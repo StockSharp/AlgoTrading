@@ -1,6 +1,6 @@
 # Designer Strategies Examples Directory
 
-Welcome to the Designer Strategies Examples Directory. This folder contains a collection of trading strategy examples specifically designed for use with the Designer program, a visual and code-based environment within the StockSharp platform. These examples are provided in both schematic and C# code formats to cater to different styles of development and learning.
+Welcome to the [Designer](https://stocksharp.com/store/strategy-designer/) Strategies Examples Directory. This folder contains a collection of trading strategy examples specifically designed for use with the Designer program, a visual and code-based environment within the StockSharp platform. These examples are provided in both schematic and C# code formats to cater to different styles of development and learning.
 
 ## Directory Structure
 
@@ -22,7 +22,7 @@ The primary goals of providing these examples are:
 To make the most out of these examples, follow these steps:
 
 1. **Choose an Example**: Browse the directory and select an example that aligns with your trading interests or learning needs.
-2. **Download and Import**: For schematic examples, download the `.schematic` file and import it into your Designer program. For C# examples, copy the code or download the file to your project.
+2. **Download and Import**: For schematic examples, download the `.json` file and import it into your Designer program. For C# examples, copy the code or download the file to your project.
 3. **Study and Modify**: Examine how the strategies are constructed and consider modifying them to better fit your specific trading criteria or to experiment with new ideas.
 4. **Test and Deploy**: Always test your strategies in a simulated environment provided by Designer before applying them in live trading to ensure they perform as expected.
 
