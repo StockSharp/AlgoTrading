@@ -1,0 +1,198 @@
+﻿{
+  "Id": "93603863-cb59-468e-bd30-c8ff37a21b2a",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Type": "Regular",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "Description": "",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "64567870-ab14-454d-aa54-38b4d88fab53",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "Lesson_06_01"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": true
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "49faeb32-3941-477c-884a-7c7c519455edValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 2.0
+                }
+              }
+            },
+            "5ffb5787-b4a5-43b1-9a76-36e538c66ed3Value": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 4.0
+                }
+              }
+            }
+          },
+          "TypeId": "5fb92121-aa49-4ddb-9e22-29df711a8147",
+          "Type": "Independent",
+          "Revision": 17,
+          "PublishedId": 0
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "2",
+              "X": -250.0,
+              "Y": -170.0,
+              "Figure": "Procedure",
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "49faeb32-3941-477c-884a-7c7c519455ed",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "2"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 2.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "3",
+              "X": -230.0,
+              "Y": 0.0,
+              "Figure": "Procedure",
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "5ffb5787-b4a5-43b1-9a76-36e538c66ed3",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "4"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 4.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "4",
+              "X": 97.2687113803532,
+              "Y": -85.2896271606612,
+              "Figure": "Procedure",
+              "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
+              "Settings": {
+                "Id": "97153505-004c-4711-8a7a-6a78a09cb3b0",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "y+3*x"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": true
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Expression": {
+                    "Value": "y+3*x"
+                  }
+                }
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "4",
+              "ToPort": "dynsock_y"
+            },
+            {
+              "From": "3",
+              "FromPort": "Output",
+              "To": "4",
+              "ToPort": "dynsock_x"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
