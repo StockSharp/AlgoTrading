@@ -1,0 +1,14 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\common_fromsrc.props" />
+
+  <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFrameworks>net6.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="$(RepoGitHubPath)Algo\Algo.csproj" />
+    <ProjectReference Include="$(RepoAppsPath)Connectors\Binance\Binance.csproj" />
+  </ItemGroup>
+
+</Project>
