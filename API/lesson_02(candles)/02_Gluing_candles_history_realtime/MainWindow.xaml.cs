@@ -17,87 +17,86 @@ using StockSharp.Messages;
 using StockSharp.Xaml.Charting;
 using StockSharp.Charting;
 
-namespace Gluing_candles_history_realtime
+namespace Gluing_candles_history_realtime;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow
+	private readonly Connector _connector;
+	private const string _connectorFile = "ConnectorFile.json";
+
+	private readonly string _pathHistory = Paths.HistoryDataPath;
+
+	private Subscription _subscription;
+	private ChartCandleElement _candleElement;
+	public MainWindow()
 	{
-		private readonly Connector _connector;
-        private const string _connectorFile = "ConnectorFile.json";
-
-		private readonly string _pathHistory = Paths.HistoryDataPath;
-
-		private Subscription _subscription;
-		private ChartCandleElement _candleElement;
-		public MainWindow()
+		InitializeComponent();
+		var entityRegistry = new CsvEntityRegistry(_pathHistory);
+		var storageRegistry = new StorageRegistry
 		{
-			InitializeComponent();
-			var entityRegistry = new CsvEntityRegistry(_pathHistory);
-			var storageRegistry = new StorageRegistry
-			{
-				DefaultDrive = new LocalMarketDataDrive(_pathHistory)
-			};
-			_connector = new Connector(entityRegistry.Securities, entityRegistry.PositionStorage, new InMemoryExchangeInfoProvider(), storageRegistry, new SnapshotRegistry("SnapshotRegistry"));
+			DefaultDrive = new LocalMarketDataDrive(_pathHistory)
+		};
+		_connector = new Connector(entityRegistry.Securities, entityRegistry.PositionStorage, new InMemoryExchangeInfoProvider(), storageRegistry, new SnapshotRegistry("SnapshotRegistry"));
 
-			// registering all connectors
-			ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
+		// registering all connectors
+		ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
 
-			if (File.Exists(_connectorFile))
+		if (File.Exists(_connectorFile))
+		{
+			_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
+		}
+
+		_connector.Adapter.StorageSettings.DaysLoad = TimeSpan.FromDays(30);
+
+		CandleSettingsEditor.DataType = DataType.TimeFrame(TimeSpan.FromMinutes(5));
+	}
+
+	private void Setting_Click(object sender, RoutedEventArgs e)
+	{
+		if (_connector.Configure(this))
+		{
+			_connector.Save().Serialize(_connectorFile);
+		}
+	}
+
+	private void Connect_Click(object sender, RoutedEventArgs e)
+	{
+		SecurityPicker.SecurityProvider = _connector;
+		_connector.CandleProcessing += Connector_CandleSeriesProcessing;
+		_connector.Connect();
+	}
+
+	private void Connector_CandleSeriesProcessing(CandleSeries candleSeries, ICandleMessage candle)
+	{
+		Chart.Draw(_candleElement, candle);
+	}
+
+	private void SecurityPicker_SecuritySelected(Security security)
+	{
+		if (security == null) return;
+		if (_subscription != null) _connector.UnSubscribe(_subscription);
+
+		_subscription = new(CandleSettingsEditor.DataType.ToCandleSeries(security))
+		{
+			MarketData =
 			{
-				_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
+				From = DateTime.Today.AddDays(-720),
+				BuildMode = MarketDataBuildModes.LoadAndBuild,
 			}
+		};
 
-			_connector.Adapter.StorageSettings.DaysLoad = TimeSpan.FromDays(30);
+		//-----------------Chart--------------------------------
+		Chart.ClearAreas();
 
-			CandleSettingsEditor.DataType = DataType.TimeFrame(TimeSpan.FromMinutes(5));
-		}
+		var area = new ChartArea();
+		_candleElement = new ChartCandleElement();
 
-		private void Setting_Click(object sender, RoutedEventArgs e)
-		{
-			if (_connector.Configure(this))
-			{
-				_connector.Save().Serialize(_connectorFile);
-			}
-		}
+		Chart.AddArea(area);
+		Chart.AddElement(area, _candleElement, _subscription.CandleSeries);
 
-		private void Connect_Click(object sender, RoutedEventArgs e)
-		{
-			SecurityPicker.SecurityProvider = _connector;
-			_connector.CandleProcessing += Connector_CandleSeriesProcessing;
-			_connector.Connect();
-		}
-
-		private void Connector_CandleSeriesProcessing(CandleSeries candleSeries, ICandleMessage candle)
-		{
-			Chart.Draw(_candleElement, candle);
-		}
-
-		private void SecurityPicker_SecuritySelected(Security security)
-		{
-			if (security == null) return;
-			if (_subscription != null) _connector.UnSubscribe(_subscription);
-
-			_subscription = new(CandleSettingsEditor.DataType.ToCandleSeries(security))
-			{
-				MarketData =
-				{
-					From = DateTime.Today.AddDays(-720),
-					BuildMode = MarketDataBuildModes.LoadAndBuild,
-				}
-			};
-
-			//-----------------Chart--------------------------------
-			Chart.ClearAreas();
-
-			var area = new ChartArea();
-			_candleElement = new ChartCandleElement();
-
-			Chart.AddArea(area);
-			Chart.AddElement(area, _candleElement, _subscription.CandleSeries);
-
-			_connector.Subscribe(_subscription);
-		}
+		_connector.Subscribe(_subscription);
 	}
 }

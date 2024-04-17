@@ -11,94 +11,93 @@ using StockSharp.Algo;
 using StockSharp.BusinessEntities;
 using StockSharp.Xaml;
 
-namespace MarketDepths_Trades
+namespace MarketDepths_Trades;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow
+	private readonly Connector _connector = new Connector();
+	private const string _connectorFile = "ConnectorFile.json";
+
+	private readonly List<Subscription> _subscriptions = new();
+	private SecurityId? _selectedSecurityId;
+
+	public MainWindow()
 	{
-		private readonly Connector _connector = new Connector();
-		private const string _connectorFile = "ConnectorFile.json";
+		InitializeComponent();
 
-		private readonly List<Subscription> _subscriptions = new();
-		private SecurityId? _selectedSecurityId;
+		// registering all connectors
+		ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
 
-		public MainWindow()
+		if (File.Exists(_connectorFile))
 		{
-			InitializeComponent();
-
-			// registering all connectors
-			ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
-
-			if (File.Exists(_connectorFile))
-			{
-				_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
-			}
+			_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
 		}
+	}
 
-		private void Setting_Click(object sender, RoutedEventArgs e)
+	private void Setting_Click(object sender, RoutedEventArgs e)
+	{
+		if (_connector.Configure(this))
 		{
-			if (_connector.Configure(this))
-			{
-				_connector.Save().Serialize(_connectorFile);
-			}
+			_connector.Save().Serialize(_connectorFile);
 		}
+	}
 
-		private void Connect_Click(object sender, RoutedEventArgs e)
-		{
-			SecurityPicker.SecurityProvider = _connector;
-			SecurityPicker.MarketDataProvider = _connector;
+	private void Connect_Click(object sender, RoutedEventArgs e)
+	{
+		SecurityPicker.SecurityProvider = _connector;
+		SecurityPicker.MarketDataProvider = _connector;
 
-			_connector.TickTradeReceived += ConnectorOnTickTradeReceived;
-			_connector.OrderBookReceived += ConnectorOnMarketDepthReceived;
+		_connector.TickTradeReceived += ConnectorOnTickTradeReceived;
+		_connector.OrderBookReceived += ConnectorOnMarketDepthReceived;
 
-			_connector.Connect();
-		}
+		_connector.Connect();
+	}
 
-		private void ConnectorOnMarketDepthReceived(Subscription sub, IOrderBookMessage depth)
-		{
-			if (depth.SecurityId == _selectedSecurityId)
-				MarketDepthControl.UpdateDepth(depth);
-		}
+	private void ConnectorOnMarketDepthReceived(Subscription sub, IOrderBookMessage depth)
+	{
+		if (depth.SecurityId == _selectedSecurityId)
+			MarketDepthControl.UpdateDepth(depth);
+	}
 
-		private void ConnectorOnTickTradeReceived(Subscription sub, ITickTradeMessage trade)
-		{
-			if (trade.SecurityId == _selectedSecurityId)
-				TradeGrid.Trades.Add(trade);
-		}
+	private void ConnectorOnTickTradeReceived(Subscription sub, ITickTradeMessage trade)
+	{
+		if (trade.SecurityId == _selectedSecurityId)
+			TradeGrid.Trades.Add(trade);
+	}
 
-		private void UnsubscribeAll()
-		{
-			foreach (var sub in _subscriptions)
-				_connector.UnSubscribe(sub);
+	private void UnsubscribeAll()
+	{
+		foreach (var sub in _subscriptions)
+			_connector.UnSubscribe(sub);
 
-			_subscriptions.Clear();
-		}
+		_subscriptions.Clear();
+	}
 
-		private void SecurityPicker_SecuritySelected(Security security)
-		{
-			// cancel old subscriptions
-			UnsubscribeAll();
+	private void SecurityPicker_SecuritySelected(Security security)
+	{
+		// cancel old subscriptions
+		UnsubscribeAll();
 
-			_selectedSecurityId = security?.ToSecurityId();
+		_selectedSecurityId = security?.ToSecurityId();
 
-			//-----------------SecurityPicker-----------------------
-			if (_selectedSecurityId == null)
-				return;
+		//-----------------SecurityPicker-----------------------
+		if (_selectedSecurityId == null)
+			return;
 
-			//_connector.RegisterSecurity(security); // - out of date
-			_subscriptions.Add(_connector.SubscribeLevel1(security));
+		//_connector.RegisterSecurity(security); // - out of date
+		_subscriptions.Add(_connector.SubscribeLevel1(security));
 
-			//-----------------TradeGrid-----------------------
-            //_connector.RegisterTrades(security); // - out of date
-			_subscriptions.Add(_connector.SubscribeTrades(security));
+		//-----------------TradeGrid-----------------------
+		//_connector.RegisterTrades(security); // - out of date
+		_subscriptions.Add(_connector.SubscribeTrades(security));
 
-			//-----------------MarketDepth--------------------------
-			MarketDepthControl.Clear();
+		//-----------------MarketDepth--------------------------
+		MarketDepthControl.Clear();
 
-			//_connector.RegisterMarketDepth(security); // - out of date
-			_subscriptions.Add(_connector.SubscribeMarketDepth(security));
-		}
+		//_connector.RegisterMarketDepth(security); // - out of date
+		_subscriptions.Add(_connector.SubscribeMarketDepth(security));
 	}
 }

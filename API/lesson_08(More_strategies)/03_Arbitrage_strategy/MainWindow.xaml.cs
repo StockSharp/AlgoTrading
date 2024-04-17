@@ -11,106 +11,105 @@ using StockSharp.Configuration;
 using StockSharp.Logging;
 using StockSharp.Xaml;
 
-namespace Arbitrage_strategy
+namespace Arbitrage_strategy;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow
+	private ArbitrageStrategy _strategy;
+	private readonly LogManager _logManager;
+	private readonly Connector _connector = new Connector();
+	private const string _connectorFile = "ConnectorFile.json";
+	public MainWindow()
 	{
-		private ArbitrageStrategy _strategy;
-		private readonly LogManager _logManager;
-		private readonly Connector _connector = new Connector();
-		private const string _connectorFile = "ConnectorFile.json";
-		public MainWindow()
+		InitializeComponent();
+
+		// registering all connectors
+		ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
+
+		if (File.Exists(_connectorFile))
 		{
-			InitializeComponent();
-
-			// registering all connectors
-			ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
-
-			if (File.Exists(_connectorFile))
-			{
-				_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
-			}
-			_logManager = new LogManager();
-			_logManager.Listeners.Add(new GuiLogListener(Monitor));
+			_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
 		}
+		_logManager = new LogManager();
+		_logManager.Listeners.Add(new GuiLogListener(Monitor));
+	}
 
-		private void Setting_Click(object sender, RoutedEventArgs e)
+	private void Setting_Click(object sender, RoutedEventArgs e)
+	{
+		if (_connector.Configure(this))
 		{
-			if (_connector.Configure(this))
-			{
-				_connector.Save().Serialize(_connectorFile);
-			}
+			_connector.Save().Serialize(_connectorFile);
 		}
+	}
 
-		private void Connect_Click(object sender, RoutedEventArgs e)
+	private void Connect_Click(object sender, RoutedEventArgs e)
+	{
+		SecurityEditor1.SecurityProvider = _connector;
+		PortfolioEditor1.Portfolios = new PortfolioDataSource(_connector);
+		SecurityEditor2.SecurityProvider = _connector;
+		PortfolioEditor2.Portfolios = new PortfolioDataSource(_connector);
+		_connector.PortfolioReceived += (sub, portfolio) =>
 		{
-			SecurityEditor1.SecurityProvider = _connector;
-			PortfolioEditor1.Portfolios = new PortfolioDataSource(_connector);
-			SecurityEditor2.SecurityProvider = _connector;
-			PortfolioEditor2.Portfolios = new PortfolioDataSource(_connector);
-			_connector.PortfolioReceived += (sub, portfolio) =>
-			{
-				PortfolioGrid.Positions.Add(portfolio);
-			};
+			PortfolioGrid.Positions.Add(portfolio);
+		};
 
-			_connector.SecurityReceived += (sub, security) =>
-			{
-				this.GuiSync(() =>
-				{
-					if (security.Id == "SBER@QJSIM") SecurityEditor1.SelectedSecurity = security;
-					if (security.Id == "SBER@TQBR") SecurityEditor1.SelectedSecurity = security;
-				});
-			};
-
-			_connector.PositionReceived += (sub, pos) => PortfolioGrid.Positions.Add(pos);
-
-
-			_connector.Connect();
-		}
-
-		private void Start_Click(object sender, RoutedEventArgs e)
+		_connector.SecurityReceived += (sub, security) =>
 		{
-			if (PortfolioEditor1.SelectedPortfolio == null) return;
-			if (SecurityEditor1.SelectedSecurity == null) return;
-
-			if (PortfolioEditor2.SelectedPortfolio == null) return;
-			if (SecurityEditor2.SelectedSecurity == null) return;
-
-			_strategy = new ArbitrageStrategy()
+			this.GuiSync(() =>
 			{
-				Connector = _connector,
-				Security = SecurityEditor1.SelectedSecurity,
-				Portfolio = PortfolioEditor1.SelectedPortfolio,
+				if (security.Id == "SBER@QJSIM") SecurityEditor1.SelectedSecurity = security;
+				if (security.Id == "SBER@TQBR") SecurityEditor1.SelectedSecurity = security;
+			});
+		};
 
-				FutureSecurity = SecurityEditor1.SelectedSecurity,
-				StockSecurity = SecurityEditor2.SelectedSecurity,
-				FuturePortfolio = PortfolioEditor1.SelectedPortfolio,
-				StockPortfolio = PortfolioEditor2.SelectedPortfolio,
+		_connector.PositionReceived += (sub, pos) => PortfolioGrid.Positions.Add(pos);
 
-				FutureVolume = 1,
-				StockVolume = 1,
 
-				ProfitToExit = -0.05m,
-				SpreadToGenerateSignal = 0.03m,
-				StockMultiplicator = 1.26m
+		_connector.Connect();
+	}
 
-			};
+	private void Start_Click(object sender, RoutedEventArgs e)
+	{
+		if (PortfolioEditor1.SelectedPortfolio == null) return;
+		if (SecurityEditor1.SelectedSecurity == null) return;
 
-			_strategy.OrderRegistered += OrderGrid.Orders.Add;
-			_strategy.OrderRegisterFailed += OrderGrid.AddRegistrationFail;
-			_strategy.NewMyTrade += MyTradeGrid.Trades.Add;
+		if (PortfolioEditor2.SelectedPortfolio == null) return;
+		if (SecurityEditor2.SelectedSecurity == null) return;
 
-			_logManager.Sources.Add(_strategy);
-
-			_strategy.Start();
-		}
-
-		private void Stop_Click(object sender, RoutedEventArgs e)
+		_strategy = new ArbitrageStrategy()
 		{
-			_strategy.Stop();
-		}
+			Connector = _connector,
+			Security = SecurityEditor1.SelectedSecurity,
+			Portfolio = PortfolioEditor1.SelectedPortfolio,
+
+			FutureSecurity = SecurityEditor1.SelectedSecurity,
+			StockSecurity = SecurityEditor2.SelectedSecurity,
+			FuturePortfolio = PortfolioEditor1.SelectedPortfolio,
+			StockPortfolio = PortfolioEditor2.SelectedPortfolio,
+
+			FutureVolume = 1,
+			StockVolume = 1,
+
+			ProfitToExit = -0.05m,
+			SpreadToGenerateSignal = 0.03m,
+			StockMultiplicator = 1.26m
+
+		};
+
+		_strategy.OrderRegistered += OrderGrid.Orders.Add;
+		_strategy.OrderRegisterFailed += OrderGrid.AddRegistrationFail;
+		_strategy.NewMyTrade += MyTradeGrid.Trades.Add;
+
+		_logManager.Sources.Add(_strategy);
+
+		_strategy.Start();
+	}
+
+	private void Stop_Click(object sender, RoutedEventArgs e)
+	{
+		_strategy.Stop();
 	}
 }

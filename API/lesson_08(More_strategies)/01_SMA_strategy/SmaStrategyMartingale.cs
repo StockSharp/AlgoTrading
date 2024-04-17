@@ -61,7 +61,7 @@ namespace SMA_strategy
 
 			var volume = Volume + Math.Abs(Position);
 
-			var price = Security.ShrinkPrice(ShortSma.GetCurrentValue()); 
+			var price = Security.ShrinkPrice(ShortSma.GetCurrentValue());
 			RegisterOrder(this.CreateOrder(direction, price, volume));
 		}
 	}

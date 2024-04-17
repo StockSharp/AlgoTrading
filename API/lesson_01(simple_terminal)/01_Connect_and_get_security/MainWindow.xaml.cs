@@ -10,56 +10,55 @@ using StockSharp.Algo;
 using StockSharp.BusinessEntities;
 using StockSharp.Xaml;
 
-namespace Connect_and_get_security
+namespace Connect_and_get_security;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow
+	private readonly Connector _connector = new Connector();
+	private const string _connectorFile = "ConnectorFile.json";
+
+	public MainWindow()
 	{
-		private readonly Connector _connector = new Connector();
-		private const string _connectorFile = "ConnectorFile.json";
+		InitializeComponent();
 
-		public MainWindow()
+		// registering all connectors
+		ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
+
+		if (File.Exists(_connectorFile))
 		{
-			InitializeComponent();
-
-			// registering all connectors
-			ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
-
-			if (File.Exists(_connectorFile))
-			{
-				_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
-			}
+			_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
 		}
+	}
 
-		private void Setting_Click(object sender, RoutedEventArgs e)
+	private void Setting_Click(object sender, RoutedEventArgs e)
+	{
+		if (_connector.Configure(this))
 		{
-			if (_connector.Configure(this))
-			{
-				_connector.Save().Serialize(_connectorFile);
-			}
+			_connector.Save().Serialize(_connectorFile);
 		}
+	}
 
-		private void Connect_Click(object sender, RoutedEventArgs e)
-		{
-			SecurityPicker.SecurityProvider = _connector;
-			SecurityPicker.MarketDataProvider = _connector;
-			_connector.Connected += Connector_Connected;
-			_connector.Connect();
-		}
+	private void Connect_Click(object sender, RoutedEventArgs e)
+	{
+		SecurityPicker.SecurityProvider = _connector;
+		SecurityPicker.MarketDataProvider = _connector;
+		_connector.Connected += Connector_Connected;
+		_connector.Connect();
+	}
 
-		private void Connector_Connected()
-		{
-			// for Interactive Brokers Trader Workstation
-			_connector.LookupSecurities(new Security() { Code = "BTC" });
-		}
+	private void Connector_Connected()
+	{
+		// for Interactive Brokers Trader Workstation
+		_connector.LookupSecurities(new Security() { Code = "BTC" });
+	}
 
-		private void SecurityPicker_SecuritySelected(Security security)
-		{
-			if (security == null) return;
-			//_connector.RegisterSecurity(security); // - out of date
-			_connector.SubscribeLevel1(security);
-		}
+	private void SecurityPicker_SecuritySelected(Security security)
+	{
+		if (security == null) return;
+		//_connector.RegisterSecurity(security); // - out of date
+		_connector.SubscribeLevel1(security);
 	}
 }

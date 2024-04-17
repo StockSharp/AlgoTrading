@@ -1,10 +1,9 @@
-﻿namespace Arbitrage_strategy
+﻿namespace Arbitrage_strategy;
+
+public enum ArbitrageState
 {
-	public enum ArbitrageState
-	{
-		Contango,
-		Backvordation,
-		None,
-		OrderRegistration,
-	}
+	Contango,
+	Backvordation,
+	None,
+	OrderRegistration,
 }

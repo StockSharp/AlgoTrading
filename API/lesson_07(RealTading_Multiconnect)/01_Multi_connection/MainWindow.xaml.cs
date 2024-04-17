@@ -10,116 +10,115 @@ using StockSharp.Configuration;
 using StockSharp.Messages;
 using StockSharp.Xaml;
 
-namespace Multi_connection
+namespace Multi_connection;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow
+	private readonly Connector _connector = new Connector();
+	private const string _connectorFile = "ConnectorFile.json";
+
+	public MainWindow()
 	{
-		private readonly Connector _connector = new Connector();
-		private const string _connectorFile = "ConnectorFile.json";
+		InitializeComponent();
 
-		public MainWindow()
+		// registering all connectors
+		ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
+
+		if (File.Exists(_connectorFile))
 		{
-			InitializeComponent();
-
-			// registering all connectors
-			ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
-
-			if (File.Exists(_connectorFile))
-			{
-				_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
-			}
+			_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
 		}
+	}
 
-		private void Setting_Click(object sender, RoutedEventArgs e)
+	private void Setting_Click(object sender, RoutedEventArgs e)
+	{
+		if (_connector.Configure(this))
 		{
-			if (_connector.Configure(this))
-			{
-				_connector.Save().Serialize(_connectorFile);
-			}
+			_connector.Save().Serialize(_connectorFile);
 		}
+	}
 
-		private void Connect_Click(object sender, RoutedEventArgs e)
+	private void Connect_Click(object sender, RoutedEventArgs e)
+	{
+		SecurityEditor1.SecurityProvider = _connector;
+		PortfolioEditor1.Portfolios = new PortfolioDataSource(_connector);
+
+		SecurityEditor2.SecurityProvider = _connector;
+		PortfolioEditor2.Portfolios = new PortfolioDataSource(_connector);
+
+
+		_connector.NewOrder += OrderGrid.Orders.Add;
+		_connector.OrderRegisterFailed += OrderGrid.AddRegistrationFail;
+		_connector.NewMyTrade += MyTradeGrid.Trades.Add;
+		_connector.Connected += ConnectorOnConnected;
+		_connector.Connect();
+	}
+
+	private void ConnectorOnConnected()
+	{
+		_connector.LookupSecurities(new Security());
+
+		//_connector.LookupPortfolios(new Portfolio()); // - out of date
+		_connector.SubscribePositions();
+	}
+
+	private void Buy_Click(object sender, RoutedEventArgs e)
+	{
+		var order = new Order
 		{
-			SecurityEditor1.SecurityProvider = _connector;
-			PortfolioEditor1.Portfolios = new PortfolioDataSource(_connector);
+			Security = SecurityEditor1.SelectedSecurity,
+			Portfolio = PortfolioEditor1.SelectedPortfolio,
+			Price = decimal.Parse(TextBoxPrice1.Text),
+			Volume = 1,
+			Side = Sides.Buy,
+		};
 
-			SecurityEditor2.SecurityProvider = _connector;
-			PortfolioEditor2.Portfolios = new PortfolioDataSource(_connector);
+		_connector.RegisterOrder(order);
+	}
 
 
-			_connector.NewOrder += OrderGrid.Orders.Add;
-			_connector.OrderRegisterFailed += OrderGrid.AddRegistrationFail;
-			_connector.NewMyTrade += MyTradeGrid.Trades.Add;
-			_connector.Connected += ConnectorOnConnected;
-			_connector.Connect();
-		}
-
-		private void ConnectorOnConnected()
+	private void Sell_Click(object sender, RoutedEventArgs e)
+	{
+		var order = new Order
 		{
-			_connector.LookupSecurities(new Security());
+			Security = SecurityEditor1.SelectedSecurity,
+			Portfolio = PortfolioEditor1.SelectedPortfolio,
+			Price = decimal.Parse(TextBoxPrice1.Text),
+			Volume = 1,
+			Side = Sides.Sell,
+		};
 
-			//_connector.LookupPortfolios(new Portfolio()); // - out of date
-			_connector.SubscribePositions();
-		}
+		_connector.RegisterOrder(order);
+	}
 
-		private void Buy_Click(object sender, RoutedEventArgs e)
+	private void Buy2_Click(object sender, RoutedEventArgs e)
+	{
+		var order = new Order
 		{
-			var order = new Order
-			{
-				Security = SecurityEditor1.SelectedSecurity,
-				Portfolio = PortfolioEditor1.SelectedPortfolio,
-				Price = decimal.Parse(TextBoxPrice1.Text),
-				Volume = 1,
-				Side = Sides.Buy,
-			};
+			Security = SecurityEditor2.SelectedSecurity,
+			Portfolio = PortfolioEditor2.SelectedPortfolio,
+			Price = decimal.Parse(TextBoxPrice2.Text),
+			Volume = 1,
+			Side = Sides.Buy,
+		};
 
-			_connector.RegisterOrder(order);
-		}
+		_connector.RegisterOrder(order);
+	}
 
-
-		private void Sell_Click(object sender, RoutedEventArgs e)
+	private void Sell2_Click(object sender, RoutedEventArgs e)
+	{
+		var order = new Order
 		{
-			var order = new Order
-			{
-				Security = SecurityEditor1.SelectedSecurity,
-				Portfolio = PortfolioEditor1.SelectedPortfolio,
-				Price = decimal.Parse(TextBoxPrice1.Text),
-				Volume = 1,
-				Side = Sides.Sell,
-			};
+			Security = SecurityEditor2.SelectedSecurity,
+			Portfolio = PortfolioEditor2.SelectedPortfolio,
+			Price = decimal.Parse(TextBoxPrice1.Text),
+			Volume = 1,
+			Side = Sides.Sell,
+		};
 
-			_connector.RegisterOrder(order);
-		}
-
-		private void Buy2_Click(object sender, RoutedEventArgs e)
-		{
-			var order = new Order
-			{
-				Security = SecurityEditor2.SelectedSecurity,
-				Portfolio = PortfolioEditor2.SelectedPortfolio,
-				Price = decimal.Parse(TextBoxPrice2.Text),
-				Volume = 1,
-				Side = Sides.Buy,
-			};
-
-			_connector.RegisterOrder(order);
-		}
-
-		private void Sell2_Click(object sender, RoutedEventArgs e)
-		{
-			var order = new Order
-			{
-				Security = SecurityEditor2.SelectedSecurity,
-				Portfolio = PortfolioEditor2.SelectedPortfolio,
-				Price = decimal.Parse(TextBoxPrice1.Text),
-				Volume = 1,
-				Side = Sides.Sell,
-			};
-
-			_connector.RegisterOrder(order);
-		}
+		_connector.RegisterOrder(order);
 	}
 }

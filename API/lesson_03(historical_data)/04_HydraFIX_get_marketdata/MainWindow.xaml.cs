@@ -14,97 +14,96 @@ using System;
 using System.IO;
 using System.Windows;
 
-namespace HydraFIX_get_marketdata
+namespace HydraFIX_get_marketdata;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow
+	private readonly Connector _connector = new Connector();
+	private Subscription _subscription;
+	private ChartCandleElement _candleElement;
+
+	private const string _connectorFile = "ConnectorFile.json";
+
+	public MainWindow()
 	{
-		private readonly Connector _connector = new Connector();
-		private Subscription _subscription;
-		private ChartCandleElement _candleElement;
+		InitializeComponent();
 
-		private const string _connectorFile = "ConnectorFile.json";
+		// registering all connectors
+		ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
 
-		public MainWindow()
+		if (File.Exists(_connectorFile))
 		{
-			InitializeComponent();
+			_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
+		}
 
-			// registering all connectors
-			ConfigManager.RegisterService<IMessageAdapterProvider>(new InMemoryMessageAdapterProvider(_connector.Adapter.InnerAdapters));
+		CandleSettingsEditor.DataType = DataType.TimeFrame(TimeSpan.FromMinutes(5));
 
-			if (File.Exists(_connectorFile))
+		DatePickerBegin.SelectedDate = Paths.HistoryBeginDate;
+		DatePickerEnd.SelectedDate = Paths.HistoryEndDate;
+	}
+
+	private void Setting_Click(object sender, RoutedEventArgs e)
+	{
+		if (_connector.Configure(this))
+		{
+			_connector.Save().Serialize(_connectorFile);
+		}
+	}
+
+	private void Connect_Click(object sender, RoutedEventArgs e)
+	{
+		//_connector.Adapter.InnerAdapters.ForEach(a => a.RemoveTransactionalSupport());  // - out of date
+		SecurityPicker.SecurityProvider = _connector;
+		SecurityPicker.MarketDataProvider = _connector;
+
+		_connector.CandleProcessing += Connector_CandleSeriesProcessing;
+		_connector.Connected += Connector_Connected;
+		_connector.Connect();
+	}
+
+	private void Connector_Connected()
+	{
+		_connector.LookupSecurities(new Security());
+	}
+
+	private void SecurityPicker_SecuritySelected(Security security)
+	{
+		if (security == null) return;
+		if (_subscription != null) _connector.UnSubscribe(_subscription);
+
+		_subscription = new(CandleSettingsEditor.DataType.ToCandleSeries(security))
+		{
+			MarketData =
 			{
-				_connector.Load(_connectorFile.Deserialize<SettingsStorage>());
+				From = DatePickerBegin.SelectedDate,
+				To = DatePickerEnd.SelectedDate,
 			}
+		};
 
-			CandleSettingsEditor.DataType = DataType.TimeFrame(TimeSpan.FromMinutes(5));
-
-			DatePickerBegin.SelectedDate = Paths.HistoryBeginDate;
-			DatePickerEnd.SelectedDate = Paths.HistoryEndDate;
-		}
-
-		private void Setting_Click(object sender, RoutedEventArgs e)
+		if (BuildFromTicks.IsChecked == true)
 		{
-			if (_connector.Configure(this))
-			{
-				_connector.Save().Serialize(_connectorFile);
-			}
+			_subscription.MarketData.BuildMode = MarketDataBuildModes.Build;
+			_subscription.MarketData.BuildFrom = DataType.Ticks;
 		}
 
-		private void Connect_Click(object sender, RoutedEventArgs e)
-		{
-			//_connector.Adapter.InnerAdapters.ForEach(a => a.RemoveTransactionalSupport());  // - out of date
-			SecurityPicker.SecurityProvider = _connector;
-			SecurityPicker.MarketDataProvider = _connector;
+		//------------------------------------------Chart----------------------------------------------------------------------------------------
+		Chart.ClearAreas();
 
-			_connector.CandleProcessing += Connector_CandleSeriesProcessing;
-			_connector.Connected += Connector_Connected;
-			_connector.Connect();
-		}
+		var area = new ChartArea();
+		_candleElement = new ChartCandleElement();
 
-		private void Connector_Connected()
-		{
-			_connector.LookupSecurities(new Security());
-		}
+		Chart.AddArea(area);
+		_candleElement = new ChartCandleElement();
 
-		private void SecurityPicker_SecuritySelected(Security security)
-		{
-			if (security == null) return;
-			if (_subscription != null) _connector.UnSubscribe(_subscription);
+		Chart.AddElement(area, _candleElement, _subscription.CandleSeries);
+		_connector.Subscribe(_subscription);
+	}
 
-			_subscription = new(CandleSettingsEditor.DataType.ToCandleSeries(security))
-			{
-				MarketData =
-				{
-					From = DatePickerBegin.SelectedDate,
-					To = DatePickerEnd.SelectedDate,
-				}
-			};
-
-			if (BuildFromTicks.IsChecked == true)
-			{
-				_subscription.MarketData.BuildMode = MarketDataBuildModes.Build;
-				_subscription.MarketData.BuildFrom = DataType.Ticks;
-			}
-
-			//------------------------------------------Chart----------------------------------------------------------------------------------------
-			Chart.ClearAreas();
-
-			var area = new ChartArea();
-			_candleElement = new ChartCandleElement();
-
-			Chart.AddArea(area);
-			_candleElement = new ChartCandleElement();
-
-			Chart.AddElement(area, _candleElement, _subscription.CandleSeries);
-			_connector.Subscribe(_subscription);
-		}
-
-		private void Connector_CandleSeriesProcessing(CandleSeries candleSeries,ICandleMessage candle)
-		{
-			Chart.Draw(_candleElement, candle);
-		}
+	private void Connector_CandleSeriesProcessing(CandleSeries candleSeries,ICandleMessage candle)
+	{
+		Chart.Draw(_candleElement, candle);
 	}
 }

@@ -36,7 +36,7 @@ namespace Quoting_strategy
 			//_candleManager.Start(_candleSeries);// - out of date
 			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
 			Connector.Subscribe(_subscription);
-			
+
 			base.OnStarted(time);
 		}
 

@@ -41,7 +41,7 @@
 			if (!BollingerBands.IsFormed) return;
 			if (!IsHistoryEmulationConnector && !IsRealTime(candle)) return;
 
-			if (candle.ClosePrice >= BollingerBands.UpBand.GetCurrentValue()  && Position >= 0)
+			if (candle.ClosePrice >= BollingerBands.UpBand.GetCurrentValue() && Position >= 0)
 			{
 				RegisterOrder(this.SellAtMarket(Volume + Math.Abs(Position)));
 			}

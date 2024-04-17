@@ -1,62 +1,60 @@
 ﻿using System;
 using System.Windows.Media;
-using Ecng.Common;
+
 using StockSharp.Algo;
-using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Storages;
-using StockSharp.BusinessEntities;
 using StockSharp.Configuration;
 using StockSharp.Xaml.Charting;
 using StockSharp.Charting;
 using StockSharp.Messages;
 
-namespace Simple_indicator_SMA
+namespace Simple_indicator_SMA;
+
+/// <summary>
+/// Interaction logic for MainWindow.xaml
+/// </summary>
+public partial class MainWindow
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
-    public partial class MainWindow
-    {
-	    private readonly string _pathHistory = Paths.HistoryDataPath;
-		public MainWindow()
-        {
-            InitializeComponent();
+	private readonly string _pathHistory = Paths.HistoryDataPath;
 
-			var chartArea = new ChartArea();
-	        Chart.AddArea(chartArea);
+	public MainWindow()
+	{
+		InitializeComponent();
 
-	        var chartCandleElement = new ChartCandleElement();
-	        Chart.AddElement(chartArea, chartCandleElement);
+		var chartArea = new ChartArea();
+		Chart.AddArea(chartArea);
 
-	        var chartIndicatorElement = new ChartIndicatorElement()
-	        {
-				Color = Colors.Brown,
-		        DrawStyle = ChartIndicatorDrawStyles.Line
-	        };
-	        Chart.AddElement(chartArea, chartIndicatorElement);
+		var chartCandleElement = new ChartCandleElement();
+		Chart.AddElement(chartArea, chartCandleElement);
 
-	        var secId = "SBER@TQBR".ToSecurityId();
+		var chartIndicatorElement = new ChartIndicatorElement()
+		{
+			Color = Colors.Brown,
+			DrawStyle = ChartIndicatorDrawStyles.Line
+		};
+		Chart.AddElement(chartArea, chartIndicatorElement);
 
-	        var candleStorage = new StorageRegistry().GetTimeFrameCandleMessageStorage(secId, TimeSpan.FromMinutes(1), new LocalMarketDataDrive(_pathHistory), StorageFormats.Binary);
-	        var candles = candleStorage.Load(Paths.HistoryBeginDate, Paths.HistoryEndDate);
+		var secId = "SBER@TQBR".ToSecurityId();
 
-	        var indicator = new SimpleMovingAverage()
-	        {
-		        Length = 10
-	        };
+		var candleStorage = new StorageRegistry().GetTimeFrameCandleMessageStorage(secId, TimeSpan.FromMinutes(1), new LocalMarketDataDrive(_pathHistory), StorageFormats.Binary);
+		var candles = candleStorage.Load(Paths.HistoryBeginDate, Paths.HistoryEndDate);
 
-	        foreach (var candle in candles)
-	        {
-		        var indicatorValue = indicator.Process(candle);
-		        var chartDrawData = new ChartDrawData();
+		var indicator = new SimpleMovingAverage()
+		{
+			Length = 10
+		};
 
-		        chartDrawData.Group(candle.OpenTime)
-			        .Add(chartCandleElement, candle)
-			        .Add(chartIndicatorElement, indicatorValue);
+		foreach (var candle in candles)
+		{
+			var indicatorValue = indicator.Process(candle);
+			var chartDrawData = new ChartDrawData();
 
-		        Chart.Draw(chartDrawData);
-	        }
+			chartDrawData.Group(candle.OpenTime)
+				.Add(chartCandleElement, candle)
+				.Add(chartIndicatorElement, indicatorValue);
+
+			Chart.Draw(chartDrawData);
 		}
-    }
+	}
 }
