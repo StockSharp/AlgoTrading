@@ -17,7 +17,7 @@ namespace Connect_and_get_security;
 /// </summary>
 public partial class MainWindow
 {
-	private readonly Connector _connector = new Connector();
+	private readonly Connector _connector = new();
 	private const string _connectorFile = "ConnectorFile.json";
 
 	public MainWindow()

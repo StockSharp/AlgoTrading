@@ -83,9 +83,12 @@ internal class LazyMovingAverage : BaseIndicator
 	protected override IIndicatorValue OnProcess(IIndicatorValue input)
 	{
 		var value = input.GetValue<decimal>();
-		if (_outputValue == null) _outputValue = value;
+		
+		if (_outputValue == null)
+			_outputValue = value;
+		else
+			_outputValue += (value - _outputValue) / Length;
 
-		_outputValue = _outputValue + (value - _outputValue) / Length;
 		return new DecimalIndicatorValue(this, _outputValue.Value);
 	}
 }

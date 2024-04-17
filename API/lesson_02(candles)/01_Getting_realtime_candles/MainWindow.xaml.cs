@@ -24,7 +24,7 @@ public partial class MainWindow
 	private Subscription _subscription;
 	private ChartCandleElement _candleElement;
 
-	private readonly Connector _connector = new Connector();
+	private readonly Connector _connector = new();
 	private const string _connectorFile = "ConnectorFile.json";
 
 	public MainWindow()

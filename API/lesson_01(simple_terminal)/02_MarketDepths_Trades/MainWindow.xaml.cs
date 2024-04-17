@@ -18,7 +18,7 @@ namespace MarketDepths_Trades;
 /// </summary>
 public partial class MainWindow
 {
-	private readonly Connector _connector = new Connector();
+	private readonly Connector _connector = new();
 	private const string _connectorFile = "ConnectorFile.json";
 
 	private readonly List<Subscription> _subscriptions = new();

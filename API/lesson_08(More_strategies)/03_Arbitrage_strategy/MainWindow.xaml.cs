@@ -20,7 +20,7 @@ public partial class MainWindow
 {
 	private ArbitrageStrategy _strategy;
 	private readonly LogManager _logManager;
-	private readonly Connector _connector = new Connector();
+	private readonly Connector _connector = new();
 	private const string _connectorFile = "ConnectorFile.json";
 	public MainWindow()
 	{

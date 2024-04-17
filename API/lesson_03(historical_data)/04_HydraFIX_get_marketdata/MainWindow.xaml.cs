@@ -21,7 +21,7 @@ namespace HydraFIX_get_marketdata;
 /// </summary>
 public partial class MainWindow
 {
-	private readonly Connector _connector = new Connector();
+	private readonly Connector _connector = new();
 	private Subscription _subscription;
 	private ChartCandleElement _candleElement;
 

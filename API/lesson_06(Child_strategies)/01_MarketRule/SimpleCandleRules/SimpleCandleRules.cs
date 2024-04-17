@@ -30,7 +30,7 @@ namespace MarketRule
 			Connector.WhenCandlesStarted(_subscription)
 				.Do((candle) =>
 				{
-					i = i + 1;
+					i++;
 					Connector.WhenTotalVolumeMore(candle, new Unit(100000m))
 
 						.Do((candle1) =>

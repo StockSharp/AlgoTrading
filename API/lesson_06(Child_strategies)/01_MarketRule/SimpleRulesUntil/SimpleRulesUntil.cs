@@ -19,7 +19,7 @@ namespace MarketRule
 			var i = 0;
 			mdSub.WhenOrderBookReceived(Connector).Do((depth) =>
 				{
-					i = i + 1;
+					i++;
 					this.AddInfoLog($"The rule WhenOrderBookReceived BestBid={depth.GetBestBid()}, BestAsk={depth.GetBestAsk()}");
 					this.AddInfoLog($"The rule WhenOrderBookReceived i={i}");
 				}).Until(() => i >= 10)

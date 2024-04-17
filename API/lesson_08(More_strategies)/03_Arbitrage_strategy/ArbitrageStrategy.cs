@@ -79,7 +79,9 @@ namespace Arbitrage_strategy
 			var backvordationSpread = _stBid - _futAck;
 
 			if (_futBid == 0 || _futAck == 0 || _stBid == 0 || _stAsk == 0) return;
+
 			decimal spread;
+
 			ArbitrageState arbitrageSignal;
 			if (backvordationSpread > contangoSpread)
 			{
@@ -91,10 +93,12 @@ namespace Arbitrage_strategy
 				arbitrageSignal = ArbitrageState.Contango;
 				spread = contangoSpread;
 			}
+
 			this.AddInfoLog($"Current state {_currentState}, enter spread = {_enterSpread}");
 			this.AddInfoLog($"{ArbitrageState.Backvordation} spread = {backvordationSpread}");
 			this.AddInfoLog($"{ArbitrageState.Contango}        spread = {contangoSpread}");
 			this.AddInfoLog($"Entry from spread:{SpreadToGenerateSignal}. Exit from profit:{ProfitToExit}");
+
 			if (_arbitragePnl != null)
 			{
 				_profit = _arbitragePnl();
@@ -106,110 +110,112 @@ namespace Arbitrage_strategy
 				_currentState = ArbitrageState.OrderRegistration;
 				if (arbitrageSignal == ArbitrageState.Backvordation)
 				{
-					var orders = GenerateOrdersBackvardation();
+					var (buy, sell) = GenerateOrdersBackvardation();
 
 					new IMarketRule[]
+					{
+						buy.WhenMatched(Connector), sell.WhenMatched(Connector),
+						buy.WhenAllTrades(Connector), sell.WhenAllTrades(Connector),
+					}
+					.And()
+					.Do(() =>
+					{
+						var futurePrise = buy.GetTrades(Connector).GetAveragePrice();
+						var stockPrise = sell.GetTrades(Connector).GetAveragePrice() * StockMultiplicator;
+
+						_enterSpread = stockPrise - futurePrise;
+
+						_arbitragePnl = () =>
 						{
-							orders.Item1.WhenMatched(Connector), orders.Item2.WhenMatched(Connector),
-							orders.Item1.WhenAllTrades(Connector), orders.Item2.WhenAllTrades(Connector),
-						}
-						.And()
-						.Do(() =>
-						{
-							var futurePrise = orders.Item1.GetTrades(Connector).GetAveragePrice();
-							var stockPrise = orders.Item2.GetTrades(Connector).GetAveragePrice() * StockMultiplicator;
+							return stockPrise - _stAsk + _futBid - futurePrise;
+						};
+						_currentState = ArbitrageState.Backvordation;
 
-							_enterSpread = stockPrise - futurePrise;
+					}).Once().Apply(this);
 
-							_arbitragePnl = () =>
-							{
-								return stockPrise - _stAsk + _futBid - futurePrise;
-							};
-							_currentState = ArbitrageState.Backvordation;
-
-						}).Once().Apply(this);
-
-					RegisterOrder(orders.Item1);
-					RegisterOrder(orders.Item2);
+					RegisterOrder(buy);
+					RegisterOrder(sell);
 				}
 				else
 				{
-					var orders = GenerateOrdersContango();
+					var (sell, buy) = GenerateOrdersContango();
 
 					new IMarketRule[]
+					{
+						sell.WhenMatched(Connector), buy.WhenMatched(Connector),
+						sell.WhenAllTrades(Connector), buy.WhenAllTrades(Connector),
+					}
+					.And()
+					.Do(() =>
+					{
+						var futurePrise = sell.GetTrades(Connector).GetAveragePrice();
+						var stockPrise = buy.GetTrades(Connector).GetAveragePrice() * StockMultiplicator;
+
+						_enterSpread = futurePrise - stockPrise;
+
+						_arbitragePnl = () =>
 						{
-							orders.Item1.WhenMatched(Connector), orders.Item2.WhenMatched(Connector),
-							orders.Item1.WhenAllTrades(Connector), orders.Item2.WhenAllTrades(Connector),
-						}
-						.And()
-						.Do(() =>
-						{
-							var futurePrise = orders.Item1.GetTrades(Connector).GetAveragePrice();
-							var stockPrise = orders.Item2.GetTrades(Connector).GetAveragePrice() * StockMultiplicator;
+							return futurePrise - _futAck + _stBid - stockPrise;
+						};
+						_currentState = ArbitrageState.Contango;
 
-							_enterSpread = futurePrise - stockPrise;
+					}).Once().Apply(this);
 
-							_arbitragePnl = () =>
-							{
-								return futurePrise - _futAck + _stBid - stockPrise;
-							};
-							_currentState = ArbitrageState.Contango;
-
-						}).Once().Apply(this);
-
-					RegisterOrder(orders.Item1);
-					RegisterOrder(orders.Item2);
+					RegisterOrder(sell);
+					RegisterOrder(buy);
 				}
 			}
 			else
 			if (_currentState == ArbitrageState.Backvordation && _profit >= ProfitToExit)
 			{
 				_currentState = ArbitrageState.OrderRegistration;
-				var orders = GenerateOrdersContango();
+
+				var (sell, buy) = GenerateOrdersContango();
 
 				new IMarketRule[]
-					{
-						orders.Item1.WhenMatched(Connector), orders.Item2.WhenMatched(Connector),
-					}
-					.And()
-					.Do(() =>
-					{
+				{
+					sell.WhenMatched(Connector), buy.WhenMatched(Connector),
+				}
+				.And()
+				.Do(() =>
+				{
 
-						_enterSpread = 0;
-						_arbitragePnl = null;
-						_currentState = ArbitrageState.None;
+					_enterSpread = 0;
+					_arbitragePnl = null;
+					_currentState = ArbitrageState.None;
 
-					}).Once().Apply(this);
+				}).Once().Apply(this);
 
-				RegisterOrder(orders.Item1);
-				RegisterOrder(orders.Item2);
+				RegisterOrder(sell);
+				RegisterOrder(buy);
 			}
 			else
 			if (_currentState == ArbitrageState.Contango && _profit >= ProfitToExit)
 			{
 				_currentState = ArbitrageState.OrderRegistration;
-				var orders = GenerateOrdersBackvardation();
+
+				var (buy, sell) = GenerateOrdersBackvardation();
 
 				new IMarketRule[]
-					{
-						orders.Item1.WhenMatched(Connector), orders.Item2.WhenMatched(Connector),
-					}
-					.And()
-					.Do(() =>
-					{
+				{
+					buy.WhenMatched(Connector), sell.WhenMatched(Connector),
+				}
+				.And()
+				.Do(() =>
+				{
 
-						_enterSpread = 0;
-						_arbitragePnl = null;
-						_currentState = ArbitrageState.None;
+					_enterSpread = 0;
+					_arbitragePnl = null;
+					_currentState = ArbitrageState.None;
 
-					}).Once().Apply(this);
+				}).Once().Apply(this);
 
-				RegisterOrder(orders.Item1);
-				RegisterOrder(orders.Item2);
+				RegisterOrder(buy);
+				RegisterOrder(sell);
 			}
 		}
 
-		private Tuple<Order, Order> GenerateOrdersBackvardation()
+		private (Order buy, Order sell) GenerateOrdersBackvardation()
 		{
 			var o1 = this.CreateOrder(Sides.Buy, FutureVolume);
 			o1.Portfolio = FuturePortfolio;
@@ -221,9 +227,9 @@ namespace Arbitrage_strategy
 			o2.Security = StockSecurity;
 			o2.Type = OrderTypes.Market;
 
-			return new Tuple<Order, Order>(o1, o2);
+			return new (o1, o2);
 		}
-		private Tuple<Order, Order> GenerateOrdersContango()
+		private (Order sell, Order buy) GenerateOrdersContango()
 		{
 			var o1 = this.CreateOrder(Sides.Sell, FutureVolume);
 			o1.Portfolio = FuturePortfolio;
@@ -237,7 +243,8 @@ namespace Arbitrage_strategy
 
 			return new Tuple<Order, Order>(o1, o2);
 		}
-		public decimal GetAveragePrice(IOrderBookMessage depth, Sides orderDirection, decimal volume)
+
+		private static decimal GetAveragePrice(IOrderBookMessage depth, Sides orderDirection, decimal volume)
 		{
 			if (!depth.Bids.Any() || !depth.Asks.Any()) return 0;
 
