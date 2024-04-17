@@ -2,6 +2,8 @@
 
 This diagram provides a straightforward demonstration of how to use the "Candles" data source and "Chart" cube within the Designer platform. It is designed to help users understand the fundamentals of fetching market data and visualizing it in a chart format.
 
+![schema](schema.png)
+
 ## Overview
 
 The diagram showcases the basic setup required to retrieve candle data for a specific financial instrument and display it on a chart. This serves as a foundational example for those new to using Designer or those who wish to start with simple data visualization techniques.
