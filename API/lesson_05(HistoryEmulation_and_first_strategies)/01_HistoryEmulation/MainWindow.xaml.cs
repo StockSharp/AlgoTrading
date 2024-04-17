@@ -107,11 +107,10 @@ public partial class MainWindow
 
 	private void Connector_Connected()
 	{
-		//_connector.RegisterTrades(_security); // - out of date
-		//_candleManager = new CandleManager(_connector);// - out of date
-		//_candleManager.Start(_candleSeries);// - out of date
-
+		// uncomment in case has order book history
+		// (will degradate performance)
 		//_connector.SubscribeMarketDepth(_security);
+
 		_connector.SubscribeCandles(_candleSeries);
 		_connector.Start();
 	}

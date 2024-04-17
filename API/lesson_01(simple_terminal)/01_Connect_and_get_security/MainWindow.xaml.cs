@@ -51,14 +51,13 @@ public partial class MainWindow
 
 	private void Connector_Connected()
 	{
-		// for Interactive Brokers Trader Workstation
-		_connector.LookupSecurities(new Security() { Code = "BTC" });
+		// try lookup all securities
+		_connector.LookupSecurities(StockSharp.Messages.Extensions.LookupAllCriteriaMessage);
 	}
 
 	private void SecurityPicker_SecuritySelected(Security security)
 	{
 		if (security == null) return;
-		//_connector.RegisterSecurity(security); // - out of date
 		_connector.SubscribeLevel1(security);
 	}
 }

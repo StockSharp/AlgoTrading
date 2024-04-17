@@ -68,7 +68,6 @@ public partial class MainWindow
 		if (SecurityEditor.SelectedSecurity == null) return;
 		_security = SecurityEditor.SelectedSecurity;
 
-		//_connector.RegisterTrades(_security); // - out of date
 		_connector.SubscribeTrades(_security);
 
 		_candleSeries = CandleSettingsEditor.DataType.ToCandleSeries(_security);

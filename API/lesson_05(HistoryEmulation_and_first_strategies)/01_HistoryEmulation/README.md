@@ -92,6 +92,10 @@ Once connected, subscribes to candles and begins the simulation:
 ```csharp
 private void Connector_Connected()
 {
+	// uncomment in case has order book history
+	// (will degradate performance)
+	//_connector.SubscribeMarketDepth(_security);
+
 	_connector.SubscribeCandles(_candleSeries);
 	_connector.Start();
 }

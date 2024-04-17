@@ -87,17 +87,14 @@ public partial class MainWindow
 		if (_selectedSecurityId == null)
 			return;
 
-		//_connector.RegisterSecurity(security); // - out of date
 		_subscriptions.Add(_connector.SubscribeLevel1(security));
 
 		//-----------------TradeGrid-----------------------
-		//_connector.RegisterTrades(security); // - out of date
 		_subscriptions.Add(_connector.SubscribeTrades(security));
 
 		//-----------------MarketDepth--------------------------
 		MarketDepthControl.Clear();
 
-		//_connector.RegisterMarketDepth(security); // - out of date
 		_subscriptions.Add(_connector.SubscribeMarketDepth(security));
 	}
 }

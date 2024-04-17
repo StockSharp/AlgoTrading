@@ -95,7 +95,8 @@ Triggered when the connection is successfully established. It performs an initia
 ```csharp
 private void Connector_Connected()
 {
-    _connector.LookupSecurities(new Security() { Code = "BTC" });
+    // try lookup all securities
+    _connector.LookupSecurities(StockSharp.Messages.Extensions.LookupAllCriteriaMessage);
 }
 ```
 

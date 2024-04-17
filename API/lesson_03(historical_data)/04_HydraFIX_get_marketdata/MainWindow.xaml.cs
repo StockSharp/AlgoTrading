@@ -55,7 +55,6 @@ public partial class MainWindow
 
 	private void Connect_Click(object sender, RoutedEventArgs e)
 	{
-		//_connector.Adapter.InnerAdapters.ForEach(a => a.RemoveTransactionalSupport());  // - out of date
 		SecurityPicker.SecurityProvider = _connector;
 		SecurityPicker.MarketDataProvider = _connector;
 

@@ -22,9 +22,6 @@ namespace TakeProfit_and_StopLoss_strategy
 		public int Length { get; set; } = 2;
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			//_candleManager = new CandleManager(Connector);// - out of date
-			//_candleManager.WhenCandlesFinished(_candleSeries).Do(CandleManager_Processing).Apply();// - out of date
-			//_candleManager.Start(_candleSeries);// - out of date
 			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
 			Connector.Subscribe(_subscription);
 

@@ -153,11 +153,6 @@ public partial class MainWindow
 
 	private void Connector_Connected()
 	{
-		//_connector.RegisterTrades(_security); // - out of date
-
-		// strategies request required subscriptions by them selfs
-		//_connector.SubscribeTrades(_security);
-
 		_strategy.Start();
 		_connector.Start();
 	}

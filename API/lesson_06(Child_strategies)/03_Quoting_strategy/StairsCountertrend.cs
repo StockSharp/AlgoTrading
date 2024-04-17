@@ -1,4 +1,7 @@
-﻿using StockSharp.Algo;
+﻿using System;
+using System.Linq;
+
+using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Strategies;
 using StockSharp.Algo.Strategies.Quoting;
@@ -6,9 +9,6 @@ using StockSharp.Messages;
 
 namespace Quoting_strategy
 {
-	using System;
-	using System.Linq;
-
 	public class StairsCountertrend : Strategy
 	{
 		private readonly Subscription _subscription;
@@ -25,15 +25,10 @@ namespace Quoting_strategy
 			// history connector disable filtered market depths for performance reason
 			Connector.SupportFilteredMarketDepth = true;
 
-			//Connector.RegisterMarketDepth(Security); // - out of date
+			// for performance reason use candle data only by default
 			//Connector.SubscribeMarketDepth(Security);
-
-			//Connector.RegisterSecurity(Security); // - out of date
 			//Connector.SubscribeLevel1(Security);
 
-			//_candleManager = new CandleManager(Connector);// - out of date
-			//_candleManager.WhenCandlesFinished(_candleSeries).Do(CandleManager_Processing).Apply();// - out of date
-			//_candleManager.Start(_candleSeries);// - out of date
 			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
 			Connector.Subscribe(_subscription);
 

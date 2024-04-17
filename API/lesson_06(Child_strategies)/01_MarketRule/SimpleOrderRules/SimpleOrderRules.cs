@@ -9,7 +9,6 @@ namespace MarketRule
 	{
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			//Connector.RegisterTrades(Security); // - out of date
 			var sub = Connector.SubscribeTrades(Security);
 
 			sub.WhenTickTradeReceived(Connector).Do(() =>

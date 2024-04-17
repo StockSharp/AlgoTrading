@@ -10,10 +10,8 @@ namespace MarketRule
 	{
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			//Connector.RegisterTrades(Security); // - out of date
 			var tickSub = Connector.SubscribeTrades(Security);
 
-			//Connector.RegisterMarketDepth(Security); // - out of date
 			var mdSub = Connector.SubscribeMarketDepth(Security);
 
 			//-----------------------Create a rule. Method №1-----------------------------------

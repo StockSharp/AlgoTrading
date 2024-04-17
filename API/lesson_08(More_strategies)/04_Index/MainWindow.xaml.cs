@@ -29,9 +29,6 @@ public partial class MainWindow
 	private HistoryEmulationConnector _connector;
 	private ChartCandleElement _candleElement;
 
-	// out of date; class Connector now provided all necessary candles events
-	//private CandleManager _candleManager;
-
 	private CandleSeries _candleSeries;
 	private Security _security;
 	private Security _indexSecurity;
@@ -96,8 +93,6 @@ public partial class MainWindow
 		_candleSeries.BuildCandlesFrom2 = DataType.Ticks;
 
 		InitCart();
-		//_candleManager = new CandleManager(_connector);
-		//_candleManager.Processing += Processing;
 
 		_connector.CandleProcessing += Processing;
 
@@ -108,9 +103,7 @@ public partial class MainWindow
 
 	private void Connector_Connected()
 	{
-		//_connector.RegisterTrades(_security); // - out of date
 		_connector.SubscribeTrades(_security);
-		//_candleManager.Start(_candleSeries); // - out of date
 		_connector.SubscribeCandles(_candleSeries);
 		_connector.Start();
 	}

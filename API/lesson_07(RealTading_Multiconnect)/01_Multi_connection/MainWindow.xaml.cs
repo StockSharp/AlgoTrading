@@ -61,7 +61,6 @@ public partial class MainWindow
 	{
 		_connector.LookupSecurities(new Security());
 
-		//_connector.LookupPortfolios(new Portfolio()); // - out of date
 		_connector.SubscribePositions();
 	}
 

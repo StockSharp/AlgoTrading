@@ -136,9 +136,6 @@ namespace Quoting_strategy
 
 		private void Connector_Connected()
 		{
-			//_connector.RegisterTrades(_security); // - out of date
-			//_connector.SubscribeTrades(_security);
-
 			_strategy.Start();
 			_connector.Start();
 		}

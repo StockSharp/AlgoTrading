@@ -15,9 +15,6 @@ namespace SMA_strategy
 		public SimpleMovingAverage LongSma { get; set; }
 		public SimpleMovingAverage ShortSma { get; set; }
 
-		// out of date; class Connector now provided all necessary candles events
-		//private ICandleManager _candleManager;
-
 		public SmaStrategyMartingale(CandleSeries series)
 		{
 			_subscription = new(series);
@@ -32,9 +29,6 @@ namespace SMA_strategy
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			//_candleManager = new CandleManager(Connector);// - out of date
-			//_candleManager.WhenCandlesFinished(_candleSeries).Do(CandleManager_Processing).Apply();// - out of date
-			//_candleManager.Start(_candleSeries);// - out of date
 			Connector.WhenCandlesFinished(_subscription).Do(ProcessCandle).Apply(this);
 			Connector.Subscribe(_subscription);
 			base.OnStarted(time);

@@ -16,9 +16,6 @@ namespace First_strategies
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			//_candleManager = new CandleManager(Connector);// - out of date
-			//_candleManager.WhenCandlesFinished(_candleSeries).Do(CandleManager_Processing).Apply();// - out of date
-			//_candleManager.Start(_candleSeries);// - out of date
 			Connector.CandleProcessing += CandleManager_Processing;
 			Connector.SubscribeCandles(_candleSeries);
 			base.OnStarted(time);

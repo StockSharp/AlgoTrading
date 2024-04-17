@@ -1,94 +1,95 @@
-# Historical Testing of Trading Strategies with StockSharp
+The provided example in your `MainWindow` class demonstrates how to set up a WPF application using the StockSharp library to test different trading strategies on historical market data. The example is versatile, allowing the user to test various predefined strategies by simply uncommenting the desired strategy in the code. Here’s a detailed breakdown of how the application operates and integrates these strategies with the historical data testing framework:
+
+---
+
+# Strategy Testing on Historical Data using StockSharp
 
 ## Overview
 
-The process involves setting up a test harness that loads historical data, initializes each of the trading strategies with this data, and runs simulations to see how each strategy would have performed. This is crucial for validating trading logic before deployment in a live trading environment.
+The application is designed to facilitate the backtesting of multiple trading strategies by replaying historical market data through a `HistoryEmulationConnector`. This setup allows for evaluating the performance of strategies such as `OneCandleCountertrend`, `OneCandleTrend`, `StairsCountertrend`, and `StairsTrend` under historically accurate market conditions.
 
-## Key Components
+## Key Components of the Application
 
-1. **Historical Data Loader**: Responsible for fetching and providing historical candle data for the securities of interest.
-2. **Simulation Environment Setup**: Includes configuring a backtesting engine that uses historical data to mimic real-time trading.
-3. **Strategy Configuration**: Each strategy is initialized and configured for the test.
-4. **Performance Metrics**: Collecting and analyzing trading statistics and performance metrics to evaluate each strategy.
+### Initialization and Configuration
 
-## Detailed Setup and Execution
-
-### 1. Historical Data Preparation
-
-Assuming you have access to historical candle data stored locally or can retrieve it from a database:
+Upon launching the application, the UI components are initialized, and logging listeners are set up to capture and display relevant information:
 
 ```csharp
-var storageRegistry = new StorageRegistry
+public MainWindow()
 {
-    DefaultDrive = new LocalMarketDataDrive(Paths.HistoryDataPath)
-};
-
-var secId = "SBER@TQBR".ToSecurityId();
-var candleSeries = new CandleSeries(typeof(TimeFrameCandle), secId, TimeSpan.FromMinutes(1));
-var candles = storageRegistry.GetCandleStorage(candleSeries.CandleType, secId, candleSeries.Arg, candleSeries.Drive, StorageFormats.Binary)
-                             .Load(Paths.HistoryBeginDate, Paths.HistoryEndDate);
+	InitializeComponent();
+	_logManager = new LogManager();
+	_logManager.Listeners.Add(new FileLogListener("log.txt"));
+	_logManager.Listeners.Add(new GuiLogListener(Monitor));
+	DatePickerBegin.SelectedDate = Paths.HistoryBeginDate;
+	DatePickerEnd.SelectedDate = Paths.HistoryEndDate;
+	CandleSettingsEditor.DataType = DataType.TimeFrame(TimeSpan.FromMinutes(5));
+}
 ```
 
-### 2. Strategy Initialization
+- **LogManager**: Captures logs for debugging and analysis.
+- **Date Pickers**: Allows the user to select the period for historical data simulation.
+- **Candle Settings**: Configures the candle data type used during the simulation.
 
-Create and configure instances of each strategy:
+### Strategy Setup and Historical Data Simulation
 
-```csharp
-var oneCandleCountertrend = new OneCandleCountertrend(candleSeries);
-var oneCandleTrend = new OneCandleTrend(candleSeries);
-var stairsCountertrend = new StairsCountertrend(candleSeries) { Length = 3 };
-var stairsTrend = new StairsTrend(candleSeries) { Length = 3 };
-```
-
-### 3. Backtesting Engine Configuration
-
-Set up a backtesting engine to run these strategies using historical data:
+When the user starts the simulation, the application configures the necessary components for running the selected trading strategy on historical data:
 
 ```csharp
-var start = Paths.HistoryBeginDate;
-var end = Paths.HistoryEndDate;
-
-var emulator = new HistoryEmulationConnector(candles.Select(c => c.Security), new[] { new Portfolio { Name = "backtest", BeginValue = 100000 } })
+private void Start_Click(object sender, RoutedEventArgs e)
 {
-    HistoryMessageAdapter =
-    {
-        StorageRegistry = storageRegistry,
-        StorageFormat = StorageFormats.Binary,
-        StartDate = start,
-        StopDate = end
-    }
-};
+	// Setup security, portfolio, and storage for historical data
+	_security = new Security { Id = "SBER@TQBR", Code = "SBER", PriceStep = 0.01m, Board = ExchangeBoard.Micex };
+	_portfolio = new Portfolio { Name = "test account", BeginValue = 1000000 };
+	var storageRegistry = new StorageRegistry { DefaultDrive = new LocalMarketDataDrive(_pathHistory) };
 
-emulator.Strategies.Add(oneCandleCountertrend);
-emulator.Strategies.Add(oneCandleTrend);
-emulator.Strategies.Add(stairsCountertrend);
-emulator.Strategies.Add(stairsTrend);
+	// Initialize the history emulation connector
+	_connector = new HistoryEmulationConnector(new[] { _security }, new[] { _portfolio }) { ... };
+	_logManager.Sources.Add(_connector);
+
+	// Initialize and select strategy
+	_strategy = new OneCandleCountertrend(_candleSeries); // Uncomment the desired strategy
+	//_strategy = new OneCandleTrend(_candleSeries);
+	//_strategy = new StairsCountertrend(_candleSeries);
+	//_strategy = new StairsTrend(_candleSeries);
+
+	_logManager.Sources.Add(_strategy);
+	_connector.Connected += Connector_Connected;
+	_connector.Connect();
+}
 ```
 
-### 4. Running the Test
+### Chart and Strategy Output Visualization
 
-Execute the backtesting process and collect results:
-
-```csharp
-emulator.Start();
-
-// Wait for the completion or handle asynchronously
-emulator.Stop();
-```
-
-### 5. Performance Evaluation
-
-After the simulation, gather and analyze the trading logs, performance metrics, and other statistical data:
+The application includes a charting setup to visualize the trading outcomes and other relevant financial indicators such as P&L, trades, and commissions:
 
 ```csharp
-var stats = emulator.GetStatistics();
-Console.WriteLine("Strategy performance metrics:");
-foreach (var stat in stats)
+private void InitChart()
 {
-    Console.WriteLine($"{stat.Key} : {stat.Value}");
+	// Setup chart areas and elements for visualization
+	Chart.ClearAreas();
+	var area = new ChartArea();
+	_candleElement = new ChartCandleElement();
+	_tradesElem = new ChartTradeElement { FullTitle = "Trade" };
+	Chart.AddArea(area);
+	Chart.AddElement(area, _candleElement);
+	Chart.AddElement(area, _tradesElem);
+	...
+}
+```
+
+### Event Handling and Strategy Execution
+
+Once connected, the strategy starts alongside the market data simulation, allowing for real-time monitoring and analysis of strategy performance:
+
+```csharp
+private void Connector_Connected()
+{
+	_strategy.Start();
+	_connector.Start();
 }
 ```
 
 ## Conclusion
 
-This setup provides a comprehensive method for testing multiple trading strategies against historical data using StockSharp’s trading and simulation tools. It helps identify the strengths and weaknesses of each strategy under various market conditions without financial risk. The insights gained from these tests are invaluable for refining the strategies, adjusting parameters, or scrapping ineffective trading rules.
+This application provides a comprehensive environment for developing, testing, and analyzing trading strategies using historical market data. It demonstrates the capability of the StockSharp library to integrate with a WPF application, providing tools for extensive financial analysis and strategy development. By allowing users to easily switch between different strategies, the application serves as a valuable tool for both novice and experienced traders looking to optimize their trading algorithms based on historical performance.

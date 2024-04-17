@@ -48,10 +48,7 @@ namespace Arbitrage_strategy
 			_futId = FutureSecurity.ToSecurityId();
 			_stockId = StockSecurity.ToSecurityId();
 
-			//Connector.RegisterMarketDepth(FutureSecurity); // - out of date
 			var subFut = Connector.SubscribeMarketDepth(FutureSecurity);
-
-			//Connector.RegisterMarketDepth(StockSecurity); // - out of date
 			var subStock = Connector.SubscribeMarketDepth(StockSecurity);
 
 			subFut.WhenOrderBookReceived(Connector).Do(ProcessMarketDepth).Apply(this);

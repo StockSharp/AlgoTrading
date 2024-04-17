@@ -138,8 +138,6 @@ public partial class MainWindow
 
 	private void Connector_Connected()
 	{
-		//_connector.RegisterTrades(_security);
-
 		_strategy.Start();
 		_connector.Start();
 	}
