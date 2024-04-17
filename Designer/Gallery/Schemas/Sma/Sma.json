@@ -1,17 +1,17 @@
 ﻿{
-  "Id": "%NEW_ID%",
+  "Id": "4dfdfbc3-8021-4527-81bd-8deef806a383",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Regular",
+      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
         "Description": "Strategy based on intersection of simple moving averages.",
         "DocUrl": "",
         "Composition": {
-          "Id": "%NEW_ID%",
+          "Id": "7e212836-6153-48be-a726-c9858fa274b3",
           "CanAutoName": false,
           "Parameters": {
             "Name": {
@@ -46,16 +46,15 @@
             }
           },
           "TypeId": "a7a0c6a0-8c7c-4a62-9c84-1f6f91d1f605",
-          "Type": "Regular",
-          "Revision": 289
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
               "Key": "2",
+              "Figure": "Procedure",
               "X": -440.0,
               "Y": -430.0,
-              "Figure": "Procedure",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "632e8544-be5c-4cd8-9a1c-4003ff83740b",
@@ -86,12 +85,11 @@
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
                         "Arg": "00-05-00",
                         "From": "0001-01-01T03:00:00+03:00",
-                        "To": "9999-12-31T23:59:59.9999999+03:00",
+                        "To": "9999-12-31T23:59:59.9999999+00:00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -104,6 +102,7 @@
                   "AllowBuildFromSmallerTimeFrame": {
                     "Value": true
                   },
+                  "IsRegularTradingHours": {},
                   "BuildCandlesMode": {
                     "Value": "LoadAndBuild"
                   },
@@ -114,9 +113,9 @@
             },
             {
               "Key": "6",
+              "Figure": "Procedure",
               "X": -350.0,
               "Y": -330.0,
-              "Figure": "Procedure",
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
@@ -139,13 +138,16 @@
                   },
                   "Type": {
                     "Value": {
-                      "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo"
                     }
                   },
                   "IsFinal": {
                     "Value": false
                   },
                   "IsFormed": {
+                    "Value": false
+                  },
+                  "IsEmpty": {
                     "Value": false
                   },
                   "Length": {
@@ -156,9 +158,9 @@
             },
             {
               "Key": "7",
+              "Figure": "Procedure",
               "X": -350.0,
               "Y": -260.0,
-              "Figure": "Procedure",
               "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
               "Settings": {
                 "Id": "00bc249b-1afd-4b14-a187-e70cc93cd6f4",
@@ -181,13 +183,16 @@
                   },
                   "Type": {
                     "Value": {
-                      "Indicator": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo"
+                      "Id": "StockSharp.Algo.Indicators.SimpleMovingAverage, StockSharp.Algo"
                     }
                   },
                   "IsFinal": {
                     "Value": false
                   },
                   "IsFormed": {
+                    "Value": false
+                  },
+                  "IsEmpty": {
                     "Value": false
                   },
                   "Length": {
@@ -198,9 +203,9 @@
             },
             {
               "Key": "9",
+              "Figure": "Procedure",
               "X": 120.0,
               "Y": -170.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d7d4577b-03a6-443f-af26-9f4cbe2b1790",
@@ -243,9 +248,9 @@
             },
             {
               "Key": "16",
+              "Figure": "Procedure",
               "X": -100.0,
               "Y": -520.0,
-              "Figure": "Procedure",
               "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
               "Settings": {
                 "Id": "0e92bcb3-e5e0-439e-9126-0af27f6ea157",
@@ -277,9 +282,9 @@
             },
             {
               "Key": "15",
+              "Figure": "Procedure",
               "X": 360.0,
               "Y": -300.0,
-              "Figure": "Procedure",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "38062036-5ec0-4059-b74f-a1cebed2f3f8",
@@ -325,15 +330,16 @@
                   },
                   "IsMargin": {},
                   "IsMarketMaker": {},
-                  "IsManual": {}
+                  "IsManual": {},
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "11",
+              "Figure": "Procedure",
               "X": -100.0,
               "Y": -130.0,
-              "Figure": "Procedure",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "9a5e2157-eb18-4d02-9fd5-d385d6128d6e",
@@ -372,9 +378,9 @@
             },
             {
               "Key": "13",
+              "Figure": "Procedure",
               "X": -350.0,
               "Y": -100.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "ce76e7a1-9c30-4f5c-af41-acd6858906b9",
@@ -417,9 +423,9 @@
             },
             {
               "Key": "14",
+              "Figure": "Procedure",
               "X": 130.0,
               "Y": -250.0,
-              "Figure": "Procedure",
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "25458699-26f8-4705-a020-09f69e0452f9",
@@ -453,9 +459,9 @@
             },
             {
               "Key": "27",
+              "Figure": "Procedure",
               "X": 130.0,
               "Y": -320.0,
-              "Figure": "Procedure",
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "887c0068-0c0a-4838-8842-15efea0082f5",
@@ -489,9 +495,9 @@
             },
             {
               "Key": "28",
+              "Figure": "Procedure",
               "X": -100.0,
               "Y": -200.0,
-              "Figure": "Procedure",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "438a969c-0bb0-43a6-b394-e34eed69ee5d",
@@ -530,9 +536,9 @@
             },
             {
               "Key": "3",
+              "Figure": "Procedure",
               "X": 120.0,
               "Y": -480.0,
-              "Figure": "Procedure",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "7e6b3222-4a0f-44e4-a281-dd67d3f67414",
@@ -558,6 +564,9 @@
                   },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
                   },
                   "AreaName": {
                     "Value": "Chart panel"
@@ -713,9 +722,9 @@
             },
             {
               "Key": "17",
+              "Figure": "Procedure",
               "X": 360.0,
               "Y": -220.0,
-              "Figure": "Procedure",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "c4f54010-25f6-44b1-8512-a5bcee7c6628",
@@ -761,15 +770,16 @@
                   },
                   "IsMargin": {},
                   "IsMarketMaker": {},
-                  "IsManual": {}
+                  "IsManual": {},
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "8",
+              "Figure": "Procedure",
               "X": -100.0,
               "Y": -360.0,
-              "Figure": "Procedure",
               "TypeId": "da1d00fc-3ccc-4769-a692-5938e8aca201",
               "Settings": {
                 "Id": "63119d7d-1d15-48cc-9e28-73d1a9b250e7",
@@ -795,9 +805,9 @@
             },
             {
               "Key": "4",
+              "Figure": "Procedure",
               "X": -100.0,
               "Y": -280.0,
-              "Figure": "Procedure",
               "TypeId": "da1d00fc-3ccc-4769-a692-5938e8aca201",
               "Settings": {
                 "Id": "b2d253c3-30c4-4744-8593-ffd5a6db8df6",
@@ -823,9 +833,9 @@
             },
             {
               "Key": "5",
+              "Figure": "Procedure",
               "X": -350.0,
               "Y": -170.0,
-              "Figure": "Procedure",
               "TypeId": "83bcd64c-0f75-4572-be49-3d771a456f76",
               "Settings": {
                 "Id": "3e0384ba-5433-48a8-9ba6-e19b72de273b",

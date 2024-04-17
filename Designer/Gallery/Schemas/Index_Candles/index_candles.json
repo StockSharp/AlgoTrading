@@ -1,18 +1,18 @@
 ﻿{
-  "Id": "%NEW_ID%",
+  "Id": "f8c24762-e97c-4714-a14e-512a79973398",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Regular",
+      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
         "Description": "Sample index candles",
         "DocUrl": "",
         "Composition": {
-          "Id": "%NEW_ID%",
-          "CanAutoName": true,
+          "Id": "051ac6ed-adfa-4f23-b98e-b6b0741ddb11",
+          "CanAutoName": false,
           "Parameters": {
             "Name": {
               "Value": "Index candles"
@@ -37,17 +37,15 @@
             }
           },
           "TypeId": "ccdca5d5-ac70-4a96-9129-9908257fd84d",
-          "Type": "Regular",
-          "Revision": 38,
-          "PublishedId": 0
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
               "Key": "4",
+              "Figure": "Procedure",
               "X": -140.0,
               "Y": -180.0,
-              "Figure": "Procedure",
               "TypeId": "d9f4dd6f-2676-4a3f-a279-1e7acfd44117",
               "Settings": {
                 "Id": "d212bc8a-e35a-4efb-b458-e9207b7ff798",
@@ -85,9 +83,9 @@
             },
             {
               "Key": "2",
+              "Figure": "Procedure",
               "X": 90.0,
               "Y": -180.0,
-              "Figure": "Procedure",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "4df4b601-a7c8-4947-928e-8ba89ffea4c5",
@@ -118,12 +116,11 @@
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
                         "Arg": "00-05-00",
                         "From": "0001-01-01T03:00:00+03:00",
-                        "To": "9999-12-31T23:59:59.9999999+03:00",
+                        "To": "9999-12-31T23:59:59.9999999+00:00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -136,6 +133,7 @@
                   "AllowBuildFromSmallerTimeFrame": {
                     "Value": true
                   },
+                  "IsRegularTradingHours": {},
                   "BuildCandlesMode": {
                     "Value": "LoadAndBuild"
                   },
@@ -146,9 +144,9 @@
             },
             {
               "Key": "5",
+              "Figure": "Procedure",
               "X": 90.0,
               "Y": -360.0,
-              "Figure": "Procedure",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "d3a89f4e-f2ad-42b7-9385-69a51fe91c88",
@@ -179,12 +177,11 @@
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
                         "Arg": "00-05-00",
                         "From": "0001-01-01T03:00:00+03:00",
-                        "To": "9999-12-31T23:59:59.9999999+03:00",
+                        "To": "9999-12-31T23:59:59.9999999+00:00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -197,6 +194,7 @@
                   "AllowBuildFromSmallerTimeFrame": {
                     "Value": true
                   },
+                  "IsRegularTradingHours": {},
                   "BuildCandlesMode": {
                     "Value": "LoadAndBuild"
                   },
@@ -207,9 +205,9 @@
             },
             {
               "Key": "6",
+              "Figure": "Procedure",
               "X": -160.0,
               "Y": -360.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "16eb01be-cda9-43c1-986b-e298de47fe5e",
@@ -246,9 +244,9 @@
             },
             {
               "Key": "7",
+              "Figure": "Procedure",
               "X": -160.0,
               "Y": -270.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "8bc10769-f344-478a-ba67-a7ec8441e55a",
@@ -285,9 +283,9 @@
             },
             {
               "Key": "8",
+              "Figure": "Procedure",
               "X": 90.0,
               "Y": -270.0,
-              "Figure": "Procedure",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "a9c1c039-f396-46eb-bc97-5f4a581154bf",
@@ -318,12 +316,11 @@
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
                         "Arg": "00-05-00",
                         "From": "0001-01-01T03:00:00+03:00",
-                        "To": "9999-12-31T23:59:59.9999999+03:00",
+                        "To": "9999-12-31T23:59:59.9999999+00:00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -336,6 +333,7 @@
                   "AllowBuildFromSmallerTimeFrame": {
                     "Value": true
                   },
+                  "IsRegularTradingHours": {},
                   "BuildCandlesMode": {
                     "Value": "LoadAndBuild"
                   },
@@ -346,9 +344,9 @@
             },
             {
               "Key": "3",
+              "Figure": "Procedure",
               "X": 380.0,
               "Y": -360.0,
-              "Figure": "Procedure",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "7e678194-b935-413f-83d6-0140094243a2",
@@ -372,11 +370,14 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
@@ -462,9 +463,9 @@
             },
             {
               "Key": "9",
+              "Figure": "Procedure",
               "X": 380.0,
               "Y": -270.0,
-              "Figure": "Procedure",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "6f48e435-5bd0-47fd-8b1b-70aee4dd936f",
@@ -488,11 +489,14 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
@@ -578,9 +582,9 @@
             },
             {
               "Key": "10",
+              "Figure": "Procedure",
               "X": 380.0,
               "Y": -180.0,
-              "Figure": "Procedure",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "e178a1bf-9023-466f-9690-60f20ed12d43",
@@ -604,11 +608,14 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [

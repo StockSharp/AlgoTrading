@@ -1,21 +1,21 @@
 ﻿{
-  "Id": "%NEW_ID%",
+  "Id": "fc74ecd6-dc99-4919-95b2-16e2d246ddad",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Regular",
+      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
-        "Description": "Simple strategy for drawing candles.",
+        "Description": "",
         "DocUrl": "",
         "Composition": {
-          "Id": "%NEW_ID%",
-          "CanAutoName": true,
+          "Id": "5f413a60-6070-4319-8b8d-f06f886283a4",
+          "CanAutoName": false,
           "Parameters": {
             "Name": {
-              "Value": "Sample candles"
+              "Value": "Market Depth Sample"
             },
             "LogLevel": {
               "Value": "Inherit"
@@ -24,89 +24,26 @@
               "Value": true
             },
             "ShowSockets": {
-              "Value": true
+              "Value": false
             },
             "ProcessNullValues": {
               "Value": false
             },
-            "d38d579f-a7e2-4e85-81e4-5905b5e95286Value": {}
+            "34049f15-1626-49db-ba34-e982d9500d40Value": {}
           },
-          "TypeId": "d2d7aeb2-ca92-4a88-9f2b-dccb72949af1",
-          "Type": "Regular",
-          "Revision": 13,
-          "PublishedId": 0
+          "TypeId": "7f61d0c9-5dd0-410d-a414-e625b1af6abf",
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
-              "Key": "3",
-              "X": 420.0,
-              "Y": 370.0,
+              "Key": "2",
               "Figure": "Procedure",
-              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
-              "Settings": {
-                "Id": "78f8d89d-185a-4b00-b269-2f507cf25848",
-                "CanAutoName": true,
-                "Parameters": {
-                  "Name": {
-                    "Value": "TimeFrameCandle__00-05-00"
-                  },
-                  "LogLevel": {
-                    "Value": "Inherit"
-                  },
-                  "ShowParameters": {
-                    "Value": false
-                  },
-                  "ShowSockets": {
-                    "Value": true
-                  },
-                  "ProcessNullValues": {
-                    "Value": false
-                  },
-                  "IsManuallySubscription": {
-                    "Value": false
-                  },
-                  "Series": {
-                    "Value": {
-                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
-                      "settings": {
-                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00-05-00",
-                        "From": "0001-01-01T03:00:00+03:00",
-                        "To": "9999-12-31T23:59:59.9999999+03:00",
-                        "IsCalcVolumeProfile": false,
-                        "BuildCandlesMode": "LoadAndBuild",
-                        "AllowBuildFromSmallerTimeFrame": true,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
-                      }
-                    }
-                  },
-                  "IsFinishedOnly": {
-                    "Value": true
-                  },
-                  "IsCalcVolumeProfile": {
-                    "Value": false
-                  },
-                  "AllowBuildFromSmallerTimeFrame": {
-                    "Value": true
-                  },
-                  "BuildCandlesMode": {
-                    "Value": "LoadAndBuild"
-                  },
-                  "BuildCandlesFrom": {},
-                  "BuildCandlesField": {}
-                }
-              }
-            },
-            {
-              "Key": "5",
-              "X": 190.0,
-              "Y": 370.0,
-              "Figure": "Procedure",
+              "X": -770.0,
+              "Y": -240.0,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
-                "Id": "d38d579f-a7e2-4e85-81e4-5905b5e95286",
+                "Id": "34049f15-1626-49db-ba34-e982d9500d40",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
@@ -119,7 +56,7 @@
                     "Value": true
                   },
                   "ShowSockets": {
-                    "Value": true
+                    "Value": false
                   },
                   "ProcessNullValues": {
                     "Value": false
@@ -137,13 +74,75 @@
               }
             },
             {
-              "Key": "2",
-              "X": 700.0,
-              "Y": 370.0,
+              "Key": "3",
               "Figure": "Procedure",
+              "X": -520.0,
+              "Y": -250.0,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "c2e98f36-00fb-4b00-93ce-73c0665a999c",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TimeFrameCandle__00-05-00"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "settings": {
+                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
+                        "Arg": "00-05-00",
+                        "IsCalcVolumeProfile": false,
+                        "BuildCandlesMode": "LoadAndBuild",
+                        "AllowBuildFromSmallerTimeFrame": true,
+                        "IsRegularTradingHours": false,
+                        "IsFinishedOnly": false
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {
+                    "Value": false
+                  },
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "4",
+              "Figure": "Procedure",
+              "X": -240.0,
+              "Y": -250.0,
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
-                "Id": "429b2e9a-0cb1-4f26-b0a1-456f7c30bafd",
+                "Id": "ecbf89aa-b9c6-4a06-a179-5a561fef3310",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
@@ -159,21 +158,24 @@
                     "Value": false
                   },
                   "ShowSockets": {
-                    "Value": true
+                    "Value": false
                   },
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
                   {
-                    "Id": "3500d9cf-9731-4d18-8ee5-e00ecf2d707b",
+                    "Id": "a4ec09c2-7121-4cd2-9b91-fa5ce03643a2",
                     "IsVisible": true,
                     "IsLegend": true,
                     "XAxisId": "X",
@@ -217,12 +219,11 @@
                     "Id": "X",
                     "Title": "X",
                     "IsVisible": true,
-                    "Group": "CategoryDateTimeX",
-                    "AutoRange": false,
+                    "AutoRange": true,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": true,
+                    "DrawMinorGridLines": false,
                     "DrawLabels": true,
                     "TextFormatting": "G",
                     "SubDayTextFormatting": "T",
@@ -236,12 +237,11 @@
                     "Id": "Y",
                     "Title": "Y",
                     "IsVisible": true,
-                    "Group": "NumericY2",
                     "AutoRange": true,
                     "DrawMinorTicks": false,
                     "DrawMajorTicks": true,
                     "DrawMajorGridLines": true,
-                    "DrawMinorGridLines": true,
+                    "DrawMinorGridLines": false,
                     "DrawLabels": true,
                     "TextFormatting": "#.####",
                     "SubDayTextFormatting": "T",
@@ -251,11 +251,79 @@
                   }
                 ]
               }
+            },
+            {
+              "Key": "5",
+              "Figure": "Procedure",
+              "X": -260.0,
+              "Y": -160.0,
+              "TypeId": "a2b9e4c3-4a04-484c-a486-d82ca2ca202a",
+              "Settings": {
+                "Id": "9af8f720-0b5c-47a2-9124-fec12c83b89b",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Market depth panel"
+                  },
+                  "ElementName": {
+                    "Value": "Market depth panel"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "6",
+              "Figure": "Procedure",
+              "X": -509.82138,
+              "Y": -156.87192,
+              "TypeId": "143cc455-34d4-44f0-870b-124a5f531978",
+              "Settings": {
+                "Id": "b8392804-52ba-4457-8fa0-ecd896b451f4",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Market depth"
+                  },
+                  "ElementName": {
+                    "Value": "Market depth"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "SupportEmptyDepth": {
+                    "Value": false
+                  }
+                }
+              }
             }
           ],
           "Links": [
             {
-              "From": "5",
+              "From": "2",
               "FromPort": "Output",
               "To": "3",
               "ToPort": "Security"
@@ -263,8 +331,20 @@
             {
               "From": "3",
               "FromPort": "Output",
-              "To": "2",
-              "ToPort": "dynsock_3500d9cf97314d188ee5e00ecf2d707b"
+              "To": "4",
+              "ToPort": "dynsock_a4ec09c271214cd29b91fa5ce03643a2"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "6",
+              "ToPort": "Security"
+            },
+            {
+              "From": "6",
+              "FromPort": "Output",
+              "To": "5",
+              "ToPort": "MarketDepth"
             }
           ]
         }
