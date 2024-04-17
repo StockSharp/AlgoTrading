@@ -26,11 +26,15 @@ namespace Quoting_strategy
 			Connector.SupportFilteredMarketDepth = true;
 
 			// for performance reason use candle data only by default
-			//Connector.SubscribeMarketDepth(Security);
-			//Connector.SubscribeLevel1(Security);
+			//this.SubscribeMarketDepth(Security);
+			//this.SubscribeLevel1(Security);
 
-			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
-			Connector.Subscribe(_subscription);
+			this
+				.WhenCandlesFinished(_subscription)
+				.Do(CandleManager_Processing)
+				.Apply(this);
+			
+			Subscribe(_subscription);
 
 			base.OnStarted(time);
 		}

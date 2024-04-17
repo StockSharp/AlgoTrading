@@ -65,7 +65,8 @@ public partial class MainWindow
 
 	private void Connector_Connected()
 	{
-		_connector.LookupSecurities(new Security());
+		// try lookup all securities
+		_connector.LookupSecurities(StockSharp.Messages.Extensions.LookupAllCriteriaMessage);
 	}
 
 	private void SecurityPicker_SecuritySelected(Security security)

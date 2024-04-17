@@ -22,15 +22,19 @@ namespace Run_strategy_in_real_trading
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
-			Connector.Subscribe(_subscription);
+			this
+				.WhenCandlesFinished(_subscription)
+				.Do(CandleManager_Processing)
+				.Apply(this);
+
+			Subscribe(_subscription);
 
 			base.OnStarted(time);
 		}
 
 		private bool IsRealTime(ICandleMessage candle)
 		{
-			return (Connector.CurrentTime - candle.CloseTime).TotalSeconds < 40;
+			return (CurrentTime - candle.CloseTime).TotalSeconds < 40;
 		}
 
 		private bool IsHistoryEmulationConnector => Connector is HistoryEmulationConnector;

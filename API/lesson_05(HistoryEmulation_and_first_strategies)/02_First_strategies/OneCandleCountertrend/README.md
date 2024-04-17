@@ -24,13 +24,13 @@ When the strategy starts, it subscribes to candle data for the specified `Candle
 ```csharp
 protected override void OnStarted(DateTimeOffset time)
 {
-    Connector.CandleProcessing += CandleManager_Processing;
-    Connector.SubscribeCandles(_candleSeries);
+    CandleReceived += OnCandleReceived;
+    _subscription = this.SubscribeCandles(_candleSeries);
     base.OnStarted(time);
 }
 ```
 
-- **Candle Processing Subscription**: The strategy hooks into the `CandleProcessing` event of the connector. This event is fired every time a candle is updated.
+- **Candle Processing Subscription**: The strategy hooks into the `CandleReceived` event of the strategy. This event is fired every time a candle is updated.
 - **Subscribe Candles**: The strategy subscribes to receive candle data for the specified series.
 
 ### Candle Processing Logic
@@ -38,8 +38,11 @@ protected override void OnStarted(DateTimeOffset time)
 The core logic of the strategy evaluates the candle data once each candle is complete (i.e., fully formed).
 
 ```csharp
-private void CandleManager_Processing(CandleSeries candleSeries, ICandleMessage candle)
+private void OnCandleReceived(Subscription subscription, ICandleMessage candle)
 {
+	if (subscription != _subscription)
+		return;
+
     if (candle.State != CandleStates.Finished) return;
 
     if (candle.OpenPrice < candle.ClosePrice && Position >= 0)
@@ -57,6 +60,27 @@ private void CandleManager_Processing(CandleSeries candleSeries, ICandleMessage 
 - **Condition Checks**:
   - If the candle closes higher than it opens and the strategy's current position is neutral or long, it triggers a sell order.
   - Conversely, if the candle closes lower than it opens and the strategy is neutral or short, it triggers a buy order.
+
+### Unsubscribing from Market Data
+
+The `OnStopped` method is overridden to include steps that unsubscribe the strategy from market data updates, ensuring that no unnecessary data processing occurs after the strategy is stopped.
+
+```csharp
+protected override void OnStopped()
+{
+    // Check if there is an active subscription
+    if (_subscription != null)
+    {
+        // Unsubscribe from the market data
+        UnSubscribe(_subscription);
+        // Nullify the subscription reference to free up resources
+        _subscription = null;
+    }
+
+    // Call the base class's OnStopped method to handle additional cleanup
+    base.OnStopped();
+}
+```
 
 ### Trading Logic
 

@@ -20,10 +20,15 @@ namespace TakeProfit_and_StopLoss_strategy
 		private int _bullLength;
 		private int _bearLength;
 		public int Length { get; set; } = 2;
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
-			Connector.Subscribe(_subscription);
+			this
+				.WhenCandlesFinished(_subscription)
+				.Do(CandleManager_Processing)
+				.Apply(this);
+
+			Subscribe(_subscription);
 
 			base.OnStarted(time);
 		}
@@ -45,7 +50,13 @@ namespace TakeProfit_and_StopLoss_strategy
 			if (_bullLength >= Length && Position >= 0)
 			{
 				var order = this.SellAtMarket(Volume + Math.Abs(Position));
-				order.WhenNewTrade(Connector).Do(NewOderTrade).Until(() => order.State == OrderStates.Done).Apply(this);
+
+				order
+					.WhenNewTrade(this)
+					.Do(NewOderTrade)
+					.Until(() => order.State == OrderStates.Done)
+					.Apply(this);
+
 				ChildStrategies.ToList().ForEach(s => s.Stop());
 				RegisterOrder(order);
 			}
@@ -54,7 +65,13 @@ namespace TakeProfit_and_StopLoss_strategy
 			if (_bearLength >= Length && Position <= 0)
 			{
 				var order = this.BuyAtMarket(Volume + Math.Abs(Position));
-				order.WhenNewTrade(Connector).Do(NewOderTrade).Until(() => order.State == OrderStates.Done).Apply(this);
+
+				order
+					.WhenNewTrade(this)
+					.Do(NewOderTrade)
+					.Until(() => order.State == OrderStates.Done)
+					.Apply(this);
+				
 				ChildStrategies.ToList().ForEach(s => s.Stop());
 				RegisterOrder(order);
 			}

@@ -48,11 +48,11 @@ namespace Arbitrage_strategy
 			_futId = FutureSecurity.ToSecurityId();
 			_stockId = StockSecurity.ToSecurityId();
 
-			var subFut = Connector.SubscribeMarketDepth(FutureSecurity);
-			var subStock = Connector.SubscribeMarketDepth(StockSecurity);
+			var subFut = this.SubscribeMarketDepth(FutureSecurity);
+			var subStock = this.SubscribeMarketDepth(StockSecurity);
 
-			subFut.WhenOrderBookReceived(Connector).Do(ProcessMarketDepth).Apply(this);
-			subStock.WhenOrderBookReceived(Connector).Do(ProcessMarketDepth).Apply(this);
+			subFut.WhenOrderBookReceived(this).Do(ProcessMarketDepth).Apply(this);
+			subStock.WhenOrderBookReceived(this).Do(ProcessMarketDepth).Apply(this);
 			base.OnStarted(time);
 		}
 
@@ -111,8 +111,8 @@ namespace Arbitrage_strategy
 
 					new IMarketRule[]
 					{
-						buy.WhenMatched(Connector), sell.WhenMatched(Connector),
-						buy.WhenAllTrades(Connector), sell.WhenAllTrades(Connector),
+						buy.WhenMatched(this), sell.WhenMatched(this),
+						buy.WhenAllTrades(this), sell.WhenAllTrades(this),
 					}
 					.And()
 					.Do(() =>
@@ -139,8 +139,8 @@ namespace Arbitrage_strategy
 
 					new IMarketRule[]
 					{
-						sell.WhenMatched(Connector), buy.WhenMatched(Connector),
-						sell.WhenAllTrades(Connector), buy.WhenAllTrades(Connector),
+						sell.WhenMatched(this), buy.WhenMatched(this),
+						sell.WhenAllTrades(this), buy.WhenAllTrades(this),
 					}
 					.And()
 					.Do(() =>
@@ -171,7 +171,7 @@ namespace Arbitrage_strategy
 
 				new IMarketRule[]
 				{
-					sell.WhenMatched(Connector), buy.WhenMatched(Connector),
+					sell.WhenMatched(this), buy.WhenMatched(this),
 				}
 				.And()
 				.Do(() =>
@@ -195,7 +195,7 @@ namespace Arbitrage_strategy
 
 				new IMarketRule[]
 				{
-					buy.WhenMatched(Connector), sell.WhenMatched(Connector),
+					buy.WhenMatched(this), sell.WhenMatched(this),
 				}
 				.And()
 				.Do(() =>
@@ -224,7 +224,7 @@ namespace Arbitrage_strategy
 			o2.Security = StockSecurity;
 			o2.Type = OrderTypes.Market;
 
-			return new (o1, o2);
+			return new(o1, o2);
 		}
 		private (Order sell, Order buy) GenerateOrdersContango()
 		{
@@ -238,7 +238,7 @@ namespace Arbitrage_strategy
 			o2.Security = StockSecurity;
 			o2.Type = OrderTypes.Market;
 
-			return new Tuple<Order, Order>(o1, o2);
+			return new(o1, o2);
 		}
 
 		private static decimal GetAveragePrice(IOrderBookMessage depth, Sides orderDirection, decimal volume)

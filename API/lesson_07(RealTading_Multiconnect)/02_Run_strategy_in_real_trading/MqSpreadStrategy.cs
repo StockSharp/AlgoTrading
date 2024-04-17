@@ -26,7 +26,7 @@ namespace Run_strategy_in_real_trading
 
 			_strategyBuy = new MarketQuotingStrategy(Sides.Buy, Volume)
 			{
-				Name = "buy " + Connector.CurrentTime,
+				Name = "buy " + CurrentTime,
 				Volume = 1,
 				PriceType = MarketPriceTypes.Following,
 				IsSupportAtomicReRegister = false
@@ -35,7 +35,7 @@ namespace Run_strategy_in_real_trading
 
 			_strategySell = new MarketQuotingStrategy(Sides.Sell, Volume)
 			{
-				Name = "sell " + Connector.CurrentTime,
+				Name = "sell " + CurrentTime,
 				Volume = 1,
 				PriceType = MarketPriceTypes.Following,
 				IsSupportAtomicReRegister = false

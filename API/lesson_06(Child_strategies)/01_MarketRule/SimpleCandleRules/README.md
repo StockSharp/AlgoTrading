@@ -17,15 +17,17 @@ protected override void OnStarted(DateTimeOffset time)
     {
         // Configuration for market data handling can be specified here.
     };
-    Connector.Subscribe(_subscription);
+    Subscribe(_subscription);
 
     int i = 0;
 
-    Connector.WhenCandlesStarted(_subscription)
+    this.WhenCandlesStarted(_subscription)
         .Do((candle) =>
         {
-            i += 1;
-            Connector.WhenTotalVolumeMore(candle, new Unit(100000m))
+            i++;
+
+            this
+				.WhenTotalVolumeMore(candle, new Unit(100000m))
                 .Do((candle1) =>
                 {
                     this.AddInfoLog($"The rule WhenPartiallyFinished and WhenTotalVolumeMore candle={candle1}");

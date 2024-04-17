@@ -9,18 +9,20 @@ namespace MarketRule
 	{
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			var sub = Connector.SubscribeTrades(Security);
+			var sub = this.SubscribeTrades(Security);
 
-			sub.WhenTickTradeReceived(Connector).Do(() =>
+			sub.WhenTickTradeReceived(this).Do(() =>
 			{
-				new IMarketRule[] { Security.WhenLastTradePriceMore(Connector, 2), Security.WhenLastTradePriceLess(Connector, 2) }
-					.Or()
+				new IMarketRule[] { Security.WhenLastTradePriceMore(this, 2), Security.WhenLastTradePriceLess(this, 2) }
+					.Or() // or conditions (WhenLastTradePriceMore or WhenLastTradePriceLess)
 					.Do(() =>
 					{
 						this.AddInfoLog($"The rule WhenLastTradePriceMore Or WhenLastTradePriceLess candle={Security.LastTick}");
 					})
 					.Apply(this);
-			}).Once().Apply(this);
+			})
+			.Once() // call this rule only once
+			.Apply(this);
 
 			base.OnStarted(time);
 		}

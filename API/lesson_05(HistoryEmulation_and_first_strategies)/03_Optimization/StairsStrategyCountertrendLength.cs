@@ -29,7 +29,7 @@ namespace Parallel_testing_terminal
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			Connector.CandleProcessing += CandleManager_Processing;
-			Connector.SubscribeCandles(_candleSeries);
+			this.SubscribeCandles(_candleSeries);
 			base.OnStarted(time);
 		}
 

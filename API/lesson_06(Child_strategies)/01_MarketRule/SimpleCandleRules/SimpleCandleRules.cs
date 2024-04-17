@@ -23,16 +23,17 @@ namespace MarketRule
 				//	BuildFrom = DataType.Ticks,
 				//}
 			};
-			Connector.Subscribe(_subscription);
+			Subscribe(_subscription);
 
 			var i = 0;
 
-			Connector.WhenCandlesStarted(_subscription)
+			this.WhenCandlesStarted(_subscription)
 				.Do((candle) =>
 				{
 					i++;
-					Connector.WhenTotalVolumeMore(candle, new Unit(100000m))
 
+					this
+						.WhenTotalVolumeMore(candle, new Unit(100000m))
 						.Do((candle1) =>
 						{
 							this.AddInfoLog($"The rule WhenPartiallyFinished and WhenTotalVolumeMore candle={candle1}");

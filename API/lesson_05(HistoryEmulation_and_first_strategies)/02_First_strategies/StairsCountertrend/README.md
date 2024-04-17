@@ -25,7 +25,7 @@ When the strategy starts, it subscribes to the `CandleProcessing` event and begi
 protected override void OnStarted(DateTimeOffset time)
 {
     Connector.CandleProcessing += CandleManager_Processing;
-    Connector.SubscribeCandles(_candleSeries);
+    this.SubscribeCandles(_candleSeries);
     base.OnStarted(time);
 }
 ```

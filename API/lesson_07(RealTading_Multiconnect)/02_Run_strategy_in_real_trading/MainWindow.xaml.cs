@@ -68,8 +68,6 @@ public partial class MainWindow
 		if (SecurityEditor.SelectedSecurity == null) return;
 		_security = SecurityEditor.SelectedSecurity;
 
-		_connector.SubscribeTrades(_security);
-
 		_candleSeries = CandleSettingsEditor.DataType.ToCandleSeries(_security);
 		_candleSeries.BuildCandlesMode = MarketDataBuildModes.Build;
 		_candleSeries.BuildCandlesFrom2 = DataType.Ticks;

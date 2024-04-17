@@ -59,7 +59,8 @@ public partial class MainWindow
 
 	private void ConnectorOnConnected()
 	{
-		_connector.LookupSecurities(new Security());
+		// try lookup all securities
+		_connector.LookupSecurities(StockSharp.Messages.Extensions.LookupAllCriteriaMessage);
 
 		_connector.SubscribePositions();
 	}

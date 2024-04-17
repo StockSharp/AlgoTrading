@@ -10,18 +10,19 @@ namespace MarketRule
 	{
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			var tickSub = Connector.SubscribeTrades(Security);
+			var tickSub = this.SubscribeTrades(Security);
 
-			var mdSub = Connector.SubscribeMarketDepth(Security);
+			var mdSub = this.SubscribeMarketDepth(Security);
 
 			var i = 0;
-			mdSub.WhenOrderBookReceived(Connector).Do((depth) =>
-				{
-					i++;
-					this.AddInfoLog($"The rule WhenOrderBookReceived BestBid={depth.GetBestBid()}, BestAsk={depth.GetBestAsk()}");
-					this.AddInfoLog($"The rule WhenOrderBookReceived i={i}");
-				}).Until(() => i >= 10)
-				.Apply(this);
+			mdSub.WhenOrderBookReceived(this).Do(depth =>
+			{
+				i++;
+				this.AddInfoLog($"The rule WhenOrderBookReceived BestBid={depth.GetBestBid()}, BestAsk={depth.GetBestAsk()}");
+				this.AddInfoLog($"The rule WhenOrderBookReceived i={i}");
+			})
+			.Until(() => i >= 10)
+			.Apply(this);
 
 			base.OnStarted(time);
 		}

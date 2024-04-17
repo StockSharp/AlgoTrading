@@ -12,17 +12,18 @@ When the strategy is initiated, it sets up subscriptions for trade ticks and mar
 ```csharp
 protected override void OnStarted(DateTimeOffset time)
 {
-    var tickSub = Connector.SubscribeTrades(Security); // Subscribe to trades, not used in the current setup.
-    var mdSub = Connector.SubscribeMarketDepth(Security); // Subscribe to market depth updates.
+    var tickSub = this.SubscribeTrades(Security); // Subscribe to trades, not used in the current setup.
+    var mdSub = this.SubscribeMarketDepth(Security); // Subscribe to market depth updates.
 
     var i = 0;
-    mdSub.WhenOrderBookReceived(Connector).Do((depth) =>
-        {
-            i++;
-            this.AddInfoLog($"The rule WhenOrderBookReceived BestBid={depth.GetBestBid()}, BestAsk={depth.GetBestAsk()}");
-            this.AddInfoLog($"The rule WhenOrderBookReceived i={i}");
-        }).Until(() => i >= 10) // Continue executing until the counter reaches 10.
-        .Apply(this);
+    mdSub.WhenOrderBookReceived(this).Do(depth =>
+    {
+        i++;
+        this.AddInfoLog($"The rule WhenOrderBookReceived BestBid={depth.GetBestBid()}, BestAsk={depth.GetBestAsk()}");
+        this.AddInfoLog($"The rule WhenOrderBookReceived i={i}");
+    })
+	.Until(() => i >= 10) // Continue executing until the counter reaches 10.
+    .Apply(this);
 	
     base.OnStarted(time);
 }

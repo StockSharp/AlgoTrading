@@ -9,6 +9,8 @@ namespace First_strategies
 	public class OneCandleCountertrend : Strategy
 	{
 		private readonly CandleSeries _candleSeries;
+		private Subscription _subscription;
+
 		public OneCandleCountertrend(CandleSeries candleSeries)
 		{
 			_candleSeries = candleSeries;
@@ -16,13 +18,28 @@ namespace First_strategies
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			Connector.CandleProcessing += CandleManager_Processing;
-			Connector.SubscribeCandles(_candleSeries);
+			CandleReceived += OnCandleReceived;
+			_subscription = this.SubscribeCandles(_candleSeries);
+
 			base.OnStarted(time);
 		}
 
-		private void CandleManager_Processing(CandleSeries candleSeries, ICandleMessage candle)
+		protected override void OnStopped()
 		{
+			if (_subscription != null)
+			{
+				UnSubscribe(_subscription);
+				_subscription = null;
+			}
+
+			base.OnStopped();
+		}
+
+		private void OnCandleReceived(Subscription subscription, ICandleMessage candle)
+		{
+			if (subscription != _subscription)
+				return;
+
 			if (candle.State != CandleStates.Finished) return;
 
 			if (candle.OpenPrice < candle.ClosePrice && Position >= 0)

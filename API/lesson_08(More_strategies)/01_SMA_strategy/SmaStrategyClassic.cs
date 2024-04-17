@@ -21,14 +21,18 @@ namespace SMA_strategy
 		}
 		bool IsRealTime(ICandleMessage candle)
 		{
-			return (Connector.CurrentTime - candle.CloseTime).TotalSeconds < 10;
+			return (CurrentTime - candle.CloseTime).TotalSeconds < 10;
 		}
 
 		private bool IsHistoryEmulationConnector => Connector is HistoryEmulationConnector;
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			Connector.WhenCandlesFinished(_subscription).Do(CandleManager_Processing).Apply(this);
-			Connector.Subscribe(_subscription);
+			this
+				.WhenCandlesFinished(_subscription)
+				.Do(CandleManager_Processing)
+				.Apply(this);
+
+			Subscribe(_subscription);
 			base.OnStarted(time);
 		}
 

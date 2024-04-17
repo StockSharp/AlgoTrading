@@ -9,13 +9,13 @@ namespace MarketRule
 	{
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			var sub = Connector.SubscribeTrades(Security);
+			var sub = this.SubscribeTrades(Security);
 
-			sub.WhenTickTradeReceived(Connector).Do(() =>
+			sub.WhenTickTradeReceived(this).Do(() =>
 			{
 				var order = this.BuyAtMarket(1);
-				var ruleReg = order.WhenRegistered(Connector);
-				var ruleRegFailed = order.WhenRegisterFailed(Connector);
+				var ruleReg = order.WhenRegistered(this);
+				var ruleRegFailed = order.WhenRegisterFailed(this);
 
 				ruleReg
 					.Do(() => this.AddInfoLog("Order №1 Registered"))
@@ -32,11 +32,11 @@ namespace MarketRule
 				RegisterOrder(order);
 			}).Once().Apply(this);
 
-			sub.WhenTickTradeReceived(Connector).Do(() =>
+			sub.WhenTickTradeReceived(this).Do(() =>
 			{
 				var order = this.BuyAtMarket(10000000);
-				var ruleReg = order.WhenRegistered(Connector);
-				var ruleRegFailed = order.WhenRegisterFailed(Connector);
+				var ruleReg = order.WhenRegistered(this);
+				var ruleRegFailed = order.WhenRegisterFailed(this);
 
 				ruleReg
 					.Do(() => this.AddInfoLog("Order №2 Registered"))
