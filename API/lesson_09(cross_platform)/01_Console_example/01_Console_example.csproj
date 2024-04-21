@@ -6,7 +6,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-	<PackageReference Include="StockSharp.Algo" Version="5.*" />
+    <PackageReference Include="StockSharp.Algo" Version="5.*" />
     <PackageReference Include="StockSharp.Binance" Version="5.*" />
   </ItemGroup>
 </Project>

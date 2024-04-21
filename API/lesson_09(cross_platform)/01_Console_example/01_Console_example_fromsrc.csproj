@@ -2,8 +2,8 @@
   <Import Project="..\..\common_fromsrc.props" />
 
   <PropertyGroup>
-      <OutputType>Exe</OutputType>
-      <TargetFrameworks>net6.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net6.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

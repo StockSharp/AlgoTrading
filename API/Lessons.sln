@@ -31,7 +31,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "02_Gluing_candles_history_r
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "04_HydraFIX_get_marketdata", "lesson_03(historical_data)\04_HydraFIX_get_marketdata\04_HydraFIX_get_marketdata.csproj", "{0F8F54EE-2219-40E3-8467-3B502BEE361D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "03_HydraWCF_save_to_local_storage", "lesson_03(historical_data)\03_HydraWCF_save_to_local_storage\03_HydraWCF_save_to_local_storage.csproj", "{5A387DA7-8199-4198-BCF4-40CB8F76B7B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "03_RemoteStorage_save_to_local_storage", "lesson_03(historical_data)\03_RemoteStorage_save_to_local_storage\03_RemoteStorage_save_to_local_storage.csproj", "{5A387DA7-8199-4198-BCF4-40CB8F76B7B9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "01_LocalStorage", "lesson_03(historical_data)\01_LocalStorage\01_LocalStorage.csproj", "{B3B04AE7-6DA7-4363-AEF8-2A0D7B4B28E1}"
 EndProject
@@ -67,9 +67,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "03_Arbitrage_strategy", "le
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "04_Index", "lesson_08(More_strategies)\04_Index\04_Index.csproj", "{4854C6AB-84ED-4CAD-A7D5-C84262060731}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lesson_09(dot_net_core)", "lesson_09(dot_net_core)", "{7D251BAA-730E-4EB9-8276-9322A033AB9B}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lesson_09(cross_platform)", "lesson_09(cross_platform)", "{7D251BAA-730E-4EB9-8276-9322A033AB9B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "01_Dot_net_core_example", "lesson_09(dot_net_core)\Dot_net_core_example\01_Dot_net_core_example.csproj", "{BA2E5DE4-5AF4-41BF-B070-D61F72361294}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "01_Console_example", "lesson_09(cross_platform)\01_Console_example\01_Console_example.csproj", "{BA2E5DE4-5AF4-41BF-B070-D61F72361294}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

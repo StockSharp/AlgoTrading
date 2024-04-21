@@ -11,7 +11,7 @@ using StockSharp.Messages;
 using StockSharp.Algo.Storages.Csv;
 using StockSharp.Fix;
 
-namespace HydraWCF_save_to_local_storage;
+namespace RemoteStorage_save_to_local_storage;
 
 static class Program
 {

@@ -8,7 +8,7 @@ using StockSharp.Binance;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace Dot_net_core_example;
+namespace Console_example;
 
 static class Program
 {

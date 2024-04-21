@@ -3,8 +3,8 @@
   <PropertyGroup>
     <ProjectGuid>{5A387DA7-8199-4198-BCF4-40CB8F76B7B9}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>HydraWCF_save_to_local_storage</RootNamespace>
-    <AssemblyName>HydraWCF_save_to_local_storage</AssemblyName>
+    <RootNamespace>RemoteStorage_save_to_local_storage</RootNamespace>
+    <AssemblyName>RemoteStorage_save_to_local_storage</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="$(RepoGitHubPath)Algo\Algo.csproj" />
