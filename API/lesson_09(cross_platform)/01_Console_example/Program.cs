@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Linq;
 using System.Security;
+
 using Ecng.Common;
 
 using StockSharp.Algo;
-using StockSharp.Binance;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
@@ -16,16 +16,21 @@ static class Program
 	{
 		var connector = new Connector();
 
-		//connector.LookupMessagesOnConnect.Remove(MessageTypes.SecurityLookup);
+		//
+		// !!! IMPORTANT !!!
+		// The code show how to connect to Binance.
+		// Use your own adapter and proper setup
+		// !!! DO NOT FORGET ADD NUGET PACKAGE WITH REQUIRED CONNECTOR !!!
+		// https://stocksharp.com/products/nuget_manual/#privateserver
+		//
+		//var messageAdapter = new StockSharp.Binance.BinanceMessageAdapter(connector.TransactionIdGenerator)
+		//{
+		//	Key = "<Your key>".Secure(),
+		//	Secret = "<Your secret>".Secure(),
+		//	IsDemo = true
+		//};
 
-		var messageAdapter = new BinanceMessageAdapter(connector.TransactionIdGenerator)
-		{
-			Key = "<Your key>".Secure(),
-			Secret = "<Your secret>".Secure(),
-			IsDemo = true
-		};
-
-		connector.Adapter.InnerAdapters.Add(messageAdapter);
+		//connector.Adapter.InnerAdapters.Add(messageAdapter);
 
 		connector.ConnectionError += Console.WriteLine;
 		connector.Error += Console.WriteLine;

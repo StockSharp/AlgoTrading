@@ -22,7 +22,7 @@ Ensure you have the following installed:
 
 1. Clone the repository.
 2. Open the solution in Visual Studio.
-3. Restore NuGet packages to resolve dependencies.
+3. Find and add required connector via [NuGet package](https://stocksharp.com/products/nuget_manual/#privateserver)
 4. Build and run the application.
 
 ### Usage
@@ -46,7 +46,7 @@ This variable holds the path to the configuration file.
 
 ### Constructor
 
-The constructor initializes the component and loads settings if the configuration file exists.
+The constructor initializes the component and [loads settings](https://doc.stocksharp.com/topics/api/connectors/save_and_load_settings.html) if the configuration file exists.
 
 ```csharp
 public MainWindow()
@@ -62,7 +62,7 @@ public MainWindow()
 
 ### Setting_Click Event Handler
 
-This method is triggered when the "Settings" button is clicked. It opens a configuration dialog and saves the settings if the user confirms them.
+This method is triggered when the "Settings" button is clicked. It opens a configuration dialog and [saves the settings](https://doc.stocksharp.com/topics/api/connectors/save_and_load_settings.html) if the user confirms them.
 
 ```csharp
 private void Setting_Click(object sender, RoutedEventArgs e)
@@ -76,7 +76,7 @@ private void Setting_Click(object sender, RoutedEventArgs e)
 
 ### Connect_Click Event Handler
 
-This method is responsible for starting the connection process. It assigns providers to the SecurityPicker and initiates the connection.
+This method is responsible for starting the [connection process](https://doc.stocksharp.com/topics/api/connectors.html). It assigns providers to the [SecurityPicker](https://doc.stocksharp.com/topics/api/graphical_user_interface/instruments/picker.html) and initiates the connection.
 
 ```csharp
 private void Connect_Click(object sender, RoutedEventArgs e)
@@ -90,7 +90,7 @@ private void Connect_Click(object sender, RoutedEventArgs e)
 
 ### Connector_Connected Event Handler
 
-Triggered when the connection is successfully established. It performs an initial lookup of securities.
+Triggered when the connection is successfully established. It performs an initial [lookup of securities](https://doc.stocksharp.com/topics/api/instruments/instrument_search.html).
 
 ```csharp
 private void Connector_Connected()
@@ -102,7 +102,7 @@ private void Connector_Connected()
 
 ### SecurityPicker_SecuritySelected Event Handler
 
-Handles the event when a security is selected from the security picker. It subscribes to Level 1 data for the selected security.
+Handles the event when a security is selected from the security picker. It [subscribes](https://doc.stocksharp.com/topics/api/market_data/subscriptions.html) to Level 1 data for the selected security.
 
 ```csharp
 private void SecurityPicker_SecuritySelected(Security security)

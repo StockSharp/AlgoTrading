@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="$(RepoGitHubPath)Algo\Algo.csproj" />
-    <ProjectReference Include="$(RepoAppsPath)Connectors\Binance\Binance.csproj" />
   </ItemGroup>
 
 </Project>
