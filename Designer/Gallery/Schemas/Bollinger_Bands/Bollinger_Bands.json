@@ -1,0 +1,831 @@
+﻿{
+  "Id": "40b86cc4-4c6d-4ef5-9ef4-e57ca07cb2a6",
+  "Content": {
+    "Type": "Schema",
+    "Value": {
+      "Version": "1.0",
+      "Type": "Independent",
+      "Scheme": {
+        "SchemaVersion": 1,
+        "Category": "",
+        "Description": "",
+        "DocUrl": "",
+        "Composition": {
+          "Id": "124706b1-4b65-4595-a580-55a2ca6593c2",
+          "CanAutoName": false,
+          "Parameters": {
+            "Name": {
+              "Value": "Bollindger Bands"
+            },
+            "LogLevel": {
+              "Value": "Inherit"
+            },
+            "ShowParameters": {
+              "Value": true
+            },
+            "ShowSockets": {
+              "Value": false
+            },
+            "ProcessNullValues": {
+              "Value": false
+            },
+            "7a6bbff5-3f31-454d-8316-7e3932f246bdLength": {
+              "Value": 32
+            },
+            "7a6bbff5-3f31-454d-8316-7e3932f246bdWidth": {
+              "Value": 2.0
+            },
+            "275646d9-b122-49d1-b8a8-7efbdbd1e8deValue": {
+              "Value": {
+                "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                "settings": {
+                  "Type": "Absolute",
+                  "Value": 1.0
+                }
+              }
+            }
+          },
+          "TypeId": "eb011712-85f8-4957-a601-4f11b9c58743",
+          "Type": "Independent"
+        },
+        "Model": {
+          "Nodes": [
+            {
+              "Key": "2",
+              "Figure": "Procedure",
+              "X": -795.4375,
+              "Y": -316.92245,
+              "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
+              "Settings": {
+                "Id": "ee1b2284-6dd1-484b-a62f-8dfbeecb2877",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "TimeFrameCandle__00-05-00"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "IsManuallySubscription": {
+                    "Value": false
+                  },
+                  "Series": {
+                    "Value": {
+                      "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
+                      "settings": {
+                        "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
+                        "Arg": "00-05-00",
+                        "IsCalcVolumeProfile": false,
+                        "BuildCandlesMode": "LoadAndBuild",
+                        "AllowBuildFromSmallerTimeFrame": true,
+                        "IsFinishedOnly": false
+                      }
+                    }
+                  },
+                  "IsFinishedOnly": {
+                    "Value": true
+                  },
+                  "IsCalcVolumeProfile": {
+                    "Value": false
+                  },
+                  "AllowBuildFromSmallerTimeFrame": {
+                    "Value": true
+                  },
+                  "IsRegularTradingHours": {},
+                  "BuildCandlesMode": {
+                    "Value": "LoadAndBuild"
+                  },
+                  "BuildCandlesFrom": {},
+                  "BuildCandlesField": {}
+                }
+              }
+            },
+            {
+              "Key": "3",
+              "Figure": "Procedure",
+              "X": -370.0,
+              "Y": -320.0,
+              "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
+              "Settings": {
+                "Id": "9a8dd7d5-2b72-40c1-9ee2-4e27fbcaf739",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Chart panel"
+                  },
+                  "ElementName": {
+                    "Value": "Chart panel"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "ShowNonFormedIndicators": {
+                    "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
+                  }
+                },
+                "CandleElements": [
+                  {
+                    "Id": "a478088b-6372-4e87-a75b-0482074211c8",
+                    "IsVisible": true,
+                    "FullTitle": "TimeFrameCandle__00-05-00",
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "UpFillColor": -16744448,
+                    "UpBorderColor": -16744448,
+                    "DownFillColor": -65536,
+                    "DownBorderColor": -65536,
+                    "LineColor": -16777077,
+                    "AreaColor": -16728065,
+                    "DrawStyle": "CandleStick",
+                    "StrokeThickness": 1,
+                    "AntiAliasing": false,
+                    "ShowAxisMarker": true,
+                    "Cluster": {
+                      "Timeframe2Multiplier": 5,
+                      "Timeframe3Multiplier": 15,
+                      "FontColor": -13421773,
+                      "Timeframe2Color": -2236963,
+                      "Timeframe2FrameColor": -43691,
+                      "Timeframe3Color": -5592406,
+                      "MaxVolumeColor": -65536,
+                      "ClusterLineColor": -5592406,
+                      "ClusterSeparatorLineColor": 855638015,
+                      "ClusterTextColor": -13421773,
+                      "ClusterColor": -7829368,
+                      "ClusterMaxColor": -65536,
+                      "ShowHorizontalVolumes": true,
+                      "LocalHorizontalVolumes": true,
+                      "HorizontalVolumeWidthFraction": 0.15,
+                      "HorizontalVolumeColor": -2147458048,
+                      "HorizontalVolumeFontColor": -16751616
+                    }
+                  }
+                ],
+                "IndicatorElements": [
+                  {
+                    "IndicatorPainter": {
+                      "type": "StockSharp.Xaml.Charting.IndicatorPainters.BollingerBandsPainter, StockSharp.Xaml.Charting",
+                      "settings": {
+                        "Band": {
+                          "Id": "398f6630-a2e4-4644-86fe-81baa806bd86",
+                          "IsVisible": true,
+                          "IsLegend": true,
+                          "XAxisId": "X",
+                          "YAxisId": "Y",
+                          "Line1": {
+                            "Id": "bf2b1283-0202-457a-bf00-3e3c823fc4cb",
+                            "IsVisible": true,
+                            "IsLegend": true,
+                            "XAxisId": "X",
+                            "YAxisId": "Y",
+                            "Color": -23296,
+                            "AdditionalColor": 520070400,
+                            "StrokeThickness": 1,
+                            "AntiAliasing": true,
+                            "Style": "Line",
+                            "ShowAxisMarker": false
+                          },
+                          "Line2": {
+                            "Id": "095ff007-8b24-4573-8aeb-7006513da44d",
+                            "IsVisible": true,
+                            "IsLegend": true,
+                            "XAxisId": "X",
+                            "YAxisId": "Y",
+                            "Color": -23296,
+                            "AdditionalColor": 520070400,
+                            "StrokeThickness": 1,
+                            "AntiAliasing": true,
+                            "Style": "Line",
+                            "ShowAxisMarker": false
+                          }
+                        },
+                        "MovingAverage": {
+                          "Id": "91eb2784-be80-498a-a6ef-356acb078f36",
+                          "IsVisible": true,
+                          "IsLegend": true,
+                          "XAxisId": "X",
+                          "YAxisId": "Y",
+                          "Color": -60269,
+                          "AdditionalColor": 520033427,
+                          "StrokeThickness": 1,
+                          "AntiAliasing": true,
+                          "Style": "Line",
+                          "ShowAxisMarker": false
+                        }
+                      }
+                    },
+                    "Id": "04985f8d-9b72-45b3-87ea-2dc8c98f2a9f",
+                    "IsVisible": true,
+                    "FullTitle": "Bollinger 32",
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y"
+                  }
+                ],
+                "OrderElements": [],
+                "TradeElements": [
+                  {
+                    "Id": "95bb5cde-435f-4029-b7bb-ca10d5ec6828",
+                    "IsVisible": true,
+                    "FullTitle": "Buy\n(Open position)",
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "7cd45879-99bb-4bda-a0ff-8f8c8b2b9b95",
+                    "IsVisible": true,
+                    "FullTitle": "Close position",
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
+                "XAxes": [
+                  {
+                    "Id": "X",
+                    "Title": "X",
+                    "IsVisible": true,
+                    "AutoRange": true,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": false,
+                    "DrawLabels": true,
+                    "TextFormatting": "G",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "CategoryDateTime",
+                    "TimeZone": "Russian Standard Time"
+                  }
+                ],
+                "YAxes": [
+                  {
+                    "Id": "Y",
+                    "Title": "Y",
+                    "IsVisible": true,
+                    "AutoRange": true,
+                    "DrawMinorTicks": false,
+                    "DrawMajorTicks": true,
+                    "DrawMajorGridLines": true,
+                    "DrawMinorGridLines": false,
+                    "DrawLabels": true,
+                    "TextFormatting": "#.####",
+                    "SubDayTextFormatting": "T",
+                    "SwitchAxisLocation": false,
+                    "AxisType": "Numeric",
+                    "TimeZone": "Russian Standard Time"
+                  }
+                ]
+              }
+            },
+            {
+              "Key": "4",
+              "Figure": "Procedure",
+              "X": -771.09314,
+              "Y": -227.65982,
+              "TypeId": "f56c74af-7c39-464a-8b90-4eff4c8760b1",
+              "Settings": {
+                "Id": "7a6bbff5-3f31-454d-8316-7e3932f246bd",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Bollinger 32"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Id": "StockSharp.Algo.Indicators.BollingerBands, StockSharp.Algo"
+                    }
+                  },
+                  "IsFinal": {
+                    "Value": false
+                  },
+                  "IsFormed": {
+                    "Value": false
+                  },
+                  "IsEmpty": {
+                    "Value": false
+                  },
+                  "Length": {
+                    "Value": 32
+                  },
+                  "Width": {
+                    "Value": 2.0
+                  }
+                }
+              }
+            },
+            {
+              "Key": "5",
+              "Figure": "Procedure",
+              "X": -560.0,
+              "Y": -170.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "663f7632-38cb-4512-85a8-9254d2a7fe3f",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "LowBand"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.Algo"
+                    }
+                  },
+                  "Property": {
+                    "Value": "LowBand"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "6",
+              "Figure": "Procedure",
+              "X": -310.0,
+              "Y": -140.0,
+              "TypeId": "da1d00fc-3ccc-4769-a692-5938e8aca201",
+              "Settings": {
+                "Id": "02cb62a9-349e-4d8c-89bf-588d37d81f11",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Crossing"
+                  },
+                  "ElementName": {
+                    "Value": "Crossing"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "7",
+              "Figure": "Procedure",
+              "X": -560.0,
+              "Y": -100.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "a1ae1a9c-8489-4845-adb3-550f9b13c848",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "LowPrice"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "LowPrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "8",
+              "Figure": "Procedure",
+              "X": -60.0,
+              "Y": -170.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "95302469-8304-4181-84f8-1d27f69ec1e6",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Buy\n(Open position)"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "Direction": {
+                    "Value": "Buy"
+                  },
+                  "IsMarket": {
+                    "Value": true
+                  },
+                  "PosCondition": {
+                    "Value": "OpenPosition"
+                  },
+                  "ZeroAsMarket": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "ConditionalSettings": {},
+                  "ShrinkPrice": {
+                    "Value": true
+                  },
+                  "IsMargin": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Slippage": {}
+                }
+              }
+            },
+            {
+              "Key": "9",
+              "Figure": "Procedure",
+              "X": -310.0,
+              "Y": -60.0,
+              "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
+              "Settings": {
+                "Id": "275646d9-b122-49d1-b8a8-7efbdbd1e8de",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "1"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": true
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.Unit, StockSharp.Messages"
+                    }
+                  },
+                  "Value": {
+                    "Value": {
+                      "type": "StockSharp.Messages.Unit, StockSharp.Messages",
+                      "settings": {
+                        "Type": "Absolute",
+                        "Value": 1.0
+                      }
+                    }
+                  },
+                  "InputAsTrigger": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "10",
+              "Figure": "Procedure",
+              "X": -570.0,
+              "Y": 50.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "f2f9b0cb-afb8-42e8-bb90-f1859a557aed",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "UpBand"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Algo.Indicators.IIndicatorValue, StockSharp.Algo"
+                    }
+                  },
+                  "Property": {
+                    "Value": "UpBand"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "11",
+              "Figure": "Procedure",
+              "X": -570.0,
+              "Y": -20.0,
+              "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
+              "Settings": {
+                "Id": "a7d82252-07cc-4428-8698-715c30104e3f",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "HighPrice"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "Type": {
+                    "Value": {
+                      "Type": "StockSharp.Messages.ICandleMessage, StockSharp.Messages"
+                    }
+                  },
+                  "Property": {
+                    "Value": "HighPrice"
+                  }
+                }
+              }
+            },
+            {
+              "Key": "12",
+              "Figure": "Procedure",
+              "X": -313.18738,
+              "Y": 9.987451,
+              "TypeId": "da1d00fc-3ccc-4769-a692-5938e8aca201",
+              "Settings": {
+                "Id": "592f0250-f264-4b95-91dd-6fc52ad0ad1f",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Crossing"
+                  },
+                  "ElementName": {
+                    "Value": "Crossing"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  }
+                }
+              }
+            },
+            {
+              "Key": "13",
+              "Figure": "Procedure",
+              "X": -60.0,
+              "Y": -10.0,
+              "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
+              "Settings": {
+                "Id": "f0259205-08f2-43dc-b261-8c3407334a91",
+                "CanAutoName": true,
+                "Parameters": {
+                  "Name": {
+                    "Value": "Close position"
+                  },
+                  "LogLevel": {
+                    "Value": "Inherit"
+                  },
+                  "ShowParameters": {
+                    "Value": false
+                  },
+                  "ShowSockets": {
+                    "Value": false
+                  },
+                  "ProcessNullValues": {
+                    "Value": false
+                  },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
+                  "Direction": {
+                    "Value": "Sell"
+                  },
+                  "IsMarket": {
+                    "Value": true
+                  },
+                  "PosCondition": {
+                    "Value": "ClosePosition"
+                  },
+                  "ZeroAsMarket": {
+                    "Value": false
+                  },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
+                  "ClientCode": {},
+                  "BrokerCode": {},
+                  "ConditionalSettings": {},
+                  "ShrinkPrice": {
+                    "Value": true
+                  },
+                  "IsMargin": {},
+                  "IsMarketMaker": {},
+                  "IsManual": {},
+                  "Slippage": {}
+                }
+              }
+            }
+          ],
+          "Links": [
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "3",
+              "ToPort": "dynsock_a478088b63724e87a75b0482074211c8"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "4",
+              "ToPort": "Input"
+            },
+            {
+              "From": "4",
+              "FromPort": "Output",
+              "To": "3",
+              "ToPort": "dynsock_04985f8d9b7245b387ea2dc8c98f2a9f"
+            },
+            {
+              "From": "4",
+              "FromPort": "Output",
+              "To": "5",
+              "ToPort": "Input"
+            },
+            {
+              "From": "5",
+              "FromPort": "Output",
+              "To": "6",
+              "ToPort": "Input Up"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "7",
+              "ToPort": "Input"
+            },
+            {
+              "From": "7",
+              "FromPort": "Output",
+              "To": "6",
+              "ToPort": "Input Down"
+            },
+            {
+              "From": "6",
+              "FromPort": "Output",
+              "To": "8",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "9",
+              "FromPort": "Output",
+              "To": "8",
+              "ToPort": "Volume"
+            },
+            {
+              "From": "8",
+              "FromPort": "MyTrade",
+              "To": "3",
+              "ToPort": "dynsock_95bb5cde435f4029b7bbca10d5ec6828"
+            },
+            {
+              "From": "4",
+              "FromPort": "Output",
+              "To": "10",
+              "ToPort": "Input"
+            },
+            {
+              "From": "2",
+              "FromPort": "Output",
+              "To": "11",
+              "ToPort": "Input"
+            },
+            {
+              "From": "11",
+              "FromPort": "Output",
+              "To": "12",
+              "ToPort": "Input Up"
+            },
+            {
+              "From": "10",
+              "FromPort": "Output",
+              "To": "12",
+              "ToPort": "Input Down"
+            },
+            {
+              "From": "12",
+              "FromPort": "Output",
+              "To": "13",
+              "ToPort": "Trigger"
+            },
+            {
+              "From": "13",
+              "FromPort": "MyTrade",
+              "To": "3",
+              "ToPort": "dynsock_7cd4587999bb4bdaa0ff8f8c8b2b9b95"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
