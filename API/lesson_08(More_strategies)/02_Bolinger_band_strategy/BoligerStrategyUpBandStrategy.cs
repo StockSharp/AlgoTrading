@@ -9,25 +9,20 @@
 	using StockSharp.Algo.Testing;
 	using StockSharp.Messages;
 
-	internal class BoligerStrategyLowBand : Strategy
+	internal class BoligerStrategyUpBandStrategy : Strategy
 	{
 		private readonly Subscription _subscription;
 
 		public BollingerBands BollingerBands { get; set; }
-		public BoligerStrategyLowBand(CandleSeries series)
+		public BoligerStrategyUpBandStrategy(CandleSeries series)
 		{
 			_subscription = new(series);
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			this
-				.WhenCandlesFinished(_subscription)
-				.Do(ProcessCandle)
-				.Apply(this);
-
+			this.WhenCandlesFinished(_subscription).Do(ProcessCandle).Apply(this);
 			Subscribe(_subscription);
-
 			base.OnStarted(time);
 		}
 
@@ -45,14 +40,14 @@
 			if (!BollingerBands.IsFormed) return;
 			if (!IsHistoryEmulationConnector && !IsRealTime(candle)) return;
 
-			if (candle.ClosePrice <= BollingerBands.LowBand.GetCurrentValue() && Position == 0)
+			if (candle.ClosePrice >= BollingerBands.UpBand.GetCurrentValue() && Position == 0)
 			{
-				RegisterOrder(this.SellAtMarket(Volume));
+				RegisterOrder(this.BuyAtMarket(Volume));
 			}
 
-			else if (candle.ClosePrice >= BollingerBands.MovingAverage.GetCurrentValue() && Position < 0)
+			else if (candle.ClosePrice <= BollingerBands.MovingAverage.GetCurrentValue() && Position > 0)
 			{
-				RegisterOrder(this.BuyAtMarket(Math.Abs(Position)));
+				RegisterOrder(this.SellAtMarket(Math.Abs(Position)));
 			}
 		}
 	}

@@ -6,16 +6,19 @@ using StockSharp.Messages;
 
 namespace First_strategies
 {
-	public class OneCandleCountertrend : Strategy
+	public class StairsTrendStrategy : Strategy
 	{
 		private readonly CandleSeries _candleSeries;
 		private Subscription _subscription;
 
-		public OneCandleCountertrend(CandleSeries candleSeries)
+		public StairsTrendStrategy(CandleSeries candleSeries)
 		{
 			_candleSeries = candleSeries;
 		}
 
+		private int _bullLength;
+		private int _bearLength;
+		public int Length { get; set; } = 3;
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			CandleReceived += OnCandleReceived;
@@ -42,15 +45,27 @@ namespace First_strategies
 
 			if (candle.State != CandleStates.Finished) return;
 
-			if (candle.OpenPrice < candle.ClosePrice && Position >= 0)
+			if (candle.OpenPrice < candle.ClosePrice)
 			{
-				RegisterOrder(this.SellAtMarket(Volume + Math.Abs(Position)));
+				_bullLength++;
+				_bearLength = 0;
+			}
+			else
+			if (candle.OpenPrice > candle.ClosePrice)
+			{
+				_bullLength = 0;
+				_bearLength++;
+			}
+
+			if (_bullLength >= Length && Position <= 0)
+			{
+				RegisterOrder(this.BuyAtMarket(Volume + Math.Abs(Position)));
 			}
 
 			else
-			if (candle.OpenPrice > candle.ClosePrice && Position <= 0)
+			if (_bearLength >= Length && Position >= 0)
 			{
-				RegisterOrder(this.BuyAtMarket(Volume + Math.Abs(Position)));
+				RegisterOrder(this.SellAtMarket(Volume + Math.Abs(Position)));
 			}
 		}
 	}

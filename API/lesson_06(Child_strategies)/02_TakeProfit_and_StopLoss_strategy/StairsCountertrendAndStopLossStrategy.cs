@@ -9,10 +9,10 @@ using StockSharp.BusinessEntities;
 
 namespace TakeProfit_and_StopLoss_strategy
 {
-	public class StairsCountertrendAndStopLoss : Strategy
+	public class StairsCountertrendAndStopLossStrategy : Strategy
 	{
 		private readonly Subscription _subscription;
-		public StairsCountertrendAndStopLoss(CandleSeries candleSeries)
+		public StairsCountertrendAndStopLossStrategy(CandleSeries candleSeries)
 		{
 			_subscription = new(candleSeries);
 		}

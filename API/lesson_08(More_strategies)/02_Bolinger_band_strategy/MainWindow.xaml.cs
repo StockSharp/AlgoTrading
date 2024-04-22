@@ -100,10 +100,13 @@ public partial class MainWindow
 
 		_bollingerBands = new BollingerBands();
 
-		// uncomment required strategy
-		_strategy = new BoligerStrategyClasic(_candleSeries)
-		//_strategy = new BoligerStrategyLowBand(_candleSeries)
-		//_strategy = new BoligerStrategyUpBand(_candleSeries)
+		//
+		// !!! IMPORTANT !!!
+		// Uncomment the desired strategy
+		//
+		_strategy = new BoligerStrategyClasicStrategy(_candleSeries)
+		//_strategy = new BoligerStrategyLowBandStrategy(_candleSeries)
+		//_strategy = new BoligerStrategyUpBandStrategy(_candleSeries)
 		{
 			Security = _security,
 			Connector = _connector,

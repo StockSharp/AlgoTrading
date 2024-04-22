@@ -2,7 +2,7 @@
 
 ## Overview
 
-This program is designed to load and display various types of market data using the StockSharp framework, interacting with a local market data drive. It handles securities, candles, trades, market depths, level1 messages, and an expression-based index.
+This program is designed to load and display various types of market data using the StockSharp framework, interacting with a [local market data drive](https://doc.stocksharp.com/topics/api/market_data_storage.html). It handles securities, candles, trades, market depths, level1 messages, and an expression-based index.
 
 ## Detailed Code Explanation
 
@@ -24,7 +24,7 @@ foreach (var sec in securities)
 }
 Console.ReadLine();
 ```
-Here, the program lists all securities stored in the local drive and outputs each to the console.
+Here, the program lists all [securities](https://doc.stocksharp.com/topics/api/instruments.html) stored in the local drive and outputs each to the console.
 
 ### Loading and Displaying Candle Data
 
@@ -38,7 +38,7 @@ foreach (var candle in candles)
 }
 Console.ReadLine();
 ```
-This code loads candle data for the security `SBER@TQBR` using a one-minute timeframe, from April 1, 2020, to April 2, 2020. Each candle is then printed to the console.
+This code loads [candle data](https://doc.stocksharp.com/topics/api/candles.html) for the security `SBER@TQBR` using a one-minute timeframe, from April 1, 2020, to April 2, 2020. Each candle is then printed to the console.
 
 ### Loading and Displaying Trade Data
 
@@ -64,7 +64,7 @@ foreach (var marketDepth in marketDepths)
 }
 Console.ReadLine();
 ```
-This part of the program loads and displays market depth data, showing bid and ask prices and quantities.
+This part of the program loads and displays [market depth](https://doc.stocksharp.com/topics/api/order_books.html) data, showing bid and ask prices and quantities.
 
 ### Loading and Displaying Level1 Messages
 
@@ -90,7 +90,7 @@ var basketSecurity = new ExpressionIndexSecurity
     BasketExpression = "SBER@TQBR + 987654321",
 };
 ```
-This configures an expression-based index which is calculated using the specified formula. This demonstrates how to extend the application to handle composite securities based on expressions.
+This configures an [expression-based index](https://doc.stocksharp.com/topics/api/instruments/index.html) which is calculated using the specified formula. This demonstrates how to extend the application to handle composite securities based on expressions.
 
 ### Calculating and Displaying Index Candles
 

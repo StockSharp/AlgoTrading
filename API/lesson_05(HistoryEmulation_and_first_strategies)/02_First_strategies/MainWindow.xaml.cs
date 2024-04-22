@@ -95,11 +95,14 @@ public partial class MainWindow
 		_connector.NewOrder += OrderGrid.Orders.Add;
 		_connector.OrderRegisterFailed += OrderGrid.AddRegistrationFail;
 
-		// uncomment required strategy
-		_strategy = new OneCandleCountertrend(_candleSeries)
-		//_strategy = new OneCandleTrend(_candleSeries)
-		//_strategy = new StairsCountertrend(_candleSeries)
-		//_strategy = new StairsTrend(_candleSeries)
+		//
+		// !!! IMPORTANT !!!
+		// Uncomment the desired strategy
+		//
+		_strategy = new OneCandleCountertrendStrategy(_candleSeries)
+		//_strategy = new OneCandleTrendStrategy(_candleSeries)
+		//_strategy = new StairsCountertrendStrategy(_candleSeries)
+		//_strategy = new StairsTrendStrategy(_candleSeries)
 		{
 			Security = _security,
 			Connector = _connector,

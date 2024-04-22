@@ -6,12 +6,12 @@ using StockSharp.Messages;
 
 namespace First_strategies
 {
-	public class StairsCountertrend : Strategy
+	public class StairsCountertrendStrategy : Strategy
 	{
 		private readonly CandleSeries _candleSeries;
 		private Subscription _subscription;
 
-		public StairsCountertrend(CandleSeries candleSeries)
+		public StairsCountertrendStrategy(CandleSeries candleSeries)
 		{
 			_candleSeries = candleSeries;
 		}

@@ -1,10 +1,10 @@
 ﻿{
-  "Id": "b9a9cbdc-fee4-45f0-a0b7-13eec75bb79d",
+  "Id": "688f8e6c-9d76-4cb1-b7fa-fb858c1f7786",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Regular",
+      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
@@ -41,30 +41,29 @@
                 }
               }
             },
+            "47eaa830-65a0-4741-a6da-40e55db4c81fValue": {},
             "d02d5433-e39a-4112-b924-51c61acbc8bbValue": {},
             "64b3a325-cca1-4ee4-a06f-e6dbb108c2dcValue": {
               "Value": "18:00:00"
             }
           },
           "TypeId": "64989e95-f33e-48ef-b92f-d4230084488d",
-          "Type": "Independent",
-          "Revision": 52,
-          "PublishedId": 0
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
               "Key": "9",
+              "Figure": "None",
               "X": -130.0,
               "Y": -740.0,
-              "Figure": "None",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "7e70f24b-4d92-4b9e-853b-0eb9de38ec7b",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Candle -> Closing price"
+                    "Value": "ClosePrice"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -91,9 +90,9 @@
             },
             {
               "Key": "8",
+              "Figure": "None",
               "X": 180.0,
               "Y": -440.0,
-              "Figure": "None",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "ae460f9b-9d9a-49d7-8219-183ef1e418f5",
@@ -130,16 +129,16 @@
             },
             {
               "Key": "7",
+              "Figure": "None",
               "X": 180.0,
               "Y": -510.0,
-              "Figure": "None",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d26f7f05-58d1-4974-aa9b-8093a778dd32",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "1.0"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -175,9 +174,9 @@
             },
             {
               "Key": "6",
+              "Figure": "None",
               "X": 230.0,
               "Y": -710.0,
-              "Figure": "None",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "99b026f5-4036-4546-946a-b30e71fae176",
@@ -198,15 +197,23 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
                   "Direction": {
                     "Value": "Buy"
                   },
                   "IsMarket": {
                     "Value": false
                   },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
                   "ZeroAsMarket": {
                     "Value": false
                   },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
                   "ClientCode": {},
                   "BrokerCode": {},
                   "ConditionalSettings": {},
@@ -216,16 +223,15 @@
                   "IsMargin": {},
                   "IsMarketMaker": {},
                   "IsManual": {},
-                  "TimeInForce": {},
-                  "ExpiryDate": {}
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "5",
+              "Figure": "None",
               "X": 180.0,
               "Y": -820.0,
-              "Figure": "None",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "044c47bc-16d6-4685-a8c3-0c93c04fec4f",
@@ -249,17 +255,21 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
                   {
                     "Id": "e0999fac-817c-4ef3-987b-6f86ac493a68",
                     "IsVisible": true,
+                    "FullTitle": "TimeFrameCandle__00-05-00",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -282,6 +292,7 @@
                       "Timeframe3Color": -5592406,
                       "MaxVolumeColor": -65536,
                       "ClusterLineColor": -5592406,
+                      "ClusterSeparatorLineColor": 0,
                       "ClusterTextColor": -13421773,
                       "ClusterColor": -7829368,
                       "ClusterMaxColor": -65536,
@@ -298,6 +309,7 @@
                   {
                     "Id": "35289b44-dce9-42ff-8827-1e721ef1db99",
                     "IsVisible": true,
+                    "FullTitle": "Buy",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -308,6 +320,7 @@
                     "UseAltIcon": false,
                     "DrawSize": 0.0,
                     "ErrorColor": -16777216,
+                    "ErrorStrokeColor": 0,
                     "Filter": "All"
                   }
                 ],
@@ -353,9 +366,9 @@
             },
             {
               "Key": "4",
+              "Figure": "None",
               "X": -160.0,
               "Y": -820.0,
-              "Figure": "None",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "3a34c835-48bb-4dd3-87ee-d160167521b2",
@@ -384,13 +397,12 @@
                       "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
                       "settings": {
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
+                        "Arg": "00-05-00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
                         "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -401,7 +413,7 @@
                     "Value": false
                   },
                   "AllowBuildFromSmallerTimeFrame": {
-                    "Value": false
+                    "Value": true
                   },
                   "IsRegularTradingHours": {
                     "Value": false
@@ -416,9 +428,9 @@
             },
             {
               "Key": "3",
+              "Figure": "None",
               "X": -370.0,
               "Y": -820.0,
-              "Figure": "None",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "47eaa830-65a0-4741-a6da-40e55db4c81f",
@@ -444,6 +456,7 @@
                       "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
                     }
                   },
+                  "Value": {},
                   "InputAsTrigger": {
                     "Value": false
                   }
@@ -452,9 +465,9 @@
             },
             {
               "Key": "2",
+              "Figure": "Procedure",
               "X": -390.0,
               "Y": -620.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d02d5433-e39a-4112-b924-51c61acbc8bb",
@@ -489,16 +502,16 @@
             },
             {
               "Key": "10",
+              "Figure": "Procedure",
               "X": -400.0,
               "Y": -550.0,
-              "Figure": "Procedure",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "ca012d6b-df48-443d-82d1-547553e0ad43",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Strategy -> CurrentTime"
+                    "Value": "CurrentTime"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -525,16 +538,16 @@
             },
             {
               "Key": "11",
+              "Figure": "Procedure",
               "X": -190.0,
               "Y": -580.0,
-              "Figure": "Procedure",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "bb54bac5-7217-4bd0-bfde-909e4075992e",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "DateTimeOffset -> TimeOfDay"
+                    "Value": "TimeOfDay"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -561,9 +574,9 @@
             },
             {
               "Key": "12",
+              "Figure": "Procedure",
               "X": -180.0,
               "Y": -480.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "64b3a325-cca1-4ee4-a06f-e6dbb108c2dc",
@@ -600,9 +613,9 @@
             },
             {
               "Key": "13",
+              "Figure": "Procedure",
               "X": -10.0,
               "Y": -550.0,
-              "Figure": "Procedure",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "d22fb8df-a794-46fd-a3ea-de3746657d85",

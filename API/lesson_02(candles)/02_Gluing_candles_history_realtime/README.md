@@ -6,11 +6,18 @@ This section of the documentation outlines how to manage and visualize both hist
 
 ## Key Components
 
-1. **Data Storage**: Utilizes CSV storage for historical data and local market data drives.
-2. **Real-Time Subscription**: Subscribing to real-time candle data and merging it with historical data.
-3. **Charting**: Visualization of both historical and real-time data on a chart.
+1. **Data Storage**: Utilizes CSV [storage](https://doc.stocksharp.com/topics/api/market_data_storage.html) for historical data and local market [data drives](https://doc.stocksharp.com/topics/api/market_data_storage/api.html).
+2. **Real-Time Subscription**: Subscribing to [real-time candle data](https://doc.stocksharp.com/topics/api/candles.html) and [merging it with historical data](https://doc.stocksharp.com/topics/api/candles/gluing_candles_history_real_time.html).
+3. **Charting**: Visualization of both historical and real-time data on a [chart](https://doc.stocksharp.com/topics/api/graphical_user_interface.html).
 
 ## Code Explanation and Usage
+
+### Installation
+
+1. Clone the repository.
+2. Open the solution in Visual Studio.
+3. Find and add required connector via [NuGet package](https://stocksharp.com/products/nuget_manual/#privateserver)
+4. Build and run the application.
 
 ### Initialization and Configuration
 
@@ -57,7 +64,7 @@ private void Connector_CandleSeriesProcessing(CandleSeries candleSeries, ICandle
 
 ### Selecting Security and Subscribing to Data
 
-When a security is selected, the application subscribes to both historical and real-time candle data, setting up the charting components accordingly:
+When a security is selected, the application [subscribes](https://doc.stocksharp.com/topics/api/market_data/subscriptions.html) to both historical and real-time candle data, setting up the charting components accordingly:
 
 ```csharp
 private void SecurityPicker_SecuritySelected(Security security)

@@ -5,7 +5,7 @@ using System;
 
 namespace MarketRule
 {
-	public class SimpleOrderRules : Strategy
+	public class SimpleOrderRulesStrategy : Strategy
 	{
 		protected override void OnStarted(DateTimeOffset time)
 		{

@@ -95,7 +95,7 @@ namespace Quoting_strategy
 			_connector.NewOrder += OrderGrid.Orders.Add;
 			_connector.OrderRegisterFailed += OrderGrid.AddRegistrationFail;
 
-			_strategy = new StairsCountertrend(_candleSeries)
+			_strategy = new StairsCountertrendStrategy(_candleSeries)
 			{
 				Security = _security,
 				Connector = _connector,

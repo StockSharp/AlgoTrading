@@ -102,7 +102,7 @@ namespace Parallel_testing_terminal
 
 			//candleSeries.BuildCandlesMode = MarketDataBuildModes.Build;
 
-			var strategy = new StairsStrategyCountertrendLength(candleSeries)
+			var strategy = new StairsStrategyCountertrendStrategy(candleSeries)
 			{
 				Length = length,
 				Security = _security,

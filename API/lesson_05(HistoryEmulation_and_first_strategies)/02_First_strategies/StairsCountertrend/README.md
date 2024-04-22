@@ -11,7 +11,7 @@ This strategy operates on the principle of identifying sequences of consecutive 
 The strategy is initialized with a specific `CandleSeries`, setting the context for which securities and candle timeframe it will operate on:
 
 ```csharp
-public StairsCountertrend(CandleSeries candleSeries)
+public StairsCountertrendStrategy(CandleSeries candleSeries)
 {
     _candleSeries = candleSeries;
 }

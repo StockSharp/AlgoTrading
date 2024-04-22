@@ -63,11 +63,15 @@ public partial class MainWindow
 			LogLevel = LogLevels.Info,
 		};
 
-		_strategy = new SimpleCandleRules
-		//_strategy = new SimpleOrderRules
-		//_strategy = new SimpleRules
-		//_strategy = new SimpleRulesUntil
-		//_strategy = new SimpleTradeRules
+		//
+		// !!! IMPORTANT !!!
+		// Uncomment the desired strategy
+		//
+		_strategy = new SimpleCandleRulesStrategy
+		//_strategy = new SimpleOrderRulesStrategy
+		//_strategy = new SimpleRulesStrategy
+		//_strategy = new SimpleRulesUntilStrategy
+		//_strategy = new SimpleTradeRulesStrategy
 		{
 			Security = _security,
 			Connector = _connector,

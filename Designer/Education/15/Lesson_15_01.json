@@ -1,5 +1,5 @@
 ﻿{
-  "Id": "be2232cf-932b-430d-9a45-19a5b6b38c17",
+  "Id": "1a536f90-84a9-4b50-96c2-11a46ac85579",
   "Content": {
     "Type": "Schema",
     "Value": {
@@ -50,17 +50,15 @@
             }
           },
           "TypeId": "b9704a51-8b18-4f47-afff-6bcc0a27b009",
-          "Type": "Independent",
-          "Revision": 220,
-          "PublishedId": 0
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
               "Key": "2",
+              "Figure": "Procedure",
               "X": -220.0,
               "Y": -320.0,
-              "Figure": "Procedure",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "3b5e7ee5-833d-445c-8a2a-cf6965a35d05",
@@ -89,13 +87,12 @@
                       "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
                       "settings": {
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
+                        "Arg": "00-05-00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
                         "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -121,9 +118,9 @@
             },
             {
               "Key": "3",
+              "Figure": "Procedure",
               "X": -410.0,
               "Y": -320.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "a0d648e5-2c51-4727-9d1d-51bda795056c",
@@ -158,9 +155,9 @@
             },
             {
               "Key": "4",
+              "Figure": "Procedure",
               "X": 120.0,
               "Y": -360.0,
-              "Figure": "Procedure",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "b1f7aa6e-874c-4bf3-9a1d-eda06f9f78c7",
@@ -184,17 +181,21 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
                   {
                     "Id": "a5c99c73-dd15-4843-a2dd-e5d84aabcf1f",
                     "IsVisible": true,
+                    "FullTitle": "TimeFrameCandle__00-05-00",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -217,6 +218,7 @@
                       "Timeframe3Color": -5592406,
                       "MaxVolumeColor": -65536,
                       "ClusterLineColor": -5592406,
+                      "ClusterSeparatorLineColor": 0,
                       "ClusterTextColor": -13421773,
                       "ClusterColor": -7829368,
                       "ClusterMaxColor": -65536,
@@ -230,7 +232,36 @@
                 ],
                 "IndicatorElements": [],
                 "OrderElements": [],
-                "TradeElements": [],
+                "TradeElements": [
+                  {
+                    "Id": "d27937bb-9973-4c69-8f5f-51531f3f9548",
+                    "IsVisible": true,
+                    "FullTitle": "Buy",
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  },
+                  {
+                    "Id": "799ced63-f17d-49ba-a06b-95544ea673c1",
+                    "IsVisible": true,
+                    "FullTitle": "Sell",
+                    "IsLegend": true,
+                    "XAxisId": "X",
+                    "YAxisId": "Y",
+                    "BuyColor": -16711936,
+                    "BuyStrokeColor": -16711936,
+                    "SellColor": -38476,
+                    "SellStrokeColor": -38476,
+                    "UseAltIcon": false,
+                    "DrawSize": 0.0
+                  }
+                ],
                 "XAxes": [
                   {
                     "Id": "X",
@@ -271,16 +302,16 @@
             },
             {
               "Key": "5",
+              "Figure": "Procedure",
               "X": -210.0,
               "Y": -260.0,
-              "Figure": "Procedure",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "e8446627-afba-4602-bd9d-73009d01a03d",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Candle -> Closing price"
+                    "Value": "ClosePrice"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -307,16 +338,16 @@
             },
             {
               "Key": "6",
+              "Figure": "Procedure",
               "X": -220.0,
               "Y": -200.0,
-              "Figure": "Procedure",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "06b687f8-d4da-4741-86b1-a101f742e097",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Candle -> Opening price"
+                    "Value": "OpenPrice"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -343,9 +374,9 @@
             },
             {
               "Key": "7",
+              "Figure": "Procedure",
               "X": -370.0,
               "Y": -100.0,
-              "Figure": "Procedure",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "137e1d3d-5afc-4854-92c9-449c597f6010",
@@ -384,9 +415,9 @@
             },
             {
               "Key": "8",
+              "Figure": "Procedure",
               "X": -390.0,
               "Y": 50.0,
-              "Figure": "Procedure",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "75c1983e-6be4-4a45-934e-c75ad84bda30",
@@ -425,16 +456,16 @@
             },
             {
               "Key": "9",
-              "X": 164.36068874646878,
-              "Y": -114.1417760183985,
               "Figure": "Procedure",
+              "X": 164.36069,
+              "Y": -114.14178,
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "4134666a-40c0-4ab7-905f-a461a32f7993",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "1.0"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -470,9 +501,9 @@
             },
             {
               "Key": "10",
+              "Figure": "Procedure",
               "X": 160.0,
               "Y": -50.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "f03851cc-bdaf-438d-b0c7-dff4db6955a4",
@@ -509,9 +540,9 @@
             },
             {
               "Key": "11",
+              "Figure": "Procedure",
               "X": 170.0,
               "Y": -200.0,
-              "Figure": "Procedure",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "f2ed44ec-f074-4633-9f83-0aa77e1e3f9f",
@@ -532,15 +563,23 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
                   "Direction": {
                     "Value": "Buy"
                   },
                   "IsMarket": {
                     "Value": true
                   },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
                   "ZeroAsMarket": {
                     "Value": false
                   },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
                   "ClientCode": {},
                   "BrokerCode": {},
                   "ConditionalSettings": {},
@@ -550,16 +589,15 @@
                   "IsMargin": {},
                   "IsMarketMaker": {},
                   "IsManual": {},
-                  "TimeInForce": {},
-                  "ExpiryDate": {}
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "12",
+              "Figure": "Procedure",
               "X": 170.0,
               "Y": 20.0,
-              "Figure": "Procedure",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "89cf77ed-1618-4a36-b477-1dbf14fb8ab7",
@@ -580,15 +618,23 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
                   "Direction": {
                     "Value": "Sell"
                   },
                   "IsMarket": {
                     "Value": true
                   },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
                   "ZeroAsMarket": {
                     "Value": false
                   },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
                   "ClientCode": {},
                   "BrokerCode": {},
                   "ConditionalSettings": {},
@@ -598,16 +644,15 @@
                   "IsMargin": {},
                   "IsMarketMaker": {},
                   "IsManual": {},
-                  "TimeInForce": {},
-                  "ExpiryDate": {}
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "14",
+              "Figure": "Procedure",
               "X": -10.0,
               "Y": -130.0,
-              "Figure": "Procedure",
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "00940f48-a0bf-4199-a700-90fe19ce43ee",
@@ -641,9 +686,9 @@
             },
             {
               "Key": "15",
+              "Figure": "Procedure",
               "X": -150.0,
               "Y": -10.0,
-              "Figure": "Procedure",
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "ad23097d-9112-4d0b-9b2b-0792923f6111",
@@ -675,9 +720,9 @@
             },
             {
               "Key": "16",
+              "Figure": "Procedure",
               "X": -60.0,
               "Y": 90.0,
-              "Figure": "Procedure",
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "c7724037-3c98-4768-9a8e-d4f79c0c5435",
@@ -711,9 +756,9 @@
             },
             {
               "Key": "13",
+              "Figure": "Procedure",
               "X": -150.0,
               "Y": -70.0,
-              "Figure": "Procedure",
               "ElementModel": {
                 "SchemaVersion": 1,
                 "Category": "",
@@ -746,17 +791,15 @@
                     }
                   },
                   "TypeId": "2ba82bd9-e007-4e0f-9a8c-d351cfb4b003",
-                  "Type": "Independent",
-                  "Revision": 42,
-                  "PublishedId": 0
+                  "Type": "Independent"
                 },
                 "Model": {
                   "Nodes": [
                     {
                       "Key": "2",
+                      "Figure": "Procedure",
                       "X": -500.0,
                       "Y": -130.0,
-                      "Figure": "Procedure",
                       "TypeId": "03bbd944-d369-4860-8d35-a642cb06fe5e",
                       "Settings": {
                         "Id": "0097b85d-ceb0-4441-9836-174e71eaa2a8",
@@ -787,9 +830,9 @@
                     },
                     {
                       "Key": "3",
+                      "Figure": "Procedure",
                       "X": -490.0,
                       "Y": -40.0,
-                      "Figure": "Procedure",
                       "TypeId": "03bbd944-d369-4860-8d35-a642cb06fe5e",
                       "Settings": {
                         "Id": "b593e6f6-c0f8-45b5-8743-6040caaee000",
@@ -820,9 +863,9 @@
                     },
                     {
                       "Key": "4",
+                      "Figure": "Procedure",
                       "X": -490.0,
                       "Y": 40.0,
-                      "Figure": "Procedure",
                       "TypeId": "03bbd944-d369-4860-8d35-a642cb06fe5e",
                       "Settings": {
                         "Id": "58c06202-13e4-4039-837d-6f8e0f9f43b4",
@@ -853,9 +896,9 @@
                     },
                     {
                       "Key": "5",
+                      "Figure": "Procedure",
                       "X": -153.0,
                       "Y": -45.0,
-                      "Figure": "Procedure",
                       "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
                       "Settings": {
                         "Id": "fbde4d1c-ba1b-4695-99f9-d811c8ac8cc3",
@@ -892,9 +935,9 @@
                     },
                     {
                       "Key": "6",
+                      "Figure": "Procedure",
                       "X": -160.0,
                       "Y": -140.0,
-                      "Figure": "Procedure",
                       "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
                       "Settings": {
                         "Id": "71f3e545-da76-4cb2-a222-15218f5fa554",
@@ -931,9 +974,9 @@
                     },
                     {
                       "Key": "7",
+                      "Figure": "Procedure",
                       "X": -151.0,
                       "Y": 44.0,
-                      "Figure": "Procedure",
                       "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
                       "Settings": {
                         "Id": "3c9f41a8-fbc1-477f-bb7a-d8b3d44eed9b",
@@ -970,9 +1013,9 @@
                     },
                     {
                       "Key": "8",
+                      "Figure": "Procedure",
                       "X": 110.0,
                       "Y": -40.0,
-                      "Figure": "Procedure",
                       "TypeId": "03bbd944-d369-4860-8d35-a642cb06fe5e",
                       "Settings": {
                         "Id": "feb0a53e-86f8-4b68-88af-64bbce9a58d9",
@@ -1188,6 +1231,18 @@
               "FromPort": "8_Output",
               "To": "14",
               "ToPort": "935b09e9a32a40ea9f97169ad1c1de76"
+            },
+            {
+              "From": "11",
+              "FromPort": "MyTrade",
+              "To": "4",
+              "ToPort": "dynsock_d27937bb99734c698f5f51531f3f9548"
+            },
+            {
+              "From": "12",
+              "FromPort": "MyTrade",
+              "To": "4",
+              "ToPort": "dynsock_799ced63f17d49baa06b95544ea673c1"
             }
           ]
         }

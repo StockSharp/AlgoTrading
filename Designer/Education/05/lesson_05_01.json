@@ -1,5 +1,5 @@
 ﻿{
-  "Id": "0acd109d-a2ff-40ca-9cb4-e93890a9ef2a",
+  "Id": "010e5247-6ac3-4ecb-9d38-76e367036bce",
   "Content": {
     "Type": "Schema",
     "Value": {
@@ -59,24 +59,22 @@
             }
           },
           "TypeId": "b78defe6-c610-49cc-a8fd-ca79974176ba",
-          "Type": "Independent",
-          "Revision": 647,
-          "PublishedId": 0
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
               "Key": "2",
+              "Figure": "Procedure",
               "X": -350.0,
               "Y": -290.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "29ab128e-2abf-441c-8618-7af8e653f79f",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Инструмент"
+                    "Value": "Security"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -104,9 +102,9 @@
             },
             {
               "Key": "3",
+              "Figure": "Procedure",
               "X": -90.0,
               "Y": -290.0,
-              "Figure": "Procedure",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "ee70deba-6f48-48bf-8344-a7b3b3d4c206",
@@ -135,13 +133,12 @@
                       "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
                       "settings": {
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
+                        "Arg": "00-05-00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
                         "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -152,7 +149,7 @@
                     "Value": false
                   },
                   "AllowBuildFromSmallerTimeFrame": {
-                    "Value": false
+                    "Value": true
                   },
                   "IsRegularTradingHours": {
                     "Value": false
@@ -167,15 +164,18 @@
             },
             {
               "Key": "4",
+              "Figure": "Procedure",
               "X": 210.0,
               "Y": -300.0,
-              "Figure": "Procedure",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "1c386ab2-8b54-4fab-a293-e7ab804a30f1",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
+                    "Value": "Chart panel"
+                  },
+                  "ElementName": {
                     "Value": "Chart panel"
                   },
                   "LogLevel": {
@@ -190,17 +190,21 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
                   {
                     "Id": "72d89173-8cf6-4712-b10c-85abbbd9a858",
                     "IsVisible": true,
+                    "FullTitle": "TimeFrameCandle__00-05-00",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -223,6 +227,7 @@
                       "Timeframe3Color": -5592406,
                       "MaxVolumeColor": -65536,
                       "ClusterLineColor": -5592406,
+                      "ClusterSeparatorLineColor": 0,
                       "ClusterTextColor": -13421773,
                       "ClusterColor": -7829368,
                       "ClusterMaxColor": -65536,
@@ -240,6 +245,7 @@
                   {
                     "Id": "47bfc5fd-0c06-4bbb-9188-a6ab573ba2d6",
                     "IsVisible": true,
+                    "FullTitle": "Trades for order",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -306,16 +312,16 @@
             },
             {
               "Key": "5",
-              "X": -48.2421196966374,
-              "Y": -214.448882176979,
               "Figure": "Procedure",
+              "X": -48.24212,
+              "Y": -214.44888,
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "b7e8a396-0405-46a3-b52f-41cc1a503d5a",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Candle -> Цена открытия"
+                    "Value": "OpenPrice"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -342,16 +348,16 @@
             },
             {
               "Key": "6",
+              "Figure": "Procedure",
               "X": -50.0,
               "Y": -160.0,
-              "Figure": "Procedure",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "43cdead1-1c56-42e5-89ad-0fd43e4f81b1",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Candle -> Цена закрытия"
+                    "Value": "ClosePrice"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -378,16 +384,16 @@
             },
             {
               "Key": "8",
+              "Figure": "Procedure",
               "X": -280.0,
               "Y": -90.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "5d17c01d-2360-405c-b20e-d0a3d2cc6612",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "1.0"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -423,16 +429,16 @@
             },
             {
               "Key": "10",
+              "Figure": "Procedure",
               "X": 220.0,
               "Y": -110.0,
-              "Figure": "Procedure",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "6b93cc5a-b3cd-4906-8c63-fc4e7a7c090c",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Покупка"
+                    "Value": "Buy"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -446,15 +452,23 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
                   "Direction": {
                     "Value": "Buy"
                   },
                   "IsMarket": {
                     "Value": true
                   },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
                   "ZeroAsMarket": {
                     "Value": false
                   },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
                   "ClientCode": {},
                   "BrokerCode": {},
                   "ConditionalSettings": {},
@@ -464,23 +478,22 @@
                   "IsMargin": {},
                   "IsMarketMaker": {},
                   "IsManual": {},
-                  "TimeInForce": {},
-                  "ExpiryDate": {}
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "11",
+              "Figure": "Procedure",
               "X": -150.0,
               "Y": 220.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "d209822e-de20-4636-98bf-a37d17abc253",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "1.0"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -516,9 +529,9 @@
             },
             {
               "Key": "12",
+              "Figure": "Procedure",
               "X": -150.0,
               "Y": 280.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "ef4b16bc-8231-40a3-b065-ef89d337c683",
@@ -555,15 +568,18 @@
             },
             {
               "Key": "13",
+              "Figure": "Procedure",
               "X": 220.0,
               "Y": -40.0,
-              "Figure": "Procedure",
               "TypeId": "b4344dc8-e328-439b-b9e0-9e02f5cae85d",
               "Settings": {
                 "Id": "e385800b-6f00-46dd-a45f-4fa9bba9f344",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
+                    "Value": "Trades for order"
+                  },
+                  "ElementName": {
                     "Value": "Trades for order"
                   },
                   "LogLevel": {
@@ -583,15 +599,18 @@
             },
             {
               "Key": "15",
+              "Figure": "Procedure",
               "X": 220.0,
               "Y": 30.0,
-              "Figure": "Procedure",
               "TypeId": "b4344dc8-e328-439b-b9e0-9e02f5cae85d",
               "Settings": {
                 "Id": "c30599e2-ef88-48f9-a356-ca8d3b049c0a",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
+                    "Value": "Trades for order"
+                  },
+                  "ElementName": {
                     "Value": "Trades for order"
                   },
                   "LogLevel": {
@@ -611,9 +630,9 @@
             },
             {
               "Key": "7",
+              "Figure": "Procedure",
               "X": -20.0,
               "Y": -70.0,
-              "Figure": "Procedure",
               "TypeId": "f0edcbdf-41cb-442b-896c-332dac3caae3",
               "Settings": {
                 "Id": "c8ab3ad6-0547-4fe2-b539-5efaeaafb0b0",
@@ -636,22 +655,23 @@
                   },
                   "Expression": {
                     "Value": "a - b"
-                  }
+                  },
+                  "Validation": {}
                 }
               }
             },
             {
               "Key": "16",
+              "Figure": "Procedure",
               "X": 240.0,
               "Y": 130.0,
-              "Figure": "Procedure",
               "TypeId": "ded60960-7595-461d-997f-8f6287adec2e",
               "Settings": {
                 "Id": "06333ce8-084f-4d3d-9944-c2d11cb2f0b9",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "И"
+                    "Value": "AND"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -678,9 +698,9 @@
             },
             {
               "Key": "17",
+              "Figure": "Procedure",
               "X": 240.0,
               "Y": 280.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "916e11b8-2b27-4dbd-a07e-068e214b6b49",
@@ -717,9 +737,9 @@
             },
             {
               "Key": "18",
+              "Figure": "Procedure",
               "X": 240.0,
               "Y": 340.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9cad028f-a682-4373-b7d0-abb60fcbff91",
@@ -756,9 +776,9 @@
             },
             {
               "Key": "19",
+              "Figure": "Procedure",
               "X": 240.0,
               "Y": 210.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "0beed370-0403-4cc9-b939-384d4eee0839",
@@ -795,9 +815,9 @@
             },
             {
               "Key": "9",
-              "X": -41.2865895987292,
-              "Y": 12.7651010213563,
               "Figure": "Procedure",
+              "X": -41.28659,
+              "Y": 12.765101,
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "ed6cda4d-dc7f-47e1-95f5-d3ef063c0e2e",
@@ -836,16 +856,16 @@
             },
             {
               "Key": "14",
+              "Figure": "Procedure",
               "X": -150.0,
               "Y": 130.0,
-              "Figure": "Procedure",
               "TypeId": "7712ff8b-0270-49fa-9663-196a9a03bfe8",
               "Settings": {
                 "Id": "e473dbe0-f49d-44ef-b3c4-3bc6da6ace28",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Тейк 3% Стоп 2%"
+                    "Value": "Take 3.0% Stop 2.0%"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -886,11 +906,14 @@
                   "IsTrailingStopLoss": {
                     "Value": false
                   },
-                  "WaitAllTrades": {
-                    "Value": false
+                  "StopLossTimeOut": {
+                    "Value": "00:00:00"
                   },
                   "UseMarketOrders": {
                     "Value": true
+                  },
+                  "UseServer": {
+                    "Value": false
                   }
                 }
               }

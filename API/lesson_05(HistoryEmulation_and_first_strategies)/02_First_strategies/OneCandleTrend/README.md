@@ -11,7 +11,7 @@ This strategy is designed to capitalize on the momentum within each trading cand
 The constructor initializes the strategy with a specific `CandleSeries`, which defines the security and the timeframe for which the strategy should receive and process candle data.
 
 ```csharp
-public OneCandleTrend(CandleSeries candleSeries)
+public OneCandleTrendStrategy(CandleSeries candleSeries)
 {
     _candleSeries = candleSeries;
 }

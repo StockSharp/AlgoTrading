@@ -1,10 +1,10 @@
 ﻿{
-  "Id": "844c0f0a-99d2-4f55-8567-e8a3b4877f9c",
+  "Id": "ac823f46-bb55-46dd-9ccb-f49a2f45bac1",
   "Content": {
     "Type": "Schema",
     "Value": {
       "Version": "1.0",
-      "Type": "Regular",
+      "Type": "Independent",
       "Scheme": {
         "SchemaVersion": 1,
         "Category": "",
@@ -40,20 +40,19 @@
                   "Value": 1.0
                 }
               }
-            }
+            },
+            "10a1078b-df68-48d8-bba3-27b9693ebb39Value": {}
           },
           "TypeId": "36ad1ed3-5250-4e30-bf3f-2ab5d844c837",
-          "Type": "Independent",
-          "Revision": 80,
-          "PublishedId": 0
+          "Type": "Independent"
         },
         "Model": {
           "Nodes": [
             {
               "Key": "14",
+              "Figure": "None",
               "X": 260.0,
               "Y": -240.0,
-              "Figure": "None",
               "TypeId": "7162155b-ecaa-4248-84ff-b1046e753562",
               "Settings": {
                 "Id": "6ccf6058-0f04-4076-8de1-ae8c14bac119",
@@ -85,9 +84,9 @@
             },
             {
               "Key": "13",
+              "Figure": "None",
               "X": -10.0,
               "Y": 60.0,
-              "Figure": "None",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "efa1ee68-064b-4406-be5f-02a581991c70",
@@ -124,16 +123,16 @@
             },
             {
               "Key": "12",
+              "Figure": "None",
               "X": -10.0,
               "Y": -10.0,
-              "Figure": "None",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "9ab5918b-4bf7-4ba0-9754-51dc0eb859f7",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "1"
+                    "Value": "1.0"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -169,9 +168,9 @@
             },
             {
               "Key": "11",
+              "Figure": "None",
               "X": 240.0,
               "Y": -40.0,
-              "Figure": "None",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "18b2422b-f0fc-4296-ad48-abe1a14c9ae1",
@@ -192,15 +191,23 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
                   "Direction": {
                     "Value": "Sell"
                   },
                   "IsMarket": {
                     "Value": false
                   },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
                   "ZeroAsMarket": {
                     "Value": false
                   },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
                   "ClientCode": {},
                   "BrokerCode": {},
                   "ConditionalSettings": {},
@@ -210,16 +217,15 @@
                   "IsMargin": {},
                   "IsMarketMaker": {},
                   "IsManual": {},
-                  "TimeInForce": {},
-                  "ExpiryDate": {}
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "10",
+              "Figure": "None",
               "X": 240.0,
               "Y": -150.0,
-              "Figure": "None",
               "TypeId": "953961cd-a9ba-4afe-ac38-e8b61f84b3be",
               "Settings": {
                 "Id": "f7497893-efa7-44d9-b63a-1998d4da30f1",
@@ -240,15 +246,23 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
+                  "OnlineOnly": {
+                    "Value": true
+                  },
                   "Direction": {
                     "Value": "Buy"
                   },
                   "IsMarket": {
                     "Value": false
                   },
+                  "PosCondition": {
+                    "Value": "NoCondition"
+                  },
                   "ZeroAsMarket": {
                     "Value": false
                   },
+                  "TimeInForce": {},
+                  "ExpiryDate": {},
                   "ClientCode": {},
                   "BrokerCode": {},
                   "ConditionalSettings": {},
@@ -258,16 +272,15 @@
                   "IsMargin": {},
                   "IsMarketMaker": {},
                   "IsManual": {},
-                  "TimeInForce": {},
-                  "ExpiryDate": {}
+                  "Slippage": {}
                 }
               }
             },
             {
               "Key": "9",
+              "Figure": "None",
               "X": -20.0,
               "Y": -120.0,
-              "Figure": "None",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "aa4b9c8b-a392-40fe-864b-19307c33844e",
@@ -306,9 +319,9 @@
             },
             {
               "Key": "8",
+              "Figure": "None",
               "X": -60.0,
               "Y": -220.0,
-              "Figure": "None",
               "TypeId": "95ca0e17-8579-48d9-9228-63e50b7d78f6",
               "Settings": {
                 "Id": "cb5f2b08-a651-4b48-b938-a3c893f825c8",
@@ -347,16 +360,16 @@
             },
             {
               "Key": "7",
+              "Figure": "None",
               "X": -330.0,
               "Y": 20.0,
-              "Figure": "None",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "822ff95c-c6b7-4855-bcf8-9f5d529d887b",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "0"
+                    "Value": "0.0"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -392,9 +405,9 @@
             },
             {
               "Key": "6",
+              "Figure": "None",
               "X": -320.0,
               "Y": -240.0,
-              "Figure": "None",
               "TypeId": "835c9ae0-906a-48d6-9e20-a332b6350fd0",
               "Settings": {
                 "Id": "a348b7cb-a2ea-41e4-bb4d-76467b02980f",
@@ -428,16 +441,16 @@
             },
             {
               "Key": "5",
+              "Figure": "None",
               "X": -200.0,
               "Y": -320.0,
-              "Figure": "None",
               "TypeId": "35c046c4-1b0f-4074-ac08-0c70850a8dcf",
               "Settings": {
                 "Id": "ea9845c1-76d3-458e-9a68-4a2796b803bf",
                 "CanAutoName": true,
                 "Parameters": {
                   "Name": {
-                    "Value": "Candle -> Closing price"
+                    "Value": "ClosePrice"
                   },
                   "LogLevel": {
                     "Value": "Inherit"
@@ -464,9 +477,9 @@
             },
             {
               "Key": "4",
+              "Figure": "None",
               "X": 260.0,
               "Y": -340.0,
-              "Figure": "None",
               "TypeId": "1926c40e-aaa3-4948-98e6-fba4b38b580e",
               "Settings": {
                 "Id": "37216eb8-4c93-4902-86b2-ea306002bad2",
@@ -490,17 +503,21 @@
                   "ProcessNullValues": {
                     "Value": false
                   },
-                  "AreaName": {
-                    "Value": "Chart panel"
-                  },
                   "ShowNonFormedIndicators": {
                     "Value": false
+                  },
+                  "ChartGroupId": {
+                    "Value": ""
+                  },
+                  "AreaName": {
+                    "Value": "Chart panel"
                   }
                 },
                 "CandleElements": [
                   {
                     "Id": "fb8b9ad4-db74-41db-9b2b-beac3701853d",
                     "IsVisible": true,
+                    "FullTitle": "TimeFrameCandle__00-05-00",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -523,6 +540,7 @@
                       "Timeframe3Color": -5592406,
                       "MaxVolumeColor": -65536,
                       "ClusterLineColor": -5592406,
+                      "ClusterSeparatorLineColor": 0,
                       "ClusterTextColor": -13421773,
                       "ClusterColor": -7829368,
                       "ClusterMaxColor": -65536,
@@ -540,6 +558,7 @@
                   {
                     "Id": "cbfcdd88-b753-49a4-a002-1acc576bf5bf",
                     "IsVisible": true,
+                    "FullTitle": "Strategy trades",
                     "IsLegend": true,
                     "XAxisId": "X",
                     "YAxisId": "Y",
@@ -593,9 +612,9 @@
             },
             {
               "Key": "3",
+              "Figure": "None",
               "X": -20.0,
               "Y": -450.0,
-              "Figure": "None",
               "TypeId": "3d773273-0cee-4d40-8eef-acded2d07ab8",
               "Settings": {
                 "Id": "d83e445f-fb55-4f45-9aa8-2461f43f53fe",
@@ -624,13 +643,12 @@
                       "type": "StockSharp.Algo.Candles.CandleSeries, StockSharp.Algo",
                       "settings": {
                         "CandleType": "StockSharp.Algo.Candles.TimeFrameCandle, StockSharp.Algo",
-                        "Arg": "00:05:00",
+                        "Arg": "00-05-00",
                         "IsCalcVolumeProfile": false,
                         "BuildCandlesMode": "LoadAndBuild",
                         "AllowBuildFromSmallerTimeFrame": true,
                         "IsRegularTradingHours": false,
-                        "IsFinishedOnly": false,
-                        "FillGaps": false
+                        "IsFinishedOnly": false
                       }
                     }
                   },
@@ -641,7 +659,7 @@
                     "Value": false
                   },
                   "AllowBuildFromSmallerTimeFrame": {
-                    "Value": false
+                    "Value": true
                   },
                   "IsRegularTradingHours": {
                     "Value": false
@@ -656,9 +674,9 @@
             },
             {
               "Key": "2",
+              "Figure": "Procedure",
               "X": -310.0,
               "Y": -450.0,
-              "Figure": "Procedure",
               "TypeId": "95b3aefe-23fd-4cee-b49e-09764f2ab2e2",
               "Settings": {
                 "Id": "10a1078b-df68-48d8-bba3-27b9693ebb39",
@@ -684,6 +702,7 @@
                       "Type": "StockSharp.BusinessEntities.Security, StockSharp.BusinessEntities"
                     }
                   },
+                  "Value": {},
                   "InputAsTrigger": {
                     "Value": false
                   }

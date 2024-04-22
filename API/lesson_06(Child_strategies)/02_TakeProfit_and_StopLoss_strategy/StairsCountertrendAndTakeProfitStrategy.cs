@@ -1,39 +1,33 @@
 ﻿using System;
 using System.Linq;
-
+using StockSharp.Messages;
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Strategies;
-using StockSharp.Algo.Strategies.Quoting;
-using StockSharp.Messages;
+using StockSharp.Algo.Strategies.Protective;
+using StockSharp.BusinessEntities;
 
-namespace Quoting_strategy
+namespace TakeProfit_and_StopLoss_strategy
 {
-	public class StairsCountertrend : Strategy
+	public class StairsCountertrendAndTakeProfitStrategy : Strategy
 	{
 		private readonly Subscription _subscription;
-		public StairsCountertrend(CandleSeries candleSeries)
+		public StairsCountertrendAndTakeProfitStrategy(CandleSeries candleSeries)
 		{
 			_subscription = new(candleSeries);
 		}
 
 		private int _bullLength;
 		private int _bearLength;
-		public int Length { get; set; } = 3;
+		public int Length { get; set; } = 2;
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			// history connector disable filtered market depths for performance reason
-			Connector.SupportFilteredMarketDepth = true;
-
-			// for performance reason use candle data only by default
-			//this.SubscribeMarketDepth(Security);
-			//this.SubscribeLevel1(Security);
-
 			this
 				.WhenCandlesFinished(_subscription)
 				.Do(CandleManager_Processing)
 				.Apply(this);
-			
+
 			Subscribe(_subscription);
 
 			base.OnStarted(time);
@@ -41,8 +35,6 @@ namespace Quoting_strategy
 
 		private void CandleManager_Processing(ICandleMessage candle)
 		{
-			if (candle.State != CandleStates.Finished) return;
-
 			if (candle.OpenPrice < candle.ClosePrice)
 			{
 				_bullLength++;
@@ -57,24 +49,41 @@ namespace Quoting_strategy
 
 			if (_bullLength >= Length && Position >= 0)
 			{
+				var order = this.SellAtMarket(Volume + Math.Abs(Position));
+
+				order
+					.WhenNewTrade(this)
+					.Do(NewOderTrade)
+					.Until(() => order.State == OrderStates.Done)
+					.Apply(this);
+
 				ChildStrategies.ToList().ForEach(s => s.Stop());
-				var strategy = new MarketQuotingStrategy(Sides.Sell, 1)
-				{
-					WaitAllTrades = true
-				};
-				ChildStrategies.Add(strategy);
+				RegisterOrder(order);
 			}
 
 			else
 			if (_bearLength >= Length && Position <= 0)
 			{
+				var order = this.BuyAtMarket(Volume + Math.Abs(Position));
+
+				order
+					.WhenNewTrade(this)
+					.Do(NewOderTrade)
+					.Until(() => order.State == OrderStates.Done)
+					.Apply(this);
+				
 				ChildStrategies.ToList().ForEach(s => s.Stop());
-				var strategy = new MarketQuotingStrategy(Sides.Buy, 1)
-				{
-					WaitAllTrades = true
-				};
-				ChildStrategies.Add(strategy);
+				RegisterOrder(order);
 			}
+		}
+
+		protected void NewOderTrade(MyTrade myTrade)
+		{
+			var takeProfit = new TakeProfitStrategy(myTrade, 0.1)
+			{
+				WaitAllTrades = true,
+			};
+			ChildStrategies.Add(takeProfit);
 		}
 	}
 }

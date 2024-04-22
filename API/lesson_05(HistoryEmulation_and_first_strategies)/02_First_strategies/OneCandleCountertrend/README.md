@@ -11,7 +11,7 @@ This strategy aims to take advantage of small reversals or "countertrend" moves 
 The strategy is initialized with a `CandleSeries`, which specifies the security and timeframe for the candle data it will process.
 
 ```csharp
-public OneCandleCountertrend(CandleSeries candleSeries)
+public OneCandleCountertrendStrategy(CandleSeries candleSeries)
 {
     _candleSeries = candleSeries;
 }

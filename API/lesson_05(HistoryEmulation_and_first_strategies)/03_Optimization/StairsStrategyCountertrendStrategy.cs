@@ -6,12 +6,12 @@ using StockSharp.Messages;
 
 namespace Parallel_testing_terminal
 {
-	public class StairsStrategyCountertrendLength : Strategy
+	public class StairsStrategyCountertrendStrategy : Strategy
 	{
 		private readonly CandleSeries _candleSeries;
 		private readonly StrategyParam<int> _length;
 
-		public StairsStrategyCountertrendLength(CandleSeries candleSeries)
+		public StairsStrategyCountertrendStrategy(CandleSeries candleSeries)
 		{
 			_candleSeries = candleSeries;
 			_length = this.Param(nameof(Length), 3);

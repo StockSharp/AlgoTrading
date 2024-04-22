@@ -65,7 +65,7 @@ The `CreateStrategy` method creates instances of the countertrend strategy with 
 private (Strategy, IStrategyParam[]) CreateStrategy(string name, Color color, int length)
 {
     var candleSeries = CandleSettingsEditor.DataType.ToCandleSeries(_security);
-    var strategy = new StairsStrategyCountertrendLength(candleSeries)
+    var strategy = new StairsStrategyCountertrendStrategy(candleSeries)
     {
         Length = length,
         Security = _security,

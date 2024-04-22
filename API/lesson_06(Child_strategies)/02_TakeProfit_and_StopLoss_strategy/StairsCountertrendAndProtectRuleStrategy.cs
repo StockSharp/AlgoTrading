@@ -7,10 +7,10 @@ using StockSharp.Algo.Strategies;
 
 namespace TakeProfit_and_StopLoss_strategy
 {
-	public class StairsCountertrendAndProtectRule : Strategy
+	public class StairsCountertrendAndProtectRuleStrategy : Strategy
 	{
 		private readonly Subscription _subscription;
-		public StairsCountertrendAndProtectRule(CandleSeries candleSeries)
+		public StairsCountertrendAndProtectRuleStrategy(CandleSeries candleSeries)
 		{
 			_subscription = new(candleSeries);
 		}

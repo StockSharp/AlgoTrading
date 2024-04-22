@@ -7,7 +7,7 @@ using StockSharp.Messages;
 
 namespace MarketRule
 {
-	public class SimpleCandleRules : Strategy
+	public class SimpleCandleRulesStrategy : Strategy
 	{
 		private Subscription _subscription;
 		protected override void OnStarted(DateTimeOffset time)

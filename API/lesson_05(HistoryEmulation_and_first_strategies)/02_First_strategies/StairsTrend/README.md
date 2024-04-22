@@ -11,7 +11,7 @@ This strategy operates by tracking consecutive bullish and bearish candle sequen
 Initializes the strategy with a specific `CandleSeries`, which defines the security and the timeframe for candle data:
 
 ```csharp
-public StairsTrend(CandleSeries candleSeries)
+public StairsTrendStrategy(CandleSeries candleSeries)
 {
     _candleSeries = candleSeries;
 }

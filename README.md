@@ -1,6 +1,6 @@
 # StockSharp Algorithmic Trading and Strategy Designer Repository
 
-Welcome to the official repository for algorithmic trading strategies and the Strategy Designer designed for the StockSharp platform. This repository aims to serve as a comprehensive resource for both new and experienced traders and developers using StockSharp for automated trading and strategy design.
+Welcome to the official repository for algorithmic trading strategies and the [Strategy Designer](https://doc.stocksharp.com/topics/designer.html) designed for the StockSharp platform. This repository aims to serve as a comprehensive resource for both new and experienced traders and developers using StockSharp for automated trading and strategy design.
 
 ## Repository Purpose
 
@@ -12,7 +12,7 @@ This repository provides detailed examples and source code for various algorithm
 
 ## Contributing
 
-We welcome contributions from all users! If you have a strategy, a feature from the Strategy Designer, or a piece of code that offers educational insights or is innovative in terms of trading automation, please consider sharing it with the community. To contribute, follow these steps:
+We welcome contributions from all users! If you have a strategy, a feature from the [Strategy Designer](https://doc.stocksharp.com/topics/designer.html), or a piece of code that offers educational insights or is innovative in terms of trading automation, please consider sharing it with the community. To contribute, follow these steps:
 
 1. **Fork the Repository**: Start by forking the repository to your own GitHub account.
 2. **Clone Your Fork**: Clone the forked repository to your local machine to start working on the changes.

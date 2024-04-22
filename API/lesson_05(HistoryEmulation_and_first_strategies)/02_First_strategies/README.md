@@ -47,11 +47,14 @@ private void Start_Click(object sender, RoutedEventArgs e)
 	_connector = new HistoryEmulationConnector(new[] { _security }, new[] { _portfolio }) { ... };
 	_logManager.Sources.Add(_connector);
 
-	// Initialize and select strategy
-	_strategy = new OneCandleCountertrend(_candleSeries); // Uncomment the desired strategy
-	//_strategy = new OneCandleTrend(_candleSeries);
-	//_strategy = new StairsCountertrend(_candleSeries);
-	//_strategy = new StairsTrend(_candleSeries);
+	//
+	// !!! IMPORTANT !!!
+	// Uncomment the desired strategy
+	//
+	_strategy = new OneCandleCountertrendStrategy(_candleSeries);
+	//_strategy = new OneCandleTrendStrategy(_candleSeries);
+	//_strategy = new StairsCountertrendStrategy(_candleSeries);
+	//_strategy = new StairsTrendStrategy(_candleSeries);
 
 	_logManager.Sources.Add(_strategy);
 	_connector.Connected += Connector_Connected;

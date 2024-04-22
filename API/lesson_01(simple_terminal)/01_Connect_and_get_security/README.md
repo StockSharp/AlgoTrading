@@ -12,12 +12,6 @@ This repository contains a .NET application using the StockSharp trading framewo
 
 ## Getting Started
 
-### Prerequisites
-
-Ensure you have the following installed:
-- .NET 6
-- StockSharp library (available via NuGet)
-
 ### Installation
 
 1. Clone the repository.

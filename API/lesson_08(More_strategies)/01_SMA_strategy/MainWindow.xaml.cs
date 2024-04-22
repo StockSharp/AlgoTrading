@@ -102,8 +102,8 @@ public partial class MainWindow
 		_longMa = new SimpleMovingAverage { Length = 80 };
 
 		// uncomment required strategy
-		_strategy = new SmaStrategyClassic(_candleSeries)
-		//_strategy = new SmaStrategyMartingale(_candleSeries)
+		_strategy = new SmaStrategyClassicStrategy(_candleSeries)
+		//_strategy = new SmaStrategyMartingaleStrategy(_candleSeries)
 		{
 			Security = _security,
 			Connector = _connector,

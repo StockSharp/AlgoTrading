@@ -6,14 +6,14 @@ Welcome to the [Designer](https://stocksharp.com/store/strategy-designer/) Strat
 
 This directory is organized to help you easily find and utilize various trading strategy examples:
 
-- **Schematic Examples**: Contains strategy examples created using the visual design features of Designer. These are primarily `.schematic` files that can be directly imported into Designer.
-- **C# Code Examples**: Includes strategy examples written in C# that demonstrate how to programmatically define trading logic within Designer.
+- **Schematic Examples**: Contains strategy examples created using the [visual design features](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) of Designer. These are primarily `.json` files that can be directly imported into Designer.
+- **C# Code Examples**: Includes strategy examples [written in C#](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html) that demonstrate how to programmatically define trading logic within Designer.
 
 ## Purpose of the Examples
 
 The primary goals of providing these examples are:
 
-- **Educational Tool**: To help new and existing users of the Designer program learn through practical examples.
+- **Educational Tool**: To help new and existing users of the [Designer](https://doc.stocksharp.com/topics/designer.html) program learn through practical examples.
 - **Inspiration for Development**: To inspire users to develop and customize their own strategies by demonstrating various techniques and approaches.
 - **Community Engagement**: To encourage users to share their own examples and improvements, fostering a collaborative and supportive environment.
 
@@ -22,9 +22,9 @@ The primary goals of providing these examples are:
 To make the most out of these examples, follow these steps:
 
 1. **Choose an Example**: Browse the directory and select an example that aligns with your trading interests or learning needs.
-2. **Download and Import**: For schematic examples, download the `.json` file and import it into your Designer program. For C# examples, copy the code or download the file to your project.
+2. **Download and Import**: For schematic examples, download the `.json` file and [import](https://doc.stocksharp.com/topics/designer/export_import/import.html) it into your Designer program. For C# examples, copy the code or download the file to your project.
 3. **Study and Modify**: Examine how the strategies are constructed and consider modifying them to better fit your specific trading criteria or to experiment with new ideas.
-4. **Test and Deploy**: Always test your strategies in a simulated environment provided by Designer before applying them in live trading to ensure they perform as expected.
+4. **Test and Deploy**: Always [test your strategies](https://doc.stocksharp.com/topics/designer/backtesting/getting_started.html) in a simulated environment provided by Designer before applying them in [live trading](https://doc.stocksharp.com/topics/designer/live_execution/getting_started.html) to ensure they perform as expected.
 
 ## Contributing
 

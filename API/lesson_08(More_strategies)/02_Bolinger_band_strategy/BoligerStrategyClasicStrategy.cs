@@ -9,12 +9,12 @@
 	using StockSharp.Algo.Testing;
 	using StockSharp.Messages;
 
-	internal class BoligerStrategyClasic : Strategy
+	internal class BoligerStrategyClasicStrategy : Strategy
 	{
 		private readonly Subscription _subscription;
 
 		public BollingerBands BollingerBands { get; set; }
-		public BoligerStrategyClasic(CandleSeries series)
+		public BoligerStrategyClasicStrategy(CandleSeries series)
 		{
 			_subscription = new(series);
 		}

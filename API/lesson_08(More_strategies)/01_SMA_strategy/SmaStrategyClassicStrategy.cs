@@ -8,55 +8,52 @@ using StockSharp.Messages;
 
 namespace SMA_strategy
 {
-	internal class SmaStrategyMartingale : Strategy
+	public class SmaStrategyClassicStrategy : Strategy
 	{
 		private readonly Subscription _subscription;
 
 		public SimpleMovingAverage LongSma { get; set; }
 		public SimpleMovingAverage ShortSma { get; set; }
 
-		public SmaStrategyMartingale(CandleSeries series)
+		public SmaStrategyClassicStrategy(CandleSeries candleSeries)
 		{
-			_subscription = new(series);
+			_subscription = new(candleSeries);
 		}
-
-		private bool IsRealTime(ICandleMessage candle)
+		bool IsRealTime(ICandleMessage candle)
 		{
 			return (CurrentTime - candle.CloseTime).TotalSeconds < 10;
 		}
 
 		private bool IsHistoryEmulationConnector => Connector is HistoryEmulationConnector;
-
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			this.WhenCandlesFinished(_subscription).Do(ProcessCandle).Apply(this);
+			this
+				.WhenCandlesFinished(_subscription)
+				.Do(CandleManager_Processing)
+				.Apply(this);
+
 			Subscribe(_subscription);
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle)
+		private void CandleManager_Processing(ICandleMessage candle)
 		{
 			var longSmaIsFormedPrev = LongSma.IsFormed;
 			LongSma.Process(candle);
 			ShortSma.Process(candle);
 
 			if (!LongSma.IsFormed || !longSmaIsFormedPrev) return;
-			if (!IsHistoryEmulationConnector && !IsRealTime(candle)) return;
 
-			var isShortLessThenLongCurrent = ShortSma.GetCurrentValue() < LongSma.GetCurrentValue();
-			var isShortLessThenLongPrevios = ShortSma.GetValue(1) < LongSma.GetValue(1);
+			var isShortLessCurrent = ShortSma.GetCurrentValue() < LongSma.GetCurrentValue();
+			var isShortLessPrev = ShortSma.GetValue(1) < LongSma.GetValue(1);
 
-
-			if (isShortLessThenLongPrevios == isShortLessThenLongCurrent) return;
-
-			CancelActiveOrders();
-
-			var direction = isShortLessThenLongCurrent ? Sides.Sell : Sides.Buy;
+			if (isShortLessCurrent == isShortLessPrev) return;
+			if (!IsRealTime(candle) && !IsHistoryEmulationConnector) return;
 
 			var volume = Volume + Math.Abs(Position);
-
-			var price = Security.ShrinkPrice(ShortSma.GetCurrentValue());
-			RegisterOrder(this.CreateOrder(direction, price, volume));
+			RegisterOrder(isShortLessCurrent ?
+				this.SellAtMarket(volume) :
+				this.BuyAtMarket(volume));
 		}
 	}
 }
