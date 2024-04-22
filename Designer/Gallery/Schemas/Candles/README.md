@@ -10,9 +10,8 @@ The diagram showcases the basic setup required to retrieve candle data for a spe
 
 ## Components of the Diagram
 
-- **Candles Data Source**: This is the primary node that fetches candle data from the selected financial instrument. Users can specify the instrument, the data range, and the candle time frame (e.g., 1-minute, 5-minute candles).
-
-- **Chart Cube**: This node is used to plot the fetched data on a graphical interface. It can display various candle attributes such as open, high, low, and close prices.
+- **Candles Data Source**: This is the primary node that fetches [candle data](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) from the selected financial instrument. Users can specify the instrument, the data range, and the candle time frame (e.g., 1-minute, 5-minute candles).
+- **Chart Cube**: This node is used to [plot](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) the fetched data on a graphical interface. It can display various candle attributes such as open, high, low, and close prices.
 
 ## Functionality
 

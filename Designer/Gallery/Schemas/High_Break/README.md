@@ -10,17 +10,17 @@ The "High Break" strategy depicted in the provided JSON schema is designed to ex
 
 The schema provided outlines a sequence of interconnected components designed to capture, analyze, and act upon real-time market data:
 
-1. **Security Node**: Serves as the foundation, specifying the security (e.g., stock, futures) for which the strategy is applied. This node is critical as it determines the data input for the strategy.
+1. **Security Node**: Serves as the foundation, specifying the [security](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (e.g., stock, futures) for which the strategy is applied. This node is critical as it determines the data input for the strategy.
 
-2. **TimeFrameCandle Node**: Processes incoming market data and organizes it into candles based on a specified time frame. This node is vital for strategies that rely on historical price analysis to make trading decisions.
+2. **TimeFrameCandle Node**: Processes incoming market data and organizes it into [candles based](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) on a specified time frame. This node is vital for strategies that rely on historical price analysis to make trading decisions.
 
-3. **Highest Node**: Analyzes the candle data to determine the highest price reached over a specified length of time (e.g., 60 minutes). This value sets a benchmark for identifying significant price breaks.
+3. **Highest Node**: Analyzes the candle data to [determine the highest price](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) reached over a specified length of time (e.g., 60 minutes). This value sets a benchmark for identifying significant price breaks.
 
-4. **Comparison Node**: Compares current prices to the historical high determined by the Highest node. If the current price exceeds this high, it triggers a potential trade signal.
+4. **Comparison Node**: [Compares](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) current prices to the historical high determined by the Highest node. If the current price exceeds this high, it triggers a potential trade signal.
 
-5. **Chart Panel Node**: Visualizes the price data and the strategy's actions, providing a graphical representation of the strategy's operation, which aids in monitoring and adjustments.
+5. **Chart Panel Node**: [Visualizes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) the price data and the strategy's actions, providing a graphical representation of the strategy's operation, which aids in monitoring and adjustments.
 
-6. **Trade Execution Nodes (Buy/Sell)**: Responsible for executing trades when the strategy's conditions are met. For instance, a buy order might be executed when the price breaks above the historical high.
+6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) when the strategy's conditions are met. For instance, a buy order might be executed when the price breaks above the historical high.
 
 ## Workflow
 

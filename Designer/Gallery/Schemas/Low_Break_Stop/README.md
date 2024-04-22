@@ -10,19 +10,19 @@ This example demonstrates a "Low Break with Stop" trading strategy configured wi
 
 The schema provided in the JSON file outlines a detailed workflow for trading based on price action relative to historical lows:
 
-1. **Security Node**: This is the primary input node where the target security is defined, serving as the base for data input related to market prices.
+1. **Security Node**: This is the primary input node where the target [security is defined](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html), serving as the base for data input related to market prices.
 
-2. **TimeFrameCandle Node**: Processes the incoming market data to generate candlesticks, which are crucial for analyzing price movements over specific time intervals.
+2. **TimeFrameCandle Node**: Processes the incoming market data to generate [candlesticks](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), which are crucial for analyzing price movements over specific time intervals.
 
-3. **Lowest Indicator Nodes**: These nodes calculate the lowest price over a given number of periods, identifying potential breakout levels for initiating trades.
+3. **Lowest Indicator Nodes**: These nodes [calculate the lowest price](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) over a given number of periods, identifying potential breakout levels for initiating trades.
 
-4. **Comparison Nodes**: These are used to compare the current price with the historical low, triggering trading signals when the current price falls below the set threshold, indicating a bearish breakout.
+4. **Comparison Nodes**: These are used to [compare](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) the current price with the historical low, triggering trading signals when the current price falls below the set threshold, indicating a bearish breakout.
 
-5. **Chart Panel Node**: Visualizes the trading data and indicators, providing a graphical representation of the strategy’s operations, which is essential for real-time monitoring and strategy adjustments.
+5. **Chart Panel Node**: Visualizes the trading data and indicators, providing a [graphical representation](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) of the strategy’s operations, which is essential for real-time monitoring and strategy adjustments.
 
-6. **Trade Execution Nodes (Buy/Sell)**: Responsible for executing trades based on the strategy's logic. In this case, a sell order may be executed to capitalize on the expected downward price movement.
+6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) based on the strategy's logic. In this case, a sell order may be executed to capitalize on the expected downward price movement.
 
-7. **Stop Order Node**: Implements stop-loss conditions to manage risk effectively. This ensures that trades are exited at a predefined loss threshold to protect against significant adverse movements.
+7. **Stop Order Node**: Implements [stop-loss](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) conditions to manage risk effectively. This ensures that trades are exited at a predefined loss threshold to protect against significant adverse movements.
 
 ## Workflow
 

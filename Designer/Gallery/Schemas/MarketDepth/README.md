@@ -10,15 +10,15 @@ This example illustrates a setup within the StockSharp Strategy Designer that fo
 
 The schema comprises several interconnected components designed to fetch, process, and display market depth information:
 
-1. **Security Node**: This node likely represents the security (e.g., a stock, future, or other financial instrument) for which the market depth will be retrieved. This is a fundamental element as it defines which market or instrument's depth is being analyzed.
+1. **Security Node**: This node likely represents the [security](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) (e.g., a stock, future, or other financial instrument) for which the market depth will be retrieved. This is a fundamental element as it defines which market or instrument's depth is being analyzed.
 
-2. **TimeFrameCandle Node**: This component is configured to handle candle data for the security, aggregated over a specified timeframe (5 minutes in your example). This might be used to correlate changes in market depth with price movements over time.
+2. **TimeFrameCandle Node**: This component is configured to handle [candle data](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) for the security, aggregated over a specified timeframe (5 minutes in your example). This might be used to correlate changes in market depth with price movements over time.
 
-3. **Market Depth Nodes**: These are designed to capture and possibly react to real-time changes in market depth. It includes settings to process incoming market depth data, providing insights into current buy and sell orders.
+3. **Market Depth Nodes**: These are designed to capture and possibly react to real-time changes in [market depth](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book.html). It includes settings to process incoming market depth data, providing insights into current buy and sell orders.
 
-4. **Chart Panel Node**: This element suggests that the market depth and possibly other data (like candlestick charts) are being visualized on a chart. This can help traders or algorithms visualize the market situation better and make informed decisions.
+4. **Chart Panel Node**: This element suggests that the candlestick data are being visualized on a [chart](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html). This can help traders or algorithms visualize the market situation better and make informed decisions.
 
-5. **Market Depth Panel Node**: Specifically focused on displaying the market depth data in a structured format, potentially offering features like highlighting the best bid and ask prices, visualizing the depth of market data, and more.
+5. **Market Depth Panel Node**: Specifically focused on displaying the market depth data in a [special panel](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/market_depths/order_book_panel.html), potentially offering features like highlighting the best bid and ask prices, visualizing the depth of market data, and more.
 
 ## Workflow
 - The **Security Node** outputs data which is likely used as input for both the **TimeFrameCandle Node** and the **Market Depth Node**.

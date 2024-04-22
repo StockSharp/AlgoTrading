@@ -6,12 +6,12 @@ This diagram file illustrates a strategy for creating a composite index from can
 
 ## Strategy Overview
 
-The strategy involves combining price data from multiple securities into a single index. This process typically uses normalization or weighting techniques to ensure that each security contributes proportionally to the final index value.
+The strategy involves combining price data from multiple securities into a single [index](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html). This process typically uses normalization or weighting techniques to ensure that each security contributes proportionally to the final index value.
 
 ## Components of the Diagram
 
-- **Data Collection Nodes**: These nodes are responsible for fetching candle data for each selected security.
-- **Normalization Nodes**: Apply normalization to the candle data to ensure uniform impact on the final index calculation, mitigating effects of varying price scales.
+- **Data Collection Nodes**: These nodes are responsible for fetching [candle data](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) for each selected security.
+- **Normalization Nodes**: Apply normalization to the candle data to ensure uniform impact on the final [index calculation](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/index.html), mitigating effects of varying price scales.
 - **Weighting Nodes**: Assign weights to each security based on predefined criteria such as market capitalization or historical volatility.
 - **Index Calculation Node**: Aggregates the normalized and weighted price data to calculate the final index value.
 

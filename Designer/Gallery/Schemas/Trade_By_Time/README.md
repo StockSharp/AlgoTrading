@@ -10,15 +10,15 @@ This example in the StockSharp Strategy Designer demonstrates a sophisticated se
 
 The schema presented in the JSON file outlines a complex interaction between various nodes that handle time-based data to trigger trading actions:
 
-1. **TimeFrameCandle Node**: This node processes candle data for a specified timeframe. It's essential for strategies that rely on historical price movements to predict future trends.
+1. **TimeFrameCandle Node**: This node processes [candle data](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) for a specified timeframe. It's essential for strategies that rely on historical price movements to predict future trends.
 
-2. **OpenTime and CloseTime Nodes**: These nodes extract the opening and closing times from candle data, which are critical for determining the specific periods during which trading conditions are evaluated.
+2. **OpenTime and CloseTime Nodes**: These nodes [extract](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/converters/converter.html) the opening and closing times from candle data, which are critical for determining the specific periods during which trading conditions are evaluated.
 
-3. **Comparison Nodes (Equals, Greater Than)**: These nodes compare specific times (like 14:00:00 or 15:00:00) to the current time extracted from the candle data. This setup allows the strategy to activate or deactivate based on whether it matches the specified times.
+3. **Comparison Nodes (Equals, Greater Than)**: These nodes [compare](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/comparison.html) specific times (like 14:00:00 or 15:00:00) to the current time extracted from the candle data. This setup allows the strategy to activate or deactivate based on whether it matches the specified times.
 
-4. **Chart Panel Node**: Implements visualization components that likely display trading data and indicators in a comprehensible format, assisting in real-time decision-making and strategy adjustments.
+4. **Chart Panel Node**: Implements [visualization components](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) that likely display trading data and indicators in a comprehensible format, assisting in real-time decision-making and strategy adjustments.
 
-5. **Trading Nodes (Buy, Sell)**: These are activated when certain time conditions are met, allowing the strategy to execute buy or sell orders based on the comparison results and the trading logic defined within the strategy.
+5. **Trading Nodes (Buy, Sell)**: These are activated when certain time conditions are met, allowing the strategy to execute [buy or sell orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) based on the comparison results and the trading logic defined within the strategy.
 
 ## Workflow
 

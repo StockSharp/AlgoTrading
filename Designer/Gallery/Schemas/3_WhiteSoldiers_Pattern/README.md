@@ -8,17 +8,17 @@ This example demonstrates the implementation of a trading strategy in the StockS
 
 ## Description of the Schema
 
-The schema outlines a complex workflow designed to detect the "Three White Soldiers" pattern and execute trades accordingly. Here are the key components and their roles:
+The schema outlines a complex workflow designed to detect the "Three White Soldiers" [pattern](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) and execute trades accordingly. Here are the key components and their roles:
 
-1. **Security Node**: Specifies the security for which the strategy is applied. It acts as the primary data input source, providing market data necessary for the subsequent analysis.
+1. **Security Node**: Specifies the [security](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/variable.html) for which the strategy is applied. It acts as the primary data input source, providing market data necessary for the subsequent analysis.
 
-2. **TimeFrameCandle Node**: Generates candle data for the specified security. This node is crucial as it processes incoming market data into a usable format (candles) that the pattern detection algorithm can analyze.
+2. **TimeFrameCandle Node**: Generates [candle data](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html) for the specified security. This node is crucial as it processes incoming market data into a usable format (candles) that the pattern detection algorithm can analyze.
 
-3. **Pattern Detection Node**: Specifically configured to detect the "Three White Soldiers" pattern. This node analyzes the candle data and triggers an action when the pattern is identified.
+3. **Pattern Detection Node**: Specifically configured to detect the "Three White Soldiers" [pattern](https://doc.stocksharp.com/topics/api/indicators/list_of_indicators/pattern.html) via [indicator](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html). This node analyzes the candle data and triggers an action when the pattern is identified.
 
-4. **Chart Panel Node**: Visualizes the trading data, including candlestick patterns and possibly trades executed by the strategy. This component helps in monitoring the strategy’s performance and understanding how the pattern influences trading decisions.
+4. **Chart Panel Node**: Visualizes the trading data, including candlestick patterns and possibly trades executed by the strategy. This [component](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) helps in monitoring the strategy’s performance and understanding how the pattern influences trading decisions.
 
-5. **Trading Nodes (Buy, Sell)**: These nodes are configured to execute trades when the pattern is detected. The actions can vary based on additional conditions set within the strategy, such as market conditions or other technical indicators.
+5. **Trading Nodes (Buy, Sell)**: These [nodes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) are configured to execute trades when the pattern is detected. The actions can vary based on additional conditions set within the strategy, such as market conditions or other technical indicators.
 
 ## Workflow
 
