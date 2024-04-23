@@ -4,17 +4,7 @@ Welcome to the Designer Video Tutorials Directory. This folder contains links an
 
 ## Overview
 
-The StockSharp YouTube channel offers a series of video tutorials aimed at helping users maximize their use of the Designer tool within the StockSharp platform. This directory serves as a curated list of these videos, providing easy access to educational content.
-
-## Video Tutorials List
-
-Below is a list of available video tutorials for the Designer program, each accompanied by a brief description and a direct link to the video on YouTube:
-
-- **Getting Started with Designer**: Learn how to navigate the interface of Designer and understand its core features. [Watch Now](#)
-- **Building Your First Strategy in Designer**: A step-by-step guide on creating your first trading strategy using the visual tools available in Designer. [Watch Now](#)
-- **Using C# for Strategy Development**: Explore how to use C# in Designer to script more complex trading algorithms. [Watch Now](#)
-- **Debugging and Testing Strategies**: Techniques for testing and debugging your strategies within Designer to ensure optimal performance. [Watch Now](#)
-- **Advanced Features and Tips**: Dive into advanced features of Designer and learn various tips for power users. [Watch Now](#)
+The StockSharp YouTube channel offers a series of video tutorials ([Watch Now](https://www.youtube.com/watch?v=oiJRi5wk8AE&list=PLpwmSw294KYrfM1ALrONIz9MLpRQ1Uwfe)) aimed at helping users maximize their use of the Designer tool within the StockSharp platform. This directory serves as a curated list of these videos, providing easy access to educational content.
 
 ## Using This Directory
 
