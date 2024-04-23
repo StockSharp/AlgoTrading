@@ -4,7 +4,7 @@ Welcome to the Designer Video Tutorials Directory. This folder contains links an
 
 ## Overview
 
-The StockSharp YouTube channel offers a series of video tutorials ([Watch Now](https://www.youtube.com/watch?v=oiJRi5wk8AE&list=PLpwmSw294KYrfM1ALrONIz9MLpRQ1Uwfe)) aimed at helping users maximize their use of the Designer tool within the StockSharp platform. This directory serves as a curated list of these videos, providing easy access to educational content.
+The StockSharp YouTube channel offers a series of video tutorials ([Watch Now](https://www.youtube.com/playlist?list=PLpwmSw294KYrfM1ALrONIz9MLpRQ1Uwfe)) aimed at helping users maximize their use of the Designer tool within the StockSharp platform. This directory serves as a curated list of these videos, providing easy access to educational content.
 
 ## Using This Directory
 
