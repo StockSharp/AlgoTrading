@@ -15,7 +15,7 @@ The "Bullish8020" strategy is crafted for [StockSharp Designer](https://doc.stoc
 
 ### Trade Execution
 
-- **Order Type**: Market [Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html)
+- **Order Type**: Market [Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
 - **Entry**: Buys when the 'Bullish8020' [pattern](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/indicator.html) is confirmed, signaling a potential upward movement.
 - **Exit Strategy**: 
   - **Stop Loss**: Set at 0.5% below the entry point to limit potential losses.

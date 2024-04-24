@@ -18,8 +18,8 @@ The "Low Break with Calculation" strategy utilizes a combination of high and low
 
 ### Trade Execution
 
-- **Entry Signal**: A [buy](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) order is initiated when the current price crosses [below]() the lowest point calculated by the "Lowest 45" indicator.
-- **Exit Signal**: A [sell](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) order is triggered when subsequent price action does not support the continuation of the downtrend, defined by specific calculation parameters.
+- **Entry Signal**: A [buy](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) order is initiated when the current price crosses [below]() the lowest point calculated by the "Lowest 45" indicator.
+- **Exit Signal**: A [sell](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) order is triggered when subsequent price action does not support the continuation of the downtrend, defined by specific calculation parameters.
 
 ### Visualization
 

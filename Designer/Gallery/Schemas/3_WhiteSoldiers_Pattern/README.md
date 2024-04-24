@@ -18,7 +18,7 @@ The schema outlines a complex workflow designed to detect the "Three White Soldi
 
 4. **Chart Panel Node**: Visualizes the trading data, including candlestick patterns and possibly trades executed by the strategy. This [component](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) helps in monitoring the strategy’s performance and understanding how the pattern influences trading decisions.
 
-5. **Trading Nodes (Buy, Sell)**: These [nodes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) are configured to execute trades when the pattern is detected. The actions can vary based on additional conditions set within the strategy, such as market conditions or other technical indicators.
+5. **Trading Nodes (Buy, Sell)**: These [nodes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) are configured to execute trades when the pattern is detected. The actions can vary based on additional conditions set within the strategy, such as market conditions or other technical indicators.
 
 ## Workflow
 

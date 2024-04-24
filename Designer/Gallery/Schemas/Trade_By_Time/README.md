@@ -18,7 +18,7 @@ The schema presented in the JSON file outlines a complex interaction between var
 
 4. **Chart Panel Node**: Implements [visualization components](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) that likely display trading data and indicators in a comprehensible format, assisting in real-time decision-making and strategy adjustments.
 
-5. **Trading Nodes (Buy, Sell)**: These are activated when certain time conditions are met, allowing the strategy to execute [buy or sell orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) based on the comparison results and the trading logic defined within the strategy.
+5. **Trading Nodes (Buy, Sell)**: These are activated when certain time conditions are met, allowing the strategy to execute [buy or sell orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) based on the comparison results and the trading logic defined within the strategy.
 
 ## Workflow
 

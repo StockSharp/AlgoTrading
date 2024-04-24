@@ -20,7 +20,7 @@ The schema provided outlines a sequence of interconnected components designed to
 
 5. **Chart Panel Node**: [Visualizes](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) the price data and the strategy's actions, providing a graphical representation of the strategy's operation, which aids in monitoring and adjustments.
 
-6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) when the strategy's conditions are met. For instance, a buy order might be executed when the price breaks above the historical high.
+6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) when the strategy's conditions are met. For instance, a buy order might be executed when the price breaks above the historical high.
 
 ## Workflow
 

@@ -20,7 +20,7 @@ The schema provided in the JSON file outlines a detailed workflow for trading ba
 
 5. **Chart Panel Node**: Visualizes the trading data and indicators, providing a [graphical representation](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/chart.html) of the strategy’s operations, which is essential for real-time monitoring and strategy adjustments.
 
-6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) based on the strategy's logic. In this case, a sell order may be executed to capitalize on the expected downward price movement.
+6. **Trade Execution Nodes (Buy/Sell)**: Responsible for [executing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) based on the strategy's logic. In this case, a sell order may be executed to capitalize on the expected downward price movement.
 
 7. **Stop Order Node**: Implements [stop-loss](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/protect_position.html) conditions to manage risk effectively. This ensures that trades are exited at a predefined loss threshold to protect against significant adverse movements.
 

@@ -18,7 +18,7 @@ The "3 Black Crows Trend" strategy in the [Strategy Designer](https://doc.stocks
 
 ### Trade Execution
 
-- **Order Type**: Market [Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html)
+- **Order Type**: Market [Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
 - **Entry**: Initiates a sell order upon confirmation of the "3 Black Crows" pattern.
 - **Exit Strategy**: 
   - **Take Profit**: Set at 3% above the entry price.
@@ -28,7 +28,7 @@ The "3 Black Crows Trend" strategy in the [Strategy Designer](https://doc.stocks
 ### Trading Conditions
 
 - **Frequency**: Operates on a [daily timeframe](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/data_sources/candles.html), processing new candle formations at the end of each trading day.
-- **Market Order**: Ensures rapid execution by [placing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) at prevailing market prices.
+- **Market Order**: Ensures rapid execution by [placing trades](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) at prevailing market prices.
 
 ## Implementation Details
 

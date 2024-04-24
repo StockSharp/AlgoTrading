@@ -13,8 +13,8 @@ The strategy incorporates two moving averages:
 
 ## Entry and Exit Rules
 
-- **Buy Signal**: The strategy generates a [buy](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) signal when the short-term moving average [crosses](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) above the long-term moving average, suggesting an upward trend.
-- **Sell Signal**: Conversely, a [sell](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) signal is issued when the short-term moving average [crosses](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) below the long-term moving average, indicating a potential downward trend.
+- **Buy Signal**: The strategy generates a [buy](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) signal when the short-term moving average [crosses](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) above the long-term moving average, suggesting an upward trend.
+- **Sell Signal**: Conversely, a [sell](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) signal is issued when the short-term moving average [crosses](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/common/crossing.html) below the long-term moving average, indicating a potential downward trend.
 
 ## Diagram Details
 

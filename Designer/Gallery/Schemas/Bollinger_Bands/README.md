@@ -18,7 +18,7 @@ The "Bollinger Bands" strategy is designed for [StockSharp Designer](https://doc
 
 ### Trade Execution
 
-- **Order Type**: [Market orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) are used for both entry and exit to ensure quick execution.
+- **Order Type**: [Market orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) are used for both entry and exit to ensure quick execution.
 - **Position Management**: Positions are opened based on the crossing signals and closed either on a crossing in the opposite direction or based on predefined stop-loss or take-profit conditions.
 
 ### Risk Management

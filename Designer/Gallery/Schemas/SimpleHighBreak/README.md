@@ -16,7 +16,7 @@ The "SimpleHighBreak" strategy is designed to capitalize on price breakouts over
 
 ### Trade Execution
 
-- **Order Type**: Market [Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html)
+- **Order Type**: Market [Order](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html)
 - **Entry**: A buy order is placed when the price exceeds the 15-period high.
 - **Exit Strategy**: The position is closed based on specific conditions such as a set time frame or a reversal pattern, which are dynamically managed by the strategy.
 

@@ -17,7 +17,7 @@ The "StDevStrategy" is engineered for [StockSharp Designer](https://doc.stocksha
 
 ### Trade Execution
 
-- **Order Type**: Executes trades using [market orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/trading/register_order.html) to ensure rapid response to signal changes.
+- **Order Type**: Executes trades using [market orders](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer/elements/positions/modify.html) to ensure rapid response to signal changes.
 - **Entry and Exit**:
   - **Buy**: Triggered when price action suggests a rebound from oversold conditions.
   - **Sell**: Initiated when price action indicates potential downturn from overbought conditions.
