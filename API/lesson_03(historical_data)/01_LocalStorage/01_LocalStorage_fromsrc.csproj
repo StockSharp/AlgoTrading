@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Ecng.Compilation.Roslyn" Version="1.*" />
-    <ProjectReference Include="$(RepoAppsPath)Xaml\Xaml.csproj" />
+    <ProjectReference Include="$(RepoGitHubPath)Algo\Algo.csproj" />
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="1.*" />
   </ItemGroup>
 </Project>
