@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common_net.props" />
   <PropertyGroup>
+    <RootNamespace>Console_example</RootNamespace>
+    <AssemblyName>Console_example</AssemblyName>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
