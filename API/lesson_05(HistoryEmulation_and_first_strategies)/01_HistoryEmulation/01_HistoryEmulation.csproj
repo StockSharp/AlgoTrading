@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="..\..\common.props" />
+  <Import Project="..\..\common_netwindows.props" />
   <PropertyGroup>
     <ProjectGuid>{C461EF60-0589-4309-BE01-C73D41873C05}</ProjectGuid>
     <OutputType>WinExe</OutputType>
