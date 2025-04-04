@@ -117,11 +117,11 @@ namespace StockSharp.Samples.Strategies
                 // Morning Star pattern detected - enter long position
                 BuyMarket(Volume);
                 
-                this.AddInfoLog($"Morning Star pattern detected. Entering long position at {candle.ClosePrice}");
+                LogInfo($"Morning Star pattern detected. Entering long position at {candle.ClosePrice}");
                 
                 // Set stop-loss
                 var stopPrice = _secondCandle.LowPrice * (1 - StopLossPercent / 100);
-                this.AddInfoLog($"Setting stop-loss at {stopPrice}");
+                LogInfo($"Setting stop-loss at {stopPrice}");
                 
                 // Setup trailing stop
                 StartProtection(
@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
             if (Position > 0 && candle.HighPrice > _secondCandle.HighPrice)
             {
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit signal: Price above previous high. Closing position at {candle.ClosePrice}");
+                LogInfo($"Exit signal: Price above previous high. Closing position at {candle.ClosePrice}");
             }
         }
 
@@ -164,7 +164,7 @@ namespace StockSharp.Samples.Strategies
             var thirdClosesHighEnough = third.ClosePrice > firstMidpoint;
             
             // Log pattern analysis
-            this.AddInfoLog($"Pattern analysis: First bearish={firstIsBearish}, Second small={secondIsSmall}, " +
+            LogInfo($"Pattern analysis: First bearish={firstIsBearish}, Second small={secondIsSmall}, " +
                            $"Third bullish={thirdIsBullish}, Third above midpoint={thirdClosesHighEnough}");
             
             // Return true if all conditions are met

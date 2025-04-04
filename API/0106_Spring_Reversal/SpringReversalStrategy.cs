@@ -152,7 +152,7 @@ namespace StockSharp.Samples.Strategies
                     var volume = Volume + Math.Abs(Position);
                     BuyMarket(volume);
                     
-                    this.AddInfoLog($"Spring Reversal detected. Support level: {_lastLowestValue}, Low: {candle.LowPrice}. Long entry at {candle.ClosePrice}");
+                    LogInfo($"Spring Reversal detected. Support level: {_lastLowestValue}, Low: {candle.LowPrice}. Long entry at {candle.ClosePrice}");
                 }
             }
             
@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
                     SellMarket(Math.Abs(Position));
                     _springDetected = false;
                     
-                    this.AddInfoLog($"Exit signal: Price above MA. Closed long position at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price above MA. Closed long position at {candle.ClosePrice}");
                 }
             }
         }

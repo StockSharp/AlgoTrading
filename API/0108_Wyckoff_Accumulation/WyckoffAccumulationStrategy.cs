@@ -184,7 +184,7 @@ namespace StockSharp.Samples.Strategies
                     if (!isBullish && highVolume && candle.ClosePrice < lowest)
                     {
                         _currentPhase = WyckoffPhase.PhaseA;
-                        this.AddInfoLog($"Wyckoff Phase A detected: Selling climax at {candle.ClosePrice}");
+                        LogInfo($"Wyckoff Phase A detected: Selling climax at {candle.ClosePrice}");
                     }
                     break;
                     
@@ -193,7 +193,7 @@ namespace StockSharp.Samples.Strategies
                     if (isBullish && candle.ClosePrice > ma)
                     {
                         _currentPhase = WyckoffPhase.PhaseB;
-                        this.AddInfoLog($"Entering Wyckoff Phase B: Automatic rally at {candle.ClosePrice}");
+                        LogInfo($"Entering Wyckoff Phase B: Automatic rally at {candle.ClosePrice}");
                         _sidewaysCount = 0;
                     }
                     break;
@@ -208,7 +208,7 @@ namespace StockSharp.Samples.Strategies
                         if (_sidewaysCount >= 5)
                         {
                             _currentPhase = WyckoffPhase.PhaseC;
-                            this.AddInfoLog($"Entering Wyckoff Phase C: Accumulation complete after {_sidewaysCount} sideways candles");
+                            LogInfo($"Entering Wyckoff Phase C: Accumulation complete after {_sidewaysCount} sideways candles");
                         }
                     }
                     else
@@ -223,7 +223,7 @@ namespace StockSharp.Samples.Strategies
                     {
                         _springLow = candle.LowPrice;
                         _currentPhase = WyckoffPhase.PhaseD;
-                        this.AddInfoLog($"Entering Wyckoff Phase D: Spring detected at {_springLow}");
+                        LogInfo($"Entering Wyckoff Phase D: Spring detected at {_springLow}");
                     }
                     break;
                     
@@ -232,7 +232,7 @@ namespace StockSharp.Samples.Strategies
                     if (isBullish && highVolume && priceAboveMA)
                     {
                         _currentPhase = WyckoffPhase.PhaseE;
-                        this.AddInfoLog($"Entering Wyckoff Phase E: Sign of strength detected at {candle.ClosePrice}");
+                        LogInfo($"Entering Wyckoff Phase E: Sign of strength detected at {candle.ClosePrice}");
                     }
                     break;
                     
@@ -245,7 +245,7 @@ namespace StockSharp.Samples.Strategies
                         BuyMarket(volume);
                         
                         _positionOpened = true;
-                        this.AddInfoLog($"Wyckoff Accumulation complete. Long entry at {candle.ClosePrice}");
+                        LogInfo($"Wyckoff Accumulation complete. Long entry at {candle.ClosePrice}");
                     }
                     break;
             }
@@ -260,7 +260,7 @@ namespace StockSharp.Samples.Strategies
                     _positionOpened = false;
                     _currentPhase = WyckoffPhase.None; // Reset the pattern detection
                     
-                    this.AddInfoLog($"Exit signal: Price broke above range high ({_lastRangeHigh}). Closed long position at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price broke above range high ({_lastRangeHigh}). Closed long position at {candle.ClosePrice}");
                 }
                 // Exit also if price falls back below MA (failed pattern)
                 else if (priceBelowMA)
@@ -269,7 +269,7 @@ namespace StockSharp.Samples.Strategies
                     _positionOpened = false;
                     _currentPhase = WyckoffPhase.None; // Reset the pattern detection
                     
-                    this.AddInfoLog($"Exit signal: Price fell below MA. Pattern may have failed. Closed long position at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price fell below MA. Pattern may have failed. Closed long position at {candle.ClosePrice}");
                 }
             }
         }

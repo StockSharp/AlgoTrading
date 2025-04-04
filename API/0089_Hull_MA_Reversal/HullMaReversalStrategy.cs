@@ -144,7 +144,7 @@ namespace StockSharp.Samples.Strategies
             if (directionChangedUp && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Hull MA direction changed up ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
+                LogInfo($"Long entry: Hull MA direction changed up ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
                 
                 // Set stop-loss based on ATR
                 decimal stopPrice = candle.ClosePrice - (atrValue * AtrMultiplier.Value);
@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
             else if (directionChangedDown && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Hull MA direction changed down ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
+                LogInfo($"Short entry: Hull MA direction changed down ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
                 
                 // Set stop-loss based on ATR
                 decimal stopPrice = candle.ClosePrice + (atrValue * AtrMultiplier.Value);

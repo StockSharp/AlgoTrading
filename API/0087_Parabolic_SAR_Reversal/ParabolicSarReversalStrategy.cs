@@ -139,13 +139,13 @@ namespace StockSharp.Samples.Strategies
             if (sarSwitchedBelow && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: SAR ({sarValue}) switched below price ({candle.ClosePrice})");
+                LogInfo($"Long entry: SAR ({sarValue}) switched below price ({candle.ClosePrice})");
             }
             // Short entry: SAR switched from below to above price
             else if (sarSwitchedAbove && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: SAR ({sarValue}) switched above price ({candle.ClosePrice})");
+                LogInfo($"Short entry: SAR ({sarValue}) switched above price ({candle.ClosePrice})");
             }
             
             // Update the previous state

@@ -145,13 +145,13 @@ namespace StockSharp.Samples.Strategies
             if (bullishReversal && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Heikin-Ashi reversal from bearish to bullish");
+                LogInfo($"Long entry: Heikin-Ashi reversal from bearish to bullish");
             }
             // Short entry: Bearish reversal
             else if (bearishReversal && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Heikin-Ashi reversal from bullish to bearish");
+                LogInfo($"Short entry: Heikin-Ashi reversal from bullish to bearish");
             }
             
             // Update previous state

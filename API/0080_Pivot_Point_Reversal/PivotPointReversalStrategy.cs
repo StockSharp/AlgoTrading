@@ -132,8 +132,8 @@ namespace StockSharp.Samples.Strategies
             // Calculate pivot points for the new day
             CalculatePivotPoints();
             
-            this.AddInfoLog($"New daily candle: High={_prevHigh}, Low={_prevLow}, Close={_prevClose}");
-            this.AddInfoLog($"Pivot Points: P={_pivot}, R1={_r1}, R2={_r2}, S1={_s1}, S2={_s2}");
+            LogInfo($"New daily candle: High={_prevHigh}, Low={_prevLow}, Close={_prevClose}");
+            LogInfo($"Pivot Points: P={_pivot}, R1={_r1}, R2={_r2}, S1={_s1}, S2={_s2}");
         }
 
         private void CalculatePivotPoints()
@@ -198,7 +198,7 @@ namespace StockSharp.Samples.Strategies
                     else
                         BuyMarket(Math.Abs(Position));
                     
-                    this.AddInfoLog($"New day started, closing position at {candle.ClosePrice}");
+                    LogInfo($"New day started, closing position at {candle.ClosePrice}");
                 }
                 _newDayStarted = false;
             }
@@ -221,7 +221,7 @@ namespace StockSharp.Samples.Strategies
                 // Bullish candle bouncing off S1 - go long
                 CancelActiveOrders();
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry at {candle.ClosePrice} on S1 bounce at {_s1}");
+                LogInfo($"Long entry at {candle.ClosePrice} on S1 bounce at {_s1}");
             }
             
             // Check if price is near R1 and bearish
@@ -231,19 +231,19 @@ namespace StockSharp.Samples.Strategies
                 // Bearish candle bouncing off R1 - go short
                 CancelActiveOrders();
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry at {candle.ClosePrice} on R1 bounce at {_r1}");
+                LogInfo($"Short entry at {candle.ClosePrice} on R1 bounce at {_r1}");
             }
             
             // Exit logic - target pivot point
             if (Position > 0 && candle.ClosePrice > _pivot)
             {
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Long exit at {candle.ClosePrice} (price above pivot {_pivot})");
+                LogInfo($"Long exit at {candle.ClosePrice} (price above pivot {_pivot})");
             }
             else if (Position < 0 && candle.ClosePrice < _pivot)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Short exit at {candle.ClosePrice} (price below pivot {_pivot})");
+                LogInfo($"Short exit at {candle.ClosePrice} (price below pivot {_pivot})");
             }
         }
     }

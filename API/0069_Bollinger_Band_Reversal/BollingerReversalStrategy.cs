@@ -157,7 +157,7 @@ namespace StockSharp.Samples.Strategies
                 // Enter long position
                 BuyMarket(Volume + Math.Abs(Position));
                 
-                this.AddInfoLog($"Long entry: Price {candle.ClosePrice} below lower band {lowerBand} with bullish candle");
+                LogInfo($"Long entry: Price {candle.ClosePrice} below lower band {lowerBand} with bullish candle");
             }
             // Short entry: Price above upper band and bearish candle
             else if (candle.ClosePrice > upperBand && isBearish && Position >= 0)
@@ -168,19 +168,19 @@ namespace StockSharp.Samples.Strategies
                 // Enter short position
                 SellMarket(Volume + Math.Abs(Position));
                 
-                this.AddInfoLog($"Short entry: Price {candle.ClosePrice} above upper band {upperBand} with bearish candle");
+                LogInfo($"Short entry: Price {candle.ClosePrice} above upper band {upperBand} with bearish candle");
             }
             // Long exit: Price above middle band
             else if (candle.ClosePrice > middleBand && Position > 0)
             {
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Long exit: Price {candle.ClosePrice} above middle band {middleBand}");
+                LogInfo($"Long exit: Price {candle.ClosePrice} above middle band {middleBand}");
             }
             // Short exit: Price below middle band
             else if (candle.ClosePrice < middleBand && Position < 0)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Short exit: Price {candle.ClosePrice} below middle band {middleBand}");
+                LogInfo($"Short exit: Price {candle.ClosePrice} below middle band {middleBand}");
             }
         }
     }

@@ -223,7 +223,7 @@ namespace StockSharp.Samples.Strategies
                 _inPosition = true;
                 _positionSide = Sides.Buy;
                 
-                this.AddInfoLog($"Bullish Stochastic Failure Swing detected. %K values: {_prevPrevKValue:F2} -> {_prevKValue:F2} -> {kValue:F2}. Long entry at {candle.ClosePrice}");
+                LogInfo($"Bullish Stochastic Failure Swing detected. %K values: {_prevPrevKValue:F2} -> {_prevKValue:F2} -> {kValue:F2}. Long entry at {candle.ClosePrice}");
             }
             else if (isBearishFailureSwing && !_inPosition)
             {
@@ -234,7 +234,7 @@ namespace StockSharp.Samples.Strategies
                 _inPosition = true;
                 _positionSide = Sides.Sell;
                 
-                this.AddInfoLog($"Bearish Stochastic Failure Swing detected. %K values: {_prevPrevKValue:F2} -> {_prevKValue:F2} -> {kValue:F2}. Short entry at {candle.ClosePrice}");
+                LogInfo($"Bearish Stochastic Failure Swing detected. %K values: {_prevPrevKValue:F2} -> {_prevKValue:F2} -> {kValue:F2}. Short entry at {candle.ClosePrice}");
             }
             
             // Exit conditions
@@ -247,7 +247,7 @@ namespace StockSharp.Samples.Strategies
                     _inPosition = false;
                     _positionSide = Sides.None;
                     
-                    this.AddInfoLog($"Exit signal for long position: Stochastic %K ({kValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
+                    LogInfo($"Exit signal for long position: Stochastic %K ({kValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
                 }
                 // For short positions: exit when Stochastic crosses below 50
                 else if (_positionSide == Sides.Sell && kValue < 50)
@@ -256,7 +256,7 @@ namespace StockSharp.Samples.Strategies
                     _inPosition = false;
                     _positionSide = Sides.None;
                     
-                    this.AddInfoLog($"Exit signal for short position: Stochastic %K ({kValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
+                    LogInfo($"Exit signal for short position: Stochastic %K ({kValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
                 }
             }
             

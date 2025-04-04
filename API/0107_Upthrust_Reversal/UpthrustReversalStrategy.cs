@@ -152,7 +152,7 @@ namespace StockSharp.Samples.Strategies
                     var volume = Volume + Math.Abs(Position);
                     SellMarket(volume);
                     
-                    this.AddInfoLog($"Upthrust Reversal detected. Resistance level: {_lastHighestValue}, High: {candle.HighPrice}. Short entry at {candle.ClosePrice}");
+                    LogInfo($"Upthrust Reversal detected. Resistance level: {_lastHighestValue}, High: {candle.HighPrice}. Short entry at {candle.ClosePrice}");
                 }
             }
             
@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
                     BuyMarket(Math.Abs(Position));
                     _upthrustDetected = false;
                     
-                    this.AddInfoLog($"Exit signal: Price below MA. Closed short position at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price below MA. Closed short position at {candle.ClosePrice}");
                 }
             }
         }

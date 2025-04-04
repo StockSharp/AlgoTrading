@@ -221,25 +221,25 @@ namespace StockSharp.Samples.Strategies
             if (oversoldHookUp && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Stochastic %K upward hook from oversold ({_prevK} -> {kValue})");
+                LogInfo($"Long entry: Stochastic %K upward hook from oversold ({_prevK} -> {kValue})");
             }
             // Short entry: %K forms a downward hook from overbought
             else if (overboughtHookDown && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Stochastic %K downward hook from overbought ({_prevK} -> {kValue})");
+                LogInfo($"Short entry: Stochastic %K downward hook from overbought ({_prevK} -> {kValue})");
             }
             
             // Exit conditions based on Stochastic reaching neutral zone
             if (kValue > ExitLevel && Position < 0)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit short: Stochastic %K reached neutral zone ({kValue} > {ExitLevel})");
+                LogInfo($"Exit short: Stochastic %K reached neutral zone ({kValue} > {ExitLevel})");
             }
             else if (kValue < ExitLevel && Position > 0)
             {
                 SellMarket(Position);
-                this.AddInfoLog($"Exit long: Stochastic %K reached neutral zone ({kValue} < {ExitLevel})");
+                LogInfo($"Exit long: Stochastic %K reached neutral zone ({kValue} < {ExitLevel})");
             }
             
             // Update previous K value

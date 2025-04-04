@@ -215,7 +215,7 @@ namespace StockSharp.Samples.Strategies
                     _swingHigh = middleHigh;
                     swingHighFound = true;
                     _trendIsUp = false; // After a swing high, the trend is down
-                    this.AddInfoLog($"New swing high found: {_swingHigh}");
+                    LogInfo($"New swing high found: {_swingHigh}");
                 }
 
                 if (isLower && middleLow < _swingLow)
@@ -223,7 +223,7 @@ namespace StockSharp.Samples.Strategies
                     _swingLow = middleLow;
                     swingLowFound = true;
                     _trendIsUp = true; // After a swing low, the trend is up
-                    this.AddInfoLog($"New swing low found: {_swingLow}");
+                    LogInfo($"New swing low found: {_swingLow}");
                 }
             }
 
@@ -272,7 +272,7 @@ namespace StockSharp.Samples.Strategies
                 if (Math.Abs(currentPrice - levelPrice) <= buffer)
                 {
                     // We're at a Fibonacci level - check if we should enter a position
-                    this.AddInfoLog($"Price {currentPrice} is near Fibonacci {fibLevel*100}% level {levelPrice} (buffer: {buffer})");
+                    LogInfo($"Price {currentPrice} is near Fibonacci {fibLevel*100}% level {levelPrice} (buffer: {buffer})");
 
                     // Look for long signal at 61.8% or 78.6% retracement in uptrend with bullish candle
                     if (_trendIsUp && (Math.Abs(fibLevel - 0.618m) < 0.001m || Math.Abs(fibLevel - 0.786m) < 0.001m) && 
@@ -281,7 +281,7 @@ namespace StockSharp.Samples.Strategies
                         // Enter long position
                         CancelActiveOrders();
                         BuyMarket(Volume + Math.Abs(Position));
-                        this.AddInfoLog($"Long entry at {currentPrice} near {fibLevel*100}% retracement level");
+                        LogInfo($"Long entry at {currentPrice} near {fibLevel*100}% retracement level");
                         break;
                     }
                     // Look for short signal at 61.8% or 78.6% retracement in downtrend with bearish candle
@@ -291,7 +291,7 @@ namespace StockSharp.Samples.Strategies
                         // Enter short position
                         CancelActiveOrders();
                         SellMarket(Volume + Math.Abs(Position));
-                        this.AddInfoLog($"Short entry at {currentPrice} near {fibLevel*100}% retracement level");
+                        LogInfo($"Short entry at {currentPrice} near {fibLevel*100}% retracement level");
                         break;
                     }
                 }
@@ -305,12 +305,12 @@ namespace StockSharp.Samples.Strategies
             if (Position > 0 && currentPrice >= centralLevel)
             {
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Long exit at {currentPrice}, reached 50% level {centralLevel}");
+                LogInfo($"Long exit at {currentPrice}, reached 50% level {centralLevel}");
             }
             else if (Position < 0 && currentPrice <= centralLevel)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Short exit at {currentPrice}, reached 50% level {centralLevel}");
+                LogInfo($"Short exit at {currentPrice}, reached 50% level {centralLevel}");
             }
         }
     }

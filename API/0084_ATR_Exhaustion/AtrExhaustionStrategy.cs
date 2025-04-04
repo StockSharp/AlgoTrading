@@ -188,13 +188,13 @@ namespace StockSharp.Samples.Strategies
             if (isAtrSpike && isBullishCandle && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: ATR spike ({atrValue} > {atrAvgValue * AtrMultiplier}) with bullish candle");
+                LogInfo($"Long entry: ATR spike ({atrValue} > {atrAvgValue * AtrMultiplier}) with bullish candle");
             }
             // Short entry: ATR spike with bearish candle
             else if (isAtrSpike && isBearishCandle && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: ATR spike ({atrValue} > {atrAvgValue * AtrMultiplier}) with bearish candle");
+                LogInfo($"Short entry: ATR spike ({atrValue} > {atrAvgValue * AtrMultiplier}) with bearish candle");
             }
         }
     }

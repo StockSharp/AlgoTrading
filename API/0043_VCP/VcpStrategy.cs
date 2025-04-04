@@ -135,8 +135,8 @@ namespace StockSharp.Samples.Strategies
             var isContraction = currentCandleRange < _prevCandleRange;
             
             // Log current values
-            this.AddInfoLog($"Candle Range: {currentCandleRange}, Previous Range: {_prevCandleRange}, Contraction: {isContraction}");
-            this.AddInfoLog($"Highest: {highestValue}, Lowest: {lowestValue}, MA: {maValue}");
+            LogInfo($"Candle Range: {currentCandleRange}, Previous Range: {_prevCandleRange}, Contraction: {isContraction}");
+            LogInfo($"Highest: {highestValue}, Lowest: {lowestValue}, MA: {maValue}");
 
             // Trading logic:
             if (isContraction)
@@ -144,13 +144,13 @@ namespace StockSharp.Samples.Strategies
                 // Long: Contraction and breakout above highest high
                 if (candle.ClosePrice > highestValue && Position <= 0)
                 {
-                    this.AddInfoLog($"Buy Signal: Contraction and Price ({candle.ClosePrice}) > Highest ({highestValue})");
+                    LogInfo($"Buy Signal: Contraction and Price ({candle.ClosePrice}) > Highest ({highestValue})");
                     BuyMarket(Volume + Math.Abs(Position));
                 }
                 // Short: Contraction and breakout below lowest low
                 else if (candle.ClosePrice < lowestValue && Position >= 0)
                 {
-                    this.AddInfoLog($"Sell Signal: Contraction and Price ({candle.ClosePrice}) < Lowest ({lowestValue})");
+                    LogInfo($"Sell Signal: Contraction and Price ({candle.ClosePrice}) < Lowest ({lowestValue})");
                     SellMarket(Volume + Math.Abs(Position));
                 }
             }
@@ -158,12 +158,12 @@ namespace StockSharp.Samples.Strategies
             // Exit logic: Price crosses MA
             if (Position > 0 && candle.ClosePrice < maValue)
             {
-                this.AddInfoLog($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
+                LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && candle.ClosePrice > maValue)
             {
-                this.AddInfoLog($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
+                LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
                 BuyMarket(Math.Abs(Position));
             }
 

@@ -127,13 +127,13 @@ namespace StockSharp.Samples.Strategies
             if (candle.ClosePrice < vwap && isBullishCandle && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Close {candle.ClosePrice}, VWAP {vwap}, Bullish Candle");
+                LogInfo($"Long entry: Close {candle.ClosePrice}, VWAP {vwap}, Bullish Candle");
             }
             // Short entry: Price above VWAP and bearish candle
             else if (candle.ClosePrice > vwap && isBearishCandle && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Close {candle.ClosePrice}, VWAP {vwap}, Bearish Candle");
+                LogInfo($"Short entry: Close {candle.ClosePrice}, VWAP {vwap}, Bearish Candle");
             }
 
             // Update previous VWAP value

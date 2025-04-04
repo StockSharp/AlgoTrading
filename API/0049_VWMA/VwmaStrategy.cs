@@ -124,33 +124,33 @@ namespace StockSharp.Samples.Strategies
             var crossoverDown = _previousClosePrice >= _previousVWMA && candle.ClosePrice < vwmaPrice;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, VWMA: {vwmaPrice}");
-            this.AddInfoLog($"Previous Close: {_previousClosePrice}, Previous VWMA: {_previousVWMA}");
-            this.AddInfoLog($"Crossover Up: {crossoverUp}, Crossover Down: {crossoverDown}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, VWMA: {vwmaPrice}");
+            LogInfo($"Previous Close: {_previousClosePrice}, Previous VWMA: {_previousVWMA}");
+            LogInfo($"Crossover Up: {crossoverUp}, Crossover Down: {crossoverDown}");
 
             // Trading logic:
             // Long: Price crosses above VWMA
             if (crossoverUp && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Price crossing above VWMA ({candle.ClosePrice} > {vwmaPrice})");
+                LogInfo($"Buy Signal: Price crossing above VWMA ({candle.ClosePrice} > {vwmaPrice})");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: Price crosses below VWMA
             else if (crossoverDown && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Price crossing below VWMA ({candle.ClosePrice} < {vwmaPrice})");
+                LogInfo($"Sell Signal: Price crossing below VWMA ({candle.ClosePrice} < {vwmaPrice})");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: Price crosses back through VWMA
             if (Position > 0 && crossoverDown)
             {
-                this.AddInfoLog($"Exit Long: Price crossing below VWMA ({candle.ClosePrice} < {vwmaPrice})");
+                LogInfo($"Exit Long: Price crossing below VWMA ({candle.ClosePrice} < {vwmaPrice})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && crossoverUp)
             {
-                this.AddInfoLog($"Exit Short: Price crossing above VWMA ({candle.ClosePrice} > {vwmaPrice})");
+                LogInfo($"Exit Short: Price crossing above VWMA ({candle.ClosePrice} > {vwmaPrice})");
                 BuyMarket(Math.Abs(Position));
             }
 

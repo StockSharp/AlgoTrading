@@ -160,32 +160,32 @@ namespace StockSharp.Samples.Strategies
                 return;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, OBV: {obvValue}, OBV MA: {obvMAValue}");
-            this.AddInfoLog($"Highest OBV: {highestValue}, Lowest OBV: {lowestValue}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, OBV: {obvValue}, OBV MA: {obvMAValue}");
+            LogInfo($"Highest OBV: {highestValue}, Lowest OBV: {lowestValue}");
 
             // Trading logic:
             // Long: OBV breaks above highest level
             if (obvValue > highestValue && obvValue > _highestOBV && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: OBV ({obvValue}) breaking above highest level ({highestValue})");
+                LogInfo($"Buy Signal: OBV ({obvValue}) breaking above highest level ({highestValue})");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: OBV breaks below lowest level
             else if (obvValue < lowestValue && obvValue < _lowestOBV && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: OBV ({obvValue}) breaking below lowest level ({lowestValue})");
+                LogInfo($"Sell Signal: OBV ({obvValue}) breaking below lowest level ({lowestValue})");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: OBV crosses below/above its moving average
             if (Position > 0 && obvValue < obvMAValue)
             {
-                this.AddInfoLog($"Exit Long: OBV ({obvValue}) < OBV MA ({obvMAValue})");
+                LogInfo($"Exit Long: OBV ({obvValue}) < OBV MA ({obvMAValue})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && obvValue > obvMAValue)
             {
-                this.AddInfoLog($"Exit Short: OBV ({obvValue}) > OBV MA ({obvMAValue})");
+                LogInfo($"Exit Short: OBV ({obvValue}) > OBV MA ({obvMAValue})");
                 BuyMarket(Math.Abs(Position));
             }
         }

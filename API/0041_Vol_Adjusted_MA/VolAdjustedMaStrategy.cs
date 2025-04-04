@@ -141,8 +141,8 @@ namespace StockSharp.Samples.Strategies
             var adjustedLowerBand = maValue - ATRMultiplier * atrValue;
 
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, MA: {maValue}, ATR: {atrValue}");
-            this.AddInfoLog($"Upper Band: {adjustedUpperBand}, Lower Band: {adjustedLowerBand}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, ATR: {atrValue}");
+            LogInfo($"Upper Band: {adjustedUpperBand}, Lower Band: {adjustedLowerBand}");
 
             // Store for next comparison if needed
             _prevAdjustedUpperBand = adjustedUpperBand;
@@ -152,25 +152,25 @@ namespace StockSharp.Samples.Strategies
             // Long: Price > MA + k*ATR
             if (candle.ClosePrice > adjustedUpperBand && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Price ({candle.ClosePrice}) > Upper Band ({adjustedUpperBand})");
+                LogInfo($"Buy Signal: Price ({candle.ClosePrice}) > Upper Band ({adjustedUpperBand})");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: Price < MA - k*ATR
             else if (candle.ClosePrice < adjustedLowerBand && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Price ({candle.ClosePrice}) < Lower Band ({adjustedLowerBand})");
+                LogInfo($"Sell Signal: Price ({candle.ClosePrice}) < Lower Band ({adjustedLowerBand})");
                 SellMarket(Volume + Math.Abs(Position));
             }
             // Exit Long: Price < MA
             else if (candle.ClosePrice < maValue && Position > 0)
             {
-                this.AddInfoLog($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
+                LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
                 SellMarket(Math.Abs(Position));
             }
             // Exit Short: Price > MA
             else if (candle.ClosePrice > maValue && Position < 0)
             {
-                this.AddInfoLog($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
+                LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
                 BuyMarket(Math.Abs(Position));
             }
         }

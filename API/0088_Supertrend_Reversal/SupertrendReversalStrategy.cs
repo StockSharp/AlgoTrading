@@ -197,13 +197,13 @@ namespace StockSharp.Samples.Strategies
             if (supertrendSwitchedBelow && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Supertrend switched below price");
+                LogInfo($"Long entry: Supertrend switched below price");
             }
             // Short entry: Supertrend switched from below to above price
             else if (supertrendSwitchedAbove && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Supertrend switched above price");
+                LogInfo($"Short entry: Supertrend switched above price");
             }
             
             // Update the previous state and values

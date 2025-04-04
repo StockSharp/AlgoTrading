@@ -144,14 +144,14 @@ namespace StockSharp.Samples.Strategies
             }
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, Cumulative Delta: {_cumulativeDelta}");
-            this.AddInfoLog($"Highest Delta: {_highestDelta}, Lowest Delta: {_lowestDelta}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, Cumulative Delta: {_cumulativeDelta}");
+            LogInfo($"Highest Delta: {_highestDelta}, Lowest Delta: {_lowestDelta}");
 
             // Trading logic:
             // Long: Cumulative Delta breaks above highest
             if (_cumulativeDelta > _highestDelta && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Cumulative Delta ({_cumulativeDelta}) breaking above highest ({_highestDelta})");
+                LogInfo($"Buy Signal: Cumulative Delta ({_cumulativeDelta}) breaking above highest ({_highestDelta})");
                 BuyMarket(Volume + Math.Abs(Position));
                 
                 // Update highest after breakout
@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
             // Short: Cumulative Delta breaks below lowest
             else if (_cumulativeDelta < _lowestDelta && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Cumulative Delta ({_cumulativeDelta}) breaking below lowest ({_lowestDelta})");
+                LogInfo($"Sell Signal: Cumulative Delta ({_cumulativeDelta}) breaking below lowest ({_lowestDelta})");
                 SellMarket(Volume + Math.Abs(Position));
                 
                 // Update lowest after breakout
@@ -170,12 +170,12 @@ namespace StockSharp.Samples.Strategies
             // Exit logic: Cumulative Delta crosses zero
             if (Position > 0 && _cumulativeDelta < 0)
             {
-                this.AddInfoLog($"Exit Long: Cumulative Delta ({_cumulativeDelta}) < 0");
+                LogInfo($"Exit Long: Cumulative Delta ({_cumulativeDelta}) < 0");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && _cumulativeDelta > 0)
             {
-                this.AddInfoLog($"Exit Short: Cumulative Delta ({_cumulativeDelta}) > 0");
+                LogInfo($"Exit Short: Cumulative Delta ({_cumulativeDelta}) > 0");
                 BuyMarket(Math.Abs(Position));
             }
         }

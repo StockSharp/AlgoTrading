@@ -112,7 +112,7 @@ namespace StockSharp.Samples.Strategies
                     {
                         CancelActiveOrders();
                         BuyMarket(Volume + Math.Abs(Position));
-                        this.AddInfoLog($"Long entry at {candle.ClosePrice} on breakout above inside bar high {_insideCandle.HighPrice}");
+                        LogInfo($"Long entry at {candle.ClosePrice} on breakout above inside bar high {_insideCandle.HighPrice}");
                         
                         // Set stop-loss below inside bar's low
                         StartProtection(
@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
                     {
                         CancelActiveOrders();
                         SellMarket(Volume + Math.Abs(Position));
-                        this.AddInfoLog($"Short entry at {candle.ClosePrice} on breakout below inside bar low {_insideCandle.LowPrice}");
+                        LogInfo($"Short entry at {candle.ClosePrice} on breakout below inside bar low {_insideCandle.LowPrice}");
                         
                         // Set stop-loss above inside bar's high
                         StartProtection(
@@ -148,7 +148,7 @@ namespace StockSharp.Samples.Strategies
             {
                 _insideCandle = candle;
                 _waitingForBreakout = true;
-                this.AddInfoLog($"Inside bar detected: High {candle.HighPrice} < Previous High {_previousCandle.HighPrice}, " +
+                LogInfo($"Inside bar detected: High {candle.HighPrice} < Previous High {_previousCandle.HighPrice}, " +
                                $"Low {candle.LowPrice} > Previous Low {_previousCandle.LowPrice}");
             }
 
@@ -162,13 +162,13 @@ namespace StockSharp.Samples.Strategies
                 if (Position > 0 && candle.LowPrice < _previousCandle.LowPrice)
                 {
                     SellMarket(Math.Abs(Position));
-                    this.AddInfoLog($"Long exit at {candle.ClosePrice} (price below previous candle low {_previousCandle.LowPrice})");
+                    LogInfo($"Long exit at {candle.ClosePrice} (price below previous candle low {_previousCandle.LowPrice})");
                 }
                 // For short positions, exit if the price rises above the previous candle's high
                 else if (Position < 0 && candle.HighPrice > _previousCandle.HighPrice)
                 {
                     BuyMarket(Math.Abs(Position));
-                    this.AddInfoLog($"Short exit at {candle.ClosePrice} (price above previous candle high {_previousCandle.HighPrice})");
+                    LogInfo($"Short exit at {candle.ClosePrice} (price above previous candle high {_previousCandle.HighPrice})");
                 }
             }
         }

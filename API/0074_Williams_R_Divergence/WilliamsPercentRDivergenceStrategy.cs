@@ -166,8 +166,8 @@ namespace StockSharp.Samples.Strategies
             var bearishDivergence = _currentPrice > _previousPrice && _currentWilliamsR < _previousWilliamsR;
 
             // Log divergence information
-            this.AddInfoLog($"Price: {_previousPrice} -> {_currentPrice}, Williams %R: {_previousWilliamsR} -> {_currentWilliamsR}");
-            this.AddInfoLog($"Bullish divergence: {bullishDivergence}, Bearish divergence: {bearishDivergence}");
+            LogInfo($"Price: {_previousPrice} -> {_currentPrice}, Williams %R: {_previousWilliamsR} -> {_currentWilliamsR}");
+            LogInfo($"Bullish divergence: {bullishDivergence}, Bearish divergence: {bearishDivergence}");
 
             // Trading decisions based on divergence and current Williams %R levels
             if (bullishDivergence && _currentWilliamsR < -80 && Position <= 0)
@@ -175,14 +175,14 @@ namespace StockSharp.Samples.Strategies
                 // Bullish divergence with oversold condition - go long
                 CancelActiveOrders();
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Bullish divergence detected with Williams %R oversold ({_currentWilliamsR})");
+                LogInfo($"Long entry: Bullish divergence detected with Williams %R oversold ({_currentWilliamsR})");
             }
             else if (bearishDivergence && _currentWilliamsR > -20 && Position >= 0)
             {
                 // Bearish divergence with overbought condition - go short
                 CancelActiveOrders();
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Bearish divergence detected with Williams %R overbought ({_currentWilliamsR})");
+                LogInfo($"Short entry: Bearish divergence detected with Williams %R overbought ({_currentWilliamsR})");
             }
 
             // Exit logic based on Williams %R levels
@@ -190,13 +190,13 @@ namespace StockSharp.Samples.Strategies
             {
                 // Exit long position when Williams %R reaches overbought level
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Long exit: Williams %R reached overbought level ({_currentWilliamsR})");
+                LogInfo($"Long exit: Williams %R reached overbought level ({_currentWilliamsR})");
             }
             else if (Position < 0 && _currentWilliamsR < -80)
             {
                 // Exit short position when Williams %R reaches oversold level
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Short exit: Williams %R reached oversold level ({_currentWilliamsR})");
+                LogInfo($"Short exit: Williams %R reached oversold level ({_currentWilliamsR})");
             }
         }
     }

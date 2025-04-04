@@ -145,7 +145,7 @@ namespace StockSharp.Samples.Strategies
             if (_barCounter == 1 || _barCounter % LookbackPeriod == 1)
             {
                 _nBarsAgoPrice = candle.ClosePrice;
-                this.AddInfoLog($"Storing reference price: {_nBarsAgoPrice} at bar {_barCounter}");
+                LogInfo($"Storing reference price: {_nBarsAgoPrice} at bar {_barCounter}");
                 return;
             }
 
@@ -158,8 +158,8 @@ namespace StockSharp.Samples.Strategies
             var absMovement = Math.Abs(priceMovement);
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, Reference Price: {_nBarsAgoPrice}, Movement: {priceMovement}");
-            this.AddInfoLog($"ATR: {atrValue}, MA: {maValue}, Absolute Movement: {absMovement}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, Reference Price: {_nBarsAgoPrice}, Movement: {priceMovement}");
+            LogInfo($"ATR: {atrValue}, MA: {maValue}, Absolute Movement: {absMovement}");
 
             // Check if price movement exceeds ATR
             if (absMovement >= atrValue)
@@ -167,13 +167,13 @@ namespace StockSharp.Samples.Strategies
                 // Long signal: Price moved up by at least ATR
                 if (priceMovement > 0 && Position <= 0)
                 {
-                    this.AddInfoLog($"Buy Signal: Price movement ({priceMovement}) > ATR ({atrValue})");
+                    LogInfo($"Buy Signal: Price movement ({priceMovement}) > ATR ({atrValue})");
                     BuyMarket(Volume + Math.Abs(Position));
                 }
                 // Short signal: Price moved down by at least ATR
                 else if (priceMovement < 0 && Position >= 0)
                 {
-                    this.AddInfoLog($"Sell Signal: Price movement ({priceMovement}) < -ATR ({-atrValue})");
+                    LogInfo($"Sell Signal: Price movement ({priceMovement}) < -ATR ({-atrValue})");
                     SellMarket(Volume + Math.Abs(Position));
                 }
             }
@@ -181,12 +181,12 @@ namespace StockSharp.Samples.Strategies
             // Exit logic: Price crosses MA
             if (Position > 0 && candle.ClosePrice < maValue)
             {
-                this.AddInfoLog($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
+                LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && candle.ClosePrice > maValue)
             {
-                this.AddInfoLog($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
+                LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
                 BuyMarket(Math.Abs(Position));
             }
         }

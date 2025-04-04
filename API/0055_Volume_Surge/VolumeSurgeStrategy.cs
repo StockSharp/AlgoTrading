@@ -148,9 +148,9 @@ namespace StockSharp.Samples.Strategies
             var isVolumeSurge = volumeSurgeRatio >= VolumeSurgeMultiplier;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Volume: {candle.TotalVolume}");
-            this.AddInfoLog($"Volume MA: {volumeMAValue}, Volume Surge Ratio: {volumeSurgeRatio:P2}");
-            this.AddInfoLog($"Is Volume Surge: {isVolumeSurge}, Threshold: {VolumeSurgeMultiplier}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Volume: {candle.TotalVolume}");
+            LogInfo($"Volume MA: {volumeMAValue}, Volume Surge Ratio: {volumeSurgeRatio:P2}");
+            LogInfo($"Is Volume Surge: {isVolumeSurge}, Threshold: {VolumeSurgeMultiplier}");
 
             // Trading logic:
             // Check for volume surge
@@ -159,13 +159,13 @@ namespace StockSharp.Samples.Strategies
                 // Long: Volume surge and price above MA
                 if (candle.ClosePrice > maValue && Position <= 0)
                 {
-                    this.AddInfoLog($"Buy Signal: Volume Surge ({volumeSurgeRatio:P2}) and Price ({candle.ClosePrice}) > MA ({maValue})");
+                    LogInfo($"Buy Signal: Volume Surge ({volumeSurgeRatio:P2}) and Price ({candle.ClosePrice}) > MA ({maValue})");
                     BuyMarket(Volume + Math.Abs(Position));
                 }
                 // Short: Volume surge and price below MA
                 else if (candle.ClosePrice < maValue && Position >= 0)
                 {
-                    this.AddInfoLog($"Sell Signal: Volume Surge ({volumeSurgeRatio:P2}) and Price ({candle.ClosePrice}) < MA ({maValue})");
+                    LogInfo($"Sell Signal: Volume Surge ({volumeSurgeRatio:P2}) and Price ({candle.ClosePrice}) < MA ({maValue})");
                     SellMarket(Volume + Math.Abs(Position));
                 }
             }
@@ -175,12 +175,12 @@ namespace StockSharp.Samples.Strategies
             {
                 if (Position > 0)
                 {
-                    this.AddInfoLog($"Exit Long: Volume ({candle.TotalVolume}) < Average Volume ({volumeMAValue})");
+                    LogInfo($"Exit Long: Volume ({candle.TotalVolume}) < Average Volume ({volumeMAValue})");
                     SellMarket(Math.Abs(Position));
                 }
                 else if (Position < 0)
                 {
-                    this.AddInfoLog($"Exit Short: Volume ({candle.TotalVolume}) < Average Volume ({volumeMAValue})");
+                    LogInfo($"Exit Short: Volume ({candle.TotalVolume}) < Average Volume ({volumeMAValue})");
                     BuyMarket(Math.Abs(Position));
                 }
             }

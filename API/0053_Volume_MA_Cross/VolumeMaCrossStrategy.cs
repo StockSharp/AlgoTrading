@@ -163,33 +163,33 @@ namespace StockSharp.Samples.Strategies
             var crossBelow = _previousFastVolumeMA >= _previousSlowVolumeMA && fastVolumeMAValue < slowVolumeMAValue;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, Price MA: {priceMAValue}");
-            this.AddInfoLog($"Fast Volume MA: {fastVolumeMAValue}, Slow Volume MA: {slowVolumeMAValue}");
-            this.AddInfoLog($"Cross Above: {crossAbove}, Cross Below: {crossBelow}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, Price MA: {priceMAValue}");
+            LogInfo($"Fast Volume MA: {fastVolumeMAValue}, Slow Volume MA: {slowVolumeMAValue}");
+            LogInfo($"Cross Above: {crossAbove}, Cross Below: {crossBelow}");
 
             // Trading logic:
             // Long: Fast volume MA crosses above slow volume MA
             if (crossAbove && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Fast Volume MA crossing above Slow Volume MA");
+                LogInfo($"Buy Signal: Fast Volume MA crossing above Slow Volume MA");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: Fast volume MA crosses below slow volume MA
             else if (crossBelow && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Fast Volume MA crossing below Slow Volume MA");
+                LogInfo($"Sell Signal: Fast Volume MA crossing below Slow Volume MA");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: Reverse crossover
             if (Position > 0 && crossBelow)
             {
-                this.AddInfoLog($"Exit Long: Fast Volume MA crossing below Slow Volume MA");
+                LogInfo($"Exit Long: Fast Volume MA crossing below Slow Volume MA");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && crossAbove)
             {
-                this.AddInfoLog($"Exit Short: Fast Volume MA crossing above Slow Volume MA");
+                LogInfo($"Exit Short: Fast Volume MA crossing above Slow Volume MA");
                 BuyMarket(Math.Abs(Position));
             }
 

@@ -144,13 +144,13 @@ namespace StockSharp.Samples.Strategies
             if (bouncedFromLower && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Price bounced from lower Donchian band ({lowerBand})");
+                LogInfo($"Long entry: Price bounced from lower Donchian band ({lowerBand})");
             }
             // Short entry: Price bounced from upper band
             else if (bouncedFromUpper && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Price bounced from upper Donchian band ({upperBand})");
+                LogInfo($"Short entry: Price bounced from upper Donchian band ({upperBand})");
             }
             
             // Store current close price for next candle comparison

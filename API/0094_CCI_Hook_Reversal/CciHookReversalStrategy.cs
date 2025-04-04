@@ -170,25 +170,25 @@ namespace StockSharp.Samples.Strategies
             if (oversoldHookUp && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: CCI upward hook from oversold ({_prevCci} -> {cciValue})");
+                LogInfo($"Long entry: CCI upward hook from oversold ({_prevCci} -> {cciValue})");
             }
             // Short entry: CCI forms a downward hook from overbought
             else if (overboughtHookDown && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: CCI downward hook from overbought ({_prevCci} -> {cciValue})");
+                LogInfo($"Short entry: CCI downward hook from overbought ({_prevCci} -> {cciValue})");
             }
             
             // Exit conditions based on CCI crossing zero line
             if (cciValue > 0 && Position < 0)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit short: CCI crossed above zero ({cciValue})");
+                LogInfo($"Exit short: CCI crossed above zero ({cciValue})");
             }
             else if (cciValue < 0 && Position > 0)
             {
                 SellMarket(Position);
-                this.AddInfoLog($"Exit long: CCI crossed below zero ({cciValue})");
+                LogInfo($"Exit long: CCI crossed below zero ({cciValue})");
             }
             
             // Update previous CCI value

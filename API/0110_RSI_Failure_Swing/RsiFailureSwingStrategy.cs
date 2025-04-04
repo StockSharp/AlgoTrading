@@ -186,7 +186,7 @@ namespace StockSharp.Samples.Strategies
                 _inPosition = true;
                 _positionSide = Sides.Buy;
                 
-                this.AddInfoLog($"Bullish RSI Failure Swing detected. RSI values: {_prevPrevRsiValue:F2} -> {_prevRsiValue:F2} -> {rsiValue:F2}. Long entry at {candle.ClosePrice}");
+                LogInfo($"Bullish RSI Failure Swing detected. RSI values: {_prevPrevRsiValue:F2} -> {_prevRsiValue:F2} -> {rsiValue:F2}. Long entry at {candle.ClosePrice}");
             }
             else if (isBearishFailureSwing && !_inPosition)
             {
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
                 _inPosition = true;
                 _positionSide = Sides.Sell;
                 
-                this.AddInfoLog($"Bearish RSI Failure Swing detected. RSI values: {_prevPrevRsiValue:F2} -> {_prevRsiValue:F2} -> {rsiValue:F2}. Short entry at {candle.ClosePrice}");
+                LogInfo($"Bearish RSI Failure Swing detected. RSI values: {_prevPrevRsiValue:F2} -> {_prevRsiValue:F2} -> {rsiValue:F2}. Short entry at {candle.ClosePrice}");
             }
             
             // Exit conditions
@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
                     _inPosition = false;
                     _positionSide = Sides.None;
                     
-                    this.AddInfoLog($"Exit signal for long position: RSI ({rsiValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
+                    LogInfo($"Exit signal for long position: RSI ({rsiValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
                 }
                 // For short positions: exit when RSI crosses below 50
                 else if (_positionSide == Sides.Sell && rsiValue < 50)
@@ -219,7 +219,7 @@ namespace StockSharp.Samples.Strategies
                     _inPosition = false;
                     _positionSide = Sides.None;
                     
-                    this.AddInfoLog($"Exit signal for short position: RSI ({rsiValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
+                    LogInfo($"Exit signal for short position: RSI ({rsiValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
                 }
             }
             

@@ -186,7 +186,7 @@ namespace StockSharp.Samples.Strategies
                 _inPosition = true;
                 _positionSide = Sides.Buy;
                 
-                this.AddInfoLog($"Bullish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue:F2}. Long entry at {candle.ClosePrice}");
+                LogInfo($"Bullish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue:F2}. Long entry at {candle.ClosePrice}");
             }
             else if (isBearishFailureSwing && !_inPosition)
             {
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
                 _inPosition = true;
                 _positionSide = Sides.Sell;
                 
-                this.AddInfoLog($"Bearish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue:F2}. Short entry at {candle.ClosePrice}");
+                LogInfo($"Bearish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue:F2}. Short entry at {candle.ClosePrice}");
             }
             
             // Exit conditions
@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
                     _inPosition = false;
                     _positionSide = Sides.None;
                     
-                    this.AddInfoLog($"Exit signal for long position: CCI ({cciValue:F2}) crossed above 0. Closing at {candle.ClosePrice}");
+                    LogInfo($"Exit signal for long position: CCI ({cciValue:F2}) crossed above 0. Closing at {candle.ClosePrice}");
                 }
                 // For short positions: exit when CCI crosses below 0
                 else if (_positionSide == Sides.Sell && cciValue < 0)
@@ -219,7 +219,7 @@ namespace StockSharp.Samples.Strategies
                     _inPosition = false;
                     _positionSide = Sides.None;
                     
-                    this.AddInfoLog($"Exit signal for short position: CCI ({cciValue:F2}) crossed below 0. Closing at {candle.ClosePrice}");
+                    LogInfo($"Exit signal for short position: CCI ({cciValue:F2}) crossed below 0. Closing at {candle.ClosePrice}");
                 }
             }
             

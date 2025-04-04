@@ -175,13 +175,13 @@ namespace StockSharp.Samples.Strategies
             if (crossedAboveZero && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: MACD histogram crossed above zero ({_prevHistogram} -> {histogramValue})");
+                LogInfo($"Long entry: MACD histogram crossed above zero ({_prevHistogram} -> {histogramValue})");
             }
             // Short entry: MACD histogram crossed below zero
             else if (crossedBelowZero && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: MACD histogram crossed below zero ({_prevHistogram} -> {histogramValue})");
+                LogInfo($"Short entry: MACD histogram crossed below zero ({_prevHistogram} -> {histogramValue})");
             }
             
             // Update previous value

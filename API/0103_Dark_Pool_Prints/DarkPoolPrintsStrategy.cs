@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
                 var volume = Volume + Math.Abs(Position);
                 BuyMarket(volume);
                 
-                this.AddInfoLog($"Dark Pool Print detected. Bullish candle with volume {candle.TotalVolume} (avg: {volumeAvg}). Buying at {candle.ClosePrice}");
+                LogInfo($"Dark Pool Print detected. Bullish candle with volume {candle.TotalVolume} (avg: {volumeAvg}). Buying at {candle.ClosePrice}");
             }
             else if (!isBullish && isBelowMA && Position >= 0)
             {
@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
                 var volume = Volume + Math.Abs(Position);
                 SellMarket(volume);
                 
-                this.AddInfoLog($"Dark Pool Print detected. Bearish candle with volume {candle.TotalVolume} (avg: {volumeAvg}). Selling at {candle.ClosePrice}");
+                LogInfo($"Dark Pool Print detected. Bearish candle with volume {candle.TotalVolume} (avg: {volumeAvg}). Selling at {candle.ClosePrice}");
             }
         }
     }

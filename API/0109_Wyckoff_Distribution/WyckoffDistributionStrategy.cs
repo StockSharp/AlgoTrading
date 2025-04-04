@@ -185,7 +185,7 @@ namespace StockSharp.Samples.Strategies
                     if (isBullish && highVolume && candle.ClosePrice > highest)
                     {
                         _currentPhase = WyckoffPhase.PhaseA;
-                        this.AddInfoLog($"Wyckoff Phase A detected: Buying climax at {candle.ClosePrice}");
+                        LogInfo($"Wyckoff Phase A detected: Buying climax at {candle.ClosePrice}");
                     }
                     break;
                     
@@ -194,7 +194,7 @@ namespace StockSharp.Samples.Strategies
                     if (isBearish && candle.ClosePrice < ma)
                     {
                         _currentPhase = WyckoffPhase.PhaseB;
-                        this.AddInfoLog($"Entering Wyckoff Phase B: Automatic reaction at {candle.ClosePrice}");
+                        LogInfo($"Entering Wyckoff Phase B: Automatic reaction at {candle.ClosePrice}");
                         _sidewaysCount = 0;
                     }
                     break;
@@ -209,7 +209,7 @@ namespace StockSharp.Samples.Strategies
                         if (_sidewaysCount >= 5)
                         {
                             _currentPhase = WyckoffPhase.PhaseC;
-                            this.AddInfoLog($"Entering Wyckoff Phase C: Distribution complete after {_sidewaysCount} sideways candles");
+                            LogInfo($"Entering Wyckoff Phase C: Distribution complete after {_sidewaysCount} sideways candles");
                         }
                     }
                     else
@@ -224,7 +224,7 @@ namespace StockSharp.Samples.Strategies
                     {
                         _upthrustHigh = candle.HighPrice;
                         _currentPhase = WyckoffPhase.PhaseD;
-                        this.AddInfoLog($"Entering Wyckoff Phase D: Upthrust detected at {_upthrustHigh}");
+                        LogInfo($"Entering Wyckoff Phase D: Upthrust detected at {_upthrustHigh}");
                     }
                     break;
                     
@@ -233,7 +233,7 @@ namespace StockSharp.Samples.Strategies
                     if (isBearish && highVolume && priceBelowMA)
                     {
                         _currentPhase = WyckoffPhase.PhaseE;
-                        this.AddInfoLog($"Entering Wyckoff Phase E: Sign of weakness detected at {candle.ClosePrice}");
+                        LogInfo($"Entering Wyckoff Phase E: Sign of weakness detected at {candle.ClosePrice}");
                     }
                     break;
                     
@@ -246,7 +246,7 @@ namespace StockSharp.Samples.Strategies
                         SellMarket(volume);
                         
                         _positionOpened = true;
-                        this.AddInfoLog($"Wyckoff Distribution complete. Short entry at {candle.ClosePrice}");
+                        LogInfo($"Wyckoff Distribution complete. Short entry at {candle.ClosePrice}");
                     }
                     break;
             }
@@ -261,7 +261,7 @@ namespace StockSharp.Samples.Strategies
                     _positionOpened = false;
                     _currentPhase = WyckoffPhase.None; // Reset the pattern detection
                     
-                    this.AddInfoLog($"Exit signal: Price broke below range low ({_lastRangeLow}). Closed short position at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price broke below range low ({_lastRangeLow}). Closed short position at {candle.ClosePrice}");
                 }
                 // Exit also if price rises back above MA (failed pattern)
                 else if (priceAboveMA)
@@ -270,7 +270,7 @@ namespace StockSharp.Samples.Strategies
                     _positionOpened = false;
                     _currentPhase = WyckoffPhase.None; // Reset the pattern detection
                     
-                    this.AddInfoLog($"Exit signal: Price rose above MA. Pattern may have failed. Closed short position at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price rose above MA. Pattern may have failed. Closed short position at {candle.ClosePrice}");
                 }
             }
         }

@@ -157,13 +157,13 @@ namespace StockSharp.Samples.Strategies
             if (isAdxWeakening && candle.ClosePrice > maValue && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: ADX weakening ({adxValue} < {_prevAdxValue}) and price above MA");
+                LogInfo($"Long entry: ADX weakening ({adxValue} < {_prevAdxValue}) and price above MA");
             }
             // Short entry: ADX weakening and price below MA
             else if (isAdxWeakening && candle.ClosePrice < maValue && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: ADX weakening ({adxValue} < {_prevAdxValue}) and price below MA");
+                LogInfo($"Short entry: ADX weakening ({adxValue} < {_prevAdxValue}) and price below MA");
             }
             
             // Update previous ADX value

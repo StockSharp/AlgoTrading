@@ -212,7 +212,7 @@ namespace StockSharp.Samples.Strategies
             var isTenkanAboveKijun = tenkan > kijun;
             
             // Log current state
-            this.AddInfoLog($"Close: {candle.ClosePrice}, Tenkan: {tenkan:N2}, Kijun: {kijun:N2}, " + 
+            LogInfo($"Close: {candle.ClosePrice}, Tenkan: {tenkan:N2}, Kijun: {kijun:N2}, " + 
                           $"Cloud Top: {cloudTop:N2}, Cloud Bottom: {cloudBottom:N2}, ADX: {_lastAdxValue:N2}");
             
             var isPriceRelativeToCloudChanged = _isPriceAboveCloud != isPriceAboveCloud;
@@ -234,13 +234,13 @@ namespace StockSharp.Samples.Strategies
                 {
                     // Buy signal: price above cloud, Tenkan above Kijun, strong trend
                     BuyMarket(Volume);
-                    this.AddInfoLog($"Buy signal: Price above cloud, Tenkan above Kijun, ADX = {_lastAdxValue}");
+                    LogInfo($"Buy signal: Price above cloud, Tenkan above Kijun, ADX = {_lastAdxValue}");
                 }
                 else if (isPriceBelowCloud && !isTenkanAboveKijun && isStrongTrend)
                 {
                     // Sell signal: price below cloud, Tenkan below Kijun, strong trend
                     SellMarket(Volume);
-                    this.AddInfoLog($"Sell signal: Price below cloud, Tenkan below Kijun, ADX = {_lastAdxValue}");
+                    LogInfo($"Sell signal: Price below cloud, Tenkan below Kijun, ADX = {_lastAdxValue}");
                 }
             }
             else if (isPriceRelativeToCloudChanged) // Exit on cloud crossing
@@ -249,13 +249,13 @@ namespace StockSharp.Samples.Strategies
                 {
                     // Exit long position: price fell below cloud
                     SellMarket(Math.Abs(Position));
-                    this.AddInfoLog($"Exit long position: Price fell into/below cloud");
+                    LogInfo($"Exit long position: Price fell into/below cloud");
                 }
                 else if (Position < 0 && !isPriceBelowCloud)
                 {
                     // Exit short position: price rose above cloud
                     BuyMarket(Math.Abs(Position));
-                    this.AddInfoLog($"Exit short position: Price rose into/above cloud");
+                    LogInfo($"Exit short position: Price rose into/above cloud");
                 }
             }
             

@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
                         SellMarket(Math.Abs(Position));
                         _inPosition = false;
                         _currentPositionSide = Sides.None;
-                        this.AddInfoLog($"Closed long position at {candle.ClosePrice} on bearish rejection");
+                        LogInfo($"Closed long position at {candle.ClosePrice} on bearish rejection");
                     }
                     // Enter short if we're not already short
                     else if (Position <= 0)
@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
                         SellMarket(volume);
                         _inPosition = true;
                         _currentPositionSide = Sides.Sell;
-                        this.AddInfoLog($"Bearish rejection detected. Short entry at {candle.ClosePrice}");
+                        LogInfo($"Bearish rejection detected. Short entry at {candle.ClosePrice}");
                     }
                 }
             }
@@ -159,7 +159,7 @@ namespace StockSharp.Samples.Strategies
                         BuyMarket(Math.Abs(Position));
                         _inPosition = false;
                         _currentPositionSide = Sides.None;
-                        this.AddInfoLog($"Closed short position at {candle.ClosePrice} on bullish rejection");
+                        LogInfo($"Closed short position at {candle.ClosePrice} on bullish rejection");
                     }
                     // Enter long if we're not already long
                     else if (Position >= 0)
@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
                         BuyMarket(volume);
                         _inPosition = true;
                         _currentPositionSide = Sides.Buy;
-                        this.AddInfoLog($"Bullish rejection detected. Long entry at {candle.ClosePrice}");
+                        LogInfo($"Bullish rejection detected. Long entry at {candle.ClosePrice}");
                     }
                 }
             }
@@ -182,7 +182,7 @@ namespace StockSharp.Samples.Strategies
                     SellMarket(Math.Abs(Position));
                     _inPosition = false;
                     _currentPositionSide = Sides.None;
-                    this.AddInfoLog($"Exit signal: Price broke above previous high ({_previousCandle.HighPrice}). Closed long at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price broke above previous high ({_previousCandle.HighPrice}). Closed long at {candle.ClosePrice}");
                 }
                 else if (_currentPositionSide == Sides.Sell && candle.LowPrice < _previousCandle.LowPrice)
                 {
@@ -190,7 +190,7 @@ namespace StockSharp.Samples.Strategies
                     BuyMarket(Math.Abs(Position));
                     _inPosition = false;
                     _currentPositionSide = Sides.None;
-                    this.AddInfoLog($"Exit signal: Price broke below previous low ({_previousCandle.LowPrice}). Closed short at {candle.ClosePrice}");
+                    LogInfo($"Exit signal: Price broke below previous low ({_previousCandle.LowPrice}). Closed short at {candle.ClosePrice}");
                 }
             }
             

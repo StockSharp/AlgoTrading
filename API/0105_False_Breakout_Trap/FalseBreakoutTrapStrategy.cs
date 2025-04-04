@@ -153,7 +153,7 @@ namespace StockSharp.Samples.Strategies
                         var volume = Volume + Math.Abs(Position);
                         SellMarket(volume);
                         
-                        this.AddInfoLog($"False upside breakout confirmed. Short entry at {candle.ClosePrice}. Resistance level: {_lastHighestValue}");
+                        LogInfo($"False upside breakout confirmed. Short entry at {candle.ClosePrice}. Resistance level: {_lastHighestValue}");
                         
                         // Reset breakout detection
                         _breakoutDetected = false;
@@ -169,7 +169,7 @@ namespace StockSharp.Samples.Strategies
                         var volume = Volume + Math.Abs(Position);
                         BuyMarket(volume);
                         
-                        this.AddInfoLog($"False downside breakout confirmed. Long entry at {candle.ClosePrice}. Support level: {_lastLowestValue}");
+                        LogInfo($"False downside breakout confirmed. Long entry at {candle.ClosePrice}. Support level: {_lastLowestValue}");
                         
                         // Reset breakout detection
                         _breakoutDetected = false;
@@ -180,13 +180,13 @@ namespace StockSharp.Samples.Strategies
                 // If the breakout continues beyond our threshold, abandon the false breakout idea
                 if (_breakoutSide == Sides.Buy && candle.ClosePrice > _breakoutPrice * 1.01m)
                 {
-                    this.AddInfoLog($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
+                    LogInfo($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
                     _breakoutDetected = false;
                     _breakoutSide = Sides.None;
                 }
                 else if (_breakoutSide == Sides.Sell && candle.ClosePrice < _breakoutPrice * 0.99m)
                 {
-                    this.AddInfoLog($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
+                    LogInfo($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
                     _breakoutDetected = false;
                     _breakoutSide = Sides.None;
                 }
@@ -201,7 +201,7 @@ namespace StockSharp.Samples.Strategies
                     _breakoutSide = Sides.Buy;
                     _breakoutPrice = candle.ClosePrice;
                     
-                    this.AddInfoLog($"Potential upside breakout detected at {candle.HighPrice}. Watching for false breakout pattern.");
+                    LogInfo($"Potential upside breakout detected at {candle.HighPrice}. Watching for false breakout pattern.");
                 }
                 else if (candle.LowPrice < _lastLowestValue)
                 {
@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
                     _breakoutSide = Sides.Sell;
                     _breakoutPrice = candle.ClosePrice;
                     
-                    this.AddInfoLog($"Potential downside breakout detected at {candle.LowPrice}. Watching for false breakout pattern.");
+                    LogInfo($"Potential downside breakout detected at {candle.LowPrice}. Watching for false breakout pattern.");
                 }
             }
             
@@ -219,13 +219,13 @@ namespace StockSharp.Samples.Strategies
             {
                 // Exit long position when price falls below MA
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit signal: Price below MA. Closed long position at {candle.ClosePrice}");
+                LogInfo($"Exit signal: Price below MA. Closed long position at {candle.ClosePrice}");
             }
             else if (Position < 0 && candle.ClosePrice > ma)
             {
                 // Exit short position when price rises above MA
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit signal: Price above MA. Closed short position at {candle.ClosePrice}");
+                LogInfo($"Exit signal: Price above MA. Closed short position at {candle.ClosePrice}");
             }
         }
     }

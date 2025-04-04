@@ -126,7 +126,7 @@ namespace StockSharp.Samples.Strategies
                 // Set stop-loss level
                 var stopLossLevel = candle.LowPrice * (1 - StopLossPercent / 100);
                 
-                this.AddInfoLog($"Harami Bullish detected. Buying at {candle.ClosePrice}. Stop-loss set at {stopLossLevel}");
+                LogInfo($"Harami Bullish detected. Buying at {candle.ClosePrice}. Stop-loss set at {stopLossLevel}");
             }
             else if (_patternDetected)
             {
@@ -139,7 +139,7 @@ namespace StockSharp.Samples.Strategies
                         SellMarket(Math.Abs(Position));
                         _patternDetected = false;
                         
-                        this.AddInfoLog($"Exit signal: Price broke above previous high ({_previousCandle.HighPrice}). Closing position at {candle.ClosePrice}");
+                        LogInfo($"Exit signal: Price broke above previous high ({_previousCandle.HighPrice}). Closing position at {candle.ClosePrice}");
                     }
                 }
             }

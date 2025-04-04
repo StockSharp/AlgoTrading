@@ -185,25 +185,25 @@ namespace StockSharp.Samples.Strategies
             if (oversoldHookUp && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Williams %R upward hook from oversold ({_prevWillR} -> {willRValue})");
+                LogInfo($"Long entry: Williams %R upward hook from oversold ({_prevWillR} -> {willRValue})");
             }
             // Short entry: Williams %R forms a downward hook from overbought
             else if (overboughtHookDown && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Williams %R downward hook from overbought ({_prevWillR} -> {willRValue})");
+                LogInfo($"Short entry: Williams %R downward hook from overbought ({_prevWillR} -> {willRValue})");
             }
             
             // Exit conditions based on Williams %R reaching neutral zone
             if (willRValue > ExitLevel && Position < 0)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit short: Williams %R reached neutral zone ({willRValue} > {ExitLevel})");
+                LogInfo($"Exit short: Williams %R reached neutral zone ({willRValue} > {ExitLevel})");
             }
             else if (willRValue < ExitLevel && Position > 0)
             {
                 SellMarket(Position);
-                this.AddInfoLog($"Exit long: Williams %R reached neutral zone ({willRValue} < {ExitLevel})");
+                LogInfo($"Exit long: Williams %R reached neutral zone ({willRValue} < {ExitLevel})");
             }
             
             // Update previous Williams %R value

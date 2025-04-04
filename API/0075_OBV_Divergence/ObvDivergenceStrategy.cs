@@ -172,8 +172,8 @@ namespace StockSharp.Samples.Strategies
             var bearishDivergence = _currentPrice > _previousPrice && _currentObv < _previousObv;
 
             // Log divergence information
-            this.AddInfoLog($"Price: {_previousPrice} -> {_currentPrice}, OBV: {_previousObv} -> {_currentObv}");
-            this.AddInfoLog($"Bullish divergence: {bullishDivergence}, Bearish divergence: {bearishDivergence}");
+            LogInfo($"Price: {_previousPrice} -> {_currentPrice}, OBV: {_previousObv} -> {_currentObv}");
+            LogInfo($"Bullish divergence: {bullishDivergence}, Bearish divergence: {bearishDivergence}");
 
             // Trading decisions based on divergence
             if (bullishDivergence && Position <= 0)
@@ -181,14 +181,14 @@ namespace StockSharp.Samples.Strategies
                 // Bullish divergence - go long
                 CancelActiveOrders();
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Bullish divergence detected at price {_currentPrice}");
+                LogInfo($"Long entry: Bullish divergence detected at price {_currentPrice}");
             }
             else if (bearishDivergence && Position >= 0)
             {
                 // Bearish divergence - go short
                 CancelActiveOrders();
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Bearish divergence detected at price {_currentPrice}");
+                LogInfo($"Short entry: Bearish divergence detected at price {_currentPrice}");
             }
 
             // Exit logic based on moving average
@@ -196,13 +196,13 @@ namespace StockSharp.Samples.Strategies
             {
                 // Exit long position when price is above MA
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Long exit: Price {_currentPrice} above MA {maPrice}");
+                LogInfo($"Long exit: Price {_currentPrice} above MA {maPrice}");
             }
             else if (Position < 0 && _currentPrice < maPrice)
             {
                 // Exit short position when price is below MA
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Short exit: Price {_currentPrice} below MA {maPrice}");
+                LogInfo($"Short exit: Price {_currentPrice} below MA {maPrice}");
             }
         }
     }

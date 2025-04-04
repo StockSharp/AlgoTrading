@@ -156,18 +156,18 @@ namespace StockSharp.Strategies
 
             if (isVolumeClimaxDetected)
             {
-                this.AddInfoLog($"Volume climax detected: {currentVolume} > {volumeAverageValue} * {VolumeMultiplier}");
+                LogInfo($"Volume climax detected: {currentVolume} > {volumeAverageValue} * {VolumeMultiplier}");
 
                 // Bullish reversal: High volume + bearish candle + price below MA
                 if (isBearishCandle && candle.ClosePrice < maValue && Position <= 0)
                 {
-                    this.AddInfoLog("Bullish reversal signal detected");
+                    LogInfo("Bullish reversal signal detected");
                     BuyMarket(Volume + Math.Abs(Position));
                 }
                 // Bearish reversal: High volume + bullish candle + price above MA
                 else if (isBullishCandle && candle.ClosePrice > maValue && Position >= 0)
                 {
-                    this.AddInfoLog("Bearish reversal signal detected");
+                    LogInfo("Bearish reversal signal detected");
                     SellMarket(Volume + Math.Abs(Position));
                 }
             }
@@ -175,12 +175,12 @@ namespace StockSharp.Strategies
             // Exit logic - Price crosses MA
             if (Position > 0 && candle.ClosePrice < maValue)
             {
-                this.AddInfoLog("Exit long: Price moved below MA");
+                LogInfo("Exit long: Price moved below MA");
                 ClosePosition();
             }
             else if (Position < 0 && candle.ClosePrice > maValue)
             {
-                this.AddInfoLog("Exit short: Price moved above MA");
+                LogInfo("Exit short: Price moved above MA");
                 ClosePosition();
             }
 
@@ -194,7 +194,7 @@ namespace StockSharp.Strategies
                         ? Security.LastTrade.Price - atrValue * ATRMultiplier
                         : Security.LastTrade.Price + atrValue * ATRMultiplier;
                     
-                    this.AddInfoLog($"Dynamic stop loss updated: {stopLossLevel}");
+                    LogInfo($"Dynamic stop loss updated: {stopLossLevel}");
                 }
             }
         }

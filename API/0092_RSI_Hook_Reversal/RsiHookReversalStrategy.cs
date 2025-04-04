@@ -185,25 +185,25 @@ namespace StockSharp.Samples.Strategies
             if (oversoldHookUp && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: RSI upward hook from oversold ({_prevRsi} -> {rsiValue})");
+                LogInfo($"Long entry: RSI upward hook from oversold ({_prevRsi} -> {rsiValue})");
             }
             // Short entry: RSI forms a downward hook from overbought
             else if (overboughtHookDown && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: RSI downward hook from overbought ({_prevRsi} -> {rsiValue})");
+                LogInfo($"Short entry: RSI downward hook from overbought ({_prevRsi} -> {rsiValue})");
             }
             
             // Exit conditions based on RSI reaching neutral zone
             if (rsiValue > ExitLevel && Position < 0)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit short: RSI reached neutral zone ({rsiValue} > {ExitLevel})");
+                LogInfo($"Exit short: RSI reached neutral zone ({rsiValue} > {ExitLevel})");
             }
             else if (rsiValue < ExitLevel && Position > 0)
             {
                 SellMarket(Position);
-                this.AddInfoLog($"Exit long: RSI reached neutral zone ({rsiValue} < {ExitLevel})");
+                LogInfo($"Exit long: RSI reached neutral zone ({rsiValue} < {ExitLevel})");
             }
             
             // Update previous RSI value

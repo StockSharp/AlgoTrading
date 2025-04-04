@@ -154,8 +154,8 @@ namespace StockSharp.Samples.Strategies
                 return;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Choppiness: {choppinessValue}");
-            this.AddInfoLog($"Previous Choppiness: {_prevChoppiness}, Threshold: {ChoppinessThreshold}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Choppiness: {choppinessValue}");
+            LogInfo($"Previous Choppiness: {_prevChoppiness}, Threshold: {ChoppinessThreshold}");
 
             // Check for transition from choppy to trending (falling below threshold)
             var transitionToTrending = _prevChoppiness >= ChoppinessThreshold && choppinessValue < ChoppinessThreshold;
@@ -163,18 +163,18 @@ namespace StockSharp.Samples.Strategies
             // Trading logic:
             if (transitionToTrending)
             {
-                this.AddInfoLog($"Market transitioning to trending state: {choppinessValue} < {ChoppinessThreshold}");
+                LogInfo($"Market transitioning to trending state: {choppinessValue} < {ChoppinessThreshold}");
                 
                 // Long: Low choppiness and price above MA
                 if (candle.ClosePrice > maValue && Position <= 0)
                 {
-                    this.AddInfoLog($"Buy Signal: Low choppiness ({choppinessValue}) and Price ({candle.ClosePrice}) > MA ({maValue})");
+                    LogInfo($"Buy Signal: Low choppiness ({choppinessValue}) and Price ({candle.ClosePrice}) > MA ({maValue})");
                     BuyMarket(Volume + Math.Abs(Position));
                 }
                 // Short: Low choppiness and price below MA
                 else if (candle.ClosePrice < maValue && Position >= 0)
                 {
-                    this.AddInfoLog($"Sell Signal: Low choppiness ({choppinessValue}) and Price ({candle.ClosePrice}) < MA ({maValue})");
+                    LogInfo($"Sell Signal: Low choppiness ({choppinessValue}) and Price ({candle.ClosePrice}) < MA ({maValue})");
                     SellMarket(Volume + Math.Abs(Position));
                 }
             }
@@ -182,16 +182,16 @@ namespace StockSharp.Samples.Strategies
             // Exit logic: Choppiness rises above high threshold (market becoming choppy again)
             if (choppinessValue > HighChoppinessThreshold)
             {
-                this.AddInfoLog($"Market becoming choppy: {choppinessValue} > {HighChoppinessThreshold}");
+                LogInfo($"Market becoming choppy: {choppinessValue} > {HighChoppinessThreshold}");
                 
                 if (Position > 0)
                 {
-                    this.AddInfoLog($"Exit Long: High choppiness ({choppinessValue})");
+                    LogInfo($"Exit Long: High choppiness ({choppinessValue})");
                     SellMarket(Math.Abs(Position));
                 }
                 else if (Position < 0)
                 {
-                    this.AddInfoLog($"Exit Short: High choppiness ({choppinessValue})");
+                    LogInfo($"Exit Short: High choppiness ({choppinessValue})");
                     BuyMarket(Math.Abs(Position));
                 }
             }

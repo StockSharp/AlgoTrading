@@ -107,33 +107,33 @@ namespace StockSharp.Samples.Strategies
             var breakoutDown = _previousClosePrice >= _previousVWAP && candle.ClosePrice < vwapPrice;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, VWAP: {vwapPrice}");
-            this.AddInfoLog($"Previous Close: {_previousClosePrice}, Previous VWAP: {_previousVWAP}");
-            this.AddInfoLog($"Breakout Up: {breakoutUp}, Breakout Down: {breakoutDown}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, VWAP: {vwapPrice}");
+            LogInfo($"Previous Close: {_previousClosePrice}, Previous VWAP: {_previousVWAP}");
+            LogInfo($"Breakout Up: {breakoutUp}, Breakout Down: {breakoutDown}");
 
             // Trading logic:
             // Long: Price breaks above VWAP
             if (breakoutUp && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Price ({candle.ClosePrice}) breaking above VWAP ({vwapPrice})");
+                LogInfo($"Buy Signal: Price ({candle.ClosePrice}) breaking above VWAP ({vwapPrice})");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: Price breaks below VWAP
             else if (breakoutDown && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Price ({candle.ClosePrice}) breaking below VWAP ({vwapPrice})");
+                LogInfo($"Sell Signal: Price ({candle.ClosePrice}) breaking below VWAP ({vwapPrice})");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: Price crosses back through VWAP
             if (Position > 0 && candle.ClosePrice < vwapPrice)
             {
-                this.AddInfoLog($"Exit Long: Price ({candle.ClosePrice}) < VWAP ({vwapPrice})");
+                LogInfo($"Exit Long: Price ({candle.ClosePrice}) < VWAP ({vwapPrice})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && candle.ClosePrice > vwapPrice)
             {
-                this.AddInfoLog($"Exit Short: Price ({candle.ClosePrice}) > VWAP ({vwapPrice})");
+                LogInfo($"Exit Short: Price ({candle.ClosePrice}) > VWAP ({vwapPrice})");
                 BuyMarket(Math.Abs(Position));
             }
 

@@ -102,7 +102,7 @@ namespace StockSharp.Samples.Strategies
             
             if (isOutsideBar)
             {
-                this.AddInfoLog($"Outside bar detected: High {candle.HighPrice} > Previous High {_previousCandle.HighPrice}, " +
+                LogInfo($"Outside bar detected: High {candle.HighPrice} > Previous High {_previousCandle.HighPrice}, " +
                                $"Low {candle.LowPrice} < Previous Low {_previousCandle.LowPrice}");
 
                 // Determine if the outside bar is bullish or bearish
@@ -115,7 +115,7 @@ namespace StockSharp.Samples.Strategies
                     // Bullish outside bar - go long
                     CancelActiveOrders();
                     BuyMarket(Volume + Math.Abs(Position));
-                    this.AddInfoLog($"Long entry at {candle.ClosePrice} on bullish outside bar");
+                    LogInfo($"Long entry at {candle.ClosePrice} on bullish outside bar");
                     
                     // Set stop-loss below outside bar's low
                     StartProtection(
@@ -128,7 +128,7 @@ namespace StockSharp.Samples.Strategies
                     // Bearish outside bar - go short
                     CancelActiveOrders();
                     SellMarket(Volume + Math.Abs(Position));
-                    this.AddInfoLog($"Short entry at {candle.ClosePrice} on bearish outside bar");
+                    LogInfo($"Short entry at {candle.ClosePrice} on bearish outside bar");
                     
                     // Set stop-loss above outside bar's high
                     StartProtection(
@@ -145,7 +145,7 @@ namespace StockSharp.Samples.Strategies
                 if (candle.HighPrice > _previousCandle.HighPrice)
                 {
                     SellMarket(Math.Abs(Position));
-                    this.AddInfoLog($"Long exit at {candle.ClosePrice} (price above outside bar high {_previousCandle.HighPrice})");
+                    LogInfo($"Long exit at {candle.ClosePrice} (price above outside bar high {_previousCandle.HighPrice})");
                 }
             }
             else if (Position < 0)
@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
                 if (candle.LowPrice < _previousCandle.LowPrice)
                 {
                     BuyMarket(Math.Abs(Position));
-                    this.AddInfoLog($"Short exit at {candle.ClosePrice} (price below outside bar low {_previousCandle.LowPrice})");
+                    LogInfo($"Short exit at {candle.ClosePrice} (price below outside bar low {_previousCandle.LowPrice})");
                 }
             }
 

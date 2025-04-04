@@ -144,33 +144,33 @@ namespace StockSharp.Samples.Strategies
             var bearishDivergence = priceUp && volumeUp;    // Price up but volume up too much (distribution)
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, Previous Close: {_previousClose}, MA: {maValue}");
-            this.AddInfoLog($"Volume: {candle.TotalVolume}, Previous Volume: {_previousVolume}");
-            this.AddInfoLog($"Bullish Divergence: {bullishDivergence}, Bearish Divergence: {bearishDivergence}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, Previous Close: {_previousClose}, MA: {maValue}");
+            LogInfo($"Volume: {candle.TotalVolume}, Previous Volume: {_previousVolume}");
+            LogInfo($"Bullish Divergence: {bullishDivergence}, Bearish Divergence: {bearishDivergence}");
 
             // Trading logic:
             // Long: Price down but volume up (accumulation)
             if (bullishDivergence && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Price down but volume up (possible accumulation)");
+                LogInfo($"Buy Signal: Price down but volume up (possible accumulation)");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: Price up but volume up too much (distribution)
             else if (bearishDivergence && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Price up but volume up too much (possible distribution)");
+                LogInfo($"Sell Signal: Price up but volume up too much (possible distribution)");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: Price crosses MA
             if (Position > 0 && candle.ClosePrice < maValue)
             {
-                this.AddInfoLog($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
+                LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && candle.ClosePrice > maValue)
             {
-                this.AddInfoLog($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
+                LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
                 BuyMarket(Math.Abs(Position));
             }
 

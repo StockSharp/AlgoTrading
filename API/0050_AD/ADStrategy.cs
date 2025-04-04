@@ -121,32 +121,32 @@ namespace StockSharp.Samples.Strategies
             var adFalling = adValue < _previousADValue;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, MA: {maValue}, A/D: {adValue}");
-            this.AddInfoLog($"Previous A/D: {_previousADValue}, A/D Rising: {adRising}, A/D Falling: {adFalling}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, A/D: {adValue}");
+            LogInfo($"Previous A/D: {_previousADValue}, A/D Rising: {adRising}, A/D Falling: {adFalling}");
 
             // Trading logic:
             // Long: A/D rising and price above MA
             if (adRising && candle.ClosePrice > maValue && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: A/D rising and Price ({candle.ClosePrice}) > MA ({maValue})");
+                LogInfo($"Buy Signal: A/D rising and Price ({candle.ClosePrice}) > MA ({maValue})");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: A/D falling and price below MA
             else if (adFalling && candle.ClosePrice < maValue && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: A/D falling and Price ({candle.ClosePrice}) < MA ({maValue})");
+                LogInfo($"Sell Signal: A/D falling and Price ({candle.ClosePrice}) < MA ({maValue})");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: A/D changes direction
             if (Position > 0 && adFalling)
             {
-                this.AddInfoLog($"Exit Long: A/D changing direction (falling)");
+                LogInfo($"Exit Long: A/D changing direction (falling)");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && adRising)
             {
-                this.AddInfoLog($"Exit Short: A/D changing direction (rising)");
+                LogInfo($"Exit Short: A/D changing direction (rising)");
                 BuyMarket(Math.Abs(Position));
             }
 

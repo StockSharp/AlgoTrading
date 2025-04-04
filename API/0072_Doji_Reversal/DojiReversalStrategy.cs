@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
                 // Check for uptrend before the doji (previous candle higher than the one before it)
                 var isUptrend = _previousCandle.ClosePrice > _previousPreviousCandle.ClosePrice;
                 
-                this.AddInfoLog($"Doji detected. Downtrend before: {isDowntrend}, Uptrend before: {isUptrend}");
+                LogInfo($"Doji detected. Downtrend before: {isDowntrend}, Uptrend before: {isUptrend}");
                 
                 // If we have a doji after a downtrend and no long position yet
                 if (isDowntrend && Position <= 0)
@@ -149,7 +149,7 @@ namespace StockSharp.Samples.Strategies
                     // Enter long position
                     BuyMarket(Volume + Math.Abs(Position));
                     
-                    this.AddInfoLog($"Buying at {candle.ClosePrice} after doji in downtrend");
+                    LogInfo($"Buying at {candle.ClosePrice} after doji in downtrend");
                 }
                 // If we have a doji after an uptrend and no short position yet
                 else if (isUptrend && Position >= 0)
@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
                     // Enter short position
                     SellMarket(Volume + Math.Abs(Position));
                     
-                    this.AddInfoLog($"Selling at {candle.ClosePrice} after doji in uptrend");
+                    LogInfo($"Selling at {candle.ClosePrice} after doji in uptrend");
                 }
             }
 
@@ -168,12 +168,12 @@ namespace StockSharp.Samples.Strategies
             if (Position > 0 && candle.HighPrice > _previousCandle.HighPrice)
             {
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exiting long position at {candle.ClosePrice} (price above doji high)");
+                LogInfo($"Exiting long position at {candle.ClosePrice} (price above doji high)");
             }
             else if (Position < 0 && candle.LowPrice < _previousCandle.LowPrice)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exiting short position at {candle.ClosePrice} (price below doji low)");
+                LogInfo($"Exiting short position at {candle.ClosePrice} (price below doji low)");
             }
 
             // Update candles for next iteration
@@ -199,7 +199,7 @@ namespace StockSharp.Samples.Strategies
             // It's a doji if the body size is smaller than the threshold
             var isDoji = bodySizePercentage < DojiThreshold;
             
-            this.AddInfoLog($"Candle analysis: Body size: {bodySize}, Total range: {totalRange}, " +
+            LogInfo($"Candle analysis: Body size: {bodySize}, Total range: {totalRange}, " +
                            $"Body %: {bodySizePercentage:P2}, Is Doji: {isDoji}");
             
             return isDoji;

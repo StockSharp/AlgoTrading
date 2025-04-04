@@ -99,7 +99,7 @@ namespace StockSharp.Strategies
                 return;
 
             // Add log entry for the candle
-            this.AddInfoLog($"Candle: Open={candle.OpenPrice}, High={candle.HighPrice}, Low={candle.LowPrice}, Close={candle.ClosePrice}");
+            LogInfo($"Candle: Open={candle.OpenPrice}, High={candle.HighPrice}, Low={candle.LowPrice}, Close={candle.ClosePrice}");
 
             // If we have enough candles, check for the Bearish Abandoned Baby pattern
             if (_prevCandle2 != null && _prevCandle1 != null)
@@ -116,13 +116,13 @@ namespace StockSharp.Strategies
 
                 if (firstCandleBullish && middleCandleGapsUp && currentCandleBearish && currentCandleGapsDown)
                 {
-                    this.AddInfoLog("Bearish Abandoned Baby pattern detected!");
+                    LogInfo("Bearish Abandoned Baby pattern detected!");
 
                     // Enter short position if we don't have one already
                     if (Position >= 0)
                     {
                         this.SellMarket(Volume);
-                        this.AddInfoLog($"Short position opened: {Volume} at market");
+                        LogInfo($"Short position opened: {Volume} at market");
                     }
                 }
             }
@@ -134,7 +134,7 @@ namespace StockSharp.Strategies
             // Exit logic - if we're in a short position and price breaks below low of the current candle
             if (Position < 0 && candle.LowPrice < _prevCandle2?.LowPrice)
             {
-                this.AddInfoLog("Exit signal: Price broke below previous candle low");
+                LogInfo("Exit signal: Price broke below previous candle low");
                 ClosePosition();
             }
         }

@@ -147,24 +147,24 @@ namespace StockSharp.Samples.Strategies
             var ivChange = ivValue / _previousIV;
             
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, MA: {maValue}, IV: {ivValue}, IV Change: {ivChange:P2}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, IV: {ivValue}, IV Change: {ivChange:P2}");
 
             // Trading logic:
             // Check for IV spike
             if (ivChange >= IVSpikeThreshold)
             {
-                this.AddInfoLog($"IV Spike detected: {ivChange:P2}");
+                LogInfo($"IV Spike detected: {ivChange:P2}");
 
                 // Long: IV spike and price below MA
                 if (candle.ClosePrice < maValue && Position <= 0)
                 {
-                    this.AddInfoLog($"Buy Signal: IV Spike ({ivChange:P2}) and Price ({candle.ClosePrice}) < MA ({maValue})");
+                    LogInfo($"Buy Signal: IV Spike ({ivChange:P2}) and Price ({candle.ClosePrice}) < MA ({maValue})");
                     BuyMarket(Volume + Math.Abs(Position));
                 }
                 // Short: IV spike and price above MA
                 else if (candle.ClosePrice > maValue && Position >= 0)
                 {
-                    this.AddInfoLog($"Sell Signal: IV Spike ({ivChange:P2}) and Price ({candle.ClosePrice}) > MA ({maValue})");
+                    LogInfo($"Sell Signal: IV Spike ({ivChange:P2}) and Price ({candle.ClosePrice}) > MA ({maValue})");
                     SellMarket(Volume + Math.Abs(Position));
                 }
             }
@@ -174,12 +174,12 @@ namespace StockSharp.Samples.Strategies
             {
                 if (Position > 0)
                 {
-                    this.AddInfoLog($"Exit Long: IV declining ({ivValue} < {_previousIV})");
+                    LogInfo($"Exit Long: IV declining ({ivValue} < {_previousIV})");
                     SellMarket(Math.Abs(Position));
                 }
                 else if (Position < 0)
                 {
-                    this.AddInfoLog($"Exit Short: IV declining ({ivValue} < {_previousIV})");
+                    LogInfo($"Exit Short: IV declining ({ivValue} < {_previousIV})");
                     BuyMarket(Math.Abs(Position));
                 }
             }

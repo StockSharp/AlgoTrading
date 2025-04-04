@@ -228,13 +228,13 @@ namespace StockSharp.Samples.Strategies
             if (supportPoints.Count >= 2)
             {
                 CalculateLinearRegression(supportPoints, out _supportSlope, out _supportIntercept);
-                this.AddInfoLog($"Updated support trendline: y = {_supportSlope}x + {_supportIntercept}");
+                LogInfo($"Updated support trendline: y = {_supportSlope}x + {_supportIntercept}");
             }
             
             if (resistancePoints.Count >= 2)
             {
                 CalculateLinearRegression(resistancePoints, out _resistanceSlope, out _resistanceIntercept);
-                this.AddInfoLog($"Updated resistance trendline: y = {_resistanceSlope}x + {_resistanceIntercept}");
+                LogInfo($"Updated resistance trendline: y = {_resistanceSlope}x + {_resistanceIntercept}");
             }
         }
 
@@ -280,7 +280,7 @@ namespace StockSharp.Samples.Strategies
             decimal supportValue = _supportSlope * x + _supportIntercept;
             decimal resistanceValue = _resistanceSlope * x + _resistanceIntercept;
             
-            this.AddInfoLog($"Current candle: Close={candle.ClosePrice}, Support={supportValue}, Resistance={resistanceValue}");
+            LogInfo($"Current candle: Close={candle.ClosePrice}, Support={supportValue}, Resistance={resistanceValue}");
             
             // Determine if price is near a trendline
             decimal bounceThreshold = candle.ClosePrice * (BounceThresholdPercent / 100);
@@ -296,7 +296,7 @@ namespace StockSharp.Samples.Strategies
                 {
                     CancelActiveOrders();
                     BuyMarket(Volume + Math.Abs(Position));
-                    this.AddInfoLog($"Long entry at {candle.ClosePrice} on support bounce at {supportValue}");
+                    LogInfo($"Long entry at {candle.ClosePrice} on support bounce at {supportValue}");
                 }
             }
             // Check for bearish bounce off resistance
@@ -307,7 +307,7 @@ namespace StockSharp.Samples.Strategies
                 {
                     CancelActiveOrders();
                     SellMarket(Volume + Math.Abs(Position));
-                    this.AddInfoLog($"Short entry at {candle.ClosePrice} on resistance bounce at {resistanceValue}");
+                    LogInfo($"Short entry at {candle.ClosePrice} on resistance bounce at {resistanceValue}");
                 }
             }
 
@@ -315,12 +315,12 @@ namespace StockSharp.Samples.Strategies
             if (Position > 0 && candle.ClosePrice < maPrice)
             {
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Long exit at {candle.ClosePrice} (price below MA {maPrice})");
+                LogInfo($"Long exit at {candle.ClosePrice} (price below MA {maPrice})");
             }
             else if (Position < 0 && candle.ClosePrice > maPrice)
             {
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Short exit at {candle.ClosePrice} (price above MA {maPrice})");
+                LogInfo($"Short exit at {candle.ClosePrice} (price above MA {maPrice})");
             }
         }
     }

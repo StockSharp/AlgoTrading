@@ -162,7 +162,7 @@ namespace StockSharp.Samples.Strategies
             if (isVolumeSpike && isBullishCandle && candle.ClosePrice > maValue && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Volume spike ({candle.TotalVolume} > {volumeAvgValue * VolumeMultiplier}) with bullish candle");
+                LogInfo($"Long entry: Volume spike ({candle.TotalVolume} > {volumeAvgValue * VolumeMultiplier}) with bullish candle");
                 
                 // Set stop-loss based on ATR
                 decimal stopPrice = candle.ClosePrice - (atrValue * AtrMultiplier.Value);
@@ -172,7 +172,7 @@ namespace StockSharp.Samples.Strategies
             else if (isVolumeSpike && isBearishCandle && candle.ClosePrice < maValue && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Volume spike ({candle.TotalVolume} > {volumeAvgValue * VolumeMultiplier}) with bearish candle");
+                LogInfo($"Short entry: Volume spike ({candle.TotalVolume} > {volumeAvgValue * VolumeMultiplier}) with bearish candle");
                 
                 // Set stop-loss based on ATR
                 decimal stopPrice = candle.ClosePrice + (atrValue * AtrMultiplier.Value);

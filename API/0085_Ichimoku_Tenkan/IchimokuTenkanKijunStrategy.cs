@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
             if (bullishCross && priceAboveKumo && Position <= 0)
             {
                 BuyMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Long entry: Tenkan ({tenkan}) crossed above Kijun ({kijun}) and price ({candle.ClosePrice}) above Kumo ({upperKumo})");
+                LogInfo($"Long entry: Tenkan ({tenkan}) crossed above Kijun ({kijun}) and price ({candle.ClosePrice}) above Kumo ({upperKumo})");
                 
                 // Set stop-loss at Kijun-sen
                 StartProtection(null, new Unit(candle.ClosePrice - kijun, UnitTypes.Absolute), false, true);
@@ -177,7 +177,7 @@ namespace StockSharp.Samples.Strategies
             else if (bearishCross && priceBelowKumo && Position >= 0)
             {
                 SellMarket(Volume + Math.Abs(Position));
-                this.AddInfoLog($"Short entry: Tenkan ({tenkan}) crossed below Kijun ({kijun}) and price ({candle.ClosePrice}) below Kumo ({lowerKumo})");
+                LogInfo($"Short entry: Tenkan ({tenkan}) crossed below Kijun ({kijun}) and price ({candle.ClosePrice}) below Kumo ({lowerKumo})");
                 
                 // Set stop-loss at Kijun-sen
                 StartProtection(null, new Unit(kijun - candle.ClosePrice, UnitTypes.Absolute), false, true);

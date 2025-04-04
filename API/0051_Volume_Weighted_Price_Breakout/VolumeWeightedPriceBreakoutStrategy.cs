@@ -118,31 +118,31 @@ namespace StockSharp.Samples.Strategies
                 return;
 
             // Log current values
-            this.AddInfoLog($"Candle Close: {candle.ClosePrice}, MA: {maValue}, VWMA: {vwmaValue}");
+            LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, VWMA: {vwmaValue}");
 
             // Trading logic:
             // Long: Price above VWMA
             if (candle.ClosePrice > vwmaValue && Position <= 0)
             {
-                this.AddInfoLog($"Buy Signal: Price ({candle.ClosePrice}) > VWMA ({vwmaValue})");
+                LogInfo($"Buy Signal: Price ({candle.ClosePrice}) > VWMA ({vwmaValue})");
                 BuyMarket(Volume + Math.Abs(Position));
             }
             // Short: Price below VWMA
             else if (candle.ClosePrice < vwmaValue && Position >= 0)
             {
-                this.AddInfoLog($"Sell Signal: Price ({candle.ClosePrice}) < VWMA ({vwmaValue})");
+                LogInfo($"Sell Signal: Price ({candle.ClosePrice}) < VWMA ({vwmaValue})");
                 SellMarket(Volume + Math.Abs(Position));
             }
             
             // Exit logic: Price crosses MA in the opposite direction
             if (Position > 0 && candle.ClosePrice < maValue)
             {
-                this.AddInfoLog($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
+                LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
                 SellMarket(Math.Abs(Position));
             }
             else if (Position < 0 && candle.ClosePrice > maValue)
             {
-                this.AddInfoLog($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
+                LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
                 BuyMarket(Math.Abs(Position));
             }
         }
