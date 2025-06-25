@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <LangVersion>13.0</LangVersion>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <StockSharpVer>5.*</StockSharpVer>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StockSharp.Algo" Version="$(StockSharpVer)" />
+    <PackageReference Include="StockSharp.Algo.Compilation" Version="$(StockSharpVer)" />
+    <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
+  </ItemGroup>
+
+</Project>
