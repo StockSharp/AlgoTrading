@@ -85,8 +85,8 @@ namespace StockSharp.Samples.Strategies
 			// Create Parabolic SAR indicator
 			var parabolicSar = new ParabolicSar
 			{
-				AccelerationFactor = AccelerationFactor,
-				AccelerationFactorMax = MaxAccelerationFactor
+				Acceleration = AccelerationFactor,
+				AccelerationMax = MaxAccelerationFactor
 			};
 
 			// Create subscription and bind indicator

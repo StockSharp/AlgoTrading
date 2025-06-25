@@ -55,12 +55,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			_initialAcceleration = Param(nameof(InitialAcceleration), 0.02m)
 				.SetDisplay("Initial Acceleration", "Initial acceleration factor for Parabolic SAR", "SAR Settings")
-				.SetRange(0.01m, 0.05m, 0.01m)
+				.SetRange(0.01m, 0.05m)
 				.SetCanOptimize(true);
 				
 			_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
 				.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "SAR Settings")
-				.SetRange(0.1m, 0.3m, 0.05m)
+				.SetRange(0.1m, 0.3m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -85,7 +85,7 @@ namespace StockSharp.Samples.Strategies
 			var parabolicSar = new ParabolicSar
 			{
 				Acceleration = InitialAcceleration,
-				MaxAcceleration = MaxAcceleration
+				AccelerationMax = MaxAcceleration
 			};
 
 			// Create subscription

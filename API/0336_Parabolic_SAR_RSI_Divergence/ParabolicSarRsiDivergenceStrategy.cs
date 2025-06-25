@@ -98,8 +98,8 @@ namespace StockSharp.Samples.Strategies
 			// Create Parabolic SAR indicator
 			var parabolicSar = new ParabolicSar
 			{
-				Af = SarAccelerationFactor,
-				MaxAf = SarMaxAccelerationFactor
+				Acceleration = SarAccelerationFactor,
+				AccelerationMax = SarMaxAccelerationFactor
 			};
 
 			// Create RSI indicator

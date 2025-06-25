@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
 			var parabolicSar = new ParabolicSar
 			{
 				Acceleration = SarAf,
-				AccelerationLimit = SarMaxAf,
+				AccelerationMax = SarMaxAf,
 				AccelerationStep = SarAf // Using initial AF as the step
 			};
 

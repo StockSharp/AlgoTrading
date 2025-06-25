@@ -161,11 +161,14 @@ namespace StockSharp.Strategies
 			_macdHistValues.Clear();
 
 			// Create MACD indicator
-			var macd = new MovingAverageConvergenceDivergence
+			var macd = new MovingAverageConvergenceDivergenceSignal
 			{
-				FastEma = new ExponentialMovingAverage { Length = FastMacdPeriod },
-				SlowEma = new ExponentialMovingAverage { Length = SlowMacdPeriod },
-				SignalEma = new ExponentialMovingAverage { Length = SignalPeriod }
+				Macd =
+				{
+					ShortMa = { Length = FastMacdPeriod },
+					LongMa = { Length = SlowMacdPeriod },
+				},
+				SignalMa = { Length = SignalPeriod }
 			};
 
 			// Create histogram indicator based on MACD

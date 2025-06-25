@@ -76,7 +76,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 30, 5);
 
 			_ivSpikeThreshold = Param(nameof(IVSpikeThreshold), 1.5m)
-				.SetGreaterThan(1.0m)
+				.SetRange(1.0m, decimal.MaxValue)
 				.SetDisplay("IV Spike Threshold", "Minimum IV increase multiplier (e.g., 1.5 = 50% increase)", "Strategy Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.2m, 2.0m, 0.1m);

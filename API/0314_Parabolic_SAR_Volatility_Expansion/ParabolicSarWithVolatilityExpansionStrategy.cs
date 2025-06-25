@@ -111,8 +111,8 @@ namespace StockSharp.Samples.Strategies
 			// Create indicators
 			var parabolicSar = new ParabolicSar
 			{
-				AccelerationFactor = SarAf,
-				AccelerationLimit = SarMaxAf
+				Acceleration = SarAf,
+				AccelerationMax = SarMaxAf
 			};
 			
 			var atr = new AverageTrueRange { Length = AtrPeriod };

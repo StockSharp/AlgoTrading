@@ -69,18 +69,17 @@ namespace StockSharp.Samples.Strategies
 		public ParabolicSarVolumeStrategy()
 		{
 			_acceleration = Param(nameof(Acceleration), 0.02m)
-				.SetRange(0.01m, 0.1m, 0.01m)
+				.SetRange(0.01m, 0.1m)
 				.SetCanOptimize(true)
 				.SetDisplay("SAR Acceleration", "Starting acceleration factor", "Indicators");
 
 			_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
-				.SetRange(0.1m, 0.5m, 0.05m)
+				.SetRange(0.1m, 0.5m)
 				.SetCanOptimize(true)
 				.SetDisplay("SAR Max Acceleration", "Maximum acceleration factor", "Indicators");
 
 			_volumePeriod = Param(nameof(VolumePeriod), 20)
-				.SetDigits()
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetCanOptimize(true)
 				.SetDisplay("Volume Period", "Period for volume moving average", "Indicators");
 
@@ -103,7 +102,7 @@ namespace StockSharp.Samples.Strategies
 			_parabolicSar = new ParabolicSar
 			{
 				Acceleration = Acceleration,
-				MaxAcceleration = MaxAcceleration
+				AccelerationMax = MaxAcceleration
 			};
 
 			_volumeIndicator = new VolumeIndicator();

@@ -50,12 +50,12 @@ namespace StockSharp.Samples.Strategies
 		public LaguerreRsiStrategy()
 		{
 			_gamma = Param(nameof(Gamma), 0.7m)
-				.SetRange(0.2m, 0.9m, 0.1m)
+				.SetRange(0.2m, 0.9m)
 				.SetDisplay("Gamma", "Gamma parameter for Laguerre RSI", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true);
 
