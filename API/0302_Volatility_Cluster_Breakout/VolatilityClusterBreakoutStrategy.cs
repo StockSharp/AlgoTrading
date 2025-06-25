@@ -180,12 +180,12 @@ namespace StockSharp.Samples.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Long exit on volatility drop: Price={candle.ClosePrice}, ATR={atrValue}");
+					LogInfo($"Long exit on volatility drop: Price={candle.ClosePrice}, ATR={atrValue}");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Short exit on volatility drop: Price={candle.ClosePrice}, ATR={atrValue}");
+					LogInfo($"Short exit on volatility drop: Price={candle.ClosePrice}, ATR={atrValue}");
 				}
 			}
 			else if (longEntryCondition)
@@ -199,7 +199,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, Upper={upperLevel}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, Upper={upperLevel}, ATR={atrValue}, Stop={stopPrice}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -212,7 +212,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, Lower={lowerLevel}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, Lower={lowerLevel}, ATR={atrValue}, Stop={stopPrice}");
 			}
 		}
 	}

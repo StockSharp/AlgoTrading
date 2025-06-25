@@ -175,7 +175,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}, ATR={atrValue}, Stop={stopPrice}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -188,19 +188,19 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}, ATR={atrValue}, Stop={stopPrice}");
 			}
 			else if (longExitCondition)
 			{
 				// Exit long position
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long exit: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}");
+				LogInfo($"Long exit: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}");
 			}
 			else if (shortExitCondition)
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short exit: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}");
+				LogInfo($"Short exit: Price={candle.ClosePrice}, Kalman={kalmanValue}, Slope={kalmanSlope}");
 			}
 
 			// Store current value for next candle

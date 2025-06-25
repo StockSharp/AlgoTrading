@@ -257,21 +257,21 @@ namespace StockSharp.Samples.Strategies
 			if (_lastCorrelation < _avgCorrelation - Threshold * stdDev && GetPositionValue(Asset1) <= 0 && GetPositionValue(Asset2) >= 0)
 			{
 				// Correlation breakdown - go long Asset1, short Asset2
-				this.AddInfoLog($"Correlation breakdown: {_lastCorrelation} < {_avgCorrelation - Threshold * stdDev}");
+				LogInfo($"Correlation breakdown: {_lastCorrelation} < {_avgCorrelation - Threshold * stdDev}");
 				BuyMarket(Asset1, Volume);
 				SellMarket(Asset2, Volume);
 			}
 			else if (_lastCorrelation > _avgCorrelation + Threshold * stdDev && GetPositionValue(Asset1) >= 0 && GetPositionValue(Asset2) <= 0)
 			{
 				// Correlation spike - go short Asset1, long Asset2
-				this.AddInfoLog($"Correlation spike: {_lastCorrelation} > {_avgCorrelation + Threshold * stdDev}");
+				LogInfo($"Correlation spike: {_lastCorrelation} > {_avgCorrelation + Threshold * stdDev}");
 				SellMarket(Asset1, Volume);
 				BuyMarket(Asset2, Volume);
 			}
 			else if (Math.Abs(_lastCorrelation - _avgCorrelation) < 0.2m * stdDev)
 			{
 				// Close position when correlation returns to average
-				this.AddInfoLog($"Correlation returned to average: {_lastCorrelation} ≈ {_avgCorrelation}");
+				LogInfo($"Correlation returned to average: {_lastCorrelation} ≈ {_avgCorrelation}");
 				
 				if (GetPositionValue(Asset1) > 0)
 					SellMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));

@@ -195,25 +195,25 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Buy signal - price below lower band and in oversold cluster
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: Price below lower band ({bollingerLower:F2}) in oversold cluster");
+				LogInfo($"Buy Signal: Price below lower band ({bollingerLower:F2}) in oversold cluster");
 			}
 			else if (candle.ClosePrice > bollingerUpper && _currentClusterState == ClusterState.Overbought && Position >= 0)
 			{
 				// Sell signal - price above upper band and in overbought cluster
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: Price above upper band ({bollingerUpper:F2}) in overbought cluster");
+				LogInfo($"Sell Signal: Price above upper band ({bollingerUpper:F2}) in overbought cluster");
 			}
 			else if (Position > 0 && candle.ClosePrice > bollingerMiddle)
 			{
 				// Exit long position when price returns to middle band
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: Price returned to middle band ({bollingerMiddle:F2})");
+				LogInfo($"Exit Long: Price returned to middle band ({bollingerMiddle:F2})");
 			}
 			else if (Position < 0 && candle.ClosePrice < bollingerMiddle)
 			{
 				// Exit short position when price returns to middle band
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: Price returned to middle band ({bollingerMiddle:F2})");
+				LogInfo($"Exit Short: Price returned to middle band ({bollingerMiddle:F2})");
 			}
 		}
 		
@@ -274,7 +274,7 @@ namespace StockSharp.Samples.Strategies
 				_currentClusterState = ClusterState.Neutral;
 			}
 			
-			this.AddInfoLog($"Cluster State: {_currentClusterState}, Normalized RSI: {normalizedRsi:F2}, Normalized Price: {normalizedPrice:F2}");
+			LogInfo($"Cluster State: {_currentClusterState}, Normalized RSI: {normalizedRsi:F2}, Normalized Price: {normalizedPrice:F2}");
 		}
 	}
 }

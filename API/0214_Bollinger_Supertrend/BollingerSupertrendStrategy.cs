@@ -229,7 +229,7 @@ namespace StockSharp.Strategies
 				if (Position <= 0)
 				{
 					BuyMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Long Entry: Price({candle.ClosePrice}) > Upper BB({upperBand}) && Price > Supertrend({_supertrendValue})");
+					LogInfo($"Long Entry: Price({candle.ClosePrice}) > Upper BB({upperBand}) && Price > Supertrend({_supertrendValue})");
 				}
 			}
 			// Short signal: Price breaks below lower Bollinger Band and is below Supertrend
@@ -238,7 +238,7 @@ namespace StockSharp.Strategies
 				if (Position >= 0)
 				{
 					SellMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Short Entry: Price({candle.ClosePrice}) < Lower BB({lowerBand}) && Price < Supertrend({_supertrendValue})");
+					LogInfo($"Short Entry: Price({candle.ClosePrice}) < Lower BB({lowerBand}) && Price < Supertrend({_supertrendValue})");
 				}
 			}
 			// Exit signals based on Supertrend
@@ -248,12 +248,12 @@ namespace StockSharp.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit Long: Price({candle.ClosePrice}) < Supertrend({_supertrendValue})");
+					LogInfo($"Exit Long: Price({candle.ClosePrice}) < Supertrend({_supertrendValue})");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit Short: Price({candle.ClosePrice}) > Supertrend({_supertrendValue})");
+					LogInfo($"Exit Short: Price({candle.ClosePrice}) > Supertrend({_supertrendValue})");
 				}
 			}
 		}

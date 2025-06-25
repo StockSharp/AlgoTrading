@@ -272,14 +272,14 @@ namespace StockSharp.Strategies
 				{
 					// Sell options (overpriced volatility) when underlying has positive momentum
 					SellMarket(OptionSecurity, Volume);
-					this.AddInfoLog($"SHORT OPTION: Skew Z-Score: {skewZScore:F2}, Momentum: Positive");
+					LogInfo($"SHORT OPTION: Skew Z-Score: {skewZScore:F2}, Momentum: Positive");
 				}
 				// Volatility is lower than normal (underpriced options) with negative momentum in underlying
 				else if (skewZScore < -SkewThreshold && !isPositiveMomentum)
 				{
 					// Buy options (underpriced volatility) when underlying has negative momentum
 					BuyMarket(OptionSecurity, Volume);
-					this.AddInfoLog($"LONG OPTION: Skew Z-Score: {skewZScore:F2}, Momentum: Negative");
+					LogInfo($"LONG OPTION: Skew Z-Score: {skewZScore:F2}, Momentum: Negative");
 				}
 			}
 			// Check for exit signals
@@ -290,7 +290,7 @@ namespace StockSharp.Strategies
 					(Position < 0 && skewZScore <= 0))
 				{
 					ClosePosition();
-					this.AddInfoLog($"CLOSE OPTION: Skew Z-Score: {skewZScore:F2}");
+					LogInfo($"CLOSE OPTION: Skew Z-Score: {skewZScore:F2}");
 				}
 			}
 		}

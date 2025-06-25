@@ -150,7 +150,7 @@ namespace StockSharp.Strategies
 				if (Position <= 0)
 				{
 					BuyMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Long Entry: Price({candle.ClosePrice}) > MA({maValue}) && Price > SAR({sarValue})");
+					LogInfo($"Long Entry: Price({candle.ClosePrice}) > MA({maValue}) && Price > SAR({sarValue})");
 				}
 			}
 			// Short signal: Price below MA and below SAR
@@ -159,20 +159,20 @@ namespace StockSharp.Strategies
 				if (Position >= 0)
 				{
 					SellMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Short Entry: Price({candle.ClosePrice}) < MA({maValue}) && Price < SAR({sarValue})");
+					LogInfo($"Short Entry: Price({candle.ClosePrice}) < MA({maValue}) && Price < SAR({sarValue})");
 				}
 			}
 			// Exit long position: Price falls below SAR
 			else if (Position > 0 && !isPriceAboveSAR)
 			{
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Long: Price({candle.ClosePrice}) < SAR({sarValue})");
+				LogInfo($"Exit Long: Price({candle.ClosePrice}) < SAR({sarValue})");
 			}
 			// Exit short position: Price rises above SAR
 			else if (Position < 0 && isPriceAboveSAR)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: Price({candle.ClosePrice}) > SAR({sarValue})");
+				LogInfo($"Exit Short: Price({candle.ClosePrice}) > SAR({sarValue})");
 			}
 		}
 		
@@ -198,7 +198,7 @@ namespace StockSharp.Strategies
 						stopLoss: new Unit(stopLossPercent, UnitTypes.Percent)
 					);
 					
-					this.AddInfoLog($"Updated Long Protection: Stop at {stopLossLevel} ({stopLossPercent:F2}%)");
+					LogInfo($"Updated Long Protection: Stop at {stopLossLevel} ({stopLossPercent:F2}%)");
 				}
 				else
 				{
@@ -212,7 +212,7 @@ namespace StockSharp.Strategies
 						stopLoss: new Unit(stopLossPercent, UnitTypes.Percent)
 					);
 					
-					this.AddInfoLog($"Updated Short Protection: Stop at {stopLossLevel} ({stopLossPercent:F2}%)");
+					LogInfo($"Updated Short Protection: Stop at {stopLossLevel} ({stopLossPercent:F2}%)");
 				}
 			}
 		}

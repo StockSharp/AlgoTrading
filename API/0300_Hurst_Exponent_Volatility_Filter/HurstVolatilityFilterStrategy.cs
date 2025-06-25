@@ -259,7 +259,7 @@ namespace StockSharp.Samples.Strategies
 			_isLongPosition = true;
 			_positionEntryPrice = price;
 			
-			this.AddInfoLog($"Enter LONG at {price}, Hurst shows mean-reversion market with low volatility");
+			LogInfo($"Enter LONG at {price}, Hurst shows mean-reversion market with low volatility");
 		}
 		
 		private void EnterShort(decimal price)
@@ -272,7 +272,7 @@ namespace StockSharp.Samples.Strategies
 			_isLongPosition = false;
 			_positionEntryPrice = price;
 			
-			this.AddInfoLog($"Enter SHORT at {price}, Hurst shows mean-reversion market with low volatility");
+			LogInfo($"Enter SHORT at {price}, Hurst shows mean-reversion market with low volatility");
 		}
 		
 		private void ExitPosition(decimal price)
@@ -285,7 +285,7 @@ namespace StockSharp.Samples.Strategies
 				? (price - _positionEntryPrice) / _positionEntryPrice * 100 
 				: (_positionEntryPrice - price) / _positionEntryPrice * 100;
 			
-			this.AddInfoLog($"Exit position at {price}, P&L: {pnl:F2}%, Mean reversion complete");
+			LogInfo($"Exit position at {price}, P&L: {pnl:F2}%, Mean reversion complete");
 			
 			// Reset position tracking
 			_positionEntryPrice = 0;

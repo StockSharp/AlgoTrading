@@ -192,7 +192,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Bullish setup - price above Supertrend with bullish divergence
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: Price {candle.ClosePrice:F2} > Supertrend {_supertrendValue:F2} with bullish RSI divergence");
+				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > Supertrend {_supertrendValue:F2} with bullish RSI divergence");
 				_isLongPosition = true;
 				_isShortPosition = false;
 			}
@@ -200,7 +200,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Bearish setup - price below Supertrend with bearish divergence
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: Price {candle.ClosePrice:F2} < Supertrend {_supertrendValue:F2} with bearish RSI divergence");
+				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < Supertrend {_supertrendValue:F2} with bearish RSI divergence");
 				_isLongPosition = false;
 				_isShortPosition = true;
 			}
@@ -208,14 +208,14 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Exit long position when price falls below Supertrend
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: Price {candle.ClosePrice:F2} fell below Supertrend {_supertrendValue:F2}");
+				LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below Supertrend {_supertrendValue:F2}");
 				_isLongPosition = false;
 			}
 			else if (_isShortPosition && candle.ClosePrice > _supertrendValue)
 			{
 				// Exit short position when price rises above Supertrend
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: Price {candle.ClosePrice:F2} rose above Supertrend {_supertrendValue:F2}");
+				LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above Supertrend {_supertrendValue:F2}");
 				_isShortPosition = false;
 			}
 		}
@@ -239,7 +239,7 @@ namespace StockSharp.Samples.Strategies
 			
 			if (divergence)
 			{
-				this.AddInfoLog($"Bullish Divergence Detected: Price {previousPrice:F2}->{currentPrice:F2}, RSI {previousRsi:F2}->{currentRsi:F2}");
+				LogInfo($"Bullish Divergence Detected: Price {previousPrice:F2}->{currentPrice:F2}, RSI {previousRsi:F2}->{currentRsi:F2}");
 			}
 			
 			return divergence;
@@ -264,7 +264,7 @@ namespace StockSharp.Samples.Strategies
 			
 			if (divergence)
 			{
-				this.AddInfoLog($"Bearish Divergence Detected: Price {previousPrice:F2}->{currentPrice:F2}, RSI {previousRsi:F2}->{currentRsi:F2}");
+				LogInfo($"Bearish Divergence Detected: Price {previousPrice:F2}->{currentPrice:F2}, RSI {previousRsi:F2}->{currentRsi:F2}");
 			}
 			
 			return divergence;

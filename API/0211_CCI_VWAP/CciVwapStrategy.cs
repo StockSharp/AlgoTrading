@@ -147,25 +147,25 @@ namespace StockSharp.Strategies
 			if (cciValue < -100 && candle.ClosePrice < _currentVwap && Position <= 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy signal: CCI={cciValue:F2}, Price={candle.ClosePrice}, VWAP={_currentVwap}");
+				LogInfo($"Buy signal: CCI={cciValue:F2}, Price={candle.ClosePrice}, VWAP={_currentVwap}");
 			}
 			// Short signal: CCI above 100 and price above VWAP
 			else if (cciValue > 100 && candle.ClosePrice > _currentVwap && Position >= 0)
 			{
 				SellMarket(Volume);
-				this.AddInfoLog($"Sell signal: CCI={cciValue:F2}, Price={candle.ClosePrice}, VWAP={_currentVwap}");
+				LogInfo($"Sell signal: CCI={cciValue:F2}, Price={candle.ClosePrice}, VWAP={_currentVwap}");
 			}
 			// Exit long position: Price crosses above VWAP
 			else if (Position > 0 && candle.ClosePrice > _currentVwap)
 			{
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit long: Price={candle.ClosePrice}, VWAP={_currentVwap}");
+				LogInfo($"Exit long: Price={candle.ClosePrice}, VWAP={_currentVwap}");
 			}
 			// Exit short position: Price crosses below VWAP
 			else if (Position < 0 && candle.ClosePrice < _currentVwap)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit short: Price={candle.ClosePrice}, VWAP={_currentVwap}");
+				LogInfo($"Exit short: Price={candle.ClosePrice}, VWAP={_currentVwap}");
 			}
 		}
 	}

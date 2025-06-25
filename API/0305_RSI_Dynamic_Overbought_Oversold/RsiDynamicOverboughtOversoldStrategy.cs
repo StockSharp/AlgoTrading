@@ -183,7 +183,7 @@ namespace StockSharp.Samples.Strategies
 			dynamicOversold = Math.Max(dynamicOversold, 10m);
 			
 			// Log current values
-			this.AddInfoLog($"RSI: {rsiValue}, MA: {priceSmaValue}, Dynamic Overbought: {dynamicOverbought}, Dynamic Oversold: {dynamicOversold}");
+			LogInfo($"RSI: {rsiValue}, MA: {priceSmaValue}, Dynamic Overbought: {dynamicOverbought}, Dynamic Oversold: {dynamicOversold}");
 			
 			// Define entry conditions
 			var longEntryCondition = rsiValue < dynamicOversold && candle.ClosePrice > priceSmaValue && Position <= 0;
@@ -202,7 +202,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, RSI={rsiValue}, Oversold={dynamicOversold}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, RSI={rsiValue}, Oversold={dynamicOversold}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -212,19 +212,19 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, RSI={rsiValue}, Overbought={dynamicOverbought}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, RSI={rsiValue}, Overbought={dynamicOverbought}");
 			}
 			else if (longExitCondition)
 			{
 				// Exit long position
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long exit: Price={candle.ClosePrice}, RSI={rsiValue}");
+				LogInfo($"Long exit: Price={candle.ClosePrice}, RSI={rsiValue}");
 			}
 			else if (shortExitCondition)
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short exit: Price={candle.ClosePrice}, RSI={rsiValue}");
+				LogInfo($"Short exit: Price={candle.ClosePrice}, RSI={rsiValue}");
 			}
 		}
 	}

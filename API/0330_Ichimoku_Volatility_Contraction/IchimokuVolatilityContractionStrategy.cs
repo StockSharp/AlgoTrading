@@ -219,7 +219,7 @@ namespace StockSharp.Samples.Strategies
 			bool isVolatilityContraction = currentAtr < (_avgAtr - DeviationFactor * _atrStdDev);
 			
 			// Log the values
-			this.AddInfoLog($"Tenkan: {tenkan}, Kijun: {kijun}, Cloud: {lowerKumo}-{upperKumo}, " +
+			LogInfo($"Tenkan: {tenkan}, Kijun: {kijun}, Cloud: {lowerKumo}-{upperKumo}, " +
 							$"ATR: {currentAtr}, Avg ATR: {_avgAtr}, Contraction: {isVolatilityContraction}");
 
 			// Trading logic with volatility contraction filter
@@ -234,7 +234,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Open long position
 					BuyMarket(Volume);
-					this.AddInfoLog($"Long signal: Price ({candle.ClosePrice}) above cloud, " +
+					LogInfo($"Long signal: Price ({candle.ClosePrice}) above cloud, " +
 									$"Tenkan ({tenkan}) > Kijun ({kijun}) with volatility contraction");
 				}
 				// Bearish signal: Price below cloud and Tenkan below Kijun
@@ -246,7 +246,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Open short position
 					SellMarket(Volume);
-					this.AddInfoLog($"Short signal: Price ({candle.ClosePrice}) below cloud, " +
+					LogInfo($"Short signal: Price ({candle.ClosePrice}) below cloud, " +
 									$"Tenkan ({tenkan}) < Kijun ({kijun}) with volatility contraction");
 				}
 			}
@@ -257,7 +257,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Close position when price crosses the cloud in the opposite direction
 				ClosePosition();
-				this.AddInfoLog($"Exit signal: Price exited cloud in opposite direction. Position closed at {candle.ClosePrice}");
+				LogInfo($"Exit signal: Price exited cloud in opposite direction. Position closed at {candle.ClosePrice}");
 			}
 		}
 	}

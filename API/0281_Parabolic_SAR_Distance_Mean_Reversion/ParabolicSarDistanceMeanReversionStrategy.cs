@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 				Position >= 0 && candle.ClosePrice > _sarValue)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Long distance extended: {_currentDistanceLong} > {longDistanceExtendedThreshold}. Selling at {candle.ClosePrice}");
+				LogInfo($"Long distance extended: {_currentDistanceLong} > {longDistanceExtendedThreshold}. Selling at {candle.ClosePrice}");
 			}
 			// For short positions - when price is far below SAR (mean reversion to upside)
 			else if (_currentDistanceShort > shortDistanceExtendedThreshold && 
@@ -218,19 +218,19 @@ namespace StockSharp.Samples.Strategies
 					Position <= 0 && candle.ClosePrice < _sarValue)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Short distance extended: {_currentDistanceShort} > {shortDistanceExtendedThreshold}. Buying at {candle.ClosePrice}");
+				LogInfo($"Short distance extended: {_currentDistanceShort} > {shortDistanceExtendedThreshold}. Buying at {candle.ClosePrice}");
 			}
 			
 			// Exit positions when distance returns to average
 			else if (Position < 0 && _currentDistanceShort < _prevDistanceAvgShort && _prevDistanceShort >= _prevDistanceAvgShort)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short distance returned to average: {_currentDistanceShort} < {_prevDistanceAvgShort}. Closing short position at {candle.ClosePrice}");
+				LogInfo($"Short distance returned to average: {_currentDistanceShort} < {_prevDistanceAvgShort}. Closing short position at {candle.ClosePrice}");
 			}
 			else if (Position > 0 && _currentDistanceLong < _prevDistanceAvgLong && _prevDistanceLong >= _prevDistanceAvgLong)
 			{
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long distance returned to average: {_currentDistanceLong} < {_prevDistanceAvgLong}. Closing long position at {candle.ClosePrice}");
+				LogInfo($"Long distance returned to average: {_currentDistanceLong} < {_prevDistanceAvgLong}. Closing long position at {candle.ClosePrice}");
 			}
 			
 			// Use Parabolic SAR as dynamic stop
@@ -240,12 +240,12 @@ namespace StockSharp.Samples.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Price crossed below Parabolic SAR: {candle.ClosePrice} < {_sarValue}. Closing long position at {candle.ClosePrice}");
+					LogInfo($"Price crossed below Parabolic SAR: {candle.ClosePrice} < {_sarValue}. Closing long position at {candle.ClosePrice}");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Price crossed above Parabolic SAR: {candle.ClosePrice} > {_sarValue}. Closing short position at {candle.ClosePrice}");
+					LogInfo($"Price crossed above Parabolic SAR: {candle.ClosePrice} > {_sarValue}. Closing short position at {candle.ClosePrice}");
 				}
 			}
 			

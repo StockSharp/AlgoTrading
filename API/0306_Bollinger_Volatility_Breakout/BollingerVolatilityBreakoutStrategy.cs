@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 			var shortExitCondition = candle.ClosePrice > bbMiddle && Position < 0;
 
 			// Log current values
-			this.AddInfoLog($"Close: {candle.ClosePrice}, BB Upper: {bbUpper}, BB Lower: {bbLower}, ATR: {atrValue}, ATR Threshold: {volatilityThreshold}, High Volatility: {isHighVolatility}");
+			LogInfo($"Close: {candle.ClosePrice}, BB Upper: {bbUpper}, BB Lower: {bbLower}, ATR: {atrValue}, ATR Threshold: {volatilityThreshold}, High Volatility: {isHighVolatility}");
 
 			// Execute trading logic
 			if (longEntryCondition)
@@ -224,7 +224,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, BB Upper={bbUpper}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, BB Upper={bbUpper}, ATR={atrValue}, Stop={stopPrice}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -237,19 +237,19 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, BB Lower={bbLower}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, BB Lower={bbLower}, ATR={atrValue}, Stop={stopPrice}");
 			}
 			else if (longExitCondition)
 			{
 				// Exit long position
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long exit: Price={candle.ClosePrice}, BB Middle={bbMiddle}");
+				LogInfo($"Long exit: Price={candle.ClosePrice}, BB Middle={bbMiddle}");
 			}
 			else if (shortExitCondition)
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short exit: Price={candle.ClosePrice}, BB Middle={bbMiddle}");
+				LogInfo($"Short exit: Price={candle.ClosePrice}, BB Middle={bbMiddle}");
 			}
 		}
 	}

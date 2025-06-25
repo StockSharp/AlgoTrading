@@ -193,12 +193,12 @@ namespace StockSharp.Strategies
 					if (direction == Sides.Buy)
 					{
 						BuyMarket(Volume);
-						this.AddInfoLog($"Long entry: ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}, +DI > -DI");
+						LogInfo($"Long entry: ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}, +DI > -DI");
 					}
 					else
 					{
 						SellMarket(Volume);
-						this.AddInfoLog($"Short entry: ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}, +DI < -DI");
+						LogInfo($"Short entry: ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}, +DI < -DI");
 					}
 				}
 				// ADX is significantly above its average - mean reversion expects it to fall
@@ -210,12 +210,12 @@ namespace StockSharp.Strategies
 					if (direction == Sides.Sell)
 					{
 						BuyMarket(Volume);
-						this.AddInfoLog($"Long entry (trend strength exhaustion): ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}");
+						LogInfo($"Long entry (trend strength exhaustion): ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}");
 					}
 					else
 					{
 						SellMarket(Volume);
-						this.AddInfoLog($"Short entry (trend strength exhaustion): ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}");
+						LogInfo($"Short entry (trend strength exhaustion): ADX = {currentAdx}, Avg = {_avgAdx}, StdDev = {_stdDevAdx}");
 					}
 				}
 			}
@@ -225,7 +225,7 @@ namespace StockSharp.Strategies
 				if (currentAdx > _avgAdx)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Long exit: ADX = {currentAdx}, Avg = {_avgAdx}");
+					LogInfo($"Long exit: ADX = {currentAdx}, Avg = {_avgAdx}");
 				}
 			}
 			else if (Position < 0) // Short position
@@ -233,7 +233,7 @@ namespace StockSharp.Strategies
 				if (currentAdx < _avgAdx)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Short exit: ADX = {currentAdx}, Avg = {_avgAdx}");
+					LogInfo($"Short exit: ADX = {currentAdx}, Avg = {_avgAdx}");
 				}
 			}
 		}

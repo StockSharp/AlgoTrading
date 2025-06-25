@@ -175,13 +175,13 @@ namespace StockSharp.Strategies
 				if (zScore < -ZScoreThreshold && isHighVolume)
 				{
 					BuyMarket(Volume);
-					this.AddInfoLog($"LONG: Z-Score: {zScore:F2}, Volume: High");
+					LogInfo($"LONG: Z-Score: {zScore:F2}, Volume: High");
 				}
 				// Short signal: price is above threshold (overvalued) with high volume
 				else if (zScore > ZScoreThreshold && isHighVolume)
 				{
 					SellMarket(Volume);
-					this.AddInfoLog($"SHORT: Z-Score: {zScore:F2}, Volume: High");
+					LogInfo($"SHORT: Z-Score: {zScore:F2}, Volume: High");
 				}
 			}
 			// Check for exit signals
@@ -192,7 +192,7 @@ namespace StockSharp.Strategies
 					(Position < 0 && zScore <= 0))
 				{
 					ClosePosition();
-					this.AddInfoLog($"CLOSE: Z-Score: {zScore:F2}");
+					LogInfo($"CLOSE: Z-Score: {zScore:F2}");
 				}
 			}
 		}

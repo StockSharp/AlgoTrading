@@ -199,12 +199,12 @@ namespace StockSharp.Samples.Strategies
 			if (_currentAtrSlope < longEntryThreshold && Position <= 0)
 			{
 				// Long entry: slope is significantly lower than average (mean reversion expected)
-				this.AddInfoLog($"ATR slope {_currentAtrSlope} below threshold {longEntryThreshold}, entering LONG");
+				LogInfo($"ATR slope {_currentAtrSlope} below threshold {longEntryThreshold}, entering LONG");
 				BuyMarket(Volume + Math.Abs(Position));
 				
 				// Calculate and set stop loss based on ATR
 				var stopPrice = candle.ClosePrice - atrValue * StopLossMultiplier;
-				this.AddInfoLog($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
+				LogInfo($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
 				
 				// Use dynamic stop protection for this position
 				StartProtection(null, new Unit(atrValue * StopLossMultiplier, UnitTypes.Absolute));
@@ -212,12 +212,12 @@ namespace StockSharp.Samples.Strategies
 			else if (_currentAtrSlope > shortEntryThreshold && Position >= 0)
 			{
 				// Short entry: slope is significantly higher than average (mean reversion expected)
-				this.AddInfoLog($"ATR slope {_currentAtrSlope} above threshold {shortEntryThreshold}, entering SHORT");
+				LogInfo($"ATR slope {_currentAtrSlope} above threshold {shortEntryThreshold}, entering SHORT");
 				SellMarket(Volume + Math.Abs(Position));
 				
 				// Calculate and set stop loss based on ATR
 				var stopPrice = candle.ClosePrice + atrValue * StopLossMultiplier;
-				this.AddInfoLog($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
+				LogInfo($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
 				
 				// Use dynamic stop protection for this position
 				StartProtection(new Unit(atrValue * StopLossMultiplier, UnitTypes.Absolute), null);
@@ -225,13 +225,13 @@ namespace StockSharp.Samples.Strategies
 			else if (Position > 0 && _currentAtrSlope > _averageSlope)
 			{
 				// Exit long when slope returns to or above average
-				this.AddInfoLog($"ATR slope {_currentAtrSlope} returned to average {_averageSlope}, exiting LONG");
+				LogInfo($"ATR slope {_currentAtrSlope} returned to average {_averageSlope}, exiting LONG");
 				SellMarket(Math.Abs(Position));
 			}
 			else if (Position < 0 && _currentAtrSlope < _averageSlope)
 			{
 				// Exit short when slope returns to or below average
-				this.AddInfoLog($"ATR slope {_currentAtrSlope} returned to average {_averageSlope}, exiting SHORT");
+				LogInfo($"ATR slope {_currentAtrSlope} returned to average {_averageSlope}, exiting SHORT");
 				BuyMarket(Math.Abs(Position));
 			}
 		}

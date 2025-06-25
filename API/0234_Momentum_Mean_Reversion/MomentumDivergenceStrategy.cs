@@ -193,13 +193,13 @@ namespace StockSharp.Samples.Strategies
 			if (bullishDivergence && Position <= 0)
 			{
 				// Bullish divergence - buy signal
-				this.AddInfoLog($"Bullish divergence detected. Price: {currentPrice}, Momentum: {currentMomentum}");
+				LogInfo($"Bullish divergence detected. Price: {currentPrice}, Momentum: {currentMomentum}");
 				BuyMarket(Volume);
 			}
 			else if (bearishDivergence && Position >= 0)
 			{
 				// Bearish divergence - sell signal
-				this.AddInfoLog($"Bearish divergence detected. Price: {currentPrice}, Momentum: {currentMomentum}");
+				LogInfo($"Bearish divergence detected. Price: {currentPrice}, Momentum: {currentMomentum}");
 				SellMarket(Volume + Position);
 			}
 			
@@ -207,13 +207,13 @@ namespace StockSharp.Samples.Strategies
 			if (Position > 0 && currentPrice < currentMA)
 			{
 				// Long position and price below MA - exit
-				this.AddInfoLog($"Exit long position. Price below MA: {currentPrice} < {currentMA}");
+				LogInfo($"Exit long position. Price below MA: {currentPrice} < {currentMA}");
 				SellMarket(Position);
 			}
 			else if (Position < 0 && currentPrice > currentMA)
 			{
 				// Short position and price above MA - exit
-				this.AddInfoLog($"Exit short position. Price above MA: {currentPrice} > {currentMA}");
+				LogInfo($"Exit short position. Price above MA: {currentPrice} > {currentMA}");
 				BuyMarket(Math.Abs(Position));
 			}
 		}

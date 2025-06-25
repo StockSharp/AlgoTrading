@@ -236,8 +236,8 @@ namespace StockSharp.Samples.Strategies
 			var shortExitCondition = histogram > 0 && Position < 0;
 
 			// Log current values
-			this.AddInfoLog($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd}, Signal: {signal}, Histogram: {histogram}");
-			this.AddInfoLog($"Hist Avg: {histAvgValue}, Hist StdDev: {histStdDevValue}, Upper: {upperThreshold}, Lower: {lowerThreshold}");
+			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd}, Signal: {signal}, Histogram: {histogram}");
+			LogInfo($"Hist Avg: {histAvgValue}, Hist StdDev: {histStdDevValue}, Upper: {upperThreshold}, Lower: {lowerThreshold}");
 
 			// Execute trading logic
 			if (longEntryCondition)
@@ -248,7 +248,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, Histogram={histogram}, Threshold={upperThreshold}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, Histogram={histogram}, Threshold={upperThreshold}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -258,19 +258,19 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, Histogram={histogram}, Threshold={lowerThreshold}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, Histogram={histogram}, Threshold={lowerThreshold}");
 			}
 			else if (longExitCondition)
 			{
 				// Exit long position
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long exit: Price={candle.ClosePrice}, Histogram={histogram}");
+				LogInfo($"Long exit: Price={candle.ClosePrice}, Histogram={histogram}");
 			}
 			else if (shortExitCondition)
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short exit: Price={candle.ClosePrice}, Histogram={histogram}");
+				LogInfo($"Short exit: Price={candle.ClosePrice}, Histogram={histogram}");
 			}
 		}
 	}

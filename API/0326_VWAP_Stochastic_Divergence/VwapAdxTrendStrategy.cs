@@ -165,32 +165,32 @@ namespace StockSharp.Samples.Strategies
 				return;
 				
 			// Log current values
-			this.AddInfoLog($"VWAP: {_vwapValue:F2}, ADX: {_adxValue:F2}, +DI: {_plusDiValue:F2}, -DI: {_minusDiValue:F2}");
+			LogInfo($"VWAP: {_vwapValue:F2}, ADX: {_adxValue:F2}, +DI: {_plusDiValue:F2}, -DI: {_minusDiValue:F2}");
 			
 			// Trading logic
 			// Buy when price is above VWAP, ADX > threshold, and +DI > -DI (strong uptrend)
 			if (candle.ClosePrice > _vwapValue && _adxValue > AdxThreshold && _plusDiValue > _minusDiValue && Position <= 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: Price {candle.ClosePrice:F2} > VWAP {_vwapValue:F2}, ADX {_adxValue:F2} > {AdxThreshold}, +DI {_plusDiValue:F2} > -DI {_minusDiValue:F2}");
+				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > VWAP {_vwapValue:F2}, ADX {_adxValue:F2} > {AdxThreshold}, +DI {_plusDiValue:F2} > -DI {_minusDiValue:F2}");
 			}
 			// Sell when price is below VWAP, ADX > threshold, and -DI > +DI (strong downtrend)
 			else if (candle.ClosePrice < _vwapValue && _adxValue > AdxThreshold && _minusDiValue > _plusDiValue && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: Price {candle.ClosePrice:F2} < VWAP {_vwapValue:F2}, ADX {_adxValue:F2} > {AdxThreshold}, -DI {_minusDiValue:F2} > +DI {_plusDiValue:F2}");
+				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < VWAP {_vwapValue:F2}, ADX {_adxValue:F2} > {AdxThreshold}, -DI {_minusDiValue:F2} > +DI {_plusDiValue:F2}");
 			}
 			// Exit long position when ADX weakens below exit threshold or -DI crosses above +DI
 			else if (Position > 0 && (_adxValue < AdxExitThreshold || _minusDiValue > _plusDiValue))
 			{
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: ADX {_adxValue:F2} < {AdxExitThreshold} or -DI {_minusDiValue:F2} > +DI {_plusDiValue:F2}");
+				LogInfo($"Exit Long: ADX {_adxValue:F2} < {AdxExitThreshold} or -DI {_minusDiValue:F2} > +DI {_plusDiValue:F2}");
 			}
 			// Exit short position when ADX weakens below exit threshold or +DI crosses above -DI
 			else if (Position < 0 && (_adxValue < AdxExitThreshold || _plusDiValue > _minusDiValue))
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: ADX {_adxValue:F2} < {AdxExitThreshold} or +DI {_plusDiValue:F2} > -DI {_minusDiValue:F2}");
+				LogInfo($"Exit Short: ADX {_adxValue:F2} < {AdxExitThreshold} or +DI {_plusDiValue:F2} > -DI {_minusDiValue:F2}");
 			}
 		}
 	}

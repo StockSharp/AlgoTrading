@@ -188,20 +188,20 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Buy signal - MACD above signal line and bullish state
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: MACD ({macdValue:F6}) > Signal ({signalValue:F6}) in Bullish state");
+				LogInfo($"Buy Signal: MACD ({macdValue:F6}) > Signal ({signalValue:F6}) in Bullish state");
 			}
 			else if (macdValue < signalValue && _currentState == MarketState.Bearish && Position >= 0)
 			{
 				// Sell signal - MACD below signal line and bearish state
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: MACD ({macdValue:F6}) < Signal ({signalValue:F6}) in Bearish state");
+				LogInfo($"Sell Signal: MACD ({macdValue:F6}) < Signal ({signalValue:F6}) in Bearish state");
 			}
 			else if ((Position > 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bearish)) ||
 					 (Position < 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bullish)))
 			{
 				// Exit position if market state changes
 				ClosePosition();
-				this.AddInfoLog($"Exit Position: Market state changed to {_currentState}");
+				LogInfo($"Exit Position: Market state changed to {_currentState}");
 			}
 		}
 		
@@ -276,7 +276,7 @@ namespace StockSharp.Samples.Strategies
 				_currentState = MarketState.Neutral;
 			}
 			
-			this.AddInfoLog($"Market State: {_currentState}, Positive Changes: {positiveChanges}, Negative Changes: {negativeChanges}");
+			LogInfo($"Market State: {_currentState}, Positive Changes: {positiveChanges}, Negative Changes: {negativeChanges}");
 		}
 	}
 }

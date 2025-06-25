@@ -237,8 +237,8 @@ namespace StockSharp.Samples.Strategies
 			var shortExitCondition = priceAboveCloud && Position < 0;
 
 			// Log current values
-			this.AddInfoLog($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, Volume: {candle.TotalVolume}, Threshold: {volumeThreshold}");
-			this.AddInfoLog($"Tenkan: {tenkan}, Kijun: {kijun}, Senkou A: {senkouA}, Senkou B: {senkouB}");
+			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, Volume: {candle.TotalVolume}, Threshold: {volumeThreshold}");
+			LogInfo($"Tenkan: {tenkan}, Kijun: {kijun}, Senkou A: {senkouA}, Senkou B: {senkouB}");
 
 			// Execute trading logic
 			if (longEntryCondition)
@@ -249,7 +249,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, Volume={candle.TotalVolume}, Threshold={volumeThreshold}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, Volume={candle.TotalVolume}, Threshold={volumeThreshold}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -259,19 +259,19 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, Volume={candle.TotalVolume}, Threshold={volumeThreshold}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, Volume={candle.TotalVolume}, Threshold={volumeThreshold}");
 			}
 			else if (longExitCondition)
 			{
 				// Exit long position
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long exit: Price={candle.ClosePrice}, Reason=Below Cloud");
+				LogInfo($"Long exit: Price={candle.ClosePrice}, Reason=Below Cloud");
 			}
 			else if (shortExitCondition)
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short exit: Price={candle.ClosePrice}, Reason=Above Cloud");
+				LogInfo($"Short exit: Price={candle.ClosePrice}, Reason=Above Cloud");
 			}
 		}
 	}

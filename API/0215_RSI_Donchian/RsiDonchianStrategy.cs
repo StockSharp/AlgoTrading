@@ -224,7 +224,7 @@ namespace StockSharp.Strategies
 				if (Position <= 0)
 				{
 					BuyMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Long Entry: RSI({_currentRsi:F2}) < 30 && Price({candle.ClosePrice}) > Donchian High({_donchianHigh})");
+					LogInfo($"Long Entry: RSI({_currentRsi:F2}) < 30 && Price({candle.ClosePrice}) > Donchian High({_donchianHigh})");
 				}
 			}
 			// Short signal: RSI > 70 (overbought) and price breaks below Donchian low
@@ -233,7 +233,7 @@ namespace StockSharp.Strategies
 				if (Position >= 0)
 				{
 					SellMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Short Entry: RSI({_currentRsi:F2}) > 70 && Price({candle.ClosePrice}) < Donchian Low({_donchianLow})");
+					LogInfo($"Short Entry: RSI({_currentRsi:F2}) > 70 && Price({candle.ClosePrice}) < Donchian Low({_donchianLow})");
 				}
 			}
 			// Exit signals based on Donchian middle line
@@ -243,12 +243,12 @@ namespace StockSharp.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit Long: Price({candle.ClosePrice}) < Donchian Middle({_donchianMiddle})");
+					LogInfo($"Exit Long: Price({candle.ClosePrice}) < Donchian Middle({_donchianMiddle})");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit Short: Price({candle.ClosePrice}) > Donchian Middle({_donchianMiddle})");
+					LogInfo($"Exit Short: Price({candle.ClosePrice}) > Donchian Middle({_donchianMiddle})");
 				}
 			}
 		}

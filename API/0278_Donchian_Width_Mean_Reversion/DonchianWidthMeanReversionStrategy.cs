@@ -192,13 +192,13 @@ namespace StockSharp.Samples.Strategies
 			if (_currentWidth < narrowThreshold && _prevWidth >= narrowThreshold && Position == 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Donchian channel width compression: {_currentWidth} < {narrowThreshold}. Buying at {candle.ClosePrice}");
+				LogInfo($"Donchian channel width compression: {_currentWidth} < {narrowThreshold}. Buying at {candle.ClosePrice}");
 			}
 			// When channel is widening (expansion), enter short position
 			else if (_currentWidth > wideThreshold && _prevWidth <= wideThreshold && Position == 0)
 			{
 				SellMarket(Volume);
-				this.AddInfoLog($"Donchian channel width expansion: {_currentWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
+				LogInfo($"Donchian channel width expansion: {_currentWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
 			}
 			
 			// Exit positions when width returns to average
@@ -209,12 +209,12 @@ namespace StockSharp.Samples.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Donchian width returned to average: {_currentWidth} ≈ {_prevWidthAverage}. Closing long position at {candle.ClosePrice}");
+					LogInfo($"Donchian width returned to average: {_currentWidth} ≈ {_prevWidthAverage}. Closing long position at {candle.ClosePrice}");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Donchian width returned to average: {_currentWidth} ≈ {_prevWidthAverage}. Closing short position at {candle.ClosePrice}");
+					LogInfo($"Donchian width returned to average: {_currentWidth} ≈ {_prevWidthAverage}. Closing short position at {candle.ClosePrice}");
 				}
 			}
 			

@@ -226,7 +226,7 @@ namespace StockSharp.Samples.Strategies
 			if (candle.ClosePrice > _upperBand && _kalmanEstimate > candle.ClosePrice && kalmanSlope > 0 && Position <= 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: Price {candle.ClosePrice:F2} > Upper Band {_upperBand:F2}, Kalman Estimate {_kalmanEstimate:F2}, Kalman Slope {kalmanSlope:F6}");
+				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > Upper Band {_upperBand:F2}, Kalman Estimate {_kalmanEstimate:F2}, Kalman Slope {kalmanSlope:F6}");
 				_isLongPosition = true;
 				_isShortPosition = false;
 			}
@@ -234,7 +234,7 @@ namespace StockSharp.Samples.Strategies
 			else if (candle.ClosePrice < _lowerBand && _kalmanEstimate < candle.ClosePrice && kalmanSlope < 0 && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: Price {candle.ClosePrice:F2} < Lower Band {_lowerBand:F2}, Kalman Estimate {_kalmanEstimate:F2}, Kalman Slope {kalmanSlope:F6}");
+				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < Lower Band {_lowerBand:F2}, Kalman Estimate {_kalmanEstimate:F2}, Kalman Slope {kalmanSlope:F6}");
 				_isLongPosition = false;
 				_isShortPosition = true;
 			}
@@ -242,14 +242,14 @@ namespace StockSharp.Samples.Strategies
 			else if (_isLongPosition && candle.ClosePrice < _emaValue)
 			{
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: Price {candle.ClosePrice:F2} fell below EMA {_emaValue:F2}");
+				LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below EMA {_emaValue:F2}");
 				_isLongPosition = false;
 			}
 			// Exit short position when price rises above EMA
 			else if (_isShortPosition && candle.ClosePrice > _emaValue)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: Price {candle.ClosePrice:F2} rose above EMA {_emaValue:F2}");
+				LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above EMA {_emaValue:F2}");
 				_isShortPosition = false;
 			}
 		}
@@ -266,7 +266,7 @@ namespace StockSharp.Samples.Strategies
 			_kalmanEstimate = predictedEstimate + kalmanGain * (price - predictedEstimate);
 			_kalmanError = (1 - kalmanGain) * predictedError;
 			
-			this.AddInfoLog($"Kalman Filter: Price {price:F2}, Estimate {_kalmanEstimate:F2}, Error {_kalmanError:F6}, Gain {kalmanGain:F6}");
+			LogInfo($"Kalman Filter: Price {price:F2}, Estimate {_kalmanEstimate:F2}, Error {_kalmanError:F6}, Gain {kalmanGain:F6}");
 		}
 		
 		private decimal CalculateKalmanSlope()

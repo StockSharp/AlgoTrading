@@ -220,43 +220,47 @@ namespace StockSharp.Samples.Strategies
 				if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
 				{
 					BuyMarket(Volume);
-					this.AddInfoLog($"Ichimoku cloud compression (bullish): {_currentCloudWidth} < {narrowThreshold}. Buying at {candle.ClosePrice}");
+					LogInfo($"Ichimoku cloud compression (bullish): {_currentCloudWidth} < {narrowThreshold}. Buying at {candle.ClosePrice}");
 				}
 				else if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
 				{
 					SellMarket(Volume);
-					this.AddInfoLog($"Ichimoku cloud compression (bearish): {_currentCloudWidth} < {narrowThreshold}. Selling at {candle.ClosePrice}");
+					LogInfo($"Ichimoku cloud compression (bearish): {_currentCloudWidth} < {narrowThreshold}. Selling at {candle.ClosePrice}");
 				}
 			}
 			// When cloud is widening (expansion)
 			else if (_currentCloudWidth > wideThreshold && _prevCloudWidth <= wideThreshold && Position == 0)
-			{
-				// Determine direction based on price position relative to cloud
-				if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
-				{
-					SellMarket(Volume);
-					this.AddInfoLog($"Ichimoku cloud expansion (bearish): {_currentCloudWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
-				}
-				else if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
-				{
-					BuyMarket(Volume);
-					this.AddInfoLog($"Ichimoku cloud expansion (bullish): {_currentCloudWidth} > {wideThreshold}. Buying at {candle.ClosePrice}");
-				}
+{
+	// Determine direction based on price position relative to cloud
+	if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
+	{
+		SellMarket(Volume);
+		LogInfo($"Ichimoku cloud expansion (bearish): {_currentCloudWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
+	}
+	else if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
+	{
+		BuyMarket(Volume);
+		LogInfo($"Ichimoku cloud expansion (bullish): {_currentCloudWidth} > {wideThreshold}. Buying at {candle.ClosePrice}");
+	}
+}
+
+// Exit positions when width returns to average
+else if (_currentCloudWidth >= 0.9m * _prevCloudWidthAverage &&
+	 _currentCloudWidth <= 1.1m * _prevCloudWidthAverage &&
+	 (_prevCloudWidth < 0.9m * _prevCloudWidthAverage || _prevCloudWidth > 1.1m * _prevCloudWidthAverage) &&
+	 (Position != 0))
+{
+	if (Position > 0)
+	{
+		SellMarket(Math.Abs(Position));
+		LogInfo($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing long position at {candle.ClosePrice}");
+	}
+	else if (Position < 0)
+	{
+		BuyMarket(Math.Abs(Position));
+		LogInfo($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing short position at {candle.ClosePrice}");
+	}
+}
 			}
-			
-			// Exit positions when width returns to average
-			else if (_currentCloudWidth >= 0.9m * _prevCloudWidthAverage && 
-				 _currentCloudWidth <= 1.1m * _prevCloudWidthAverage && 
-				 (_prevCloudWidth < 0.9m * _prevCloudWidthAverage || _prevCloudWidth > 1.1m * _prevCloudWidthAverage) &&
-				 (Position != 0))
-			{
-				if (Position > 0)
-				{
-					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing long position at {candle.ClosePrice}");
-				}
-				else if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing short position at {candle.ClosePrice}");
-				}
+			}
+			}

@@ -206,25 +206,25 @@ namespace StockSharp.Samples.Strategies
 					{
 						// Slope is below lower threshold (RSI falling rapidly) - mean reversion buy signal
 						BuyMarket(Volume + Math.Abs(Position));
-						this.AddInfoLog($"BUY Signal: RSI Slope {_currentSlope:F6} < Lower Threshold {lowerThreshold:F6}");
+						LogInfo($"BUY Signal: RSI Slope {_currentSlope:F6} < Lower Threshold {lowerThreshold:F6}");
 					}
 					else if (_currentSlope > upperThreshold && Position >= 0)
 					{
 						// Slope is above upper threshold (RSI rising rapidly) - mean reversion sell signal
 						SellMarket(Volume + Math.Abs(Position));
-						this.AddInfoLog($"SELL Signal: RSI Slope {_currentSlope:F6} > Upper Threshold {upperThreshold:F6}");
+						LogInfo($"SELL Signal: RSI Slope {_currentSlope:F6} > Upper Threshold {upperThreshold:F6}");
 					}
 					else if (_currentSlope > _averageSlope && Position > 0)
 					{
 						// Exit long position when slope returns to average (profit target)
 						SellMarket(Position);
-						this.AddInfoLog($"EXIT LONG: RSI Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
+						LogInfo($"EXIT LONG: RSI Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
 					}
 					else if (_currentSlope < _averageSlope && Position < 0)
 					{
 						// Exit short position when slope returns to average (profit target)
 						BuyMarket(Math.Abs(Position));
-						this.AddInfoLog($"EXIT SHORT: RSI Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
+						LogInfo($"EXIT SHORT: RSI Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
 					}
 				}
 			}

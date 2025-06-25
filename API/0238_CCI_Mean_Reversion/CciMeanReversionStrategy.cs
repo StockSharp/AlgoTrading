@@ -185,13 +185,13 @@ namespace StockSharp.Strategies
 				if (currentCci < _avgCci - _deviationMultiplier * _stdDevCci)
 				{
 					BuyMarket(Volume);
-					this.AddInfoLog($"Long entry: CCI = {currentCci}, CCI Avg = {_avgCci}, CCI StdDev = {_stdDevCci}");
+					LogInfo($"Long entry: CCI = {currentCci}, CCI Avg = {_avgCci}, CCI StdDev = {_stdDevCci}");
 				}
 				// Short entry - CCI is significantly above its average
 				else if (currentCci > _avgCci + _deviationMultiplier * _stdDevCci)
 				{
 					SellMarket(Volume);
-					this.AddInfoLog($"Short entry: CCI = {currentCci}, CCI Avg = {_avgCci}, CCI StdDev = {_stdDevCci}");
+					LogInfo($"Short entry: CCI = {currentCci}, CCI Avg = {_avgCci}, CCI StdDev = {_stdDevCci}");
 				}
 			}
 			// Check for exit conditions
@@ -200,7 +200,7 @@ namespace StockSharp.Strategies
 				if (currentCci > _avgCci)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Long exit: CCI = {currentCci}, CCI Avg = {_avgCci}");
+					LogInfo($"Long exit: CCI = {currentCci}, CCI Avg = {_avgCci}");
 				}
 			}
 			else if (Position < 0) // Short position
@@ -208,7 +208,7 @@ namespace StockSharp.Strategies
 				if (currentCci < _avgCci)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Short exit: CCI = {currentCci}, CCI Avg = {_avgCci}");
+					LogInfo($"Short exit: CCI = {currentCci}, CCI Avg = {_avgCci}");
 				}
 			}
 		}

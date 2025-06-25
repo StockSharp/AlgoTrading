@@ -219,7 +219,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Long entry: volume slope is significantly lower than average on a bullish candle
 					// This indicates potential for bullish continuation with volume mean reversion
-					this.AddInfoLog($"Volume slope {_currentVolumeSlope} below threshold {longEntryThreshold} with bullish price, entering LONG");
+					LogInfo($"Volume slope {_currentVolumeSlope} below threshold {longEntryThreshold} with bullish price, entering LONG");
 					BuyMarket(Volume + Math.Abs(Position));
 				}
 			}
@@ -229,20 +229,20 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Short entry: volume slope is significantly higher than average on a bearish candle
 					// This indicates potential for bearish continuation with volume mean reversion
-					this.AddInfoLog($"Volume slope {_currentVolumeSlope} above threshold {shortEntryThreshold} with bearish price, entering SHORT");
+					LogInfo($"Volume slope {_currentVolumeSlope} above threshold {shortEntryThreshold} with bearish price, entering SHORT");
 					SellMarket(Volume + Math.Abs(Position));
 				}
 			}
 			else if (Position > 0 && _currentVolumeSlope > _averageSlope)
 			{
 				// Exit long when volume slope returns to or above average
-				this.AddInfoLog($"Volume slope {_currentVolumeSlope} returned to average {_averageSlope}, exiting LONG");
+				LogInfo($"Volume slope {_currentVolumeSlope} returned to average {_averageSlope}, exiting LONG");
 				SellMarket(Math.Abs(Position));
 			}
 			else if (Position < 0 && _currentVolumeSlope < _averageSlope)
 			{
 				// Exit short when volume slope returns to or below average
-				this.AddInfoLog($"Volume slope {_currentVolumeSlope} returned to average {_averageSlope}, exiting SHORT");
+				LogInfo($"Volume slope {_currentVolumeSlope} returned to average {_averageSlope}, exiting SHORT");
 				BuyMarket(Math.Abs(Position));
 			}
 		}

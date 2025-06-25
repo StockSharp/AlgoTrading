@@ -235,7 +235,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 					
-					this.AddInfoLog($"Long signal: %K Slope {_currentSlope} > Avg {_avgSlope} + {DeviationMultiplier}*StdDev {_stdDevSlope}");
+					LogInfo($"Long signal: %K Slope {_currentSlope} > Avg {_avgSlope} + {DeviationMultiplier}*StdDev {_stdDevSlope}");
 				}
 				// Short signal: Stochastic %K slope exceeds average + k*stddev in negative direction (slope is negative and we don't have a short position)
 				else if (_currentSlope < 0 && 
@@ -249,7 +249,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
 					
-					this.AddInfoLog($"Short signal: %K Slope {_currentSlope} < Avg {_avgSlope} - {DeviationMultiplier}*StdDev {_stdDevSlope}");
+					LogInfo($"Short signal: %K Slope {_currentSlope} < Avg {_avgSlope} - {DeviationMultiplier}*StdDev {_stdDevSlope}");
 				}
 				
 				// Exit conditions - when slope returns to average
@@ -257,13 +257,13 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Exit long position
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit long: %K Slope {_currentSlope} < Avg {_avgSlope}");
+					LogInfo($"Exit long: %K Slope {_currentSlope} < Avg {_avgSlope}");
 				}
 				else if (Position < 0 && _currentSlope > _avgSlope)
 				{
 					// Exit short position
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit short: %K Slope {_currentSlope} > Avg {_avgSlope}");
+					LogInfo($"Exit short: %K Slope {_currentSlope} > Avg {_avgSlope}");
 				}
 			}
 			

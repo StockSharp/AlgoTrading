@@ -207,25 +207,25 @@ namespace StockSharp.Samples.Strategies
 			if (stochValue > upperThreshold && _prevStochValue <= upperThreshold && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Stochastic breakout UP: {stochValue} > {upperThreshold}. Buying at {candle.ClosePrice}");
+				LogInfo($"Stochastic breakout UP: {stochValue} > {upperThreshold}. Buying at {candle.ClosePrice}");
 			}
 			// Sell when stochastic breaks below lower threshold
 			else if (stochValue < lowerThreshold && _prevStochValue >= lowerThreshold && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Stochastic breakout DOWN: {stochValue} < {lowerThreshold}. Selling at {candle.ClosePrice}");
+				LogInfo($"Stochastic breakout DOWN: {stochValue} < {lowerThreshold}. Selling at {candle.ClosePrice}");
 			}
 			
 			// Exit positions when stochastic returns to average
 			else if (Position > 0 && stochValue < _prevStochAverage && _prevStochValue >= _prevStochAverage)
 			{
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Stochastic returned to average: {stochValue} < {_prevStochAverage}. Closing long position at {candle.ClosePrice}");
+				LogInfo($"Stochastic returned to average: {stochValue} < {_prevStochAverage}. Closing long position at {candle.ClosePrice}");
 			}
 			else if (Position < 0 && stochValue > _prevStochAverage && _prevStochValue <= _prevStochAverage)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Stochastic returned to average: {stochValue} > {_prevStochAverage}. Closing short position at {candle.ClosePrice}");
+				LogInfo($"Stochastic returned to average: {stochValue} > {_prevStochAverage}. Closing short position at {candle.ClosePrice}");
 			}
 			
 			// Store current values for next comparison

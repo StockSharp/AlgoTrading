@@ -307,7 +307,7 @@ namespace StockSharp.Strategies
 					BuyMarket(Security1, Volume);
 					SellMarket(Security2, Volume);
 					
-					this.AddInfoLog($"LONG {Security1.Code}, SHORT {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
+					LogInfo($"LONG {Security1.Code}, SHORT {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
 				}
 				// Correlation rises above average (securities are more correlated than normal)
 				else if (correlationZScore > DeviationThreshold)
@@ -316,7 +316,7 @@ namespace StockSharp.Strategies
 					SellMarket(Security1, Volume);
 					BuyMarket(Security2, Volume);
 					
-					this.AddInfoLog($"SHORT {Security1.Code}, LONG {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
+					LogInfo($"SHORT {Security1.Code}, LONG {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
 				}
 			}
 			// Check for exit signals
@@ -329,7 +329,7 @@ namespace StockSharp.Strategies
 					ClosePosition(Security1);
 					ClosePosition(Security2);
 					
-					this.AddInfoLog($"CLOSE PAIR: Correlation Z-Score: {correlationZScore:F2}");
+					LogInfo($"CLOSE PAIR: Correlation Z-Score: {correlationZScore:F2}");
 				}
 			}
 		}

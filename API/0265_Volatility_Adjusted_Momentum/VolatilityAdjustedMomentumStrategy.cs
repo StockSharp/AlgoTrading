@@ -205,7 +205,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 					
-					this.AddInfoLog($"Long signal: Momentum/ATR {_momentumAtrRatio} > Avg {_avgRatio} + {DeviationMultiplier}*StdDev {_stdDevRatio}");
+					LogInfo($"Long signal: Momentum/ATR {_momentumAtrRatio} > Avg {_avgRatio} + {DeviationMultiplier}*StdDev {_stdDevRatio}");
 				}
 				// Short signal: momentum/ATR ratio falls below average - k*stddev (we don't have a short position)
 				else if (_momentumAtrRatio < _avgRatio - DeviationMultiplier * _stdDevRatio && Position >= 0)
@@ -217,7 +217,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
 					
-					this.AddInfoLog($"Short signal: Momentum/ATR {_momentumAtrRatio} < Avg {_avgRatio} - {DeviationMultiplier}*StdDev {_stdDevRatio}");
+					LogInfo($"Short signal: Momentum/ATR {_momentumAtrRatio} < Avg {_avgRatio} - {DeviationMultiplier}*StdDev {_stdDevRatio}");
 				}
 				
 				// Exit conditions - when momentum/ATR ratio returns to average
@@ -225,13 +225,13 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Exit long position
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit long: Momentum/ATR {_momentumAtrRatio} < Avg {_avgRatio}");
+					LogInfo($"Exit long: Momentum/ATR {_momentumAtrRatio} < Avg {_avgRatio}");
 				}
 				else if (Position < 0 && _momentumAtrRatio > _avgRatio)
 				{
 					// Exit short position
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit short: Momentum/ATR {_momentumAtrRatio} > Avg {_avgRatio}");
+					LogInfo($"Exit short: Momentum/ATR {_momentumAtrRatio} > Avg {_avgRatio}");
 				}
 			}
 		}

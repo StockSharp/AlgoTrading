@@ -174,26 +174,26 @@ namespace StockSharp.Samples.Strategies
 			{
 				// CCI broke above upper threshold - buy signal (long)
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy signal: CCI({cciValue}) > Upper Threshold({upperThreshold})");
+				LogInfo($"Buy signal: CCI({cciValue}) > Upper Threshold({upperThreshold})");
 			}
 			else if (cciValue < lowerThreshold && Position >= 0)
 			{
 				// CCI broke below lower threshold - sell signal (short)
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell signal: CCI({cciValue}) < Lower Threshold({lowerThreshold})");
+				LogInfo($"Sell signal: CCI({cciValue}) < Lower Threshold({lowerThreshold})");
 			}
 			// Exit conditions
 			else if (Position > 0 && cciValue < cciSmaValue)
 			{
 				// Exit long position when CCI returns below its mean
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit long: CCI({cciValue}) < CCI SMA({cciSmaValue})");
+				LogInfo($"Exit long: CCI({cciValue}) < CCI SMA({cciSmaValue})");
 			}
 			else if (Position < 0 && cciValue > cciSmaValue)
 			{
 				// Exit short position when CCI returns above its mean
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit short: CCI({cciValue}) > CCI SMA({cciSmaValue})");
+				LogInfo($"Exit short: CCI({cciValue}) > CCI SMA({cciSmaValue})");
 			}
 
 			// Update previous values

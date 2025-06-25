@@ -192,7 +192,7 @@ namespace StockSharp.Strategies
 				{
 					// Close any existing short position and open long
 					BuyMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Long Entry: %R={williamsRValue:F2}, Price above Kumo, Tenkan > Kijun");
+					LogInfo($"Long Entry: %R={williamsRValue:F2}, Price above Kumo, Tenkan > Kijun");
 				}
 			}
 			else if (williamsRValue > -20 && isPriceBelowKumo && tenkan < kijun)
@@ -202,7 +202,7 @@ namespace StockSharp.Strategies
 				{
 					// Close any existing long position and open short
 					SellMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Short Entry: %R={williamsRValue:F2}, Price below Kumo, Tenkan < Kijun");
+					LogInfo($"Short Entry: %R={williamsRValue:F2}, Price below Kumo, Tenkan < Kijun");
 				}
 			}
 			else if ((Position > 0 && candle.ClosePrice < kumoBottom) || 
@@ -212,12 +212,12 @@ namespace StockSharp.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog("Exit Long: Price crossed below Kumo");
+					LogInfo("Exit Long: Price crossed below Kumo");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog("Exit Short: Price crossed above Kumo");
+					LogInfo("Exit Short: Price crossed above Kumo");
 				}
 			}
 			

@@ -227,21 +227,21 @@ namespace StockSharp.Samples.Strategies
 			if (volSkew > _avgVolSkew + Threshold * stdDev && Position <= 0)
 			{
 				// Long low vol option, short high vol option
-				this.AddInfoLog($"Volatility skew above threshold: {volSkew} > {_avgVolSkew + Threshold * stdDev}");
+				LogInfo($"Volatility skew above threshold: {volSkew} > {_avgVolSkew + Threshold * stdDev}");
 				BuyMarket(OptionWithLowVol, Volume);
 				SellMarket(OptionWithHighVol, Volume);
 			}
 			else if (volSkew < _avgVolSkew - Threshold * stdDev && Position >= 0)
 			{
 				// Short low vol option, long high vol option
-				this.AddInfoLog($"Volatility skew below threshold: {volSkew} < {_avgVolSkew - Threshold * stdDev}");
+				LogInfo($"Volatility skew below threshold: {volSkew} < {_avgVolSkew - Threshold * stdDev}");
 				SellMarket(OptionWithLowVol, Volume);
 				BuyMarket(OptionWithHighVol, Volume);
 			}
 			else if (Math.Abs(volSkew - _avgVolSkew) < 0.2m * stdDev)
 			{
 				// Close position when vol skew returns to average
-				this.AddInfoLog($"Volatility skew returned to average: {volSkew} ≈ {_avgVolSkew}");
+				LogInfo($"Volatility skew returned to average: {volSkew} ≈ {_avgVolSkew}");
 				
 				if (GetPositionValue(OptionWithLowVol) > 0)
 					SellMarket(OptionWithLowVol, Math.Abs(GetPositionValue(OptionWithLowVol)));

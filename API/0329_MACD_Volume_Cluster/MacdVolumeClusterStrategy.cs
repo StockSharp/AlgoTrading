@@ -217,7 +217,7 @@ namespace StockSharp.Samples.Strategies
 			bool isVolumeSpike = candle.TotalVolume > (_avgVolume + VolumeDeviationFactor * _volumeStdDev);
 			
 			// Log the values
-			this.AddInfoLog($"MACD: {macdLine}, Signal: {signalLine}, Volume: {candle.TotalVolume}, " +
+			LogInfo($"MACD: {macdLine}, Signal: {signalLine}, Volume: {candle.TotalVolume}, " +
 							$"Avg Volume: {_avgVolume}, StdDev: {_volumeStdDev}, Volume Spike: {isVolumeSpike}");
 
 			// Trading logic
@@ -232,7 +232,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Open long position
 					BuyMarket(Volume);
-					this.AddInfoLog($"Buy signal: MACD ({macdLine}) > Signal ({signalLine}) with volume spike ({candle.TotalVolume})");
+					LogInfo($"Buy signal: MACD ({macdLine}) > Signal ({signalLine}) with volume spike ({candle.TotalVolume})");
 				}
 				// Sell signal: MACD line crosses below signal line with volume spike
 				else if (macdLine < signalLine && Position >= 0)
@@ -243,7 +243,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Open short position
 					SellMarket(Volume);
-					this.AddInfoLog($"Sell signal: MACD ({macdLine}) < Signal ({signalLine}) with volume spike ({candle.TotalVolume})");
+					LogInfo($"Sell signal: MACD ({macdLine}) < Signal ({signalLine}) with volume spike ({candle.TotalVolume})");
 				}
 			}
 			
@@ -252,7 +252,7 @@ namespace StockSharp.Samples.Strategies
 				(Position < 0 && macdLine > signalLine))
 			{
 				ClosePosition();
-				this.AddInfoLog($"Exit signal: MACD and Signal crossed. Position closed at {candle.ClosePrice}");
+				LogInfo($"Exit signal: MACD and Signal crossed. Position closed at {candle.ClosePrice}");
 			}
 		}
 	}

@@ -184,7 +184,7 @@ namespace StockSharp.Samples.Strategies
 			if (_atrValues.Count >= AtrPeriod)
 			{
 				decimal avgAtr = _atrValues.Skip(Math.Max(0, _atrValues.Count - AtrPeriod)).Average();
-				this.AddInfoLog($"HMA: {_currentHmaValue:F2} (Prev: {_prevHmaValue:F2}), ATR: {atr:F2}, Avg ATR: {avgAtr:F2}, Volatility Contracted: {isVolatilityContracted}");
+				LogInfo($"HMA: {_currentHmaValue:F2} (Prev: {_prevHmaValue:F2}), ATR: {atr:F2}, Avg ATR: {avgAtr:F2}, Volatility Contracted: {isVolatilityContracted}");
 			}
 			
 			// Trading logic
@@ -192,7 +192,7 @@ namespace StockSharp.Samples.Strategies
 			if (isHmaRising && isVolatilityContracted && Position <= 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: HMA Rising ({_prevHmaValue:F2} -> {_currentHmaValue:F2}) with Contracted Volatility");
+				LogInfo($"Buy Signal: HMA Rising ({_prevHmaValue:F2} -> {_currentHmaValue:F2}) with Contracted Volatility");
 				_isLongPosition = true;
 				_isShortPosition = false;
 			}
@@ -200,7 +200,7 @@ namespace StockSharp.Samples.Strategies
 			else if (isHmaFalling && isVolatilityContracted && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: HMA Falling ({_prevHmaValue:F2} -> {_currentHmaValue:F2}) with Contracted Volatility");
+				LogInfo($"Sell Signal: HMA Falling ({_prevHmaValue:F2} -> {_currentHmaValue:F2}) with Contracted Volatility");
 				_isLongPosition = false;
 				_isShortPosition = true;
 			}
@@ -208,14 +208,14 @@ namespace StockSharp.Samples.Strategies
 			else if (_isLongPosition && isHmaFalling)
 			{
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: HMA started falling ({_prevHmaValue:F2} -> {_currentHmaValue:F2})");
+				LogInfo($"Exit Long: HMA started falling ({_prevHmaValue:F2} -> {_currentHmaValue:F2})");
 				_isLongPosition = false;
 			}
 			// Exit short position when HMA starts rising
 			else if (_isShortPosition && isHmaRising)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: HMA started rising ({_prevHmaValue:F2} -> {_currentHmaValue:F2})");
+				LogInfo($"Exit Short: HMA started rising ({_prevHmaValue:F2} -> {_currentHmaValue:F2})");
 				_isShortPosition = false;
 			}
 		}
@@ -243,7 +243,7 @@ namespace StockSharp.Samples.Strategies
 			// Log details if contraction is detected
 			if (isContracted)
 			{
-				this.AddInfoLog($"Volatility Contraction Detected: Current ATR {currentAtr:F2} < Mean {mean:F2} - (StdDev {standardDeviation:F2} * Factor {VolatilityContractionFactor})");
+				LogInfo($"Volatility Contraction Detected: Current ATR {currentAtr:F2} < Mean {mean:F2} - (StdDev {standardDeviation:F2} * Factor {VolatilityContractionFactor})");
 			}
 			
 			return isContracted;

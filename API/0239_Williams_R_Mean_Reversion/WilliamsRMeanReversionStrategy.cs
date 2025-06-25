@@ -185,13 +185,13 @@ namespace StockSharp.Strategies
 				if (currentWilliamsR < _avgWilliamsR - _deviationMultiplier * _stdDevWilliamsR)
 				{
 					BuyMarket(Volume);
-					this.AddInfoLog($"Long entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
+					LogInfo($"Long entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
 				}
 				// Short entry - Williams %R is significantly above its average
 				else if (currentWilliamsR > _avgWilliamsR + _deviationMultiplier * _stdDevWilliamsR)
 				{
 					SellMarket(Volume);
-					this.AddInfoLog($"Short entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
+					LogInfo($"Short entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
 				}
 			}
 			// Check for exit conditions
@@ -200,7 +200,7 @@ namespace StockSharp.Strategies
 				if (currentWilliamsR > _avgWilliamsR)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Long exit: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}");
+					LogInfo($"Long exit: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}");
 				}
 			}
 			else if (Position < 0) // Short position
@@ -208,7 +208,7 @@ namespace StockSharp.Strategies
 				if (currentWilliamsR < _avgWilliamsR)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Short exit: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}");
+					LogInfo($"Short exit: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}");
 				}
 			}
 		}

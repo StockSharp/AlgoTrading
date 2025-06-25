@@ -241,25 +241,25 @@ namespace StockSharp.Samples.Strategies
 			if (_currentHistogramSlope < longEntryThreshold && Position <= 0)
 			{
 				// Long entry: slope is significantly lower than average (mean reversion expected)
-				this.AddInfoLog($"MACD histogram slope {_currentHistogramSlope} below threshold {longEntryThreshold}, entering LONG");
+				LogInfo($"MACD histogram slope {_currentHistogramSlope} below threshold {longEntryThreshold}, entering LONG");
 				BuyMarket(Volume + Math.Abs(Position));
 			}
 			else if (_currentHistogramSlope > shortEntryThreshold && Position >= 0)
 			{
 				// Short entry: slope is significantly higher than average (mean reversion expected)
-				this.AddInfoLog($"MACD histogram slope {_currentHistogramSlope} above threshold {shortEntryThreshold}, entering SHORT");
+				LogInfo($"MACD histogram slope {_currentHistogramSlope} above threshold {shortEntryThreshold}, entering SHORT");
 				SellMarket(Volume + Math.Abs(Position));
 			}
 			else if (Position > 0 && _currentHistogramSlope > _averageSlope)
 			{
 				// Exit long when slope returns to or above average
-				this.AddInfoLog($"MACD histogram slope {_currentHistogramSlope} returned to average {_averageSlope}, exiting LONG");
+				LogInfo($"MACD histogram slope {_currentHistogramSlope} returned to average {_averageSlope}, exiting LONG");
 				SellMarket(Math.Abs(Position));
 			}
 			else if (Position < 0 && _currentHistogramSlope < _averageSlope)
 			{
 				// Exit short when slope returns to or below average
-				this.AddInfoLog($"MACD histogram slope {_currentHistogramSlope} returned to average {_averageSlope}, exiting SHORT");
+				LogInfo($"MACD histogram slope {_currentHistogramSlope} returned to average {_averageSlope}, exiting SHORT");
 				BuyMarket(Math.Abs(Position));
 			}
 		}

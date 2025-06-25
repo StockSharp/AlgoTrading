@@ -186,12 +186,12 @@ namespace StockSharp.Strategies
 					if (priceDirection == Sides.Buy)
 					{
 						BuyMarket(Volume);
-						this.AddInfoLog($"Long entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, Price up");
+						LogInfo($"Long entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, Price up");
 					}
 					else
 					{
 						SellMarket(Volume);
-						this.AddInfoLog($"Short entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, Price down");
+						LogInfo($"Short entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, Price down");
 					}
 					
 					// Set dynamic stop loss based on ATR
@@ -208,12 +208,12 @@ namespace StockSharp.Strategies
 					if (priceDirection == Sides.Sell)
 					{
 						BuyMarket(Volume);
-						this.AddInfoLog($"Contrarian long entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, High volatility");
+						LogInfo($"Contrarian long entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, High volatility");
 					}
 					else
 					{
 						SellMarket(Volume);
-						this.AddInfoLog($"Contrarian short entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, High volatility");
+						LogInfo($"Contrarian short entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, High volatility");
 					}
 					
 					// Set dynamic stop loss based on ATR
@@ -229,7 +229,7 @@ namespace StockSharp.Strategies
 				if (currentAtr < _avgAtr && priceDirection == Sides.Sell)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Long exit: ATR = {currentAtr}, Avg = {_avgAtr}, Price down");
+					LogInfo($"Long exit: ATR = {currentAtr}, Avg = {_avgAtr}, Price down");
 				}
 			}
 			else if (Position < 0) // Short position
@@ -237,7 +237,7 @@ namespace StockSharp.Strategies
 				if (currentAtr < _avgAtr && priceDirection == Sides.Buy)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Short exit: ATR = {currentAtr}, Avg = {_avgAtr}, Price up");
+					LogInfo($"Short exit: ATR = {currentAtr}, Avg = {_avgAtr}, Price up");
 				}
 			}
 

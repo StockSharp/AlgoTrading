@@ -230,25 +230,25 @@ namespace StockSharp.Samples.Strategies
 			if (_currentSlope < lowThreshold && _prevSlope >= lowThreshold && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Hull MA slope fallen below threshold: {_currentSlope} < {lowThreshold}. Buying at {candle.ClosePrice}");
+				LogInfo($"Hull MA slope fallen below threshold: {_currentSlope} < {lowThreshold}. Buying at {candle.ClosePrice}");
 			}
 			// When slope is rising above the upper threshold (mean reversion - slope will fall)
 			else if (_currentSlope > highThreshold && _prevSlope <= highThreshold && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Hull MA slope risen above threshold: {_currentSlope} > {highThreshold}. Selling at {candle.ClosePrice}");
+				LogInfo($"Hull MA slope risen above threshold: {_currentSlope} > {highThreshold}. Selling at {candle.ClosePrice}");
 			}
 			
 			// Exit positions when slope returns to average
 			else if (Position > 0 && _currentSlope > _prevSlopeAverage && _prevSlope <= _prevSlopeAverage)
 			{
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Hull MA slope returned to average from below: {_currentSlope} > {_prevSlopeAverage}. Closing long position at {candle.ClosePrice}");
+				LogInfo($"Hull MA slope returned to average from below: {_currentSlope} > {_prevSlopeAverage}. Closing long position at {candle.ClosePrice}");
 			}
 			else if (Position < 0 && _currentSlope < _prevSlopeAverage && _prevSlope >= _prevSlopeAverage)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Hull MA slope returned to average from above: {_currentSlope} < {_prevSlopeAverage}. Closing short position at {candle.ClosePrice}");
+				LogInfo($"Hull MA slope returned to average from above: {_currentSlope} < {_prevSlopeAverage}. Closing short position at {candle.ClosePrice}");
 			}
 			
 			// Dynamic ATR-based stop loss
@@ -266,12 +266,12 @@ namespace StockSharp.Samples.Strategies
 					if (Position > 0)
 					{
 						SellMarket(Math.Abs(Position));
-						this.AddInfoLog($"ATR Stop Loss triggered for long position: {candle.LowPrice} <= {stopLevel}. Closing at {candle.ClosePrice}");
+						LogInfo($"ATR Stop Loss triggered for long position: {candle.LowPrice} <= {stopLevel}. Closing at {candle.ClosePrice}");
 					}
 					else if (Position < 0)
 					{
 						BuyMarket(Math.Abs(Position));
-						this.AddInfoLog($"ATR Stop Loss triggered for short position: {candle.HighPrice} >= {stopLevel}. Closing at {candle.ClosePrice}");
+						LogInfo($"ATR Stop Loss triggered for short position: {candle.HighPrice} >= {stopLevel}. Closing at {candle.ClosePrice}");
 					}
 				}
 			}

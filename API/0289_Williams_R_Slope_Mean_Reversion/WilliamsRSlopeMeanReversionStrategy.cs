@@ -204,25 +204,25 @@ namespace StockSharp.Samples.Strategies
 			if (_currentSlopeValue < longEntryThreshold && Position <= 0)
 			{
 				// Long entry: slope is significantly lower than average (mean reversion expected)
-				this.AddInfoLog($"Williams %R slope {_currentSlopeValue} below threshold {longEntryThreshold}, entering LONG");
+				LogInfo($"Williams %R slope {_currentSlopeValue} below threshold {longEntryThreshold}, entering LONG");
 				BuyMarket(Volume + Math.Abs(Position));
 			}
 			else if (_currentSlopeValue > shortEntryThreshold && Position >= 0)
 			{
 				// Short entry: slope is significantly higher than average (mean reversion expected)
-				this.AddInfoLog($"Williams %R slope {_currentSlopeValue} above threshold {shortEntryThreshold}, entering SHORT");
+				LogInfo($"Williams %R slope {_currentSlopeValue} above threshold {shortEntryThreshold}, entering SHORT");
 				SellMarket(Volume + Math.Abs(Position));
 			}
 			else if (Position > 0 && _currentSlopeValue > _averageSlope)
 			{
 				// Exit long when slope returns to or above average
-				this.AddInfoLog($"Williams %R slope {_currentSlopeValue} returned to average {_averageSlope}, exiting LONG");
+				LogInfo($"Williams %R slope {_currentSlopeValue} returned to average {_averageSlope}, exiting LONG");
 				SellMarket(Math.Abs(Position));
 			}
 			else if (Position < 0 && _currentSlopeValue < _averageSlope)
 			{
 				// Exit short when slope returns to or below average
-				this.AddInfoLog($"Williams %R slope {_currentSlopeValue} returned to average {_averageSlope}, exiting SHORT");
+				LogInfo($"Williams %R slope {_currentSlopeValue} returned to average {_averageSlope}, exiting SHORT");
 				BuyMarket(Math.Abs(Position));
 			}
 		}

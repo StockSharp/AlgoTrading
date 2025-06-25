@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 					
-					this.AddInfoLog($"Long signal: Distance {longDistance} > Avg {_avgDistanceLong} + {DeviationMultiplier}*StdDev {_stdDevDistanceLong}");
+					LogInfo($"Long signal: Distance {longDistance} > Avg {_avgDistanceLong} + {DeviationMultiplier}*StdDev {_stdDevDistanceLong}");
 				}
 				// Short signal: distance exceeds average + k*stddev and we don't have a short position
 				else if (shortDistance > 0 && 
@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
 					
-					this.AddInfoLog($"Short signal: Distance {shortDistance} > Avg {_avgDistanceShort} + {DeviationMultiplier}*StdDev {_stdDevDistanceShort}");
+					LogInfo($"Short signal: Distance {shortDistance} > Avg {_avgDistanceShort} + {DeviationMultiplier}*StdDev {_stdDevDistanceShort}");
 				}
 				
 				// Exit conditions - when distance returns to average
@@ -218,13 +218,13 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Exit long position
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit long: Distance {longDistance} < Avg {_avgDistanceLong}");
+					LogInfo($"Exit long: Distance {longDistance} < Avg {_avgDistanceLong}");
 				}
 				else if (Position < 0 && shortDistance < _avgDistanceShort)
 				{
 					// Exit short position
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit short: Distance {shortDistance} < Avg {_avgDistanceShort}");
+					LogInfo($"Exit short: Distance {shortDistance} < Avg {_avgDistanceShort}");
 				}
 			}
 			

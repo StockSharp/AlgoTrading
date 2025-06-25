@@ -173,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 			if (candle.ClosePrice > _upperBand && _seasonalStrength > SeasonalThreshold && Position <= 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: Price {candle.ClosePrice:F2} > Upper Band {_upperBand:F2}, Seasonal Strength {_seasonalStrength:F2}");
+				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} > Upper Band {_upperBand:F2}, Seasonal Strength {_seasonalStrength:F2}");
 				_isLongPosition = true;
 				_isShortPosition = false;
 			}
@@ -181,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 			else if (candle.ClosePrice < _lowerBand && _seasonalStrength < -SeasonalThreshold && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: Price {candle.ClosePrice:F2} < Lower Band {_lowerBand:F2}, Seasonal Strength {_seasonalStrength:F2}");
+				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} < Lower Band {_lowerBand:F2}, Seasonal Strength {_seasonalStrength:F2}");
 				_isLongPosition = false;
 				_isShortPosition = true;
 			}
@@ -189,14 +189,14 @@ namespace StockSharp.Samples.Strategies
 			else if (_isLongPosition && candle.ClosePrice < _middleBand)
 			{
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: Price {candle.ClosePrice:F2} fell below Middle Band {_middleBand:F2}");
+				LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below Middle Band {_middleBand:F2}");
 				_isLongPosition = false;
 			}
 			// Exit short position when price rises above middle band
 			else if (_isShortPosition && candle.ClosePrice > _middleBand)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: Price {candle.ClosePrice:F2} rose above Middle Band {_middleBand:F2}");
+				LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above Middle Band {_middleBand:F2}");
 				_isShortPosition = false;
 			}
 		}
@@ -212,7 +212,7 @@ namespace StockSharp.Samples.Strategies
 			// Log seasonal information at the beginning of each month
 			if (time.Day == 1)
 			{
-				this.AddInfoLog($"Monthly Seasonal Data: {currentMonth} has historical strength of {_seasonalStrength:F2} over {_seasonalDataCount} years");
+				LogInfo($"Monthly Seasonal Data: {currentMonth} has historical strength of {_seasonalStrength:F2} over {_seasonalDataCount} years");
 			}
 		}
 		

@@ -198,7 +198,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 					
-					this.AddInfoLog($"Long signal: Distance {longDistance} > Avg {_avgDistanceLong} + {DeviationMultiplier}*StdDev {_stdDevDistanceLong}");
+					LogInfo($"Long signal: Distance {longDistance} > Avg {_avgDistanceLong} + {DeviationMultiplier}*StdDev {_stdDevDistanceLong}");
 				}
 				// Short signal: distance exceeds average + k*stddev and we don't have a short position
 				else if (shortDistance > 0 && 
@@ -212,7 +212,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
 					
-					this.AddInfoLog($"Short signal: Distance {shortDistance} > Avg {_avgDistanceShort} + {DeviationMultiplier}*StdDev {_stdDevDistanceShort}");
+					LogInfo($"Short signal: Distance {shortDistance} > Avg {_avgDistanceShort} + {DeviationMultiplier}*StdDev {_stdDevDistanceShort}");
 				}
 				
 				// Exit conditions - when price crosses SAR
@@ -220,13 +220,13 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Exit long position
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit long: Price {candle.ClosePrice} crossed below SAR {sarValue}");
+					LogInfo($"Exit long: Price {candle.ClosePrice} crossed below SAR {sarValue}");
 				}
 				else if (Position < 0 && candle.ClosePrice > sarValue)
 				{
 					// Exit short position
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit short: Price {candle.ClosePrice} crossed above SAR {sarValue}");
+					LogInfo($"Exit short: Price {candle.ClosePrice} crossed above SAR {sarValue}");
 				}
 			}
 			

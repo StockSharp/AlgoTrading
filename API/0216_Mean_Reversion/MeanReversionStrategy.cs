@@ -147,7 +147,7 @@ namespace StockSharp.Strategies
 				if (Position <= 0)
 				{
 					BuyMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Long Entry: Price({candle.ClosePrice}) < Lower Band({lowerBand:F2})");
+					LogInfo($"Long Entry: Price({candle.ClosePrice}) < Lower Band({lowerBand:F2})");
 				}
 			}
 			else if (candle.ClosePrice > upperBand)
@@ -156,7 +156,7 @@ namespace StockSharp.Strategies
 				if (Position >= 0)
 				{
 					SellMarket(Volume + Math.Abs(Position));
-					this.AddInfoLog($"Short Entry: Price({candle.ClosePrice}) > Upper Band({upperBand:F2})");
+					LogInfo($"Short Entry: Price({candle.ClosePrice}) > Upper Band({upperBand:F2})");
 				}
 			}
 			else if ((Position > 0 && candle.ClosePrice > maValue) || 
@@ -166,12 +166,12 @@ namespace StockSharp.Strategies
 				if (Position > 0)
 				{
 					SellMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit Long: Price({candle.ClosePrice}) > MA({maValue:F2})");
+					LogInfo($"Exit Long: Price({candle.ClosePrice}) > MA({maValue:F2})");
 				}
 				else if (Position < 0)
 				{
 					BuyMarket(Math.Abs(Position));
-					this.AddInfoLog($"Exit Short: Price({candle.ClosePrice}) < MA({maValue:F2})");
+					LogInfo($"Exit Short: Price({candle.ClosePrice}) < MA({maValue:F2})");
 				}
 			}
 		}

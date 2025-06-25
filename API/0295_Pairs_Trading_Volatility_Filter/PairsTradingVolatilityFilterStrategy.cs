@@ -267,7 +267,7 @@ namespace StockSharp.Strategies
 					BuyMarket(Security1, volume1);
 					SellMarket(Security2, volume2);
 					
-					this.AddInfoLog($"LONG SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
+					LogInfo($"LONG SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
 				}
 				// Short signal: spread is above threshold (overvalued) with low volatility
 				else if (zScore > EntryThreshold && isLowVolatility)
@@ -283,7 +283,7 @@ namespace StockSharp.Strategies
 					SellMarket(Security1, volume1);
 					BuyMarket(Security2, volume2);
 					
-					this.AddInfoLog($"SHORT SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
+					LogInfo($"SHORT SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
 				}
 			}
 			// Check for exit signals
@@ -294,7 +294,7 @@ namespace StockSharp.Strategies
 					(Position < 0 && zScore <= -ExitThreshold))
 				{
 					ClosePosition();
-					this.AddInfoLog($"CLOSE SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}");
+					LogInfo($"CLOSE SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}");
 				}
 			}
 		}

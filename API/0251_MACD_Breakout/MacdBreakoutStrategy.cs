@@ -225,26 +225,26 @@ namespace StockSharp.Samples.Strategies
 			{
 				// MACD Histogram broke above upper threshold - buy signal (long)
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy signal: MACD Hist({macdHistValue}) > Upper Threshold({upperThreshold})");
+				LogInfo($"Buy signal: MACD Hist({macdHistValue}) > Upper Threshold({upperThreshold})");
 			}
 			else if (macdHistValue < lowerThreshold && Position >= 0)
 			{
 				// MACD Histogram broke below lower threshold - sell signal (short)
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell signal: MACD Hist({macdHistValue}) < Lower Threshold({lowerThreshold})");
+				LogInfo($"Sell signal: MACD Hist({macdHistValue}) < Lower Threshold({lowerThreshold})");
 			}
 			// Exit conditions
 			else if (Position > 0 && macdHistValue < macdHistSmaValue)
 			{
 				// Exit long position when MACD Histogram returns below its mean
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit long: MACD Hist({macdHistValue}) < SMA({macdHistSmaValue})");
+				LogInfo($"Exit long: MACD Hist({macdHistValue}) < SMA({macdHistSmaValue})");
 			}
 			else if (Position < 0 && macdHistValue > macdHistSmaValue)
 			{
 				// Exit short position when MACD Histogram returns above its mean
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit short: MACD Hist({macdHistValue}) > SMA({macdHistSmaValue})");
+				LogInfo($"Exit short: MACD Hist({macdHistValue}) > SMA({macdHistSmaValue})");
 			}
 
 			// Update previous values

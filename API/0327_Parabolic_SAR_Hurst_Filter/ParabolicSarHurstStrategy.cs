@@ -155,7 +155,7 @@ namespace StockSharp.Samples.Strategies
 			var currentSarValue = sarPrice;
 			
 			// Log the values
-			this.AddInfoLog($"SAR: {sarPrice}, Hurst: {_hurstValue}, Price: {candle.ClosePrice}");
+			LogInfo($"SAR: {sarPrice}, Hurst: {_hurstValue}, Price: {candle.ClosePrice}");
 
 			// Skip first candle (need previous SAR value for comparison)
 			if (_prevSarValue == 0)
@@ -177,7 +177,7 @@ namespace StockSharp.Samples.Strategies
 
 					// Open long position
 					BuyMarket(Volume);
-					this.AddInfoLog($"Long signal: SAR={sarPrice}, Price={candle.ClosePrice}, Hurst={_hurstValue}");
+					LogInfo($"Long signal: SAR={sarPrice}, Price={candle.ClosePrice}, Hurst={_hurstValue}");
 				}
 				// Short signal: Price crossed below SAR
 				else if (candle.ClosePrice < sarPrice && Position >= 0)
@@ -188,7 +188,7 @@ namespace StockSharp.Samples.Strategies
 
 					// Open short position
 					SellMarket(Volume);
-					this.AddInfoLog($"Short signal: SAR={sarPrice}, Price={candle.ClosePrice}, Hurst={_hurstValue}");
+					LogInfo($"Short signal: SAR={sarPrice}, Price={candle.ClosePrice}, Hurst={_hurstValue}");
 				}
 			}
 			else
@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 				// If Hurst < 0.5, consider closing positions as market is not trending
 				if (Position != 0)
 				{
-					this.AddInfoLog($"Closing position as Hurst < 0.5: Hurst={_hurstValue}");
+					LogInfo($"Closing position as Hurst < 0.5: Hurst={_hurstValue}");
 					ClosePosition();
 				}
 			}

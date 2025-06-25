@@ -189,25 +189,25 @@ namespace StockSharp.Samples.Strategies
 					{
 						// Slope is below lower threshold (falling rapidly) - mean reversion buy signal
 						BuyMarket(Volume + Math.Abs(Position));
-						this.AddInfoLog($"BUY Signal: Slope {_currentSlope:F6} < Lower Threshold {lowerThreshold:F6}");
+						LogInfo($"BUY Signal: Slope {_currentSlope:F6} < Lower Threshold {lowerThreshold:F6}");
 					}
 					else if (_currentSlope > upperThreshold && Position >= 0)
 					{
 						// Slope is above upper threshold (rising rapidly) - mean reversion sell signal
 						SellMarket(Volume + Math.Abs(Position));
-						this.AddInfoLog($"SELL Signal: Slope {_currentSlope:F6} > Upper Threshold {upperThreshold:F6}");
+						LogInfo($"SELL Signal: Slope {_currentSlope:F6} > Upper Threshold {upperThreshold:F6}");
 					}
 					else if (_currentSlope > _averageSlope && Position > 0)
 					{
 						// Exit long position when slope returns to average (profit target)
 						SellMarket(Position);
-						this.AddInfoLog($"EXIT LONG: Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
+						LogInfo($"EXIT LONG: Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
 					}
 					else if (_currentSlope < _averageSlope && Position < 0)
 					{
 						// Exit short position when slope returns to average (profit target)
 						BuyMarket(Math.Abs(Position));
-						this.AddInfoLog($"EXIT SHORT: Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
+						LogInfo($"EXIT SHORT: Slope {_currentSlope:F6} returned to average {_averageSlope:F6}");
 					}
 				}
 			}

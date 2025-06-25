@@ -209,25 +209,25 @@ namespace StockSharp.Samples.Strategies
 			if (isPriceAboveKumo && _tenkanValue > _kijunValue && _hurstExponent > HurstThreshold && Position <= 0)
 			{
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy Signal: Price {candle.ClosePrice:F2} above Kumo, Tenkan {_tenkanValue:F2} > Kijun {_kijunValue:F2}, Hurst {_hurstExponent:F3}");
+				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} above Kumo, Tenkan {_tenkanValue:F2} > Kijun {_kijunValue:F2}, Hurst {_hurstExponent:F3}");
 			}
 			// Sell when price is below the cloud, Tenkan < Kijun, and Hurst > threshold (trending market)
 			else if (isPriceBelowKumo && _tenkanValue < _kijunValue && _hurstExponent > HurstThreshold && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				this.AddInfoLog($"Sell Signal: Price {candle.ClosePrice:F2} below Kumo, Tenkan {_tenkanValue:F2} < Kijun {_kijunValue:F2}, Hurst {_hurstExponent:F3}");
+				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} below Kumo, Tenkan {_tenkanValue:F2} < Kijun {_kijunValue:F2}, Hurst {_hurstExponent:F3}");
 			}
 			// Exit long position when price falls below the cloud
 			else if (Position > 0 && isPriceBelowKumo)
 			{
 				SellMarket(Position);
-				this.AddInfoLog($"Exit Long: Price {candle.ClosePrice:F2} fell below Kumo");
+				LogInfo($"Exit Long: Price {candle.ClosePrice:F2} fell below Kumo");
 			}
 			// Exit short position when price rises above the cloud
 			else if (Position < 0 && isPriceAboveKumo)
 			{
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Exit Short: Price {candle.ClosePrice:F2} rose above Kumo");
+				LogInfo($"Exit Short: Price {candle.ClosePrice:F2} rose above Kumo");
 			}
 		}
 		
@@ -278,7 +278,7 @@ namespace StockSharp.Samples.Strategies
 			if (logN != 0)
 				_hurstExponent = (decimal)Math.Log((double)rs) / logN;
 				
-			this.AddInfoLog($"Calculated Hurst Exponent: {_hurstExponent:F3} (R/S: {rs:F3}, N: {logReturns.Count})");
+			LogInfo($"Calculated Hurst Exponent: {_hurstExponent:F3} (R/S: {rs:F3}, N: {logReturns.Count})");
 		}
 	}
 }

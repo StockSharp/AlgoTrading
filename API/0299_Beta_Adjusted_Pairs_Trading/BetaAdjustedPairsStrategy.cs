@@ -347,7 +347,7 @@ namespace StockSharp.Samples.Strategies
 				if (spreadDifference > stopLossThreshold)
 				{
 					ExitPosition();
-					this.AddInfoLog($"Stop loss triggered. Entry spread: {_entrySpread}, Current spread: {_currentSpread}");
+					LogInfo($"Stop loss triggered. Entry spread: {_entrySpread}, Current spread: {_currentSpread}");
 				}
 			}
 		}
@@ -384,7 +384,7 @@ namespace StockSharp.Samples.Strategies
 			RegisterOrder(longOrder);
 			RegisterOrder(shortOrder);
 			
-			this.AddInfoLog($"Entered LONG position (long Asset1, short Asset2) at spread: {_currentSpread}, Mean: {_averageSpread}, StdDev: {_spreadStdDev}");
+			LogInfo($"Entered LONG position (long Asset1, short Asset2) at spread: {_currentSpread}, Mean: {_averageSpread}, StdDev: {_spreadStdDev}");
 		}
 
 		private void EnterShortPosition()
@@ -419,7 +419,7 @@ namespace StockSharp.Samples.Strategies
 			RegisterOrder(shortOrder);
 			RegisterOrder(longOrder);
 			
-			this.AddInfoLog($"Entered SHORT position (short Asset1, long Asset2) at spread: {_currentSpread}, Mean: {_averageSpread}, StdDev: {_spreadStdDev}");
+			LogInfo($"Entered SHORT position (short Asset1, long Asset2) at spread: {_currentSpread}, Mean: {_averageSpread}, StdDev: {_spreadStdDev}");
 		}
 
 		private void ExitPosition()
@@ -483,7 +483,7 @@ namespace StockSharp.Samples.Strategies
 			// Reset position state
 			_inPosition = false;
 			
-			this.AddInfoLog($"Exited position at spread: {_currentSpread}, Entry spread: {_entrySpread}");
+			LogInfo($"Exited position at spread: {_currentSpread}, Entry spread: {_entrySpread}");
 		}
 
 		/// <inheritdoc />

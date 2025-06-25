@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
 			decimal kalmanFilterValue = kalmanValue.GetValue<decimal>();
 			
 			// Log the values
-			this.AddInfoLog($"Price: {candle.ClosePrice}, Kalman: {kalmanFilterValue}, BB middle: {midBand}, BB upper: {upperBand}, BB lower: {lowerBand}");
+			LogInfo($"Price: {candle.ClosePrice}, Kalman: {kalmanFilterValue}, BB middle: {midBand}, BB upper: {upperBand}, BB lower: {lowerBand}");
 
 			// Trading logic: Buy when price is below lower band but Kalman filter shows upward trend
 			if (candle.ClosePrice < lowerBand && kalmanFilterValue > candle.ClosePrice && Position <= 0)
@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
                 
 				// Open a long position
 				BuyMarket(Volume);
-				this.AddInfoLog($"Buy signal: Price below lower band ({candle.ClosePrice} < {lowerBand}) with Kalman uptrend ({kalmanFilterValue} > {candle.ClosePrice})");
+				LogInfo($"Buy signal: Price below lower band ({candle.ClosePrice} < {lowerBand}) with Kalman uptrend ({kalmanFilterValue} > {candle.ClosePrice})");
 			}
 			// Trading logic: Sell when price is above upper band but Kalman filter shows downward trend
 			else if (candle.ClosePrice > upperBand && kalmanFilterValue < candle.ClosePrice && Position >= 0)
@@ -187,7 +187,7 @@ namespace StockSharp.Samples.Strategies
                 
 				// Open a short position
 				SellMarket(Volume);
-				this.AddInfoLog($"Sell signal: Price above upper band ({candle.ClosePrice} > {upperBand}) with Kalman downtrend ({kalmanFilterValue} < {candle.ClosePrice})");
+				LogInfo($"Sell signal: Price above upper band ({candle.ClosePrice} > {upperBand}) with Kalman downtrend ({kalmanFilterValue} < {candle.ClosePrice})");
 			}
 			// Exit signals
 			else if ((Position > 0 && candle.ClosePrice > midBand) || 
@@ -195,7 +195,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Close position when price returns to middle band
 				ClosePosition();
-				this.AddInfoLog($"Exit signal: Price returned to middle band. Position closed at {candle.ClosePrice}");
+				LogInfo($"Exit signal: Price returned to middle band. Position closed at {candle.ClosePrice}");
 			}
 		}
 	}

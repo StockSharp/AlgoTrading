@@ -227,7 +227,7 @@ namespace StockSharp.Samples.Strategies
 				// Additional filter: Check for positive price movement to confirm potential reversal
 				if (candle.ClosePrice > candle.OpenPrice)
 				{
-					this.AddInfoLog($"OBV slope {_currentObvSlope} below threshold {longEntryThreshold}, entering LONG");
+					LogInfo($"OBV slope {_currentObvSlope} below threshold {longEntryThreshold}, entering LONG");
 					BuyMarket(Volume + Math.Abs(Position));
 				}
 			}
@@ -237,19 +237,19 @@ namespace StockSharp.Samples.Strategies
 				// Additional filter: Check for negative price movement to confirm potential reversal
 				if (candle.ClosePrice < candle.OpenPrice)
 				{
-					this.AddInfoLog($"OBV slope {_currentObvSlope} above threshold {shortEntryThreshold}, entering SHORT");
+					LogInfo($"OBV slope {_currentObvSlope} above threshold {shortEntryThreshold}, entering SHORT");
 					SellMarket(Volume + Math.Abs(Position));
 				}
 			}
 			else if (Position > 0 && _currentObvSlope > _averageSlope)
 			{
 				// Exit long when OBV slope returns to or above average
-				this.AddInfoLog($"OBV slope {_currentObvSlope} returned to average {_averageSlope}, exiting LONG");
+				LogInfo($"OBV slope {_currentObvSlope} returned to average {_averageSlope}, exiting LONG");
 				SellMarket(Math.Abs(Position));
 			}
 			else if (Position < 0 && _currentObvSlope < _averageSlope)
 			{
 				// Exit short when OBV slope returns to or below average
-				this.AddInfoLog($"OBV slope {_currentObvSlope} returned to average {_averageSlope}, exiting SHORT");
+				LogInfo($"OBV slope {_currentObvSlope} returned to average {_averageSlope}, exiting SHORT");
 				BuyMarket(Math.Abs(Position));
 			}

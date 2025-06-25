@@ -176,12 +176,12 @@ namespace StockSharp.Strategies
 					if (priceDirection == Sides.Buy)
 					{
 						BuyMarket(Volume);
-						this.AddInfoLog($"Long entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, Low volume with price up");
+						LogInfo($"Long entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, Low volume with price up");
 					}
 					else
 					{
 						SellMarket(Volume);
-						this.AddInfoLog($"Short entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, Low volume with price down");
+						LogInfo($"Short entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, Low volume with price down");
 					}
 				}
 				// Volume is significantly above average - potential high volume climax
@@ -192,12 +192,12 @@ namespace StockSharp.Strategies
 					if (priceDirection == Sides.Sell)
 					{
 						BuyMarket(Volume);
-						this.AddInfoLog($"Contrarian long entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, High volume with price down");
+						LogInfo($"Contrarian long entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, High volume with price down");
 					}
 					else
 					{
 						SellMarket(Volume);
-						this.AddInfoLog($"Contrarian short entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, High volume with price up");
+						LogInfo($"Contrarian short entry: Volume = {currentVolume}, Avg = {_avgVolume}, StdDev = {_stdDevVolume}, High volume with price up");
 					}
 				}
 			}
@@ -208,7 +208,7 @@ namespace StockSharp.Strategies
 				if (currentVolume > _avgVolume || (currentVolume > _avgVolume * 0.8m && priceDirection == Sides.Sell))
 				{
 					ClosePosition();
-					this.AddInfoLog($"Long exit: Volume = {currentVolume}, Avg = {_avgVolume}");
+					LogInfo($"Long exit: Volume = {currentVolume}, Avg = {_avgVolume}");
 				}
 			}
 			else if (Position < 0) // Short position
@@ -217,7 +217,7 @@ namespace StockSharp.Strategies
 				if (currentVolume > _avgVolume || (currentVolume > _avgVolume * 0.8m && priceDirection == Sides.Buy))
 				{
 					ClosePosition();
-					this.AddInfoLog($"Short exit: Volume = {currentVolume}, Avg = {_avgVolume}");
+					LogInfo($"Short exit: Volume = {currentVolume}, Avg = {_avgVolume}");
 				}
 			}
 		}

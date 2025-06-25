@@ -167,7 +167,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Log seasonality data
-			this.AddInfoLog($"Month: {currentMonth}, Seasonality Strength: {seasonalStrength}, Momentum: {momentumValue}, Avg Momentum: {momentumAvgValue}");
+			LogInfo($"Month: {currentMonth}, Seasonality Strength: {seasonalStrength}, Momentum: {momentumValue}, Avg Momentum: {momentumAvgValue}");
 			
 			// Define entry conditions with seasonality adjustment
 			var longEntryCondition = momentumValue > momentumAvgValue && 
@@ -191,7 +191,7 @@ namespace StockSharp.Samples.Strategies
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				this.AddInfoLog($"Long entry: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}, Seasonality={seasonalStrength}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}, Seasonality={seasonalStrength}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -201,19 +201,19 @@ namespace StockSharp.Samples.Strategies
 				// Enter short position
 				SellMarket(positionSize);
 				
-				this.AddInfoLog($"Short entry: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}, Seasonality={seasonalStrength}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}, Seasonality={seasonalStrength}");
 			}
 			else if (longExitCondition)
 			{
 				// Exit long position
 				SellMarket(Math.Abs(Position));
-				this.AddInfoLog($"Long exit: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}");
+				LogInfo($"Long exit: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}");
 			}
 			else if (shortExitCondition)
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));
-				this.AddInfoLog($"Short exit: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}");
+				LogInfo($"Short exit: Price={candle.ClosePrice}, Momentum={momentumValue}, Avg={momentumAvgValue}");
 			}
 		}
 	}

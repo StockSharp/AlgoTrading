@@ -160,14 +160,14 @@ namespace StockSharp.Samples.Strategies
 			if (Asset1 != null && Asset2 != null && MarketIndex != null && CandleType != null)
 			{
 				// We'll use historical data to calculate initial betas
-				this.AddInfoLog("Calculating initial betas using historical data...");
-				
+				LogInfo("Calculating initial betas using historical data...");
+
 				// In a real implementation, this would be done using historical data
 				// For this example, we'll just set default values
 				_asset1Beta = 1.2m;  // Example beta for Asset1
 				_asset2Beta = 0.8m;  // Example beta for Asset2
-				
-				this.AddInfoLog($"Initial betas: Asset1={_asset1Beta}, Asset2={_asset2Beta}");
+
+				LogInfo($"Initial betas: Asset1={_asset1Beta}, Asset2={_asset2Beta}");
 
 				// Subscribe to real-time candles for trading
 				var asset1Subscription = SubscribeCandles(CandleType, Asset1);
@@ -271,41 +271,41 @@ namespace StockSharp.Samples.Strategies
 			if (_lastSpread < _avgSpread - threshold * spreadStdDev && GetPositionValue(Asset1) <= 0 && GetPositionValue(Asset2) >= 0)
 			{
 				// Spread is below threshold - buy Asset1, sell Asset2
-				this.AddInfoLog($"Spread below threshold: {_lastSpread} < {_avgSpread - threshold * spreadStdDev}");
-				
+				LogInfo($"Spread below threshold: {_lastSpread} < {_avgSpread - threshold * spreadStdDev}");
+
 				// Calculate beta-neutral position sizes
 				decimal asset1Volume = Volume;
 				decimal asset2Volume = Volume * (_asset1Beta / _asset2Beta);
-				
+
 				BuyMarket(Asset1, asset1Volume);
 				SellMarket(Asset2, asset2Volume);
 			}
 			else if (_lastSpread > _avgSpread + threshold * spreadStdDev && GetPositionValue(Asset1) >= 0 && GetPositionValue(Asset2) <= 0)
 			{
 				// Spread is above threshold - sell Asset1, buy Asset2
-				this.AddInfoLog($"Spread above threshold: {_lastSpread} > {_avgSpread + threshold * spreadStdDev}");
-				
+				LogInfo($"Spread above threshold: {_lastSpread} > {_avgSpread + threshold * spreadStdDev}");
+
 				// Calculate beta-neutral position sizes
 				decimal asset1Volume = Volume;
 				decimal asset2Volume = Volume * (_asset1Beta / _asset2Beta);
-				
+
 				SellMarket(Asset1, asset1Volume);
 				BuyMarket(Asset2, asset2Volume);
 			}
 			else if (Math.Abs(_lastSpread - _avgSpread) < 0.2m * spreadStdDev)
 			{
 				// Close position when spread returns to average
-				this.AddInfoLog($"Spread returned to average: {_lastSpread} ≈ {_avgSpread}");
-				
+				LogInfo($"Spread returned to average: {_lastSpread} ≈ {_avgSpread}");
+
 				if (GetPositionValue(Asset1) > 0)
 					SellMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));
-					
+
 				if (GetPositionValue(Asset1) < 0)
 					BuyMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));
-					
+
 				if (GetPositionValue(Asset2) > 0)
 					SellMarket(Asset2, Math.Abs(GetPositionValue(Asset2)));
-					
+
 				if (GetPositionValue(Asset2) < 0)
 					BuyMarket(Asset2, Math.Abs(GetPositionValue(Asset2)));
 			}
@@ -315,3 +315,5 @@ namespace StockSharp.Samples.Strategies
 		{
 			return security is null ? 0 : PositionManager.Positions.TryGetValue(security)?.Value ?? 0;
 		}
+	}
+}

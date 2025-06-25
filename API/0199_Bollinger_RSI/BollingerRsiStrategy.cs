@@ -193,7 +193,7 @@ namespace StockSharp.Samples.Strategies
             var price = candle.ClosePrice;
             
             // Log current state
-            this.AddInfoLog($"Close: {price}, Middle: {middleBand:N2}, Upper: {upperBand:N2}, Lower: {lowerBand:N2}, RSI: {rsiValue:N2}");
+            LogInfo($"Close: {price}, Middle: {middleBand:N2}, Upper: {upperBand:N2}, Lower: {lowerBand:N2}, RSI: {rsiValue:N2}");
             
             // Entry logic
             if (Position == 0)
@@ -202,13 +202,13 @@ namespace StockSharp.Samples.Strategies
                 {
                     // Buy signal: price below lower band and RSI oversold
                     BuyMarket(Volume);
-                    this.AddInfoLog($"Buy signal: Price ({price}) below lower band ({lowerBand}) and RSI ({rsiValue}) below {RsiOversold}");
+                    LogInfo($"Buy signal: Price ({price}) below lower band ({lowerBand}) and RSI ({rsiValue}) below {RsiOversold}");
                 }
                 else if (price > upperBand && rsiValue > RsiOverbought)
                 {
                     // Sell signal: price above upper band and RSI overbought
                     SellMarket(Volume);
-                    this.AddInfoLog($"Sell signal: Price ({price}) above upper band ({upperBand}) and RSI ({rsiValue}) above {RsiOverbought}");
+                    LogInfo($"Sell signal: Price ({price}) above upper band ({upperBand}) and RSI ({rsiValue}) above {RsiOverbought}");
                 }
             }
             // Exit logic
@@ -216,13 +216,13 @@ namespace StockSharp.Samples.Strategies
             {
                 // Exit long position: price returned to middle band
                 SellMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit long position: Price ({price}) returned to middle band ({middleBand})");
+                LogInfo($"Exit long position: Price ({price}) returned to middle band ({middleBand})");
             }
             else if (Position < 0 && price < middleBand)
             {
                 // Exit short position: price returned to middle band
                 BuyMarket(Math.Abs(Position));
-                this.AddInfoLog($"Exit short position: Price ({price}) returned to middle band ({middleBand})");
+                LogInfo($"Exit short position: Price ({price}) returned to middle band ({middleBand})");
             }
         }
     }

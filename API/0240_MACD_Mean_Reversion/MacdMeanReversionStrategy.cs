@@ -226,13 +226,13 @@ namespace StockSharp.Strategies
 				if (currentMacdHist < _avgMacdHist - _deviationMultiplier * _stdDevMacdHist)
 				{
 					BuyMarket(Volume);
-					this.AddInfoLog($"Long entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
+					LogInfo($"Long entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
 				}
 				// Short entry - MACD Histogram is significantly above its average
 				else if (currentMacdHist > _avgMacdHist + _deviationMultiplier * _stdDevMacdHist)
 				{
 					SellMarket(Volume);
-					this.AddInfoLog($"Short entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
+					LogInfo($"Short entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
 				}
 			}
 			// Check for exit conditions
@@ -241,7 +241,7 @@ namespace StockSharp.Strategies
 				if (currentMacdHist > _avgMacdHist)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Long exit: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}");
+					LogInfo($"Long exit: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}");
 				}
 			}
 			else if (Position < 0) // Short position
@@ -249,7 +249,7 @@ namespace StockSharp.Strategies
 				if (currentMacdHist < _avgMacdHist)
 				{
 					ClosePosition();
-					this.AddInfoLog($"Short exit: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}");
+					LogInfo($"Short exit: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}");
 				}
 			}
 		}
