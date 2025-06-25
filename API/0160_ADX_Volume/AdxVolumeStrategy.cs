@@ -92,7 +92,7 @@ namespace StockSharp.Samples.Strategies
             _stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Atr))
                 .SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
                 .SetDisplay("Candle Type", "Candle type for strategy", "General");
 
             _averageVolume = 0;

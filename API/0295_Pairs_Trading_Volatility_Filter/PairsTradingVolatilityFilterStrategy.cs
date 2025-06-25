@@ -127,8 +127,8 @@ namespace StockSharp.Strategies
 		{
 			if (Security1 != null && Security2 != null)
 			{
-				yield return (Security1, DataType.TimeFrame(TimeSpan.FromMinutes(5)));
-				yield return (Security2, DataType.TimeFrame(TimeSpan.FromMinutes(5)));
+				yield return (Security1, TimeSpan.FromMinutes(5).TimeFrame());
+				yield return (Security2, TimeSpan.FromMinutes(5).TimeFrame());
 			}
 		}
 		

@@ -51,7 +51,7 @@ namespace StockSharp.Samples.Strategies
                 .SetCanOptimize(true)
                 .SetOptimize(10, 50, 10);
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
                 
             _previousADValue = 0;

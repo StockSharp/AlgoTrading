@@ -93,7 +93,7 @@ namespace StockSharp.Samples.Strategies
         /// </summary>
         public WyckoffAccumulationStrategy()
         {
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                          .SetDisplay("Candle Type", "Type of candles to use for analysis", "General");
             
             _maPeriod = Param(nameof(MaPeriod), 20)

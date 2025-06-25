@@ -85,7 +85,7 @@ namespace StockSharp.Samples.Strategies
                 .SetCanOptimize(true)
                 .SetOptimize(10, 50, 5);
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
                 .SetDisplayName("Candle Type")
                 .SetDescription("Type of candles to use")
                 .SetGroup("Data");

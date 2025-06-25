@@ -66,7 +66,7 @@ namespace StockSharp.Samples.Strategies
         /// </summary>
         public ThreeBarReversalUpStrategy()
         {
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles to use", "General");
 
             _stopLossPercent = Param(nameof(StopLossPercent), 1.0m)

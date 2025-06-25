@@ -153,7 +153,7 @@ namespace StockSharp.Samples.Strategies
                 .SetDescription("ATR multiplier for stop loss calculation")
                 .SetCategories("Risk Management");
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplayName("Candle Type")
                 .SetDescription("Timeframe of data for strategy")
                 .SetCategories("General");

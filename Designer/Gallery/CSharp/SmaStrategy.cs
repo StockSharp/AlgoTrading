@@ -37,7 +37,7 @@
 
 		public SmaStrategy()
 		{
-			_candleTypeParam = this.Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)));
+			_candleTypeParam = this.Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 			_long = this.Param(nameof(Long), 80);
 			_short = this.Param(nameof(Short), 20);
 		}

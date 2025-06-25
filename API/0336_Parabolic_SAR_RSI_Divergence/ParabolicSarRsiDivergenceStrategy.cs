@@ -75,7 +75,7 @@ namespace StockSharp.Samples.Strategies
 				.SetGreaterThanZero()
 				.SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings");
 
-			_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 

@@ -117,7 +117,7 @@ namespace StockSharp.Samples.Strategies
                 .SetDescription("Period for %D line calculation")
                 .SetCategories("Indicators");
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplayName("Candle Type")
                 .SetDescription("Timeframe of data for strategy")
                 .SetCategories("General");

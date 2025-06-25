@@ -46,7 +46,7 @@ namespace StockSharp.Samples.Strategies
                 .SetNotNegative()
                 .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection");
             
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
             
             _prevCandleClose = 0;

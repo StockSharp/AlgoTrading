@@ -45,7 +45,7 @@ namespace StockSharp.Samples.Strategies
         /// </summary>
         public RejectionCandleStrategy()
         {
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
                          .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General");
             
             _stopLossPercent = Param(nameof(StopLossPercent), 1m)

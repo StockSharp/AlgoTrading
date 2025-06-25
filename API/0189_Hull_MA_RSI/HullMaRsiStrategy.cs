@@ -110,7 +110,7 @@ namespace StockSharp.Samples.Strategies
                 .SetCanOptimize(true)
                 .SetDisplay("RSI Overbought", "Level above which RSI is considered overbought", "Indicators");
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles to use", "General");
 
             _stopLossAtr = Param(nameof(StopLossAtr), 2m)

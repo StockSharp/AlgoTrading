@@ -104,7 +104,7 @@ namespace StockSharp.Samples.Strategies
 				.SetCanOptimize(true)
 				.SetOptimize(20m, 30m, 5m);
 
-			_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 			_lastSupertrend = 0;

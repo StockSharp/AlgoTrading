@@ -92,7 +92,7 @@ namespace StockSharp.Samples.Strategies
             var subscription = SubscribeCandles(CandleType);
             
             // Subscribe to the previous day's candles to get OHLC data
-            var dailySubscription = SubscribeCandles(DataType.TimeFrame(TimeSpan.FromDays(1)));
+            var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
             
             // Process daily candles to get previous day's data
             dailySubscription
