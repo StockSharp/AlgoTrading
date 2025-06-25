@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private AverageTrueRange _atr;
 		
 		// Store values for analysis
-		private readonly SynchronizedList<decimal> _atrValues = new SynchronizedList<decimal>();
+		private readonly SynchronizedList<decimal> _atrValues = [];
 		private decimal _prevHmaValue;
 		private decimal _currentHmaValue;
 		private bool _isLongPosition;

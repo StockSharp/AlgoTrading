@@ -30,7 +30,7 @@ namespace StockSharp.Strategies
 		private decimal _sumAtr;
 		private decimal _sumSquaresAtr;
 		private int _count;
-		private readonly Queue<decimal> _atrValues = new();
+		private readonly Queue<decimal> _atrValues = [];
 
 		/// <summary>
 		/// ATR Period.

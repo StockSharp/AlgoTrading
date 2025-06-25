@@ -28,7 +28,7 @@ namespace StockSharp.Samples.Strategies
 		private bool _trendIsUp = false;
 		
 		// Store recent candles for swing detection
-		private readonly Queue<ICandleMessage> _recentCandles = new Queue<ICandleMessage>();
+		private readonly Queue<ICandleMessage> _recentCandles = [];
 
 		/// <summary>
 		/// Lookback period for swing detection.

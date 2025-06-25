@@ -85,7 +85,7 @@ namespace StockSharp.Samples.Strategies
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle type", "Type of candles to use", "General");
 
-			_priceHistory = new Queue<decimal>();
+			_priceHistory = [];
 			_latestAutocorrelation = 0;
 		}
 

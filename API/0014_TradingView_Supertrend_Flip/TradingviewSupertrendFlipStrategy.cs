@@ -25,7 +25,7 @@ namespace StockSharp.Samples.Strategies
 		private bool _prevIsPriceAboveSupertrend;
 		private decimal _avgVolume;
 		private decimal _supertrendValue;
-		private readonly Queue<decimal> _volumeQueue = new Queue<decimal>();
+		private readonly Queue<decimal> _volumeQueue = [];
 
 		/// <summary>
 		/// Period for Supertrend calculation.

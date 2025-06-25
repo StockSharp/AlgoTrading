@@ -37,8 +37,8 @@ namespace StockSharp.Samples.Strategies
 		private MarketState _currentState = MarketState.Neutral;
 		
 		// Data for HMM calculations
-		private readonly SynchronizedList<decimal> _priceChanges = new SynchronizedList<decimal>();
-		private readonly SynchronizedList<decimal> _volumes = new SynchronizedList<decimal>();
+		private readonly SynchronizedList<decimal> _priceChanges = [];
+		private readonly SynchronizedList<decimal> _volumes = [];
 		private decimal _prevPrice;
 		
 		/// <summary>

@@ -30,7 +30,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal _currentBiasScore;
 		
 		// Tracks recent price movements for bias calculation
-		private readonly Queue<decimal> _recentPriceMovements = new();
+		private readonly Queue<decimal> _recentPriceMovements = [];
 		
 		// Flags to track positions
 		private bool _isLong;

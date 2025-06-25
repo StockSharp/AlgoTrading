@@ -32,7 +32,7 @@ namespace StockSharp.Strategies
 		private decimal _sumMacdHist;
 		private decimal _sumSquaresMacdHist;
 		private int _count;
-		private readonly Queue<decimal> _macdHistValues = new();
+		private readonly Queue<decimal> _macdHistValues = [];
 
 		/// <summary>
 		/// Fast EMA period for MACD.

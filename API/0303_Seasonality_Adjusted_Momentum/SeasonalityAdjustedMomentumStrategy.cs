@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		
 		// Dictionary to store seasonality strength values for each month
-		private readonly Dictionary<int, decimal> _seasonalStrengthByMonth = new Dictionary<int, decimal>();
+		private readonly Dictionary<int, decimal> _seasonalStrengthByMonth = [];
 
 		/// <summary>
 		/// Period for Momentum indicator.

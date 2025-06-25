@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private bool _isShortPosition;
 		
 		// Seasonal data storage
-		private readonly SynchronizedDictionary<Month, decimal> _monthlyReturns = new SynchronizedDictionary<Month, decimal>();
+		private readonly SynchronizedDictionary<Month, decimal> _monthlyReturns = [];
 		private int _seasonalDataCount;
 		
 		// Current values

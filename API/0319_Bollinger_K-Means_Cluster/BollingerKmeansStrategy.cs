@@ -37,9 +37,9 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		private ClusterState _currentClusterState = ClusterState.Neutral;
-		private readonly SynchronizedList<decimal> _rsiValues = new SynchronizedList<decimal>();
-		private readonly SynchronizedList<decimal> _priceValues = new SynchronizedList<decimal>();
-		private readonly SynchronizedList<decimal> _volumeValues = new SynchronizedList<decimal>();
+		private readonly SynchronizedList<decimal> _rsiValues = [];
+		private readonly SynchronizedList<decimal> _priceValues = [];
+		private readonly SynchronizedList<decimal> _volumeValues = [];
 		
 		private RelativeStrengthIndex _rsi;
 		private AverageTrueRange _atr;

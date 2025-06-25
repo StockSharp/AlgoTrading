@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal _prevBollingerWidth;
 		private decimal _avgBollingerWidth;
 		private decimal _bollingerWidthSum;
-		private readonly Queue<decimal> _bollingerWidths = new Queue<decimal>();
+		private readonly Queue<decimal> _bollingerWidths = [];
 
 		/// <summary>
 		/// Bollinger Bands period.

@@ -33,7 +33,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal _chikouSpanValue;
 		
 		// Data for Hurst exponent calculations
-		private readonly SynchronizedList<decimal> _prices = new SynchronizedList<decimal>();
+		private readonly SynchronizedList<decimal> _prices = [];
 		private decimal _hurstExponent = 0.5m;
 
 		/// <summary>
@@ -237,7 +237,7 @@ namespace StockSharp.Samples.Strategies
 			// Note: A full implementation would use multiple time scales
 			
 			// Calculate log returns
-			List<decimal> logReturns = new List<decimal>();
+			List<decimal> logReturns = [];
 			for (int i = 1; i < _prices.Count; i++)
 			{
 				if (_prices[i-1] != 0)
@@ -251,7 +251,7 @@ namespace StockSharp.Samples.Strategies
 			decimal mean = logReturns.Sum() / logReturns.Count;
 			
 			// Calculate cumulative deviation series
-			List<decimal> cumulativeDeviation = new List<decimal>();
+			List<decimal> cumulativeDeviation = [];
 			decimal sum = 0;
 			
 			foreach (var logReturn in logReturns)

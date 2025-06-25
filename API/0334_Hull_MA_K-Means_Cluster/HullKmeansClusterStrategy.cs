@@ -31,9 +31,9 @@ namespace StockSharp.Samples.Strategies
 		private MarketState _currentMarketState = MarketState.Neutral;
 
 		// Feature data for clustering
-		private readonly Queue<decimal> _priceChangeData = new Queue<decimal>();
-		private readonly Queue<decimal> _rsiData = new Queue<decimal>();
-		private readonly Queue<decimal> _volumeRatioData = new Queue<decimal>();
+		private readonly Queue<decimal> _priceChangeData = [];
+		private readonly Queue<decimal> _rsiData = [];
+		private readonly Queue<decimal> _volumeRatioData = [];
 
 		private decimal _lastPrice;
 		private decimal _avgVolume;

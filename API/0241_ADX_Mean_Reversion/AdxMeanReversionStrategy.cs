@@ -30,7 +30,7 @@ namespace StockSharp.Strategies
 		private decimal _sumAdx;
 		private decimal _sumSquaresAdx;
 		private int _count;
-		private readonly Queue<decimal> _adxValues = new();
+		private readonly Queue<decimal> _adxValues = [];
 
 		/// <summary>
 		/// ADX Period.

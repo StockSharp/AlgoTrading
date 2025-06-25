@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _pcrMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private readonly List<decimal> _pcrHistory = new();
+		private readonly List<decimal> _pcrHistory = [];
 		private decimal _pcrAverage;
 		private decimal _pcrStdDev;
 		

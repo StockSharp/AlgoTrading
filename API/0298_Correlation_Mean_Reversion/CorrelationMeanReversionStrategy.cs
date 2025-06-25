@@ -27,8 +27,8 @@ namespace StockSharp.Strategies
 		private SimpleMovingAverage _correlationSma;
 		private StandardDeviation _correlationStdDev;
 		
-		private readonly Queue<decimal> _security1Prices = new Queue<decimal>();
-		private readonly Queue<decimal> _security2Prices = new Queue<decimal>();
+		private readonly Queue<decimal> _security1Prices = [];
+		private readonly Queue<decimal> _security2Prices = [];
 		
 		// Current values
 		private decimal _currentCorrelation;

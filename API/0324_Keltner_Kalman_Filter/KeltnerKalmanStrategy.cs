@@ -31,7 +31,7 @@ namespace StockSharp.Samples.Strategies
 		// Kalman filter parameters
 		private decimal _kalmanEstimate;
 		private decimal _kalmanError;
-		private readonly SynchronizedList<decimal> _prices = new SynchronizedList<decimal>();
+		private readonly SynchronizedList<decimal> _prices = [];
 		
 		// Saved values for decision making
 		private decimal _emaValue;

@@ -25,7 +25,7 @@ namespace StockSharp.Samples.Strategies
 		private SimpleMovingAverage _ma;
 		
 		// Store recent candles for trendline calculation
-		private readonly Queue<ICandleMessage> _recentCandles = new Queue<ICandleMessage>();
+		private readonly Queue<ICandleMessage> _recentCandles = [];
 		
 		// Trendline parameters
 		private decimal _supportSlope;
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
 			int n = candles.Length;
 			
 			// Calculate support trendline (connecting lows)
-			List<(decimal x, decimal y)> supportPoints = new List<(decimal, decimal)>();
+			List<(decimal x, decimal y)> supportPoints = [];
 			
 			// Find significant lows for support line
 			for (int i = 1; i < n - 1; i++)
@@ -211,7 +211,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Calculate resistance trendline (connecting highs)
-			List<(decimal x, decimal y)> resistancePoints = new List<(decimal, decimal)>();
+			List<(decimal x, decimal y)> resistancePoints = [];
 			
 			// Find significant highs for resistance line
 			for (int i = 1; i < n - 1; i++)

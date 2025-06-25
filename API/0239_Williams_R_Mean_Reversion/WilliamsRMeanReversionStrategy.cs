@@ -30,7 +30,7 @@ namespace StockSharp.Strategies
 		private decimal _sumWilliamsR;
 		private decimal _sumSquaresWilliamsR;
 		private int _count;
-		private readonly Queue<decimal> _williamsRValues = new();
+		private readonly Queue<decimal> _williamsRValues = [];
 
 		/// <summary>
 		/// Williams %R Period.

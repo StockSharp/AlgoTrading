@@ -172,7 +172,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		private class HurstExponent : BaseIndicator
 		{
-			private readonly Queue<decimal> _prices = new Queue<decimal>();
+			private readonly Queue<decimal> _prices = [];
 			
 			/// <summary>
 			/// Period for calculation.

@@ -25,7 +25,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal _residualStdDev;
 		private decimal _residualSum;
 		private decimal _squaredResidualSum;
-		private readonly Queue<decimal> _residuals = new Queue<decimal>();
+		private readonly Queue<decimal> _residuals = [];
 		
 		private decimal _asset1Price;
 		private decimal _asset2Price;

@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLoss;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private readonly List<decimal> _sentimentHistory = new();
+		private readonly List<decimal> _sentimentHistory = [];
 		private decimal _sentimentAverage;
 		private decimal _sentimentStdDev;
 		private decimal _currentSentiment;

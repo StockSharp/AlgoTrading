@@ -26,7 +26,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal _slopeStdDev;
 		private decimal _sumSlope;
 		private decimal _sumSlopeSquared;
-		private readonly Queue<decimal> _slopeValues = new Queue<decimal>();
+		private readonly Queue<decimal> _slopeValues = [];
 
 		public int CciPeriod
 		{

@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _ivPeriod;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private readonly List<decimal> _impliedVolatilityHistory = new();
+		private readonly List<decimal> _impliedVolatilityHistory = [];
 		private decimal _avgImpliedVolatility;
 		
 		// Store previous indicator values for easier tracking

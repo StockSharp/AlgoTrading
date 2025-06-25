@@ -26,8 +26,8 @@ namespace StockSharp.Samples.Strategies
 		private RelativeStrengthIndex _rsi;
 		
 		// Data for divergence detection
-		private readonly SynchronizedList<decimal> _prices = new SynchronizedList<decimal>();
-		private readonly SynchronizedList<decimal> _rsiValues = new SynchronizedList<decimal>();
+		private readonly SynchronizedList<decimal> _prices = [];
+		private readonly SynchronizedList<decimal> _rsiValues = [];
 		private bool _isLongPosition;
 		private bool _isShortPosition;
 		

@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _seasonalThreshold;
 		private readonly StrategyParam<DataType> _candleType;
 
-		private readonly Dictionary<int, decimal> _monthlyReturns = new Dictionary<int, decimal>();
+		private readonly Dictionary<int, decimal> _monthlyReturns = [];
 		private decimal _currentSeasonalStrength;
 
 		/// <summary>

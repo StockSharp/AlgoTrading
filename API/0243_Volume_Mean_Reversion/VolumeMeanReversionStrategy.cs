@@ -28,7 +28,7 @@ namespace StockSharp.Strategies
 		private decimal _sumVolume;
 		private decimal _sumSquaresVolume;
 		private int _count;
-		private readonly Queue<decimal> _volumeValues = new();
+		private readonly Queue<decimal> _volumeValues = [];
 
 		/// <summary>
 		/// Period for calculating mean and standard deviation of Volume.

@@ -36,7 +36,7 @@ namespace StockSharp.Samples.Strategies
 		private bool _isLong; // Long = long Asset1, short Asset2; Short = short Asset1, long Asset2
 		
 		// Historical data
-		private readonly List<decimal> _spreadHistory = new List<decimal>();
+		private readonly List<decimal> _spreadHistory = [];
 
 		/// <summary>
 		/// Asset 1 for pairs trading

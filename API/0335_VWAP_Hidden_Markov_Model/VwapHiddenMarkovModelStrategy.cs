@@ -28,8 +28,8 @@ namespace StockSharp.Samples.Strategies
 		private MarketState _currentMarketState = MarketState.Neutral;
 		
 		// Feature data for HMM
-		private readonly Queue<decimal> _priceData = new Queue<decimal>();
-		private readonly Queue<decimal> _volumeData = new Queue<decimal>();
+		private readonly Queue<decimal> _priceData = [];
+		private readonly Queue<decimal> _volumeData = [];
 		
 		// Transition probabilities
 		private readonly decimal[,] _transitionMatrix = new decimal[3, 3]

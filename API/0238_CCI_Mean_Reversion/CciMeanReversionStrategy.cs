@@ -30,7 +30,7 @@ namespace StockSharp.Strategies
 		private decimal _sumCci;
 		private decimal _sumSquaresCci;
 		private int _count;
-		private readonly Queue<decimal> _cciValues = new();
+		private readonly Queue<decimal> _cciValues = [];
 
 		/// <summary>
 		/// CCI Period.

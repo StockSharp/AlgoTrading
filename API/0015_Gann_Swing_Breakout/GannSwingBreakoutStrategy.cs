@@ -25,9 +25,9 @@ namespace StockSharp.Samples.Strategies
 		private int _highBarIndex;
 		private int _lowBarIndex;
 		private int _currentBarIndex;
-		private readonly List<decimal> _recentHighs = new List<decimal>();
-		private readonly List<decimal> _recentLows = new List<decimal>();
-		private readonly List<ICandleMessage> _recentCandles = new List<ICandleMessage>();
+		private readonly List<decimal> _recentHighs = [];
+		private readonly List<decimal> _recentLows = [];
+		private readonly List<ICandleMessage> _recentCandles = [];
 		private decimal _prevMaValue;
 
 		/// <summary>
