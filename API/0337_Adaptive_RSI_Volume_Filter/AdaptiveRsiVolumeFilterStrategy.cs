@@ -100,7 +100,7 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security security, DataType dataType)> GetWorkingSecurities()
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
@@ -239,7 +239,7 @@ namespace StockSharp.Samples.Strategies
 		private void ProcessVolume(ICandleMessage candle)
 		{
 			// Process volume with SMA
-			var volumeValue = _volumeSma.Process(new DecimalIndicatorValue(candle.TotalVolume));
+			var volumeValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true);
 			
 			if (volumeValue.IsFinal)
 			{

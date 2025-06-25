@@ -101,7 +101,7 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security security, DataType dataType)> GetWorkingSecurities()
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
@@ -112,7 +112,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var adaptiveEma = new KaufmanAdaptiveMovingAverage { Length = Lookback, Fast = Fast, Slow = Slow };
+			var adaptiveEma = new KaufmanAdaptiveMovingAverage { Length = Lookback, FastSCPeriod = Fast, SlowSCPeriod = Slow };
 			var atr = new AverageTrueRange { Length = 14 };
 
 			// Reset state variables

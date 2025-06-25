@@ -111,7 +111,7 @@ namespace StockSharp.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security security, DataType dataType)> GetWorkingSecurities()
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
