@@ -98,7 +98,7 @@ namespace StockSharp.Samples.Strategies
                 .SetCanOptimize(true)
                 .SetOptimize(55m, 70m, 2.5m);
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
                 
             _prevChoppiness = 100m; // Initialize to high value

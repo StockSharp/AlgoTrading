@@ -73,7 +73,7 @@ namespace StockSharp.Strategies
         /// </summary>
         public VolumeClimaxReversalStrategy()
         {
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles to use", "Candles");
 
             _volumePeriod = Param(nameof(VolumePeriod), 20)

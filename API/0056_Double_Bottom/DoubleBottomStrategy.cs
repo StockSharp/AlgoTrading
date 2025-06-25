@@ -77,7 +77,7 @@ namespace StockSharp.Samples.Strategies
                 .SetDisplay("Similarity %", "Maximum percentage difference between two bottoms", "Pattern Parameters")
                 .SetCanOptimize(true);
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles to use", "General");
 
             _stopLossPercent = Param(nameof(StopLossPercent), 1.0m)

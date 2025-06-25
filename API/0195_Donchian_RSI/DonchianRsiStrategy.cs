@@ -87,7 +87,7 @@ namespace StockSharp.Samples.Strategies
                 .SetDescription("Stop loss percentage from entry price")
                 .SetCategories("Risk Management");
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(30)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
                 .SetDisplayName("Candle Type")
                 .SetDescription("Timeframe of data for strategy")
                 .SetCategories("General");

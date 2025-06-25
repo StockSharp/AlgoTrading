@@ -83,7 +83,7 @@ namespace StockSharp.Strategies.Samples
         /// </summary>
         public SupertrendVolumeStrategy()
         {
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                           .SetDisplay("Candle Type", "Type of candles to use", "General");
                           
             _supertrendPeriod = Param(nameof(SupertrendPeriod), 10)

@@ -88,7 +88,7 @@ namespace StockSharp.Samples.Strategies
 			_seasonalThreshold = Param(nameof(SeasonalThreshold), 0.5m)
 				.SetDisplay("Seasonal Threshold", "Minimum seasonal strength to consider for trading", "Seasonal Settings");
 
-			_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 			// Initialize seasonal returns (this would typically be loaded from historical data)

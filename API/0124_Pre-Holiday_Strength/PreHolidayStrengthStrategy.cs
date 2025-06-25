@@ -72,7 +72,7 @@ namespace StockSharp.Samples.Strategies
                 .SetGreaterThanZero()
                 .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy");
             
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromDays(1)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
             
             _inPreHolidayPosition = false;

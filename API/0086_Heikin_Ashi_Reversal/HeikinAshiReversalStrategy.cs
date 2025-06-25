@@ -43,7 +43,7 @@ namespace StockSharp.Samples.Strategies
         /// </summary>
         public HeikinAshiReversalStrategy()
         {
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
                 .SetDisplay("Candle Type", "Type of candles to use", "General");
                 
             _stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))

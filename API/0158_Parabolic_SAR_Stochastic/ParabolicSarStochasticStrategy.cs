@@ -134,7 +134,7 @@ namespace StockSharp.Samples.Strategies
                 .SetRange(1, 100)
                 .SetDisplay("Overbought Level", "Level above which market is considered overbought", "Stochastic Parameters");
 
-            _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+            _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
                 .SetDisplay("Candle Type", "Candle type for strategy", "General");
 
             _lastStochK = 50; // Initialize to a neutral value
