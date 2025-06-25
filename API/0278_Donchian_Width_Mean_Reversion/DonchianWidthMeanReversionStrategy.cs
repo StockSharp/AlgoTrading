@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private DonchianChannel _donchian;
+		private DonchianChannels _donchian;
 		private SimpleMovingAverage _widthAverage;
 		private StandardDeviation _widthStdDev;
 		
@@ -120,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize indicators
-			_donchian = new DonchianChannel { Length = DonchianPeriod };
+			_donchian = new DonchianChannels { Length = DonchianPeriod };
 			_widthAverage = new SimpleMovingAverage { Length = LookbackPeriod };
 			_widthStdDev = new StandardDeviation { Length = LookbackPeriod };
 			

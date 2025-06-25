@@ -91,7 +91,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Initialize indicators
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-			var donchian = new DonchianChannel { Length = DonchianPeriod };
+			var donchian = new DonchianChannels { Length = DonchianPeriod };
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);

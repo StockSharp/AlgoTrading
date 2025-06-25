@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _seasonalThreshold;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private DonchianChannel _donchian;
+		private DonchianChannels _donchian;
 		private bool _isLongPosition;
 		private bool _isShortPosition;
 		
@@ -123,7 +123,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create Donchian Channel indicator
-			_donchian = new DonchianChannel
+			_donchian = new DonchianChannels
 			{
 				Length = DonchianPeriod
 			};

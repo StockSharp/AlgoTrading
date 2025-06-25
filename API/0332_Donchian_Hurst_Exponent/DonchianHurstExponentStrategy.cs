@@ -109,7 +109,7 @@ namespace StockSharp.Samples.Strategies
 			_donchianIsFormed = false;
 
 			// Create Donchian Channel indicator
-			var donchian = new DonchianChannel
+			var donchian = new DonchianChannels
 			{
 				Length = DonchianPeriod
 			};

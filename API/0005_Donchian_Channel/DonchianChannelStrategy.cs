@@ -70,7 +70,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var donchian = new DonchianChannel { Length = ChannelPeriod };
+			var donchian = new DonchianChannels { Length = ChannelPeriod };
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);

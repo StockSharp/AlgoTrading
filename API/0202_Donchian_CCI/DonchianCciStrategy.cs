@@ -90,7 +90,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize Indicators
-			var donchian = new DonchianChannel { Length = DonchianPeriod };
+			var donchian = new DonchianChannels { Length = DonchianPeriod };
 			var cci = new CommodityChannelIndex { Length = CciPeriod };
 
 			// Create subscription and bind indicators

@@ -131,7 +131,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var donchian = new DonchianChannel { Length = DonchianPeriod };
+			var donchian = new DonchianChannels { Length = DonchianPeriod };
 			var rsi = new RSI { Length = RsiPeriod };
 
 			// Create subscription

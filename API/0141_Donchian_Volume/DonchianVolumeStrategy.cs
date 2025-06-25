@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 				DrawCandles(area, subscription);
 				
 				// Create a composite indicator for visualization purposes
-				var donchian = new DonchianChannel
+				var donchian = new DonchianChannels
 				{
 					Length = DonchianPeriod
 				};

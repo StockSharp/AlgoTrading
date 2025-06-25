@@ -56,12 +56,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			_period = Param(nameof(Period), 20)
 				.SetDisplay("Period", "Period for Donchian Channel calculation", "Indicator Settings")
-				.SetRange(10, 40, 5)
+				.SetOptimize(10, 40, 5)
 				.SetCanOptimize(true);
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetOptimize(1m, 3m, 0.5m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -91,7 +91,7 @@ namespace StockSharp.Samples.Strategies
 			_isFirstCandle = true;
 			
 			// Create Donchian Channel indicator
-			var donchian = new DonchianChannel { Length = Period };
+			var donchian = new DonchianChannels { Length = Period };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
