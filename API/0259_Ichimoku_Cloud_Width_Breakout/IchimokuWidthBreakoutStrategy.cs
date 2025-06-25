@@ -281,9 +281,9 @@ namespace StockSharp.Strategies
 			}
 			// Check for exit condition - width returns to average or price enters cloud
 			else if ((Position > 0 || Position < 0) && 
-				    (width < avgWidth || 
-				     (candle.ClosePrice > Math.Min(_currentSenkouA, _currentSenkouB) && 
-				      candle.ClosePrice < Math.Max(_currentSenkouA, _currentSenkouB))))
+					(width < avgWidth || 
+					 (candle.ClosePrice > Math.Min(_currentSenkouA, _currentSenkouB) && 
+					  candle.ClosePrice < Math.Max(_currentSenkouA, _currentSenkouB))))
 			{
 				// Exit position when cloud width returns to normal or price enters cloud
 				ClosePosition();

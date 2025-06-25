@@ -210,8 +210,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get values from MACD
-			var macdLine = macdValue[0].To<decimal>();      // MACD Line
-			var signalLine = macdValue[1].To<decimal>();    // Signal Line
+			var macdLine = macdValue[0].To<decimal>();	  // MACD Line
+			var signalLine = macdValue[1].To<decimal>();	// Signal Line
 			
 			// Determine if we have a volume spike
 			bool isVolumeSpike = candle.TotalVolume > (_avgVolume + VolumeDeviationFactor * _volumeStdDev);

@@ -115,7 +115,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(
 				new Unit(2, UnitTypes.Percent),   // Take profit 2%
 				new Unit(2, UnitTypes.Percent),   // Stop loss 2%
-				true                             // Use trailing stop
+				true							 // Use trailing stop
 			);
 		}
 

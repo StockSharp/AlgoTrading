@@ -173,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 				// If we have a short position, close it first
 				if (Position < 0)
 					BuyMarket(Math.Abs(Position));
-                
+				
 				// Open a long position
 				BuyMarket(Volume);
 				LogInfo($"Buy signal: Price below lower band ({candle.ClosePrice} < {lowerBand}) with Kalman uptrend ({kalmanFilterValue} > {candle.ClosePrice})");
@@ -184,7 +184,7 @@ namespace StockSharp.Samples.Strategies
 				// If we have a long position, close it first
 				if (Position > 0)
 					SellMarket(Math.Abs(Position));
-                
+				
 				// Open a short position
 				SellMarket(Volume);
 				LogInfo($"Sell signal: Price above upper band ({candle.ClosePrice} > {upperBand}) with Kalman downtrend ({kalmanFilterValue} < {candle.ClosePrice})");

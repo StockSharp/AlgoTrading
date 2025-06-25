@@ -151,7 +151,7 @@ namespace StockSharp.Samples.Strategies
 			// Enable position protection with stop-loss
 			StartProtection(
 				takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-				stopLoss: new Unit(2, UnitTypes.Percent)     // 2% stop-loss
+				stopLoss: new Unit(2, UnitTypes.Percent)	 // 2% stop-loss
 			);
 
 			// Setup chart visualization if available
