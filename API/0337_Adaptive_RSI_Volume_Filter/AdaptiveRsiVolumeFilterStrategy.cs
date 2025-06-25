@@ -239,7 +239,7 @@ namespace StockSharp.Samples.Strategies
 		private void ProcessVolume(ICandleMessage candle)
 		{
 			// Process volume with SMA
-			var volumeValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, true);
+			var volumeValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			if (volumeValue.IsFinal)
 			{

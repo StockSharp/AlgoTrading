@@ -53,12 +53,12 @@ namespace StockSharp.Samples.Strategies
 		public RocImpulseStrategy()
 		{
 			_rocPeriod = Param(nameof(RocPeriod), 12)
-				.SetRange(5, 30, 1)
+				.SetRange(5, 30)
 				.SetDisplay("ROC Period", "Period for Rate of Change calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 5m, 0.5m)
+				.SetRange(1m, 5m)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
 				.SetCanOptimize(true);
 

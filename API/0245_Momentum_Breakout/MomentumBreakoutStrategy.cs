@@ -140,8 +140,8 @@ namespace StockSharp.Samples.Strategies
 			_currentMomentum = momentumValue;
 
 			// Process momentum through average and standard deviation indicators
-			var avgIndicatorValue = _momentumAverage.Process(momentumValue, candle.ServerTime, true);
-			var stdDevIndicatorValue = _momentumStdDev.Process(momentumValue, candle.ServerTime, true);
+			var avgIndicatorValue = _momentumAverage.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevIndicatorValue = _momentumStdDev.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			_momentumAvgValue = avgIndicatorValue.GetValue<decimal>();
 			_momentumStdDevValue = stdDevIndicatorValue.GetValue<decimal>();

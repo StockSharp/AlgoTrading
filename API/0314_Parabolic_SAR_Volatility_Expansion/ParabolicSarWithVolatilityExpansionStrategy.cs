@@ -126,9 +126,8 @@ namespace StockSharp.Samples.Strategies
 				.Bind(parabolicSar, atr, (candle, sarValue, atrValue) =>
 				{
 					// Calculate ATR average and standard deviation
-					var atrInput = new DecimalIndicatorValue(atrValue);
-					var atrSmaValue = atrSma.Process(atrInput);
-					var atrStdDevValue = atrStdDev.Process(atrInput);
+					var atrSmaValue = atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished);
+					var atrStdDevValue = atrStdDev.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished);
 					
 					// Process the strategy logic
 					ProcessStrategy(
