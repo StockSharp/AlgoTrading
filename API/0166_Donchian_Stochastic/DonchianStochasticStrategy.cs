@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 
 		// Indicators
-		private Donchian _donchian;
+		private DonchianChannels _donchian;
 		private StochasticOscillator _stochastic;
 
 		/// <summary>
@@ -130,16 +130,15 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			_donchian = new Donchian
+			_donchian = new DonchianChannels
 			{
 				Length = DonchianPeriod
 			};
 
 			_stochastic = new StochasticOscillator
 			{
-				K = StochK,
-				D = StochD,
-				KPeriod = StochPeriod
+				K = { Length = StochK },
+				D = { Length = StochD },
 			};
 
 			// Enable position protection

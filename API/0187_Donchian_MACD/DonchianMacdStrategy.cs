@@ -21,8 +21,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 
-		private Donchian _donchian;
-		private MovingAverageConvergenceDivergence _macd;
+		private DonchianChannels _donchian;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		
 		private decimal _previousHighest;
 		private decimal _previousLowest;
@@ -90,31 +90,27 @@ namespace StockSharp.Samples.Strategies
 		public DonchianMacdStrategy()
 		{
 			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetDigits()
-				.SetRange(5, 50, 5)
+				.SetRange(5, 50)
 				.SetCanOptimize(true)
 				.SetDisplay("Donchian Period", "Channel lookback period", "Indicators");
 
 			_macdFast = Param(nameof(MacdFast), 12)
-				.SetDigits()
-				.SetRange(8, 20, 1)
+				.SetRange(8, 20)
 				.SetCanOptimize(true)
 				.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators");
 
 			_macdSlow = Param(nameof(MacdSlow), 26)
-				.SetDigits()
-				.SetRange(20, 40, 1)
+				.SetRange(20, 40)
 				.SetCanOptimize(true)
 				.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators");
 
 			_macdSignal = Param(nameof(MacdSignal), 9)
-				.SetDigits()
-				.SetRange(5, 15, 1)
+				.SetRange(5, 15)
 				.SetCanOptimize(true)
 				.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators");
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(1m, 5m, 0.5m)
+				.SetRange(1m, 5m)
 				.SetCanOptimize(true)
 				.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management");
 
@@ -134,16 +130,19 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize indicators
-			_donchian = new Donchian
+			_donchian = new DonchianChannels
 			{
 				Length = DonchianPeriod
 			};
 
-			_macd = new MovingAverageConvergenceDivergence
+			_macd = new MovingAverageConvergenceDivergenceSignal
 			{
-				FastMa = new ExponentialMovingAverage { Length = MacdFast },
-				SlowMa = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
 			};
 
 			// Reset state variables

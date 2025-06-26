@@ -56,13 +56,11 @@ namespace StockSharp.Samples.Strategies
 		public ParabolicSarSentimentDivergenceStrategy()
 		{
 			_startAf = Param(nameof(StartAf), 0.02m)
-				.SetDigits(2)
 				.SetRange(0.01m, 0.1m)
 				.SetCanOptimize(true)
 				.SetDisplay("Starting AF", "Starting acceleration factor for Parabolic SAR", "SAR Parameters");
 
 			_maxAf = Param(nameof(MaxAf), 0.2m)
-				.SetDigits(2)
 				.SetRange(0.1m, 0.5m)
 				.SetCanOptimize(true)
 				.SetDisplay("Maximum AF", "Maximum acceleration factor for Parabolic SAR", "SAR Parameters");
@@ -85,8 +83,8 @@ namespace StockSharp.Samples.Strategies
 			// Create indicator
 			_parabolicSar = new ParabolicSar
 			{
-				AccelerationFactor = StartAf,
-				AccelerationLimit = MaxAf
+				Acceleration = StartAf,
+				AccelerationMax = MaxAf,
 			};
 
 			// Reset variables

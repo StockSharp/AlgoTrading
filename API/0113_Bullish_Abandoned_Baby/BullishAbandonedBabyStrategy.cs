@@ -46,7 +46,6 @@ namespace StockSharp.Strategies
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 				.SetRange(0.1m, 5m)
-				.SetDigits(2)
 				.SetDisplay("Stop Loss %", "Stop Loss percentage below the low of the doji candle", "Risk")
 				.SetCanOptimize(true);
 		}
