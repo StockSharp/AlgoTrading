@@ -24,15 +24,15 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _kalmanProcessNoise;
 		private readonly StrategyParam<decimal> _kalmanMeasurementNoise;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private ExponentialMovingAverage _ema;
 		private AverageTrueRange _atr;
-		
+
 		// Kalman filter parameters
 		private decimal _kalmanEstimate;
 		private decimal _kalmanError;
 		private readonly SynchronizedList<decimal> _prices = [];
-		
+
 		// Saved values for decision making
 		private decimal _emaValue;
 		private decimal _atrValue;
@@ -67,7 +67,7 @@ namespace StockSharp.Samples.Strategies
 			get => _atrMultiplier.Value;
 			set => _atrMultiplier.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Kalman filter process noise parameter (Q).
 		/// </summary>
@@ -76,7 +76,7 @@ namespace StockSharp.Samples.Strategies
 			get => _kalmanProcessNoise.Value;
 			set => _kalmanProcessNoise.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Kalman filter measurement noise parameter (R).
 		/// </summary>
@@ -114,12 +114,12 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel", "Keltner Channel")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);
-				
+
 			_kalmanProcessNoise = Param(nameof(KalmanProcessNoise), 0.01m)
 				.SetDisplay("Kalman Process Noise (Q)", "Kalman filter process noise parameter", "Kalman Filter")
 				.SetCanOptimize(true)
 				.SetOptimize(0.001m, 0.1m, 0.005m);
-				
+
 			_kalmanMeasurementNoise = Param(nameof(KalmanMeasurementNoise), 0.1m)
 				.SetDisplay("Kalman Measurement Noise (R)", "Kalman filter measurement noise parameter", "Kalman Filter")
 				.SetCanOptimize(true)
@@ -127,7 +127,7 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).ToTimeFrameDataType())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
+
 			// Initialize Kalman filter
 			_kalmanEstimate = 0;
 			_kalmanError = 1;
@@ -149,7 +149,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				Length = EmaPeriod
 			};
-			
+
 			_atr = new AverageTrueRange
 			{
 				Length = AtrPeriod
@@ -157,7 +157,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
 				.BindEach(
 					_ema,
@@ -173,14 +173,14 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _ema);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Setup position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent), 
+				new Unit(2, UnitTypes.Percent),
 				new Unit(2, UnitTypes.Percent)
 			);
 		}
-		
+
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
@@ -190,25 +190,25 @@ namespace StockSharp.Samples.Strategies
 			// Save indicator values
 			_emaValue = emaValue.GetValue<decimal>();
 			_atrValue = atrValue.GetValue<decimal>();
-			
+
 			// Calculate Keltner Channels
 			_upperBand = _emaValue + (_atrValue * AtrMultiplier);
 			_lowerBand = _emaValue - (_atrValue * AtrMultiplier);
-			
+
 			// Update Kalman filter
 			UpdateKalmanFilter(candle.ClosePrice);
-			
+
 			// Store prices for slope calculation
 			_prices.Add(candle.ClosePrice);
 			if (_prices.Count > 10)
 				_prices.RemoveAt(0);
-			
+
 			// Calculate Kalman slope (trend direction)
 			decimal kalmanSlope = CalculateKalmanSlope();
-			
+
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
 			// Trading logic
 			// Buy when price is above EMA+k*ATR (upper band) and Kalman filter shows uptrend
 			if (candle.ClosePrice > _upperBand && _kalmanEstimate > candle.ClosePrice && kalmanSlope > 0 && Position <= 0)
@@ -241,52 +241,53 @@ namespace StockSharp.Samples.Strategies
 				_isShortPosition = false;
 			}
 		}
-		
+
 		private void UpdateKalmanFilter(decimal price)
 		{
 			// Kalman filter implementation (one-dimensional)
 			// Prediction step
 			decimal predictedEstimate = _kalmanEstimate;
 			decimal predictedError = _kalmanError + KalmanProcessNoise;
-			
+
 			// Update step
 			decimal kalmanGain = predictedError / (predictedError + KalmanMeasurementNoise);
 			_kalmanEstimate = predictedEstimate + kalmanGain * (price - predictedEstimate);
 			_kalmanError = (1 - kalmanGain) * predictedError;
-			
+
 			LogInfo($"Kalman Filter: Price {price:F2}, Estimate {_kalmanEstimate:F2}, Error {_kalmanError:F6}, Gain {kalmanGain:F6}");
 		}
-		
+
 		private decimal CalculateKalmanSlope()
 		{
 			// Need at least a few points to calculate a slope
 			if (_prices.Count < 3)
 				return 0;
-				
+
 			// Simple linear regression slope calculation
 			int n = _prices.Count;
 			decimal sumX = 0;
 			decimal sumY = 0;
 			decimal sumXY = 0;
 			decimal sumX2 = 0;
-			
+
 			for (int i = 0; i < n; i++)
 			{
 				decimal x = i;
 				decimal y = _prices[i];
-				
+
 				sumX += x;
 				sumY += y;
 				sumXY += x * y;
 				sumX2 += x * x;
 			}
-			
+
 			decimal denominator = n * sumX2 - sumX * sumX;
-			
+
 			if (denominator == 0)
 				return 0;
-				
+
 			decimal slope = (n * sumXY - sumX * sumY) / denominator;
 			return slope;
 		}
 	}
+}

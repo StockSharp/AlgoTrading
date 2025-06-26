@@ -32,6 +32,7 @@ namespace StockSharp.Samples.Strategies
 		private int _sampleCount;
 		private decimal _sumSlopes;
 		private decimal _sumSlopesSquared;
+		private Queue<decimal> _slopeBuffer; // buffer for last N slopes
 
 		/// <summary>
 		/// OBV SMA Period.
@@ -132,11 +133,12 @@ namespace StockSharp.Samples.Strategies
 			_sumSlopes = 0;
 			_sumSlopesSquared = 0;
 			_isFirstCalculation = true;
+			_slopeBuffer = new Queue<decimal>(LookbackPeriod);
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Do(ProcessCandle)
+				.Bind(ProcessCandle)
 				.Start();
 
 			// Set up chart visualization if available
@@ -190,22 +192,21 @@ namespace StockSharp.Samples.Strategies
 			_currentObvSlope = _currentObvValue - _previousObv;
 			_previousObv = _currentObvValue;
 
-			// Update statistics for slope values
-			_sampleCount++;
+			// Update statistics for slope values using a circular buffer
+			if (_slopeBuffer.Count == LookbackPeriod)
+			{
+				var removed = _slopeBuffer.Dequeue();
+				_sumSlopes -= removed;
+				_sumSlopesSquared -= removed * removed;
+			}
+			_slopeBuffer.Enqueue(_currentObvSlope);
 			_sumSlopes += _currentObvSlope;
 			_sumSlopesSquared += _currentObvSlope * _currentObvSlope;
+			_sampleCount = _slopeBuffer.Count;
 
 			// We need enough samples to calculate meaningful statistics
 			if (_sampleCount < LookbackPeriod)
 				return;
-
-			// If we have more samples than our lookback period, adjust the statistics
-			if (_sampleCount > LookbackPeriod)
-			{
-				// This is a simplified approach - ideally we would keep a circular buffer
-				// of the last N slopes for more accurate calculations
-				_sampleCount = LookbackPeriod;
-			}
 
 			// Calculate statistics
 			_averageSlope = _sumSlopes / _sampleCount;
@@ -253,3 +254,6 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"OBV slope {_currentObvSlope} returned to average {_averageSlope}, exiting SHORT");
 				BuyMarket(Math.Abs(Position));
 			}
+		}
+	}
+}
