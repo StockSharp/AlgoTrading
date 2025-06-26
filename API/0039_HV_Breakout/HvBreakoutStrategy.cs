@@ -66,30 +66,22 @@ namespace StockSharp.Samples.Strategies
 		public HvBreakoutStrategy()
 		{
 			_hvPeriod = Param(nameof(HvPeriod), 20)
-				.SetDisplayName("HV Period")
-				.SetDescription("Period for Historical Volatility calculation")
-				.SetGroup("Volatility Parameters")
+				.SetDisplay("HV Period", "Period for Historical Volatility calculation", "Volatility Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
 			_maPeriod = Param(nameof(MAPeriod), 20)
-				.SetDisplayName("MA Period")
-				.SetDescription("Period for Moving Average calculation for exit")
-				.SetGroup("Exit Parameters")
+				.SetDisplay("MA Period", "Period for Moving Average calculation for exit", "Exit Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetDisplayName("Stop Loss %")
-				.SetDescription("Stop loss as percentage from entry price")
-				.SetGroup("Risk Management")
+				.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />

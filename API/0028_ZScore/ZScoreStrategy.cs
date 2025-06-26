@@ -83,44 +83,32 @@ namespace StockSharp.Samples.Strategies
 		public ZScoreStrategy()
 		{
 			_zScoreEntryThreshold = Param(nameof(ZScoreEntryThreshold), 2.0m)
-				.SetDisplayName("Z-Score Entry Threshold")
-				.SetDescription("Distance from mean in std deviations required to enter position")
-				.SetGroup("Z-Score Parameters")
+				.SetDisplay("Z-Score Entry Threshold", "Distance from mean in std deviations required to enter position", "Z-Score Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);
 
 			_zScoreExitThreshold = Param(nameof(ZScoreExitThreshold), 0.0m)
-				.SetDisplayName("Z-Score Exit Threshold")
-				.SetDescription("Distance from mean in std deviations required to exit position")
-				.SetGroup("Z-Score Parameters")
+				.SetDisplay("Z-Score Exit Threshold", "Distance from mean in std deviations required to exit position", "Z-Score Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.0m, 1.0m, 0.2m);
 
 			_maPeriod = Param(nameof(MAPeriod), 20)
-				.SetDisplayName("MA Period")
-				.SetDescription("Period for Moving Average calculation")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("MA Period", "Period for Moving Average calculation", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_stdDevPeriod = Param(nameof(StdDevPeriod), 20)
-				.SetDisplayName("StdDev Period")
-				.SetDescription("Period for Standard Deviation calculation")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("StdDev Period", "Period for Standard Deviation calculation", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetDisplayName("Stop Loss %")
-				.SetDescription("Stop loss as percentage from entry price")
-				.SetGroup("Risk Management")
+				.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />

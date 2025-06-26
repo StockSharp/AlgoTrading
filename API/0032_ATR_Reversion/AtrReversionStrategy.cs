@@ -74,37 +74,27 @@ namespace StockSharp.Samples.Strategies
 		public AtrReversionStrategy()
 		{
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetDescription("Period for ATR calculation")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for entry signal")
-				.SetGroup("Entry Parameters")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for entry signal", "Entry Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);
 
 			_maPeriod = Param(nameof(MAPeriod), 20)
-				.SetDisplayName("MA Period")
-				.SetDescription("Period for Moving Average calculation for exit")
-				.SetGroup("Exit Parameters")
+				.SetDisplay("MA Period", "Period for Moving Average calculation for exit", "Exit Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetDisplayName("Stop Loss %")
-				.SetDescription("Stop loss as percentage from entry price")
-				.SetGroup("Risk Management")
+				.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />

@@ -65,30 +65,22 @@ namespace StockSharp.Samples.Strategies
 		public AtrTrailingStrategy()
 		{
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetDescription("Period for ATR calculation")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("ATR Period", "Period for ATR calculation", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 3.0m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for trailing stop calculation")
-				.SetGroup("Risk Management")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for trailing stop calculation", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(2.0m, 4.0m, 0.5m);
 
 			_maPeriod = Param(nameof(MAPeriod), 20)
-				.SetDisplayName("MA Period")
-				.SetDescription("Period for Moving Average calculation for entry")
-				.SetGroup("Entry Parameters")
+				.SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Entry Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />

@@ -72,37 +72,27 @@ namespace StockSharp.Samples.Strategies
 		public BollingerPercentBStrategy()
 		{
 			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-				.SetDisplayName("Bollinger Period")
-				.SetDescription("Period for Bollinger Bands calculation")
-				.SetGroup("Bollinger Parameters")
+				.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Bollinger Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-				.SetDisplayName("Bollinger Deviation")
-				.SetDescription("Deviation for Bollinger Bands calculation")
-				.SetGroup("Bollinger Parameters")
+				.SetDisplay("Bollinger Deviation", "Deviation for Bollinger Bands calculation", "Bollinger Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 2.5m, 0.25m);
 
 			_exitValue = Param(nameof(ExitValue), 0.5m)
-				.SetDisplayName("Exit %B Value")
-				.SetDescription("Exit threshold for %B")
-				.SetGroup("Exit Parameters")
+				.SetDisplay("Exit %B Value", "Exit threshold for %B", "Exit Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.3m, 0.7m, 0.1m);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetDisplayName("Stop Loss %")
-				.SetDescription("Stop loss as percentage from entry price")
-				.SetGroup("Risk Management")
+				.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />

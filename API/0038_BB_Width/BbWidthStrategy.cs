@@ -64,30 +64,22 @@ namespace StockSharp.Samples.Strategies
 		public BollingerBandWidthStrategy()
 		{
 			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-				.SetDisplayName("Bollinger Period")
-				.SetDescription("Period for Bollinger Bands calculation")
-				.SetGroup("Bollinger Parameters")
+				.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Bollinger Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-				.SetDisplayName("Bollinger Deviation")
-				.SetDescription("Deviation for Bollinger Bands calculation")
-				.SetGroup("Bollinger Parameters")
+				.SetDisplay("Bollinger Deviation", "Deviation for Bollinger Bands calculation", "Bollinger Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 2.5m, 0.25m);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for stop-loss calculation")
-				.SetGroup("Risk Management")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />
