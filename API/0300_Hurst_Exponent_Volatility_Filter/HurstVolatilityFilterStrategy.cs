@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Process Hurst exponent
-			var hurstValue = CalculateHurstExponentValue(candle.ClosePrice);
+			var hurstValue = CalculateHurstExponentValue(candle);
 			
 			// Update average ATR
 			UpdateAverageAtr(atrValue);

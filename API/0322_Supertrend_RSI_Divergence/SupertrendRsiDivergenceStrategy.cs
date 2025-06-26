@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _rsiPeriod;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private Supertrend _supertrend;
+		private SuperTrend _supertrend;
 		private RelativeStrengthIndex _rsi;
 		
 		// Data for divergence detection
@@ -107,7 +107,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			_supertrend = new Supertrend
+			_supertrend = new()
 			{
 				Length = SupertrendPeriod,
 				Multiplier = SupertrendMultiplier

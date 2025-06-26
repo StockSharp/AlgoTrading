@@ -18,7 +18,6 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<Security> _marketIndexParam;
 		private readonly StrategyParam<DataType> _candleTypeParam;
 		private readonly StrategyParam<int> _lookbackPeriodParam;
-		private readonly StrategyParam<decimal> _volumeParam;
 		private readonly StrategyParam<decimal> _stopLossPercentParam;
 
 		private decimal _asset1Beta;
@@ -77,15 +76,6 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Trading volume.
-		/// </summary>
-		public decimal Volume
-		{
-			get => _volumeParam.Value;
-			set => _volumeParam.Value = value;
-		}
-
-		/// <summary>
 		/// Stop loss percentage.
 		/// </summary>
 		public decimal StopLossPercent
@@ -99,13 +89,13 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public BetaNeutralArbitrageStrategy()
 		{
-			_asset1Param = Param(nameof(Asset1))
+			_asset1Param = Param<Security>(nameof(Asset1))
 				.SetDisplay("Asset 1", "First asset for beta-neutral arbitrage", "Instruments");
 
-			_asset2Param = Param(nameof(Asset2))
+			_asset2Param = Param<Security>(nameof(Asset2))
 				.SetDisplay("Asset 2", "Second asset for beta-neutral arbitrage", "Instruments");
 
-			_marketIndexParam = Param(nameof(MarketIndex))
+			_marketIndexParam = Param<Security>(nameof(MarketIndex))
 				.SetDisplay("Market Index", "Market index for beta calculation", "Instruments");
 
 			_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -116,10 +106,6 @@ namespace StockSharp.Samples.Strategies
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5)
 				.SetGreaterThanZero();
-
-			_volumeParam = Param(nameof(Volume), 1m)
-				.SetDisplay("Volume", "Trading volume", "General")
-				.SetNotNegative();
 
 			_stopLossPercentParam = Param(nameof(StopLossPercent), 2m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
@@ -170,9 +156,9 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Initial betas: Asset1={_asset1Beta}, Asset2={_asset2Beta}");
 
 				// Subscribe to real-time candles for trading
-				var asset1Subscription = SubscribeCandles(CandleType, Asset1);
-				var asset2Subscription = SubscribeCandles(CandleType, Asset2);
-				var marketSubscription = SubscribeCandles(CandleType, MarketIndex);
+				var asset1Subscription = SubscribeCandles(CandleType, security: Asset1);
+				var asset2Subscription = SubscribeCandles(CandleType, security: Asset2);
+				var marketSubscription = SubscribeCandles(CandleType, security: MarketIndex);
 
 				// Bind processing to candle subscriptions
 				asset1Subscription

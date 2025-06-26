@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -111,8 +111,8 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to implied volatility for both options
 			if (OptionWithLowVol != null && OptionWithHighVol != null)
 			{
-				var lowVolSubscription = new Subscription(DataType.ImpliedVolatility, OptionWithLowVol);
-				var highVolSubscription = new Subscription(DataType.ImpliedVolatility, OptionWithHighVol);
+				var lowVolSubscription = new Subscription(DataType.Level1, security: OptionWithLowVol);
+				var highVolSubscription = new Subscription(DataType.Level1, security: OptionWithHighVol);
 
 				// Create a rule to process implied volatility data
 				this.SuspendRules(() =>

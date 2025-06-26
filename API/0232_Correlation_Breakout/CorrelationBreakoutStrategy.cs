@@ -18,7 +18,6 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleTypeParam;
 		private readonly StrategyParam<int> _lookbackPeriodParam;
 		private readonly StrategyParam<decimal> _thresholdParam;
-		private readonly StrategyParam<decimal> _volumeParam;
 		private readonly StrategyParam<decimal> _stopLossPercentParam;
 
 		private decimal[] _asset1Prices;
@@ -83,15 +82,6 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Trading volume.
-		/// </summary>
-		public decimal Volume
-		{
-			get => _volumeParam.Value;
-			set => _volumeParam.Value = value;
-		}
-
-		/// <summary>
 		/// Stop loss percentage.
 		/// </summary>
 		public decimal StopLossPercent
@@ -105,10 +95,10 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public CorrelationBreakoutStrategy()
 		{
-			_asset1Param = Param(nameof(Asset1))
+			_asset1Param = Param<Security>(nameof(Asset1))
 				.SetDisplay("Asset 1", "First asset for correlation", "Instruments");
 
-			_asset2Param = Param(nameof(Asset2))
+			_asset2Param = Param<Security>(nameof(Asset2))
 				.SetDisplay("Asset 2", "Second asset for correlation", "Instruments");
 
 			_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -124,10 +114,6 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Threshold", "Threshold multiplier for standard deviation", "Strategy")
 				.SetCanOptimize(true)
 				.SetOptimize(1m, 3m, 0.5m)
-				.SetNotNegative();
-
-			_volumeParam = Param(nameof(Volume), 1m)
-				.SetDisplay("Volume", "Trading volume", "General")
 				.SetNotNegative();
 
 			_stopLossPercentParam = Param(nameof(StopLossPercent), 2m)
@@ -163,8 +149,8 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to candles for both assets
 			if (Asset1 != null && Asset2 != null && CandleType != null)
 			{
-				var asset1Subscription = SubscribeCandles(CandleType, Asset1);
-				var asset2Subscription = SubscribeCandles(CandleType, Asset2);
+				var asset1Subscription = SubscribeCandles(CandleType, security: Asset1);
+				var asset2Subscription = SubscribeCandles(CandleType, security: Asset2);
 
 				asset1Subscription
 					.Bind(ProcessAsset1Candle)
@@ -201,7 +187,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			_asset1Prices[_currentIndex] = candle.ClosePrice;
-			CalculateCorrelation();
+			CalculateCorrelation(candle);
 		}
 
 		private void ProcessAsset2Candle(ICandleMessage candle)
@@ -210,10 +196,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			_asset2Prices[_currentIndex] = candle.ClosePrice;
-			CalculateCorrelation();
+			CalculateCorrelation(candle);
 		}
 
-		private void CalculateCorrelation()
+		private void CalculateCorrelation(ICandleMessage candle)
 		{
 			// We need both prices for the same bar to calculate correlation
 			if (_asset1Prices[_currentIndex] == 0 || _asset2Prices[_currentIndex] == 0)
