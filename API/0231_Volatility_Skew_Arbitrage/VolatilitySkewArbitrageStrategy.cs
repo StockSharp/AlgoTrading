@@ -185,7 +185,7 @@ namespace StockSharp.Samples.Strategies
 			var lowIV = data.TryGetImpliedVolatility() ?? 0;
 			var highIV = _currentVolSkew + lowIV;
 			
-			UpdateVolatilitySkew(highIV - lowIV);
+			UpdateVolatilitySkew(highIV - lowIV, data.ServerTime, true);
 		}
 
 		private void ProcessHighOptionImpliedVolatility(Level1ChangeMessage data)
@@ -194,13 +194,13 @@ namespace StockSharp.Samples.Strategies
 			_currentVolSkew = highIV;
 		}
 
-		private void UpdateVolatilitySkew(decimal volSkew)
+		private void UpdateVolatilitySkew(decimal volSkew, DateTimeOffset time, bool isFinal)
 		{
 			if (volSkew == 0)
 				return;
 
 			// Process volatility skew through the indicator
-			var stdDevValue = _volSkewStdDev.Process(new DecimalIndicatorValue(volSkew));
+			var stdDevValue = _volSkewStdDev.Process(volSkew, time, isFinal);
 
 			// Update running average for the first LookbackPeriod bars
 			if (_barCount < LookbackPeriod)

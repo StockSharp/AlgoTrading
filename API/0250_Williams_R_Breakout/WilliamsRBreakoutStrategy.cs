@@ -158,7 +158,7 @@ namespace StockSharp.Strategies
 			var currentWilliamsR = williamsRValue.GetValue<decimal>();
 			
 			// Process Williams %R through average indicator
-			var williamsRAvgValue = _williamsRAverage.Process(new DecimalIndicatorValue(currentWilliamsR));
+			var williamsRAvgValue = _williamsRAverage.Process(currentWilliamsR, candle.ServerTime, candle.State == CandleStates.Finished);
 			var currentWilliamsRAvg = williamsRAvgValue.GetValue<decimal>();
 			
 			// For first values, just save and skip

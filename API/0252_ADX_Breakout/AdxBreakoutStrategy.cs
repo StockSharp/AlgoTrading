@@ -157,7 +157,7 @@ namespace StockSharp.Strategies
 			var currentAdx = adxValue.GetValue<decimal>();
 			
 			// Process ADX through average indicator
-			var adxAvgValue = _adxAverage.Process(new DecimalIndicatorValue(currentAdx));
+			var adxAvgValue = _adxAverage.Process(currentAdx, candle.ServerTime, candle.State == CandleStates.Finished);
 			var currentAdxAvg = adxAvgValue.GetValue<decimal>();
 			
 			// For first values, just save and skip

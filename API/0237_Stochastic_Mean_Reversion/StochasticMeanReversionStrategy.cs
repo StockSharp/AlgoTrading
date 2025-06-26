@@ -180,8 +180,8 @@ namespace StockSharp.Samples.Strategies
 			decimal stochKValue = stochObject[0].GetValue<decimal>();
 			
 			// Process Stochastic %K through average and standard deviation indicators
-			var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(stochKValue)).GetValue<decimal>();
-			var stochStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(stochKValue)).GetValue<decimal>();
+			var stochAvgValue = _stochAverage.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var stochStdDevValue = _stochStdDev.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
 			// Store previous Stochastic %K value for changes detection
 			decimal currentStochKValue = stochKValue;

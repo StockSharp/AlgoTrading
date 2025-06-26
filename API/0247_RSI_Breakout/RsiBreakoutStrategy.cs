@@ -143,8 +143,8 @@ namespace StockSharp.Samples.Strategies
 			_currentRsiValue = rsiValue;
 
 			// Process RSI through average and standard deviation indicators
-			var avgValue = _rsiAverage.Process(new DecimalIndicatorValue(rsiValue));
-			var stdDevValue = _rsiStdDev.Process(new DecimalIndicatorValue(rsiValue));
+			var avgValue = _rsiAverage.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevValue = _rsiStdDev.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			_currentRsiAvg = avgValue.GetValue<decimal>();
 			_currentRsiStdDev = stdDevValue.GetValue<decimal>();

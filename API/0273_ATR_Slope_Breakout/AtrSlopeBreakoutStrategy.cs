@@ -152,7 +152,7 @@ namespace StockSharp.Samples.Strategies
 			bool priceAboveEma = candle.ClosePrice > emaValue;
 			
 			// Calculate ATR slope
-			var currentSlopeValue = _atrSlope.Process(new DecimalIndicatorValue(atr)).GetValue<decimal>();
+			var currentSlopeValue = _atrSlope.Process(atr, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

@@ -170,7 +170,7 @@ namespace StockSharp.Samples.Strategies
 			var obvValue = _obv.Process(candle).GetValue<decimal>();
 			
 			// Process OBV through SMA
-			var obvSmaValue = _obvSma.Process(new DecimalIndicatorValue(obvValue)).GetValue<decimal>();
+			var obvSmaValue = _obvSma.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
 			// Skip if OBV SMA is not formed yet
 			if (!_obvSma.IsFormed)

@@ -143,7 +143,7 @@ namespace StockSharp.Samples.Strategies
 			decimal adx = adxValue.GetValue<decimal>();
 			
 			// Calculate ADX slope
-			var currentSlopeValue = _adxSlope.Process(new DecimalIndicatorValue(adx)).GetValue<decimal>();
+			var currentSlopeValue = _adxSlope.Process(adx, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

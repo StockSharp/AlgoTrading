@@ -209,8 +209,8 @@ namespace StockSharp.Samples.Strategies
 			_currentSlope = (_currentHullMa - _prevHullMa) / _prevHullMa * 100; // As percentage
 			
 			// Calculate average and standard deviation of slope
-			var slopeAverage = _slopeAverage.Process(new DecimalIndicatorValue(_currentSlope)).GetValue<decimal>();
-			var slopeStdDev = _slopeStdDev.Process(new DecimalIndicatorValue(_currentSlope)).GetValue<decimal>();
+			var slopeAverage = _slopeAverage.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var slopeStdDev = _slopeStdDev.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
 			// Skip until we have enough slope data
 			if (_prevSlope == 0)

@@ -107,7 +107,7 @@ namespace StockSharp.Samples.Strategies
 				.Bind(atr, (candle, atrValue) =>
 				{
 					// Calculate volume average
-					var volumeValue = volumeMA.Process(new DecimalIndicatorValue(candle.TotalVolume)).GetValue<decimal>();
+					var volumeValue = volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 					
 					// Calculate Supertrend
 					if (!atr.IsFormed)
