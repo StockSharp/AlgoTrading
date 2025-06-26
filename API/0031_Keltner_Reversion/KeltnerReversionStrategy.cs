@@ -72,37 +72,27 @@ namespace StockSharp.Samples.Strategies
 		public KeltnerReversionStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetDisplayName("EMA Period")
-				.SetDescription("Period for EMA calculation (middle band)")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("EMA Period", "Period for EMA calculation (middle band)", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetDescription("Period for ATR calculation")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("ATR Period", "Period for ATR calculation (middle band)", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-				.SetDisplayName("Channel Width (ATR Multiplier)")
-				.SetDescription("ATR multiplier for Keltner Channel width")
-				.SetGroup("Technical Parameters")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel width", "Technical Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_stopLossAtrMultiplier = Param(nameof(StopLossAtrMultiplier), 2.0m)
-				.SetDisplayName("Stop Loss (ATR Multiplier)")
-				.SetDescription("ATR multiplier for stop-loss calculation")
-				.SetGroup("Risk Management")
+				.SetDisplay("ATR Multiplier (Stop Loss)", "ATR multiplier for stop-loss calculation", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetGroup("Data");
+				.SetDisplay("Candle Type", "Type of candles to use", "Technical Parameters");
 		}
 
 		/// <inheritdoc />
