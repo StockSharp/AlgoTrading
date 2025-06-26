@@ -124,7 +124,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get SAR value
-			var sarPrice = sarValue.GetValue<decimal>();
+			var sarPrice = sarValue.ToDecimal();
 			
 			// Get current price and sentiment
 			var price = candle.ClosePrice;

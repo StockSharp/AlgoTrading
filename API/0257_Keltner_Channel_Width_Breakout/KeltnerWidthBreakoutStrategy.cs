@@ -190,8 +190,8 @@ namespace StockSharp.Strategies
 			var emaValue = _ema.Process(candle);
 			var atrValue = _atr.Process(candle);
 			
-			_currentEma = emaValue.GetValue<decimal>();
-			_currentAtr = atrValue.GetValue<decimal>();
+			_currentEma = emaValue.ToDecimal();
+			_currentAtr = atrValue.ToDecimal();
 			
 			// Calculate Keltner Channel boundaries
 			var upperBand = _currentEma + ATRMultiplier * _currentAtr;
@@ -202,7 +202,7 @@ namespace StockSharp.Strategies
 			
 			// Process width through average
 			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
-			var avgWidth = widthAvgValue.GetValue<decimal>();
+			var avgWidth = widthAvgValue.ToDecimal();
 			
 			// For first values, just save and skip
 			if (_lastWidth == 0)

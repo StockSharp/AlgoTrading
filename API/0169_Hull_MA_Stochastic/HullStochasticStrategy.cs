@@ -187,9 +187,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get indicator values
-			decimal hma = hmaValue.GetValue<decimal>();
+			decimal hma = hmaValue.ToDecimal();
 			decimal stochK = ((StochasticOscillatorValue)stochasticValue).K;
-			decimal atr = atrValue.GetValue<decimal>();
+			decimal atr = atrValue.ToDecimal();
 
 			// Skip first candle after initialization
 			if (_prevHmaValue == 0)

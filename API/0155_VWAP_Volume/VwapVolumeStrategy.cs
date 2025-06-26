@@ -139,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Process volume with indicator
 			var volumeValue = new DecimalIndicatorValue(candle.TotalVolume);
-			var volumeMA = _volumeMA.Process(volumeValue).GetValue<decimal>();
+			var volumeMA = _volumeMA.Process(volumeValue).ToDecimal();
 
 			// Calculate VWAP manually for the current candle
 			decimal vwap = 0;

@@ -148,12 +148,12 @@ namespace StockSharp.Samples.Strategies
 				.BindEx(stochastic, (candle, stochValue) =>
 				{
 					// Extract %K value
-					var stochK = stochValue.GetValue<decimal>();
+					var stochK = stochValue.ToDecimal();
 					
 					// Calculate dynamic zones
 					var stochKInput = new DecimalIndicatorValue(stochK);
-					var stochKAvg = stochSma.Process(stochKInput).GetValue<decimal>();
-					var stochKStdDev = stochStdDev.Process(stochKInput).GetValue<decimal>();
+					var stochKAvg = stochSma.Process(stochKInput).ToDecimal();
+					var stochKStdDev = stochStdDev.Process(stochKInput).ToDecimal();
 					
 					var dynamicOversold = stochKAvg - (StandardDeviationFactor * stochKStdDev);
 					var dynamicOverbought = stochKAvg + (StandardDeviationFactor * stochKStdDev);

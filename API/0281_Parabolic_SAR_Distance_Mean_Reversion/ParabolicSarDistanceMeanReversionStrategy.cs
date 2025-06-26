@@ -167,18 +167,18 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Get the Parabolic SAR value
-			_sarValue = value.GetValue<decimal>();
+			_sarValue = value.ToDecimal();
 			
 			// Calculate distances
 			_currentDistanceLong = candle.ClosePrice - _sarValue;
 			_currentDistanceShort = _sarValue - candle.ClosePrice;
 			
 			// Calculate averages and standard deviations for both distances
-			var longDistanceAvg = _distanceAverage.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
-			var longDistanceStdDev = _distanceStdDev.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var longDistanceAvg = _distanceAverage.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var longDistanceStdDev = _distanceStdDev.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
-			var shortDistanceAvg = _distanceAverage.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
-			var shortDistanceStdDev = _distanceStdDev.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var shortDistanceAvg = _distanceAverage.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var shortDistanceStdDev = _distanceStdDev.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Skip the first value
 			if (_prevDistanceLong == 0 || _prevDistanceShort == 0)

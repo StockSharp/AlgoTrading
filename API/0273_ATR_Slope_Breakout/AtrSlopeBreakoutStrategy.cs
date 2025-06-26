@@ -144,15 +144,15 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Get ATR value and track it for stop loss calculations
-			decimal atr = atrValue.GetValue<decimal>();
+			decimal atr = atrValue.ToDecimal();
 			_lastAtr = atr;
 			
 			// Process price for trend direction
-			decimal emaValue = _priceEma.Process(candle).GetValue<decimal>();
+			decimal emaValue = _priceEma.Process(candle).ToDecimal();
 			bool priceAboveEma = candle.ClosePrice > emaValue;
 			
 			// Calculate ATR slope
-			var currentSlopeValue = _atrSlope.Process(atr, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var currentSlopeValue = _atrSlope.Process(atr, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

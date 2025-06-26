@@ -26,7 +26,7 @@ namespace StockSharp.Samples.Strategies
 		// Indicators
 		private SimpleMovingAverage _sma;
 		private AverageTrueRange _atr;
-		private readonly Displacement _hurstExponent = new();
+		private HurstExponent _hurstExponent;
 
 		// Internal state variables
 		private decimal _averageAtr;
@@ -128,12 +128,14 @@ namespace StockSharp.Samples.Strategies
 			_averageAtr = 0;
 
 			// Create indicators
-			_sma = new SimpleMovingAverage { Length = MAPeriod };
-			_atr = new AverageTrueRange { Length = ATRPeriod };
-			
-			// Configure Hurst exponent displacement indicator
-			_hurstExponent.Length = HurstPeriod;
-			
+			_sma = new() { Length = MAPeriod };
+			_atr = new() { Length = ATRPeriod };
+			_hurstExponent = new()
+			{
+				// Configure Hurst exponent displacement indicator
+				Length = HurstPeriod
+			};
+
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);
 			
@@ -186,14 +188,14 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private decimal CalculateHurstExponentValue(decimal price)
+		private decimal CalculateHurstExponentValue(ICandleMessage candle)
 		{
 			// In a real implementation, this would use R/S analysis or other methods
 			// to calculate the Hurst exponent. For this example, we'll use a placeholder
 			// logic that estimates the Hurst exponent based on recent price behavior.
 			
 			// Process current price through the displacement indicator
-			var hurstValue = _hurstExponent.Process(price).GetValue<decimal>();
+			var hurstValue = _hurstExponent.Process(candle).ToDecimal();
 			
 			// For demonstration purposes - in a real implementation you'd use
 			// a proper Hurst exponent calculation library or algorithm

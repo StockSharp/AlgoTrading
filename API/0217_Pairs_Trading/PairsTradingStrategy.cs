@@ -180,8 +180,8 @@ namespace StockSharp.Strategies
 			if (!_spreadMA.IsFormed || !_spreadStdDev.IsFormed)
 				return;
 			
-			decimal spreadMean = maValue.GetValue<decimal>();
-			decimal spreadStdDev = stdDevValue.GetValue<decimal>();
+			decimal spreadMean = maValue.ToDecimal();
+			decimal spreadStdDev = stdDevValue.ToDecimal();
 			
 			// Calculate entry thresholds
 			decimal upperThreshold = spreadMean + (spreadStdDev * DeviationMultiplier);

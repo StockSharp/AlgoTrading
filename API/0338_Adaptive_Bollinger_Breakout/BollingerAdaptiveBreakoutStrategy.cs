@@ -171,7 +171,7 @@ namespace StockSharp.Samples.Strategies
 			// Adjust Bollinger Bands parameters based on ATR
 			if (atrValue.IsFinal)
 			{
-				decimal atr = atrValue.GetValue<decimal>();
+				decimal atr = atrValue.ToDecimal();
 				decimal volatilityRatio = Math.Min(Math.Max(atr / (candle.ClosePrice * 0.01m), 0), 1);
 				
 				// Higher volatility = shorter period and wider bands

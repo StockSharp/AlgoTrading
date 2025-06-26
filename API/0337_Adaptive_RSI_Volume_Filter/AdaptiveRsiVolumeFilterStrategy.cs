@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
 			// Calculate adaptive RSI period based on ATR
 			if (atrValue.IsFinal)
 			{
-				decimal atr = atrValue.GetValue<decimal>();
+				decimal atr = atrValue.ToDecimal();
 				
 				// Normalize ATR to a value between 0 and 1 using historical range
 				// This is a simplified approach - in a real implementation you would
@@ -205,7 +205,7 @@ namespace StockSharp.Samples.Strategies
 			// Store RSI value
 			if (rsiValue.IsFinal)
 			{
-				_adaptiveRsiValue = rsiValue.GetValue<decimal>();
+				_adaptiveRsiValue = rsiValue.ToDecimal();
 				
 				// Trading logic based on RSI with volume confirmation
 				if (_avgVolume > 0) // Make sure we have volume data
@@ -243,7 +243,7 @@ namespace StockSharp.Samples.Strategies
 			
 			if (volumeValue.IsFinal)
 			{
-				_avgVolume = volumeValue.GetValue<decimal>();
+				_avgVolume = volumeValue.ToDecimal();
 			}
 		}
 	}

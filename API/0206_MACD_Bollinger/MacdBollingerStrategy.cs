@@ -172,16 +172,16 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Process MACD
 					var macdResult = macd.Process(candle);
-					var macdLine = macdResult.GetValue<decimal>();
+					var macdLine = macdResult.ToDecimal();
 					var signalLine = macd.SignalMa.GetCurrentValue();
 					
 					// Get Bollinger values
-					var middleBand = bollingerValues[0].GetValue<decimal>();
-					var upperBand = bollingerValues[1].GetValue<decimal>();
-					var lowerBand = bollingerValues[2].GetValue<decimal>();
+					var middleBand = bollingerValues[0].ToDecimal();
+					var upperBand = bollingerValues[1].ToDecimal();
+					var lowerBand = bollingerValues[2].ToDecimal();
 					
 					// Process ATR
-					var atrValue = atr.Process(candle).GetValue<decimal>();
+					var atrValue = atr.Process(candle).ToDecimal();
 
 					ProcessIndicators(candle, macdLine, signalLine, middleBand, upperBand, lowerBand, atrValue);
 				})

@@ -115,11 +115,11 @@ namespace StockSharp.Samples.Strategies
 			subscription
 				.BindEx(donchianHigh, (candle, highValue) => 
 				{
-					var highPrice = highValue.GetValue<decimal>();
+					var highPrice = highValue.ToDecimal();
 					
 					// Process Donchian Low separately
 					var lowValue = donchianLow.Process(candle);
-					var lowPrice = lowValue.GetValue<decimal>();
+					var lowPrice = lowValue.ToDecimal();
 					
 					// Process ATR
 					var atrValue = atr.Process(candle);
@@ -133,11 +133,11 @@ namespace StockSharp.Samples.Strategies
 					var stdDevInput = new DecimalIndicatorValue(_currentDcWidth);
 					var stdDevValue = standardDeviation.Process(stdDevInput);
 					
-					_avgDcWidth = smaValue.GetValue<decimal>();
-					_stdDevDcWidth = stdDevValue.GetValue<decimal>();
+					_avgDcWidth = smaValue.ToDecimal();
+					_stdDevDcWidth = stdDevValue.ToDecimal();
 					
 					// Process the strategy logic
-					ProcessStrategy(candle, highPrice, lowPrice, atrValue.GetValue<decimal>());
+					ProcessStrategy(candle, highPrice, lowPrice, atrValue.ToDecimal());
 				})
 				.Start();
 

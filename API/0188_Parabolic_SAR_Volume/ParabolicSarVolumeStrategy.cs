@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
 			subscription
 				.BindEx(_volumeIndicator, (candle, volume) => 
 				{
-					var avgVolume = _volumeAverage.Process(volume).GetValue<decimal>();
+					var avgVolume = _volumeAverage.Process(volume).ToDecimal();
 					_currentAvgVolume = avgVolume;
 				})
 				.Start();

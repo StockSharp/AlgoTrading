@@ -180,7 +180,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get ATR value and calculate statistics
-			var currentAtr = atrValue.GetValue<decimal>();
+			var currentAtr = atrValue.ToDecimal();
 			_processedCandles++;
 			
 			// Using exponential moving average approach for ATR statistics

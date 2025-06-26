@@ -136,7 +136,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Process the candle with the Highest indicator
-			var highestValue = _highestIndicator.Process(candle).GetValue<decimal>();
+			var highestValue = _highestIndicator.Process(candle).ToDecimal();
 
 			// If strategy is not ready yet, return
 			if (!IsFormedAndOnlineAndAllowTrading())

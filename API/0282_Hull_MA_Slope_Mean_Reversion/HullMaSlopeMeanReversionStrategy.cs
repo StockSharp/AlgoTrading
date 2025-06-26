@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
 			if (candle.State != CandleStates.Finished)
 				return;
 				
-			_currentAtr = value.GetValue<decimal>();
+			_currentAtr = value.ToDecimal();
 		}
 
 		private void ProcessHullMa(ICandleMessage candle, IIndicatorValue value)
@@ -190,7 +190,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Get the Hull MA value
-			_currentHullMa = value.GetValue<decimal>();
+			_currentHullMa = value.ToDecimal();
 			
 			// First value handling
 			if (_prevHullMa == 0)
@@ -203,8 +203,8 @@ namespace StockSharp.Samples.Strategies
 			_currentSlope = (_currentHullMa - _prevHullMa) / _prevHullMa * 100; // As percentage
 			
 			// Calculate average and standard deviation of slope
-			var slopeAverage = _slopeAverage.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
-			var slopeStdDev = _slopeStdDev.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var slopeAverage = _slopeAverage.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var slopeStdDev = _slopeStdDev.Process(_currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Skip until we have enough slope data
 			if (_prevSlope == 0)

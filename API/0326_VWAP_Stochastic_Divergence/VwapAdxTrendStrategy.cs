@@ -148,8 +148,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract values from indicators
-			_vwapValue = vwapValue.GetValue<decimal>();
-			_adxValue = adxValue.GetValue<decimal>();
+			_vwapValue = vwapValue.ToDecimal();
+			_adxValue = adxValue.ToDecimal();
 			_plusDiValue = diValue[0].To<decimal>();  // +DI
 			_minusDiValue = diValue[1].To<decimal>(); // -DI
 			

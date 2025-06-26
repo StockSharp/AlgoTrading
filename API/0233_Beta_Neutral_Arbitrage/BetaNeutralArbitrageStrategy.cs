@@ -199,7 +199,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			else
 			{
-				this.AddWarningLog("Assets or market index not specified. Strategy won't work properly.");
+				LogWarning("Assets or market index not specified. Strategy won't work properly.");
 			}
 
 			// Start position protection with stop-loss
@@ -215,7 +215,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			_asset1LastPrice = candle.ClosePrice;
-			UpdateSpread();
+			UpdateSpread(candle);
 		}
 
 		private void ProcessAsset2Candle(ICandleMessage candle)
@@ -224,7 +224,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			_asset2LastPrice = candle.ClosePrice;
-			UpdateSpread();
+			UpdateSpread(candle);
 		}
 
 		private void ProcessMarketCandle(ICandleMessage candle)
@@ -236,7 +236,7 @@ namespace StockSharp.Samples.Strategies
 			// For this example, we'll just use the fixed betas
 		}
 
-		private void UpdateSpread()
+		private void UpdateSpread(ICandleMessage candle)
 		{
 			if (_asset1LastPrice == 0 || _asset2LastPrice == 0)
 				return;
@@ -258,13 +258,13 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Update average for trading decisions
-			_avgSpread = smaValue.GetValue<decimal>();
+			_avgSpread = smaValue.ToDecimal();
 
 			// Check trading conditions
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var spreadStdDev = stdDevValue.GetValue<decimal>();
+			var spreadStdDev = stdDevValue.ToDecimal();
 			decimal threshold = 2m; // Standard deviations from mean to trigger
 
 			// Trading logic for beta-neutral arbitrage

@@ -166,7 +166,7 @@ namespace StockSharp.Strategies
 				return;
 
 			// Extract ADX value
-			var currentAdx = adxValue.GetValue<decimal>();
+			var currentAdx = adxValue.ToDecimal();
 
 			// Update ADX statistics
 			UpdateAdxStatistics(currentAdx);
@@ -182,8 +182,8 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Positive trend strength should correspond to price direction for entry
-				var plusDi = adxValue.GetValue<decimal>("Plus");
-				var minusDi = adxValue.GetValue<decimal>("Minus");
+				var plusDi = adxValue.ToDecimal("Plus");
+				var minusDi = adxValue.ToDecimal("Minus");
 				var direction = plusDi > minusDi ? Sides.Buy : Sides.Sell;
 
 				// ADX is significantly below its average - mean reversion expects it to rise

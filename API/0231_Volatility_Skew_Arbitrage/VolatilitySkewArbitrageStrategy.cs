@@ -15,8 +15,6 @@ namespace StockSharp.Samples.Strategies
 	{
 		private readonly StrategyParam<Security> _optionWithLowVolParam;
 		private readonly StrategyParam<Security> _optionWithHighVolParam;
-		private readonly StrategyParam<Portfolio> _portfolioParam;
-		private readonly StrategyParam<decimal> _volumeParam;
 		private readonly StrategyParam<int> _lookbackPeriodParam;
 		private readonly StrategyParam<decimal> _thresholdParam;
 		private readonly StrategyParam<decimal> _stopLossPercentParam;
@@ -42,24 +40,6 @@ namespace StockSharp.Samples.Strategies
 		{
 			get => _optionWithHighVolParam.Value;
 			set => _optionWithHighVolParam.Value = value;
-		}
-
-		/// <summary>
-		/// Portfolio for trading.
-		/// </summary>
-		public Portfolio Portfolio
-		{
-			get => _portfolioParam.Value;
-			set => _portfolioParam.Value = value;
-		}
-
-		/// <summary>
-		/// Trading volume.
-		/// </summary>
-		public decimal Volume
-		{
-			get => _volumeParam.Value;
-			set => _volumeParam.Value = value;
 		}
 
 		/// <summary>
@@ -94,18 +74,11 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public VolatilitySkewArbitrageStrategy()
 		{
-			_optionWithLowVolParam = Param(nameof(OptionWithLowVol))
+			_optionWithLowVolParam = Param<Security>(nameof(OptionWithLowVol))
 				.SetDisplay("Option with Low Vol", "The option instrument with lower implied volatility", "Instruments");
 
-			_optionWithHighVolParam = Param(nameof(OptionWithHighVol))
+			_optionWithHighVolParam = Param<Security>(nameof(OptionWithHighVol))
 				.SetDisplay("Option with High Vol", "The option instrument with higher implied volatility", "Instruments");
-
-			_portfolioParam = Param(nameof(Portfolio))
-				.SetDisplay("Portfolio", "Portfolio for trading", "General");
-
-			_volumeParam = Param(nameof(Volume), 1m)
-				.SetDisplay("Volume", "Trading volume", "General")
-				.SetNotNegative();
 
 			_lookbackPeriodParam = Param(nameof(LookbackPeriod), 20)
 				.SetDisplay("Lookback Period", "Period for calculating average volatility skew", "Strategy")
@@ -124,16 +97,6 @@ namespace StockSharp.Samples.Strategies
 				.SetNotNegative();
 
 			_volSkewStdDev = new StandardDeviation { Length = LookbackPeriod };
-		}
-
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			if (OptionWithLowVol != null)
-				yield return (OptionWithLowVol, DataType.ImpliedVolatility);
-
-			if (OptionWithHighVol != null)
-				yield return (OptionWithHighVol, DataType.ImpliedVolatility);
 		}
 
 		/// <inheritdoc />
@@ -170,7 +133,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			else
 			{
-				this.AddWarningLog("Option instruments not specified. Strategy won't work properly.");
+				LogWarning("Option instruments not specified. Strategy won't work properly.");
 			}
 
 			// Start position protection with stop-loss
@@ -221,7 +184,7 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var stdDev = stdDevValue.GetValue<decimal>();
+			var stdDev = stdDevValue.ToDecimal();
 			
 			// Trading logic for volatility skew arbitrage
 			if (volSkew > _avgVolSkew + Threshold * stdDev && Position <= 0)

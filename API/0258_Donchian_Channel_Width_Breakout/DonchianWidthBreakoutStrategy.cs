@@ -155,15 +155,15 @@ namespace StockSharp.Strategies
 				return;
 			
 			// Process candle through Highest and Lowest indicators
-			var highestValue = _highest.Process(candle).GetValue<decimal>();
-			var lowestValue = _lowest.Process(candle).GetValue<decimal>();
+			var highestValue = _highest.Process(candle).ToDecimal();
+			var lowestValue = _lowest.Process(candle).ToDecimal();
 			
 			// Calculate Donchian Channel width
 			var width = highestValue - lowestValue;
 			
 			// Process width through average
 			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
-			var avgWidth = widthAvgValue.GetValue<decimal>();
+			var avgWidth = widthAvgValue.ToDecimal();
 			
 			// For first values, just save and skip
 			if (_lastWidth == 0)

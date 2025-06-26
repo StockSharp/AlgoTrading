@@ -166,7 +166,7 @@ namespace StockSharp.Strategies
 				return;
 
 			// Extract Williams %R value
-			var currentWilliamsR = williamsRValue.GetValue<decimal>();
+			var currentWilliamsR = williamsRValue.ToDecimal();
 
 			// Update Williams %R statistics
 			UpdateWilliamsRStatistics(currentWilliamsR);

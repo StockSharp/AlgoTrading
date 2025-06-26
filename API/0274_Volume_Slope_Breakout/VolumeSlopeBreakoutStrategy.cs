@@ -148,20 +148,20 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Process volume indicator
-			decimal volumeValue = _volumeIndicator.Process(candle).GetValue<decimal>();
+			decimal volumeValue = _volumeIndicator.Process(candle).ToDecimal();
 			
 			// Process volume SMA
-			decimal volumeSma = _volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			decimal volumeSma = _volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Process price EMA for trend direction
-			decimal priceEma = _priceEma.Process(candle).GetValue<decimal>();
+			decimal priceEma = _priceEma.Process(candle).ToDecimal();
 			bool priceAboveEma = candle.ClosePrice > priceEma;
 			
 			// Calculate volume slope (current volume relative to SMA)
 			decimal volumeRatio = volumeValue / volumeSma;
 			
 			// We use LinearRegression to calculate slope of this ratio
-			var currentSlopeValue = _volumeSlope.Process(volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var currentSlopeValue = _volumeSlope.Process(volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

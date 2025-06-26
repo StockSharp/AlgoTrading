@@ -99,12 +99,12 @@ namespace StockSharp.Samples.Strategies
 				.BindEx(donchian, (candle, donchianValues) =>
 				{
 					// Get CCI value
-					var cciValue = cci.Process(candle).GetValue<decimal>();
+					var cciValue = cci.Process(candle).ToDecimal();
 
 					// Get Donchian values
-					var upperBand = donchianValues[0].GetValue<decimal>();
-					var middleBand = donchianValues[1].GetValue<decimal>();
-					var lowerBand = donchianValues[2].GetValue<decimal>();
+					var upperBand = donchianValues[0].ToDecimal();
+					var middleBand = donchianValues[1].ToDecimal();
+					var lowerBand = donchianValues[2].ToDecimal();
 
 					ProcessIndicators(candle, upperBand, middleBand, lowerBand, cciValue);
 				})

@@ -197,10 +197,10 @@ namespace StockSharp.Samples.Strategies
 				
 			// Get Ichimoku values
 			// The component values must be extracted based on the Ichimoku implementation
-			var tenkan = ((IComplexIndicatorValue)ichimokuValue)[0].GetValue<decimal>();
-			var kijun = ((IComplexIndicatorValue)ichimokuValue)[1].GetValue<decimal>();
-			var senkouSpanA = ((IComplexIndicatorValue)ichimokuValue)[2].GetValue<decimal>();
-			var senkouSpanB = ((IComplexIndicatorValue)ichimokuValue)[3].GetValue<decimal>();
+			var tenkan = ((IComplexIndicatorValue)ichimokuValue)[0].ToDecimal();
+			var kijun = ((IComplexIndicatorValue)ichimokuValue)[1].ToDecimal();
+			var senkouSpanA = ((IComplexIndicatorValue)ichimokuValue)[2].ToDecimal();
+			var senkouSpanB = ((IComplexIndicatorValue)ichimokuValue)[3].ToDecimal();
 			
 			// Determine cloud boundaries
 			var cloudTop = Math.Max(senkouSpanA, senkouSpanB);
@@ -272,7 +272,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 				
 			// Get ADX value (this is the main value)
-			_lastAdxValue = adxValue.GetValue<decimal>();
+			_lastAdxValue = adxValue.ToDecimal();
 		}
 	}
 }

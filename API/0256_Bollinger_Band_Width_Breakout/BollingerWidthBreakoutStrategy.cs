@@ -172,14 +172,14 @@ namespace StockSharp.Strategies
 			
 			// Process candle through ATR
 			var atrValue = _atr.Process(candle);
-			var currentAtr = atrValue.GetValue<decimal>();
+			var currentAtr = atrValue.ToDecimal();
 			
 			// Calculate Bollinger Band width
 			var width = upperBand - lowerBand;
 			
 			// Process width through average
 			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
-			var avgWidth = widthAvgValue.GetValue<decimal>();
+			var avgWidth = widthAvgValue.ToDecimal();
 			
 			// For first values, just save and skip
 			if (_lastWidth == 0)

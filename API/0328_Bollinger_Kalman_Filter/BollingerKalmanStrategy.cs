@@ -162,7 +162,7 @@ namespace StockSharp.Samples.Strategies
 			decimal upperBand = bollingerValue[1].To<decimal>(); // Upper band
 			decimal lowerBand = bollingerValue[2].To<decimal>(); // Lower band
 			
-			decimal kalmanFilterValue = kalmanValue.GetValue<decimal>();
+			decimal kalmanFilterValue = kalmanValue.ToDecimal();
 			
 			// Log the values
 			LogInfo($"Price: {candle.ClosePrice}, Kalman: {kalmanFilterValue}, BB middle: {midBand}, BB upper: {upperBand}, BB lower: {lowerBand}");

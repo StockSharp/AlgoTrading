@@ -119,7 +119,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Calculate ATR average
 					var atrInput = new DecimalIndicatorValue(atrValue);
-					var atrAvg = atrSma.Process(atrInput).GetValue<decimal>();
+					var atrAvg = atrSma.Process(atrInput).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(candle, cciValue, atrValue, atrAvg);

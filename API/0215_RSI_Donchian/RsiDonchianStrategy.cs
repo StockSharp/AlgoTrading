@@ -164,7 +164,7 @@ namespace StockSharp.Strategies
 			_previousRsi = _currentRsi;
 			
 			// Get current RSI value
-			_currentRsi = rsiValue.GetValue<decimal>();
+			_currentRsi = rsiValue.ToDecimal();
 			
 			// Process trading logic after all indicators are updated
 			ProcessTradingLogic(candle);
@@ -177,7 +177,7 @@ namespace StockSharp.Strategies
 				return;
 			
 			// Update Donchian high value
-			_donchianHigh = highestValue.GetValue<decimal>();
+			_donchianHigh = highestValue.ToDecimal();
 			
 			// Calculate Donchian middle line
 			_donchianMiddle = (_donchianHigh + _donchianLow) / 2;
@@ -193,7 +193,7 @@ namespace StockSharp.Strategies
 				return;
 			
 			// Update Donchian low value
-			_donchianLow = lowestValue.GetValue<decimal>();
+			_donchianLow = lowestValue.ToDecimal();
 			
 			// Calculate Donchian middle line
 			_donchianMiddle = (_donchianHigh + _donchianLow) / 2;

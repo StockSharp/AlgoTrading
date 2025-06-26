@@ -146,8 +146,8 @@ namespace StockSharp.Samples.Strategies
 			var avgValue = _rsiAverage.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			var stdDevValue = _rsiStdDev.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			
-			_currentRsiAvg = avgValue.GetValue<decimal>();
-			_currentRsiStdDev = stdDevValue.GetValue<decimal>();
+			_currentRsiAvg = avgValue.ToDecimal();
+			_currentRsiStdDev = stdDevValue.ToDecimal();
 			
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading() || !_rsiAverage.IsFormed || !_rsiStdDev.IsFormed)

@@ -184,12 +184,12 @@ namespace StockSharp.Samples.Strategies
 			// Process EMA
 			var emaValue = _ema.Process(candle);
 			if (emaValue.IsFinal)
-				_lastEma = emaValue.GetValue<decimal>();
+				_lastEma = emaValue.ToDecimal();
 
 			// Process ATR
 			var atrValue = _atr.Process(candle);
 			if (atrValue.IsFinal)
-				_lastAtr = atrValue.GetValue<decimal>();
+				_lastAtr = atrValue.ToDecimal();
 
 			// Calculate Keltner Channel
 			if (_lastEma > 0 && _lastAtr > 0)
@@ -208,8 +208,8 @@ namespace StockSharp.Samples.Strategies
 				
 				if (widthAvgValue.IsFinal && widthStdDevValue.IsFinal)
 				{
-					_lastWidthAvg = widthAvgValue.GetValue<decimal>();
-					_lastWidthStdDev = widthStdDevValue.GetValue<decimal>();
+					_lastWidthAvg = widthAvgValue.ToDecimal();
+					_lastWidthStdDev = widthStdDevValue.ToDecimal();
 					
 					// Check if strategy is ready to trade
 					if (!IsFormedAndOnlineAndAllowTrading())

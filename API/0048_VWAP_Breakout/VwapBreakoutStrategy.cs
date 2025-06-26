@@ -91,7 +91,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract VWAP value from indicator result
-			var vwapPrice = vwapValue.GetValue<decimal>();
+			var vwapPrice = vwapValue.ToDecimal();
 			
 			// Skip the first candle, just initialize values
 			if (_isFirstCandle)

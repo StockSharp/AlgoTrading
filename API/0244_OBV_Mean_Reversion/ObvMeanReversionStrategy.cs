@@ -121,14 +121,14 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract OBV value
-			_currentObv = obvValue.GetValue<decimal>();
+			_currentObv = obvValue.ToDecimal();
 
 			// Process OBV through average and standard deviation indicators
 			var avgIndicatorValue = _obvAverage.Process(obvValue);
 			var stdDevIndicatorValue = _obvStdDev.Process(obvValue);
 			
-			_obvAvgValue = avgIndicatorValue.GetValue<decimal>();
-			_obvStdDevValue = stdDevIndicatorValue.GetValue<decimal>();
+			_obvAvgValue = avgIndicatorValue.ToDecimal();
+			_obvStdDevValue = stdDevIndicatorValue.ToDecimal();
 			
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading() || !_obvAverage.IsFormed || !_obvStdDev.IsFormed)

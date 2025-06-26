@@ -173,15 +173,15 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Process Stochastic
 					var stochResult = stochastic.Process(candle);
-					var stochK = stochResult.GetValue<decimal>();
+					var stochK = stochResult.ToDecimal();
 					
 					// Get Keltner Channel values
-					var middleBand = keltnerValues[0].GetValue<decimal>();
-					var upperBand = keltnerValues[1].GetValue<decimal>();
-					var lowerBand = keltnerValues[2].GetValue<decimal>();
+					var middleBand = keltnerValues[0].ToDecimal();
+					var upperBand = keltnerValues[1].ToDecimal();
+					var lowerBand = keltnerValues[2].ToDecimal();
 					
 					// Process ATR
-					var atrValue = atr.Process(candle).GetValue<decimal>();
+					var atrValue = atr.Process(candle).ToDecimal();
 
 					ProcessIndicators(candle, stochK, middleBand, upperBand, lowerBand, atrValue);
 				})

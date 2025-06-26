@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _multiplier;
 		private readonly StrategyParam<DataType> _candleType;
 
-		private Stochastic _stochastic;
+		private StochasticOscillator _stochastic;
 		private SimpleMovingAverage _stochAverage;
 		private StandardDeviation _stochStdDev;
 		
@@ -133,11 +133,10 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			_stochastic = new Stochastic 
+			_stochastic = new() 
 			{
-				Length = StochPeriod,
-				K = KPeriod,
-				D = DPeriod
+				K = { Length = KPeriod },
+				D = { Length = DPeriod }
 			};
 			
 			_stochAverage = new SimpleMovingAverage { Length = AveragePeriod };
@@ -177,11 +176,11 @@ namespace StockSharp.Samples.Strategies
 			if (stochObject == null || stochObject.Length < 2)
 				return;
 
-			decimal stochKValue = stochObject[0].GetValue<decimal>();
+			decimal stochKValue = stochObject[0].ToDecimal();
 			
 			// Process Stochastic %K through average and standard deviation indicators
-			var stochAvgValue = _stochAverage.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
-			var stochStdDevValue = _stochStdDev.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var stochAvgValue = _stochAverage.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var stochStdDevValue = _stochStdDev.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Store previous Stochastic %K value for changes detection
 			decimal currentStochKValue = stochKValue;

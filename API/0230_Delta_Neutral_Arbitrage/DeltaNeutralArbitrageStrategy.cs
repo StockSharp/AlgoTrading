@@ -213,8 +213,8 @@ namespace StockSharp.Samples.Strategies
 			if (!_spreadSma.IsFormed || !_spreadStdDev.IsFormed)
 				return;
 
-			decimal spreadSma = spreadValue.GetValue<decimal>();
-			decimal spreadStdDev = stdDevValue.GetValue<decimal>();
+			decimal spreadSma = spreadValue.ToDecimal();
+			decimal spreadStdDev = stdDevValue.ToDecimal();
 
 			// Calculate z-score
 			decimal zScore = (spreadStdDev == 0) ? 0 : (_currentSpread - spreadSma) / spreadStdDev;

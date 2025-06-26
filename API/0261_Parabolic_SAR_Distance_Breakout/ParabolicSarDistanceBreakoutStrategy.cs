@@ -167,7 +167,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract Parabolic SAR value
-			decimal sarValue = parabolicSarValue.GetValue<decimal>();
+			decimal sarValue = parabolicSarValue.ToDecimal();
 			
 			// Calculate distances
 			decimal longDistance = 0;

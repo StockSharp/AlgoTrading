@@ -223,7 +223,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Store current ATR average value
-			var currentAtrAvg = avgValue.GetValue<decimal>();
+			var currentAtrAvg = avgValue.ToDecimal();
 			_prevAtrAvg = currentAtrAvg;
 		}
 

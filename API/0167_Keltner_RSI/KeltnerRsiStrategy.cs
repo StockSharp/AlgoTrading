@@ -208,9 +208,9 @@ namespace StockSharp.Samples.Strategies
 		private void ProcessCandle(ICandleMessage candle)
 		{
 			// Process candle with indicators
-			var emaValue = _ema.Process(candle).GetValue<decimal>();
-			var atrValue = _atr.Process(candle).GetValue<decimal>();
-			var rsiValue = _rsi.Process(candle).GetValue<decimal>();
+			var emaValue = _ema.Process(candle).ToDecimal();
+			var atrValue = _atr.Process(candle).ToDecimal();
+			var rsiValue = _rsi.Process(candle).ToDecimal();
 			
 			// Skip if indicators are not formed yet
 			if (!_ema.IsFormed || !_atr.IsFormed || !_rsi.IsFormed)

@@ -110,7 +110,7 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var williamsRValue = value.GetValue<decimal>();
+			var williamsRValue = value.ToDecimal();
 
 			// Note: Williams %R values are negative, typically from 0 to -100
 			// Oversold: Below -80

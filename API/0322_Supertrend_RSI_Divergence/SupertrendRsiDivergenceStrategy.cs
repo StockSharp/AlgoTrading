@@ -150,8 +150,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 				
 			// Extract values from indicators
-			_supertrendValue = supertrendValue.GetValue<decimal>();
-			decimal rsi = rsiValue.GetValue<decimal>();
+			_supertrendValue = supertrendValue.ToDecimal();
+			decimal rsi = rsiValue.ToDecimal();
 			
 			// Store values for divergence calculation
 			_prices.Add(candle.ClosePrice);

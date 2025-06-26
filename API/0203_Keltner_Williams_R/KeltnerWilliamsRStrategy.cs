@@ -120,12 +120,12 @@ namespace StockSharp.Samples.Strategies
 				.BindEx(keltner, (candle, keltnerValues) =>
 				{
 					// Get Williams %R value
-					var williamsRValue = williamsR.Process(candle).GetValue<decimal>();
+					var williamsRValue = williamsR.Process(candle).ToDecimal();
 
 					// Get Keltner Channel values
-					var middleBand = keltnerValues[0].GetValue<decimal>();
-					var upperBand = keltnerValues[1].GetValue<decimal>();
-					var lowerBand = keltnerValues[2].GetValue<decimal>();
+					var middleBand = keltnerValues[0].ToDecimal();
+					var upperBand = keltnerValues[1].ToDecimal();
+					var lowerBand = keltnerValues[2].ToDecimal();
 
 					ProcessIndicators(candle, middleBand, upperBand, lowerBand, williamsRValue);
 				})

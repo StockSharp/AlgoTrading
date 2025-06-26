@@ -164,10 +164,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Ichimoku values
-			var tenkanSen = values[0].GetValue<decimal>();
-			var kijunSen = values[1].GetValue<decimal>();
-			var senkouSpanA = values[2].GetValue<decimal>();
-			var senkouSpanB = values[3].GetValue<decimal>();
+			var tenkanSen = values[0].ToDecimal();
+			var kijunSen = values[1].ToDecimal();
+			var senkouSpanA = values[2].ToDecimal();
+			var senkouSpanB = values[3].ToDecimal();
 			
 			// Calculate Kumo cloud boundaries
 			var upperKumo = Math.Max(senkouSpanA, senkouSpanB);

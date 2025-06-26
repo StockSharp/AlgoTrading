@@ -208,14 +208,14 @@ namespace StockSharp.Strategies.Samples
 				
 			// Extract values from Ichimoku indicator
 			var ichimokuComplex = (IComplexValue)ichimokuValue;
-			var tenkan = ichimokuComplex.InnerValues[0].GetValue<decimal>();		// Tenkan-sen (Conversion Line)
-			var kijun = ichimokuComplex.InnerValues[1].GetValue<decimal>();		 // Kijun-sen (Base Line)
-			var senkouSpanA = ichimokuComplex.InnerValues[2].GetValue<decimal>();   // Senkou Span A (1st Leading Span)
-			var senkouSpanB = ichimokuComplex.InnerValues[3].GetValue<decimal>();   // Senkou Span B (2nd Leading Span)
-			var chikouSpan = ichimokuComplex.InnerValues[4].GetValue<decimal>();	// Chikou Span (Lagging Span)
+			var tenkan = ichimokuComplex.InnerValues[0].ToDecimal();		// Tenkan-sen (Conversion Line)
+			var kijun = ichimokuComplex.InnerValues[1].ToDecimal();		 // Kijun-sen (Base Line)
+			var senkouSpanA = ichimokuComplex.InnerValues[2].ToDecimal();   // Senkou Span A (1st Leading Span)
+			var senkouSpanB = ichimokuComplex.InnerValues[3].ToDecimal();   // Senkou Span B (2nd Leading Span)
+			var chikouSpan = ichimokuComplex.InnerValues[4].ToDecimal();	// Chikou Span (Lagging Span)
 			
 			// Extract RSI value
-			var rsiIndicatorValue = rsiValue.GetValue<decimal>();
+			var rsiIndicatorValue = rsiValue.ToDecimal();
 			
 			// Check cloud status (Kumo)
 			bool priceAboveCloud = candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB);

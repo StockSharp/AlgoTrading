@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 
 		private HullMovingAverage _hma;
-		private AverageDirectionalMovementIndex _adx;
+		private AverageDirectionalIndex _adx;
 		private AverageTrueRange _atr;
 		
 		private decimal _prevHmaValue;
@@ -100,9 +100,9 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			_hma = new HullMovingAverage { Length = HmaPeriod };
-			_adx = new AverageDirectionalMovementIndex { Length = AdxPeriod };
-			_atr = new AverageTrueRange { Length = 14 };
+			_hma = new() { Length = HmaPeriod };
+			_adx = new() { Length = AdxPeriod };
+			_atr = new() { Length = 14 };
 
 			// Initialize variables
 			_prevHmaValue = 0;

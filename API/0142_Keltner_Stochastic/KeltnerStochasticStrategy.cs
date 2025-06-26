@@ -220,11 +220,11 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.BindEx(ema, emaValue => _emaValue = emaValue.GetValue<decimal>())
+				.BindEx(ema, emaValue => _emaValue = emaValue.ToDecimal())
 				.Start();
 
 			subscription
-				.BindEx(atr, atrValue => _atrValue = atrValue.GetValue<decimal>())
+				.BindEx(atr, atrValue => _atrValue = atrValue.ToDecimal())
 				.Start();
 
 			subscription

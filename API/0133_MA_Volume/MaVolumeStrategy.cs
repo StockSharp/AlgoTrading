@@ -154,7 +154,7 @@ namespace StockSharp.Strategies.Samples
 				return;
 				
 			// Process indicators
-			var smaValue = _priceSma.Process(candle).GetValue<decimal>();
+			var smaValue = _priceSma.Process(candle).ToDecimal();
 			
 			// Handle volume
 			var volumeCandle = new CandleMessage
@@ -168,7 +168,7 @@ namespace StockSharp.Strategies.Samples
 				State = candle.State
 			};
 			
-			var volumeSmaValue = _volumeSma.Process(volumeCandle).GetValue<decimal>();
+			var volumeSmaValue = _volumeSma.Process(volumeCandle).ToDecimal();
 			
 			if (!IsFormedAndOnlineAndAllowTrading() || !_priceSma.IsFormed || !_volumeSma.IsFormed)
 				return;

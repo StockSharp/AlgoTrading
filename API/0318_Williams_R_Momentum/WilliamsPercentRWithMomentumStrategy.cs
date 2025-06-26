@@ -119,7 +119,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Calculate momentum average
 					var momentumInput = new DecimalIndicatorValue(momentumValue);
-					var momentumAvg = momentumSma.Process(momentumInput).GetValue<decimal>();
+					var momentumAvg = momentumSma.Process(momentumInput).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(candle, williamsRValue, momentumValue, momentumAvg);

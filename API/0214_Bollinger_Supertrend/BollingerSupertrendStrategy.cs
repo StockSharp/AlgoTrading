@@ -163,9 +163,9 @@ namespace StockSharp.Strategies
 			if (bollingerValues == null)
 				return;
 				
-			var middleBand = bollingerValues[BollingerBands.Middle].GetValue<decimal>();
-			var upperBand = bollingerValues[BollingerBands.Upper].GetValue<decimal>();
-			var lowerBand = bollingerValues[BollingerBands.Lower].GetValue<decimal>();
+			var middleBand = bollingerValues[BollingerBands.Middle].ToDecimal();
+			var upperBand = bollingerValues[BollingerBands.Upper].ToDecimal();
+			var lowerBand = bollingerValues[BollingerBands.Lower].ToDecimal();
 			
 			// Calculate Supertrend
 			// Note: This is a simplified Supertrend implementation

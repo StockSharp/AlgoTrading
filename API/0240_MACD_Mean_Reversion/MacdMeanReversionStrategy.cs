@@ -210,7 +210,7 @@ namespace StockSharp.Strategies
 				return;
 
 			// Extract MACD Histogram value
-			var currentMacdHist = macdHistValue.GetValue<decimal>();
+			var currentMacdHist = macdHistValue.ToDecimal();
 
 			// Update MACD Histogram statistics
 			UpdateMacdHistStatistics(currentMacdHist);

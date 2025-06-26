@@ -113,7 +113,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get RSI value and normalize it to 0-1 range (Laguerre RSI uses 0-1 scale)
-			decimal rsi = rsiValue.GetValue<decimal>();
+			decimal rsi = rsiValue.ToDecimal();
 			decimal normRsi = rsi / 100m; // Convert standard RSI (0-100) to Laguerre RSI scale (0-1)
 
 			// Get price direction

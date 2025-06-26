@@ -175,7 +175,7 @@ namespace StockSharp.Samples.Strategies
 			decimal macdHist = macdValue - signalValue;
 			
 			// Calculate MACD histogram slope
-			var currentSlopeValue = _macdHistSlope.Process(macdHist, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var currentSlopeValue = _macdHistSlope.Process(macdHist, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

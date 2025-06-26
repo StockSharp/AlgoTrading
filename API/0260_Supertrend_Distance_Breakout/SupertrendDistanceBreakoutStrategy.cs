@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract Supertrend value
-			decimal supertrendPrice = supertrendValue.GetValue<decimal>();
+			decimal supertrendPrice = supertrendValue.ToDecimal();
 			
 			// Calculate distances
 			decimal longDistance = 0;

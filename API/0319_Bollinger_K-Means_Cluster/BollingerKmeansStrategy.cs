@@ -173,8 +173,8 @@ namespace StockSharp.Samples.Strategies
 			var bollingerUpper = bollingerValue[0].To<decimal>();
 			var bollingerMiddle = bollingerValue[1].To<decimal>();
 			var bollingerLower = bollingerValue[2].To<decimal>();
-			var rsi = rsiValue.GetValue<decimal>();
-			_atrValue = atrValue.GetValue<decimal>();
+			var rsi = rsiValue.ToDecimal();
+			_atrValue = atrValue.ToDecimal();
 			
 			// Update data for clustering
 			UpdateClusterData(candle, rsi);

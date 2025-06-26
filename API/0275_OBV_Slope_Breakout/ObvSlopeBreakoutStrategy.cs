@@ -159,12 +159,12 @@ namespace StockSharp.Samples.Strategies
 			
 			// Store values for decision making
 			_lastObvValue = obvValue;
-			_lastObvSlope = slopeValue.GetValue<decimal>();
+			_lastObvSlope = slopeValue.ToDecimal();
 			
 			if (avgValue.IsFinal && stdDevValue.IsFinal)
 			{
-				_lastSlopeAvg = avgValue.GetValue<decimal>();
-				_lastSlopeStdDev = stdDevValue.GetValue<decimal>();
+				_lastSlopeAvg = avgValue.ToDecimal();
+				_lastSlopeStdDev = stdDevValue.ToDecimal();
 				
 				// Check if strategy is ready to trade
 				if (!IsFormedAndOnlineAndAllowTrading())

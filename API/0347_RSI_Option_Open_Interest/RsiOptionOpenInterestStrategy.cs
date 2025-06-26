@@ -186,7 +186,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get current RSI value
-			var rsi = rsiValue.GetValue<decimal>();
+			var rsi = rsiValue.ToDecimal();
 
 			// Simulate option open interest data (in real implementation, this would come from a data provider)
 			SimulateOptionOI(candle);
@@ -199,10 +199,10 @@ namespace StockSharp.Samples.Strategies
 			var putOiValueStdDev = _putOiStdDev.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Update state variables
-			_avgCallOi = callOiValueSma.GetValue<decimal>();
-			_avgPutOi = putOiValueSma.GetValue<decimal>();
-			_stdDevCallOi = callOiValueStdDev.GetValue<decimal>();
-			_stdDevPutOi = putOiValueStdDev.GetValue<decimal>();
+			_avgCallOi = callOiValueSma.ToDecimal();
+			_avgPutOi = putOiValueSma.ToDecimal();
+			_stdDevCallOi = callOiValueStdDev.ToDecimal();
+			_stdDevPutOi = putOiValueStdDev.ToDecimal();
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())

@@ -136,7 +136,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Process the candle with the Lowest indicator
-			var lowestValue = _lowestIndicator.Process(candle).GetValue<decimal>();
+			var lowestValue = _lowestIndicator.Process(candle).ToDecimal();
 
 			// If strategy is not ready yet, return
 			if (!IsFormedAndOnlineAndAllowTrading())

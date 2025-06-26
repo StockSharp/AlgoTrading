@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Process IV Skew with SMA
 			var ivSkewSmaValue = _ivSkewSma.Process(_currentIvSkew, candle.ServerTime, candle.State == CandleStates.Finished);
-			_avgIvSkew = ivSkewSmaValue.GetValue<decimal>();
+			_avgIvSkew = ivSkewSmaValue.ToDecimal();
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())

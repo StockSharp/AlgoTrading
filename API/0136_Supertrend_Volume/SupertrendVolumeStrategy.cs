@@ -172,7 +172,7 @@ namespace StockSharp.Strategies.Samples
 				State = candle.State
 			};
 			
-			var volumeSmaValue = _volumeSma.Process(volumeCandle).GetValue<decimal>();
+			var volumeSmaValue = _volumeSma.Process(volumeCandle).ToDecimal();
 			
 			if (!IsFormedAndOnlineAndAllowTrading() || !_atr.IsFormed || !_volumeSma.IsFormed)
 				return;

@@ -151,7 +151,7 @@ namespace StockSharp.Samples.Strategies
 			_previousWilliamsR = _currentWilliamsR;
 			
 			_currentPrice = candle.ClosePrice;
-			_currentWilliamsR = williamsRValue.GetValue<decimal>();
+			_currentWilliamsR = williamsRValue.ToDecimal();
 
 			// We need at least two points to detect divergence
 			if (_previousPrice == 0)

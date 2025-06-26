@@ -160,7 +160,7 @@ namespace StockSharp.Strategies
 				return;
 
 			// Extract ATR value
-			var currentAtr = atrValue.GetValue<decimal>();
+			var currentAtr = atrValue.ToDecimal();
 
 			// Update ATR statistics
 			UpdateAtrStatistics(currentAtr);

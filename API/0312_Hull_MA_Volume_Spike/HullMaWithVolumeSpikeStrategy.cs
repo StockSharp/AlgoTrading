@@ -117,10 +117,10 @@ namespace StockSharp.Samples.Strategies
 					// Process the strategy logic
 					ProcessStrategy(
 						candle, 
-						hmaValue.GetValue<decimal>(), 
+						hmaValue.ToDecimal(), 
 						candle.TotalVolume, 
-						volumeSmaValue.GetValue<decimal>(), 
-						volumeStdDevValue.GetValue<decimal>()
+						volumeSmaValue.ToDecimal(), 
+						volumeStdDevValue.ToDecimal()
 					);
 				})
 				.Start();

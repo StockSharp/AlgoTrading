@@ -108,17 +108,17 @@ namespace StockSharp.Samples.Strategies
 						return;
 					
 					// Process the OBV value through other indicators
-					var obvMAValue = obvMA.Process(obvValue).GetValue<decimal>();
+					var obvMAValue = obvMA.Process(obvValue).ToDecimal();
 					
 					// Process highest/lowest only after initialization
 					if (!_isFirstCandle)
 					{
 						// Use previous highest/lowest for first N bars until indicators are formed
-						var highestValue = highest.IsFormed ? highest.Process(obvValue).GetValue<decimal>() : Math.Max(_highestOBV, obvValue.GetValue<decimal>());
-						var lowestValue = lowest.IsFormed ? lowest.Process(obvValue).GetValue<decimal>() : Math.Min(_lowestOBV, obvValue.GetValue<decimal>());
+						var highestValue = highest.IsFormed ? highest.Process(obvValue).ToDecimal() : Math.Max(_highestOBV, obvValue.ToDecimal());
+						var lowestValue = lowest.IsFormed ? lowest.Process(obvValue).ToDecimal() : Math.Min(_lowestOBV, obvValue.ToDecimal());
 						
 						// Now process the candle with all indicator values
-						ProcessCandle(candle, obvValue.GetValue<decimal>(), obvMAValue, highestValue, lowestValue);
+						ProcessCandle(candle, obvValue.ToDecimal(), obvMAValue, highestValue, lowestValue);
 						
 						// Update highest/lowest for next comparison if indicators not formed yet
 						if (!highest.IsFormed)
@@ -130,8 +130,8 @@ namespace StockSharp.Samples.Strategies
 					else
 					{
 						// For the first candle, just initialize values
-						_highestOBV = obvValue.GetValue<decimal>();
-						_lowestOBV = obvValue.GetValue<decimal>();
+						_highestOBV = obvValue.ToDecimal();
+						_lowestOBV = obvValue.ToDecimal();
 						_isFirstCandle = false;
 					}
 				})

@@ -110,7 +110,7 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var cciValue = value.GetValue<decimal>();
+			var cciValue = value.ToDecimal();
 
 			// Entry logic
 			if (cciValue > 100 && Position <= 0)

@@ -170,7 +170,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 				
 			// Calculate volume ratio (current volume / average volume)
-			var volumeRatio = candle.TotalVolume / volumeIndicatorValue.GetValue<decimal>();
+			var volumeRatio = candle.TotalVolume / volumeIndicatorValue.ToDecimal();
 
 			// Calculate volume ratio slope
 			if (_isFirstCalculation)

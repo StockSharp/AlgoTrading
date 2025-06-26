@@ -140,7 +140,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Calculate Williams %R slope
-			var currentSlopeValue = _williamsRSlope.Process(williamsRValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var currentSlopeValue = _williamsRSlope.Process(williamsRValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

@@ -108,7 +108,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract VWMA value from indicator result
-			var vwmaPrice = vwmaValue.GetValue<decimal>();
+			var vwmaPrice = vwmaValue.ToDecimal();
 			
 			// Skip the first candle, just initialize values
 			if (_isFirstCandle)

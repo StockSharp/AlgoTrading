@@ -28,7 +28,7 @@ namespace StockSharp.Strategies.Samples
 		private readonly StrategyParam<int> _stochOverbought;
 		private readonly StrategyParam<decimal> _atrMultiplier;
 		
-		private Stochastic _stochastic;
+		private StochasticOscillator _stochastic;
 		private BollingerBands _bollinger;
 		private AverageTrueRange _atr;
 		
@@ -173,17 +173,16 @@ namespace StockSharp.Strategies.Samples
 			base.OnStarted(time);
 			
 			// Initialize indicators
-			_bollinger = new BollingerBands
+			_bollinger = new()
 			{
 				Length = BollingerPeriod,
 				Width = BollingerDeviation
 			};
 			
-			_stochastic = new Stochastic
+			_stochastic = new()
 			{
-				KPeriod = StochPeriod,
-				DPeriod = StochD,
-				KSmaPeriod = StochK
+				K = { Length = StochPeriod },
+				D = { Length = StochD },
 			};
 			
 			_atr = new AverageTrueRange
@@ -230,14 +229,14 @@ namespace StockSharp.Strategies.Samples
 				return;
 				
 			// Extract values from indicators
-			var middleBand = bollingerValue.GetValue<decimal>();
+			var middleBand = bollingerValue.ToDecimal();
 			var upperBand = _bollinger.GetUpBand();
 			var lowerBand = _bollinger.GetLowBand();
 			
-			var k = stochasticValue.GetValue<decimal>();
+			var k = stochasticValue.ToDecimal();
 			var d = _stochastic.D.Current;
 			
-			var atrValue_ = atrValue.GetValue<decimal>();
+			var atrValue_ = atrValue.ToDecimal();
 			
 			// Calculate stop loss distance based on ATR
 			var stopLossDistance = atrValue_ * AtrMultiplier;

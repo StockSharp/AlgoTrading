@@ -185,7 +185,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			else
 			{
-				this.AddWarningLog("Assets or candle type not specified. Strategy won't work properly.");
+				LogWarning("Assets or candle type not specified. Strategy won't work properly.");
 			}
 
 			// Start position protection with stop-loss
@@ -251,7 +251,7 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var stdDev = stdDevValue.GetValue<decimal>();
+			var stdDev = stdDevValue.ToDecimal();
 
 			// Trading logic for correlation breakout
 			if (_lastCorrelation < _avgCorrelation - Threshold * stdDev && GetPositionValue(Asset1) <= 0 && GetPositionValue(Asset2) >= 0)

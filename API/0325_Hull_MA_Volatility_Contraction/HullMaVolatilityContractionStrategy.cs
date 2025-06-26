@@ -152,8 +152,8 @@ namespace StockSharp.Samples.Strategies
 			_prevHmaValue = _currentHmaValue;
 			
 			// Extract values from indicators
-			_currentHmaValue = hmaValue.GetValue<decimal>();
-			decimal atr = atrValue.GetValue<decimal>();
+			_currentHmaValue = hmaValue.ToDecimal();
+			decimal atr = atrValue.ToDecimal();
 			
 			// Store ATR values for volatility analysis
 			_atrValues.Add(atr);

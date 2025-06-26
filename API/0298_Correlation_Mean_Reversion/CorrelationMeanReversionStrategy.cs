@@ -247,8 +247,8 @@ namespace StockSharp.Strategies
 			_currentCorrelation = CalculateCorrelationCoefficient(_security1Prices.ToArray(), _security2Prices.ToArray());
 			
 			// Process indicators
-			_averageCorrelation = _correlationSma.Process(_currentCorrelation).GetValue<decimal>();
-			_correlationStdDeviation = _correlationStdDev.Process(_currentCorrelation).GetValue<decimal>();
+			_averageCorrelation = _correlationSma.Process(_currentCorrelation).ToDecimal();
+			_correlationStdDeviation = _correlationStdDev.Process(_currentCorrelation).ToDecimal();
 			
 			// Check for trading signals
 			CheckSignal();

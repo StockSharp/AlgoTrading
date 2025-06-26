@@ -188,7 +188,7 @@ namespace StockSharp.Samples.Strategies
 			// Process ATR
 			var atrValue = _atr.Process(candle);
 			if (atrValue.IsFinal)
-				_lastAtr = atrValue.GetValue<decimal>();
+				_lastAtr = atrValue.ToDecimal();
 
 			// Calculate Bollinger width
 			var width = upperBand - lowerBand;
@@ -200,8 +200,8 @@ namespace StockSharp.Samples.Strategies
 
 			if (widthAvg.IsFinal && widthStdDev.IsFinal)
 			{
-				_lastWidthAvg = widthAvg.GetValue<decimal>();
-				_lastWidthStdDev = widthStdDev.GetValue<decimal>();
+				_lastWidthAvg = widthAvg.ToDecimal();
+				_lastWidthStdDev = widthStdDev.ToDecimal();
 
 				// Check if strategy is ready to trade
 				if (!IsFormedAndOnlineAndAllowTrading())

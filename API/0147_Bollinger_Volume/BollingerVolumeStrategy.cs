@@ -200,7 +200,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			if (volumeAvgValue.IsFinal)
 			{
-				_avgVolume = volumeAvgValue.GetValue<decimal>();
+				_avgVolume = volumeAvgValue.ToDecimal();
 			}
 		}
 

@@ -166,7 +166,7 @@ namespace StockSharp.Strategies
 				return;
 
 			// Extract CCI value
-			var currentCci = cciValue.GetValue<decimal>();
+			var currentCci = cciValue.ToDecimal();
 
 			// Update CCI statistics
 			UpdateCciStatistics(currentCci);

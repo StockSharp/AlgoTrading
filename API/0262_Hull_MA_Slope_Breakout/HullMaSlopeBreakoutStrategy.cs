@@ -161,7 +161,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract Hull MA value
-			decimal currentHullValue = hullValue.GetValue<decimal>();
+			decimal currentHullValue = hullValue.ToDecimal();
 			
 			// Calculate the slope
 			if (!_isInitialized)

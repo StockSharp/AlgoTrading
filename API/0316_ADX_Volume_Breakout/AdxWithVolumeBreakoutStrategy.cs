@@ -121,8 +121,8 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Process volume indicators
 					var volumeIndicatorValue = new DecimalIndicatorValue(candle.TotalVolume);
-					var volumeAvg = volumeSma.Process(volumeIndicatorValue).GetValue<decimal>();
-					var volumeStdDev = volumeStdDev.Process(volumeIndicatorValue).GetValue<decimal>();
+					var volumeAvg = volumeSma.Process(volumeIndicatorValue).ToDecimal();
+					var volumeStdDev = volumeStdDev.Process(volumeIndicatorValue).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(
@@ -162,9 +162,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract values from ADX composite indicator
-			var adx = adxValue[0].GetValue<decimal>();	 // ADX value
-			var diPlus = adxValue[1].GetValue<decimal>();  // +DI value
-			var diMinus = adxValue[2].GetValue<decimal>(); // -DI value
+			var adx = adxValue[0].ToDecimal();	 // ADX value
+			var diPlus = adxValue[1].ToDecimal();  // +DI value
+			var diMinus = adxValue[2].ToDecimal(); // -DI value
 			
 			// Check for strong trend
 			var isStrongTrend = adx > AdxThreshold;

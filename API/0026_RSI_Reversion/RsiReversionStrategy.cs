@@ -156,7 +156,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get RSI value
-			decimal rsi = rsiValue.GetValue<decimal>();
+			decimal rsi = rsiValue.ToDecimal();
 
 			// Entry logic for mean reversion
 			if (rsi < OversoldThreshold && Position <= 0)

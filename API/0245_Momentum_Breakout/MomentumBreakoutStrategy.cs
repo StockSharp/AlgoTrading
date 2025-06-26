@@ -143,8 +143,8 @@ namespace StockSharp.Samples.Strategies
 			var avgIndicatorValue = _momentumAverage.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			var stdDevIndicatorValue = _momentumStdDev.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			
-			_momentumAvgValue = avgIndicatorValue.GetValue<decimal>();
-			_momentumStdDevValue = stdDevIndicatorValue.GetValue<decimal>();
+			_momentumAvgValue = avgIndicatorValue.ToDecimal();
+			_momentumStdDevValue = stdDevIndicatorValue.ToDecimal();
 			
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading() || !_momentumAverage.IsFormed || !_momentumStdDev.IsFormed)

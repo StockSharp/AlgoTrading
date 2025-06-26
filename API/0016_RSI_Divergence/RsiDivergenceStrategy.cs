@@ -120,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var currentPrice = candle.ClosePrice;
-			var currentRsi = rsiValue.GetValue<decimal>();
+			var currentRsi = rsiValue.ToDecimal();
 
 			// For the first candle, just store values and return
 			if (_isFirstCandle)

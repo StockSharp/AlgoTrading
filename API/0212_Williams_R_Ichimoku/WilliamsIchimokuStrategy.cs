@@ -169,11 +169,11 @@ namespace StockSharp.Strategies
 			if (ichimokuValues == null)
 				return;
 				
-			var tenkan = ichimokuValues[Ichimoku.TenkanLine].GetValue<decimal>();
-			var kijun = ichimokuValues[Ichimoku.KijunLine].GetValue<decimal>();
+			var tenkan = ichimokuValues[Ichimoku.TenkanLine].ToDecimal();
+			var kijun = ichimokuValues[Ichimoku.KijunLine].ToDecimal();
 			
-			var senkouA = ichimokuValues[Ichimoku.SenkouSpanA].GetValue<decimal>();
-			var senkouB = ichimokuValues[Ichimoku.SenkouSpanB].GetValue<decimal>();
+			var senkouA = ichimokuValues[Ichimoku.SenkouSpanA].ToDecimal();
+			var senkouB = ichimokuValues[Ichimoku.SenkouSpanB].ToDecimal();
 			
 			// Determine if price is above or below the Kumo (cloud)
 			var kumoTop = Math.Max(senkouA, senkouB);

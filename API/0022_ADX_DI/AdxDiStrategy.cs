@@ -98,7 +98,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators and process candles
 			subscription
-				.BindEx(adx, (candle, adxValue) => ProcessCandle(candle, adxValue, atr.Process(candle).GetValue<decimal>()))
+				.BindEx(adx, (candle, adxValue) => ProcessCandle(candle, adxValue, atr.Process(candle).ToDecimal()))
 				.Start();
 
 			// Enable position protection

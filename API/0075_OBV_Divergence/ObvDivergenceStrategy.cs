@@ -155,9 +155,9 @@ namespace StockSharp.Samples.Strategies
 			_previousObv = _currentObv;
 			
 			_currentPrice = candle.ClosePrice;
-			_currentObv = obvValue.GetValue<decimal>();
+			_currentObv = obvValue.ToDecimal();
 			
-			var maPrice = maValue.GetValue<decimal>();
+			var maPrice = maValue.ToDecimal();
 
 			// We need at least two points to detect divergence
 			if (_previousPrice == 0)

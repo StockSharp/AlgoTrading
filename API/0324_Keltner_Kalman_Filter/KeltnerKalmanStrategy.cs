@@ -188,8 +188,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Save indicator values
-			_emaValue = emaValue.GetValue<decimal>();
-			_atrValue = atrValue.GetValue<decimal>();
+			_emaValue = emaValue.ToDecimal();
+			_atrValue = atrValue.ToDecimal();
 
 			// Calculate Keltner Channels
 			_upperBand = _emaValue + (_atrValue * AtrMultiplier);

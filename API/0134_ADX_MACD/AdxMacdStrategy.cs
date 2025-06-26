@@ -196,12 +196,12 @@ namespace StockSharp.Strategies.Samples
 				return;
 				
 			// Extract values from indicators
-			var adxIndicatorValue = adxValue.GetValue<decimal>();
+			var adxIndicatorValue = adxValue.ToDecimal();
 			
-			var macdLine = macdValue.GetValue<decimal>();
+			var macdLine = macdValue.ToDecimal();
 			var signalLine = _macd.SignalMa.Current;
 			
-			var atrIndicatorValue = atrValue.GetValue<decimal>();
+			var atrIndicatorValue = atrValue.ToDecimal();
 			
 			// ADX trend strength check
 			var strongTrend = adxIndicatorValue > AdxThreshold;

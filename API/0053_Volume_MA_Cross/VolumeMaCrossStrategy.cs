@@ -113,8 +113,8 @@ namespace StockSharp.Samples.Strategies
 					volumeAdapter.Value = candle.TotalVolume;
 					
 					// Process volume through MAs
-					var fastMAValue = fastVolumeMA.Process(volumeAdapter).GetValue<decimal>();
-					var slowMAValue = slowVolumeMA.Process(volumeAdapter).GetValue<decimal>();
+					var fastMAValue = fastVolumeMA.Process(volumeAdapter).ToDecimal();
+					var slowMAValue = slowVolumeMA.Process(volumeAdapter).ToDecimal();
 					
 					// Process the volume MAs
 					ProcessVolumeMAs(candle, fastMAValue, slowMAValue, priceMA.GetCurrentValue());

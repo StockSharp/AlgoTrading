@@ -198,7 +198,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Calculate Hurst Exponent from Fractal Dimension
 			// Relationship: H = 2 - D, where D is fractal dimension
-			decimal fractalDimension = fractalDimensionValue.GetValue<decimal>();
+			decimal fractalDimension = fractalDimensionValue.ToDecimal();
 			_hurstValue = 2m - fractalDimension;
 
 			// Log Hurst Exponent value periodically

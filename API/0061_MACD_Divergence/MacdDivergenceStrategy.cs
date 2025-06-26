@@ -182,9 +182,9 @@ namespace StockSharp.Samples.Strategies
 			try
 			{
 				// Extract MACD values - be careful with the order of indexes
-				var macdLine = macdValue.GetValue<decimal>(0); // Main MACD line
-				var signalLine = macdValue.GetValue<decimal>(1); // Signal line
-				var histogram = macdValue.GetValue<decimal>(2); // Histogram (MACD - Signal)
+				var macdLine = macdValue.ToDecimal(0); // Main MACD line
+				var signalLine = macdValue.ToDecimal(1); // Signal line
+				var histogram = macdValue.ToDecimal(2); // Histogram (MACD - Signal)
 
 				// Store previous values before updating
 				if (_currentPrice.HasValue && _currentMacd.HasValue)

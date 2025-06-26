@@ -114,7 +114,7 @@ namespace StockSharp.Samples.Strategies
 						
 					// Process volume through volume MA
 					volumeAdapter.Value = candle.TotalVolume;
-					var volumeMAValue = volumeMA.Process(volumeAdapter).GetValue<decimal>();
+					var volumeMAValue = volumeMA.Process(volumeAdapter).ToDecimal();
 					
 					// Process complete data set
 					ProcessCandle(candle, ma.GetCurrentValue(), volumeMAValue);

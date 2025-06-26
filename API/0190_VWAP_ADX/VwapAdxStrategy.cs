@@ -111,7 +111,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get current ADX value
-			var currentAdxValue = adxValue.GetValue<decimal>();
+			var currentAdxValue = adxValue.ToDecimal();
 
 			// Get VWAP value (calculated per day)
 			var vwap = candle.VolumeWeightedAveragePrice;

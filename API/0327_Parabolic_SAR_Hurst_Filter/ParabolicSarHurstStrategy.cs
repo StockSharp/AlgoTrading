@@ -148,8 +148,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get SAR and Hurst values
-			var sarPrice = sarValue.GetValue<decimal>();
-			_hurstValue = hurstValue.GetValue<decimal>();
+			var sarPrice = sarValue.ToDecimal();
+			_hurstValue = hurstValue.ToDecimal();
 
 			// Store previous SAR for comparison
 			var currentSarValue = sarPrice;

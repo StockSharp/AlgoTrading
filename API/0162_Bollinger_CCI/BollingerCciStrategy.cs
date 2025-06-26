@@ -180,8 +180,8 @@ namespace StockSharp.Samples.Strategies
 			
 			// Get Bollinger Bands values from the indicator
 			var bollingerIndicator = GetIndicator<BollingerBands>();
-			var upperBand = bollingerIndicator.GetValue<decimal>(BollingerBandsResult.Upper);
-			var lowerBand = bollingerIndicator.GetValue<decimal>(BollingerBandsResult.Lower);
+			var upperBand = bollingerIndicator.ToDecimal(BollingerBandsResult.Upper);
+			var lowerBand = bollingerIndicator.ToDecimal(BollingerBandsResult.Lower);
 			
 			// Current price
 			var price = candle.ClosePrice;

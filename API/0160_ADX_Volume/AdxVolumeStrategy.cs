@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get ADX value and DI+/DI- values from the indicator
-			var adxValue = value.GetValue<decimal>();
+			var adxValue = value.ToDecimal();
 			
 			// Extract DI+ and DI- values
 			// Note: In this implementation we assume that the ADX indicator value structure

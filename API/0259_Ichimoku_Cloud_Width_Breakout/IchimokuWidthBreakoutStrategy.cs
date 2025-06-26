@@ -215,17 +215,17 @@ namespace StockSharp.Strategies
 			if (components.InnerValues.Count < 4)
 				return;
 				
-			_currentTenkan = components.InnerValues[0].GetValue<decimal>();
-			_currentKijun = components.InnerValues[1].GetValue<decimal>();
-			_currentSenkouA = components.InnerValues[2].GetValue<decimal>();
-			_currentSenkouB = components.InnerValues[3].GetValue<decimal>();
+			_currentTenkan = components.InnerValues[0].ToDecimal();
+			_currentKijun = components.InnerValues[1].ToDecimal();
+			_currentSenkouA = components.InnerValues[2].ToDecimal();
+			_currentSenkouB = components.InnerValues[3].ToDecimal();
 			
 			// Calculate Cloud width (absolute difference between Senkou lines)
 			var width = Math.Abs(_currentSenkouA - _currentSenkouB);
 			
 			// Process width through average
 			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
-			var avgWidth = widthAvgValue.GetValue<decimal>();
+			var avgWidth = widthAvgValue.ToDecimal();
 			
 			// For first values, just save and skip
 			if (_lastWidth == 0)

@@ -182,7 +182,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Get current MA value for trend confirmation
-			decimal maPrice = maValue.GetValue<decimal>();
+			decimal maPrice = maValue.ToDecimal();
 
 			// Check for trendline bounces
 			CheckForTrendlineBounces(candle, maPrice);

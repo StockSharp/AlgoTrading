@@ -134,8 +134,8 @@ namespace StockSharp.Samples.Strategies
 						candle,
 						sarValue,
 						atrValue,
-						atrSmaValue.GetValue<decimal>(),
-						atrStdDevValue.GetValue<decimal>()
+						atrSmaValue.ToDecimal(),
+						atrStdDevValue.ToDecimal()
 					);
 				})
 				.Start();
