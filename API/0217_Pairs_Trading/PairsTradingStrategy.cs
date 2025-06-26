@@ -21,7 +21,7 @@ namespace StockSharp.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<Security> _secondSecurity;
 
-		private MovingAverage _spreadMA;
+		private SimpleMovingAverage _spreadMA;
 		private StandardDeviation _spreadStdDev;
 		
 		private decimal _spread;
@@ -122,7 +122,7 @@ namespace StockSharp.Strategies
 				throw new InvalidOperationException("Second security is not specified.");
 			
 			// Initialize indicators
-			_spreadMA = new MovingAverage { Length = LookbackPeriod };
+			_spreadMA = new() { Length = LookbackPeriod };
 			_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
 			
 			// Create subscriptions for both securities
@@ -173,9 +173,8 @@ namespace StockSharp.Strategies
 			_spread = candle.ClosePrice - _lastSecondPrice;
 			
 			// Process the spread through indicators
-			var spreadValue = new DecimalIndicatorValue(_spread);
-			var maValue = _spreadMA.Process(spreadValue);
-			var stdDevValue = _spreadStdDev.Process(spreadValue);
+			var maValue = _spreadMA.Process(_spread, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevValue = _spreadStdDev.Process(_spread, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			// Skip until indicators are formed
 			if (!_spreadMA.IsFormed || !_spreadStdDev.IsFormed)

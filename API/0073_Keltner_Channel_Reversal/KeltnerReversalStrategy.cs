@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<decimal> _stopLossAtrMultiplier;
 
-		private KeltnerChannel _keltnerChannel;
+		private KeltnerChannels _keltnerChannel;
 		private AverageTrueRange _atr;
 
 		/// <summary>
@@ -112,7 +112,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			_keltnerChannel = new KeltnerChannel
+			_keltnerChannel = new KeltnerChannels
 			{
 				Length = EmaPeriod,
 				K = AtrMultiplier,

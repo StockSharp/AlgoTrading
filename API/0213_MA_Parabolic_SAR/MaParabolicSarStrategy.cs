@@ -21,7 +21,7 @@ namespace StockSharp.Strategies
 		private readonly StrategyParam<decimal> _sarMaxStep;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private MovingAverage _ma;
+		private SimpleMovingAverage _ma;
 		private ParabolicSar _parabolicSar;
 		
 		private decimal _lastSarValue;
@@ -101,11 +101,11 @@ namespace StockSharp.Strategies
 			base.OnStarted(time);
 			
 			// Initialize indicators
-			_ma = new MovingAverage { Length = MaPeriod };
+			_ma = new() { Length = MaPeriod };
 			_parabolicSar = new ParabolicSar
 			{
 				AccelerationStep = SarStep,
-				AccelerationLimit = SarMaxStep
+				AccelerationMax = SarMaxStep
 			};
 			
 			// Create candles subscription
