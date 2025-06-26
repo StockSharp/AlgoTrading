@@ -21,7 +21,7 @@ namespace StockSharp.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private MovingAverage _ma;
+		private SimpleMovingAverage _ma;
 		private StandardDeviation _stdDev;
 		
 		private decimal _lastZScore;
@@ -101,8 +101,8 @@ namespace StockSharp.Strategies
 			base.OnStarted(time);
 			
 			// Initialize indicators
-			_ma = new MovingAverage { Length = LookbackPeriod };
-			_stdDev = new StandardDeviation { Length = LookbackPeriod };
+			_ma = new() { Length = LookbackPeriod };
+			_stdDev = new() { Length = LookbackPeriod };
 			
 			// Create candles subscription
 			var subscription = SubscribeCandles(CandleType);

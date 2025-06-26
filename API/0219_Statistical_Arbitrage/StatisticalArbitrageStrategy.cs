@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using Ecng.ComponentModel;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -19,8 +19,8 @@ namespace StockSharp.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<Security> _secondSecurity;
 		
-		private MovingAverage _firstMA;
-		private MovingAverage _secondMA;
+		private SimpleMovingAverage _firstMA;
+		private SimpleMovingAverage _secondMA;
 		
 		private decimal _lastFirstPrice;
 		private decimal _lastSecondPrice;
@@ -106,8 +106,8 @@ namespace StockSharp.Strategies
 				throw new InvalidOperationException("Second security is not specified.");
 			
 			// Initialize indicators
-			_firstMA = new MovingAverage { Length = LookbackPeriod };
-			_secondMA = new MovingAverage { Length = LookbackPeriod };
+			_firstMA = new() { Length = LookbackPeriod };
+			_secondMA = new() { Length = LookbackPeriod };
 			
 			// Create subscriptions for both securities
 			var firstSecuritySubscription = SubscribeCandles(CandleType);

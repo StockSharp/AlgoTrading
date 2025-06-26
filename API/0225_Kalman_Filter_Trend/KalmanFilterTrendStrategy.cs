@@ -54,13 +54,13 @@ namespace StockSharp.Samples.Strategies
 		public KalmanFilterTrendStrategy()
 		{
 			_processNoiseParam = Param(nameof(ProcessNoise), 0.01m)
-				.SetGreaterThan(0.0001m)
+				.SetRange(0.0001m, 1)
 				.SetDisplay("Process Noise", "Process noise coefficient for Kalman filter", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.001m, 0.1m, 0.005m);
 
 			_measurementNoiseParam = Param(nameof(MeasurementNoise), 0.1m)
-				.SetGreaterThan(0.0001m)
+				.SetRange(0.0001m, 1)
 				.SetDisplay("Measurement Noise", "Measurement noise coefficient for Kalman filter", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.01m, 1.0m, 0.1m);

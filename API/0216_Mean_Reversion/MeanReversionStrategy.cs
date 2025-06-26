@@ -21,7 +21,7 @@ namespace StockSharp.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private MovingAverage _ma;
+		private SimpleMovingAverage _ma;
 		private StandardDeviation _stdDev;
 		
 		/// <summary>
@@ -99,8 +99,8 @@ namespace StockSharp.Strategies
 			base.OnStarted(time);
 			
 			// Initialize indicators
-			_ma = new MovingAverage { Length = MovingAveragePeriod };
-			_stdDev = new StandardDeviation { Length = MovingAveragePeriod };
+			_ma = new() { Length = MovingAveragePeriod };
+			_stdDev = new() { Length = MovingAveragePeriod };
 			
 			// Create candles subscription
 			var subscription = SubscribeCandles(CandleType);
