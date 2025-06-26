@@ -99,14 +99,10 @@ namespace StockSharp.Samples.Strategies
 				.SetCategories("Indicators");
 
 			_volumePeriod = Param(nameof(VolumePeriod), 20)
-				.SetDisplayName("Volume Period")
-				.SetDescription("Period for volume average calculation")
-				.SetCategories("Indicators");
+				.SetDisplay("Volume Period", "Period for volume average calculation", "Indicators");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

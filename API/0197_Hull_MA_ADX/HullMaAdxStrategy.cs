@@ -72,28 +72,20 @@ namespace StockSharp.Samples.Strategies
 		public HullMaAdxStrategy()
 		{
 			_hmaPeriod = Param(nameof(HmaPeriod), 9)
-				.SetDisplayName("HMA Period")
-				.SetDescription("Period for Hull Moving Average calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("HMA Period", "Period for Hull Moving Average calculation", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 15, 2);
 
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetDisplayName("ADX Period")
-				.SetDescription("Period for Average Directional Movement Index")
-				.SetCategories("Indicators")
+				.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 20, 2);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for stop loss calculation")
-				.SetCategories("Risk Management");
+				.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

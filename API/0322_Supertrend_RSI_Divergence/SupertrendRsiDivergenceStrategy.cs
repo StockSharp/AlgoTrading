@@ -77,30 +77,22 @@ namespace StockSharp.Samples.Strategies
 		public SupertrendRsiDivergenceStrategy()
 		{
 			_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
-				.SetDisplayName("Supertrend Period")
-				.SetDescription("Supertrend ATR period")
-				.SetCategory("Supertrend")
+				.SetDisplay("Supertrend Period", "Supertrend ATR period", "Supertrend")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 20, 1);
 
 			_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3.0m)
-				.SetDisplayName("Supertrend Multiplier")
-				.SetDescription("Supertrend ATR multiplier")
-				.SetCategory("Supertrend")
+				.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend")
 				.SetCanOptimize(true)
 				.SetOptimize(2.0m, 5.0m, 0.5m);
 
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetDisplayName("RSI Period")
-				.SetDescription("RSI period for divergence detection")
-				.SetCategory("RSI")
+				.SetDisplay("RSI Period", "RSI period for divergence detection", "RSI")
 				.SetCanOptimize(true)
 				.SetOptimize(8, 20, 2);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />

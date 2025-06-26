@@ -75,30 +75,22 @@ namespace StockSharp.Samples.Strategies
 		public HullMaVolatilityContractionStrategy()
 		{
 			_hmaPeriod = Param(nameof(HmaPeriod), 9)
-				.SetDisplayName("Hull MA Period")
-				.SetDescription("Hull Moving Average period")
-				.SetCategory("Hull MA")
+				.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 20, 1);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetDescription("Period for ATR volatility calculation")
-				.SetCategory("Volatility")
+				.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Volatility")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 2);
 
 			_volatilityContractionFactor = Param(nameof(VolatilityContractionFactor), 2.0m)
-				.SetDisplayName("Volatility Contraction Factor")
-				.SetDescription("Standard deviation multiplier for volatility contraction")
-				.SetCategory("Volatility")
+				.SetDisplay("Volatility Contraction Factor", "Standard deviation multiplier for volatility contraction", "Volatility")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />

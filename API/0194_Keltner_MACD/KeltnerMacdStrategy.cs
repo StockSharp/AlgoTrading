@@ -112,51 +112,35 @@ namespace StockSharp.Samples.Strategies
 		public KeltnerMacdStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetDisplayName("EMA Period")
-				.SetDescription("Period for EMA calculation in Keltner Channel")
-				.SetCategories("Indicators")
+				.SetDisplay("EMA Period", "Period for EMA calculation in Keltner Channel", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
 			_multiplier = Param(nameof(Multiplier), 2m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for Keltner Channel bands")
-				.SetCategories("Indicators")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel bands", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3m, 0.5m);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetDescription("Period for ATR calculation in Keltner Channel")
-				.SetCategories("Indicators");
+				.SetDisplay("ATR Period", "Period for ATR calculation in Keltner Channel", "Indicators");
 
 			_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-				.SetDisplayName("MACD Fast Period")
-				.SetDescription("Fast EMA period for MACD calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-				.SetDisplayName("MACD Slow Period")
-				.SetDescription("Slow EMA period for MACD calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-				.SetDisplayName("MACD Signal Period")
-				.SetDescription("Signal line period for MACD calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetDisplayName("Stop Loss ATR Multiplier")
-				.SetDescription("ATR multiplier for stop loss calculation")
-				.SetCategories("Risk Management");
+				.SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

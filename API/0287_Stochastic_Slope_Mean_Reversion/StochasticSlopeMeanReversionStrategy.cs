@@ -100,51 +100,37 @@ namespace StockSharp.Samples.Strategies
 		public StochasticSlopeMeanReversionStrategy()
 		{
 			_stochPeriod = Param(nameof(StochPeriod), 14)
-				.SetDisplayName("Stoch Period")
-				.SetDescription("Stochastic oscillator period")
-				.SetCategory("Stochastic Settings")
+				.SetDisplay("Stoch Period", "Stochastic oscillator period", "Stochastic Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 30, 5);
 
 			_stochKPeriod = Param(nameof(StochKPeriod), 3)
-				.SetDisplayName("Stoch %K Period")
-				.SetDescription("Stochastic %K smoothing period")
-				.SetCategory("Stochastic Settings")
+				.SetDisplay("Stoch %K Period", "Stochastic %K smoothing period", "Stochastic Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1, 5, 1);
 
 			_stochDPeriod = Param(nameof(StochDPeriod), 3)
-				.SetDisplayName("Stoch %D Period")
-				.SetDescription("Stochastic %D smoothing period")
-				.SetCategory("Stochastic Settings")
+				.SetDisplay("Stoch %D Period", "Stochastic %D smoothing period", "Stochastic Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1, 5, 1);
 
 			_slopeLookback = Param(nameof(SlopeLookback), 20)
-				.SetDisplayName("Slope Lookback")
-				.SetDescription("Period for slope statistics")
-				.SetCategory("Slope Settings")
+				.SetDisplay("Slope Lookback", "Period for slope statistics", "Slope Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 2m)
-				.SetDisplayName("Threshold Multiplier")
-				.SetDescription("Standard deviation multiplier for entry threshold")
-				.SetCategory("Slope Settings")
+				.SetDisplay("Threshold Multiplier", "Standard deviation multiplier for entry threshold", "Slope Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetDisplayName("Stop Loss %")
-				.SetDescription("Stop loss as percentage of entry price")
-				.SetCategory("Risk Management")
+				.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />

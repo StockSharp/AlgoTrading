@@ -69,23 +69,17 @@ namespace StockSharp.Samples.Strategies
 		public DonchianSeasonalStrategy()
 		{
 			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetDisplayName("Donchian Period")
-				.SetDescription("Donchian Channel period")
-				.SetCategory("Donchian")
+				.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 				
 			_seasonalThreshold = Param(nameof(SeasonalThreshold), 0.5m)
-				.SetDisplayName("Seasonal Threshold")
-				.SetDescription("Seasonal strength threshold for entry")
-				.SetCategory("Seasonal")
+				.SetDisplay("Seasonal Threshold", "Seasonal strength threshold for entry", "Seasonal")
 				.SetCanOptimize(true)
 				.SetOptimize(0.2m, 1.0m, 0.1m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 				
 			// Initialize monthly returns with neutral values
 			foreach (Month month in Enum.GetValues(typeof(Month)))

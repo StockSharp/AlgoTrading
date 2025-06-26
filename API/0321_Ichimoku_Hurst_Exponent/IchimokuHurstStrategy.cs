@@ -117,23 +117,17 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(40, 70, 5);
 				
 			_hurstPeriod = Param(nameof(HurstPeriod), 100)
-				.SetDisplayName("Hurst Period")
-				.SetDescription("Hurst exponent calculation period")
-				.SetCategory("Hurst Exponent")
+				.SetDisplay("Hurst Period", "Hurst exponent calculation period", "Hurst Exponent")
 				.SetCanOptimize(true)
 				.SetOptimize(50, 200, 10);
 				
 			_hurstThreshold = Param(nameof(HurstThreshold), 0.5m)
-				.SetDisplayName("Hurst Threshold")
-				.SetDescription("Hurst exponent threshold for trend strength")
-				.SetCategory("Hurst Exponent")
+				.SetDisplay("Hurst Threshold", "Hurst exponent threshold for trend strength", "Hurst Exponent")
 				.SetCanOptimize(true)
 				.SetOptimize(0.45m, 0.6m, 0.05m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />

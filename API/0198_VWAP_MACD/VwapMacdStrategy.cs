@@ -80,21 +80,15 @@ namespace StockSharp.Samples.Strategies
 		public VwapMacdStrategy()
 		{
 			_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-				.SetDisplayName("MACD Fast Period")
-				.SetDescription("Fast EMA period for MACD calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("MACD Fast Period", "Fast EMA period for MACD calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-				.SetDisplayName("MACD Slow Period")
-				.SetDescription("Slow EMA period for MACD calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("MACD Slow Period", "Slow EMA period for MACD calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-				.SetDisplayName("MACD Signal Period")
-				.SetDescription("Signal line period for MACD calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("MACD Signal Period", "Signal line period for MACD calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
@@ -103,9 +97,7 @@ namespace StockSharp.Samples.Strategies
 				.SetCategories("Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

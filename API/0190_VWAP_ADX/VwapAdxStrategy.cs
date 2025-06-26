@@ -63,16 +63,12 @@ namespace StockSharp.Samples.Strategies
 				.SetCategories("Risk Management");
 
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetDisplayName("ADX Period")
-				.SetDescription("Period for Average Directional Movement Index")
-				.SetCategories("Indicators")
+				.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 20, 1);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

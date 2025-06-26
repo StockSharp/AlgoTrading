@@ -101,23 +101,17 @@ namespace StockSharp.Samples.Strategies
 		public KeltnerKalmanStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetDisplayName("EMA Period")
-				.SetDescription("EMA period for Keltner Channel")
-				.SetCategory("Keltner Channel")
+				.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner Channel")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetDescription("ATR period for Keltner Channel")
-				.SetCategory("Keltner Channel")
+				.SetDisplay("ATR Period", "ATR period for Keltner Channel", "Keltner Channel")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 20, 2);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for Keltner Channel")
-				.SetCategory("Keltner Channel")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel", "Keltner Channel")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);
 				
@@ -136,9 +130,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(0.01m, 1.0m, 0.05m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 				
 			// Initialize Kalman filter
 			_kalmanEstimate = 0;

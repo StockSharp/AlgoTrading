@@ -71,30 +71,22 @@ namespace StockSharp.Samples.Strategies
 		public VwapAdxTrendStrategy()
 		{
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetDisplayName("ADX Period")
-				.SetDescription("Period for ADX and Directional Index calculations")
-				.SetCategory("ADX")
+				.SetDisplay("ADX Period", "Period for ADX and Directional Index calculations", "ADX")
 				.SetCanOptimize(true)
 				.SetOptimize(8, 20, 2);
 
 			_adxThreshold = Param(nameof(AdxThreshold), 25m)
-				.SetDisplayName("ADX Threshold")
-				.SetDescription("ADX threshold for trend strength entry")
-				.SetCategory("ADX")
+				.SetDisplay("ADX Threshold", "ADX threshold for trend strength entry", "ADX")
 				.SetCanOptimize(true)
 				.SetOptimize(20m, 40m, 5m);
 				
 			_adxExitThreshold = Param(nameof(AdxExitThreshold), 20m)
-				.SetDisplayName("ADX Exit Threshold")
-				.SetDescription("ADX threshold for trend strength exit")
-				.SetCategory("ADX")
+				.SetDisplay("ADX Exit Threshold", "ADX threshold for trend strength exit", "ADX")
 				.SetCanOptimize(true)
 				.SetOptimize(10m, 25m, 5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />

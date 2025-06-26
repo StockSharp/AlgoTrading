@@ -86,28 +86,20 @@ namespace StockSharp.Samples.Strategies
 		public BollingerKMeansStrategy()
 		{
 			_bollingerLength = Param(nameof(BollingerLength), 20)
-				.SetDisplayName("Bollinger Length")
-				.SetDescription("Length of the Bollinger Bands indicator")
-				.SetCategory("Indicators")
+				.SetDisplay("Bollinger Length", "Length of the Bollinger Bands indicator", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-				.SetDisplayName("Bollinger Deviation")
-				.SetDescription("Standard deviation multiplier for Bollinger Bands")
-				.SetCategory("Indicators")
+				.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 				
 			_kMeansHistoryLength = Param(nameof(KMeansHistoryLength), 50)
-				.SetDisplayName("K-Means History Length")
-				.SetDescription("Length of history for K-Means clustering")
-				.SetCategory("Clustering")
+				.SetDisplay("K-Means History Length", "Length of history for K-Means clustering", "Clustering")
 				.SetCanOptimize(true)
 				.SetOptimize(30, 100, 10);
 		}

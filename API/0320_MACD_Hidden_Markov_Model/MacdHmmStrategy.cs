@@ -92,35 +92,25 @@ namespace StockSharp.Samples.Strategies
 		public MacdHmmStrategy()
 		{
 			_macdFast = Param(nameof(MacdFast), 12)
-				.SetDisplayName("MACD Fast Period")
-				.SetDescription("Fast EMA period for MACD")
-				.SetCategory("Indicators")
+				.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(8, 20, 2);
 
 			_macdSlow = Param(nameof(MacdSlow), 26)
-				.SetDisplayName("MACD Slow Period")
-				.SetDescription("Slow EMA period for MACD")
-				.SetCategory("Indicators")
+				.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 40, 2);
 
 			_macdSignal = Param(nameof(MacdSignal), 9)
-				.SetDisplayName("MACD Signal Period")
-				.SetDescription("Signal EMA period for MACD")
-				.SetCategory("Indicators")
+				.SetDisplay("MACD Signal Period", "Signal EMA period for MACD", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 15, 1);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).ToTimeFrameDataType())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Type of candles to use")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 				
 			_hmmHistoryLength = Param(nameof(HmmHistoryLength), 100)
-				.SetDisplayName("HMM History Length")
-				.SetDescription("Length of history for Hidden Markov Model")
-				.SetCategory("HMM Parameters")
+				.SetDisplay("HMM History Length", "Length of history for Hidden Markov Model", "HMM Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(50, 200, 10);
 		}

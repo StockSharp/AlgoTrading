@@ -80,32 +80,22 @@ namespace StockSharp.Samples.Strategies
 		public BollingerVolumeStrategy()
 		{
 			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-				.SetDisplayName("Bollinger Period")
-				.SetDescription("Period for Bollinger Bands calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-				.SetDisplayName("Bollinger Deviation")
-				.SetDescription("Standard deviation multiplier for Bollinger Bands")
-				.SetCategories("Indicators")
+				.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3m, 0.5m);
 
 			_volumePeriod = Param(nameof(VolumePeriod), 20)
-				.SetDisplayName("Volume Period")
-				.SetDescription("Period for volume average calculation")
-				.SetCategories("Indicators");
+				.SetDisplay("Volume Period", "Period for volume average calculation", "Indicators");
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetDisplayName("ATR Multiplier")
-				.SetDescription("ATR multiplier for stop loss calculation")
-				.SetCategories("Risk Management");
+				.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

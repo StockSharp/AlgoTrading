@@ -69,16 +69,12 @@ namespace StockSharp.Samples.Strategies
 		public DonchianRsiStrategy()
 		{
 			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetDisplayName("Donchian Period")
-				.SetDescription("Period for Donchian Channel calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("Donchian Period", "Period for Donchian Channel calculation", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetDisplayName("RSI Period")
-				.SetDescription("Period for Relative Strength Index calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("RSI Period", "Period for Relative Strength Index calculation", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
@@ -88,9 +84,7 @@ namespace StockSharp.Samples.Strategies
 				.SetCategories("Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />

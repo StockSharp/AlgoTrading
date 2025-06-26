@@ -88,39 +88,27 @@ namespace StockSharp.Samples.Strategies
 		public ParabolicSarStochasticStrategy()
 		{
 			_sarAcceleration = Param(nameof(SarAcceleration), 0.02m)
-				.SetDisplayName("SAR Acceleration")
-				.SetDescription("Acceleration factor for Parabolic SAR")
-				.SetCategories("Indicators")
+				.SetDisplay("SAR Acceleration", "Acceleration factor for Parabolic SAR", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(0.01m, 0.05m, 0.01m);
 
 			_sarMaxAcceleration = Param(nameof(SarMaxAcceleration), 0.2m)
-				.SetDisplayName("SAR Max Acceleration")
-				.SetDescription("Maximum acceleration factor for Parabolic SAR")
-				.SetCategories("Indicators")
+				.SetDisplay("SAR Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(0.1m, 0.3m, 0.05m);
 
 			_stochPeriod = Param(nameof(StochPeriod), 14)
-				.SetDisplayName("Stochastic Period")
-				.SetDescription("Period for Stochastic Oscillator calculation")
-				.SetCategories("Indicators")
+				.SetDisplay("Stochastic Period", "Period for Stochastic Oscillator calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_stochKPeriod = Param(nameof(StochKPeriod), 3)
-				.SetDisplayName("Stochastic %K Period")
-				.SetDescription("Period for %K line calculation")
-				.SetCategories("Indicators");
+				.SetDisplay("Stochastic %K Period", "Period for %K line calculation", "Indicators");
 
 			_stochDPeriod = Param(nameof(StochDPeriod), 3)
-				.SetDisplayName("Stochastic %D Period")
-				.SetDescription("Period for %D line calculation")
-				.SetCategories("Indicators");
+				.SetDisplay("Stochastic %D Period", "Period for %D line calculation", "Indicators");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetDescription("Timeframe of data for strategy")
-				.SetCategories("General");
+				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
 		}
 
 		/// <inheritdoc />
