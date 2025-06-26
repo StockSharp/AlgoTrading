@@ -172,7 +172,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Update ATR average
-			var atrAvgValue = _atrAvg.Process(new DecimalIndicatorValue(atrValue)).Value;
+			var atrAvgValue = _atrAvg.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).Value;
 			
 			// Determine candle direction
 			bool isBullishCandle = candle.ClosePrice > candle.OpenPrice;

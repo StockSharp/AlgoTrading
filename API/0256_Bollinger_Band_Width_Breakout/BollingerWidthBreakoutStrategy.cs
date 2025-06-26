@@ -178,7 +178,7 @@ namespace StockSharp.Strategies
 			var width = upperBand - lowerBand;
 			
 			// Process width through average
-			var widthAvgValue = _widthAverage.Process(new DecimalIndicatorValue(width));
+			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
 			var avgWidth = widthAvgValue.GetValue<decimal>();
 			
 			// For first values, just save and skip

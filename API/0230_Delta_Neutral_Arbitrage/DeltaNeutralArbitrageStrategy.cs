@@ -206,8 +206,8 @@ namespace StockSharp.Samples.Strategies
 			_currentSpread = _lastAsset1Price - _lastAsset2Price;
 
 			// Process the spread with our indicators
-			var spreadValue = _spreadSma.Process(new DecimalIndicatorValue(_currentSpread));
-			var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_currentSpread));
+			var spreadValue = _spreadSma.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevValue = _spreadStdDev.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Check if indicators are formed
 			if (!_spreadSma.IsFormed || !_spreadStdDev.IsFormed)

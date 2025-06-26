@@ -137,12 +137,12 @@ namespace StockSharp.Strategies
 			var volume = candle.TotalVolume;
 			
 			// Calculate volume average
-			var avgValue = _volumeAverage.Process(new DecimalIndicatorValue(volume));
+			var avgValue = _volumeAverage.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished);
 			var avgVolume = avgValue.GetValue<decimal>();
 			
 			// Calculate standard deviation approximation
 			var deviation = Math.Abs(volume - avgVolume);
-			var stdDevValue = _volumeStdDev.Process(new DecimalIndicatorValue(deviation));
+			var stdDevValue = _volumeStdDev.Process(deviation, candle.ServerTime, candle.State == CandleStates.Finished);
 			var stdDev = stdDevValue.GetValue<decimal>();
 			
 			// Skip the first N candles until we have enough data

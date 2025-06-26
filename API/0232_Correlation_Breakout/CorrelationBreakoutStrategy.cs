@@ -233,7 +233,7 @@ namespace StockSharp.Samples.Strategies
 			_lastCorrelation = CalculatePearsonCorrelation(_asset1Prices, _asset2Prices);
 
 			// Process correlation through the indicator
-			var stdDevValue = _corrStdDev.Process(new DecimalIndicatorValue(_lastCorrelation));
+			var stdDevValue = _corrStdDev.Process(_lastCorrelation, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Move to next bar after first LookbackPeriod bars filled
 			if (!_corrStdDev.IsFormed)

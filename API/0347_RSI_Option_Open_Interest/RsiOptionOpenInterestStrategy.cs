@@ -192,11 +192,11 @@ namespace StockSharp.Samples.Strategies
 			SimulateOptionOI(candle);
 
 			// Process option OI with indicators
-			var callOiValueSma = _callOiSma.Process(new DecimalIndicatorValue(_currentCallOi));
-			var putOiValueSma = _putOiSma.Process(new DecimalIndicatorValue(_currentPutOi));
+			var callOiValueSma = _callOiSma.Process(_currentCallOi, candle.ServerTime, candle.State == CandleStates.Finished);
+			var putOiValueSma = _putOiSma.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
 			
-			var callOiValueStdDev = _callOiStdDev.Process(new DecimalIndicatorValue(_currentCallOi));
-			var putOiValueStdDev = _putOiStdDev.Process(new DecimalIndicatorValue(_currentPutOi));
+			var callOiValueStdDev = _callOiStdDev.Process(_currentCallOi, candle.ServerTime, candle.State == CandleStates.Finished);
+			var putOiValueStdDev = _putOiStdDev.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Update state variables
 			_avgCallOi = callOiValueSma.GetValue<decimal>();

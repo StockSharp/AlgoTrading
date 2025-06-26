@@ -195,8 +195,8 @@ namespace StockSharp.Samples.Strategies
 			_lastWidth = width;
 
 			// Calculate width's average and standard deviation
-			var widthAvg = _widthAvg.Process(new DecimalIndicatorValue(width));
-			var widthStdDev = _widthStdDev.Process(new DecimalIndicatorValue(width));
+			var widthAvg = _widthAvg.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
+			var widthStdDev = _widthStdDev.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			if (widthAvg.IsFinal && widthStdDev.IsFinal)
 			{

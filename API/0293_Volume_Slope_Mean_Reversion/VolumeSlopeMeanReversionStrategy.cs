@@ -163,7 +163,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Process volume through SMA
-			var volumeIndicatorValue = _volumeMa.Process(new DecimalIndicatorValue(candle.TotalVolume));
+			var volumeIndicatorValue = _volumeMa.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			// Skip if indicator is not formed yet
 			if (!_volumeMa.IsFormed)

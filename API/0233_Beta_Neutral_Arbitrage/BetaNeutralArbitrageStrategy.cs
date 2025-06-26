@@ -247,8 +247,8 @@ namespace StockSharp.Samples.Strategies
 			_lastSpread = betaAdjustedAsset1 - betaAdjustedAsset2;
 
 			// Process through indicators
-			var smaValue = _spreadSma.Process(new DecimalIndicatorValue(_lastSpread));
-			var stdDevValue = _spreadStdDev.Process(new DecimalIndicatorValue(_lastSpread));
+			var smaValue = _spreadSma.Process(_lastSpread, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevValue = _spreadStdDev.Process(_lastSpread, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Update counter
 			_barCount++;

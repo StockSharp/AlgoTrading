@@ -179,11 +179,11 @@ namespace StockSharp.Samples.Strategies
 			_currentDistanceShort = _sarValue - candle.ClosePrice;
 			
 			// Calculate averages and standard deviations for both distances
-			var longDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_currentDistanceLong)).GetValue<decimal>();
-			var longDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_currentDistanceLong)).GetValue<decimal>();
+			var longDistanceAvg = _distanceAverage.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var longDistanceStdDev = _distanceStdDev.Process(_currentDistanceLong, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
-			var shortDistanceAvg = _distanceAverage.Process(new DecimalIndicatorValue(_currentDistanceShort)).GetValue<decimal>();
-			var shortDistanceStdDev = _distanceStdDev.Process(new DecimalIndicatorValue(_currentDistanceShort)).GetValue<decimal>();
+			var shortDistanceAvg = _distanceAverage.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var shortDistanceStdDev = _distanceStdDev.Process(_currentDistanceShort, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
 			// Skip the first value
 			if (_prevDistanceLong == 0 || _prevDistanceShort == 0)

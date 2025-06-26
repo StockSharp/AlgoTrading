@@ -149,7 +149,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Calculate OBV slope
-			var slopeValue = _obvSlope.Process(new DecimalIndicatorValue(obvValue));
+			var slopeValue = _obvSlope.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			if (!slopeValue.IsFinal)
 				return;
 

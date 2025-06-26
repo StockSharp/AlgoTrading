@@ -194,8 +194,8 @@ namespace StockSharp.Samples.Strategies
 			_currentCloudWidth = Math.Abs(senkouSpanA - senkouSpanB);
 			
 			// Calculate average and standard deviation of cloud width
-			var cloudWidthAverage = _cloudWidthAverage.Process(new DecimalIndicatorValue(_currentCloudWidth)).GetValue<decimal>();
-			var cloudWidthStdDev = _cloudWidthStdDev.Process(new DecimalIndicatorValue(_currentCloudWidth)).GetValue<decimal>();
+			var cloudWidthAverage = _cloudWidthAverage.Process(_currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var cloudWidthStdDev = _cloudWidthStdDev.Process(_currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
 			// Skip the first value
 			if (_prevCloudWidth == 0)

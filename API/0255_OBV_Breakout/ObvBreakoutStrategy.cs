@@ -142,7 +142,7 @@ namespace StockSharp.Strategies
 			var currentObv = obvValue.GetValue<decimal>();
 			
 			// Process OBV through average indicator
-			var obvAvgValue = _obvAverage.Process(new DecimalIndicatorValue(currentObv));
+			var obvAvgValue = _obvAverage.Process(currentObv, candle.ServerTime, candle.State == CandleStates.Finished);
 			var currentObvAvg = obvAvgValue.GetValue<decimal>();
 			
 			// For first values, just save and skip

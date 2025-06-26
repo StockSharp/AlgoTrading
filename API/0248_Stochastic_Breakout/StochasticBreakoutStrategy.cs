@@ -186,8 +186,8 @@ namespace StockSharp.Samples.Strategies
 			var stochValue = value.GetValue<decimal>();
 			
 			// Calculate average and standard deviation of stochastic
-			var stochAvgValue = _stochAverage.Process(new DecimalIndicatorValue(stochValue)).GetValue<decimal>();
-			var tempStdDevValue = _stochStdDev.Process(new DecimalIndicatorValue(stochValue)).GetValue<decimal>();
+			var stochAvgValue = _stochAverage.Process(stochValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
+			var tempStdDevValue = _stochStdDev.Process(stochValue, candle.ServerTime, candle.State == CandleStates.Finished).GetValue<decimal>();
 			
 			// First values initialization - skip trading decision
 			if (_prevStochValue == 0)

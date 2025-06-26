@@ -151,7 +151,7 @@ namespace StockSharp.Strategies
 			var currentAtr = atrValue.GetValue<decimal>();
 			
 			// Process ATR through average indicator
-			var atrAvgValue = _atrAverage.Process(new DecimalIndicatorValue(currentAtr));
+			var atrAvgValue = _atrAverage.Process(currentAtr, candle.ServerTime, candle.State == CandleStates.Finished);
 			var currentAtrAvg = atrAvgValue.GetValue<decimal>();
 			
 			// For first values, just save and skip
