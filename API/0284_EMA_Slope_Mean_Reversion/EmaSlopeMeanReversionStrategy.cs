@@ -80,9 +80,7 @@ namespace StockSharp.Samples.Strategies
 		public EmaSlopeMeanReversionStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetDisplayName("EMA Period")
-				.SetDescription("Exponential Moving Average period")
-				.SetCategory("EMA Settings")
+				.SetDisplay("EMA Period", "Exponential Moving Average period", "EMA Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
