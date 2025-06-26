@@ -89,38 +89,32 @@ namespace StockSharp.Samples.Strategies
 		public StochasticBreakoutStrategy()
 		{
 			_stochasticPeriod = Param(nameof(StochasticPeriod), 14)
-				.SetDisplayName("Stochastic Period")
-				.SetCategory("Stochastic")
+				.SetDisplay("Stochastic Period", "Stochastic oscillator period", "Stochastic")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 30, 5);
 
 			_kPeriod = Param(nameof(KPeriod), 3)
-				.SetDisplayName("K Period")
-				.SetCategory("Stochastic")
+				.SetDisplay("K Period", "Stochastic %K smoothing period", "Stochastic")
 				.SetCanOptimize(true)
 				.SetOptimize(1, 5, 1);
 
 			_dPeriod = Param(nameof(DPeriod), 3)
-				.SetDisplayName("D Period")
-				.SetCategory("Stochastic")
+				.SetDisplay("D Period", "Stochastic %D smoothing period", "Stochastic")
 				.SetCanOptimize(true)
 				.SetOptimize(1, 5, 1);
 
 			_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-				.SetDisplayName("Lookback Period")
-				.SetCategory("Breakout")
+				.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation", "Breakout")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-				.SetDisplayName("Deviation Multiplier")
-				.SetCategory("Breakout")
+				.SetDisplay("Deviation Multiplier", "Deviation multiplier for breakout detection", "Breakout")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Candle type for strategy", "General");
 		}
 
 		/// <inheritdoc />

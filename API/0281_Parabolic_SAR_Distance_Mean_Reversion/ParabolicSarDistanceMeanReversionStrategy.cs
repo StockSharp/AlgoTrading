@@ -85,32 +85,27 @@ namespace StockSharp.Samples.Strategies
 		public ParabolicSarDistanceMeanReversionStrategy()
 		{
 			_accelerationFactor = Param(nameof(AccelerationFactor), 0.02m)
-				.SetDisplayName("Acceleration Factor")
-				.SetCategory("Parabolic SAR")
+				.SetDisplay("Acceleration Factor", "Acceleration factor for Parabolic SAR", "Parabolic SAR")
 				.SetCanOptimize(true)
 				.SetOptimize(0.01m, 0.05m, 0.01m);
 
 			_accelerationLimit = Param(nameof(AccelerationLimit), 0.2m)
-				.SetDisplayName("Acceleration Limit")
-				.SetCategory("Parabolic SAR")
+				.SetDisplay("Acceleration Limit", "Acceleration limit for Parabolic SAR", "Parabolic SAR")
 				.SetCanOptimize(true)
 				.SetOptimize(0.1m, 0.3m, 0.05m);
 
 			_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-				.SetDisplayName("Lookback Period")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of distance", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-				.SetDisplayName("Deviation Multiplier")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Candle type for strategy", "General");
 		}
 
 		/// <inheritdoc />
@@ -222,6 +217,11 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Exit positions when distance returns to average
+			else if (Position < 0 && _currentDistanceShort < _prevDistanceAvgShort && _prevDistanceShort >= _prevDistanceAvgShort)
+			{
+				BuyMarket(Math.Abs(Position));
+				LogInfo($"Short distance returned to average: {_currentDistanceShort} < {_prevDistanceAvgShort}. Closing short position at {candle.ClosePrice}");
+			}
 			else if (Position < 0 && _currentDistanceShort < _prevDistanceAvgShort && _prevDistanceShort >= _prevDistanceAvgShort)
 			{
 				BuyMarket(Math.Abs(Position));

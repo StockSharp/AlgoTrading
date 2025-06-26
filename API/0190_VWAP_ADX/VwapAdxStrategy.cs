@@ -58,9 +58,7 @@ namespace StockSharp.Samples.Strategies
 		public VwapAdxStrategy()
 		{
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetDisplayName("Stop loss (%)")
-				.SetDescription("Stop loss percentage from entry price")
-				.SetCategories("Risk Management");
+				.SetDisplay("Stop loss (%)", "Stop loss percentage from entry price", "Risk Management");
 
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
 				.SetDisplay("ADX Period", "Period for Average Directional Movement Index", "Indicators")

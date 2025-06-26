@@ -94,38 +94,32 @@ namespace StockSharp.Samples.Strategies
 		public HullMaSlopeMeanReversionStrategy()
 		{
 			_hullPeriod = Param(nameof(HullPeriod), 9)
-				.SetDisplayName("Hull MA Period")
-				.SetCategory("Hull MA")
+				.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 20, 1);
 
 			_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-				.SetDisplayName("Lookback Period")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of slope", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-				.SetDisplayName("Deviation Multiplier")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplayName("ATR Period")
-				.SetCategory("Risk Management")
+				.SetDisplay("ATR Period", "ATR period for stop loss calculation", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-				.SetDisplayName("ATR Multiplier")
-				.SetCategory("Risk Management")
+				.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Candle type for strategy", "General");
 		}
 
 		/// <inheritdoc />

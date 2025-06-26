@@ -86,32 +86,27 @@ namespace StockSharp.Samples.Strategies
 		public SupertrendDistanceMeanReversionStrategy()
 		{
 			_atrPeriod = Param(nameof(AtrPeriod), 10)
-				.SetDisplayName("ATR Period")
-				.SetCategory("Supertrend")
+				.SetDisplay("ATR Period", "ATR period for Supertrend calculation", "Supertrend")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 20, 1);
 
 			_multiplier = Param(nameof(Multiplier), 3.0m)
-				.SetDisplayName("Multiplier")
-				.SetCategory("Supertrend")
+				.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Supertrend")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-				.SetDisplayName("Lookback Period")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of distance", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-				.SetDisplayName("Deviation Multiplier")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Candle type for strategy", "General");
 		}
 
 		/// <inheritdoc />

@@ -96,23 +96,17 @@ namespace StockSharp.Samples.Strategies
 		public IchimokuHurstStrategy()
 		{
 			_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-				.SetDisplayName("Tenkan Period")
-				.SetDescription("Tenkan-sen (conversion line) period")
-				.SetCategory("Ichimoku")
+				.SetDisplay("Tenkan Period", "Tenkan-sen (conversion line) period", "Ichimoku")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 15, 1);
 
 			_kijunPeriod = Param(nameof(KijunPeriod), 26)
-				.SetDisplayName("Kijun Period")
-				.SetDescription("Kijun-sen (base line) period")
-				.SetCategory("Ichimoku")
+				.SetDisplay("Kijun Period", "Kijun-sen (base line) period", "Ichimoku")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 40, 2);
 
 			_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-				.SetDisplayName("Senkou Span B Period")
-				.SetDescription("Senkou Span B (leading span B) period")
-				.SetCategory("Ichimoku")
+				.SetDisplay("Senkou Span B Period", "Senkou Span B (leading span B) period", "Ichimoku")
 				.SetCanOptimize(true)
 				.SetOptimize(40, 70, 5);
 				

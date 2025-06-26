@@ -80,32 +80,27 @@ namespace StockSharp.Samples.Strategies
 		public DonchianWidthMeanReversionStrategy()
 		{
 			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetDisplayName("Donchian Period")
-				.SetCategory("Donchian")
+				.SetDisplay("Donchian Period", "Donchian Channel period", "Donchian")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-				.SetDisplayName("Lookback Period")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of width", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-				.SetDisplayName("Deviation Multiplier")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetDisplayName("Stop Loss %")
-				.SetCategory("Risk Management")
+				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Candle type for strategy", "General");
 		}
 
 		/// <inheritdoc />

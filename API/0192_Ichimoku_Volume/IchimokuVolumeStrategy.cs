@@ -84,19 +84,13 @@ namespace StockSharp.Samples.Strategies
 		public IchimokuVolumeStrategy()
 		{
 			_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-				.SetDisplayName("Tenkan-sen Period")
-				.SetDescription("Period for Tenkan-sen calculation (Conversion Line)")
-				.SetCategories("Indicators");
+				.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen calculation (Conversion Line)", "Indicators");
 
 			_kijunPeriod = Param(nameof(KijunPeriod), 26)
-				.SetDisplayName("Kijun-sen Period")
-				.SetDescription("Period for Kijun-sen calculation (Base Line)")
-				.SetCategories("Indicators");
+				.SetDisplay("Kijun-sen Period", "Period for Kijun-sen calculation (Base Line)", "Indicators");
 
 			_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-				.SetDisplayName("Senkou Span B Period")
-				.SetDescription("Period for Senkou Span B calculation (2nd Leading Span)")
-				.SetCategories("Indicators");
+				.SetDisplay("Senkou Span B Period", "Period for Senkou Span B calculation (2nd Leading Span)", "Indicators");
 
 			_volumePeriod = Param(nameof(VolumePeriod), 20)
 				.SetDisplay("Volume Period", "Period for volume average calculation", "Indicators");

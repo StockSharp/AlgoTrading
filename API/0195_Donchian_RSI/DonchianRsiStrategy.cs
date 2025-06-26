@@ -79,9 +79,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 21, 7);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetDisplayName("Stop Loss (%)")
-				.SetDescription("Stop loss percentage from entry price")
-				.SetCategories("Risk Management");
+				.SetDisplay("Stop Loss (%)", "Stop loss percentage from entry price", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");

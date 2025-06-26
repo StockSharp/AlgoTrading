@@ -90,38 +90,32 @@ namespace StockSharp.Samples.Strategies
 		public IchimokuCloudWidthMeanReversionStrategy()
 		{
 			_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-				.SetDisplayName("Tenkan Period")
-				.SetCategory("Ichimoku")
+				.SetDisplay("Tenkan Period", "Tenkan-sen (Conversion Line) period", "Ichimoku")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 20, 1);
 
 			_kijunPeriod = Param(nameof(KijunPeriod), 26)
-				.SetDisplayName("Kijun Period")
-				.SetCategory("Ichimoku")
+				.SetDisplay("Kijun Period", "Kijun-sen (Base Line) period", "Ichimoku")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 40, 2);
 
 			_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-				.SetDisplayName("Senkou Span B Period")
-				.SetCategory("Ichimoku")
+				.SetDisplay("Senkou Span B Period", "Senkou Span B (Leading Span B) period", "Ichimoku")
 				.SetCanOptimize(true)
 				.SetOptimize(40, 80, 4);
 
 			_lookbackPeriod = Param(nameof(LookbackPeriod), 20)
-				.SetDisplayName("Lookback Period")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Lookback Period", "Lookback period for calculating the average and standard deviation of cloud width", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
-				.SetDisplayName("Deviation Multiplier")
-				.SetCategory("Mean Reversion")
+				.SetDisplay("Deviation Multiplier", "Deviation multiplier for mean reversion detection", "Mean Reversion")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplayName("Candle Type")
-				.SetCategory("General");
+				.SetDisplay("Candle Type", "Candle type for strategy", "General");
 		}
 
 		/// <inheritdoc />
@@ -203,8 +197,6 @@ namespace StockSharp.Samples.Strategies
 				_prevCloudWidth = _currentCloudWidth;
 				_prevCloudWidthAverage = cloudWidthAverage;
 				_prevCloudWidthStdDev = cloudWidthStdDev;
-		}
-	}
 				return;
 			}
 			
@@ -230,37 +222,37 @@ namespace StockSharp.Samples.Strategies
 			}
 			// When cloud is widening (expansion)
 			else if (_currentCloudWidth > wideThreshold && _prevCloudWidth <= wideThreshold && Position == 0)
-{
-	// Determine direction based on price position relative to cloud
-	if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
-	{
-		SellMarket(Volume);
-		LogInfo($"Ichimoku cloud expansion (bearish): {_currentCloudWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
-	}
-	else if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
-	{
-		BuyMarket(Volume);
-		LogInfo($"Ichimoku cloud expansion (bullish): {_currentCloudWidth} > {wideThreshold}. Buying at {candle.ClosePrice}");
-	}
-}
+			{
+				// Determine direction based on price position relative to cloud
+				if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
+				{
+					SellMarket(Volume);
+					LogInfo($"Ichimoku cloud expansion (bearish): {_currentCloudWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
+				}
+				else if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
+				{
+					BuyMarket(Volume);
+					LogInfo($"Ichimoku cloud expansion (bullish): {_currentCloudWidth} > {wideThreshold}. Buying at {candle.ClosePrice}");
+				}
+			}
 
-// Exit positions when width returns to average
-else if (_currentCloudWidth >= 0.9m * _prevCloudWidthAverage &&
-	 _currentCloudWidth <= 1.1m * _prevCloudWidthAverage &&
-	 (_prevCloudWidth < 0.9m * _prevCloudWidthAverage || _prevCloudWidth > 1.1m * _prevCloudWidthAverage) &&
-	 (Position != 0))
-{
-	if (Position > 0)
-	{
-		SellMarket(Math.Abs(Position));
-		LogInfo($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing long position at {candle.ClosePrice}");
-	}
-	else if (Position < 0)
-	{
-		BuyMarket(Math.Abs(Position));
-		LogInfo($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing short position at {candle.ClosePrice}");
+			// Exit positions when width returns to average
+			else if (_currentCloudWidth >= 0.9m * _prevCloudWidthAverage &&
+					 _currentCloudWidth <= 1.1m * _prevCloudWidthAverage &&
+					 (_prevCloudWidth < 0.9m * _prevCloudWidthAverage || _prevCloudWidth > 1.1m * _prevCloudWidthAverage) &&
+					 (Position != 0))
+			{
+				if (Position > 0)
+				{
+					SellMarket(Math.Abs(Position));
+					LogInfo($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing long position at {candle.ClosePrice}");
+				}
+				else if (Position < 0)
+				{
+					BuyMarket(Math.Abs(Position));
+					LogInfo($"Ichimoku cloud width returned to average: {_currentCloudWidth} ≈ {_prevCloudWidthAverage}. Closing short position at {candle.ClosePrice}");
+				}
+			}
+		}
 	}
 }
-			}
-			}
-			}
