@@ -169,7 +169,7 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Volume is significantly below average - expecting a return to average trading activity
-				if (currentVolume < _avgVolume - _deviationMultiplier * _stdDevVolume)
+				if (currentVolume < _avgVolume - DeviationMultiplier * _stdDevVolume)
 				{
 					// In low volume environments, we might look for potential market accumulation
 					// and follow the small price movement which could be institutional accumulation
@@ -185,7 +185,7 @@ namespace StockSharp.Strategies
 					}
 				}
 				// Volume is significantly above average - potential high volume climax
-				else if (currentVolume > _avgVolume + _deviationMultiplier * _stdDevVolume)
+				else if (currentVolume > _avgVolume + DeviationMultiplier * _stdDevVolume)
 				{
 					// High volume often indicates climactic moves that might reverse
 					// So we consider going against the price direction on high volume bars

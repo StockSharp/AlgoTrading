@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _adxPeriod;
 		private readonly StrategyParam<DataType> _candleType;
 
-		private AverageDirectionalMovementIndex _adx;
+		private AverageDirectionalIndex _adx;
 		private decimal _prevAdxValue;
 
 		/// <summary>
@@ -81,7 +81,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create ADX indicator
-			_adx = new AverageDirectionalMovementIndex { Length = AdxPeriod };
+			_adx = new() { Length = AdxPeriod };
 
 			// Enable position protection
 			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
