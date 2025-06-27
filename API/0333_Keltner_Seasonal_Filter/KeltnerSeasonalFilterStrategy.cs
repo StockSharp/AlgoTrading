@@ -82,7 +82,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("ATR Period", "Period for ATR in Keltner Channel", "Indicator Settings");
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetGreaterThan(0)
+				.SetGreaterThanZero
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR to set channel width", "Indicator Settings");
 
 			_seasonalThreshold = Param(nameof(SeasonalThreshold), 0.5m)

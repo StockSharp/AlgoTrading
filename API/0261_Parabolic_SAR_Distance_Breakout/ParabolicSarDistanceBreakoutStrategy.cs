@@ -82,13 +82,13 @@ namespace StockSharp.Samples.Strategies
 		public ParabolicSarDistanceBreakoutStrategy()
 		{
 			_acceleration = Param(nameof(Acceleration), 0.02m)
-				.SetGreaterThan(0)
+				.SetGreaterThanZero
 				.SetDisplay("Acceleration", "Initial acceleration factor for Parabolic SAR", "Indicator Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.01m, 0.05m, 0.01m);
 
 			_maxAcceleration = Param(nameof(MaxAcceleration), 0.2m)
-				.SetGreaterThan(0)
+				.SetGreaterThanZero
 				.SetDisplay("Max Acceleration", "Maximum acceleration factor for Parabolic SAR", "Indicator Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.1m, 0.5m, 0.1m);
@@ -100,7 +100,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
-				.SetGreaterThan(0)
+				.SetGreaterThanZero
 				.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1m, 3m, 0.5m);

@@ -86,7 +86,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Hurst Threshold", "Minimum Hurst Exponent value for trend persistence (>0.5 is trending)", "Indicator Settings");
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetGreaterThan(0)
+				.SetGreaterThanZero
 				.SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
