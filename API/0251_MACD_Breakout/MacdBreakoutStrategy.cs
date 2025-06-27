@@ -207,9 +207,8 @@ namespace StockSharp.Samples.Strategies
 			var macdHistValue = macdValues[2];
 			
 			// Process indicators for MACD histogram
-			var macdHistInput = new DecimalIndicatorValue(macdHistValue);
-			var macdHistSmaValue = _macdHistSma.Process(macdHistInput).ToDecimal();
-			var macdHistStdDevValue = _macdHistStdDev.Process(macdHistInput).ToDecimal();
+			var macdHistSmaValue = _macdHistSma.Process(macdHistValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var macdHistStdDevValue = _macdHistStdDev.Process(macdHistValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Store previous values on first call
 			if (_prevMacdHistValue == 0 && _prevMacdHistSmaValue == 0)
