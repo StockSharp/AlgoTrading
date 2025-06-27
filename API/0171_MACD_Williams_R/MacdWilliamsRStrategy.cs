@@ -127,13 +127,16 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = MacdFast },
-				SlowMa = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
-			};
 
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
+			};
 			var williamsR = new WilliamsR { Length = WilliamsRPeriod };
 
 			// Enable position protection with stop-loss

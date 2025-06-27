@@ -126,13 +126,15 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 			
 			// Initialize indicators
-			_macd = new MovingAverageConvergenceDivergence
+			_macd = new MovingAverageConvergenceDivergenceSignal
 			{
-				FastEma = new ExponentialMovingAverage { Length = FastEma },
-				SlowEma = new ExponentialMovingAverage { Length = SlowEma },
-				SignalMa = new ExponentialMovingAverage { Length = SignalMa }
+				Macd =
+				{
+					ShortMa = { Length = FastEma },
+					LongMa = { Length = SlowEma },
+				},
+				SignalMa = { Length = SignalMa }
 			};
-			
 			_macdHistSlope = new LinearRegression { Length = 2 }; // For calculating slope
 			
 			_prevSlopeValue = 0;
