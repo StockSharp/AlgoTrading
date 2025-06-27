@@ -5,12 +5,18 @@ VisualStudioVersion = 17.13.35919.96
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backtester", "Backtester\Backtester.csproj", "{6E807F9F-7701-4790-A919-0C45AE993F23}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StrategyTests", "StrategyTests\StrategyTests.csproj", "{EBCDAFC7-92AD-4484-8FE5-6EFB7DB4F877}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+                {EBCDAFC7-92AD-4484-8FE5-6EFB7DB4F877}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+                {EBCDAFC7-92AD-4484-8FE5-6EFB7DB4F877}.Debug|Any CPU.Build.0 = Debug|Any CPU
+                {EBCDAFC7-92AD-4484-8FE5-6EFB7DB4F877}.Release|Any CPU.ActiveCfg = Release|Any CPU
+                {EBCDAFC7-92AD-4484-8FE5-6EFB7DB4F877}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6E807F9F-7701-4790-A919-0C45AE993F23}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{6E807F9F-7701-4790-A919-0C45AE993F23}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6E807F9F-7701-4790-A919-0C45AE993F23}.Release|Any CPU.ActiveCfg = Release|Any CPU
