@@ -151,9 +151,8 @@ namespace StockSharp.Samples.Strategies
 					var stochK = stochValue.ToDecimal();
 					
 					// Calculate dynamic zones
-					var stochKInput = new DecimalIndicatorValue(stochK);
-					var stochKAvg = stochSma.Process(stochKInput).ToDecimal();
-					var stochKStdDev = stochStdDev.Process(stochKInput).ToDecimal();
+					var stochKAvg = stochSma.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					var stochKStdDev = stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					var dynamicOversold = stochKAvg - (StandardDeviationFactor * stochKStdDev);
 					var dynamicOverbought = stochKAvg + (StandardDeviationFactor * stochKStdDev);

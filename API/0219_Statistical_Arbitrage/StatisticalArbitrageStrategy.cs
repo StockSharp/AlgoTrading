@@ -226,10 +226,9 @@ namespace StockSharp.Strategies
 			
 			// Store current price
 			_lastSecondPrice = candle.ClosePrice;
-			
+		
 			// Process through MA indicator
-			var secondValue = new DecimalIndicatorValue(candle.ClosePrice);
-			_secondMA.Process(secondValue);
+			_secondMA.Process(candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished);
 		}
 	}
 }
