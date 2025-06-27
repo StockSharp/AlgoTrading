@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _hmmHistoryLength;
 		
-		private MovingAverageConvergenceDivergence _macd;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		
 		// Hidden Markov Model states
 		private enum MarketState
@@ -106,7 +106,7 @@ namespace StockSharp.Samples.Strategies
 				.SetCanOptimize(true)
 				.SetOptimize(7, 15, 1);
 
-			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).ToTimeFrameDataType())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 				
 			_hmmHistoryLength = Param(nameof(HmmHistoryLength), 100)

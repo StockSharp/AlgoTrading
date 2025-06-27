@@ -181,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process volume average indicator values.
 		/// </summary>
-		private void ProcessVolumeAverage(IIndicatorValue volumeAvgValue)
+		private void ProcessVolumeAverage(ICandleMessage candle, IIndicatorValue volumeAvgValue)
 		{
 			if (volumeAvgValue.IsFinal)
 			{
