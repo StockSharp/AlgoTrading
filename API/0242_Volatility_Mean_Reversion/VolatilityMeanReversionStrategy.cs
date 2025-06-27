@@ -180,7 +180,7 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Low volatility expecting increase - possibly prepare for a breakout
-				if (currentAtr < _avgAtr - _deviationMultiplier * _stdDevAtr)
+				if (currentAtr < _avgAtr - DeviationMultiplier * _stdDevAtr)
 				{
 					// In low volatility, follow the current short-term price direction
 					if (priceDirection == Sides.Buy)
@@ -201,7 +201,7 @@ namespace StockSharp.Strategies
 					);
 				}
 				// High volatility expecting decrease - possibly looking for market exhaustion
-				else if (currentAtr > _avgAtr + _deviationMultiplier * _stdDevAtr)
+				else if (currentAtr > _avgAtr + DeviationMultiplier * _stdDevAtr)
 				{
 					// In high volatility, consider going against the short-term trend
 					// as excessive volatility often leads to reversals

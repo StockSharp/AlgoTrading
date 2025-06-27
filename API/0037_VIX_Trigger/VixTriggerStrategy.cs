@@ -105,7 +105,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscriptions
 			var mainSubscription = SubscribeCandles(CandleType);
-			var vixSubscription = new Subscription(CandleType, VixSecurity);
+			var vixSubscription = SubscribeCandles(new Subscription(CandleType, VixSecurity));
 
 			// Bind indicator to main security candles
 			mainSubscription
@@ -114,12 +114,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Process VIX candles separately
 			vixSubscription
-				.WhenCandlesFinished(this)
-				.Do(ProcessVixCandle)
-				.Apply(this);
-
-			// Register subscriptions
-			Subscribe(vixSubscription);
+				.Bind(ProcessVixCandle)
+				.Start();
 
 			// Configure chart
 			var area = CreateChartArea();
