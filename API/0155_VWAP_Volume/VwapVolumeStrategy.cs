@@ -97,7 +97,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var vwap = new VWAP();
+			var vwap = new VolumeWeightedMovingAverage();
 			_volumeMA = new SimpleMovingAverage { Length = VolumePeriod };
 
 			// Create subscription
