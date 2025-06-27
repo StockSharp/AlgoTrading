@@ -106,7 +106,7 @@ namespace StockSharp.Samples.Strategies
 				.SetGreaterThanZero()
 				.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume Parameters");
 
-			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Atr))
+			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 				.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

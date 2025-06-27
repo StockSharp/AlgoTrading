@@ -103,7 +103,7 @@ namespace StockSharp.Samples.Strategies
 			_lowest = new Lowest { Length = LookbackPeriod };
 			
 			_breakoutDetected = false;
-			_breakoutSide = Sides.None;
+			_breakoutSide = default;
 			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
@@ -157,7 +157,7 @@ namespace StockSharp.Samples.Strategies
 						
 						// Reset breakout detection
 						_breakoutDetected = false;
-						_breakoutSide = Sides.None;
+						_breakoutSide = default;
 					}
 				}
 				else if (_breakoutSide == Sides.Sell)
@@ -173,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 						
 						// Reset breakout detection
 						_breakoutDetected = false;
-						_breakoutSide = Sides.None;
+						_breakoutSide = default;
 					}
 				}
 				
@@ -182,13 +182,13 @@ namespace StockSharp.Samples.Strategies
 				{
 					LogInfo($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
 					_breakoutDetected = false;
-					_breakoutSide = Sides.None;
+					_breakoutSide = default;
 				}
 				else if (_breakoutSide == Sides.Sell && candle.ClosePrice < _breakoutPrice * 0.99m)
 				{
 					LogInfo($"Breakout appears genuine, not a false breakout. Abandoning the setup.");
 					_breakoutDetected = false;
-					_breakoutSide = Sides.None;
+					_breakoutSide = default;
 				}
 			}
 			else

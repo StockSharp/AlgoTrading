@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -123,9 +123,9 @@ namespace StockSharp.Strategies
 		
 		private void ProcessLevel1(Level1ChangeMessage level1)
 		{
-			if (level1.TryGetValue(Level1Fields.VWAP, out var vwap))
+			if (level1.Changes.TryGetValue(Level1Fields.VWAP, out var vwap))
 			{
-				_currentVwap = vwap.Value;
+				_currentVwap = (decimal)vwap;
 			}
 		}
 		

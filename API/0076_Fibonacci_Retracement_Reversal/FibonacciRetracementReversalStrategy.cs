@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies
 	public class FibonacciRetracementReversalStrategy : Strategy
 	{
 		// Fibonacci retracement levels
-		private readonly decimal[] _fibLevels = { 0.0m, 0.236m, 0.382m, 0.5m, 0.618m, 0.786m, 1.0m };
+		private readonly decimal[] _fibLevels = [0.0m, 0.236m, 0.382m, 0.5m, 0.618m, 0.786m, 1.0m];
 		
 		private readonly StrategyParam<int> _swingLookbackPeriod;
 		private readonly StrategyParam<decimal> _fibLevelBuffer;

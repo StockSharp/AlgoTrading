@@ -168,11 +168,11 @@ namespace StockSharp.Strategies
 			
 			// Process data
 			subscription1
-				.Do(ProcessSecurity1Candle)
+				.Bind(ProcessSecurity1Candle)
 				.Start();
 				
 			subscription2
-				.Do(ProcessSecurity2Candle)
+				.Bind(ProcessSecurity2Candle)
 				.Start();
 			
 			// Setup visualization

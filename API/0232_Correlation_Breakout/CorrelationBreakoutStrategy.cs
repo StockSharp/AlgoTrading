@@ -299,7 +299,7 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal GetPositionValue(Security security)
 		{
-			return security is null ? 0 : PositionManager.Positions.TryGetValue(security)?.Value ?? 0;
+			return GetPositionValue(security, Portfolio) ?? 0;
 		}
 	}
 }

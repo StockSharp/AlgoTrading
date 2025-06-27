@@ -101,7 +101,7 @@ namespace StockSharp.Samples.Strategies
 				.SetRange(1, 100)
 				.SetDisplay("RSI Overbought", "RSI level to consider market overbought", "RSI Parameters");
 
-			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Atr))
+			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 				.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

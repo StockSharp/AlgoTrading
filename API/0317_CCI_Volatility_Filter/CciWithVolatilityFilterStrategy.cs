@@ -118,8 +118,7 @@ namespace StockSharp.Samples.Strategies
 				.Bind(cci, atr, (candle, cciValue, atrValue) =>
 				{
 					// Calculate ATR average
-					var atrInput = new DecimalIndicatorValue(atrValue);
-					var atrAvg = atrSma.Process(atrInput).ToDecimal();
+					var atrAvg = atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(candle, cciValue, atrValue, atrAvg);
