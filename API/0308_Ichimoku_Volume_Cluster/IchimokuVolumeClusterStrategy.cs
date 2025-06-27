@@ -150,10 +150,9 @@ namespace StockSharp.Samples.Strategies
 			volumeSubscription
 				.BindEx(subscription, candle => {
 					var volume = candle.TotalVolume;
-					var volumeIndicatorValue = new DecimalIndicatorValue(volume);
-					
-					volumeAvg.Process(volumeIndicatorValue);
-					volumeStdDev.Process(volumeIndicatorValue);
+
+					volumeAvg.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished);
+					volumeStdDev.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished);
 				})
 				.Start();
 

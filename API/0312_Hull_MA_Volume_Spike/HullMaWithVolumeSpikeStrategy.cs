@@ -110,9 +110,8 @@ namespace StockSharp.Samples.Strategies
 				.BindEx(hma, (candle, hmaValue) => 
 				{
 					// Process volume indicators
-					var volumeValue = new DecimalIndicatorValue(candle.TotalVolume);
-					var volumeSmaValue = volumeSma.Process(volumeValue);
-					var volumeStdDevValue = volumeStdDev.Process(volumeValue);
+					var volumeSmaValue = volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
+					var volumeStdDevValue = volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished);
 					
 					// Process the strategy logic
 					ProcessStrategy(

@@ -174,9 +174,8 @@ namespace StockSharp.Samples.Strategies
 					var histogram = macd - signal;
 					
 					// Process the histogram through the statistics indicators
-					var decimalValue = new DecimalIndicatorValue(histogram);
-					histAvg.Process(decimalValue);
-					histStdDev.Process(decimalValue);
+					histAvg.Process(histogram, macdValue.Time, macdValue.IsFinal);
+					histStdDev.Process(histogram, macdValue.Time, macdValue.IsFinal);
 				})
 				.Start();
 

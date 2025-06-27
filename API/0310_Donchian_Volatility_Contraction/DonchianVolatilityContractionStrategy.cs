@@ -128,10 +128,8 @@ namespace StockSharp.Samples.Strategies
 					_currentDcWidth = highPrice - lowPrice;
 					
 					// Process SMA and StdDev for the channel width
-					var smaInput = new DecimalIndicatorValue(_currentDcWidth);
-					var smaValue = sma.Process(smaInput);
-					var stdDevInput = new DecimalIndicatorValue(_currentDcWidth);
-					var stdDevValue = standardDeviation.Process(stdDevInput);
+					var smaValue = sma.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+					var stdDevValue = standardDeviation.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
 					
 					_avgDcWidth = smaValue.ToDecimal();
 					_stdDevDcWidth = stdDevValue.ToDecimal();
