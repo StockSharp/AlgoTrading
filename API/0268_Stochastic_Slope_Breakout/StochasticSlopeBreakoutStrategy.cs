@@ -125,13 +125,13 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
-				.SetGreaterThanZero
+				.SetGreaterThanZero()
 				.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1m, 3m, 0.5m);
 				
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetGreaterThanZero
+				.SetGreaterThanZero()
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

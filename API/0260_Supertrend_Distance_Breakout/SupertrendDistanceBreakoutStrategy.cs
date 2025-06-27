@@ -90,7 +90,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(5, 20, 1);
 
 			_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
-				.SetGreaterThanZero
+				.SetGreaterThanZero()
 				.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend indicator", "Indicator Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1m, 5m, 0.5m);
@@ -102,7 +102,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 50, 5);
 
 			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2m)
-				.SetGreaterThanZero
+				.SetGreaterThanZero()
 				.SetDisplay("Deviation Multiplier", "Standard deviation multiplier for breakout detection", "Strategy Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1m, 3m, 0.5m);

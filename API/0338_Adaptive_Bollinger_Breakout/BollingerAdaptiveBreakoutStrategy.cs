@@ -94,11 +94,11 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Max Bollinger Period", "Maximum period for adaptive Bollinger Bands", "Indicator Settings");
 
 			_minBollingerDeviation = Param(nameof(MinBollingerDeviation), 1.5m)
-				.SetGreaterThanZero
+				.SetGreaterThanZero()
 				.SetDisplay("Min Bollinger Deviation", "Minimum standard deviation multiplier", "Indicator Settings");
 
 			_maxBollingerDeviation = Param(nameof(MaxBollingerDeviation), 2.5m)
-				.SetGreaterThanZero
+				.SetGreaterThanZero()
 				.SetDisplay("Max Bollinger Deviation", "Maximum standard deviation multiplier", "Indicator Settings");
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
