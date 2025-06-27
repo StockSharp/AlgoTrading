@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\common_versions.props" />
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MsTestSdkVer)" />
+    <PackageReference Include="MSTest.TestAdapter" Version="$(MsTestVer)" />
+    <PackageReference Include="MSTest.TestFramework" Version="$(MsTestVer)" />
+    <PackageReference Include="StockSharp.Algo" Version="$(StockSharpVer)" />
+    <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../API/**/*.cs" />
+  </ItemGroup>
+</Project>

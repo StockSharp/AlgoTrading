@@ -1,11 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\common_versions.props" />
 
   <PropertyGroup>
-    <LangVersion>13.0</LangVersion>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <StockSharpVer>5.*</StockSharpVer>
   </PropertyGroup>
 
   <ItemGroup>
