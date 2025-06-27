@@ -271,14 +271,14 @@ namespace StockSharp.Strategies
 				if (skewZScore > SkewThreshold && isPositiveMomentum)
 				{
 					// Sell options (overpriced volatility) when underlying has positive momentum
-					SellMarket(OptionSecurity, Volume);
+					SellMarket(Volume, OptionSecurity);
 					LogInfo($"SHORT OPTION: Skew Z-Score: {skewZScore:F2}, Momentum: Positive");
 				}
 				// Volatility is lower than normal (underpriced options) with negative momentum in underlying
 				else if (skewZScore < -SkewThreshold && !isPositiveMomentum)
 				{
 					// Buy options (underpriced volatility) when underlying has negative momentum
-					BuyMarket(OptionSecurity, Volume);
+					BuyMarket(Volume, OptionSecurity);
 					LogInfo($"LONG OPTION: Skew Z-Score: {skewZScore:F2}, Momentum: Negative");
 				}
 			}
