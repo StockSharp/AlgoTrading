@@ -65,17 +65,17 @@ namespace StockSharp.Samples.Strategies
 		{
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
 				.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
-				.SetRange(7, 28, 7)
+				.SetRange(7, 28)
 				.SetCanOptimize(true);
 				
 			_maPeriod = Param(nameof(MaPeriod), 20)
 				.SetDisplay("MA Period", "Period for moving average", "Indicators")
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetCanOptimize(true);
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetRange(1m, 3m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
