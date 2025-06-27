@@ -264,8 +264,8 @@ namespace StockSharp.Strategies
 					_entryPrice = _currentSpread;
 					
 					// Execute trades
-					BuyMarket(Security1, volume1);
-					SellMarket(Security2, volume2);
+					BuyMarket(volume1, Security1);
+					SellMarket(volume2, Security2);
 					
 					LogInfo($"LONG SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
 				}
@@ -280,8 +280,8 @@ namespace StockSharp.Strategies
 					_entryPrice = _currentSpread;
 					
 					// Execute trades
-					SellMarket(Security1, volume1);
-					BuyMarket(Security2, volume2);
+					SellMarket(volume1, Security1);
+					BuyMarket(volume2, Security2);
 					
 					LogInfo($"SHORT SPREAD: {Security1.Code} vs {Security2.Code}, Z-Score: {zScore:F2}, Volatility: Low");
 				}
