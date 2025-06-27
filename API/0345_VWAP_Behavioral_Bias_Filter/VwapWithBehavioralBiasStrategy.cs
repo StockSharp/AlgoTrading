@@ -26,7 +26,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLoss;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private VolumeWeightedAveragePrice _vwap;
+		private VolumeWeightedMovingAverage _vwap;
 		private decimal _currentBiasScore;
 		
 		// Tracks recent price movements for bias calculation
@@ -115,7 +115,7 @@ namespace StockSharp.Samples.Strategies
 			_isShort = false;
 			
 			// Initialize VWAP indicator
-			_vwap = new VolumeWeightedAveragePrice();
+			_vwap = new();
 			
 			// Subscribe to candles and bind indicator
 			var subscription = SubscribeCandles(CandleType);

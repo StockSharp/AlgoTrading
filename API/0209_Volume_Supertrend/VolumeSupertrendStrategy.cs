@@ -180,7 +180,7 @@ namespace StockSharp.Samples.Strategies
 				if (volumeArea != null)
 				{
 					// Use Volume indicator to visualize volume
-					var volumeIndicator = new Volume();
+					var volumeIndicator = new VolumeIndicator();
 					DrawIndicator(volumeArea, volumeIndicator);
 				}
 				

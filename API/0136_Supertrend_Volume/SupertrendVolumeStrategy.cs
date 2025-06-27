@@ -160,19 +160,7 @@ namespace StockSharp.Strategies.Samples
 			if (candle.State != CandleStates.Finished)
 				return;
 				
-			// Calculate volume SMA
-			var volumeCandle = new CandleMessage
-			{
-				OpenPrice = candle.TotalVolume,
-				HighPrice = candle.TotalVolume,
-				LowPrice = candle.TotalVolume,
-				ClosePrice = candle.TotalVolume,
-				TotalVolume = candle.TotalVolume,
-				OpenTime = candle.OpenTime,
-				State = candle.State
-			};
-			
-			var volumeSmaValue = _volumeSma.Process(volumeCandle).ToDecimal();
+			var volumeSmaValue = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			if (!IsFormedAndOnlineAndAllowTrading() || !_atr.IsFormed || !_volumeSma.IsFormed)
 				return;
