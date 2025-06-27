@@ -182,9 +182,8 @@ namespace StockSharp.Samples.Strategies
 			// Create Stochastic indicator
 			var stochastic = new StochasticOscillator
 			{
-				Length = StochPeriod,
-				KPeriod = StochK,
-				DPeriod = StochD
+				K = { Length = StochK },
+				D = { Length = StochD }
 			};
 
 			// Create subscription and bind indicators

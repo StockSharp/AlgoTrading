@@ -89,7 +89,7 @@ namespace StockSharp.Samples.Strategies
 				.SetGreaterThanZero()
 				.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume Parameters");
 
-			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Atr))
+			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 				.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -121,7 +121,8 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			// Bind ADX indicator to candles
-			subscription.BindEx(adx, ProcessCandle)
+			subscription
+				.Bind(adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -134,26 +135,16 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Start protective orders
-			StartProtection(StopLoss);
+			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue value)
+		private void ProcessCandle(ICandleMessage candle, decimal adxValue, decimal diPlusValue, decimal diMinusValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-
-			// Get ADX value and DI+/DI- values from the indicator
-			var adxValue = value.ToDecimal();
-			
-			// Extract DI+ and DI- values
-			// Note: In this implementation we assume that the ADX indicator value structure
-			// provides access to DI+ and DI- values. If not available directly, you may need
-			// to create separate indicators for DI+ and DI-.
-			var diPlusValue = ((AverageDirectionalIndexValue)value).Plus;
-			var diMinusValue = ((AverageDirectionalIndexValue)value).Minus;
 
 			// Update average volume calculation
 			var currentVolume = candle.TotalVolume;

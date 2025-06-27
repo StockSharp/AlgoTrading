@@ -27,7 +27,7 @@ namespace StockSharp.Strategies.Samples
 		private readonly StrategyParam<decimal> _atrMultiplier;
 		
 		private AverageDirectionalIndex _adx;
-		private MovingAverageConvergenceDivergence _macd;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		private AverageTrueRange _atr;
 		
 		/// <summary>
@@ -145,11 +145,14 @@ namespace StockSharp.Strategies.Samples
 			// Initialize indicators
 			_adx = new AverageDirectionalIndex { Length = AdxPeriod };
 			
-			_macd = new MovingAverageConvergenceDivergence
+			_macd = new()
 			{
-				FastMa = new ExponentialMovingAverage { Length = MacdFast },
-				SlowMa = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
 			};
 			
 			_atr = new AverageTrueRange { Length = 14 };
@@ -199,7 +202,7 @@ namespace StockSharp.Strategies.Samples
 			var adxIndicatorValue = adxValue.ToDecimal();
 			
 			var macdLine = macdValue.ToDecimal();
-			var signalLine = _macd.SignalMa.Current;
+			var signalLine = _macd.SignalMa.GetCurrentValue();
 			
 			var atrIndicatorValue = atrValue.ToDecimal();
 			

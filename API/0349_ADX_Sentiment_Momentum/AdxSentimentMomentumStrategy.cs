@@ -124,7 +124,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(_adx, ProcessCandle)
+				.Bind(_adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -143,17 +143,11 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+		private void ProcessCandle(ICandleMessage candle, decimal adxMain, decimal diPlus, decimal diMinus)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
-
-			// Get ADX components
-			var adx = adxValue.ToDecimal();
-			var adxMain = adx.Adx;
-			var diPlus = adx.DiPlus;
-			var diMinus = adx.DiMinus;
 
 			// Simulate sentiment data and calculate momentum
 			UpdateSentiment(candle);

@@ -126,7 +126,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Enable position protection
-			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent));
+			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
@@ -173,8 +173,8 @@ namespace StockSharp.Samples.Strategies
 				if (_slopeValues.Count >= SlopePeriod)
 				{
 					// Get DI+ and DI- from the ADX indicator for trend direction
-					var diPlus = adxValue.ToDecimal("DI+");
-					var diMinus = adxValue.ToDecimal("DI-");
+					var diPlus = adxValue.ToDecimal();
+					var diMinus = adxValue.ToDecimal();
 					var isBullish = diPlus > diMinus;
 					
 					// Breakout logic
