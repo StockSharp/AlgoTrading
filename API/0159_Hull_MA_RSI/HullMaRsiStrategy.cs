@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Start protective orders
-			StartProtection(StopLoss);
+			StartProtection(new(), StopLoss);
 		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal rsiValue)
