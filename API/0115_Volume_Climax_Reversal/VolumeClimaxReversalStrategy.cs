@@ -139,7 +139,7 @@ namespace StockSharp.Strategies
 
 			// Process indicators
 			var maValue = _ma.Process(candle).ToDecimal();
-			var volumeAverageValue = _volumeAverage.Process(candle.TotalVolume).ToDecimal();
+			var volumeAverageValue = _volumeAverage.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			var atrValue = _atr.Process(candle).ToDecimal();
 
 			// Check if strategy is ready to trade

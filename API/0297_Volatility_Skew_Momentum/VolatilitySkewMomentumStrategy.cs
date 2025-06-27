@@ -224,8 +224,8 @@ namespace StockSharp.Strategies
 					_currentSkew = impliedVolatility;
 					
 					// Process indicators
-					_averageSkew = _volatilitySkewSma.Process(_currentSkew).ToDecimal();
-					_skewStdDeviation = _volatilitySkewStdDev.Process(_currentSkew).ToDecimal();
+					_averageSkew = _volatilitySkewSma.Process(_currentSkew, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					_skewStdDeviation = _volatilitySkewStdDev.Process(_currentSkew, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					// Check for trading signals
 					CheckSignal();
