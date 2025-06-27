@@ -141,11 +141,14 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create MACD indicator with custom settings
-			var macdLine = new MovingAverageConvergenceDivergence 
-			{ 
-				LongPeriod = SlowPeriod, 
-				ShortPeriod = FastPeriod, 
-				SignalPeriod = SignalPeriod
+			var macdLine = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = FastPeriod },
+					LongMa = { Length = SlowPeriod },
+				},
+				SignalMa = { Length = SignalPeriod }
 			};
 			
 			// Create indicators for the histogram statistics
