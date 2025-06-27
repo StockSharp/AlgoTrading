@@ -56,7 +56,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 28, 7);
 
 			_adxThreshold = Param(nameof(AdxThreshold), 25m)
-				.SetGreaterThan(10m)
+				.SetRange(10m, decimal.MaxValue)
 				.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(15, 35, 5);

@@ -62,7 +62,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 50, 5);
 
 			_multiplierParam = Param(nameof(Multiplier), 2.0m)
-				.SetGreaterThan(0.1m)
+				.SetRange(0.1m, decimal.MaxValue)
 				.SetDisplay("Multiplier", "Volatility multiplier for breakout threshold", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);

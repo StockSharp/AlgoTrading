@@ -76,7 +76,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 28, 7);
 
 			_atrMultiplier = Param(nameof(ATRMultiplier), 2.0m)
-				.SetGreaterThan(0.1m)
+				.SetRange(0.1m, decimal.MaxValue)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR to adjust MA bands", "Strategy Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);

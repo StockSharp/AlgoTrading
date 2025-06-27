@@ -77,7 +77,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 30, 5);
 
 			_volumeSpikeMultiplier = Param(nameof(VolumeSpikeMultiplier), 2.0m)
-				.SetGreaterThan(1.0m)
+				.SetRange(1.0m, decimal.MaxValue)
 				.SetDisplay("Volume Spike Multiplier", "Minimum volume increase multiplier to generate signal", "Strategy Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);

@@ -74,7 +74,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 30, 5);
 
 			_bollingerMultiplierParam = Param(nameof(BollingerMultiplier), 2.0m)
-				.SetGreaterThan(0.1m)
+				.SetRange(0.1m, decimal.MaxValue)
 				.SetDisplay("Bollinger Multiplier", "Standard deviation multiplier for Bollinger Bands", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);

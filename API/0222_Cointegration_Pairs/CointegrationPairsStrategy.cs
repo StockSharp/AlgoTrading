@@ -101,13 +101,13 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 50, 10);
 
 			_entryThresholdParam = Param(nameof(EntryThreshold), 2.0m)
-				.SetGreaterThan(0.1m)
+				.SetRange(0.1m, decimal.MaxValue)
 				.SetDisplay("Entry Threshold", "Entry threshold as multiple of standard deviation", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_betaParam = Param(nameof(Beta), 1.0m)
-				.SetGreaterThan(0.01m)
+				.SetRange(0.01m, decimal.MaxValue)
 				.SetDisplay("Beta", "Coefficient of cointegration", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 2.0m, 0.1m);
@@ -116,7 +116,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Asset 2", "Second asset for pair trading", "Parameters");
 
 			_stopLossPercentParam = Param(nameof(StopLossPercent), 2.0m)
-				.SetGreaterThan(0.1m)
+				.SetRange(0.1m, decimal.MaxValue)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Parameters")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 1.0m);
