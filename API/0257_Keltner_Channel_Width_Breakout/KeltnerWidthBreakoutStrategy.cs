@@ -34,6 +34,10 @@ namespace StockSharp.Strategies
 		// Track EMA and ATR values to calculate channel
 		private decimal _currentEma;
 		private decimal _currentAtr;
+
+		private decimal _lastBid;
+		private decimal _lastAsk;
+		private Subscription _orderBookSubscription;
 		
 		/// <summary>
 		/// EMA period for Keltner Channel.
@@ -179,6 +183,23 @@ namespace StockSharp.Strategies
 				DrawCandles(area, subscription);
 				DrawOwnTrades(area);
 			}
+
+			// Subscribe to market depth (order book)
+			_orderBookSubscription = new Subscription(DataType.MarketDepth, Security);
+			Subscribe(_orderBookSubscription);
+			OrderBookReceived += OnOrderBookReceived;
+		}
+
+		private void OnOrderBookReceived(Subscription subscription, IOrderBookMessage orderBook)
+		{
+			if (subscription != _orderBookSubscription)
+				return;
+
+			// Get best bid and ask from order book
+			var bestBid = orderBook.Bids != null && orderBook.Bids.Length > 0 ? orderBook.Bids[0].Price : 0;
+			var bestAsk = orderBook.Asks != null && orderBook.Asks.Length > 0 ? orderBook.Asks[0].Price : 0;
+			_lastBid = bestBid;
+			_lastAsk = bestAsk;
 		}
 		
 		private void ProcessCandle(ICandleMessage candle)
@@ -257,22 +278,22 @@ namespace StockSharp.Strategies
 				if (priceDirection && Position <= 0)
 				{
 					// Bullish direction - Buy
-					var buyPrice = Security.GetCurrentPrice(Sides.Buy);
+					var buyPrice = _lastAsk;
 					BuyMarket(Volume + Math.Abs(Position));
 					
 					// Set stop-loss order
 					var stopLoss = buyPrice - stopOffset;
-					RegisterOrder(this.CreateOrder(Sides.Sell, stopLoss, Math.Abs(Position)));
+					RegisterOrder(CreateOrder(Sides.Sell, stopLoss, Math.Abs(Position)));
 				}
 				else if (!priceDirection && Position >= 0)
 				{
 					// Bearish direction - Sell
-					var sellPrice = Security.GetCurrentPrice(Sides.Sell);
+					var sellPrice = _lastBid;
 					SellMarket(Volume + Math.Abs(Position));
 					
 					// Set stop-loss order
 					var stopLoss = sellPrice + stopOffset;
-					RegisterOrder(this.CreateOrder(Sides.Buy, stopLoss, Math.Abs(Position)));
+					RegisterOrder(CreateOrder(Sides.Buy, stopLoss, Math.Abs(Position)));
 				}
 			}
 			// Check for exit condition - width returns to average

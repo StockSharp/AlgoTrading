@@ -20,6 +20,8 @@ namespace StockSharp.Strategies
 		private readonly StrategyParam<decimal> _sarStep;
 		private readonly StrategyParam<decimal> _sarMaxStep;
 		private readonly StrategyParam<DataType> _candleType;
+		private readonly StrategyParam<Unit> _takeValue;
+		private readonly StrategyParam<Unit> _stopValue;
 		
 		private SimpleMovingAverage _ma;
 		private ParabolicSar _parabolicSar;
@@ -61,6 +63,24 @@ namespace StockSharp.Strategies
 			get => _candleType.Value;
 			set => _candleType.Value = value;
 		}
+
+		/// <summary>
+		/// Take profit value.
+		/// </summary>
+		public Unit TakeValue
+		{
+			get => _takeValue.Value;
+			set => _takeValue.Value = value;
+		}
+
+		/// <summary>
+		/// Stop loss value.
+		/// </summary>
+		public Unit StopValue
+		{
+			get => _stopValue.Value;
+			set => _stopValue.Value = value;
+		}
 		
 		/// <summary>
 		/// Constructor.
@@ -87,6 +107,12 @@ namespace StockSharp.Strategies
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+			_takeValue = Param(nameof(TakeValue), new Unit(0, UnitTypes.Absolute))
+				.SetDisplay("Take Profit", "Take profit value", "Protection");
+
+			_stopValue = Param(nameof(StopValue), new Unit(2, UnitTypes.Percent))
+				.SetDisplay("Stop Loss", "Stop loss value", "Protection");
 		}
 		
 		/// <inheritdoc />
@@ -125,6 +151,9 @@ namespace StockSharp.Strategies
 				DrawIndicator(area, _parabolicSar);
 				DrawOwnTrades(area);
 			}
+
+			// Start protection by take profit and stop loss (like SmaStrategy)
+			StartProtection(TakeValue, StopValue);
 		}
 		
 		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal sarValue)
@@ -173,47 +202,6 @@ namespace StockSharp.Strategies
 			{
 				BuyMarket(Math.Abs(Position));
 				LogInfo($"Exit Short: Price({candle.ClosePrice}) > SAR({sarValue})");
-			}
-		}
-		
-		/// <inheritdoc />
-		protected override void OnNewMyTrade(MyTrade trade)
-		{
-			base.OnNewMyTrade(trade);
-			
-			// After a new trade, we update the stop-loss using the current SAR value
-			if (Position != 0 && _lastSarValue != 0)
-			{
-				var entryPrice = trade.Trade.Price;
-				
-				if (Position > 0)
-				{
-					// For long position, SAR is below the price
-					var stopLossLevel = Math.Min(entryPrice * 0.98m, _lastSarValue);
-					var stopLossPercent = Math.Abs((stopLossLevel / entryPrice - 1) * 100);
-					
-					// Update protection
-					UpdateProtection(
-						takeProfit: new Unit(0, UnitTypes.Absolute),
-						stopLoss: new Unit(stopLossPercent, UnitTypes.Percent)
-					);
-					
-					LogInfo($"Updated Long Protection: Stop at {stopLossLevel} ({stopLossPercent:F2}%)");
-				}
-				else
-				{
-					// For short position, SAR is above the price
-					var stopLossLevel = Math.Max(entryPrice * 1.02m, _lastSarValue);
-					var stopLossPercent = Math.Abs((stopLossLevel / entryPrice - 1) * 100);
-					
-					// Update protection
-					UpdateProtection(
-						takeProfit: new Unit(0, UnitTypes.Absolute),
-						stopLoss: new Unit(stopLossPercent, UnitTypes.Percent)
-					);
-					
-					LogInfo($"Updated Short Protection: Stop at {stopLossLevel} ({stopLossPercent:F2}%)");
-				}
 			}
 		}
 	}

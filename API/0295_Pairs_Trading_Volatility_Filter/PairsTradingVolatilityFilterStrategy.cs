@@ -30,6 +30,11 @@ namespace StockSharp.Strategies
 		private decimal _volumeRatio = 1; // Default 1:1 ratio
 		private decimal _entryPrice;
 		
+		private decimal _lastPrice1;
+		private decimal _lastPrice2;
+		private Subscription _tickSubscription1;
+		private Subscription _tickSubscription2;
+		
 		// Indicators
 		private AverageTrueRange _atr;
 		private StandardDeviation _stdDev;
@@ -156,6 +161,15 @@ namespace StockSharp.Strategies
 			var subscription1 = SubscribeCandles(TimeSpan.FromMinutes(5), false, Security1);
 			var subscription2 = SubscribeCandles(TimeSpan.FromMinutes(5), false, Security2);
 			
+			// Subscribe to ticks for both securities to track last prices
+			_tickSubscription1 = new Subscription(DataType.Ticks, Security1);
+			_tickSubscription2 = new Subscription(DataType.Ticks, Security2);
+			
+			Subscribe(_tickSubscription1);
+			Subscribe(_tickSubscription2);
+
+			TickTradeReceived += OnTickTradeReceived;
+			
 			// Process data and calculate spread
 			subscription1
 				.Bind(_atr, ProcessSecurity1Candle)
@@ -181,19 +195,21 @@ namespace StockSharp.Strategies
 			);
 		}
 		
+		private void OnTickTradeReceived(Subscription subscription, ITickTradeMessage tick)
+		{
+			if (subscription == _tickSubscription1)
+				_lastPrice1 = tick.Price;
+			else if (subscription == _tickSubscription2)
+				_lastPrice2 = tick.Price;
+		}
+		
 		private decimal CalculateVolumeRatio()
 		{
-			// Simple ratio based on current prices
-			// In a more advanced implementation, this could use beta or cointegration coefficients
-			if (Security1 == null || Security2 == null)
-				return 1;
-				
-			var price1 = Security1.GetCurrentPrice();
-			var price2 = Security2.GetCurrentPrice();
-			
+			// Use last known prices if available
+			var price1 = _lastPrice1;
+			var price2 = _lastPrice2;
 			if (price1 == 0 || price2 == 0)
 				return 1;
-				
 			return price1 / price2;
 		}
 		
@@ -215,11 +231,11 @@ namespace StockSharp.Strategies
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
-				
-			// Calculate spread (Security1 - Security2 * volumeRatio)
-			decimal price1 = Security1.GetCurrentPrice();
-			decimal price2 = Security2.GetCurrentPrice();
-			
+
+			// Calculate spread (Security1 - Security2 * volumeRatio) using last prices
+			decimal price1 = _lastPrice1;
+			decimal price2 = _lastPrice2;
+
 			_previousSpread = _currentSpread;
 			_currentSpread = price1 - (price2 * _volumeRatio);
 			
