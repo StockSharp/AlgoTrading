@@ -117,20 +117,21 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEx(adx, (candle, adxValue) =>
+				.Bind(adx, (candle, adx, diPlus, diMinus) =>
 				{
 					// Process volume indicators
-					var volumeIndicatorValue = new DecimalIndicatorValue(candle.TotalVolume);
-					var volumeAvg = volumeSma.Process(volumeIndicatorValue).ToDecimal();
-					var volumeStdDev = volumeStdDev.Process(volumeIndicatorValue).ToDecimal();
+					var smaVal = volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					var stdDevVal = volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(
 						candle,
-						adxValue,
+						adx,
+						diPlus,
+						diMinus,
 						candle.TotalVolume,
-						volumeAvg,
-						volumeStdDev
+						smaVal,
+						stdDevVal
 					);
 				})
 				.Start();
@@ -151,7 +152,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessStrategy(ICandleMessage candle, IIndicatorValue adxValue, decimal volume, decimal volumeAvg, decimal volumeStdDev)
+		private void ProcessStrategy(ICandleMessage candle, decimal adx, decimal diPlus, decimal diMinus, decimal volume, decimal volumeAvg, decimal volumeStdDev)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -161,11 +162,6 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// Extract values from ADX composite indicator
-			var adx = adxValue[0].ToDecimal();	 // ADX value
-			var diPlus = adxValue[1].ToDecimal();  // +DI value
-			var diMinus = adxValue[2].ToDecimal(); // -DI value
-			
 			// Check for strong trend
 			var isStrongTrend = adx > AdxThreshold;
 			
@@ -186,7 +182,7 @@ namespace StockSharp.Samples.Strategies
 					CancelActiveOrders();
 					
 					// Calculate position size
-					var volume = Volume + Math.Abs(Position);
+					var ordVolume = Volume + Math.Abs(Position);
 					
 					// Enter long position
 					BuyMarket(volume);
@@ -197,7 +193,7 @@ namespace StockSharp.Samples.Strategies
 					CancelActiveOrders();
 					
 					// Calculate position size
-					var volume = Volume + Math.Abs(Position);
+					var ordVolume = Volume + Math.Abs(Position);
 					
 					// Enter short position
 					SellMarket(volume);

@@ -156,7 +156,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(_donchian, _macd, ProcessCandle)
+				.BindEx(_donchian, _macd, ProcessCandle)
 				.Start();
 
 			// Setup position protection
@@ -173,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal highValue, decimal lowValue, decimal macdValue, decimal signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -182,6 +182,8 @@ namespace StockSharp.Samples.Strategies
 			// Wait until strategy and indicators are ready
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var signalValue = ((ComplexIndicatorValue)macdValue)[_macd.SignalMa].ToDecimal();
 
 			// Check for breakouts with MACD trend confirmation
 			// Long entry: Price breaks above Donchian high and MACD > Signal

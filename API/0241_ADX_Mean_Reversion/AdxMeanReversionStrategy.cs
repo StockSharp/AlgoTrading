@@ -129,12 +129,12 @@ namespace StockSharp.Strategies
 			_adxValues.Clear();
 
 			// Create ADX indicator
-			var adx = new AverageDirectionalMovementIndex { Length = AdxPeriod };
+			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(adx, ProcessCandle)
+				.Bind(adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -155,7 +155,7 @@ namespace StockSharp.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+		private void ProcessCandle(ICandleMessage candle, decimal currentAdx, decimal plusDi, decimal minusDi)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -164,9 +164,6 @@ namespace StockSharp.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-
-			// Extract ADX value
-			var currentAdx = adxValue.ToDecimal();
 
 			// Update ADX statistics
 			UpdateAdxStatistics(currentAdx);
@@ -182,13 +179,11 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Positive trend strength should correspond to price direction for entry
-				var plusDi = adxValue.ToDecimal("Plus");
-				var minusDi = adxValue.ToDecimal("Minus");
 				var direction = plusDi > minusDi ? Sides.Buy : Sides.Sell;
 
 				// ADX is significantly below its average - mean reversion expects it to rise
 				// This could indicate a period of low trend strength that might change
-				if (currentAdx < _avgAdx - _deviationMultiplier * _stdDevAdx)
+				if (currentAdx < _avgAdx - DeviationMultiplier * _stdDevAdx)
 				{
 					if (direction == Sides.Buy)
 					{
@@ -203,7 +198,7 @@ namespace StockSharp.Strategies
 				}
 				// ADX is significantly above its average - mean reversion expects it to fall
 				// This could indicate a period of high trend strength that might weaken
-				else if (currentAdx > _avgAdx + _deviationMultiplier * _stdDevAdx)
+				else if (currentAdx > _avgAdx + DeviationMultiplier * _stdDevAdx)
 				{
 					// For high ADX values, we're more cautious and might want to go against the direction
 					// as extremely high ADX may indicate trend exhaustion
