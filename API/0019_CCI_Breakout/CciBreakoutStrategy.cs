@@ -50,12 +50,12 @@ namespace StockSharp.Samples.Strategies
 		public CciBreakoutStrategy()
 		{
 			_cciPeriod = Param(nameof(CciPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true);
 

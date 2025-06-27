@@ -85,27 +85,27 @@ namespace StockSharp.Samples.Strategies
 		{
 			_willRPeriod = Param(nameof(WillRPeriod), 14)
 				.SetDisplay("Williams %R Period", "Period for Williams %R calculation", "Williams %R Settings")
-				.SetRange(7, 21, 7)
+				.SetRange(7, 21)
 				.SetCanOptimize(true);
 				
 			_oversoldLevel = Param(nameof(OversoldLevel), -80m)
 				.SetDisplay("Oversold Level", "Oversold level for Williams %R (typically -80)", "Williams %R Settings")
-				.SetRange(-90m, -70m, 5m)
+				.SetRange(-90m, -70m)
 				.SetCanOptimize(true);
 				
 			_overboughtLevel = Param(nameof(OverboughtLevel), -20m)
 				.SetDisplay("Overbought Level", "Overbought level for Williams %R (typically -20)", "Williams %R Settings")
-				.SetRange(-30m, -10m, 5m)
+				.SetRange(-30m, -10m)
 				.SetCanOptimize(true);
 				
 			_exitLevel = Param(nameof(ExitLevel), -50m)
 				.SetDisplay("Exit Level", "Exit level for Williams %R (neutral zone)", "Williams %R Settings")
-				.SetRange(-60m, -40m, 5m)
+				.SetRange(-60m, -40m)
 				.SetCanOptimize(true);
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetRange(1m, 3m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

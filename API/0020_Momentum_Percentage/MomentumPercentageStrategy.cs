@@ -60,17 +60,17 @@ namespace StockSharp.Samples.Strategies
 		public MomentumPercentageStrategy()
 		{
 			_momentumPeriod = Param(nameof(MomentumPeriod), 10)
-				.SetRange(5, 30, 1)
+				.SetRange(5, 30)
 				.SetDisplay("Momentum Period", "Period for momentum calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_thresholdPercent = Param(nameof(ThresholdPercent), 5m)
-				.SetRange(1m, 10m, 0.5m)
+				.SetRange(1m, 10m)
 				.SetDisplay("Threshold %", "Momentum percentage threshold for entry", "Strategy")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true);
 

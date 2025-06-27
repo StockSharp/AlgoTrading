@@ -60,17 +60,17 @@ namespace StockSharp.Samples.Strategies
 		public VolumeSupertrendStrategy()
 		{
 			_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("Volume Avg Period", "Period for volume average calculation", "Volume")
 				.SetCanOptimize(true);
 
 			_supertrendPeriod = Param(nameof(SupertrendPeriod), 10)
-				.SetRange(5, 30, 5)
+				.SetRange(5, 30)
 				.SetDisplay("Supertrend Period", "ATR period for Supertrend", "Supertrend")
 				.SetCanOptimize(true);
 
 			_supertrendMultiplier = Param(nameof(SupertrendMultiplier), 3m)
-				.SetRange(1m, 5m, 0.5m)
+				.SetRange(1m, 5m)
 				.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Supertrend")
 				.SetCanOptimize(true);
 

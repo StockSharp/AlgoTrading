@@ -60,17 +60,17 @@ namespace StockSharp.Samples.Strategies
 		public BollingerReversionStrategy()
 		{
 			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-				.SetRange(1m, 3m, 0.2m)
+				.SetRange(1m, 3m)
 				.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 5m, 0.5m)
+				.SetRange(1m, 5m)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
 				.SetCanOptimize(true);
 

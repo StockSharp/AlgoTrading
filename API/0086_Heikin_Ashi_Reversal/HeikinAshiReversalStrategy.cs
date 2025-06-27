@@ -48,7 +48,7 @@ namespace StockSharp.Samples.Strategies
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetRange(1m, 3m)
 				.SetCanOptimize(true);
 		}
 

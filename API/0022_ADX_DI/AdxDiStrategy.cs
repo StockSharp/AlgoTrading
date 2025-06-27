@@ -60,17 +60,17 @@ namespace StockSharp.Samples.Strategies
 		public AdxDiStrategy()
 		{
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetRange(7, 30, 1)
+				.SetRange(7, 30)
 				.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_adxThreshold = Param(nameof(AdxThreshold), 25m)
-				.SetRange(15m, 35m, 1m)
+				.SetRange(15m, 35m)
 				.SetDisplay("ADX Threshold", "ADX level to confirm trend", "Indicators")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 5m, 0.5m)
+				.SetRange(1m, 5m)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR stop loss", "Risk Management")
 				.SetCanOptimize(true);
 

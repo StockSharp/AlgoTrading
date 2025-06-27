@@ -84,27 +84,27 @@ namespace StockSharp.Samples.Strategies
 		public ElderImpulseStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 13)
-				.SetRange(8, 21, 1)
+				.SetRange(8, 21)
 				.SetDisplay("EMA Period", "Period for EMA calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
-				.SetRange(8, 20, 1)
+				.SetRange(8, 20)
 				.SetDisplay("MACD Fast Period", "Fast period for MACD", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 26)
-				.SetRange(20, 40, 1)
+				.SetRange(20, 40)
 				.SetDisplay("MACD Slow Period", "Slow period for MACD", "Indicators")
 				.SetCanOptimize(true);
 
 			_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-				.SetRange(5, 15, 1)
+				.SetRange(5, 15)
 				.SetDisplay("MACD Signal Period", "Signal period for MACD", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true);
 

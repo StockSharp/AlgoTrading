@@ -75,22 +75,22 @@ namespace StockSharp.Samples.Strategies
 		{
 			_cciPeriod = Param(nameof(CciPeriod), 20)
 				.SetDisplay("CCI Period", "Period for CCI calculation", "CCI Settings")
-				.SetRange(14, 30, 2)
+				.SetRange(14, 30)
 				.SetCanOptimize(true);
 				
 			_oversoldLevel = Param(nameof(OversoldLevel), -100)
 				.SetDisplay("Oversold Level", "Oversold level for CCI", "CCI Settings")
-				.SetRange(-150, -50, 25)
+				.SetRange(-150, -50)
 				.SetCanOptimize(true);
 				
 			_overboughtLevel = Param(nameof(OverboughtLevel), 100)
 				.SetDisplay("Overbought Level", "Overbought level for CCI", "CCI Settings")
-				.SetRange(50, 150, 25)
+				.SetRange(50, 150)
 				.SetCanOptimize(true);
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetRange(1m, 3m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

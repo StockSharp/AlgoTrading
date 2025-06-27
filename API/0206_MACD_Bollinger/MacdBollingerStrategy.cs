@@ -100,37 +100,37 @@ namespace StockSharp.Samples.Strategies
 		public MacdBollingerStrategy()
 		{
 			_macdFast = Param(nameof(MacdFast), 12)
-				.SetRange(5, 20, 1)
+				.SetRange(5, 20)
 				.SetDisplay("MACD Fast", "MACD fast EMA period", "MACD")
 				.SetCanOptimize(true);
 
 			_macdSlow = Param(nameof(MacdSlow), 26)
-				.SetRange(15, 40, 1)
+				.SetRange(15, 40)
 				.SetDisplay("MACD Slow", "MACD slow EMA period", "MACD")
 				.SetCanOptimize(true);
 
 			_macdSignal = Param(nameof(MacdSignal), 9)
-				.SetRange(5, 15, 1)
+				.SetRange(5, 15)
 				.SetDisplay("MACD Signal", "MACD signal line period", "MACD")
 				.SetCanOptimize(true);
 
 			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("Bollinger Period", "Bollinger Bands period", "Bollinger")
 				.SetCanOptimize(true);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
-				.SetRange(1.0m, 3.0m, 0.5m)
+				.SetRange(1.0m, 3.0m)
 				.SetDisplay("Bollinger Deviation", "Bollinger Bands standard deviation multiplier", "Bollinger")
 				.SetCanOptimize(true);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetRange(7, 28, 7)
+				.SetRange(7, 28)
 				.SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 4m, 0.5m)
+				.SetRange(1m, 4m)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 				.SetCanOptimize(true);
 
@@ -150,11 +150,14 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize indicators
-			var macd = new MovingAverageConvergenceDivergence
+			var macd = new MovingAverageConvergenceDivergenceSignal
 			{
-				LongMa = new ExponentialMovingAverage { Length = MacdSlow },
-				ShortMa = new ExponentialMovingAverage { Length = MacdFast },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
+				Macd =
+				{
+					LongMa = { Length = MacdSlow },
+					ShortMa = { Length = MacdFast },
+				},
+				SignalMa = { Length = MacdSignal }
 			};
 
 			var bollinger = new BollingerBands

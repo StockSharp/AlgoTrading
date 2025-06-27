@@ -64,17 +64,17 @@ namespace StockSharp.Samples.Strategies
 		public BollingerSqueezeStrategy()
 		{
 			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_bollingerDeviation = Param(nameof(BollingerDeviation), 2m)
-				.SetRange(1m, 3m, 0.2m)
+				.SetRange(1m, 3m)
 				.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicators")
 				.SetCanOptimize(true);
 
 			_squeezeThreshold = Param(nameof(SqueezeThreshold), 0.1m)
-				.SetRange(0.05m, 0.5m, 0.05m)
+				.SetRange(0.05m, 0.5m)
 				.SetDisplay("Squeeze Threshold", "Threshold for Bollinger Bands width to identify squeeze", "Strategy")
 				.SetCanOptimize(true);
 

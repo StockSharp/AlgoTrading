@@ -72,22 +72,22 @@ namespace StockSharp.Samples.Strategies
 		public RsiHullMaStrategy()
 		{
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetRange(5, 30, 1)
+				.SetRange(5, 30)
 				.SetDisplay("RSI Period", "Period for RSI indicator", "Indicators")
 				.SetCanOptimize(true);
 
 			_hullPeriod = Param(nameof(HullPeriod), 9)
-				.SetRange(5, 20, 1)
+				.SetRange(5, 20)
 				.SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicators")
 				.SetCanOptimize(true);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetRange(7, 28, 7)
+				.SetRange(7, 28)
 				.SetDisplay("ATR Period", "ATR period for stop-loss calculation", "Risk Management")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 4m, 0.5m)
+				.SetRange(1m, 4m)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 				.SetCanOptimize(true);
 

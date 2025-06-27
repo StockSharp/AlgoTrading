@@ -60,17 +60,17 @@ namespace StockSharp.Samples.Strategies
 		public DonchianCciStrategy()
 		{
 			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
 				.SetCanOptimize(true);
 
 			_cciPeriod = Param(nameof(CciPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 				.SetCanOptimize(true);
 

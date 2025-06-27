@@ -100,37 +100,37 @@ namespace StockSharp.Samples.Strategies
 		public StochasticKeltnerStrategy()
 		{
 			_stochPeriod = Param(nameof(StochPeriod), 14)
-				.SetRange(5, 30, 1)
+				.SetRange(5, 30)
 				.SetDisplay("Stoch Period", "Period for Stochastic Oscillator", "Stochastic")
 				.SetCanOptimize(true);
 
 			_stochK = Param(nameof(StochK), 3)
-				.SetRange(1, 10, 1)
+				.SetRange(1, 10)
 				.SetDisplay("Stoch %K", "Stochastic %K smoothing period", "Stochastic")
 				.SetCanOptimize(true);
 
 			_stochD = Param(nameof(StochD), 3)
-				.SetRange(1, 10, 1)
+				.SetRange(1, 10)
 				.SetDisplay("Stoch %D", "Stochastic %D smoothing period", "Stochastic")
 				.SetCanOptimize(true);
 
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner")
 				.SetCanOptimize(true);
 
 			_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2m)
-				.SetRange(1m, 4m, 0.5m)
+				.SetRange(1m, 4m)
 				.SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Keltner")
 				.SetCanOptimize(true);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetRange(7, 28, 7)
+				.SetRange(7, 28)
 				.SetDisplay("ATR Period", "ATR period for Keltner Channel and stop-loss", "Risk Management")
 				.SetCanOptimize(true);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 4m, 0.5m)
+				.SetRange(1m, 4m)
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop-loss", "Risk Management")
 				.SetCanOptimize(true);
 
@@ -152,16 +152,13 @@ namespace StockSharp.Samples.Strategies
 			// Initialize indicators
 			var stochastic = new StochasticOscillator
 			{
-				Kseries = { Length = StochPeriod },
-				Dseries = { Length = StochD },
-				KmaLength = StochK
+				K = { Length = StochPeriod },
+				D = { Length = StochD },
 			};
 
-			var keltner = new KeltnerChannel
+			var keltner = new KeltnerChannels
 			{
 				Length = EmaPeriod,
-				ATRLength = AtrPeriod,
-				K = KeltnerMultiplier
 			};
 
 			var atr = new AverageTrueRange { Length = AtrPeriod };

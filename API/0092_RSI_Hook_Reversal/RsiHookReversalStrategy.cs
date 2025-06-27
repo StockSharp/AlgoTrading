@@ -85,27 +85,27 @@ namespace StockSharp.Samples.Strategies
 		{
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
 				.SetDisplay("RSI Period", "Period for RSI calculation", "RSI Settings")
-				.SetRange(7, 21, 7)
+				.SetRange(7, 21)
 				.SetCanOptimize(true);
 				
 			_oversoldLevel = Param(nameof(OversoldLevel), 30)
 				.SetDisplay("Oversold Level", "Oversold level for RSI", "RSI Settings")
-				.SetRange(20, 40, 5)
+				.SetRange(20, 40)
 				.SetCanOptimize(true);
 				
 			_overboughtLevel = Param(nameof(OverboughtLevel), 70)
 				.SetDisplay("Overbought Level", "Overbought level for RSI", "RSI Settings")
-				.SetRange(60, 80, 5)
+				.SetRange(60, 80)
 				.SetCanOptimize(true);
 				
 			_exitLevel = Param(nameof(ExitLevel), 50)
 				.SetDisplay("Exit Level", "Exit level for RSI (neutral zone)", "RSI Settings")
-				.SetRange(45, 55, 5)
+				.SetRange(45, 55)
 				.SetCanOptimize(true);
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetRange(1m, 3m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

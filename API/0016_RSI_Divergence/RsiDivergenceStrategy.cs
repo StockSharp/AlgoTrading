@@ -54,12 +54,12 @@ namespace StockSharp.Samples.Strategies
 		public RsiDivergenceStrategy()
 		{
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetRange(5, 50, 1)
+				.SetRange(5, 50)
 				.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true);
 

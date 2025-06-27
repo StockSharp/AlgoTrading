@@ -62,12 +62,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			_period = Param(nameof(Period), 10)
 				.SetDisplay("Period", "Period for Supertrend calculation", "Supertrend Settings")
-				.SetRange(7, 20, 1)
+				.SetRange(7, 20)
 				.SetCanOptimize(true);
 				
 			_multiplier = Param(nameof(Multiplier), 3.0m)
 				.SetDisplay("Multiplier", "Multiplier for Supertrend calculation", "Supertrend Settings")
-				.SetRange(2.0m, 4.0m, 0.5m)
+				.SetRange(2.0m, 4.0m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

@@ -51,12 +51,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			_period = Param(nameof(Period), 14)
 				.SetDisplay("Period", "Period for Williams %R calculation", "Indicators")
-				.SetRange(5, 50, 1)
+				.SetRange(5, 50)
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetCanOptimize(true);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

@@ -85,27 +85,27 @@ namespace StockSharp.Samples.Strategies
 		{
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
 				.SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
-				.SetRange(7, 21, 7)
+				.SetRange(7, 21)
 				.SetCanOptimize(true);
 				
 			_atrAvgPeriod = Param(nameof(AtrAvgPeriod), 20)
 				.SetDisplay("ATR Average Period", "Period for ATR average calculation", "Indicators")
-				.SetRange(10, 30, 5)
+				.SetRange(10, 30)
 				.SetCanOptimize(true);
 				
 			_atrMultiplier = Param(nameof(AtrMultiplier), 1.5m)
 				.SetDisplay("ATR Multiplier", "Multiplier to determine ATR spike", "Indicators")
-				.SetRange(1.3m, 2.0m, 0.1m)
+				.SetRange(1.3m, 2.0m)
 				.SetCanOptimize(true);
 				
 			_maPeriod = Param(nameof(MaPeriod), 20)
 				.SetDisplay("MA Period", "Period for moving average", "Indicators")
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetCanOptimize(true);
 				
 			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Percent))
 				.SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
-				.SetRange(1m, 3m, 0.5m)
+				.SetRange(1m, 3m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

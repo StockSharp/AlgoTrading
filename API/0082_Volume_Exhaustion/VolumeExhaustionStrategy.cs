@@ -76,20 +76,20 @@ namespace StockSharp.Samples.Strategies
 		{
 			_volumePeriod = Param(nameof(VolumePeriod), 20)
 				.SetDisplay("Volume Average Period", "Period for volume average calculation", "Volume Settings")
-				.SetRange(5, 50, 5)
+				.SetRange(5, 50)
 				.SetCanOptimize(true);
 				
 			_volumeMultiplier = Param(nameof(VolumeMultiplier), 2.0m)
 				.SetDisplay("Volume Multiplier", "Multiplier to determine volume spike", "Volume Settings")
-				.SetRange(1.5m, 3.0m, 0.5m)
+				.SetRange(1.5m, 3.0m)
 				.SetCanOptimize(true);
 				
 			_maPeriod = Param(nameof(MaPeriod), 20)
 				.SetDisplay("MA Period", "Period for moving average", "Trend Settings")
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetCanOptimize(true);
 				
-			_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Times))
+			_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
 				.SetCanOptimize(true);
 				
@@ -166,7 +166,7 @@ namespace StockSharp.Samples.Strategies
 				
 				// Set stop-loss based on ATR
 				decimal stopPrice = candle.ClosePrice - (atrValue * AtrMultiplier.Value);
-				StartProtection(null, new Unit(candle.ClosePrice - stopPrice, UnitTypes.Absolute), false, true);
+				StartProtection(null, new Unit(candle.ClosePrice - stopPrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			// Short entry: Volume spike with bearish candle
 			else if (isVolumeSpike && isBearishCandle && candle.ClosePrice < maValue && Position >= 0)
@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
 				
 				// Set stop-loss based on ATR
 				decimal stopPrice = candle.ClosePrice + (atrValue * AtrMultiplier.Value);
-				StartProtection(null, new Unit(stopPrice - candle.ClosePrice, UnitTypes.Absolute), false, true);
+				StartProtection(null, new Unit(stopPrice - candle.ClosePrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 		}
 	}

@@ -53,12 +53,12 @@ namespace StockSharp.Samples.Strategies
 		public VwapWilliamsRStrategy()
 		{
 			_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
-				.SetRange(5, 50, 1)
+				.SetRange(5, 50)
 				.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 				.SetCanOptimize(true);
 
@@ -78,7 +78,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize indicators
-			var vwap = new VolumeWeightedAveragePrice();
+			var vwap = new VolumeWeightedMovingAverage();
 			var williamsR = new WilliamsR { Length = WilliamsRPeriod };
 
 			// Create subscription and bind indicators

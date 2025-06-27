@@ -85,27 +85,27 @@ namespace StockSharp.Samples.Strategies
 		public StochasticRsiCrossStrategy()
 		{
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetRange(7, 30, 1)
+				.SetRange(7, 30)
 				.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators")
 				.SetCanOptimize(true);
 
 			_stochPeriod = Param(nameof(StochPeriod), 14)
-				.SetRange(5, 30, 1)
+				.SetRange(5, 30)
 				.SetDisplay("Stochastic Period", "Period for Stochastic", "Indicators")
 				.SetCanOptimize(true);
 
 			_kPeriod = Param(nameof(KPeriod), 3)
-				.SetRange(1, 10, 1)
+				.SetRange(1, 10)
 				.SetDisplay("K Period", "Period for %K line", "Indicators")
 				.SetCanOptimize(true);
 
 			_dPeriod = Param(nameof(DPeriod), 3)
-				.SetRange(1, 10, 1)
+				.SetRange(1, 10)
 				.SetDisplay("D Period", "Period for %D line", "Indicators")
 				.SetCanOptimize(true);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-				.SetRange(0.5m, 5m, 0.5m)
+				.SetRange(0.5m, 5m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true);
 
@@ -133,9 +133,8 @@ namespace StockSharp.Samples.Strategies
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 			var stoch = new StochasticOscillator
 			{
-				Kperiod = StochPeriod,
-				Kslow = KPeriod,
-				Dslow = DPeriod
+				K = { Length = KPeriod },
+				D = { Length = DPeriod }
 			};
 
 			// Subscribe to candles
