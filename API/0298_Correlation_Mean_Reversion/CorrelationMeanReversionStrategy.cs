@@ -202,7 +202,7 @@ namespace StockSharp.Strategies
 			_security1Updated = true;
 			
 			// Update correlation and check for signals
-			CalculateCorrelation();
+			CalculateCorrelation(candle.ServerTime, candle.State == CandleStates.Finished);
 		}
 		
 		private void ProcessSecurity2Candle(ICandleMessage candle)
@@ -215,10 +215,10 @@ namespace StockSharp.Strategies
 			_security2Updated = true;
 			
 			// Update correlation and check for signals
-			CalculateCorrelation();
+			CalculateCorrelation(candle.ServerTime, candle.State == CandleStates.Finished);
 		}
 		
-		private void CalculateCorrelation()
+		private void CalculateCorrelation(DateTimeOffset time, bool isFinal)
 		{
 			// Only proceed if both securities have been updated
 			if (!_security1Updated || !_security2Updated)
@@ -247,8 +247,8 @@ namespace StockSharp.Strategies
 			_currentCorrelation = CalculateCorrelationCoefficient(_security1Prices.ToArray(), _security2Prices.ToArray());
 			
 			// Process indicators
-			_averageCorrelation = _correlationSma.Process(_currentCorrelation).ToDecimal();
-			_correlationStdDeviation = _correlationStdDev.Process(_currentCorrelation).ToDecimal();
+			_averageCorrelation = _correlationSma.Process(_currentCorrelation, time, isFinal).ToDecimal();
+			_correlationStdDeviation = _correlationStdDev.Process(_currentCorrelation, time, isFinal).ToDecimal();
 			
 			// Check for trading signals
 			CheckSignal();

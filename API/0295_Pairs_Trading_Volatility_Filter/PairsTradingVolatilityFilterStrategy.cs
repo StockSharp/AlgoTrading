@@ -204,7 +204,7 @@ namespace StockSharp.Strategies
 				
 			// Store ATR value for volatility filter
 			_currentAtr = atrValue;
-			var atrSmaValue = _atrSma.Process(atrValue).ToDecimal();
+			var atrSmaValue = _atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			_averageAtr = atrSmaValue;
 			
 			// Check if we have all necessary data to make a trading decision
@@ -224,8 +224,8 @@ namespace StockSharp.Strategies
 			_currentSpread = price1 - (price2 * _volumeRatio);
 			
 			// Calculate spread statistics
-			var spreadSmaValue = _spreadSma.Process(_currentSpread).ToDecimal();
-			var stdDevValue = _stdDev.Process(_currentSpread).ToDecimal();
+			var spreadSmaValue = _spreadSma.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var stdDevValue = _stdDev.Process(_currentSpread, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			_averageSpread = spreadSmaValue;
 			_standardDeviation = stdDevValue;

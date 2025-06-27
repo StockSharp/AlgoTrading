@@ -145,9 +145,9 @@ namespace StockSharp.Strategies
 			_currentVolume = candle.TotalVolume;
 			
 			// Process indicators
-			_averagePrice = _priceSma.Process(_currentPrice).ToDecimal();
-			_priceStdDeviation = _priceStdDev.Process(_currentPrice).ToDecimal();
-			_averageVolume = _volumeSma.Process(_currentVolume).ToDecimal();
+			_averagePrice = _priceSma.Process(_currentPrice, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			_priceStdDeviation = _priceStdDev.Process(_currentPrice, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			_averageVolume = _volumeSma.Process(_currentVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Check trading signals
 			CheckSignal();
