@@ -304,8 +304,8 @@ namespace StockSharp.Strategies
 				if (correlationZScore < -DeviationThreshold)
 				{
 					// Long Security1, Short Security2
-					BuyMarket(Security1, Volume);
-					SellMarket(Security2, Volume);
+					BuyMarket(Volume, Security1);
+					SellMarket(Volume, Security2);
 					
 					LogInfo($"LONG {Security1.Code}, SHORT {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
 				}
@@ -313,8 +313,8 @@ namespace StockSharp.Strategies
 				else if (correlationZScore > DeviationThreshold)
 				{
 					// Short Security1, Long Security2
-					SellMarket(Security1, Volume);
-					BuyMarket(Security2, Volume);
+					SellMarket(Volume, Security1);
+					BuyMarket(Volume, Security2);
 					
 					LogInfo($"SHORT {Security1.Code}, LONG {Security2.Code}: Correlation Z-Score: {correlationZScore:F2}");
 				}

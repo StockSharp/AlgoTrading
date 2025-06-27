@@ -191,15 +191,15 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Long low vol option, short high vol option
 				LogInfo($"Volatility skew above threshold: {volSkew} > {_avgVolSkew + Threshold * stdDev}");
-				BuyMarket(OptionWithLowVol, Volume);
-				SellMarket(OptionWithHighVol, Volume);
+				BuyMarket(Volume, OptionWithLowVol);
+				SellMarket(Volume, OptionWithHighVol);
 			}
 			else if (volSkew < _avgVolSkew - Threshold * stdDev && Position >= 0)
 			{
 				// Short low vol option, long high vol option
 				LogInfo($"Volatility skew below threshold: {volSkew} < {_avgVolSkew - Threshold * stdDev}");
-				SellMarket(OptionWithLowVol, Volume);
-				BuyMarket(OptionWithHighVol, Volume);
+				SellMarket(Volume, OptionWithLowVol);
+				BuyMarket(Volume, OptionWithHighVol);
 			}
 			else if (Math.Abs(volSkew - _avgVolSkew) < 0.2m * stdDev)
 			{
@@ -207,16 +207,16 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Volatility skew returned to average: {volSkew} ≈ {_avgVolSkew}");
 				
 				if (GetPositionValue(OptionWithLowVol) > 0)
-					SellMarket(OptionWithLowVol, Math.Abs(GetPositionValue(OptionWithLowVol)));
+					SellMarket(Math.Abs(GetPositionValue(OptionWithLowVol)), OptionWithLowVol);
 					
 				if (GetPositionValue(OptionWithLowVol) < 0)
-					BuyMarket(OptionWithLowVol, Math.Abs(GetPositionValue(OptionWithLowVol)));
+					BuyMarket(Math.Abs(GetPositionValue(OptionWithLowVol)), OptionWithLowVol);
 					
 				if (GetPositionValue(OptionWithHighVol) > 0)
-					SellMarket(OptionWithHighVol, Math.Abs(GetPositionValue(OptionWithHighVol)));
+					SellMarket(Math.Abs(GetPositionValue(OptionWithHighVol)), OptionWithHighVol);
 					
 				if (GetPositionValue(OptionWithHighVol) < 0)
-					BuyMarket(OptionWithHighVol, Math.Abs(GetPositionValue(OptionWithHighVol)));
+					BuyMarket(Math.Abs(GetPositionValue(OptionWithHighVol)), OptionWithHighVol);
 			}
 		}
 

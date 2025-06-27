@@ -244,15 +244,15 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Correlation breakdown - go long Asset1, short Asset2
 				LogInfo($"Correlation breakdown: {_lastCorrelation} < {_avgCorrelation - Threshold * stdDev}");
-				BuyMarket(Asset1, Volume);
-				SellMarket(Asset2, Volume);
+				BuyMarket(Volume, Asset1);
+				SellMarket(Volume, Asset2);
 			}
 			else if (_lastCorrelation > _avgCorrelation + Threshold * stdDev && GetPositionValue(Asset1) >= 0 && GetPositionValue(Asset2) <= 0)
 			{
 				// Correlation spike - go short Asset1, long Asset2
 				LogInfo($"Correlation spike: {_lastCorrelation} > {_avgCorrelation + Threshold * stdDev}");
-				SellMarket(Asset1, Volume);
-				BuyMarket(Asset2, Volume);
+				SellMarket(Volume, Asset1);
+				BuyMarket(Volume, Asset2);
 			}
 			else if (Math.Abs(_lastCorrelation - _avgCorrelation) < 0.2m * stdDev)
 			{
@@ -260,16 +260,16 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Correlation returned to average: {_lastCorrelation} ≈ {_avgCorrelation}");
 				
 				if (GetPositionValue(Asset1) > 0)
-					SellMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));
+					SellMarket(Math.Abs(GetPositionValue(Asset1)), Asset1);
 					
 				if (GetPositionValue(Asset1) < 0)
-					BuyMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));
+					BuyMarket(Math.Abs(GetPositionValue(Asset1)), Asset1);
 					
 				if (GetPositionValue(Asset2) > 0)
-					SellMarket(Asset2, Math.Abs(GetPositionValue(Asset2)));
+					SellMarket(Math.Abs(GetPositionValue(Asset2)), Asset2);
 					
 				if (GetPositionValue(Asset2) < 0)
-					BuyMarket(Asset2, Math.Abs(GetPositionValue(Asset2)));
+					BuyMarket(Math.Abs(GetPositionValue(Asset2)), Asset2);
 			}
 		}
 

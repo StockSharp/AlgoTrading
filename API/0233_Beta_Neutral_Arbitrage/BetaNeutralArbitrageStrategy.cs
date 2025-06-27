@@ -263,8 +263,8 @@ namespace StockSharp.Samples.Strategies
 				decimal asset1Volume = Volume;
 				decimal asset2Volume = Volume * (_asset1Beta / _asset2Beta);
 
-				BuyMarket(Asset1, asset1Volume);
-				SellMarket(Asset2, asset2Volume);
+				BuyMarket(asset1Volume, Asset1);
+				SellMarket(asset2Volume, Asset2);
 			}
 			else if (_lastSpread > _avgSpread + threshold * spreadStdDev && GetPositionValue(Asset1) >= 0 && GetPositionValue(Asset2) <= 0)
 			{
@@ -275,8 +275,8 @@ namespace StockSharp.Samples.Strategies
 				decimal asset1Volume = Volume;
 				decimal asset2Volume = Volume * (_asset1Beta / _asset2Beta);
 
-				SellMarket(Asset1, asset1Volume);
-				BuyMarket(Asset2, asset2Volume);
+				SellMarket(asset1Volume, Asset1);
+				BuyMarket(asset2Volume, Asset2);
 			}
 			else if (Math.Abs(_lastSpread - _avgSpread) < 0.2m * spreadStdDev)
 			{
@@ -284,16 +284,16 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Spread returned to average: {_lastSpread} ≈ {_avgSpread}");
 
 				if (GetPositionValue(Asset1) > 0)
-					SellMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));
+					SellMarket(Math.Abs(GetPositionValue(Asset1)), Asset1);
 
 				if (GetPositionValue(Asset1) < 0)
-					BuyMarket(Asset1, Math.Abs(GetPositionValue(Asset1)));
+					BuyMarket(Math.Abs(GetPositionValue(Asset1)), Asset1);
 
 				if (GetPositionValue(Asset2) > 0)
-					SellMarket(Asset2, Math.Abs(GetPositionValue(Asset2)));
+					SellMarket(Math.Abs(GetPositionValue(Asset2)), Asset2);
 
 				if (GetPositionValue(Asset2) < 0)
-					BuyMarket(Asset2, Math.Abs(GetPositionValue(Asset2)));
+					BuyMarket(Math.Abs(GetPositionValue(Asset2)), Asset2);
 			}
 		}
 
