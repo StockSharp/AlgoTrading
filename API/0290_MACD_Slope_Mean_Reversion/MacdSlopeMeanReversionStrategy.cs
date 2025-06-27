@@ -151,13 +151,16 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			// Initialize indicators
-			_macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = FastMacdPeriod },
-				SlowMa = new ExponentialMovingAverage { Length = SlowMacdPeriod },
-				SignalMa = new ExponentialMovingAverage { Length = SignalMacdPeriod }
-			};
 
+			_macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = FastMacdPeriod },
+					LongMa = { Length = SlowMacdPeriod },
+				},
+				SignalMa = { Length = SignalMacdPeriod }
+			};
 			// Initialize statistics variables
 			_sampleCount = 0;
 			_sumSlopes = 0;

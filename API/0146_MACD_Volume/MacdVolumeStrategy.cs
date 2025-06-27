@@ -151,13 +151,16 @@ namespace StockSharp.Samples.Strategies
 			_avgVolume = 0;
 
 			// Create indicators
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastEma = new ExponentialMovingAverage { Length = MacdFast },
-				SlowEma = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalEma = new ExponentialMovingAverage { Length = MacdSignal }
-			};
 
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
+			};
 			var volumeAvg = new SimpleMovingAverage
 			{
 				Length = VolumePeriod

@@ -111,13 +111,16 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create MACD indicator with signal line
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastEma = new ExponentialMovingAverage { Length = FastEmaPeriod },
-				SlowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod },
-				SignalEma = new ExponentialMovingAverage { Length = SignalPeriod }
-			};
 
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = FastEmaPeriod },
+					LongMa = { Length = SlowEmaPeriod },
+				},
+				SignalMa = { Length = SignalPeriod }
+			};
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription

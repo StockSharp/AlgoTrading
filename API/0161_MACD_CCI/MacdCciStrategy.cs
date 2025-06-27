@@ -144,13 +144,16 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = FastPeriod },
-				SlowMa = new ExponentialMovingAverage { Length = SlowPeriod },
-				SignalMa = new ExponentialMovingAverage { Length = SignalPeriod }
-			};
 
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = FastPeriod },
+					LongMa = { Length = SlowPeriod },
+				},
+				SignalMa = { Length = SignalPeriod }
+			};
 			var cci = new CommodityChannelIndex { Length = CciPeriod };
 
 			// Setup candle subscription

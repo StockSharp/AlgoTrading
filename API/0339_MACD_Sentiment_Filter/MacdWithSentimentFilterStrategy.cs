@@ -139,13 +139,16 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 			
 			// Create MACD indicator
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = MacdFast },
-				SlowMa = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
-			};
 			
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
+			};
 			// Initialize sentiment score
 			_sentimentScore = 0;
 			

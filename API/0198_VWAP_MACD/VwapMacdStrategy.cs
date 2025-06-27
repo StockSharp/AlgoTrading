@@ -110,13 +110,16 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create MACD indicator
-			_macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = MacdFastPeriod },
-				SlowMa = new ExponentialMovingAverage { Length = MacdSlowPeriod },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignalPeriod }
-			};
 
+				_macd = new MovingAverageConvergenceDivergenceSignal
+				{
+					Macd =
+					{
+						ShortMa = { Length = MacdFastPeriod },
+						LongMa = { Length = MacdSlowPeriod },
+					},
+					SignalMa = { Length = MacdSignalPeriod }
+				};
 			// Initialize variables
 			_prevMacd = 0;
 			_prevSignal = 0;

@@ -174,13 +174,15 @@ namespace StockSharp.Samples.Strategies
 				Length = AtrAvgPeriod
 			};
 
-			var macd = new MovingAverageConvergenceDivergence
+			var macd = new MovingAverageConvergenceDivergenceSignal
 			{
-				FastEma = new ExponentialMovingAverage { Length = MacdFast },
-				SlowEma = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalEma = new ExponentialMovingAverage { Length = MacdSignal }
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
 			};
-
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 

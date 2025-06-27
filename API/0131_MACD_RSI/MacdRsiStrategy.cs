@@ -160,13 +160,16 @@ namespace StockSharp.Strategies.Samples
 			);
 			
 			// Create indicators
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = MacdFast },
-				SlowMa = new ExponentialMovingAverage { Length = MacdSlow },
-				SignalMa = new ExponentialMovingAverage { Length = MacdSignal }
-			};
 			
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = MacdFast },
+					LongMa = { Length = MacdSlow },
+				},
+				SignalMa = { Length = MacdSignal }
+			};
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 			
 			// Create candle subscription

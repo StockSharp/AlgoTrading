@@ -138,13 +138,16 @@ namespace StockSharp.Samples.Strategies
 			_bearishDivergence = false;
 
 			// Create MACD indicator
-			var macd = new MovingAverageConvergenceDivergence
-			{
-				FastMa = new ExponentialMovingAverage { Length = FastMacdPeriod },
-				SlowMa = new ExponentialMovingAverage { Length = SlowMacdPeriod },
-				SignalMa = new ExponentialMovingAverage { Length = SignalPeriod }
-			};
 
+			var macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = FastMacdPeriod },
+					LongMa = { Length = SlowMacdPeriod },
+				},
+				SignalMa = { Length = SignalPeriod }
+			};
 			// Create candle subscription
 			var subscription = SubscribeCandles(CandleType);
 
