@@ -135,11 +135,14 @@ namespace StockSharp.Samples.Strategies
 			_processedCandles = 0;
 
 			// Create MACD indicator
-			var macd = new MovingAverageConvergenceDivergence
+			var macd = new MovingAverageConvergenceDivergenceSignal
 			{
-				LongPeriod = SlowMacdPeriod,
-				ShortPeriod = FastMacdPeriod,
-				SignalPeriod = MacdSignalPeriod
+				Macd =
+				{
+					ShortMa = { Length = FastMacdPeriod },
+					LongMa = { Length = SlowMacdPeriod },
+				},
+				SignalMa = { Length = MacdSignalPeriod }
 			};
 
 			// Create volume-based indicators
