@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 
 		// Indicators
-		private Supertrend _supertrend;
+		private SuperTrend _supertrend;
 		private StochasticOscillator _stochastic;
 
 		/// <summary>
@@ -130,17 +130,16 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			_supertrend = new Supertrend
+			_supertrend = new()
 			{
 				Length = SupertrendPeriod,
 				Multiplier = SupertrendMultiplier
 			};
 
-			_stochastic = new StochasticOscillator
+			_stochastic = new()
 			{
-				K = StochK,
-				D = StochD,
-				KPeriod = StochPeriod
+				K = { Length = StochK },
+				D = { Length = StochD },
 			};
 
 			// Enable dynamic stop-loss using Supertrend
