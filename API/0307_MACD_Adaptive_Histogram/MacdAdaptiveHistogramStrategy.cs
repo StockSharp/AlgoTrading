@@ -89,43 +89,43 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public MacdAdaptiveHistogramStrategy()
 		{
-			_fastPeriod = this.Param(nameof(FastPeriod), 12)
+			_fastPeriod = Param(nameof(FastPeriod), 12)
 				.SetGreaterThanZero()
 				.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(8, 16, 2);
 
-			_slowPeriod = this.Param(nameof(SlowPeriod), 26)
+			_slowPeriod = Param(nameof(SlowPeriod), 26)
 				.SetGreaterThanZero()
 				.SetDisplay("Slow Period", "Slow EMA period for MACD", "MACD Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 32, 3);
 
-			_signalPeriod = this.Param(nameof(SignalPeriod), 9)
+			_signalPeriod = Param(nameof(SignalPeriod), 9)
 				.SetGreaterThanZero()
 				.SetDisplay("Signal Period", "Signal line period for MACD", "MACD Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 12, 1);
 
-			_histogramAvgPeriod = this.Param(nameof(HistogramAvgPeriod), 20)
+			_histogramAvgPeriod = Param(nameof(HistogramAvgPeriod), 20)
 				.SetGreaterThanZero()
 				.SetDisplay("Histogram Avg Period", "Period for histogram average calculation", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
-			_stdDevMultiplier = this.Param(nameof(StdDevMultiplier), 2.0m)
+			_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("StdDev Multiplier", "Standard deviation multiplier for histogram threshold", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_stopLossPercent = this.Param(nameof(StopLossPercent), 2.0m)
+			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 		}
 

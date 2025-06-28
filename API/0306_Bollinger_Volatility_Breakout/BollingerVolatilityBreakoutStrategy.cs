@@ -79,37 +79,37 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public BollingerVolatilityBreakoutStrategy()
 		{
-			_bollingerPeriod = this.Param(nameof(BollingerPeriod), 20)
+			_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
 				.SetGreaterThanZero()
 				.SetDisplay("Bollinger Period", "Period for Bollinger Bands calculation", "Indicator Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 10);
 
-			_bollingerDeviation = this.Param(nameof(BollingerDeviation), 2.0m)
+			_bollingerDeviation = Param(nameof(BollingerDeviation), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Bollinger Deviation", "Standard deviation multiplier for Bollinger Bands", "Indicator Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);
 
-			_atrPeriod = this.Param(nameof(AtrPeriod), 14)
+			_atrPeriod = Param(nameof(AtrPeriod), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Period", "Period for ATR calculation", "Indicator Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
-			_atrDeviationMultiplier = this.Param(nameof(AtrDeviationMultiplier), 2.0m)
+			_atrDeviationMultiplier = Param(nameof(AtrDeviationMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Deviation Multiplier", "Standard deviation multiplier for ATR", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_stopLossMultiplier = this.Param(nameof(StopLossMultiplier), 2.0m)
+			_stopLossMultiplier = Param(nameof(StopLossMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Stop Loss Multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 		}
 

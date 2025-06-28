@@ -69,31 +69,31 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public VolatilityClusterBreakoutStrategy()
 		{
-			_priceAvgPeriod = this.Param(nameof(PriceAvgPeriod), 20)
+			_priceAvgPeriod = Param(nameof(PriceAvgPeriod), 20)
 				.SetGreaterThanZero()
 				.SetDisplay("Price Average Period", "Period for calculating price average and standard deviation", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
-			_atrPeriod = this.Param(nameof(AtrPeriod), 14)
+			_atrPeriod = Param(nameof(AtrPeriod), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("ATR Period", "Period for calculating Average True Range", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
-			_stdDevMultiplier = this.Param(nameof(StdDevMultiplier), 2.0m)
+			_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to determine breakout levels", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_stopMultiplier = this.Param(nameof(StopMultiplier), 2.0m)
+			_stopMultiplier = Param(nameof(StopMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Stop ATR Multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 		}
 

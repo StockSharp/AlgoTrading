@@ -195,7 +195,7 @@ namespace StockSharp.Samples.Strategies
 				
 				// Set stop-loss
 				var stopPrice = price - stopSize;
-				RegisterOrder(this.CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
+				RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
 			}
 			else if (price >= upperBand && williamsRValue > -20 && Position >= 0)
 			{
@@ -204,7 +204,7 @@ namespace StockSharp.Samples.Strategies
 				
 				// Set stop-loss
 				var stopPrice = price + stopSize;
-				RegisterOrder(this.CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
+				RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
 			}
 			// Exit conditions
 			else if (price >= middleBand && Position < 0)

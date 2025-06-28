@@ -79,37 +79,37 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public IchimokuVolumeClusterStrategy()
 		{
-			_tenkanPeriod = this.Param(nameof(TenkanPeriod), 9)
+			_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 				.SetGreaterThanZero()
 				.SetDisplay("Tenkan-sen Period", "Period for Tenkan-sen (Conversion Line)", "Ichimoku Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 12, 1);
 
-			_kijunPeriod = this.Param(nameof(KijunPeriod), 26)
+			_kijunPeriod = Param(nameof(KijunPeriod), 26)
 				.SetGreaterThanZero()
 				.SetDisplay("Kijun-sen Period", "Period for Kijun-sen (Base Line)", "Ichimoku Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 30, 2);
 
-			_senkouSpanBPeriod = this.Param(nameof(SenkouSpanBPeriod), 52)
+			_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
 				.SetGreaterThanZero()
 				.SetDisplay("Senkou Span B Period", "Period for Senkou Span B (Leading Span B)", "Ichimoku Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(40, 60, 4);
 
-			_volumeAvgPeriod = this.Param(nameof(VolumeAvgPeriod), 20)
+			_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
 				.SetGreaterThanZero()
 				.SetDisplay("Volume Average Period", "Period for volume average and standard deviation", "Volume Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(10, 30, 5);
 
-			_volumeStdDevMultiplier = this.Param(nameof(VolumeStdDevMultiplier), 2.0m)
+			_volumeStdDevMultiplier = Param(nameof(VolumeStdDevMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Volume StdDev Multiplier", "Standard deviation multiplier for volume threshold", "Volume Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 		}
 

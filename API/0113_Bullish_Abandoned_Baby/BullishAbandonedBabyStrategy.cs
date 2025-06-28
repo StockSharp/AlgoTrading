@@ -120,7 +120,7 @@ namespace StockSharp.Strategies
 					// Enter long position if we don't have one already
 					if (Position <= 0)
 					{
-						this.BuyMarket(Volume);
+						BuyMarket(Volume);
 						LogInfo($"Long position opened: {Volume} at market");
 					}
 				}

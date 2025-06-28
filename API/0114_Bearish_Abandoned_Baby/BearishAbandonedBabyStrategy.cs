@@ -120,7 +120,7 @@ namespace StockSharp.Strategies
 					// Enter short position if we don't have one already
 					if (Position >= 0)
 					{
-						this.SellMarket(Volume);
+						SellMarket(Volume);
 						LogInfo($"Short position opened: {Volume} at market");
 					}
 				}

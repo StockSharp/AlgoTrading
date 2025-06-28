@@ -223,7 +223,7 @@ namespace StockSharp.Samples.Strategies
 				BuyMarket(Volume + Math.Abs(Position));
 				
 				// Use Kijun-sen as stop-loss
-				RegisterOrder(this.CreateOrder(Sides.Sell, kijun, Math.Abs(Position + Volume)));
+				RegisterOrder(CreateOrder(Sides.Sell, kijun, Math.Abs(Position + Volume)));
 			}
 			else if (isBelowKumo && isBearishCross && stochasticK > 80 && Position >= 0)
 			{
@@ -231,7 +231,7 @@ namespace StockSharp.Samples.Strategies
 				SellMarket(Volume + Math.Abs(Position));
 				
 				// Use Kijun-sen as stop-loss
-				RegisterOrder(this.CreateOrder(Sides.Buy, kijun, Math.Abs(Position + Volume)));
+				RegisterOrder(CreateOrder(Sides.Buy, kijun, Math.Abs(Position + Volume)));
 			}
 			// Exit conditions
 			else if (price < kijun && Position > 0)

@@ -72,31 +72,31 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public AdaptiveEmaBreakoutStrategy()
 		{
-			_fast = this.Param(nameof(Fast), 2)
+			_fast = Param(nameof(Fast), 2)
 				.SetGreaterThanZero()
 				.SetDisplay("Fast period", "Fast (EMA) period for calculating KAMA", "KAMA Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(2, 10, 1);
 
-			_slow = this.Param(nameof(Slow), 30)
+			_slow = Param(nameof(Slow), 30)
 				.SetGreaterThanZero()
 				.SetDisplay("Slow period", "Slow (EMA) period for calculating KAMA", "KAMA Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 40, 5);
 
-			_lookback = this.Param(nameof(Lookback), 10)
+			_lookback = Param(nameof(Lookback), 10)
 				.SetGreaterThanZero()
 				.SetDisplay("Lookback", "Main period for calculating KAMA", "KAMA Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(5, 20, 5);
 
-			_stopMultiplier = this.Param(nameof(StopMultiplier), 2m)
+			_stopMultiplier = Param(nameof(StopMultiplier), 2m)
 				.SetGreaterThanZero()
 				.SetDisplay("Stop ATR multiplier", "ATR multiplier for stop-loss", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle type", "Type of candles for strategy", "General");
 		}
 

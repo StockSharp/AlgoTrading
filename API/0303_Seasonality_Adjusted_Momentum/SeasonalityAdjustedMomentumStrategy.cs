@@ -62,25 +62,25 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public SeasonalityAdjustedMomentumStrategy()
 		{
-			_momentumPeriod = this.Param(nameof(MomentumPeriod), 14)
+			_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("Momentum Period", "Period for momentum indicator", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
-			_seasonalityThreshold = this.Param(nameof(SeasonalityThreshold), 0.5m)
+			_seasonalityThreshold = Param(nameof(SeasonalityThreshold), 0.5m)
 				.SetGreaterThanZero()
 				.SetDisplay("Seasonality Threshold", "Threshold value for seasonality strength", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(0.3m, 0.7m, 0.1m);
 
-			_stopLossPercent = this.Param(nameof(StopLossPercent), 2.0m)
+			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 			
 			// Initialize seasonality strength for each month (example data)

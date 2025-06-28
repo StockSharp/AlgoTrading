@@ -69,31 +69,31 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public RsiDynamicOverboughtOversoldStrategy()
 		{
-			_rsiPeriod = this.Param(nameof(RsiPeriod), 14)
+			_rsiPeriod = Param(nameof(RsiPeriod), 14)
 				.SetGreaterThanZero()
 				.SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(7, 21, 7);
 
-			_movingAvgPeriod = this.Param(nameof(MovingAvgPeriod), 50)
+			_movingAvgPeriod = Param(nameof(MovingAvgPeriod), 50)
 				.SetGreaterThanZero()
 				.SetDisplay("MA Period", "Period for moving average of RSI and price", "Indicator Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(20, 100, 10);
 
-			_stdDevMultiplier = this.Param(nameof(StdDevMultiplier), 2.0m)
+			_stdDevMultiplier = Param(nameof(StdDevMultiplier), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("StdDev Multiplier", "Multiplier for standard deviation to define overbought/oversold levels", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_stopLossPercent = this.Param(nameof(StopLossPercent), 2.0m)
+			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy Settings")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = this.Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "General");
 		}
 
