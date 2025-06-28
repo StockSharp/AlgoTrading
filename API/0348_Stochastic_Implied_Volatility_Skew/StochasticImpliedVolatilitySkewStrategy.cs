@@ -128,9 +128,8 @@ namespace StockSharp.Samples.Strategies
 			// Create Stochastic Oscillator
 			_stochastic = new StochasticOscillator
 			{
-				Length = StochLength,
-				K = StochK,
-				D = StochD
+				K = { Length = StochK },
+				D = { Length = StochD },
 			};
 
 			// Create IV Skew SMA

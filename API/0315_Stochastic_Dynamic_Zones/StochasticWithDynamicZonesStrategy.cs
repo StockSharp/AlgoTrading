@@ -133,9 +133,8 @@ namespace StockSharp.Samples.Strategies
 			// Create indicators
 			var stochastic = new StochasticOscillator
 			{
-				K = StochKPeriod,
-				D = StochDPeriod,
-				Length = StochPeriod
+				K = { Length = StochKPeriod },
+				D = { Length = StochDPeriod },
 			};
 			
 			var stochSma = new SimpleMovingAverage { Length = LookbackPeriod };

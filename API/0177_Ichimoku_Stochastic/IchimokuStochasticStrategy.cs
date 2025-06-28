@@ -152,9 +152,8 @@ namespace StockSharp.Samples.Strategies
 
 			var stochastic = new StochasticOscillator
 			{
-				Length = StochPeriod,
-				KPeriod = StochK,
-				DPeriod = StochD
+				K = { Length = StochK },
+				D = { Length = StochD },
 			};
 
 			// Subscribe to candles and bind indicators
