@@ -115,7 +115,7 @@ namespace StockSharp.Samples.Strategies
 			_prevCciValue = 0;
 			_prevPrevCciValue = 0;
 			_inPosition = false;
-			_positionSide = Sides.None;
+			_positionSide = default;
 			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
@@ -208,7 +208,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					SellMarket(Math.Abs(Position));
 					_inPosition = false;
-					_positionSide = Sides.None;
+					_positionSide = default;
 					
 					LogInfo($"Exit signal for long position: CCI ({cciValue:F2}) crossed above 0. Closing at {candle.ClosePrice}");
 				}
@@ -217,7 +217,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					BuyMarket(Math.Abs(Position));
 					_inPosition = false;
-					_positionSide = Sides.None;
+					_positionSide = default;
 					
 					LogInfo($"Exit signal for short position: CCI ({cciValue:F2}) crossed below 0. Closing at {candle.ClosePrice}");
 				}

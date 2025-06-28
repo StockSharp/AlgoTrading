@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 
-		private MovingAverageConvergenceDivergence _macd;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		private decimal _previousHistogram;
 		private decimal _currentHistogramSlope;
 		private bool _isFirstCalculation = true;

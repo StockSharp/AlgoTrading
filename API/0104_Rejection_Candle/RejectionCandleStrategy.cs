@@ -66,7 +66,7 @@ namespace StockSharp.Samples.Strategies
 			
 			_previousCandle = null;
 			_inPosition = false;
-			_currentPositionSide = Sides.None;
+			_currentPositionSide = default;
 
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
@@ -128,7 +128,7 @@ namespace StockSharp.Samples.Strategies
 					{
 						SellMarket(Math.Abs(Position));
 						_inPosition = false;
-						_currentPositionSide = Sides.None;
+						_currentPositionSide = default;
 						LogInfo($"Closed long position at {candle.ClosePrice} on bearish rejection");
 					}
 					// Enter short if we're not already short
@@ -158,7 +158,7 @@ namespace StockSharp.Samples.Strategies
 					{
 						BuyMarket(Math.Abs(Position));
 						_inPosition = false;
-						_currentPositionSide = Sides.None;
+						_currentPositionSide = default;
 						LogInfo($"Closed short position at {candle.ClosePrice} on bullish rejection");
 					}
 					// Enter long if we're not already long
@@ -181,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 					// For long positions: exit when price breaks above the high of previous candle
 					SellMarket(Math.Abs(Position));
 					_inPosition = false;
-					_currentPositionSide = Sides.None;
+					_currentPositionSide = default;
 					LogInfo($"Exit signal: Price broke above previous high ({_previousCandle.HighPrice}). Closed long at {candle.ClosePrice}");
 				}
 				else if (_currentPositionSide == Sides.Sell && candle.LowPrice < _previousCandle.LowPrice)
@@ -189,7 +189,7 @@ namespace StockSharp.Samples.Strategies
 					// For short positions: exit when price breaks below the low of previous candle
 					BuyMarket(Math.Abs(Position));
 					_inPosition = false;
-					_currentPositionSide = Sides.None;
+					_currentPositionSide = default;
 					LogInfo($"Exit signal: Price broke below previous low ({_previousCandle.LowPrice}). Closed short at {candle.ClosePrice}");
 				}
 			}

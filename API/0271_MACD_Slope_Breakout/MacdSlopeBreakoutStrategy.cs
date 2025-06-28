@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 		
-		private MovingAverageConvergenceDivergence _macd;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		private LinearRegression _macdHistSlope;
 		private decimal _prevSlopeValue;
 		private decimal _slopeAvg;
@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Enable position protection
-			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent));
+			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
 		private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal signalValue)

@@ -161,7 +161,7 @@ namespace StockSharp.Strategies
 			_macdHistValues.Clear();
 
 			// Create MACD indicator
-			var macd = new MovingAverageConvergenceDivergenceSignal
+			var macd = new MovingAverageConvergenceDivergenceHistogram
 			{
 				Macd =
 				{
@@ -171,8 +171,7 @@ namespace StockSharp.Strategies
 				SignalMa = { Length = SignalPeriod }
 			};
 
-			// Create histogram indicator based on MACD
-			var macdHistogram = new MacdHistogram { Macd = macd };
+			var macdHistogram = new MovingAverageConvergenceDivergenceHistogram(macd.Macd, new());
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
@@ -226,13 +225,13 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Long entry - MACD Histogram is significantly below its average
-				if (currentMacdHist < _avgMacdHist - _deviationMultiplier * _stdDevMacdHist)
+				if (currentMacdHist < _avgMacdHist - DeviationMultiplier * _stdDevMacdHist)
 				{
 					BuyMarket(Volume);
 					LogInfo($"Long entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
 				}
 				// Short entry - MACD Histogram is significantly above its average
-				else if (currentMacdHist > _avgMacdHist + _deviationMultiplier * _stdDevMacdHist)
+				else if (currentMacdHist > _avgMacdHist + DeviationMultiplier * _stdDevMacdHist)
 				{
 					SellMarket(Volume);
 					LogInfo($"Short entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");

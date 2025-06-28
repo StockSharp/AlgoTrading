@@ -148,7 +148,7 @@ namespace StockSharp.Samples.Strategies
 			_prevKValue = 0;
 			_prevPrevKValue = 0;
 			_inPosition = false;
-			_positionSide = Sides.None;
+			_positionSide = default;
 			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
@@ -245,7 +245,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					SellMarket(Math.Abs(Position));
 					_inPosition = false;
-					_positionSide = Sides.None;
+					_positionSide = default;
 					
 					LogInfo($"Exit signal for long position: Stochastic %K ({kValue:F2}) crossed above 50. Closing at {candle.ClosePrice}");
 				}
@@ -254,7 +254,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					BuyMarket(Math.Abs(Position));
 					_inPosition = false;
-					_positionSide = Sides.None;
+					_positionSide = default;
 					
 					LogInfo($"Exit signal for short position: Stochastic %K ({kValue:F2}) crossed below 50. Closing at {candle.ClosePrice}");
 				}
