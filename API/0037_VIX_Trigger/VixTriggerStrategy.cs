@@ -85,11 +85,11 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			// We need both the primary security and VIX
-			return new[] 
-			{ 
+			return
+			[
 				(Security, CandleType),
 				(VixSecurity, CandleType)
-			};
+			];
 		}
 
 		/// <inheritdoc />

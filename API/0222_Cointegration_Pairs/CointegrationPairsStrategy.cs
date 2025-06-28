@@ -130,11 +130,11 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			return new[] 
-			{
+			return
+			[
 				(Security, CandleType),
 				(Asset2, CandleType)
-			};
+			];
 		}
 
 		/// <inheritdoc />
@@ -158,16 +158,16 @@ namespace StockSharp.Samples.Strategies
 			_asset2Price = 0;
 
 			// Create subscriptions for both assets
-			_asset1Subscription = SubscribeCandles(CandleType, Security);
-			_asset2Subscription = SubscribeCandles(CandleType, Asset2);
-			
+			_asset1Subscription = new Subscription(CandleType, Security);
+			_asset2Subscription = new Subscription(CandleType, Asset2);
+
 			// Subscribe to Asset1 candles
-			_asset1Subscription
+			SubscribeCandles(_asset1Subscription)
 				.Bind(ProcessAsset1Candle)
 				.Start();
-				
+
 			// Subscribe to Asset2 candles
-			_asset2Subscription
+			SubscribeCandles(_asset2Subscription)
 				.Bind(ProcessAsset2Candle)
 				.Start();
 
@@ -250,7 +250,7 @@ namespace StockSharp.Samples.Strategies
 					{
 						var asset2Order = new Order
 						{
-							Direction = Sides.Sell,
+							Side = Sides.Sell,
 							Security = Asset2,
 							Portfolio = _asset2Portfolio,
 							Volume = Volume * Beta
@@ -270,7 +270,7 @@ namespace StockSharp.Samples.Strategies
 					{
 						var asset2Order = new Order
 						{
-							Direction = Sides.Buy,
+							Side = Sides.Buy,
 							Security = Asset2,
 							Portfolio = _asset2Portfolio,
 							Volume = Volume * Beta
@@ -294,7 +294,7 @@ namespace StockSharp.Samples.Strategies
 						{
 							var asset2Order = new Order
 							{
-								Direction = Position > 0 ? Sides.Buy : Sides.Sell,
+								Side = Position > 0 ? Sides.Buy : Sides.Sell,
 								Security = Asset2,
 								Portfolio = _asset2Portfolio,
 								Volume = Volume * Beta

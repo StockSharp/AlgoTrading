@@ -170,11 +170,11 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			return new[]
-			{
+			return
+			[
 				(Asset1, DataType.Level1),
 				(Asset2, DataType.Level1)
-			};
+			];
 		}
 
 		/// <inheritdoc />
@@ -367,7 +367,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				Portfolio = Asset1Portfolio,
 				Security = Asset1,
-				Direction = Sides.Buy,
+				Side = Sides.Buy,
 				Volume = volume,
 				Type = OrderTypes.Market
 			};
@@ -376,7 +376,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				Portfolio = Asset2Portfolio,
 				Security = Asset2,
-				Direction = Sides.Sell,
+				Side = Sides.Sell,
 				Volume = volume,
 				Type = OrderTypes.Market
 			};
@@ -402,7 +402,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				Portfolio = Asset1Portfolio,
 				Security = Asset1,
-				Direction = Sides.Sell,
+				Side = Sides.Sell,
 				Volume = volume,
 				Type = OrderTypes.Market
 			};
@@ -411,7 +411,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				Portfolio = Asset2Portfolio,
 				Security = Asset2,
-				Direction = Sides.Buy,
+				Side = Sides.Buy,
 				Volume = volume,
 				Type = OrderTypes.Market
 			};
@@ -438,7 +438,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					Portfolio = Asset1Portfolio,
 					Security = Asset1,
-					Direction = Sides.Sell,
+					Side = Sides.Sell,
 					Volume = volume,
 					Type = OrderTypes.Market
 				};
@@ -447,7 +447,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					Portfolio = Asset2Portfolio,
 					Security = Asset2,
-					Direction = Sides.Buy,
+					Side = Sides.Buy,
 					Volume = volume,
 					Type = OrderTypes.Market
 				};
@@ -462,7 +462,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					Portfolio = Asset1Portfolio,
 					Security = Asset1,
-					Direction = Sides.Buy,
+					Side = Sides.Buy,
 					Volume = volume,
 					Type = OrderTypes.Market
 				};
@@ -471,7 +471,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					Portfolio = Asset2Portfolio,
 					Security = Asset2,
-					Direction = Sides.Sell,
+					Side = Sides.Sell,
 					Volume = volume,
 					Type = OrderTypes.Market
 				};
