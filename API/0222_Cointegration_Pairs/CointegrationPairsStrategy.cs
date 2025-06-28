@@ -125,9 +125,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Candle Type", "Candle type for strategy", "Common");
 		}
 
-		/// <summary>
-		/// Returns working securities.
-		/// </summary>
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return
