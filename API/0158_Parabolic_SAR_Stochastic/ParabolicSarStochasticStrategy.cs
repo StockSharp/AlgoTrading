@@ -161,9 +161,8 @@ namespace StockSharp.Samples.Strategies
 
 			var stochastic = new StochasticOscillator
 			{
-				KPeriod = StochK,
-				DPeriod = StochD,
-				Период = StochPeriod
+				K = { Length = StochK },
+				D = { Length = StochD },
 			};
 
 			// Reset state

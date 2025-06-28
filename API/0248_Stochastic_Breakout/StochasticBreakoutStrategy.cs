@@ -131,9 +131,8 @@ namespace StockSharp.Samples.Strategies
 			// Initialize indicators
 			_stochastic = new StochasticOscillator
 			{
-				KPeriod = StochasticPeriod,
-				KSmoothing = KPeriod,
-				DPeriod = DPeriod
+				K = { Length = StochasticPeriod },
+				D = { Length = DPeriod },
 			};
 
 			_stochAverage = new SimpleMovingAverage { Length = LookbackPeriod };

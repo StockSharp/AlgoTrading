@@ -141,9 +141,8 @@ namespace StockSharp.Samples.Strategies
 
 			_stochastic = new StochasticOscillator
 			{
-				K = StochK,
-				D = StochD,
-				KPeriod = StochPeriod
+				K = { Length = StochK },
+				D = { Length = StochD },
 			};
 
 			_atr = new AverageTrueRange { Length = 14 };

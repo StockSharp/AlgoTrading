@@ -149,9 +149,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			_stochastic = new StochasticOscillator
 			{
-				K = KPeriod,
-				D = DPeriod,
-				Length = StochPeriod
+				K = { Length = KPeriod },
+				D = { Length = DPeriod },
 			};
 			
 			_prevStochKValue = 0;

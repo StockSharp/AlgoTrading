@@ -146,9 +146,8 @@ namespace StockSharp.Samples.Strategies
 			var vwap = new VWAP();
 			var stochastic = new StochasticOscillator
 			{
-				Length = StochPeriod,
-				K = StochKPeriod,
-				D = StochDPeriod
+				K = { Length = StochKPeriod },
+				D = { Length = StochDPeriod },
 			};
 
 			// Create subscription
