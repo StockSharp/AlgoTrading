@@ -250,7 +250,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Simulate IV based on range and volume with some randomness
 			var random = new Random();
-			decimal iv = (decimal)(range * (1 + 0.5 * random.NextDouble()) * 100);
+			decimal iv = (decimal)(range * (1 + 0.5m * random.NextDouble()) * 100);
 			
 			// Add volume factor - higher volume often correlates with higher IV
 			iv *= (decimal)Math.Min(1.5, 1 + Math.Log10((double)volume) * 0.1);

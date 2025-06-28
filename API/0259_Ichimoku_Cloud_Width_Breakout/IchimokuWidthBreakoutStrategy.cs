@@ -165,9 +165,9 @@ namespace StockSharp.Strategies
 			// Create indicators
 			_ichimoku = new Ichimoku
 			{
-				TenkanPeriod = TenkanPeriod,
-				KijunPeriod = KijunPeriod,
-				SenkouSpanBPeriod = SenkouSpanBPeriod
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanBPeriod }
 			};
 			
 			_widthAverage = new SimpleMovingAverage { Length = AvgPeriod };

@@ -145,7 +145,7 @@ namespace StockSharp.Samples.Strategies
 			var atr = new AverageTrueRange { Length = AtrPeriod };
 			
 			// Create Keltner Channels using EMA and ATR
-			var keltner = new KeltnerChannel
+			var keltner = new KeltnerChannels
 			{
 				Ema = ema,
 				Atr = atr,

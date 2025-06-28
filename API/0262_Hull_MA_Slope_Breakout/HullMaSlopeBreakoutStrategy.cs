@@ -99,7 +99,7 @@ namespace StockSharp.Samples.Strategies
 				.SetCanOptimize(true)
 				.SetOptimize(1m, 3m, 0.5m);
 				
-			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Atrs))
+			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
 				.SetDisplay("Stop Loss", "Stop loss value in ATRs", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

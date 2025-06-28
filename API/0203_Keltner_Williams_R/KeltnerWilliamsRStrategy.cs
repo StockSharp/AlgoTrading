@@ -70,22 +70,22 @@ namespace StockSharp.Samples.Strategies
 		public KeltnerWilliamsRStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetRange(10, 50, 5)
+				.SetRange(10, 50)
 				.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Indicators")
 				.SetCanOptimize(true);
 
 			_keltnerMultiplier = Param(nameof(KeltnerMultiplier), 2m)
-				.SetRange(1m, 4m, 0.5m)
+				.SetRange(1m, 4m)
 				.SetDisplay("K Multiplier", "Multiplier for Keltner Channel", "Indicators")
 				.SetCanOptimize(true);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetRange(7, 28, 7)
+				.SetRange(7, 28)
 				.SetDisplay("ATR Period", "ATR period for Keltner Channel", "Indicators")
 				.SetCanOptimize(true);
 
 			_williamsRPeriod = Param(nameof(WilliamsRPeriod), 14)
-				.SetRange(5, 30, 5)
+				.SetRange(5, 30)
 				.SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators")
 				.SetCanOptimize(true);
 
@@ -105,7 +105,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize indicators
-			var keltner = new KeltnerChannel
+			var keltner = new KeltnerChannels
 			{
 				Length = EmaPeriod,
 				ATRLength = AtrPeriod,
