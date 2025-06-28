@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
+using Ecng.Common;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -235,7 +235,6 @@ namespace StockSharp.Samples.Strategies
 			// Simple sentiment simulation based on price action
 			// In reality, this would come from social media or news sentiment API
 			
-			var random = new Random();
 			decimal sentiment;
 			
 			// Base sentiment on candle pattern
@@ -262,7 +261,7 @@ namespace StockSharp.Samples.Strategies
 				}
 				
 				// Add some randomness
-				sentiment += (decimal)((random.NextDouble() - 0.5) * 0.5);
+				sentiment += (decimal)((RandomGen.GetDouble() - 0.5) * 0.5);
 			}
 			
 			// Ensure sentiment is within -2 to 2 range

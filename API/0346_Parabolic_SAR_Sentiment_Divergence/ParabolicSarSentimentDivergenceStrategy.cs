@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -187,8 +187,7 @@ namespace StockSharp.Samples.Strategies
 			// This is a placeholder for a real sentiment analysis
 			// In a real implementation, this would connect to a sentiment data provider
 			// Returning a random value between -1 and 1 for simulation
-			var random = new Random();
-			return (decimal)(random.NextDouble() * 2 - 1);
+			return (decimal)(RandomGen.GetDouble() * 2 - 1);
 		}
 	}
 }

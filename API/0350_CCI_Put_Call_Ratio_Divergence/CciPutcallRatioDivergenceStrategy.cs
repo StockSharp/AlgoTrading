@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -202,9 +202,6 @@ namespace StockSharp.Samples.Strategies
 			// This is a placeholder for real Put/Call Ratio data
 			// In a real implementation, this would connect to an options data provider
 			
-			// Create pseudo-random but somewhat realistic PCR values
-			var random = new Random();
-			
 			// Base PCR on price movement (inverse relation usually exists)
 			bool priceUp = candle.OpenPrice < candle.ClosePrice;
 			decimal priceChange = Math.Abs((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice);
@@ -212,16 +209,16 @@ namespace StockSharp.Samples.Strategies
 			if (priceUp)
 			{
 				// When price rises, PCR often falls (less put buying)
-				_currentPcr = 0.7m - priceChange + (decimal)(random.NextDouble() * 0.2);
+				_currentPcr = 0.7m - priceChange + (decimal)(RandomGen.GetDouble() * 0.2);
 			}
 			else
 			{
 				// When price falls, PCR often rises (more put buying for protection)
-				_currentPcr = 1.0m + priceChange + (decimal)(random.NextDouble() * 0.3);
+				_currentPcr = 1.0m + priceChange + (decimal)(RandomGen.GetDouble() * 0.3);
 			}
 			
 			// Add some randomness for market events
-			if (random.NextDouble() > 0.9)
+			if (RandomGen.GetDouble() > 0.9)
 			{
 				// Occasional PCR spikes
 				_currentPcr *= 1.3m;

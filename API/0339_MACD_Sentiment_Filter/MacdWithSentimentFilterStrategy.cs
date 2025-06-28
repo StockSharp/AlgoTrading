@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
@@ -269,8 +269,7 @@ namespace StockSharp.Samples.Strategies
 			// Add random noise to sentiment
 			else
 			{
-				var random = new Random();
-				_sentimentScore += (decimal)((random.NextDouble() - 0.5) * 0.1);
+				_sentimentScore += (decimal)((RandomGen.GetDouble() - 0.5) * 0.1);
 				_sentimentScore = Math.Max(Math.Min(_sentimentScore, 1m), -1m);
 			}
 			

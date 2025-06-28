@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 
+using Ecng.Common;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
@@ -131,8 +133,7 @@ namespace StockSharp.Samples.Strategies
 			_isShort = false;
 			
 			// Create Supertrend indicator
-			var atr = new AverageTrueRange { Length = Period };
-			var supertrend = new SuperTrend { Atr = atr, Multiplier = Multiplier };
+			var supertrend = new SuperTrend { Length = Period, Multiplier = Multiplier };
 			
 			// Subscribe to candles and bind indicator
 			var subscription = SubscribeCandles(CandleType);
@@ -220,22 +221,18 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		private void UpdatePCR(ICandleMessage candle)
 		{
-			// Simple PCR simulation
-			// In reality, this would come from options market data
-			var random = new Random();
-			
 			// Base PCR on candle pattern with some randomness
 			decimal pcr;
 			
 			// Bullish candle tends to have lower PCR
 			if (candle.ClosePrice > candle.OpenPrice)
 			{
-				pcr = 0.7m + (decimal)(random.NextDouble() * 0.3);
+				pcr = 0.7m + (decimal)(RandomGen.GetDouble() * 0.3);
 			}
 			// Bearish candle tends to have higher PCR
 			else
 			{
-				pcr = 1.0m + (decimal)(random.NextDouble() * 0.5);
+				pcr = 1.0m + (decimal)(RandomGen.GetDouble() * 0.5);
 			}
 			
 			_currentPcr = pcr;

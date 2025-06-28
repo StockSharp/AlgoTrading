@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -248,8 +248,7 @@ namespace StockSharp.Samples.Strategies
 			decimal iv = (candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100;
 			
 			// Add some random fluctuation to simulate IV behavior
-			var random = new Random();
-			iv *= (decimal)(0.8 + 0.4 * random.NextDouble());
+			iv *= (decimal)(0.8 + 0.4 * RandomGen.GetDouble());
 			
 			// Add to history and maintain history length
 			_impliedVolatilityHistory.Add(iv);

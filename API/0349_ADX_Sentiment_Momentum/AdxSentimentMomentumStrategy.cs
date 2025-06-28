@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -204,9 +204,6 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal SimulateSentiment(ICandleMessage candle)
 		{
-			// Create pseudo-random but somewhat realistic sentiment values
-			var random = new Random();
-			
 			// Base sentiment on price movement (up = positive sentiment, down = negative sentiment)
 			var priceUp = candle.OpenPrice < candle.ClosePrice;
 			var priceChange = (candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice;
@@ -215,10 +212,10 @@ namespace StockSharp.Samples.Strategies
 			var baseSentiment = priceChange * 10; // Scale up for easier interpretation
 
 			// Add noise to simulate real-world sentiment data
-			var noise = (decimal)(random.NextDouble() * 0.2 - 0.1);
+			var noise = (decimal)(RandomGen.GetDouble() * 0.2 - 0.1);
 			
 			// Sometimes sentiment can diverge from price action
-			if (random.NextDouble() > 0.7)
+			if (RandomGen.GetDouble() > 0.7)
 			{
 				noise *= 2; // Occasionally larger divergences
 			}

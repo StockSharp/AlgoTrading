@@ -1,11 +1,11 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -247,9 +247,6 @@ namespace StockSharp.Samples.Strategies
 			// In a real implementation, this would connect to an options data provider
 			// We'll simulate some values based on price action for demonstration
 			
-			// Create pseudo-random but somewhat realistic values
-			var random = new Random();
-			
 			// Base OI values on price movement
 			bool priceUp = candle.OpenPrice < candle.ClosePrice;
 			
@@ -257,23 +254,23 @@ namespace StockSharp.Samples.Strategies
 			// Simulate bearish sentiment with higher put OI when price is falling
 			if (priceUp)
 			{
-				_currentCallOi = candle.TotalVolume * (1m + (decimal)random.NextDouble() * 0.5m);
-				_currentPutOi = candle.TotalVolume * (0.7m + (decimal)random.NextDouble() * 0.3m);
+				_currentCallOi = candle.TotalVolume * (1m + (decimal)RandomGen.GetDouble() * 0.5m);
+				_currentPutOi = candle.TotalVolume * (0.7m + (decimal)RandomGen.GetDouble() * 0.3m);
 			}
 			else
 			{
-				_currentCallOi = candle.TotalVolume * (0.7m + (decimal)random.NextDouble() * 0.3m);
-				_currentPutOi = candle.TotalVolume * (1m + (decimal)random.NextDouble() * 0.5m);
+				_currentCallOi = candle.TotalVolume * (0.7m + (decimal)RandomGen.GetDouble() * 0.3m);
+				_currentPutOi = candle.TotalVolume * (1m + (decimal)RandomGen.GetDouble() * 0.5m);
 			}
 			
 			// Add some randomness for spikes
-			if (random.NextDouble() > 0.9)
+			if (RandomGen.GetDouble() > 0.9)
 			{
 				// Occasional spikes in OI
 				_currentCallOi *= 1.5m;
 			}
 			
-			if (random.NextDouble() > 0.9)
+			if (RandomGen.GetDouble() > 0.9)
 			{
 				// Occasional spikes in OI
 				_currentPutOi *= 1.5m;
