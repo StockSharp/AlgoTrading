@@ -96,18 +96,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(donchian, (candle, donchianValues) =>
-				{
-					// Process ADX
-					var adxValue = adx.Process(candle).ToDecimal();
-					
-					// Get Donchian Channel values
-					var upperBand = donchianValues[0].ToDecimal();
-					var middleBand = donchianValues[1].ToDecimal();
-					var lowerBand = donchianValues[2].ToDecimal();
-
-					ProcessIndicators(candle, adxValue, upperBand, middleBand, lowerBand);
-				})
+				.BindEx(donchian, adx, ProcessCandle)
 				.Start();
 			
 			// Enable percentage-based stop-loss protection
@@ -124,8 +113,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessIndicators(ICandleMessage candle, decimal adxValue, decimal upperBand, 
-			decimal middleBand, decimal lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue adxValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -135,13 +123,22 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			// Process ADX
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+
+			// Get Donchian Channel values
+			var typedDonchian = (DonchianChannelsValue)donchianValue;
+			var upperBand = typedDonchian.UpperBand;
+			var middleBand = typedDonchian.Middle;
+			var lowerBand = typedDonchian.LowerBand;
+
 			var price = candle.ClosePrice;
 
 			// Trading logic:
 			// Long: ADX > 25 && Price > Donchian upper band (strong trend with breakout up)
 			// Short: ADX > 25 && Price < Donchian lower band (strong trend with breakout down)
 			
-			var strongTrend = adxValue > 25;
+			var strongTrend = typedAdx.MovingAverage > 25;
 
 			if (strongTrend && price > upperBand && Position <= 0)
 			{
@@ -156,7 +153,7 @@ namespace StockSharp.Samples.Strategies
 				SellMarket(volume);
 			}
 			// Exit conditions - ADX weakness
-			else if (Position != 0 && adxValue < 20)
+			else if (Position != 0 && typedAdx.MovingAverage < 20)
 			{
 				// Exit position when ADX falls below 20 (trend weakening)
 				if (Position > 0)

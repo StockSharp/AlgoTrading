@@ -134,7 +134,7 @@ namespace StockSharp.Strategies
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(adx, ProcessCandle)
+				.BindEx(adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -155,7 +155,7 @@ namespace StockSharp.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal currentAdx, decimal plusDi, decimal minusDi)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -164,6 +164,9 @@ namespace StockSharp.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+			var currentAdx = typedAdx.MovingAverage;
 
 			// Update ADX statistics
 			UpdateAdxStatistics(currentAdx);
@@ -179,7 +182,7 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Positive trend strength should correspond to price direction for entry
-				var direction = plusDi > minusDi ? Sides.Buy : Sides.Sell;
+				var direction = typedAdx.Dx.Plus > typedAdx.Dx.Minus ? Sides.Buy : Sides.Sell;
 
 				// ADX is significantly below its average - mean reversion expects it to rise
 				// This could indicate a period of low trend strength that might change

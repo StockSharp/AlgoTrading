@@ -98,7 +98,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators and process candles
 			subscription
-				.BindEx(adx, (candle, adxValue) => ProcessCandle(candle, adxValue, atr.Process(candle).ToDecimal()))
+				.BindEx(adx, atr, ProcessCandle)
 				.Start();
 
 			// Enable position protection
@@ -120,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -131,10 +131,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get ADX and +DI/-DI values
-			var adx = adxValue.GetValue<AdxValue>();
-			var adxMain = adx.Adx;
-			var plusDi = adx.PlusDi;
-			var minusDi = adx.MinusDi;
+			var adx = (AverageDirectionalIndexValue)adxValue;
+			var adxMain = adx.MovingAverage;
+			var plusDi = adx.Dx.Plus;
+			var minusDi = adx.Dx.Minus;
 
 			// Trading logic
 			if (adxMain >= AdxThreshold)

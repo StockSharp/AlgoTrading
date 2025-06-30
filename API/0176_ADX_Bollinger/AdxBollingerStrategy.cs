@@ -141,7 +141,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(adx, bollinger, atr, ProcessCandle)
+				.BindEx(adx, bollinger, atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -162,7 +162,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal adxValue, decimal bollingerValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -173,22 +173,22 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get additional values from Bollinger Bands
-			var bollingerIndicator = (BollingerBands)Indicators.FindById(nameof(BollingerBands));
-			if (bollingerIndicator == null)
-				return;
+			var bollingerValueTyped = (BollingerBandsValue)bollingerValue;
 
-			var middleBand = bollingerValue; // Middle band is returned by default
-			var upperBand = bollingerIndicator.UpBand.GetCurrentValue();
-			var lowerBand = bollingerIndicator.LowBand.GetCurrentValue();
-			
+			var upperBand = bollingerValueTyped.UpBand;
+			var lowerBand = bollingerValueTyped.LowBand;
+			var middleBand = (upperBand - lowerBand) / 2 + lowerBand;
+
 			// Current price (close of the candle)
 			var price = candle.ClosePrice;
 
 			// Stop-loss size based on ATR
-			var stopSize = atrValue * AtrMultiplier;
+			var stopSize = atrValue.ToDecimal() * AtrMultiplier;
+
+			var adxValueTyped = (AverageDirectionalIndexValue)adxValue;
 
 			// Trading logic
-			if (adxValue > 25) // Strong trend
+			if (adxValueTyped.MovingAverage > 25) // Strong trend
 			{
 				if (price > upperBand && Position <= 0)
 				{
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Set stop-loss
 					var stopPrice = price - stopSize;
-					RegisterOrder(this.CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
+					RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
 				}
 				else if (price < lowerBand && Position >= 0)
 				{
@@ -206,11 +206,11 @@ namespace StockSharp.Samples.Strategies
 					
 					// Set stop-loss
 					var stopPrice = price + stopSize;
-					RegisterOrder(this.CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
+					RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
 				}
 			}
 			// Exit conditions
-			else if (adxValue < 20)
+			else if (adxValueTyped.MovingAverage < 20)
 			{
 				// Trend is weakening - close any position
 				if (Position > 0)

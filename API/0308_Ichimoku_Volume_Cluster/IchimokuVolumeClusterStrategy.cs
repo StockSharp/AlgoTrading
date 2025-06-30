@@ -141,7 +141,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind Ichimoku to subscription
 			subscription
-				.Bind(ichimoku, ProcessCandle)
+				.BindEx(ichimoku, ProcessCandle)
 				.Start();
 				
 			// Create a subscription for volume processing
@@ -189,7 +189,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IchimokuIndicatorValue ichimokuValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue v)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -198,7 +198,9 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
+			var ichimokuValue = (IchimokuValue)v;
+
 			// Extract Ichimoku values
 			var tenkan = ichimokuValue.Tenkan;
 			var kijun = ichimokuValue.Kijun;

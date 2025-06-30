@@ -1,11 +1,13 @@
+using System;
+using System.Collections.Generic;
+
 using Ecng.Common;
+
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using System;
-using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -124,7 +126,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_adx, ProcessCandle)
+				.BindEx(_adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -143,7 +145,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal adxMain, decimal diPlus, decimal diMinus)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -155,6 +157,11 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+			var adxMain = typedAdx.MovingAverage;
+			var diPlus = typedAdx.Dx.Plus;
+			var diMinus = typedAdx.Dx.Minus;
 
 			// Entry logic based on ADX and sentiment momentum
 			if (adxMain > AdxThreshold && diPlus > diMinus && _sentimentMomentum > 0 && Position <= 0)
