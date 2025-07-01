@@ -182,13 +182,13 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Long entry - CCI is significantly below its average
-				if (currentCci < _avgCci - _deviationMultiplier * _stdDevCci)
+				if (currentCci < _avgCci - DeviationMultiplier * _stdDevCci)
 				{
 					BuyMarket(Volume);
 					LogInfo($"Long entry: CCI = {currentCci}, CCI Avg = {_avgCci}, CCI StdDev = {_stdDevCci}");
 				}
 				// Short entry - CCI is significantly above its average
-				else if (currentCci > _avgCci + _deviationMultiplier * _stdDevCci)
+				else if (currentCci > _avgCci + DeviationMultiplier * _stdDevCci)
 				{
 					SellMarket(Volume);
 					LogInfo($"Short entry: CCI = {currentCci}, CCI Avg = {_avgCci}, CCI StdDev = {_stdDevCci}");

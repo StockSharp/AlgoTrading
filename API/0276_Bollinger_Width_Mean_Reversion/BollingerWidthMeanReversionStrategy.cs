@@ -19,11 +19,9 @@ namespace StockSharp.Samples.Strategies
 		private SimpleMovingAverage _widthAvg;
 		private StandardDeviation _widthStdDev;
 
-		private decimal _lastWidth;
 		private decimal _lastWidthAvg;
 		private decimal _lastWidthStdDev;
 		private AverageTrueRange _atr;
-		private decimal _lastAtr;
 
 		private readonly StrategyParam<int> _bollingerLength;
 		private readonly StrategyParam<decimal> _bollingerDeviation;
@@ -166,7 +164,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_bollinger, ProcessBollinger)
+				.BindEx(_bollinger, _atr, ProcessBollinger)
 				.Start();
 
 			// Create chart visualization if available
@@ -179,24 +177,23 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessBollinger(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+		private void ProcessBollinger(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			// Process ATR
-			var atrValue = _atr.Process(candle);
-			if (atrValue.IsFinal)
-				_lastAtr = atrValue.ToDecimal();
+			var lastAtr = atrValue.ToDecimal();
+
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
 
 			// Calculate Bollinger width
-			var width = upperBand - lowerBand;
-			_lastWidth = width;
+			var lastWidth = bollingerTyped.UpBand - bollingerTyped.LowBand;
 
 			// Calculate width's average and standard deviation
-			var widthAvg = _widthAvg.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
-			var widthStdDev = _widthStdDev.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
+			var widthAvg = _widthAvg.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+			var widthStdDev = _widthStdDev.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			if (widthAvg.IsFinal && widthStdDev.IsFinal)
 			{
@@ -212,37 +209,37 @@ namespace StockSharp.Samples.Strategies
 				var upperThreshold = _lastWidthAvg + WidthDeviationMultiplier * _lastWidthStdDev;
 
 				// Trading logic
-				if (_lastWidth < lowerThreshold && Position <= 0)
+				if (lastWidth < lowerThreshold && Position <= 0)
 				{
 					// Width is compressed - Long signal (expecting expansion)
 					BuyMarket(Volume + Math.Abs(Position));
 					
 					// Set ATR-based stop loss
-					if (_lastAtr > 0)
+					if (lastAtr > 0)
 					{
-						var stopPrice = candle.ClosePrice - AtrMultiplier * _lastAtr;
+						var stopPrice = candle.ClosePrice - AtrMultiplier * lastAtr;
 						PlaceStopLoss(stopPrice);
 					}
 				}
-				else if (_lastWidth > upperThreshold && Position >= 0)
+				else if (lastWidth > upperThreshold && Position >= 0)
 				{
 					// Width is expanded - Short signal (expecting contraction)
 					SellMarket(Volume + Math.Abs(Position));
 					
 					// Set ATR-based stop loss
-					if (_lastAtr > 0)
+					if (lastAtr > 0)
 					{
-						var stopPrice = candle.ClosePrice + AtrMultiplier * _lastAtr;
+						var stopPrice = candle.ClosePrice + AtrMultiplier * lastAtr;
 						PlaceStopLoss(stopPrice);
 					}
 				}
 				// Exit logic
-				else if (_lastWidth > _lastWidthAvg && Position > 0)
+				else if (lastWidth > _lastWidthAvg && Position > 0)
 				{
 					// Width returned to average - Exit long position
 					SellMarket(Position);
 				}
-				else if (_lastWidth < _lastWidthAvg && Position < 0)
+				else if (lastWidth < _lastWidthAvg && Position < 0)
 				{
 					// Width returned to average - Exit short position
 					BuyMarket(Math.Abs(Position));
@@ -259,7 +256,6 @@ namespace StockSharp.Samples.Strategies
 				Math.Abs(Position)
 			);
 			
-			stopOrder.Type = OrderTypes.Stop;
 			RegisterOrder(stopOrder);
 		}
 	}

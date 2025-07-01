@@ -141,7 +141,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(bollinger, williamsR, atr, ProcessCandle)
+				.BindEx(bollinger, williamsR, atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -162,7 +162,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal bollingerValue, decimal williamsRValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue williamsRValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -173,22 +173,22 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get additional values from Bollinger Bands
-			var bollingerIndicator = (BollingerBands)Indicators.FindById(nameof(BollingerBands));
-			if (bollingerIndicator == null)
-				return;
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
 
-			var middleBand = bollingerValue; // Middle band is returned by default
-			var upperBand = bollingerIndicator.UpBand.GetCurrentValue();
-			var lowerBand = bollingerIndicator.LowBand.GetCurrentValue();
+			var middleBand = bollingerTyped.MovingAverage; // Middle band is returned by default
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
 			
 			// Current price (close of the candle)
 			var price = candle.ClosePrice;
 
 			// Stop-loss size based on ATR
-			var stopSize = atrValue * AtrMultiplier;
+			var stopSize = atrValue.ToDecimal() * AtrMultiplier;
+
+			var williamsRValueDec = williamsRValue.ToDecimal();
 
 			// Trading logic
-			if (price <= lowerBand && williamsRValue < -80 && Position <= 0)
+			if (price <= lowerBand && williamsRValueDec < -80 && Position <= 0)
 			{
 				// Buy signal: price at/below lower band and Williams %R oversold
 				BuyMarket(Volume + Math.Abs(Position));
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
 				var stopPrice = price - stopSize;
 				RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
 			}
-			else if (price >= upperBand && williamsRValue > -20 && Position >= 0)
+			else if (price >= upperBand && williamsRValueDec > -20 && Position >= 0)
 			{
 				// Sell signal: price at/above upper band and Williams %R overbought
 				SellMarket(Volume + Math.Abs(Position));

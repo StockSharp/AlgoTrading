@@ -182,13 +182,13 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Long entry - Williams %R is significantly below its average
-				if (currentWilliamsR < _avgWilliamsR - _deviationMultiplier * _stdDevWilliamsR)
+				if (currentWilliamsR < _avgWilliamsR - DeviationMultiplier * _stdDevWilliamsR)
 				{
 					BuyMarket(Volume);
 					LogInfo($"Long entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");
 				}
 				// Short entry - Williams %R is significantly above its average
-				else if (currentWilliamsR > _avgWilliamsR + _deviationMultiplier * _stdDevWilliamsR)
+				else if (currentWilliamsR > _avgWilliamsR + DeviationMultiplier * _stdDevWilliamsR)
 				{
 					SellMarket(Volume);
 					LogInfo($"Short entry: Williams %R = {currentWilliamsR}, Avg = {_avgWilliamsR}, StdDev = {_stdDevWilliamsR}");

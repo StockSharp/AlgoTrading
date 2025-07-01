@@ -26,10 +26,6 @@ namespace StockSharp.Strategies
 		private SimpleMovingAverage _widthAverage;
 		private AverageTrueRange _atr;
 		
-		// Track band width values
-		private decimal _lastWidth;
-		private decimal _lastAvgWidth;
-		
 		/// <summary>
 		/// Bollinger Bands period.
 		/// </summary>
@@ -134,9 +130,6 @@ namespace StockSharp.Strategies
 		{
 			base.OnStarted(time);
 			
-			_lastWidth = 0;
-			_lastAvgWidth = 0;
-			
 			// Create indicators
 			_bollinger = new BollingerBands
 			{
@@ -152,7 +145,7 @@ namespace StockSharp.Strategies
 			
 			// Bind Bollinger Bands
 			subscription
-				.Bind(_bollinger, ProcessBollinger)
+				.BindEx(_bollinger, _atr, ProcessBollinger)
 				.Start();
 			
 			// Create chart area for visualization
@@ -165,51 +158,41 @@ namespace StockSharp.Strategies
 			}
 		}
 		
-		private void ProcessBollinger(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+		private void ProcessBollinger(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 			
 			// Process candle through ATR
-			var atrValue = _atr.Process(candle);
 			var currentAtr = atrValue.ToDecimal();
-			
+
 			// Calculate Bollinger Band width
-			var width = upperBand - lowerBand;
-			
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
+			var lastWidth = upperBand - lowerBand;
+
 			// Process width through average
-			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
+			var widthAvgValue = _widthAverage.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished);
 			var avgWidth = widthAvgValue.ToDecimal();
 			
-			// For first values, just save and skip
-			if (_lastWidth == 0)
-			{
-				_lastWidth = width;
-				_lastAvgWidth = avgWidth;
-				return;
-			}
-			
 			// Calculate width standard deviation (simplified approach)
-			var stdDev = Math.Abs(width - avgWidth) * 1.5m; // Simplified approximation
+			var stdDev = Math.Abs(lastWidth - avgWidth) * 1.5m; // Simplified approximation
 			
 			// Skip if indicators are not formed yet
 			if (!_bollinger.IsFormed || !_widthAverage.IsFormed || !_atr.IsFormed)
 			{
-				_lastWidth = width;
-				_lastAvgWidth = avgWidth;
 				return;
 			}
 			
 			// Check if trading is allowed
 			if (!IsFormedAndOnlineAndAllowTrading())
 			{
-				_lastWidth = width;
-				_lastAvgWidth = avgWidth;
 				return;
 			}
 			
 			// Bollinger width breakout detection
-			if (width > avgWidth + Multiplier * stdDev)
+			if (lastWidth > avgWidth + Multiplier * stdDev)
 			{
 				// Determine direction based on price and bands
 				var priceDirection = false;
@@ -253,15 +236,11 @@ namespace StockSharp.Strategies
 				}
 			}
 			// Check for exit condition - width returns to average
-			else if ((Position > 0 || Position < 0) && width < avgWidth)
+			else if ((Position > 0 || Position < 0) && lastWidth < avgWidth)
 			{
 				// Exit position
 				ClosePosition();
 			}
-			
-			// Update last values
-			_lastWidth = width;
-			_lastAvgWidth = avgWidth;
 		}
 	}
 }

@@ -126,7 +126,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Enable position protection
-			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent));
+			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
 		private void ProcessCandle(ICandleMessage candle, decimal cciValue)
