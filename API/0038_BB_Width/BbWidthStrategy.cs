@@ -108,7 +108,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(bollinger, atr, ProcessCandle)
+				.BindEx(bollinger, atr, ProcessCandle)
 				.Start();
 
 			// Configure chart
@@ -125,7 +125,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and calculate Bollinger Band Width
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -135,8 +135,10 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+
 			// Calculate Bollinger Band Width
-			decimal bbWidth = upperBand - lowerBand;
+			decimal bbWidth = bollingerTyped.UpBand - bollingerTyped.LowBand;
 			
 			// Initialize _prevWidth on first formed candle
 			if (_prevWidth == 0)
@@ -149,10 +151,10 @@ namespace StockSharp.Samples.Strategies
 			bool isBBWidthExpanding = bbWidth > _prevWidth;
 			
 			// Determine price position relative to middle band for trend direction
-			bool isPriceAboveMiddleBand = candle.ClosePrice > middleBand;
+			bool isPriceAboveMiddleBand = candle.ClosePrice > bollingerTyped.MovingAverage;
 			
 			// Calculate stop-loss amount based on ATR
-			decimal stopLossAmount = atrValue * AtrMultiplier;
+			decimal stopLossAmount = atrValue.ToDecimal() * AtrMultiplier;
 
 			if (Position == 0)
 			{

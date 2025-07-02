@@ -143,7 +143,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators to candles
 			subscription
-				.Bind(bollinger, cci, ProcessCandle)
+				.BindEx(bollinger, cci, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -167,7 +167,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal cciValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue cciValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -177,35 +177,37 @@ namespace StockSharp.Samples.Strategies
 
 			// In this function we receive only the middle band value from the Bollinger Bands indicator
 			// We need to calculate the upper and lower bands ourselves or get them directly from the indicator
-			
+
 			// Get Bollinger Bands values from the indicator
-			var bollingerIndicator = GetIndicator<BollingerBands>();
-			var upperBand = bollingerIndicator.ToDecimal(BollingerBandsResult.Upper);
-			var lowerBand = bollingerIndicator.ToDecimal(BollingerBandsResult.Lower);
-			
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerType.UpBand;
+			var lowerBand = bollingerType.LowBand;
+			var middleBand = bollingerType.MovingAverage;
+			var cciTyped = cciValue.ToDecimal();
+
 			// Current price
 			var price = candle.ClosePrice;
 
 			LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
 				   $"Upper Band: {upperBand}, Middle Band: {middleBand}, Lower Band: {lowerBand}, " +
-				   $"CCI: {cciValue}");
+				   $"CCI: {cciTyped}");
 
 			// Trading rules
-			if (price < lowerBand && cciValue < CciOversold && Position <= 0)
+			if (price < lowerBand && cciTyped < CciOversold && Position <= 0)
 			{
 				// Buy signal - price below lower band and CCI oversold
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 				
-				LogInfo($"Buy signal: Price below lower Bollinger Band and CCI oversold ({cciValue} < {CciOversold}). Volume: {volume}");
+				LogInfo($"Buy signal: Price below lower Bollinger Band and CCI oversold ({cciTyped} < {CciOversold}). Volume: {volume}");
 			}
-			else if (price > upperBand && cciValue > CciOverbought && Position >= 0)
+			else if (price > upperBand && cciTyped > CciOverbought && Position >= 0)
 			{
 				// Sell signal - price above upper band and CCI overbought
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 				
-				LogInfo($"Sell signal: Price above upper Bollinger Band and CCI overbought ({cciValue} > {CciOverbought}). Volume: {volume}");
+				LogInfo($"Sell signal: Price above upper Bollinger Band and CCI overbought ({cciTyped} > {CciOverbought}). Volume: {volume}");
 			}
 			// Exit conditions
 			else if (price > middleBand && Position > 0)

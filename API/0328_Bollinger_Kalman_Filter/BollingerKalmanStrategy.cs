@@ -118,8 +118,8 @@ namespace StockSharp.Samples.Strategies
 
 			var kalmanFilter = new KalmanFilter
 			{
-				Q = KalmanQ,
-				R = KalmanR
+				ProcessNoise = KalmanQ,
+				MeasurementNoise = KalmanR
 			};
 
 			// Create subscription for candles
@@ -157,10 +157,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+
 			// Extract values from indicators
-			decimal midBand = bollingerValue[0].To<decimal>();  // Middle band (SMA)
-			decimal upperBand = bollingerValue[1].To<decimal>(); // Upper band
-			decimal lowerBand = bollingerValue[2].To<decimal>(); // Lower band
+			decimal midBand = bollingerTyped.MovingAverage;  // Middle band (SMA)
+			decimal upperBand = bollingerTyped.UpBand; // Upper band
+			decimal lowerBand = bollingerTyped.LowBand; // Lower band
 			
 			decimal kalmanFilterValue = kalmanValue.ToDecimal();
 			

@@ -106,9 +106,9 @@ namespace StockSharp.Samples.Strategies
 				Length = BollingerPeriod,
 				Width = BollingerMultiplier
 			};
-			
+
 			_atr = new AverageTrueRange { Length = BollingerPeriod };
-			
+
 			// Reset state
 			_prevBollingerWidth = 0;
 			_avgBollingerWidth = 0;
@@ -117,9 +117,9 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
-                        subscription
-                                .BindEx(_bollinger, _atr, ProcessCandle)
-                                .Start();
+			subscription
+					.BindEx(_bollinger, _atr, ProcessCandle)
+					.Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _bollinger);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Enable position protection
 			StartProtection(
 				takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
@@ -137,40 +137,40 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-                private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
-                {
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+		{
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
-                        var bb = (BollingerBandsValue)bollingerValue;
-                        var middleBand = bb.MiddleBand;
-                        var upperBand = bb.UpperBand;
-                        var lowerBand = bb.LowerBand;
-                        var atr = atrValue.ToDecimal();
 
-                        // Calculate Bollinger width (upper - lower)
-                        var bollingerWidth = upperBand - lowerBand;
-			
+			var bb = (BollingerBandsValue)bollingerValue;
+			var middleBand = bb.MovingAverage;
+			var upperBand = bb.UpBand;
+			var lowerBand = bb.LowBand;
+			var atr = atrValue.ToDecimal();
+
+			// Calculate Bollinger width (upper - lower)
+			var bollingerWidth = upperBand - lowerBand;
+
 			// Track average Bollinger width over lookback period
 			_bollingerWidths.Enqueue(bollingerWidth);
 			_bollingerWidthSum += bollingerWidth;
-			
+
 			if (_bollingerWidths.Count > LookbackPeriod)
 			{
 				var oldValue = _bollingerWidths.Dequeue();
 				_bollingerWidthSum -= oldValue;
 			}
-			
+
 			if (_bollingerWidths.Count == LookbackPeriod)
 			{
 				_avgBollingerWidth = _bollingerWidthSum / LookbackPeriod;
-				
+
 				// Detect Bollinger Band squeeze (narrowing bands)
 				bool isSqueeze = bollingerWidth < _avgBollingerWidth;
-				
+
 				// Breakout after squeeze
 				if (isSqueeze)
 				{
@@ -186,7 +186,7 @@ namespace StockSharp.Samples.Strategies
 					}
 				}
 			}
-			
+
 			_prevBollingerWidth = bollingerWidth;
 		}
 	}

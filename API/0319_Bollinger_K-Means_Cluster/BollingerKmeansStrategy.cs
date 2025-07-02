@@ -10,6 +10,7 @@ using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System.Linq;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -136,7 +137,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEach(
+				.BindEx(
 					_bollinger, 
 					_rsi,
 					_atr,
@@ -168,11 +169,14 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+
 			// Extract values from indicators
-			var bollingerUpper = bollingerValue[0].To<decimal>();
-			var bollingerMiddle = bollingerValue[1].To<decimal>();
-			var bollingerLower = bollingerValue[2].To<decimal>();
+			var bollingerUpper = bollingerTyped.UpBand;
+			var bollingerMiddle = bollingerTyped.MovingAverage;
+			var bollingerLower = bollingerTyped.LowBand;
+
 			var rsi = rsiValue.ToDecimal();
 			_atrValue = atrValue.ToDecimal();
 			

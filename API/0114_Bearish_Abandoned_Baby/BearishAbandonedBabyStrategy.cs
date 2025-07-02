@@ -109,7 +109,7 @@ namespace StockSharp.Strategies
 				// 3. Current candle is bearish (close < open) and gaps down (high < low of middle candle)
 				
 				bool firstCandleBullish = _prevCandle2.ClosePrice > _prevCandle2.OpenPrice;
-				bool middleCandleGapsUp = _prevCandle1.LowPrice > _prevCanle2.HighPrice;
+				bool middleCandleGapsUp = _prevCandle1.LowPrice > _prevCandle2.HighPrice;
 				bool currentCandleBearish = candle.ClosePrice < candle.OpenPrice;
 				bool currentCandleGapsDown = candle.HighPrice < _prevCandle1.LowPrice;
 

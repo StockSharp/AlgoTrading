@@ -140,7 +140,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to candles
 			subscription
-				.Bind(bollingerBands, adx, atr, ProcessCandle)
+				.BindEx(bollingerBands, adx, atr, ProcessCandle)
 				.Start();
 
 			// Enable stop-loss using ATR
@@ -166,7 +166,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal adxValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -176,24 +176,29 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
 			// Trading logic - only trade when ADX indicates strong trend
-			if (adxValue > AdxThreshold)
+			if (adxTyped.MovingAverage > AdxThreshold)
 			{
 				// Strong trend detected
-				if (candle.ClosePrice > upperBand && Position <= 0)
+				if (candle.ClosePrice > bollingerTyped.UpBand && Position <= 0)
 				{
 					// Price breaks above upper Bollinger band - Buy
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 				}
-				else if (candle.ClosePrice < lowerBand && Position >= 0)
+				else if (candle.ClosePrice < bollingerTyped.LowBand && Position >= 0)
 				{
 					// Price breaks below lower Bollinger band - Sell
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
 				}
 			}
-			
+
+			var middleBand = bollingerTyped.MovingAverage;
+
 			// Exit positions when price returns to middle band
 			if ((Position > 0 && candle.ClosePrice < middleBand) ||
 				(Position < 0 && candle.ClosePrice > middleBand))

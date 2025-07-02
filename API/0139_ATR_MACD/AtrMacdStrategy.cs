@@ -187,11 +187,11 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.BindEx(atr, atrValue => ProcessAtr(atrValue, atrAvg))
+				.BindEx(atr, (_, atrValue) => ProcessAtr(atrValue, atrAvg))
 				.Start();
 
 			subscription
-				.Bind(macd, ProcessMacd)
+				.BindEx(macd, ProcessMacd)
 				.Start();
 
 			// Setup position protection
@@ -232,7 +232,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process MACD indicator values.
 		/// </summary>
-		private void ProcessMacd(ICandleMessage candle, decimal macdValue, decimal signalValue)
+		private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

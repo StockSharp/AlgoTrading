@@ -153,16 +153,11 @@ namespace StockSharp.Samples.Strategies
 				Length = RsiPeriod
 			};
 
-			var atr = new AverageTrueRange
-			{
-				Length = 14
-			};
-
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(bollinger, rsi, atr, ProcessCandles)
+				.BindEx(bollinger, rsi, ProcessCandles)
 				.Start();
 
 			// Setup position protection
@@ -185,7 +180,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candles and indicator values.
 		/// </summary>
-		private void ProcessCandles(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue, decimal atrValue)
+		private void ProcessCandles(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -195,14 +190,20 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
+			var middleBand = bollingerTyped.MovingAverage;
+			var rsiTyped = rsiValue.ToDecimal();
+
 			// Long entry: price below lower Bollinger Band and RSI oversold
-			if (candle.ClosePrice < lowerBand && rsiValue < RsiOversold && Position <= 0)
+			if (candle.ClosePrice < lowerBand && rsiTyped < RsiOversold && Position <= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
 			// Short entry: price above upper Bollinger Band and RSI overbought
-			else if (candle.ClosePrice > upperBand && rsiValue > RsiOverbought && Position >= 0)
+			else if (candle.ClosePrice > upperBand && rsiTyped > RsiOverbought && Position >= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);

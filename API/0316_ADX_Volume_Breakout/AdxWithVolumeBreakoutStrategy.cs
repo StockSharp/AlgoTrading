@@ -117,8 +117,10 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(adx, (candle, adx, diPlus, diMinus) =>
+				.BindEx(adx, (candle, adxValue) =>
 				{
+					var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
 					// Process volume indicators
 					var smaVal = volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					var stdDevVal = volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
@@ -126,9 +128,9 @@ namespace StockSharp.Samples.Strategies
 					// Process the strategy logic
 					ProcessStrategy(
 						candle,
-						adx,
-						diPlus,
-						diMinus,
+						adxTyped.MovingAverage,
+						adxTyped.Dx.Plus,
+						adxTyped.Dx.Minus,
 						candle.TotalVolume,
 						smaVal,
 						stdDevVal

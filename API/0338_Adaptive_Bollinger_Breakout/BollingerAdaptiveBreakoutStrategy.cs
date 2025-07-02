@@ -215,12 +215,15 @@ namespace StockSharp.Samples.Strategies
 				
 				// Check if volatility is high enough for breakout trading
 				bool isHighVolatility = atrValue > avgAtr;
-				
+
+				var bollingerTyped = (BollingerBandsValue)bollingerValue;
+
+				decimal middleBand = bollingerTyped.MovingAverage;
+
 				if (isHighVolatility)
 				{
-					decimal middleBand = (decimal)bollingerValue[0];
-					decimal upperBand = (decimal)bollingerValue[1];
-					decimal lowerBand = (decimal)bollingerValue[2];
+					decimal upperBand = bollingerTyped.UpBand;
+					decimal lowerBand = bollingerTyped.LowBand;
 					
 					// Breakout above upper band - Sell signal
 					if (candle.ClosePrice > upperBand && Position >= 0)

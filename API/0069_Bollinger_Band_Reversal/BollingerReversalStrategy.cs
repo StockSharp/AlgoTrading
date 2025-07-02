@@ -112,7 +112,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_bollingerBands, _atr, ProcessCandle)
+				.BindEx(_bollingerBands, _atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -127,7 +127,7 @@ namespace StockSharp.Samples.Strategies
 			// Start position protection
 			StartProtection(
 				takeProfit: new Unit(10, UnitTypes.Percent),
-				stopLoss: new Unit(AtrMultiplier, UnitTypes.ATR)
+				stopLoss: new Unit(AtrMultiplier, UnitTypes.Absolute)
 			);
 		}
 
@@ -140,9 +140,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get current Bollinger Bands values
-			var upperBand = bollingerValue.GetValue<BollingerBandsValue>().Upper;
-			var lowerBand = bollingerValue.GetValue<BollingerBandsValue>().Lower;
-			var middleBand = bollingerValue.GetValue<BollingerBandsValue>().Middle;
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
+			var middleBand = bollingerTyped.MovingAverage;
 
 			// Determine if the candle is bullish or bearish
 			var isBullish = candle.ClosePrice > candle.OpenPrice;

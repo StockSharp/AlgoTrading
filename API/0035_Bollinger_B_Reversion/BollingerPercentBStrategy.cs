@@ -116,7 +116,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(bollinger, ProcessCandle)
+				.BindEx(bollinger, ProcessCandle)
 				.Start();
 
 			// Configure chart
@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and calculate Bollinger %B
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -147,6 +147,10 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
 
 			// Calculate Bollinger %B: (Price - Lower Band) / (Upper Band - Lower Band)
 			decimal percentB = 0;

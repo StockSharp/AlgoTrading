@@ -133,7 +133,7 @@ namespace StockSharp.Samples.Strategies
 		/// <param name="candle">Candle.</param>
 		/// <param name="ma">Moving average value.</param>
 		/// <param name="adx">ADX value.</param>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ma, IIndicatorValue adx)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue adxValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -142,8 +142,9 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
 			var ma = maValue.ToDecimal();
-			var adx = adxValue.ToDecimal();
+			var adx = ((AverageDirectionalIndexValue)adxValue).MovingAverage;
 
 
 			// If this is the first calculation, just store the ADX value

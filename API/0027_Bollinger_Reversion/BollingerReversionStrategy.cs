@@ -101,7 +101,7 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(bollingerBands, atr, ProcessCandle)
+				.BindEx(bollingerBands, atr, ProcessCandle)
 				.Start();
 
 			// Enable position protection with ATR-based stop loss
@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, BollingerBandsValue bbValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -132,10 +132,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upper = bollingerTyped.UpBand;
+			var lower = bollingerTyped.LowBand;
+			var middle = bollingerTyped.MovingAverage;
+
 			// Get Bollinger Bands values
-			decimal middle = bbValue.Middle;
-			decimal upper = bbValue.Upper;
-			decimal lower = bbValue.Lower;
 			decimal closePrice = candle.ClosePrice;
 
 			// Entry logic

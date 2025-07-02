@@ -190,18 +190,12 @@ namespace StockSharp.Samples.Strategies
 							// Go long when price is above EMA (uptrend) during volatility expansion
 							BuyMarket(Volume + Math.Abs(Position));
 							LogInfo($"Long entry: ATR slope breakout above {_slopeAvg + BreakoutMultiplier * _slopeStdDev:F5} with price above EMA");
-							
-							// Set stop loss based on ATR
-							SetStopLoss();
 						}
 						else if (!priceAboveEma && Position >= 0)
 						{
 							// Go short when price is below EMA (downtrend) during volatility expansion
 							SellMarket(Volume + Math.Abs(Position));
 							LogInfo($"Short entry: ATR slope breakout above {_slopeAvg + BreakoutMultiplier * _slopeStdDev:F5} with price below EMA");
-							
-							// Set stop loss based on ATR
-							SetStopLoss();
 						}
 					}
 					
@@ -224,27 +218,6 @@ namespace StockSharp.Samples.Strategies
 			
 			// Update previous value for next iteration
 			_prevSlopeValue = currentSlopeValue;
-		}
-		
-		private void SetStopLoss()
-		{
-			// Use ATR-based stop loss
-			if (_lastAtr > 0)
-			{
-				var stopLossAmount = _lastAtr * StopLossAtrMultiplier;
-				
-				// Remove any previous stop loss
-				CancelProtections();
-				
-				// Set dynamic stop loss based on ATR
-				StartProtection(
-					null, // No take profit
-					new Unit(stopLossAmount), // ATR-based stop loss
-					false, // No trailing stop
-					null,
-					null,
-					true); // Use market orders for faster execution
-			}
 		}
 	}
 }

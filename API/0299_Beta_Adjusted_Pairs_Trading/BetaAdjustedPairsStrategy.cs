@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using Ecng.ComponentModel;
 using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -126,19 +126,19 @@ namespace StockSharp.Samples.Strategies
 		{
 			_asset1Param = Param(nameof(Asset1), (Security)null)
 				.SetDisplay("Asset 1", "Primary asset for pairs trading", "Assets")
-				.SetValidator(new RequiredAttribute());
+				.SetRequired();
 				
 			_asset2Param = Param(nameof(Asset2), (Security)null)
 				.SetDisplay("Asset 2", "Secondary asset for pairs trading", "Assets")
-				.SetValidator(new RequiredAttribute());
+				.SetRequired();
 				
 			_asset1PortfolioParam = Param(nameof(Asset1Portfolio), (Portfolio)null)
 				.SetDisplay("Asset 1 Portfolio", "Portfolio for trading Asset 1", "Portfolios")
-				.SetValidator(new RequiredAttribute());
+				.SetRequired();
 				
 			_asset2PortfolioParam = Param(nameof(Asset2Portfolio), (Portfolio)null)
 				.SetDisplay("Asset 2 Portfolio", "Portfolio for trading Asset 2", "Portfolios")
-				.SetValidator(new RequiredAttribute());
+				.SetRequired();
 				
 			_betaAsset1Param = Param(nameof(BetaAsset1), 1.0m)
 				.SetDisplay("Beta Asset 1", "Beta coefficient for Asset 1 relative to market", "Parameters")
