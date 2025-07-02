@@ -205,7 +205,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(rsi, stochastic, ProcessIndicators)
+				.BindEx(rsi, stochastic, ProcessIndicators)
 				.Start();
 
 			// Setup position protection

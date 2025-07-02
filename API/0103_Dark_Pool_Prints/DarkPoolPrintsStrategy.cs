@@ -118,7 +118,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators and processor
 			subscription
-				.Bind(_ma, _volumeAverage, _adx, _atr, ProcessCandle)
+				.BindEx(_ma, _volumeAverage, _adx, _atr, ProcessCandle)
 				.Start();
 
 			// Enable stop-loss protection
@@ -135,7 +135,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal ma, decimal volumeAvg, decimal adx, decimal atr)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ma, IIndicatorValue volumeAvg, IIndicatorValue adx, IIndicatorValue atr)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

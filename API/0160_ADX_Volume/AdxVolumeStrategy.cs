@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind ADX indicator to candles
 			subscription
-				.Bind(adx, ProcessCandle)
+				.BindEx(adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal adxValue, decimal diPlusValue, decimal diMinusValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue diPlusValue, IIndicatorValue diMinusValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

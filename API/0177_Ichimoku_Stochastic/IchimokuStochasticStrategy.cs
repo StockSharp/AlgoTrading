@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(ichimoku, stochastic, ProcessCandle)
+				.BindEx(ichimoku, stochastic, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -181,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal ichimokuValue, decimal stochasticValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue stochasticValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

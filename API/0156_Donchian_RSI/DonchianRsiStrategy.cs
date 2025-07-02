@@ -139,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to candles
 			subscription
-				.Bind(donchian, rsi, ProcessCandle)
+				.BindEx(donchian, rsi, ProcessCandle)
 				.Start();
 
 			// Enable stop-loss
@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue middleBand, IIndicatorValue upperBand, IIndicatorValue lowerBand, IIndicatorValue rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

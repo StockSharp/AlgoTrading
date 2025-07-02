@@ -227,7 +227,7 @@ namespace StockSharp.Samples.Strategies
 				.Start();
 
 			subscription
-				.Bind(stochastic, ProcessStochastic)
+				.BindEx(stochastic, ProcessStochastic)
 				.Start();
 
 			// Setup position protection
@@ -259,7 +259,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process Stochastic indicator values.
 		/// </summary>
-		private void ProcessStochastic(ICandleMessage candle, decimal stochKValue)
+		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue stochKValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

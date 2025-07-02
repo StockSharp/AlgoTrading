@@ -163,7 +163,7 @@ namespace StockSharp.Samples.Strategies
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_stochastic, ProcessCandle)
+				.BindEx(_stochastic, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available

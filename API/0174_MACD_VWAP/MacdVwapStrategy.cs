@@ -132,7 +132,7 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(macd, vwap, ProcessCandle)
+				.BindEx(macd, vwap, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal vwapValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue vwapValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

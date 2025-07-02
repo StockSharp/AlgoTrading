@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind MACD for trade decisions
 			subscription
-				.Bind(macd, ProcessMacd)
+				.BindEx(macd, ProcessMacd)
 				.Start();
 
 			// Setup position protection
@@ -209,7 +209,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process MACD indicator values.
 		/// </summary>
-		private void ProcessMacd(ICandleMessage candle, decimal macdValue, decimal signalValue)
+		private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

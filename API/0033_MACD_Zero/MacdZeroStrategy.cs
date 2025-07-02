@@ -125,7 +125,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind MACD indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(macd, ProcessCandle)
+				.BindEx(macd, ProcessCandle)
 				.Start();
 
 			// Configure chart
@@ -147,7 +147,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for MACD signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
