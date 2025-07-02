@@ -103,7 +103,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(stochastic, ProcessCandle)
+				.BindEx(stochastic, ProcessCandle)
 				.Start();
 
 			// Setup stop loss/take profit protection
@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal kValue, decimal dValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue kValue, IIndicatorValue dValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

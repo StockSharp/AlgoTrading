@@ -174,7 +174,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(ma, stochastic, ProcessCandles)
+				.BindEx(ma, stochastic, ProcessCandles)
 				.Start();
 
 			// Setup position protection
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candles and indicator values.
 		/// </summary>
-		private void ProcessCandles(ICandleMessage candle, decimal maValue, decimal stochKValue)
+		private void ProcessCandles(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stochKValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

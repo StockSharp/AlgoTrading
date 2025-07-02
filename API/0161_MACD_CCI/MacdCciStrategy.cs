@@ -161,7 +161,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators to candles
 			subscription
-				.Bind(macd, cci, ProcessCandle)
+				.BindEx(macd, cci, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -185,7 +185,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal cciValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue cciValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

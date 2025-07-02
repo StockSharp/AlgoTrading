@@ -174,7 +174,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators to candles
 			subscription
-				.Bind(parabolicSar, stochastic, ProcessCandle)
+				.BindEx(parabolicSar, stochastic, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -198,7 +198,7 @@ namespace StockSharp.Samples.Strategies
 			// when price crosses SAR in the opposite direction
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal sarValue, decimal stochKValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue stochKValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

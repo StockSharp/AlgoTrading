@@ -150,7 +150,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(_donchian, _stochastic, ProcessCandle)
+				.BindEx(_donchian, _stochastic, ProcessCandle)
 				.Start();
 
 			// Setup chart
@@ -171,9 +171,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		private void ProcessCandle(
-			ICandleMessage candle, 
-			(decimal upper, decimal middle, decimal lower) donchianValues, 
-			(decimal k, decimal d) stochValues)
+			ICandleMessage candle,
+			IIndicatorValue donchianValues,
+			IIndicatorValue stochValues)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

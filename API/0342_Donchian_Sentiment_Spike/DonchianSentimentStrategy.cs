@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(donchian, ProcessCandle)
+				.BindEx(donchian, ProcessCandle)
 				.Start();
 			
 			// Create chart visualization if available

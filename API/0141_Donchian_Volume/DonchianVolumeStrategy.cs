@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 				.Start();
 
 			subscription
-				.Bind(donchianHigh, donchianLow, ProcessDonchian)
+				.BindEx(donchianHigh, donchianLow, ProcessDonchian)
 				.Start();
 
 			// Setup position protection
@@ -178,7 +178,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process Donchian Channel values.
 		/// </summary>
-		private void ProcessDonchian(ICandleMessage candle, decimal highestValue, decimal lowestValue)
+		private void ProcessDonchian(ICandleMessage candle, IIndicatorValue highestValue, IIndicatorValue lowestValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

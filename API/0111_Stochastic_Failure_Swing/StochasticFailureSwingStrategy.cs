@@ -155,7 +155,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicator and processor
 			subscription
-				.Bind(_stochastic, ProcessCandle)
+				.BindEx(_stochastic, ProcessCandle)
 				.Start();
 			
 			// Enable stop-loss protection

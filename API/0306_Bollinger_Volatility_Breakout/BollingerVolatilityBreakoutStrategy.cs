@@ -140,7 +140,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind main indicators to subscription
 			subscription
-				.Bind(bollingerBands, atr, ProcessCandle)
+				.BindEx(bollingerBands, atr, ProcessCandle)
 				.Start();
 				
 			// Setup additional processing for ATR-based indicators
@@ -171,7 +171,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal bbMiddle, decimal bbUpper, decimal bbLower, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbMiddle, IIndicatorValue bbUpper, IIndicatorValue bbLower, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

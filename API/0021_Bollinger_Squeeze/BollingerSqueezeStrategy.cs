@@ -108,7 +108,7 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to candles and bind the indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(bollingerBands, ProcessCandle)
+				.BindEx(bollingerBands, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -121,7 +121,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue middleBand, IIndicatorValue upperBand, IIndicatorValue lowerBand)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

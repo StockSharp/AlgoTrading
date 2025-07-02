@@ -135,7 +135,7 @@ namespace StockSharp.Strategies
 			
 			// Bind Bollinger indicator to candle subscription
 			subscription
-				.Bind(_bollinger, _atr, ProcessCandle)
+				.BindEx(_bollinger, _atr, ProcessCandle)
 				.Start();
 			
 			// Setup chart if available
@@ -148,7 +148,7 @@ namespace StockSharp.Strategies
 			}
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal bollingerValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

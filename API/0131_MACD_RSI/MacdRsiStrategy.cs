@@ -177,7 +177,7 @@ namespace StockSharp.Strategies.Samples
 			
 			// When both indicators are ready, process the candle
 			subscription
-				.Bind(macd, rsi, ProcessCandle)
+				.BindEx(macd, rsi, ProcessCandle)
 				.Start();
 				
 			// Set up chart if available
@@ -205,7 +205,7 @@ namespace StockSharp.Strategies.Samples
 		/// <param name="macdValue">MACD line value.</param>
 		/// <param name="signalValue">MACD signal line value.</param>
 		/// <param name="rsiValue">RSI value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal macdValue, decimal signalValue, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue, IIndicatorValue rsiValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

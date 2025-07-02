@@ -126,7 +126,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to subscription and start
 			subscription
-				.Bind(donchian, ProcessDonchianChannel)
+				.BindEx(donchian, ProcessDonchianChannel)
 				.BindEx(fractalDimension, ProcessFractalDimension)
 				.Start();
 
@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessDonchianChannel(ICandleMessage candle, decimal upperBand, decimal lowerBand, decimal middleBand)
+		private void ProcessDonchianChannel(ICandleMessage candle, IIndicatorValue upperBand, IIndicatorValue lowerBand, IIndicatorValue middleBand)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

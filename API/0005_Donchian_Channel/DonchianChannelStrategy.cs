@@ -75,7 +75,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(donchian, ProcessCandle)
+				.BindEx(donchian, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -88,7 +88,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal midValue, decimal upperValue, decimal lowerValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue midValue, IIndicatorValue upperValue, IIndicatorValue lowerValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
