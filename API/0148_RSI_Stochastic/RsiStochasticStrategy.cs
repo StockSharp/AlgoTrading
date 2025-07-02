@@ -228,7 +228,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process indicator values.
 		/// </summary>
-		private void ProcessIndicators(ICandleMessage candle, decimal rsiValue, decimal stochKValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsi, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -237,26 +237,28 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-
+			var rsi = rsiValue.ToDecimal();
+			var stoch = (StochasticValue)stochValue;
+			var stochK = stoch.K;
 			// Long entry: double confirmation of oversold condition
-			if (rsiValue < RsiOversold && stochKValue < StochOversold && Position <= 0)
+			if (rsi < RsiOversold && stochK < StochOversold && Position <= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
 			// Short entry: double confirmation of overbought condition
-			else if (rsiValue > RsiOverbought && stochKValue > StochOverbought && Position >= 0)
+			else if (rsi > RsiOverbought && stochK > StochOverbought && Position >= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 			}
 			// Long exit: RSI returns to neutral zone
-			else if (Position > 0 && rsiValue > 50)
+			else if (Position > 0 && rsi > 50)
 			{
 				SellMarket(Math.Abs(Position));
 			}
 			// Short exit: RSI returns to neutral zone
-			else if (Position < 0 && rsiValue < 50)
+			else if (Position < 0 && rsi < 50)
 			{
 				BuyMarket(Math.Abs(Position));
 			}

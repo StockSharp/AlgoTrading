@@ -173,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind Bollinger and ATR for trade decisions
 			subscription
-				.Bind(bollinger, atr, ProcessBollingerAndAtr)
+				.BindEx(bollinger, atr, ProcessBollingerAndAtr)
 				.Start();
 
 			// Setup position protection with ATR-based stop loss
@@ -207,7 +207,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process Bollinger Bands and ATR indicator values.
 		/// </summary>
-		private void ProcessBollingerAndAtr(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal atrValue)
+		private void ProcessBollingerAndAtr(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -215,7 +215,14 @@ namespace StockSharp.Samples.Strategies
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading() || _avgVolume <= 0)
-				return;
+			return;
+
+			var bb = (BollingerBandsValue)bollingerValue;
+			var middleBand = bb.MiddleBand;
+			var upperBand = bb.UpperBand;
+			var lowerBand = bb.LowerBand;
+
+			var atr = atrValue.ToDecimal();
 
 			// Check volume confirmation
 			var isVolumeHighEnough = candle.TotalVolume > _avgVolume * VolumeMultiplier;
