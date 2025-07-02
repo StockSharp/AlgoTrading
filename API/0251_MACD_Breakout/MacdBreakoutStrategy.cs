@@ -163,7 +163,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(_macd, ProcessCandle)
+				.BindEx(_macd, ProcessCandle)
 				.Start();
 
 			// Enable position protection

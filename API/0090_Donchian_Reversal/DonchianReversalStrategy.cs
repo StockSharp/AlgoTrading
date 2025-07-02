@@ -98,7 +98,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicator and process candles
 			subscription
-				.Bind(donchian, ProcessCandle)
+				.BindEx(donchian, ProcessCandle)
 				.Start();
 				
 			// Setup chart visualization
@@ -118,7 +118,7 @@ namespace StockSharp.Samples.Strategies
 		/// <param name="upperBand">Upper band value.</param>
 		/// <param name="middleBand">Middle band value.</param>
 		/// <param name="lowerBand">Lower band value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal upperBand, decimal middleBand, decimal lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue upperBand, IIndicatorValue middleBand, IIndicatorValue lowerBand)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

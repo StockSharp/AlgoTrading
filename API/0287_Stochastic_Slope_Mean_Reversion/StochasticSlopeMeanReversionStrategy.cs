@@ -164,7 +164,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(stochastic, ProcessCandle)
+				.BindEx(stochastic, ProcessCandle)
 				.Start();
 
 			// Start position protection
@@ -183,7 +183,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal kValue, decimal dValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue kValue, IIndicatorValue dValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

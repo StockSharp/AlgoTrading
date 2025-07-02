@@ -135,7 +135,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicator and process candles
 			subscription
-				.Bind(macdHistogram, ProcessCandle)
+				.BindEx(macdHistogram, ProcessCandle)
 				.Start();
 				
 			// Setup chart visualization
@@ -153,7 +153,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		/// <param name="candle">Candle.</param>
 		/// <param name="histogramValue">MACD histogram value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal histogramValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue histogramValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

@@ -155,7 +155,7 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to candles and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(macd, ProcessCandle)
+				.BindEx(macd, ProcessCandle)
 				.Start();
 			
 			// Create chart visualization if available
@@ -177,7 +177,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process each candle and MACD values.
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal macd, decimal signal)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macd, IIndicatorValue signal)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

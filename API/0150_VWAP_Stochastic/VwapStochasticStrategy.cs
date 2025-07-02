@@ -155,7 +155,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to candles
 			subscription
-				.Bind(vwap, stochastic, ProcessCandle)
+				.BindEx(vwap, stochastic, ProcessCandle)
 				.Start();
 
 			// Enable stop-loss and take-profit protection
@@ -180,7 +180,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal vwapValue, decimal kValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwapValue, IIndicatorValue kValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

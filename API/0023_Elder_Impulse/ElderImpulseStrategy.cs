@@ -144,7 +144,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Process candles with both indicators
 			subscription
-				.Bind(ema, macd, ProcessCandle)
+				.BindEx(ema, macd, ProcessCandle)
 				.Start();
 
 			// Enable position protection
@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal emaValue, MacdSignalValue macdValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

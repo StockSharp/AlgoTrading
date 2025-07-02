@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind MACD to subscription
 			subscription
-				.Bind(macdLine, ProcessCandle)
+				.BindEx(macdLine, ProcessCandle)
 				.Start();
 				
 			// Create a special subscription for histogram statistics
@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, Tuple<decimal, decimal, decimal> macdValues)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValues)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

@@ -132,7 +132,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Process candles with Supertrend and ADX indicators
 			subscription
-				.Bind(supertrend, adx, ProcessCandle)
+				.BindEx(supertrend, adx, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal adxValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue adxValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
