@@ -77,7 +77,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create the VWAP indicator
-			var vwap = new VolumeWeightedAveragePrice();
+			var vwap = new VolumeWeightedMovingAverage();
 
 			// Create subscription and bind VWAP indicator
 			var subscription = SubscribeCandles(CandleType);

@@ -164,7 +164,7 @@ namespace StockSharp.Strategies
 			
 			// Process option candles
 			optionSubscription
-				.Do(ProcessOptionCandle)
+				.Bind(ProcessOptionCandle)
 				.Start();
 				
 			// Process underlying candles and momentum
@@ -232,7 +232,7 @@ namespace StockSharp.Strategies
 				}
 				catch (Exception ex)
 				{
-					this.AddErrorLog($"Error calculating implied volatility: {ex.Message}");
+					LogError($"Error calculating implied volatility: {ex.Message}");
 				}
 			}
 		}

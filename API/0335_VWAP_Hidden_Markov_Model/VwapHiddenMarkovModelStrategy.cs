@@ -100,7 +100,7 @@ namespace StockSharp.Samples.Strategies
 			_volumeData.Clear();
 
 			// Create Vwap indicator
-			var vwap = new VolumeWeightedAveragePrice();
+			var vwap = new VolumeWeightedMovingAverage();
 
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);

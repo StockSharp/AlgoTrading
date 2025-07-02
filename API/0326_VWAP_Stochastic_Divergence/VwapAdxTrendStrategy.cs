@@ -117,7 +117,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEach(
+				.BindEx(
 					_vwap,
 					_adx,
 					_di,

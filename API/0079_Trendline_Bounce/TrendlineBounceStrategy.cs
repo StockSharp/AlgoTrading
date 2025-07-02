@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue maValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maPrice)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -180,9 +180,6 @@ namespace StockSharp.Samples.Strategies
 				UpdateTrendlines();
 				_lastTrendlineUpdate = candle.OpenTime;
 			}
-
-			// Get current MA value for trend confirmation
-			decimal maPrice = maValue.ToDecimal();
 
 			// Check for trendline bounces
 			CheckForTrendlineBounces(candle, maPrice);

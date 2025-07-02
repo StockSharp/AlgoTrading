@@ -143,7 +143,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var vwap = new VWAP();
+			var vwap = new VolumeWeightedMovingAverage();
 			var stochastic = new StochasticOscillator
 			{
 				K = { Length = StochKPeriod },

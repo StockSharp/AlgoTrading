@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
 
-		private MovingAverageConvergenceDivergence _macd;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		
 		private decimal _prevMacd;
 		private decimal _prevSignal;
@@ -111,15 +111,15 @@ namespace StockSharp.Samples.Strategies
 
 			// Create MACD indicator
 
-				_macd = new MovingAverageConvergenceDivergenceSignal
+			_macd = new()
+			{
+				Macd =
 				{
-					Macd =
-					{
-						ShortMa = { Length = MacdFastPeriod },
-						LongMa = { Length = MacdSlowPeriod },
-					},
-					SignalMa = { Length = MacdSignalPeriod }
-				};
+					ShortMa = { Length = MacdFastPeriod },
+					LongMa = { Length = MacdSlowPeriod },
+				},
+				SignalMa = { Length = MacdSignalPeriod }
+			};
 			// Initialize variables
 			_prevMacd = 0;
 			_prevSignal = 0;

@@ -118,7 +118,7 @@ namespace StockSharp.Strategies
 			
 			// Use BindEx to process both price and volume
 			subscription
-				.BindEx(ProcessCandle)
+				.Bind(_ma, _atr, ProcessCandle)
 				.Start();
 
 			// Set up chart if available
@@ -131,16 +131,14 @@ namespace StockSharp.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			// Process indicators
-			var maValue = _ma.Process(candle).ToDecimal();
 			var volumeAverageValue = _volumeAverage.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-			var atrValue = _atr.Process(candle).ToDecimal();
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())

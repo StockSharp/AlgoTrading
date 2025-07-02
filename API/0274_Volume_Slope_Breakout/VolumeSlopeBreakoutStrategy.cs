@@ -119,12 +119,9 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators and processing logic using event handlers
 			// since we need to track multiple indicator values
-			subscription.WhenCandlesFinished(this)
-				.Do(ProcessCandle)
-				.Apply(this);
-			
-			// Start subscription
-			subscription.Start();
+			subscription
+				.Bind(_volumeIndicator, ProcessCandle)
+				.Start();
 			
 			// Setup chart visualization
 			var area = CreateChartArea();
@@ -138,17 +135,14 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Enable position protection
-			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent));
+			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
-		private void ProcessCandle(ICandleMessage candle)
+		private void ProcessCandle(ICandleMessage candle, decimal volumeValue)
 		{
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
-			// Process volume indicator
-			decimal volumeValue = _volumeIndicator.Process(candle).ToDecimal();
 			
 			// Process volume SMA
 			decimal volumeSma = _volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();

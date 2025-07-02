@@ -117,7 +117,7 @@ namespace StockSharp.Samples.Strategies
 				Length = RsiPeriod
 			};
 
-			var vwap = new VolumeWeightedAveragePrice();
+			var vwap = new VolumeWeightedMovingAverage();
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
