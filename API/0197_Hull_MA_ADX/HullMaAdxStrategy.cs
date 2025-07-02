@@ -112,9 +112,9 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			// Process candles with indicators
-			subscription
-				.Bind(_hma, _adx, _atr, ProcessCandle)
-				.Start();
+                        subscription
+                                .BindEx(_hma, _adx, _atr, ProcessCandle)
+                                .Start();
 
 			// Setup chart visualization
 			var area = CreateChartArea();
@@ -133,15 +133,19 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal hma, decimal adx, decimal atr)
-		{
+                private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
+                {
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Detect HMA direction
-			bool hmaIncreasing = hma > _prevHmaValue;
-			bool hmaDecreasing = hma < _prevHmaValue;
+                        var hma = hmaValue.ToDecimal();
+                        var adx = adxValue.ToDecimal();
+                        var atr = atrValue.ToDecimal();
+
+                        // Detect HMA direction
+                        bool hmaIncreasing = hma > _prevHmaValue;
+                        bool hmaDecreasing = hma < _prevHmaValue;
 
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading())

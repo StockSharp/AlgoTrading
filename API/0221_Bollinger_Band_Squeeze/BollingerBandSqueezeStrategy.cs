@@ -117,9 +117,9 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
-			subscription
-				.Bind(_bollinger, _atr, ProcessCandle)
-				.Start();
+                        subscription
+                                .BindEx(_bollinger, _atr, ProcessCandle)
+                                .Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -137,16 +137,22 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal middleBand, decimal upperBand, decimal lowerBand, decimal atr)
-		{
+                private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+                {
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 				
-			// Calculate Bollinger width (upper - lower)
-			var bollingerWidth = upperBand - lowerBand;
+                        var bb = (BollingerBandsValue)bollingerValue;
+                        var middleBand = bb.MiddleBand;
+                        var upperBand = bb.UpperBand;
+                        var lowerBand = bb.LowerBand;
+                        var atr = atrValue.ToDecimal();
+
+                        // Calculate Bollinger width (upper - lower)
+                        var bollingerWidth = upperBand - lowerBand;
 			
 			// Track average Bollinger width over lookback period
 			_bollingerWidths.Enqueue(bollingerWidth);
