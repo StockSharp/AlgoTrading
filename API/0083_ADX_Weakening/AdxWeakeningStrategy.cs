@@ -113,7 +113,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Bind indicators and process candles
 			subscription
-				.Bind(ma, adx, ProcessCandle)
+				.BindEx(ma, adx, ProcessCandle)
 				.Start();
 				
 			// Setup chart visualization
@@ -131,9 +131,9 @@ namespace StockSharp.Samples.Strategies
 		/// Process candle with indicator values.
 		/// </summary>
 		/// <param name="candle">Candle.</param>
-		/// <param name="maValue">Moving average value.</param>
-		/// <param name="adxValue">ADX value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal adxValue)
+		/// <param name="ma">Moving average value.</param>
+		/// <param name="adx">ADX value.</param>
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ma, IIndicatorValue adx)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -142,32 +142,35 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+			var ma = maValue.ToDecimal();
+			var adx = adxValue.ToDecimal();
+
 
 			// If this is the first calculation, just store the ADX value
 			if (_prevAdxValue == 0)
 			{
-				_prevAdxValue = adxValue;
+				_prevAdxValue = adx;
 				return;
 			}
 			
 			// Check if ADX is weakening (decreasing)
-			bool isAdxWeakening = adxValue < _prevAdxValue;
+			bool isAdxWeakening = adx < _prevAdxValue;
 			
 			// Long entry: ADX weakening and price above MA
-			if (isAdxWeakening && candle.ClosePrice > maValue && Position <= 0)
+			if (isAdxWeakening && candle.ClosePrice > ma && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long entry: ADX weakening ({adxValue} < {_prevAdxValue}) and price above MA");
+				LogInfo($"Long entry: ADX weakening ({adx} < {_prevAdxValue}) and price above MA");
 			}
 			// Short entry: ADX weakening and price below MA
-			else if (isAdxWeakening && candle.ClosePrice < maValue && Position >= 0)
+			else if (isAdxWeakening && candle.ClosePrice < ma && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short entry: ADX weakening ({adxValue} < {_prevAdxValue}) and price below MA");
+				LogInfo($"Short entry: ADX weakening ({adx} < {_prevAdxValue}) and price below MA");
 			}
 			
 			// Update previous ADX value
-			_prevAdxValue = adxValue;
+			_prevAdxValue = adx;
 		}
 	}
 }

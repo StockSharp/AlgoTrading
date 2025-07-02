@@ -190,7 +190,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(adx, stochastic, ProcessIndicators)
+				.BindEx(adx, stochastic, ProcessIndicators)
 				.Start();
 
 			// Setup position protection
@@ -213,7 +213,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process indicator values.
 		/// </summary>
-		private void ProcessIndicators(ICandleMessage candle, decimal adxValue, decimal stochKValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -222,9 +222,13 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+			var adx = adxValue.ToDecimal();
+			var stoch = (StochasticValue)stochValue;
+			var stochK = stoch.K;
+
 
 			// Check if ADX indicates strong trend
-			var isStrongTrend = adxValue > AdxThreshold;
+			var isStrongTrend = adx > AdxThreshold;
 
 			if (isStrongTrend)
 			{
@@ -233,13 +237,13 @@ namespace StockSharp.Samples.Strategies
 				var isBearishTrend = candle.OpenPrice > candle.ClosePrice;
 
 				// Long entry: strong bullish trend with Stochastic oversold
-				if (isBullishTrend && stochKValue < StochOversold && Position <= 0)
+				if (isBullishTrend && stochK < StochOversold && Position <= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 				}
 				// Short entry: strong bearish trend with Stochastic overbought
-				else if (isBearishTrend && stochKValue > StochOverbought && Position >= 0)
+				else if (isBearishTrend && stochK > StochOverbought && Position >= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
@@ -247,7 +251,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Exit conditions
-			if (adxValue < AdxThreshold)
+			if (adx < AdxThreshold)
 			{
 				// Exit all positions when trend weakens (ADX below threshold)
 				if (Position != 0)

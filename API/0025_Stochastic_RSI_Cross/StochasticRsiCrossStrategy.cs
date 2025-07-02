@@ -142,7 +142,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Create a custom binding to simulate Stochastic RSI since it's not built-in
 			subscription
-				.Bind(stoch, rsi, ProcessCandle)
+				.BindEx(stoch, rsi, ProcessCandle)
 				.Start();
 
 			// Enable position protection
@@ -163,7 +163,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, StochasticValue stochValue, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue, IIndicatorValue rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -173,9 +173,9 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// Get K and D values from stochastic
-			decimal kValue = stochValue.K;
-			decimal dValue = stochValue.D;
+			var stoch = (StochasticValue)stochValue;
+			decimal kValue = stoch.K;
+			decimal dValue = stoch.D;
 
 			// For the first candle, just store values and return
 			if (_isFirstCandle)
