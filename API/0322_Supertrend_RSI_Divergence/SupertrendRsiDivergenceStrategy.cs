@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEach(
+				.Bind(
 					_supertrend,
 					_rsi,
 					ProcessCandle)
@@ -139,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue, IIndicatorValue rsiValue)
+		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -150,8 +150,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 				
 			// Extract values from indicators
-			_supertrendValue = supertrendValue.ToDecimal();
-			decimal rsi = rsiValue.ToDecimal();
+			_supertrendValue = supertrendValue;
+			decimal rsi = rsiValue;
 			
 			// Store values for divergence calculation
 			_prices.Add(candle.ClosePrice);

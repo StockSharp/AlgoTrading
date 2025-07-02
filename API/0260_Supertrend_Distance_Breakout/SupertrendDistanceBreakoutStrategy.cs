@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue supertrendValue)
+		private void ProcessCandle(ICandleMessage candle, decimal supertrendPrice)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -164,9 +164,6 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// Extract Supertrend value
-			decimal supertrendPrice = supertrendValue.ToDecimal();
-			
 			// Calculate distances
 			decimal longDistance = 0;
 			decimal shortDistance = 0;
