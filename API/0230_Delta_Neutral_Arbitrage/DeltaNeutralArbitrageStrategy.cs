@@ -139,8 +139,8 @@ namespace StockSharp.Samples.Strategies
 			_spreadStdDev = new StandardDeviation { Length = LookbackPeriod };
 
 			// Create subscriptions to both securities
-			var asset1Subscription = SubscribeCandles(CandleType, Security);
-			var asset2Subscription = SubscribeCandles(CandleType, Asset2Security);
+			var asset1Subscription = SubscribeCandles(CandleType, security: Security);
+			var asset2Subscription = SubscribeCandles(CandleType, security: Asset2Security);
 
 			// Subscribe to candle processing for Asset 1
 			asset1Subscription
@@ -176,7 +176,7 @@ namespace StockSharp.Samples.Strategies
 			_lastAsset1Price = candle.ClosePrice;
 
 			// Process spread if we have both prices
-			ProcessSpreadIfReady();
+			ProcessSpreadIfReady(candle);
 		}
 
 		private void ProcessAsset2Candle(ICandleMessage candle)
@@ -189,10 +189,10 @@ namespace StockSharp.Samples.Strategies
 			_lastAsset2Price = candle.ClosePrice;
 
 			// Process spread if we have both prices
-			ProcessSpreadIfReady();
+			ProcessSpreadIfReady(candle);
 		}
 
-		private void ProcessSpreadIfReady()
+		private void ProcessSpreadIfReady(ICandleMessage candle)
 		{
 			// Ensure we have both prices
 			if (_lastAsset1Price == 0 || _lastAsset2Price == 0)
@@ -282,9 +282,9 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Close position in Asset1
 			if (Position > 0)
-				SellAtMarket(Math.Abs(Position));
+				SellMarket(Math.Abs(Position));
 			else if (Position < 0)
-				BuyAtMarket(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 
 			// Note: In a real implementation, you would also close the position
 			// in Asset2 by checking its position via separate portfolio tracking
@@ -295,8 +295,10 @@ namespace StockSharp.Samples.Strategies
 				Position > 0 ? Sides.Buy : Sides.Sell, 
 				_lastAsset2Price, 
 				_asset2Volume);
+
 			asset2Order.Security = Asset2Security;
 			asset2Order.Portfolio = Asset2Portfolio;
+
 			RegisterOrder(asset2Order);
 		}
 	}

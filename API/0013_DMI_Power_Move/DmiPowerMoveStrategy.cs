@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var dmi = new DirectionalMovementIndex { Length = DmiPeriod };
+			var dmi = new DirectionalIndex { Length = DmiPeriod };
 			var atr = new AverageTrueRange { Length = DmiPeriod };
 
 			// Create subscription and bind indicators
