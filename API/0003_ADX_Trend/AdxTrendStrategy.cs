@@ -153,14 +153,17 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			var adxMa = adxTyped.MovingAverage;
+
 			// Check ADX threshold for entry conditions
-			var isAdxEnoughForEntry = adxValue > 25;
+			var isAdxEnoughForEntry = adxMa > 25;
 			
 			// Check ADX threshold for exit conditions
-			var isAdxBelowExit = adxValue < AdxExitThreshold;
+			var isAdxBelowExit = adxMa < AdxExitThreshold;
 			
 			// Current price relative to MA
-			var isPriceAboveMa = candle.ClosePrice > maValue;
+			var isPriceAboveMa = candle.ClosePrice > maValue.ToDecimal();
 
 			// Store ADX state
 			_adxAboveThreshold = isAdxEnoughForEntry;
@@ -170,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Exit position when ADX weakens
 				ClosePosition();
-				LogInfo($"Exiting position at {candle.ClosePrice}. ADX = {adxValue} (below threshold {AdxExitThreshold})");
+				LogInfo($"Exiting position at {candle.ClosePrice}. ADX = {adxMa} (below threshold {AdxExitThreshold})");
 			}
 			else if (isAdxEnoughForEntry)
 			{
@@ -180,19 +183,19 @@ namespace StockSharp.Samples.Strategies
 				if (isPriceAboveMa && Position <= 0)
 				{
 					BuyMarket(volume);
-					LogInfo($"Buy signal: ADX = {adxValue}, Price = {candle.ClosePrice}, MA = {maValue}");
+					LogInfo($"Buy signal: ADX = {adxMa}, Price = {candle.ClosePrice}, MA = {maValue}");
 				}
 				// Short entry
 				else if (!isPriceAboveMa && Position >= 0)
 				{
 					SellMarket(volume);
-					LogInfo($"Sell signal: ADX = {adxValue}, Price = {candle.ClosePrice}, MA = {maValue}");
+					LogInfo($"Sell signal: ADX = {adxMa}, Price = {candle.ClosePrice}, MA = {maValue}");
 				}
 			}
 
 			// Update previous values
-			_prevAdxValue = adxValue;
-			_prevMaValue = maValue;
+			_prevAdxValue = adxMa;
+			_prevMaValue = maValue.ToDecimal();
 		}
 	}
 }

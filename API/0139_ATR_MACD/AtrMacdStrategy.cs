@@ -242,6 +242,10 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading() || _prevAtrAvg == 0)
 				return;
 
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macdDec = macdTyped.Macd;
+			var signalValue = macdTyped.Signal;
+
 			// Get current ATR value
 			var currentAtr = candle.GetTrueRange();
 			
@@ -251,13 +255,13 @@ namespace StockSharp.Samples.Strategies
 			if (isVolatilityIncreasing)
 			{
 				// Long entry: MACD above Signal in rising volatility
-				if (macdValue > signalValue && Position <= 0)
+				if (macdDec > signalValue && Position <= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 				}
 				// Short entry: MACD below Signal in rising volatility
-				else if (macdValue < signalValue && Position >= 0)
+				else if (macdDec < signalValue && Position >= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
@@ -265,11 +269,11 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Exit conditions based on MACD crossovers
-			if (Position > 0 && macdValue < signalValue)
+			if (Position > 0 && macdDec < signalValue)
 			{
 				SellMarket(Math.Abs(Position));
 			}
-			else if (Position < 0 && macdValue > signalValue)
+			else if (Position < 0 && macdDec > signalValue)
 			{
 				BuyMarket(Math.Abs(Position));
 			}

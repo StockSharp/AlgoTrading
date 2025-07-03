@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue diPlusValue, IIndicatorValue diMinusValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -159,15 +159,20 @@ namespace StockSharp.Samples.Strategies
 				_averageVolume = (_averageVolume * (VolumeAvgPeriod - 1) + currentVolume) / VolumeAvgPeriod;
 			}
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			var diPlusValue = adxTyped.Dx.Plus;
+			var diMinusValue = adxTyped.Dx.Minus;
+			var adxMa = adxTyped.MovingAverage;
+
 			// Check if volume is above average
 			var isVolumeAboveAverage = currentVolume > _averageVolume;
 
 			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-				   $"ADX: {adxValue}, DI+: {diPlusValue}, DI-: {diMinusValue}, " +
+				   $"ADX: {adxMa}, DI+: {diPlusValue}, DI-: {diMinusValue}, " +
 				   $"Volume: {currentVolume}, Avg Volume: {_averageVolume}");
 
 			// Trading rules
-			if (adxValue > AdxThreshold && isVolumeAboveAverage)
+			if (adxMa > AdxThreshold && isVolumeAboveAverage)
 			{
 				// Strong trend detected with above average volume
 				
@@ -177,7 +182,7 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 					
-					LogInfo($"Buy signal: Strong trend (ADX: {adxValue}) with DI+ > DI- and high volume. Volume: {volume}");
+					LogInfo($"Buy signal: Strong trend (ADX: {adxMa}) with DI+ > DI- and high volume. Volume: {volume}");
 				}
 				else if (diMinusValue > diPlusValue && Position >= 0)
 				{
@@ -185,11 +190,11 @@ namespace StockSharp.Samples.Strategies
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
 					
-					LogInfo($"Sell signal: Strong trend (ADX: {adxValue}) with DI- > DI+ and high volume. Volume: {volume}");
+					LogInfo($"Sell signal: Strong trend (ADX: {adxMa}) with DI- > DI+ and high volume. Volume: {volume}");
 				}
 			}
 			// Exit conditions
-			else if (adxValue < AdxThreshold * 0.8m)
+			else if (adxMa < AdxThreshold * 0.8m)
 			{
 				// Trend weakening - exit all positions
 				if (Position > 0)

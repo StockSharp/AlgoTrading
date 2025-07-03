@@ -163,16 +163,19 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			var adxMa = adxTyped.MovingAverage;
+
 			// Calculate ADX slope
 			if (_isFirstCalculation)
 			{
-				_previousAdx = adxValue;
+				_previousAdx = adxMa;
 				_isFirstCalculation = false;
 				return;
 			}
 
-			_currentAdxSlope = adxValue - _previousAdx;
-			_previousAdx = adxValue;
+			_currentAdxSlope = adxMa - _previousAdx;
+			_previousAdx = adxMa;
 
 			// Update statistics for slope values
 			_sampleCount++;

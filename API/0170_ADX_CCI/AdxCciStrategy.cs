@@ -147,29 +147,32 @@ namespace StockSharp.Samples.Strategies
 			// For the first value, just store and skip trading
 			if (_isFirstValue)
 			{
-				_prevCciValue = cciValue;
+				_prevCciValue = cciValue.ToDecimal();
 				_isFirstValue = false;
 				return;
 			}
 
 			// Store for the next iteration
-			_prevCciValue = cciValue;
+			_prevCciValue = cciValue.ToDecimal();
+
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			var adxMa = adxTyped.MovingAverage;
 
 			// Trading logic
-			if (adxValue > 25)
+			if (adxMa > 25)
 			{
-				if (cciValue < -100 && Position <= 0)
+				if (_prevCciValue < -100 && Position <= 0)
 				{
 					// Strong trend with oversold CCI - Buy
 					BuyMarket(Volume + Math.Abs(Position));
 				}
-				else if (cciValue > 100 && Position >= 0)
+				else if (_prevCciValue > 100 && Position >= 0)
 				{
 					// Strong trend with overbought CCI - Sell
 					SellMarket(Volume + Math.Abs(Position));
 				}
 			}
-			else if (adxValue < 20)
+			else if (adxMa < 20)
 			{
 				// Trend is weakening - close any position
 				if (Position > 0)
