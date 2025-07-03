@@ -126,8 +126,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to subscription and start
 			subscription
-				.BindEx(donchian, ProcessDonchianChannel)
-				.BindEx(fractalDimension, ProcessFractalDimension)
+				.BindEx(donchian, fractalDimension, ProcessIndicators)
 				.Start();
 
 			// Add chart visualization
@@ -146,13 +145,23 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessDonchianChannel(ICandleMessage candle, IIndicatorValue upperBand, IIndicatorValue lowerBand, IIndicatorValue middleBand)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue fractalDimensionValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Check if strategy is ready to trade
+			// --- FractalDimension logic (was ProcessFractalDimension) ---
+			decimal fractalDimension = fractalDimensionValue.ToDecimal();
+			_hurstValue = 2m - fractalDimension;
+
+			// Log Hurst Exponent value periodically
+			if (candle.OpenTime.Second == 0 && candle.OpenTime.Minute % 15 == 0)
+			{
+				LogInfo($"Current Hurst Exponent: {_hurstValue} (>{HurstThreshold} indicates trend persistence)");
+			}
+
+			// --- Donchian logic (was ProcessDonchianChannel) ---
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
@@ -163,48 +172,37 @@ namespace StockSharp.Samples.Strategies
 				return;
 			}
 
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+
+			// Convert indicator values to decimal
+			decimal upper = donchianTyped.UpperBand;
+			decimal lower = donchianTyped.LowerBand;
+			decimal middle = donchianTyped.Middle;
+
 			// Check for Hurst Exponent indicating trend persistence
 			if (_hurstValue > HurstThreshold)
 			{
 				// Check for breakout signals
-				if (candle.ClosePrice > upperBand && Position <= 0)
+				if (candle.ClosePrice > upper && Position <= 0)
 				{
 					// Breakout above upper band - Buy signal
-					LogInfo($"Buy signal: Breakout above Donchian upper band ({upperBand}) with Hurst = {_hurstValue}");
+					LogInfo($"Buy signal: Breakout above Donchian upper band ({upper}) with Hurst = {_hurstValue}");
 					BuyMarket(Volume + Math.Abs(Position));
 				}
-				else if (candle.ClosePrice < lowerBand && Position >= 0)
+				else if (candle.ClosePrice < lower && Position >= 0)
 				{
 					// Breakout below lower band - Sell signal
-					LogInfo($"Sell signal: Breakout below Donchian lower band ({lowerBand}) with Hurst = {_hurstValue}");
+					LogInfo($"Sell signal: Breakout below Donchian lower band ({lower}) with Hurst = {_hurstValue}");
 					SellMarket(Volume + Math.Abs(Position));
 				}
 			}
 
 			// Exit rules based on middle band reversion
-			if ((Position > 0 && candle.ClosePrice < middleBand) ||
-				(Position < 0 && candle.ClosePrice > middleBand))
+			if ((Position > 0 && candle.ClosePrice < middle) ||
+				(Position < 0 && candle.ClosePrice > middle))
 			{
-				LogInfo($"Exit signal: Price reverted to middle band ({middleBand})");
+				LogInfo($"Exit signal: Price reverted to middle band ({middle})");
 				ClosePosition();
-			}
-		}
-
-		private void ProcessFractalDimension(ICandleMessage candle, IIndicatorValue fractalDimensionValue)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			// Calculate Hurst Exponent from Fractal Dimension
-			// Relationship: H = 2 - D, where D is fractal dimension
-			decimal fractalDimension = fractalDimensionValue.ToDecimal();
-			_hurstValue = 2m - fractalDimension;
-
-			// Log Hurst Exponent value periodically
-			if (candle.OpenTime.Second == 0 && candle.OpenTime.Minute % 15 == 0)
-			{
-				LogInfo($"Current Hurst Exponent: {_hurstValue} (>{HurstThreshold} indicates trend persistence)");
 			}
 		}
 	}

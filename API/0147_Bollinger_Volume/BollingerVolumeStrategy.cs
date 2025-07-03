@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process volume average indicator values.
 		/// </summary>
-		private void ProcessVolumeAverage(IIndicatorValue volumeAvgValue)
+		private void ProcessVolumeAverage(ICandleMessage candle, IIndicatorValue volumeAvgValue)
 		{
 			if (volumeAvgValue.IsFinal)
 			{
@@ -218,9 +218,9 @@ namespace StockSharp.Samples.Strategies
 			return;
 
 			var bb = (BollingerBandsValue)bollingerValue;
-			var middleBand = bb.MiddleBand;
-			var upperBand = bb.UpperBand;
-			var lowerBand = bb.LowerBand;
+			var middleBand = bb.MovingAverage;
+			var upperBand = bb.UpBand;
+			var lowerBand = bb.LowBand;
 
 			var atr = atrValue.ToDecimal();
 

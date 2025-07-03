@@ -227,14 +227,16 @@ namespace StockSharp.Strategies.Samples
 				
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
 			// Extract values from indicators
-			var middleBand = bollingerValue.ToDecimal();
-			var upperBand = _bollinger.GetUpBand();
-			var lowerBand = _bollinger.GetLowBand();
-			
-			var k = stochasticValue.ToDecimal();
-			var d = _stochastic.D.Current;
+			var bb = (BollingerBandsValue)bollingerValue;
+			var middleBand = bb.MovingAverage;
+			var upperBand = bb.UpBand;
+			var lowerBand = bb.LowBand;
+
+			var stochasticTyped = (StochasticOscillatorValue)stochasticValue;
+			var k = stochasticTyped.K;
+			var d = stochasticTyped.D;
 			
 			var atrValue_ = atrValue.ToDecimal();
 			

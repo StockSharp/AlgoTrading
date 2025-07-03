@@ -145,11 +145,16 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue upperBand, IIndicatorValue middleBand, IIndicatorValue lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var middleBand = donchianTyped.Middle;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
 
 			// Save current Donchian Channel values
 			_upperBand = upperBand;

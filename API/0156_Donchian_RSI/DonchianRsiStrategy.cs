@@ -165,11 +165,16 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue middleBand, IIndicatorValue upperBand, IIndicatorValue lowerBand, IIndicatorValue rsiValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var middleBand = donchianTyped.Middle;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
 
 			// Store current bands before comparison
 			var currentUpper = upperBand;
@@ -188,18 +193,20 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var rsiDec = rsiValue.ToDecimal();
+
 			// Detect breakouts by comparing current price to previous Donchian bands
 			bool upperBreakout = candle.ClosePrice > _prevUpperBand;
 			bool lowerBreakout = candle.ClosePrice < _prevLowerBand;
 
 			// Trading logic
-			if (upperBreakout && rsiValue < RsiOverboughtLevel && Position <= 0)
+			if (upperBreakout && rsiDec < RsiOverboughtLevel && Position <= 0)
 			{
 				// Upward breakout with RSI not overbought - Buy
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
-			else if (lowerBreakout && rsiValue > RsiOversoldLevel && Position >= 0)
+			else if (lowerBreakout && rsiDec > RsiOversoldLevel && Position >= 0)
 			{
 				// Downward breakout with RSI not oversold - Sell
 				var volume = Volume + Math.Abs(Position);

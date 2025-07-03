@@ -111,14 +111,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		/// <summary>
-		/// Process candle with Donchian Channel values.
-		/// </summary>
-		/// <param name="candle">Candle.</param>
-		/// <param name="upperBand">Upper band value.</param>
-		/// <param name="middleBand">Middle band value.</param>
-		/// <param name="lowerBand">Lower band value.</param>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue upperBand, IIndicatorValue middleBand, IIndicatorValue lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -135,6 +128,11 @@ namespace StockSharp.Samples.Strategies
 				_isFirstCandle = false;
 				return;
 			}
+
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var middleBand = donchianTyped.Middle;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
 
 			// Check for price bounce from Donchian bands
 			bool bouncedFromLower = _previousClose < lowerBand && candle.ClosePrice > lowerBand;

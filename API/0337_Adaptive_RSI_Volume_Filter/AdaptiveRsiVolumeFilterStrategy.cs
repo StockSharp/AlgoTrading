@@ -136,8 +136,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to subscription and start
 			subscription
-				.BindEx(_atr, ProcessAtr)
-				.BindEx(_rsi, ProcessRsi)
+				.BindEx(_atr, _rsi, ProcessCandle)
 				.Start();
 
 			// Add chart visualization
@@ -156,7 +155,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessAtr(ICandleMessage candle, IIndicatorValue atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -190,13 +189,6 @@ namespace StockSharp.Samples.Strategies
 					LogInfo($"Adjusted RSI period to {_currentRsiPeriod} based on ATR ({atr})");
 				}
 			}
-		}
-
-		private void ProcessRsi(ICandleMessage candle, IIndicatorValue rsiValue)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
@@ -206,12 +198,12 @@ namespace StockSharp.Samples.Strategies
 			if (rsiValue.IsFinal)
 			{
 				_adaptiveRsiValue = rsiValue.ToDecimal();
-				
+
 				// Trading logic based on RSI with volume confirmation
 				if (_avgVolume > 0) // Make sure we have volume data
 				{
 					bool isHighVolume = candle.TotalVolume > _avgVolume;
-					
+
 					// Oversold condition with volume confirmation
 					if (_adaptiveRsiValue < 30 && isHighVolume && Position <= 0)
 					{
@@ -225,9 +217,9 @@ namespace StockSharp.Samples.Strategies
 						SellMarket(Volume + Math.Abs(Position));
 					}
 				}
-				
+
 				// Exit logic based on RSI returning to neutral zone
-				if ((Position > 0 && _adaptiveRsiValue > 50) || 
+				if ((Position > 0 && _adaptiveRsiValue > 50) ||
 					(Position < 0 && _adaptiveRsiValue < 50))
 				{
 					LogInfo($"Exit signal: RSI returned to neutral zone ({_adaptiveRsiValue})");

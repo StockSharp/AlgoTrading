@@ -157,19 +157,16 @@ namespace StockSharp.Strategies
 			// Skip if strategy is not ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
 			// Extract Bollinger Band values
-			var bollingerValues = bollingerValue as IComplexIndicatorValue;
-			if (bollingerValues == null)
-				return;
-				
-			var middleBand = bollingerValues[BollingerBands.Middle].ToDecimal();
-			var upperBand = bollingerValues[BollingerBands.Upper].ToDecimal();
-			var lowerBand = bollingerValues[BollingerBands.Lower].ToDecimal();
-			
+			var bb = (BollingerBandsValue)bollingerValue;
+			var middleBand = bb.MovingAverage;
+			var upperBand = bb.UpBand;
+			var lowerBand = bb.LowBand;
+
 			// Calculate Supertrend
 			// Note: This is a simplified Supertrend implementation
-			decimal atrValue2 = atrValue * SupertrendMultiplier;
+			decimal atrValue2 = atrValue.ToDecimal() * SupertrendMultiplier;
 			decimal upperBand2 = (candle.HighPrice + candle.LowPrice) / 2 + atrValue2;
 			decimal lowerBand2 = (candle.HighPrice + candle.LowPrice) / 2 - atrValue2;
 			

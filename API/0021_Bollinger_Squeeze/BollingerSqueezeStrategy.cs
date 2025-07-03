@@ -121,7 +121,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue middleBand, IIndicatorValue upperBand, IIndicatorValue lowerBand)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -130,6 +130,11 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var bb = (BollingerBandsValue)bollingerValue;
+			var middleBand = bb.MovingAverage;
+			var upperBand = bb.UpBand;
+			var lowerBand = bb.LowBand;
 
 			// Calculate Bollinger Bands width relative to the middle band
 			decimal bandWidth = (upperBand - lowerBand) / middleBand;

@@ -179,10 +179,10 @@ namespace StockSharp.Samples.Strategies
 			// We need to calculate the upper and lower bands ourselves or get them directly from the indicator
 
 			// Get Bollinger Bands values from the indicator
-			var bollingerTyped = (BollingerBandsValue)bollingerValue;
-			var upperBand = bollingerType.UpBand;
-			var lowerBand = bollingerType.LowBand;
-			var middleBand = bollingerType.MovingAverage;
+			var bb = (BollingerBandsValue)bollingerValue;
+			var middleBand = bb.MovingAverage;
+			var upperBand = bb.UpBand;
+			var lowerBand = bb.LowBand;
 			var cciTyped = cciValue.ToDecimal();
 
 			// Current price

@@ -183,11 +183,13 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var signalValue = ((ComplexIndicatorValue)macdValue)[_macd.SignalMa].ToDecimal();
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var signalValue = macdTyped.Signal;
+			var macdDec = macdTyped.Macd;
 
 			// Check for breakouts with MACD trend confirmation
 			// Long entry: Price breaks above Donchian high and MACD > Signal
-			if (candle.ClosePrice > _previousHighest && Position <= 0 && macdValue > signalValue)
+			if (candle.ClosePrice > _previousHighest && Position <= 0 && macdDec > signalValue)
 			{
 				// Cancel existing orders before entering new position
 				CancelActiveOrders();
@@ -200,7 +202,7 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Long entry signal: Price {candle.ClosePrice} broke above Donchian high {_previousHighest} with MACD confirmation");
 			}
 			// Short entry: Price breaks below Donchian low and MACD < Signal
-			else if (candle.ClosePrice < _previousLowest && Position >= 0 && macdValue < signalValue)
+			else if (candle.ClosePrice < _previousLowest && Position >= 0 && macdDec < signalValue)
 			{
 				// Cancel existing orders before entering new position
 				CancelActiveOrders();
@@ -213,20 +215,22 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Short entry signal: Price {candle.ClosePrice} broke below Donchian low {_previousLowest} with MACD confirmation");
 			}
 			// MACD trend reversal exit
-			else if ((Position > 0 && macdValue < signalValue && _previousMacd > _previousSignal) ||
-					 (Position < 0 && macdValue > signalValue && _previousMacd < _previousSignal))
+			else if ((Position > 0 && macdDec < signalValue && _previousMacd > _previousSignal) ||
+					 (Position < 0 && macdDec > signalValue && _previousMacd < _previousSignal))
 			{
 				// Close position on MACD signal reversal
 				ClosePosition();
 				_entryPrice = null;
 				
-				LogInfo($"Exit signal: MACD trend reversal. MACD: {macdValue}, Signal: {signalValue}");
+				LogInfo($"Exit signal: MACD trend reversal. MACD: {macdDec}, Signal: {signalValue}");
 			}
 
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+
 			// Update previous values for next candle
-			_previousHighest = highValue;
-			_previousLowest = lowValue;
-			_previousMacd = macdValue;
+			_previousHighest = donchianTyped.UpperBand;
+			_previousLowest = donchianTyped.LowerBand;
+			_previousMacd = macdDec;
 			_previousSignal = signalValue;
 		}
 	}

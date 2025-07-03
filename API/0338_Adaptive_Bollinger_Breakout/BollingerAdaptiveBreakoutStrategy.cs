@@ -26,6 +26,9 @@ namespace StockSharp.Samples.Strategies
 		private BollingerBands _bollinger;
 		private AverageTrueRange _atr;
 
+		private decimal _atrSum = 0;
+		private int _atrCount = 0;
+
 		/// <summary>
 		/// Strategy parameter: Minimum Bollinger period.
 		/// </summary>
@@ -142,8 +145,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to subscription and start
 			subscription
-				.BindEx(_atr, ProcessAtr)
-				.BindEx(_bollinger, ProcessBollinger)
+				.BindEx(_atr, _bollinger, ProcessIndicators)
 				.Start();
 
 			// Add chart visualization
@@ -162,69 +164,61 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessAtr(ICandleMessage candle, IIndicatorValue atrValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue bollingerValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Adjust Bollinger Bands parameters based on ATR
+			// --- ATR logic (was ProcessAtr) ---
 			if (atrValue.IsFinal)
 			{
 				decimal atr = atrValue.ToDecimal();
+				// Maintain running average for ATR
+				_atrSum += atr;
+				_atrCount++;
+				decimal avgAtr = _atrCount > 0 ? _atrSum / _atrCount : atr;
 				decimal volatilityRatio = Math.Min(Math.Max(atr / (candle.ClosePrice * 0.01m), 0), 1);
-				
+
 				// Higher volatility = shorter period and wider bands
 				int newPeriod = MaxBollingerPeriod - (int)Math.Round(volatilityRatio * (MaxBollingerPeriod - MinBollingerPeriod));
 				decimal newDeviation = MinBollingerDeviation + volatilityRatio * (MaxBollingerDeviation - MinBollingerDeviation);
-				
+
 				// Ensure parameters stay within bounds
 				newPeriod = Math.Max(MinBollingerPeriod, Math.Min(MaxBollingerPeriod, newPeriod));
 				newDeviation = Math.Max(MinBollingerDeviation, Math.Min(MaxBollingerDeviation, newDeviation));
-				
+
 				// Update Bollinger parameters if changed
 				if (newPeriod != _currentBollingerPeriod || newDeviation != _currentBollingerDeviation)
 				{
 					_currentBollingerPeriod = newPeriod;
 					_currentBollingerDeviation = newDeviation;
-					
+
 					_bollinger.Length = _currentBollingerPeriod;
 					_bollinger.Width = _currentBollingerDeviation;
-					
+
 					LogInfo($"Adjusted Bollinger parameters: Period={_currentBollingerPeriod}, Deviation={_currentBollingerDeviation:F2} based on ATR={atr:F6}");
 				}
 			}
-		}
 
-		private void ProcessBollinger(ICandleMessage candle, IIndicatorValue bollingerValue)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			// Check if strategy is ready to trade
+			// --- Bollinger logic (was ProcessBollinger) ---
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// Get Bollinger Bands values
 			if (bollingerValue.IsFinal && _atr.IsFormed)
 			{
-				// Get ATR value for volatility check
-				decimal atrValue = _atr.GetCurrentValue();
-				decimal avgAtr = _atr.GetAverage();
-				
-				// Check if volatility is high enough for breakout trading
-				bool isHighVolatility = atrValue > avgAtr;
+				decimal atrVal = atrValue.ToDecimal(); // use current ATR value
+				// use running average
+				bool isHighVolatility = atrVal > (_atrCount > 0 ? _atrSum / _atrCount : atrVal);
 
 				var bollingerTyped = (BollingerBandsValue)bollingerValue;
-
 				decimal middleBand = bollingerTyped.MovingAverage;
 
 				if (isHighVolatility)
 				{
 					decimal upperBand = bollingerTyped.UpBand;
 					decimal lowerBand = bollingerTyped.LowBand;
-					
+
 					// Breakout above upper band - Sell signal
 					if (candle.ClosePrice > upperBand && Position >= 0)
 					{
@@ -238,7 +232,7 @@ namespace StockSharp.Samples.Strategies
 						BuyMarket(Volume + Math.Abs(Position));
 					}
 				}
-				
+
 				// Exit logic based on middle band reversion
 				if ((Position > 0 && candle.ClosePrice > middleBand) || 
 					(Position < 0 && candle.ClosePrice < middleBand))
