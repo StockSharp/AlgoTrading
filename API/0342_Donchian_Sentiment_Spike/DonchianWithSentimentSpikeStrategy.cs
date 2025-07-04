@@ -172,12 +172,13 @@ namespace StockSharp.Samples.Strategies
 			
 			// Update sentiment data (in a real system, this would come from external source)
 			UpdateSentiment(candle);
-			
+
 			// Extract Donchian Channel values
-			var upperBand = donchianValue.GetValue<Tuple<decimal, decimal, decimal>>().Item1;
-			var middleBand = donchianValue.GetValue<Tuple<decimal, decimal, decimal>>().Item2;
-			var lowerBand = donchianValue.GetValue<Tuple<decimal, decimal, decimal>>().Item3;
-			
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
+			var middleBand = donchianTyped.Middle;
+
 			// Store middle band for exit conditions
 			_midChannel = middleBand;
 			

@@ -122,17 +122,9 @@ namespace StockSharp.Strategies
 			
 			// Bind indicators
 			subscription
-				.BindEx(_rsi, ProcessRsi)
+				.BindEx(_rsi, _highestHigh, _lowestLow, ProcessIndicators)
 				.Start();
-				
-			subscription
-				.BindEx(_highestHigh, ProcessHighest)
-				.Start();
-				
-			subscription
-				.BindEx(_lowestLow, ProcessLowest)
-				.Start();
-			
+
 			// Enable position protection with stop-loss
 			StartProtection(
 				takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
@@ -154,7 +146,7 @@ namespace StockSharp.Strategies
 		private decimal _donchianMiddle;
 		private decimal _currentRsi;
 		
-		private void ProcessRsi(ICandleMessage candle, IIndicatorValue rsiValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -165,43 +157,20 @@ namespace StockSharp.Strategies
 			
 			// Get current RSI value
 			_currentRsi = rsiValue.ToDecimal();
-			
-			// Process trading logic after all indicators are updated
-			ProcessTradingLogic(candle);
-		}
-		
-		private void ProcessHighest(ICandleMessage candle, IIndicatorValue highestValue)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-			
+
 			// Update Donchian high value
 			_donchianHigh = highestValue.ToDecimal();
-			
-			// Calculate Donchian middle line
-			_donchianMiddle = (_donchianHigh + _donchianLow) / 2;
-			
-			// Process trading logic after all indicators are updated
-			ProcessTradingLogic(candle);
-		}
-		
-		private void ProcessLowest(ICandleMessage candle, IIndicatorValue lowestValue)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-			
+
 			// Update Donchian low value
 			_donchianLow = lowestValue.ToDecimal();
-			
+
 			// Calculate Donchian middle line
 			_donchianMiddle = (_donchianHigh + _donchianLow) / 2;
-			
+
 			// Process trading logic after all indicators are updated
 			ProcessTradingLogic(candle);
 		}
-		
+
 		private void ProcessTradingLogic(ICandleMessage candle)
 		{
 			// Skip if strategy is not ready to trade

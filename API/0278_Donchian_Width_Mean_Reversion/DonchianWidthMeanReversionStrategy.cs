@@ -147,7 +147,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessDonchian(ICandleMessage candle, IIndicatorValue value)
+		private void ProcessDonchian(ICandleMessage candle, IIndicatorValue donchianValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -158,9 +158,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Extract upper and lower bands from the indicator value
-			var donchianValue = value.GetValue<(decimal upper, decimal middle, decimal lower)>();
-			var upperBand = donchianValue.upper;
-			var lowerBand = donchianValue.lower;
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
 			
 			// Calculate the Donchian channel width
 			_currentWidth = upperBand - lowerBand;

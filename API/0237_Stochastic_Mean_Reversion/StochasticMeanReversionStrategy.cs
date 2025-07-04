@@ -172,11 +172,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract %K value from stochastic
-			var stochObject = stochValue.GetValue<IIndicatorValue[]>();
-			if (stochObject == null || stochObject.Length < 2)
-				return;
+			var stochTyped = (StochasticOscillatorValue)stochValue;
 
-			decimal stochKValue = stochObject[0].ToDecimal();
+			decimal stochKValue = stochTyped.K;
 			
 			// Process Stochastic %K through average and standard deviation indicators
 			var stochAvgValue = _stochAverage.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();

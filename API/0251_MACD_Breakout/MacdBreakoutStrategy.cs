@@ -193,18 +193,10 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// MACD returns multiple values (MACD Line, Signal Line, Histogram)
-			// We're interested in the histogram (difference between MACD and Signal)
-			// Which is typically the third value (index 2)
-			var macdValues = macdValue.GetValue<IList<decimal>>();
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 			
-			// For MACD, the typical order is: MACD Line, Signal Line, Histogram
-			// But we'll check to make sure we have enough values
-			if (macdValues.Count < 3)
-				return;
-
 			// Extract the histogram value (MACD Line - Signal Line)
-			var macdHistValue = macdValues[2];
+			var macdHistValue = macdTyped.Macd;
 			
 			// Process indicators for MACD histogram
 			var macdHistSmaValue = _macdHistSma.Process(macdHistValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();

@@ -169,10 +169,11 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Get Ichimoku values
-			var tenkan = ichimokuValue.GetValue<Tuple<decimal, decimal, decimal, decimal, decimal>>().Item1;
-			var kijun = ichimokuValue.GetValue<Tuple<decimal, decimal, decimal, decimal, decimal>>().Item2;
-			var senkouA = ichimokuValue.GetValue<Tuple<decimal, decimal, decimal, decimal, decimal>>().Item3;
-			var senkouB = ichimokuValue.GetValue<Tuple<decimal, decimal, decimal, decimal, decimal>>().Item4;
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouA = ichimokuTyped.SenkouA;
+			var senkouB = ichimokuTyped.SenkouB;
 			
 			// Determine if price is above Kumo (cloud)
 			var kumoTop = Math.Max(senkouA, senkouB);

@@ -171,12 +171,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind volume average indicator separately to update volume average
 			subscription
-				.BindEx(volumeAvg, ProcessVolumeAverage)
-				.Start();
-
-			// Bind MACD for trade decisions
-			subscription
-				.BindEx(macd, ProcessMacd)
+				.BindEx(volumeAvg, macd, ProcessIndicators)
 				.Start();
 
 			// Setup position protection
@@ -196,24 +191,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Process volume average indicator values.
-		/// </summary>
-		private void ProcessVolumeAverage(ICandleMessage candle, IIndicatorValue volumeAvgValue)
-		{
-			if (volumeAvgValue.IsFinal)
-			{
-				_avgVolume = volumeAvgValue.ToDecimal();
-			}
-		}
-
-		/// <summary>
 		/// Process MACD indicator values.
 		/// </summary>
-		private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			if (volumeAvgValue.IsFinal)
+				_avgVolume = volumeAvgValue.ToDecimal();
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading() || _avgVolume <= 0)

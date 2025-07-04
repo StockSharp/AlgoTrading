@@ -184,7 +184,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochasticValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -193,10 +193,11 @@ namespace StockSharp.Samples.Strategies
 			// Check if indicator is formed
 			if (!_stochastic.IsFormed)
 				return;
-				
+
 			// Extract Stochastic %K value - the main line that we'll track the slope of
 			// Stochastic returns a complex value with both %K and %D values
-			decimal kValue = stochasticValue.GetValue<Tuple<decimal, decimal>>().Item1;
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var kValue = stochTyped.K;
 
 			// Initialize on first valid value
 			if (!_isInitialized)

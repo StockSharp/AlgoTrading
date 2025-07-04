@@ -198,7 +198,7 @@ namespace StockSharp.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdHistValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -209,7 +209,8 @@ namespace StockSharp.Strategies
 				return;
 
 			// Extract MACD Histogram value
-			var currentMacdHist = macdHistValue.ToDecimal();
+			var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;
+			var currentMacdHist = macdTyped.Macd;
 
 			// Update MACD Histogram statistics
 			UpdateMacdHistStatistics(currentMacdHist);

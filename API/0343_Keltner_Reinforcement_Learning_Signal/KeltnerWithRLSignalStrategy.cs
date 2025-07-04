@@ -180,12 +180,13 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
 			// Extract Keltner Channel values
-			var upperBand = keltnerValue.GetValue<Tuple<decimal, decimal, decimal>>().Item1;
-			var middleBand = keltnerValue.GetValue<Tuple<decimal, decimal, decimal>>().Item2; // This is the EMA
-			var lowerBand = keltnerValue.GetValue<Tuple<decimal, decimal, decimal>>().Item3;
-			
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+			var upperBand = keltnerTyped.Upper;
+			var lowerBand = keltnerTyped.Lower;
+			var middleBand = keltnerTyped.Middle;
+
 			// Calculate current ATR value (upper - middle)/multiplier
 			var currentAtr = (upperBand - middleBand) / AtrMultiplier;
 			
