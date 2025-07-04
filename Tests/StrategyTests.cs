@@ -15,6 +15,7 @@ using StockSharp.Algo.Strategies;
 using StockSharp.Algo.Testing;
 using StockSharp.BusinessEntities;
 using StockSharp.Configuration;
+using StockSharp.Messages;
 
 [TestClass]
 public class StrategyTests
@@ -25,14 +26,16 @@ public class StrategyTests
 		.Where(t => typeof(Strategy).IsAssignableFrom(t) && !t.IsAbstract)
 		.Select(t => new object[] { t });
 
+	private static readonly MarketDataStorageCache _cache = new();
+
 	[DataTestMethod]
 	[DynamicData(nameof(StrategyTypes))]
 	public async Task RunStrategy(Type strategyType)
 	{
-		var strategy = (Strategy)Activator.CreateInstance(strategyType)!;
+		var strategy = (Strategy)Activator.CreateInstance(strategyType);
 
-		var logManager = new LogManager();
-		logManager.Listeners.Add(new ConsoleLogListener());
+		//var logManager = new LogManager();
+		//logManager.Listeners.Add(new ConsoleLogListener());
 
 		var token = CancellationToken.None;
 
@@ -53,7 +56,14 @@ public class StrategyTests
 			{
 				StartDate = startTime,
 				StopDate = stopTime,
+				AdapterCache = _cache,
 			}
+		};
+
+		connector.StateChanged2 += state =>
+		{
+			if (state == ChannelStates.Stopped)
+				strategy.Stop();
 		};
 
 		strategy.Portfolio = pf;
@@ -61,8 +71,8 @@ public class StrategyTests
 		strategy.Connector = connector;
 		strategy.Volume = 1;
 
-		logManager.Sources.Add(connector);
-		logManager.Sources.Add(strategy);
+		//logManager.Sources.Add(connector);
+		//logManager.Sources.Add(strategy);
 
 		await connector.ConnectAsync(token);
 
