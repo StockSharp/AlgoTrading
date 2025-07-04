@@ -108,8 +108,7 @@ namespace StockSharp.Samples.Strategies
 			var keltner = new KeltnerChannels
 			{
 				Length = EmaPeriod,
-				ATRLength = AtrPeriod,
-				K = KeltnerMultiplier
+				Multiplier = KeltnerMultiplier
 			};
 
 			var williamsR = new WilliamsR { Length = WilliamsRPeriod };
@@ -117,18 +116,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(keltner, (candle, keltnerValues) =>
-				{
-					// Get Williams %R value
-					var williamsRValue = williamsR.Process(candle).ToDecimal();
-
-					// Get Keltner Channel values
-					var middleBand = keltnerValues[0].ToDecimal();
-					var upperBand = keltnerValues[1].ToDecimal();
-					var lowerBand = keltnerValues[2].ToDecimal();
-
-					ProcessIndicators(candle, middleBand, upperBand, lowerBand, williamsRValue);
-				})
+				.BindEx(keltner, williamsR, ProcessIndicators)
 				.Start();
 			
 			// Enable stop-loss protection based on ATR
@@ -145,8 +133,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessIndicators(ICandleMessage candle, decimal middleBand, decimal upperBand, 
-			decimal lowerBand, decimal williamsRValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue williamsRValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -156,31 +143,38 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+			var upper = keltnerTyped.Upper;
+			var lower = keltnerTyped.Lower;
+			var middle = keltnerTyped.Middle;
+
+			var williamsR = williamsRValue.ToDecimal();
+
 			var price = candle.ClosePrice;
 
 			// Trading logic:
 			// Long: Price < lower Keltner band && Williams %R < -80 (oversold at lower band)
 			// Short: Price > upper Keltner band && Williams %R > -20 (overbought at upper band)
 			
-			if (price < lowerBand && williamsRValue < -80 && Position <= 0)
+			if (price < lower && williamsR < -80 && Position <= 0)
 			{
 				// Buy signal
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
-			else if (price > upperBand && williamsRValue > -20 && Position >= 0)
+			else if (price > upper && williamsR > -20 && Position >= 0)
 			{
 				// Sell signal
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 			}
 			// Exit conditions
-			else if (Position > 0 && price > middleBand)
+			else if (Position > 0 && price > middle)
 			{
 				// Exit long position when price returns to middle band
 				SellMarket(Position);
 			}
-			else if (Position < 0 && price < middleBand)
+			else if (Position < 0 && price < middle)
 			{
 				// Exit short position when price returns to middle band
 				BuyMarket(Math.Abs(Position));

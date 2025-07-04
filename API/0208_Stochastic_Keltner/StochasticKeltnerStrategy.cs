@@ -195,6 +195,11 @@ namespace StockSharp.Samples.Strategies
 
 			var price = candle.ClosePrice;
 
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+			var upperBand = keltnerTyped.Upper;
+			var lowerBand = keltnerTyped.Lower;
+			var middleBand = keltnerTyped.Middle;
+
 			// Trading logic:
 			// Long: Stoch %K < 20 && Price < Keltner lower band (oversold at lower band)
 			// Short: Stoch %K > 80 && Price > Keltner upper band (overbought at upper band)

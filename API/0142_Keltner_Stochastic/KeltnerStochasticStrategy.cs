@@ -116,10 +116,6 @@ namespace StockSharp.Samples.Strategies
 			set => _candleType.Value = value;
 		}
 
-		// Variables to store current Keltner Channel values
-		private decimal _emaValue;
-		private decimal _atrValue;
-
 		/// <summary>
 		/// Strategy constructor.
 		/// </summary>
@@ -194,19 +190,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
-			// Initialize variables
-			_emaValue = 0;
-			_atrValue = 0;
-
 			// Create indicators
-			var ema = new ExponentialMovingAverage
+			// Create a full Keltner Channel indicator for visualization
+			var keltner = new KeltnerChannels
 			{
-				Length = EmaPeriod
-			};
-
-			var atr = new AverageTrueRange
-			{
-				Length = AtrPeriod
+				Length = EmaPeriod,
+				Multiplier = KeltnerMultiplier
 			};
 
 			var stochastic = new StochasticOscillator
@@ -219,15 +208,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.BindEx(ema, emaValue => _emaValue = emaValue.ToDecimal())
-				.Start();
-
-			subscription
-				.BindEx(atr, atrValue => _atrValue = atrValue.ToDecimal())
-				.Start();
-
-			subscription
-				.BindEx(stochastic, ProcessStochastic)
+				.BindEx(keltner, stochastic, ProcessStochastic)
 				.Start();
 
 			// Setup position protection
@@ -242,14 +223,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				DrawCandles(area, subscription);
 				
-				// Create a full Keltner Channel indicator for visualization
-				var keltner = new KeltnerChannel
-				{
-					EMA = new ExponentialMovingAverage { Length = EmaPeriod },
-					ATR = new AverageTrueRange { Length = AtrPeriod },
-					K = KeltnerMultiplier
-				};
-				
 				DrawIndicator(area, keltner);
 				DrawIndicator(area, stochastic);
 				DrawOwnTrades(area);
@@ -259,14 +232,14 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process Stochastic indicator values.
 		/// </summary>
-		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue stochKValue)
+		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue stochKValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			// Check if strategy is ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading() || _emaValue == 0 || _atrValue == 0)
+			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
 			// Calculate Keltner Channel bands

@@ -160,10 +160,12 @@ namespace StockSharp.Samples.Strategies
 			// Get VWAP value (calculated per day)
 			var vwap = candle.VolumeWeightedAveragePrice;
 
-			// Extract MACD and Signal values
-			var macd = macdValue[MovingAverageConvergenceDivergence.MacdLine];
-			var signal = macdValue[MovingAverageConvergenceDivergence.SignalLine];
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
+			// Extract MACD and Signal values
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+			
 			// Detect MACD crosses
 			bool macdCrossedAboveSignal = _prevMacd <= _prevSignal && macd > signal;
 			bool macdCrossedBelowSignal = _prevMacd >= _prevSignal && macd < signal;

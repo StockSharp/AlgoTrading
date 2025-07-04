@@ -200,7 +200,7 @@ namespace StockSharp.Samples.Strategies
 				_currentPrice = candle.ClosePrice;
 				_currentMacd = macd;
 
-				LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd:F4}, Signal: {signalLine:F4}");
+				LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd:F4}, Signal: {signal:F4}");
 
 				// Look for divergences once we have enough data
 				if (_previousPrice.HasValue && _previousMacd.HasValue && _currentPrice.HasValue && _currentMacd.HasValue)

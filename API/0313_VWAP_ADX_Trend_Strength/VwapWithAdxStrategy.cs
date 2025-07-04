@@ -112,10 +112,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
 			// Extract values from ADX composite indicator
-			var adx = adxValue[0].ToDecimal();	 // ADX value
-			var diPlus = adxValue[1].ToDecimal();  // +DI value
-			var diMinus = adxValue[2].ToDecimal(); // -DI value
+			var adx = adxTyped.MovingAverage;	 // ADX value
+			var diPlus = adxTyped.Dx.Plus;  // +DI value
+			var diMinus = adxTyped.Dx.mi; // -DI value
 			
 			// Get VWAP
 			var vwap = GetVwap(Security);

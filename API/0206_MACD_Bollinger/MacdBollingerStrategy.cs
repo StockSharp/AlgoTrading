@@ -171,23 +171,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(bollinger, (candle, bollingerValues) =>
-				{
-					// Process MACD
-					var macdResult = macd.Process(candle);
-					var macdLine = macdResult.ToDecimal();
-					var signalLine = macd.SignalMa.GetCurrentValue();
-					
-					// Get Bollinger values
-					var middleBand = bollingerValues[0].ToDecimal();
-					var upperBand = bollingerValues[1].ToDecimal();
-					var lowerBand = bollingerValues[2].ToDecimal();
-					
-					// Process ATR
-					var atrValue = atr.Process(candle).ToDecimal();
-
-					ProcessIndicators(candle, macdLine, signalLine, middleBand, upperBand, lowerBand, atrValue);
-				})
+				.BindEx(bollinger, macd, atr, ProcessIndicators)
 				.Start();
 			
 			// Enable ATR-based stop protection
@@ -204,8 +188,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessIndicators(ICandleMessage candle, decimal macdLine, decimal signalLine, 
-			decimal middleBand, decimal upperBand, decimal lowerBand, decimal atrValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue macdValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -215,13 +198,22 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
+			var middleBand = bollingerTyped.MovingAverage;
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			var price = candle.ClosePrice;
 
 			// Trading logic:
 			// Long: MACD > Signal && Price < BB_lower (trend up with oversold conditions)
 			// Short: MACD < Signal && Price > BB_upper (trend down with overbought conditions)
 			
-			var macdCrossOver = macdLine > signalLine;
+			var macdCrossOver = macd > signal;
 
 			if (macdCrossOver && price < lowerBand && Position <= 0)
 			{

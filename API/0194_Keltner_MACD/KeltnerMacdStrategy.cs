@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -29,7 +28,7 @@ namespace StockSharp.Samples.Strategies
 
 		private ExponentialMovingAverage _ema;
 		private AverageTrueRange _atr;
-		private MovingAverageConvergenceDivergence _macd;
+		private MovingAverageConvergenceDivergenceSignal _macd;
 		
 		private decimal _prevMacd;
 		private decimal _prevSignal;
@@ -158,15 +157,15 @@ namespace StockSharp.Samples.Strategies
 			_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 			_atr = new AverageTrueRange { Length = AtrPeriod };
 
-				_macd = new MovingAverageConvergenceDivergenceSignal
+			_macd = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
 				{
-					Macd =
-					{
-						ShortMa = { Length = MacdFastPeriod },
-						LongMa = { Length = MacdSlowPeriod },
-					},
-					SignalMa = { Length = MacdSignalPeriod }
-				};
+					ShortMa = { Length = MacdFastPeriod },
+					LongMa = { Length = MacdSlowPeriod },
+				},
+				SignalMa = { Length = MacdSignalPeriod }
+			};
 			// Initialize variables
 			_prevMacd = 0;
 			_prevSignal = 0;
@@ -176,19 +175,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Process candles with indicators
 			subscription
-				.Bind(_ema, _atr, (candle, ema, atr) => 
-				{
-					// Calculate Keltner Channels
-					var upperBand = ema + Multiplier * atr;
-					var lowerBand = ema - Multiplier * atr;
-					
-					// Process MACD separately to get MACD and Signal values
-					var macdValue = _macd.Process(candle);
-					var macd = macdValue[MovingAverageConvergenceDivergence.MacdLine];
-					var signal = macdValue[MovingAverageConvergenceDivergence.SignalLine];
-					
-					ProcessCandle(candle, ema, upperBand, lowerBand, macd, signal, atr);
-				})
+				.BindEx(_ema, _atr, _macd, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -196,11 +183,6 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				
-				// Create custom indicators for Keltner Channels visualization
-				var upperLine = area.CreateIndicator<Highest>("Keltner Upper");
-				var midLine = area.CreateIndicator<Lowest>("Keltner Middle");
-				var lowerLine = area.CreateIndicator<Lowest>("Keltner Lower");
 				
 				// MACD in separate area
 				var macdArea = CreateChartArea();
@@ -213,12 +195,25 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal ema, decimal upperBand, decimal lowerBand, 
-								 decimal macd, decimal signal, decimal atr)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			var ema = emaValue.ToDecimal();
+			var atr = atrValue.ToDecimal();
+
+			// Calculate Keltner Channels
+			var upperBand = ema + Multiplier * atr;
+			var lowerBand = ema - Multiplier * atr;
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+			// Process MACD separately to get MACD and Signal values
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 
 			// Detect MACD crosses
 			bool macdCrossedAboveSignal = _prevMacd <= _prevSignal && macd > signal;

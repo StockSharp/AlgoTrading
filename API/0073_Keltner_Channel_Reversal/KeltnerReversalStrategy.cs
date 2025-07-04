@@ -115,8 +115,7 @@ namespace StockSharp.Samples.Strategies
 			_keltnerChannel = new KeltnerChannels
 			{
 				Length = EmaPeriod,
-				K = AtrMultiplier,
-				ATRLength = AtrPeriod
+				Multiplier = AtrMultiplier,
 			};
 
 			_atr = new AverageTrueRange
@@ -127,7 +126,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_keltnerChannel, _atr, ProcessCandle)
+				.BindEx(_keltnerChannel, _atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -142,7 +141,7 @@ namespace StockSharp.Samples.Strategies
 			// Start position protection
 			StartProtection(
 				takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, rely on the strategy's exit logic
-				stopLoss: new Unit(StopLossAtrMultiplier, UnitTypes.ATR)
+				stopLoss: new Unit(StopLossAtrMultiplier, UnitTypes.Absolute)
 			);
 		}
 
@@ -155,9 +154,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get Keltner Channel values
-			var upper = keltnerValue.GetValue<KeltnerChannelValue>().Upper;
-			var lower = keltnerValue.GetValue<KeltnerChannelValue>().Lower;
-			var middle = keltnerValue.GetValue<KeltnerChannelValue>().Middle;
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+			var upper = keltnerTyped.Upper;
+			var lower = keltnerTyped.Lower;
+			var middle = keltnerTyped.Middle;
 
 			// Determine if the candle is bullish or bearish
 			var isBullish = candle.ClosePrice > candle.OpenPrice;

@@ -105,14 +105,13 @@ namespace StockSharp.Samples.Strategies
 			var keltnerChannel = new KeltnerChannels
 			{
 				Length = EmaPeriod,
-				ATRLength = AtrPeriod,
-				K = AtrMultiplier
+				Multiplier = AtrMultiplier
 			};
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(keltnerChannel, ProcessCandle)
+				.BindEx(keltnerChannel, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -125,7 +124,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal middleValue, decimal upperValue, decimal lowerValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue keltnerValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -134,6 +133,11 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+			var upperValue = keltnerTyped.Upper;
+			var lowerValue = keltnerTyped.Lower;
+			var middleValue = keltnerTyped.Middle;
 
 			// Skip the first received value for proper comparison
 			if (_prevUpperBand == 0)
