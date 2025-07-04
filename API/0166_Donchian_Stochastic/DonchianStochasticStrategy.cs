@@ -172,8 +172,8 @@ namespace StockSharp.Samples.Strategies
 
 		private void ProcessCandle(
 			ICandleMessage candle,
-			IIndicatorValue donchianValues,
-			IIndicatorValue stochValues)
+			IIndicatorValue donchianValue,
+			IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -183,10 +183,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			decimal upperBand = donchianValues.upper;
-			decimal lowerBand = donchianValues.lower;
-			decimal middleBand = donchianValues.middle;
-			decimal stochK = stochValues.k;
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
+			var middleBand = donchianTyped.Middle;
+
+			decimal stochK = ((StochasticOscillatorValue)stochValue).K;
 
 			// Trading logic:
 			// Buy when price breaks above upper Donchian band with Stochastic showing oversold condition

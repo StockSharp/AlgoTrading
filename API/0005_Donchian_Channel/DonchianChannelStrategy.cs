@@ -88,7 +88,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue midValue, IIndicatorValue upperValue, IIndicatorValue lowerValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue donchianValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -97,6 +97,11 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var upperValue = donchianTyped.UpperBand;
+			var lowerValue = donchianTyped.LowerBand;
+			var midValue = donchianTyped.Middle;
 
 			// Skip the first received value for proper comparison
 			if (_prevUpperBand == 0)

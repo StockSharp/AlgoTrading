@@ -96,18 +96,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(donchian, (candle, donchianValues) =>
-				{
-					// Get CCI value
-					var cciValue = cci.Process(candle).ToDecimal();
-
-					// Get Donchian values
-					var upperBand = donchianValues[0].ToDecimal();
-					var middleBand = donchianValues[1].ToDecimal();
-					var lowerBand = donchianValues[2].ToDecimal();
-
-					ProcessIndicators(candle, upperBand, middleBand, lowerBand, cciValue);
-				})
+				.BindEx(donchian, cci, ProcessIndicators)
 				.Start();
 
 			// Enable stop-loss protection
@@ -124,8 +113,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessIndicators(ICandleMessage candle, decimal upperBand, decimal middleBand, 
-			decimal lowerBand, decimal cciValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue cciValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -135,19 +123,26 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var donchianTyped = (DonchianChannelsValue)donchianValue;
+			var upperBand = donchianTyped.UpperBand;
+			var lowerBand = donchianTyped.LowerBand;
+			var middleBand = donchianTyped.Middle;
+
+			var cciDec = cciValue.ToDecimal();
+
 			var price = candle.ClosePrice;
 
 			// Trading logic:
 			// Long: Price > Donchian Upper && CCI < -100 (breakout up with oversold conditions)
 			// Short: Price < Donchian Lower && CCI > 100 (breakout down with overbought conditions)
 			
-			if (price > upperBand && cciValue < -100 && Position <= 0)
+			if (price > upperBand && cciDec < -100 && Position <= 0)
 			{
 				// Buy signal - breakout up with oversold conditions
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
-			else if (price < lowerBand && cciValue > 100 && Position >= 0)
+			else if (price < lowerBand && cciDec > 100 && Position >= 0)
 			{
 				// Sell signal - breakout down with overbought conditions
 				var volume = Volume + Math.Abs(Position);
