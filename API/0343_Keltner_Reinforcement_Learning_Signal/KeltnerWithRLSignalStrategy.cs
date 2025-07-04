@@ -44,7 +44,6 @@ namespace StockSharp.Samples.Strategies
 		private decimal _previousSignalPrice;
 		private int _consecutiveWins;
 		private int _consecutiveLosses;
-		private bool _lastTradeProfitable;
 		
 		/// <summary>
 		/// EMA period.
@@ -138,7 +137,6 @@ namespace StockSharp.Samples.Strategies
 			// Initialize RL state variables
 			_consecutiveWins = 0;
 			_consecutiveLosses = 0;
-			_lastTradeProfitable = false;
 			
 			// Create Keltner Channels using EMA and ATR
 			var keltner = new KeltnerChannels
@@ -319,14 +317,12 @@ namespace StockSharp.Samples.Strategies
 			{
 				_consecutiveWins++;
 				_consecutiveLosses = 0;
-				_lastTradeProfitable = true;
 				LogInfo($"Profitable trade: Win streak = {_consecutiveWins}");
 			}
 			else
 			{
 				_consecutiveLosses++;
 				_consecutiveWins = 0;
-				_lastTradeProfitable = false;
 				LogInfo($"Unprofitable trade: Loss streak = {_consecutiveLosses}");
 			}
 		}

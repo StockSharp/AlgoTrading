@@ -29,7 +29,6 @@ namespace StockSharp.Samples.Strategies
 		private decimal _stdDevRatio;
 		private decimal[] _ratios;
 		private int _currentIndex;
-		private bool _isInitialized;
 
 		/// <summary>
 		/// Momentum period
@@ -138,7 +137,6 @@ namespace StockSharp.Samples.Strategies
 			_stdDevRatio = 0;
 			_ratios = new decimal[LookbackPeriod];
 			_currentIndex = 0;
-			_isInitialized = false;
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription
