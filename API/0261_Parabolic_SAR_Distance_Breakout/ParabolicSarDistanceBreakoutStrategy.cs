@@ -121,7 +121,7 @@ namespace StockSharp.Samples.Strategies
 			_parabolicSar = new ParabolicSar
 			{
 				Acceleration = Acceleration,
-				MaxAcceleration = MaxAcceleration
+				AccelerationMax = MaxAcceleration
 			};
 
 			_avgDistanceLong = 0;
@@ -156,7 +156,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue parabolicSarValue)
+		private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -166,9 +166,6 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// Extract Parabolic SAR value
-			decimal sarValue = parabolicSarValue.ToDecimal();
-			
 			// Calculate distances
 			decimal longDistance = 0;
 			decimal shortDistance = 0;

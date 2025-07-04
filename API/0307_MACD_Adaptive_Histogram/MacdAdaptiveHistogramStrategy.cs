@@ -20,6 +20,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stdDevMultiplier;
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
+		private SimpleMovingAverage _histAvg;
+		private StandardDeviation _histStdDev;
 
 		/// <summary>
 		/// Fast EMA period for MACD.
@@ -152,8 +154,8 @@ namespace StockSharp.Samples.Strategies
 			};
 			
 			// Create indicators for the histogram statistics
-			var histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
-			var histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
+			_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
+			_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -161,22 +163,6 @@ namespace StockSharp.Samples.Strategies
 			// Bind MACD to subscription
 			subscription
 				.BindEx(macdLine, ProcessCandle)
-				.Start();
-				
-			// Create a special subscription for histogram statistics
-			var histogramSubscription = subscription.CopySubscription();
-			
-			histogramSubscription
-				.BindEx(macdLine, macdValue => {
-					// Extract the histogram value (MACD - Signal)
-					var macd = macdValue.GetValue<Tuple<decimal, decimal, decimal>>().Item1;
-					var signal = macdValue.GetValue<Tuple<decimal, decimal, decimal>>().Item2;
-					var histogram = macd - signal;
-					
-					// Process the histogram through the statistics indicators
-					histAvg.Process(histogram, macdValue.Time, macdValue.IsFinal);
-					histStdDev.Process(histogram, macdValue.Time, macdValue.IsFinal);
-				})
 				.Start();
 
 			// Enable position protection with percentage stop-loss
@@ -202,21 +188,21 @@ namespace StockSharp.Samples.Strategies
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Check if strategy is ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 			var macd = macdTyped.Macd;
 			var signal = macdTyped.Signal;
 
 			// Extract MACD values
 			var histogram = macd - signal; // Not using Item3 as it might not be available depending on MACD implementation
-			
-			// Get values from indicators
-			var histAvgValue = 0m;
-			var histStdDevValue = 0.001m; // Default small value to avoid division by zero
 
+			// Process the histogram through the statistics indicators
+			var histAvgValue = _histAvg.Process(histogram, macdValue.Time, macdValue.IsFinal).ToDecimal();
+			var histStdDevValue = _histStdDev.Process(histogram, macdValue.Time, macdValue.IsFinal).ToDecimal();
+
+			// Check if strategy is ready to trade
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
+			
 			// Calculate adaptive thresholds for histogram
 			var upperThreshold = histAvgValue + StdDevMultiplier * histStdDevValue;
 			var lowerThreshold = histAvgValue - StdDevMultiplier * histStdDevValue;

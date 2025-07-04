@@ -105,12 +105,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Create custom bind for processing VWAP and volume data
 			subscription
-				.WhenCandlesFinished(this)
-				.Do(ProcessCandle)
-				.Apply(this);
-
-			// Start subscription
-			subscription.Start();
+				.Bind(ProcessCandle)
+				.Start();
 
 			// Enable stop-loss
 			StartProtection(

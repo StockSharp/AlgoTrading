@@ -176,7 +176,7 @@ namespace StockSharp.Strategies
 				.Start();
 				
 			subscription2
-				.Do(ProcessSecurity2Candle)
+				.Bind(ProcessSecurity2Candle)
 				.Start();
 			
 			// Setup visualization

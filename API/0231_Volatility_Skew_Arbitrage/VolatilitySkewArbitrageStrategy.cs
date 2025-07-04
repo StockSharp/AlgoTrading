@@ -111,25 +111,13 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to implied volatility for both options
 			if (OptionWithLowVol != null && OptionWithHighVol != null)
 			{
-				var lowVolSubscription = new Subscription(DataType.Level1, security: OptionWithLowVol);
-				var highVolSubscription = new Subscription(DataType.Level1, security: OptionWithHighVol);
+				SubscribeLevel1(OptionWithLowVol)
+					.Bind(ProcessLowOptionImpliedVolatility)
+					.Start();
 
-				// Create a rule to process implied volatility data
-				this.SuspendRules(() =>
-				{
-					lowVolSubscription
-						.WhenLevel1ReceivingImpliedVolatility(this)
-						.Do(ProcessLowOptionImpliedVolatility)
-						.Apply(this);
-
-					highVolSubscription
-						.WhenLevel1ReceivingImpliedVolatility(this)
-						.Do(ProcessHighOptionImpliedVolatility)
-						.Apply(this);
-				});
-
-				Subscribe(lowVolSubscription);
-				Subscribe(highVolSubscription);
+				SubscribeLevel1(OptionWithHighVol)
+					.Bind(ProcessHighOptionImpliedVolatility)
+					.Start();
 			}
 			else
 			{
@@ -145,7 +133,7 @@ namespace StockSharp.Samples.Strategies
 
 		private void ProcessLowOptionImpliedVolatility(Level1ChangeMessage data)
 		{
-			var lowIV = data.TryGetImpliedVolatility() ?? 0;
+			var lowIV = data.TryGetDecimal(Level1Fields.ImpliedVolatility) ?? 0;
 			var highIV = _currentVolSkew + lowIV;
 			
 			UpdateVolatilitySkew(highIV - lowIV, data.ServerTime, true);
@@ -153,7 +141,7 @@ namespace StockSharp.Samples.Strategies
 
 		private void ProcessHighOptionImpliedVolatility(Level1ChangeMessage data)
 		{
-			var highIV = data.TryGetImpliedVolatility() ?? 0;
+			var highIV = data.TryGetDecimal(Level1Fields.ImpliedVolatility) ?? 0;
 			_currentVolSkew = highIV;
 		}
 
@@ -222,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal GetPositionValue(Security security)
 		{
-			return security is null ? 0 : PositionManager.Positions.TryGetValue(security)?.Value ?? 0;
+			return GetPositionValue(security, Portfolio) ?? 0;
 		}
 	}
 }

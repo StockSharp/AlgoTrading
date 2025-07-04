@@ -119,10 +119,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEach(
-					_hma,
-					_atr,
-					ProcessCandle)
+				.Bind(_hma, _atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -142,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -152,8 +149,8 @@ namespace StockSharp.Samples.Strategies
 			_prevHmaValue = _currentHmaValue;
 			
 			// Extract values from indicators
-			_currentHmaValue = hmaValue.ToDecimal();
-			decimal atr = atrValue.ToDecimal();
+			_currentHmaValue = hmaValue;
+			decimal atr = atrValue;
 			
 			// Store ATR values for volatility analysis
 			_atrValues.Add(atr);

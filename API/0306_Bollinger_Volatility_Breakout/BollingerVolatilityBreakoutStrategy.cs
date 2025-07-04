@@ -19,6 +19,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _atrDeviationMultiplier;
 		private readonly StrategyParam<decimal> _stopLossMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
+		private SimpleMovingAverage _atrSma;
+		private StandardDeviation _atrStdDev;
 
 		/// <summary>
 		/// Period for Bollinger Bands calculation.
@@ -132,8 +134,8 @@ namespace StockSharp.Samples.Strategies
 			};
 			
 			var atr = new AverageTrueRange { Length = AtrPeriod };
-			var atrSma = new SimpleMovingAverage { Length = AtrPeriod };
-			var atrStdDev = new StandardDeviation { Length = AtrPeriod };
+			_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+			_atrStdDev = new StandardDeviation { Length = AtrPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -143,16 +145,6 @@ namespace StockSharp.Samples.Strategies
 				.BindEx(bollingerBands, atr, ProcessCandle)
 				.Start();
 				
-			// Setup additional processing for ATR-based indicators
-			var atrSubscription = subscription.CopySubscription();
-			
-			atrSubscription
-				.BindEx(atr, atrValue => {
-					atrSma.Process(atrDec);
-					atrStdDev.Process(atrDec);
-				})
-				.Start();
-
 			// Enable position protection
 			StartProtection(
 				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
@@ -189,8 +181,8 @@ namespace StockSharp.Samples.Strategies
 			var atrDec = atrValue.ToDecimal();
 
 			// Get values from indicators
-			var atrSmaValue = atrDec; // Default to current ATR if SMA not available
-			var atrStdDevValue = atrDec * 0.2m; // Default to 20% of ATR if StdDev not available
+			var atrSmaValue = _atrSma.Process(atrDec, candle.ServerTime, true).ToDecimal(); // Default to current ATR if SMA not available
+			var atrStdDevValue = _atrStdDev.Process(atrDec, candle.ServerTime, true).ToDecimal() * 0.2m; // Default to 20% of ATR if StdDev not available
 			
 			// Calculate volatility threshold for breakout confirmation
 			var volatilityThreshold = atrSmaValue + AtrDeviationMultiplier * atrStdDevValue;

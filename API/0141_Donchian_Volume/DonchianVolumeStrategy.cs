@@ -134,11 +134,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.BindEx(volumeAverage, ProcessVolumeAverage)
-				.Start();
-
-			subscription
-				.BindEx(donchianHigh, donchianLow, ProcessDonchian)
+				.BindEx(volumeAverage, donchianHigh, donchianLow, ProcessDonchian)
 				.Start();
 
 			// Setup position protection
@@ -165,31 +161,28 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Process volume average.
-		/// </summary>
-		private void ProcessVolumeAverage(ICandleMessage candle, IIndicatorValue volumeAvgValue)
-		{
-			if (volumeAvgValue.IsFinal)
-			{
-				_averageVolume = volumeAvgValue.ToDecimal();
-			}
-		}
-
-		/// <summary>
 		/// Process Donchian Channel values.
 		/// </summary>
-		private void ProcessDonchian(ICandleMessage candle, IIndicatorValue highestValue, IIndicatorValue lowestValue)
+		private void ProcessDonchian(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			if (volumeAvgValue.IsFinal)
+			{
+				_averageVolume = volumeAvgValue.ToDecimal();
+			}
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading() || _averageVolume <= 0)
 				return;
 
+			var highestDec = highestValue.ToDecimal();
+			var lowestDec = lowestValue.ToDecimal();
+
 			// Calculate middle line of Donchian Channel
-			var middleLine = (highestValue + lowestValue) / 2;
+			var middleLine = (highestDec + lowestDec) / 2;
 
 			// Check if volume condition is met
 			var isVolumeHighEnough = candle.TotalVolume > _averageVolume * VolumeMultiplier;
@@ -197,13 +190,13 @@ namespace StockSharp.Samples.Strategies
 			if (isVolumeHighEnough)
 			{
 				// Long entry: price breaks above highest high with increased volume
-				if (candle.ClosePrice > highestValue && Position <= 0)
+				if (candle.ClosePrice > highestDec && Position <= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 				}
 				// Short entry: price breaks below lowest low with increased volume
-				else if (candle.ClosePrice < lowestValue && Position >= 0)
+				else if (candle.ClosePrice < lowestDec && Position >= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);

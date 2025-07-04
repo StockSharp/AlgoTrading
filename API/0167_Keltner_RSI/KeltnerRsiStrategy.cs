@@ -173,12 +173,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Use WhenCandlesFinished to process candles manually
 			subscription
-				.WhenCandlesFinished(this)
-				.Do(ProcessCandle)
-				.Apply(this);
-
-			// Start subscription
-			subscription.Start();
+				.Bind(_ema, _atr, _rsi, ProcessCandle)
+				.Start();
 
 			// Enable stop-loss
 			StartProtection(
@@ -205,13 +201,8 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle)
+		private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue, decimal rsiValue)
 		{
-			// Process candle with indicators
-			var emaValue = _ema.Process(candle).ToDecimal();
-			var atrValue = _atr.Process(candle).ToDecimal();
-			var rsiValue = _rsi.Process(candle).ToDecimal();
-			
 			// Skip if indicators are not formed yet
 			if (!_ema.IsFormed || !_atr.IsFormed || !_rsi.IsFormed)
 				return;

@@ -18,6 +18,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stdDevMultiplier;
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
+		private SimpleMovingAverage _rsiSma;
+		private StandardDeviation _rsiStdDev;
 
 		/// <summary>
 		/// Period for RSI calculation.
@@ -110,8 +112,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Create indicators
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-			var rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
-			var rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
+			_rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
+			_rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
 			var priceSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
 
 			// Create subscription
@@ -150,22 +152,14 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var smaValue = _rsiSma.Process(rsiValue);
-			_rsiStdDev.Process(rsiValue);
+			var smaValue = _rsiSma.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevValue = _rsiStdDev.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Get values from indicators
-			var rsiSmaValue = 50m; // Default to neutral value
-			var rsiStdDevValue = 10m; // Default to standard value
+			var rsiSmaValue = smaValue.ToDecimal();
+			var rsiStdDevValue = stdDevValue.ToDecimal();
 			
 			// Get the indicator containers using container names
-			var rsiSmaContainer = Indicators.TryGetByName("RsiSma");
-			var rsiStdDevContainer = Indicators.TryGetByName("RsiStdDev");
-			
-			if (rsiSmaContainer != null && rsiSmaContainer.IsFormed)
-				rsiSmaValue = rsiSmaContainer.GetCurrentValue();
-				
-			if (rsiStdDevContainer != null && rsiStdDevContainer.IsFormed)
-				rsiStdDevValue = rsiStdDevContainer.GetCurrentValue();
 			
 			// Calculate dynamic overbought/oversold levels
 			var dynamicOverbought = rsiSmaValue + StdDevMultiplier * rsiStdDevValue;

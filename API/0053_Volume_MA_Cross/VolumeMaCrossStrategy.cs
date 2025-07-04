@@ -1,10 +1,9 @@
-using System;
-using System.Collections.Generic;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -23,6 +22,8 @@ namespace StockSharp.Samples.Strategies
 		private decimal _previousFastVolumeMA;
 		private decimal _previousSlowVolumeMA;
 		private bool _isFirstValue;
+		private SimpleMovingAverage _fastVolumeMA;
+		private SimpleMovingAverage _slowVolumeMA;
 
 		/// <summary>
 		/// Fast Volume MA Length
@@ -88,12 +89,9 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var fastVolumeMA = new SimpleMovingAverage { Length = FastVolumeMALength };
-			var slowVolumeMA = new SimpleMovingAverage { Length = SlowVolumeMALength };
+			_fastVolumeMA = new SimpleMovingAverage { Length = FastVolumeMALength };
+			_slowVolumeMA = new SimpleMovingAverage { Length = SlowVolumeMALength };
 			var priceMA = new SimpleMovingAverage { Length = FastVolumeMALength }; // Use same period as fast Volume MA
-
-			// Create volume input adapter to use volume as input for MAs
-			var volumeAdapter = new DecimalIndicatorValue();
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -102,24 +100,6 @@ namespace StockSharp.Samples.Strategies
 			subscription
 				.Bind(priceMA, ProcessCandle)
 				.Start();
-
-			// Subscribe to candle updates and process volume data
-			this.WhenCandlesChanged(subscription)
-				.Do(candle => {
-					if (candle.State != CandleStates.Finished)
-						return;
-
-					// Create indicator value based on volume
-					volumeAdapter.Value = candle.TotalVolume;
-					
-					// Process volume through MAs
-					var fastMAValue = fastVolumeMA.Process(volumeAdapter).ToDecimal();
-					var slowMAValue = slowVolumeMA.Process(volumeAdapter).ToDecimal();
-					
-					// Process the volume MAs
-					ProcessVolumeMAs(candle, fastMAValue, slowMAValue, priceMA.GetCurrentValue());
-				})
-				.Apply(this);
 
 			// Configure protection
 			StartProtection(
@@ -139,12 +119,15 @@ namespace StockSharp.Samples.Strategies
 		
 		private void ProcessCandle(ICandleMessage candle, decimal priceMAValue)
 		{
-			// This method is mainly for chart visualization
-			// The actual trading logic is in ProcessVolumeMAs
-		}
+			if (candle.State != CandleStates.Finished)
+				return;
 
-		private void ProcessVolumeMAs(ICandleMessage candle, decimal fastVolumeMAValue, decimal slowVolumeMAValue, decimal priceMAValue)
-		{
+			// Process volume through MAs
+			var fastMAValue = _fastVolumeMA.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+			var slowMAValue = _slowVolumeMA.Process(candle.TotalVolume, candle.ServerTime, true).ToDecimal();
+
+			// Process the volume MAs
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
@@ -152,19 +135,19 @@ namespace StockSharp.Samples.Strategies
 			// Skip the first values to initialize previous values
 			if (_isFirstValue)
 			{
-				_previousFastVolumeMA = fastVolumeMAValue;
-				_previousSlowVolumeMA = slowVolumeMAValue;
+				_previousFastVolumeMA = fastMAValue;
+				_previousSlowVolumeMA = slowMAValue;
 				_isFirstValue = false;
 				return;
 			}
 			
 			// Check for crossovers
-			var crossAbove = _previousFastVolumeMA <= _previousSlowVolumeMA && fastVolumeMAValue > slowVolumeMAValue;
-			var crossBelow = _previousFastVolumeMA >= _previousSlowVolumeMA && fastVolumeMAValue < slowVolumeMAValue;
+			var crossAbove = _previousFastVolumeMA <= _previousSlowVolumeMA && fastMAValue > slowMAValue;
+			var crossBelow = _previousFastVolumeMA >= _previousSlowVolumeMA && fastMAValue < slowMAValue;
 			
 			// Log current values
 			LogInfo($"Candle Close: {candle.ClosePrice}, Price MA: {priceMAValue}");
-			LogInfo($"Fast Volume MA: {fastVolumeMAValue}, Slow Volume MA: {slowVolumeMAValue}");
+			LogInfo($"Fast Volume MA: {fastMAValue}, Slow Volume MA: {slowMAValue}");
 			LogInfo($"Cross Above: {crossAbove}, Cross Below: {crossBelow}");
 
 			// Trading logic:
@@ -194,8 +177,8 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Store current values for next comparison
-			_previousFastVolumeMA = fastVolumeMAValue;
-			_previousSlowVolumeMA = slowVolumeMAValue;
+			_previousFastVolumeMA = fastMAValue;
+			_previousSlowVolumeMA = slowMAValue;
 		}
 	}
 }

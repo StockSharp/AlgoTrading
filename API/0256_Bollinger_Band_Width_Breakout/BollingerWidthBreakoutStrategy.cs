@@ -25,7 +25,9 @@ namespace StockSharp.Strategies
 		private BollingerBands _bollinger;
 		private SimpleMovingAverage _widthAverage;
 		private AverageTrueRange _atr;
-		
+		private decimal? _bestBidPrice;
+		private decimal? _bestAskPrice;
+
 		/// <summary>
 		/// Bollinger Bands period.
 		/// </summary>
@@ -129,7 +131,10 @@ namespace StockSharp.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_bestBidPrice = default;
+			_bestAskPrice = default;
+
 			// Create indicators
 			_bollinger = new BollingerBands
 			{
@@ -147,7 +152,15 @@ namespace StockSharp.Strategies
 			subscription
 				.BindEx(_bollinger, _atr, ProcessBollinger)
 				.Start();
-			
+
+			SubscribeOrderBook()
+				.Bind(d =>
+				{
+					_bestBidPrice = d.GetBestBid()?.Price ?? _bestBidPrice;
+					_bestAskPrice = d.GetBestAsk()?.Price ?? _bestAskPrice;
+				})
+				.Start();
+
 			// Create chart area for visualization
 			var area = CreateChartArea();
 			if (area != null)
@@ -217,22 +230,12 @@ namespace StockSharp.Strategies
 				if (priceDirection && Position <= 0)
 				{
 					// Bullish direction - Buy
-					var buyPrice = Security.GetCurrentPrice(Sides.Buy);
 					BuyMarket(Volume + Math.Abs(Position));
-					
-					// Set stop-loss order
-					var stopLoss = buyPrice - stopOffset;
-					RegisterOrder(this.CreateOrder(Sides.Sell, stopLoss, Math.Abs(Position)));
 				}
 				else if (!priceDirection && Position >= 0)
 				{
 					// Bearish direction - Sell
-					var sellPrice = Security.GetCurrentPrice(Sides.Sell);
 					SellMarket(Volume + Math.Abs(Position));
-					
-					// Set stop-loss order
-					var stopLoss = sellPrice + stopOffset;
-					RegisterOrder(this.CreateOrder(Sides.Buy, stopLoss, Math.Abs(Position)));
 				}
 			}
 			// Check for exit condition - width returns to average

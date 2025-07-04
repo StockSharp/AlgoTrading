@@ -19,6 +19,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _volumeAvgPeriod;
 		private readonly StrategyParam<decimal> _volumeStdDevMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
+		private SimpleMovingAverage _volumeAvg;
+		private StandardDeviation _volumeStdDev;
 
 		/// <summary>
 		/// Tenkan-sen (Conversion Line) period.
@@ -133,8 +135,8 @@ namespace StockSharp.Samples.Strategies
 			};
 			
 			// Create volume indicators
-			var volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
-			var volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
+			_volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+			_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -144,18 +146,6 @@ namespace StockSharp.Samples.Strategies
 				.BindEx(ichimoku, ProcessCandle)
 				.Start();
 				
-			// Create a subscription for volume processing
-			var volumeSubscription = subscription.CopySubscription();
-			
-			volumeSubscription
-				.BindEx(subscription, candle => {
-					var volume = candle.TotalVolume;
-
-					volumeAvg.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished);
-					volumeStdDev.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished);
-				})
-				.Start();
-
 			// Setup stop-loss at Kijun-sen level
 			StartProtection(
 				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
@@ -175,7 +165,7 @@ namespace StockSharp.Samples.Strategies
 				var volumeArea = CreateChartArea();
 				if (volumeArea != null)
 				{
-					DrawIndicator(volumeArea, volumeAvg);
+					DrawIndicator(volumeArea, _volumeAvg);
 				}
 			}
 		}
@@ -185,6 +175,11 @@ namespace StockSharp.Samples.Strategies
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			var volume = candle.TotalVolume;
+
+			var volumeAvgValue = _volumeAvg.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var volumeStdDevValue = _volumeStdDev.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
@@ -201,10 +196,6 @@ namespace StockSharp.Samples.Strategies
 			// Determine cloud position
 			var priceAboveCloud = candle.ClosePrice > Math.Max(senkouA, senkouB);
 			var priceBelowCloud = candle.ClosePrice < Math.Min(senkouA, senkouB);
-			
-			// Get volume statistics
-			var volumeAvgValue = 0m;
-			var volumeStdDevValue = 0.001m; // Default small value
 			
 			// Check for volume spike
 			var volumeThreshold = volumeAvgValue + VolumeStdDevMultiplier * volumeStdDevValue;

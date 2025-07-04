@@ -127,22 +127,17 @@ namespace StockSharp.Strategies
 			
 			// Create subscriptions for both securities
 			var firstSecuritySubscription = SubscribeCandles(CandleType);
-			var secondSecuritySubscription = new Subscription(CandleType, SecondSecurity);
+			var secondSecuritySubscription = SubscribeCandles(CandleType, security: SecondSecurity);
 			
 			// Bind to first security candles
 			firstSecuritySubscription
-				.WhenCandlesFinished(this)
-				.Do(ProcessFirstSecurityCandle)
-				.Apply(this);
+				.Bind(ProcessFirstSecurityCandle)
+				.Start();
 			
 			// Bind to second security candles
 			secondSecuritySubscription
-				.WhenCandlesFinished(this)
-				.Do(ProcessSecondSecurityCandle)
-				.Apply(this);
-			
-			// Start subscriptions
-			Subscribe(secondSecuritySubscription);
+				.Bind(ProcessSecondSecurityCandle)
+				.Start();
 			
 			// Enable position protection with stop-loss
 			StartProtection(

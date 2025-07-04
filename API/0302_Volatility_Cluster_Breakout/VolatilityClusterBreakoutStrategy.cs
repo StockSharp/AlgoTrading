@@ -18,6 +18,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stdDevMultiplier;
 		private readonly StrategyParam<decimal> _stopMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
+		private SimpleMovingAverage _atrAvg;
 
 		/// <summary>
 		/// Period for price average and standard deviation calculation.
@@ -112,7 +113,7 @@ namespace StockSharp.Samples.Strategies
 			var sma = new SimpleMovingAverage { Length = PriceAvgPeriod };
 			var stdDev = new StandardDeviation { Length = PriceAvgPeriod };
 			var atr = new AverageTrueRange { Length = AtrPeriod };
-			var atrAvg = new SimpleMovingAverage { Length = AtrPeriod };
+			_atrAvg = new SimpleMovingAverage { Length = AtrPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -120,15 +121,6 @@ namespace StockSharp.Samples.Strategies
 			// Bind indicators to subscription
 			subscription
 				.Bind(sma, stdDev, atr, ProcessCandle)
-				.Start();
-
-			// Create another subscription for ATR average
-			var atrSubscription = subscription.CopySubscription();
-			
-			atrSubscription
-				.BindEx(atr, atrValue => {
-					atrAvg.Process(atrValue);
-				})
 				.Start();
 
 			// Enable position protection with dynamic stops
@@ -154,6 +146,8 @@ namespace StockSharp.Samples.Strategies
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			var atrAvgVal = _atrAvg.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
