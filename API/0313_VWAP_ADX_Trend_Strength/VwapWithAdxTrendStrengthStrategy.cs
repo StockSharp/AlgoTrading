@@ -78,12 +78,14 @@ namespace StockSharp.Samples.Strategies
 
 			// Create indicators
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-			
+
+			var vwap = new VolumeWeightedMovingAverage();
+
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEx(adx, ProcessCandle)
+				.BindEx(adx, vwap, ProcessCandle)
 				.Start();
 
 			// Setup chart if available
@@ -102,7 +104,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue vwapValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -120,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			var diMinus = adxTyped.Dx.Minus; // -DI value
 			
 			// Get VWAP
-			var vwap = GetVwap(Security);
+			var vwap = vwapValue.ToDecimal();
 			
 			// Check for strong trend
 			var isStrongTrend = adx > AdxThreshold;
@@ -163,12 +165,6 @@ namespace StockSharp.Samples.Strategies
 				// Close position
 				ClosePosition();
 			}
-		}
-
-		private decimal GetVwap(Security security)
-		{
-			// Get VWAP from the security if available
-			return security.LastTrade?.Price ?? 0;
 		}
 	}
 }

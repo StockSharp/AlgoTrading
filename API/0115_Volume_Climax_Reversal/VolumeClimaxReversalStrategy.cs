@@ -181,20 +181,6 @@ namespace StockSharp.Strategies
 				LogInfo("Exit short: Price moved above MA");
 				ClosePosition();
 			}
-
-			// Dynamic stop loss based on ATR
-			if (atrValue > 0 && _atr.IsFormed)
-			{
-				// Set stop loss for open positions
-				if (Position != 0)
-				{
-					decimal stopLossLevel = Position > 0 
-						? Security.LastTrade.Price - atrValue * ATRMultiplier
-						: Security.LastTrade.Price + atrValue * ATRMultiplier;
-					
-					LogInfo($"Dynamic stop loss updated: {stopLossLevel}");
-				}
-			}
 		}
 	}
 }
