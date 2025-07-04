@@ -19,10 +19,10 @@ using StockSharp.Configuration;
 [TestClass]
 public class StrategyTests
 {
-	public static IEnumerable<object[]> StrategyTypes => typeof(StockSharp.Samples.Strategies.MaCrossoverStrategy)
+	public static IEnumerable<object[]> StrategyTypes => typeof(StrategyTests)
 		.Assembly
 		.GetTypes()
-		.Where(t => typeof(Strategy).IsAssignableFrom(t) && !t.IsAbstract && t.Namespace == "StockSharp.Samples.Strategies")
+		.Where(t => typeof(Strategy).IsAssignableFrom(t) && !t.IsAbstract)
 		.Select(t => new object[] { t });
 
 	[DataTestMethod]
@@ -30,11 +30,7 @@ public class StrategyTests
 	public async Task RunStrategy(Type strategyType)
 	{
 		var strategy = (Strategy)Activator.CreateInstance(strategyType)!;
-		await Run(strategy);
-	}
 
-	private static async Task Run(Strategy strategy)
-	{
 		var logManager = new LogManager();
 		logManager.Listeners.Add(new ConsoleLogListener());
 
