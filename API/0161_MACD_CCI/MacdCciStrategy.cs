@@ -200,33 +200,35 @@ namespace StockSharp.Samples.Strategies
 			
 			// Get MACD line and Signal line values
 			// This approach is not ideal - in a proper implementation, these values should come from the Bind parameters
-			var macdIndicator = GetIndicator<MovingAverageConvergenceDivergence>();
-			var macdLine = macdValue; // The main MACD line
-			var signalLine = macdIndicator.SignalMa.GetCurrentValue(); // Signal line
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macdLine = macdTyped.Macd; // The main MACD line
+			var signalLine = macdTyped.Signal; // Signal line
 			
 			// Determine if MACD is above or below signal line
 			var isMacdAboveSignal = macdLine > signalLine;
 
+			var cciDec = cciValue.ToDecimal();
+
 			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
 				   $"MACD: {macdLine}, Signal: {signalLine}, " +
-				   $"MACD > Signal: {isMacdAboveSignal}, CCI: {cciValue}");
+				   $"MACD > Signal: {isMacdAboveSignal}, CCI: {cciDec}");
 
 			// Trading rules
-			if (isMacdAboveSignal && cciValue < CciOversold && Position <= 0)
+			if (isMacdAboveSignal && cciDec < CciOversold && Position <= 0)
 			{
 				// Buy signal - MACD above signal line and CCI oversold
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 				
-				LogInfo($"Buy signal: MACD above Signal and CCI oversold ({cciValue} < {CciOversold}). Volume: {volume}");
+				LogInfo($"Buy signal: MACD above Signal and CCI oversold ({cciDec} < {CciOversold}). Volume: {volume}");
 			}
-			else if (!isMacdAboveSignal && cciValue > CciOverbought && Position >= 0)
+			else if (!isMacdAboveSignal && cciDec > CciOverbought && Position >= 0)
 			{
 				// Sell signal - MACD below signal line and CCI overbought
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 				
-				LogInfo($"Sell signal: MACD below Signal and CCI overbought ({cciValue} > {CciOverbought}). Volume: {volume}");
+				LogInfo($"Sell signal: MACD below Signal and CCI overbought ({cciDec} > {CciOverbought}). Volume: {volume}");
 			}
 			// Exit conditions based on MACD crossovers
 			else if (!isMacdAboveSignal && Position > 0)

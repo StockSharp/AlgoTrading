@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.Algo.Indicators;
@@ -147,11 +147,13 @@ namespace StockSharp.Samples.Strategies
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
 			// Extract values from indicators
 			_vwapValue = vwapValue.ToDecimal();
-			_adxValue = adxValue.ToDecimal();
-			_plusDiValue = diValue[0].To<decimal>();  // +DI
-			_minusDiValue = diValue[1].To<decimal>(); // -DI
+			_adxValue = adxTyped.MovingAverage;
+			_plusDiValue = adxTyped.Dx.Plus;  // +DI
+			_minusDiValue = adxTyped.Dx.Minus; // -DI
 			
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;

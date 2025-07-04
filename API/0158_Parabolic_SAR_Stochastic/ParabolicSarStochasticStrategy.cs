@@ -156,7 +156,7 @@ namespace StockSharp.Samples.Strategies
 			var parabolicSar = new ParabolicSar
 			{
 				AccelerationStep = AccelerationFactor,
-				AccelerationLimit = MaxAccelerationFactor
+				AccelerationMax = MaxAccelerationFactor
 			};
 
 			var stochastic = new StochasticOscillator
@@ -198,7 +198,7 @@ namespace StockSharp.Samples.Strategies
 			// when price crosses SAR in the opposite direction
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue stochKValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue sarValue, IIndicatorValue stochValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -206,11 +206,16 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochKValue = stochTyped.K;
+
+			var sarDec = sarValue.ToDecimal();
+
 			var currentPrice = candle.ClosePrice;
-			var priceAboveSar = currentPrice > sarValue;
+			var priceAboveSar = currentPrice > sarDec;
 			
 			LogInfo($"Candle: {candle.OpenTime}, Close: {currentPrice}, " +
-				   $"Parabolic SAR: {sarValue}, Stochastic %K: {stochKValue}, " +
+				   $"Parabolic SAR: {sarDec}, Stochastic %K: {stochKValue}, " +
 				   $"IsAboveSAR: {priceAboveSar}, OldIsAboveSAR: {_isAboveSar}");
 
 			// Check for SAR reversal signal (price crossing SAR)

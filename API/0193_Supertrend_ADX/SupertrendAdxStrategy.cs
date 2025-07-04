@@ -156,9 +156,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			var supertrendTyped = (SuperTrendIndicatorValue)supertrendValue;
+
 			// Determine current position relative to Supertrend
-			var isAboveSupertrend = candle.ClosePrice > supertrendValue;
-			var isStrongTrend = adxValue > AdxThreshold;
+			var isAboveSupertrend = candle.ClosePrice > supertrendTyped.Value;
+			var isStrongTrend = adxTyped.MovingAverage > AdxThreshold;
 
 			// Log current state
 			LogInfo($"Close: {candle.ClosePrice}, Supertrend: {supertrendValue}, ADX: {adxValue}, Above: {isAboveSupertrend}, Strong Trend: {isStrongTrend}");
@@ -199,7 +202,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Save current state
-			_lastSupertrend = supertrendValue;
+			_lastSupertrend = supertrendTyped.Value;
 			_isAboveSupertrend = isAboveSupertrend;
 		}
 	}

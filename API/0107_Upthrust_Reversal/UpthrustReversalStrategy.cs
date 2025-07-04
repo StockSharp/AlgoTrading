@@ -24,7 +24,6 @@ namespace StockSharp.Samples.Strategies
 		private Highest _highest;
 		
 		private decimal _lastHighestValue;
-		private bool _upthrustDetected;
 
 		/// <summary>
 		/// Candle type and timeframe for the strategy.
@@ -98,8 +97,6 @@ namespace StockSharp.Samples.Strategies
 			_ma = new SimpleMovingAverage { Length = MaPeriod };
 			_highest = new Highest { Length = LookbackPeriod };
 			
-			_upthrustDetected = false;
-			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			
@@ -144,8 +141,6 @@ namespace StockSharp.Samples.Strategies
 			// 2. But closes below the resistance level (bearish rejection)
 			if (piercesAboveResistance && closeBelowResistance && isBearish)
 			{
-				_upthrustDetected = true;
-				
 				// Enter short position only if we're not already short
 				if (Position >= 0)
 				{
@@ -163,7 +158,6 @@ namespace StockSharp.Samples.Strategies
 				if (candle.ClosePrice < ma)
 				{
 					BuyMarket(Math.Abs(Position));
-					_upthrustDetected = false;
 					
 					LogInfo($"Exit signal: Price below MA. Closed short position at {candle.ClosePrice}");
 				}

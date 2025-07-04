@@ -57,12 +57,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			_hmaPeriod = Param(nameof(HmaPeriod), 9)
 				.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicator Settings")
-				.SetRange(5, 20, 1)
+				.SetRange(5, 20)
 				.SetCanOptimize(true);
 				
-			_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Times))
+			_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
 				.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
-				.SetRange(1.5m, 3.0m, 0.5m)
+				.SetRange(1.5m, 3.0m)
 				.SetCanOptimize(true);
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -148,7 +148,7 @@ namespace StockSharp.Samples.Strategies
 				
 				// Set stop-loss based on ATR
 				decimal stopPrice = candle.ClosePrice - (atrValue * AtrMultiplier.Value);
-				StartProtection(null, new Unit(candle.ClosePrice - stopPrice, UnitTypes.Absolute), false, true);
+				StartProtection(null, new Unit(candle.ClosePrice - stopPrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			// Short entry: Hull MA changed direction from up to down
 			else if (directionChangedDown && Position >= 0)
@@ -158,7 +158,7 @@ namespace StockSharp.Samples.Strategies
 				
 				// Set stop-loss based on ATR
 				decimal stopPrice = candle.ClosePrice + (atrValue * AtrMultiplier.Value);
-				StartProtection(null, new Unit(stopPrice - candle.ClosePrice, UnitTypes.Absolute), false, true);
+				StartProtection(null, new Unit(stopPrice - candle.ClosePrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			
 			// Update previous values

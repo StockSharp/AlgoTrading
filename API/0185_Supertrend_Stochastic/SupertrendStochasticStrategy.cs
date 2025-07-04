@@ -186,11 +186,11 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get indicator values
-			var supertrend = (SupertrendValue)supertrendValue;
-			decimal supertrendLine = supertrend.SupertrendLine;
+			var supertrend = (SuperTrendIndicatorValue)supertrendValue;
+			decimal supertrendLine = supertrend.Value;
 			
 			// Is trend bullish or bearish
-			bool isBullish = supertrend.IsBullish;
+			bool isBullish = supertrend.IsUpTrend;
 			bool isBearish = !isBullish;
 			
 			var stoch = (StochasticOscillatorValue)stochasticValue;

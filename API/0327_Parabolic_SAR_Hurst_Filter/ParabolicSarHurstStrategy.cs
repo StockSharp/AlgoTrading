@@ -103,8 +103,8 @@ namespace StockSharp.Samples.Strategies
 			// Create indicators
 			var parabolicSar = new ParabolicSar
 			{
-				AccelerationFactor = SarAccelerationFactor,
-				AccelerationLimit = SarMaxAccelerationFactor
+				Acceleration = SarAccelerationFactor,
+				AccelerationMax = SarMaxAccelerationFactor
 			};
 
 			var hurstIndicator = new HurstExponent

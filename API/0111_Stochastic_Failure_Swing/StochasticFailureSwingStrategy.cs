@@ -142,7 +142,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				K = { Length = KPeriod },
 				D = { Length = DPeriod },
-				Slowing = Slowing
 			};
 			
 			_prevKValue = 0;
@@ -182,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Get current K value (we use %K for the strategy, not %D)
-			var stochastic = (StochasticIndicatorValue)stochasticValue;
+			var stochastic = (StochasticOscillatorValue)stochasticValue;
 			decimal kValue = stochastic.K;
 			
 			// Need at least 3 Stochastic values to detect failure swing

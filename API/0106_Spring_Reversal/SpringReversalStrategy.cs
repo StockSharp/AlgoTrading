@@ -24,7 +24,6 @@ namespace StockSharp.Samples.Strategies
 		private Lowest _lowest;
 		
 		private decimal _lastLowestValue;
-		private bool _springDetected;
 
 		/// <summary>
 		/// Candle type and timeframe for the strategy.
@@ -98,8 +97,6 @@ namespace StockSharp.Samples.Strategies
 			_ma = new SimpleMovingAverage { Length = MaPeriod };
 			_lowest = new Lowest { Length = LookbackPeriod };
 			
-			_springDetected = false;
-			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			
@@ -144,8 +141,6 @@ namespace StockSharp.Samples.Strategies
 			// 2. But closes above the support level (bullish rejection)
 			if (piercesBelowSupport && closeAboveSupport && isBullish)
 			{
-				_springDetected = true;
-				
 				// Enter long position only if we're not already long
 				if (Position <= 0)
 				{
@@ -163,7 +158,6 @@ namespace StockSharp.Samples.Strategies
 				if (candle.ClosePrice > ma)
 				{
 					SellMarket(Math.Abs(Position));
-					_springDetected = false;
 					
 					LogInfo($"Exit signal: Price above MA. Closed long position at {candle.ClosePrice}");
 				}

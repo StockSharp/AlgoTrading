@@ -117,7 +117,7 @@ namespace StockSharp.Samples.Strategies
 			// Extract values from ADX composite indicator
 			var adx = adxTyped.MovingAverage;	 // ADX value
 			var diPlus = adxTyped.Dx.Plus;  // +DI value
-			var diMinus = adxTyped.Dx.mi; // -DI value
+			var diMinus = adxTyped.Dx.Minus; // -DI value
 			
 			// Get VWAP
 			var vwap = GetVwap(Security);

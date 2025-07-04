@@ -122,16 +122,6 @@ namespace StockSharp.Samples.Strategies
 				.Bind(rsi, priceSma, ProcessCandle)
 				.Start();
 				
-			// Create separate subscriptions for RSI-based indicators
-			var rsiSubscription = subscription.CopySubscription();
-			
-			rsiSubscription
-				.BindEx(rsi, rsiValue => {
-					var smaValue = rsiSma.Process(rsiValue);
-					rsiStdDev.Process(rsiValue);
-				})
-				.Start();
-
 			// Enable position protection with percentage stop-loss
 			StartProtection(
 				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
@@ -159,7 +149,10 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
+			var smaValue = _rsiSma.Process(rsiValue);
+			_rsiStdDev.Process(rsiValue);
+
 			// Get values from indicators
 			var rsiSmaValue = 50m; // Default to neutral value
 			var rsiStdDevValue = 10m; // Default to standard value

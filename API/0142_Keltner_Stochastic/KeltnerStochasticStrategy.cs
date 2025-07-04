@@ -232,7 +232,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process Stochastic indicator values.
 		/// </summary>
-		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue stochKValue)
+		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -242,29 +242,35 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+			var emaValue = keltnerTyped.Middle;
+			var atrValue = keltnerTyped.Upper - keltnerTyped.Middle; // ATR is the distance from middle to upper band
+
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+
 			// Calculate Keltner Channel bands
-			var upperBand = _emaValue + (_atrValue * KeltnerMultiplier);
-			var lowerBand = _emaValue - (_atrValue * KeltnerMultiplier);
+			var upperBand = emaValue + (atrValue * KeltnerMultiplier);
+			var lowerBand = emaValue - (atrValue * KeltnerMultiplier);
 
 			// Long entry: price below lower Keltner band and Stochastic oversold
-			if (candle.ClosePrice < lowerBand && stochKValue < StochOversold && Position <= 0)
+			if (candle.ClosePrice < lowerBand && stochTyped.K < StochOversold && Position <= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
 			// Short entry: price above upper Keltner band and Stochastic overbought
-			else if (candle.ClosePrice > upperBand && stochKValue > StochOverbought && Position >= 0)
+			else if (candle.ClosePrice > upperBand && stochTyped.K > StochOverbought && Position >= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 			}
 			// Long exit: price returns to EMA line (middle band)
-			else if (Position > 0 && candle.ClosePrice > _emaValue)
+			else if (Position > 0 && candle.ClosePrice > emaValue)
 			{
 				SellMarket(Math.Abs(Position));
 			}
 			// Short exit: price returns to EMA line (middle band)
-			else if (Position < 0 && candle.ClosePrice < _emaValue)
+			else if (Position < 0 && candle.ClosePrice < emaValue)
 			{
 				BuyMarket(Math.Abs(Position));
 			}

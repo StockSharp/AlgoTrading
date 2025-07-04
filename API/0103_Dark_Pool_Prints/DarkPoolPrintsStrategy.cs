@@ -145,11 +145,14 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adx;
+			var maDecimal = ma.ToDecimal();
+
 			// Check if we have a strong trend (ADX > 25)
-			bool isStrongTrend = adx > 25;
+			bool isStrongTrend = adxTyped.MovingAverage > 25;
 			
 			// Check if current volume is significantly higher than average
-			bool isHighVolume = candle.TotalVolume > volumeAvg * VolumeMultiplier;
+			bool isHighVolume = candle.TotalVolume > volumeAvg.ToDecimal() * VolumeMultiplier;
 			
 			if (!isHighVolume || !isStrongTrend)
 				return;
@@ -158,8 +161,8 @@ namespace StockSharp.Samples.Strategies
 			bool isBullish = candle.ClosePrice > candle.OpenPrice;
 			
 			// Determine if price is above or below the moving average
-			bool isAboveMA = candle.ClosePrice > ma;
-			bool isBelowMA = candle.ClosePrice < ma;
+			bool isAboveMA = candle.ClosePrice > maDecimal;
+			bool isBelowMA = candle.ClosePrice < maDecimal;
 
 			// Entry rules for long or short positions
 			if (isBullish && isAboveMA && Position <= 0)

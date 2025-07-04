@@ -175,16 +175,7 @@ namespace StockSharp.Samples.Strategies
 				var volumeArea = CreateChartArea();
 				if (volumeArea != null)
 				{
-					// Add volume element
-					var volumeElement = volumeArea.AddIndicator(new Volume());
-					subscription.WhenCandlesFinished(this)
-						.Do(c => {
-							var data = _chart.CreateData();
-							var group = data.Group(c.OpenTime);
-							group.Add(volumeElement, c.TotalVolume);
-							_chart.Draw(data);
-						})
-						.Apply(this);
+					DrawIndicator(volumeArea, volumeAvg);
 				}
 			}
 		}

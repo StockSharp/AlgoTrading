@@ -135,7 +135,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsRValue)
+		private void ProcessCandle(ICandleMessage candle, decimal williamsRValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -144,14 +144,14 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Store price and Williams %R values
-			if (_divergencePeriod <= 0)
+			if (DivergencePeriod <= 0)
 				return;
 
 			_previousPrice = _currentPrice;
 			_previousWilliamsR = _currentWilliamsR;
 			
 			_currentPrice = candle.ClosePrice;
-			_currentWilliamsR = williamsRValue.ToDecimal();
+			_currentWilliamsR = williamsRValue;
 
 			// We need at least two points to detect divergence
 			if (_previousPrice == 0)

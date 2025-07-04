@@ -175,18 +175,24 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var emaDec = emaValue.ToDecimal();
+
 			if (_isFirstCandle)
 			{
-				_previousEma = emaValue;
+				_previousEma = emaDec;
 				_isFirstCandle = false;
 				return;
 			}
 
 			// Determine EMA direction
-			bool isEmaRising = emaValue > _previousEma;
+			bool isEmaRising = emaDec > _previousEma;
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
 
 			// Get MACD histogram value (MACD - Signal)
-			decimal macdHistogram = macdValue.Macd - macdValue.Signal;
+			decimal macdHistogram = macd - signal;
 
 			// Elder Impulse System:
 			// 1. Green bar: EMA rising and MACD histogram rising
@@ -202,14 +208,14 @@ namespace StockSharp.Samples.Strategies
 				// Buy signal: EMA rising and MACD histogram positive
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
-				LogInfo($"Buy signal: EMA rising, MACD histogram positive. EMA = {emaValue:F2}, MACD Histogram = {macdHistogram:F4}");
+				LogInfo($"Buy signal: EMA rising, MACD histogram positive. EMA = {emaDec:F2}, MACD Histogram = {macdHistogram:F4}");
 			}
 			else if (isBearish && Position >= 0)
 			{
 				// Sell signal: EMA falling and MACD histogram negative
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
-				LogInfo($"Sell signal: EMA falling, MACD histogram negative. EMA = {emaValue:F2}, MACD Histogram = {macdHistogram:F4}");
+				LogInfo($"Sell signal: EMA falling, MACD histogram negative. EMA = {emaDec:F2}, MACD Histogram = {macdHistogram:F4}");
 			}
 
 			// Exit logic
@@ -227,7 +233,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Store current EMA value for next comparison
-			_previousEma = emaValue;
+			_previousEma = emaDec;
 		}
 	}
 }

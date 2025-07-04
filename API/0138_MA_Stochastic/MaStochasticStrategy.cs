@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candles and indicator values.
 		/// </summary>
-		private void ProcessCandles(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stochKValue)
+		private void ProcessCandles(ICandleMessage candle, IIndicatorValue maValue, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -207,25 +207,29 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var maDec = maValue.ToDecimal();
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochKValue = stochTyped.K;
+
 			// Long entry: price above MA and Stochastic is oversold
-			if (candle.ClosePrice > maValue && stochKValue < StochOversold && Position <= 0)
+			if (candle.ClosePrice > maDec && stochKValue < StochOversold && Position <= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
 			// Short entry: price below MA and Stochastic is overbought
-			else if (candle.ClosePrice < maValue && stochKValue > StochOverbought && Position >= 0)
+			else if (candle.ClosePrice < maDec && stochKValue > StochOverbought && Position >= 0)
 			{
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 			}
 			// Long exit: price falls below MA
-			else if (Position > 0 && candle.ClosePrice < maValue)
+			else if (Position > 0 && candle.ClosePrice < maDec)
 			{
 				SellMarket(Math.Abs(Position));
 			}
 			// Short exit: price rises above MA
-			else if (Position < 0 && candle.ClosePrice > maValue)
+			else if (Position < 0 && candle.ClosePrice > maDec)
 			{
 				BuyMarket(Math.Abs(Position));
 			}

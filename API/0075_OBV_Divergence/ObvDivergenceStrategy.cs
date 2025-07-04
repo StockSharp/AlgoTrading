@@ -139,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue obvValue, IIndicatorValue maValue)
+		private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal maValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -148,16 +148,16 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Store price and OBV values
-			if (_divergencePeriod <= 0)
+			if (DivergencePeriod <= 0)
 				return;
 
 			_previousPrice = _currentPrice;
 			_previousObv = _currentObv;
 			
 			_currentPrice = candle.ClosePrice;
-			_currentObv = obvValue.ToDecimal();
+			_currentObv = obvValue;
 			
-			var maPrice = maValue.ToDecimal();
+			var maPrice = maValue;
 
 			// We need at least two points to detect divergence
 			if (_previousPrice == 0)

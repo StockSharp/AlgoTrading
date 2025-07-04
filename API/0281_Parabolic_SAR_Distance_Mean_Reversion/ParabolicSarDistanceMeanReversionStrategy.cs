@@ -122,8 +122,8 @@ namespace StockSharp.Samples.Strategies
 			// Initialize indicators
 			_parabolicSar = new ParabolicSar
 			{
-				AccelerationFactor = AccelerationFactor,
-				AccelerationLimit = AccelerationLimit
+				Acceleration = AccelerationFactor,
+				AccelerationMax = AccelerationLimit
 			};
 			
 			_distanceAverage = new SimpleMovingAverage { Length = LookbackPeriod };

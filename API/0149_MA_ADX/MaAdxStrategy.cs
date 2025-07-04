@@ -151,7 +151,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Save ATR value for stop-loss calculation
-			_atrValue = atrValue;
+			_atrValue = atrValue.ToDecimal();
 
 			// Skip the first candle to have previous values to compare
 			if (_isFirstCandle)
@@ -164,17 +164,21 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
 			// Trading logic
-			if (adxValue > 25)
+			if (adxTyped.MovingAverage > 25)
 			{
+				var maDec = maValue.ToDecimal();
+
 				// Strong trend detected
-				if (candle.ClosePrice > maValue && Position <= 0)
+				if (candle.ClosePrice > maDec && Position <= 0)
 				{
 					// Price above MA and no long position - Buy
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);
 				}
-				else if (candle.ClosePrice < maValue && Position >= 0)
+				else if (candle.ClosePrice < maDec && Position >= 0)
 				{
 					// Price below MA and no short position - Sell
 					var volume = Volume + Math.Abs(Position);

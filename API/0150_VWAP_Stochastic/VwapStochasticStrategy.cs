@@ -180,7 +180,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwapValue, IIndicatorValue kValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwapValue, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -190,25 +190,30 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var kValue = stochTyped.K;
+
+			var vwapDec = vwapValue.ToDecimal();
+
 			// Trading logic
-			if (candle.ClosePrice < vwapValue && kValue < OversoldLevel && Position <= 0)
+			if (candle.ClosePrice < vwapDec && kValue < OversoldLevel && Position <= 0)
 			{
 				// Price below VWAP and stochastic shows oversold - Buy
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
-			else if (candle.ClosePrice > vwapValue && kValue > OverboughtLevel && Position >= 0)
+			else if (candle.ClosePrice > vwapDec && kValue > OverboughtLevel && Position >= 0)
 			{
 				// Price above VWAP and stochastic shows overbought - Sell
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 			}
-			else if (Position > 0 && candle.ClosePrice > vwapValue)
+			else if (Position > 0 && candle.ClosePrice > vwapDec)
 			{
 				// Exit long position when price crosses above VWAP
 				SellMarket(Math.Abs(Position));
 			}
-			else if (Position < 0 && candle.ClosePrice < vwapValue)
+			else if (Position < 0 && candle.ClosePrice < vwapDec)
 			{
 				// Exit short position when price crosses below VWAP
 				BuyMarket(Math.Abs(Position));
