@@ -180,24 +180,23 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get additional values from MACD (signal line)
-			var macdIndicator = (MovingAverageConvergenceDivergence)Indicators.FindById(nameof(MovingAverageConvergenceDivergence));
-			if (macdIndicator == null)
-				return;
-
-			var signalValue = macdIndicator.SignalMa.GetCurrentValue();
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+			var williamsR = williamsRValue.ToDecimal();
 
 			// Trading logic
-			if (macdValue > signalValue) // MACD above signal line - bullish
+			if (macd > signal) // MACD above signal line - bullish
 			{
-				if (williamsRValue < -80 && Position <= 0) // Oversold condition
+				if (williamsR < -80 && Position <= 0) // Oversold condition
 				{
 					// Buy signal
 					BuyMarket(Volume + Math.Abs(Position));
 				}
 			}
-			else if (macdValue < signalValue) // MACD below signal line - bearish
+			else if (macd < signal) // MACD below signal line - bearish
 			{
-				if (williamsRValue > -20 && Position >= 0) // Overbought condition
+				if (williamsR > -20 && Position >= 0) // Overbought condition
 				{
 					// Sell signal
 					SellMarket(Volume + Math.Abs(Position));
@@ -208,7 +207,7 @@ namespace StockSharp.Samples.Strategies
 					SellMarket(Position);
 				}
 			}
-			else if (macdValue > signalValue && Position < 0) // Already short, exit on MACD crossing up
+			else if (macd > signal && Position < 0) // Already short, exit on MACD crossing up
 			{
 				// Exit short position
 				BuyMarket(Math.Abs(Position));

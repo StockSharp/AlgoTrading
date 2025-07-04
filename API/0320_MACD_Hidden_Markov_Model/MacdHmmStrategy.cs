@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -175,19 +175,23 @@ namespace StockSharp.Samples.Strategies
 			
 			// Determine market state using HMM
 			CalculateMarketState();
-			
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Generate trade signals based on MACD and HMM state
-			if (macdValue > signalValue && _currentState == MarketState.Bullish && Position <= 0)
+			if (macd > signal && _currentState == MarketState.Bullish && Position <= 0)
 			{
 				// Buy signal - MACD above signal line and bullish state
 				BuyMarket(Volume);
-				LogInfo($"Buy Signal: MACD ({macdValue:F6}) > Signal ({signalValue:F6}) in Bullish state");
+				LogInfo($"Buy Signal: MACD ({macd:F6}) > Signal ({signal:F6}) in Bullish state");
 			}
-			else if (macdValue < signalValue && _currentState == MarketState.Bearish && Position >= 0)
+			else if (macd < signal && _currentState == MarketState.Bearish && Position >= 0)
 			{
 				// Sell signal - MACD below signal line and bearish state
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Sell Signal: MACD ({macdValue:F6}) < Signal ({signalValue:F6}) in Bearish state");
+				LogInfo($"Sell Signal: MACD ({macd:F6}) < Signal ({signal:F6}) in Bearish state");
 			}
 			else if ((Position > 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bearish)) ||
 					 (Position < 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bullish)))

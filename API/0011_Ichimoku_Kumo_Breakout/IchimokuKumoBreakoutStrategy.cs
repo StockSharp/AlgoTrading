@@ -105,15 +105,15 @@ namespace StockSharp.Samples.Strategies
 			// Create Ichimoku indicator
 			var ichimoku = new Ichimoku
 			{
-				TenkanPeriod = TenkanPeriod,
-				KijunPeriod = KijunPeriod,
-				SenkouSpanBPeriod = SenkouSpanPeriod
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanPeriod }
 			};
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(ichimoku, ProcessCandle)
+				.BindEx(ichimoku, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -126,8 +126,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal tenkanValue, decimal kijunValue, 
-								  decimal senkouAValue, decimal senkouBValue, decimal chikouValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

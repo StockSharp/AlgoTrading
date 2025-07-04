@@ -185,9 +185,9 @@ namespace StockSharp.Samples.Strategies
 			try
 			{
 				// Extract MACD values - be careful with the order of indexes
-				var macdLine = macdValue.ToDecimal(0); // Main MACD line
-				var signalLine = macdValue.ToDecimal(1); // Signal line
-				var histogram = macdValue.ToDecimal(2); // Histogram (MACD - Signal)
+				var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+				var macd = macdTyped.Macd;
+				var signal = macdTyped.Signal;
 
 				// Store previous values before updating
 				if (_currentPrice.HasValue && _currentMacd.HasValue)
@@ -198,9 +198,9 @@ namespace StockSharp.Samples.Strategies
 
 				// Update current values
 				_currentPrice = candle.ClosePrice;
-				_currentMacd = macdLine;
+				_currentMacd = macd;
 
-				LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macdLine:F4}, Signal: {signalLine:F4}");
+				LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, MACD: {macd:F4}, Signal: {signalLine:F4}");
 
 				// Look for divergences once we have enough data
 				if (_previousPrice.HasValue && _previousMacd.HasValue && _currentPrice.HasValue && _currentMacd.HasValue)
@@ -209,7 +209,7 @@ namespace StockSharp.Samples.Strategies
 				}
 
 				// Process signals based on detected divergences
-				ProcessDivergenceSignals(candle, macdLine, signalLine);
+				ProcessDivergenceSignals(candle, macd, signal);
 			}
 			catch (Exception ex)
 			{

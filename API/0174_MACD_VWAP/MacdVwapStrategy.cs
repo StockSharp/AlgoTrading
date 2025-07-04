@@ -157,33 +157,32 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get additional values from MACD (signal line)
-			var macdIndicator = (MovingAverageConvergenceDivergence)Indicators.FindById(nameof(MovingAverageConvergenceDivergence));
-			if (macdIndicator == null)
-				return;
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+			var vwap = vwapValue.ToDecimal();
 
-			var signalValue = macdIndicator.SignalMa.GetCurrentValue();
-			
 			// Current price (close of the candle)
 			var price = candle.ClosePrice;
 
 			// Trading logic
-			if (macdValue > signalValue && price > vwapValue && Position <= 0)
+			if (macd > signal && price > vwap && Position <= 0)
 			{
 				// Buy signal: MACD above signal and price above VWAP
 				BuyMarket(Volume + Math.Abs(Position));
 			}
-			else if (macdValue < signalValue && price < vwapValue && Position >= 0)
+			else if (macd < signal && price < vwap && Position >= 0)
 			{
 				// Sell signal: MACD below signal and price below VWAP
 				SellMarket(Volume + Math.Abs(Position));
 			}
 			// Exit conditions
-			else if (macdValue < signalValue && Position > 0)
+			else if (macd < signal && Position > 0)
 			{
 				// Exit long position when MACD crosses below signal
 				SellMarket(Position);
 			}
-			else if (macdValue > signalValue && Position < 0)
+			else if (macd > signal && Position < 0)
 			{
 				// Exit short position when MACD crosses above signal
 				BuyMarket(Math.Abs(Position));

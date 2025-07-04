@@ -205,36 +205,41 @@ namespace StockSharp.Strategies.Samples
 		/// <param name="macdValue">MACD line value.</param>
 		/// <param name="signalValue">MACD signal line value.</param>
 		/// <param name="rsiValue">RSI value.</param>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue, IIndicatorValue rsiValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue rsiValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
 				
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macdDec = macdTyped.Macd;
+			var signalValue = macdTyped.Signal;
+			var rsiDec = rsiValue.ToDecimal();
+
 			// Trading logic: Combine MACD trend with RSI extreme values
-			
+
 			// MACD above signal line indicates uptrend
-			bool isUptrend = macdValue > signalValue;
+			bool isUptrend = macdDec > signalValue;
 			
 			// Check for entry conditions
-			if (isUptrend && rsiValue < RsiOversold)
+			if (isUptrend && rsiDec < RsiOversold)
 			{
 				// Bullish trend with oversold RSI - Long signal
 				if (Position <= 0)
 				{
 					BuyMarket(Volume + Math.Abs(Position));
-					LogInfo($"Buy signal: MACD uptrend ({macdValue:F4} > {signalValue:F4}) with oversold RSI ({rsiValue:F2})");
+					LogInfo($"Buy signal: MACD uptrend ({macdDec:F4} > {signalValue:F4}) with oversold RSI ({rsiDec:F2})");
 				}
 			}
-			else if (!isUptrend && rsiValue > RsiOverbought)
+			else if (!isUptrend && rsiDec > RsiOverbought)
 			{
 				// Bearish trend with overbought RSI - Short signal
 				if (Position >= 0)
 				{
 					SellMarket(Volume + Math.Abs(Position));
-					LogInfo($"Sell signal: MACD downtrend ({macdValue:F4} < {signalValue:F4}) with overbought RSI ({rsiValue:F2})");
+					LogInfo($"Sell signal: MACD downtrend ({macdDec:F4} < {signalValue:F4}) with overbought RSI ({rsiDec:F2})");
 				}
 			}
 			
@@ -243,13 +248,13 @@ namespace StockSharp.Strategies.Samples
 			{
 				// Exit long when MACD crosses below signal line
 				SellMarket(Math.Abs(Position));
-				LogInfo($"Exit long: MACD crossed below signal ({macdValue:F4} < {signalValue:F4})");
+				LogInfo($"Exit long: MACD crossed below signal ({macdDec:F4} < {signalValue:F4})");
 			}
 			else if (Position < 0 && isUptrend)
 			{
 				// Exit short when MACD crosses above signal line
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: MACD crossed above signal ({macdValue:F4} > {signalValue:F4})");
+				LogInfo($"Exit short: MACD crossed above signal ({macdDec:F4} > {signalValue:F4})");
 			}
 		}
 	}

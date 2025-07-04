@@ -147,7 +147,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for MACD signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -157,22 +157,26 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macdDec = macdTyped.Macd;
+			var signalValue = macdTyped.Signal;
+
 			// Initialize _prevMacd on first formed candle
 			if (_prevMacd == 0)
 			{
-				_prevMacd = macdValue;
+				_prevMacd = macdDec;
 				return;
 			}
 
 			// Check if MACD is trending towards zero
 			bool isTrendingTowardsZero = false;
 			
-			if (macdValue < 0 && macdValue > _prevMacd)
+			if (macdDec < 0 && macdDec > _prevMacd)
 			{
 				// MACD is negative but increasing (moving towards zero from below)
 				isTrendingTowardsZero = true;
 			}
-			else if (macdValue > 0 && macdValue < _prevMacd)
+			else if (macdDec > 0 && macdDec < _prevMacd)
 			{
 				// MACD is positive but decreasing (moving towards zero from above)
 				isTrendingTowardsZero = true;
@@ -181,12 +185,12 @@ namespace StockSharp.Samples.Strategies
 			if (Position == 0)
 			{
 				// No position - check for entry signals
-				if (macdValue < 0 && isTrendingTowardsZero)
+				if (macdDec < 0 && isTrendingTowardsZero)
 				{
 					// MACD is below zero and trending back to zero - buy (long)
 					BuyMarket(Volume);
 				}
-				else if (macdValue > 0 && isTrendingTowardsZero)
+				else if (macdDec > 0 && isTrendingTowardsZero)
 				{
 					// MACD is above zero and trending back to zero - sell (short)
 					SellMarket(Volume);
@@ -195,7 +199,7 @@ namespace StockSharp.Samples.Strategies
 			else if (Position > 0)
 			{
 				// Long position - check for exit signal
-				if (macdValue > signalValue)
+				if (macdDec > signalValue)
 				{
 					// MACD crossed above signal line - exit long
 					SellMarket(Position);
@@ -204,7 +208,7 @@ namespace StockSharp.Samples.Strategies
 			else if (Position < 0)
 			{
 				// Short position - check for exit signal
-				if (macdValue < signalValue)
+				if (macdDec < signalValue)
 				{
 					// MACD crossed below signal line - exit short
 					BuyMarket(Math.Abs(Position));
@@ -212,7 +216,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Update previous MACD value
-			_prevMacd = macdValue;
+			_prevMacd = macdDec;
 		}
 	}
 }

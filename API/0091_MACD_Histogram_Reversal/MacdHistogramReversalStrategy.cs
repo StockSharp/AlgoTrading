@@ -153,7 +153,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		/// <param name="candle">Candle.</param>
 		/// <param name="histogramValue">MACD histogram value.</param>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue histogramValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -162,33 +162,37 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
+			var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// If this is the first calculation, just store the value
 			if (_prevHistogram == null)
 			{
-				_prevHistogram = histogramValue;
+				_prevHistogram = macd;
 				return;
 			}
 
 			// Check for zero-line crossovers
-			bool crossedAboveZero = _prevHistogram < 0 && histogramValue > 0;
-			bool crossedBelowZero = _prevHistogram > 0 && histogramValue < 0;
+			bool crossedAboveZero = _prevHistogram < 0 && macd > 0;
+			bool crossedBelowZero = _prevHistogram > 0 && macd < 0;
 			
 			// Long entry: MACD histogram crossed above zero
 			if (crossedAboveZero && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long entry: MACD histogram crossed above zero ({_prevHistogram} -> {histogramValue})");
+				LogInfo($"Long entry: MACD histogram crossed above zero ({_prevHistogram} -> {macd})");
 			}
 			// Short entry: MACD histogram crossed below zero
 			else if (crossedBelowZero && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short entry: MACD histogram crossed below zero ({_prevHistogram} -> {histogramValue})");
+				LogInfo($"Short entry: MACD histogram crossed below zero ({_prevHistogram} -> {macd})");
 			}
 			
 			// Update previous value
-			_prevHistogram = histogramValue;
+			_prevHistogram = macd;
 		}
 	}
 }

@@ -145,9 +145,9 @@ namespace StockSharp.Samples.Strategies
 			// Create indicators
 			var ichimoku = new Ichimoku
 			{
-				TenkanPeriod = TenkanPeriod,
-				KijunPeriod = KijunPeriod,
-				SenkouSpanBPeriod = SenkouSpanBPeriod
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanBPeriod }
 			};
 			
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };

@@ -212,22 +212,22 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			// Get values from MACD
-			var macdLine = macdValue[0].To<decimal>();	  // MACD Line
-			var signalLine = macdValue[1].To<decimal>();	// Signal Line
-			
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Determine if we have a volume spike
 			bool isVolumeSpike = candle.TotalVolume > (_avgVolume + VolumeDeviationFactor * _volumeStdDev);
 			
 			// Log the values
-			LogInfo($"MACD: {macdLine}, Signal: {signalLine}, Volume: {candle.TotalVolume}, " +
+			LogInfo($"MACD: {macd}, Signal: {signal}, Volume: {candle.TotalVolume}, " +
 							$"Avg Volume: {_avgVolume}, StdDev: {_volumeStdDev}, Volume Spike: {isVolumeSpike}");
 
 			// Trading logic
 			if (isVolumeSpike)
 			{
 				// Buy signal: MACD line crosses above signal line with volume spike
-				if (macdLine > signalLine && Position <= 0)
+				if (macd > signal && Position <= 0)
 				{
 					// Close any existing short position
 					if (Position < 0)
@@ -235,10 +235,10 @@ namespace StockSharp.Samples.Strategies
 					
 					// Open long position
 					BuyMarket(Volume);
-					LogInfo($"Buy signal: MACD ({macdLine}) > Signal ({signalLine}) with volume spike ({candle.TotalVolume})");
+					LogInfo($"Buy signal: MACD ({macd}) > Signal ({signal}) with volume spike ({candle.TotalVolume})");
 				}
 				// Sell signal: MACD line crosses below signal line with volume spike
-				else if (macdLine < signalLine && Position >= 0)
+				else if (macd < signal && Position >= 0)
 				{
 					// Close any existing long position
 					if (Position > 0)
@@ -246,13 +246,13 @@ namespace StockSharp.Samples.Strategies
 					
 					// Open short position
 					SellMarket(Volume);
-					LogInfo($"Sell signal: MACD ({macdLine}) < Signal ({signalLine}) with volume spike ({candle.TotalVolume})");
+					LogInfo($"Sell signal: MACD ({macd}) < Signal ({signal}) with volume spike ({candle.TotalVolume})");
 				}
 			}
 			
 			// Exit logic: MACD crosses back
-			if ((Position > 0 && macdLine < signalLine) || 
-				(Position < 0 && macdLine > signalLine))
+			if ((Position > 0 && macd < signal) || 
+				(Position < 0 && macd > signal))
 			{
 				ClosePosition();
 				LogInfo($"Exit signal: MACD and Signal crossed. Position closed at {candle.ClosePrice}");

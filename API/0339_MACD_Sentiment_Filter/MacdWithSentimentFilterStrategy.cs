@@ -177,7 +177,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process each candle and MACD values.
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macd, IIndicatorValue signal)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -189,10 +189,11 @@ namespace StockSharp.Samples.Strategies
 			
 			// Update sentiment score (in a real system this would come from external source)
 			UpdateSentimentScore(candle);
-			
-			// Trading logic based on MACD signal and sentiment
-			// MACD indicator values have already been calculated via the Bind method
-			
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Store previous MACD values for state tracking
 			var prevMacdOverSignal = _prevMacd > _prevSignal;
 			var currMacdOverSignal = macd > signal;

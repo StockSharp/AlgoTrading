@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValues)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -205,26 +205,18 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Extract MACD values
-			var macd = macdValues.Item1;
-			var signal = macdValues.Item2;
 			var histogram = macd - signal; // Not using Item3 as it might not be available depending on MACD implementation
 			
 			// Get values from indicators
 			var histAvgValue = 0m;
 			var histStdDevValue = 0.001m; // Default small value to avoid division by zero
-			
-			// Get the indicator containers
-			var histAvgContainer = Indicators.TryGetByName("HistAvg");
-			var histStdDevContainer = Indicators.TryGetByName("HistStdDev");
-			
-			if (histAvgContainer != null && histAvgContainer.IsFormed)
-				histAvgValue = histAvgContainer.GetCurrentValue();
-				
-			if (histStdDevContainer != null && histStdDevContainer.IsFormed)
-				histStdDevValue = histStdDevContainer.GetCurrentValue();
-			
+
 			// Calculate adaptive thresholds for histogram
 			var upperThreshold = histAvgValue + StdDevMultiplier * histStdDevValue;
 			var lowerThreshold = histAvgValue - StdDevMultiplier * histStdDevValue;

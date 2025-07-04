@@ -145,9 +145,9 @@ namespace StockSharp.Samples.Strategies
 			// Create indicators
 			var ichimoku = new Ichimoku
 			{
-				TenkanPeriod = TenkanPeriod,
-				KijunPeriod = KijunPeriod,
-				SenkouPeriod = SenkouPeriod
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouPeriod }
 			};
 
 			var stochastic = new StochasticOscillator

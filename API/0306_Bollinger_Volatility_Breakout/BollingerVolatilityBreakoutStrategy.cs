@@ -148,8 +148,8 @@ namespace StockSharp.Samples.Strategies
 			
 			atrSubscription
 				.BindEx(atr, atrValue => {
-					atrSma.Process(atrValue);
-					atrStdDev.Process(atrValue);
+					atrSma.Process(atrDec);
+					atrStdDev.Process(atrDec);
 				})
 				.Start();
 
@@ -171,7 +171,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbMiddle, IIndicatorValue bbUpper, IIndicatorValue bbLower, IIndicatorValue atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -180,26 +180,23 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
+			var bbTyped = (BollingerBandsValue)bbValue;
+			var bbUpper = bbTyped.UpBand;
+			var bbLower = bbTyped.LowBand;
+			var bbMiddle = bbTyped.MovingAverage;
+
+			var atrDec = atrValue.ToDecimal();
+
 			// Get values from indicators
-			var atrSmaValue = atrValue; // Default to current ATR if SMA not available
-			var atrStdDevValue = atrValue * 0.2m; // Default to 20% of ATR if StdDev not available
-			
-			// Get the indicator containers
-			var atrSmaContainer = Indicators.TryGetByName("AtrSma");
-			var atrStdDevContainer = Indicators.TryGetByName("AtrStdDev");
-			
-			if (atrSmaContainer != null && atrSmaContainer.IsFormed)
-				atrSmaValue = atrSmaContainer.GetCurrentValue();
-				
-			if (atrStdDevContainer != null && atrStdDevContainer.IsFormed)
-				atrStdDevValue = atrStdDevContainer.GetCurrentValue();
+			var atrSmaValue = atrDec; // Default to current ATR if SMA not available
+			var atrStdDevValue = atrDec * 0.2m; // Default to 20% of ATR if StdDev not available
 			
 			// Calculate volatility threshold for breakout confirmation
 			var volatilityThreshold = atrSmaValue + AtrDeviationMultiplier * atrStdDevValue;
 			
 			// Check for increased volatility
-			var isHighVolatility = atrValue > volatilityThreshold;
+			var isHighVolatility = atrDec > volatilityThreshold;
 			
 			// Define entry conditions
 			var longEntryCondition = candle.ClosePrice > bbUpper && isHighVolatility && Position <= 0;
@@ -210,7 +207,7 @@ namespace StockSharp.Samples.Strategies
 			var shortExitCondition = candle.ClosePrice > bbMiddle && Position < 0;
 
 			// Log current values
-			LogInfo($"Close: {candle.ClosePrice}, BB Upper: {bbUpper}, BB Lower: {bbLower}, ATR: {atrValue}, ATR Threshold: {volatilityThreshold}, High Volatility: {isHighVolatility}");
+			LogInfo($"Close: {candle.ClosePrice}, BB Upper: {bbUpper}, BB Lower: {bbLower}, ATR: {atrDec}, ATR Threshold: {volatilityThreshold}, High Volatility: {isHighVolatility}");
 
 			// Execute trading logic
 			if (longEntryCondition)
@@ -219,12 +216,12 @@ namespace StockSharp.Samples.Strategies
 				var positionSize = Volume + Math.Abs(Position);
 				
 				// Calculate stop loss level
-				var stopPrice = candle.ClosePrice - atrValue * StopLossMultiplier;
+				var stopPrice = candle.ClosePrice - atrDec * StopLossMultiplier;
 				
 				// Enter long position
 				BuyMarket(positionSize);
 				
-				LogInfo($"Long entry: Price={candle.ClosePrice}, BB Upper={bbUpper}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Long entry: Price={candle.ClosePrice}, BB Upper={bbUpper}, ATR={atrDec}, Stop={stopPrice}");
 			}
 			else if (shortEntryCondition)
 			{
@@ -232,12 +229,12 @@ namespace StockSharp.Samples.Strategies
 				var positionSize = Volume + Math.Abs(Position);
 				
 				// Calculate stop loss level
-				var stopPrice = candle.ClosePrice + atrValue * StopLossMultiplier;
+				var stopPrice = candle.ClosePrice + atrDec * StopLossMultiplier;
 				
 				// Enter short position
 				SellMarket(positionSize);
 				
-				LogInfo($"Short entry: Price={candle.ClosePrice}, BB Lower={bbLower}, ATR={atrValue}, Stop={stopPrice}");
+				LogInfo($"Short entry: Price={candle.ClosePrice}, BB Lower={bbLower}, ATR={atrDec}, Stop={stopPrice}");
 			}
 			else if (longExitCondition)
 			{

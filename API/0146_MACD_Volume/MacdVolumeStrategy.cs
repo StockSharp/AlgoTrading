@@ -209,7 +209,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process MACD indicator values.
 		/// </summary>
-		private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
+		private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -219,12 +219,16 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading() || _avgVolume <= 0)
 				return;
 
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Check if we have previous values to compare
 			if (_prevMacd.HasValue && _prevSignal.HasValue)
 			{
 				// Detect MACD crossover signals
-				bool macdCrossedAboveSignal = _prevMacd < _prevSignal && macdValue > signalValue;
-				bool macdCrossedBelowSignal = _prevMacd > _prevSignal && macdValue < signalValue;
+				bool macdCrossedAboveSignal = _prevMacd < _prevSignal && macd > signal;
+				bool macdCrossedBelowSignal = _prevMacd > _prevSignal && macd < signal;
 
 				// Check volume confirmation
 				var isVolumeHighEnough = candle.TotalVolume > _avgVolume * VolumeMultiplier;
@@ -247,18 +251,18 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Exit logic - when MACD crosses back
-			if (Position > 0 && macdValue < signalValue)
+			if (Position > 0 && macd < signal)
 			{
 				SellMarket(Math.Abs(Position));
 			}
-			else if (Position < 0 && macdValue > signalValue)
+			else if (Position < 0 && macd > signal)
 			{
 				BuyMarket(Math.Abs(Position));
 			}
 
 			// Update previous values
-			_prevMacd = macdValue;
-			_prevSignal = signalValue;
+			_prevMacd = macd;
+			_prevSignal = signal;
 		}
 	}
 }

@@ -143,7 +143,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -153,8 +153,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Check MACD position relative to signal line
-			var isMacdAboveSignal = macdValue > signalValue;
+			var isMacdAboveSignal = macd > signal;
 			
 			// Check for crossovers
 			var isMacdCrossedAboveSignal = isMacdAboveSignal && !_prevIsMacdAboveSignal;
@@ -166,25 +170,25 @@ namespace StockSharp.Samples.Strategies
 				// MACD crossed above signal line - Buy signal
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
-				LogInfo($"Buy signal: MACD ({macdValue:F5}) crossed above Signal ({signalValue:F5})");
+				LogInfo($"Buy signal: MACD ({macd:F5}) crossed above Signal ({signal:F5})");
 			}
 			else if (isMacdCrossedBelowSignal && Position >= 0)
 			{
 				// MACD crossed below signal line - Sell signal
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
-				LogInfo($"Sell signal: MACD ({macdValue:F5}) crossed below Signal ({signalValue:F5})");
+				LogInfo($"Sell signal: MACD ({macd:F5}) crossed below Signal ({signal:F5})");
 			}
 			// Exit logic based on opposite crossover
 			else if (isMacdCrossedBelowSignal && Position > 0)
 			{
 				SellMarket(Position);
-				LogInfo($"Exit long: MACD ({macdValue:F5}) crossed below Signal ({signalValue:F5})");
+				LogInfo($"Exit long: MACD ({macd:F5}) crossed below Signal ({signal:F5})");
 			}
 			else if (isMacdCrossedAboveSignal && Position < 0)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: MACD ({macdValue:F5}) crossed above Signal ({signalValue:F5})");
+				LogInfo($"Exit short: MACD ({macd:F5}) crossed above Signal ({signal:F5})");
 			}
 
 			// Update previous state

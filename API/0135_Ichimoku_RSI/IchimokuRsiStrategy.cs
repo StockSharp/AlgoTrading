@@ -162,9 +162,9 @@ namespace StockSharp.Strategies.Samples
 			// Create indicators
 			var ichimoku = new Ichimoku
 			{
-				TenkanPeriod = TenkanPeriod,
-				KijunPeriod = KijunPeriod,
-				SenkouSpanBPeriod = SenkouSpanBPeriod
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanBPeriod }
 			};
 			
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

@@ -133,7 +133,7 @@ namespace StockSharp.Strategies
 			
 			// Bind indicators to subscription
 			subscription
-				.Bind(_williamsR, _ichimoku, ProcessCandle)
+				.BindEx(_williamsR, _ichimoku, ProcessCandle)
 				.Start();
 			
 			// Set stop-loss at Kijun-sen level
@@ -154,7 +154,7 @@ namespace StockSharp.Strategies
 			}
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal williamsRValue, IIndicatorValue ichimokuValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue williamsRValue, IIndicatorValue ichimokuValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -165,44 +165,43 @@ namespace StockSharp.Strategies
 				return;
 				
 			// Extract Ichimoku values
-			var ichimokuValues = ichimokuValue as IComplexIndicatorValue;
-			if (ichimokuValues == null)
-				return;
-				
-			var tenkan = ichimokuValues[Ichimoku.TenkanLine].ToDecimal();
-			var kijun = ichimokuValues[Ichimoku.KijunLine].ToDecimal();
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
 			
-			var senkouA = ichimokuValues[Ichimoku.SenkouSpanA].ToDecimal();
-			var senkouB = ichimokuValues[Ichimoku.SenkouSpanB].ToDecimal();
+			var senkouA = ichimokuTyped.SenkouA;
+			var senkouB = ichimokuTyped.SenkouB;
 			
 			// Determine if price is above or below the Kumo (cloud)
 			var kumoTop = Math.Max(senkouA, senkouB);
 			var kumoBottom = Math.Min(senkouA, senkouB);
 			var isPriceAboveKumo = candle.ClosePrice > kumoTop;
 			var isPriceBelowKumo = candle.ClosePrice < kumoBottom;
-			
+
+			var williamsRDec = williamsRValue.ToDecimal();
+
 			// Save current Kijun for stop-loss
 			_lastKijun = kijun;
 			
 			// Trading logic
-			if (williamsRValue < -80 && isPriceAboveKumo && tenkan > kijun)
+			if (williamsRDec < -80 && isPriceAboveKumo && tenkan > kijun)
 			{
 				// Long signal: %R < -80 (oversold), price above Kumo, Tenkan > Kijun
 				if (Position <= 0)
 				{
 					// Close any existing short position and open long
 					BuyMarket(Volume + Math.Abs(Position));
-					LogInfo($"Long Entry: %R={williamsRValue:F2}, Price above Kumo, Tenkan > Kijun");
+					LogInfo($"Long Entry: %R={williamsRDec:F2}, Price above Kumo, Tenkan > Kijun");
 				}
 			}
-			else if (williamsRValue > -20 && isPriceBelowKumo && tenkan < kijun)
+			else if (williamsRDec > -20 && isPriceBelowKumo && tenkan < kijun)
 			{
 				// Short signal: %R > -20 (overbought), price below Kumo, Tenkan < Kijun
 				if (Position >= 0)
 				{
 					// Close any existing long position and open short
 					SellMarket(Volume + Math.Abs(Position));
-					LogInfo($"Short Entry: %R={williamsRValue:F2}, Price below Kumo, Tenkan < Kijun");
+					LogInfo($"Short Entry: %R={williamsRDec:F2}, Price below Kumo, Tenkan < Kijun");
 				}
 			}
 			else if ((Position > 0 && candle.ClosePrice < kumoBottom) || 
@@ -218,27 +217,6 @@ namespace StockSharp.Strategies
 				{
 					BuyMarket(Math.Abs(Position));
 					LogInfo("Exit Short: Price crossed above Kumo");
-				}
-			}
-			
-			// Update dynamic stop-loss based on Kijun-sen
-			if (_lastKijun != null && Position != 0)
-			{
-				var entryPrice = Security.GetCurrentPrice(Position > 0 ? Sides.Buy : Sides.Sell);
-				if (entryPrice != 0)
-				{
-					var stopLevel = Position > 0 ? 
-						Math.Min(entryPrice * 0.97m, kijun) :  // For long positions
-						Math.Max(entryPrice * 1.03m, kijun);   // For short positions
-						
-					// The distance from current price to stop price in percentage
-					var stopDistance = Math.Abs((stopLevel / entryPrice - 1) * 100);
-					
-					// Update protection with dynamic stop
-					UpdateProtection(
-						takeProfit: new Unit(0, UnitTypes.Absolute),
-						stopLoss: new Unit(stopDistance, UnitTypes.Percent)
-					);
 				}
 			}
 		}

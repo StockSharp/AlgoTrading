@@ -190,7 +190,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -200,8 +200,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Calculate MACD histogram
-			var histogram = macdValue - signalValue;
+			var histogram = macd - signal;
 
 			// Calculate MACD histogram slope
 			if (_isFirstCalculation)

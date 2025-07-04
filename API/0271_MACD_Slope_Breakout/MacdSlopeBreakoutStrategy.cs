@@ -163,7 +163,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue signalValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -172,9 +172,13 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macd = macdTyped.Macd;
+			var signal = macdTyped.Signal;
+
 			// Calculate MACD histogram value (MACD - Signal)
-			decimal macdHist = macdValue - signalValue;
+			decimal macdHist = macd - signal;
 			
 			// Calculate MACD histogram slope
 			var currentSlopeValue = _macdHistSlope.Process(macdHist, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();

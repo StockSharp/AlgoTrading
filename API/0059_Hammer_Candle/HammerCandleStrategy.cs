@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-
+using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
@@ -66,6 +66,13 @@ namespace StockSharp.Samples.Strategies
 				DrawCandles(area, subscription);
 				DrawOwnTrades(area);
 			}
+
+			this.WhenPositionChanged().Do(() =>
+			{
+				if (Position == 0)
+					_isPositionOpen = false;
+			})
+			.Apply(this);
 		}
 
 		private void ProcessCandle(ICandleMessage candle)
@@ -104,16 +111,6 @@ namespace StockSharp.Samples.Strategies
 
 				LogInfo($"Hammer pattern detected. Low: {candle.LowPrice}, Body size: {bodySize}, Lower shadow: {lowerShadow}");
 			}
-		}
-
-		/// <inheritdoc />
-		protected override void OnPositionChanged(PositionChangeType changeType, decimal value)
-		{
-			base.OnPositionChanged(changeType, value);
-
-			// Reset position flag when position is closed
-			if (Position == 0)
-				_isPositionOpen = false;
 		}
 	}
 }

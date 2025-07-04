@@ -132,9 +132,9 @@ namespace StockSharp.Samples.Strategies
 			// Initialize indicators
 			_ichimoku = new Ichimoku
 			{
-				TenkanPeriod = TenkanPeriod,
-				KijunPeriod = KijunPeriod,
-				SenkouSpanBPeriod = SenkouSpanBPeriod
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanBPeriod }
 			};
 			
 			_cloudWidthAverage = new SimpleMovingAverage { Length = LookbackPeriod };

@@ -140,23 +140,18 @@ namespace StockSharp.Samples.Strategies
 			_consecutiveLosses = 0;
 			_lastTradeProfitable = false;
 			
-			// Create indicators
-			var ema = new ExponentialMovingAverage { Length = EmaPeriod };
-			var atr = new AverageTrueRange { Length = AtrPeriod };
-			
 			// Create Keltner Channels using EMA and ATR
 			var keltner = new KeltnerChannels
 			{
-				Ema = ema,
-				Atr = atr,
-				K = AtrMultiplier
+				Length = EmaPeriod,
+				Multiplier = AtrMultiplier
 			};
 			
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(keltner, ProcessCandle)
+				.BindEx(keltner, ProcessCandle)
 				.Start();
 			
 			// Subscribe to own trades for reinforcement learning feedback
