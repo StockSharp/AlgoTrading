@@ -25,7 +25,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 
 		private MovingAverageConvergenceDivergenceSignal _macd;
-		
+		private VolumeWeightedMovingAverage _vwap;
+
 		private decimal _prevMacd;
 		private decimal _prevSignal;
 
@@ -120,6 +121,7 @@ namespace StockSharp.Samples.Strategies
 				},
 				SignalMa = { Length = MacdSignalPeriod }
 			};
+			_vwap = new() { Length = MacdSignalPeriod };
 			// Initialize variables
 			_prevMacd = 0;
 			_prevSignal = 0;
@@ -158,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get VWAP value (calculated per day)
-			var vwap = candle.VolumeWeightedAveragePrice;
+			var vwap = _vwap.Process(candle).ToDecimal();
 
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 

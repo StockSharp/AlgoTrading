@@ -150,7 +150,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue hullValue, IIndicatorValue atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal hullValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -161,7 +161,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract Hull MA value
-			decimal currentHullValue = hullValue.ToDecimal();
+			decimal currentHullValue = hullValue;
 			
 			// Calculate the slope
 			if (!_isInitialized)

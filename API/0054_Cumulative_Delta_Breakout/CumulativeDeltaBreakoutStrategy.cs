@@ -75,7 +75,6 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription for both candles and ticks
 			var candleSubscription = SubscribeCandles(CandleType);
-			var tickSubscription = new Subscription(DataType.Ticks, Security);
 			
 			// Bind candle processing
 			candleSubscription
@@ -83,19 +82,17 @@ namespace StockSharp.Samples.Strategies
 				.Start();
 				
 			// Subscribe to ticks to compute delta
-			this.WhenNewTrades(tickSubscription)
-				.Do(trade => {
+			SubscribeTicks()
+				.Bind(trade =>
+				{
 					// Calculate delta: positive for buy trades, negative for sell trades
-					var delta = trade.Side == Sides.Buy ? trade.Volume : -trade.Volume;
+					var delta = trade.OriginSide == Sides.Buy ? trade.Volume : -trade.Volume;
 					
 					// Add to cumulative delta
 					_cumulativeDelta += delta;
 				})
-				.Apply(this);
+				.Start();
 				
-			// Start the tick subscription
-			Subscribe(tickSubscription);
-
 			// Configure protection
 			StartProtection(
 				takeProfit: new Unit(3, UnitTypes.Percent),

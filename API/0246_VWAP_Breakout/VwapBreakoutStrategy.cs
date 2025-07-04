@@ -20,6 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _atrPeriod;
 
 		private AverageTrueRange _atr;
+		private VolumeWeightedMovingAverage _vwap;
 		private decimal _currentAtr;
 		private decimal _currentVwap;
 		private decimal _currentPrice;
@@ -85,6 +86,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create ATR indicator
 			_atr = new AverageTrueRange { Length = AtrPeriod };
+			_vwap = new VolumeWeightedMovingAverage { Length = AtrPeriod };
 
 			// Create candle subscription
 			var subscription = SubscribeCandles(CandleType);
@@ -93,13 +95,6 @@ namespace StockSharp.Samples.Strategies
 			subscription
 				.Bind(_atr, ProcessCandle)
 				.Start();
-
-			// Create subscription for VWAP
-			var vwapSubscription = new Subscription(DataType.VWAP, Security);
-			
-			// Subscribe to VWAP data
-			vwapSubscription.WhenTimeComeOut(this).Do(ProcessVwap).Apply(this);
-			Subscribe(vwapSubscription);
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -124,17 +119,9 @@ namespace StockSharp.Samples.Strategies
 
 			_currentAtr = atr;
 			_currentPrice = candle.ClosePrice;
-			
-			UpdateStrategy();
-		}
 
-		private void ProcessVwap(Security security, DateTimeOffset time)
-		{
-			if (security != Security)
-				return;
+			_currentVwap = _vwap.Process(candle).ToDecimal();
 
-			_currentVwap = security.LastTrade?.Price ?? 0;
-			
 			UpdateStrategy();
 		}
 

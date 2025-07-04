@@ -23,6 +23,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 
 		private AverageDirectionalIndex _adx;
+		private VolumeWeightedMovingAverage _vwap;
 		private decimal _prevAdxValue;
 
 		/// <summary>
@@ -82,6 +83,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create ADX indicator
 			_adx = new() { Length = AdxPeriod };
+			_vwap = new() { Length = AdxPeriod };
 
 			// Enable position protection
 			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));
@@ -110,11 +112,10 @@ namespace StockSharp.Samples.Strategies
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			var vwap = _vwap.Process(candle).ToDecimal();
+
 			// Get current ADX value
 			var currentAdxValue = adxValue.ToDecimal();
-
-			// Get VWAP value (calculated per day)
-			var vwap = candle.VolumeWeightedAveragePrice;
 
 			// Skip if not formed or online
 			if (!IsFormedAndOnlineAndAllowTrading())

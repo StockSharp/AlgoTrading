@@ -20,6 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _volumeAvgPeriod;
 		private readonly StrategyParam<decimal> _volumeSurgeMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
+		private SimpleMovingAverage _volumeMA;
 
 		/// <summary>
 		/// MA Period
@@ -98,27 +99,14 @@ namespace StockSharp.Samples.Strategies
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MAPeriod };
 			
-			// Create volume adapter to feed volume data to SMA for volume averaging
-			var volumeAdapter = new DecimalIndicatorValue();
-			var volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+			_volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
 			
 			// Regular price MA binding for signals and visualization
 			subscription
-				.Bind(ma, candle => {
-					// Skip unfinished candles
-					if (candle.State != CandleStates.Finished)
-						return;
-						
-					// Process volume through volume MA
-					volumeAdapter.Value = candle.TotalVolume;
-					var volumeMAValue = volumeMA.Process(volumeAdapter).ToDecimal();
-					
-					// Process complete data set
-					ProcessCandle(candle, ma.GetCurrentValue(), volumeMAValue);
-				})
+				.Bind(ma, ProcessCandle)
 				.Start();
 
 			// Configure protection
@@ -137,8 +125,10 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal volumeMAValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue)
 		{
+			var volumeMAValue = _volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;

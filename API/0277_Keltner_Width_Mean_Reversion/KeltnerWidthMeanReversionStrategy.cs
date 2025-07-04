@@ -224,17 +224,11 @@ namespace StockSharp.Samples.Strategies
 					{
 						// Channel width is compressed - Long signal (expecting expansion)
 						BuyMarket(Volume + Math.Abs(Position));
-						
-						// Set ATR-based stop loss
-						PlaceStopLoss(candle.ClosePrice - AtrStopMultiplier * _lastAtr);
 					}
 					else if (_lastChannelWidth > upperThreshold && Position >= 0)
 					{
 						// Channel width is expanded - Short signal (expecting contraction)
 						SellMarket(Volume + Math.Abs(Position));
-						
-						// Set ATR-based stop loss
-						PlaceStopLoss(candle.ClosePrice + AtrStopMultiplier * _lastAtr);
 					}
 					// Exit logic
 					else if (_lastChannelWidth > _lastWidthAvg && Position > 0)
@@ -249,19 +243,6 @@ namespace StockSharp.Samples.Strategies
 					}
 				}
 			}
-		}
-
-		private void PlaceStopLoss(decimal price)
-		{
-			// Place a stop order as stop loss
-			var stopOrder = CreateOrder(
-				Position > 0 ? Sides.Sell : Sides.Buy,
-				price,
-				Math.Abs(Position)
-			);
-			
-			stopOrder.Type = OrderTypes.Stop;
-			RegisterOrder(stopOrder);
 		}
 	}
 }

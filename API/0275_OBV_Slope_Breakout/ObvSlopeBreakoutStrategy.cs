@@ -131,7 +131,7 @@ namespace StockSharp.Samples.Strategies
 				.Start();
 
 			// Set up position protection
-			StartProtection(new Unit(StopLoss, UnitTypes.Percent));
+			StartProtection(new(), new Unit(StopLoss, UnitTypes.Percent));
 
 			// Create chart visualization if available
 			var area = CreateChartArea();

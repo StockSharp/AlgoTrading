@@ -159,10 +159,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.BindEach(
-					_ema,
-					_atr,
-					ProcessCandle)
+				.Bind(_ema, _atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -181,15 +178,15 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
 			// Save indicator values
-			_emaValue = emaValue.ToDecimal();
-			_atrValue = atrValue.ToDecimal();
+			_emaValue = emaValue;
+			_atrValue = atrValue;
 
 			// Calculate Keltner Channels
 			_upperBand = _emaValue + (_atrValue * AtrMultiplier);

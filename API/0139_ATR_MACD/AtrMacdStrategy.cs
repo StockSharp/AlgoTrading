@@ -247,7 +247,7 @@ namespace StockSharp.Samples.Strategies
 			var signalValue = macdTyped.Signal;
 
 			// Get current ATR value
-			var currentAtr = candle.GetTrueRange();
+			var currentAtr = _prevAtrAvg;
 			
 			// Check if volatility is increasing
 			var isVolatilityIncreasing = currentAtr > _prevAtrAvg * AtrMultiplier;

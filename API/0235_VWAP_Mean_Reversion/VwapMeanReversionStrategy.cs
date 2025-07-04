@@ -20,6 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _atrPeriod;
 
 		private AverageTrueRange _atr;
+		private VolumeWeightedMovingAverage _vwap;
 		private decimal _currentAtr;
 		private decimal _currentVwap;
 
@@ -84,21 +85,15 @@ namespace StockSharp.Samples.Strategies
 
 			// Create indicators
 			_atr = new AverageTrueRange { Length = AtrPeriod };
+			_vwap = new VolumeWeightedMovingAverage { Length = AtrPeriod };
 
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 
-			// Create subscription for VWAP
-			var vwapSubscription = new Subscription(DataType.VWAP, Security);
-
 			// Bind indicators to candles
 			subscription
-				.Bind(_atr, (candle, atr) => ProcessATR(candle, atr))
+				.Bind(_atr, ProcessATR)
 				.Start();
-
-			// Subscribe to VWAP data
-			vwapSubscription.WhenTimeComeOut(this).Do(ProcessVwap).Apply(this);
-			Subscribe(vwapSubscription);
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -121,20 +116,13 @@ namespace StockSharp.Samples.Strategies
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			_currentVwap = _vwap.Process(candle).ToDecimal();
+
 			_currentAtr = atr;
-			ProcessStrategy();
+			ProcessStrategy(candle.ClosePrice);
 		}
 
-		private void ProcessVwap(Security security, DateTimeOffset time)
-		{
-			if (security != Security)
-				return;
-
-			_currentVwap = security.LastTrade?.Price ?? 0;
-			ProcessStrategy();
-		}
-
-		private void ProcessStrategy()
+		private void ProcessStrategy(decimal currentPrice)
 		{
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading())
@@ -142,13 +130,6 @@ namespace StockSharp.Samples.Strategies
 
 			// Skip if we don't have valid VWAP or ATR yet
 			if (_currentVwap <= 0 || _currentAtr <= 0)
-				return;
-
-			var security = GetSecurity();
-			
-			// Make sure we have a valid current price
-			var currentPrice = security.LastTrade?.Price ?? 0;
-			if (currentPrice <= 0)
 				return;
 
 			// Calculate distance to VWAP

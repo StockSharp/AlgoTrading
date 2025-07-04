@@ -208,34 +208,14 @@ namespace StockSharp.Samples.Strategies
 			var asset2Subscription = new Subscription(DataType.Level1, Asset2);
 
 			// Handle price updates for Asset1
-			asset1Subscription
-				.WhenLevel1FieldReceived(this, Level1Fields.LastTradePrice)
-				.Do(msg =>
-				{
-					_asset1Price = msg.Message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var price) 
-						? price.To<decimal>() 
-						: 0;
-						
-					UpdateSpread();
-				})
-				.Apply(this);
+			SubscribeLevel1(asset1Subscription)
+				.Bind(OnAsset1Subscription)
+				.Start();
 
 			// Handle price updates for Asset2
-			asset2Subscription
-				.WhenLevel1FieldReceived(this, Level1Fields.LastTradePrice)
-				.Do(msg =>
-				{
-					_asset2Price = msg.Message.Changes.TryGetValue(Level1Fields.LastTradePrice, out var price) 
-						? price.To<decimal>() 
-						: 0;
-						
-					UpdateSpread();
-				})
-				.Apply(this);
-
-			// Subscribe to market data
-			Subscribe(asset1Subscription);
-			Subscribe(asset2Subscription);
+			SubscribeLevel1(asset2Subscription)
+				.Bind(OnAsset2Subscription)
+				.Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -244,6 +224,20 @@ namespace StockSharp.Samples.Strategies
 				// If chart features are needed, add them here
 				// For example, you could track and draw the spread
 			}
+		}
+
+		private void OnAsset1Subscription(Level1ChangeMessage message)
+		{
+			_asset1Price = message.TryGetDecimal(Level1Fields.LastTradePrice) ?? _asset1Price;
+
+			UpdateSpread();
+		}
+
+		private void OnAsset2Subscription(Level1ChangeMessage message)
+		{
+			_asset2Price = message.TryGetDecimal(Level1Fields.LastTradePrice) ?? _asset1Price;
+
+			UpdateSpread();
 		}
 
 		private void UpdateSpread()

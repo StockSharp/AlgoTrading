@@ -228,7 +228,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process indicator values.
 		/// </summary>
-		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsi, IIndicatorValue stochValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -237,9 +237,10 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
 			var rsi = rsiValue.ToDecimal();
-			var stoch = (StochasticValue)stochValue;
-			var stochK = stoch.K;
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochK = stochTyped.K;
 			// Long entry: double confirmation of oversold condition
 			if (rsi < RsiOversold && stochK < StochOversold && Position <= 0)
 			{
