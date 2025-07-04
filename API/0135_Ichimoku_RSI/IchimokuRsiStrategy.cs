@@ -205,15 +205,14 @@ namespace StockSharp.Strategies.Samples
 				
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
+
 			// Extract values from Ichimoku indicator
-			var ichimokuComplex = (IComplexValue)ichimokuValue;
-			var tenkan = ichimokuComplex.InnerValues[0].ToDecimal();		// Tenkan-sen (Conversion Line)
-			var kijun = ichimokuComplex.InnerValues[1].ToDecimal();		 // Kijun-sen (Base Line)
-			var senkouSpanA = ichimokuComplex.InnerValues[2].ToDecimal();   // Senkou Span A (1st Leading Span)
-			var senkouSpanB = ichimokuComplex.InnerValues[3].ToDecimal();   // Senkou Span B (2nd Leading Span)
-			var chikouSpan = ichimokuComplex.InnerValues[4].ToDecimal();	// Chikou Span (Lagging Span)
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouSpanA = ichimokuTyped.SenkouA;
+			var senkouSpanB = ichimokuTyped.SenkouB;
+
 			// Extract RSI value
 			var rsiIndicatorValue = rsiValue.ToDecimal();
 			

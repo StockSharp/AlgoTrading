@@ -29,13 +29,7 @@ namespace StockSharp.Strategies
 		// Track cloud width values
 		private decimal _lastWidth;
 		private decimal _lastAvgWidth;
-		
-		// Current cloud values
-		private decimal _currentSenkouA;
-		private decimal _currentSenkouB;
-		private decimal _currentTenkan;
-		private decimal _currentKijun;
-		
+	
 		/// <summary>
 		/// Tenkan-sen period for Ichimoku.
 		/// </summary>
@@ -157,11 +151,7 @@ namespace StockSharp.Strategies
 			
 			_lastWidth = 0;
 			_lastAvgWidth = 0;
-			_currentSenkouA = 0;
-			_currentSenkouB = 0;
-			_currentTenkan = 0;
-			_currentKijun = 0;
-			
+
 			// Create indicators
 			_ichimoku = new Ichimoku
 			{
@@ -203,25 +193,17 @@ namespace StockSharp.Strategies
 			
 			if (!ichimokuValue.IsFinal)
 				return;
-			
+
 			// Get current Ichimoku values
 			// The structure of values depends on the implementation, this is just an example
-			var components = ichimokuValue as ComplexIndicatorValue;
-			if (components == null)
-				return;
-				
-			// Extract components (this depends on how your Ichimoku indicator is implemented)
-			// Assuming the order is: Tenkan, Kijun, SenkouA, SenkouB, Chikou
-			if (components.InnerValues.Count < 4)
-				return;
-				
-			_currentTenkan = components.InnerValues[0].ToDecimal();
-			_currentKijun = components.InnerValues[1].ToDecimal();
-			_currentSenkouA = components.InnerValues[2].ToDecimal();
-			_currentSenkouB = components.InnerValues[3].ToDecimal();
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouSpanA = ichimokuTyped.SenkouA;
+			var senkouSpanB = ichimokuTyped.SenkouB;
+
 			// Calculate Cloud width (absolute difference between Senkou lines)
-			var width = Math.Abs(_currentSenkouA - _currentSenkouB);
+			var width = Math.Abs(senkouSpanA - senkouSpanB);
 			
 			// Process width through average
 			var widthAvgValue = _widthAverage.Process(width, candle.ServerTime, candle.State == CandleStates.Finished);
@@ -258,8 +240,8 @@ namespace StockSharp.Strategies
 			if (width > avgWidth + Multiplier * stdDev)
 			{
 				// Determine trade direction based on price relative to cloud
-				var upperCloud = Math.Max(_currentSenkouA, _currentSenkouB);
-				var lowerCloud = Math.Min(_currentSenkouA, _currentSenkouB);
+				var upperCloud = Math.Max(senkouSpanA, senkouSpanB);
+				var lowerCloud = Math.Min(senkouSpanA, senkouSpanB);
 				
 				var bullish = candle.ClosePrice > upperCloud;
 				var bearish = candle.ClosePrice < lowerCloud;
@@ -282,8 +264,8 @@ namespace StockSharp.Strategies
 			// Check for exit condition - width returns to average or price enters cloud
 			else if ((Position > 0 || Position < 0) && 
 					(width < avgWidth || 
-					 (candle.ClosePrice > Math.Min(_currentSenkouA, _currentSenkouB) && 
-					  candle.ClosePrice < Math.Max(_currentSenkouA, _currentSenkouB))))
+					 (candle.ClosePrice > Math.Min(senkouSpanA, senkouSpanB) && 
+					  candle.ClosePrice < Math.Max(senkouSpanA, senkouSpanB))))
 			{
 				// Exit position when cloud width returns to normal or price enters cloud
 				ClosePosition();

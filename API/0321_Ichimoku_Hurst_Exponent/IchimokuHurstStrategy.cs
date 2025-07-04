@@ -26,11 +26,6 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		
 		private Ichimoku _ichimoku;
-		private decimal _tenkanValue;
-		private decimal _kijunValue;
-		private decimal _senkouSpanAValue;
-		private decimal _senkouSpanBValue;
-		private decimal _chikouSpanValue;
 		
 		// Data for Hurst exponent calculations
 		private readonly SynchronizedList<decimal> _prices = [];
@@ -167,12 +162,12 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Store Ichimoku values
-			_tenkanValue = ichimokuValue[0].To<decimal>();
-			_kijunValue = ichimokuValue[1].To<decimal>();
-			_senkouSpanAValue = ichimokuValue[2].To<decimal>();
-			_senkouSpanBValue = ichimokuValue[3].To<decimal>();
-			_chikouSpanValue = ichimokuValue[4].To<decimal>();
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouSpanA = ichimokuTyped.SenkouA;
+			var senkouSpanB = ichimokuTyped.SenkouB;
+
 			// Update price data for Hurst exponent calculation
 			_prices.Add(candle.ClosePrice);
 			
@@ -189,21 +184,21 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Check if price is above/below Kumo (cloud)
-			bool isPriceAboveKumo = candle.ClosePrice > Math.Max(_senkouSpanAValue, _senkouSpanBValue);
-			bool isPriceBelowKumo = candle.ClosePrice < Math.Min(_senkouSpanAValue, _senkouSpanBValue);
+			bool isPriceAboveKumo = candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB);
+			bool isPriceBelowKumo = candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB);
 			
 			// Trading logic
 			// Buy when price is above the cloud, Tenkan > Kijun, and Hurst > threshold (trending market)
-			if (isPriceAboveKumo && _tenkanValue > _kijunValue && _hurstExponent > HurstThreshold && Position <= 0)
+			if (isPriceAboveKumo && tenkan > kijun && _hurstExponent > HurstThreshold && Position <= 0)
 			{
 				BuyMarket(Volume);
-				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} above Kumo, Tenkan {_tenkanValue:F2} > Kijun {_kijunValue:F2}, Hurst {_hurstExponent:F3}");
+				LogInfo($"Buy Signal: Price {candle.ClosePrice:F2} above Kumo, Tenkan {tenkan:F2} > Kijun {kijun:F2}, Hurst {_hurstExponent:F3}");
 			}
 			// Sell when price is below the cloud, Tenkan < Kijun, and Hurst > threshold (trending market)
-			else if (isPriceBelowKumo && _tenkanValue < _kijunValue && _hurstExponent > HurstThreshold && Position >= 0)
+			else if (isPriceBelowKumo && tenkan < kijun && _hurstExponent > HurstThreshold && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} below Kumo, Tenkan {_tenkanValue:F2} < Kijun {_kijunValue:F2}, Hurst {_hurstExponent:F3}");
+				LogInfo($"Sell Signal: Price {candle.ClosePrice:F2} below Kumo, Tenkan {tenkan:F2} < Kijun {kijun:F2}, Hurst {_hurstExponent:F3}");
 			}
 			// Exit long position when price falls below the cloud
 			else if (Position > 0 && isPriceBelowKumo)

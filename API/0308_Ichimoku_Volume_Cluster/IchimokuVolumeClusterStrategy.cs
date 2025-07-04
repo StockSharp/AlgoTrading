@@ -215,16 +215,6 @@ namespace StockSharp.Samples.Strategies
 			var volumeAvgValue = 0m;
 			var volumeStdDevValue = 0.001m; // Default small value
 			
-			// Get the indicator containers
-			var volumeAvgContainer = Indicators.TryGetByName("VolumeAvg");
-			var volumeStdDevContainer = Indicators.TryGetByName("VolumeStdDev");
-			
-			if (volumeAvgContainer != null && volumeAvgContainer.IsFormed)
-				volumeAvgValue = volumeAvgContainer.GetCurrentValue();
-				
-			if (volumeStdDevContainer != null && volumeStdDevContainer.IsFormed)
-				volumeStdDevValue = volumeStdDevContainer.GetCurrentValue();
-			
 			// Check for volume spike
 			var volumeThreshold = volumeAvgValue + VolumeStdDevMultiplier * volumeStdDevValue;
 			var hasVolumeSpike = candle.TotalVolume > volumeThreshold;

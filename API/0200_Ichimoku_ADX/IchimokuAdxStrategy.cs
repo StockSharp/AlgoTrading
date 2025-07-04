@@ -194,14 +194,15 @@ namespace StockSharp.Samples.Strategies
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
-				
+
 			// Get Ichimoku values
 			// The component values must be extracted based on the Ichimoku implementation
-			var tenkan = ((IComplexIndicatorValue)ichimokuValue)[0].ToDecimal();
-			var kijun = ((IComplexIndicatorValue)ichimokuValue)[1].ToDecimal();
-			var senkouSpanA = ((IComplexIndicatorValue)ichimokuValue)[2].ToDecimal();
-			var senkouSpanB = ((IComplexIndicatorValue)ichimokuValue)[3].ToDecimal();
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouSpanA = ichimokuTyped.SenkouA;
+			var senkouSpanB = ichimokuTyped.SenkouB;
+
 			// Determine cloud boundaries
 			var cloudTop = Math.Max(senkouSpanA, senkouSpanB);
 			var cloudBottom = Math.Min(senkouSpanA, senkouSpanB);

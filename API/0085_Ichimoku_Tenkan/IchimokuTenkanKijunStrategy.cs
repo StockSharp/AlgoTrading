@@ -141,10 +141,11 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get current Ichimoku values
-			var tenkan = _ichimoku.GetTenkanSen(ichimokuValue);
-			var kijun = _ichimoku.GetKijunSen(ichimokuValue);
-			var senkouA = _ichimoku.GetSenkouSpanA(ichimokuValue);
-			var senkouB = _ichimoku.GetSenkouSpanB(ichimokuValue);
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouA = ichimokuTyped.SenkouA;
+			var senkouB = ichimokuTyped.SenkouB;
 
 			// If first calculation, just store values
 			if (_prevTenkan == 0 || _prevKijun == 0)
@@ -171,7 +172,7 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Long entry: Tenkan ({tenkan}) crossed above Kijun ({kijun}) and price ({candle.ClosePrice}) above Kumo ({upperKumo})");
 				
 				// Set stop-loss at Kijun-sen
-				StartProtection(null, new Unit(candle.ClosePrice - kijun, UnitTypes.Absolute), false, true);
+				StartProtection(null, new Unit(candle.ClosePrice - kijun, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			// Short entry: Bearish cross and price below Kumo
 			else if (bearishCross && priceBelowKumo && Position >= 0)
@@ -180,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Short entry: Tenkan ({tenkan}) crossed below Kijun ({kijun}) and price ({candle.ClosePrice}) below Kumo ({lowerKumo})");
 				
 				// Set stop-loss at Kijun-sen
-				StartProtection(null, new Unit(kijun - candle.ClosePrice, UnitTypes.Absolute), false, true);
+				StartProtection(null, new Unit(kijun - candle.ClosePrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			
 			// Update previous values

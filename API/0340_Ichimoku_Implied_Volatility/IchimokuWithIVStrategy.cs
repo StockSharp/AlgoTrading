@@ -136,7 +136,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(ichimoku, ProcessCandle)
+				.BindEx(ichimoku, ProcessCandle)
 				.Start();
 			
 			// Create chart visualization if available

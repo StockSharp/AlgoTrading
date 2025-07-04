@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessIchimoku(ICandleMessage candle, IIndicatorValue value)
+		private void ProcessIchimoku(ICandleMessage candle, IIndicatorValue ichimokuValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -177,13 +177,14 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
 			// Extract values from the Ichimoku indicator
-			var ichimokuValue = value.GetValue<IchimokuIndicatorValue>();
-			var senkouSpanA = ichimokuValue.SenkouSpanA;
-			var senkouSpanB = ichimokuValue.SenkouSpanB;
-			var kijunSen = ichimokuValue.KijunSen;
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouSpanA = ichimokuTyped.SenkouA;
+			var senkouSpanB = ichimokuTyped.SenkouB;
+
 			// Calculate cloud width (absolute difference between Senkou Span A and B)
 			_currentCloudWidth = Math.Abs(senkouSpanA - senkouSpanB);
 			

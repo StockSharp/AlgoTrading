@@ -136,6 +136,12 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkanValue = ichimokuTyped.Tenkan;
+			var kijunValue = ichimokuTyped.Kijun;
+			var senkouAValue = ichimokuTyped.SenkouA;
+			var senkouBValue = ichimokuTyped.SenkouB;
+
 			// Skip if any value is zero (indicator initializing)
 			if (tenkanValue == 0 || kijunValue == 0 || senkouAValue == 0 || senkouBValue == 0)
 			{

@@ -139,7 +139,8 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 			
 			// Bind Ichimoku indicator to candles
-			subscription.BindEx(ichimoku, ProcessCandle)
+			subscription
+				.BindEx(ichimoku, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -155,7 +156,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -164,11 +165,12 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Ichimoku values
-			var tenkanSen = values[0].ToDecimal();
-			var kijunSen = values[1].ToDecimal();
-			var senkouSpanA = values[2].ToDecimal();
-			var senkouSpanB = values[3].ToDecimal();
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouSpanA = ichimokuTyped.SenkouA;
+			var senkouSpanB = ichimokuTyped.SenkouB;
+
 			// Calculate Kumo cloud boundaries
 			var upperKumo = Math.Max(senkouSpanA, senkouSpanB);
 			var lowerKumo = Math.Min(senkouSpanA, senkouSpanB);
@@ -189,12 +191,12 @@ namespace StockSharp.Samples.Strategies
 			// Check if volume is above average
 			var isVolumeAboveAverage = currentVolume > _averageVolume;
 
-			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, TenkanSen: {tenkanSen}, " +
-				   $"KijunSen: {kijunSen}, Upper Kumo: {upperKumo}, Lower Kumo: {lowerKumo}, " +
+			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, TenkanSen: {tenkan}, " +
+				   $"KijunSen: {kijun}, Upper Kumo: {upperKumo}, Lower Kumo: {lowerKumo}, " +
 				   $"Volume: {currentVolume}, Avg Volume: {_averageVolume}");
 
 			// Trading rules
-			if (candle.ClosePrice > upperKumo && tenkanSen > kijunSen && isVolumeAboveAverage && Position <= 0)
+			if (candle.ClosePrice > upperKumo && tenkan > kijun && isVolumeAboveAverage && Position <= 0)
 			{
 				// Buy signal - price above Kumo, Tenkan above Kijun, volume above average
 				var volume = Volume + Math.Abs(Position);
@@ -202,7 +204,7 @@ namespace StockSharp.Samples.Strategies
 				
 				LogInfo($"Buy signal: Price above Kumo, Tenkan above Kijun, Volume above average. Volume: {volume}");
 			}
-			else if (candle.ClosePrice < lowerKumo && tenkanSen < kijunSen && isVolumeAboveAverage && Position >= 0)
+			else if (candle.ClosePrice < lowerKumo && tenkan < kijun && isVolumeAboveAverage && Position >= 0)
 			{
 				// Sell signal - price below Kumo, Tenkan below Kijun, volume above average
 				var volume = Volume + Math.Abs(Position);

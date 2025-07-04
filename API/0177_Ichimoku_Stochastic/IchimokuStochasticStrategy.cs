@@ -192,18 +192,14 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get additional values from Ichimoku
-			var ichimokuIndicator = (Ichimoku)Indicators.FindById(nameof(Ichimoku));
-			if (ichimokuIndicator == null)
-				return;
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouA = ichimokuTyped.SenkouA;
+			var senkouB = ichimokuTyped.SenkouB;
 
 			// Current price (close of the candle)
 			var price = candle.ClosePrice;
-			
-			// Get individual Ichimoku components
-			var tenkan = ichimokuIndicator.Tenkan.GetCurrentValue();
-			var kijun = ichimokuIndicator.Kijun.GetCurrentValue();
-			var senkouA = ichimokuIndicator.SenkouA.GetCurrentValue();
-			var senkouB = ichimokuIndicator.SenkouB.GetCurrentValue();
 			
 			// Check if price is above/below Kumo cloud
 			var isAboveKumo = price > Math.Max(senkouA, senkouB);
@@ -214,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 			var isBearishCross = tenkan < kijun;
 			
 			// Get Stochastic %K value
-			var stochasticK = stochasticValue;
+			var stochasticK = stochasticValue.ToDecimal();
 
 			// Trading logic
 			if (isAboveKumo && isBullishCross && stochasticK < 20 && Position <= 0)

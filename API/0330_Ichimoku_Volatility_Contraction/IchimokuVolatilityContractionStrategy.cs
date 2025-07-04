@@ -206,11 +206,12 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract Ichimoku values
-			decimal tenkan = ichimokuValue[0].To<decimal>();	 // Tenkan-sen (Conversion Line)
-			decimal kijun = ichimokuValue[1].To<decimal>();	  // Kijun-sen (Base Line)
-			decimal senkouA = ichimokuValue[2].To<decimal>();	// Senkou Span A (Leading Span A)
-			decimal senkouB = ichimokuValue[3].To<decimal>();	// Senkou Span B (Leading Span B)
-			
+			var ichimokuTyped = (IchimokuValue)ichimokuValue;
+			var tenkan = ichimokuTyped.Tenkan;
+			var kijun = ichimokuTyped.Kijun;
+			var senkouA = ichimokuTyped.SenkouA;
+			var senkouB = ichimokuTyped.SenkouB;
+
 			// Determine Kumo (cloud) boundaries
 			decimal upperKumo = Math.Max(senkouA, senkouB);
 			decimal lowerKumo = Math.Min(senkouA, senkouB);
