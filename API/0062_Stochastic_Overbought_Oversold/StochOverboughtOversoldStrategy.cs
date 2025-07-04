@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue kValue, IIndicatorValue dValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -131,6 +131,10 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var kValue = stochTyped.K;
+			var dValue = stochTyped.D;
 
 			LogInfo($"Stochastic %K: {kValue}, %D: {dValue}");
 

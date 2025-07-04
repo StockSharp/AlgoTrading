@@ -166,22 +166,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(keltner, (candle, keltnerValues) =>
-				{
-					// Process Stochastic
-					var stochResult = stochastic.Process(candle);
-					var stochK = stochResult.ToDecimal();
-					
-					// Get Keltner Channel values
-					var middleBand = keltnerValues[0].ToDecimal();
-					var upperBand = keltnerValues[1].ToDecimal();
-					var lowerBand = keltnerValues[2].ToDecimal();
-					
-					// Process ATR
-					var atrValue = atr.Process(candle).ToDecimal();
-
-					ProcessIndicators(candle, stochK, middleBand, upperBand, lowerBand, atrValue);
-				})
+				.BindEx(keltner, stochastic, atr, ProcessIndicators)
 				.Start();
 			
 			// Enable ATR-based stop protection
@@ -198,8 +183,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessIndicators(ICandleMessage candle, decimal stochK, decimal middleBand, 
-			decimal upperBand, decimal lowerBand, decimal atrValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue keltnerValue, IIndicatorValue stochValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -214,7 +198,11 @@ namespace StockSharp.Samples.Strategies
 			// Trading logic:
 			// Long: Stoch %K < 20 && Price < Keltner lower band (oversold at lower band)
 			// Short: Stoch %K > 80 && Price > Keltner upper band (overbought at upper band)
-			
+
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochK = stochTyped.K;
+			var stochD = stochTyped.D;
+
 			if (stochK < 20 && price < lowerBand && Position <= 0)
 			{
 				// Buy signal - Stochastic oversold at Keltner lower band

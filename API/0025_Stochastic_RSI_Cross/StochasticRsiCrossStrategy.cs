@@ -173,7 +173,7 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var stoch = (StochasticValue)stochValue;
+			var stoch = (StochasticOscillatorValue)stochValue;
 			decimal kValue = stoch.K;
 			decimal dValue = stoch.D;
 

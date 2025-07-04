@@ -183,7 +183,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue kValue, IIndicatorValue dValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -191,11 +191,15 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochK = stochTyped.K;
+			var stochD = stochTyped.D;
+
 			// Calculate Stochastic %K slope only if we have previous %K value
 			if (_previousStochKValue != 0)
 			{
 				// Calculate current slope
-				_currentSlope = kValue - _previousStochKValue;
+				_currentSlope = stochK - _previousStochKValue;
 
 				// Update statistics
 				_slopeCount++;
@@ -254,7 +258,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Save current Stochastic %K value for next calculation
-			_previousStochKValue = kValue;
+			_previousStochKValue = stochK;
 		}
 	}
 }

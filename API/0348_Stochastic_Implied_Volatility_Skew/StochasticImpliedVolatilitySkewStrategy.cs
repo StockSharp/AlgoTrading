@@ -164,7 +164,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochK, IIndicatorValue stochD)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -180,6 +180,10 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
+
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochK = stochTyped.K;
+			var stochD = stochTyped.D;
 
 			// Entry logic
 			if (stochK < 20 && _currentIvSkew > _avgIvSkew && Position <= 0)

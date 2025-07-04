@@ -195,7 +195,7 @@ namespace StockSharp.Samples.Strategies
 		/// <param name="candle">Candle.</param>
 		/// <param name="kValue">Stochastic %K value.</param>
 		/// <param name="dValue">Stochastic %D value.</param>
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue kValue, IIndicatorValue dValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -204,45 +204,49 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			var stochK = stochTyped.K;
+			var stochD = stochTyped.D;
+
 			// If this is the first calculation, just store the value
 			if (_prevK == 0)
 			{
-				_prevK = kValue;
+				_prevK = stochK;
 				return;
 			}
 
 			// Check for Stochastic hooks
-			bool oversoldHookUp = _prevK < OversoldLevel && kValue > _prevK;
-			bool overboughtHookDown = _prevK > OverboughtLevel && kValue < _prevK;
+			bool oversoldHookUp = _prevK < OversoldLevel && stochK > _prevK;
+			bool overboughtHookDown = _prevK > OverboughtLevel && stochK < _prevK;
 			
 			// Long entry: %K forms an upward hook from oversold
 			if (oversoldHookUp && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long entry: Stochastic %K upward hook from oversold ({_prevK} -> {kValue})");
+				LogInfo($"Long entry: Stochastic %K upward hook from oversold ({_prevK} -> {stochK})");
 			}
 			// Short entry: %K forms a downward hook from overbought
 			else if (overboughtHookDown && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short entry: Stochastic %K downward hook from overbought ({_prevK} -> {kValue})");
+				LogInfo($"Short entry: Stochastic %K downward hook from overbought ({_prevK} -> {stochK})");
 			}
 			
 			// Exit conditions based on Stochastic reaching neutral zone
-			if (kValue > ExitLevel && Position < 0)
+			if (stochK > ExitLevel && Position < 0)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: Stochastic %K reached neutral zone ({kValue} > {ExitLevel})");
+				LogInfo($"Exit short: Stochastic %K reached neutral zone ({stochK} > {ExitLevel})");
 			}
-			else if (kValue < ExitLevel && Position > 0)
+			else if (stochK < ExitLevel && Position > 0)
 			{
 				SellMarket(Position);
-				LogInfo($"Exit long: Stochastic %K reached neutral zone ({kValue} < {ExitLevel})");
+				LogInfo($"Exit long: Stochastic %K reached neutral zone ({stochK} < {ExitLevel})");
 			}
 			
 			// Update previous K value
-			_prevK = kValue;
+			_prevK = stochK;
 		}
 	}
 }
