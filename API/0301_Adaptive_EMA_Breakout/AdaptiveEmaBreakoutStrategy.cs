@@ -144,34 +144,37 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal adaptiveEmaValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? adaptiveEmaValue, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			if (adaptiveEmaValue == null || atrValue == null)
+				return;
+
 			// Check if strategy is ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading())
+				if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
 			// Initialize values on first candle
 			if (_isFirstCandle)
 			{
-				_prevAdaptiveEmaValue = adaptiveEmaValue;
+				_prevAdaptiveEmaValue = adaptiveEmaValue.Value;
 				_isFirstCandle = false;
 				return;
 			}
 
 			// Calculate trend direction
-			var adaptiveEmaTrendUp = adaptiveEmaValue > _prevAdaptiveEmaValue;
+			var adaptiveEmaTrendUp = adaptiveEmaValue.Value > _prevAdaptiveEmaValue;
 			
 			// Define entry conditions
-			var longEntryCondition = candle.ClosePrice > adaptiveEmaValue && adaptiveEmaTrendUp && Position <= 0;
-			var shortEntryCondition = candle.ClosePrice < adaptiveEmaValue && !adaptiveEmaTrendUp && Position >= 0;
+			var longEntryCondition = candle.ClosePrice > adaptiveEmaValue.Value && adaptiveEmaTrendUp && Position <= 0;
+			var shortEntryCondition = candle.ClosePrice < adaptiveEmaValue.Value && !adaptiveEmaTrendUp && Position >= 0;
 			
 			// Define exit conditions
-			var longExitCondition = candle.ClosePrice < adaptiveEmaValue && Position > 0;
-			var shortExitCondition = candle.ClosePrice > adaptiveEmaValue && Position < 0;
+			var longExitCondition = candle.ClosePrice < adaptiveEmaValue.Value && Position > 0;
+			var shortExitCondition = candle.ClosePrice > adaptiveEmaValue.Value && Position < 0;
 
 			// Execute trading logic
 			if (longEntryCondition)
@@ -180,7 +183,7 @@ namespace StockSharp.Samples.Strategies
 				var positionSize = Volume + Math.Abs(Position);
 				
 				// Calculate stop loss level
-				var stopPrice = candle.ClosePrice - atrValue * StopMultiplier;
+				var stopPrice = candle.ClosePrice - atrValue.Value * StopMultiplier;
 				
 				// Enter long position
 				BuyMarket(positionSize);
@@ -193,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 				var positionSize = Volume + Math.Abs(Position);
 				
 				// Calculate stop loss level
-				var stopPrice = candle.ClosePrice + atrValue * StopMultiplier;
+				var stopPrice = candle.ClosePrice + atrValue.Value * StopMultiplier;
 				
 				// Enter short position
 				SellMarket(positionSize);
@@ -214,7 +217,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Store current value for next candle
-			_prevAdaptiveEmaValue = adaptiveEmaValue;
+			_prevAdaptiveEmaValue = adaptiveEmaValue.Value;
 		}
 	}
 }

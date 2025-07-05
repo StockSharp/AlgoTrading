@@ -150,22 +150,25 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-
+			return;
+			
+			if (rsiValue == null)
+			return;
+			
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
+			return;
+			
 			LogInfo($"RSI value: {rsiValue}, Position: {Position}");
-
+			
 			// Trading logic
-			if (rsiValue <= OversoldLevel && Position <= 0)
+			if (rsiValue.Value <= OversoldLevel && Position <= 0)
 			{
-				// RSI indicates oversold condition - Buy signal
-				if (Position < 0)
+			// RSI indicates oversold condition - Buy signal
+			if (Position < 0)
 				{
 					// Close any existing short position
 					BuyMarket(Math.Abs(Position));
@@ -176,7 +179,7 @@ namespace StockSharp.Samples.Strategies
 				BuyMarket(Volume);
 				LogInfo($"Buy signal: RSI {rsiValue} is below oversold level {OversoldLevel}");
 			}
-			else if (rsiValue >= OverboughtLevel && Position >= 0)
+			else if (rsiValue.Value >= OverboughtLevel && Position >= 0)
 			{
 				// RSI indicates overbought condition - Sell signal
 				if (Position > 0)
@@ -190,13 +193,13 @@ namespace StockSharp.Samples.Strategies
 				SellMarket(Volume);
 				LogInfo($"Sell signal: RSI {rsiValue} is above overbought level {OverboughtLevel}");
 			}
-			else if (Position > 0 && rsiValue >= NeutralLevel)
+			else if (Position > 0 && rsiValue.Value >= NeutralLevel)
 			{
 				// Exit long position when RSI returns to neutral
 				SellMarket(Position);
 				LogInfo($"Exit long: RSI {rsiValue} returned to neutral level {NeutralLevel}");
 			}
-			else if (Position < 0 && rsiValue <= NeutralLevel)
+			else if (Position < 0 && rsiValue.Value <= NeutralLevel)
 			{
 				// Exit short position when RSI returns to neutral
 				BuyMarket(Math.Abs(Position));

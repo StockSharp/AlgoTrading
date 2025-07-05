@@ -134,18 +134,21 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal momentumValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? supertrendValue, decimal? momentumValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Check if strategy is ready for trading
-			if (!IsFormedAndOnlineAndAllowTrading())
+			if (supertrendValue == null || momentumValue == null)
 				return;
 
-			var isAboveSupertrend = candle.ClosePrice > supertrendValue;
-			var isMomentumRising = momentumValue > _prevMomentum;
+			// Check if strategy is ready for trading
+				if (!IsFormedAndOnlineAndAllowTrading())
+				return;
+
+			var isAboveSupertrend = candle.ClosePrice > supertrendValue.Value;
+			var isMomentumRising = momentumValue.Value > _prevMomentum;
 
 			// Strategy logic:
 			// Buy when price is above Supertrend and Momentum is rising
@@ -174,7 +177,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Store current momentum value for next comparison
-			_prevMomentum = momentumValue;
+			_prevMomentum = momentumValue.Value;
 		}
 	}
 }

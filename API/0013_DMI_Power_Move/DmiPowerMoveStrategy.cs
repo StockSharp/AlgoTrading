@@ -148,10 +148,13 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal dmiValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? dmiValue, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
+				return;
+
+			if (dmiValue == null || atrValue == null)
 				return;
 
 			// Check if strategy is ready to trade
@@ -162,9 +165,10 @@ namespace StockSharp.Samples.Strategies
 			// Note: Since StockSharp's DirectionalMovementIndex returns a single value (DX/ADX),
 			// we need to calculate +DI and -DI separately in a real implementation
 			// For this example, we'll simulate these values
-			var adxValue = dmiValue;
-			var plusDiValue = dmiValue + 10; // Simulated for this example
-			var minusDiValue = dmiValue - 5; // Simulated for this example
+			var dmi = dmiValue.Value;
+			var adxValue = dmi;
+			var plusDiValue = dmi + 10; // Simulated for this example
+			var minusDiValue = dmi - 5; // Simulated for this example
 
 			// For real implementation, use separate DirectionalIndex indicators with Plus/Minus directions
 			// and bind them separately to get actual values

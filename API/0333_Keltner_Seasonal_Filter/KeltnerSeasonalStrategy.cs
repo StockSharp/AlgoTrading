@@ -145,10 +145,13 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessKeltner(ICandleMessage candle, decimal emaValue, decimal atrValue)
+		private void ProcessKeltner(ICandleMessage candle, decimal? emaValue, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
+			return;
+
+			if (emaValue == null || atrValue == null)
 				return;
 
 			// Check if strategy is ready to trade
@@ -164,8 +167,8 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Calculate Keltner Channel bands
-			decimal upperBand = emaValue + atrValue * AtrMultiplier;
-			decimal lowerBand = emaValue - atrValue * AtrMultiplier;
+			decimal upperBand = emaValue.Value + atrValue.Value * AtrMultiplier;
+			decimal lowerBand = emaValue.Value - atrValue.Value * AtrMultiplier;
 
 			// Check for breakout signals with seasonal filter
 			if (_currentSeasonalStrength > SeasonalThreshold)
@@ -190,8 +193,8 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Exit rules based on middle line reversion
-			if ((Position > 0 && candle.ClosePrice < emaValue) ||
-				(Position < 0 && candle.ClosePrice > emaValue))
+			if ((Position > 0 && candle.ClosePrice < emaValue.Value) ||
+			(Position < 0 && candle.ClosePrice > emaValue.Value))
 			{
 				LogInfo($"Exit signal: Price reverted to EMA ({emaValue})");
 				ClosePosition();

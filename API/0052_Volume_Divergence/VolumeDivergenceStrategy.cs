@@ -115,10 +115,13 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
+				return;
+
+			if (maValue == null || atrValue == null)
 				return;
 
 			// Check if strategy is ready to trade
@@ -163,12 +166,12 @@ namespace StockSharp.Samples.Strategies
 			}
 			
 			// Exit logic: Price crosses MA
-			if (Position > 0 && candle.ClosePrice < maValue)
+			if (Position > 0 && candle.ClosePrice < maValue.Value)
 			{
 				LogInfo($"Exit Long: Price ({candle.ClosePrice}) < MA ({maValue})");
 				SellMarket(Math.Abs(Position));
 			}
-			else if (Position < 0 && candle.ClosePrice > maValue)
+			else if (Position < 0 && candle.ClosePrice > maValue.Value)
 			{
 				LogInfo($"Exit Short: Price ({candle.ClosePrice}) > MA ({maValue})");
 				BuyMarket(Math.Abs(Position));
