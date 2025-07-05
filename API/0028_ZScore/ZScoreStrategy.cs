@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and calculate Z-Score
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? stdDevValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdDevValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

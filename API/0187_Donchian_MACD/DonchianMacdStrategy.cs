@@ -24,10 +24,10 @@ namespace StockSharp.Samples.Strategies
 		private DonchianChannels _donchian;
 		private MovingAverageConvergenceDivergenceSignal _macd;
 		
-		private decimal _previousHighest;
-		private decimal _previousLowest;
-		private decimal _previousMacd;
-		private decimal _previousSignal;
+		private decimal? _previousHighest;
+		private decimal? _previousLowest;
+		private decimal? _previousMacd;
+		private decimal? _previousSignal;
 		private decimal? _entryPrice;
 
 		/// <summary>

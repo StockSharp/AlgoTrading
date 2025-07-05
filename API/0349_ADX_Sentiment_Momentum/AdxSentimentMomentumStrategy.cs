@@ -209,7 +209,7 @@ namespace StockSharp.Samples.Strategies
 			_sentimentMomentum = _currentSentiment - _prevSentiment;
 		}
 
-		private decimal? SimulateSentiment(ICandleMessage candle)
+		private decimal SimulateSentiment(ICandleMessage candle)
 		{
 			// Base sentiment on price movement (up = positive sentiment, down = negative sentiment)
 			var priceUp = candle.OpenPrice < candle.ClosePrice;

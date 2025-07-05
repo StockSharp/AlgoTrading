@@ -153,13 +153,10 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? williamsRValue)
+		private void ProcessCandle(ICandleMessage candle, decimal williamsRValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-
-			if (williamsRValue == null)
 				return;
 
 			// Check if strategy is ready for trading
@@ -169,13 +166,13 @@ namespace StockSharp.Samples.Strategies
 			// Calculate Williams %R slope
 			if (_isFirstCalculation)
 			{
-				_previousSlopeValue = williamsRValue.Value;
+				_previousSlopeValue = williamsRValue;
 				_isFirstCalculation = false;
 				return;
 			}
 			
-			_currentSlopeValue = williamsRValue.Value - _previousSlopeValue;
-			_previousSlopeValue = williamsRValue.Value;
+			_currentSlopeValue = williamsRValue - _previousSlopeValue;
+			_previousSlopeValue = williamsRValue;
 
 			// Update statistics for slope values
 			_sampleCount++;

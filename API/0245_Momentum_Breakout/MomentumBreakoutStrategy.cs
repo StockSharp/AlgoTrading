@@ -131,20 +131,17 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessMomentum(ICandleMessage candle, decimal? momentumValue)
+		private void ProcessMomentum(ICandleMessage candle, decimal momentumValue)
 		{
 			if (candle.State != CandleStates.Finished)
-				return;
-
-			if (momentumValue == null)
 				return;
 
 			// Store the current momentum value
 			_currentMomentum = momentumValue;
 
 			// Process momentum through average and standard deviation indicators
-			var avgIndicatorValue = _momentumAverage.Process(momentumValue.Value, candle.ServerTime, candle.State == CandleStates.Finished);
-			var stdDevIndicatorValue = _momentumStdDev.Process(momentumValue.Value, candle.ServerTime, candle.State == CandleStates.Finished);
+			var avgIndicatorValue = _momentumAverage.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevIndicatorValue = _momentumStdDev.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			_momentumAvgValue = avgIndicatorValue.ToDecimal();
 			_momentumStdDevValue = stdDevIndicatorValue.ToDecimal();
@@ -154,7 +151,7 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Ensure we have all needed values
-				if (!_currentMomentum.HasValue || !_momentumAvgValue.HasValue || !_momentumStdDevValue.HasValue)
+			if (!_currentMomentum.HasValue || !_momentumAvgValue.HasValue || !_momentumStdDevValue.HasValue)
 				return;
 
 			// Calculate bands

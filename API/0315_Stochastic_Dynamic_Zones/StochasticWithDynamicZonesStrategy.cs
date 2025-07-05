@@ -177,7 +177,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessStrategy(ICandleMessage candle, decimal? stochK, decimal? dynamicOversold, decimal? dynamicOverbought)
+		private void ProcessStrategy(ICandleMessage candle, decimal stochK, decimal dynamicOversold, decimal dynamicOverbought)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

@@ -124,13 +124,10 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? highestValue)
+		private void ProcessCandle(ICandleMessage candle, decimal highestValue)
 		{
-		// Skip unfinished candles
+			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-
-			if (highestValue == null)
 				return;
 
 			if (!IsFormedAndOnlineAndAllowTrading())

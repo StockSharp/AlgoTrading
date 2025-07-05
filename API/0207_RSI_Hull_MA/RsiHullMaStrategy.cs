@@ -131,7 +131,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessIndicators(ICandleMessage candle, decimal? rsiValue, decimal? hullValue, decimal? atrValue)
+		private void ProcessIndicators(ICandleMessage candle, decimal rsiValue, decimal hullValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

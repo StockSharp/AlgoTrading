@@ -130,7 +130,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for HV breakout signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal? stdDevValue, decimal? smaValue)
+		private void ProcessCandle(ICandleMessage candle, decimal stdDevValue, decimal smaValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

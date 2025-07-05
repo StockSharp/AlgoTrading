@@ -111,7 +111,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		/// <param name="candle">Candle.</param>
 		/// <param name="sarValue">Parabolic SAR value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal? sarValue)
+		private void ProcessCandle(ICandleMessage candle, decimal sarValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

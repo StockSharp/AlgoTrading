@@ -152,7 +152,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for low volatility mean reversion signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal? smaValue, decimal? atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

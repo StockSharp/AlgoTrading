@@ -125,7 +125,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? maValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue)
 		{
 			var volumeMAValue = _volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 

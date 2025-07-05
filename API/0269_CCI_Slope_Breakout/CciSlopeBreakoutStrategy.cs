@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal? cciValue)
+		private void ProcessCandle(ICandleMessage candle, decimal cciValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

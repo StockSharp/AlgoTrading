@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 		/// <param name="maValue">Moving average value.</param>
 		/// <param name="atrValue">ATR value.</param>
 		/// <param name="volumeAvgValue">Volume average value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? atrValue, decimal? volumeAvgValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue, decimal volumeAvgValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

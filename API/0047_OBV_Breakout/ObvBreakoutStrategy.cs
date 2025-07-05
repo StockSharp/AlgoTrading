@@ -153,7 +153,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? obvValue, decimal? obvMAValue, decimal? highestValue, decimal? lowestValue)
+		private void ProcessCandle(ICandleMessage candle, decimal obvValue, decimal obvMAValue, decimal highestValue, decimal lowestValue)
 		{
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())

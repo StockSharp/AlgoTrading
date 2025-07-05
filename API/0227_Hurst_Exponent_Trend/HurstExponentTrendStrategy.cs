@@ -123,7 +123,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? hurstValue, decimal? smaValue)
+		private void ProcessCandle(ICandleMessage candle, decimal hurstValue, decimal smaValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

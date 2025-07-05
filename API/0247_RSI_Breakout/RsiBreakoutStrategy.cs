@@ -133,7 +133,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessRsi(ICandleMessage candle, decimal? rsiValue)
+		private void ProcessRsi(ICandleMessage candle, decimal rsiValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

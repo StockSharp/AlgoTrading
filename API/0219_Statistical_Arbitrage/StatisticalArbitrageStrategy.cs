@@ -139,7 +139,7 @@ namespace StockSharp.Strategies
 			}
 		}
 		
-		private void ProcessFirstSecurityCandle(ICandleMessage candle, decimal? firstMAValue)
+		private void ProcessFirstSecurityCandle(ICandleMessage candle, decimal firstMAValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

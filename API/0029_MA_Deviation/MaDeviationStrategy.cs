@@ -130,7 +130,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for MA deviation signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

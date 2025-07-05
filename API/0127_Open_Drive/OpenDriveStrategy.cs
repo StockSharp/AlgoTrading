@@ -126,7 +126,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? smaValue, decimal? atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
 		{
 			// Skip if we don't have the previous close price yet
 			if (_prevClosePrice == 0)

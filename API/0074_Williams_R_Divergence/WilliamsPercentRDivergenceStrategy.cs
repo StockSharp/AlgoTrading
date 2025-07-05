@@ -135,7 +135,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? williamsRValue)
+		private void ProcessCandle(ICandleMessage candle, decimal williamsRValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

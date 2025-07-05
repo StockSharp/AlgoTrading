@@ -155,7 +155,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process each candle and Supertrend value.
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal? supertrendValue)
+		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

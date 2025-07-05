@@ -127,7 +127,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessSignals(ICandleMessage candle, decimal? sarValue, decimal? rsiValue)
+		private void ProcessSignals(ICandleMessage candle, decimal sarValue, decimal rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 
 		private decimal? _prevHullValue;
-		private decimal _avgVolume;
+		private decimal? _avgVolume;
 
 		/// <summary>
 		/// Hull Moving Average period.
@@ -192,7 +192,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process Hull MA and ATR indicator values.
 		/// </summary>
-		private void ProcessHullAndAtr(ICandleMessage candle, decimal? hullValue, decimal? atrValue)
+		private void ProcessHullAndAtr(ICandleMessage candle, decimal hullValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

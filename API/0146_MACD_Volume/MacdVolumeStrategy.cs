@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal? _prevMacd;
 		private decimal? _prevSignal;
-		private decimal _avgVolume;
+		private decimal? _avgVolume;
 
 		/// <summary>
 		/// MACD fast EMA period.

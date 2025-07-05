@@ -142,7 +142,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessStrategy(ICandleMessage candle, decimal? cciValue, decimal? atrValue, decimal? atrAvg)
+		private void ProcessStrategy(ICandleMessage candle, decimal cciValue, decimal atrValue, decimal atrAvg)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

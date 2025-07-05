@@ -121,7 +121,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? smaValue)
+		private void ProcessCandle(ICandleMessage candle, decimal smaValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private decimal? CalculateSimplifiedHurst(ICandleMessage candle)
+		private decimal CalculateSimplifiedHurst(ICandleMessage candle)
 		{
 			// This is a simplified placeholder implementation
 			// A real Hurst exponent would require more complex calculations

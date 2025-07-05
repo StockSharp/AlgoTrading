@@ -213,7 +213,7 @@ namespace StockSharp.Strategies
 			return price1 / price2;
 		}
 		
-		private void ProcessSecurity1Candle(ICandleMessage candle, decimal? atrValue)
+		private void ProcessSecurity1Candle(ICandleMessage candle, decimal atrValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

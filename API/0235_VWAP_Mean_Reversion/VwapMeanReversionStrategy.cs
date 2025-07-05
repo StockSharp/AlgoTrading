@@ -111,7 +111,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessATR(ICandleMessage candle, decimal? atr)
+		private void ProcessATR(ICandleMessage candle, decimal atr)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

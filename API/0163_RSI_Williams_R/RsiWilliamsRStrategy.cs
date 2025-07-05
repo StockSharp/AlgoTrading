@@ -151,7 +151,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Setup candle subscription
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			// Bind indicators to candles
 			subscription
 				.Bind(rsi, williamsR, ProcessCandle)
@@ -162,7 +162,7 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				
+
 				// Create separate area for oscillators
 				var oscillatorArea = CreateChartArea();
 				if (oscillatorArea != null)
@@ -170,7 +170,7 @@ namespace StockSharp.Samples.Strategies
 					DrawIndicator(oscillatorArea, rsi);
 					DrawIndicator(oscillatorArea, williamsR);
 				}
-				
+
 				DrawOwnTrades(area);
 			}
 
@@ -178,14 +178,11 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), StopLoss);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? rsiValue, decimal? williamsRValue)
+		private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal williamsRValue)
 		{
-		if (candle.State != CandleStates.Finished)
-			return;
-				
-			if (rsiValue == null || williamsRValue == null)
-			return;
-				
+			if (candle.State != CandleStates.Finished)
+				return;
+
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
@@ -193,31 +190,31 @@ namespace StockSharp.Samples.Strategies
 				$"RSI: {rsiValue} , Williams %R: {williamsRValue}");
 
 			// Trading rules
-			if (rsiValue.Value < RsiOversold && williamsRValue.Value < WilliamsROversold && Position <= 0)
-				{
+			if (rsiValue < RsiOversold && williamsRValue < WilliamsROversold && Position <= 0)
+			{
 				// Buy signal - double oversold condition
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
-				
+
 				LogInfo($"Buy signal: Double oversold condition - RSI: {rsiValue} < {RsiOversold} and Williams %R: {williamsRValue} < {WilliamsROversold}. Volume: {volume}");
 			}
-			else if (rsiValue.Value > RsiOverbought && williamsRValue.Value > WilliamsROverbought && Position >= 0)
-				{
+			else if (rsiValue > RsiOverbought && williamsRValue > WilliamsROverbought && Position >= 0)
+			{
 				// Sell signal - double overbought condition
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
-				
+
 				LogInfo($"Sell signal: Double overbought condition - RSI: {rsiValue} > {RsiOverbought} and Williams %R: {williamsRValue} > {WilliamsROverbought}. Volume: {volume}");
 			}
 			// Exit conditions
-			else if (rsiValue.Value > 50 && Position > 0)
-				{
+			else if (rsiValue > 50 && Position > 0)
+			{
 				// Exit long position when RSI returns to neutral zone
 				SellMarket(Position);
 				LogInfo($"Exit long: RSI returned to neutral zone ({rsiValue} > 50). Position: {Position}");
 			}
-			else if (rsiValue.Value < 50 && Position < 0)
-				{
+			else if (rsiValue < 50 && Position < 0)
+			{
 				// Exit short position when RSI returns to neutral zone
 				BuyMarket(Math.Abs(Position));
 				LogInfo($"Exit short: RSI returned to neutral zone ({rsiValue} < 50). Position: {Position}");

@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? supertrendPrice)
+		private void ProcessCandle(ICandleMessage candle, decimal supertrendPrice)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

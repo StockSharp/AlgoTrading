@@ -161,32 +161,29 @@ namespace StockSharp.Samples.Strategies
 		/// <param name="candle">Candle.</param>
 		/// <param name="maValue">Moving average value.</param>
 		/// <param name="atrValue">ATR value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 		{
 			// Skip unfinished candles
-				if (candle.State != CandleStates.Finished)
+			if (candle.State != CandleStates.Finished)
 				return;
-			
-				if (maValue == null || atrValue == null)
+
+			// Check if strategy is ready to trade
+			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
-				// Check if strategy is ready to trade
-				if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-			
+
 			// Update ATR average
-			var atrAvgValue = _atrAvg.Process(atrValue.Value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-			
+			var atrAvgValue = _atrAvg.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+
 			// Determine candle direction
 			bool isBullishCandle = candle.ClosePrice > candle.OpenPrice;
 			bool isBearishCandle = candle.ClosePrice < candle.OpenPrice;
-			
+
 			// Check for ATR spike
-			bool isAtrSpike = atrValue.Value > atrAvgValue * AtrMultiplier;
-			
+			bool isAtrSpike = atrValue > atrAvgValue * AtrMultiplier;
+
 			if (!isAtrSpike)
 				return;
-				
+
 			// Long entry: ATR spike with bullish candle
 			if (isAtrSpike && isBullishCandle && Position <= 0)
 			{

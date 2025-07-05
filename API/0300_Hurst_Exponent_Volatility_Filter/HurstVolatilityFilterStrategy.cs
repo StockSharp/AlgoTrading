@@ -161,7 +161,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? smaValue, decimal? atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -188,7 +188,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private decimal? CalculateHurstExponentValue(ICandleMessage candle)
+		private decimal CalculateHurstExponentValue(ICandleMessage candle)
 		{
 			// In a real implementation, this would use R/S analysis or other methods
 			// to calculate the Hurst exponent. For this example, we'll use a placeholder

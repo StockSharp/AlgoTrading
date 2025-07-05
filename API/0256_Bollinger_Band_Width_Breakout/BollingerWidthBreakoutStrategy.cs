@@ -25,8 +25,8 @@ namespace StockSharp.Strategies
 		private BollingerBands _bollinger;
 		private SimpleMovingAverage _widthAverage;
 		private AverageTrueRange _atr;
-		private decimal? _bestBidPrice;
-		private decimal? _bestAskPrice;
+		private decimal _bestBidPrice;
+		private decimal _bestAskPrice;
 
 		/// <summary>
 		/// Bollinger Bands period.

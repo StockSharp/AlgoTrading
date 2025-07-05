@@ -164,7 +164,7 @@ namespace StockSharp.Samples.Strategies
 			// through the Supertrend indicator crossovers)
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal? supertrendValue, decimal? rsiValue)
+		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal rsiValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;

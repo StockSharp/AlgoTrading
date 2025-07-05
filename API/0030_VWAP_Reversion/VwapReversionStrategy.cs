@@ -104,7 +104,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for VWAP deviation signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal? vwapValue)
+		private void ProcessCandle(ICandleMessage candle, decimal vwapValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
