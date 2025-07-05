@@ -156,7 +156,7 @@ namespace StockSharp.Strategies
 			StartProtection(TakeValue, StopValue);
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal sarValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? sarValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

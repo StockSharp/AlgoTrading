@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal maPrice)
+		private void ProcessCandle(ICandleMessage candle, decimal? maPrice)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -265,7 +265,7 @@ namespace StockSharp.Samples.Strategies
 			intercept = (sumY - slope * sumX) / n;
 		}
 
-		private void CheckForTrendlineBounces(ICandleMessage candle, decimal maPrice)
+		private void CheckForTrendlineBounces(ICandleMessage candle, decimal? maPrice)
 		{
 			if (_recentCandles.Count < 3)
 				return;

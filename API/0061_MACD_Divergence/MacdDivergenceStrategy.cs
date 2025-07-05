@@ -248,7 +248,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessDivergenceSignals(ICandleMessage candle, decimal macdLine, decimal signalLine)
+		private void ProcessDivergenceSignals(ICandleMessage candle, decimal? macdLine, decimal? signalLine)
 		{
 			// Entry signals based on detected divergences
 			if (_bullishDivergence && Position <= 0 && macdLine > signalLine)

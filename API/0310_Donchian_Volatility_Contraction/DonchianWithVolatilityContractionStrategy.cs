@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessStrategy(ICandleMessage candle, decimal donchianHigh, decimal donchianLow, decimal atrValue)
+		private void ProcessStrategy(ICandleMessage candle, decimal? donchianHigh, decimal? donchianLow, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

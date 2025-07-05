@@ -188,7 +188,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessSignals(ICandleMessage candle, decimal currentVolume, decimal volumeAvg, 
+		private void ProcessSignals(ICandleMessage candle, decimal? currentVolume, decimal? volumeAvg, 
 			decimal supertrendValue, int supertrendDirection)
 		{
 			// Skip unfinished candles

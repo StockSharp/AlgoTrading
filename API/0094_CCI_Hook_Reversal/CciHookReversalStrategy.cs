@@ -145,7 +145,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		/// <param name="candle">Candle.</param>
 		/// <param name="cciValue">CCI value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? cciValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

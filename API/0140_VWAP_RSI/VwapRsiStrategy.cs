@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candles and indicator values.
 		/// </summary>
-		private void ProcessCandles(ICandleMessage candle, decimal vwapValue, decimal rsiValue)
+		private void ProcessCandles(ICandleMessage candle, decimal? vwapValue, decimal? rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

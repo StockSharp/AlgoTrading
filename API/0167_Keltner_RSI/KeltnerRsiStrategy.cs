@@ -201,7 +201,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? emaValue, decimal? atrValue, decimal? rsiValue)
 		{
 			// Skip if indicators are not formed yet
 			if (!_ema.IsFormed || !_atr.IsFormed || !_rsi.IsFormed)

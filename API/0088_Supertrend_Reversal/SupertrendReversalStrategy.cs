@@ -114,7 +114,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		/// <param name="candle">Candle.</param>
 		/// <param name="atrValue">ATR value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

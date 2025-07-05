@@ -138,7 +138,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new(), new Unit(StopLossPercent, UnitTypes.Percent));
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal volumeValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? volumeValue)
 		{
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())

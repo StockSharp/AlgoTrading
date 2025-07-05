@@ -160,7 +160,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		/// <param name="candle">Candle.</param>
 		/// <param name="rsiValue">RSI value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
