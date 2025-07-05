@@ -1,4 +1,4 @@
-namespace StockSharp.Strategies
+namespace StockSharp.Samples.Strategies
 {
 	using System;
 	using System.Collections.Generic;

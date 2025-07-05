@@ -6,7 +6,7 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Strategies
+namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
 	/// Strategy based on RSI and Donchian Channel indicators.
@@ -122,7 +122,7 @@ namespace StockSharp.Strategies
 			
 			// Bind indicators
 			subscription
-				.BindEx(_rsi, _highestHigh, _lowestLow, ProcessIndicators)
+				.Bind(_rsi, _highestHigh, _lowestLow, ProcessIndicators)
 				.Start();
 
 			// Enable position protection with stop-loss
@@ -146,7 +146,7 @@ namespace StockSharp.Strategies
 		private decimal _donchianMiddle;
 		private decimal _currentRsi;
 		
-		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
+		private void ProcessIndicators(ICandleMessage candle, decimal rsiValue, decimal highestValue, decimal lowestValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -156,13 +156,13 @@ namespace StockSharp.Strategies
 			_previousRsi = _currentRsi;
 			
 			// Get current RSI value
-			_currentRsi = rsiValue.ToDecimal();
+			_currentRsi = rsiValue;
 
 			// Update Donchian high value
-			_donchianHigh = highestValue.ToDecimal();
+			_donchianHigh = highestValue;
 
 			// Update Donchian low value
-			_donchianLow = lowestValue.ToDecimal();
+			_donchianLow = lowestValue;
 
 			// Calculate Donchian middle line
 			_donchianMiddle = (_donchianHigh + _donchianLow) / 2;

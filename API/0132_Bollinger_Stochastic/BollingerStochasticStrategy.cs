@@ -1,4 +1,4 @@
-namespace StockSharp.Strategies.Samples
+namespace StockSharp.Samples.Strategies
 {
 	using System;
 	using System.Collections.Generic;
@@ -254,7 +254,7 @@ namespace StockSharp.Strategies.Samples
 					
 					// Set stop loss
 					var stopPrice = candle.ClosePrice - stopLossDistance;
-					RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
+					RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 				}
 			}
 			// Trading logic for short positions
@@ -268,7 +268,7 @@ namespace StockSharp.Strategies.Samples
 					
 					// Set stop loss
 					var stopPrice = candle.ClosePrice + stopLossDistance;
-					RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
+					RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 				}
 			}
 			

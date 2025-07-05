@@ -6,7 +6,7 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Strategies
+namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
 	/// Statistical Arbitrage strategy that trades pairs of securities based on their relative mean reversion.

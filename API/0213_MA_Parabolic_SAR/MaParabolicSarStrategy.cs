@@ -6,7 +6,7 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Strategies
+namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
 	/// Strategy based on Moving Average and Parabolic SAR indicators.
