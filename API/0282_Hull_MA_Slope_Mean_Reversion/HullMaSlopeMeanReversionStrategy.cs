@@ -1,10 +1,9 @@
-using System;
-using System.Collections.Generic;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -153,14 +152,9 @@ namespace StockSharp.Samples.Strategies
 			
 			// First binding for Hull MA
 			subscription
-				.BindEx(_hullMa, ProcessHullMa)
+				.BindEx(_hullMa, _atr, ProcessIndicators)
 				.Start();
 				
-			// Additional binding for ATR (separate to keep the code cleaner)
-			subscription
-				.BindEx(_atr, ProcessAtr)
-				.Start();
-
 			// Setup chart visualization if available
 			var area = CreateChartArea();
 			if (area != null)
@@ -171,15 +165,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private void ProcessAtr(ICandleMessage candle, IIndicatorValue value)
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-				
-			_currentAtr = value.ToDecimal();
-		}
-
-		private void ProcessHullMa(ICandleMessage candle, IIndicatorValue value)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue hullValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -188,9 +174,11 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
+			_currentAtr = atrValue.ToDecimal();
+
 			// Get the Hull MA value
-			_currentHullMa = value.ToDecimal();
+			_currentHullMa = hullValue.ToDecimal();
 			
 			// First value handling
 			if (_prevHullMa == 0)

@@ -151,14 +151,9 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 
-			// Bind volume average indicator separately to update volume average
-			subscription
-				.BindEx(volumeAvg, ProcessVolumeAverage)
-				.Start();
-
 			// Bind Hull MA and ATR for trade decisions
 			subscription
-				.Bind(hullMa, atr, ProcessHullAndAtr)
+				.Bind(volumeAvg, hullMa, atr, ProcessIndicators)
 				.Start();
 
 			// Setup position protection with ATR-based stop loss
@@ -179,20 +174,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Process volume average indicator values.
-		/// </summary>
-		private void ProcessVolumeAverage(ICandleMessage candle, IIndicatorValue volumeAvgValue)
-		{
-			if (volumeAvgValue.IsFinal)
-			{
-				_avgVolume = volumeAvgValue.ToDecimal();
-			}
-		}
-
-		/// <summary>
 		/// Process Hull MA and ATR indicator values.
 		/// </summary>
-		private void ProcessHullAndAtr(ICandleMessage candle, decimal hullValue, decimal atrValue)
+		private void ProcessIndicators(ICandleMessage candle, decimal volumeAvgValue, decimal hullValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -201,6 +185,8 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading() || _avgVolume <= 0)
 				return;
+
+			_avgVolume = volumeAvgValue;
 
 			// Store current Hull MA value
 			var currentHullValue = hullValue;

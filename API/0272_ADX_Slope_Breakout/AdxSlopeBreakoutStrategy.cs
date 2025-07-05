@@ -138,12 +138,24 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
 			// Get ADX value
-			decimal adx = adxValue.ToDecimal();
-			
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+
+			if (typedAdx.MovingAverage is not decimal adx)
+				return;
+
+			var dx = typedAdx.Dx;
+
+			if (dx.Minus is not decimal diMinus ||
+				dx.Plus is not decimal diPlus)
+				return;
+
 			// Calculate ADX slope
-			var currentSlopeValue = _adxSlope.Process(adx, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var currentSlopeTyped = (LinearRegressionValue)_adxSlope.Process(adx, candle.ServerTime, candle.State == CandleStates.Finished);
+
+			if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
+				return;
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)
@@ -173,8 +185,6 @@ namespace StockSharp.Samples.Strategies
 				if (_slopeValues.Count >= SlopePeriod)
 				{
 					// Get DI+ and DI- from the ADX indicator for trend direction
-					var diPlus = adxValue.ToDecimal();
-					var diMinus = adxValue.ToDecimal();
 					var isBullish = diPlus > diMinus;
 					
 					// Breakout logic

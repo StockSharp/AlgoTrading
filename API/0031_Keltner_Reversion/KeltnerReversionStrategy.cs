@@ -153,14 +153,12 @@ namespace StockSharp.Samples.Strategies
 				if (candle.ClosePrice < lowerBand)
 				{
 					// Price is below lower band - buy (long)
-					var order = BuyMarket(Volume);
-					RegisterOrder(order);
+					BuyMarket(Volume);
 				}
 				else if (candle.ClosePrice > upperBand)
 				{
 					// Price is above upper band - sell (short)
-					var order = SellMarket(Volume);
-					RegisterOrder(order);
+					SellMarket(Volume);
 				}
 			}
 			else if (Position > 0)
@@ -169,8 +167,7 @@ namespace StockSharp.Samples.Strategies
 				if (candle.ClosePrice > emaValue)
 				{
 					// Price has returned to or above EMA - exit long
-					var order = SellMarket(Position);
-					RegisterOrder(order);
+					SellMarket(Position);
 				}
 			}
 			else if (Position < 0)
@@ -179,8 +176,7 @@ namespace StockSharp.Samples.Strategies
 				if (candle.ClosePrice < emaValue)
 				{
 					// Price has returned to or below EMA - exit short
-					var order = BuyMarket(Math.Abs(Position));
-					RegisterOrder(order);
+					BuyMarket(Math.Abs(Position));
 				}
 			}
 		}

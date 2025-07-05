@@ -166,14 +166,8 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 
-			// Bind volume average indicator separately to update volume average
 			subscription
-				.BindEx(volumeAvg, ProcessVolumeAverage)
-				.Start();
-
-			// Bind Bollinger and ATR for trade decisions
-			subscription
-				.BindEx(bollinger, atr, ProcessBollingerAndAtr)
+				.BindEx(volumeAvg, bollinger, atr, ProcessIndicators)
 				.Start();
 
 			// Setup position protection with ATR-based stop loss
@@ -194,21 +188,13 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Process volume average indicator values.
-		/// </summary>
-		private void ProcessVolumeAverage(ICandleMessage candle, IIndicatorValue volumeAvgValue)
-		{
-			if (volumeAvgValue.IsFinal)
-			{
-				_avgVolume = volumeAvgValue.ToDecimal();
-			}
-		}
-
-		/// <summary>
 		/// Process Bollinger Bands and ATR indicator values.
 		/// </summary>
-		private void ProcessBollingerAndAtr(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue bollingerValue, IIndicatorValue atrValue)
 		{
+			if (volumeAvgValue.IsFinal)
+				_avgVolume = volumeAvgValue.ToDecimal();
+
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;

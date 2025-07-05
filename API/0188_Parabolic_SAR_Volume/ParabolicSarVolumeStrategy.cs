@@ -122,16 +122,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Binding for Parabolic SAR indicator
 			subscription
-				.Bind(_parabolicSar, ProcessSarSignal)
-				.Start();
-
-			// Binding for Volume indicators
-			subscription
-				.BindEx(_volumeIndicator, (candle, volume) => 
-				{
-					var avgVolume = _volumeAverage.Process(volume).ToDecimal();
-					_currentAvgVolume = avgVolume;
-				})
+				.Bind(_parabolicSar, _volumeIndicator, ProcessIndicators)
 				.Start();
 
 			// Setup position protection with trailing stop
@@ -156,8 +147,10 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessSarSignal(ICandleMessage candle, decimal sarValue)
+		private void ProcessIndicators(ICandleMessage candle, decimal sarValue, decimal volumeValue)
 		{
+			_currentAvgVolume = _volumeAverage.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;

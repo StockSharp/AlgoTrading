@@ -189,8 +189,12 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-			var macd = macdTyped.Macd;
-			var signal = macdTyped.Signal;
+			
+			if (macdTyped.Macd is not decimal macd ||
+				macdTyped.Signal is not decimal signal)
+			{
+				return;
+			}
 
 			// Extract MACD values
 			var histogram = macd - signal; // Not using Item3 as it might not be available depending on MACD implementation

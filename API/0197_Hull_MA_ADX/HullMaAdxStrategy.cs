@@ -26,7 +26,7 @@ namespace StockSharp.Samples.Strategies
 		private HullMovingAverage _hma;
 		private AverageDirectionalIndex _adx;
 		private AverageTrueRange _atr;
-		
+
 		private decimal _prevHmaValue;
 		private decimal _prevAdxValue;
 
@@ -112,9 +112,9 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			// Process candles with indicators
-                        subscription
-                                .BindEx(_hma, _adx, _atr, ProcessCandle)
-                                .Start();
+			subscription
+					.BindEx(_hma, _adx, _atr, ProcessCandle)
+					.Start();
 
 			// Setup chart visualization
 			var area = CreateChartArea();
@@ -133,19 +133,23 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-                private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
-                {
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
+		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-                        var hma = hmaValue.ToDecimal();
-                        var adx = adxValue.ToDecimal();
-                        var atr = atrValue.ToDecimal();
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
 
-                        // Detect HMA direction
-                        bool hmaIncreasing = hma > _prevHmaValue;
-                        bool hmaDecreasing = hma < _prevHmaValue;
+			if (typedAdx.MovingAverage is not decimal adx)
+				return;
+
+			var hma = hmaValue.ToDecimal();
+			var atr = atrValue.ToDecimal();
+
+			// Detect HMA direction
+			bool hmaIncreasing = hma > _prevHmaValue;
+			bool hmaDecreasing = hma < _prevHmaValue;
 
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading())

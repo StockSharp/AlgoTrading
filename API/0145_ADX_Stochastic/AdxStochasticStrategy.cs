@@ -222,10 +222,14 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			var adx = adxValue.ToDecimal();
+
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+
+			if (typedAdx.MovingAverage is not decimal adx)
+				return;
+
 			var stoch = (StochasticOscillatorValue)stochValue;
 			var stochK = stoch.K;
-
 
 			// Check if ADX indicates strong trend
 			var isStrongTrend = adx > AdxThreshold;

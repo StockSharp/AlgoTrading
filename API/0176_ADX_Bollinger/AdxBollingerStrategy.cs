@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -197,7 +197,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Set stop-loss
 					var stopPrice = price - stopSize;
-					RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
+					RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 				}
 				else if (price < lowerBand && Position >= 0)
 				{
@@ -206,7 +206,7 @@ namespace StockSharp.Samples.Strategies
 					
 					// Set stop-loss
 					var stopPrice = price + stopSize;
-					RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
+					RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 				}
 			}
 			// Exit conditions

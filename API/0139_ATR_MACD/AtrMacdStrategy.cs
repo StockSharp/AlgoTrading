@@ -25,6 +25,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 
 		private decimal _prevAtrAvg;
+		private SimpleMovingAverage _atrAvg;
 
 		/// <summary>
 		/// ATR indicator period.
@@ -169,7 +170,7 @@ namespace StockSharp.Samples.Strategies
 				Length = AtrPeriod
 			};
 
-			var atrAvg = new SimpleMovingAverage
+			_atrAvg = new SimpleMovingAverage
 			{
 				Length = AtrAvgPeriod
 			};
@@ -187,11 +188,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.BindEx(atr, (_, atrValue) => ProcessAtr(atrValue, atrAvg))
-				.Start();
-
-			subscription
-				.BindEx(macd, ProcessMacd)
+				.BindEx(atr, macd, ProcessIndicators)
 				.Start();
 
 			// Setup position protection
@@ -212,28 +209,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Process ATR indicator values.
+		/// Process MACD indicator values.
 		/// </summary>
-		private void ProcessAtr(IIndicatorValue atrValue, SimpleMovingAverage atrAvg)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue atrValue, IIndicatorValue macdValue)
 		{
 			if (!atrValue.IsFinal)
 				return;
 
 			// Process ATR through averaging indicator
-			var avgValue = atrAvg.Process(atrValue);
+			var avgValue = _atrAvg.Process(atrValue);
 			if (!avgValue.IsFinal)
 				return;
 
 			// Store current ATR average value
 			var currentAtrAvg = avgValue.ToDecimal();
 			_prevAtrAvg = currentAtrAvg;
-		}
 
-		/// <summary>
-		/// Process MACD indicator values.
-		/// </summary>
-		private void ProcessMacd(ICandleMessage candle, IIndicatorValue macdValue)
-		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;

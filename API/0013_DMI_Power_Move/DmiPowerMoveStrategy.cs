@@ -122,13 +122,13 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Create indicators
-			var dmi = new DirectionalIndex { Length = DmiPeriod };
+			var dmi = new AverageDirectionalIndex { Length = DmiPeriod };
 			var atr = new AverageTrueRange { Length = DmiPeriod };
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(dmi, atr, ProcessCandle)
+				.BindEx(dmi, atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization if available
@@ -148,7 +148,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal dmiValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -158,14 +158,15 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
 			// Get individual components from DMI indicator value
-			// Note: Since StockSharp's DirectionalMovementIndex returns a single value (DX/ADX),
-			// we need to calculate +DI and -DI separately in a real implementation
-			// For this example, we'll simulate these values
-			var dmi = dmiValue;
-			var adxValue = dmi;
-			var plusDiValue = dmi + 10; // Simulated for this example
-			var minusDiValue = dmi - 5; // Simulated for this example
+			if (adxTyped.MovingAverage is not decimal adx ||
+				adxTyped.Dx.Plus is not decimal plusDiValue ||
+				adxTyped.Dx.Minus is not decimal minusDiValue)
+			{
+				return;
+			}
 
 			// For real implementation, use separate DirectionalIndex indicators with Plus/Minus directions
 			// and bind them separately to get actual values
@@ -174,9 +175,9 @@ namespace StockSharp.Samples.Strategies
 			var diDifference = plusDiValue - minusDiValue;
 			
 			// Check trading conditions
-			var isStrongBullishTrend = diDifference > DiDifferenceThreshold && adxValue > AdxThreshold;
-			var isStrongBearishTrend = diDifference < -DiDifferenceThreshold && adxValue > AdxThreshold;
-			var isWeakTrend = adxValue < AdxExitThreshold;
+			var isStrongBullishTrend = diDifference > DiDifferenceThreshold && adx > AdxThreshold;
+			var isStrongBearishTrend = diDifference < -DiDifferenceThreshold && adx > AdxThreshold;
+			var isWeakTrend = adx < AdxExitThreshold;
 			
 			// Entry logic
 			if (isStrongBullishTrend && Position <= 0)
@@ -184,21 +185,21 @@ namespace StockSharp.Samples.Strategies
 				// Strong bullish trend - Buy signal
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
-				LogInfo($"Buy signal: +DI - (-DI) = {diDifference}, ADX = {adxValue}");
+				LogInfo($"Buy signal: +DI - (-DI) = {diDifference}, ADX = {adx}");
 			}
 			else if (isStrongBearishTrend && Position >= 0)
 			{
 				// Strong bearish trend - Sell signal
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
-				LogInfo($"Sell signal: -DI - (+DI) = {-diDifference}, ADX = {adxValue}");
+				LogInfo($"Sell signal: -DI - (+DI) = {-diDifference}, ADX = {adx}");
 			}
 			// Exit logic
 			else if (isWeakTrend && Position != 0)
 			{
 				// Trend is weakening - Exit position
 				ClosePosition();
-				LogInfo($"Exit signal: ADX = {adxValue} (below threshold {AdxExitThreshold})");
+				LogInfo($"Exit signal: ADX = {adx} (below threshold {AdxExitThreshold})");
 			}
 		}
 	}

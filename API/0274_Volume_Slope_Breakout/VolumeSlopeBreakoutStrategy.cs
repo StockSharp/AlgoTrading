@@ -155,7 +155,10 @@ namespace StockSharp.Samples.Strategies
 			decimal volumeRatio = volumeValue / volumeSma;
 			
 			// We use LinearRegression to calculate slope of this ratio
-			var currentSlopeValue = _volumeSlope.Process(volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var currentSlopeTyped = (LinearRegressionValue)_volumeSlope.Process(volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished);
+
+			if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
+				return; // Skip if slope is not available
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevSlopeValue != 0)

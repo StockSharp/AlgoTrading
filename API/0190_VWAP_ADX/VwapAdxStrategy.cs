@@ -115,7 +115,10 @@ namespace StockSharp.Samples.Strategies
 			var vwap = _vwap.Process(candle).ToDecimal();
 
 			// Get current ADX value
-			var currentAdxValue = adxValue.ToDecimal();
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+
+			if (typedAdx.MovingAverage is not decimal currentAdxValue)
+				return;
 
 			// Skip if not formed or online
 			if (!IsFormedAndOnlineAndAllowTrading())

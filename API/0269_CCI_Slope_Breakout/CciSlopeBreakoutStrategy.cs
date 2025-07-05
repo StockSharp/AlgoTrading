@@ -140,7 +140,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Calculate CCI slope
-			var currentSlopeValue = _cciSlope.Process(cciValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var currentSlopeTyped = (LinearRegressionValue)_cciSlope.Process(cciValue, candle.ServerTime, candle.State == CandleStates.Finished);
+
+			if (currentSlopeTyped.LinearReg is not decimal currentSlopeValue)
+				return;
 
 			// Update slope stats when we have 2 values to calculate slope
 			if (_prevCciSlopeValue != 0)

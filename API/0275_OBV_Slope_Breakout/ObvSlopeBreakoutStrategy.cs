@@ -149,17 +149,21 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Calculate OBV slope
-			var slopeValue = _obvSlope.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished);
-			if (!slopeValue.IsFinal)
+			var slopeTyped = (LinearRegressionValue)_obvSlope.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished);
+			if (!slopeTyped.IsFinal)
 				return;
 
+			if (slopeTyped.LinearReg is not decimal slopeValue)
+				return;
+
+			_lastObvSlope = slopeValue;
+
 			// Calculate slope average and standard deviation
-			var avgValue = _obvSlopeAvg.Process(slopeValue);
-			var stdDevValue = _obvSlopeStdDev.Process(slopeValue);
+			var avgValue = _obvSlopeAvg.Process(slopeValue, candle.ServerTime, candle.State == CandleStates.Finished);
+			var stdDevValue = _obvSlopeStdDev.Process(slopeValue, candle.ServerTime, candle.State == CandleStates.Finished);
 			
 			// Store values for decision making
 			_lastObvValue = obvValue;
-			_lastObvSlope = slopeValue.ToDecimal();
 			
 			if (avgValue.IsFinal && stdDevValue.IsFinal)
 			{

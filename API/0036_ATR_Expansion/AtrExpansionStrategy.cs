@@ -152,14 +152,12 @@ namespace StockSharp.Samples.Strategies
 				if (isAtrExpanding && isPriceAboveMA)
 				{
 					// ATR is expanding and price is above MA - buy (long)
-					var order = BuyMarket(Volume);
-					RegisterOrder(order);
+					BuyMarket(Volume);
 				}
 				else if (isAtrExpanding && !isPriceAboveMA)
 				{
 					// ATR is expanding and price is below MA - sell (short)
-					var order = SellMarket(Volume);
-					RegisterOrder(order);
+					SellMarket(Volume);
 				}
 			}
 			else if (Position > 0)
@@ -168,8 +166,7 @@ namespace StockSharp.Samples.Strategies
 				if (!isAtrExpanding)
 				{
 					// ATR is decreasing (volatility contracting) - exit long
-					var order = SellMarket(Position);
-					RegisterOrder(order);
+					SellMarket(Position);
 				}
 			}
 			else if (Position < 0)
@@ -178,8 +175,7 @@ namespace StockSharp.Samples.Strategies
 				if (!isAtrExpanding)
 				{
 					// ATR is decreasing (volatility contracting) - exit short
-					var order = BuyMarket(Math.Abs(Position));
-					RegisterOrder(order);
+					BuyMarket(Math.Abs(Position));
 				}
 			}
 

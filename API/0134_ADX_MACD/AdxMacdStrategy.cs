@@ -197,12 +197,17 @@ namespace StockSharp.Samples.Strategies
 				
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-				
-			// Extract values from indicators
-			var adxIndicatorValue = adxValue.ToDecimal();
-			
-			var macdLine = macdValue.ToDecimal();
-			var signalLine = _macd.SignalMa.GetCurrentValue();
+
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+
+			if (typedAdx.MovingAverage is not decimal adxIndicatorValue)
+				return;
+
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+			if (macdTyped.Macd is not decimal macdLine ||
+				macdTyped.Signal is not decimal signalLine)
+				return;
 			
 			var atrIndicatorValue = atrValue.ToDecimal();
 			
@@ -225,7 +230,7 @@ namespace StockSharp.Samples.Strategies
 						
 						// Set stop loss
 						var stopPrice = candle.ClosePrice - stopLossDistance;
-						RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume)));
+						RegisterOrder(CreateOrder(Sides.Sell, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 					}
 				}
 				else if (macdLine < signalLine) // Bearish signal
@@ -238,7 +243,7 @@ namespace StockSharp.Samples.Strategies
 						
 						// Set stop loss
 						var stopPrice = candle.ClosePrice + stopLossDistance;
-						RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume)));
+						RegisterOrder(CreateOrder(Sides.Buy, stopPrice, Math.Abs(Position + Volume).Max(Volume)));
 					}
 				}
 			}

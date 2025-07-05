@@ -157,17 +157,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// We'll need to manually bind Ichimoku and ADX separately as they have different output values
 			subscription
-				.BindEx(ichimoku, (candle, ichimokuValue) => {
-					// Process candle with Ichimoku
-					ProcessIchimokuData(candle, ichimokuValue);
-				})
-				.Start();
-				
-			subscription
-				.BindEx(adx, (candle, adxValue) => {
-					// Process candle with ADX
-					ProcessAdxData(candle, adxValue);
-				})
+				.BindEx(ichimoku, adx, ProcessIndicators)
 				.Start();
 
 			// Setup chart visualization if available
@@ -189,11 +179,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		// Process Ichimoku indicator data
-		private void ProcessIchimokuData(ICandleMessage candle, IIndicatorValue ichimokuValue)
+		private void ProcessIndicators(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue adxValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
+
+			var typedAdx = (AverageDirectionalIndexValue)adxValue;
+
+			if (typedAdx.MovingAverage is not decimal adx)
+				return;
+
+			_lastAdxValue = adx;
 
 			// Get Ichimoku values
 			// The component values must be extracted based on the Ichimoku implementation
@@ -271,17 +268,6 @@ namespace StockSharp.Samples.Strategies
 			// Update tracking variables
 			_isPriceAboveCloud = isPriceAboveCloud;
 			_isTenkanAboveKijun = isTenkanAboveKijun;
-		}
-		
-		// Process ADX indicator data
-		private void ProcessAdxData(ICandleMessage candle, IIndicatorValue adxValue)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-				
-			// Get ADX value (this is the main value)
-			_lastAdxValue = adxValue.ToDecimal();
 		}
 	}
 }

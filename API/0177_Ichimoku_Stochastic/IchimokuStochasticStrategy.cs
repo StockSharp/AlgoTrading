@@ -1,10 +1,10 @@
-using System;
-using System.Collections.Generic;
-
+using Ecng.Common;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -181,7 +181,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue stochasticValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue ichimokuValue, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -216,9 +216,12 @@ namespace StockSharp.Samples.Strategies
 			// Check Tenkan/Kijun cross (trend direction)
 			var isBullishCross = tenkan > kijun;
 			var isBearishCross = tenkan < kijun;
-			
+
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+
 			// Get Stochastic %K value
-			var stochasticK = stochasticValue.ToDecimal();
+			if (stochTyped.K is not decimal stochasticK)
+				return;
 
 			// Trading logic
 			if (isAboveKumo && isBullishCross && stochasticK < 20 && Position <= 0)
@@ -227,7 +230,7 @@ namespace StockSharp.Samples.Strategies
 				BuyMarket(Volume + Math.Abs(Position));
 				
 				// Use Kijun-sen as stop-loss
-				RegisterOrder(CreateOrder(Sides.Sell, kijun, Math.Abs(Position + Volume)));
+				RegisterOrder(CreateOrder(Sides.Sell, kijun, Math.Abs(Position + Volume).Max(Volume)));
 			}
 			else if (isBelowKumo && isBearishCross && stochasticK > 80 && Position >= 0)
 			{
@@ -235,7 +238,7 @@ namespace StockSharp.Samples.Strategies
 				SellMarket(Volume + Math.Abs(Position));
 				
 				// Use Kijun-sen as stop-loss
-				RegisterOrder(CreateOrder(Sides.Buy, kijun, Math.Abs(Position + Volume)));
+				RegisterOrder(CreateOrder(Sides.Buy, kijun, Math.Abs(Position + Volume).Max(Volume)));
 			}
 			// Exit conditions
 			else if (price < kijun && Position > 0)
