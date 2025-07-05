@@ -213,7 +213,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private void UpdateClusterData(ICandleMessage candle, decimal rsi)
+		private void UpdateClusterData(ICandleMessage candle, decimal? rsi)
 		{
 			// Add current values to the data series
 			_priceValues.Add(candle.ClosePrice);

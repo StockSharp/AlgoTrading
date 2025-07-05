@@ -155,7 +155,7 @@ namespace StockSharp.Strategies.Samples
 		/// </summary>
 		/// <param name="candle">Candle to process.</param>
 		/// <param name="atrValue">ATR value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? atrValue)
 		{
 			if (candle.State != CandleStates.Finished)
 				return;
@@ -219,7 +219,7 @@ namespace StockSharp.Strategies.Samples
 		/// </summary>
 		/// <param name="candle">Candle to process.</param>
 		/// <param name="atrValue">ATR value.</param>
-		private void CalculateSupertrend(ICandleMessage candle, decimal atrValue)
+		private void CalculateSupertrend(ICandleMessage candle, decimal? atrValue)
 		{
 			// Calculate basic price
 			var basicPrice = (candle.HighPrice + candle.LowPrice) / 2;

@@ -166,7 +166,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process main security candle and check for trading signals
 		/// </summary>
-		private void ProcessMainCandle(ICandleMessage candle, decimal smaValue)
+		private void ProcessMainCandle(ICandleMessage candle, decimal? smaValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

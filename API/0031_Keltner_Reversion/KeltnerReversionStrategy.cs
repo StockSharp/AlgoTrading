@@ -130,7 +130,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for Keltner Channel signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? emaValue, decimal? atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

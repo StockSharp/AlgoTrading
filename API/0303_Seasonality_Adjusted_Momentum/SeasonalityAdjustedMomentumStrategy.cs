@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal momentumValue, decimal momentumAvgValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? momentumValue, decimal? momentumAvgValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

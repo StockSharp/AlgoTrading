@@ -120,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Process candle and check for ATR expansion signals
 		/// </summary>
-		private void ProcessCandle(ICandleMessage candle, decimal atrValue, decimal smaValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? atrValue, decimal? smaValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)

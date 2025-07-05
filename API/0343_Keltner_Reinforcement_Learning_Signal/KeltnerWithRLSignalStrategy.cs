@@ -247,7 +247,7 @@ namespace StockSharp.Samples.Strategies
 		/// This is a simplified RL model (Q-learning) for demonstration.
 		/// In a real system, this would likely be a more sophisticated model.
 		/// </summary>
-		private void UpdateRLSignal(ICandleMessage candle, decimal ema, decimal atr)
+		private void UpdateRLSignal(ICandleMessage candle, decimal? ema, decimal? atr)
 		{
 			// Features for RL decision:
 			// 1. Price position relative to EMA

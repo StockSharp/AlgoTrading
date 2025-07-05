@@ -168,7 +168,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? cciValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -231,7 +231,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessDivergenceSignals(ICandleMessage candle, decimal cciValue)
+		private void ProcessDivergenceSignals(ICandleMessage candle, decimal? cciValue)
 		{
 			// Entry signals based on detected divergences
 			if (_bullishDivergence && Position <= 0 && cciValue < OversoldLevel)

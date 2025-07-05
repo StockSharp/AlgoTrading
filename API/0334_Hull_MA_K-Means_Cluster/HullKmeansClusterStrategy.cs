@@ -152,7 +152,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal hullValue, decimal rsiValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? hullValue, decimal? rsiValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -199,7 +199,7 @@ namespace StockSharp.Samples.Strategies
 			_lastPrice = candle.ClosePrice;
 		}
 
-		private void UpdateFeatureData(ICandleMessage candle, decimal rsiValue)
+		private void UpdateFeatureData(ICandleMessage candle, decimal? rsiValue)
 		{
 			// Calculate price change percentage
 			if (_lastPrice != 0)
