@@ -46,7 +46,7 @@ public class StrategyTests
 			{
 				StartDate = startTime,
 				StopDate = stopTime,
-				AdapterCache = _cache,
+				//AdapterCache = _cache,
 			}
 		};
 
@@ -61,6 +61,13 @@ public class StrategyTests
 		strategy.Connector = connector;
 		strategy.Volume = 1;
 
+		Exception error = null;
+		strategy.Error += (s, e) =>
+		{
+			error = e;
+			s.Stop();
+		};
+
 		//logManager.Sources.Add(connector);
 		//logManager.Sources.Add(strategy);
 
@@ -69,6 +76,9 @@ public class StrategyTests
 		var task = strategy.ExecAsync(null, token);
 		connector.Start();
 		await task.AsTask();
+
+		if (error is not null)
+			throw error;
 
 		Assert.IsTrue(strategy.Orders.Count() > 10, $"{strategy.GetType().Name} placed {strategy.Orders.Count()} orders");
 		Assert.IsTrue(strategy.MyTrades.Count() > 5, $"{strategy.GetType().Name} executed {strategy.MyTrades.Count()} trades");
