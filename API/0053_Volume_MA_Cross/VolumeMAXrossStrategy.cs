@@ -117,9 +117,12 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal priceMAValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? priceMAValue)
 		{
 			if (candle.State != CandleStates.Finished)
+				return;
+
+			if (priceMAValue == null)
 				return;
 
 			// Process volume through MAs

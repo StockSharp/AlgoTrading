@@ -128,22 +128,25 @@ namespace StockSharp.Strategies
 			}
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdDevValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? stdDevValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
-				
+
+			if (maValue == null || stdDevValue == null)
+				return;
+
 			// Skip if strategy is not ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading())
+				if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 			
 			// Skip if standard deviation is zero (avoid division by zero)
-			if (stdDevValue == 0)
+			if (stdDevValue.Value == 0)
 				return;
-			
+
 			// Calculate Z-Score: (Price - Mean) / StdDev
-			decimal zScore = (candle.ClosePrice - maValue) / stdDevValue;
+			decimal zScore = (candle.ClosePrice - maValue.Value) / stdDevValue.Value;
 			
 			LogInfo($"Current Z-Score: {zScore:F4}, Mean: {maValue:F4}, StdDev: {stdDevValue:F4}");
 			

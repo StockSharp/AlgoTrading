@@ -126,19 +126,22 @@ namespace StockSharp.Strategies
 			}
 		}
 		
-		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal stdDevValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? maValue, decimal? stdDevValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
-				
+
+			if (maValue == null || stdDevValue == null)
+				return;
+
 			// Skip if strategy is not ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 			
 			// Calculate upper and lower bands based on mean and standard deviation
-			decimal upperBand = maValue + (stdDevValue * DeviationMultiplier);
-			decimal lowerBand = maValue - (stdDevValue * DeviationMultiplier);
+			decimal upperBand = maValue.Value + (stdDevValue.Value * DeviationMultiplier);
+			decimal lowerBand = maValue.Value - (stdDevValue.Value * DeviationMultiplier);
 			
 			// Trading logic
 			if (candle.ClosePrice < lowerBand)
@@ -159,21 +162,21 @@ namespace StockSharp.Strategies
 					LogInfo($"Short Entry: Price({candle.ClosePrice}) > Upper Band({upperBand:F2})");
 				}
 			}
-			else if ((Position > 0 && candle.ClosePrice > maValue) || 
-					(Position < 0 && candle.ClosePrice < maValue))
-			{
-				// Exit signals: Price returned to the mean
-				if (Position > 0)
+			else if ((Position > 0 && candle.ClosePrice > maValue.Value) ||
+			(Position < 0 && candle.ClosePrice < maValue.Value))
 				{
-					SellMarket(Math.Abs(Position));
-					LogInfo($"Exit Long: Price({candle.ClosePrice}) > MA({maValue:F2})");
-				}
+					// Exit signals: Price returned to the mean
+					if (Position > 0)
+						{
+							SellMarket(Math.Abs(Position));
+								LogInfo($"Exit Long: Price({candle.ClosePrice}) > MA({maValue.Value:F2})");
+								}
 				else if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					LogInfo($"Exit Short: Price({candle.ClosePrice}) < MA({maValue:F2})");
+					{
+						BuyMarket(Math.Abs(Position));
+							LogInfo($"Exit Short: Price({candle.ClosePrice}) < MA({maValue.Value:F2})");
+								}
 				}
-			}
 		}
 	}
 }

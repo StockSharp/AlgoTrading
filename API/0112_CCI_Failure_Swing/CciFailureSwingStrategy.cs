@@ -138,21 +138,24 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal cciValue)
+		private void ProcessCandle(ICandleMessage candle, decimal? cciValue)
 		{
-			// Skip unfinished candles
+		// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
+			if (cciValue == null)
+				return;
+
 			// Check if strategy is ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading())
+				if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 			
 			// Need at least 3 CCI values to detect failure swing
 			if (_prevCciValue == 0 || _prevPrevCciValue == 0)
 			{
 				_prevPrevCciValue = _prevCciValue;
-				_prevCciValue = cciValue;
+				_prevCciValue = cciValue.Value;
 				return;
 			}
 			
@@ -162,9 +165,9 @@ namespace StockSharp.Samples.Strategies
 			// 3. CCI pulls back but stays above previous low
 			// 4. CCI breaks above the high point of first rise
 			bool isBullishFailureSwing = _prevPrevCciValue < OversoldLevel &&
-										_prevCciValue > _prevPrevCciValue &&
-										cciValue < _prevCciValue &&
-										cciValue > _prevPrevCciValue;
+				_prevCciValue > _prevPrevCciValue &&
+				cciValue.Value < _prevCciValue &&
+				cciValue.Value > _prevPrevCciValue;
 			
 			// Detect Bearish Failure Swing:
 			// 1. CCI rises above overbought level
@@ -172,9 +175,9 @@ namespace StockSharp.Samples.Strategies
 			// 3. CCI bounces up but stays below previous high
 			// 4. CCI breaks below the low point of first decline
 			bool isBearishFailureSwing = _prevPrevCciValue > OverboughtLevel &&
-										 _prevCciValue < _prevPrevCciValue &&
-										 cciValue > _prevCciValue &&
-										 cciValue < _prevPrevCciValue;
+				_prevCciValue < _prevPrevCciValue &&
+				cciValue.Value > _prevCciValue &&
+				cciValue.Value < _prevPrevCciValue;
 			
 			// Trading logic
 			if (isBullishFailureSwing && !_inPosition)
@@ -186,7 +189,7 @@ namespace StockSharp.Samples.Strategies
 				_inPosition = true;
 				_positionSide = Sides.Buy;
 				
-				LogInfo($"Bullish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue:F2}. Long entry at {candle.ClosePrice}");
+				LogInfo($"Bullish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue.Value:F2}. Long entry at {candle.ClosePrice}");
 			}
 			else if (isBearishFailureSwing && !_inPosition)
 			{
@@ -197,14 +200,14 @@ namespace StockSharp.Samples.Strategies
 				_inPosition = true;
 				_positionSide = Sides.Sell;
 				
-				LogInfo($"Bearish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue:F2}. Short entry at {candle.ClosePrice}");
+				LogInfo($"Bearish CCI Failure Swing detected. CCI values: {_prevPrevCciValue:F2} -> {_prevCciValue:F2} -> {cciValue.Value:F2}. Short entry at {candle.ClosePrice}");
 			}
 			
 			// Exit conditions
 			if (_inPosition)
 			{
 				// For long positions: exit when CCI crosses above 0
-				if (_positionSide == Sides.Buy && cciValue > 0)
+			if (_positionSide == Sides.Buy && cciValue.Value > 0)
 				{
 					SellMarket(Math.Abs(Position));
 					_inPosition = false;
@@ -213,7 +216,7 @@ namespace StockSharp.Samples.Strategies
 					LogInfo($"Exit signal for long position: CCI ({cciValue:F2}) crossed above 0. Closing at {candle.ClosePrice}");
 				}
 				// For short positions: exit when CCI crosses below 0
-				else if (_positionSide == Sides.Sell && cciValue < 0)
+			else if (_positionSide == Sides.Sell && cciValue.Value < 0)
 				{
 					BuyMarket(Math.Abs(Position));
 					_inPosition = false;
@@ -225,7 +228,7 @@ namespace StockSharp.Samples.Strategies
 			
 			// Update CCI values for next iteration
 			_prevPrevCciValue = _prevCciValue;
-			_prevCciValue = cciValue;
+			_prevCciValue = cciValue.Value;
 		}
 	}
 }
