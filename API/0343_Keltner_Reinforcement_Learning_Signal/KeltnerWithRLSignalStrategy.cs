@@ -183,9 +183,15 @@ namespace StockSharp.Samples.Strategies
 
 			// Extract Keltner Channel values
 			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
-			var upperBand = keltnerTyped.Upper;
-			var lowerBand = keltnerTyped.Lower;
-			var middleBand = keltnerTyped.Middle;
+
+			if (keltnerTyped.Upper is not decimal upperBand)
+				return;
+
+			if (keltnerTyped.Lower is not decimal lowerBand)
+				return;
+
+			if (keltnerTyped.Middle is not decimal middleBand)
+				return;
 
 			// Calculate current ATR value (upper - middle)/multiplier
 			var currentAtr = (upperBand - middleBand) / AtrMultiplier;

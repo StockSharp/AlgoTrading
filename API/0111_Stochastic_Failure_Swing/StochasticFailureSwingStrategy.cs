@@ -181,9 +181,11 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Get current K value (we use %K for the strategy, not %D)
-			var stochastic = (StochasticOscillatorValue)stochasticValue;
-			decimal kValue = stochastic.K;
+			var stochTyped = (StochasticOscillatorValue)stochasticValue;
 			
+			if (stochTyped.K is not decimal kValue)
+				return;
+
 			// Need at least 3 Stochastic values to detect failure swing
 			if (_prevKValue == 0 || _prevPrevKValue == 0)
 			{

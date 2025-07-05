@@ -99,9 +99,13 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var donchianTyped = (DonchianChannelsValue)donchianValue;
-			var upperValue = donchianTyped.UpperBand;
-			var lowerValue = donchianTyped.LowerBand;
-			var midValue = donchianTyped.Middle;
+			
+			if (donchianTyped.UpperBand is not decimal upperValue ||
+				donchianTyped.LowerBand is not decimal lowerValue ||
+				donchianTyped.Middle is not decimal midValue)
+			{
+				return;
+			}
 
 			// Skip the first received value for proper comparison
 			if (_prevUpperBand == 0)

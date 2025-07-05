@@ -154,7 +154,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var adxTyped = (AverageDirectionalIndexValue)adxValue;
-			var adxMa = adxTyped.MovingAverage;
+
+			if (adxTyped.MovingAverage is not decimal adxMa)
+				return;
 
 			// Check ADX threshold for entry conditions
 			var isAdxEnoughForEntry = adxMa > 25;

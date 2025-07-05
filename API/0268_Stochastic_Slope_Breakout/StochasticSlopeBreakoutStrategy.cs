@@ -197,7 +197,9 @@ namespace StockSharp.Samples.Strategies
 			// Extract Stochastic %K value - the main line that we'll track the slope of
 			// Stochastic returns a complex value with both %K and %D values
 			var stochTyped = (StochasticOscillatorValue)stochValue;
-			var kValue = stochTyped.K;
+			
+			if (stochTyped.K is not decimal kValue)
+				return;
 
 			// Initialize on first valid value
 			if (!_isInitialized)

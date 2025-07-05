@@ -165,8 +165,15 @@ namespace StockSharp.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var typedAdx = (AverageDirectionalIndexValue)adxValue;
-			var currentAdx = typedAdx.MovingAverage;
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			
+			if (adxTyped.MovingAverage is not decimal currentAdx)
+				return;
+
+			var dx = adxTyped.Dx;
+
+			if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
+				return;
 
 			// Update ADX statistics
 			UpdateAdxStatistics(currentAdx);
@@ -182,7 +189,7 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Positive trend strength should correspond to price direction for entry
-				var direction = typedAdx.Dx.Plus > typedAdx.Dx.Minus ? Sides.Buy : Sides.Sell;
+				var direction = plusDi > minusDi ? Sides.Buy : Sides.Sell;
 
 				// ADX is significantly below its average - mean reversion expects it to rise
 				// This could indicate a period of low trend strength that might change

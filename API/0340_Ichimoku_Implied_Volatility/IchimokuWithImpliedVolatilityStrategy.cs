@@ -170,11 +170,19 @@ namespace StockSharp.Samples.Strategies
 			
 			// Get Ichimoku values
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouA = ichimokuTyped.SenkouA;
-			var senkouB = ichimokuTyped.SenkouB;
-			
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
+
 			// Determine if price is above Kumo (cloud)
 			var kumoTop = Math.Max(senkouA, senkouB);
 			var kumoBottom = Math.Min(senkouA, senkouB);

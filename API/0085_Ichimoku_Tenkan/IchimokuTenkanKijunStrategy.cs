@@ -142,10 +142,18 @@ namespace StockSharp.Samples.Strategies
 
 			// Get current Ichimoku values
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouA = ichimokuTyped.SenkouA;
-			var senkouB = ichimokuTyped.SenkouB;
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
 
 			// If first calculation, just store values
 			if (_prevTenkan == 0 || _prevKijun == 0)

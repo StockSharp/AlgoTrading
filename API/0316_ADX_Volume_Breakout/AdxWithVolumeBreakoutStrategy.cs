@@ -121,6 +121,14 @@ namespace StockSharp.Samples.Strategies
 				{
 					var adxTyped = (AverageDirectionalIndexValue)adxValue;
 
+					if (adxTyped.MovingAverage is not decimal adx)
+						return;
+
+					var dx = adxTyped.Dx;
+
+					if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
+						return;
+
 					// Process volume indicators
 					var smaVal = volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					var stdDevVal = volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
@@ -128,9 +136,9 @@ namespace StockSharp.Samples.Strategies
 					// Process the strategy logic
 					ProcessStrategy(
 						candle,
-						adxTyped.MovingAverage,
-						adxTyped.Dx.Plus,
-						adxTyped.Dx.Minus,
+						adx,
+						plusDi,
+						minusDi,
 						candle.TotalVolume,
 						smaVal,
 						stdDevVal

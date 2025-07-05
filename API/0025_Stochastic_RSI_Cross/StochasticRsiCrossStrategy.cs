@@ -173,9 +173,13 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var stoch = (StochasticOscillatorValue)stochValue;
-			decimal kValue = stoch.K;
-			decimal dValue = stoch.D;
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+
+			if (stochTyped.K is not decimal kValue)
+				return;
+
+			if (stochTyped.D is not decimal dValue)
+				return;
 
 			// For the first candle, just store values and return
 			if (_isFirstCandle)

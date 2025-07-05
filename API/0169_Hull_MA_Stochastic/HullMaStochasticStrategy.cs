@@ -174,7 +174,7 @@ namespace StockSharp.Samples.Strategies
 		private void ProcessCandle(
 			ICandleMessage candle, 
 			IIndicatorValue hmaValue, 
-			IIndicatorValue stochasticValue, 
+			IIndicatorValue stochValue, 
 			IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
@@ -187,7 +187,12 @@ namespace StockSharp.Samples.Strategies
 
 			// Get indicator values
 			decimal hma = hmaValue.ToDecimal();
-			decimal stochK = ((StochasticOscillatorValue)stochasticValue).K;
+			
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+
+			if (stochTyped.K is not decimal stochK)
+				return;
+
 			decimal atr = atrValue.ToDecimal();
 
 			// Skip first candle after initialization

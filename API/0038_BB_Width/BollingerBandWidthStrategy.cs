@@ -137,8 +137,14 @@ namespace StockSharp.Samples.Strategies
 
 			var bollingerTyped = (BollingerBandsValue)bollingerValue;
 
+			if (bollingerTyped.UpBand is not decimal upperBand)
+				return;
+
+			if (bollingerTyped.LowBand is not decimal lowerBand)
+				return;
+
 			// Calculate Bollinger Band Width
-			decimal bbWidth = bollingerTyped.UpBand - bollingerTyped.LowBand;
+			decimal bbWidth = upperBand - lowerBand;
 			
 			// Initialize _prevWidth on first formed candle
 			if (_prevWidth == 0)

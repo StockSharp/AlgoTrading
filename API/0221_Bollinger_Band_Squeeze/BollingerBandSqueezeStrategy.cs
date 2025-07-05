@@ -145,10 +145,14 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var bb = (BollingerBandsValue)bollingerValue;
-			var middleBand = bb.MovingAverage;
-			var upperBand = bb.UpBand;
-			var lowerBand = bb.LowBand;
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+
+			if (bollingerTyped.UpBand is not decimal upperBand)
+				return;
+
+			if (bollingerTyped.LowBand is not decimal lowerBand)
+				return;
+
 			var atr = atrValue.ToDecimal();
 
 			// Calculate Bollinger width (upper - lower)

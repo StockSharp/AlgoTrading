@@ -184,11 +184,20 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var donchianTyped = (DonchianChannelsValue)donchianValue;
-			var upperBand = donchianTyped.UpperBand;
-			var lowerBand = donchianTyped.LowerBand;
-			var middleBand = donchianTyped.Middle;
+			
+			if (donchianTyped.UpperBand is not decimal upperBand ||
+				donchianTyped.LowerBand is not decimal lowerBand ||
+				donchianTyped.Middle is not decimal middleBand)
+			{
+				return;
+			}
 
-			decimal stochK = ((StochasticOscillatorValue)stochValue).K;
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			
+			if (stochTyped.K is not decimal stochK || stochTyped.D is not decimal stochD)
+			{
+				return;
+			}
 
 			// Trading logic:
 			// Buy when price breaks above upper Donchian band with Stochastic showing oversold condition

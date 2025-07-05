@@ -181,8 +181,13 @@ namespace StockSharp.Strategies
 
 			// Calculate Bollinger Band width
 			var bollingerTyped = (BollingerBandsValue)bollingerValue;
-			var upperBand = bollingerTyped.UpBand;
-			var lowerBand = bollingerTyped.LowBand;
+
+			if (bollingerTyped.UpBand is not decimal upperBand)
+				return;
+
+			if (bollingerTyped.LowBand is not decimal lowerBand)
+				return;
+
 			var lastWidth = upperBand - lowerBand;
 
 			// Process width through average

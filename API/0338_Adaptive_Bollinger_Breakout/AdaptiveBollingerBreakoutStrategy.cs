@@ -212,13 +212,16 @@ namespace StockSharp.Samples.Strategies
 				bool isHighVolatility = atrVal > (_atrCount > 0 ? _atrSum / _atrCount : atrVal);
 
 				var bollingerTyped = (BollingerBandsValue)bollingerValue;
-				decimal middleBand = bollingerTyped.MovingAverage;
+				
+				if (bollingerTyped.UpBand is not decimal upperBand ||
+					bollingerTyped.LowBand is not decimal lowerBand ||
+					bollingerTyped.MovingAverage is not decimal middleBand)
+				{
+					return; // Not enough data to calculate bands
+				}
 
 				if (isHighVolatility)
 				{
-					decimal upperBand = bollingerTyped.UpBand;
-					decimal lowerBand = bollingerTyped.LowBand;
-
 					// Breakout above upper band - Sell signal
 					if (candle.ClosePrice > upperBand && Position >= 0)
 					{

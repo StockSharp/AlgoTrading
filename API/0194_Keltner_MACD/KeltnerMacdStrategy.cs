@@ -211,9 +211,10 @@ namespace StockSharp.Samples.Strategies
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 
 			// Process MACD separately to get MACD and Signal values
-			var macd = macdTyped.Macd;
-			var signal = macdTyped.Signal;
-
+			if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			{
+				return;
+			}
 
 			// Detect MACD crosses
 			bool macdCrossedAboveSignal = _prevMacd <= _prevSignal && macd > signal;

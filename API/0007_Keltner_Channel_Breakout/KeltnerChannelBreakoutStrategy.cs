@@ -135,9 +135,15 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
-			var upperValue = keltnerTyped.Upper;
-			var lowerValue = keltnerTyped.Lower;
-			var middleValue = keltnerTyped.Middle;
+
+			if (keltnerTyped.Upper is not decimal upperValue)
+				return;
+
+			if (keltnerTyped.Lower is not decimal lowerValue)
+				return;
+
+			if (keltnerTyped.Middle is not decimal middleValue)
+				return;
 
 			// Skip the first received value for proper comparison
 			if (_prevUpperBand == 0)

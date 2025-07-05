@@ -197,10 +197,18 @@ namespace StockSharp.Strategies
 			// Get current Ichimoku values
 			// The structure of values depends on the implementation, this is just an example
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouSpanA = ichimokuTyped.SenkouA;
-			var senkouSpanB = ichimokuTyped.SenkouB;
+			
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouSpanA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouSpanB)
+				return;
 
 			// Calculate Cloud width (absolute difference between Senkou lines)
 			var width = Math.Abs(senkouSpanA - senkouSpanB);

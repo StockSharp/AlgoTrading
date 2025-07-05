@@ -132,9 +132,14 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var bb = (BollingerBandsValue)bollingerValue;
-			var middleBand = bb.MovingAverage;
-			var upperBand = bb.UpBand;
-			var lowerBand = bb.LowBand;
+			
+			if (bb.UpBand is not decimal upperBand ||
+				bb.LowBand is not decimal lowerBand ||
+				bb.MovingAverage is not decimal middleBand)
+			{
+				return; // Not enough data to calculate bands
+			}
+
 
 			// Calculate Bollinger Bands width relative to the middle band
 			decimal bandWidth = (upperBand - lowerBand) / middleBand;

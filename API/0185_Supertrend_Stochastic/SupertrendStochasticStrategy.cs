@@ -193,9 +193,10 @@ namespace StockSharp.Samples.Strategies
 			bool isBullish = supertrend.IsUpTrend;
 			bool isBearish = !isBullish;
 			
-			var stoch = (StochasticOscillatorValue)stochasticValue;
-			decimal stochK = stoch.K;
-			decimal stochD = stoch.D;
+			var stochTyped = (StochasticOscillatorValue)stochasticValue;
+
+			if (stochTyped.K is not decimal stochK)
+				return;
 
 			bool isAboveSupertrend = candle.ClosePrice > supertrendLine;
 			bool isBelowSupertrend = candle.ClosePrice < supertrendLine;

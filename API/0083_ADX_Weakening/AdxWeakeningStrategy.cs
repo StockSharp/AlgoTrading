@@ -144,8 +144,16 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var ma = maValue.ToDecimal();
-			var adx = ((AverageDirectionalIndexValue)adxValue).MovingAverage;
 
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+
+			if (adxTyped.MovingAverage is not decimal adx)
+				return;
+
+			var dx = adxTyped.Dx;
+
+			if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
+				return;
 
 			// If this is the first calculation, just store the ADX value
 			if (_prevAdxValue == 0)

@@ -154,8 +154,11 @@ namespace StockSharp.Strategies
 				return;
 			
 			// Get current ADX value
-			var currentAdx = ((AverageDirectionalIndexValue)adxValue).MovingAverage;
-			
+			if (((AverageDirectionalIndexValue)adxValue).MovingAverage is not decimal currentAdx)
+			{
+				return;
+			}
+
 			// Process ADX through average indicator
 			var adxAvgValue = _adxAverage.Process(currentAdx, candle.ServerTime, candle.State == CandleStates.Finished);
 			var currentAdxAvg = adxAvgValue.ToDecimal();

@@ -206,8 +206,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var stochTyped = (StochasticOscillatorValue)stochValue;
-			var stochK = stochTyped.K;
-			var stochD = stochTyped.D;
+
+			if (stochTyped.K is not decimal stochK)
+				return;
 
 			// If this is the first calculation, just store the value
 			if (_prevK == 0)

@@ -149,11 +149,19 @@ namespace StockSharp.Samples.Strategies
 
 			var adxTyped = (AverageDirectionalIndexValue)adxValue;
 
+			if (adxTyped.MovingAverage is not decimal adx)
+				return;
+
+			var dx = adxTyped.Dx;
+
+			if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
+				return;
+
 			// Extract values from indicators
 			_vwapValue = vwapValue.ToDecimal();
-			_adxValue = adxTyped.MovingAverage;
-			_plusDiValue = adxTyped.Dx.Plus;  // +DI
-			_minusDiValue = adxTyped.Dx.Minus; // -DI
+			_adxValue = adx;
+			_plusDiValue = plusDi;  // +DI
+			_minusDiValue = minusDi; // -DI
 			
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;

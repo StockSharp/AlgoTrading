@@ -159,9 +159,13 @@ namespace StockSharp.Samples.Strategies
 			
 			// Extract upper and lower bands from the indicator value
 			var donchianTyped = (DonchianChannelsValue)donchianValue;
-			var upperBand = donchianTyped.UpperBand;
-			var lowerBand = donchianTyped.LowerBand;
 			
+			if (donchianTyped.UpperBand is not decimal upperBand ||
+				donchianTyped.LowerBand is not decimal lowerBand)
+			{
+				return; // Not enough data to calculate bands
+			}
+
 			// Calculate the Donchian channel width
 			_currentWidth = upperBand - lowerBand;
 			

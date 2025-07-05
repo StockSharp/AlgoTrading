@@ -160,10 +160,15 @@ namespace StockSharp.Samples.Strategies
 			var bollingerTyped = (BollingerBandsValue)bollingerValue;
 
 			// Extract values from indicators
-			decimal midBand = bollingerTyped.MovingAverage;  // Middle band (SMA)
-			decimal upperBand = bollingerTyped.UpBand; // Upper band
-			decimal lowerBand = bollingerTyped.LowBand; // Lower band
-			
+			if (bollingerTyped.UpBand is not decimal upperBand)
+				return;
+
+			if (bollingerTyped.LowBand is not decimal lowerBand)
+				return;
+
+			if (bollingerTyped.MovingAverage is not decimal midBand)
+				return;
+
 			decimal kalmanFilterValue = kalmanValue.ToDecimal();
 			
 			// Log the values

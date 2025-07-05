@@ -192,8 +192,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var stochTyped = (StochasticOscillatorValue)stochValue;
-			var stochK = stochTyped.K;
-			var stochD = stochTyped.D;
+
+			if (stochTyped.K is not decimal stochK)
+				return;
 
 			// Calculate Stochastic %K slope only if we have previous %K value
 			if (_previousStochKValue != 0)

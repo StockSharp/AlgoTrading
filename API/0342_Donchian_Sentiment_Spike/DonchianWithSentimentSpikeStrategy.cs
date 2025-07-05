@@ -175,10 +175,14 @@ namespace StockSharp.Samples.Strategies
 
 			// Extract Donchian Channel values
 			var donchianTyped = (DonchianChannelsValue)donchianValue;
-			var upperBand = donchianTyped.UpperBand;
-			var lowerBand = donchianTyped.LowerBand;
-			var middleBand = donchianTyped.Middle;
-
+			
+			if (donchianTyped.UpperBand is not decimal upperBand ||
+				donchianTyped.LowerBand is not decimal lowerBand ||
+				donchianTyped.Middle is not decimal middleBand)
+			{
+				return;
+			}
+			
 			// Store middle band for exit conditions
 			_midChannel = middleBand;
 			

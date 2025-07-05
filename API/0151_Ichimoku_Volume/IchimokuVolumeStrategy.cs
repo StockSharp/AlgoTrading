@@ -166,14 +166,22 @@ namespace StockSharp.Samples.Strategies
 
 			// Ichimoku values
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouSpanA = ichimokuTyped.SenkouA;
-			var senkouSpanB = ichimokuTyped.SenkouB;
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
 
 			// Calculate Kumo cloud boundaries
-			var upperKumo = Math.Max(senkouSpanA, senkouSpanB);
-			var lowerKumo = Math.Min(senkouSpanA, senkouSpanB);
+			var upperKumo = Math.Max(senkouA, senkouB);
+			var lowerKumo = Math.Min(senkouA, senkouB);
 
 			// Update average volume calculation
 			var currentVolume = candle.TotalVolume;

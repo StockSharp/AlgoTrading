@@ -180,13 +180,21 @@ namespace StockSharp.Samples.Strategies
 
 			// Extract values from the Ichimoku indicator
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouSpanA = ichimokuTyped.SenkouA;
-			var senkouSpanB = ichimokuTyped.SenkouB;
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
 
 			// Calculate cloud width (absolute difference between Senkou Span A and B)
-			_currentCloudWidth = Math.Abs(senkouSpanA - senkouSpanB);
+			_currentCloudWidth = Math.Abs(senkouA - senkouB);
 			
 			// Calculate average and standard deviation of cloud width
 			var cloudWidthAverage = _cloudWidthAverage.Process(_currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
@@ -210,12 +218,12 @@ namespace StockSharp.Samples.Strategies
 			if (_currentCloudWidth < narrowThreshold && _prevCloudWidth >= narrowThreshold && Position == 0)
 			{
 				// Determine direction based on price position relative to cloud
-				if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
+				if (candle.ClosePrice > Math.Max(senkouA, senkouB))
 				{
 					BuyMarket(Volume);
 					LogInfo($"Ichimoku cloud compression (bullish): {_currentCloudWidth} < {narrowThreshold}. Buying at {candle.ClosePrice}");
 				}
-				else if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
+				else if (candle.ClosePrice < Math.Min(senkouA, senkouB))
 				{
 					SellMarket(Volume);
 					LogInfo($"Ichimoku cloud compression (bearish): {_currentCloudWidth} < {narrowThreshold}. Selling at {candle.ClosePrice}");
@@ -225,12 +233,12 @@ namespace StockSharp.Samples.Strategies
 			else if (_currentCloudWidth > wideThreshold && _prevCloudWidth <= wideThreshold && Position == 0)
 			{
 				// Determine direction based on price position relative to cloud
-				if (candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB))
+				if (candle.ClosePrice < Math.Min(senkouA, senkouB))
 				{
 					SellMarket(Volume);
 					LogInfo($"Ichimoku cloud expansion (bearish): {_currentCloudWidth} > {wideThreshold}. Selling at {candle.ClosePrice}");
 				}
-				else if (candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB))
+				else if (candle.ClosePrice > Math.Max(senkouA, senkouB))
 				{
 					BuyMarket(Volume);
 					LogInfo($"Ichimoku cloud expansion (bullish): {_currentCloudWidth} > {wideThreshold}. Buying at {candle.ClosePrice}");

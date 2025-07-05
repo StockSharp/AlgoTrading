@@ -186,8 +186,11 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Extract MACD values - be careful with the order of indexes
 				var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-				var macd = macdTyped.Macd;
-				var signal = macdTyped.Signal;
+				
+				if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+				{
+					return;
+				}
 
 				// Store previous values before updating
 				if (_currentPrice.HasValue && _currentMacd.HasValue)

@@ -207,7 +207,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var stochTyped = (StochasticOscillatorValue)stochValue;
-			var stochKValue = stochTyped.K;
+			if (stochTyped.K is not decimal stochK)
+				return;
 
 			var sarDec = sarValue.ToDecimal();
 
@@ -215,28 +216,28 @@ namespace StockSharp.Samples.Strategies
 			var priceAboveSar = currentPrice > sarDec;
 			
 			LogInfo($"Candle: {candle.OpenTime}, Close: {currentPrice}, " +
-				   $"Parabolic SAR: {sarDec}, Stochastic %K: {stochKValue}, " +
+				   $"Parabolic SAR: {sarDec}, Stochastic %K: {stochK}, " +
 				   $"IsAboveSAR: {priceAboveSar}, OldIsAboveSAR: {_isAboveSar}");
 
 			// Check for SAR reversal signal (price crossing SAR)
 			var sarSignalChange = priceAboveSar != _isAboveSar;
 
 			// Trading rules
-			if (priceAboveSar && stochKValue < StochOversold && Position <= 0)
+			if (priceAboveSar && stochK < StochOversold && Position <= 0)
 			{
 				// Buy signal - price above SAR (uptrend) and Stochastic oversold
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 				
-				LogInfo($"Buy signal: Price above SAR and Stochastic oversold ({stochKValue} < {StochOversold}). Volume: {volume}");
+				LogInfo($"Buy signal: Price above SAR and Stochastic oversold ({stochK} < {StochOversold}). Volume: {volume}");
 			}
-			else if (!priceAboveSar && stochKValue > StochOverbought && Position >= 0)
+			else if (!priceAboveSar && stochK > StochOverbought && Position >= 0)
 			{
 				// Sell signal - price below SAR (downtrend) and Stochastic overbought
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 				
-				LogInfo($"Sell signal: Price below SAR and Stochastic overbought ({stochKValue} > {StochOverbought}). Volume: {volume}");
+				LogInfo($"Sell signal: Price below SAR and Stochastic overbought ({stochK} > {StochOverbought}). Volume: {volume}");
 			}
 			// Check for SAR reversal - exit signals
 			else if (sarSignalChange)
@@ -256,7 +257,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Update state for next iteration
-			_lastStochK = stochKValue;
+			_lastStochK = stochK;
 			_isAboveSar = priceAboveSar;
 		}
 	}

@@ -175,9 +175,12 @@ namespace StockSharp.Samples.Strategies
 			var donchianTyped = (DonchianChannelsValue)donchianValue;
 
 			// Convert indicator values to decimal
-			decimal upper = donchianTyped.UpperBand;
-			decimal lower = donchianTyped.LowerBand;
-			decimal middle = donchianTyped.Middle;
+			if (donchianTyped.UpperBand is not decimal upper ||
+				donchianTyped.LowerBand is not decimal lower ||
+				donchianTyped.Middle is not decimal middle)
+			{
+				return;
+			}
 
 			// Check for Hurst Exponent indicating trend persistence
 			if (_hurstValue > HurstThreshold)

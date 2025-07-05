@@ -185,14 +185,21 @@ namespace StockSharp.Samples.Strategies
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
 
-			var ichimokuValue = (IchimokuValue)v;
+			var ichimokuTyped = (IchimokuValue)v;
 
 			// Extract Ichimoku values
-			var tenkan = ichimokuValue.Tenkan;
-			var kijun = ichimokuValue.Kijun;
-			var senkouA = ichimokuValue.SenkouA;
-			var senkouB = ichimokuValue.SenkouB;
-			
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
+
 			// Determine cloud position
 			var priceAboveCloud = candle.ClosePrice > Math.Max(senkouA, senkouB);
 			var priceBelowCloud = candle.ClosePrice < Math.Min(senkouA, senkouB);

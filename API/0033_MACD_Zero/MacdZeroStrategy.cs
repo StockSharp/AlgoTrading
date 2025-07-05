@@ -158,25 +158,27 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-			var macdDec = macdTyped.Macd;
-			var signalValue = macdTyped.Signal;
+			if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			{
+				return;
+			}
 
 			// Initialize _prevMacd on first formed candle
 			if (_prevMacd == 0)
 			{
-				_prevMacd = macdDec;
+				_prevMacd = macd;
 				return;
 			}
 
 			// Check if MACD is trending towards zero
 			bool isTrendingTowardsZero = false;
 			
-			if (macdDec < 0 && macdDec > _prevMacd)
+			if (macd < 0 && macd > _prevMacd)
 			{
 				// MACD is negative but increasing (moving towards zero from below)
 				isTrendingTowardsZero = true;
 			}
-			else if (macdDec > 0 && macdDec < _prevMacd)
+			else if (macd > 0 && macd < _prevMacd)
 			{
 				// MACD is positive but decreasing (moving towards zero from above)
 				isTrendingTowardsZero = true;
@@ -185,12 +187,12 @@ namespace StockSharp.Samples.Strategies
 			if (Position == 0)
 			{
 				// No position - check for entry signals
-				if (macdDec < 0 && isTrendingTowardsZero)
+				if (macd < 0 && isTrendingTowardsZero)
 				{
 					// MACD is below zero and trending back to zero - buy (long)
 					BuyMarket(Volume);
 				}
-				else if (macdDec > 0 && isTrendingTowardsZero)
+				else if (macd > 0 && isTrendingTowardsZero)
 				{
 					// MACD is above zero and trending back to zero - sell (short)
 					SellMarket(Volume);
@@ -199,7 +201,7 @@ namespace StockSharp.Samples.Strategies
 			else if (Position > 0)
 			{
 				// Long position - check for exit signal
-				if (macdDec > signalValue)
+				if (macd > signal)
 				{
 					// MACD crossed above signal line - exit long
 					SellMarket(Position);
@@ -208,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 			else if (Position < 0)
 			{
 				// Short position - check for exit signal
-				if (macdDec < signalValue)
+				if (macd < signal)
 				{
 					// MACD crossed below signal line - exit short
 					BuyMarket(Math.Abs(Position));
@@ -216,7 +218,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Update previous MACD value
-			_prevMacd = macdDec;
+			_prevMacd = macd;
 		}
 	}
 }

@@ -163,10 +163,18 @@ namespace StockSharp.Samples.Strategies
 
 			// Store Ichimoku values
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouSpanA = ichimokuTyped.SenkouA;
-			var senkouSpanB = ichimokuTyped.SenkouB;
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
 
 			// Update price data for Hurst exponent calculation
 			_prices.Add(candle.ClosePrice);
@@ -184,8 +192,8 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Check if price is above/below Kumo (cloud)
-			bool isPriceAboveKumo = candle.ClosePrice > Math.Max(senkouSpanA, senkouSpanB);
-			bool isPriceBelowKumo = candle.ClosePrice < Math.Min(senkouSpanA, senkouSpanB);
+			bool isPriceAboveKumo = candle.ClosePrice > Math.Max(senkouA, senkouB);
+			bool isPriceBelowKumo = candle.ClosePrice < Math.Min(senkouA, senkouB);
 			
 			// Trading logic
 			// Buy when price is above the cloud, Tenkan > Kijun, and Hurst > threshold (trending market)

@@ -188,8 +188,11 @@ namespace StockSharp.Samples.Strategies
 			bool isEmaRising = emaDec > _previousEma;
 
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-			var macd = macdTyped.Macd;
-			var signal = macdTyped.Signal;
+
+			if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			{
+				return;
+			}
 
 			// Get MACD histogram value (MACD - Signal)
 			decimal macdHistogram = macd - signal;

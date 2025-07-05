@@ -137,22 +137,30 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkanValue = ichimokuTyped.Tenkan;
-			var kijunValue = ichimokuTyped.Kijun;
-			var senkouAValue = ichimokuTyped.SenkouA;
-			var senkouBValue = ichimokuTyped.SenkouB;
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
 
 			// Skip if any value is zero (indicator initializing)
-			if (tenkanValue == 0 || kijunValue == 0 || senkouAValue == 0 || senkouBValue == 0)
+			if (tenkan == 0 || kijun == 0 || senkouA == 0 || senkouB == 0)
 			{
-				_prevTenkanValue = tenkanValue;
-				_prevKijunValue = kijunValue;
+				_prevTenkanValue = tenkan;
+				_prevKijunValue = kijun;
 				return;
 			}
 
 			// Determine cloud boundaries
-			var upperCloud = Math.Max(senkouAValue, senkouBValue);
-			var lowerCloud = Math.Min(senkouAValue, senkouBValue);
+			var upperCloud = Math.Max(senkouA, senkouB);
+			var lowerCloud = Math.Min(senkouA, senkouB);
 
 			// Check price position relative to cloud
 			var isPriceAboveCloud = candle.ClosePrice > upperCloud;
@@ -160,7 +168,7 @@ namespace StockSharp.Samples.Strategies
 			var isPriceInCloud = !isPriceAboveCloud && !isPriceBelowCloud;
 
 			// Check Tenkan/Kijun cross
-			var isTenkanAboveKijun = tenkanValue > kijunValue;
+			var isTenkanAboveKijun = tenkan > kijun;
 			var isTenkanKijunCross = isTenkanAboveKijun != _prevIsTenkanAboveKijun && _prevTenkanValue != 0;
 
 			// Check cloud breakout
@@ -173,14 +181,14 @@ namespace StockSharp.Samples.Strategies
 				// Bullish conditions met - Buy signal
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
-				LogInfo($"Buy signal: Price ({candle.ClosePrice}) above cloud ({upperCloud}) and Tenkan ({tenkanValue}) > Kijun ({kijunValue})");
+				LogInfo($"Buy signal: Price ({candle.ClosePrice}) above cloud ({upperCloud}) and Tenkan ({tenkan}) > Kijun ({kijun})");
 			}
 			else if (isPriceBelowCloud && !isTenkanAboveKijun && Position >= 0)
 			{
 				// Bearish conditions met - Sell signal
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
-				LogInfo($"Sell signal: Price ({candle.ClosePrice}) below cloud ({lowerCloud}) and Tenkan ({tenkanValue}) < Kijun ({kijunValue})");
+				LogInfo($"Sell signal: Price ({candle.ClosePrice}) below cloud ({lowerCloud}) and Tenkan ({tenkan}) < Kijun ({kijun})");
 			}
 			// Exit logic
 			else if (Position > 0 && isPriceBelowCloud)
@@ -197,8 +205,8 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Update state for the next candle
-			_prevTenkanValue = tenkanValue;
-			_prevKijunValue = kijunValue;
+			_prevTenkanValue = tenkan;
+			_prevKijunValue = kijun;
 			_prevIsTenkanAboveKijun = isTenkanAboveKijun;
 			_prevIsPriceAboveCloud = isPriceAboveCloud;
 		}

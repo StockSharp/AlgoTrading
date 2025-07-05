@@ -207,10 +207,18 @@ namespace StockSharp.Samples.Strategies
 
 			// Extract Ichimoku values
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
-			var tenkan = ichimokuTyped.Tenkan;
-			var kijun = ichimokuTyped.Kijun;
-			var senkouA = ichimokuTyped.SenkouA;
-			var senkouB = ichimokuTyped.SenkouB;
+
+			if (ichimokuTyped.Tenkan is not decimal tenkan)
+				return;
+
+			if (ichimokuTyped.Kijun is not decimal kijun)
+				return;
+
+			if (ichimokuTyped.SenkouA is not decimal senkouA)
+				return;
+
+			if (ichimokuTyped.SenkouB is not decimal senkouB)
+				return;
 
 			// Determine Kumo (cloud) boundaries
 			decimal upperKumo = Math.Max(senkouA, senkouB);

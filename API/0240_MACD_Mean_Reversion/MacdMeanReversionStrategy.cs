@@ -210,13 +210,16 @@ namespace StockSharp.Strategies
 
 			// Extract MACD Histogram value
 			var macdTyped = (MovingAverageConvergenceDivergenceHistogramValue)macdValue;
-			var currentMacdHist = macdTyped.Macd;
+			if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			{
+				return;
+			}
 
 			// Update MACD Histogram statistics
-			UpdateMacdHistStatistics(currentMacdHist);
+			UpdateMacdHistStatistics(macd);
 
 			// Save current MACD Histogram for next iteration
-			_prevMacdHist = currentMacdHist;
+			_prevMacdHist = macd;
 
 			// If we don't have enough data yet for statistics
 			if (_count < AveragePeriod)
@@ -226,33 +229,33 @@ namespace StockSharp.Strategies
 			if (Position == 0)
 			{
 				// Long entry - MACD Histogram is significantly below its average
-				if (currentMacdHist < _avgMacdHist - DeviationMultiplier * _stdDevMacdHist)
+				if (macd < _avgMacdHist - DeviationMultiplier * _stdDevMacdHist)
 				{
 					BuyMarket(Volume);
-					LogInfo($"Long entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
+					LogInfo($"Long entry: MACD Hist = {macd}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
 				}
 				// Short entry - MACD Histogram is significantly above its average
-				else if (currentMacdHist > _avgMacdHist + DeviationMultiplier * _stdDevMacdHist)
+				else if (macd > _avgMacdHist + DeviationMultiplier * _stdDevMacdHist)
 				{
 					SellMarket(Volume);
-					LogInfo($"Short entry: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
+					LogInfo($"Short entry: MACD Hist = {macd}, Avg = {_avgMacdHist}, StdDev = {_stdDevMacdHist}");
 				}
 			}
 			// Check for exit conditions
 			else if (Position > 0) // Long position
 			{
-				if (currentMacdHist > _avgMacdHist)
+				if (macd > _avgMacdHist)
 				{
 					ClosePosition();
-					LogInfo($"Long exit: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}");
+					LogInfo($"Long exit: MACD Hist = {macd}, Avg = {_avgMacdHist}");
 				}
 			}
 			else if (Position < 0) // Short position
 			{
-				if (currentMacdHist < _avgMacdHist)
+				if (macd < _avgMacdHist)
 				{
 					ClosePosition();
-					LogInfo($"Short exit: MACD Hist = {currentMacdHist}, Avg = {_avgMacdHist}");
+					LogInfo($"Short exit: MACD Hist = {macd}, Avg = {_avgMacdHist}");
 				}
 			}
 		}

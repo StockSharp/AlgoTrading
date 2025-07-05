@@ -174,14 +174,15 @@ namespace StockSharp.Samples.Strategies
 			// Extract %K value from stochastic
 			var stochTyped = (StochasticOscillatorValue)stochValue;
 
-			decimal stochKValue = stochTyped.K;
-			
+			if (stochTyped.K is not decimal kValue)
+				return;
+
 			// Process Stochastic %K through average and standard deviation indicators
-			var stochAvgValue = _stochAverage.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-			var stochStdDevValue = _stochStdDev.Process(stochKValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var stochAvgValue = _stochAverage.Process(kValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var stochStdDevValue = _stochStdDev.Process(kValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// Store previous Stochastic %K value for changes detection
-			decimal currentStochKValue = stochKValue;
+			decimal currentStochKValue = kValue;
 			
 			// Check if strategy is ready for trading
 			if (!IsFormedAndOnlineAndAllowTrading() || !_stochAverage.IsFormed || !_stochStdDev.IsFormed)

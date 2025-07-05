@@ -149,8 +149,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var bollingerTyped = (BollingerBandsValue)bollingerValue;
-			var upperBand = bollingerTyped.UpBand;
-			var lowerBand = bollingerTyped.LowBand;
+			
+			if (bollingerTyped.UpBand is not decimal upperBand ||
+				bollingerTyped.LowBand is not decimal lowerBand)
+				return;
 
 			// Calculate Bollinger %B: (Price - Lower Band) / (Upper Band - Lower Band)
 			decimal percentB = 0;

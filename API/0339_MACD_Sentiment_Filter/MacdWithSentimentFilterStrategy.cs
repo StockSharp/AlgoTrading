@@ -191,8 +191,10 @@ namespace StockSharp.Samples.Strategies
 			UpdateSentimentScore(candle);
 
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-			var macd = macdTyped.Macd;
-			var signal = macdTyped.Signal;
+			if (macdTyped.Macd is not decimal macd || macdTyped.Signal is not decimal signal)
+			{
+				return;
+			}
 
 			// Store previous MACD values for state tracking
 			var prevMacdOverSignal = _prevMacd > _prevSignal;
