@@ -1,3 +1,4 @@
+![StockSharp Logo](https://stocksharp.com/files/logo.png)
 # StockSharp Algorithmic Trading and Strategy Designer Repository
 
 Welcome to the official repository for algorithmic trading strategies and the [Strategy Designer](https://doc.stocksharp.com/topics/designer.html) designed for the StockSharp platform. This repository aims to serve as a comprehensive resource for both new and experienced traders and developers using StockSharp for automated trading and strategy design.
@@ -21,9 +22,20 @@ We welcome contributions from all users! If you have a strategy, a feature from 
 5. **Document Your Code**: Include comments in your code to explain the logic and usage of the strategy or feature. Additionally, provide a README.md file with a detailed description of what the strategy or feature does and how it can be used.
 6. **Submit a Pull Request**: Once you've added and tested your contribution, submit a pull request to the main repository. Include a clear description of what your contribution does and any other relevant information that would help the reviewers.
 
+## Resources
+
+- [Telegram Chat](https://t.me/stocksharp)
+- [StockSharp Documentation](https://doc.stocksharp.com)
+
 ## Usage
 
 To use the strategies or features in this repository, you'll need to have StockSharp installed and configured on your system. Each strategy or feature may have specific requirements or dependencies, so be sure to check the included README.md or documentation files for each contribution.
+
+The easiest way to run these strategies is through the [Designer](https://stocksharp.com/store/strategy-designer/) application:
+
+1. Download Designer from the [official site](https://stocksharp.com/store/strategy-designer/).
+2. Install the program on your machine.
+3. Open the [Strategy Gallery](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) inside Designer and select the strategy you want to run.
 
 ## Disclaimer
 
