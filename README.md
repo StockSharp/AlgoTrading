@@ -24,7 +24,7 @@ We welcome contributions from all users! If you have a strategy, a feature from 
 
 ## Resources
 
-- [Telegram Chat](https://t.me/stocksharp)
+- [Telegram Chat](https://t.me/stocksharpchat)
 - [StockSharp Documentation](https://doc.stocksharp.com)
 
 ## Usage
@@ -33,7 +33,7 @@ To use the strategies or features in this repository, you'll need to have StockS
 
 The easiest way to run these strategies is through the [Designer](https://stocksharp.com/store/strategy-designer/) application:
 
-1. Download Designer from the [official site](https://stocksharp.com/store/strategy-designer/).
+1. Download Designer from the [official site](https://stocksharp.com/products/download/).
 2. Install the program on your machine.
 3. Open the [Strategy Gallery](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) inside Designer and select the strategy you want to run.
 
