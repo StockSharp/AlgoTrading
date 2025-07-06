@@ -1,4 +1,4 @@
-![StockSharp Logo](https://stocksharp.com/files/logo.png)
+![StockSharp Logo](logo.png)
 # StockSharp Algorithmic Trading and Strategy Designer Repository
 
 Welcome to the official repository for algorithmic trading strategies and the [Strategy Designer](https://doc.stocksharp.com/topics/designer.html) designed for the StockSharp platform. This repository aims to serve as a comprehensive resource for both new and experienced traders and developers using StockSharp for automated trading and strategy design.
