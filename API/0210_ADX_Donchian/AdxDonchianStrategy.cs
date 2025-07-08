@@ -17,6 +17,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _donchianPeriod;
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		private readonly StrategyParam<DataType> _candleType;
+		private readonly StrategyParam<int> _adxThreshold;
+		private readonly StrategyParam<decimal> _multiplier;
 
 		/// <summary>
 		/// ADX period
@@ -55,6 +57,24 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// ADX threshold for strong trend detection
+		/// </summary>
+		public int AdxThreshold
+		{
+			get => _adxThreshold.Value;
+			set => _adxThreshold.Value = value;
+		}
+
+		/// <summary>
+		 /// Multiplier for Donchian Channel border sensitivity (in percent, e.g. 0.1 for 0.1%)
+		 /// </summary>
+		public decimal Multiplier
+		{
+			get => _multiplier.Value;
+			set => _multiplier.Value = value;
+		}
+
+		/// <summary>
 		/// Constructor
 		/// </summary>
 		public AdxDonchianStrategy()
@@ -64,8 +84,8 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("ADX Period", "Period for ADX indicator", "Indicators")
 				.SetCanOptimize(true);
 
-			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetRange(10, 50)
+			_donchianPeriod = Param(nameof(DonchianPeriod), 5)
+				.SetRange(5, 50)
 				.SetDisplay("Donchian Period", "Period for Donchian Channel", "Indicators")
 				.SetCanOptimize(true);
 
@@ -76,6 +96,16 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+			_adxThreshold = Param(nameof(AdxThreshold), 10)
+				.SetRange(5, 40)
+				.SetDisplay("ADX Threshold", "ADX value for strong trend detection", "Indicators")
+				.SetCanOptimize(true);
+
+			_multiplier = Param(nameof(Multiplier), 0.1m)
+				.SetRange(0m, 1m)
+				.SetDisplay("Multiplier %", "Sensitivity to Donchian Channel border (percent)", "Indicators")
+				.SetCanOptimize(true);
 		}
 
 		/// <inheritdoc />
@@ -135,27 +165,30 @@ namespace StockSharp.Samples.Strategies
 			var price = candle.ClosePrice;
 
 			// Trading logic:
-			// Long: ADX > 25 && Price > Donchian upper band (strong trend with breakout up)
-			// Short: ADX > 25 && Price < Donchian lower band (strong trend with breakout down)
+			// Long: ADX > AdxThreshold && Price >= upperBorder (strong trend with breakout up)
+			// Short: ADX > AdxThreshold && Price <= lowerBorder (strong trend with breakout down)
 			
-			var strongTrend = typedAdx.MovingAverage > 25;
+			var strongTrend = typedAdx.MovingAverage > AdxThreshold;
 
-			if (strongTrend && price > upperBand && Position <= 0)
+			var upperBorder = upperBand * (1 - Multiplier / 100);
+			var lowerBorder = lowerBand * (1 + Multiplier / 100);
+
+			if (strongTrend && price >= upperBorder && Position <= 0)
 			{
-				// Buy signal - Strong trend with Donchian Channel breakout up
+				// Buy signal - Strong trend with Donchian Channel breakout up (with multiplier)
 				var volume = Volume + Math.Abs(Position);
 				BuyMarket(volume);
 			}
-			else if (strongTrend && price < lowerBand && Position >= 0)
+			else if (strongTrend && price <= lowerBorder && Position >= 0)
 			{
-				// Sell signal - Strong trend with Donchian Channel breakout down
+				// Sell signal - Strong trend with Donchian Channel breakout down (with multiplier)
 				var volume = Volume + Math.Abs(Position);
 				SellMarket(volume);
 			}
 			// Exit conditions - ADX weakness
-			else if (Position != 0 && typedAdx.MovingAverage < 20)
+			else if (Position != 0 && typedAdx.MovingAverage < AdxThreshold - 5)
 			{
-				// Exit position when ADX falls below 20 (trend weakening)
+				// Exit position when ADX falls below (threshold - 5)
 				if (Position > 0)
 					SellMarket(Position);
 				else

@@ -93,7 +93,7 @@ namespace StockSharp.Samples.Strategies
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 
-			_deviationMultiplier = Param(nameof(DeviationMultiplier), 2.0m)
+			_deviationMultiplier = Param(nameof(DeviationMultiplier), 1.0m)
 				.SetGreaterThanZero()
 				.SetDisplay("Deviation Multiplier", "Multiplier for standard deviation to determine entry threshold", "Strategy Parameters")
 				.SetCanOptimize(true)

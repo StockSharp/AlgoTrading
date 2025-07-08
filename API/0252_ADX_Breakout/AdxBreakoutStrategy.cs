@@ -87,11 +87,11 @@ namespace StockSharp.Samples.Strategies
 				.SetCanOptimize(true)
 				.SetOptimize(10, 50, 5);
 			
-			_multiplier = Param(nameof(Multiplier), 2.0m)
+			_multiplier = Param(nameof(Multiplier), 0.1m)
 				.SetGreaterThanZero()
 				.SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
 				.SetCanOptimize(true)
-				.SetOptimize(1.0m, 3.0m, 0.5m);
+				.SetOptimize(0.0m, 1.0m, 0.1m);
 			
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");

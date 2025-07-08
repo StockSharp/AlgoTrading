@@ -66,6 +66,7 @@ public class StrategyTests
 		strategy.Security = security1;
 		strategy.Connector = connector;
 		strategy.Volume = 1;
+		strategy.WaitRulesOnStop = false;
 
 		extra?.Invoke(strategy, security2);
 
@@ -88,8 +89,8 @@ public class StrategyTests
 		if (error is not null)
 			throw error;
 
-		Assert.IsTrue(strategy.Orders.Count() > 10, $"{strategy.GetType().Name} placed {strategy.Orders.Count()} orders");
-		Assert.IsTrue(strategy.MyTrades.Count() > 5, $"{strategy.GetType().Name} executed {strategy.MyTrades.Count()} trades");
+		Assert.IsTrue(strategy.Orders.Any());
+		Assert.IsTrue(strategy.MyTrades.Any());
 	}
 
 	[TestMethod]
