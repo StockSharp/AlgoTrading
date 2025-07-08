@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class PairsTradingVolatilityFilterStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _security1;
 		private readonly StrategyParam<Security> _security2;
 		private readonly StrategyParam<int> _lookbackPeriod;
 		private readonly StrategyParam<decimal> _entryThreshold;
@@ -46,8 +45,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Security Security1
 		{
-			get => _security1.Value;
-			set => _security1.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 		
 		/// <summary>
@@ -100,9 +99,6 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public PairsTradingVolatilityFilterStrategy()
 		{
-			_security1 = Param<Security>(nameof(Security1))
-				.SetDisplay("First Security", "First security of the pair", "Parameters");
-				
 			_security2 = Param<Security>(nameof(Security2))
 				.SetDisplay("Second Security", "Second security of the pair", "Parameters");
 				

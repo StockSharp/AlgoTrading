@@ -15,9 +15,7 @@ namespace StockSharp.Samples.Strategies
 	public class BetaAdjustedPairsStrategy : Strategy
 	{
 		// Strategy parameters
-		private readonly StrategyParam<Security> _asset1Param;
 		private readonly StrategyParam<Security> _asset2Param;
-		private readonly StrategyParam<Portfolio> _asset1PortfolioParam;
 		private readonly StrategyParam<Portfolio> _asset2PortfolioParam;
 		private readonly StrategyParam<decimal> _betaAsset1Param;
 		private readonly StrategyParam<decimal> _betaAsset2Param;
@@ -43,8 +41,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Security Asset1
 		{
-			get => _asset1Param.Value;
-			set => _asset1Param.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 
 		/// <summary>
@@ -61,8 +59,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Portfolio Asset1Portfolio
 		{
-			get => _asset1PortfolioParam.Value;
-			set => _asset1PortfolioParam.Value = value;
+			get => Portfolio;
+			set => Portfolio = value;
 		}
 
 		/// <summary>
@@ -124,16 +122,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public BetaAdjustedPairsStrategy()
 		{
-			_asset1Param = Param(nameof(Asset1), (Security)null)
-				.SetDisplay("Asset 1", "Primary asset for pairs trading", "Assets")
-				.SetRequired();
-				
 			_asset2Param = Param(nameof(Asset2), (Security)null)
 				.SetDisplay("Asset 2", "Secondary asset for pairs trading", "Assets")
-				.SetRequired();
-				
-			_asset1PortfolioParam = Param(nameof(Asset1Portfolio), (Portfolio)null)
-				.SetDisplay("Asset 1 Portfolio", "Portfolio for trading Asset 1", "Portfolios")
 				.SetRequired();
 				
 			_asset2PortfolioParam = Param(nameof(Asset2Portfolio), (Portfolio)null)
