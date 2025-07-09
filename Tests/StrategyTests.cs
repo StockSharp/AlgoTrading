@@ -91,6 +91,23 @@ public class StrategyTests
 
 		Assert.IsTrue(strategy.Orders.Any());
 		Assert.IsTrue(strategy.MyTrades.Any());
+
+		 // Check the distribution of trades over the entire period
+		var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);
+		var lastTradeTime = strategy.MyTrades.Max(t => t.Trade.ServerTime);
+
+		// The time of the first and last trade should not be too close to the start/end of the period
+		var totalPeriod = (stopTime - startTime).TotalSeconds;
+		var firstOffset = (firstTradeTime - startTime).TotalSeconds / totalPeriod;
+		var lastOffset = (stopTime - lastTradeTime).TotalSeconds / totalPeriod;
+
+		 // The first trade should not be later than 15% from the start, the last not earlier than 15% before the end
+		Assert.IsTrue(firstOffset < 0.85, $"First trade too late: {firstTradeTime}");
+		Assert.IsTrue(lastOffset < 0.85, $"Last trade too early: {lastTradeTime}");
+
+		 // Trades should be distributed over at least 70% of the period
+		var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
+		Assert.IsTrue(tradesSpan > 0.7, $"Trades are not distributed enough: {tradesSpan:P0}");
 	}
 
 	[TestMethod]
