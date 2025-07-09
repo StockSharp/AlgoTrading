@@ -2,6 +2,7 @@ namespace StockSharp.Tests;
 
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -108,6 +109,22 @@ public class StrategyTests
 		 // Trades should be distributed over at least 70% of the period
 		var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
 		Assert.IsTrue(tradesSpan > 0.7, $"Trades are not distributed enough: {tradesSpan:P0}");
+
+		var onStarted = typeof(Strategy).GetMethod("OnStarted", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(DateTimeOffset)]);
+		onStarted.Invoke(strategy, [DateTimeOffset.UtcNow]);
+
+		var clone = (T)TypeHelper.CreateInstance(typeof(T));
+
+		foreach (var field in strategy.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
+		{
+			if (field.GetValue(strategy) is IStrategyParam sp)
+			{
+				var cloneParam = (IStrategyParam)field.GetValue(clone);
+				Assert.AreEqual(sp.Value, cloneParam.Value);
+			}
+			else
+				Assert.AreEqual(field.GetValue(strategy), field.GetValue(clone));
+		}
 	}
 
 	[TestMethod]
