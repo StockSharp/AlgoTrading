@@ -7,9 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Ecng.Common;
+using Ecng.Serialization;
+using Ecng.UnitTesting;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Storages;
 using StockSharp.Algo.Strategies;
 using StockSharp.Algo.Testing;
@@ -21,7 +24,29 @@ using StockSharp.Samples.Strategies;
 [TestClass]
 public class StrategyTests
 {
-	private static readonly MarketDataStorageCache _cache = new();
+	private readonly static MarketDataStorageCache _cache = new();
+
+	[ClassInitialize]
+	public static void Setup(TestContext _)
+	{
+		var drive = new LocalMarketDataDrive(Paths.HistoryDataPath);
+		var storageRegistry = new StorageRegistry { DefaultDrive = drive };
+
+		SecurityId[] secIds = [Paths.HistoryDefaultSecurity.ToSecurityId(), Paths.HistoryDefaultSecurity2.ToSecurityId()];
+		var dts = secIds.SelectMany(id => drive.GetAvailableDataTypes(id, StorageFormats.Binary)).Where(dt => dt.IsTFCandles).ToArray();
+		var days = Paths.HistoryBeginDate.Range(Paths.HistoryEndDate, TimeSpan.FromDays(1)).ToArray();
+
+		foreach (var day in days)
+		{
+			foreach (var secId in secIds)
+			{
+				foreach (var dt in dts)
+				{
+					_cache.GetMessages(secId, dt, day, date => [.. storageRegistry.GetStorage(secId, dt).Load(date)]);
+				}
+			}
+		}
+	}
 
 	private static async Task RunStrategy<T>(Action<T, Security> extra = null)
 		where T : Strategy
@@ -53,7 +78,7 @@ public class StrategyTests
 			{
 				StartDate = startTime,
 				StopDate = stopTime,
-				//AdapterCache = _cache,
+				StorageCache = _cache,
 			}
 		};
 
@@ -90,8 +115,8 @@ public class StrategyTests
 		if (error is not null)
 			throw error;
 
-		Assert.IsTrue(strategy.Orders.Any());
-		Assert.IsTrue(strategy.MyTrades.Any());
+		strategy.Orders.Any().AssertTrue();
+		strategy.MyTrades.Any().AssertTrue();
 
 		 // Check the distribution of trades over the entire period
 		var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);
@@ -102,28 +127,50 @@ public class StrategyTests
 		var firstOffset = (firstTradeTime - startTime).TotalSeconds / totalPeriod;
 		var lastOffset = (stopTime - lastTradeTime).TotalSeconds / totalPeriod;
 
-		 // The first trade should not be later than 15% from the start, the last not earlier than 15% before the end
-		Assert.IsTrue(firstOffset < 0.85, $"First trade too late: {firstTradeTime}");
-		Assert.IsTrue(lastOffset < 0.85, $"Last trade too early: {lastTradeTime}");
+		// The first trade should not be later than 15% from the start, the last not earlier than 15% before the end
+		(firstOffset < 0.85).AssertTrue($"First trade too late: {firstTradeTime}");
+		(lastOffset < 0.85).AssertTrue($"Last trade too early: {lastTradeTime}");
 
 		 // Trades should be distributed over at least 70% of the period
 		var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
-		Assert.IsTrue(tradesSpan > 0.7, $"Trades are not distributed enough: {tradesSpan:P0}");
+		(tradesSpan > 0.7).AssertTrue($"Trades are not distributed enough: {tradesSpan:P0}");
 
 		var onStarted = typeof(Strategy).GetMethod("OnStarted", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(DateTimeOffset)]);
 		onStarted.Invoke(strategy, [DateTimeOffset.UtcNow]);
 
 		var clone = (T)TypeHelper.CreateInstance(typeof(T));
+		clone.Connector = connector;
+		onStarted.Invoke(clone, [DateTimeOffset.UtcNow]);
+
+		static void validateSettingsStorage(SettingsStorage s1, SettingsStorage s2)
+		{
+			s1.Count.AreEqual(s2.Count);
+
+			foreach (var (k, v) in s1)
+			{
+				if (v is SettingsStorage v1)
+					validateSettingsStorage(v1, (SettingsStorage)s2[k]);
+				else if (k != nameof(IIndicator.Id))
+					v.AreEqual(s2[k]);
+			}
+		}
 
 		foreach (var field in strategy.GetType().GetFields(BindingFlags.Instance | BindingFlags.NonPublic))
 		{
-			if (field.GetValue(strategy) is IStrategyParam sp)
+			var fv = field.GetValue(strategy);
+			var fv2 = field.GetValue(clone);
+
+			if (fv is IStrategyParam sp)
 			{
-				var cloneParam = (IStrategyParam)field.GetValue(clone);
-				Assert.AreEqual(sp.Value, cloneParam.Value);
+				var cloneParam = (IStrategyParam)fv2;
+				sp.Value.AreEqual(cloneParam.Value);
+			}
+			else if (fv is IIndicator i)
+			{
+				validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save());
 			}
 			else
-				Assert.AreEqual(field.GetValue(strategy), field.GetValue(clone));
+				fv.AreEqual(fv2);
 		}
 	}
 
