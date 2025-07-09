@@ -3,6 +3,7 @@ namespace StockSharp.Tests;
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Collections;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -169,6 +170,8 @@ public class StrategyTests
 			{
 				validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save());
 			}
+			else if (fv is IEnumerable e)
+				e.Cast<object>().ToArray().AssertEqual([.. ((IEnumerable)fv2).Cast<object>()]);
 			else
 				fv.AreEqual(fv2);
 		}
