@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -23,6 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal? _highestDelta;
 		private decimal? _lowestDelta;
 		private int _barCount;
+		private readonly Queue<decimal> _deltaWindow = new();
 
 		/// <summary>
 		/// Lookback Period for highest/lowest delta
@@ -72,6 +74,7 @@ namespace StockSharp.Samples.Strategies
 			_highestDelta = null;
 			_lowestDelta = null;
 			_barCount = 0;
+			_deltaWindow.Clear();
 
 			// Create subscription for both candles and ticks
 			var candleSubscription = SubscribeCandles(CandleType);
@@ -120,32 +123,22 @@ namespace StockSharp.Samples.Strategies
 				
 			// Increment bar counter
 			_barCount++;
-			
-			// Update highest and lowest values if within lookback period
-			if (_barCount <= LookbackPeriod)
+
+			// Update rolling window
+			_deltaWindow.Enqueue(_cumulativeDelta);
+			if (_deltaWindow.Count > LookbackPeriod)
+				_deltaWindow.Dequeue();
+
+			if (_deltaWindow.Count < LookbackPeriod)
 			{
-				if (_highestDelta == null || _cumulativeDelta > _highestDelta)
-					_highestDelta = _cumulativeDelta;
-				if (_lowestDelta == null || _cumulativeDelta < _lowestDelta)
-					_lowestDelta = _cumulativeDelta;
-				
-				// Need at least lookback period bars before trading
-				if (_barCount < LookbackPeriod)
-					return;
+				_highestDelta = _deltaWindow.Max();
+				_lowestDelta = _deltaWindow.Min();
+				return;
 			}
-			else
-			{
-				// After lookback period, use rolling window for highest/lowest (approximation)
-				if (_highestDelta == null || _cumulativeDelta > _highestDelta * 0.95m)
-					_highestDelta = _cumulativeDelta;
-				else
-					_highestDelta *= 0.95m;
-				if (_lowestDelta == null || _cumulativeDelta < _lowestDelta * 1.05m)
-					_lowestDelta = _cumulativeDelta;
-				else
-					_lowestDelta *= 1.05m;
-			}
-			
+
+			_highestDelta = _deltaWindow.Max();
+			_lowestDelta = _deltaWindow.Min();
+
 			// Log current values
 			LogInfo($"Candle Close: {candle.ClosePrice}, Cumulative Delta: {_cumulativeDelta}");
 			LogInfo($"Highest Delta: {_highestDelta}, Lowest Delta: {_lowestDelta}");
@@ -156,18 +149,12 @@ namespace StockSharp.Samples.Strategies
 			{
 				LogInfo($"Buy Signal: Cumulative Delta ({_cumulativeDelta}) breaking above highest ({_highestDelta})");
 				BuyMarket(Volume + Math.Abs(Position));
-				
-				// Update highest after breakout
-				_highestDelta = _cumulativeDelta;
 			}
 			// Short: Cumulative Delta breaks below lowest
 			else if (_lowestDelta.HasValue && _cumulativeDelta < _lowestDelta && Position >= 0)
 			{
 				LogInfo($"Sell Signal: Cumulative Delta ({_cumulativeDelta}) breaking below lowest ({_lowestDelta})");
 				SellMarket(Volume + Math.Abs(Position));
-				
-				// Update lowest after breakout
-				_lowestDelta = _cumulativeDelta;
 			}
 			
 			// Exit logic: Cumulative Delta crosses zero

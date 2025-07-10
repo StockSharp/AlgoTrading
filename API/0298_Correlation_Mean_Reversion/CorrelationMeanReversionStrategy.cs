@@ -147,7 +147,17 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_currentCorrelation = 0;
+			_averageCorrelation = 0;
+			_correlationStdDeviation = 0;
+			_security1LastPrice = 0;
+			_security2LastPrice = 0;
+			_security1Updated = false;
+			_security2Updated = false;
+			_security1Prices.Clear();
+			_security2Prices.Clear();
+
 			if (Security1 == null)
 				throw new InvalidOperationException("First security is not specified.");
 				
@@ -245,12 +255,15 @@ namespace StockSharp.Samples.Strategies
 			// Process indicators
 			_averageCorrelation = _correlationSma.Process(_currentCorrelation, time, isFinal).ToDecimal();
 			_correlationStdDeviation = _correlationStdDev.Process(_currentCorrelation, time, isFinal).ToDecimal();
+
+			if (_correlationStdDeviation == 0)
+				return;
 			
 			// Check for trading signals
 			CheckSignal();
 		}
 		
-		private decimal CalculateCorrelationCoefficient(decimal[] series1, decimal[] series2)
+		private static decimal CalculateCorrelationCoefficient(decimal[] series1, decimal[] series2)
 		{
 			// Need at least two points for correlation
 			if (series1.Length < 2 || series1.Length != series2.Length)
@@ -278,8 +291,10 @@ namespace StockSharp.Samples.Strategies
 			// Avoid division by zero
 			if (sum1 == 0 || sum2 == 0)
 				return 0;
-			
-			return sum12 / (decimal)Math.Sqrt((double)(sum1 * sum2));
+
+			var demom = (decimal)Math.Sqrt((double)(sum1 * sum2));
+
+			return demom == 0 ? 0 : sum12 / demom;
 		}
 		
 		private void CheckSignal()
