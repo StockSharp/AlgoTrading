@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using StockSharp.Algo.Strategies;
+using StockSharp.Algo.Indicators;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
@@ -73,7 +74,7 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 			
 			// Create a simple moving average indicator
-			var sma = new StockSharp.Algo.Indicators.SimpleMovingAverage { Length = MaPeriod };
+			var sma = new SimpleMovingAverage { Length = MaPeriod };
 			
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
