@@ -23,9 +23,9 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _stopLossPercent;
 		
 		// Variables to store swing high and low
-		private decimal _swingHigh = decimal.MinValue;
-		private decimal _swingLow = decimal.MaxValue;
-		private bool _trendIsUp = false;
+		private decimal? _swingHigh;
+		private decimal? _swingLow;
+		private bool _trendIsUp;
 		
 		// Store recent candles for swing detection
 		private readonly Queue<ICandleMessage> _recentCandles = [];
@@ -105,8 +105,8 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Reset values
-			_swingHigh = decimal.MinValue;
-			_swingLow = decimal.MaxValue;
+			_swingHigh = null;
+			_swingLow = null;
 			_trendIsUp = false;
 			_recentCandles.Clear();
 
@@ -210,7 +210,7 @@ namespace StockSharp.Samples.Strategies
 				}
 
 				// If we found a swing high or low
-				if (isHigher && middleHigh > _swingHigh)
+				if (isHigher && (!_swingHigh.HasValue || middleHigh > _swingHigh.Value))
 				{
 					_swingHigh = middleHigh;
 					swingHighFound = true;
@@ -218,7 +218,7 @@ namespace StockSharp.Samples.Strategies
 					LogInfo($"New swing high found: {_swingHigh}");
 				}
 
-				if (isLower && middleLow < _swingLow)
+				if (isLower && (!_swingLow.HasValue || middleLow < _swingLow.Value))
 				{
 					_swingLow = middleLow;
 					swingLowFound = true;
@@ -228,25 +228,27 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// If we found both a new swing high and low, use the most recent one
-			if (swingHighFound && swingLowFound)
+			if (swingHighFound && swingLowFound && _swingHigh.HasValue && _swingLow.HasValue)
 			{
 				var lastCandle = candles.Last();
-				_trendIsUp = lastCandle.ClosePrice > ((_swingHigh + _swingLow) / 2);
+				_trendIsUp = lastCandle.ClosePrice > ((_swingHigh.Value + _swingLow.Value) / 2);
 			}
 		}
 
 		private void CheckForEntrySignals(ICandleMessage candle)
 		{
 			// Need valid swing points to calculate Fibonacci levels
-			if (_swingHigh <= _swingLow || _swingHigh == decimal.MinValue || _swingLow == decimal.MaxValue)
+			if (!_swingHigh.HasValue || !_swingLow.HasValue || _swingHigh.Value <= _swingLow.Value)
 				return;
 
+			var swingHigh = _swingHigh.Value;
+			var swingLow = _swingLow.Value;
 			var currentPrice = candle.ClosePrice;
 			var isBullish = candle.ClosePrice > candle.OpenPrice;
 			var isBearish = candle.ClosePrice < candle.OpenPrice;
 
 			// Calculate Fibonacci retracement levels
-			decimal range = _swingHigh - _swingLow;
+			decimal range = swingHigh - swingLow;
 			
 			// Check if price is near a Fibonacci retracement level
 			foreach (var fibLevel in _fibLevels)
@@ -257,12 +259,12 @@ namespace StockSharp.Samples.Strategies
 				if (_trendIsUp)
 				{
 					// For uptrend, calculate retracement levels from swing low
-					levelPrice = _swingLow + (range * fibLevel);
+					levelPrice = swingLow + (range * fibLevel);
 				}
 				else
 				{
 					// For downtrend, calculate retracement levels from swing high
-					levelPrice = _swingHigh - (range * fibLevel);
+					levelPrice = swingHigh - (range * fibLevel);
 				}
 
 				// Calculate buffer around Fibonacci level
@@ -299,8 +301,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Exit logic - exit when price reaches the central Fibonacci level (50%)
 			decimal centralLevel = _trendIsUp ? 
-				_swingLow + (range * 0.5m) : 
-				_swingHigh - (range * 0.5m);
+				swingLow + (range * 0.5m) : 
+				swingHigh - (range * 0.5m);
 			
 			if (Position > 0 && currentPrice >= centralLevel)
 			{

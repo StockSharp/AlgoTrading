@@ -245,18 +245,24 @@ namespace StockSharp.Samples.Strategies
 			var normalizedRsi = _rsiValues.Last() / 100m;  // RSI is already 0-100
 			
 			// Find min/max for price normalization
-			decimal minPrice = decimal.MaxValue;
-			decimal maxPrice = decimal.MinValue;
+			decimal? minPrice = null;
+			decimal? maxPrice = null;
 			
 			foreach (var price in _priceValues)
 			{
-				minPrice = Math.Min(minPrice, price);
-				maxPrice = Math.Max(maxPrice, price);
+				if (minPrice == null || price < minPrice.Value)
+					minPrice = price;
+				if (maxPrice == null || price > maxPrice.Value)
+					maxPrice = price;
 			}
 			
 			// Normalize the last price
-			var priceRange = maxPrice - minPrice;
-			var normalizedPrice = priceRange == 0 ? 0.5m : (_priceValues.Last() - minPrice) / priceRange;
+			decimal normalizedPrice = 0.5m;
+			if (minPrice.HasValue && maxPrice.HasValue && maxPrice.Value != minPrice.Value)
+			{
+				var priceRange = maxPrice.Value - minPrice.Value;
+				normalizedPrice = (_priceValues.Last() - minPrice.Value) / priceRange;
+			}
 			
 			// Simple rules-based clustering (simplified K-means approximation)
 			// Oversold: Low RSI (< 30) and price near bottom of range

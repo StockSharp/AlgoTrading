@@ -31,8 +31,6 @@ namespace StockSharp.Samples.Strategies
 		
 		private decimal _lastPrice1;
 		private decimal _lastPrice2;
-		private Subscription _tickSubscription1;
-		private Subscription _tickSubscription2;
 		
 		// Indicators
 		private AverageTrueRange _atr;
@@ -126,18 +124,30 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			if (Security1 != null && Security2 != null)
-			{
-				yield return (Security1, TimeSpan.FromMinutes(5).TimeFrame());
-				yield return (Security2, TimeSpan.FromMinutes(5).TimeFrame());
-			}
+			var dt = TimeSpan.FromMinutes(5).TimeFrame();
+
+			if (Security1 != null)
+				yield return (Security1, dt);
+
+			if (Security2 != null)
+				yield return (Security2, dt);
 		}
-		
+
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_currentAtr = 0;
+			_averageAtr = 0;
+			_currentSpread = 0;
+			_previousSpread = 0;
+			_averageSpread = 0;
+			_standardDeviation = 0;
+			_entryPrice = 0;
+			_lastPrice1 = 0;
+			_lastPrice2 = 0;
+
 			if (Security1 == null)
 				throw new InvalidOperationException("First security is not specified.");
 				
@@ -158,13 +168,14 @@ namespace StockSharp.Samples.Strategies
 			var subscription2 = SubscribeCandles(TimeSpan.FromMinutes(5), false, Security2);
 			
 			// Subscribe to ticks for both securities to track last prices
-			_tickSubscription1 = new Subscription(DataType.Ticks, Security1);
-			_tickSubscription2 = new Subscription(DataType.Ticks, Security2);
 			
-			Subscribe(_tickSubscription1);
-			Subscribe(_tickSubscription2);
+			SubscribeTicks(Security1)
+				.Bind(tick => _lastPrice1 = tick.Price)
+				.Start();
 
-			TickTradeReceived += OnTickTradeReceived;
+			SubscribeTicks(Security2)
+				.Bind(tick => _lastPrice2 = tick.Price)
+				.Start();
 			
 			// Process data and calculate spread
 			subscription1
@@ -189,14 +200,6 @@ namespace StockSharp.Samples.Strategies
 				new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss in percent
 				false // No trailing stop
 			);
-		}
-		
-		private void OnTickTradeReceived(Subscription subscription, ITickTradeMessage tick)
-		{
-			if (subscription == _tickSubscription1)
-				_lastPrice1 = tick.Price;
-			else if (subscription == _tickSubscription2)
-				_lastPrice2 = tick.Price;
 		}
 		
 		private decimal CalculateVolumeRatio()
@@ -254,6 +257,10 @@ namespace StockSharp.Samples.Strategies
 				
 			// Check if indicators are formed
 			if (!_spreadSma.IsFormed || !_stdDev.IsFormed || !_atrSma.IsFormed)
+				return;
+
+			// Prevent division by zero
+			if (_standardDeviation == 0)
 				return;
 				
 			// Calculate Z-score for spread

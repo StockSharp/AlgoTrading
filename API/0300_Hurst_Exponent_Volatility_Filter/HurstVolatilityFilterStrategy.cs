@@ -168,8 +168,9 @@ namespace StockSharp.Samples.Strategies
 				return;
 			
 			// Process Hurst exponent
-			var hurstValue = CalculateHurstExponentValue(candle);
-			
+			if (CalculateHurstExponentValue(candle) is not decimal hurstValue)
+				return;
+
 			// Update average ATR
 			UpdateAverageAtr(atrValue);
 			
@@ -188,14 +189,14 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 		
-		private decimal CalculateHurstExponentValue(ICandleMessage candle)
+		private decimal? CalculateHurstExponentValue(ICandleMessage candle)
 		{
 			// In a real implementation, this would use R/S analysis or other methods
 			// to calculate the Hurst exponent. For this example, we'll use a placeholder
 			// logic that estimates the Hurst exponent based on recent price behavior.
 			
 			// Process current price through the displacement indicator
-			var hurstValue = _hurstExponent.Process(candle).ToDecimal();
+			var hurstValue = _hurstExponent.Process(candle).ToNullableDecimal();
 			
 			// For demonstration purposes - in a real implementation you'd use
 			// a proper Hurst exponent calculation library or algorithm
