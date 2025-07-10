@@ -128,7 +128,7 @@ public class StrategyTests
 		strategy.Orders.Any().AssertTrue();
 		strategy.MyTrades.Any().AssertTrue();
 
-		 // Check the distribution of trades over the entire period
+		// Check the distribution of trades over the entire period
 		var firstTradeTime = strategy.MyTrades.Min(t => t.Trade.ServerTime);
 		var lastTradeTime = strategy.MyTrades.Max(t => t.Trade.ServerTime);
 
@@ -141,7 +141,7 @@ public class StrategyTests
 		(firstOffset < 0.85).AssertTrue($"First trade too late: {firstTradeTime}");
 		(lastOffset < 0.85).AssertTrue($"Last trade too early: {lastTradeTime}");
 
-		 // Trades should be distributed over at least 70% of the period
+		// Trades should be distributed over at least 70% of the period
 		var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
 		(tradesSpan > 0.7).AssertTrue($"Trades are not distributed enough: {tradesSpan:P0}");
 
@@ -151,16 +151,16 @@ public class StrategyTests
 		var clone = createStrategy();
 		onStarted.Invoke(clone, [DateTimeOffset.UtcNow]);
 
-		static void validateSettingsStorage(SettingsStorage s1, SettingsStorage s2)
+		static void validateSettingsStorage(SettingsStorage s1, SettingsStorage s2, string name)
 		{
-			s1.Count.AreEqual(s2.Count);
+			s1.Count.AreEqual(s2.Count, name);
 
 			foreach (var (k, v) in s1)
 			{
 				if (v is SettingsStorage v1)
-					validateSettingsStorage(v1, (SettingsStorage)s2[k]);
+					validateSettingsStorage(v1, (SettingsStorage)s2[k], k);
 				else if (k != nameof(IIndicator.Id))
-					v.AreEqual(s2[k]);
+					v.AreEqual(s2[k], k);
 			}
 		}
 
@@ -172,16 +172,16 @@ public class StrategyTests
 			if (fv is IStrategyParam sp)
 			{
 				var cloneParam = (IStrategyParam)fv2;
-				sp.Value.AreEqual(cloneParam.Value);
+				sp.Value.AreEqual(cloneParam.Value, field.Name);
 			}
 			else if (fv is IIndicator i)
 			{
-				validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save());
+				validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save(), field.Name);
 			}
 			else if (fv is IEnumerable e)
-				e.Cast<object>().ToArray().AssertEqual([.. ((IEnumerable)fv2).Cast<object>()]);
+				e.Cast<object>().ToArray().AssertEqual([.. ((IEnumerable)fv2).Cast<object>()], field.Name);
 			else
-				fv.AreEqual(fv2);
+				fv.AreEqual(fv2, field.Name);
 		}
 	}
 
