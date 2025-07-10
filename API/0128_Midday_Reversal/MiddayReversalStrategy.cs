@@ -48,9 +48,6 @@ namespace StockSharp.Samples.Strategies
 			
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
-			
-			_prevCandleClose = 0;
-			_prevPrevCandleClose = 0;
 		}
 
 		/// <inheritdoc />
@@ -63,7 +60,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_prevCandleClose = 0;
+			_prevPrevCandleClose = 0;
+
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
 			subscription

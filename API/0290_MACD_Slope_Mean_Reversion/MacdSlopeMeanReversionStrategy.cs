@@ -150,6 +150,15 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			_previousHistogram = default;
+			_currentHistogramSlope = default;
+			_averageSlope = default;
+			_slopeStdDev = default;
+			_sampleCount = 0;
+			_sumSlopes = 0;
+			_sumSlopesSquared = 0;
+			_isFirstCalculation = true;
+
 			// Initialize indicators
 
 			_macd = new MovingAverageConvergenceDivergenceSignal

@@ -102,6 +102,7 @@ namespace StockSharp.Samples.Strategies
 			var cci = new CommodityChannelIndex { Length = CciPeriod };
 
 			// Reset state variables
+			_prevCciValue = 0;
 			_isFirstValue = true;
 			
 			// Enable position protection with stop-loss

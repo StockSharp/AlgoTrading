@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies
 
 		private SimpleMovingAverage _sma;
 		private decimal _currentPrice;
-		private Queue<decimal> _priceHistory;
+		private readonly Queue<decimal> _priceHistory = [];
 		private decimal _latestAutocorrelation;
 
 		/// <summary>
@@ -84,9 +84,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle type", "Type of candles to use", "General");
-
-			_priceHistory = [];
-			_latestAutocorrelation = 0;
 		}
 
 		/// <inheritdoc />
@@ -99,6 +96,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_priceHistory.Clear();
+			_latestAutocorrelation = default;
+			_currentPrice = default;
 
 			// Initialize the SMA indicator (using same period as autocorrelation for simplicity)
 			_sma = new SimpleMovingAverage { Length = AutoCorrPeriod };

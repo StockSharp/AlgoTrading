@@ -106,6 +106,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_previousHullValue = default;
+
 			// Initialize indicators
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 			var hullMA = new HullMovingAverage { Length = HullPeriod };

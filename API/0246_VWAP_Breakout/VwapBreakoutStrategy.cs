@@ -84,6 +84,10 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_currentAtr = default;
+			_currentVwap = default;
+			_currentPrice = default;
+
 			// Create ATR indicator
 			_atr = new AverageTrueRange { Length = AtrPeriod };
 			_vwap = new VolumeWeightedMovingAverage { Length = AtrPeriod };

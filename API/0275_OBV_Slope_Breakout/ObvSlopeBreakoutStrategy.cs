@@ -118,6 +118,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_lastObvSlope = default;
+			_lastObvValue = default;
+			_lastSlopeAvg = default;
+			_lastSlopeStdDev = default;
+
 			// Initialize indicators
 			_obv = new OnBalanceVolume();
 			_obvSlope = new LinearRegression { Length = SlopeLength };

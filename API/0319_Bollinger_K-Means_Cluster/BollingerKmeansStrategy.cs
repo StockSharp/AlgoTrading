@@ -116,6 +116,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_atrValue = default;
+			_currentClusterState = ClusterState.Neutral;
+			_rsiValues.Clear();
+			_priceValues.Clear();
+			_volumeValues.Clear();
+
 			// Create indicators
 			_bollinger = new BollingerBands
 			{

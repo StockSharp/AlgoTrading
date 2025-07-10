@@ -71,13 +71,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-			
-			_bullishCount = 0;
-			_bearishCount = 0;
-			_prevHaOpen = 0;
-			_prevHaClose = 0;
-			_prevHaHigh = 0;
-			_prevHaLow = 0;
 		}
 
 		/// <inheritdoc />
@@ -90,6 +83,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_bullishCount = default;
+			_bearishCount = default;
+			_prevHaOpen = default;
+			_prevHaClose = default;
+			_prevHaHigh = default;
+			_prevHaLow = default;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

@@ -106,6 +106,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_previousHullValue = default;
+
 			// Initialize indicators
 			var hullMA = new HullMovingAverage { Length = HullPeriod };
 			var cci = new CommodityChannelIndex { Length = CciPeriod };

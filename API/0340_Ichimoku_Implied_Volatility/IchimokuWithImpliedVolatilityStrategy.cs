@@ -123,7 +123,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_prevAboveKumo = default;
+			_prevTenkanAboveKijun = default;
+			_prevPrice = default;
+			_avgImpliedVolatility = default;
+			_impliedVolatilityHistory.Clear();
+
 			// Create Ichimoku indicator
 			var ichimoku = new Ichimoku
 			{

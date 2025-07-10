@@ -37,10 +37,6 @@ namespace StockSharp.Samples.Strategies
 		{
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
-				
-			_previousClosePrice = 0;
-			_previousVWAP = 0;
-			_isFirstCandle = true;
 		}
 
 		/// <inheritdoc />
@@ -53,6 +49,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_previousClosePrice = 0;
+			_previousVWAP = 0;
+			_isFirstCandle = true;
 
 			// Create VWAP indicator
 			var vwap = new VolumeWeightedMovingAverage();

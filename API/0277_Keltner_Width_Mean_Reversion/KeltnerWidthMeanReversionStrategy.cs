@@ -152,6 +152,13 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_lastEma = default;
+			_lastAtr = default;
+			_lastChannelWidth = default;
+			_lastWidthAvg = default;
+			_lastWidthStdDev = default;
+
+
 			// Initialize indicators
 			_ema = new ExponentialMovingAverage { Length = EmaPeriod };
 			_atr = new AverageTrueRange { Length = AtrPeriod };

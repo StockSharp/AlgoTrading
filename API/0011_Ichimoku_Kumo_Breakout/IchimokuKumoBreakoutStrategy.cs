@@ -84,11 +84,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_prevTenkanValue = 0;
-			_prevKijunValue = 0;
-			_prevIsTenkanAboveKijun = false;
-			_prevIsPriceAboveCloud = false;
 		}
 
 		/// <inheritdoc />
@@ -101,6 +96,11 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevTenkanValue = default;
+			_prevKijunValue = default;
+			_prevIsTenkanAboveKijun = default;
+			_prevIsPriceAboveCloud = default;
 
 			// Create Ichimoku indicator
 			var ichimoku = new Ichimoku

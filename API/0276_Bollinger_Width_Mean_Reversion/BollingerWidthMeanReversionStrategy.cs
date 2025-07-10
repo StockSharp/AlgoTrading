@@ -150,6 +150,9 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_lastWidthAvg = default;
+			_lastWidthStdDev = default;
+
 			// Initialize indicators
 			_bollinger = new BollingerBands
 			{

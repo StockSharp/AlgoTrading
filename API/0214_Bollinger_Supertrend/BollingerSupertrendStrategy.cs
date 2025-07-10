@@ -25,9 +25,9 @@ namespace StockSharp.Samples.Strategies
 		private BollingerBands _bollinger;
 		private AverageTrueRange _atr;
 		
-		private bool _isLongTrend = false;
-		private decimal _supertrendValue = 0;
-		private decimal _lastClose = 0;
+		private bool _isLongTrend;
+		private decimal _supertrendValue;
+		private decimal _lastClose;
 		
 		/// <summary>
 		/// Bollinger Bands period.
@@ -117,7 +117,12 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_isLongTrend = default;
+			_supertrendValue = default;
+			_lastClose = default;
+
+
 			// Initialize indicators
 			_bollinger = new BollingerBands
 			{

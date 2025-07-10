@@ -81,6 +81,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_prevAdxValue = default;
+
 			// Create ADX indicator
 			_adx = new() { Length = AdxPeriod };
 			_vwap = new() { Length = AdxPeriod };

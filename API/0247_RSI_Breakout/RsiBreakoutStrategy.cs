@@ -103,6 +103,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_prevRsiValue = default;
+			_currentRsiValue = default;
+			_currentRsiAvg = default;
+			_currentRsiStdDev = default;
+
 			// Create indicators
 			_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 			_rsiAverage = new SimpleMovingAverage { Length = AveragePeriod };

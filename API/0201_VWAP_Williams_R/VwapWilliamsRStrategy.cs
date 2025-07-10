@@ -77,6 +77,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_previousWilliamsR = default;
+
 			// Initialize indicators
 			var vwap = new VolumeWeightedMovingAverage();
 			var williamsR = new WilliamsR { Length = WilliamsRPeriod };

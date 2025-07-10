@@ -66,9 +66,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_prevSarValue = 0;
-			_prevIsPriceAboveSar = false;
 		}
 
 		/// <inheritdoc />
@@ -81,6 +78,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevSarValue = 0;
+			_prevIsPriceAboveSar = false;
 
 			// Create Parabolic SAR indicator
 			var parabolicSar = new ParabolicSar

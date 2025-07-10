@@ -88,7 +88,11 @@ namespace StockSharp.Samples.Strategies
 			// Initialize previous state
 			_prevIsSupertrendAbovePrice = null;
 			_isFirstUpdate = true;
-			
+			_prevHighest = 0;
+			_prevLowest = 0;
+			_prevSupertrend = 0;
+			_prevClose = 0;
+
 			// Create ATR indicator for Supertrend calculation
 			_atr = new AverageTrueRange { Length = Period };
 

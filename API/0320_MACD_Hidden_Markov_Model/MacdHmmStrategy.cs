@@ -126,6 +126,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_currentState = MarketState.Neutral;
+			_prevPrice = 0;
+			_priceChanges.Clear();
+			_volumes.Clear();
+
 			// Create MACD indicator
 
 			_macd = new MovingAverageConvergenceDivergenceSignal

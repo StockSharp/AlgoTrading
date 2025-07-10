@@ -129,10 +129,15 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 			
 			// Initialize flags
-			_isLong = false;
-			_isShort = false;
-			_prevHmaValue = 0;
-			
+			_isLong = default;
+			_isShort = default;
+			_prevHmaValue = default;
+			_currentAtr = default;
+			_currentIv = default;
+			_ivAverage = default;
+			_ivStdDev = default;
+			_impliedVolatilityHistory.Clear();
+
 			// Create indicators
 			var hma = new HullMovingAverage { Length = HmaPeriod };
 			var atr = new AverageTrueRange { Length = 14 }; // Fixed ATR period for stop-loss

@@ -95,8 +95,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_prevIsMacdAboveSignal = false;
 		}
 
 		/// <inheritdoc />
@@ -109,6 +107,8 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevIsMacdAboveSignal = false;
 
 			// Create MACD indicator with signal line
 

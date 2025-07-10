@@ -99,7 +99,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_lastZScore = default;
+
 			// Initialize indicators
 			_ma = new() { Length = LookbackPeriod };
 			_stdDev = new() { Length = LookbackPeriod };

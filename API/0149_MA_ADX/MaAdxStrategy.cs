@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _takeProfitAtrMultiplier;
 
 		private decimal _atrValue;
-		private bool _isFirstCandle = true;
+		private bool _isFirstCandle;
 
 		/// <summary>
 		/// MA period.
@@ -111,6 +111,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_atrValue = default;
+			_isFirstCandle = true;
 
 			// Create indicators
 			var ma = new SMA { Length = MaPeriod };

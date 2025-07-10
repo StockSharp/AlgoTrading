@@ -52,10 +52,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_prevClosePrice = 0;
-			_prevUpperBand = 0;
-			_prevLowerBand = 0;
 		}
 
 		/// <inheritdoc />
@@ -68,6 +64,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevClosePrice = default;
+			_prevUpperBand = default;
+			_prevLowerBand = default;
 
 			// Create indicators
 			var donchian = new DonchianChannels { Length = ChannelPeriod };

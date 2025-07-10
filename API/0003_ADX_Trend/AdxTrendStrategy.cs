@@ -97,10 +97,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_adxAboveThreshold = false;
-			_prevAdxValue = 0;
-			_prevMaValue = 0;
 		}
 
 		/// <inheritdoc />
@@ -113,6 +109,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_adxAboveThreshold = default;
+			_prevAdxValue = default;
+			_prevMaValue = default;
 
 			// Create indicators
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };

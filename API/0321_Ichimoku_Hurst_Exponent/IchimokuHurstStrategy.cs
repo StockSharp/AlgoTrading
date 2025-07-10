@@ -29,7 +29,7 @@ namespace StockSharp.Samples.Strategies
 		
 		// Data for Hurst exponent calculations
 		private readonly SynchronizedList<decimal> _prices = [];
-		private decimal _hurstExponent = 0.5m;
+		private decimal _hurstExponent;
 
 		/// <summary>
 		/// Tenkan-sen (conversion line) period.
@@ -129,6 +129,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prices.Clear();
+			_hurstExponent = 0.5m; // Default Hurst exponent value
 
 			// Create Ichimoku indicator
 			_ichimoku = new Ichimoku

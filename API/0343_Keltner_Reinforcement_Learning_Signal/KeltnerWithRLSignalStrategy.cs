@@ -133,11 +133,17 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
 			// Initialize RL state variables
-			_consecutiveWins = 0;
-			_consecutiveLosses = 0;
-			
+			_currentSignal = RLSignal.None;
+			_consecutiveWins = default;
+			_consecutiveLosses = default;
+			_lastPrice = default;
+			_previousEma = default;
+			_previousAtr = default;
+			_previousPrice = default;
+			_previousSignalPrice = default;
+
 			// Create Keltner Channels using EMA and ATR
 			var keltner = new KeltnerChannels
 			{

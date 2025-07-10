@@ -52,8 +52,6 @@ public class StrategyTests
 	private static async Task RunStrategy<T>(Action<T, Security> extra = null)
 		where T : Strategy
 	{
-		var strategy = (T)TypeHelper.CreateInstance(typeof(T));
-
 		//var logManager = new LogManager();
 		//logManager.Listeners.Add(new ConsoleLogListener());
 
@@ -83,19 +81,28 @@ public class StrategyTests
 			}
 		};
 
+		T createStrategy()
+		{
+			var s = (T)TypeHelper.CreateInstance(typeof(T));
+
+			s.Portfolio = pf;
+			s.Security = security1;
+			s.Connector = connector;
+			s.Volume = 1;
+			s.WaitRulesOnStop = false;
+
+			extra?.Invoke(s, security2);
+
+			return s;
+		}
+
+		var strategy = createStrategy();
+
 		connector.StateChanged2 += state =>
 		{
 			if (state == ChannelStates.Stopped)
 				strategy.Stop();
 		};
-
-		strategy.Portfolio = pf;
-		strategy.Security = security1;
-		strategy.Connector = connector;
-		strategy.Volume = 1;
-		strategy.WaitRulesOnStop = false;
-
-		extra?.Invoke(strategy, security2);
 
 		Exception error = null;
 		strategy.Error += (s, e) =>
@@ -109,7 +116,9 @@ public class StrategyTests
 
 		await connector.ConnectAsync(token);
 
-		var task = strategy.ExecAsync(null, token);
+		var (_, timeout) = token.CreateChildToken(TimeSpan.FromSeconds(30));
+
+		var task = strategy.ExecAsync(null, timeout);
 		connector.Start();
 		await task.AsTask();
 
@@ -139,8 +148,7 @@ public class StrategyTests
 		var onStarted = typeof(Strategy).GetMethod("OnStarted", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(DateTimeOffset)]);
 		onStarted.Invoke(strategy, [DateTimeOffset.UtcNow]);
 
-		var clone = (T)TypeHelper.CreateInstance(typeof(T));
-		clone.Connector = connector;
+		var clone = createStrategy();
 		onStarted.Invoke(clone, [DateTimeOffset.UtcNow]);
 
 		static void validateSettingsStorage(SettingsStorage s1, SettingsStorage s2)

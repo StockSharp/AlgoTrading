@@ -95,6 +95,9 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_previousHurstValue = default;
+			_currentPrice = default;
+
 			// Initialize the SMA indicator
 			_sma = new SimpleMovingAverage { Length = AveragePeriod };
 

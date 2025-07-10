@@ -128,6 +128,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_currentSpread = default;
+			_lastAsset1Price = default;
+			_lastAsset2Price = default;
+			_asset1Volume = default;
+			_asset2Volume = default;
+
 			if (Asset2Security == null)
 				throw new InvalidOperationException("Asset2Security is not specified.");
 

@@ -125,7 +125,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_lastSarValue = default;
+
 			// Initialize indicators
 			_ma = new() { Length = MaPeriod };
 			_parabolicSar = new ParabolicSar

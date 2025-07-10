@@ -78,7 +78,7 @@ namespace StockSharp.Samples.Strategies
 		// Variables to store previous high and low values for breakout detection
 		private decimal _prevUpperBand;
 		private decimal _prevLowerBand;
-		private bool _isFirstCalculation = true;
+		private bool _isFirstCalculation;
 
 		/// <summary>
 		/// Initialize strategy.
@@ -129,6 +129,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevLowerBand = default;
+			_prevUpperBand = default;
+			_isFirstCalculation = true;
 
 			// Create indicators
 			var donchian = new DonchianChannels { Length = DonchianPeriod };

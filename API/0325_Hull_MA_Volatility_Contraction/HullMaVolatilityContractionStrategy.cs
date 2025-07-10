@@ -104,6 +104,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_prevHmaValue = default;
+			_currentHmaValue = default;
+			_isLongPosition = false;
+			_isShortPosition = false;
+			_atrValues.Clear();
+
 			// Create indicators
 			_hma = new HullMovingAverage
 			{

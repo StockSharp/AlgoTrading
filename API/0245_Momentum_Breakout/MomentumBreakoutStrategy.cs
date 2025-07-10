@@ -102,6 +102,10 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_currentMomentum = default;
+			_momentumAvgValue = default;
+			_momentumStdDevValue = default;
+
 			// Create indicators
 			_momentum = new Momentum { Length = MomentumPeriod };
 			_momentumAverage = new SimpleMovingAverage { Length = AveragePeriod };

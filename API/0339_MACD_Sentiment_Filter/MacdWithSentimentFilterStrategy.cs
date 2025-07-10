@@ -137,9 +137,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_prevMacd = default;
+			_prevSignal = default;
+			_sentimentScore = default;
+
 			// Create MACD indicator
-			
+
 			var macd = new MovingAverageConvergenceDivergenceSignal
 			{
 				Macd =

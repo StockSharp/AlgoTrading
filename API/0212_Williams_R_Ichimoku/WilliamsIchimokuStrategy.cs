@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private WilliamsR _williamsR;
 		private Ichimoku _ichimoku;
 		
-		private decimal? _lastKijun = null;
+		private decimal? _lastKijun;
 		
 		/// <summary>
 		/// Williams %R indicator period.
@@ -114,7 +114,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_lastKijun = null;
+
 			// Initialize indicators
 			_williamsR = new WilliamsR
 			{

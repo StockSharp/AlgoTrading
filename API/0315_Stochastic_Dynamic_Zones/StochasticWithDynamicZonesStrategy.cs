@@ -146,9 +146,12 @@ namespace StockSharp.Samples.Strategies
 			subscription
 				.BindEx(stochastic, (candle, stochValue) =>
 				{
-					// Extract %K value
-					var stochK = stochValue.ToDecimal();
+					var stochTyped = (StochasticOscillatorValue)stochValue;
 					
+					// Extract %K value
+					if (stochTyped.K is not decimal stochK)
+						return;
+
 					// Calculate dynamic zones
 					var stochKAvg = stochSma.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					var stochKStdDev = stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();

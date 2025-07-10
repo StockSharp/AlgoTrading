@@ -66,9 +66,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_prevIsPriceAboveSupertrend = false;
-			_prevSupertrendValue = 0;
 		}
 
 		/// <inheritdoc />
@@ -81,6 +78,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevIsPriceAboveSupertrend = false;
+			_prevSupertrendValue = 0;
 
 			// Create custom supertrend indicator
 			// Since StockSharp doesn't have a built-in Supertrend indicator,

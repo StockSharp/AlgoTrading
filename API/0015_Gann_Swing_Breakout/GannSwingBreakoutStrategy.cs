@@ -74,13 +74,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
-			_lastSwingHigh = null;
-			_lastSwingLow = null;
-			_highBarIndex = 0;
-			_lowBarIndex = 0;
-			_currentBarIndex = 0;
-			_prevMaValue = 0;
 		}
 
 		/// <inheritdoc />
@@ -93,6 +86,16 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_lastSwingHigh = default;
+			_lastSwingLow = default;
+			_highBarIndex = default;
+			_lowBarIndex = default;
+			_currentBarIndex = default;
+			_prevMaValue = default;
+			_recentHighs.Clear();
+			_recentLows.Clear();
+			_recentCandles.Clear();
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MaPeriod };

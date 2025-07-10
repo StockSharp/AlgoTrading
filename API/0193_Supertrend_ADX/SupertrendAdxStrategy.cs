@@ -106,9 +106,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-			_lastSupertrend = 0;
-			_isAboveSupertrend = false;
 		}
 
 		/// <inheritdoc />
@@ -121,6 +118,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_lastSupertrend = 0;
+			_isAboveSupertrend = false;
 
 			// Create indicators
 			var atr = new AverageTrueRange { Length = SupertrendPeriod };

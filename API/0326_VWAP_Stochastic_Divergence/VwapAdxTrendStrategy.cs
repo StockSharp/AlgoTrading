@@ -100,6 +100,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_vwapValue = default;
+			_adxValue = default;
+			_plusDiValue = default;
+			_minusDiValue = default;
+
 			// Create indicators
 			_vwap = new VolumeWeightedMovingAverage();
 			

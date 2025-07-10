@@ -32,7 +32,7 @@ namespace StockSharp.Samples.Strategies
 		private int _sampleCount;
 		private decimal _sumSlopes;
 		private decimal _sumSlopesSquared;
-		private Queue<decimal> _slopeBuffer; // buffer for last N slopes
+		private readonly Queue<decimal> _slopeBuffer = []; // buffer for last N slopes
 
 		/// <summary>
 		/// OBV SMA Period.
@@ -133,7 +133,7 @@ namespace StockSharp.Samples.Strategies
 			_sumSlopes = 0;
 			_sumSlopesSquared = 0;
 			_isFirstCalculation = true;
-			_slopeBuffer = new Queue<decimal>(LookbackPeriod);
+			_slopeBuffer.Clear();
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

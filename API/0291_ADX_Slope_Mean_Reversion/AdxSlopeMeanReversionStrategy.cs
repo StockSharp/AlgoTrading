@@ -130,6 +130,11 @@ namespace StockSharp.Samples.Strategies
 			_sumSlopesSquared = 0;
 			_isFirstCalculation = true;
 
+			_previousAdx = 0;
+			_currentAdxSlope = 0;
+			_averageSlope = 0;
+			_slopeStdDev = 0;
+
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription

@@ -129,9 +129,13 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 			
 			// Initialize flags
-			_isLong = false;
-			_isShort = false;
-			
+			_pcrHistory.Clear();
+			_isLong = default;
+			_isShort = default;
+			_currentPcr = default;
+			_pcrAverage = default;
+			_pcrStdDev = default;
+
 			// Create Supertrend indicator
 			var supertrend = new SuperTrend { Length = Period, Multiplier = Multiplier };
 			

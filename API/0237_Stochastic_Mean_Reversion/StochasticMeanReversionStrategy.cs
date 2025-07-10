@@ -132,6 +132,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_prevStochKValue = default;
+
 			// Create indicators
 			_stochastic = new() 
 			{

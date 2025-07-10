@@ -145,8 +145,11 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			_prevMacdHistSmaValue = default;
+			_prevMacdHistValue = default;
+
 			// Initialize indicators
-			
+
 			_macd = new MovingAverageConvergenceDivergenceSignal
 			{
 				Macd =

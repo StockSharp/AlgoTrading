@@ -128,6 +128,10 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_prevStochAverage = default;
+			_prevStochStdDev = default;
+			_prevStochValue = default;
+
 			// Initialize indicators
 			_stochastic = new StochasticOscillator
 			{
@@ -165,7 +169,7 @@ namespace StockSharp.Samples.Strategies
 			);
 		}
 
-		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue value)
+		private void ProcessStochastic(ICandleMessage candle, IIndicatorValue stochValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -176,16 +180,18 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Get stochastic value (K line)
-			var stochValue = value.ToDecimal();
-			
+			var stochTyped = (StochasticOscillatorValue)stochValue;
+			if (stochTyped.K is not decimal stochK)
+				return;
+
 			// Calculate average and standard deviation of stochastic
-			var stochAvgValue = _stochAverage.Process(stochValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-			var tempStdDevValue = _stochStdDev.Process(stochValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var stochAvgValue = _stochAverage.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+			var tempStdDevValue = _stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 			
 			// First values initialization - skip trading decision
 			if (_prevStochValue == 0)
 			{
-				_prevStochValue = stochValue;
+				_prevStochValue = stochK;
 				_prevStochAverage = stochAvgValue;
 				_prevStochStdDev = tempStdDevValue;
 				return;
@@ -197,32 +203,32 @@ namespace StockSharp.Samples.Strategies
 			
 			// Trading logic:
 			// Buy when stochastic breaks above upper threshold
-			if (stochValue > upperThreshold && _prevStochValue <= upperThreshold && Position <= 0)
+			if (stochK > upperThreshold && _prevStochValue <= upperThreshold && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Stochastic breakout UP: {stochValue} > {upperThreshold}. Buying at {candle.ClosePrice}");
+				LogInfo($"Stochastic breakout UP: {stochK} > {upperThreshold}. Buying at {candle.ClosePrice}");
 			}
 			// Sell when stochastic breaks below lower threshold
-			else if (stochValue < lowerThreshold && _prevStochValue >= lowerThreshold && Position >= 0)
+			else if (stochK < lowerThreshold && _prevStochValue >= lowerThreshold && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Stochastic breakout DOWN: {stochValue} < {lowerThreshold}. Selling at {candle.ClosePrice}");
+				LogInfo($"Stochastic breakout DOWN: {stochK} < {lowerThreshold}. Selling at {candle.ClosePrice}");
 			}
 			
 			// Exit positions when stochastic returns to average
-			else if (Position > 0 && stochValue < _prevStochAverage && _prevStochValue >= _prevStochAverage)
+			else if (Position > 0 && stochK < _prevStochAverage && _prevStochValue >= _prevStochAverage)
 			{
 				SellMarket(Math.Abs(Position));
-				LogInfo($"Stochastic returned to average: {stochValue} < {_prevStochAverage}. Closing long position at {candle.ClosePrice}");
+				LogInfo($"Stochastic returned to average: {stochK} < {_prevStochAverage}. Closing long position at {candle.ClosePrice}");
 			}
-			else if (Position < 0 && stochValue > _prevStochAverage && _prevStochValue <= _prevStochAverage)
+			else if (Position < 0 && stochK > _prevStochAverage && _prevStochValue <= _prevStochAverage)
 			{
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Stochastic returned to average: {stochValue} > {_prevStochAverage}. Closing short position at {candle.ClosePrice}");
+				LogInfo($"Stochastic returned to average: {stochK} > {_prevStochAverage}. Closing short position at {candle.ClosePrice}");
 			}
 			
 			// Store current values for next comparison
-			_prevStochValue = stochValue;
+			_prevStochValue = stochK;
 			_prevStochAverage = stochAvgValue;
 			_prevStochStdDev = tempStdDevValue;
 		}
