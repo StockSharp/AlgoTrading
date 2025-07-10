@@ -28,8 +28,10 @@ namespace StockSharp.Samples.Strategies
 		
 		// Seasonal data storage
 		private readonly SynchronizedDictionary<Month, decimal> _monthlyReturns = [];
-		private int _seasonalDataCount;
 		
+		// Simulated 5 years of data
+		private const int _seasonalDataCount = 5;
+
 		// Current values
 		private decimal _upperBand;
 		private decimal _lowerBand;
@@ -101,8 +103,6 @@ namespace StockSharp.Samples.Strategies
 			_monthlyReturns[Month.October] = -0.1m;
 			_monthlyReturns[Month.November] = 0.5m;
 			_monthlyReturns[Month.December] = 0.7m;
-			
-			_seasonalDataCount = 5; // Simulated 5 years of data
 		}
 
 		/// <inheritdoc />
@@ -115,6 +115,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_isLongPosition = false;
+			_isShortPosition = false;
+			_upperBand = 0;
+			_middleBand = 0;
+			_lowerBand = 0;
+			_seasonalStrength = 0;
 
 			// Create Donchian Channel indicator
 			_donchian = new DonchianChannels

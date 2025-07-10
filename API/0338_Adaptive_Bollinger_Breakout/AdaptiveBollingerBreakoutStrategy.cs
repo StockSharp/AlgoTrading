@@ -26,8 +26,8 @@ namespace StockSharp.Samples.Strategies
 		private BollingerBands _bollinger;
 		private AverageTrueRange _atr;
 
-		private decimal _atrSum = 0;
-		private int _atrCount = 0;
+		private decimal _atrSum;
+		private int _atrCount;
 
 		/// <summary>
 		/// Strategy parameter: Minimum Bollinger period.
@@ -126,6 +126,11 @@ namespace StockSharp.Samples.Strategies
 			// Initialize adaptive parameters
 			_currentBollingerPeriod = MaxBollingerPeriod; // Start with maximum period
 			_currentBollingerDeviation = MinBollingerDeviation; // Start with minimum deviation
+
+			_atr = default;
+			_bollinger = default;
+			_atrSum = default;
+			_atrCount = default;
 
 			// Create ATR indicator for volatility measurement
 			_atr = new AverageTrueRange

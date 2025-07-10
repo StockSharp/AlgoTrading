@@ -127,10 +127,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-			// Initialize Kalman filter
-			_kalmanEstimate = 0;
-			_kalmanError = 1;
 		}
 
 		/// <inheritdoc />
@@ -143,6 +139,17 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			// Initialize Kalman filter
+			_kalmanEstimate = 0;
+			_kalmanError = 1;
+			_prices.Clear();
+			_isLongPosition = false;
+			_isShortPosition = false;
+			_emaValue = 0;
+			_atrValue = 0;
+			_upperBand = 0;
+			_lowerBand = 0;
 
 			// Create indicators
 			_ema = new ExponentialMovingAverage

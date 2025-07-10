@@ -130,7 +130,12 @@ namespace StockSharp.Samples.Strategies
 			// Initialize flags
 			_isLong = false;
 			_isShort = false;
-			
+			_midChannel = 0;
+			_sentimentHistory.Clear();
+			_sentimentAverage = 0;
+			_sentimentStdDev = 0;
+			_currentSentiment = 0;
+
 			// Create Donchian Channel indicator
 			var donchian = new DonchianChannels { Length = DonchianPeriod };
 			

@@ -133,7 +133,10 @@ namespace StockSharp.Samples.Strategies
 			_currentPhase = WyckoffPhase.None;
 			_sidewaysCount = 0;
 			_positionOpened = false;
-			
+			_lastRangeHigh = 0;
+			_lastRangeLow = 0;
+			_springLow = 0;
+
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			

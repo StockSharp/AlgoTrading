@@ -68,8 +68,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
-				
-			_prevCandleRange = 0;
 		}
 
 		/// <inheritdoc />
@@ -82,6 +80,8 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_prevCandleRange = 0;
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MAPeriod };

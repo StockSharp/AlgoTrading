@@ -37,7 +37,6 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal _lastBid;
 		private decimal _lastAsk;
-		private Subscription _orderBookSubscription;
 		
 		/// <summary>
 		/// EMA period for Keltner Channel.
@@ -162,7 +161,9 @@ namespace StockSharp.Samples.Strategies
 			_lastAvgWidth = 0;
 			_currentEma = 0;
 			_currentAtr = 0;
-			
+			_lastBid = 0;
+			_lastAsk = 0;
+
 			// Create indicators
 			_ema = new ExponentialMovingAverage { Length = EMAPeriod };
 			_atr = new AverageTrueRange { Length = ATRPeriod };
@@ -185,16 +186,13 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Subscribe to market depth (order book)
-			_orderBookSubscription = new Subscription(DataType.MarketDepth, Security);
-			Subscribe(_orderBookSubscription);
-			OrderBookReceived += OnOrderBookReceived;
+			SubscribeOrderBook()
+				.Bind(OnOrderBookReceived)
+				.Start();
 		}
 
-		private void OnOrderBookReceived(Subscription subscription, IOrderBookMessage orderBook)
+		private void OnOrderBookReceived(IOrderBookMessage orderBook)
 		{
-			if (subscription != _orderBookSubscription)
-				return;
-
 			// Get best bid and ask from order book
 			var bestBid = orderBook.Bids != null && orderBook.Bids.Length > 0 ? orderBook.Bids[0].Price : 0;
 			var bestAsk = orderBook.Asks != null && orderBook.Asks.Length > 0 ? orderBook.Asks[0].Price : 0;

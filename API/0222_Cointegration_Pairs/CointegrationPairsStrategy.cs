@@ -29,10 +29,7 @@ namespace StockSharp.Samples.Strategies
 		
 		private decimal _asset1Price;
 		private decimal _asset2Price;
-		
-		private Subscription _asset1Subscription;
-		private Subscription _asset2Subscription;
-		
+
 		private Portfolio _asset2Portfolio;
 
 		/// <summary>
@@ -156,16 +153,16 @@ namespace StockSharp.Samples.Strategies
 			_asset2Price = 0;
 
 			// Create subscriptions for both assets
-			_asset1Subscription = new Subscription(CandleType, Security);
-			_asset2Subscription = new Subscription(CandleType, Asset2);
+			var asset1Subscription = new Subscription(CandleType, Security);
+			var asset2Subscription = new Subscription(CandleType, Asset2);
 
 			// Subscribe to Asset1 candles
-			SubscribeCandles(_asset1Subscription)
+			SubscribeCandles(asset1Subscription)
 				.Bind(ProcessAsset1Candle)
 				.Start();
 
 			// Subscribe to Asset2 candles
-			SubscribeCandles(_asset2Subscription)
+			SubscribeCandles(asset2Subscription)
 				.Bind(ProcessAsset2Candle)
 				.Start();
 
@@ -173,7 +170,7 @@ namespace StockSharp.Samples.Strategies
 			var area = CreateChartArea();
 			if (area != null)
 			{
-				DrawCandles(area, _asset1Subscription);
+				DrawCandles(area, asset1Subscription);
 				DrawOwnTrades(area);
 			}
 			

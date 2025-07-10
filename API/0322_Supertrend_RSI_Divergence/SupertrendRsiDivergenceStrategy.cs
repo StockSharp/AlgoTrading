@@ -106,6 +106,13 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_prices.Clear();
+			_rsiValues.Clear();
+			_isLongPosition = false;
+			_isShortPosition = false;
+			_trendDirection = TrendDirection.None;
+			_supertrendValue = 0;
+
 			// Create indicators
 			_supertrend = new()
 			{

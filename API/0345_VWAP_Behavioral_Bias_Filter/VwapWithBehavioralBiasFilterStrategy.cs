@@ -113,7 +113,9 @@ namespace StockSharp.Samples.Strategies
 			// Initialize flags
 			_isLong = false;
 			_isShort = false;
-			
+			_currentBiasScore = 0;
+			_recentPriceMovements.Clear();
+
 			// Initialize VWAP indicator
 			_vwap = new();
 			

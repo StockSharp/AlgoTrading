@@ -88,6 +88,7 @@ namespace StockSharp.Samples.Strategies
 			);
 
 			// Initialize state
+			_previousClose = 0;
 			_isFirstCandle = true;
 			
 			// Create Donchian Channel indicator

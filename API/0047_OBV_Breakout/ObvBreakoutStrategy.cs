@@ -70,10 +70,6 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters");
-				
-			_highestOBV = decimal.MinValue;
-			_lowestOBV = decimal.MaxValue;
-			_isFirstCandle = true;
 		}
 
 		/// <inheritdoc />
@@ -86,6 +82,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_highestOBV = decimal.MinValue;
+			_lowestOBV = decimal.MaxValue;
+			_isFirstCandle = true;
 
 			// Create indicators
 			var obv = new OnBalanceVolume();

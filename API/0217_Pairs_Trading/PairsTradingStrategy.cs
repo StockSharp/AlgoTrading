@@ -117,7 +117,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_spread = 0;
+			_lastSecondPrice = 0;
+
 			if (SecondSecurity == null)
 				throw new InvalidOperationException("Second security is not specified.");
 			

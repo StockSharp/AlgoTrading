@@ -118,6 +118,15 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			_previousVolumeRatio = 0;
+			_currentVolumeSlope = 0;
+			_averageSlope = 0;
+			_slopeStdDev = 0;
+			_sampleCount = 0;
+			_sumSlopes = 0;
+			_sumSlopesSquared = 0;
+			_isFirstCalculation = true;
+
 			// Initialize indicators
 			_volumeMa = new SimpleMovingAverage
 			{

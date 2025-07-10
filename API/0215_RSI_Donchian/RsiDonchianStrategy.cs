@@ -26,7 +26,11 @@ namespace StockSharp.Samples.Strategies
 		private Lowest _lowestLow;
 		
 		private decimal _previousRsi;
-		
+		private decimal _donchianHigh;
+		private decimal _donchianLow;
+		private decimal _donchianMiddle;
+		private decimal _currentRsi;
+
 		/// <summary>
 		/// RSI period parameter.
 		/// </summary>
@@ -100,7 +104,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_previousRsi = 0;
+			_donchianHigh = 0;
+			_donchianLow = 0;
+			_donchianMiddle = 0;
+			_currentRsi = 0;
+
 			// Initialize indicators
 			_rsi = new RelativeStrengthIndex
 			{
@@ -140,11 +150,6 @@ namespace StockSharp.Samples.Strategies
 				DrawOwnTrades(area);
 			}
 		}
-		
-		private decimal _donchianHigh;
-		private decimal _donchianLow;
-		private decimal _donchianMiddle;
-		private decimal _currentRsi;
 		
 		private void ProcessIndicators(ICandleMessage candle, decimal rsiValue, decimal highestValue, decimal lowestValue)
 		{

@@ -134,6 +134,11 @@ namespace StockSharp.Samples.Strategies
 			_sumSlopesSquared = 0;
 			_isFirstCalculation = true;
 			_slopeBuffer.Clear();
+			_previousObv = 0;
+			_currentObvValue = 0;
+			_currentObvSlope = 0;
+			_averageSlope = 0;
+			_slopeStdDev = 0;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

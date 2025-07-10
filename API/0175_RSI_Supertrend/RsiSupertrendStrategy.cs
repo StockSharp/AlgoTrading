@@ -104,16 +104,21 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			// Reset state variables
+			_isFirstValue = true;
+			_currentTrend = 1; // Default to uptrend_upValue = 0;
+			_downValue = 0;
+			_prevUpValue = 0;
+			_prevDownValue = 0;
+			_prevClose = 0;
+			_upValue = 0;
+
 			// Create RSI indicator
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 			
 			// Create ATR indicator for Supertrend calculation
 			_atr = new AverageTrueRange { Length = SupertrendPeriod };
 			
-			// Reset state variables
-			_isFirstValue = true;
-			_currentTrend = 1; // Default to uptrend
-
 			// Enable using Supertrend as a dynamic stop-loss
 			// We'll implement our own stop management based on Supertrend
 
