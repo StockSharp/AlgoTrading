@@ -1,5 +1,4 @@
-# Ichimoku Volume Cluster
-The **Ichimoku Volume Cluster** strategy is built around Ichimoku Cloud with volume cluster confirmation.
+# Ichimoku Volume Cluster The **Ichimoku Volume Cluster** strategy is built around Ichimoku Cloud with volume cluster confirmation.
 
 Signals trigger when its indicators confirms trend changes on intraday (1h) data. This makes the method suitable for active traders.
 

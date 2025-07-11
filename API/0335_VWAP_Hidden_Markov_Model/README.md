@@ -1,5 +1,4 @@
-# VWAP Hidden Markov Model
-The **VWAP Hidden Markov Model** strategy is built around that trades based on VWAP with Hidden Markov Model for market state detection.
+# VWAP Hidden Markov Model The **VWAP Hidden Markov Model** strategy is built around that trades based on VWAP with Hidden Markov Model for market state detection.
 
 Signals trigger when Markov confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
 

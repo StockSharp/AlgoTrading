@@ -1,8 +1,6 @@
 # Hull Ma Stochastic Strategy
 
-Hull Moving Average + Stochastic Oscillator strategy. Strategy enters
-when HMA trend direction changes with Stochastic confirming
-oversold/overbought conditions.
+Hull Moving Average + Stochastic Oscillator strategy. Strategy enters when HMA trend direction changes with Stochastic confirming oversold/overbought conditions.
 
 Hull MA quickly reveals trend direction. Stochastic waits for a dip or rally within that trend to trigger the trade.
 

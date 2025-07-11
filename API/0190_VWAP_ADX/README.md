@@ -1,8 +1,6 @@
 # Vwap Adx Strategy
 
-Strategy based on VWAP and ADX indicators. Enters long when price is
-above VWAP and ADX > 25. Enters short when price is below VWAP and ADX >
-25. Exits when ADX < 20.
+Strategy based on VWAP and ADX indicators. Enters long when price is above VWAP and ADX > 25. Enters short when price is below VWAP and ADX > 25. Exits when ADX < 20.
 
 VWAP acts as the session benchmark, and ADX measures conviction. Entries appear when price departs from VWAP with ADX showing strength.
 

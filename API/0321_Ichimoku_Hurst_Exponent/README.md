@@ -1,5 +1,4 @@
-# Ichimoku Hurst Exponent
-The **Ichimoku Hurst Exponent** strategy is built around Ichimoku Kinko Hyo indicator with Hurst exponent filter.
+# Ichimoku Hurst Exponent The **Ichimoku Hurst Exponent** strategy is built around Ichimoku Kinko Hyo indicator with Hurst exponent filter.
 
 Signals trigger when Hurst confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
 

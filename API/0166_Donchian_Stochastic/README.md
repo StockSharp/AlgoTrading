@@ -1,8 +1,6 @@
 # Donchian Stochastic Strategy
 
-Donchian Channel + Stochastic strategy. Strategy enters the market when
-the price breaks out of Donchian Channel with Stochastic confirming
-oversold/overbought conditions.
+Donchian Channel + Stochastic strategy. Strategy enters the market when the price breaks out of Donchian Channel with Stochastic confirming oversold/overbought conditions.
 
 Breakouts beyond the Donchian channel are confirmed with Stochastic momentum. Trades start as soon as price escapes the range and the oscillator agrees.
 

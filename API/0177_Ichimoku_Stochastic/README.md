@@ -1,9 +1,7 @@
 # Ichimoku Stochastic Strategy
 
 Strategy based on Ichimoku Cloud and Stochastic Oscillator indicators.
-Enters long when price is above Kumo (cloud), Tenkan > Kijun, and
-Stochastic is oversold (< 20) Enters short when price is below Kumo,
-Tenkan < Kijun, and Stochastic is overbought (> 80)
+Enters long when price is above Kumo (cloud), Tenkan > Kijun, and Stochastic is oversold (< 20) Enters short when price is below Kumo, Tenkan < Kijun, and Stochastic is overbought (> 80)
 
 Ichimoku outlines trend and support levels while Stochastic times the entry on pullbacks. Trades open when the oscillator resets within the prevailing cloud direction.
 

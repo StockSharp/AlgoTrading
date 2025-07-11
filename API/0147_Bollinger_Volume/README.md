@@ -1,8 +1,7 @@
 # Bollinger Volume Strategy
 
 Strategy that uses Bollinger Bands breakouts with volume confirmation.
-Enters positions when price breaks above/below Bollinger Bands with
-increased volume.
+Enters positions when price breaks above/below Bollinger Bands with increased volume.
 
 Bollinger bands show volatility expansion and volume confirms the breakout. Positions are taken when price closes outside a band with strong activity.
 

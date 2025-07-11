@@ -1,7 +1,6 @@
 # Rsi Stochastic Strategy
 
-Strategy that combines RSI and Stochastic Oscillator for double
-confirmation of oversold and overbought conditions.
+Strategy that combines RSI and Stochastic Oscillator for double confirmation of oversold and overbought conditions.
 
 RSI provides a broader momentum view, while Stochastic gives faster signals near extremes. Trades flip as the oscillator crosses levels within the RSI context.
 

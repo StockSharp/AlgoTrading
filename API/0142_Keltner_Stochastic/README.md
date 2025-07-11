@@ -1,8 +1,7 @@
 # Keltner Stochastic Strategy
 
 Strategy that combines Keltner Channels and Stochastic Oscillator.
-Enters positions when price reaches Keltner Channel boundaries and
-Stochastic confirms oversold/overbought conditions.
+Enters positions when price reaches Keltner Channel boundaries and Stochastic confirms oversold/overbought conditions.
 
 This setup looks to catch reversals near the Keltner bands while the oscillator confirms momentum shifts. Signals can trigger in both directions whenever price presses against an envelope.
 

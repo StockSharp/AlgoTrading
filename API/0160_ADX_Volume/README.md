@@ -1,8 +1,6 @@
 # Adx Volume Strategy
 
-Implementation of strategy #160 - ADX + Volume. Enter trades when ADX is
-above threshold with above average volume. Direction determined by DI+
-and DI- comparison.
+Implementation of strategy #160 - ADX + Volume. Enter trades when ADX is above threshold with above average volume. Direction determined by DI+ and DI- comparison.
 
 High ADX denotes a strong trend and volume spikes confirm commitment. Entries are made when both indicators show strength together.
 

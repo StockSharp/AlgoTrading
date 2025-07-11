@@ -1,10 +1,7 @@
 # Ichimoku Adx Strategy
 
 Strategy based on Ichimoku Cloud and ADX indicators. Entry criteria:
-Long: Price > Kumo (cloud) && Tenkan > Kijun && ADX > 25 (uptrend with
-strong movement) Short: Price < Kumo (cloud) && Tenkan < Kijun && ADX >
-25 (downtrend with strong movement) Exit criteria: Long: Price < Kumo
-(price falls below cloud) Short: Price > Kumo (price rises above cloud)
+Long: Price > Kumo (cloud) && Tenkan > Kijun && ADX > 25 (uptrend with strong movement) Short: Price < Kumo (cloud) && Tenkan < Kijun && ADX > 25 (downtrend with strong movement) Exit criteria: Long: Price < Kumo (price falls below cloud) Short: Price > Kumo (price rises above cloud)
 
 This strategy blends Ichimoku Cloud signals with ADX to filter for powerful trends. Trades occur when price breaks above or below the cloud with ADX confirming.
 

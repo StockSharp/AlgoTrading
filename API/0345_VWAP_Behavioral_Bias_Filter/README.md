@@ -1,5 +1,4 @@
-# VWAP Behavioral Bias Filter
-The **VWAP Behavioral Bias Filter** strategy is built around VWAP Behavioral Bias Filter.
+# VWAP Behavioral Bias Filter The **VWAP Behavioral Bias Filter** strategy is built around VWAP Behavioral Bias Filter.
 
 Signals trigger when Behavioral confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.
 

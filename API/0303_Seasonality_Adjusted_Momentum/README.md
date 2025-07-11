@@ -1,5 +1,4 @@
-# Seasonality Adjusted Momentum
-The **Seasonality Adjusted Momentum** strategy is built around momentum indicator adjusted with seasonality strength.
+# Seasonality Adjusted Momentum The **Seasonality Adjusted Momentum** strategy is built around momentum indicator adjusted with seasonality strength.
 
 Signals trigger when Seasonality confirms momentum shifts on daily data. This makes the method suitable for active traders.
 

@@ -1,5 +1,4 @@
-# Keltner Kalman Filter
-The **Keltner Kalman Filter** strategy is built around combining Keltner Channels with a Kalman Filter to identify trends and trade opportunities.
+# Keltner Kalman Filter The **Keltner Kalman Filter** strategy is built around combining Keltner Channels with a Kalman Filter to identify trends and trade opportunities.
 
 Signals trigger when Keltner confirms filtered entries on intraday (15m) data. This makes the method suitable for active traders.
 

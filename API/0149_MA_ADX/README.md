@@ -1,7 +1,6 @@
 # Ma Adx Strategy
 
-Strategy based on MA and ADX indicators. Enters position when price
-crosses MA with strong trend.
+Strategy based on MA and ADX indicators. Enters position when price crosses MA with strong trend.
 
 The moving average dictates the trend, and ADX verifies whether it's strong enough to trade. Entries follow price crossings of the MA when ADX exceeds a threshold.
 

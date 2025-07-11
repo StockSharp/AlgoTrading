@@ -1,9 +1,6 @@
 # Ichimoku Volume Strategy
 
-Implementation of strategy #151 - Ichimoku + Volume. Buy when price is
-above Kumo cloud, Tenkan-sen is above Kijun-sen, and volume is above
-average. Sell when price is below Kumo cloud, Tenkan-sen is below Kijun-
-sen, and volume is above average.
+Implementation of strategy #151 - Ichimoku + Volume. Buy when price is above Kumo cloud, Tenkan-sen is above Kijun-sen, and volume is above average. Sell when price is below Kumo cloud, Tenkan-sen is below Kijun-sen, and volume is above average.
 
 Ichimoku components define the directional bias while surging volume confirms interest. Trades open when price aligns with the cloud and volume picks up.
 

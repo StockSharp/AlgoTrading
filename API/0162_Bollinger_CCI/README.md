@@ -1,9 +1,6 @@
 # Bollinger Cci Strategy
 
-Implementation of strategy #162 - Bollinger Bands + CCI. Buy when price
-is below lower Bollinger Band and CCI is below -100 (oversold). Sell
-when price is above upper Bollinger Band and CCI is above 100
-(overbought).
+Implementation of strategy #162 - Bollinger Bands + CCI. Buy when price is below lower Bollinger Band and CCI is below -100 (oversold). Sell when price is above upper Bollinger Band and CCI is above 100 (overbought).
 
 Bollinger bands map volatility limits, and CCI measures the distance from the mean. Breaks beyond a band with CCI confirmation trigger trades.
 
