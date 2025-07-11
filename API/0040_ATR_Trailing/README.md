@@ -6,7 +6,7 @@ As price advances, the stop ratchets up (or down) based on the latest ATR readin
 
 Exits happen when the trailing stop is triggered or when price crosses back through the moving average.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price above or below MA.
 - **Long/Short**: Both directions.

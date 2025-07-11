@@ -7,7 +7,7 @@ CCI Breakout uses the Commodity Channel Index to spot powerful moves. Surges bey
 Because CCI measures deviation from a moving average, extreme readings imply unsustainable prices. This system waits for those extremes and then attempts to profit from the follow-through.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on CCI, Momentum.
 - **Long/Short**: Both directions.

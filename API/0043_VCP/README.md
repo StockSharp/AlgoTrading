@@ -6,7 +6,7 @@ Once contraction is observed, a breakout beyond the recent extremes triggers a t
 
 This approach aims to capture explosive moves following a volatility squeeze.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Range contraction then breakout of recent high/low.
 - **Long/Short**: Both directions.

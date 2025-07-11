@@ -7,7 +7,7 @@ MACD Trend reacts to crossovers between the MACD line and its signal line. Bulli
 The moving-average convergence divergence indicator adapts well to shifting markets by measuring momentum. This approach aims to ride trending swings while the indicator maintains a clear bullish or bearish bias.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, MACD.
 - **Long/Short**: Both directions.

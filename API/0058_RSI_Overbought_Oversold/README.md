@@ -4,7 +4,7 @@ This system trades reversals using the Relative Strength Index. When RSI drops b
 
 Positions exit when RSI returns to a neutral zone or the stop-loss is reached.
 
-## Rules
+## Details
 
 - **Entry Criteria**: RSI below `OversoldLevel` or above `OverboughtLevel`.
 - **Long/Short**: Both directions.

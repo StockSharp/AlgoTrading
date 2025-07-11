@@ -6,7 +6,7 @@ Long trades are opened above the upper band, shorts below the lower band. A cros
 
 Because the bands expand with volatility, stops adapt to market conditions.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price breaks above or below MA ± ATR multiplier.
 - **Long/Short**: Both directions.

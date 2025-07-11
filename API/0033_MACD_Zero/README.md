@@ -6,7 +6,7 @@ The strategy waits for the MACD line to trend toward zero while still on the opp
 
 Trades exit when MACD crosses its signal line or a stop-loss is triggered.
 
-## Rules
+## Details
 
 - **Entry Criteria**: MACD trending toward zero from either side.
 - **Long/Short**: Both directions.

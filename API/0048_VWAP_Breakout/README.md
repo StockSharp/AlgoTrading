@@ -6,7 +6,7 @@ The strategy waits for a close on the other side of VWAP and then trades in that
 
 Because VWAP represents the average transaction price, breaks often lead to momentum moves.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price closes on the opposite side of VWAP.
 - **Long/Short**: Both directions.

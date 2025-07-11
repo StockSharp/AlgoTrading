@@ -6,7 +6,7 @@ N-day breakout looks for new highs or lows over the given period. Entries occur 
 By waiting for the prior extreme to break, the system attempts to catch the start of a directional move. Filtering by a trend-following average helps avoid false signals that arise during consolidation.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA.
 - **Long/Short**: Both directions.

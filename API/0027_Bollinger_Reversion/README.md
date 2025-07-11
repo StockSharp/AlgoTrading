@@ -7,7 +7,7 @@ Bollinger Reversion fades moves outside the Bollinger Bands. Trades open against
 Standard deviation bands offer a statistical view of overextension. Entering after extreme closes aims to profit from the snap back toward the middle band.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI, ATR, Bollinger.
 - **Long/Short**: Both directions.

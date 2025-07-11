@@ -7,7 +7,7 @@ Momentum Percentage tracks percent change in price. Trades trigger when momentum
 By measuring returns over a set lookback, the system adapts to different markets. The volatility stop ensures large adverse moves exit quickly.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, Momentum.
 - **Long/Short**: Both directions.

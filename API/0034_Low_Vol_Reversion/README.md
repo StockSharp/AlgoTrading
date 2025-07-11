@@ -6,7 +6,7 @@ By trading against small moves in calm conditions, it aims to capture snap backs
 
 Positions exit once price touches the moving average or the ATR-based stop-loss is reached.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price away from moving average while ATR is below threshold.
 - **Long/Short**: Both directions.

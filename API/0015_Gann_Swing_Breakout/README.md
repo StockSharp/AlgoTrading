@@ -7,7 +7,7 @@ Gann Swing Breakout tracks swing highs and lows from Gann analysis. A breakout b
 The method is designed for traders who view past swing points as important support and resistance. By trading the break, it attempts to ride the next leg of a trend.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, Gann.
 - **Long/Short**: Both directions.

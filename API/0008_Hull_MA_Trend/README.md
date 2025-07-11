@@ -7,7 +7,7 @@ The Hull MA Trend strategy monitors the slope of the Hull Moving Average. Rising
 Its responsive calculation reduces lag compared with traditional moving averages, allowing the system to react quickly to new momentum. The ATR stop helps avoid large drawdowns if the slope changes abruptly.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, ATR.
 - **Long/Short**: Both directions.

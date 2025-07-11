@@ -7,7 +7,7 @@ Williams %R identifies overbought and oversold zones. When the indicator rises a
 Because %R oscillates quickly, the strategy can generate many signals in volatile markets. Some traders combine it with other filters to reduce noise.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on Williams.
 - **Long/Short**: Both directions.

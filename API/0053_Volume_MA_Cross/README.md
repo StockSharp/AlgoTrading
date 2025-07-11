@@ -6,7 +6,7 @@ Positions are closed when the opposite crossover occurs. Price is monitored with
 
 Volume-based signals often precede price movement, giving early entries.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Fast volume MA crosses slow volume MA.
 - **Long/Short**: Both directions.

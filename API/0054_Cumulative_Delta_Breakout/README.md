@@ -4,7 +4,7 @@ Cumulative Delta sums the difference between buy and sell volume. This strategy 
 
 A break of cumulative delta often precedes price follow-through. The strategy closes trades when delta crosses back through zero or a stop-loss level.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Cumulative delta exceeds highest or lowest value in lookback.
 - **Long/Short**: Both directions.

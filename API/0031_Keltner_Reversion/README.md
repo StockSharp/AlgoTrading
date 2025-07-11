@@ -7,7 +7,7 @@ Keltner Reversion fades pushes outside the Keltner Channel. Entries bet on a ret
 The channel width expands and contracts with volatility, allowing the system to catch extreme moves while giving trades room to develop. Stops are typically based on ATR multiples.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI, ATR, Keltner.
 - **Long/Short**: Both directions.

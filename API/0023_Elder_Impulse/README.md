@@ -7,7 +7,7 @@ Elder Impulse combines EMA direction with MACD histogram color. Green bars above
 By blending trend direction and momentum, this approach keeps traders on the right side of strong moves. Exits are straightforward, relying on the histogram color change or the EMA slope reversing.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MACD.
 - **Long/Short**: Both directions.

@@ -6,7 +6,7 @@ A close above VWMA after being below it generates a long entry, while a drop bel
 
 Using a volume-weighted average reduces noise from low-volume periods.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price crosses VWMA from below or above.
 - **Long/Short**: Both directions.

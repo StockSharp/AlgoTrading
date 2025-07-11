@@ -7,7 +7,7 @@ RSI Reversion assumes price will revert after reaching extreme RSI values. When 
 The extremes can be calibrated to suit various markets. Using additional filters like trend direction helps avoid fading strong moves too early.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI.
 - **Long/Short**: Both directions.

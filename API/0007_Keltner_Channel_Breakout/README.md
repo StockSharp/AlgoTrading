@@ -7,7 +7,7 @@ Keltner Channel Breakout uses volatility bands derived from ATR. Breakouts above
 Because the bands expand and contract with volatility, this breakout method aims to capture early stages of a strong move while still allowing price room to breathe within the channel.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on ATR, Keltner.
 - **Long/Short**: Both directions.

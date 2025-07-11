@@ -7,7 +7,7 @@ RSI Divergence searches for price extremes unconfirmed by the RSI oscillator. A 
 Divergence setups often emerge near the end of long trends. By comparing the oscillator's behavior with price action, the strategy attempts to catch early reversals with controlled risk.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI.
 - **Long/Short**: Both directions.

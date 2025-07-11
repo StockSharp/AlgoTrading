@@ -6,7 +6,7 @@ The strategy opens a trade opposite the direction of the spike and uses a moving
 
 Positions close on a moving-average crossover or when the volatility stop is hit.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price move exceeds `AtrMultiplier` times ATR.
 - **Long/Short**: Both directions.
