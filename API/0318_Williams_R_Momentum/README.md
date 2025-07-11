@@ -1,4 +1,4 @@
-# 318 Williams R Momentum
+# Williams R Momentum
 The **Williams R Momentum** strategy is built around Williams %R with Momentum filter.
 
 Signals trigger when Williams confirms momentum shifts on intraday (5m) data. This makes the method suitable for active traders.

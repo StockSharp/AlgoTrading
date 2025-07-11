@@ -1,4 +1,4 @@
-# 344 Hull MA Implied Volatility Breakout
+# Hull MA Implied Volatility Breakout
 The **Hull MA Implied Volatility Breakout** strategy is built around Hull MA Implied Volatility Breakout.
 
 Signals trigger when its indicators confirms breakout opportunities on intraday (15m) data. This makes the method suitable for active traders.

@@ -1,4 +1,4 @@
-# 343 Keltner Reinforcement Learning Signal
+# Keltner Reinforcement Learning Signal
 The **Keltner Reinforcement Learning Signal** strategy is built around Keltner Reinforcement Learning Signal.
 
 Signals trigger when Keltner confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.

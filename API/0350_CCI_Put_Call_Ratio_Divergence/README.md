@@ -1,4 +1,4 @@
-# 350 CCI Put Call Ratio Divergence
+# CCI Put Call Ratio Divergence
 The **CCI Put Call Ratio Divergence** strategy is built around CCI Put Call Ratio Divergence.
 
 Signals trigger when Divergence confirms divergence setups on intraday (5m) data. This makes the method suitable for active traders.

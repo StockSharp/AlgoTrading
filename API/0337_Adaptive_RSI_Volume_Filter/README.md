@@ -1,4 +1,4 @@
-# 337 Adaptive RSI Volume Filter
+# Adaptive RSI Volume Filter
 The **Adaptive RSI Volume Filter** strategy is built around that trades based on Adaptive RSI with volume confirmation.
 
 Signals trigger when its indicators confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.

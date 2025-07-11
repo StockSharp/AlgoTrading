@@ -1,4 +1,4 @@
-# 322 Supertrend RSI Divergence
+# Supertrend RSI Divergence
 The **Supertrend RSI Divergence** strategy is built around that uses Supertrend indicator along with RSI divergence to identify trading opportunities.
 
 Signals trigger when Divergence confirms divergence setups on intraday (15m) data. This makes the method suitable for active traders.

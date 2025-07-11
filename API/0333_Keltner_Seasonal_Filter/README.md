@@ -1,4 +1,4 @@
-# 333 Keltner Seasonal Filter
+# Keltner Seasonal Filter
 The **Keltner Seasonal Filter** strategy is built around that trades based on Keltner Channel breakouts with seasonal bias filter.
 
 Signals trigger when Keltner confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.
