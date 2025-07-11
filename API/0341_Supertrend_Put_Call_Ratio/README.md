@@ -1,4 +1,5 @@
 # Supertrend Put Call Ratio
+
 The **Supertrend Put Call Ratio** strategy is built around Supertrend Put Call Ratio.
 
 Signals trigger when its indicators confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.

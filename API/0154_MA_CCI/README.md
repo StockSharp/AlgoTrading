@@ -1,8 +1,6 @@
 # Ma Cci Strategy
 
-Strategy combining Moving Average and CCI indicators. Buys when price is
-above MA and CCI is oversold. Sells when price is below MA and CCI is
-overbought.
+Strategy combining Moving Average and CCI indicators. Buys when price is above MA and CCI is oversold. Sells when price is below MA and CCI is overbought.
 
 A moving average guides the trend while CCI looks for deviations from that average. Entries happen on CCI extremes in the direction of the MA.
 

@@ -1,7 +1,6 @@
 # Hull Ma Volume Strategy
 
-Strategy that uses Hull Moving Average for trend direction and volume
-confirmation for trade entries.
+Strategy that uses Hull Moving Average for trend direction and volume confirmation for trade entries.
 
 The Hull moving average smooths out noise, and rising volume confirms conviction. Entries occur when price moves with the Hull slope backed by a volume surge.
 

@@ -1,4 +1,5 @@
 # Bollinger Volatility Breakout
+
 The **Bollinger Volatility Breakout** strategy is built around Bollinger Bands breakout with volatility confirmation.
 
 Signals trigger when Bollinger confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.

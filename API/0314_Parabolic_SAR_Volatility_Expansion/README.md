@@ -1,4 +1,5 @@
 # Parabolic SAR Volatility Expansion
+
 The **Parabolic SAR Volatility Expansion** strategy is built around Parabolic SAR with Volatility Expansion detection.
 
 Signals trigger when Parabolic confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

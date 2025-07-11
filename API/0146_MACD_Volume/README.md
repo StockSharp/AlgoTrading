@@ -1,8 +1,6 @@
 # Macd Volume Strategy
 
-Strategy combining MACD (Moving Average Convergence Divergence) with
-volume confirmation. Enters positions when MACD line crosses the Signal
-line and confirms with increased volume.
+Strategy combining MACD (Moving Average Convergence Divergence) with volume confirmation. Enters positions when MACD line crosses the Signal line and confirms with increased volume.
 
 MACD crossovers are filtered by an increase in volume to confirm momentum. Buy signals come on bullish crosses with expanding volume; sells do the opposite.
 

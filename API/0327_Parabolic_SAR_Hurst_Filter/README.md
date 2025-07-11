@@ -1,4 +1,5 @@
 # Parabolic SAR Hurst Filter
+
 The **Parabolic SAR Hurst Filter** strategy is built around Parabolic SAR Hurst Filter.
 
 Signals trigger when Parabolic confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.

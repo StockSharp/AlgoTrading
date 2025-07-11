@@ -1,7 +1,6 @@
 # NDay Breakout
 
-N-day high/low breakout strategy
-N-day breakout looks for new highs or lows over the given period. Entries occur when price pierces the latest N-day high or low, anticipating momentum. A moving-average filter and percentage stop manage exits.
+N-day high/low breakout strategy N-day breakout looks for new highs or lows over the given period. Entries occur when price pierces the latest N-day high or low, anticipating momentum. A moving-average filter and percentage stop manage exits.
 
 By waiting for the prior extreme to break, the system attempts to catch the start of a directional move. Filtering by a trend-following average helps avoid false signals that arise during consolidation.
 

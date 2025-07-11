@@ -1,8 +1,6 @@
 # Keltner Volume Strategy
 
-Implementation of strategy #157 - Keltner Channels + Volume. Buy when
-price breaks above upper Keltner Channel with above average volume. Sell
-when price breaks below lower Keltner Channel with above average volume.
+Implementation of strategy #157 - Keltner Channels + Volume. Buy when price breaks above upper Keltner Channel with above average volume. Sell when price breaks below lower Keltner Channel with above average volume.
 
 Keltner Channel boundaries define potential reversals, and increased volume signals conviction. The system trades when price touches a band with volume expanding.
 
