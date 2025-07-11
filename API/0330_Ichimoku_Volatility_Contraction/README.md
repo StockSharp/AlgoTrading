@@ -1,4 +1,4 @@
-# 330 Ichimoku Volatility Contraction
+# Ichimoku Volatility Contraction
 The **Ichimoku Volatility Contraction** strategy is built around Ichimoku Volatility Contraction.
 
 Signals trigger when its indicators confirms volatility contraction patterns on intraday (5m) data. This makes the method suitable for active traders.

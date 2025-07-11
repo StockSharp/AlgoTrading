@@ -1,4 +1,4 @@
-# 309 Supertrend Momentum Filter
+# Supertrend Momentum Filter
 The **Supertrend Momentum Filter** strategy is built around Supertrend and Momentum indicators.
 
 Signals trigger when its indicators confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.

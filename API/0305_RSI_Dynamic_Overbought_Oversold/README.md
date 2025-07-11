@@ -1,4 +1,4 @@
-# 305 RSI Dynamic Overbought Oversold
+# RSI Dynamic Overbought Oversold
 The **RSI Dynamic Overbought Oversold** strategy is built around RSI with dynamic overbought/oversold levels.
 
 Signals trigger when Overbought confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

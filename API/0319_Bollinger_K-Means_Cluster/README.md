@@ -1,4 +1,4 @@
-# 319 Bollinger K-Means Cluster
+# Bollinger K-Means Cluster
 The **Bollinger K-Means Cluster** strategy is built around Bollinger K-Means Cluster.
 
 Signals trigger when Bollinger confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

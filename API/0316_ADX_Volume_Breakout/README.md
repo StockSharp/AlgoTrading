@@ -1,4 +1,4 @@
-# 316 ADX Volume Breakout
+# ADX Volume Breakout
 The **ADX Volume Breakout** strategy is built around ADX with Volume Breakout.
 
 Signals trigger when its indicators confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.
