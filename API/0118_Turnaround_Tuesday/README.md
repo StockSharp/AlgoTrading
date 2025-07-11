@@ -1,10 +1,11 @@
 # Turnaround Tuesday Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+Turnaround Tuesday refers to the tendency for markets that sold off on Monday to rebound the next day.
+The effect is often attributed to traders overreacting after the weekend and then reversing course.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+This strategy buys at Tuesday's open when Monday was down, holding only for the session or until a modest profit target is reached.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are tight to protect against continued weakness if the bounce fails to develop.
 
 ## Details
 

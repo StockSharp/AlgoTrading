@@ -1,10 +1,11 @@
 # Bullish Abandoned Baby Strategy
 
-The bullish abandoned baby looks for specific patterns or indicator conditions to enter trades.
+The Bullish Abandoned Baby is a rare three-candle pattern featuring a gap down doji followed by a gap up.
+This formation leaves the middle candle "abandoned" and often precedes a sharp reversal higher.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+The strategy buys at the open of the third candle once it gaps above the doji, anticipating strong follow-through as shorts cover.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops reside just beneath the doji low, ensuring losses remain small if the reversal fails to hold.
 
 ## Details
 

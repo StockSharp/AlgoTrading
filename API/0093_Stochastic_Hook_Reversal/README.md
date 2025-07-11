@@ -1,10 +1,12 @@
 # Stochastic Hook Reversal Strategy
 
-The stochastic hook reversal looks for specific patterns or indicator conditions to enter trades.
+The Stochastic Hook Reversal watches the %K line for a hook out of overbought or oversold territory.
+After stretching to an extreme the oscillator often curls back, indicating momentum is waning.
 
-Signals rely on stochastic to confirm the opportunity before executing.
+The system enters long when %K turns up from below twenty as price presses a new low.
+It sells short when the oscillator hooks down from above eighty during a final push higher.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Positions use a small percent stop and close when the stochastic hooks the other way or the stop is reached.
 
 ## Details
 

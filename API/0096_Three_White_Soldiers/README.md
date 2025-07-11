@@ -1,10 +1,12 @@
 # Three White Soldiers Strategy
 
-The three white soldiers looks for specific patterns or indicator conditions to enter trades.
+The Three White Soldiers pattern is a classic bullish reversal consisting of three consecutive strong up candles.
+After a downtrend, this sequence often marks the start of a sustained move higher as buying pressure overwhelms sellers.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+The strategy enters long once the third soldier forms, expecting follow-through from the surge in momentum.
+Short trades are not taken because the setup is purely bullish, but the system does allow exiting short positions initiated by other methods.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are placed a short distance below the pattern to guard against false signals and positions exit if price closes back below that level.
 
 ## Details
 

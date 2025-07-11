@@ -1,10 +1,11 @@
 # Rejection Candle Strategy
 
-The rejection candle looks for specific patterns or indicator conditions to enter trades.
+A Rejection Candle forms when price probes a level but fails to hold beyond it, leaving a long wick and small body.
+Such candles indicate an attempt to move in one direction was firmly rejected by the market.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+The strategy enters in the opposite direction of the wick once the candle closes, expecting price to reverse back through the range.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are set outside the rejected high or low to cap risk, and trades exit if momentum fails to materialize.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Tweezer Bottom Strategy
 
-The tweezer bottom looks for specific patterns or indicator conditions to enter trades.
+The Tweezer Bottom is a two-candle reversal pattern that appears after a decline.
+Both candles share a similar low, signaling that sellers failed to push beyond that level.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+This strategy goes long after the second candle confirms the shared bottom, anticipating a bounce as selling pressure dries up.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are placed just beneath the common low to manage risk, and the position exits if price fails to rally.
 
 ## Details
 

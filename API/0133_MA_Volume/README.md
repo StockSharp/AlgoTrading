@@ -1,10 +1,11 @@
 # MA Volume Strategy
 
-The ma volume looks for specific patterns or indicator conditions to enter trades.
+MA Volume combines a moving average trend filter with volume surges to time entries.
+Rising volume alongside price above the average signals strong accumulation; falling volume below the average indicates distribution.
 
-Signals rely on moving average, volume to confirm the opportunity before executing.
+The strategy trades in the direction of the moving average when volume expands, exiting once volume dries up or the average reverses.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop protects against sudden shifts in trend.
 
 ## Details
 

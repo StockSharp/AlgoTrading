@@ -1,10 +1,11 @@
 # Open Drive Strategy
 
-The open drive looks for specific patterns or indicator conditions to enter trades.
+Open Drive refers to strong directional movement right from the opening bell, often after an overnight news catalyst.
+Traders look for heavy volume and sustained momentum in the first few minutes.
 
-Signals rely on price action to confirm the opportunity before executing.
+The strategy joins that momentum, entering long or short within the opening range and trailing a stop as price extends.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Positions close quickly if the drive stalls, keeping losses small during choppy opens.
 
 ## Details
 

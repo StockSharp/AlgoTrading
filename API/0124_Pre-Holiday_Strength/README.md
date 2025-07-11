@@ -1,10 +1,11 @@
 # Pre-Holiday Strength Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+Pre-Holiday Strength refers to the bullish tendency just before major market holidays when volume is lighter and sentiment optimistic.
+Traders often position ahead of the break, pushing prices higher in the final session or two.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy goes long on the day before a holiday and exits the following session or at the close, capturing that short-term bias.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A tight stop is used in case the expected lift doesn't occur.
 
 ## Details
 

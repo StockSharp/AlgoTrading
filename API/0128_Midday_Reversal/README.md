@@ -1,10 +1,11 @@
 # Midday Reversal Strategy
 
-The midday reversal looks for specific patterns or indicator conditions to enter trades.
+Midday Reversal seeks turning points that occur around lunchtime when morning trends often exhaust.
+Liquidity typically dries up mid-session, leading to reversals as traders square positions.
 
-Signals rely on price action to confirm the opportunity before executing.
+The system monitors for a shift in momentum near midday and enters in the opposite direction of the morning move.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop controls risk and exits occur if the reversal fails to develop by the afternoon.
 
 ## Details
 

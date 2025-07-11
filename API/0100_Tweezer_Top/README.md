@@ -1,10 +1,11 @@
 # Tweezer Top Strategy
 
-The tweezer top looks for specific patterns or indicator conditions to enter trades.
+The Tweezer Top mirrors the bottom version but appears after an advance.
+Two candles share nearly the same high, showing that buyers could not push beyond a certain level.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+The strategy opens a short once the second candle confirms the ceiling, expecting a pullback as bullish momentum stalls.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A tight stop above the twin highs keeps risk in check and the trade exits if price climbs back above that resistance.
 
 ## Details
 

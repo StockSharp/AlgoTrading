@@ -1,10 +1,11 @@
 # ADX MACD Strategy
 
-The adx macd looks for specific patterns or indicator conditions to enter trades.
+ADX MACD blends trend strength from the Average Directional Index with momentum shifts from MACD.
+When ADX is rising, breakouts have a higher chance of continuing, especially if MACD crosses in the same direction.
 
-Signals rely on adx, macd to confirm the opportunity before executing.
+The strategy trades those aligned signals and exits once ADX starts to weaken or MACD flips against the position.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A modest percent stop contains losses during choppy markets.
 
 ## Details
 

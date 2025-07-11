@@ -1,10 +1,12 @@
 # Gap Fill Reversal Strategy
 
-The gap fill reversal looks for specific patterns or indicator conditions to enter trades.
+Gap Fill Reversal takes advantage of overnight gaps that quickly retrace during the next session.
+When price gaps away from the prior close but immediately moves back to fill that void, it often signals an exhaustion of the initial move.
 
-Signals rely on gap to confirm the opportunity before executing.
+The strategy enters once the gap is fully closed and looks for a reversal in the opposite direction of the open.
+It aims to capture the snap back that occurs as trapped traders exit their positions.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent-based stop defines the risk and positions close when momentum fades or the stop is hit.
 
 ## Details
 

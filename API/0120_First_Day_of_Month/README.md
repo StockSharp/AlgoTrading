@@ -1,10 +1,11 @@
 # First Day of Month Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+Many markets exhibit a bullish bias on the first trading day of the month as new capital flows into funds.
+Traders attempt to front-run this effect by buying at the prior month's close or early in the session.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy enters long at the start of the month and exits before the second day begins, capturing the typical influx of buying.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A small stop protects against downside surprises if the expected strength fails to appear.
 
 ## Details
 

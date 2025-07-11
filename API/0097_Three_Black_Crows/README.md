@@ -1,10 +1,12 @@
 # Three Black Crows Strategy
 
-The three black crows looks for specific patterns or indicator conditions to enter trades.
+Three Black Crows is the bearish counterpart to Three White Soldiers, consisting of three long down candles after an advance.
+The pattern suggests that sellers have seized control as each close lands near the session low.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+This strategy initiates a short position once the third crow appears, expecting momentum to continue lower.
+It can also be used to exit longs that were opened by other systems if the pattern forms at resistance.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Risk is managed with a tight percent stop above the pattern high, and trades exit if price closes back above that level.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # False Breakout Trap Strategy
 
-The false breakout trap looks for specific patterns or indicator conditions to enter trades.
+The False Breakout Trap aims to capitalize on breaks that fail to hold beyond key support or resistance.
+Traders often jump into a breakout only to see price quickly reverse, leaving them trapped.
 
-Signals rely on price action to confirm the opportunity before executing.
+This strategy waits for that failure, entering in the opposite direction once price closes back inside the range.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stop placement is tight, just beyond the failed breakout level, ensuring losses stay small if the reversal doesn't materialize.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Supertrend Volume Strategy
 
-The supertrend volume looks for specific patterns or indicator conditions to enter trades.
+Supertrend Volume augments the Supertrend indicator with volume confirmation.
+Rising volume during a Supertrend flip strengthens the likelihood of a new impulse move.
 
-Signals rely on supertrend, volume to confirm the opportunity before executing.
+The strategy enters with the trend on a Supertrend signal only when accompanied by above-average volume.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops track the Supertrend line, exiting when price closes on the other side.
 
 ## Details
 

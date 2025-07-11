@@ -1,10 +1,11 @@
 # RSI Failure Swing Strategy
 
-The rsi failure swing looks for specific patterns or indicator conditions to enter trades.
+RSI Failure Swing is a classic reversal technique where the RSI forms a higher low in oversold territory or a lower high in overbought territory.
+This failure to reach a new extreme often precedes a change in trend.
 
-Signals rely on rsi to confirm the opportunity before executing.
+The strategy buys when the RSI holds above its prior low and then crosses back above 30, or sells when it fails to exceed a prior high and crosses below 70.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop limits downside, and positions close when RSI crosses the opposite level.
 
 ## Details
 

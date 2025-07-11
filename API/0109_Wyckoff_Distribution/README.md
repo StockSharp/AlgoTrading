@@ -1,10 +1,11 @@
 # Wyckoff Distribution Strategy
 
-The wyckoff distribution looks for specific patterns or indicator conditions to enter trades.
+Wyckoff Distribution is a topping phase characterized by heavy selling into rallies and tests of resistance.
+Volume often expands on down moves and contracts on bounces, suggesting large interests are liquidating positions.
 
-Signals rely on volume, price to confirm the opportunity before executing.
+This strategy sells short when price breaks down from the distribution range, anticipating a sustained decline.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A stop just above the range protects against false breakouts, and positions close if price returns to the top of the structure.
 
 ## Details
 

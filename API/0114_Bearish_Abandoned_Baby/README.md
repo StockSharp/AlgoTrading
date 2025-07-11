@@ -1,10 +1,11 @@
 # Bearish Abandoned Baby Strategy
 
-The bearish abandoned baby looks for specific patterns or indicator conditions to enter trades.
+The Bearish Abandoned Baby mirrors the bullish version but signals a potential top.
+It features a gap up doji followed by a gap down, leaving the middle candle isolated above the prior range.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+The strategy sells short when the third candle gaps below the doji, aiming to profit from the abrupt shift in sentiment.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Risk is limited with a stop just above the doji high in case price recovers.
 
 ## Details
 

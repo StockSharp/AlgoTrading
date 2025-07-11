@@ -1,10 +1,11 @@
 # Ichimoku RSI Strategy
 
-The ichimoku rsi looks for specific patterns or indicator conditions to enter trades.
+Ichimoku RSI uses Ichimoku cloud levels to define trend direction while RSI pinpoints short-term pullbacks.
+Trades align with the cloud, entering when RSI recovers from oversold in an uptrend or falls from overbought in a downtrend.
 
-Signals rely on ichimoku, rsi to confirm the opportunity before executing.
+By combining a broad trend filter with a momentum oscillator, the strategy aims to join strong moves after brief pauses.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are placed beyond the cloud boundary to protect against deeper corrections.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Post-Holiday Weakness Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+Post-Holiday Weakness is the tendency for prices to drift lower immediately after a major holiday when volume remains thin.
+With many participants still away, counter-trend moves can gain traction.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy sells short the day after a holiday and covers quickly once normal participation returns.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A small stop is used to avoid excessive losses during low-liquidity trading.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Donchian Volume Strategy
 
-The donchian volume looks for specific patterns or indicator conditions to enter trades.
+Donchian Volume uses Donchian channel breakouts confirmed by rising volume to initiate trades.
+A move outside the channel on strong volume suggests the start of a new trend.
 
-Signals rely on donchian channel, volume to confirm the opportunity before executing.
+The strategy enters in the direction of the breakout and exits when price closes back inside the channel or volume wanes.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are set a short distance inside the channel to protect against false moves.
 
 ## Details
 

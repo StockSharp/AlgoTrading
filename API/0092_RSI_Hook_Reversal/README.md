@@ -1,10 +1,12 @@
 # RSI Hook Reversal Strategy
 
-The rsi hook reversal looks for specific patterns or indicator conditions to enter trades.
+The RSI Hook Reversal tries to catch short-term turning points when the RSI exits an extreme.
+After an overbought or oversold push the indicator often "hooks" back toward the midline before price reacts.
 
-Signals rely on rsi to confirm the opportunity before executing.
+The strategy waits for that hook while price keeps pressing in the prior direction.
+A long entry triggers once RSI curls higher from oversold as price marks a fresh low, while a short opens when RSI turns down from overbought during a new high.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Trades use a simple percent stop to control risk and typically close when the RSI hooks the other way.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Santa Claus Rally Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+The Santa Claus Rally describes the tendency for stocks to rise in the final week of December through the first two trading days of January.
+Holiday optimism and year-end positioning can fuel this short burst of strength.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy buys at the start of the period and exits after the second trading day of the new year, aiming to capture the seasonal lift.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are kept small to avoid large losses if the market fails to rally during the window.
 
 ## Details
 

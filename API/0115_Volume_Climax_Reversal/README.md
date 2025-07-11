@@ -1,10 +1,11 @@
 # Volume Climax Reversal Strategy
 
-The volume climax reversal looks for specific patterns or indicator conditions to enter trades.
+Volume Climax Reversal seeks turning points marked by extremely high volume after a strong trend.
+Such climactic spikes suggest exhaustion as the last buyers or sellers rush in before momentum fades.
 
-Signals rely on volume to confirm the opportunity before executing.
+The strategy enters against the prior move once a large volume bar closes and price begins to retrace.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A tight percent stop protects the position, and trades exit if volume fails to drop off or price continues in the original direction.
 
 ## Details
 

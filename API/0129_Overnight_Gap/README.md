@@ -1,10 +1,11 @@
 # Overnight Gap Strategy
 
-The overnight gap looks for specific patterns or indicator conditions to enter trades.
+Overnight Gap plays the open when price gaps significantly from the prior close due to news or after-hours activity.
+Large gaps often retrace partially as traders digest the move.
 
-Signals rely on gap to confirm the opportunity before executing.
+The strategy fades excessive gaps, entering in the opposite direction shortly after the open and closing before the session ends.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are based on a percentage beyond the gap extremes to manage risk if the move continues.
 
 ## Details
 

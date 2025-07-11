@@ -1,10 +1,11 @@
 # End of Month Strength Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+End of Month Strength observes that equities often rally during the last few trading days as portfolio managers adjust holdings.
+Buying pressure tied to window dressing can create a reliable upward bias ahead of the monthly close.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy buys near the final days of the month and exits on the first trading day of the new month to capture that tendency.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are placed below recent support to guard against unexpected weakness.
 
 ## Details
 

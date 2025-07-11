@@ -1,10 +1,11 @@
 # Bearish Harami Strategy
 
-The bearish harami looks for specific patterns or indicator conditions to enter trades.
+The Bearish Harami is the inverse of the bullish version, appearing after an upswing.
+Here a small candle forms completely inside the prior bullish bar, hinting that upward momentum is stalling.
 
-Signals rely on candlestick to confirm the opportunity before executing.
+The strategy sells short when that inside candle closes, betting on a reversal as buyers lose conviction.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop above the pattern high caps the risk and the trade exits if price breaks to new highs.
 
 ## Details
 

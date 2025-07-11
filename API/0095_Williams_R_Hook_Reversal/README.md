@@ -1,10 +1,11 @@
 # Williams %R Hook Reversal Strategy
 
-The williams %r hook reversal looks for specific patterns or indicator conditions to enter trades.
+The Williams %R Hook Reversal follows the Williams %R indicator as it quickly snaps back from an extreme.
+When the reading moves above -20 or below -80 and then hooks toward the center, the prior thrust is likely exhausted.
 
-Signals rely on williams %r to confirm the opportunity before executing.
+The strategy buys when %R reverses higher from oversold while price presses new lows and sells when it hooks downward from overbought during new highs.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A tight percent stop controls risk and trades exit once %R hooks in the opposite direction or the stop triggers.
 
 ## Details
 

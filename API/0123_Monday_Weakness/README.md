@@ -1,10 +1,11 @@
 # Monday Weakness Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+Monday Weakness notes that equities often open lower after the weekend as traders digest news and reposition.
+Short-term bearish pressure can appear at the start of the week before markets stabilize.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy sells short at Monday's open and covers by the close, seeking to profit from that initial softness.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are kept narrow to avoid losses if the market bucks the tendency and rallies instead.
 
 ## Details
 

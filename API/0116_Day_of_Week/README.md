@@ -1,10 +1,11 @@
 # Day of Week Effect Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+The Day of Week Effect exploits tendencies for markets to exhibit recurring behavior on specific weekdays.
+Some indices show consistent strength midweek while Monday or Friday can be relatively weak.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy opens trades based on those historical tendencies, buying or selling at the start of the session and exiting by the close.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A modest stop guards against anomalies, closing the position early if the pattern fails on a given day.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Bollinger Stochastic Strategy
 
-The bollinger stochastic looks for specific patterns or indicator conditions to enter trades.
+Bollinger Stochastic pairs Bollinger Bands with the stochastic oscillator to identify overextended moves.
+Price touching the outer band while the oscillator is in an extreme zone suggests a possible snap back.
 
-Signals rely on bollinger bands, stochastic to confirm the opportunity before executing.
+The system fades those extremes, going long when price hits the lower band with stochastic oversold, and shorting the upper band with stochastic overbought.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent-based stop limits risk if the mean reversion fails to occur.
 
 ## Details
 

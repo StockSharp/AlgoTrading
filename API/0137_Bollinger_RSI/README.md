@@ -1,10 +1,11 @@
 # Bollinger RSI Strategy
 
-The bollinger rsi looks for specific patterns or indicator conditions to enter trades.
+Bollinger RSI combines Bollinger Band overextension with RSI momentum signals.
+When price closes outside the bands but RSI shows divergence, a reversal is often near.
 
-Signals rely on bollinger bands, rsi to confirm the opportunity before executing.
+The system takes counter-trend trades on that divergence, exiting once price re-enters the bands or RSI crosses back.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A tight percent stop limits exposure in case volatility expands further.
 
 ## Details
 

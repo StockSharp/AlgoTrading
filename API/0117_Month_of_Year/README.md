@@ -1,10 +1,11 @@
 # Month of Year Effect Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+The Month of Year Effect captures performance differences observed in various months.
+For example, equities often rally in November and December but can be weak during September.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The system goes long or short at the beginning of each month based on those historical averages, exiting by month-end.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops are used to protect capital if the usual seasonal behavior fails to appear.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # Quarterly Expiry Strategy
 
-This seasonal setup tracks how markets tend to behave at certain times.
+Quarterly Expiry weeks see futures and options contracts roll over, often creating volatility as positions are closed or rolled.
+Price swings can accelerate as hedges are adjusted and liquidity temporarily dries up.
 
-It exploits calendar patterns such as specific days or months showing persistent strength or weakness.
+The strategy trades in the direction of the prevailing trend at the start of the week, exiting before settlement day to avoid chaos.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A fixed stop keeps risk in line if volatility proves too extreme.
 
 ## Details
 

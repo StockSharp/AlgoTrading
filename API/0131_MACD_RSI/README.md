@@ -1,10 +1,11 @@
 # MACD RSI Strategy
 
-The macd rsi looks for specific patterns or indicator conditions to enter trades.
+MACD RSI combines momentum from the Moving Average Convergence Divergence with overbought/oversold readings from RSI.
+When both indicators align, the probability of a sustained move increases.
 
-Signals rely on macd, rsi to confirm the opportunity before executing.
+The strategy enters long when MACD crosses up and RSI rises from oversold, or sells short when MACD crosses down with RSI falling from overbought.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Stops based on a percentage of price help contain losses if the indicators diverge after entry.
 
 ## Details
 

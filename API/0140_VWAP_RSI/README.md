@@ -1,10 +1,11 @@
 # VWAP RSI Strategy
 
-The vwap rsi looks for specific patterns or indicator conditions to enter trades.
+VWAP RSI uses the volume-weighted average price to gauge fair value during the session while RSI shows momentum extremes.
+Trades are taken when price stretches away from VWAP and RSI reaches overbought or oversold levels.
 
-Signals rely on vwap, rsi to confirm the opportunity before executing.
+The expectation is that price will revert back toward VWAP once momentum cools.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop guards against trends that continue to drive price away from VWAP.
 
 ## Details
 

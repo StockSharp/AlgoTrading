@@ -1,10 +1,11 @@
 # Stochastic Failure Swing Strategy
 
-The stochastic failure swing looks for specific patterns or indicator conditions to enter trades.
+The Stochastic Failure Swing monitors the oscillator for a lower high above 80 or a higher low below 20.
+When the indicator fails to reach a new extreme and then reverses, it often signals a trend shift.
 
-Signals rely on stochastic to confirm the opportunity before executing.
+The strategy buys when a higher low forms below 20 and %K crosses back above %D, or sells when a lower high occurs above 80 and %K crosses under.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Trades employ a small percent stop and close when the stochastic crosses back through the prior swing level.
 
 ## Details
 

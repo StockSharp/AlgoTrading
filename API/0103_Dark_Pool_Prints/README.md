@@ -1,10 +1,11 @@
 # Dark Pool Prints Strategy
 
-The dark pool prints looks for specific patterns or indicator conditions to enter trades.
+Dark Pool Prints tracks large off-exchange transactions that often precede sharp moves once the activity is revealed.
+Unusual volume hitting the tape can signal institutional positioning that hasn't yet impacted the regular market.
 
-Signals rely on volume to confirm the opportunity before executing.
+The strategy enters in the same direction as heavy dark pool buying or selling, expecting follow-through when the rest of the market reacts.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A small percent stop keeps risk contained and positions close if the anticipated momentum fails to appear.
 
 ## Details
 

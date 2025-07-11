@@ -1,10 +1,11 @@
 # Upthrust Reversal Strategy
 
-The upthrust reversal looks for specific patterns or indicator conditions to enter trades.
+Upthrust Reversal is the bearish companion to the spring and occurs when price briefly breaks above resistance but quickly falls back.
+The move flushes out late buyers before reversing lower.
 
-Signals rely on wyckoff to confirm the opportunity before executing.
+This strategy sells short once price drops back under the breakout level, expecting supply to overwhelm demand.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A stop just above the upthrust high manages risk and positions exit if price recovers above that level.
 
 ## Details
 

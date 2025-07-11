@@ -1,10 +1,11 @@
 # Spring Reversal Strategy
 
-The spring reversal looks for specific patterns or indicator conditions to enter trades.
+Spring Reversal is a Wyckoff concept where price briefly breaks support and then springs back above it.
+This shakeout traps late sellers and often marks the beginning of an uptrend.
 
-Signals rely on wyckoff to confirm the opportunity before executing.
+The strategy buys once price reclaims the broken level, anticipating swift short covering and new demand.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A stop just below the spring low limits downside, and the position is closed if follow-through fails.
 
 ## Details
 

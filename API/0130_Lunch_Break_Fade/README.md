@@ -1,10 +1,11 @@
 # Lunch Break Fade Strategy
 
-The lunch break fade looks for specific patterns or indicator conditions to enter trades.
+Lunch Break Fade targets reversals that develop during the slow midday period.
+After the morning session, trends often pause or pull back as volume dries up around lunchtime.
 
-Signals rely on price action to confirm the opportunity before executing.
+The strategy fades the morning move around noon, entering counter to the prevailing direction and covering before volume returns.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop manages risk if the trend resumes instead of fading.
 
 ## Details
 

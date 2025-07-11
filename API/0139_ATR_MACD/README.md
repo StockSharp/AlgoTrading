@@ -1,10 +1,11 @@
 # ATR MACD Strategy
 
-The atr macd looks for specific patterns or indicator conditions to enter trades.
+ATR MACD uses volatility from the Average True Range to adjust position size while trading MACD crossovers.
+Larger ATR readings result in smaller trade size, keeping risk consistent across market regimes.
 
-Signals rely on atr, macd to confirm the opportunity before executing.
+Entries occur when MACD crosses its signal line, with exits triggered by the opposite crossover or a volatility-based stop.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+This combination seeks to capture momentum while accounting for changing volatility.
 
 ## Details
 

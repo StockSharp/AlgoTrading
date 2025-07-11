@@ -1,10 +1,11 @@
 # CCI Failure Swing Strategy
 
-The cci failure swing looks for specific patterns or indicator conditions to enter trades.
+The CCI Failure Swing is based on the Commodity Channel Index forming a lower high above +100 or a higher low below -100.
+This inability to make a new extreme often signals the end of the prior trend.
 
-Signals rely on cci to confirm the opportunity before executing.
+The strategy goes long when CCI holds above -100 and turns up, or short when it fails near +100 and turns down.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A percent stop keeps risk small and trades exit if the CCI crosses back through the previous swing level.
 
 ## Details
 

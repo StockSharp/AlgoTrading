@@ -1,10 +1,11 @@
 # Wyckoff Accumulation Strategy
 
-The wyckoff accumulation looks for specific patterns or indicator conditions to enter trades.
+Wyckoff Accumulation describes a basing phase where large interests quietly build positions after a decline.
+Volume and price action form a series of tests of support followed by higher lows, hinting at growing demand.
 
-Signals rely on volume, price to confirm the opportunity before executing.
+This strategy enters long when price breaks out of the accumulation range, expecting a new uptrend fueled by those earlier purchases.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+A protective stop sits just below the base to limit losses should the breakout fail.
 
 ## Details
 

@@ -1,10 +1,11 @@
 # MA Stochastic Strategy
 
-The ma stochastic looks for specific patterns or indicator conditions to enter trades.
+MA Stochastic uses a moving average trend filter with stochastic oscillator pullbacks.
+When price trends above the average and the stochastic dips into oversold, the system prepares to buy the next upturn.
 
-Signals rely on moving average, stochastic to confirm the opportunity before executing.
+Short trades mirror this logic for downtrends, selling rallies when stochastic reaches overbought.
 
-Risk is controlled with a fixed percent stop and positions close when the signal fades.
+Fixed percent stops help avoid large losses if the trend suddenly reverses.
 
 ## Details
 
