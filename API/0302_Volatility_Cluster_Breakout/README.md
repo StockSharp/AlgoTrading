@@ -1,4 +1,6 @@
-# Volatility Cluster Breakout The **Volatility Cluster Breakout** strategy is built around breakouts during high volatility clusters.
+# Volatility Cluster Breakout
+
+The **Volatility Cluster Breakout** strategy is built around breakouts during high volatility clusters.
 
 Signals trigger when its indicators confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.
 

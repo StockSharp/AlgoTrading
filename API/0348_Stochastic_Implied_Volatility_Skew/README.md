@@ -1,4 +1,6 @@
-# Stochastic Implied Volatility Skew The **Stochastic Implied Volatility Skew** strategy is built around Stochastic Implied Volatility Skew.
+# Stochastic Implied Volatility Skew
+
+The **Stochastic Implied Volatility Skew** strategy is built around Stochastic Implied Volatility Skew.
 
 Signals trigger when Stochastic confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
 

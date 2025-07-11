@@ -1,4 +1,6 @@
-# Bollinger Kalman Filter The **Bollinger Kalman Filter** strategy is built around Bollinger Kalman Filter.
+# Bollinger Kalman Filter
+
+The **Bollinger Kalman Filter** strategy is built around Bollinger Kalman Filter.
 
 Signals trigger when Bollinger confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.
 

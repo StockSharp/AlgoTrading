@@ -1,4 +1,6 @@
-# Ichimoku Implied Volatility The **Ichimoku Implied Volatility** strategy is built around Ichimoku Implied Volatility.
+# Ichimoku Implied Volatility
+
+The **Ichimoku Implied Volatility** strategy is built around Ichimoku Implied Volatility.
 
 Signals trigger when its indicators confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
 

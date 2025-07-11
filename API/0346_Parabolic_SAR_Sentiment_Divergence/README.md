@@ -1,4 +1,6 @@
-# Parabolic SAR Sentiment Divergence The **Parabolic SAR Sentiment Divergence** strategy is built around Parabolic SAR Sentiment Divergence.
+# Parabolic SAR Sentiment Divergence
+
+The **Parabolic SAR Sentiment Divergence** strategy is built around Parabolic SAR Sentiment Divergence.
 
 Signals trigger when Parabolic confirms divergence setups on intraday (5m) data. This makes the method suitable for active traders.
 

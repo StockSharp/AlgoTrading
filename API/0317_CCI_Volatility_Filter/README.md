@@ -1,4 +1,6 @@
-# CCI Volatility Filter The **CCI Volatility Filter** strategy is built around CCI with Volatility Filter.
+# CCI Volatility Filter
+
+The **CCI Volatility Filter** strategy is built around CCI with Volatility Filter.
 
 Signals trigger when its indicators confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.
 

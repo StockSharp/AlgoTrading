@@ -1,4 +1,6 @@
-# RSI Option Open Interest The **RSI Option Open Interest** strategy is built around RSI Option Open Interest.
+# RSI Option Open Interest
+
+The **RSI Option Open Interest** strategy is built around RSI Option Open Interest.
 
 Signals trigger when Option confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
 
