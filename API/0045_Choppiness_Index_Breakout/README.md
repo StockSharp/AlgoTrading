@@ -6,7 +6,7 @@ This strategy enters in the direction of price relative to its moving average wh
 
 The goal is to catch new trends emerging from consolidation periods.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Choppiness below `ChoppinessThreshold` with price above/below MA.
 - **Long/Short**: Both directions.

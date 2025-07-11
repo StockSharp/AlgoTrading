@@ -6,7 +6,7 @@ If volume spikes and price is above the moving average, the strategy buys; if vo
 
 This method seeks to catch moves fueled by a burst of activity.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Volume change exceeds `VolumeSpikeMultiplier` times average.
 - **Long/Short**: Both directions.

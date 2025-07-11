@@ -6,7 +6,7 @@ The strategy enters long when falling prices are accompanied by rising volume, a
 
 This approach attempts to trade against unsustainable moves.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price and volume moving in opposite directions.
 - **Long/Short**: Both directions.

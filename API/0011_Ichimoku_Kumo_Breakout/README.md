@@ -7,7 +7,7 @@ This approach relies on Ichimoku cloud signals. Price breaking above the cloud w
 The cloud outlines key support and resistance levels, so the system waits for decisive closes beyond it. By combining multiple Ichimoku components, the strategy avoids lower-probability trades during sideways markets.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on Ichimoku.
 - **Long/Short**: Both directions.

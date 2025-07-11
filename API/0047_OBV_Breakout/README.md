@@ -6,7 +6,7 @@ A breakout in OBV suggests strong interest. The system goes long if OBV exceeds 
 
 This combines volume momentum with price action.
 
-## Rules
+## Details
 
 - **Entry Criteria**: OBV surpasses highest or lowest value in lookback period.
 - **Long/Short**: Both directions.

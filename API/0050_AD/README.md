@@ -6,7 +6,7 @@ Trades are taken in the direction of the A/D trend relative to the moving averag
 
 Stops are optional but can help manage risk.
 
-## Rules
+## Details
 
 - **Entry Criteria**: A/D rising with price above MA or falling below MA.
 - **Long/Short**: Both directions.

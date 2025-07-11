@@ -6,7 +6,7 @@ Entries occur when slope exceeds its typical level by a multiple of standard dev
 
 It appeals to active traders eager for early trend exposure. Positions exit when the slope drifts back toward normal readings. Default `AtrPeriod` = 14.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Indicator exceeds average by deviation multiplier.
 - **Long/Short**: Both directions.

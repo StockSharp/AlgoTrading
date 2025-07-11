@@ -7,7 +7,7 @@ ROC Impulse captures sudden bursts in the Rate of Change indicator. Sharp positi
 The trigger levels can be tuned to react only to exceptional momentum events. ATR-based stops help prevent large losses if the spike quickly reverses.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on ATR, ROC, Momentum.
 - **Long/Short**: Both directions.

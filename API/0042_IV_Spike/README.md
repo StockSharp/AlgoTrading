@@ -6,7 +6,7 @@ When implied volatility increases by the configured threshold, the system enters
 
 Positions are closed once volatility begins to drop or a stop-loss occurs.
 
-## Rules
+## Details
 
 - **Entry Criteria**: IV spike above `IVSpikeThreshold` and price relative to MA.
 - **Long/Short**: Both directions.

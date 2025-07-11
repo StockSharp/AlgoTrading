@@ -7,7 +7,7 @@ MA Deviation enters when price deviates a set percentage from its moving average
 Deviation thresholds can be widened or narrowed depending on volatility. Using ATR for position sizing keeps risk consistent across markets.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, ATR.
 - **Long/Short**: Both directions.

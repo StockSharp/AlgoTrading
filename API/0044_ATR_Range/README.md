@@ -6,7 +6,7 @@ The strategy checks price every N bars and uses the moving average for exit sign
 
 Trades close when price crosses back through the moving average or when the stop based on ATR fires.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price moves more than ATR over the lookback period.
 - **Long/Short**: Both directions.

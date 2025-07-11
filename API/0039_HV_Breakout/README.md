@@ -6,7 +6,7 @@ The strategy compares price to levels derived from standard deviation and a simp
 
 Exits occur when price crosses back through the moving average or the stop hits.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price breaks above or below HV-based level.
 - **Long/Short**: Both directions.

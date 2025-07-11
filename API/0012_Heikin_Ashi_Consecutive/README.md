@@ -7,7 +7,7 @@ Heikin Ashi Consecutive waits for several same-color Heikin Ashi candles to conf
 Because Heikin Ashi charts smooth price data, a series of like-colored candles highlights a strong directional move. The trailing ATR stop attempts to lock in gains if the sequence abruptly reverses.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on Heikin.
 - **Long/Short**: Both directions.

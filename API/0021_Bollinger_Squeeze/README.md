@@ -7,7 +7,7 @@ Bollinger Squeeze waits for narrow band width indicating low volatility. A break
 The squeeze condition hints at an upcoming volatility expansion. Once triggered, the trade rides the breakout and relies on an ATR stop or band crossover to exit.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on Bollinger.
 - **Long/Short**: Both directions.

@@ -4,7 +4,7 @@ Hammer candles often mark an intraday reversal after selling pressure subsides. 
 
 The system requires a lower shadow at least twice the body and little upper shadow. Once identified, it buys with volume size and waits for profit or stop-loss.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Hammer candle detected.
 - **Long/Short**: Long only.

@@ -6,7 +6,7 @@ Trades are initiated only on a surge and closed once volume falls back below ave
 
 This simple approach captures momentum sparked by sudden participation.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Volume ratio above `VolumeSurgeMultiplier`.
 - **Long/Short**: Both directions.

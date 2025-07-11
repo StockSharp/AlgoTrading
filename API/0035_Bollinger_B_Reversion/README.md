@@ -6,7 +6,7 @@ When percent B is less than zero or greater than one, the system bets on a retur
 
 Stops are placed at a fixed percentage from entry.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Percent B outside the 0–1 range.
 - **Long/Short**: Both directions.

@@ -7,7 +7,7 @@ Super Trend calculates a dynamic line from ATR that flips between support and re
 By following this adaptive line, the strategy attempts to capture sustained runs while minimizing whipsaws. Because the stop level trails price, it locks in profits once momentum fades.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on ATR, Supertrend.
 - **Long/Short**: Both directions.

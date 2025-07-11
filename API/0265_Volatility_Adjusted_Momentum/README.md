@@ -6,7 +6,7 @@ A position opens once the indicator pierces a band derived from recent data and 
 
 This system fits momentum traders seeking early breakouts. Trades close as the Volatility falls back toward the mean. Defaults start with `MomentumPeriod` = 14.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Indicator exceeds average by deviation multiplier.
 - **Long/Short**: Both directions.

@@ -7,7 +7,7 @@ Laguerre RSI smooths the standard RSI to reduce noise. The strategy buys when th
 Laguerre filtering helps avoid choppy conditions that plague regular RSI signals. The method is popular for capturing swings on intraday charts while ignoring minor fluctuations.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI.
 - **Long/Short**: Both directions.

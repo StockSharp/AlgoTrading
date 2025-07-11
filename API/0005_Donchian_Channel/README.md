@@ -7,7 +7,7 @@ Donchian Channel Breakout trades new highs and lows based on the channel range. 
 The channel is calculated from the highest high and lowest low over a lookback window. When price pierces these bounds, the system expects volatility expansion and positions accordingly.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on Price Action.
 - **Long/Short**: Both directions.

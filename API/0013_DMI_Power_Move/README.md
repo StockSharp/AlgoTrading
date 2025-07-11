@@ -7,7 +7,7 @@ DMI Power Move combines directional indicator differences with ADX to catch powe
 This approach filters out weak signals by requiring both strong directional movement and rising ADX. The result is fewer, but potentially higher-quality, trend trades.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on ADX, ATR, DMI.
 - **Long/Short**: Both directions.

@@ -6,7 +6,7 @@ When confirmation occurs, the system buys with a stop below the pattern lows. Th
 
 Exits rely on a predefined stop-loss or manual profit targets.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Two bottoms form within `SimilarityPercent` after `Distance` bars.
 - **Long/Short**: Long only.

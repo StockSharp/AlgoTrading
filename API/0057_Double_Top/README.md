@@ -6,7 +6,7 @@ The strategy sells short upon confirmation with a stop above the pattern highs, 
 
 Positions are closed via stop-loss or discretionary targets.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Two tops within `SimilarityPercent` after `Distance` bars.
 - **Long/Short**: Short only.

@@ -4,7 +4,7 @@ MACD Divergence looks for disagreement between price action and the MACD indicat
 
 After detecting divergence, the system waits for MACD to cross its signal line before entering. The trade is closed if MACD crosses back or the stop-loss triggers.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Bullish or bearish divergence plus MACD crossing signal line.
 - **Long/Short**: Both directions.

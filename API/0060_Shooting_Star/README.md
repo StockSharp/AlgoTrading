@@ -4,7 +4,7 @@ The shooting star candlestick often appears after an advance and warns of a reve
 
 If confirmation is required, the next candle must close lower before entering short. Otherwise the trade can be taken immediately. Stops are placed above the pattern high.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Shooting star detected and confirmation if enabled.
 - **Long/Short**: Short only.

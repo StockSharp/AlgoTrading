@@ -7,7 +7,7 @@ Stochastic RSI Cross watches the %K and %D lines of StochRSI. Bullish crosses ne
 Because StochRSI oscillates quickly, signals can be frequent. Many traders require the cross to happen near an extreme to filter out noise.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI, Stochastic.
 - **Long/Short**: Both directions.

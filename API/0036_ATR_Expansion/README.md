@@ -6,7 +6,7 @@ Expansion of ATR implies a strong move is underway. Entries align with the direc
 
 Stops are set using an ATR multiple to let trades breathe during high volatility.
 
-## Rules
+## Details
 
 - **Entry Criteria**: ATR increasing and price above/below MA.
 - **Long/Short**: Both directions.

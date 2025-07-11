@@ -6,7 +6,7 @@ Trades trigger when the indicator swings far from its mean and then begins to re
 
 Suited for swing traders expecting oscillations, the strategy closes out once the Donchian returns toward balance. Starting parameter `DonchianPeriod` = 20.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Indicator crosses back toward mean.
 - **Long/Short**: Both directions.

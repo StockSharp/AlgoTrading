@@ -7,7 +7,7 @@ Triple MA aligns three moving averages to define direction. When the shortest av
 Using three averages helps filter out noise present in single-MA systems. This layered approach seeks to confirm momentum before committing to a trade.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA.
 - **Long/Short**: Both directions.

@@ -7,7 +7,7 @@ TradingView Supertrend Flip emulates the popular indicator's color changes. A fl
 Volume confirmation can be used to avoid whipsaws during thin trading periods. By only acting on flips with supporting volume, the method aims to capture more reliable reversals.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on ATR, Supertrend.
 - **Long/Short**: Both directions.

@@ -7,7 +7,7 @@ VWAP Reversion trades deviations from the volume-weighted average price. If pric
 Because VWAP reflects typical transaction levels, extreme deviations often lure price back toward it. Some traders combine this signal with intraday trend filters for higher probability.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on RSI, VWAP.
 - **Long/Short**: Both directions.

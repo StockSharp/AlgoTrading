@@ -6,7 +6,7 @@ Signals require the indicator to surpass a threshold while volatility meets pred
 
 Designed for traders who value risk control, the strategy exits as soon as the indicator mean reverts or volatility shifts. Initial setting `Asset2` = (Security.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Indicator crosses back toward mean.
 - **Long/Short**: Both directions.

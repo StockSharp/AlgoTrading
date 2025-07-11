@@ -6,7 +6,7 @@ Price position relative to the middle band sets direction. A widening channel wi
 
 Exits occur when the band width contracts or a volatility stop is reached.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Band width expanding and price relative to middle band.
 - **Long/Short**: Both directions.

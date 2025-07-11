@@ -6,7 +6,7 @@ When VIX increases and price is below the moving average, it buys expecting a re
 
 Positions close when VIX falls or the stop-loss percentage is reached.
 
-## Rules
+## Details
 
 - **Entry Criteria**: VIX rising while price relative to MA triggers longs or shorts.
 - **Long/Short**: Both directions.

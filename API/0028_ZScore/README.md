@@ -7,7 +7,7 @@ ZScore measures price deviation from a moving average. Extreme high or low z-sco
 Z-Score is a flexible filter because it can be scaled to any time series. Using a volatility-adjusted exit helps the system adapt to changing market conditions.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, ZScore.
 - **Long/Short**: Both directions.

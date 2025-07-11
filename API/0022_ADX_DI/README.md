@@ -7,7 +7,7 @@ ADX DI focuses on the crossing of +DI and -DI with rising ADX. A bullish cross o
 This combination helps avoid trading every DI cross by demanding confirmation from the ADX. The system aims to capture sustainable trends rather than short-term swings.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on ADX, ATR.
 - **Long/Short**: Both directions.

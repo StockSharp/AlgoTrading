@@ -6,7 +6,7 @@ Trades align with the VWMA direction and use the simple moving average as a high
 
 The goal is to capture breakouts supported by volume.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Price above or below VWMA with MA confirmation.
 - **Long/Short**: Both directions.

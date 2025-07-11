@@ -6,7 +6,7 @@ The ADX Trend strategy gauges market strength using the ADX indicator. When ADX 
 By waiting for a solid ADX reading, the approach only trades when momentum is firmly established. Stops typically use an ATR multiple so risk adjusts with volatility.
 
 
-## Rules
+## Details
 
 - **Entry Criteria**: Signals based on MA, ADX, ATR.
 - **Long/Short**: Both directions.

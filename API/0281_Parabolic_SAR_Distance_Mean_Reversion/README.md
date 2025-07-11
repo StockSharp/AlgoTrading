@@ -6,7 +6,7 @@ Trades trigger when the indicator swings far from its mean and then begins to re
 
 Suited for swing traders expecting oscillations, the strategy closes out once the Parabolic returns toward balance. Starting parameter `AccelerationFactor` = 0.02m.
 
-## Rules
+## Details
 
 - **Entry Criteria**: Indicator crosses back toward mean.
 - **Long/Short**: Both directions.
