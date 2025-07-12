@@ -86,7 +86,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(
 				takeProfit: new Unit(0, UnitTypes.Absolute), // no take profit, rely on exit signal
 				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-				isStopTrailing: true,
+				isStopTrailing: true
 			);
 		}
 
