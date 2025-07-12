@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _averagePeriod;
 		private readonly StrategyParam<decimal> _deviationMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
-		private readonly StrategyParam<decimal> _stopLossAtrMultiple;
+		private readonly StrategyParam<decimal> _stopLossPercent;
 
 		private decimal _prevAtr;
 		private decimal _avgAtr;
@@ -69,12 +69,12 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Stop-loss ATR multiple.
+		/// Stop-loss percentage.
 		/// </summary>
-		public decimal StopLossAtrMultiple
+		public decimal StopLossPercent
 		{
-			get => _stopLossAtrMultiple.Value;
-			set => _stopLossAtrMultiple.Value = value;
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
 		}
 
 		/// <summary>
@@ -103,11 +103,11 @@ namespace StockSharp.Samples.Strategies
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-			_stopLossAtrMultiple = Param(nameof(StopLossAtrMultiple), 2m)
-				.SetGreaterThanZero()
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
 				.SetCanOptimize(true)
-				.SetOptimize(1m, 3m, 0.5m)
-				.SetDisplay("Stop Loss ATR Multiple", "Stop loss as a multiple of ATR", "Risk Management");
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -145,6 +145,12 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, atr);
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				new(),
+				new Unit(StopLossPercent, UnitTypes.Percent),
+				useMarketOrders: true
+			);
 
 			base.OnStarted(time);
 		}
@@ -193,12 +199,6 @@ namespace StockSharp.Samples.Strategies
 						SellMarket(Volume);
 						LogInfo($"Short entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, Price down");
 					}
-					
-					// Set dynamic stop loss based on ATR
-					StartProtection(
-						takeProfit: new Unit(0m), // We'll manage exits ourselves
-						stopLoss: new Unit(currentAtr * StopLossAtrMultiple, UnitTypes.Absolute)
-					);
 				}
 				// High volatility expecting decrease - possibly looking for market exhaustion
 				else if (currentAtr > _avgAtr + DeviationMultiplier * _stdDevAtr)
@@ -215,12 +215,6 @@ namespace StockSharp.Samples.Strategies
 						SellMarket(Volume);
 						LogInfo($"Contrarian short entry: ATR = {currentAtr}, Avg = {_avgAtr}, StdDev = {_stdDevAtr}, High volatility");
 					}
-					
-					// Set dynamic stop loss based on ATR
-					StartProtection(
-						takeProfit: new Unit(0m), // We'll manage exits ourselves
-						stopLoss: new Unit(currentAtr * StopLossAtrMultiple, UnitTypes.Absolute)
-					);
 				}
 			}
 			// Check for exit conditions

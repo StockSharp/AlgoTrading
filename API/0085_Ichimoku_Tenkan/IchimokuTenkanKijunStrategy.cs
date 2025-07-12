@@ -19,7 +19,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _kijunPeriod;
 		private readonly StrategyParam<int> _senkouSpanBPeriod;
 		private readonly StrategyParam<DataType> _candleType;
-		
+		private readonly StrategyParam<decimal> _stopLossPercent;
+
 		private decimal _prevTenkan;
 		private decimal _prevKijun;
 		private Ichimoku _ichimoku;
@@ -61,6 +62,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// Stop-loss percentage.
+		/// </summary>
+		public decimal StopLossPercent
+		{
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
+		}
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="IchimokuTenkanKijunStrategy"/>.
 		/// </summary>
 		public IchimokuTenkanKijunStrategy()
@@ -82,6 +92,12 @@ namespace StockSharp.Samples.Strategies
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+				.SetCanOptimize(true)
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -123,6 +139,12 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _ichimoku);
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				new(),
+				new Unit(StopLossPercent, UnitTypes.Percent),
+				useMarketOrders: true
+			);
 		}
 
 		/// <summary>
@@ -178,18 +200,12 @@ namespace StockSharp.Samples.Strategies
 			{
 				BuyMarket(Volume + Math.Abs(Position));
 				LogInfo($"Long entry: Tenkan ({tenkan}) crossed above Kijun ({kijun}) and price ({candle.ClosePrice}) above Kumo ({upperKumo})");
-				
-				// Set stop-loss at Kijun-sen
-				StartProtection(null, new Unit(candle.ClosePrice - kijun, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			// Short entry: Bearish cross and price below Kumo
 			else if (bearishCross && priceBelowKumo && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
 				LogInfo($"Short entry: Tenkan ({tenkan}) crossed below Kijun ({kijun}) and price ({candle.ClosePrice}) below Kumo ({lowerKumo})");
-				
-				// Set stop-loss at Kijun-sen
-				StartProtection(null, new Unit(kijun - candle.ClosePrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			
 			// Update previous values

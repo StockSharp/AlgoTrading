@@ -20,6 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _stochK;
 		private readonly StrategyParam<int> _stochD;
 		private readonly StrategyParam<DataType> _candleType;
+		private readonly StrategyParam<decimal> _stopLossPercent;
 
 		// Indicators
 		private SuperTrend _supertrend;
@@ -80,6 +81,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// Stop-loss percentage.
+		/// </summary>
+		public decimal StopLossPercent
+		{
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
+		}
+
+		/// <summary>
 		/// Constructor.
 		/// </summary>
 		public SupertrendStochasticStrategy()
@@ -116,6 +126,12 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+				.SetCanOptimize(true)
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -170,6 +186,11 @@ namespace StockSharp.Samples.Strategies
 				
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				new(),
+				new Unit(StopLossPercent, UnitTypes.Percent)
+			);
 		}
 
 		private void ProcessCandle(

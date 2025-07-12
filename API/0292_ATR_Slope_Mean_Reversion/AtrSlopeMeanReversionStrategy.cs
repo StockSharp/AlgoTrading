@@ -19,7 +19,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _deviationMultiplier;
 		private readonly StrategyParam<int> _stopLossMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
-
+		private readonly StrategyParam<decimal> _stopLossPercent;
+		
 		private AverageTrueRange _atr;
 		private decimal _previousAtr;
 		private decimal _currentAtrSlope;
@@ -77,6 +78,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// Stop-loss percentage.
+		/// </summary>
+		public decimal StopLossPercent
+		{
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
+		}
+
+		/// <summary>
 		/// Constructor.
 		/// </summary>
 		public AtrSlopeMeanReversionStrategy()
@@ -107,6 +117,12 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+				.SetCanOptimize(true)
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -148,6 +164,11 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _atr);
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				new(),
+				new Unit(StopLossPercent, UnitTypes.Percent)
+			);
 
 			base.OnStarted(time);
 		}
@@ -209,9 +230,6 @@ namespace StockSharp.Samples.Strategies
 				// Calculate and set stop loss based on ATR
 				var stopPrice = candle.ClosePrice - atrValue * StopLossMultiplier;
 				LogInfo($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
-				
-				// Use dynamic stop protection for this position
-				StartProtection(null, new Unit(atrValue * StopLossMultiplier, UnitTypes.Absolute));
 			}
 			else if (_currentAtrSlope > shortEntryThreshold && Position >= 0)
 			{
@@ -222,9 +240,6 @@ namespace StockSharp.Samples.Strategies
 				// Calculate and set stop loss based on ATR
 				var stopPrice = candle.ClosePrice + atrValue * StopLossMultiplier;
 				LogInfo($"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {StopLossMultiplier})");
-				
-				// Use dynamic stop protection for this position
-				StartProtection(new Unit(atrValue * StopLossMultiplier, UnitTypes.Absolute), null);
 			}
 			else if (Position > 0 && _currentAtrSlope > _averageSlope)
 			{

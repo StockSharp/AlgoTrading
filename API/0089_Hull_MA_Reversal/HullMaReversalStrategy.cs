@@ -18,7 +18,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _hmaPeriod;
 		private readonly StrategyParam<Unit> _atrMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
-		
+		private readonly StrategyParam<decimal> _stopLossPercent;
+
 		private decimal _prevHmaValue;
 		private decimal _prevPrevHmaValue;
 		private AverageTrueRange _atr;
@@ -51,6 +52,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// Stop-loss percentage.
+		/// </summary>
+		public decimal StopLossPercent
+		{
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
+		}
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="HullMaReversalStrategy"/>.
 		/// </summary>
 		public HullMaReversalStrategy()
@@ -67,6 +77,12 @@ namespace StockSharp.Samples.Strategies
 				
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+				.SetCanOptimize(true)
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -104,6 +120,12 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, hma);
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				new(),
+				new Unit(StopLossPercent, UnitTypes.Percent),
+				useMarketOrders: true
+			);
 		}
 
 		/// <summary>
@@ -145,20 +167,12 @@ namespace StockSharp.Samples.Strategies
 			{
 				BuyMarket(Volume + Math.Abs(Position));
 				LogInfo($"Long entry: Hull MA direction changed up ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
-				
-				// Set stop-loss based on ATR
-				decimal stopPrice = candle.ClosePrice - (atrValue * AtrMultiplier.Value);
-				StartProtection(null, new Unit(candle.ClosePrice - stopPrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			// Short entry: Hull MA changed direction from up to down
 			else if (directionChangedDown && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
 				LogInfo($"Short entry: Hull MA direction changed down ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
-				
-				// Set stop-loss based on ATR
-				decimal stopPrice = candle.ClosePrice + (atrValue * AtrMultiplier.Value);
-				StartProtection(null, new Unit(stopPrice - candle.ClosePrice, UnitTypes.Absolute), false, useMarketOrders: true);
 			}
 			
 			// Update previous values

@@ -84,6 +84,11 @@ namespace StockSharp.Samples.Strategies
 				DrawCandles(area, subscription);
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				takeProfit: new(), // No take profit, rely on exit logic
+				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
+			);
 		}
 
 		private void ProcessCandle(ICandleMessage candle)
@@ -113,13 +118,8 @@ namespace StockSharp.Samples.Strategies
 						CancelActiveOrders();
 						BuyMarket(Volume + Math.Abs(Position));
 						LogInfo($"Long entry at {candle.ClosePrice} on breakout above inside bar high {_insideCandle.HighPrice}");
-						
-						// Set stop-loss below inside bar's low
-						StartProtection(
-							takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, rely on exit logic
-							stopLoss: new Unit(_insideCandle.LowPrice * (1 - StopLossPercent / 100), UnitTypes.Absolute)
-						);
 					}
+
 					_waitingForBreakout = false;
 				}
 				else if (candle.LowPrice < _insideCandle.LowPrice)
@@ -130,12 +130,6 @@ namespace StockSharp.Samples.Strategies
 						CancelActiveOrders();
 						SellMarket(Volume + Math.Abs(Position));
 						LogInfo($"Short entry at {candle.ClosePrice} on breakout below inside bar low {_insideCandle.LowPrice}");
-						
-						// Set stop-loss above inside bar's high
-						StartProtection(
-							takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit, rely on exit logic
-							stopLoss: new Unit(_insideCandle.HighPrice * (1 + StopLossPercent / 100), UnitTypes.Absolute)
-						);
 					}
 					_waitingForBreakout = false;
 				}
