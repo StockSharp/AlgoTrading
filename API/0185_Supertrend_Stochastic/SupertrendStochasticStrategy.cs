@@ -158,12 +158,6 @@ namespace StockSharp.Samples.Strategies
 				D = { Length = StochD },
 			};
 
-			// Enable dynamic stop-loss using Supertrend
-			StartProtection(
-				takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit, use strategy logic
-				stopLoss: new Unit(0, UnitTypes.Absolute)	// Dynamic stop-loss set below
-			);
-
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			
@@ -246,41 +240,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				BuyMarket(Math.Abs(Position));
 				LogInfo($"Short exit: Price={candle.ClosePrice}, Above Supertrend={supertrendLine}");
-			}
-
-			// Set Supertrend value as dynamic stop-loss
-			if (Position != 0)
-			{
-				if (Position > 0 && isBullish)
-				{
-					// For long positions, set stop to Supertrend line
-					var stopDistance = candle.ClosePrice - supertrendLine;
-					var stopPercentage = stopDistance / candle.ClosePrice * 100;
-					
-					// Only set stop if it's reasonable (not too tight)
-					if (stopPercentage > 0.3m)
-					{
-						StartProtection(
-							takeProfit: new Unit(0, UnitTypes.Absolute),
-							stopLoss: new Unit(stopPercentage, UnitTypes.Percent)
-						);
-					}
-				}
-				else if (Position < 0 && isBearish)
-				{
-					// For short positions, set stop to Supertrend line
-					var stopDistance = supertrendLine - candle.ClosePrice;
-					var stopPercentage = stopDistance / candle.ClosePrice * 100;
-					
-					// Only set stop if it's reasonable (not too tight)
-					if (stopPercentage > 0.3m)
-					{
-						StartProtection(
-							takeProfit: new Unit(0, UnitTypes.Absolute),
-							stopLoss: new Unit(stopPercentage, UnitTypes.Percent)
-						);
-					}
-				}
 			}
 		}
 	}

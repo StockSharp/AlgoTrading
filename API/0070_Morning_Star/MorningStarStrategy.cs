@@ -81,6 +81,13 @@ namespace StockSharp.Samples.Strategies
 				DrawCandles(area, subscription);
 				DrawOwnTrades(area);
 			}
+
+			// Setup trailing stop
+			StartProtection(
+				takeProfit: new Unit(0, UnitTypes.Absolute), // no take profit, rely on exit signal
+				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+				isStopTrailing: true,
+			);
 		}
 
 		private void ProcessCandle(ICandleMessage candle)
@@ -122,12 +129,6 @@ namespace StockSharp.Samples.Strategies
 				// Set stop-loss
 				var stopPrice = _secondCandle.LowPrice * (1 - StopLossPercent / 100);
 				LogInfo($"Setting stop-loss at {stopPrice}");
-				
-				// Setup trailing stop
-				StartProtection(
-					takeProfit: new Unit(0, UnitTypes.Absolute), // no take profit, rely on exit signal
-					stopLoss: new Unit(StopLossPercent, UnitTypes.Percent)
-				);
 			}
 
 			// Shift candles (drop first, move second to first, current to second)

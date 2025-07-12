@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _stochK;
 		private readonly StrategyParam<int> _stochD;
 		private readonly StrategyParam<DataType> _candleType;
-		private readonly StrategyParam<decimal> _stopLossAtr;
+		private readonly StrategyParam<decimal> _stopLossPercent;
 
 		// Indicators
 		private HullMovingAverage _hma;
@@ -75,12 +75,12 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		/// Stop-loss in ATR multiples.
+		/// Stop-loss percentage.
 		/// </summary>
-		public decimal StopLossAtr
+		public decimal StopLossPercent
 		{
-			get => _stopLossAtr.Value;
-			set => _stopLossAtr.Value = value;
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
 		}
 
 		/// <summary>
@@ -115,11 +115,11 @@ namespace StockSharp.Samples.Strategies
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-			_stopLossAtr = Param(nameof(StopLossAtr), 2m)
-				.SetGreaterThanZero()
-				.SetDisplay("Stop Loss ATR", "Stop loss in ATR multiples", "Risk Management")
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
 				.SetCanOptimize(true)
-				.SetOptimize(1m, 4m, 0.5m);
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -169,6 +169,11 @@ namespace StockSharp.Samples.Strategies
 				
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(
+				new(),
+				new Unit(StopLossPercent, UnitTypes.Percent)
+			);
 		}
 
 		private void ProcessCandle(
@@ -206,9 +211,6 @@ namespace StockSharp.Samples.Strategies
 			bool hmaIncreasing = hma > _prevHmaValue;
 			bool hmaDecreasing = hma < _prevHmaValue;
 
-			// Calculate stop loss based on ATR
-			decimal stopLoss = StopLossAtr * atr;
-
 			// Trading logic:
 			// Buy when HMA starts increasing (trend changes up) and Stochastic shows oversold condition
 			if (hmaIncreasing && !hmaDecreasing && stochK < 20 && Position <= 0)
@@ -236,13 +238,6 @@ namespace StockSharp.Samples.Strategies
 
 			// Save current HMA value for next candle
 			_prevHmaValue = hma;
-
-			// Set stop loss based on ATR (if position is open)
-			if (Position != 0)
-			{
-				var stopLossUnit = new Unit(stopLoss, UnitTypes.Absolute);
-				StartProtection(new Unit(0, UnitTypes.Absolute), stopLossUnit);
-			}
 		}
 	}
 }

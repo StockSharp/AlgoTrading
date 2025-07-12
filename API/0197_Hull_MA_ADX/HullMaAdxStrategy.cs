@@ -22,6 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _adxPeriod;
 		private readonly StrategyParam<decimal> _atrMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
+		private readonly StrategyParam<decimal> _stopLossPercent;
 
 		private HullMovingAverage _hma;
 		private AverageDirectionalIndex _adx;
@@ -67,6 +68,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// Stop-loss percentage.
+		/// </summary>
+		public decimal StopLossPercent
+		{
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
+		}
+
+		/// <summary>
 		/// Initializes a new instance of the <see cref="HullMaAdxStrategy"/>.
 		/// </summary>
 		public HullMaAdxStrategy()
@@ -86,6 +96,12 @@ namespace StockSharp.Samples.Strategies
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 				.SetDisplay("Candle Type", "Timeframe of data for strategy", "General");
+
+			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+				.SetNotNegative()
+				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+				.SetCanOptimize(true)
+				.SetOptimize(0.5m, 2.0m, 0.5m);
 		}
 
 		/// <inheritdoc />
@@ -131,6 +147,11 @@ namespace StockSharp.Samples.Strategies
 					DrawIndicator(adxArea, _adx);
 				}
 			}
+
+			StartProtection(
+				new Unit(0), // No take profit
+				new Unit(StopLossPercent, UnitTypes.Absolute)
+			);
 		}
 
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue hmaValue, IIndicatorValue adxValue, IIndicatorValue atrValue)
@@ -145,7 +166,6 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var hma = hmaValue.ToDecimal();
-			var atr = atrValue.ToDecimal();
 
 			// Detect HMA direction
 			bool hmaIncreasing = hma > _prevHmaValue;
@@ -179,15 +199,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Trend weakening - close position
 				ClosePosition();
-			}
-
-			// Set dynamic stop loss based on ATR
-			if (Position != 0)
-			{
-				StartProtection(
-					new Unit(0), // No take profit - use ADX for exit
-					new Unit(AtrMultiplier * atr, UnitTypes.Absolute)
-				);
 			}
 
 			// Store current values for next candle
