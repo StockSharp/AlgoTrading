@@ -85,7 +85,6 @@ class adx_weakening_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
-    # <inheritdoc />
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(adx_weakening_strategy, self).OnStarted(time)
