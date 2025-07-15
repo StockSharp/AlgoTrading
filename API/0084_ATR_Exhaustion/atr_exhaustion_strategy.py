@@ -17,8 +17,8 @@ class atr_exhaustion_strategy(Strategy):
     Enters short when ATR rises significantly and a bearish candle forms.
     """
 
-    # Initializes a new instance of the <see cref="AtrExhaustionStrategy"/>.
     def __init__(self):
+        """Initializes a new instance of the strategy."""
         super(atr_exhaustion_strategy, self).__init__()
 
         # Initialize strategy parameters
@@ -106,12 +106,12 @@ class atr_exhaustion_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    # <inheritdoc />
     def GetWorkingSecurities(self):
+        """Return the security and candle type this strategy works with."""
         return [(self.Security, self.CandleType)]
 
-    # <inheritdoc />
     def OnStarted(self, time):
+        """Called when the strategy starts."""
         super(atr_exhaustion_strategy, self).OnStarted(time)
 
         # Enable position protection using stop-loss
@@ -139,13 +139,8 @@ class atr_exhaustion_strategy(Strategy):
             self.DrawIndicator(area, atr)
             self.DrawOwnTrades(area)
 
-    # <summary>
-    # Process candle with indicator values.
-    # </summary>
-    # <param name="candle">Candle.</param>
-    # <param name="maValue">Moving average value.</param>
-    # <param name="atrValue">ATR value.</param>
     def ProcessCandle(self, candle, ma_value, atr_value):
+        """Process candle with indicator values."""
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
