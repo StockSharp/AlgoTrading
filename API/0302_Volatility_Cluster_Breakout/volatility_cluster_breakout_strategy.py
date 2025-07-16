@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 
 class volatility_cluster_breakout_strategy(Strategy):

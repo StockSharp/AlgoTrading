@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 
 class parabolic_sar_volatility_expansion_strategy(Strategy):

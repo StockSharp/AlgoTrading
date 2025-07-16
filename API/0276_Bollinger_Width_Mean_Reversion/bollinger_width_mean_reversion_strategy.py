@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, StandardDeviation, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class bollinger_width_mean_reversion_strategy(Strategy):
     """

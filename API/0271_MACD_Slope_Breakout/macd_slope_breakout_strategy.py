@@ -10,6 +10,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, LinearRegression
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class macd_slope_breakout_strategy(Strategy):
     """
