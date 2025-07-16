@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class low_vol_reversion_strategy(Strategy):
     """
@@ -38,7 +39,7 @@ class low_vol_reversion_strategy(Strategy):
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "ATR multiplier for stop-loss calculation", "Risk Management")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "Data")
         
         # State tracking

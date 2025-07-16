@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class volatility_breakout_strategy(Strategy):
     """
@@ -31,7 +32,7 @@ class volatility_breakout_strategy(Strategy):
             .SetOptimize(1.0, 3.0, 0.5)
 
         # Candle type for strategy.
-        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type_param = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
         # Indicators and state variables

@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class donchian_macd_strategy(Strategy):
     """
@@ -47,7 +48,7 @@ class donchian_macd_strategy(Strategy):
         self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop-Loss %", "Stop-loss percentage from entry price", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

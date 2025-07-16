@@ -10,6 +10,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 
@@ -25,7 +26,7 @@ class volume_climax_reversal_strategy(Strategy):
         # Initializes a new instance of the <see cref="VolumeClimaxReversalStrategy"/>.
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "Candles")
 
         self._volumePeriod = self.Param("VolumePeriod", 20) \

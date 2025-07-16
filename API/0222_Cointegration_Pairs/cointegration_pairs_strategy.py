@@ -8,6 +8,7 @@ from System import TimeSpan, Math
 from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides, Subscription
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from StockSharp.BusinessEntities import Order
 
 class cointegration_pairs_strategy(Strategy):
@@ -52,7 +53,7 @@ class cointegration_pairs_strategy(Strategy):
             .SetOptimize(1.0, 5.0, 1.0)
 
         # Candle type for strategy.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
         # Internal state

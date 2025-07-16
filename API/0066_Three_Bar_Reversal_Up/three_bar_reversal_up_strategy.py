@@ -17,6 +17,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import Lowest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class three_bar_reversal_up_strategy(Strategy):
     """
@@ -36,7 +37,7 @@ class three_bar_reversal_up_strategy(Strategy):
         self._lowestIndicator = None
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

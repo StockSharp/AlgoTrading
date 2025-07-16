@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class volatility_adjusted_mean_reversion_strategy(Strategy):
     """
@@ -34,7 +35,7 @@ class volatility_adjusted_mean_reversion_strategy(Strategy):
             .SetOptimize(1.0, 3.0, 0.5)
 
         # Candle type for strategy.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
     @property

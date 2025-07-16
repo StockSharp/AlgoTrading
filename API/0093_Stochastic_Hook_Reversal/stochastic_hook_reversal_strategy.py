@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import StochasticOscillator, StochasticOscillatorValue
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class stochastic_hook_reversal_strategy(Strategy):
@@ -44,7 +45,7 @@ class stochastic_hook_reversal_strategy(Strategy):
         self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
             .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Previous %K value

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class macd_slope_mean_reversion_strategy(Strategy):
     """
@@ -42,7 +43,7 @@ class macd_slope_mean_reversion_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management") \
             .SetCanOptimize(True).SetOptimize(1.0, 5.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # State variables

@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class dmi_power_move_strategy(Strategy):
     """
@@ -38,7 +39,7 @@ class dmi_power_move_strategy(Strategy):
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR to determine stop-loss distance", "Risk parameters")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

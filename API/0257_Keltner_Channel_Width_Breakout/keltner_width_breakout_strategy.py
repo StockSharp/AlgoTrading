@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_width_breakout_strategy(Strategy):
     """
@@ -37,7 +38,7 @@ class keltner_width_breakout_strategy(Strategy):
         self._multiplier = self.Param("Multiplier", 2.0) \
             .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopMultiplier = self.Param("StopMultiplier", 2) \

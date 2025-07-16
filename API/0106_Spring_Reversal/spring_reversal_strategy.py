@@ -9,6 +9,7 @@ from System import Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage, Lowest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class spring_reversal_strategy(Strategy):
     """
@@ -20,7 +21,7 @@ class spring_reversal_strategy(Strategy):
         super(spring_reversal_strategy, self).__init__()
 
         # Strategy parameters
-        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type_param = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
         self._lookback_period_param = self.Param("LookbackPeriod", 20) \
             .SetDisplay("Lookback Period", "Period for support level detection", "Range") \

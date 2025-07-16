@@ -11,6 +11,7 @@ from StockSharp.Messages import Unit
 from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class upthrust_reversal_strategy(Strategy):
@@ -25,7 +26,7 @@ class upthrust_reversal_strategy(Strategy):
         super(upthrust_reversal_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
 
         self._lookbackPeriod = self.Param("LookbackPeriod", 20) \

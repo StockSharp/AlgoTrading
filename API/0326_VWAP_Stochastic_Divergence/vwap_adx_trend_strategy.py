@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, AverageDirectionalIndex, DirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 
@@ -33,7 +34,7 @@ class vwap_adx_trend_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(10.0, 25.0, 5.0)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._vwap = None

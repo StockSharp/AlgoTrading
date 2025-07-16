@@ -8,6 +8,7 @@ from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Messages import ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class santa_claus_rally_strategy(Strategy):
     """
@@ -28,7 +29,7 @@ class santa_claus_rally_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 20) \
             .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
+        self._candle_type = self.Param("CandleType", tf(1*1440)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
 
     @property

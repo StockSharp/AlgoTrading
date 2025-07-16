@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class atr_slope_mean_reversion_strategy(Strategy):
     """ATR Slope Mean Reversion Strategy.
@@ -41,7 +42,7 @@ class atr_slope_mean_reversion_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1, 5, 1)
 
-        self._candleType = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

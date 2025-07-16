@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class hull_ma_slope_breakout_strategy(Strategy):
@@ -39,7 +40,7 @@ class hull_ma_slope_breakout_strategy(Strategy):
         self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Absolute)) \
             .SetDisplay("Stop Loss", "Stop loss value in ATRs", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._hull_ma = None

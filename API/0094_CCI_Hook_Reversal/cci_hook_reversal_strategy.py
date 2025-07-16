@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class cci_hook_reversal_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class cci_hook_reversal_strategy(Strategy):
         self._stop_loss_percent = self.Param("StopLoss", 2.0) \
             .SetDisplay("Stop Loss", "Stop loss as percentage from entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Previous CCI value

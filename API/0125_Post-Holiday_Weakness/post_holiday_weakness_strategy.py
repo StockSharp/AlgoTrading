@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class post_holiday_weakness_strategy(Strategy):
@@ -27,7 +28,7 @@ class post_holiday_weakness_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1*1440)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
 
         # Dictionary of common holidays (month, day)

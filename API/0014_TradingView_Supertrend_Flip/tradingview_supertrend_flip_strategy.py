@@ -10,6 +10,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class tradingview_supertrend_flip_strategy(Strategy):
     """
@@ -33,7 +34,7 @@ class tradingview_supertrend_flip_strategy(Strategy):
         self._volume_avg_period = self.Param("VolumeAvgPeriod", 20) \
             .SetDisplay("Volume Avg Period", "Period for volume average calculation", "Indicators")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # State tracking

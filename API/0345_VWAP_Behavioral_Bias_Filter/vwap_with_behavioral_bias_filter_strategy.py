@@ -11,6 +11,7 @@ from StockSharp.Messages import Unit
 from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class vwap_with_behavioral_bias_filter_strategy(Strategy):
     """
@@ -47,7 +48,7 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Indicators and state variables

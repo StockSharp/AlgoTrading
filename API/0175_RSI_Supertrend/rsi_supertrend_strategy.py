@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class rsi_supertrend_strategy(Strategy):
     """
@@ -39,7 +40,7 @@ class rsi_supertrend_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(2.0, 4.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
 
         # Custom Supertrend indicator

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, LinearRegression, LinearRegressionValue
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class cci_slope_breakout_strategy(Strategy):
     """CCI Slope Breakout Strategy"""
@@ -38,7 +39,7 @@ class cci_slope_breakout_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._cci = None

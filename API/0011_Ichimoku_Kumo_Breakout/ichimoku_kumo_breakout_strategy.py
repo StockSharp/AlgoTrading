@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class ichimoku_kumo_breakout_strategy(Strategy):
     """
@@ -32,7 +33,7 @@ class ichimoku_kumo_breakout_strategy(Strategy):
         self._senkou_span_period = self.Param("SenkouSpanPeriod", 52) \
             .SetDisplay("Senkou Span B Period", "Period for Senkou Span B calculation", "Indicators")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # Current state tracking

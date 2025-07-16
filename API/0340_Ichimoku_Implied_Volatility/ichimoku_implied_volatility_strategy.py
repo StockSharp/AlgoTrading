@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 import random
 
@@ -54,7 +55,7 @@ class ichimoku_implied_volatility_strategy(Strategy):
             .SetOptimize(10, 30, 5)
 
         # Type of candles to use.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state

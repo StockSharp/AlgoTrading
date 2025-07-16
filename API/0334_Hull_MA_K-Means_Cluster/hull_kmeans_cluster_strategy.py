@@ -8,6 +8,7 @@ from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hull_kmeans_cluster_strategy(Strategy):
     """Strategy that trades based on Hull Moving Average direction with K-Means clustering for market state detection."""
@@ -31,7 +32,7 @@ class hull_kmeans_cluster_strategy(Strategy):
             .SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings")
 
         # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Enum representing market state

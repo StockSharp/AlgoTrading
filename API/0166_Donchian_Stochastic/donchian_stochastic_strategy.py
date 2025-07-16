@@ -12,6 +12,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class donchian_stochastic_strategy(Strategy):
     """
@@ -37,7 +38,7 @@ class donchian_stochastic_strategy(Strategy):
         self._stochD = self.Param("StochD", 3) \
             .SetDisplay("Stochastic %D", "Stochastic %D period", "Indicators")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 2.0) \

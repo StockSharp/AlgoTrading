@@ -12,6 +12,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import Momentum
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class momentum_divergence_strategy(Strategy):
     """
@@ -37,7 +38,7 @@ class momentum_divergence_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(10, 50, 10)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
         # Initialize internal state

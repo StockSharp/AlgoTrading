@@ -9,6 +9,7 @@ from System.Drawing import Color
 from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, WeightedMovingAverage, SmoothedMovingAverage, HullMovingAverage, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from enum import Enum
 
 class MovingAverageTypeEnum(Enum):
@@ -51,7 +52,7 @@ class ma_williams_r_strategy(Strategy):
         self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
             .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
     @property

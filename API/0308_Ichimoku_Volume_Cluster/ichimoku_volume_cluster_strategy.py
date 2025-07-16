@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, Unit
 from StockSharp.Algo.Indicators import Ichimoku, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class ichimoku_volume_cluster_strategy(Strategy):
@@ -49,7 +50,7 @@ class ichimoku_volume_cluster_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromHours(1))) \
+        self._candle_type = self.Param("CandleType", tf(1*60)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "General")
 
         # Internal indicators

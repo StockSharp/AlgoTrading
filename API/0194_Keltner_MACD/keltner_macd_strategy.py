@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_macd_strategy(Strategy):
     """
@@ -50,7 +51,7 @@ class keltner_macd_strategy(Strategy):
         self._atrMultiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("Stop Loss ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Timeframe of data for strategy", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

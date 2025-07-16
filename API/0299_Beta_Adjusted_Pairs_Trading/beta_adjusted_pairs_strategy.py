@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, Level1Fields, Level1ChangeMessage, Subscription
 from StockSharp.Messages import Sides, OrderTypes, Order
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from StockSharp.BusinessEntities import Security, Portfolio
 
 class beta_adjusted_pairs_strategy(Strategy):

@@ -14,6 +14,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hammer_candle_strategy(Strategy):
     """
@@ -28,7 +29,7 @@ class hammer_candle_strategy(Strategy):
         self._isPositionOpen = False
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General")
 
     @property

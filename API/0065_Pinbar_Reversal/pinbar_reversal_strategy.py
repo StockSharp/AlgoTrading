@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class pinbar_reversal_strategy(Strategy):
     """
@@ -37,7 +38,7 @@ class pinbar_reversal_strategy(Strategy):
         self._oppositeTailRatio = self.Param("OppositeTailRatio", 0.5) \
             .SetDisplay("Opposite Tail Ratio", "Maximum ratio of opposite tail to body", "Pattern Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

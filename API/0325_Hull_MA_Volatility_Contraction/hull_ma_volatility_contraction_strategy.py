@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hull_ma_volatility_contraction_strategy(Strategy):
     """
@@ -32,7 +33,7 @@ class hull_ma_volatility_contraction_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Indicators

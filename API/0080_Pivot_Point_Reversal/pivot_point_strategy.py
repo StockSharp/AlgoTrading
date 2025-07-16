@@ -15,6 +15,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class pivot_point_reversal_strategy(Strategy):
     """
@@ -28,7 +29,7 @@ class pivot_point_reversal_strategy(Strategy):
         super(pivot_point_reversal_strategy, self).__init__()
         
         # Initialize strategy parameters
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossPercentParam = self.Param("StopLossPercent", 2.0) \
@@ -86,7 +87,7 @@ class pivot_point_reversal_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         
         # Subscribe to the previous day's candles to get OHLC data
-        dailySubscription = self.SubscribeCandles(DataType.TimeFrame(TimeSpan.FromDays(1)))
+        dailySubscription = self.SubscribeCandles(tf(1*1440))
         
         # Process daily candles to get previous day's data
         dailySubscription.Bind(self.ProcessDailyCandle).Start()

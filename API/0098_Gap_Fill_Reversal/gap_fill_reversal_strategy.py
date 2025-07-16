@@ -7,6 +7,7 @@ from System import TimeSpan
 from System import Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class gap_fill_reversal_strategy(Strategy):
     """
@@ -18,7 +19,7 @@ class gap_fill_reversal_strategy(Strategy):
         super(gap_fill_reversal_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \

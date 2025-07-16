@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class williams_percent_r_divergence_strategy(Strategy):
     """
@@ -33,7 +34,7 @@ class williams_percent_r_divergence_strategy(Strategy):
         self._divergencePeriodParam = self.Param("DivergencePeriod", 5) \
             .SetDisplay("Divergence Period", "Number of periods to look back for divergence", "Indicators")
         
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossPercentParam = self.Param("StopLossPercent", 2.0) \

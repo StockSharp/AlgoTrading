@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class cci_with_volatility_filter_strategy(Strategy):
@@ -44,7 +45,7 @@ class cci_with_volatility_filter_strategy(Strategy):
             .SetOptimize(50, 150, 25)
 
         # Candle type parameter.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal indicators

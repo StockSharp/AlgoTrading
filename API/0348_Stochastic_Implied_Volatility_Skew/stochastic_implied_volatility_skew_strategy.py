@@ -7,6 +7,7 @@ from System import TimeSpan, Math, Random
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class stochastic_implied_volatility_skew_strategy(Strategy):
@@ -46,7 +47,7 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
 
         # Candle type for strategy calculation.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal fields

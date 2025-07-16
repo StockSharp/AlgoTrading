@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import KaufmanAdaptiveMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class adaptive_ema_breakout_strategy(Strategy):
     """
@@ -45,7 +46,7 @@ class adaptive_ema_breakout_strategy(Strategy):
             .SetOptimize(1.0, 3.0, 0.5)
 
         # Candle type parameter.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle type", "Type of candles for strategy", "General")
 
         # Internal state variables

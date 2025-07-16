@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class gann_swing_breakout_strategy(Strategy):
     """
@@ -29,7 +30,7 @@ class gann_swing_breakout_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 20) \
             .SetDisplay("MA Period", "Period for moving average calculation", "Indicators")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # State tracking

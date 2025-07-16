@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from collections import deque
 from enum import Enum
 
@@ -35,7 +36,7 @@ class vwap_hidden_markov_model_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management")
 
         # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # HMM state and data

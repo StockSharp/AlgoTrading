@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class donchian_width_mean_reversion_strategy(Strategy):
@@ -41,7 +42,7 @@ class donchian_width_mean_reversion_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 5.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         # Indicators

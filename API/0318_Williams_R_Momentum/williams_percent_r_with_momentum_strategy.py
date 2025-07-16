@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 from StockSharp.Algo.Indicators import WilliamsR, Momentum, SimpleMovingAverage
 
@@ -44,7 +45,7 @@ class williams_percent_r_with_momentum_strategy(Strategy):
             .SetOptimize(-30, -10, 5)
 
         # Candle type parameter.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

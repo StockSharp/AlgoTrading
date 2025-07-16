@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, ATR, RSI
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_rsi_strategy(Strategy):
     """
@@ -44,7 +45,7 @@ class keltner_rsi_strategy(Strategy):
         self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Fields for indicators

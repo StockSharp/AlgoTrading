@@ -12,6 +12,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class end_of_month_strength_strategy(Strategy):
     """
@@ -33,7 +34,7 @@ class end_of_month_strength_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
 
-        self._candleType = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candleType = self.Param("CandleType", tf(1*1440)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
 
     @property

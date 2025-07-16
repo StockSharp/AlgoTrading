@@ -9,6 +9,7 @@ from System.Collections.Generic import Queue
 from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, LinearRegression
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class adx_slope_breakout_strategy(Strategy):
     """
@@ -55,7 +56,7 @@ class adx_slope_breakout_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candleType = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

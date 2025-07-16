@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import KalmanFilter, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class kalman_filter_trend_strategy(Strategy):
     """
@@ -32,7 +33,7 @@ class kalman_filter_trend_strategy(Strategy):
             .SetOptimize(0.01, 1.0, 0.1)
 
         # Candle type for strategy.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
     @property

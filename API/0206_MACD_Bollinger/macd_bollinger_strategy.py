@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, BollingerBands, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class macd_bollinger_strategy(Strategy):
     """
@@ -59,7 +60,7 @@ class macd_bollinger_strategy(Strategy):
             .SetCanOptimize(True)
 
         # Candle type for strategy
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class vwma_strategy(Strategy):
@@ -38,7 +39,7 @@ class vwma_strategy(Strategy):
         self._vwmaPeriod = self.Param("VWMAPeriod", 14) \
             .SetDisplay("VWMA Period", "Period for Volume Weighted Moving Average calculation", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

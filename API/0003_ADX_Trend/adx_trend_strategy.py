@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class adx_trend_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class adx_trend_strategy(Strategy):
         self._adx_exit_threshold = self.Param("AdxExitThreshold", 20) \
             .SetDisplay("ADX Exit Threshold", "ADX level below which to exit position", "Exit parameters")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # Current trend state

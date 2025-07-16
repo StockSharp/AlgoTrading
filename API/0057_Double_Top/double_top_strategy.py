@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class double_top_strategy(Strategy):
@@ -41,7 +42,7 @@ class double_top_strategy(Strategy):
         self._similarityPercent = self.Param("SimilarityPercent", 2.0) \
             .SetDisplay("Similarity %", "Maximum percentage difference between two tops", "Pattern Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

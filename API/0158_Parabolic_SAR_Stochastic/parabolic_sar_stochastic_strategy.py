@@ -10,6 +10,7 @@ from System.Drawing import Color
 from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
 from StockSharp.Algo.Indicators import ParabolicSar, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class parabolic_sar_stochastic_strategy(Strategy):
@@ -52,7 +53,7 @@ class parabolic_sar_stochastic_strategy(Strategy):
             .SetRange(1, 100) \
             .SetDisplay("Overbought Level", "Level above which market is considered overbought", "Stochastic Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         self._lastStochK = 50  # Initialize to a neutral value

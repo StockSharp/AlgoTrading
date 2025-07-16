@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class vwap_breakout_strategy(Strategy):
@@ -35,7 +36,7 @@ class vwap_breakout_strategy(Strategy):
         self._isFirstCandle = True
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

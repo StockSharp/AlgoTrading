@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, ICandleMessage, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class harami_bearish_strategy(Strategy):
@@ -24,7 +25,7 @@ class harami_bearish_strategy(Strategy):
         self._pattern_detected = False
 
         # Strategy parameters
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

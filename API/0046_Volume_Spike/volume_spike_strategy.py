@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class volume_spike_strategy(Strategy):
     """
@@ -41,7 +42,7 @@ class volume_spike_strategy(Strategy):
         self._volumeSpikeMultiplier = self.Param("VolumeSpikeMultiplier", 2.0) \
             .SetDisplay("Volume Spike Multiplier", "Minimum volume increase multiplier to generate signal", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

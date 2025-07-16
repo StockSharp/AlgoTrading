@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Ichimoku
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class ichimoku_tenkan_kijun_strategy(Strategy):
     """Ichimoku Tenkan/Kijun Cross Strategy.
@@ -33,7 +34,7 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
             .SetRange(40, 60) \
             .SetCanOptimize(True)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", tf(30)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

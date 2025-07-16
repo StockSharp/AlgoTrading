@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class bollinger_rsi_strategy(Strategy):
@@ -50,7 +51,7 @@ class bollinger_rsi_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(60, 80, 5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossAtr = self.Param("StopLossAtr", 2.0) \

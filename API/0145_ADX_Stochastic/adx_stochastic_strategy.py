@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class adx_stochastic_strategy(Strategy):
     """
@@ -70,7 +71,7 @@ class adx_stochastic_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

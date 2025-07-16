@@ -8,6 +8,7 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 from Ecng.Common import RandomGen
 
@@ -30,7 +31,7 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
             .SetDisplay("Maximum AF", "Maximum acceleration factor for Parabolic SAR", "SAR Parameters")
 
         # Candle type for strategy calculation.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._parabolic_sar = None

@@ -7,6 +7,7 @@ from System import Math
 from StockSharp.Messages import Level1Fields, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 

@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, StochasticOscillator, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hull_ma_stochastic_strategy(Strategy):
     """
@@ -45,7 +46,7 @@ class hull_ma_stochastic_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1, 10, 1)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

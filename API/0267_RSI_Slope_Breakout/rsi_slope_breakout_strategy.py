@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class rsi_slope_breakout_strategy(Strategy):
     """
@@ -40,7 +41,7 @@ class rsi_slope_breakout_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Indicators and state variables

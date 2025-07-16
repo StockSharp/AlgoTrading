@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, StandardDeviation, StochasticOscillatorValue
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class stochastic_breakout_strategy(Strategy):
@@ -36,7 +37,7 @@ class stochastic_breakout_strategy(Strategy):
         self._deviationMultiplier = self.Param("DeviationMultiplier", 2.0) \
             .SetDisplay("Deviation Multiplier", "Deviation multiplier for breakout detection", "Breakout")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         # Internal indicators and state

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class keltner_seasonal_strategy(Strategy):
@@ -38,7 +39,7 @@ class keltner_seasonal_strategy(Strategy):
             .SetDisplay("Seasonal Threshold", "Minimum seasonal strength to consider for trading", "Seasonal Settings")
 
         # Strategy parameter: Candle type.
-        self._candleType = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Initialize seasonal data dictionary

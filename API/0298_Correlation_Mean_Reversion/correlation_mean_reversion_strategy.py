@@ -11,6 +11,7 @@ from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 from StockSharp.BusinessEntities import Security
 
@@ -64,7 +65,7 @@ class correlation_mean_reversion_strategy(Strategy):
             .SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters") \
             .SetCanOptimize(True)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Timeframe for candles", "Parameters")
 
     # First security for correlation calculation.

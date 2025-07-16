@@ -7,6 +7,7 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, HurstExponent
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hurst_volatility_filter_strategy(Strategy):
     """
@@ -42,7 +43,7 @@ class hurst_volatility_filter_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type_param = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Indicators

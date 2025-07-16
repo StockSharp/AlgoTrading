@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class donchian_channel_strategy(Strategy):
     """
@@ -26,7 +27,7 @@ class donchian_channel_strategy(Strategy):
         self._channel_period = self.Param("ChannelPeriod", 20) \
             .SetDisplay("Channel Period", "Period for Donchian Channel calculation", "Indicators")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # Current state

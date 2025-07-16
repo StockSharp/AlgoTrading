@@ -17,6 +17,7 @@ from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class bollinger_volume_strategy(Strategy):
@@ -47,7 +48,7 @@ class bollinger_volume_strategy(Strategy):
         self._atrPeriod = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "Period of the ATR for stop loss calculation", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state

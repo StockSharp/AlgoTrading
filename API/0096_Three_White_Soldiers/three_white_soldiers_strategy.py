@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class three_white_soldiers_strategy(Strategy):
     """
@@ -26,7 +27,7 @@ class three_white_soldiers_strategy(Strategy):
         self._currentCandle = None
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

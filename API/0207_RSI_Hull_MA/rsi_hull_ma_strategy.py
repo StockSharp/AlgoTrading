@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class rsi_hull_ma_strategy(Strategy):
@@ -42,7 +43,7 @@ class rsi_hull_ma_strategy(Strategy):
             .SetCanOptimize(True)
 
         # Candle type for strategy
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._previous_hull_value = 0

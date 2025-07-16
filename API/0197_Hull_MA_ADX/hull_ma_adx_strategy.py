@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hull_ma_adx_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class hull_ma_adx_strategy(Strategy):
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "ATR multiplier for stop loss calculation", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Timeframe of data for strategy", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

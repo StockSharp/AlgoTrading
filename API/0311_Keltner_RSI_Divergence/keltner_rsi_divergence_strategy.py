@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_rsi_divergence_strategy(Strategy):
     """
@@ -45,7 +46,7 @@ class keltner_rsi_divergence_strategy(Strategy):
             .SetOptimize(7, 28, 7)
 
         # Candle type parameter.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Store previous values to detect divergence

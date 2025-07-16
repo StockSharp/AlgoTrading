@@ -12,6 +12,7 @@ from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_volume_strategy(Strategy):
     """
@@ -51,7 +52,7 @@ class keltner_volume_strategy(Strategy):
         self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Absolute)) \
             .SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
     @property

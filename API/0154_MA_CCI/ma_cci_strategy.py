@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SMA, CCI
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class ma_cci_strategy(Strategy):
     """
@@ -50,7 +51,7 @@ class ma_cci_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 5.0, 1.0)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

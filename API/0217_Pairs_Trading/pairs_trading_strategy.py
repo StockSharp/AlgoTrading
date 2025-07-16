@@ -8,6 +8,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates, Subscription
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from StockSharp.BusinessEntities import Security
 
 class pairs_trading_strategy(Strategy):
@@ -39,7 +40,7 @@ class pairs_trading_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._second_security = self.Param("SecondSecurity", None) \

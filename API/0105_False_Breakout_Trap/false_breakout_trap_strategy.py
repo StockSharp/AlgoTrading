@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class false_breakout_trap_strategy(Strategy):
     """
@@ -19,7 +20,7 @@ class false_breakout_trap_strategy(Strategy):
         super(false_breakout_trap_strategy, self).__init__()
 
         # Candle type and timeframe for the strategy.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
 
         # Period for high/low range detection.

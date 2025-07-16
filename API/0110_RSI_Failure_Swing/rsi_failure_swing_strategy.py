@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates, Sides
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class rsi_failure_swing_strategy(Strategy):
     """
@@ -21,7 +22,7 @@ class rsi_failure_swing_strategy(Strategy):
         super(rsi_failure_swing_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
 
         self._rsiPeriod = self.Param("RsiPeriod", 14) \

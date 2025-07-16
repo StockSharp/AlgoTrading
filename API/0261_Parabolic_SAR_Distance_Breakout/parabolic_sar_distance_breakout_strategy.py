@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class parabolic_sar_distance_breakout_strategy(Strategy):
@@ -45,7 +46,7 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
             .SetOptimize(1.0, 3.0, 0.5)
 
         # Candle type
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._parabolic_sar = None

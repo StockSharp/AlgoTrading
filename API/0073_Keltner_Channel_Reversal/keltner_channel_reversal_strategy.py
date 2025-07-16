@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import KeltnerChannels
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_channel_reversal_strategy(Strategy):
     """
@@ -38,7 +39,7 @@ class keltner_channel_reversal_strategy(Strategy):
         self._atrPeriodParam = self.Param("AtrPeriod", 14) \
             .SetDisplay("ATR Period", "Period for ATR calculation", "Indicators")
         
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossAtrMultiplierParam = self.Param("StopLossAtrMultiplier", 2.0) \

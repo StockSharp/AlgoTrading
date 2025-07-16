@@ -14,6 +14,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class fibonacci_retracement_reversal_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class fibonacci_retracement_reversal_strategy(Strategy):
         self._fibLevelBufferParam = self.Param("FibLevelBuffer", 0.5) \
             .SetDisplay("Fib Level Buffer %", "Buffer percentage around Fibonacci levels", "Indicators")
         
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossPercentParam = self.Param("StopLossPercent", 2.0) \

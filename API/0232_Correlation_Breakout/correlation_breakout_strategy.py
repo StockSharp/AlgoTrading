@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 from StockSharp.BusinessEntities import Security
 
@@ -27,7 +28,7 @@ class correlation_breakout_strategy(Strategy):
             .SetDisplay("Asset 2", "Second asset for correlation", "Instruments")
 
         # Candle type for data
-        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type_param = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Period for calculating correlations

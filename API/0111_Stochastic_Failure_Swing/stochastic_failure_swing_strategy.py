@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class stochastic_failure_swing_strategy(Strategy):
     """
@@ -19,7 +20,7 @@ class stochastic_failure_swing_strategy(Strategy):
         super(stochastic_failure_swing_strategy, self).__init__()
 
         # Candle type and timeframe for the strategy.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
 
         # K period for Stochastic calculation.

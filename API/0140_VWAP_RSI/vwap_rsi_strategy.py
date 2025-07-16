@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class vwap_rsi_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class vwap_rsi_strategy(Strategy):
         self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

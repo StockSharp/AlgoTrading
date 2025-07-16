@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, StandardDeviation, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class bollinger_width_mean_reversion_strategy(Strategy):
     """
@@ -57,7 +58,7 @@ class bollinger_width_mean_reversion_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use in the strategy", "General")
 
         # Internal variables

@@ -12,6 +12,7 @@ from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import HullMovingAverage
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hull_ma_rsi_strategy(Strategy):
     """
@@ -45,7 +46,7 @@ class hull_ma_rsi_strategy(Strategy):
         self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Absolute)) \
             .SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         # Previous HMA value

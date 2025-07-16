@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hull_ma_reversal_strategy(Strategy):
     """
@@ -24,7 +25,7 @@ class hull_ma_reversal_strategy(Strategy):
             .SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicator Settings")
         self._atr_multiplier = self.Param("AtrMultiplier", Unit(2, UnitTypes.Absolute)) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \
             .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
