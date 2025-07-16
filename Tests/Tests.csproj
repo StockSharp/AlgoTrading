@@ -13,6 +13,7 @@
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="../API/**/*.cs" />
+    <Compile Include="../API/**/*.cs" Link="CS\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="../API/**/*.py" Link="PY\%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
