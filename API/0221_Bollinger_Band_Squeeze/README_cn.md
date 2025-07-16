@@ -1,4 +1,5 @@
 # Bollinger Band Squeeze Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略监控布林带宽度以发现低波动时期，当带宽相对于近期平均收窄时，预示即将出现波动扩张。
 

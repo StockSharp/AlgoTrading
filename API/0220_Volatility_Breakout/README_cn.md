@@ -1,4 +1,5 @@
 # Volatility Breakout Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略在价格脱离平均区间时捕捉强势走势。通过平均真实波幅(ATR)衡量价格与简单移动平均线的距离，并据此设定随波动变化的突破阈值。
 

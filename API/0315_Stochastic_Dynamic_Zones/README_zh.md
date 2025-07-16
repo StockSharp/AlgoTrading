@@ -1,4 +1,5 @@
 # Stochastic Dynamic Zones
+[English](README.md) | [Русский](README_ru.md)
 
 **Stochastic Dynamic Zones** 策略基于 Stochastic Oscillator with Dynamic Overbought/Oversold Zones。
 

@@ -1,4 +1,5 @@
 # Keltner Kalman Filter
+[English](README.md) | [Русский](README_ru.md)
 
 **Keltner Kalman Filter** 策略基于 combining Keltner Channels with a Kalman Filter to identify trends and trade opportunities。
 

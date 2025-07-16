@@ -1,4 +1,5 @@
 # Williams %R 均值回归策略
+[English](README.md) | [Русский](README_ru.md)
 
 Williams %R 在 0 到 -100 区间波动，用于衡量价格在最近区间中的相对位置。当指标远离自身均值时，本策略选择逆势进入。
 

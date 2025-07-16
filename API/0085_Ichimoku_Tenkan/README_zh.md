@@ -1,4 +1,5 @@
 # 一目均衡表 Tenkan/Kijun 交叉策略
+[English](README.md) | [Русский](README_ru.md)
 
 一目均衡表是一套完整的趋势跟随系统。本策略关注 Tenkan 线与 Kijun 线的交叉，并结合价格相对于云层的位置。Tenkan 在云层上方上穿 Kijun 表示趋势可能继续上行；在云层下方下穿则表明疲弱。
 

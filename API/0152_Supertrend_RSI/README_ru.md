@@ -1,4 +1,5 @@
 # Стратегия Supertrend RSI
+[English](README.md) | [中文](README_cn.md)
 
 Реализация стратегии №152 — Supertrend + RSI. Покупать, когда цена выше линии Supertrend и RSI ниже 30 (перепроданность). Продавать, когда цена ниже Supertrend и RSI выше 70 (перекупленность).
 

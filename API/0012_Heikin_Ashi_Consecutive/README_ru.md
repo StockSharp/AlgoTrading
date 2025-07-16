@@ -1,4 +1,5 @@
 # Последовательные свечи Heikin Ashi
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия основана на серии подряд идущих свечей Heikin Ashi.
 

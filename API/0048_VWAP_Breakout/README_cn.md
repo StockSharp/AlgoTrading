@@ -1,4 +1,5 @@
 # VWAP突破 (VWAP Breakout)
+[English](README.md) | [Русский](README_ru.md)
 
 价格从另一侧穿越成交量加权平均价(VWAP)时视为突破。
 

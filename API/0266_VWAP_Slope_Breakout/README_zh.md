@@ -1,4 +1,5 @@
 # VWAP 斜率突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略监测 VWAP 斜率的变化。若斜率异常陡峭，常常预示新的趋势正在形成。
 

@@ -1,4 +1,5 @@
 # RSI Laguerre
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия на основе индикатора Laguerre RSI
 

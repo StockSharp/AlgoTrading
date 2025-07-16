@@ -1,4 +1,5 @@
 # 量价加权突破 (Volume Weighted Price Breakout)
+[English](README.md) | [Русский](README_ru.md)
 
 结合简单均线与VWMA, 当价格从另一侧穿越VWMA视为突破。
 

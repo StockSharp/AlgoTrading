@@ -1,4 +1,5 @@
 # ATR扩张突破 (ATR Expansion Breakout)
+[English](README.md) | [Русский](README_ru.md)
 
 ATR上升表示波动爆发, 在价格相对均线方向突破时入场。
 

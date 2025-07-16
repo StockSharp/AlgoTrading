@@ -1,4 +1,5 @@
 # Сила тренда VWAP и ADX
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **VWAP ADX Trend Strength** основана на VWAP с использованием ADX для оценки силы тренда.
 

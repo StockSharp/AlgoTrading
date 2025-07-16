@@ -1,4 +1,5 @@
 # Beta Adjusted Pairs Trading
+[English](README.md) | [Русский](README_ru.md)
 
 Beta Adjusted Pairs Trading 策略结合指标与波动率过滤器，只在满足特定条件时进场。
 

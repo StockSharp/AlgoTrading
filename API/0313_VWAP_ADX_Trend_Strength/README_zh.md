@@ -1,4 +1,5 @@
 # VWAP ADX Trend Strength
+[English](README.md) | [Русский](README_ru.md)
 
 **VWAP ADX Trend Strength** 策略基于 VWAP with ADX Trend Strength。
 

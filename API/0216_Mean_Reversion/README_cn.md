@@ -1,4 +1,5 @@
 # Mean Reversion Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该统计策略寻找价格相对于近期均值的短期极端。策略使用移动平均线作为公允价，通过标准差计算衡量偏离度。
 

@@ -1,4 +1,5 @@
 # Parabolic SAR Sentiment Divergence
+[English](README.md) | [Русский](README_ru.md)
 
 **Parabolic SAR Sentiment Divergence** 策略基于 Parabolic SAR Sentiment Divergence。
 

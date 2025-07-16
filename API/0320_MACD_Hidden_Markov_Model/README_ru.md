@@ -1,4 +1,5 @@
 # MACD и скрытая модель Маркова
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **MACD Hidden Markov Model** построена на индикаторе MACD с использованием скрытой модели Маркова.
 

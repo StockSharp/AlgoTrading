@@ -1,4 +1,5 @@
 # Stochastic 斜率突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略跟踪随机指标斜率的变化。当斜率异常陡峭时，意味着可能形成新的趋势。
 

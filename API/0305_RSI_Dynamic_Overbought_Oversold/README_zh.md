@@ -1,4 +1,5 @@
 # RSI Dynamic Overbought Oversold
+[English](README.md) | [Русский](README_ru.md)
 
 **RSI Dynamic Overbought Oversold** 策略基于相关指标构建。
 

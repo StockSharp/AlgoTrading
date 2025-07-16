@@ -1,4 +1,5 @@
 # ATR MACD 策略
+[English](README.md) | [Русский](README_ru.md)
 
 该策略利用平均真实波幅(ATR)来调整仓位规模，并根据MACD的交叉进行交易。
 ATR数值越大，持仓规模越小，从而在不同市场环境中保持风险一致。

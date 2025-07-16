@@ -1,4 +1,5 @@
 # Williams %R 突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略通过观察 Williams %R 相对其历史均值的强势突破来捕捉动量。当指标远离常态区间时，往往预示着趋势即将展开。
 

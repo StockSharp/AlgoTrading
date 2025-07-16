@@ -1,4 +1,5 @@
 # MACD Bollinger Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略结合MACD与布林带。当MACD高于信号线且价格在下轨以下时做多；当MACD低于信号线且价格在上轨以上时做空。
 

@@ -1,4 +1,5 @@
 # Seasonality Adjusted Momentum
+[English](README.md) | [Русский](README_ru.md)
 
 **Seasonality Adjusted Momentum** 策略基于相关指标构建。
 

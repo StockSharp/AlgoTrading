@@ -1,4 +1,5 @@
 # ZScore Reversal Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略通过计算价格相对于移动平均线的标准差距离(Z分数)来衡量偏离程度，捕捉可能向均值回归的极端状态。
 

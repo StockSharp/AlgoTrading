@@ -1,4 +1,5 @@
 # ADX Slope Mean Reversion
+[English](README.md) | [Русский](README_ru.md)
 
 ADX Slope Mean Reversion 策略关注指标的极端读数以捕捉均值回归。远离正常水平的情况通常不会持续太久。
 

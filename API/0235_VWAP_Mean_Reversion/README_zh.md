@@ -1,4 +1,5 @@
 # VWAP 均值回归策略
+[English](README.md) | [Русский](README_ru.md)
 
 该策略在价格偏离成交量加权平均价(VWAP)时进行反向操作。ATR 用于衡量价格离开 VWAP 的幅度，超过一定倍数才考虑进场。
 

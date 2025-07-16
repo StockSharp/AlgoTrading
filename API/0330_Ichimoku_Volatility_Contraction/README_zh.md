@@ -1,4 +1,5 @@
 # Ichimoku Volatility Contraction
+[English](README.md) | [Русский](README_ru.md)
 
 **Ichimoku Volatility Contraction** 策略基于 Ichimoku Volatility Contraction。
 

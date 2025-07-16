@@ -1,4 +1,5 @@
 # 射击之星形态 (Shooting Star Pattern)
+[English](README.md) | [Русский](README_ru.md)
 
 射击之星在上升后出现, 长上影表示可能反转。
 

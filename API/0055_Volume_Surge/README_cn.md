@@ -1,4 +1,5 @@
 # 成交量激增 (Volume Surge)
+[English](README.md) | [Русский](README_ru.md)
 
 监控成交量远高于均值的情况, 表示市场强烈兴趣。
 

@@ -1,4 +1,5 @@
 # Parabolic SAR 距离突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略监控 Parabolic SAR 指标的迅速扩张。当读数突破近期区间时，价格通常会展开新走势。
 

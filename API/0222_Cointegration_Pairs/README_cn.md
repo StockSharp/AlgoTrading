@@ -1,4 +1,5 @@
 # Cointegration Pairs Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略交易长期协整关系的两只资产。通过计算第一只资产与经beta调整的第二只资产之间的残差z值，寻找会回归均衡的偏离。
 

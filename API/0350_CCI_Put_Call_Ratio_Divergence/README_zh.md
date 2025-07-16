@@ -1,4 +1,5 @@
 # CCI Put Call Ratio Divergence
+[English](README.md) | [Русский](README_ru.md)
 
 **CCI Put Call Ratio Divergence** 策略基于 CCI Put Call Ratio Divergence。
 

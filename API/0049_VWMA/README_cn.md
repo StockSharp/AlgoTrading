@@ -1,4 +1,5 @@
 # VWMA交叉 (VWMA Cross)
+[English](README.md) | [Русский](README_ru.md)
 
 成交量加权移动平均(VWMA)强调高量价格。
 

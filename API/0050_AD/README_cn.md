@@ -1,4 +1,5 @@
 # AD趋势 (Accumulation/Distribution Trend)
+[English](README.md) | [Русский](README_ru.md)
 
 利用累计/派发指标判定买卖压力。
 

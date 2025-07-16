@@ -1,4 +1,5 @@
 # Vwap Macd Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 策略结合VWAP和MACD。当价格高于VWAP且MACD在信号线上方时做多；价格低于VWAP且MACD在信号线下方时做空。MACD与信号线反向交叉时离场。
 

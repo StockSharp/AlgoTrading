@@ -1,4 +1,5 @@
 # Pairs Trading Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略监控两只相关资产之间的价差，并与其历史均值与标准差比较，捕捉暂时性偏离。
 

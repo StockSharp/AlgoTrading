@@ -1,4 +1,5 @@
 # Donchian Hurst Exponent
+[English](README.md) | [Русский](README_ru.md)
 
 **Donchian Hurst Exponent** 策略基于 that trades based on Donchian Channel breakouts with Hurst Exponent filter。
 

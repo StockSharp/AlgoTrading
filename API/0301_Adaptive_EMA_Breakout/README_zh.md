@@ -1,4 +1,5 @@
 # Adaptive EMA Breakout
+[English](README.md) | [Русский](README_ru.md)
 
 **Adaptive EMA Breakout** 策略基于相关指标构建。
 

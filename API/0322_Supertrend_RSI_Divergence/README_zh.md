@@ -1,4 +1,5 @@
 # Supertrend RSI Divergence
+[English](README.md) | [Русский](README_ru.md)
 
 **Supertrend RSI Divergence** 策略基于 that uses Supertrend indicator along with RSI divergence to identify trading opportunities。
 

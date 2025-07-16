@@ -1,4 +1,5 @@
 # Keltner 通道宽度突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略观察 Keltner 通道宽度的快速扩张。当指标超出常态范围时，价格往往开始新的走势。
 

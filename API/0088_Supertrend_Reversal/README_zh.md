@@ -1,4 +1,5 @@
 # Supertrend 反转策略
+[English](README.md) | [Русский](README_ru.md)
 
 Supertrend 指标结合 ATR 和价格生成跟随式支撑/阻力。当该线从价格上方翻到下方或相反时，可能预示趋势转换。本策略交易这种翻转。
 

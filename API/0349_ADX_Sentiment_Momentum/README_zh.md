@@ -1,4 +1,5 @@
 # ADX Sentiment Momentum
+[English](README.md) | [Русский](README_ru.md)
 
 **ADX Sentiment Momentum** 策略基于 ADX Sentiment Momentum。
 

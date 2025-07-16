@@ -1,4 +1,5 @@
 # Фильтр импульса Supertrend
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Supertrend Momentum Filter** основана на индикаторах Supertrend и Momentum.
 

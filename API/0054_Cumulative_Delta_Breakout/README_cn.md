@@ -1,4 +1,5 @@
 # 累积差分突破 (Cumulative Delta Breakout)
+[English](README.md) | [Русский](README_ru.md)
 
 累积买卖量差突破历史区间时入场。
 

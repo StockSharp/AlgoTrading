@@ -1,4 +1,5 @@
 # Hurst Exponent Trend Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 本策略使用赫斯特指数判断市场是否处于趋势状态。指数高于阈值表示趋势持续，低于阈值则可能是震荡或均值回归。移动平均线提供方向确认。
 

@@ -1,4 +1,5 @@
 # Parabolic Sar Volume Strategy
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия, которая сочетает Parabolic SAR с подтверждением объёма. Вход в сделки происходит, когда цена пересекает Parabolic SAR при объёме выше среднего.
 

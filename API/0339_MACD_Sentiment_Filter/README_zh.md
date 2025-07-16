@@ -1,4 +1,5 @@
 # MACD Sentiment Filter
+[English](README.md) | [Русский](README_ru.md)
 
 **MACD Sentiment Filter** 策略基于 MACD Sentiment Filter。
 

@@ -1,4 +1,5 @@
 # Volume Supertrend Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 本策略利用成交量与Supertrend指标。当成交量大于均值且价格在Supertrend上方时做多；当成交量大于均值且价格在Supertrend下方时做空，表明放量趋势。
 

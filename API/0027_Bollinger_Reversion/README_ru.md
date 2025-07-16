@@ -1,4 +1,5 @@
 # Bollinger Reversion
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия возврата к среднему по полосам Боллинджера
 

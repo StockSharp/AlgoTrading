@@ -1,4 +1,5 @@
 # MACD Adaptive Histogram
+[English](README.md) | [Русский](README_ru.md)
 
 **MACD Adaptive Histogram** 策略基于相关指标构建。
 
