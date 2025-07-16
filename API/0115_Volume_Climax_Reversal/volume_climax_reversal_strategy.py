@@ -18,7 +18,6 @@ class volume_climax_reversal_strategy(Strategy):
     """
     Volume Climax Reversal strategy.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

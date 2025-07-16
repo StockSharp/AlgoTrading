@@ -25,7 +25,6 @@ class vix_trigger_strategy(Strategy):
     It enters positions when VIX is rising (indicating increasing fear/volatility in the market)
     and price is moving in an expected direction relative to its moving average.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(vix_trigger_strategy, self).__init__()

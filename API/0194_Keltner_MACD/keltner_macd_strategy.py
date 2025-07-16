@@ -16,7 +16,6 @@ class keltner_macd_strategy(Strategy):
     Enters short when price breaks below lower Keltner Channel with MACD < Signal.
     Exits when MACD crosses its signal line in the opposite direction.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

@@ -15,7 +15,6 @@ class rsi_hook_reversal_strategy(Strategy):
     Enters long when RSI forms an upward hook from oversold conditions.
     Enters short when RSI forms a downward hook from overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

@@ -23,7 +23,6 @@ class pinbar_reversal_strategy(Strategy):
     A pinbar is characterized by a small body with a long wick/tail, 
     signaling a potential reversal in the market.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(pinbar_reversal_strategy, self).__init__()

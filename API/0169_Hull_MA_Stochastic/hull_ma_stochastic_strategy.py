@@ -15,7 +15,6 @@ class hull_ma_stochastic_strategy(Strategy):
     Hull Moving Average + Stochastic Oscillator strategy.
     Strategy enters when HMA trend direction changes with Stochastic confirming oversold/overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

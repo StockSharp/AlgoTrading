@@ -16,7 +16,6 @@ class bollinger_width_mean_reversion_strategy(Strategy):
     Bollinger Width Mean Reversion Strategy.
     Strategy trades based on mean reversion of Bollinger Bands width.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

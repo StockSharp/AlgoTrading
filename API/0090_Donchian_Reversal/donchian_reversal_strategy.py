@@ -15,7 +15,6 @@ class donchian_reversal_strategy(Strategy):
     Enters long when price bounces from the lower Donchian Channel band.
     Enters short when price bounces from the upper Donchian Channel band.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

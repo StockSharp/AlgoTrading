@@ -25,7 +25,6 @@ class volume_weighted_price_breakout_strategy(Strategy):
     Short entry: Price falls below the volume-weighted average price over N periods
     Exit: Price crosses MA in the opposite direction
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(volume_weighted_price_breakout_strategy, self).__init__()

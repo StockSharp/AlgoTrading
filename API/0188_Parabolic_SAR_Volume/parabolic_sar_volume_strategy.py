@@ -23,7 +23,6 @@ class parabolic_sar_volume_strategy(Strategy):
     Strategy that combines Parabolic SAR with volume confirmation.
     Enters trades when price crosses the Parabolic SAR with above-average volume.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(parabolic_sar_volume_strategy, self).__init__()

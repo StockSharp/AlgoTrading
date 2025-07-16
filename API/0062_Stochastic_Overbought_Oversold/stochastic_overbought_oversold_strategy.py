@@ -21,7 +21,6 @@ class stochastic_overbought_oversold_strategy(Strategy):
     """
     Strategy based on Stochastic Oscillator's overbought/oversold conditions.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(stochastic_overbought_oversold_strategy, self).__init__()

@@ -24,7 +24,6 @@ class atr_trailing_strategy(Strategy):
     It enters positions using a simple moving average and manages exits with a dynamic
     trailing stop calculated as a multiple of ATR.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(atr_trailing_strategy, self).__init__()

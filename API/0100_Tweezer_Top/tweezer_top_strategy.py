@@ -15,7 +15,6 @@ class tweezer_top_strategy(Strategy):
     This pattern forms when two candlesticks have nearly identical highs, with the first
     being bullish and the second being bearish, indicating a potential reversal.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

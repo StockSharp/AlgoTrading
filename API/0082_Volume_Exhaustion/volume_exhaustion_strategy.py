@@ -23,7 +23,6 @@ class volume_exhaustion_strategy(Strategy):
     Volume Exhaustion Strategy.
     Looks for volume spikes with corresponding bullish/bearish candles.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(volume_exhaustion_strategy, self).__init__()

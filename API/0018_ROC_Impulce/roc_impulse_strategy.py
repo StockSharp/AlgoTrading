@@ -17,7 +17,6 @@ class roc_impulse_strategy(Strategy):
     It enters long when ROC is positive and increasing (positive momentum),
     and short when ROC is negative and decreasing (negative momentum).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

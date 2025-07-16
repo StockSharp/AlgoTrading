@@ -17,7 +17,6 @@ class supertrend_strategy(Strategy):
     It enters long position when price is above Supertrend line 
     and short position when price is below Supertrend line.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

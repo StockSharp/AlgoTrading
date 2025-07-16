@@ -18,7 +18,6 @@ class tradingview_supertrend_flip_strategy(Strategy):
     It detects when Supertrend flips from above price to below (bullish) or 
     from below price to above (bearish) and confirms the signal with above-average volume.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

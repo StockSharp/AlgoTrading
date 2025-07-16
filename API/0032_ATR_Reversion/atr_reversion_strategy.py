@@ -17,7 +17,6 @@ class atr_reversion_strategy(Strategy):
     It enters positions when price makes a significant move in one direction (N * ATR)
     and expects a reversion to the mean.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

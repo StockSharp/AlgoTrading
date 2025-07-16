@@ -17,7 +17,6 @@ class gann_swing_breakout_strategy(Strategy):
     It detects swing highs and lows, then enters positions when price breaks out
     after a pullback to a moving average.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -15,7 +15,6 @@ class heikin_ashi_reversal_strategy(Strategy):
     Enters long when Heikin-Ashi candles change from bearish to bullish.
     Enters short when Heikin-Ashi candles change from bullish to bearish.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         """Initializes a new instance of the HeikinAshiReversalStrategy."""

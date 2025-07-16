@@ -22,7 +22,6 @@ class engulfing_bearish_strategy(Strategy):
     This pattern occurs when a bearish (black) candlestick completely engulfs
     the previous bullish (white) candlestick, signaling a potential bearish reversal.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(engulfing_bearish_strategy, self).__init__()

@@ -21,7 +21,6 @@ class evening_star_strategy(Strategy):
     Evening Star candle pattern strategy.
     The strategy looks for an Evening Star pattern - first bullish candle, second small candle (doji), third bearish candle that closes below the midpoint of the first.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(evening_star_strategy, self).__init__()

@@ -25,7 +25,6 @@ class volume_surge_strategy(Strategy):
     Short entry: Volume exceeds average volume by k times and price is below MA
     Exit when volume falls below average
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(volume_surge_strategy, self).__init__()

@@ -24,7 +24,6 @@ class hv_breakout_strategy(Strategy):
     It calculates price levels for breakouts using the historical volatility of the instrument
     and enters positions when price breaks above or below those levels.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(hv_breakout_strategy, self).__init__()

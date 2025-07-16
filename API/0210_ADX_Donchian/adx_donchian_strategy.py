@@ -13,7 +13,6 @@ class adx_donchian_strategy(Strategy):
     """
     Strategy based on ADX and Donchian Channel indicators (#210)
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

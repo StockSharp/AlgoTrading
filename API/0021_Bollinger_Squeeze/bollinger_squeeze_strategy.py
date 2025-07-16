@@ -17,7 +17,6 @@ class bollinger_squeeze_strategy(Strategy):
     It detects when Bollinger Bands narrow (squeeze) and then trades the breakout 
     when the bands start expanding again.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

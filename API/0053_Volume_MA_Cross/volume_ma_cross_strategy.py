@@ -25,7 +25,6 @@ class volume_ma_cross_strategy(Strategy):
     Short entry: Fast volume MA crosses below slow volume MA
     Exit: Reverse crossover
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(volume_ma_cross_strategy, self).__init__()

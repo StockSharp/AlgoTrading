@@ -25,7 +25,6 @@ class bollinger_band_width_strategy(Strategy):
     It identifies periods of increasing volatility (widening Bollinger Bands)
     and trades in the direction of the trend as identified by price position relative to the middle band.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(bollinger_band_width_strategy, self).__init__()

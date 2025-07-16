@@ -26,7 +26,6 @@ class vcp_strategy(Strategy):
     Long entry: Range contraction followed by a break above previous high
     Short entry: Range contraction followed by a break below previous low
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(vcp_strategy, self).__init__()

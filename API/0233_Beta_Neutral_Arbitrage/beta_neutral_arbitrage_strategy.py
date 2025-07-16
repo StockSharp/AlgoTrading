@@ -16,7 +16,6 @@ class beta_neutral_arbitrage_strategy(Strategy):
     """
     Beta Neutral Arbitrage strategy that trades pairs of assets based on their beta-adjusted prices.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

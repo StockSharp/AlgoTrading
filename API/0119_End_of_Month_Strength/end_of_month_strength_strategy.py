@@ -19,7 +19,6 @@ class end_of_month_strength_strategy(Strategy):
     Implementation of End of Month Strength trading strategy.
     The strategy enters long position on the 25th day of the month and exits on the 5th day of the next month.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

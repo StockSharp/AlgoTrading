@@ -24,7 +24,6 @@ class atr_range_strategy(Strategy):
     Enters long when price moves up by at least ATR over N candles
     Enters short when price moves down by at least ATR over N candles
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(atr_range_strategy, self).__init__()

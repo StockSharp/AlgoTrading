@@ -17,7 +17,6 @@ class rsi_divergence_strategy(Strategy):
     It detects bullish divergence (price makes lower low, RSI makes higher low) 
     and bearish divergence (price makes higher high, RSI makes lower high).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

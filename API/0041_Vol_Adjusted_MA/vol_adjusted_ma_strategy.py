@@ -23,7 +23,6 @@ class vol_adjusted_ma_strategy(Strategy):
     Vol Adjusted MA strategy
     Strategy enters long when price is above MA + k*ATR, and short when price is below MA - k*ATR
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(vol_adjusted_ma_strategy, self).__init__()

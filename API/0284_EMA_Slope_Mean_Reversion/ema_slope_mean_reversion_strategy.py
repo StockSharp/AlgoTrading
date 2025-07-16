@@ -13,7 +13,6 @@ class ema_slope_mean_reversion_strategy(Strategy):
     """
     EMA Slope Mean Reversion Strategy - strategy based on mean reversion of exponential moving average slope.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

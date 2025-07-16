@@ -24,7 +24,6 @@ class bollinger_band_reversal_strategy(Strategy):
     The strategy enters long position when price is below the lower Bollinger Band and the candle is bullish,
     enters short position when price is above the upper Bollinger Band and the candle is bearish.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(bollinger_band_reversal_strategy, self).__init__()

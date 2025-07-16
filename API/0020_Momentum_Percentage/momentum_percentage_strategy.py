@@ -17,7 +17,6 @@ class momentum_percentage_strategy(Strategy):
     It enters positions when momentum percentage exceeds threshold 
     and price is on the correct side of the moving average.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -12,7 +12,6 @@ class lunch_break_fade_strategy(Strategy):
     """
     Strategy that trades on the price movement fade during the lunch break.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

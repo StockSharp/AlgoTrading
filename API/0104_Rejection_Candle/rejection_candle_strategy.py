@@ -17,7 +17,6 @@ class rejection_candle_strategy(Strategy):
     """
     Strategy based on rejection candles that indicate potential reversals.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

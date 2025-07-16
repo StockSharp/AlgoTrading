@@ -15,7 +15,6 @@ class supertrend_stochastic_strategy(Strategy):
     Supertrend + Stochastic strategy.
     Strategy enters trades when Supertrend indicates trend direction and Stochastic confirms with oversold/overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

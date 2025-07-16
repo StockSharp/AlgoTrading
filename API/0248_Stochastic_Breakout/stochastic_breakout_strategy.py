@@ -15,7 +15,6 @@ class stochastic_breakout_strategy(Strategy):
     Stochastic Breakout Strategy.
     This strategy identifies breakouts based on the Stochastic oscillator values compared to their historical average.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

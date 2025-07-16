@@ -15,7 +15,6 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
     """
     Strategy based on RSI with dynamic overbought/oversold levels.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

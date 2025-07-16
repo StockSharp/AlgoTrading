@@ -21,7 +21,6 @@ class fibonacci_retracement_reversal_strategy(Strategy):
     Fibonacci Retracement Reversal strategy.
     The strategy identifies significant swings in price and looks for reversals at key Fibonacci retracement levels.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(fibonacci_retracement_reversal_strategy, self).__init__()

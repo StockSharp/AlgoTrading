@@ -23,7 +23,6 @@ class adx_weakening_strategy(Strategy):
     Enters long when ADX weakens and price is above MA.
     Enters short when ADX weakens and price is below MA.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         """Initializes a new instance of the ``adx_weakening_strategy``."""

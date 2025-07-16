@@ -17,7 +17,6 @@ class cci_vwap_strategy(Strategy):
     Enters long when CCI is below -100 and price is below VWAP.
     Enters short when CCI is above 100 and price is above VWAP.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

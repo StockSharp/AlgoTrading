@@ -15,7 +15,6 @@ class vwap_volume_strategy(Strategy):
     Strategy combining VWAP and Volume indicators.
     Buys/sells on VWAP breakouts confirmed by above-average volume.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

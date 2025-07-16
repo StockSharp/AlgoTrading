@@ -16,7 +16,6 @@ class z_score_reversal_strategy(Strategy):
     Enters short when Z-Score is above a positive threshold (price significantly above mean).
     Exits when Z-Score returns to zero (price returns to mean).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

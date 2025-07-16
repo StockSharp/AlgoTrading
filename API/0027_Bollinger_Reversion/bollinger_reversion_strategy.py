@@ -17,7 +17,6 @@ class bollinger_reversion_strategy(Strategy):
     It buys when price touches the lower band and sells when price touches the upper band,
     expecting prices to revert to the middle band (mean).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -16,7 +16,6 @@ class supertrend_volume_strategy(Strategy):
     Strategy that combines the Supertrend indicator with volume analysis to identify
     strong trend-following trading opportunities.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

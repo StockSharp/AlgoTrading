@@ -17,7 +17,6 @@ class hull_ma_trend_strategy(Strategy):
     It enters long position when Hull MA is rising 
     and short position when Hull MA is falling.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -17,7 +17,6 @@ class ma_deviation_strategy(Strategy):
     It opens positions when price deviates by a specified percentage from MA
     and closes when price returns to MA.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

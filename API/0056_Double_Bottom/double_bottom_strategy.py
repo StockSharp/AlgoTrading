@@ -23,7 +23,6 @@ class double_bottom_strategy(Strategy):
     Double Bottom reversal strategy: looks for two similar bottoms with confirmation.
     This pattern often indicates a trend reversal from bearish to bullish.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(double_bottom_strategy, self).__init__()

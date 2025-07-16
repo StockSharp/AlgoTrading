@@ -17,7 +17,6 @@ class cci_breakout_strategy(Strategy):
     It enters long when CCI breaks above +100 (strong upward momentum)
     and short when CCI breaks below -100 (strong downward momentum).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -15,7 +15,6 @@ class donchian_hurst_strategy(Strategy):
     Strategy that trades based on Donchian Channel breakouts with Hurst Exponent filter.
     Enters position when price breaks Donchian Channel with Hurst Exponent indicating trend persistence.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

@@ -15,7 +15,6 @@ class harami_bullish_strategy(Strategy):
     Harami Bullish pattern strategy.
     Strategy enters long position when a bullish harami pattern is detected.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

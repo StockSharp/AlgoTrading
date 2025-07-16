@@ -24,7 +24,6 @@ class volume_spike_strategy(Strategy):
     Short entry: Volume increases 2x above previous candle and price is below MA
     Exit when volume falls below average volume
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(volume_spike_strategy, self).__init__()

@@ -25,7 +25,6 @@ class ad_strategy(Strategy):
     Short entry: A/D falling and price below MA
     Exit: A/D changes direction
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(ad_strategy, self).__init__()

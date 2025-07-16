@@ -17,7 +17,6 @@ class adx_di_strategy(Strategy):
     It enters long when ADX is strong and +DI > -DI,
     and short when ADX is strong and -DI > +DI.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

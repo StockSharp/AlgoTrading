@@ -16,7 +16,6 @@ class santa_claus_rally_strategy(Strategy):
     The strategy enters long position between December 20 and December 31,
     and exits on January 5 of the following year.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

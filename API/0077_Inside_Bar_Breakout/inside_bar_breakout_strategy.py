@@ -22,7 +22,6 @@ class inside_bar_breakout_strategy(Strategy):
     The strategy looks for inside bar patterns (a bar with high lower than the previous bar's high and low higher than the previous bar's low)
     and enters positions on breakouts of the inside bar's high or low.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(inside_bar_breakout_strategy, self).__init__()

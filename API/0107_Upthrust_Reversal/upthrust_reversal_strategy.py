@@ -19,7 +19,6 @@ class upthrust_reversal_strategy(Strategy):
     Strategy based on Upthrust Reversal pattern, which occurs when price makes a new high above resistance
     but immediately reverses and closes below the resistance level, indicating a bearish reversal.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

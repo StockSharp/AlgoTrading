@@ -17,7 +17,6 @@ class rsi_reversion_strategy(Strategy):
     It buys when RSI is oversold and sells when RSI is overbought,
     expecting prices to revert to the mean (exit level).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -14,7 +14,6 @@ class harami_bearish_strategy(Strategy):
     Harami Bearish pattern strategy.
     Strategy enters short position when a bearish harami pattern is detected.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

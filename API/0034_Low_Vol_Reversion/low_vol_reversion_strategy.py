@@ -17,7 +17,6 @@ class low_vol_reversion_strategy(Strategy):
     It identifies periods of low ATR (Average True Range) and opens positions when price
     deviates from its moving average, expecting a return to the mean.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

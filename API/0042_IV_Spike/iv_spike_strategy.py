@@ -24,7 +24,6 @@ class iv_spike_strategy(Strategy):
     This strategy enters long when IV increases by 50% and price is below MA,
     or short when IV increases by 50% and price is above MA
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(iv_spike_strategy, self).__init__()

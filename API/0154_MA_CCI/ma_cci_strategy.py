@@ -16,7 +16,6 @@ class ma_cci_strategy(Strategy):
     Buys when price is above MA and CCI is oversold.
     Sells when price is below MA and CCI is overbought.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

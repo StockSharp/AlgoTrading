@@ -19,7 +19,6 @@ class stochastic_mean_reversion_strategy(Strategy):
     Enter when Stochastic %K deviates from its average by a certain multiple of standard deviation.
     Exit when Stochastic %K returns to its average.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

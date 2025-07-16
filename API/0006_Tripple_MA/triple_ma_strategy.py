@@ -17,7 +17,6 @@ class triple_ma_strategy(Strategy):
     It enters long position when short MA > middle MA > long MA 
     and short position when short MA < middle MA < long MA.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -15,7 +15,6 @@ class rsi_stochastic_strategy(Strategy):
     Strategy that combines RSI and Stochastic Oscillator for double confirmation
     of oversold and overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

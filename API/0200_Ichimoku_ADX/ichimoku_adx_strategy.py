@@ -21,7 +21,6 @@ class ichimoku_adx_strategy(Strategy):
     Long: Price < Kumo (price falls below cloud)
     Short: Price > Kumo (price rises above cloud)
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

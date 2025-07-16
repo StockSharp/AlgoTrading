@@ -23,7 +23,6 @@ class shooting_star_strategy(Strategy):
     Shooting Star is a bearish reversal pattern that forms after an advance
     and is characterized by a small body with a long upper shadow.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(shooting_star_strategy, self).__init__()

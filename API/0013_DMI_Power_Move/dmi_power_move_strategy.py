@@ -17,7 +17,6 @@ class dmi_power_move_strategy(Strategy):
     It enters long position when +DI exceeds -DI by a specified threshold and ADX is strong.
     It enters short position when -DI exceeds +DI by a specified threshold and ADX is strong.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

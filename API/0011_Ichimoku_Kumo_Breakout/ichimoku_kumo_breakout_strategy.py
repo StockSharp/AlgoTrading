@@ -17,7 +17,6 @@ class ichimoku_kumo_breakout_strategy(Strategy):
     It enters long position when price breaks above the cloud and Tenkan-sen crosses above Kijun-sen.
     It enters short position when price breaks below the cloud and Tenkan-sen crosses below Kijun-sen.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

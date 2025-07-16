@@ -17,7 +17,6 @@ class laguerre_rsi_strategy(Strategy):
     Note: Since StockSharp doesn't have built-in Laguerre RSI, this implementation 
     uses regular RSI but applies Laguerre RSI trading logic with 0-1 scale.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

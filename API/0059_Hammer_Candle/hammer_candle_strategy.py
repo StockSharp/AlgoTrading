@@ -20,7 +20,6 @@ class hammer_candle_strategy(Strategy):
     """
     Hammer Candle strategy that enters long positions when a hammer candlestick pattern appears.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(hammer_candle_strategy, self).__init__()

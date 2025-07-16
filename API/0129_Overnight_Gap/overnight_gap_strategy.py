@@ -14,7 +14,6 @@ class overnight_gap_strategy(Strategy):
     Implementation of Overnight Gap trading strategy.
     The strategy trades on gaps between the current open and previous close prices.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

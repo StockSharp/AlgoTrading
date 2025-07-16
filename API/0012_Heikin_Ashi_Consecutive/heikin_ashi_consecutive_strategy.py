@@ -16,7 +16,6 @@ class heikin_ashi_consecutive_strategy(Strategy):
     It enters long position after a sequence of bullish Heikin Ashi candles 
     and short position after a sequence of bearish Heikin Ashi candles.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

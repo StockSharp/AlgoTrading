@@ -17,7 +17,6 @@ class macd_zero_strategy(Strategy):
     It enters when MACD is below/above zero and trending back towards zero line,
     and exits when MACD crosses its signal line.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

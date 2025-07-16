@@ -13,7 +13,6 @@ class false_breakout_trap_strategy(Strategy):
     """
     Strategy that trades false breakouts of support and resistance levels.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

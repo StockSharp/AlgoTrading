@@ -15,7 +15,6 @@ class ichimoku_stochastic_strategy(Strategy):
     Enters long when price is above Kumo (cloud), Tenkan > Kijun, and Stochastic is oversold (< 20)
     Enters short when price is below Kumo, Tenkan < Kijun, and Stochastic is overbought (> 80)
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

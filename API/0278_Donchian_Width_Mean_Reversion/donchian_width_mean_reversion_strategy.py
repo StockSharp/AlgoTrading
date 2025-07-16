@@ -15,7 +15,6 @@ class donchian_width_mean_reversion_strategy(Strategy):
     Donchian Width Mean Reversion Strategy.
     This strategy trades based on the mean reversion of the Donchian Channel width.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

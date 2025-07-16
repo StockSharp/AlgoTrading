@@ -18,7 +18,6 @@ class vwap_stochastic_strategy(Strategy):
     Buys when price is below VWAP and Stochastic is oversold.
     Sells when price is above VWAP and Stochastic is overbought.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

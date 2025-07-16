@@ -17,7 +17,6 @@ class keltner_reversion_strategy(Strategy):
     It opens positions when price touches or breaks through the upper or lower Keltner Channel bands
     and exits when price reverts to the middle band (EMA).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):
