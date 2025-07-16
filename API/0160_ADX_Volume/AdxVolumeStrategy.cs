@@ -11,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Implementation of strategy #160 - ADX + Volume.
+	/// Implementation of strategy - ADX + Volume.
 	/// Enter trades when ADX is above threshold with above average volume.
 	/// Direction determined by DI+ and DI- comparison.
 	/// </summary>

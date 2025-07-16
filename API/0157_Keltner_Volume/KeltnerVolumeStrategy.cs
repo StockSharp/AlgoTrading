@@ -11,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Implementation of strategy #157 - Keltner Channels + Volume.
+	/// Implementation of strategy - Keltner Channels + Volume.
 	/// Buy when price breaks above upper Keltner Channel with above average volume.
 	/// Sell when price breaks below lower Keltner Channel with above average volume.
 	/// </summary>
