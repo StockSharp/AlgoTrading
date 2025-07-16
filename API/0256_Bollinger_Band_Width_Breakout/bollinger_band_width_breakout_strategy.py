@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 
@@ -37,7 +38,7 @@ class bollinger_band_width_breakout_strategy(Strategy):
             .SetDisplay("Multiplier", "Standard deviation multiplier for breakout detection", "Indicators")
 
         # Candle type for strategy.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Stop-loss ATR multiplier.

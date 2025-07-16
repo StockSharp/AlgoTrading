@@ -12,6 +12,7 @@ from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class macd_cci_strategy(Strategy):
@@ -48,7 +49,7 @@ class macd_cci_strategy(Strategy):
         self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
             .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
     @property

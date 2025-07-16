@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AccumulationDistributionLine
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class ad_strategy(Strategy):
     """
@@ -37,7 +38,7 @@ class ad_strategy(Strategy):
         self._maPeriod = self.Param("MAPeriod", 20) \
             .SetDisplay("MA Period", "Period for Moving Average calculation", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

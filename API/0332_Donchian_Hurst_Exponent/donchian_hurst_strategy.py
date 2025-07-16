@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import DonchianChannels, FractalDimension
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class donchian_hurst_strategy(Strategy):
@@ -37,7 +38,7 @@ class donchian_hurst_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Stop Loss %", "Stop Loss percentage from entry price", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state

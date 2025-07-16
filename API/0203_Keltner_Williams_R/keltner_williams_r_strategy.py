@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import KeltnerChannels, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_williams_r_strategy(Strategy):
     """Strategy based on Keltner Channels and Williams %R indicators (#203)"""
@@ -36,7 +37,7 @@ class keltner_williams_r_strategy(Strategy):
             .SetDisplay("Williams %R Period", "Period for Williams %R indicator", "Indicators") \
             .SetCanOptimize(True)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

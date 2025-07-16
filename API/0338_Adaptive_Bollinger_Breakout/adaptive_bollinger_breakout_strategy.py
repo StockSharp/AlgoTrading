@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class adaptive_bollinger_breakout_strategy(Strategy):
@@ -42,7 +43,7 @@ class adaptive_bollinger_breakout_strategy(Strategy):
             .SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings")
 
         # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal fields

@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class donchian_seasonal_filter_strategy(Strategy):
     """
@@ -42,7 +43,7 @@ class donchian_seasonal_filter_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(0.2, 1.0, 0.1)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._donchian = None

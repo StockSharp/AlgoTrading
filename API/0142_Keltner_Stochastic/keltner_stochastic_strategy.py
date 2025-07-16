@@ -12,6 +12,7 @@ from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import KeltnerChannels
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_stochastic_strategy(Strategy):
     """
@@ -78,7 +79,7 @@ class keltner_stochastic_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

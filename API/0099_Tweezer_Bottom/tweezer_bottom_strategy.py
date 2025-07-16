@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, ICandleMessage, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class tweezer_bottom_strategy(Strategy):
     """
@@ -17,7 +18,7 @@ class tweezer_bottom_strategy(Strategy):
     def __init__(self):
         super(tweezer_bottom_strategy, self).__init__()
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

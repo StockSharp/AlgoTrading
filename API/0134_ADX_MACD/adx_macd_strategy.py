@@ -15,6 +15,7 @@ from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class adx_macd_strategy(Strategy):
@@ -29,7 +30,7 @@ class adx_macd_strategy(Strategy):
         super(adx_macd_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._adxPeriod = self.Param("AdxPeriod", 14) \

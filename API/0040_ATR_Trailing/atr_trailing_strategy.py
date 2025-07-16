@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class atr_trailing_strategy(Strategy):
     """
@@ -42,7 +43,7 @@ class atr_trailing_strategy(Strategy):
         self._maPeriod = self.Param("MAPeriod", 20) \
             .SetDisplay("MA Period", "Period for Moving Average calculation for entry", "Entry Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "Data")
 
     @property

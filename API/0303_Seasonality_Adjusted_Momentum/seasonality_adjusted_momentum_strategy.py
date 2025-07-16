@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class seasonality_adjusted_momentum_strategy(Strategy):
     """
@@ -39,7 +40,7 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             .SetOptimize(1.0, 3.0, 0.5)
 
         # Candle type parameter.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
+        self._candle_type = self.Param("CandleType", tf(1*1440)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "General")
 
         # Dictionary to store seasonality strength values for each month

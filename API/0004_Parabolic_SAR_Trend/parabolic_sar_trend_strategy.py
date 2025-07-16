@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class parabolic_sar_trend_strategy(Strategy):
     """
@@ -28,7 +29,7 @@ class parabolic_sar_trend_strategy(Strategy):
         self._max_acceleration_factor = self.Param("MaxAccelerationFactor", 0.2) \
             .SetDisplay("Max Acceleration Factor", "Maximum acceleration factor for SAR calculation", "Indicators")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # Current state

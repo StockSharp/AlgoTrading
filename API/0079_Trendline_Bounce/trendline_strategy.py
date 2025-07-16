@@ -18,6 +18,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class trendline_bounce_strategy(Strategy):
     """
@@ -40,7 +41,7 @@ class trendline_bounce_strategy(Strategy):
         self._bounceThresholdPercentParam = self.Param("BounceThresholdPercent", 0.5) \
             .SetDisplay("Bounce Threshold %", "Maximum distance from trendline for bounce detection", "Indicators")
         
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossPercentParam = self.Param("StopLossPercent", 2.0) \

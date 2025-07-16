@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, BollingerBandsValue
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class bollinger_band_squeeze_strategy(Strategy):
     """
@@ -41,7 +42,7 @@ class bollinger_band_squeeze_strategy(Strategy):
             .SetOptimize(10, 30, 5)
 
         # Candle type for strategy.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
         # Internal state fields

@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class volume_weighted_price_breakout_strategy(Strategy):
     """
@@ -36,7 +37,7 @@ class volume_weighted_price_breakout_strategy(Strategy):
         self._vwapPeriod = self.Param("VWAPPeriod", 20) \
             .SetDisplay("VWAP Period", "Period for Volume Weighted Average Price calculation", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

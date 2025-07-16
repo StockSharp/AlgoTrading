@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class shooting_star_strategy(Strategy):
     """
@@ -36,7 +37,7 @@ class shooting_star_strategy(Strategy):
         self._shadowToBodyRatio = self.Param("ShadowToBodyRatio", 2.0) \
             .SetDisplay("Shadow/Body Ratio", "Minimum ratio of upper shadow to body length", "Pattern Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 1.0) \

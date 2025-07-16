@@ -7,6 +7,7 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class zscore_volume_filter_strategy(Strategy):
     """
@@ -33,7 +34,7 @@ class zscore_volume_filter_strategy(Strategy):
             .SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters") \
             .SetCanOptimize(True)
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Timeframe for candles", "Parameters")
 
         # Technical indicators

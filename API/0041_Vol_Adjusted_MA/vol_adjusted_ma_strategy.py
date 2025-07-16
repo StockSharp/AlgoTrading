@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class vol_adjusted_ma_strategy(Strategy):
     """
@@ -41,7 +42,7 @@ class vol_adjusted_ma_strategy(Strategy):
         self._atrMultiplier = self.Param("ATRMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR to adjust MA bands", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

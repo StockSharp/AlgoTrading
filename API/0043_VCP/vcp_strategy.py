@@ -17,6 +17,7 @@ from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Indicators import Lowest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class vcp_strategy(Strategy):
     """
@@ -40,7 +41,7 @@ class vcp_strategy(Strategy):
         self._lookbackPeriod = self.Param("LookbackPeriod", 20) \
             .SetDisplay("Lookback Period", "Period for calculating breakout levels", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

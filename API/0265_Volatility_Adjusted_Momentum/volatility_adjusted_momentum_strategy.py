@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Momentum, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class volatility_adjusted_momentum_strategy(Strategy):
     """
@@ -51,7 +52,7 @@ class volatility_adjusted_momentum_strategy(Strategy):
             .SetDisplay("Stop Loss", "Stop loss value in ATRs", "Risk Management")
 
         # Candle type
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal variables

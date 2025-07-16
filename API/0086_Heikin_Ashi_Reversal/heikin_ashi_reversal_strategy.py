@@ -7,6 +7,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class heikin_ashi_reversal_strategy(Strategy):
     """
@@ -21,7 +22,7 @@ class heikin_ashi_reversal_strategy(Strategy):
         super(heikin_ashi_reversal_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLoss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \

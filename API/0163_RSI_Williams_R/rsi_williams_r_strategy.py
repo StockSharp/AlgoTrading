@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class rsi_williams_r_strategy(Strategy):
@@ -49,7 +50,7 @@ class rsi_williams_r_strategy(Strategy):
         self._stop_loss = self.Param("StopLoss", Unit(2, UnitTypes.Percent)) \
             .SetDisplay("Stop Loss", "Stop loss percent or value", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
     @property

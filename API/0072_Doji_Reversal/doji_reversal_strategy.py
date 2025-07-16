@@ -14,6 +14,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class doji_reversal_strategy(Strategy):
     """
@@ -30,7 +31,7 @@ class doji_reversal_strategy(Strategy):
         self._previousPreviousCandle = None
 
         # Initialize strategy parameters
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._dojiThreshold = self.Param("DojiThreshold", 0.1) \

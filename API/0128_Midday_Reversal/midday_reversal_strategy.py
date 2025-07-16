@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class midday_reversal_strategy(Strategy):
     """
@@ -23,7 +24,7 @@ class midday_reversal_strategy(Strategy):
             .SetNotNegative() \
             .SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Protection")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", tf(30)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
 
         # Previous candle closing prices

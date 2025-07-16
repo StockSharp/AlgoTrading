@@ -7,6 +7,7 @@ from System import TimeSpan, Math, Random
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hurst_exponent_reversion_strategy(Strategy):
     """
@@ -34,7 +35,7 @@ class hurst_exponent_reversion_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle type", "Type of candles to use", "General")
 
         self._sma = None

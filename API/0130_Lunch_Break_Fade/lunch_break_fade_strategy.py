@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class lunch_break_fade_strategy(Strategy):
     """
@@ -18,7 +19,7 @@ class lunch_break_fade_strategy(Strategy):
         super(lunch_break_fade_strategy, self).__init__()
 
         # Data type for candles.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Hour when lunch break typically starts (default is 13:00).

@@ -11,6 +11,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Messages import Unit
 from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class rejection_candle_strategy(Strategy):
     """
@@ -23,7 +24,7 @@ class rejection_candle_strategy(Strategy):
         super(rejection_candle_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for pattern detection", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

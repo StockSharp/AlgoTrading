@@ -14,6 +14,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class adx_weakening_strategy(Strategy):
@@ -44,7 +45,7 @@ class adx_weakening_strategy(Strategy):
             .SetRange(1.0, 3.0) \
             .SetCanOptimize(True)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state

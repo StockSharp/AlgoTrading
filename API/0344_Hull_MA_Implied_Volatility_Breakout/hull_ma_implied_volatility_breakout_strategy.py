@@ -9,6 +9,7 @@ from Ecng.Common import RandomGen
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class hull_ma_implied_volatility_breakout_strategy(Strategy):
@@ -50,7 +51,7 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 3.0, 0.5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Track trade direction

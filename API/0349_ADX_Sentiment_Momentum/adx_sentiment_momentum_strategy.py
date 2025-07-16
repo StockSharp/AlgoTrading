@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 import random
 
@@ -42,7 +43,7 @@ class adx_sentiment_momentum_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management")
 
         # Candle type for strategy calculation.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._adx = None

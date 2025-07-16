@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class stochastic_overbought_oversold_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class stochastic_overbought_oversold_strategy(Strategy):
         self._dPeriod = self.Param("DPeriod", 3) \
             .SetDisplay("D Period", "Smoothing period for Stochastic %D line", "Indicators")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

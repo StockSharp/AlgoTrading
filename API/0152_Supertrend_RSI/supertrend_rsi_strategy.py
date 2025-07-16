@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SuperTrend, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class supertrend_rsi_strategy(Strategy):
     """
@@ -41,7 +42,7 @@ class supertrend_rsi_strategy(Strategy):
             .SetRange(1, 100) \
             .SetDisplay("RSI Overbought", "RSI level to consider market overbought", "RSI Parameters")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "General")
 
         # Indicators

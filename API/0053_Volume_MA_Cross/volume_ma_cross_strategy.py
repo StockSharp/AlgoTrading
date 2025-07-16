@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class volume_ma_cross_strategy(Strategy):
@@ -43,7 +44,7 @@ class volume_ma_cross_strategy(Strategy):
         self._slowVolumeMALength = self.Param("SlowVolumeMALength", 50) \
             .SetDisplay("Slow Volume MA Length", "Period for Slow Volume Moving Average", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

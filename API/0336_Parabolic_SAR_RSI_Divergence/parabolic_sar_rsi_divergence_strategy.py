@@ -8,6 +8,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class parabolic_sar_rsi_divergence_strategy(Strategy):
@@ -32,7 +33,7 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
             .SetDisplay("RSI Period", "Period for RSI calculation", "Indicator Settings")
 
         # Strategy parameter: Candle type.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prev_rsi = 0

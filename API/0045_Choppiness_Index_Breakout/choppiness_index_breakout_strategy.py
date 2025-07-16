@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import ChoppinessIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class choppiness_index_breakout_strategy(Strategy):
     """
@@ -45,7 +46,7 @@ class choppiness_index_breakout_strategy(Strategy):
         self._highChoppinessThreshold = self.Param("HighChoppinessThreshold", 61.8) \
             .SetDisplay("High Choppiness Threshold", "Threshold above which to exit positions", "Strategy Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "Strategy Parameters")
 
     @property

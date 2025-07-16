@@ -11,6 +11,7 @@ from StockSharp.Messages import Unit
 from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import ParabolicSar, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class parabolic_sar_rsi_strategy(Strategy):
@@ -53,7 +54,7 @@ class parabolic_sar_rsi_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(60.0, 80.0, 5.0)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

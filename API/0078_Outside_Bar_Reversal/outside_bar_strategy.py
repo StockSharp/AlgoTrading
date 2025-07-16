@@ -14,6 +14,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class outside_bar_reversal_strategy(Strategy):
     """
@@ -27,7 +28,7 @@ class outside_bar_reversal_strategy(Strategy):
         super(outside_bar_reversal_strategy, self).__init__()
         
         # Initialize strategy parameters
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossPercentParam = self.Param("StopLossPercent", 1.0) \

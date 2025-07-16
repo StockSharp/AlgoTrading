@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import WilliamsR, Ichimoku
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class williams_ichimoku_strategy(Strategy):
@@ -48,7 +49,7 @@ class williams_ichimoku_strategy(Strategy):
             .SetOptimize(40, 60, 4)
 
         # Candle type parameter.
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal indicator instances

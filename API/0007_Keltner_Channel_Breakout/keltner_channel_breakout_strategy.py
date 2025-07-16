@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import KeltnerChannels
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class keltner_channel_breakout_strategy(Strategy):
     """
@@ -32,7 +33,7 @@ class keltner_channel_breakout_strategy(Strategy):
         self._atr_multiplier = self.Param("AtrMultiplier", 2.0) \
             .SetDisplay("ATR Multiplier", "Multiplier for ATR to determine channel width", "Indicators")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # Current state

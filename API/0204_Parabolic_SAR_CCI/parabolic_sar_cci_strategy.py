@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class parabolic_sar_cci_strategy(Strategy):
@@ -31,7 +32,7 @@ class parabolic_sar_cci_strategy(Strategy):
             .SetDisplay("CCI Period", "Period for CCI indicator", "Indicators") \
             .SetCanOptimize(True)
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

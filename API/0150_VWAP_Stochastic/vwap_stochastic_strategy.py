@@ -9,6 +9,7 @@ from System import Math
 from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 class vwap_stochastic_strategy(Strategy):
@@ -60,7 +61,7 @@ class vwap_stochastic_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(1.0, 5.0, 0.5)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     @property

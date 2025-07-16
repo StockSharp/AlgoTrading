@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, SuperTrend, AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class supertrend_adx_strategy(Strategy):
     """
@@ -49,7 +50,7 @@ class supertrend_adx_strategy(Strategy):
             .SetCanOptimize(True) \
             .SetOptimize(20.0, 30.0, 5.0)
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._last_supertrend = 0

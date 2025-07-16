@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class bearish_abandoned_baby_strategy(Strategy):
     """Strategy based on Bearish Abandoned Baby candlestick pattern."""
@@ -14,7 +15,7 @@ class bearish_abandoned_baby_strategy(Strategy):
         super(bearish_abandoned_baby_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "Candles")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

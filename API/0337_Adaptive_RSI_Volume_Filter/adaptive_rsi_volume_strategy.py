@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 
@@ -40,7 +41,7 @@ class adaptive_rsi_volume_strategy(Strategy):
             .SetDisplay("Volume Lookback", "Number of periods to calculate volume average", "Volume Settings")
 
         # Strategy parameter: Candle type.
-        self._candleType = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state

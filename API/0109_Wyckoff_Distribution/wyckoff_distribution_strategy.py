@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import SimpleMovingAverage, Highest, Lowest
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class wyckoff_distribution_strategy(Strategy):
     """
@@ -27,7 +28,7 @@ class wyckoff_distribution_strategy(Strategy):
         super(wyckoff_distribution_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
 
         self._ma_period = self.Param("MaPeriod", 20) \

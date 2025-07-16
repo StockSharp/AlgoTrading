@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Ichimoku, AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class ichimoku_adx_strategy(Strategy):
     """
@@ -62,7 +63,7 @@ class ichimoku_adx_strategy(Strategy):
             .SetOptimize(20.0, 30.0, 5.0)
 
         # Type of candles to use.
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Previous state tracking

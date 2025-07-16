@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import OnBalanceVolume
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class obv_divergence_strategy(Strategy):
     """
@@ -34,7 +35,7 @@ class obv_divergence_strategy(Strategy):
         self._maPeriodParam = self.Param("MAPeriod", 20) \
             .SetDisplay("MA Period", "Period for moving average calculation (used for exit signal)", "Indicators")
         
-        self._candleTypeParam = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleTypeParam = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         self._stopLossPercentParam = self.Param("StopLossPercent", 2.0) \

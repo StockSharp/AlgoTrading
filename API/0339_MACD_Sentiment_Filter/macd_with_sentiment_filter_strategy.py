@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 import random
 
 class macd_with_sentiment_filter_strategy(Strategy):
@@ -70,7 +71,7 @@ class macd_with_sentiment_filter_strategy(Strategy):
 
         # Type of candles to use.
         self._candle_type = (
-            self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+            self.Param("CandleType", tf(15))
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         )
 

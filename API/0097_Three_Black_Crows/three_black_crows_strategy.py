@@ -13,6 +13,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SMA
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class three_black_crows_strategy(Strategy):
     """
@@ -35,7 +36,7 @@ class three_black_crows_strategy(Strategy):
         self._current_candle = None
 
         # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General")
 
         self._stop_loss_percent = self.Param("StopLossPercent", 1.0) \

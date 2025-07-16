@@ -14,6 +14,7 @@ from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class bullish_abandoned_baby_strategy(Strategy):
     """
@@ -23,7 +24,7 @@ class bullish_abandoned_baby_strategy(Strategy):
         super(bullish_abandoned_baby_strategy, self).__init__()
 
         # Candle type and timeframe.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "Candles")
 
         # Stop-loss percent from entry price.

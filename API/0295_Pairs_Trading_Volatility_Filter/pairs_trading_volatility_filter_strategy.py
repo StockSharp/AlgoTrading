@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, StandardDeviation, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 from StockSharp.BusinessEntities import Security
 
@@ -118,7 +119,7 @@ class pairs_trading_volatility_filter_strategy(Strategy):
     # endregion
 
     def GetWorkingSecurities(self):
-        dt = DataType.TimeFrame(TimeSpan.FromMinutes(5))
+        dt = tf(5)
         result = []
         if self.Security1 is not None:
             result.append((self.Security1, dt))

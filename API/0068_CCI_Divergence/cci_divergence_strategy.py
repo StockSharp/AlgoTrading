@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class cci_divergence_strategy(Strategy):
     """
@@ -42,7 +43,7 @@ class cci_divergence_strategy(Strategy):
         self._divergencePeriod = self.Param("DivergencePeriod", 5) \
             .SetDisplay("Divergence Period", "Number of bars to look back for divergence", "Signal Parameters")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._stopLossPercent = self.Param("StopLossPercent", 2.0) \

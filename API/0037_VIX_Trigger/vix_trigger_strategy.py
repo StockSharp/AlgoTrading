@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Messages import Subscription
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from StockSharp.BusinessEntities import Security
 
 class vix_trigger_strategy(Strategy):
@@ -41,7 +42,7 @@ class vix_trigger_strategy(Strategy):
         self._stopLossPercent = self.Param("StopLossPercent", 2.0) \
             .SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management")
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "Data")
 
         self._vixSecurity = self.Param("VixSecurity", None) \

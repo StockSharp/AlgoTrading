@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 
 class beta_neutral_arbitrage_strategy(Strategy):
@@ -29,7 +30,7 @@ class beta_neutral_arbitrage_strategy(Strategy):
         self._market_index_param = self.Param("MarketIndex") \
             .SetDisplay("Market Index", "Market index for beta calculation", "Instruments")
 
-        self._candle_type_param = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type_param = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._lookback_period_param = self.Param("LookbackPeriod", 20) \

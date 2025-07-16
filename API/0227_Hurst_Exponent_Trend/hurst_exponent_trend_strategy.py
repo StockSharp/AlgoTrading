@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import HurstExponent, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class hurst_exponent_trend_strategy(Strategy):
     """
@@ -39,7 +40,7 @@ class hurst_exponent_trend_strategy(Strategy):
             .SetOptimize(0.5, 0.6, 0.05)
 
         # Candle type for strategy.
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
 
         # Internal indicators

@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceHistogram
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class macd_histogram_reversal_strategy(Strategy):
     """
@@ -42,7 +43,7 @@ class macd_histogram_reversal_strategy(Strategy):
             .SetRange(1.0, 3.0) \
             .SetCanOptimize(True)
 
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(15))) \
+        self._candleType = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Previous MACD histogram value

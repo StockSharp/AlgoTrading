@@ -7,6 +7,7 @@ from System import TimeSpan, Math, DayOfWeek
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class turnaround_tuesday_strategy(Strategy):
     """
@@ -26,7 +27,7 @@ class turnaround_tuesday_strategy(Strategy):
         self._ma_period = self.Param("MaPeriod", 20) \
             .SetDisplay("MA Period", "Moving average period for trend confirmation", "Strategy")
 
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromDays(1))) \
+        self._candle_type = self.Param("CandleType", tf(1*1440)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "Strategy")
 
         # Internal state

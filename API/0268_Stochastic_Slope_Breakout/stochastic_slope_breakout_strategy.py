@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class stochastic_slope_breakout_strategy(Strategy):
     """ 
@@ -58,7 +59,7 @@ class stochastic_slope_breakout_strategy(Strategy):
             .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 
         # Candle type
-        self._candleType = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal variables

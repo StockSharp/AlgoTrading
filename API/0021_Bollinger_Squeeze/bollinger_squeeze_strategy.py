@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class bollinger_squeeze_strategy(Strategy):
     """
@@ -32,7 +33,7 @@ class bollinger_squeeze_strategy(Strategy):
         self._squeeze_threshold = self.Param("SqueezeThreshold", 0.1) \
             .SetDisplay("Squeeze Threshold", "Threshold for Bollinger Bands width to identify squeeze", "Strategy")
         
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
         
         # State tracking

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 from indicator_extensions import *
 
 
@@ -42,7 +43,7 @@ class bollinger_volatility_breakout_strategy(Strategy):
             .SetDisplay("Stop Loss Multiplier", "ATR multiplier for stop-loss", "Strategy Settings") \
             .SetCanOptimize(True)
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(5).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles for strategy", "General")
 
         # Internal indicators

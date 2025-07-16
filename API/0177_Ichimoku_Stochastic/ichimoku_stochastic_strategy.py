@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import Ichimoku, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class ichimoku_stochastic_strategy(Strategy):
     """
@@ -57,7 +58,7 @@ class ichimoku_stochastic_strategy(Strategy):
             .SetOptimize(1, 5, 1)
 
         # Candle type for strategy calculation
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(30))) \
+        self._candle_type = self.Param("CandleType", tf(30)) \
             .SetDisplay("Candle Type", "Timeframe for strategy", "General")
 
     @property

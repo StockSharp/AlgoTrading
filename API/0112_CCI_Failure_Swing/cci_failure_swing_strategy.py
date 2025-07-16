@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from datatype_extensions import *
 
 class cci_failure_swing_strategy(Strategy):
     """
@@ -20,7 +21,7 @@ class cci_failure_swing_strategy(Strategy):
         super(cci_failure_swing_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._candle_type = self.Param("CandleType", DataType.TimeFrame(TimeSpan.FromMinutes(5))) \
+        self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use for analysis", "General")
 
         self._cci_period = self.Param("CciPeriod", 20) \
