@@ -10,7 +10,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class ichimoku_volume_strategy(Strategy):
     """
-    Implementation of strategy #151 - Ichimoku + Volume.
+    Implementation of strategy - Ichimoku + Volume.
     Buy when price is above Kumo cloud, Tenkan-sen is above Kijun-sen, and volume is above average.
     Sell when price is below Kumo cloud, Tenkan-sen is below Kijun-sen, and volume is above average.
 

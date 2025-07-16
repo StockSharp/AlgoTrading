@@ -15,7 +15,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class macd_cci_strategy(Strategy):
     """
-    Implementation of strategy #161 - MACD + CCI.
+    Implementation of strategy - MACD + CCI.
     Buy when MACD is above Signal line and CCI is below -100 (oversold).
     Sell when MACD is below Signal line and CCI is above 100 (overbought).
 

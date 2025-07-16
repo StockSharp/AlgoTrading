@@ -11,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Implementation of strategy #165 - VWAP + CCI.
+	/// Implementation of strategy - VWAP + CCI.
 	/// Buy when price is below VWAP and CCI is below -100 (oversold).
 	/// Sell when price is above VWAP and CCI is above 100 (overbought).
 	/// </summary>

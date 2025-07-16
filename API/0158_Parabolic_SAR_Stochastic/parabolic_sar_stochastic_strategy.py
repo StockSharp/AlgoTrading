@@ -13,7 +13,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class parabolic_sar_stochastic_strategy(Strategy):
     """
-    Implementation of strategy #158 - Parabolic SAR + Stochastic.
+    Implementation of strategy - Parabolic SAR + Stochastic.
     Buy when price is above SAR and Stochastic %K is below 20 (oversold).
     Sell when price is below SAR and Stochastic %K is above 80 (overbought).
 

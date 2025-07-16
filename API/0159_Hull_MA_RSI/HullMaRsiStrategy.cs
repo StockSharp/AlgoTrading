@@ -11,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Implementation of strategy #159 - Hull Moving Average + RSI.
+	/// Implementation of strategy - Hull Moving Average + RSI.
 	/// Buy when HMA is rising and RSI is below 30 (oversold).
 	/// Sell when HMA is falling and RSI is above 70 (overbought).
 	/// </summary>

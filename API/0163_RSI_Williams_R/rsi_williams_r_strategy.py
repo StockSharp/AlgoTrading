@@ -11,7 +11,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class rsi_williams_r_strategy(Strategy):
     """
-    Implementation of strategy #163 - RSI + Williams %R.
+    Implementation of strategy - RSI + Williams %R.
     Buy when RSI is below 30 and Williams %R is below -80 (double oversold condition).
     Sell when RSI is above 70 and Williams %R is above -20 (double overbought condition).
 
