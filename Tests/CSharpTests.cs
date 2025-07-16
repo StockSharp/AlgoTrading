@@ -7,13 +7,7 @@ public class CSharpTests
 {
 	public static Task RunStrategy<T>(Action<T, Security> extra = null)
 		where T : Strategy
-	{
-		var strategy = (T)TypeHelper.CreateInstance(typeof(T));
-
-		extra?.Invoke(strategy, AsmInit.Security2);
-
-		return AsmInit.RunStrategy(strategy);
-	}
+		=> AsmInit.RunStrategy(TypeHelper.CreateInstance<T>(typeof(T)), extra);
 
 	[TestMethod]
 	public Task MaCrossoverStrategyTest()

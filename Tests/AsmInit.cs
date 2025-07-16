@@ -64,7 +64,8 @@ public static class AsmInit
 		ConfigManager.RegisterService<IPortfolioProvider>(new CollectionPortfolioProvider([pf]));
 	}
 
-	public static async Task RunStrategy(Strategy strategy)
+	public static async Task RunStrategy<T>(T strategy, Action<T, Security> extra = null)
+		where T : Strategy
 	{
 		var token = CancellationToken.None;
 
@@ -88,6 +89,7 @@ public static class AsmInit
 		strategy.Connector = connector;
 		strategy.Volume = 1;
 		strategy.WaitRulesOnStop = false;
+		extra?.Invoke(strategy, Security2);
 
 		var clone = strategy.TypedClone();
 		clone.Connector = connector;
