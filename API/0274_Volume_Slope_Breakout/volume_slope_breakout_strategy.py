@@ -153,7 +153,7 @@ class volume_slope_breakout_strategy(Strategy):
         volumeSma = to_float(process_float(self._volumeSma, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Process price EMA for trend direction
-        priceEma = to_float(self._priceEma.Process(candle))
+        priceEma = to_float(process_candle(self._priceEma, candle))
         priceAboveEma = candle.ClosePrice > priceEma
 
         # Calculate volume slope (current volume relative to SMA)

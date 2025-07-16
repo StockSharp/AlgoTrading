@@ -21,3 +21,8 @@ def to_float(value):
 def process_float(indicator, value, time, is_final):
     """Wrapper for indicator.Process accepting Python float."""
     return indicator.Process(float(value), time, is_final)
+
+
+def process_candle(indicator, candle):
+    """Wrapper for indicator.Process accepting a candle."""
+    return indicator.Process(candle)

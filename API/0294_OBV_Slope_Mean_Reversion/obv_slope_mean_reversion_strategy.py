@@ -162,7 +162,7 @@ class obv_slope_mean_reversion_strategy(Strategy):
             return
 
         # Process the candle with OBV indicator
-        obv_value = to_float(self._obv.Process(candle))
+        obv_value = to_float(process_candle(self._obv, candle))
 
         # Process OBV through SMA
         obv_sma_value = to_float(process_float(self._obv_sma, obv_value, candle.ServerTime, candle.State == CandleStates.Finished))

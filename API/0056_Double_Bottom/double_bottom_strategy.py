@@ -136,7 +136,7 @@ class double_bottom_strategy(Strategy):
             return
 
         # Process the candle with the Lowest indicator
-        lowestValue = to_float(self._lowestIndicator.Process(candle))
+        lowestValue = to_float(process_candle(self._lowestIndicator, candle))
 
         # If strategy is not ready yet, return
         if not self.IsFormedAndOnlineAndAllowTrading():
