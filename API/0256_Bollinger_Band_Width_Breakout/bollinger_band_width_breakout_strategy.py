@@ -9,7 +9,7 @@ from StockSharp.Algo.Indicators import BollingerBands, SimpleMovingAverage, Aver
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-
+from orderbook_extensions import *
 
 class bollinger_band_width_breakout_strategy(Strategy):
     """
@@ -101,10 +101,10 @@ class bollinger_band_width_breakout_strategy(Strategy):
         self._stop_multiplier.Value = value
 
     def _update_best_prices(self, depth):
-        best_bid = depth.GetBestBid()
+        best_bid = get_best_bid(depth)
         if best_bid is not None:
             self._best_bid_price = best_bid.Price
-        best_ask = depth.GetBestAsk()
+        best_ask = get_best_ask(depth)
         if best_ask is not None:
             self._best_ask_price = best_ask.Price
 
