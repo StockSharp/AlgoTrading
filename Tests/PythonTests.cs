@@ -324,32 +324,32 @@ public class PythonTests
 		=> RunStrategy("0073_Keltner_Channel_Reversal/keltner_channel_reversal_strategy.py");
 
 	[TestMethod]
-        public Task WilliamsRStrategy()
-                => RunStrategy("0074_Williams_R_Divergence/williams_percent_r_divergence_strategy.py");
+	public Task WilliamsRStrategy()
+		=> RunStrategy("0074_Williams_R_Divergence/williams_percent_r_divergence_strategy.py");
 
 	[TestMethod]
-        public Task ObvStrategy()
-                => RunStrategy("0075_OBV_Divergence/obv_divergence_strategy.py");
+	public Task ObvStrategy()
+		=> RunStrategy("0075_OBV_Divergence/obv_divergence_strategy.py");
 
 	[TestMethod]
-        public Task FibonacciStrategy()
-                => RunStrategy("0076_Fibonacci_Retracement_Reversal/fibonacci_retracement_reversal_strategy.py");
+	public Task FibonacciStrategy()
+		=> RunStrategy("0076_Fibonacci_Retracement_Reversal/fibonacci_retracement_reversal_strategy.py");
 
 	[TestMethod]
-        public Task InsideBarStrategy()
-                => RunStrategy("0077_Inside_Bar_Breakout/inside_bar_breakout_strategy.py");
+	public Task InsideBarStrategy()
+		=> RunStrategy("0077_Inside_Bar_Breakout/inside_bar_breakout_strategy.py");
 
 	[TestMethod]
-        public Task OutsideBarStrategy()
-                => RunStrategy("0078_Outside_Bar_Reversal/outside_bar_reversal_strategy.py");
+	public Task OutsideBarStrategy()
+		=> RunStrategy("0078_Outside_Bar_Reversal/outside_bar_reversal_strategy.py");
 
 	[TestMethod]
-        public Task TrendlineStrategy()
-                => RunStrategy("0079_Trendline_Bounce/trendline_bounce_strategy.py");
+	public Task TrendlineStrategy()
+		=> RunStrategy("0079_Trendline_Bounce/trendline_bounce_strategy.py");
 
 	[TestMethod]
-        public Task PivotPointStrategy()
-                => RunStrategy("0080_Pivot_Point_Reversal/pivot_point_reversal_strategy.py");
+	public Task PivotPointStrategy()
+		=> RunStrategy("0080_Pivot_Point_Reversal/pivot_point_reversal_strategy.py");
 
 	[TestMethod]
 	public Task VwapBounceStrategy()
@@ -1140,11 +1140,18 @@ public class PythonTests
 
 	[TestMethod]
 	public Task CorrelationMeanReversionStrategy()
-		=> RunStrategy("0298_Correlation_Mean_Reversion/correlation_mean_reversion_strategy.py");
+		=> RunStrategy("0298_Correlation_Mean_Reversion/correlation_mean_reversion_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Security2"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task BetaAdjustedPairsStrategy()
-		=> RunStrategy("0299_Beta_Adjusted_Pairs_Trading/beta_adjusted_pairs_strategy.py");
+		=> RunStrategy("0299_Beta_Adjusted_Pairs_Trading/beta_adjusted_pairs_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Asset2"].Value = sec;
+			stra.Parameters["Asset2Portfolio"].Value = stra.Portfolio;
+		});
 
 	[TestMethod]
 	public Task HurstVolatilityFilterStrategy()

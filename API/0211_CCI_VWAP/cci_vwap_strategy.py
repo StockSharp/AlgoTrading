@@ -2,11 +2,13 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields, Subscription
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Subscription
 from datatype_extensions import *
 
 class cci_vwap_strategy(Strategy):

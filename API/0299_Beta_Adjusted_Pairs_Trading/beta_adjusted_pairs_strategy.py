@@ -5,11 +5,11 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
 from System import Math
-from StockSharp.Messages import DataType, Level1Fields, Level1ChangeMessage, Subscription
+from StockSharp.Messages import DataType, Level1Fields, Level1ChangeMessage
 from StockSharp.Messages import Sides, OrderTypes, Order
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-from StockSharp.BusinessEntities import Security, Portfolio
+from StockSharp.BusinessEntities import Security, Portfolio, Subscription
 
 class beta_adjusted_pairs_strategy(Strategy):
     """
@@ -21,19 +21,19 @@ class beta_adjusted_pairs_strategy(Strategy):
         super(beta_adjusted_pairs_strategy, self).__init__()
 
         # Strategy parameters
-        self._asset2Param = self.Param("Asset2", None) \
+        self._asset2Param = self.Param[Security]("Asset2", None) \
             .SetDisplay("Asset 2", "Secondary asset for pairs trading", "Assets") \
             .SetRequired()
 
-        self._asset2PortfolioParam = self.Param("Asset2Portfolio", None) \
+        self._asset2PortfolioParam = self.Param[Portfolio]("Asset2Portfolio", None) \
             .SetDisplay("Asset 2 Portfolio", "Portfolio for trading Asset 2", "Portfolios") \
             .SetRequired()
 
-        self._betaAsset1Param = self.Param("BetaAsset1", 1.0) \
+        self._betaAsset1Param = self.Param[Security]("BetaAsset1", 1.0) \
             .SetDisplay("Beta Asset 1", "Beta coefficient for Asset 1 relative to market", "Parameters") \
             .SetNotNegative()
 
-        self._betaAsset2Param = self.Param("BetaAsset2", 1.0) \
+        self._betaAsset2Param = self.Param[Security]("BetaAsset2", 1.0) \
             .SetDisplay("Beta Asset 2", "Beta coefficient for Asset 2 relative to market", "Parameters") \
             .SetNotNegative()
 

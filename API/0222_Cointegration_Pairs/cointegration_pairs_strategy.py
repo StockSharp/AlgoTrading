@@ -6,10 +6,10 @@ clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
-from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides, Subscription
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Subscription
 from datatype_extensions import *
-from StockSharp.BusinessEntities import Order
 
 class cointegration_pairs_strategy(Strategy):
     """
