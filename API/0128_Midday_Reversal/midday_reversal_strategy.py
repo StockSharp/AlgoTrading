@@ -70,10 +70,9 @@ class midday_reversal_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            takeProfit=Unit(0),  # No take profit
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

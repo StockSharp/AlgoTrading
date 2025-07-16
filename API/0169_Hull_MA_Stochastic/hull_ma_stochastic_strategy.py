@@ -153,10 +153,9 @@ class hull_ma_stochastic_strategy(Strategy):
 
         # Start protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, hma_value, stoch_value, atr_value):
         """Processes each finished candle and executes trading logic."""
         # Skip unfinished candles

@@ -130,10 +130,9 @@ class ma_slope_breakout_strategy(Strategy):
 
         # Set up position protection
         self.StartProtection(
-            None,  # we'll handle take-profit separately
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ma_value):
         """Process new candle values and generate trading signals."""
         # Skip unfinished candles

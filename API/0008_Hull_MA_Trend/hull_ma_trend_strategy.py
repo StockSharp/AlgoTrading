@@ -112,8 +112,10 @@ class hull_ma_trend_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Setup protection using ATR
-        self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
+        )
     def ProcessCandle(self, candle, hma_value, atr_value):
         """
         Processes each finished candle and executes Hull MA trend-based trading logic.

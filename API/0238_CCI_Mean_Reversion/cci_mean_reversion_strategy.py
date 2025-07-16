@@ -132,10 +132,9 @@ class cci_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            takeProfit=Unit(0),  # We'll manage exits ourselves based on CCI
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         super(cci_mean_reversion_strategy, self).OnStarted(time)
 
     def ProcessCandle(self, candle, cci_value):

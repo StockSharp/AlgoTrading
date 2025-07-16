@@ -142,11 +142,10 @@ class vwap_stochastic_strategy(Strategy):
 
         # Enable stop-loss and take-profit protection
         self.StartProtection(
-            None,
-            Unit(self.StopLossPercent, UnitTypes.Percent),
-            True
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

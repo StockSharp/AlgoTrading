@@ -99,7 +99,6 @@ class three_white_soldiers_strategy(Strategy):
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
             isStopTrailing=False
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

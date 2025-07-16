@@ -191,10 +191,9 @@ class rsi_stochastic_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.stop_loss_percent, UnitTypes.Percent)  # Percentage-based stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

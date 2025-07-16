@@ -107,10 +107,9 @@ class bollinger_band_reversal_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(10, UnitTypes.Percent),    # Take profit
-            Unit(self.AtrMultiplier, UnitTypes.Absolute)  # Stop loss
+            takeProfit=Unit(10, UnitTypes.Percent),
+            stopLoss=Unit(self.AtrMultiplier, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, bollingerValue, atrValue):
         """
         Process candle and execute trading logic

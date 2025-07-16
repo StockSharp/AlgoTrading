@@ -133,10 +133,9 @@ class ma_adx_strategy(Strategy):
 
         # Enable stop-loss and take-profit
         self.StartProtection(
-            Unit(self.take_profit_atr_multiplier, UnitTypes.Absolute),
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(self.take_profit_atr_multiplier, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

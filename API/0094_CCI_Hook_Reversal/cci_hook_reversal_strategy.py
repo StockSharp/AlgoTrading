@@ -98,12 +98,11 @@ class cci_hook_reversal_strategy(Strategy):
 
         # Enable position protection using stop-loss
         self.StartProtection(
-            None,
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
-            False,
-            True
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            isStopTrailing=False,
+            useMarketOrders=True
         )
-
         # Initialize previous CCI value
         self._prev_cci = 0.0
 

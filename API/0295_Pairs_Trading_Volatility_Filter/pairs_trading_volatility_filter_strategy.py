@@ -189,11 +189,10 @@ class pairs_trading_volatility_filter_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent),  # Stop loss in percent
-            False  # No trailing stop
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=False
         )
-
     # Helper methods to store last prices
     def _set_last_price1(self, price):
         self._last_price1 = price

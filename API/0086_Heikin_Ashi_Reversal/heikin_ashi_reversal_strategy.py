@@ -55,8 +55,12 @@ class heikin_ashi_reversal_strategy(Strategy):
         super(heikin_ashi_reversal_strategy, self).OnStarted(time)
 
         # Enable position protection using stop-loss
-        self.StartProtection(None, self.StopLoss, False, True)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.StopLoss,
+            isStopTrailing=False,
+            useMarketOrders=True
+        )
         # Initialize previous value
         self._prevIsBullish = None
 

@@ -134,10 +134,9 @@ class donchian_width_mean_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessDonchian(self, candle, donchian_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

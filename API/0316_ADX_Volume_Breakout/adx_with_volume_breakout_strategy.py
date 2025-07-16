@@ -142,7 +142,6 @@ class adx_with_volume_breakout_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def ProcessStrategy(self, candle, adx, di_plus, di_minus, volume, volume_avg, volume_std_dev):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

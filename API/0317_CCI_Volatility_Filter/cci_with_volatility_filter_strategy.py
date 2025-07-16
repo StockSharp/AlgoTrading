@@ -123,7 +123,6 @@ class cci_with_volatility_filter_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def _on_candle(self, candle, cci_value, atr_value):
         # Calculate ATR average
         atr_avg = to_float(self._atrSma.Process(

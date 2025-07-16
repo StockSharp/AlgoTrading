@@ -159,8 +159,10 @@ class macd_bollinger_strategy(Strategy):
         subscription.BindEx(bollinger, macd, atr, self.ProcessIndicators).Start()
 
         # Enable ATR-based stop protection
-        self.StartProtection(Unit(0), Unit(self.AtrMultiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.AtrMultiplier, UnitTypes.Absolute)
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

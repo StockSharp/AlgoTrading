@@ -135,10 +135,9 @@ class stochastic_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(5, UnitTypes.Percent),
-            Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(5, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessStochastic(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return

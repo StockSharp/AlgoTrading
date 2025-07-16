@@ -104,10 +104,9 @@ class vwap_hidden_markov_model_strategy(Strategy):
 
         # Start position protection with percentage-based stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),  # No fixed take profit
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessVwap(self, candle, vwap_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

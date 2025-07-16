@@ -75,8 +75,10 @@ class harami_bullish_strategy(Strategy):
         subscription.Bind(self.ProcessCandle).Start()
 
         # Enable stop-loss protection
-        self.StartProtection(Unit(0), Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

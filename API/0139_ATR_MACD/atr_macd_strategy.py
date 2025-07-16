@@ -187,10 +187,9 @@ class atr_macd_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossAtr, UnitTypes.Absolute)  # Stop loss as ATR multiplier
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossAtr, UnitTypes.Absolute)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

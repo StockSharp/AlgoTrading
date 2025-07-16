@@ -113,9 +113,8 @@ class supertrend_momentum_filter_strategy(Strategy):
         # Setup position protection
         self.StartProtection(
             takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, supertrend_value, momentum_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

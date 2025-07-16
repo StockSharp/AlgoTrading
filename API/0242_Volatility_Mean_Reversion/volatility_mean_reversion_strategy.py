@@ -135,11 +135,10 @@ class volatility_mean_reversion_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         self.StartProtection(
-            Unit(0),
-            Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
             useMarketOrders=True
         )
-
     def ProcessCandle(self, candle, atrValue):
         """Process candle and ATR value."""
         # Skip unfinished candles

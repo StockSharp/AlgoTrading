@@ -151,10 +151,9 @@ class correlation_breakout_strategy(Strategy):
 
         # Start position protection with stop-loss
         self.StartProtection(
-            None,
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessAsset1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return

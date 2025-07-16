@@ -133,11 +133,10 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
 
         # Set up position protection using the dynamic Parabolic SAR
         self.StartProtection(
-            takeProfit=None,  # We'll handle exits via strategy logic
-            stopLoss=None,    # The dynamic SAR will act as our stop
+            takeProfit=None,
+            stopLoss=None,
             isStopTrailing=True
         )
-
         super(parabolic_sar_distance_breakout_strategy, self).OnStarted(time)
 
     def ProcessCandle(self, candle, sar_value):

@@ -131,12 +131,11 @@ class bollinger_adx_strategy(Strategy):
 
         # Enable stop-loss using ATR
         self.StartProtection(
-            None,
-            Unit(self.atr_multiplier, UnitTypes.Absolute),
-            False,
-            True
+            takeProfit=None,
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute),
+            isStopTrailing=False,
+            useMarketOrders=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

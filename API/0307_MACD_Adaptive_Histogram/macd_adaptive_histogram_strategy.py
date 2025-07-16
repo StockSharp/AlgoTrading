@@ -174,11 +174,10 @@ class macd_adaptive_histogram_strategy(Strategy):
 
         # Enable position protection with percentage stop-loss
         self.StartProtection(
-            Unit(0),  # We'll handle exits in the strategy logic
-            Unit(self.StopLossPercent, UnitTypes.Percent),
-            True,
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

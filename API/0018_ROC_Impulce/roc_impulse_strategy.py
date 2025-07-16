@@ -96,8 +96,10 @@ class roc_impulse_strategy(Strategy):
         subscription.Bind(roc, atr, self.ProcessCandle).Start()
 
         # Enable position protection with ATR-based stop loss
-        self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
+        )
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

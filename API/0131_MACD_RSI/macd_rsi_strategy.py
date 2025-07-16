@@ -142,10 +142,9 @@ class macd_rsi_strategy(Strategy):
 
         # Set up stop loss protection
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.stop_loss_percent, UnitTypes.Percent)  # Stop loss based on parameter
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
         # Create indicators
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self.macd_fast

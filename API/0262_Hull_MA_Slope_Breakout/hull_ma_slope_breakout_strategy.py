@@ -129,7 +129,6 @@ class hull_ma_slope_breakout_strategy(Strategy):
             stopLoss=self.StopLoss,
             isStopTrailing=False
         )
-
         super(hull_ma_slope_breakout_strategy, self).OnStarted(time)
 
     def ProcessCandle(self, candle: ICandleMessage, hullValue: float, atrValue: float):

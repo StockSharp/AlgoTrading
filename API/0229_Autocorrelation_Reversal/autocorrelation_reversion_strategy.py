@@ -106,10 +106,9 @@ class autocorrelation_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(self.StopLossPercent, UnitTypes.Percent),
-            Unit(self.StopLossPercent * 1.5, UnitTypes.Percent)
+            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
+            stopLoss=Unit(self.StopLossPercent * 1.5, UnitTypes.Percent)
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

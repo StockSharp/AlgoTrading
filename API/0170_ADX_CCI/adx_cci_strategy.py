@@ -87,10 +87,9 @@ class adx_cci_strategy(Strategy):
 
         # Enable position protection with stop-loss
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(adx, cci, self.ProcessCandle).Start()

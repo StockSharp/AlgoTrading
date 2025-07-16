@@ -85,10 +85,9 @@ class end_of_month_strength_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, maValue):
         """Process finished candle and execute trading logic."""
         # Skip unfinished candles

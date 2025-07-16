@@ -137,8 +137,10 @@ class donchian_macd_strategy(Strategy):
         subscription.BindEx(self._donchian, self._macd, self.ProcessCandle).Start()
 
         # Setup position protection
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

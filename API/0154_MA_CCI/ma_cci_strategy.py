@@ -134,10 +134,9 @@ class ma_cci_strategy(Strategy):
 
         # Enable stop-loss
         self.StartProtection(
-            None,
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

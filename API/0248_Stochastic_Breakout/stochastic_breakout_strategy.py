@@ -146,7 +146,6 @@ class stochastic_breakout_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessStochastic(self, candle, stochValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

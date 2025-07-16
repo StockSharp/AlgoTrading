@@ -70,11 +70,10 @@ class bearish_abandoned_baby_strategy(Strategy):
 
         # Configure protection for open positions
         self.StartProtection(
-            takeProfit=Unit(0),  # No take profit, using exit logic in the strategy
+            takeProfit=Unit(0),
             stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
             isStopTrailing=False
         )
-
         # Set up chart if available
         area = self.CreateChartArea()
         if area is not None:

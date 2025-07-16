@@ -109,10 +109,9 @@ class hurst_exponent_trend_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),  # No take profit
-            stopLoss=Unit(2, UnitTypes.Percent)       # 2% stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, hurstValue, smaValue):
         if candle.State != CandleStates.Finished:
             return

@@ -155,8 +155,10 @@ class keltner_volume_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protective orders
-        self.StartProtection(None, self.StopLoss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.StopLoss
+        )
     def ProcessCandle(self, candle, emaValue, atrValue):
         if candle.State != CandleStates.Finished:
             return

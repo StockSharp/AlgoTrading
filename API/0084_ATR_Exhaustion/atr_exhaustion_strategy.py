@@ -117,8 +117,10 @@ class atr_exhaustion_strategy(Strategy):
         super(atr_exhaustion_strategy, self).OnStarted(time)
 
         # Enable position protection using stop-loss
-        self.StartProtection(None, self.StopLoss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.StopLoss
+        )
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MaPeriod

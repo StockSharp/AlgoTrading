@@ -119,8 +119,10 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
             self.DrawIndicator(area, self._ichimoku)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, ichimoku_value):
         """Process candle with Ichimoku indicator values.
 

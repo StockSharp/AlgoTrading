@@ -167,10 +167,9 @@ class macd_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(0),  # We'll manage exits ourselves based on MACD Histogram
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
         super(macd_mean_reversion_strategy, self).OnStarted(time)
 
     def ProcessCandle(self, candle, macd_value):

@@ -133,10 +133,9 @@ class donchian_with_sentiment_spike_strategy(Strategy):
 
         # Enable position protection with stop-loss
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.stop_loss, UnitTypes.Percent)  # Stop-loss as percentage
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, donchian_value):
         """Process each candle and Donchian Channel values."""
         # Skip unfinished candles

@@ -119,8 +119,10 @@ class adx_donchian_strategy(Strategy):
         subscription.BindEx(donchian, adx, self.ProcessCandle).Start()
 
         # Enable percentage-based stop-loss protection
-        self.StartProtection(Unit(self.stop_loss_percent, UnitTypes.Percent), None)
-
+        self.StartProtection(
+            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            stopLoss=None
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

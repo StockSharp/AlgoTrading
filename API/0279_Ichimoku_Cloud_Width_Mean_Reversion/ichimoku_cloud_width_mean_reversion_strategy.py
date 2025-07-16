@@ -152,7 +152,6 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
             takeProfit=None,
             stopLoss=None
         )
-
     def ProcessIchimoku(self, candle, ichimokuValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

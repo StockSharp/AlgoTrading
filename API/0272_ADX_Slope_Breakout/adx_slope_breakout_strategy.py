@@ -132,8 +132,10 @@ class adx_slope_breakout_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Enable position protection
-        self.StartProtection(Unit(0), Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, adxValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

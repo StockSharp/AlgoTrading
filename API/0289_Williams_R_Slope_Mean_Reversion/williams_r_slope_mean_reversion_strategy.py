@@ -151,10 +151,9 @@ class williams_r_slope_mean_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, williams_r_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

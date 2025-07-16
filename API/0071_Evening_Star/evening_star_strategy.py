@@ -85,11 +85,10 @@ class evening_star_strategy(Strategy):
 
         # Setup trailing stop
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # no take profit, rely on exit signal
-            Unit(self.StopLossPercent, UnitTypes.Percent),  # stop loss
-            True  # trailing stop
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=True
         )
-
     def ProcessCandle(self, candle):
         """
         Process candle and execute trading logic

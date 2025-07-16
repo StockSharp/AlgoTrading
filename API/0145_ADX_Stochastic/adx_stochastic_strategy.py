@@ -176,10 +176,9 @@ class adx_stochastic_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),  # No take profit
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)  # Percentage-based stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

@@ -78,10 +78,9 @@ class day_of_week_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ma_value):
         """
         Processes candles and executes trading logic.

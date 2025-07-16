@@ -108,8 +108,10 @@ class heikin_ashi_consecutive_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protection with stop loss
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle):
         """
         Processes each finished candle and executes Heikin-Ashi consecutive logic.
