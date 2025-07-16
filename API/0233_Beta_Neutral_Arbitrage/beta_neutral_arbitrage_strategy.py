@@ -190,11 +190,17 @@ class beta_neutral_arbitrage_strategy(Strategy):
         beta_adjusted_asset2 = self._asset2_last_price / self._asset2_beta
         self._last_spread = beta_adjusted_asset1 - beta_adjusted_asset2
 
-        sma_value = self._spread_sma.Process(
-            self._last_spread, candle.ServerTime, candle.State == CandleStates.Finished
+        sma_value = process_float(
+            self._spread_sma,
+            self._last_spread,
+            candle.ServerTime,
+            candle.State == CandleStates.Finished,
         )
-        std_dev_value = self._spread_std_dev.Process(
-            self._last_spread, candle.ServerTime, candle.State == CandleStates.Finished
+        std_dev_value = process_float(
+            self._spread_std_dev,
+            self._last_spread,
+            candle.ServerTime,
+            candle.State == CandleStates.Finished,
         )
 
         self._bar_count += 1

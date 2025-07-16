@@ -141,12 +141,14 @@ class donchian_volatility_contraction_strategy(Strategy):
             self._current_dc_width = high_price - low_price
 
             # Process SMA and StdDev for the channel width
-            sma_value = sma.Process(
+            sma_value = process_float(
+                sma,
                 self._current_dc_width,
                 candle.ServerTime,
                 candle.State == CandleStates.Finished,
             )
-            std_dev_value = standard_deviation.Process(
+            std_dev_value = process_float(
+                standard_deviation,
                 self._current_dc_width,
                 candle.ServerTime,
                 candle.State == CandleStates.Finished,

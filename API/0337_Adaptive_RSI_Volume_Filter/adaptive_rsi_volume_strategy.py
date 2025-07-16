@@ -202,8 +202,12 @@ class adaptive_rsi_volume_strategy(Strategy):
 
     def ProcessVolume(self, candle):
         # Process volume with SMA
-        volumeValue = self._volumeSma.Process(candle.TotalVolume, candle.ServerTime,
-                                             candle.State == CandleStates.Finished)
+        volumeValue = process_float(
+            self._volumeSma,
+            candle.TotalVolume,
+            candle.ServerTime,
+            candle.State == CandleStates.Finished,
+        )
 
         if volumeValue.IsFinal:
             self._avgVolume = to_float(volumeValue)

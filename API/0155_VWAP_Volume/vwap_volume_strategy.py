@@ -122,11 +122,14 @@ class vwap_volume_strategy(Strategy):
 
     def ProcessCandle(self, candle):
         # Process volume with indicator
-        volume_ma = to_float(self._volumeMA.Process(
-            candle.TotalVolume,
-            candle.ServerTime,
-            candle.State == CandleStates.Finished
-        ))
+        volume_ma = to_float(
+            process_float(
+                self._volumeMA,
+                candle.TotalVolume,
+                candle.ServerTime,
+                candle.State == CandleStates.Finished,
+            )
+        )
 
         # Calculate VWAP manually for the current candle
         vwap = 0

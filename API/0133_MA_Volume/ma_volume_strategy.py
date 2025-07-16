@@ -140,11 +140,14 @@ class ma_volume_strategy(Strategy):
         sma_value = to_float(self._price_sma.Process(candle))
 
         # Handle volume
-        volume_sma_value = to_float(self._volume_sma.Process(
-            candle.TotalVolume,
-            candle.ServerTime,
-            candle.State == CandleStates.Finished
-        ))
+        volume_sma_value = to_float(
+            process_float(
+                self._volume_sma,
+                candle.TotalVolume,
+                candle.ServerTime,
+                candle.State == CandleStates.Finished,
+            )
+        )
 
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._price_sma.IsFormed or not self._volume_sma.IsFormed:
             return
