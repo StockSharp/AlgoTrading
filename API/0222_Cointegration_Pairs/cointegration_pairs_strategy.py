@@ -8,7 +8,7 @@ from System import TimeSpan, Math
 from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security, Subscription
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class cointegration_pairs_strategy(Strategy):
@@ -136,14 +136,14 @@ class cointegration_pairs_strategy(Strategy):
         self._asset2Price = 0
 
         # Create subscriptions for both assets
-        asset1Subscription = Subscription(self.CandleType, self.Security)
-        asset2Subscription = Subscription(self.CandleType, self.Asset2)
+        asset1Subscription = self.SubscribeCandles(self.CandleType)
+        asset2Subscription = self.SubscribeCandles(self.CandleType, self.Asset2)
 
         # Subscribe to Asset1 candles
-        self.SubscribeCandles(asset1Subscription).Bind(self.ProcessAsset1Candle).Start()
+        asset1Subscription.Bind(self.ProcessAsset1Candle).Start()
 
         # Subscribe to Asset2 candles
-        self.SubscribeCandles(asset2Subscription).Bind(self.ProcessAsset2Candle).Start()
+        asset2Subscription.Bind(self.ProcessAsset2Candle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

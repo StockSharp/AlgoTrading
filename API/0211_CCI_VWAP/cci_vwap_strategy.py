@@ -8,7 +8,6 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, Level1Fields
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Subscription
 from datatype_extensions import *
 
 class cci_vwap_strategy(Strategy):
@@ -88,14 +87,11 @@ class cci_vwap_strategy(Strategy):
         candles_subscription = self.SubscribeCandles(self.candle_type)
 
         # Create subscription for Level1 to get VWAP
-        level1_subscription = Subscription(DataType.Level1, self.Security)
-        level1_subscription.WhenLevel1Received(self).Do(self.ProcessLevel1).Apply(self)
+        level1_subscription = self.SubscribeLevel1()
+        level1_subscription.Bind(self.ProcessLevel1).Start()
 
         # Bind CCI to candle subscription
         candles_subscription.Bind(self._cci, self.ProcessCandle).Start()
-
-        # Start Level1 subscription
-        self.Subscribe(level1_subscription)
 
         # Enable position protection
         self.StartProtection(
