@@ -179,12 +179,12 @@ class keltner_width_mean_reversion_strategy(Strategy):
             return
 
         # Process EMA
-        emaValue = self._ema.Process(candle)
+        emaValue = process_candle(self._ema, candle)
         if emaValue.IsFinal:
             self._lastEma = to_float(emaValue)
 
         # Process ATR
-        atrValue = self._atr.Process(candle)
+        atrValue = process_candle(self._atr, candle)
         if atrValue.IsFinal:
             self._lastAtr = to_float(atrValue)
 

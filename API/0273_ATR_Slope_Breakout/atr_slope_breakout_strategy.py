@@ -151,7 +151,7 @@ class atr_slope_breakout_strategy(Strategy):
         self._last_atr = atr
 
         # Process price for trend direction
-        ema_value = to_float(self._price_ema.Process(candle))
+        ema_value = to_float(process_candle(self._price_ema, candle))
         price_above_ema = candle.ClosePrice > ema_value
 
         # Calculate ATR slope

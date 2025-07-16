@@ -170,7 +170,7 @@ class hurst_volatility_filter_strategy(Strategy):
         # logic that estimates the Hurst exponent based on recent price behavior.
 
         # Process current price through the displacement indicator
-        hurst_value = self._hurst_exponent.Process(candle)
+        hurst_value = process_candle(self._hurst_exponent, candle)
 
         # For demonstration purposes - in a real implementation you'd use
         # a proper Hurst exponent calculation library or algorithm

@@ -171,8 +171,8 @@ class keltner_width_breakout_strategy(Strategy):
             return
 
         # Process candle through EMA and ATR
-        emaValue = self._ema.Process(candle)
-        atrValue = self._atr.Process(candle)
+        emaValue = process_candle(self._ema, candle)
+        atrValue = process_candle(self._atr, candle)
 
         self._currentEma = float(emaValue)
         self._currentAtr = float(atrValue)

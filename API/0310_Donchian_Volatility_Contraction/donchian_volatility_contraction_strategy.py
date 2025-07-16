@@ -131,11 +131,11 @@ class donchian_volatility_contraction_strategy(Strategy):
             high_price = to_float(high_value)
 
             # Process Donchian Low separately
-            low_value = donchian_low.Process(candle)
+            low_value = process_candle(donchian_low, candle)
             low_price = to_float(low_value)
 
             # Process ATR
-            atr_value = atr.Process(candle)
+            atr_value = process_candle(atr, candle)
 
             # Calculate Donchian Channel width
             self._current_dc_width = high_price - low_price

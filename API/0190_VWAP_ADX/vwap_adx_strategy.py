@@ -102,7 +102,7 @@ class vwap_adx_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        vwap = to_float(self._vwap.Process(candle))
+        vwap = to_float(process_candle(self._vwap, candle))
 
         # Get current ADX value
         typed_adx = adx_value
