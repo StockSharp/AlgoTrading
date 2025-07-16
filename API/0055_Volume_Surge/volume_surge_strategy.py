@@ -118,8 +118,14 @@ class volume_surge_strategy(Strategy):
         :param candle: The candle message.
         :param maValue: The Moving Average value.
         """
-        volumeMAValue = to_float(self._volumeMA.Process(candle.TotalVolume, candle.ServerTime, 
-                                              candle.State == CandleStates.Finished))
+        volumeMAValue = to_float(
+            process_float(
+                self._volumeMA,
+                candle.TotalVolume,
+                candle.ServerTime,
+                candle.State == CandleStates.Finished,
+            )
+        )
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

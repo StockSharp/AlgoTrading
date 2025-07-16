@@ -201,12 +201,22 @@ class macd_adaptive_histogram_strategy(Strategy):
         histogram = macd - signal
 
         # Process the histogram through the statistics indicators
-        hist_avg_value = to_float(self._hist_avg.Process(
-            histogram, macd_value.Time, macd_value.IsFinal
-        ))
-        hist_std_dev_value = to_float(self._hist_std_dev.Process(
-            histogram, macd_value.Time, macd_value.IsFinal
-        ))
+        hist_avg_value = to_float(
+            process_float(
+                self._hist_avg,
+                histogram,
+                macd_value.Time,
+                macd_value.IsFinal,
+            )
+        )
+        hist_std_dev_value = to_float(
+            process_float(
+                self._hist_std_dev,
+                histogram,
+                macd_value.Time,
+                macd_value.IsFinal,
+            )
+        )
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
