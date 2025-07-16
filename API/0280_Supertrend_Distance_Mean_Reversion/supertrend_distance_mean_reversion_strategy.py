@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, SuperTrend, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 
 class supertrend_distance_mean_reversion_strategy(Strategy):

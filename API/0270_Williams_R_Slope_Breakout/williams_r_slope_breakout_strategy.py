@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import WilliamsR, LinearRegression
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 from collections import deque
 
 

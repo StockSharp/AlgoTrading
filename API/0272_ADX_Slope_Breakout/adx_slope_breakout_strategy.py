@@ -10,6 +10,7 @@ from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, LinearRegression
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class adx_slope_breakout_strategy(Strategy):
     """
