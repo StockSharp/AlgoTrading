@@ -193,17 +193,13 @@ namespace StockSharp.Samples.Strategies
 			_spreadStdDev = 0;
 			_entrySpread = 0;
 
-			// Create subscriptions for both assets
-			var asset1Subscription = new Subscription(DataType.Level1, Asset1);
-			var asset2Subscription = new Subscription(DataType.Level1, Asset2);
-
 			// Handle price updates for Asset1
-			SubscribeLevel1(asset1Subscription)
+			SubscribeLevel1(Asset1)
 				.Bind(OnAsset1Subscription)
 				.Start();
 
 			// Handle price updates for Asset2
-			SubscribeLevel1(asset2Subscription)
+			SubscribeLevel1(Asset2)
 				.Bind(OnAsset2Subscription)
 				.Start();
 

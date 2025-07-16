@@ -2,6 +2,7 @@ import clr
 
 clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan
@@ -13,11 +14,10 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import ICandleMessage
 from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
-from StockSharp.Messages import Subscription
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-from StockSharp.BusinessEntities import Security
+from StockSharp.BusinessEntities import Security, Subscription
 
 class vix_trigger_strategy(Strategy):
     """
@@ -44,7 +44,7 @@ class vix_trigger_strategy(Strategy):
         self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "Data")
 
-        self._vixSecurity = self.Param("VixSecurity", None) \
+        self._vixSecurity = self.Param[Security]("VixSecurity", None) \
             .SetDisplay("VIX Security", "VIX Security to use for signals", "Data")
 
     @property
@@ -107,7 +107,7 @@ class vix_trigger_strategy(Strategy):
 
         # Create subscriptions
         mainSubscription = self.SubscribeCandles(self.CandleType)
-        vixSubscription = self.SubscribeCandles(Subscription(self.CandleType, self.VixSecurity))
+        vixSubscription = self.SubscribeCandles(self.CandleType, self.VixSecurity)
 
         # Bind indicator to main security candles
         mainSubscription.Bind(sma, self.ProcessMainCandle).Start()

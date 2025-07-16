@@ -87,24 +87,16 @@ namespace StockSharp.Samples.Strategies
 				Length = CciPeriod
 			};
 			
-			// Create subscription for candles
-			var candlesSubscription = SubscribeCandles(CandleType);
-			
 			// Create subscription for Level1 to get VWAP
-			var level1Subscription = new Subscription(DataType.Level1, Security);
-			level1Subscription
-				.WhenLevel1Received(this)
-				.Do(ProcessLevel1)
-				.Apply(this);
-			
+			SubscribeLevel1()
+				.Bind(ProcessLevel1)
+				.Start();
+
 			// Bind CCI to candle subscription
-			candlesSubscription
+			var candlesSubscription = SubscribeCandles(CandleType)
 				.Bind(_cci, ProcessCandle)
 				.Start();
-			
-			// Start Level1 subscription
-			Subscribe(level1Subscription);
-			
+
 			// Enable position protection
 			StartProtection(
 				takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit

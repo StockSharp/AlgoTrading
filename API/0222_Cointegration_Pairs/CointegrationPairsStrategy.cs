@@ -152,17 +152,13 @@ namespace StockSharp.Samples.Strategies
 			_asset1Price = 0;
 			_asset2Price = 0;
 
-			// Create subscriptions for both assets
-			var asset1Subscription = new Subscription(CandleType, Security);
-			var asset2Subscription = new Subscription(CandleType, Asset2);
-
 			// Subscribe to Asset1 candles
-			SubscribeCandles(asset1Subscription)
+			var asset1Subscription = SubscribeCandles(CandleType)
 				.Bind(ProcessAsset1Candle)
 				.Start();
 
 			// Subscribe to Asset2 candles
-			SubscribeCandles(asset2Subscription)
+			var asset2Subscription = SubscribeCandles(CandleType, security: Asset2)
 				.Bind(ProcessAsset2Candle)
 				.Start();
 

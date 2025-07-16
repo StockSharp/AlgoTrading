@@ -105,7 +105,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscriptions
 			var mainSubscription = SubscribeCandles(CandleType);
-			var vixSubscription = SubscribeCandles(new Subscription(CandleType, VixSecurity));
+			var vixSubscription = SubscribeCandles(CandleType, security: VixSecurity);
 
 			// Bind indicator to main security candles
 			mainSubscription

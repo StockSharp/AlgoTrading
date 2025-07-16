@@ -17,7 +17,6 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-import System.Linq
 
 class cumulative_delta_breakout_strategy(Strategy):
     """

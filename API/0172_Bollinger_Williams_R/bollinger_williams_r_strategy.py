@@ -154,14 +154,14 @@ class bollinger_williams_r_strategy(Strategy):
 
             # Set stop-loss
             stop_price = price - stop_size
-            self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, Math.Abs(self.Position + self.Volume).Max(self.Volume)))
+            self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
         elif price >= upper_band and williams_value_dec > -20 and self.Position >= 0:
             # Sell signal: price at/above upper band and Williams %R overbought
             self.SellMarket(self.Volume + Math.Abs(self.Position))
 
             # Set stop-loss
             stop_price = price + stop_size
-            self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, Math.Abs(self.Position + self.Volume).Max(self.Volume)))
+            self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
         # Exit conditions
         elif price >= middle_band and self.Position < 0:
             # Exit short position when price returns to middle band

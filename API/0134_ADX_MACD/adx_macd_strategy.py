@@ -203,7 +203,7 @@ class adx_macd_strategy(Strategy):
 
                     # Set stop loss
                     stopPrice = candle.ClosePrice - stopLossDistance
-                    self.RegisterOrder(self.CreateOrder(Sides.Sell, stopPrice, Math.Abs(self.Position + self.Volume).Max(self.Volume)))
+                    self.RegisterOrder(self.CreateOrder(Sides.Sell, stopPrice, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
             elif macdLine < signalLine:  # Bearish signal
                 # Strong downtrend with bearish MACD - Short signal
                 if self.Position >= 0:
@@ -213,7 +213,7 @@ class adx_macd_strategy(Strategy):
 
                     # Set stop loss
                     stopPrice = candle.ClosePrice + stopLossDistance
-                    self.RegisterOrder(self.CreateOrder(Sides.Buy, stopPrice, Math.Abs(self.Position + self.Volume).Max(self.Volume)))
+                    self.RegisterOrder(self.CreateOrder(Sides.Buy, stopPrice, Math.Max(Math.Abs(self.Position + self.Volume), self.Volume)))
 
         # Exit conditions
         if adxIndicatorValue < self.AdxThreshold * 0.8:
