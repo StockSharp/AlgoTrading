@@ -114,7 +114,7 @@ class macd_trend_strategy(Strategy):
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(macd, self.ProcessCandle).Start()
+        subscription.BindEx(macd, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

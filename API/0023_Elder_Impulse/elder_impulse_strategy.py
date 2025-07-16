@@ -134,7 +134,7 @@ class elder_impulse_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         
         # Process candles with both indicators
-        subscription.Bind(ema, macd, self.ProcessCandle).Start()
+        subscription.BindEx(ema, macd, self.ProcessCandle).Start()
 
         # Enable position protection
         self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))

@@ -80,7 +80,7 @@ class williams_percent_r_strategy(Strategy):
 
         # Subscribe to candles and bind the indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(williams_r, self.ProcessCandle).Start()
+        subscription.BindEx(williams_r, self.ProcessCandle).Start()
             
         # Enable position protection
         self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))

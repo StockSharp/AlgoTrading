@@ -158,7 +158,7 @@ class macd_rsi_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
 
         # When both indicators are ready, process the candle
-        subscription.Bind(macd, rsi, self.ProcessCandle).Start()
+        subscription.BindEx(macd, rsi, self.ProcessCandle).Start()
 
         # Set up chart if available
         area = self.CreateChartArea()

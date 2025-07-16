@@ -105,7 +105,7 @@ class bollinger_percent_b_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(bollinger, self.ProcessCandle).Start()
+        subscription.BindEx(bollinger, self.ProcessCandle).Start()
 
         # Configure chart
         area = self.CreateChartArea()

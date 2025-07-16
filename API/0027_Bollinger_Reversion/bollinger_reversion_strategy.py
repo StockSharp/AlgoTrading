@@ -96,7 +96,7 @@ class bollinger_reversion_strategy(Strategy):
 
         # Subscribe to candles
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(bollinger_bands, atr, self.ProcessCandle).Start()
+        subscription.BindEx(bollinger_bands, atr, self.ProcessCandle).Start()
 
         # Enable position protection with ATR-based stop loss
         self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))

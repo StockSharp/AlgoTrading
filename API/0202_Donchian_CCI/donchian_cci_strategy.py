@@ -91,7 +91,7 @@ class donchian_cci_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(donchian, cci, self.ProcessIndicators).Start()
+        subscription.BindEx(donchian, cci, self.ProcessIndicators).Start()
 
         # Enable stop-loss protection
         self.StartProtection(takeProfit=None, stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent))

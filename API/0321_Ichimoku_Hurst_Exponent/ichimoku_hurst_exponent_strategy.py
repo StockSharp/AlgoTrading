@@ -123,7 +123,7 @@ class ichimoku_hurst_exponent_strategy(Strategy):
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._ichimoku, self.ProcessCandle).Start()
+        subscription.BindEx(self._ichimoku, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

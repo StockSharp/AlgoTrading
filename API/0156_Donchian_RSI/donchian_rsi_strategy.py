@@ -129,7 +129,7 @@ class donchian_rsi_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
 
         # Bind indicators to candles
-        subscription.Bind(donchian, rsi, self.ProcessCandle).Start()
+        subscription.BindEx(donchian, rsi, self.ProcessCandle).Start()
 
         # Enable stop-loss
         self.StartProtection(

@@ -106,7 +106,7 @@ class bollinger_squeeze_strategy(Strategy):
 
         # Subscribe to candles and bind the indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(bollinger_bands, self.ProcessCandle).Start()
+        subscription.BindEx(bollinger_bands, self.ProcessCandle).Start()
 
         # Setup chart visualization
         area = self.CreateChartArea()

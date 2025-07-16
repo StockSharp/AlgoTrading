@@ -108,7 +108,7 @@ class dark_pool_prints_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
 
         # Bind indicators and processor
-        subscription.Bind(self._ma, self._volume_average, self._adx, self._atr, self.ProcessCandle).Start()
+        subscription.BindEx(self._ma, self._volume_average, self._adx, self._atr, self.ProcessCandle).Start()
 
         # Enable stop-loss protection
         self.StartProtection(Unit(0), Unit(self.AtrMultiplier, UnitTypes.Absolute))
