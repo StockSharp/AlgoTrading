@@ -17,6 +17,7 @@ from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class bollinger_volume_strategy(Strategy):
     """\
@@ -154,7 +155,7 @@ class bollinger_volume_strategy(Strategy):
     def ProcessIndicators(self, candle, volumeAvgValue, bollingerValue, atrValue):
         """Process Bollinger Bands and ATR indicator values."""
         if volumeAvgValue.IsFinal:
-            self._avgVolume = volumeAvgValue.ToDecimal()
+            self._avgVolume = to_float(volumeAvgValue)
 
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:
@@ -169,7 +170,7 @@ class bollinger_volume_strategy(Strategy):
         upperBand = bb.UpBand
         lowerBand = bb.LowBand
 
-        atr = atrValue.ToDecimal()
+        atr = to_float(atrValue)
 
         # Check volume confirmation
         isVolumeHighEnough = candle.TotalVolume > self._avgVolume * self.VolumeMultiplier

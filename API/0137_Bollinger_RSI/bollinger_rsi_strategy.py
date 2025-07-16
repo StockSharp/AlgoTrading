@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class bollinger_rsi_strategy(Strategy):
     """
@@ -169,7 +170,7 @@ class bollinger_rsi_strategy(Strategy):
         upperBand = bollingerTyped.UpBand
         lowerBand = bollingerTyped.LowBand
         middleBand = bollingerTyped.MovingAverage
-        rsiTyped = rsiValue.ToDecimal()
+        rsiTyped = to_float(rsiValue)
 
         # Long entry: price below lower Bollinger Band and RSI oversold
         if candle.ClosePrice < lowerBand and rsiTyped < self.RsiOversold and self.Position <= 0:

@@ -18,6 +18,7 @@ from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Indicators import Lowest
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class obv_breakout_strategy(Strategy):
     """
@@ -141,18 +142,18 @@ class obv_breakout_strategy(Strategy):
             return
         
         # Process the OBV value through other indicators
-        obvMAValue = self._obvMA.Process(obvValue).ToDecimal()
-        obvVal = obvValue.ToDecimal()
+        obvMAValue = to_float(self._obvMA.Process(obvValue))
+        obvVal = to_float(obvValue)
         
         if not self._isFirstCandle:
             # Calculate highest and lowest OBV values
             if self._highest.IsFormed and self._highestOBV is not None:
-                highestValue = self._highest.Process(obvValue).ToDecimal()
+                highestValue = to_float(self._highest.Process(obvValue))
             else:
                 highestValue = Math.Max(self._highestOBV or obvVal, obvVal) if self._highestOBV is not None else obvVal
             
             if self._lowest.IsFormed and self._lowestOBV is not None:
-                lowestValue = self._lowest.Process(obvValue).ToDecimal()
+                lowestValue = to_float(self._lowest.Process(obvValue))
             else:
                 lowestValue = Math.Min(self._lowestOBV or obvVal, obvVal) if self._lowestOBV is not None else obvVal
             

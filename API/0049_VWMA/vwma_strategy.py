@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class vwma_strategy(Strategy):
     """
@@ -114,7 +115,7 @@ class vwma_strategy(Strategy):
             return
 
         # Extract VWMA value from indicator result
-        vwmaPrice = vwmaValue.ToDecimal()
+        vwmaPrice = to_float(vwmaValue)
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:

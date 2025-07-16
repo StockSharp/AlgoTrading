@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class cci_with_volatility_filter_strategy(Strategy):
     """
@@ -124,11 +125,11 @@ class cci_with_volatility_filter_strategy(Strategy):
 
     def _on_candle(self, candle, cci_value, atr_value):
         # Calculate ATR average
-        atr_avg = self._atrSma.Process(
+        atr_avg = to_float(self._atrSma.Process(
             atr_value,
             candle.ServerTime,
             candle.State == CandleStates.Finished
-        ).ToDecimal()
+        ))
 
         # Process the strategy logic
         self.ProcessStrategy(candle, cci_value, atr_value, atr_avg)

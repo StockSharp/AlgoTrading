@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class vwap_breakout_strategy(Strategy):
     """
@@ -102,7 +103,7 @@ class vwap_breakout_strategy(Strategy):
             return
 
         # Extract VWAP value from indicator result
-        vwapPrice = vwapValue.ToDecimal()
+        vwapPrice = to_float(vwapValue)
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:

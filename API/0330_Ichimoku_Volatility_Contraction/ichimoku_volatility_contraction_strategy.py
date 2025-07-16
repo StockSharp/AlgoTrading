@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import Ichimoku, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class ichimoku_volatility_contraction_strategy(Strategy):
     """
@@ -158,7 +159,7 @@ class ichimoku_volatility_contraction_strategy(Strategy):
             return
 
         # Get ATR value and calculate statistics
-        current_atr = atr_value.ToDecimal()
+        current_atr = to_float(atr_value)
         self._processed_candles += 1
 
         # Using exponential moving average approach for ATR statistics

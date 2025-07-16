@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class rsi_breakout_strategy(Strategy):
@@ -149,8 +150,8 @@ class rsi_breakout_strategy(Strategy):
         avg_value = self._rsiAverage.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
         std_dev_value = self._rsiStdDev.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
 
-        self._currentRsiAvg = avg_value.ToDecimal()
-        self._currentRsiStdDev = std_dev_value.ToDecimal()
+        self._currentRsiAvg = to_float(avg_value)
+        self._currentRsiStdDev = to_float(std_dev_value)
 
         # Check if strategy is ready for trading
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._rsiAverage.IsFormed or not self._rsiStdDev.IsFormed:

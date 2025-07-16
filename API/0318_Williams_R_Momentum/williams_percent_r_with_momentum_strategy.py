@@ -6,6 +6,7 @@ clr.AddReference("StockSharp.Algo")
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 from StockSharp.Algo.Indicators import WilliamsR, Momentum, SimpleMovingAverage
 
 class williams_percent_r_with_momentum_strategy(Strategy):
@@ -112,7 +113,7 @@ class williams_percent_r_with_momentum_strategy(Strategy):
 
         def on_process(candle, williamsRValue, momentumValue):
             # Calculate momentum average
-            momentumAvg = momentumSma.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+            momentumAvg = to_float(momentumSma.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Process the strategy logic
             self.ProcessStrategy(candle, williamsRValue, momentumValue, momentumAvg)

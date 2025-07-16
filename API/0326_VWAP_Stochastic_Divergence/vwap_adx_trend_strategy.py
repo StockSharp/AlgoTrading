@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, AverageDirectionalIndex, DirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class vwap_adx_trend_strategy(Strategy):
@@ -136,7 +137,7 @@ class vwap_adx_trend_strategy(Strategy):
         minus_di = dx.Minus
 
         # Extract values from indicators
-        self._vwap_value = vwap_value.ToDecimal()
+        self._vwap_value = to_float(vwap_value)
         self._adx_value = adx
         self._plus_di_value = plus_di  # +DI
         self._minus_di_value = minus_di  # -DI

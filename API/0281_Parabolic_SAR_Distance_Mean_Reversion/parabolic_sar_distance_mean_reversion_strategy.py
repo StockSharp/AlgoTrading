@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import ParabolicSar, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class parabolic_sar_distance_mean_reversion_strategy(Strategy):
     """
@@ -173,11 +174,11 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
         self._current_distance_short = self._sar_value - candle.ClosePrice
 
         # Calculate averages and standard deviations for both distances
-        long_distance_avg = self._distance_average.Process(self._current_distance_long, candle.ServerTime, True).ToDecimal()
-        long_distance_std = self._distance_std_dev.Process(self._current_distance_long, candle.ServerTime, True).ToDecimal()
+        long_distance_avg = to_float(self._distance_average.Process(self._current_distance_long, candle.ServerTime, True))
+        long_distance_std = to_float(self._distance_std_dev.Process(self._current_distance_long, candle.ServerTime, True))
 
-        short_distance_avg = self._distance_average.Process(self._current_distance_short, candle.ServerTime, True).ToDecimal()
-        short_distance_std = self._distance_std_dev.Process(self._current_distance_short, candle.ServerTime, True).ToDecimal()
+        short_distance_avg = to_float(self._distance_average.Process(self._current_distance_short, candle.ServerTime, True))
+        short_distance_std = to_float(self._distance_std_dev.Process(self._current_distance_short, candle.ServerTime, True))
 
         # Skip the first value
         if self._prev_distance_long == 0 or self._prev_distance_short == 0:

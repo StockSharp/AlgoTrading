@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import VolumeIndicator, SimpleMovingAverage, ExponentialMovingAverage, LinearRegression, LinearRegressionValue
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class volume_slope_breakout_strategy(Strategy):
     """Volume Slope Breakout Strategy"""
@@ -146,10 +147,10 @@ class volume_slope_breakout_strategy(Strategy):
             return
 
         # Process volume SMA
-        volumeSma = self._volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        volumeSma = to_float(self._volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Process price EMA for trend direction
-        priceEma = self._priceEma.Process(candle).ToDecimal()
+        priceEma = to_float(self._priceEma.Process(candle))
         priceAboveEma = candle.ClosePrice > priceEma
 
         # Calculate volume slope (current volume relative to SMA)

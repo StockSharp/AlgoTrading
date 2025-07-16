@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import HullMovingAverage, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class hull_ma_volume_spike_strategy(Strategy):
@@ -115,8 +116,8 @@ class hull_ma_volume_spike_strategy(Strategy):
                 candle,
                 float(hma_value),
                 float(candle.TotalVolume),
-                float(volume_sma_value.ToDecimal()),
-                float(volume_std_dev_value.ToDecimal())
+                float(to_float(volume_sma_value)),
+                float(to_float(volume_std_dev_value))
             )
 
         subscription.BindEx(hma, process).Start()

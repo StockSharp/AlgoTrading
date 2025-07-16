@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class rsi_mean_reversion_strategy(Strategy):
     """
@@ -118,8 +119,8 @@ class rsi_mean_reversion_strategy(Strategy):
             return
 
         # Process RSI through average and standard deviation indicators
-        rsi_avg_value = self._rsi_average.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-        rsi_std_dev_value = self._rsi_std_dev.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        rsi_avg_value = to_float(self._rsi_average.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        rsi_std_dev_value = to_float(self._rsi_std_dev.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Store previous RSI value for changes detection
         current_rsi_value = rsi_value

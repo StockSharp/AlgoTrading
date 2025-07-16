@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class vwap_volume_strategy(Strategy):
     """
@@ -121,11 +122,11 @@ class vwap_volume_strategy(Strategy):
 
     def ProcessCandle(self, candle):
         # Process volume with indicator
-        volume_ma = self._volumeMA.Process(
+        volume_ma = to_float(self._volumeMA.Process(
             candle.TotalVolume,
             candle.ServerTime,
             candle.State == CandleStates.Finished
-        ).ToDecimal()
+        ))
 
         # Calculate VWAP manually for the current candle
         vwap = 0

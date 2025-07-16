@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import Highest, Lowest, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class donchian_width_breakout_strategy(Strategy):
     """
@@ -144,15 +145,15 @@ class donchian_width_breakout_strategy(Strategy):
             return
 
         # Process candle through Highest and Lowest indicators
-        highest_value = self._highest.Process(candle).ToDecimal()
-        lowest_value = self._lowest.Process(candle).ToDecimal()
+        highest_value = to_float(self._highest.Process(candle))
+        lowest_value = to_float(self._lowest.Process(candle))
 
         # Calculate Donchian Channel width
         width = highest_value - lowest_value
 
         # Process width through average
         width_avg_value = self._width_average.Process(width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = width_avg_value.ToDecimal()
+        avg_width = to_float(width_avg_value)
 
         # For first values, just save and skip
         if self._last_width == 0:

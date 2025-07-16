@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class cci_mean_reversion_strategy(Strategy):
     """
@@ -146,7 +147,7 @@ class cci_mean_reversion_strategy(Strategy):
             return
 
         # Extract CCI value
-        current_cci = cci_value.ToDecimal()
+        current_cci = to_float(cci_value)
 
         # Update CCI statistics
         self.UpdateCciStatistics(current_cci)

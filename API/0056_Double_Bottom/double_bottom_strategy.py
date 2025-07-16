@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import Lowest
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class double_bottom_strategy(Strategy):
     """
@@ -135,7 +136,7 @@ class double_bottom_strategy(Strategy):
             return
 
         # Process the candle with the Lowest indicator
-        lowestValue = self._lowestIndicator.Process(candle).ToDecimal()
+        lowestValue = to_float(self._lowestIndicator.Process(candle))
 
         # If strategy is not ready yet, return
         if not self.IsFormedAndOnlineAndAllowTrading():

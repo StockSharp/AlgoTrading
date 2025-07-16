@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import BollingerBands, StochasticOscillator, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class bollinger_stochastic_strategy(Strategy):
     """
@@ -190,7 +191,7 @@ class bollinger_stochastic_strategy(Strategy):
         k = stochastic_typed.K
         d = stochastic_typed.D
 
-        atr_val = atr_value.ToDecimal()
+        atr_val = to_float(atr_value)
 
         # Calculate stop loss distance based on ATR
         stop_loss_distance = atr_val * self.atr_multiplier

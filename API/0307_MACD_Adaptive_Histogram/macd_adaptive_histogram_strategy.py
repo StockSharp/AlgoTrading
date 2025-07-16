@@ -11,6 +11,7 @@ from StockSharp.Algo.Indicators import (
     StandardDeviation,
 )
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class macd_adaptive_histogram_strategy(Strategy):
@@ -200,12 +201,12 @@ class macd_adaptive_histogram_strategy(Strategy):
         histogram = macd - signal
 
         # Process the histogram through the statistics indicators
-        hist_avg_value = self._hist_avg.Process(
+        hist_avg_value = to_float(self._hist_avg.Process(
             histogram, macd_value.Time, macd_value.IsFinal
-        ).ToDecimal()
-        hist_std_dev_value = self._hist_std_dev.Process(
+        ))
+        hist_std_dev_value = to_float(self._hist_std_dev.Process(
             histogram, macd_value.Time, macd_value.IsFinal
-        ).ToDecimal()
+        ))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

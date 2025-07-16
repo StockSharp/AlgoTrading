@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class volume_ma_cross_strategy(Strategy):
     """
@@ -130,8 +131,8 @@ class volume_ma_cross_strategy(Strategy):
             return
 
         # Process volume through MAs
-        fastMAValue = self._fastVolumeMA.Process(candle.TotalVolume, candle.ServerTime, True).ToDecimal()
-        slowMAValue = self._slowVolumeMA.Process(candle.TotalVolume, candle.ServerTime, True).ToDecimal()
+        fastMAValue = to_float(self._fastVolumeMA.Process(candle.TotalVolume, candle.ServerTime, True))
+        slowMAValue = to_float(self._slowVolumeMA.Process(candle.TotalVolume, candle.ServerTime, True))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

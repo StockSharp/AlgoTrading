@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import Highest
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class double_top_strategy(Strategy):
     """
@@ -135,7 +136,7 @@ class double_top_strategy(Strategy):
             return
 
         # Process the candle with the Highest indicator
-        highestValue = self._highestIndicator.Process(candle).ToDecimal()
+        highestValue = to_float(self._highestIndicator.Process(candle))
 
         # If strategy is not ready yet, return
         if not self.IsFormedAndOnlineAndAllowTrading():

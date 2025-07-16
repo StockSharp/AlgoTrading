@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class atr_exhaustion_strategy(Strategy):
     """
@@ -150,7 +151,7 @@ class atr_exhaustion_strategy(Strategy):
             return
 
         # Update ATR average
-        atr_avg_value = self._atr_avg.Process(atr_value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        atr_avg_value = to_float(self._atr_avg.Process(atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Determine candle direction
         is_bullish_candle = candle.ClosePrice > candle.OpenPrice

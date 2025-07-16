@@ -13,6 +13,7 @@ from StockSharp.Algo.Indicators import (
     StandardDeviation,
 )
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class donchian_volatility_contraction_strategy(Strategy):
@@ -126,11 +127,11 @@ class donchian_volatility_contraction_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
 
         def handler(candle, high_value):
-            high_price = high_value.ToDecimal()
+            high_price = to_float(high_value)
 
             # Process Donchian Low separately
             low_value = donchian_low.Process(candle)
-            low_price = low_value.ToDecimal()
+            low_price = to_float(low_value)
 
             # Process ATR
             atr_value = atr.Process(candle)
@@ -150,11 +151,11 @@ class donchian_volatility_contraction_strategy(Strategy):
                 candle.State == CandleStates.Finished,
             )
 
-            self._avg_dc_width = sma_value.ToDecimal()
-            self._std_dev_dc_width = std_dev_value.ToDecimal()
+            self._avg_dc_width = to_float(sma_value)
+            self._std_dev_dc_width = to_float(std_dev_value)
 
             # Process the strategy logic
-            self.ProcessStrategy(candle, high_price, low_price, atr_value.ToDecimal())
+            self.ProcessStrategy(candle, high_price, low_price, to_float(atr_value))
 
         subscription.BindEx(donchian_high, handler).Start()
 

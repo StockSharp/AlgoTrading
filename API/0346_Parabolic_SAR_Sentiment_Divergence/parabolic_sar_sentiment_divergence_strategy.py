@@ -8,6 +8,7 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 from Ecng.Common import RandomGen
 
 class parabolic_sar_sentiment_divergence_strategy(Strategy):
@@ -103,7 +104,7 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
             return
 
         # Get SAR value
-        sar_price = sar_value.ToDecimal()
+        sar_price = to_float(sar_value)
 
         # Get current price and sentiment
         price = candle.ClosePrice

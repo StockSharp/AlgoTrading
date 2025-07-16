@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class volume_surge_strategy(Strategy):
     """
@@ -117,8 +118,8 @@ class volume_surge_strategy(Strategy):
         :param candle: The candle message.
         :param maValue: The Moving Average value.
         """
-        volumeMAValue = self._volumeMA.Process(candle.TotalVolume, candle.ServerTime, 
-                                              candle.State == CandleStates.Finished).ToDecimal()
+        volumeMAValue = to_float(self._volumeMA.Process(candle.TotalVolume, candle.ServerTime, 
+                                              candle.State == CandleStates.Finished))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

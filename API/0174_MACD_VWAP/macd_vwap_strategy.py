@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class macd_vwap_strategy(Strategy):
     """
@@ -118,7 +119,7 @@ class macd_vwap_strategy(Strategy):
         macd_typed = macd_value
         macd_line = macd_typed.Macd
         signal_line = macd_typed.Signal
-        vwap = vwap_value.ToDecimal()
+        vwap = to_float(vwap_value)
 
         # Current price (close of the candle)
         price = candle.ClosePrice

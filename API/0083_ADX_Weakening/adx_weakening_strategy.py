@@ -14,6 +14,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class adx_weakening_strategy(Strategy):
     """
@@ -137,7 +138,7 @@ class adx_weakening_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ma = maValue.ToDecimal()
+        ma = to_float(maValue)
 
         adxTyped = adxValue
         if not hasattr(adxTyped, 'MovingAverage') or adxTyped.MovingAverage is None:

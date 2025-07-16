@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import Ichimoku, SimpleMovingAverage, StandardDeviation, IchimokuValue
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
@@ -180,8 +181,8 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         self._currentCloudWidth = Math.Abs(senkouA - senkouB)
 
         # Calculate average and standard deviation of cloud width
-        cloudWidthAverage = self._cloudWidthAverage.Process(self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-        cloudWidthStdDev = self._cloudWidthStdDev.Process(self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        cloudWidthAverage = to_float(self._cloudWidthAverage.Process(self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished))
+        cloudWidthStdDev = to_float(self._cloudWidthStdDev.Process(self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip the first value
         if self._prevCloudWidth == 0:

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class rsi_dynamic_overbought_oversold_strategy(Strategy):
@@ -144,8 +145,8 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         stdDevValue = self._rsiStdDev.Process(rsiValue, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Get values from indicators
-        rsiSmaValue = smaValue.ToDecimal()
-        rsiStdDevValue = stdDevValue.ToDecimal()
+        rsiSmaValue = to_float(smaValue)
+        rsiStdDevValue = to_float(stdDevValue)
 
         # Get the indicator containers using container names
 

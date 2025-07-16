@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, StandardDeviation, StochasticOscillatorValue
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class stochastic_breakout_strategy(Strategy):
     """
@@ -162,8 +163,8 @@ class stochastic_breakout_strategy(Strategy):
         stochK = stochTyped.K
 
         # Calculate average and standard deviation of stochastic
-        stochAvgValue = self._stochAverage.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-        tempStdDevValue = self._stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        stochAvgValue = to_float(self._stochAverage.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished))
+        tempStdDevValue = to_float(self._stochStdDev.Process(stochK, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # First values initialization - skip trading decision
         if self._prevStochValue == 0:

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class hull_ma_slope_mean_reversion_strategy(Strategy):
     """
@@ -156,10 +157,10 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        self._currentAtr = atrValue.ToDecimal()
+        self._currentAtr = to_float(atrValue)
 
         # Get the Hull MA value
-        self._currentHullMa = hullValue.ToDecimal()
+        self._currentHullMa = to_float(hullValue)
 
         # First value handling
         if self._prevHullMa == 0:
@@ -170,8 +171,8 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
         self._currentSlope = (self._currentHullMa - self._prevHullMa) / self._prevHullMa * 100  # As percentage
 
         # Calculate average and standard deviation of slope
-        slopeAverage = self._slopeAverage.Process(self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-        slopeStdDev = self._slopeStdDev.Process(self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        slopeAverage = to_float(self._slopeAverage.Process(self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
+        slopeStdDev = to_float(self._slopeStdDev.Process(self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip until we have enough slope data
         if self._prevSlope == 0:

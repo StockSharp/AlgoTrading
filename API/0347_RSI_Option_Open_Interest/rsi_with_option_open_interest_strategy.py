@@ -7,6 +7,7 @@ from System import TimeSpan, Math, Random
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class rsi_with_option_open_interest_strategy(Strategy):
@@ -163,7 +164,7 @@ class rsi_with_option_open_interest_strategy(Strategy):
             return
 
         # Get current RSI value
-        rsi = rsi_value.ToDecimal()
+        rsi = to_float(rsi_value)
 
         # Simulate option open interest data (in real implementation, this would come from a data provider)
         self.SimulateOptionOI(candle)
@@ -176,10 +177,10 @@ class rsi_with_option_open_interest_strategy(Strategy):
         put_oi_value_stddev = self._put_oi_stddev.Process(self._current_put_oi, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Update state variables
-        self._avg_call_oi = call_oi_value_sma.ToDecimal()
-        self._avg_put_oi = put_oi_value_sma.ToDecimal()
-        self._stddev_call_oi = call_oi_value_stddev.ToDecimal()
-        self._stddev_put_oi = put_oi_value_stddev.ToDecimal()
+        self._avg_call_oi = to_float(call_oi_value_sma)
+        self._avg_put_oi = to_float(put_oi_value_sma)
+        self._stddev_call_oi = to_float(call_oi_value_stddev)
+        self._stddev_put_oi = to_float(put_oi_value_stddev)
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
