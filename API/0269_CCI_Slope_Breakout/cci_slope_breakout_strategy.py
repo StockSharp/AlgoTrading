@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, LinearRegression, LinearRegressionValue
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class cci_slope_breakout_strategy(Strategy):
     """CCI Slope Breakout Strategy"""

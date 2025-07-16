@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class delta_neutral_arbitrage_strategy(Strategy):
     """

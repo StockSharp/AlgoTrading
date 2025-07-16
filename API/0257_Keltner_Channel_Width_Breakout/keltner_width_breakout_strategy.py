@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class keltner_width_breakout_strategy(Strategy):
     """
