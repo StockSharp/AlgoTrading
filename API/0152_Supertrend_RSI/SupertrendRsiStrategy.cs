@@ -11,7 +11,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Implementation of strategy #152 - Supertrend + RSI.
+	/// Implementation of strategy - Supertrend + RSI.
 	/// Buy when price is above Supertrend and RSI is below 30 (oversold).
 	/// Sell when price is below Supertrend and RSI is above 70 (overbought).
 	/// </summary>
