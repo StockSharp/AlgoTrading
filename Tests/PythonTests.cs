@@ -853,7 +853,10 @@ public class PythonTests
 
 	[TestMethod]
 	public Task CointegrationPairsStrategy()
-		=> RunStrategy("0222_Cointegration_Pairs/cointegration_pairs_strategy.py");
+		=> RunStrategy("0222_Cointegration_Pairs/cointegration_pairs_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Asset2"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task MomentumDivergenceStrategy()

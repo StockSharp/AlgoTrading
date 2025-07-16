@@ -42,7 +42,7 @@ class correlation_mean_reversion_strategy(Strategy):
         self._security2_updated = False
 
         # Initialize strategy parameters
-        self._security2 = self.Param("Security2", None) \
+        self._security2 = self.Param[Security]("Security2", None) \
             .SetDisplay("Second Security", "Second security for correlation calculation", "Securities")
 
         self._correlation_period = self.Param("CorrelationPeriod", 20) \

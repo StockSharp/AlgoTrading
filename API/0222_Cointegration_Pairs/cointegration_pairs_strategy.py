@@ -8,7 +8,7 @@ from System import TimeSpan, Math
 from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Subscription
+from StockSharp.BusinessEntities import Order, Security, Subscription
 from datatype_extensions import *
 
 class cointegration_pairs_strategy(Strategy):
@@ -42,7 +42,7 @@ class cointegration_pairs_strategy(Strategy):
             .SetOptimize(0.5, 2.0, 0.1)
 
         # Second asset for pair trading.
-        self._asset2 = self.Param("Asset2", None) \
+        self._asset2 = self.Param[Security]("Asset2", None) \
             .SetDisplay("Asset 2", "Second asset for pair trading", "Parameters")
 
         # Stop loss percentage.
