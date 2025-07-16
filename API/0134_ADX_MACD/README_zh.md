@@ -1,4 +1,5 @@
 # ADX MACD 策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略结合平均趋向指数(ADX)的趋势强度与MACD的动量变化。
 当ADX上升并且MACD在同一方向交叉时，突破延续的概率更大。

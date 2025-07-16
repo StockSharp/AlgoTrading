@@ -1,4 +1,5 @@
 # ADX Slope Breakout
+[English](README.md) | [Русский](README_ru.md)
 
 ADX Slope Breakout 策略监控相关指标的变化率。斜率异常陡峭时暗示新的趋势正在形成。
 

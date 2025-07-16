@@ -1,4 +1,5 @@
 # MA Parabolic SAR Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略利用移动平均线和抛物线SAR捕捉趋势。当收盘价高于均线且SAR点位于价格下方时做多；收盘价低于均线且SAR点位于价格上方时做空。价格穿越SAR反向时离场。
 

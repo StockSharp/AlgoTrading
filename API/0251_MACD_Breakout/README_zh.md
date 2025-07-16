@@ -1,4 +1,5 @@
 # MACD 突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略关注 MACD 指标的突然扩张。当数值明显超出常态范围时，价格往往开始新的走势。
 

@@ -1,4 +1,5 @@
 # Ichimoku 云宽度突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略监测 Ichimoku 云层宽度的快速扩张。当宽度显著超出常态时，价格往往会开始新的走势。
 

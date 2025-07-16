@@ -1,4 +1,5 @@
 # Elder Impulse
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия по системе Elder's Impulse
 

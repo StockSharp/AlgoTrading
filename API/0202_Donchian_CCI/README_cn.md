@@ -1,4 +1,5 @@
 # Donchian CCI Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 此策略利用唐奇安通道与CCI指标产生信号。当价格突破上轨且CCI < -100时做多；当价格跌破下轨且CCI > 100时做空，分别代表超卖和超买条件下的突破。
 

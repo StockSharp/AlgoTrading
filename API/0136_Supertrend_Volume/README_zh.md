@@ -1,4 +1,5 @@
 # 超级趋势成交量策略
+[English](README.md) | [Русский](README_ru.md)
 
 该策略在 Supertrend 指标的基础上加入成交量确认。
 当 Supertrend 出现反转并伴随成交量上升时，新的动能更可能启动。

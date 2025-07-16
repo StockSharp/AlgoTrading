@@ -1,4 +1,5 @@
 # 双顶形态 (Double Top Pattern)
+[English](README.md) | [Русский](README_ru.md)
 
 侦测两次相近高点形成的反转形态。
 

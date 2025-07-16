@@ -1,4 +1,5 @@
 # Autocorrelation Reversal Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 此策略分析短期价格自相关性，以判断近期走势是否可能反转。负自相关表明价格变动倾向交替，为均值回归创造条件。
 

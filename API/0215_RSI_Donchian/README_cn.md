@@ -1,4 +1,5 @@
 # RSI Donchian Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 本策略结合RSI与唐奇安通道，寻找动量极端并配合通道突破。当RSI低于30且价格突破上轨时做多；当RSI高于70且价格跌破下轨时做空。价格回到中轨时离场。
 

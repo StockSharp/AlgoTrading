@@ -1,4 +1,5 @@
 # Supertrend Momentum Filter
+[English](README.md) | [Русский](README_ru.md)
 
 **Supertrend Momentum Filter** 策略基于相关指标构建。
 

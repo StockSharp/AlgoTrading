@@ -1,4 +1,5 @@
 # Hull MA CCI Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略结合Hull移动平均线和CCI指标。当HMA上升且CCI < -100时做多；当HMA下降且CCI > 100时做空，分别表示超卖与超买的趋势。
 

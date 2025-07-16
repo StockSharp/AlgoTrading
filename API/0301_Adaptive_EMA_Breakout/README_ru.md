@@ -1,4 +1,5 @@
 # Прорыв адаптивной EMA
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Adaptive EMA Breakout** построена на пробое адаптивной EMA с подтверждением тренда.
 

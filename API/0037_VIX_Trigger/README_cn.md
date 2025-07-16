@@ -1,4 +1,5 @@
 # VIX触发 (VIX Trigger)
+[English](README.md) | [Русский](README_ru.md)
 
 监控波动率指数VIX的变化。上升的VIX可能预示反转。
 

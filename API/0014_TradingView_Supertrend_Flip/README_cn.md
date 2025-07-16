@@ -1,4 +1,5 @@
 # TradingView Supertrend 翻转
+[English](README.md) | [Русский](README_ru.md)
 
 策略模拟流行的Supertrend指标颜色翻转，结合成交量确认。指标从红转绿时做多，从绿转红时做空，下一次翻转即平仓。使用成交量过滤可在交易清淡时避免震荡，只在有量支撑的翻转中入场，力求捕捉更可靠的反转。
 

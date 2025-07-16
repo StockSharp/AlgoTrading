@@ -1,4 +1,5 @@
 # 双底形态 (Double Bottom Pattern)
+[English](README.md) | [Русский](README_ru.md)
 
 侦测两次相近低点形成的反转形态。
 

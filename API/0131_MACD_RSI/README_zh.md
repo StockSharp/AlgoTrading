@@ -1,4 +1,5 @@
 # MACD RSI 策略
+[English](README.md) | [Русский](README_ru.md)
 
 本策略结合MACD动量与RSI的超买超卖读数。
 当两个指标方向一致时，行情延续的可能性更高。

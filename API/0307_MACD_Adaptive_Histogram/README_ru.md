@@ -1,4 +1,5 @@
 # MACD с адаптивной гистограммой
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **MACD Adaptive Histogram** построена на MACD с адаптивным порогом гистограммы.
 

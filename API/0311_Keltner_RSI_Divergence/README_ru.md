@@ -1,4 +1,5 @@
 # Дивергенция Keltner и RSI
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Keltner RSI Divergence** основана на канале Келтнера и дивергенции RSI.
 

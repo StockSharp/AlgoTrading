@@ -1,4 +1,5 @@
 # 成交量激增趋势 (Volume Spike Trend)
+[English](README.md) | [Русский](README_ru.md)
 
 当成交量超过平均值乘以倍数时表明强烈参与。
 

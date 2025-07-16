@@ -1,4 +1,5 @@
 # 低波动均值回归 (Low Volatility Reversion)
+[English](README.md) | [Русский](README_ru.md)
 
 仅在市场安静时启用, 当波动率低于平均水平且价格偏离均线时介入。
 

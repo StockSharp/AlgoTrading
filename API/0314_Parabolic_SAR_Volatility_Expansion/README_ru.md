@@ -1,4 +1,5 @@
 # Расширение волатильности Parabolic SAR
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Parabolic SAR Volatility Expansion** основана на индикаторе Parabolic SAR с обнаружением расширения волатильности.
 

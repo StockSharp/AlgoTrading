@@ -1,4 +1,5 @@
 # Индикатор Williams %R
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия основана на показателе Williams %R.
 

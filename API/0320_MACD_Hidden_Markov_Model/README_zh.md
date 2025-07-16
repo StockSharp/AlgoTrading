@@ -1,4 +1,5 @@
 # MACD Hidden Markov Model
+[English](README.md) | [Русский](README_ru.md)
 
 **MACD Hidden Markov Model** 策略基于 MACD Hidden Markov Model。
 

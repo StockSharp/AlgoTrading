@@ -1,4 +1,5 @@
 # Ichimoku Adx Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 本策略结合一目均衡表和ADX指标。做多条件：价格在云层上方，且转折线高于基准线，ADX>25；做空条件：价格在云层下方，且转折线低于基准线，ADX>25。价格穿越云层相反方向时平仓。
 

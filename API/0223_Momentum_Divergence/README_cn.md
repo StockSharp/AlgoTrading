@@ -1,4 +1,5 @@
 # Momentum Divergence Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略比较动量指标与价格走势，用于提前发现可能的反转。当价格创出新高或新低而动量未能跟随时，即形成背离，显示趋势减弱。
 

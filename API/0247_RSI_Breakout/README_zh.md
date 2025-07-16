@@ -1,4 +1,5 @@
 # RSI 突破策略
+[English](README.md) | [Русский](README_ru.md)
 
 该策略观察 RSI 相对于其均值的急剧变化，以捕捉动能爆发。
 

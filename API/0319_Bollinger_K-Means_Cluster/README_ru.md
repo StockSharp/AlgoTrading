@@ -1,4 +1,5 @@
 # Кластер K-Means на основе Боллинджера
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Bollinger K-Means Cluster** построена на использовании полос Боллинджера совместно с кластеризацией K-Means.
 

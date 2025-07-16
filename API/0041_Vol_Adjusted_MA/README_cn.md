@@ -1,4 +1,5 @@
 # 波动率调节均线 (Volatility Adjusted Moving Average)
+[English](README.md) | [Русский](README_ru.md)
 
 在均线上下添加ATR倍数带。
 

@@ -1,4 +1,5 @@
 # Supertrend Put Call Ratio
+[English](README.md) | [Русский](README_ru.md)
 
 **Supertrend Put Call Ratio** 策略基于 Supertrend Put Call Ratio。
 

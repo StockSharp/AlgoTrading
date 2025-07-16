@@ -1,4 +1,5 @@
 # Parabolic SAR RSI Divergence
+[English](README.md) | [Русский](README_ru.md)
 
 **Parabolic SAR RSI Divergence** 策略基于 that trades based on Parabolic SAR signals when RSI shows divergence from price。
 

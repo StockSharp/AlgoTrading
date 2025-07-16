@@ -1,4 +1,5 @@
 # Прорыв расстояния Parabolic SAR
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Parabolic SAR Distance Breakout отслеживает быстрые расширения индикатора Parabolic. Когда его значения выходят за недавний диапазон, цена часто начинает новое движение.
 

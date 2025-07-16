@@ -1,4 +1,5 @@
 # Сильное движение по DMI
+[English](README.md) | [中文](README_cn.md)
 
 Стратегия основана на мощных движениях индикатора DMI (Directional Movement Index).
 

@@ -1,4 +1,5 @@
 # Stochastic 均值回归策略
+[English](README.md) | [Русский](README_ru.md)
 
 该策略将随机指标 %K 与其平均值比较，寻找过度波动的情形。当 %K 偏离均值数个标准差时，预期其回落。
 

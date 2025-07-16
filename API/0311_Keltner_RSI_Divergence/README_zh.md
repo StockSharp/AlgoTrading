@@ -1,4 +1,5 @@
 # Keltner RSI Divergence
+[English](README.md) | [Русский](README_ru.md)
 
 **Keltner RSI Divergence** 策略基于 Keltner Channel and RSI Divergence。
 

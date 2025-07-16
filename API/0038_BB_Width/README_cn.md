@@ -1,4 +1,5 @@
 # 布林带宽突破 (Bollinger Band Width Breakout)
+[English](README.md) | [Русский](README_ru.md)
 
 带宽扩大表明波动增加并可能形成趋势。
 

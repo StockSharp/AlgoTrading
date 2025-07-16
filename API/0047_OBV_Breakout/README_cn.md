@@ -1,4 +1,5 @@
 # OBV突破 (OBV Breakout)
+[English](README.md) | [Русский](README_ru.md)
 
 观察能量潮(OBV)突破历史高点或低点并由价格确认。
 

@@ -1,4 +1,5 @@
 # Прорыв наклона Williams %R
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия Williams R Slope Breakout отслеживает скорость изменения индикатора Williams %R. Слишком крутой наклон указывает на появление нового тренда.
 

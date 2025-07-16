@@ -1,4 +1,5 @@
 # Импульс Williams %R
+[English](README.md) | [中文](README_zh.md)
 
 Стратегия **Williams R Momentum** основана на индикаторе Williams %R с фильтром Momentum.
 

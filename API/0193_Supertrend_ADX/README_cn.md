@@ -1,4 +1,5 @@
 # Supertrend Adx Strategy
+[English](README.md) | [Русский](README_ru.md)
 
 该策略结合Supertrend指标与ADX，用于确认趋势强度。做多条件：价格高于Supertrend且ADX>25；做空条件：价格低于Supertrend且ADX>25。价格反向突破Supertrend时平仓。
 
