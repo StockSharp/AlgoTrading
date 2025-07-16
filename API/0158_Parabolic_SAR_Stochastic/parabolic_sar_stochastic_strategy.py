@@ -176,10 +176,9 @@ class parabolic_sar_stochastic_strategy(Strategy):
             return
 
         stochTyped = stochValue
-        if hasattr(stochTyped, 'K') and stochTyped.K is not None:
-            stochK = float(stochTyped.K)
-        else:
+        if stochTyped.K is None:
             return
+        stochK = float(stochTyped.K)
 
         sarDec = to_float(sarValue)
 

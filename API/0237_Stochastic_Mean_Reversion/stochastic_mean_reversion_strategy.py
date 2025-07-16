@@ -142,11 +142,9 @@ class stochastic_mean_reversion_strategy(Strategy):
             return
 
         # Extract %K value from stochastic
-        k_value = None
-        if hasattr(stoch_value, 'K') and stoch_value.K is not None:
-            k_value = float(stoch_value.K)
-        if k_value is None:
+        if stoch_value.K is None:
             return
+        k_value = float(stoch_value.K)
 
         # Process Stochastic %K through average and standard deviation indicators
         stoch_avg_value = to_float(process_float(self._stoch_average, k_value, candle.ServerTime, candle.State == CandleStates.Finished))

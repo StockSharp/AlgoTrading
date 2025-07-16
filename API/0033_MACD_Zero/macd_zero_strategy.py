@@ -143,15 +143,13 @@ class macd_zero_strategy(Strategy):
 
         # Extract MACD values
         try:
-            if hasattr(macd_value, 'Macd') and macd_value.Macd is not None:
-                macd = float(macd_value.Macd)
-            else:
+            if macd_value.Macd is None:
                 return
-                
-            if hasattr(macd_value, 'Signal') and macd_value.Signal is not None:
-                signal = float(macd_value.Signal)
-            else:
+            macd = float(macd_value.Macd)
+
+            if macd_value.Signal is None:
                 return
+            signal = float(macd_value.Signal)
         except:
             # If we can't extract values, skip this candle
             return

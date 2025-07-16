@@ -149,25 +149,21 @@ class ichimoku_volume_strategy(Strategy):
 
         # Ichimoku values
         try:
-            if hasattr(ichimoku_value, 'Tenkan') and ichimoku_value.Tenkan is not None:
-                tenkan = float(ichimoku_value.Tenkan)
-            else:
+            if ichimoku_value.Tenkan is None:
                 return
+            tenkan = float(ichimoku_value.Tenkan)
 
-            if hasattr(ichimoku_value, 'Kijun') and ichimoku_value.Kijun is not None:
-                kijun = float(ichimoku_value.Kijun)
-            else:
+            if ichimoku_value.Kijun is None:
                 return
+            kijun = float(ichimoku_value.Kijun)
 
-            if hasattr(ichimoku_value, 'SenkouA') and ichimoku_value.SenkouA is not None:
-                senkou_a = float(ichimoku_value.SenkouA)
-            else:
+            if ichimoku_value.SenkouA is None:
                 return
+            senkou_a = float(ichimoku_value.SenkouA)
 
-            if hasattr(ichimoku_value, 'SenkouB') and ichimoku_value.SenkouB is not None:
-                senkou_b = float(ichimoku_value.SenkouB)
-            else:
+            if ichimoku_value.SenkouB is None:
                 return
+            senkou_b = float(ichimoku_value.SenkouB)
         except:
             return
 

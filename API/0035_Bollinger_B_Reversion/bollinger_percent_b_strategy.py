@@ -135,15 +135,13 @@ class bollinger_percent_b_strategy(Strategy):
 
         # Extract Bollinger Bands values
         try:
-            if hasattr(bollinger_value, 'UpBand') and bollinger_value.UpBand is not None:
-                upper_band = float(bollinger_value.UpBand)
-            else:
+            if bollinger_value.UpBand is None:
                 return
-                
-            if hasattr(bollinger_value, 'LowBand') and bollinger_value.LowBand is not None:
-                lower_band = float(bollinger_value.LowBand)
-            else:
+            upper_band = float(bollinger_value.UpBand)
+
+            if bollinger_value.LowBand is None:
                 return
+            lower_band = float(bollinger_value.LowBand)
         except:
             # If we can't extract values, skip this candle
             return
