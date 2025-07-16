@@ -1,5 +1,6 @@
 # Pinbar Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Pinbars highlight sudden rejections of price and can signal short-term turning points. This strategy measures the length of the candle's tail relative to its body, looking for long shadows that stick out from recent price action. A moving average filter helps trade in the direction of the underlying trend.
 
 During each candle update the system calculates upper and lower shadows and compares them to the body size. A bullish pinbar with a long lower wick may trigger a long entry if price is above the moving average. Likewise a bearish pinbar with an extended upper tail can initiate a short position in a downtrend. Stops are placed a fixed percentage from entry.

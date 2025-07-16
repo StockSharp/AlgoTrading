@@ -1,5 +1,6 @@
 # Williams R Ichimoku Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This setup combines the momentum extremes of Williams %R with the trend structure defined by the Ichimoku Cloud. The idea is to join strong moves only when price sits on the favourable side of the cloud and the short term lines confirm the bias.
 
 A long opportunity appears when the oscillator drops below -80 while price holds above the cloud and Tenkan-sen crosses above Kijun-sen. A short signal occurs when %R climbs above -20 with price below the cloud and Tenkan-sen under Kijun-sen. The position remains open until price crosses the opposite side of the cloud.

@@ -1,5 +1,6 @@
 # MACD Adaptive Histogram
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **MACD Adaptive Histogram** strategy is built around MACD with adaptive histogram threshold.
 
 Signals trigger when Histogram confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.

@@ -1,5 +1,6 @@
 # Momentum Percentage
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on price momentum percentage change
 
 Momentum Percentage tracks percent change in price. Trades trigger when momentum exceeds positive or negative levels and exit on the counter signal or a volatility stop.

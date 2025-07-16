@@ -1,5 +1,6 @@
 # First Day of Month Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Many markets exhibit a bullish bias on the first trading day of the month as new capital flows into funds.
 Traders attempt to front-run this effect by buying at the prior month's close or early in the session.
 

@@ -1,5 +1,6 @@
 # Three Black Crows Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Three Black Crows is the bearish counterpart to Three White Soldiers, consisting of three long down candles after an advance.
 The pattern suggests that sellers have seized control as each close lands near the session low.
 

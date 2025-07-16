@@ -1,5 +1,6 @@
 # Williams R Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Williams %R oscillates between 0 and -100 to show when price closes near the extremes of its recent range. This strategy fades those extremes once the indicator stretches far from its own average.
 
 A long trade triggers when Williams %R falls below the average minus `DeviationMultiplier` times the standard deviation. A short trade is taken when it rises above the average plus that multiplier. Exits occur when Williams %R moves back toward its average level.

@@ -1,5 +1,6 @@
 # Hull MA CCI Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy uses Hull MA CCI indicators to generate signals.
 Long entry occurs when HMA(t) > HMA(t-1) && CCI < -100 (HMA rising with oversold conditions). Short entry occurs when HMA(t) < HMA(t-1) && CCI > 100 (HMA falling with overbought conditions).
 It is suitable for traders seeking opportunities in mixed markets.

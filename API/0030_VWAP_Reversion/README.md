@@ -1,5 +1,6 @@
 # VWAP Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 VWAP Reversion strategy that trades on deviations from Volume Weighted Average Price
 
 VWAP Reversion trades deviations from the volume-weighted average price. If price strays too far above or below VWAP, the strategy fades the move and exits on a snap back.

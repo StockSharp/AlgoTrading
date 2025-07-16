@@ -1,5 +1,6 @@
 # Open Drive Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Open Drive refers to strong directional movement right from the opening bell, often after an overnight news catalyst.
 Traders look for heavy volume and sustained momentum in the first few minutes.
 

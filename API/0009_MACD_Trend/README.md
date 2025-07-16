@@ -1,5 +1,6 @@
 # MACD Trend
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on MACD indicator
 
 MACD Trend reacts to crossovers between the MACD line and its signal line. Bullish crosses initiate longs while bearish crosses start shorts. Opposite crosses or a stop close the trade.

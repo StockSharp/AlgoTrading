@@ -1,5 +1,6 @@
 # Volume Climax Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Volume Climax Reversal seeks turning points marked by extremely high volume after a strong trend.
 Such climactic spikes suggest exhaustion as the last buyers or sellers rush in before momentum fades.
 

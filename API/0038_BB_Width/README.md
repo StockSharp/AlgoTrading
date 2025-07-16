@@ -1,5 +1,6 @@
 # Bollinger Band Width Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Bollinger Band Width measures the spread between the upper and lower bands. Expanding width suggests volatility and possible trend formation. This strategy trades breakouts when the width is increasing.
 
 Price position relative to the middle band sets direction. A widening channel with price above the mid-band triggers longs, while a widening channel below it triggers shorts.

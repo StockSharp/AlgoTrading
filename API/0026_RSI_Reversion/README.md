@@ -1,5 +1,6 @@
 # RSI Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on RSI mean reversion
 
 RSI Reversion assumes price will revert after reaching extreme RSI values. When RSI falls below the lower threshold it buys; when above the upper threshold it sells. Positions close as RSI moves back toward neutral.

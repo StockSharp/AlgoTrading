@@ -1,5 +1,6 @@
 # Momentum Breakout Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This breakout system looks for sudden surges in momentum relative to its historical average. When momentum readings exceed the average by a large margin, price may be starting a fast directional move.
 
 The strategy buys when momentum rises above the average plus `Multiplier` times its standard deviation. A short is initiated when momentum falls below the average minus the same multiplier. Positions are closed once momentum returns toward its mean.

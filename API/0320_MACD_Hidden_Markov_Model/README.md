@@ -1,5 +1,6 @@
 # MACD Hidden Markov Model
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **MACD Hidden Markov Model** strategy is built around MACD Hidden Markov Model.
 
 Signals trigger when Markov confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

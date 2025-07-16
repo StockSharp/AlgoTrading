@@ -1,5 +1,6 @@
 # Keltner Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy that trades on mean reversion using Keltner Channels
 
 Keltner Reversion fades pushes outside the Keltner Channel. Entries bet on a return toward the middle band, closing trades once price re-enters the channel or the stop is hit.

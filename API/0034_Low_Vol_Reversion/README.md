@@ -1,5 +1,6 @@
 # Low Volatility Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This mean-reversion strategy activates only during quiet markets. It measures ATR over a lookback window and enters when volatility falls below a percentage of that average and price deviates from its moving average.
 
 By trading against small moves in calm conditions, it aims to capture snap backs without chasing large trends.

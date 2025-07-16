@@ -1,5 +1,6 @@
 # Hammer Candle Reversal
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Hammer candles often mark an intraday reversal after selling pressure subsides. This strategy looks for a hammer pattern and enters long, anticipating a rebound.
 
 The system requires a lower shadow at least twice the body and little upper shadow. Once identified, it buys with volume size and waits for profit or stop-loss.

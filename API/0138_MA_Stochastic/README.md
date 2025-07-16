@@ -1,5 +1,6 @@
 # MA Stochastic Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 MA Stochastic uses a moving average trend filter with stochastic oscillator pullbacks.
 When price trends above the average and the stochastic dips into oversold, the system prepares to buy the next upturn.
 

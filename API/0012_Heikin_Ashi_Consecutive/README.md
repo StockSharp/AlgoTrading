@@ -1,5 +1,6 @@
 # Heikin Ashi Consecutive
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on consecutive Heikin Ashi candles
 
 Heikin Ashi Consecutive waits for several same-color Heikin Ashi candles to confirm momentum. After a run of bullish or bearish bars the strategy joins the move and exits on the first opposite candle or an ATR stop.

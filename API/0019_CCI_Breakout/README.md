@@ -1,5 +1,6 @@
 # CCI Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on CCI (Commodity Channel Index) breakout
 
 CCI Breakout uses the Commodity Channel Index to spot powerful moves. Surges beyond positive or negative CCI thresholds generate entries. Exits happen when CCI retreats toward zero or an opposite signal forms.

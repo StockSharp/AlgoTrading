@@ -1,5 +1,6 @@
 # Morning Star Pattern Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Morning Star is a bullish candlestick formation that signals a potential bottom after a decline. It consists of a large bearish candle, a small indecisive candle, and a strong bullish candle that closes above the midpoint of the first bar.
 
 This strategy tracks sequences of three candles. When the pattern appears a long position is opened with a stop placed below the small middle candle. Exits occur once price rises above the high of the confirmation bar or if the stop is reached.

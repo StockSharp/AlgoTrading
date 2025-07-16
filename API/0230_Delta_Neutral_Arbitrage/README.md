@@ -1,5 +1,6 @@
 # Delta Neutral Arbitrage Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This arbitrage strategy trades the spread between two correlated assets while keeping the combined position close to delta neutral. By balancing a long position in one asset against a short in another, it attempts to profit from mean reversion in the spread rather than market direction.
 
 A long spread is entered when the z-score of the price difference falls below `-EntryThreshold`. The first asset is bought and the second is sold in equal size. A short spread does the reverse when the z-score rises above the positive threshold. The trade is closed once the spread returns to the moving average.

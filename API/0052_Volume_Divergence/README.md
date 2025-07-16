@@ -1,5 +1,6 @@
 # Volume Divergence
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Volume Divergence looks for discrepancies between price movement and trading volume. If price falls but volume increases, it may signal accumulation; if price rises with strong volume, it may signal distribution.
 
 The strategy enters long when falling prices are accompanied by rising volume, and enters short when rising prices pair with heavy volume. Exits rely on a moving average crossover.

@@ -1,5 +1,6 @@
 # Ichimoku RSI Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Ichimoku RSI uses Ichimoku cloud levels to define trend direction while RSI pinpoints short-term pullbacks.
 Trades align with the cloud, entering when RSI recovers from oversold in an uptrend or falls from overbought in a downtrend.
 

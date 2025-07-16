@@ -1,5 +1,6 @@
 # Macd Cci Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Implementation of strategy #161 - MACD + CCI. Buy when MACD is above Signal line and CCI is below -100 (oversold). Sell when MACD is below Signal line and CCI is above 100 (overbought).
 
 MACD swings highlight momentum shifts; CCI helps time pullback entries in that direction. Both long and short trades are possible.

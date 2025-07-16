@@ -1,5 +1,6 @@
 # Double Bottom Pattern
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This pattern-based strategy scans for two consecutive lows at roughly the same price separated by a set distance. After the second bottom forms, a bullish candle confirms the reversal.
 
 When confirmation occurs, the system buys with a stop below the pattern lows. The setup aims to capture sharp rebounds from exhausted selling.

@@ -1,5 +1,6 @@
 # Stochastic Hook Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Stochastic Hook Reversal watches the %K line for a hook out of overbought or oversold territory.
 After stretching to an extreme the oscillator often curls back, indicating momentum is waning.
 

@@ -1,5 +1,6 @@
 # Volume Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This system looks for unusually high or low trading volume relative to its historical average. Significant volume spikes often revert as activity normalizes, offering potential fade trades.
 
 A long entry is made when volume drops below the average minus `DeviationMultiplier` times the standard deviation and price is below the moving average. A short entry occurs when volume rises above the upper band with price above the average. Trades exit once volume returns toward its mean level.

@@ -1,5 +1,6 @@
 # Volatility Contraction Pattern
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The VCP strategy looks for a sequence of narrowing price ranges. As each range contracts, energy builds for a breakout. The system measures range size and waits for a break above the highest high or below the lowest low.
 
 Once contraction is observed, a breakout beyond the recent extremes triggers a trade in that direction. Price crossing the moving average is used to manage exits.

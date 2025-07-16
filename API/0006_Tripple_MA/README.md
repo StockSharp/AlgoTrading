@@ -1,5 +1,6 @@
 # Tripple MA
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Triple Moving Average crossover
 
 Triple MA aligns three moving averages to define direction. When the shortest average is above the middle and long averages a long entry occurs. The reverse alignment opens shorts, and a cross of the short and middle lines closes the trade.

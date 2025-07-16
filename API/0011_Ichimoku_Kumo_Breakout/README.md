@@ -1,5 +1,6 @@
 # Ichimoku Kumo Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Ichimoku Kumo (cloud) breakout
 
 This approach relies on Ichimoku cloud signals. Price breaking above the cloud with Tenkan-sen crossing over Kijun-sen triggers a buy, while the opposite break below the cloud starts a short. Positions are held until price returns through the cloud.

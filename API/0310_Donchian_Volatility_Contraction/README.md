@@ -1,5 +1,6 @@
 # Donchian Volatility Contraction
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Donchian Volatility Contraction** strategy is built around Donchian Channel breakout after volatility contraction.
 
 Signals trigger when Donchian confirms volatility contraction patterns on intraday (5m) data. This makes the method suitable for active traders.

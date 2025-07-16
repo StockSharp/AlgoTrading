@@ -1,5 +1,6 @@
 # Keltner RSI Divergence
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Keltner RSI Divergence** strategy is built around Keltner Channel and RSI Divergence.
 
 Signals trigger when Keltner confirms divergence setups on intraday (5m) data. This makes the method suitable for active traders.

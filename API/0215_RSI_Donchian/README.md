@@ -1,5 +1,6 @@
 # RSI Donchian Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The RSI Donchian strategy looks for momentum extremes that coincide with breakouts of the Donchian Channel. The relative strength index gauges overbought and oversold conditions while the channel defines recent price highs and lows.
 
 A buy signal appears when the RSI dips below 30 and price breaks above the Donchian upper band. A short signal forms when the RSI rises above 70 and price falls through the lower band. Exits occur once price moves back to the Donchian middle line, signalling a return to balance.

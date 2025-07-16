@@ -1,5 +1,6 @@
 # Parabolic SAR RSI Divergence
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Parabolic SAR RSI Divergence** strategy is built around that trades based on Parabolic SAR signals when RSI shows divergence from price.
 
 Signals trigger when Parabolic confirms divergence setups on intraday (5m) data. This makes the method suitable for active traders.

@@ -1,5 +1,6 @@
 # Volatility Skew Arbitrage Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This options-based strategy observes the difference in implied volatility between two strikes. When the skew diverges from its historical average by a large margin, it opens a position expecting the skew to revert.
 
 A long skew trade buys the cheaper-volatility option and sells the expensive one when the skew exceeds `Threshold` standard deviations above the mean. A short skew trade does the opposite when the skew falls below the mean by the same amount. Positions are closed when the skew moves back toward its average level.

@@ -1,5 +1,6 @@
 # VWAP ADX Trend Strength
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **VWAP ADX Trend Strength** strategy is built around VWAP with ADX Trend Strength.
 
 Signals trigger when its indicators confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

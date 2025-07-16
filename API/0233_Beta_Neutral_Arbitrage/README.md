@@ -1,5 +1,6 @@
 # Beta Neutral Arbitrage Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This strategy seeks to exploit pricing differences between two securities while neutralizing overall market beta. By adjusting positions based on each asset's beta to a common index, the portfolio aims to remain insensitive to broad market moves.
 
 A long spread goes long the asset with lower beta-adjusted price and shorts the other when the spread deviates beyond two standard deviations. A short spread does the reverse when the spread is above the mean. Trades are closed once the beta-adjusted spread reverts toward its average.

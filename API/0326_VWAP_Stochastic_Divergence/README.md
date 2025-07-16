@@ -1,5 +1,6 @@
 # VWAP Stochastic Divergence
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **VWAP Stochastic Divergence** strategy is built around combining VWAP with ADX trend strength indicator.
 
 Signals trigger when Stochastic confirms divergence setups on intraday (5m) data. This makes the method suitable for active traders.

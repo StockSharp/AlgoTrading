@@ -1,5 +1,6 @@
 # Santa Claus Rally Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Santa Claus Rally describes the tendency for stocks to rise in the final week of December through the first two trading days of January.
 Holiday optimism and year-end positioning can fuel this short burst of strength.
 

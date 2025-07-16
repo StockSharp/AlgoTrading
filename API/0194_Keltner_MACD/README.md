@@ -1,5 +1,6 @@
 # Keltner Macd Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Keltner Channels and MACD. Enters long when price breaks above upper Keltner Channel with MACD > Signal. Enters short when price breaks below lower Keltner Channel with MACD < Signal. Exits when MACD crosses its signal line in the opposite direction.
 
 Keltner Channel breakouts serve as the trigger, and MACD momentum filters the direction. The strategy initiates trades once both signals align.

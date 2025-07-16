@@ -1,5 +1,6 @@
 # MA Deviation
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy that trades when price deviates significantly from its moving average
 
 MA Deviation enters when price deviates a set percentage from its moving average, anticipating a return to the mean. The position is exited when price converges back toward the average.

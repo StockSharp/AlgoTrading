@@ -1,5 +1,6 @@
 # Parabolic SAR Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Parabolic SAR indicator places dots above or below price to signal trend direction. When the dots flip sides, it may mark the end of the previous move. This strategy enters trades on that switch, expecting a short-term reversal.
 
 A running Parabolic SAR value is maintained for each candle. If the indicator moves from above price to below, a long position is opened. If it flips from below to above, a short trade is executed. The method does not use an explicit profit target and typically relies on discretionary exit or trailing stops outside the sample code.

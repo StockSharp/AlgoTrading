@@ -1,5 +1,6 @@
 # RSI Divergence
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on RSI divergence
 
 RSI Divergence searches for price extremes unconfirmed by the RSI oscillator. A bullish divergence leads to a buy and a bearish divergence prompts a sell. The trade lasts until RSI reverses or a stop fires.

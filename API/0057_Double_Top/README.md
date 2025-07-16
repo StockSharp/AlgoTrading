@@ -1,5 +1,6 @@
 # Double Top Pattern
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Double Top identifies two peaks separated by a number of bars with similar prices. After the second peak forms, a bearish candle confirms the reversal.
 
 The strategy sells short upon confirmation with a stop above the pattern highs, aiming to profit from a trend change after buyers are exhausted.

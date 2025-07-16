@@ -1,5 +1,6 @@
 # Bollinger RSI Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Bollinger RSI combines Bollinger Band overextension with RSI momentum signals.
 When price closes outside the bands but RSI shows divergence, a reversal is often near.
 

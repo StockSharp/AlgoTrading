@@ -1,5 +1,6 @@
 # Hull MA Volatility Contraction
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Hull MA Volatility Contraction** strategy is built around Hull Moving Average with volatility contraction filter.
 
 Signals trigger when its indicators confirms volatility contraction patterns on intraday (15m) data. This makes the method suitable for active traders.

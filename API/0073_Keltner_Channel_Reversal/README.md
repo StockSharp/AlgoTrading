@@ -1,5 +1,6 @@
 # Keltner Channel Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Volatility-based channels can highlight overextended moves. This method fades price when it pushes outside the Keltner Channel, anticipating a snap back toward the middle line. It uses an exponential moving average and ATR to size the channel width.
 
 As each candle completes, the strategy checks whether the close is beyond the upper or lower band and whether the candle direction agrees. Bullish candles closing below the lower band spark long entries, while bearish candles above the upper band prompt shorts. Positions exit once price crosses the middle band or when the ATR-based stop is reached.

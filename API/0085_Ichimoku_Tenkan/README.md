@@ -1,5 +1,6 @@
 # Ichimoku Tenkan/Kijun Cross Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Ichimoku indicators provide a full trend-following system. This approach focuses on the Tenkan-sen crossing the Kijun-sen while price trades relative to the Kumo cloud. A bullish cross above the cloud signals trend continuation higher, whereas a bearish cross below the cloud suggests weakness.
 
 During operation the strategy calculates the Ichimoku components on each bar. When Tenkan rises above Kijun and price sits above the cloud, a long trade is initiated with a stop near Kijun. A cross in the opposite direction below the cloud triggers a short with a similar stop placement.

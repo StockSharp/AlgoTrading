@@ -1,5 +1,6 @@
 # CCI Hook Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The CCI Hook Reversal uses the Commodity Channel Index as a trigger when it hooks away from an extreme reading.
 After the indicator pushes above +100 or below -100 it often snaps back quickly as momentum stalls.
 

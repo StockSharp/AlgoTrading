@@ -1,5 +1,6 @@
 # Wyckoff Distribution Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Wyckoff Distribution is a topping phase characterized by heavy selling into rallies and tests of resistance.
 Volume often expands on down moves and contracts on bounces, suggesting large interests are liquidating positions.
 

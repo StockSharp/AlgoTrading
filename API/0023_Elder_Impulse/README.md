@@ -1,5 +1,6 @@
 # Elder Impulse
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Elder's Impulse System
 
 Elder Impulse combines EMA direction with MACD histogram color. Green bars above the EMA prompt longs, red bars below prompt shorts, and neutral bars signal exits.

@@ -1,5 +1,6 @@
 # Pivot Point Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Daily pivot points and their support and resistance levels often act as turning points for intraday price action. This strategy calculates the classic floor-trader pivots from the prior day's high, low and close, then looks for candles bouncing off S1 or R1.
 
 When price approaches support level S1 and forms a bullish candle, a long entry is taken. If price tests resistance level R1 and prints a bearish candle, a short is opened. Trades exit upon reaching the central pivot or if the protective stop is hit.

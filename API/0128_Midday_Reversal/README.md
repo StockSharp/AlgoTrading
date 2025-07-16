@@ -1,5 +1,6 @@
 # Midday Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Midday Reversal seeks turning points that occur around lunchtime when morning trends often exhaust.
 Liquidity typically dries up mid-session, leading to reversals as traders square positions.
 

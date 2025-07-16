@@ -1,5 +1,6 @@
 # Rejection Candle Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 A Rejection Candle forms when price probes a level but fails to hold beyond it, leaving a long wick and small body.
 Such candles indicate an attempt to move in one direction was firmly rejected by the market.
 

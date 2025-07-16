@@ -1,5 +1,6 @@
 # Donchian Macd Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy combining Donchian Channel breakout with MACD trend confirmation.
 
 The strategy waits for a Donchian breakout and verifies momentum with MACD. Long or short trades ride the move once MACD agrees.

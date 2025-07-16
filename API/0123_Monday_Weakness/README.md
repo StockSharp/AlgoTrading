@@ -1,5 +1,6 @@
 # Monday Weakness Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Monday Weakness notes that equities often open lower after the weekend as traders digest news and reposition.
 Short-term bearish pressure can appear at the start of the week before markets stabilize.
 

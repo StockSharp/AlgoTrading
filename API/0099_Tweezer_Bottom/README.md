@@ -1,5 +1,6 @@
 # Tweezer Bottom Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Tweezer Bottom is a two-candle reversal pattern that appears after a decline.
 Both candles share a similar low, signaling that sellers failed to push beyond that level.
 

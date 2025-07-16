@@ -1,5 +1,6 @@
 # Three White Soldiers Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Three White Soldiers pattern is a classic bullish reversal consisting of three consecutive strong up candles.
 After a downtrend, this sequence often marks the start of a sustained move higher as buying pressure overwhelms sellers.
 

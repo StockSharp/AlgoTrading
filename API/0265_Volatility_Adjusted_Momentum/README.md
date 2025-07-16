@@ -1,5 +1,6 @@
 # Volatility Adjusted Momentum
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Volatility Adjusted Momentum strategy monitors the Volatility for rapid expansions. When readings jump beyond their average range, price often starts a new move.
 
 A position opens once the indicator pierces a band derived from recent data and a deviation multiplier. Long and short trades are possible with a stop attached.

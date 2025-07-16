@@ -1,5 +1,6 @@
 # Stochastic Dynamic Zones
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Stochastic Dynamic Zones** strategy is built around Stochastic Oscillator with Dynamic Overbought/Oversold Zones.
 
 Signals trigger when Stochastic confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

@@ -1,5 +1,6 @@
 # Volume MA Cross
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy processes volume through fast and slow moving averages. When the fast volume MA crosses above the slow volume MA, it indicates increasing participation and triggers a long entry. A cross below signals weakness and initiates a short.
 
 Positions are closed when the opposite crossover occurs. Price is monitored with its own moving average to help filter trades.

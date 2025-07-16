@@ -1,5 +1,6 @@
 # DMI Power Move
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on DMI (Directional Movement Index) power moves
 
 DMI Power Move combines directional indicator differences with ADX to catch powerful trends. Trades enter when +DI markedly exceeds -DI (or vice versa) and ADX is strong. They exit when ADX fades or the DI spread narrows.

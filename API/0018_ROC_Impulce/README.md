@@ -1,5 +1,6 @@
 # ROC Impulce
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Rate of Change (ROC) impulse
 
 ROC Impulse captures sudden bursts in the Rate of Change indicator. Sharp positive spikes lead to long trades and sharp negatives to short trades. When momentum fades back toward zero the position is closed.

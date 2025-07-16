@@ -1,5 +1,6 @@
 # ATR Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The ATR Mean Reversion strategy measures how far price travels away from a moving average relative to recent volatility. The Average True Range (ATR) provides an adaptive gauge so thresholds expand during active periods and contract when markets quiet down.
 
 A long setup occurs when price closes below the moving average by more than `Multiplier` times the ATR. A short setup appears when price closes above the moving average by the same distance. Positions are exited once price returns to the moving average.

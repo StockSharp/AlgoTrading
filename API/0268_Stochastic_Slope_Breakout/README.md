@@ -1,5 +1,6 @@
 # Stochastic Slope Breakout
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Stochastic Slope Breakout strategy tracks the rate of change of the Stochastic. An unusually steep slope hints that a new trend is forming.
 
 Entries occur when slope exceeds its typical level by a multiple of standard deviation, taking trades in the direction of acceleration with a protective stop.

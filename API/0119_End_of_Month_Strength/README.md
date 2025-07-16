@@ -1,5 +1,6 @@
 # End of Month Strength Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 End of Month Strength observes that equities often rally during the last few trading days as portfolio managers adjust holdings.
 Buying pressure tied to window dressing can create a reliable upward bias ahead of the monthly close.
 

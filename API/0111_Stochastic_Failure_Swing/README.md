@@ -1,5 +1,6 @@
 # Stochastic Failure Swing Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Stochastic Failure Swing monitors the oscillator for a lower high above 80 or a higher low below 20.
 When the indicator fails to reach a new extreme and then reverses, it often signals a trend shift.
 

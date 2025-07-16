@@ -1,5 +1,6 @@
 # Hull MA Volume Spike
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Hull MA Volume Spike** strategy is built around Hull Moving Average with Volume Spike detection.
 
 Signals trigger when Spike confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

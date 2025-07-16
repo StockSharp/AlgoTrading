@@ -1,5 +1,6 @@
 # Parabolic SAR CCI Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy uses Parabolic SAR CCI indicators to generate signals.
 Long entry occurs when Price > SAR && CCI < -100 (trend up with oversold conditions). Short entry occurs when Price < SAR && CCI > 100 (trend down with overbought conditions).
 It is suitable for traders seeking opportunities in mixed markets.

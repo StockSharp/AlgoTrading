@@ -1,5 +1,6 @@
 # MACD Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This method tracks the MACD histogram relative to its own average. Extreme histogram readings often revert once momentum subsides. By monitoring the difference between MACD and its signal line, the strategy finds overextended moves.
 
 A long position is entered when the MACD histogram falls below the mean by `DeviationMultiplier` standard deviations. A short position is opened when the histogram rises above the mean by the same amount. The trade is closed when the histogram crosses back through its average.

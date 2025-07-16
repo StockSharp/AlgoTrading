@@ -1,5 +1,6 @@
 # Adx Cci Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on ADX and CCI indicators. Enters long when ADX > 25 and CCI is oversold (< -100) Enters short when ADX > 25 and CCI is overbought (> 100)
 
 ADX assesses whether a trend has strength and CCI identifies entry timing after pullbacks. Longs and shorts follow the ADX direction.

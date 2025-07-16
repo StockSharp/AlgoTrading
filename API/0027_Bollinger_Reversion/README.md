@@ -1,5 +1,6 @@
 # Bollinger Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Bollinger Bands mean reversion
 
 Bollinger Reversion fades moves outside the Bollinger Bands. Trades open against closes beyond the bands and close once price returns inside or hits a stop.

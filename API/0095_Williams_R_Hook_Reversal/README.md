@@ -1,5 +1,6 @@
 # Williams %R Hook Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Williams %R Hook Reversal follows the Williams %R indicator as it quickly snaps back from an extreme.
 When the reading moves above -20 or below -80 and then hooks toward the center, the prior thrust is likely exhausted.
 

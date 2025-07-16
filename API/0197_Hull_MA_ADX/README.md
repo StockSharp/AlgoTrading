@@ -1,5 +1,6 @@
 # Hull Ma Adx Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Hull Moving Average and ADX. Enters long when HMA increases and ADX > 25 (strong trend). Enters short when HMA decreases and ADX > 25 (strong trend). Exits when ADX < 20 (weakening trend).
 
 Hull MA shows the trend, while ADX confirms its intensity. Entries follow the Hull slope when ADX indicates strength.

@@ -1,5 +1,6 @@
 # Adaptive Bollinger Breakout
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Adaptive Bollinger Breakout** strategy is built around that trades based on breakouts of Bollinger Bands with adaptively adjusted parameters.
 
 Signals trigger when Bollinger confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.

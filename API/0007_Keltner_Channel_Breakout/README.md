@@ -1,5 +1,6 @@
 # Keltner Channel Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Keltner Channel breakout
 
 Keltner Channel Breakout uses volatility bands derived from ATR. Breakouts above the upper band or below the lower band trigger entries. Price moving back through the EMA center or hitting a stop exits the position.

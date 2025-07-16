@@ -1,5 +1,6 @@
 # Keltner Stochastic Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy that combines Keltner Channels and Stochastic Oscillator.
 Enters positions when price reaches Keltner Channel boundaries and Stochastic confirms oversold/overbought conditions.
 

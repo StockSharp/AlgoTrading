@@ -1,5 +1,6 @@
 # RSI Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This strategy tracks the relative strength index and measures its distance from an average level. When RSI deviates by more than a multiple of its recent standard deviation, the algorithm expects a snap back toward the mean.
 
 A long trade is opened when RSI falls below the lower band defined by the average minus `Multiplier` times the standard deviation. A short trade is taken when RSI rises above the upper band. Exits occur when RSI returns to its moving average.
