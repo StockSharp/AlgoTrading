@@ -8,7 +8,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import DonchianChannels
 from StockSharp.Algo.Strategies import Strategy
-
+from datatype_extensions import *
 
 class donchian_with_sentiment_spike_strategy(Strategy):
     """Donchian with Sentiment Spike strategy.
@@ -52,7 +52,7 @@ class donchian_with_sentiment_spike_strategy(Strategy):
             .SetOptimize(1.0, 3.0, 0.5)
 
         # Type of candles to use.
-        self._candle_type = self.Param("CandleType", TimeSpan.FromMinutes(15).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state
@@ -122,7 +122,7 @@ class donchian_with_sentiment_spike_strategy(Strategy):
 
         # Subscribe to candles and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(donchian, self.ProcessCandle).Start()
+        subscription.BindEx(donchian, self.ProcessCandle).Start()
 
         # Create chart visualization if available
         area = self.CreateChartArea()
