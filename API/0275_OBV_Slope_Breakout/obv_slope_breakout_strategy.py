@@ -139,7 +139,7 @@ class obv_slope_breakout_strategy(Strategy):
             return
 
         # Calculate OBV slope
-        slopeTyped = self._obvSlope.Process(obvValue, candle.ServerTime, candle.State == CandleStates.Finished)
+        slopeTyped = process_float(self._obvSlope, obvValue, candle.ServerTime, candle.State == CandleStates.Finished)
         if hasattr(slopeTyped, 'IsFinal') and not slopeTyped.IsFinal:
             return
 
@@ -150,8 +150,8 @@ class obv_slope_breakout_strategy(Strategy):
         self._lastObvSlope = slopeValue
 
         # Calculate slope average and standard deviation
-        avgValue = self._obvSlopeAvg.Process(slopeValue, candle.ServerTime, candle.State == CandleStates.Finished)
-        stdDevValue = self._obvSlopeStdDev.Process(slopeValue, candle.ServerTime, candle.State == CandleStates.Finished)
+        avgValue = process_float(self._obvSlopeAvg, slopeValue, candle.ServerTime, candle.State == CandleStates.Finished)
+        stdDevValue = process_float(self._obvSlopeStdDev, slopeValue, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Store values for decision making
         self._lastObvValue = obvValue

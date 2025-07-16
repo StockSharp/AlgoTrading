@@ -199,8 +199,8 @@ class keltner_width_mean_reversion_strategy(Strategy):
             self._lastChannelWidth = channelWidth
 
             # Process width's average and standard deviation
-            widthAvgValue = self._widthAvg.Process(channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
-            widthStdDevValue = self._widthStdDev.Process(channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
+            widthAvgValue = process_float(self._widthAvg, channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
+            widthStdDevValue = process_float(self._widthStdDev, channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
 
             if widthAvgValue.IsFinal and widthStdDevValue.IsFinal:
                 self._lastWidthAvg = to_float(widthAvgValue)

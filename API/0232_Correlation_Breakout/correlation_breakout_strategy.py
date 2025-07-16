@@ -188,7 +188,7 @@ class correlation_breakout_strategy(Strategy):
         self._last_correlation = self._calculate_pearson_correlation(self._asset1_prices, self._asset2_prices)
 
         # Process correlation through the indicator
-        std_dev_value = self._corr_std_dev.Process(self._last_correlation, candle.ServerTime, candle.State == CandleStates.Finished)
+        std_dev_value = process_float(self._corr_std_dev, self._last_correlation, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Move to next bar after first LookbackPeriod bars filled
         if not self._corr_std_dev.IsFormed:

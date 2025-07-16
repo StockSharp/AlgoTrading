@@ -132,8 +132,8 @@ class volume_ma_cross_strategy(Strategy):
             return
 
         # Process volume through MAs
-        fastMAValue = to_float(self._fastVolumeMA.Process(candle.TotalVolume, candle.ServerTime, True))
-        slowMAValue = to_float(self._slowVolumeMA.Process(candle.TotalVolume, candle.ServerTime, True))
+        fastMAValue = to_float(process_float(self._fastVolumeMA, candle.TotalVolume, candle.ServerTime, True))
+        slowMAValue = to_float(process_float(self._slowVolumeMA, candle.TotalVolume, candle.ServerTime, True))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

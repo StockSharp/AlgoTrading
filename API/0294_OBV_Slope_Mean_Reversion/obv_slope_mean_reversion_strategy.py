@@ -166,7 +166,7 @@ class obv_slope_mean_reversion_strategy(Strategy):
         obv_value = to_float(self._obv.Process(candle))
 
         # Process OBV through SMA
-        obv_sma_value = to_float(self._obv_sma.Process(obv_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        obv_sma_value = to_float(process_float(self._obv_sma, obv_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip if OBV SMA is not formed yet
         if not self._obv_sma.IsFormed:

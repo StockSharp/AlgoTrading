@@ -189,7 +189,7 @@ class ichimoku_width_breakout_strategy(Strategy):
         width = Math.Abs(senkou_span_a - senkou_span_b)
 
         # Process width through average
-        width_avg_value = self._width_average.Process(width, candle.ServerTime, candle.State == CandleStates.Finished)
+        width_avg_value = process_float(self._width_average, width, candle.ServerTime, candle.State == CandleStates.Finished)
         avg_width = to_float(width_avg_value)
 
         # For first values, just save and skip

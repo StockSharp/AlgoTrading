@@ -109,8 +109,8 @@ class hull_ma_volume_spike_strategy(Strategy):
 
         def process(candle, hma_value):
             # Process volume indicators
-            volume_sma_value = volume_sma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished)
-            volume_std_dev_value = volume_std_dev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished)
+            volume_sma_value = process_float(volume_sma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished)
+            volume_std_dev_value = process_float(volume_std_dev, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished)
 
             # Process the strategy logic
             self.ProcessStrategy(

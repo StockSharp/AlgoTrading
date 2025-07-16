@@ -173,7 +173,7 @@ class macd_slope_breakout_strategy(Strategy):
         macd_hist = macd_typed.Macd - macd_typed.Signal
 
         # Calculate MACD histogram slope
-        current_slope_typed = self._macd_hist_slope.Process(macd_hist, candle.ServerTime, candle.State == CandleStates.Finished)
+        current_slope_typed = process_float(self._macd_hist_slope, macd_hist, candle.ServerTime, candle.State == CandleStates.Finished)
         current_slope_value = current_slope_typed.LinearReg
         if current_slope_value is None:
             return

@@ -147,7 +147,7 @@ class supertrend_volume_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        volumeSmaValue = self._volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished)
+        volumeSmaValue = process_float(self._volumeSma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished)
 
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._atr.IsFormed or not self._volumeSma.IsFormed:
             return

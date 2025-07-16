@@ -215,7 +215,7 @@ class pairs_trading_volatility_filter_strategy(Strategy):
 
         # Store ATR value for volatility filter
         self._current_atr = atr_value
-        atr_sma_value = to_float(self._atr_sma.Process(atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        atr_sma_value = to_float(process_float(self._atr_sma, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
         self._average_atr = atr_sma_value
 
         # Check if we have all necessary data to make a trading decision
@@ -233,8 +233,8 @@ class pairs_trading_volatility_filter_strategy(Strategy):
         self._current_spread = price1 - (price2 * self._volume_ratio)
 
         # Calculate spread statistics
-        spread_sma_value = to_float(self._spread_sma.Process(self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished))
-        std_dev_value = to_float(self._std_dev.Process(self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished))
+        spread_sma_value = to_float(process_float(self._spread_sma, self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished))
+        std_dev_value = to_float(process_float(self._std_dev, self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished))
 
         self._average_spread = spread_sma_value
         self._standard_deviation = std_dev_value

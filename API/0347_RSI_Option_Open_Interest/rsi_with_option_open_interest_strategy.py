@@ -171,11 +171,11 @@ class rsi_with_option_open_interest_strategy(Strategy):
         self.SimulateOptionOI(candle)
 
         # Process option OI with indicators
-        call_oi_value_sma = self._call_oi_sma.Process(self._current_call_oi, candle.ServerTime, candle.State == CandleStates.Finished)
-        put_oi_value_sma = self._put_oi_sma.Process(self._current_put_oi, candle.ServerTime, candle.State == CandleStates.Finished)
+        call_oi_value_sma = process_float(self._call_oi_sma, self._current_call_oi, candle.ServerTime, candle.State == CandleStates.Finished)
+        put_oi_value_sma = process_float(self._put_oi_sma, self._current_put_oi, candle.ServerTime, candle.State == CandleStates.Finished)
 
-        call_oi_value_stddev = self._call_oi_stddev.Process(self._current_call_oi, candle.ServerTime, candle.State == CandleStates.Finished)
-        put_oi_value_stddev = self._put_oi_stddev.Process(self._current_put_oi, candle.ServerTime, candle.State == CandleStates.Finished)
+        call_oi_value_stddev = process_float(self._call_oi_stddev, self._current_call_oi, candle.ServerTime, candle.State == CandleStates.Finished)
+        put_oi_value_stddev = process_float(self._put_oi_stddev, self._current_put_oi, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Update state variables
         self._avg_call_oi = to_float(call_oi_value_sma)

@@ -182,8 +182,8 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         self._currentCloudWidth = Math.Abs(senkouA - senkouB)
 
         # Calculate average and standard deviation of cloud width
-        cloudWidthAverage = to_float(self._cloudWidthAverage.Process(self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished))
-        cloudWidthStdDev = to_float(self._cloudWidthStdDev.Process(self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished))
+        cloudWidthAverage = to_float(process_float(self._cloudWidthAverage, self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished))
+        cloudWidthStdDev = to_float(process_float(self._cloudWidthStdDev, self._currentCloudWidth, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip the first value
         if self._prevCloudWidth == 0:
