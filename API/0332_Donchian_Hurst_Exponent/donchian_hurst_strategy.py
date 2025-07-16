@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import DonchianChannels, FractalDimension
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class donchian_hurst_strategy(Strategy):
     """
@@ -132,7 +133,7 @@ class donchian_hurst_strategy(Strategy):
             return
 
         # --- FractalDimension logic (was ProcessFractalDimension) ---
-        fractalDimension = fractalDimensionValue.ToDecimal()
+        fractalDimension = to_float(fractalDimensionValue)
         self._hurstValue = 2 - fractalDimension
 
         # Log Hurst Exponent value periodically

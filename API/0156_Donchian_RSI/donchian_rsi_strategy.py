@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import DonchianChannels, RSI
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class donchian_rsi_strategy(Strategy):
@@ -179,7 +180,7 @@ class donchian_rsi_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rsi_dec = rsi_value.ToDecimal() if hasattr(rsi_value, 'ToDecimal') else float(rsi_value)
+        rsi_dec = to_float(rsi_value) if hasattr(rsi_value, 'ToDecimal') else float(rsi_value)
 
         # Detect breakouts by comparing current price to previous Donchian bands
         upper_breakout = candle.ClosePrice > self._prev_upper_band

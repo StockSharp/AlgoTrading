@@ -10,6 +10,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class volume_climax_reversal_strategy(Strategy):
@@ -132,7 +133,7 @@ class volume_climax_reversal_strategy(Strategy):
             return
 
         # Process indicators
-        volumeAverageValue = self._volumeAverage.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        volumeAverageValue = to_float(self._volumeAverage.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

@@ -7,6 +7,7 @@ from System import Math
 from StockSharp.Messages import Level1Fields, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class volatility_skew_arbitrage_strategy(Strategy):
@@ -154,7 +155,7 @@ class volatility_skew_arbitrage_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        std_dev = std_dev_value.ToDecimal()
+        std_dev = to_float(std_dev_value)
 
         # Trading logic for volatility skew arbitrage
         if vol_skew > self._avg_vol_skew + self.threshold * std_dev and self.Position <= 0:

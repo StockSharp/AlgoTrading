@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class adx_breakout_strategy(Strategy):
     """
@@ -145,7 +146,7 @@ class adx_breakout_strategy(Strategy):
 
         # Process ADX through average indicator
         adxAvgValue = self._adx_average.Process(currentAdx, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentAdxAvg = float(adxAvgValue.ToDecimal())
+        currentAdxAvg = float(to_float(adxAvgValue))
 
         # For first values, just save and skip
         if self._prev_adx_value == 0:

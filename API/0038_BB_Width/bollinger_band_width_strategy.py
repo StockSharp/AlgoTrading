@@ -16,6 +16,7 @@ from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import BollingerBands
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class bollinger_band_width_strategy(Strategy):
     """
@@ -152,7 +153,7 @@ class bollinger_band_width_strategy(Strategy):
         isPriceAboveMiddleBand = candle.ClosePrice > bollingerValue.MovingAverage
         
         # Calculate stop-loss amount based on ATR
-        stopLossAmount = atrValue.ToDecimal() * self.AtrMultiplier
+        stopLossAmount = to_float(atrValue) * self.AtrMultiplier
 
         if self.Position == 0:
             # No position - check for entry signals

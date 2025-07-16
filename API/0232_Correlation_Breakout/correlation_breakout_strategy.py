@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 from StockSharp.BusinessEntities import Security
 
 class correlation_breakout_strategy(Strategy):
@@ -206,7 +207,7 @@ class correlation_breakout_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        std_dev = float(std_dev_value.ToDecimal()) if hasattr(std_dev_value, 'ToDecimal') else float(std_dev_value)
+        std_dev = float(to_float(std_dev_value)) if hasattr(std_dev_value, 'ToDecimal') else float(std_dev_value)
 
         # Trading logic for correlation breakout
         if self._last_correlation < self._avg_correlation - self.Threshold * std_dev and self._get_position_value(self.Asset1) <= 0 and self._get_position_value(self.Asset2) >= 0:

@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, SimpleMovingAverage, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class atr_macd_strategy(Strategy):
     """
@@ -203,13 +204,13 @@ class atr_macd_strategy(Strategy):
             return
 
         # Process ATR through averaging indicator
-        current_atr = atr_value.ToDecimal()
+        current_atr = to_float(atr_value)
         avg_value = self._atr_avg.Process(atr_value)
         if not avg_value.IsFinal:
             return
 
         # Store current ATR average value
-        current_atr_avg = avg_value.ToDecimal()
+        current_atr_avg = to_float(avg_value)
         self._prev_atr_avg = current_atr_avg
 
         # Skip unfinished candles

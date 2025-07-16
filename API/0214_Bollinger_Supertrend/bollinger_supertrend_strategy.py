@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class bollinger_supertrend_strategy(Strategy):
     """
@@ -153,7 +154,7 @@ class bollinger_supertrend_strategy(Strategy):
         lower_band = bb.LowBand
 
         # Calculate Supertrend (simplified)
-        atr_val = atr_value.ToDecimal() * self.SupertrendMultiplier
+        atr_val = to_float(atr_value) * self.SupertrendMultiplier
         upper_band2 = (candle.HighPrice + candle.LowPrice) / 2 + atr_val
         lower_band2 = (candle.HighPrice + candle.LowPrice) / 2 - atr_val
 

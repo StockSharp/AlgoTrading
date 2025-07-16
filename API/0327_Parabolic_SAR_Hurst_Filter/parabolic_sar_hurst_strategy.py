@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ParabolicSar, HurstExponent
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class parabolic_sar_hurst_strategy(Strategy):
@@ -129,8 +130,8 @@ class parabolic_sar_hurst_strategy(Strategy):
             return
 
         # Get SAR and Hurst values
-        sar_price = sar_value.ToDecimal()
-        self._hurst_value = hurst_value.ToDecimal()
+        sar_price = to_float(sar_value)
+        self._hurst_value = to_float(hurst_value)
 
         # Store previous SAR for comparison
         current_sar_value = sar_price

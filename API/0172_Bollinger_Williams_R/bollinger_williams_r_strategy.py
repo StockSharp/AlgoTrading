@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import BollingerBands, WilliamsR, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class bollinger_williams_r_strategy(Strategy):
     """
@@ -141,9 +142,9 @@ class bollinger_williams_r_strategy(Strategy):
         price = candle.ClosePrice
 
         # Stop-loss size based on ATR
-        stop_size = atr_value.ToDecimal() * self.AtrMultiplier
+        stop_size = to_float(atr_value) * self.AtrMultiplier
 
-        williams_value_dec = williams_r_value.ToDecimal()
+        williams_value_dec = to_float(williams_r_value)
 
         # Trading logic
         if price <= lower_band and williams_value_dec < -80 and self.Position <= 0:

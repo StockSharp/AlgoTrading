@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Messages import Sides
 from StockSharp.Algo.Indicators import ParabolicSar, VolumeIndicator, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class parabolic_sar_volume_strategy(Strategy):
     """
@@ -140,7 +141,7 @@ class parabolic_sar_volume_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessIndicators(self, candle, sarValue, volumeValue):
-        self._currentAvgVolume = self._volumeAverage.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        self._currentAvgVolume = to_float(self._volumeAverage.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

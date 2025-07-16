@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Indicators import VolumeIndicator
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class volume_supertrend_strategy(Strategy):
     """Strategy based on Volume and Supertrend indicators (#209)"""
@@ -95,7 +96,7 @@ class volume_supertrend_strategy(Strategy):
         # Bind indicators to handle each candle
         def handle_candle(candle, atr_value):
             # Calculate volume average
-            volume_value = volume_ma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+            volume_value = to_float(volume_ma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Calculate Supertrend
             if not atr.IsFormed:

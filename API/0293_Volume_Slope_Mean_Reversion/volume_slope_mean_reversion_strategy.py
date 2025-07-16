@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class volume_slope_mean_reversion_strategy(Strategy):
@@ -160,7 +161,7 @@ class volume_slope_mean_reversion_strategy(Strategy):
             return
 
         # Calculate volume ratio (current volume / average volume)
-        volume_ratio = candle.TotalVolume / volume_indicator_value.ToDecimal()
+        volume_ratio = candle.TotalVolume / to_float(volume_indicator_value)
 
         # Calculate volume ratio slope
         if self._is_first_calculation:

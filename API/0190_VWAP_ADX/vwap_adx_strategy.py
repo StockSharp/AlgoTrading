@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class vwap_adx_strategy(Strategy):
     """
@@ -101,7 +102,7 @@ class vwap_adx_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        vwap = self._vwap.Process(candle).ToDecimal()
+        vwap = to_float(self._vwap.Process(candle))
 
         # Get current ADX value
         typed_adx = adx_value

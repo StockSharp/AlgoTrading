@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class ma_volume_strategy(Strategy):
@@ -136,14 +137,14 @@ class ma_volume_strategy(Strategy):
             return
 
         # Process indicators
-        sma_value = self._price_sma.Process(candle).ToDecimal()
+        sma_value = to_float(self._price_sma.Process(candle))
 
         # Handle volume
-        volume_sma_value = self._volume_sma.Process(
+        volume_sma_value = to_float(self._volume_sma.Process(
             candle.TotalVolume,
             candle.ServerTime,
             candle.State == CandleStates.Finished
-        ).ToDecimal()
+        ))
 
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._price_sma.IsFormed or not self._volume_sma.IsFormed:
             return

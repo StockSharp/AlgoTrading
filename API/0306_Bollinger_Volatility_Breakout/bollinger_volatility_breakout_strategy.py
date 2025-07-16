@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit
 from StockSharp.Algo.Indicators import BollingerBands, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class bollinger_volatility_breakout_strategy(Strategy):
@@ -156,11 +157,11 @@ class bollinger_volatility_breakout_strategy(Strategy):
         bb_lower = bb.LowBand
         bb_middle = bb.MovingAverage
 
-        atr_dec = atr_value.ToDecimal()
+        atr_dec = to_float(atr_value)
 
         # Get values from indicators
-        atr_sma_value = self._atr_sma.Process(atr_dec, candle.ServerTime, True).ToDecimal()  # Default to current ATR if SMA not available
-        atr_std_dev_value = self._atr_std_dev.Process(atr_dec, candle.ServerTime, True).ToDecimal() * 0.2  # Default to 20% of ATR if StdDev not available
+        atr_sma_value = to_float(self._atr_sma.Process(atr_dec, candle.ServerTime, True))  # Default to current ATR if SMA not available
+        atr_std_dev_value = to_float(self._atr_std_dev.Process(atr_dec, candle.ServerTime, True)) * 0.2  # Default to 20% of ATR if StdDev not available
 
         # Calculate volatility threshold for breakout confirmation
         volatility_threshold = atr_sma_value + self.AtrDeviationMultiplier * atr_std_dev_value

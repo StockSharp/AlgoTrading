@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import WilliamsR, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class williams_r_breakout_strategy(Strategy):
@@ -139,11 +140,11 @@ class williams_r_breakout_strategy(Strategy):
             return
 
         # Get current Williams %R value
-        currentWilliamsR = williamsRValue.ToDecimal()
+        currentWilliamsR = to_float(williamsRValue)
 
         # Process Williams %R through average indicator
         williamsRAvgValue = self._williamsRAverage.Process(currentWilliamsR, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentWilliamsRAvg = williamsRAvgValue.ToDecimal()
+        currentWilliamsRAvg = to_float(williamsRAvgValue)
 
         # For first values, just save and skip
         if self._prevWilliamsRValue == 0:

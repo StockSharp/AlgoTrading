@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import OnBalanceVolume, LinearRegression, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class obv_slope_breakout_strategy(Strategy):
     """
@@ -155,8 +156,8 @@ class obv_slope_breakout_strategy(Strategy):
         self._lastObvValue = obvValue
 
         if getattr(avgValue, 'IsFinal', True) and getattr(stdDevValue, 'IsFinal', True):
-            self._lastSlopeAvg = avgValue.ToDecimal()
-            self._lastSlopeStdDev = stdDevValue.ToDecimal()
+            self._lastSlopeAvg = to_float(avgValue)
+            self._lastSlopeStdDev = to_float(stdDevValue)
 
             # Check if strategy is ready to trade
             if not self.IsFormedAndOnlineAndAllowTrading():

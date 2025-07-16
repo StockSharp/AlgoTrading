@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import Momentum, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class momentum_breakout_strategy(Strategy):
     """
@@ -131,8 +132,8 @@ class momentum_breakout_strategy(Strategy):
         avg_val = self._momentum_average.Process(momentum_value, candle.ServerTime, candle.State == CandleStates.Finished)
         std_val = self._momentum_stddev.Process(momentum_value, candle.ServerTime, candle.State == CandleStates.Finished)
 
-        self._momentum_avg_value = avg_val.ToDecimal()
-        self._momentum_stddev_value = std_val.ToDecimal()
+        self._momentum_avg_value = to_float(avg_val)
+        self._momentum_stddev_value = to_float(std_val)
 
         # Check if strategy is ready for trading
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._momentum_average.IsFormed or not self._momentum_stddev.IsFormed:

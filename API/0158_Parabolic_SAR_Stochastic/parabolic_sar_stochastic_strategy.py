@@ -10,6 +10,7 @@ from System.Drawing import Color
 from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
 from StockSharp.Algo.Indicators import ParabolicSar, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class parabolic_sar_stochastic_strategy(Strategy):
     """
@@ -180,7 +181,7 @@ class parabolic_sar_stochastic_strategy(Strategy):
         else:
             return
 
-        sarDec = sarValue.ToDecimal()
+        sarDec = to_float(sarValue)
 
         currentPrice = candle.ClosePrice
         priceAboveSar = currentPrice > sarDec

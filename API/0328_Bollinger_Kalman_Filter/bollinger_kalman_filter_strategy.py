@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import BollingerBands, KalmanFilter
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class bollinger_kalman_filter_strategy(Strategy):
@@ -146,7 +147,7 @@ class bollinger_kalman_filter_strategy(Strategy):
         if mid_band is None:
             return
 
-        kalman_filter_value = kalman_value.ToDecimal()
+        kalman_filter_value = to_float(kalman_value)
 
         # Log the values
         self.LogInfo(

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, AverageTrueRange, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class adaptive_rsi_volume_strategy(Strategy):
@@ -147,7 +148,7 @@ class adaptive_rsi_volume_strategy(Strategy):
 
         # Calculate adaptive RSI period based on ATR
         if atr_value.IsFinal:
-            atr = atr_value.ToDecimal()
+            atr = to_float(atr_value)
 
             # Normalize ATR to a value between 0 and 1 using historical range
             # This is a simplified approach - in a real implementation you would
@@ -173,7 +174,7 @@ class adaptive_rsi_volume_strategy(Strategy):
 
         # Store RSI value
         if rsi_value.IsFinal:
-            self._adaptiveRsiValue = rsi_value.ToDecimal()
+            self._adaptiveRsiValue = to_float(rsi_value)
 
             # Trading logic based on RSI with volume confirmation
             if self._avgVolume > 0:  # Make sure we have volume data
@@ -205,7 +206,7 @@ class adaptive_rsi_volume_strategy(Strategy):
                                              candle.State == CandleStates.Finished)
 
         if volumeValue.IsFinal:
-            self._avgVolume = volumeValue.ToDecimal()
+            self._avgVolume = to_float(volumeValue)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

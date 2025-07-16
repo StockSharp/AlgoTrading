@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class macd_breakout_strategy(Strategy):
     """
@@ -182,8 +183,8 @@ class macd_breakout_strategy(Strategy):
         macd = float(macd_typed.Macd)
 
         # Process indicators for MACD histogram
-        macd_hist_sma_value = float(self._macd_hist_sma.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal())
-        macd_hist_stddev_value = float(self._macd_hist_stddev.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal())
+        macd_hist_sma_value = float(to_float(self._macd_hist_sma.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished)))
+        macd_hist_stddev_value = float(to_float(self._macd_hist_stddev.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished)))
 
         # Store previous values on first call
         if self._prev_macd_hist_value == 0 and self._prev_macd_hist_sma_value == 0:

@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class macd_rsi_strategy(Strategy):
@@ -189,7 +190,7 @@ class macd_rsi_strategy(Strategy):
 
         macd_dec = macd_value.Macd
         signal_value = macd_value.Signal
-        rsi_dec = rsi_value.ToDecimal()
+        rsi_dec = to_float(rsi_value)
 
         # Trading logic: Combine MACD trend with RSI extreme values
 

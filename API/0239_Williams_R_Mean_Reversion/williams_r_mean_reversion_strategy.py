@@ -8,6 +8,7 @@ from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class williams_r_mean_reversion_strategy(Strategy):
     """
@@ -142,7 +143,7 @@ class williams_r_mean_reversion_strategy(Strategy):
             return
 
         # Extract Williams %R value
-        current_williams_r = williams_r_value.ToDecimal()
+        current_williams_r = to_float(williams_r_value)
 
         # Update Williams %R statistics
         self.UpdateWilliamsRStatistics(current_williams_r)

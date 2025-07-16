@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class keltner_width_mean_reversion_strategy(Strategy):
@@ -179,12 +180,12 @@ class keltner_width_mean_reversion_strategy(Strategy):
         # Process EMA
         emaValue = self._ema.Process(candle)
         if emaValue.IsFinal:
-            self._lastEma = emaValue.ToDecimal()
+            self._lastEma = to_float(emaValue)
 
         # Process ATR
         atrValue = self._atr.Process(candle)
         if atrValue.IsFinal:
-            self._lastAtr = atrValue.ToDecimal()
+            self._lastAtr = to_float(atrValue)
 
         # Calculate Keltner Channel
         if self._lastEma > 0 and self._lastAtr > 0:
@@ -201,8 +202,8 @@ class keltner_width_mean_reversion_strategy(Strategy):
             widthStdDevValue = self._widthStdDev.Process(channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
 
             if widthAvgValue.IsFinal and widthStdDevValue.IsFinal:
-                self._lastWidthAvg = widthAvgValue.ToDecimal()
-                self._lastWidthStdDev = widthStdDevValue.ToDecimal()
+                self._lastWidthAvg = to_float(widthAvgValue)
+                self._lastWidthStdDev = to_float(widthStdDevValue)
 
                 # Check if strategy is ready to trade
                 if not self.IsFormedAndOnlineAndAllowTrading():

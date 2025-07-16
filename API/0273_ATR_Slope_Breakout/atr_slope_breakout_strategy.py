@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange, ExponentialMovingAverage, LinearRegression
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class atr_slope_breakout_strategy(Strategy):
     """
@@ -145,11 +146,11 @@ class atr_slope_breakout_strategy(Strategy):
             return
 
         # Get ATR value and track it for stop loss calculations
-        atr = atr_value.ToDecimal()
+        atr = to_float(atr_value)
         self._last_atr = atr
 
         # Process price for trend direction
-        ema_value = self._price_ema.Process(candle).ToDecimal()
+        ema_value = to_float(self._price_ema.Process(candle))
         price_above_ema = candle.ClosePrice > ema_value
 
         # Calculate ATR slope

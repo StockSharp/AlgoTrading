@@ -8,6 +8,7 @@ from System import Math
 from StockSharp.Messages import DataType, CandleStates, Unit
 from StockSharp.Algo.Indicators import Ichimoku, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class ichimoku_volume_cluster_strategy(Strategy):
     """
@@ -158,8 +159,8 @@ class ichimoku_volume_cluster_strategy(Strategy):
 
         volume = candle.TotalVolume
 
-        volume_avg_value = self._volume_avg.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-        volume_std_dev_value = self._volume_std_dev.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        volume_avg_value = to_float(self._volume_avg.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished))
+        volume_std_dev_value = to_float(self._volume_std_dev.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

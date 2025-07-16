@@ -7,6 +7,7 @@ from System import TimeSpan, Math, Random
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class stochastic_implied_volatility_skew_strategy(Strategy):
     """Stochastic strategy with Implied Volatility Skew."""
@@ -155,7 +156,7 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
 
         # Process IV Skew with SMA
         iv_skew_sma_value = self._iv_skew_sma.Process(self._current_iv_skew, candle.ServerTime, candle.State == CandleStates.Finished)
-        self._avg_iv_skew = iv_skew_sma_value.ToDecimal()
+        self._avg_iv_skew = to_float(iv_skew_sma_value)
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

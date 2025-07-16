@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class adx_with_volume_breakout_strategy(Strategy):
     """Strategy based on ADX with Volume Breakout."""
@@ -112,8 +113,8 @@ class adx_with_volume_breakout_strategy(Strategy):
             minus_di = dx.Minus
 
             # Process volume indicators
-            sma_val = volume_sma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-            std_dev_val = volume_std_dev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+            sma_val = to_float(volume_sma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+            std_dev_val = to_float(volume_std_dev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Process the strategy logic
             self.ProcessStrategy(

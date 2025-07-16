@@ -11,6 +11,7 @@ from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 from StockSharp.BusinessEntities import Security
 
 
@@ -233,8 +234,8 @@ class correlation_mean_reversion_strategy(Strategy):
         self._current_correlation = self.CalculateCorrelationCoefficient(series1, series2)
 
         # Process indicators
-        self._average_correlation = self._correlation_sma.Process(self._current_correlation, time, is_final).ToDecimal()
-        self._correlation_std_deviation = self._correlation_std_dev.Process(self._current_correlation, time, is_final).ToDecimal()
+        self._average_correlation = to_float(self._correlation_sma.Process(self._current_correlation, time, is_final))
+        self._correlation_std_deviation = to_float(self._correlation_std_dev.Process(self._current_correlation, time, is_final))
 
         if self._correlation_std_deviation == 0:
             return

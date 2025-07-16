@@ -9,6 +9,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit
 from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class stochastic_mean_reversion_strategy(Strategy):
@@ -149,8 +150,8 @@ class stochastic_mean_reversion_strategy(Strategy):
             return
 
         # Process Stochastic %K through average and standard deviation indicators
-        stoch_avg_value = self._stoch_average.Process(k_value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
-        stoch_stddev_value = self._stoch_stddev.Process(k_value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        stoch_avg_value = to_float(self._stoch_average.Process(k_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        stoch_stddev_value = to_float(self._stoch_stddev.Process(k_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Store previous Stochastic %K value for changes detection
         current_stoch_k_value = k_value

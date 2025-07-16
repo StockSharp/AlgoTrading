@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Ichimoku, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 
 class ichimoku_width_breakout_strategy(Strategy):
@@ -188,7 +189,7 @@ class ichimoku_width_breakout_strategy(Strategy):
 
         # Process width through average
         width_avg_value = self._width_average.Process(width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = width_avg_value.ToDecimal()
+        avg_width = to_float(width_avg_value)
 
         # For first values, just save and skip
         if self._last_width == 0:

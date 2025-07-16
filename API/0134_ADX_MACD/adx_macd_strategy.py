@@ -15,6 +15,7 @@ from StockSharp.Algo.Indicators import AverageDirectionalIndex
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class adx_macd_strategy(Strategy):
     """
@@ -184,7 +185,7 @@ class adx_macd_strategy(Strategy):
         except AttributeError:
             return
 
-        atrIndicatorValue = atrValue.ToDecimal()
+        atrIndicatorValue = to_float(atrValue)
 
         # ADX trend strength check
         strongTrend = adxIndicatorValue > self.AdxThreshold

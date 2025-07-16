@@ -9,6 +9,7 @@ from System import Math
 from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class vwap_stochastic_strategy(Strategy):
     """
@@ -175,7 +176,7 @@ class vwap_stochastic_strategy(Strategy):
         stochTyped = stochValue
         kValue = stochTyped.K
 
-        vwapDec = vwapValue.ToDecimal()
+        vwapDec = to_float(vwapValue)
 
         # Trading logic
         if candle.ClosePrice < vwapDec and kValue < self.OversoldLevel and self.Position <= 0:

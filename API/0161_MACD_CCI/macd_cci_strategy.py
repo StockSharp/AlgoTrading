@@ -12,6 +12,7 @@ from StockSharp.Messages import UnitTypes
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class macd_cci_strategy(Strategy):
     """
@@ -183,7 +184,7 @@ class macd_cci_strategy(Strategy):
         # Determine if MACD is above or below signal line
         isMacdAboveSignal = macdLine > signalLine
 
-        cciDec = cciValue.ToDecimal()
+        cciDec = to_float(cciValue)
 
         self.LogInfo(
             "Candle: {0}, Close: {1}, MACD: {2}, Signal: {3}, MACD > Signal: {4}, CCI: {5}".format(

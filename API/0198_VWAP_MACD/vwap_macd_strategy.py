@@ -7,6 +7,7 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class vwap_macd_strategy(Strategy):
     """
@@ -129,7 +130,7 @@ class vwap_macd_strategy(Strategy):
             return
 
         # Get VWAP value (calculated per day)
-        vwap = self._vwap.Process(candle).ToDecimal()
+        vwap = to_float(self._vwap.Process(candle))
 
         macd_typed = macd_value
 

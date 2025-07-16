@@ -15,6 +15,7 @@ from StockSharp.Messages import CandleStates
 from StockSharp.Algo.Indicators import OnBalanceVolume
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from indicator_extensions import *
 
 class obv_slope_mean_reversion_strategy(Strategy):
     """
@@ -161,10 +162,10 @@ class obv_slope_mean_reversion_strategy(Strategy):
             return
 
         # Process the candle with OBV indicator
-        obv_value = self._obv.Process(candle).ToDecimal()
+        obv_value = to_float(self._obv.Process(candle))
 
         # Process OBV through SMA
-        obv_sma_value = self._obv_sma.Process(obv_value, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal()
+        obv_sma_value = to_float(self._obv_sma.Process(obv_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip if OBV SMA is not formed yet
         if not self._obv_sma.IsFormed:
