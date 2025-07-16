@@ -142,15 +142,13 @@ class macd_trend_strategy(Strategy):
 
         # Extract MACD and Signal values
         try:
-            if hasattr(macd_value, 'Macd') and macd_value.Macd is not None:
-                macd_line = float(macd_value.Macd)
-            else:
+            if macd_value.Macd is None:
                 return
-                
-            if hasattr(macd_value, 'Signal') and macd_value.Signal is not None:
-                signal_line = float(macd_value.Signal)
-            else:
+            macd_line = float(macd_value.Macd)
+
+            if macd_value.Signal is None:
                 return
+            signal_line = float(macd_value.Signal)
         except:
             # If we can't extract values, skip this candle
             return

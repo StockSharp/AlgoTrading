@@ -168,10 +168,9 @@ class hull_ma_stochastic_strategy(Strategy):
         hma = float(hma_value)
 
         stoch_typed = stoch_value
-        if hasattr(stoch_typed, 'K') and stoch_typed.K is not None:
-            stoch_k = float(stoch_typed.K)
-        else:
+        if stoch_typed.K is None:
             return
+        stoch_k = float(stoch_typed.K)
 
         atr = float(atr_value)
 

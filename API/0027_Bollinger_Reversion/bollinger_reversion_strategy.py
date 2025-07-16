@@ -126,20 +126,17 @@ class bollinger_reversion_strategy(Strategy):
 
         # Extract Bollinger Bands values
         try:
-            if hasattr(bollinger_value, 'UpBand') and bollinger_value.UpBand is not None:
-                upper = float(bollinger_value.UpBand)
-            else:
+            if bollinger_value.UpBand is None:
                 return
-                
-            if hasattr(bollinger_value, 'LowBand') and bollinger_value.LowBand is not None:
-                lower = float(bollinger_value.LowBand)
-            else:
+            upper = float(bollinger_value.UpBand)
+
+            if bollinger_value.LowBand is None:
                 return
-                
-            if hasattr(bollinger_value, 'MovingAverage') and bollinger_value.MovingAverage is not None:
-                middle = float(bollinger_value.MovingAverage)
-            else:
+            lower = float(bollinger_value.LowBand)
+
+            if bollinger_value.MovingAverage is None:
                 return
+            middle = float(bollinger_value.MovingAverage)
         except:
             # If we can't extract values, skip this candle
             return

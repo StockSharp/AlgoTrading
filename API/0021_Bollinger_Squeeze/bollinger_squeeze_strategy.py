@@ -129,20 +129,17 @@ class bollinger_squeeze_strategy(Strategy):
 
         # Extract values from Bollinger Bands indicator
         try:
-            if hasattr(bollinger_value, 'UpBand') and bollinger_value.UpBand is not None:
-                upper_band = float(bollinger_value.UpBand)
-            else:
+            if bollinger_value.UpBand is None:
                 return
-                
-            if hasattr(bollinger_value, 'LowBand') and bollinger_value.LowBand is not None:
-                lower_band = float(bollinger_value.LowBand)
-            else:
+            upper_band = float(bollinger_value.UpBand)
+
+            if bollinger_value.LowBand is None:
                 return
-                
-            if hasattr(bollinger_value, 'MovingAverage') and bollinger_value.MovingAverage is not None:
-                middle_band = float(bollinger_value.MovingAverage)
-            else:
+            lower_band = float(bollinger_value.LowBand)
+
+            if bollinger_value.MovingAverage is None:
                 return
+            middle_band = float(bollinger_value.MovingAverage)
         except:
             # If we can't extract values, skip this candle
             return

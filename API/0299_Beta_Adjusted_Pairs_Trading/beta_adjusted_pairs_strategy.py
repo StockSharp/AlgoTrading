@@ -7,7 +7,7 @@ clr.AddReference("StockSharp.BusinessEntities")
 from System import Math
 from StockSharp.Messages import DataType, Level1Fields, Level1ChangeMessage, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Security, Portfolio, Subscription, Order
+from StockSharp.BusinessEntities import Security, Portfolio, Order
 from datatype_extensions import *
 
 class beta_adjusted_pairs_strategy(Strategy):
@@ -177,14 +177,14 @@ class beta_adjusted_pairs_strategy(Strategy):
         self._entrySpread = 0
 
         # Create subscriptions for both assets
-        asset1Subscription = Subscription(DataType.Level1, self.Asset1)
-        asset2Subscription = Subscription(DataType.Level1, self.Asset2)
+        asset1Subscription = self.SubscribeLevel1(self.Asset1)
+        asset2Subscription = self.SubscribeLevel1(self.Asset2)
 
         # Handle price updates for Asset1
-        self.SubscribeLevel1(asset1Subscription).Bind(self.OnAsset1Subscription).Start()
+        asset1Subscription.Bind(self.OnAsset1Subscription).Start()
 
         # Handle price updates for Asset2
-        self.SubscribeLevel1(asset2Subscription).Bind(self.OnAsset2Subscription).Start()
+        asset2Subscription.Bind(self.OnAsset2Subscription).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

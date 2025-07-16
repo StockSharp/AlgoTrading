@@ -165,15 +165,13 @@ class stochastic_rsi_cross_strategy(Strategy):
 
         # Extract Stochastic values
         try:
-            if hasattr(stoch_value, 'K') and stoch_value.K is not None:
-                k_value = float(stoch_value.K)
-            else:
+            if stoch_value.K is None:
                 return
-                
-            if hasattr(stoch_value, 'D') and stoch_value.D is not None:
-                d_value = float(stoch_value.D)
-            else:
+            k_value = float(stoch_value.K)
+
+            if stoch_value.D is None:
                 return
+            d_value = float(stoch_value.D)
         except:
             # If we can't extract values, skip this candle
             return

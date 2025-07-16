@@ -128,7 +128,7 @@ class pairs_trading_strategy(Strategy):
 
         # Create subscriptions for both securities
         first_subscription = self.SubscribeCandles(self.candle_type)
-        second_subscription = self.SubscribeCandles(Subscription(self.candle_type, self.second_security))
+        second_subscription = self.SubscribeCandles(self.candle_type, self.second_security)
 
         # Bind to first security candles
         first_subscription.Bind(self.ProcessFirstSecurityCandle).Start()
