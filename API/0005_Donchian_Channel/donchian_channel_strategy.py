@@ -106,20 +106,17 @@ class donchian_channel_strategy(Strategy):
 
         # Extract values from Donchian Channel indicator
         try:
-            if hasattr(donchian_value, 'UpperBand') and donchian_value.UpperBand is not None:
-                upper_value = float(donchian_value.UpperBand)
-            else:
+            if donchian_value.UpperBand is None:
                 return
-                
-            if hasattr(donchian_value, 'LowerBand') and donchian_value.LowerBand is not None:
-                lower_value = float(donchian_value.LowerBand)
-            else:
+            upper_value = float(donchian_value.UpperBand)
+
+            if donchian_value.LowerBand is None:
                 return
-                
-            if hasattr(donchian_value, 'Middle') and donchian_value.Middle is not None:
-                mid_value = float(donchian_value.Middle)
-            else:
+            lower_value = float(donchian_value.LowerBand)
+
+            if donchian_value.Middle is None:
                 return
+            mid_value = float(donchian_value.Middle)
         except:
             # If we can't extract values, skip this candle
             return
