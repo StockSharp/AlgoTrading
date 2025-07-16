@@ -144,10 +144,9 @@ class adx_donchian_strategy(Strategy):
             return
 
         # Process ADX
-        try:
-            adx_ma = float(adx_value.MovingAverage)
-        except Exception:
+        if adx_value.MovingAverage is None:
             return
+        adx_ma = float(adx_value.MovingAverage)
 
         # Get Donchian Channel values
         upper_band = donchian_value.UpperBand

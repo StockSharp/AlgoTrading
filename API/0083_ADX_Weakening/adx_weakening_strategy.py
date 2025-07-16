@@ -141,12 +141,12 @@ class adx_weakening_strategy(Strategy):
         ma = to_float(maValue)
 
         adxTyped = adxValue
-        if not hasattr(adxTyped, 'MovingAverage') or adxTyped.MovingAverage is None:
+        if adxTyped.MovingAverage is None:
             return
         adx_val = float(adxTyped.MovingAverage)
 
         dx = adxTyped.Dx
-        if not hasattr(dx, 'Plus') or dx.Plus is None or not hasattr(dx, 'Minus') or dx.Minus is None:
+        if dx.Plus is None or dx.Minus is None:
             return
 
         # If this is the first calculation, just store the ADX value

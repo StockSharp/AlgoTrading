@@ -104,11 +104,11 @@ class adx_with_volume_breakout_strategy(Strategy):
 
         def process(candle, adx_value):
             adx_typed = adx_value
-            if getattr(adx_typed, 'MovingAverage', None) is None:
+            if adx_typed.MovingAverage is None:
                 return
             adx_ma = adx_typed.MovingAverage
             dx = getattr(adx_typed, 'Dx', None)
-            if dx is None or getattr(dx, 'Plus', None) is None or getattr(dx, 'Minus', None) is None:
+            if dx is None or dx.Plus is None or dx.Minus is None:
                 return
             plus_di = dx.Plus
             minus_di = dx.Minus

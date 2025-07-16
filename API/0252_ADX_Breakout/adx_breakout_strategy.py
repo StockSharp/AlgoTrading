@@ -139,10 +139,9 @@ class adx_breakout_strategy(Strategy):
             return
 
         # Get current ADX value
-        try:
-            currentAdx = float(adxValue.MovingAverage)
-        except Exception:
+        if adxValue.MovingAverage is None:
             return
+        currentAdx = float(adxValue.MovingAverage)
 
         # Process ADX through average indicator
         adxAvgValue = process_float(self._adx_average, currentAdx, candle.ServerTime, candle.State == CandleStates.Finished)

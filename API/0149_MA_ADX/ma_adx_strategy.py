@@ -164,14 +164,9 @@ class ma_adx_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        try:
-            if hasattr(adx_value, 'MovingAverage') and adx_value.MovingAverage is not None:
-                adx_ma = float(adx_value.MovingAverage)
-            else:
-                return
-        except:
-            # If we can't extract ADX value, skip this candle
+        if adx_value.MovingAverage is None:
             return
+        adx_ma = float(adx_value.MovingAverage)
 
         # Trading logic
         if adx_ma > 25:

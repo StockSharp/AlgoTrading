@@ -174,10 +174,9 @@ class adx_macd_strategy(Strategy):
             return
 
         typedAdx = adxValue
-        try:
-            adxIndicatorValue = typedAdx.MovingAverage
-        except AttributeError:
+        if typedAdx.MovingAverage is None:
             return
+        adxIndicatorValue = typedAdx.MovingAverage
 
         macdTyped = macdValue
         try:

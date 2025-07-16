@@ -126,13 +126,9 @@ class adx_cci_strategy(Strategy):
         self._prev_cci_value = float(cci_value)
 
         # Extract ADX moving average value
-        try:
-            if hasattr(adx_value, 'MovingAverage') and adx_value.MovingAverage is not None:
-                adx_ma = float(adx_value.MovingAverage)
-            else:
-                adx_ma = float(adx_value)
-        except Exception:
+        if adx_value.MovingAverage is None:
             return
+        adx_ma = float(adx_value.MovingAverage)
 
         # Trading logic
         if adx_ma > 25:

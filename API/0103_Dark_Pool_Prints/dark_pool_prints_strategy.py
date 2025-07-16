@@ -133,13 +133,9 @@ class dark_pool_prints_strategy(Strategy):
             return
 
         # Retrieve ADX moving average value
-        try:
-            if hasattr(adx, 'MovingAverage') and adx.MovingAverage is not None:
-                adx_ma = float(adx.MovingAverage)
-            else:
-                adx_ma = float(adx)
-        except:
+        if adx.MovingAverage is None:
             return
+        adx_ma = float(adx.MovingAverage)
 
         ma_decimal = float(ma)
 

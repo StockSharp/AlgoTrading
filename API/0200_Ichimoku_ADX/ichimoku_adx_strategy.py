@@ -170,10 +170,9 @@ class ichimoku_adx_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        try:
-            adx = adx_value.MovingAverage
-        except AttributeError:
+        if adx_value.MovingAverage is None:
             return
+        adx = adx_value.MovingAverage
 
         self._last_adx_value = adx
 

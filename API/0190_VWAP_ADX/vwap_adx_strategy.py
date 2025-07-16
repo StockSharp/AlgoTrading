@@ -106,10 +106,9 @@ class vwap_adx_strategy(Strategy):
 
         # Get current ADX value
         typed_adx = adx_value
-        try:
-            current_adx_value = typed_adx.MovingAverage
-        except AttributeError:
+        if typed_adx.MovingAverage is None:
             return
+        current_adx_value = typed_adx.MovingAverage
 
         # Skip if not formed or online
         if not self.IsFormedAndOnlineAndAllowTrading():

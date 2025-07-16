@@ -200,10 +200,9 @@ class adx_stochastic_strategy(Strategy):
             return
 
         # Extract ADX value from indicator
-        if hasattr(adxValue, 'MovingAverage') and adxValue.MovingAverage is not None:
-            adx = float(adxValue.MovingAverage)
-        else:
+        if adxValue.MovingAverage is None:
             return
+        adx = float(adxValue.MovingAverage)
 
         stoch = stochValue
         stochK = stoch.K
