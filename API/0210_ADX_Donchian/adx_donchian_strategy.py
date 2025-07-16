@@ -116,7 +116,7 @@ class adx_donchian_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(donchian, adx, self.ProcessCandle).Start()
+        subscription.BindEx(donchian, adx, self.ProcessCandle).Start()
 
         # Enable percentage-based stop-loss protection
         self.StartProtection(Unit(self.stop_loss_percent, UnitTypes.Percent), None)

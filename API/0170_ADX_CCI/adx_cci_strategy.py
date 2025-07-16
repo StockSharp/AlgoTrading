@@ -93,7 +93,7 @@ class adx_cci_strategy(Strategy):
 
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(adx, cci, self.ProcessCandle).Start()
+        subscription.BindEx(adx, cci, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

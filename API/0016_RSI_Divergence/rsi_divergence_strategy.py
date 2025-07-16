@@ -93,7 +93,7 @@ class rsi_divergence_strategy(Strategy):
 
         # Subscribe to candles and bind the indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self.ProcessCandle).Start()
+        subscription.BindEx(rsi, self.ProcessCandle).Start()
 
         # Enable position protection
         self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))

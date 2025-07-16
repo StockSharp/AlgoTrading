@@ -100,7 +100,7 @@ class donchian_reversal_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
 
         # Bind indicator and process candles
-        subscription.Bind(donchian, self.ProcessCandle).Start()
+        subscription.BindEx(donchian, self.ProcessCandle).Start()
 
         # Setup chart visualization
         area = self.CreateChartArea()

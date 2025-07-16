@@ -81,7 +81,7 @@ class donchian_channel_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(donchian, self.ProcessCandle).Start()
+        subscription.BindEx(donchian, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

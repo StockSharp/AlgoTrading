@@ -123,7 +123,7 @@ class adx_trend_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(adx, ma, atr, self.ProcessCandle).Start()
+        subscription.BindEx(adx, ma, atr, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

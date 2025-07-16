@@ -116,7 +116,7 @@ class rsi_reversion_strategy(Strategy):
 
         # Subscribe to candles
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(rsi, self.ProcessCandle).Start()
+        subscription.BindEx(rsi, self.ProcessCandle).Start()
 
         # Enable position protection
         self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))

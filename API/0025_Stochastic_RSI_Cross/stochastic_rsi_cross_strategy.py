@@ -135,7 +135,7 @@ class stochastic_rsi_cross_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         
         # Create a custom binding to simulate Stochastic RSI since it's not built-in
-        subscription.Bind(stoch, rsi, self.ProcessCandle).Start()
+        subscription.BindEx(stoch, rsi, self.ProcessCandle).Start()
 
         # Enable position protection
         self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))

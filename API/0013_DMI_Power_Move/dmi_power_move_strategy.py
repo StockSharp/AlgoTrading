@@ -119,7 +119,7 @@ class dmi_power_move_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(dmi, atr, self.ProcessCandle).Start()
+        subscription.BindEx(dmi, atr, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

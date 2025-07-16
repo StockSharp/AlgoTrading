@@ -129,7 +129,7 @@ class ma_adx_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
 
         # Bind indicators to candles
-        subscription.Bind(ma, adx, atr, self.ProcessCandle).Start()
+        subscription.BindEx(ma, adx, atr, self.ProcessCandle).Start()
 
         # Enable stop-loss and take-profit
         self.StartProtection(
