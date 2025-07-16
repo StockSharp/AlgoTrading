@@ -1,5 +1,6 @@
 # Keltner Rsi Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy combining Keltner Channels and RSI indicators. Looks for mean reversion opportunities when price touches channel boundaries and RSI confirms oversold/overbought conditions.
 
 Keltner Channels map recent volatility while RSI measures momentum extremes. Entries occur when RSI supports a move beyond the channel.

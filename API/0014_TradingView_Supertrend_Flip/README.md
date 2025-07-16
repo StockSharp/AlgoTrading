@@ -1,5 +1,6 @@
 # TradingView Supertrend Flip
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Supertrend indicator flips with volume confirmation
 
 TradingView Supertrend Flip emulates the popular indicator's color changes. A flip from red to green signals a long entry and green to red signals a short. The strategy exits on the next flip.

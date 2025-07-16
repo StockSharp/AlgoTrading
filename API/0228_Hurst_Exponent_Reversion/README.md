@@ -1,5 +1,6 @@
 # Hurst Exponent Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This approach uses the Hurst exponent to detect when a market is behaving in a mean-reverting manner. Values below 0.5 suggest price tends to return toward its average, creating opportunities to fade extremes.
 
 A long position is opened when the Hurst exponent is below 0.5 and price closes under a moving average. A short position occurs when the Hurst value is below 0.5 and price closes above the average. Positions exit when price returns to the average line or the Hurst exponent rises above the threshold.

@@ -1,5 +1,6 @@
 # CCI Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Commodity Channel Index (CCI) measures how far price moves from its statistical average. This strategy enters when CCI deviates from its own mean by a large margin, expecting a snap back once momentum fades.
 
 A long trade occurs when CCI drops below the average minus `DeviationMultiplier` times the standard deviation. A short trade is opened when CCI rises above the average plus that multiplier. The position exits when CCI crosses back through the mean value.

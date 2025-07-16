@@ -1,5 +1,6 @@
 # Donchian Channel
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Donchian Channel
 
 Donchian Channel Breakout trades new highs and lows based on the channel range. A close beyond the upper band signals strength, while a drop below the lower band invites shorts. Exits occur when price returns to the midpoint.

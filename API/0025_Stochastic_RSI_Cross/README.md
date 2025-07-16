@@ -1,5 +1,6 @@
 # Stochastic RSI Cross
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Stochastic RSI crossover
 
 Stochastic RSI Cross watches the %K and %D lines of StochRSI. Bullish crosses near oversold levels trigger buys, bearish crosses near overbought trigger sells, and opposite crosses exit.

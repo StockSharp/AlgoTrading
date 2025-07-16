@@ -1,5 +1,6 @@
 # Volatility Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This approach trades around fluctuations in market volatility. When the ATR deviates markedly from its moving average, it suggests volatility has become unusually high or low and may revert.
 
 The strategy goes long when ATR drops below the average minus `DeviationMultiplier` times the standard deviation and price is below the moving average. It shorts when ATR exceeds the upper band and price is above the average. Positions exit once ATR returns toward its mean level.

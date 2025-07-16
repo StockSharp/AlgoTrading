@@ -1,5 +1,6 @@
 # Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This statistical approach looks for short-term extremes in price relative to its recent average. The strategy uses a moving average to define fair value and measures the deviation from that mean through a standard deviation calculation.
 
 Trades are opened when price pushes a set distance from the average. A dip below the lower band triggers a long entry, anticipating a rebound toward the mean, while a rally above the upper band prompts a short. Once price touches the moving average again, any open position is closed.

@@ -1,5 +1,6 @@
 # Lunch Break Fade Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Lunch Break Fade targets reversals that develop during the slow midday period.
 After the morning session, trends often pause or pull back as volume dries up around lunchtime.
 

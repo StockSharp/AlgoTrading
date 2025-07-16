@@ -1,5 +1,6 @@
 # RSI Laguerre
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Laguerre RSI
 
 Laguerre RSI smooths the standard RSI to reduce noise. The strategy buys when the Laguerre value crosses up from oversold and sells when it crosses down from overbought, exiting when it returns to mid-levels.

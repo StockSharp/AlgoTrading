@@ -1,5 +1,6 @@
 # Hurst Exponent Volatility Filter
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Hurst Exponent Volatility Filter strategy uses the Hurst alongside volatility filters. It enters trades only when specified conditions align.
 
 Signals require the indicator to surpass a threshold while volatility meets predefined criteria. Positions can be long or short with built-in stops.

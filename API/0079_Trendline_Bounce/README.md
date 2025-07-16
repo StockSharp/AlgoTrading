@@ -1,5 +1,6 @@
 # Trendline Bounce Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Markets often respect trendlines drawn across prior swing highs or lows. This strategy automatically fits regression lines to recent price action and looks for candles that bounce from those lines in the direction of the dominant trend.
 
 Recent candles are stored to calculate upward or downward sloping support and resistance lines. When price nears a trendline and a candle confirms the bounce while staying on the correct side of a moving average, the system enters a trade. The stop is set using a percentage of price and an exit occurs on a cross of the moving average.

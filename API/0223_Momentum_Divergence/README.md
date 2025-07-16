@@ -1,5 +1,6 @@
 # Momentum Divergence Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The Momentum Divergence strategy compares momentum readings with price direction to spot early signs of a reversal. Divergences occur when price makes a new extreme yet the momentum indicator fails to confirm, hinting at weakening strength.
 
 A bullish setup happens when price records a lower low while the momentum oscillator prints a higher low. A bearish setup forms when price pushes to a higher high but momentum fails to follow. Positions are closed when momentum crosses back through zero or the divergence is invalidated.

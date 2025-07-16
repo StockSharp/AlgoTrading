@@ -1,5 +1,6 @@
 # Bollinger Percent B Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This approach fades price extremes beyond the Bollinger Bands using the Percent B indicator. Moves above the upper band or below the lower band suggest overextension.
 
 When percent B is less than zero or greater than one, the system bets on a return to the middle of the band. An exit threshold closes trades once momentum normalizes.

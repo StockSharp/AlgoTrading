@@ -1,5 +1,6 @@
 # Fibonacci Retracement Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Markets often retrace a portion of a prior move before resuming trend. This strategy identifies recent swing highs and lows and watches for price to test the 61.8% or 78.6% retracement levels. These areas frequently mark exhaustion points.
 
 The algorithm tracks swings over a rolling window and calculates Fibonacci levels between them. When price nears a key retracement and forms a candle in the direction of the original trend, a trade is opened with a stop placed a set percent away. Targets are around the 50% midpoint of the swing.

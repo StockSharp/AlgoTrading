@@ -1,5 +1,6 @@
 # ZScore Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The ZScore Reversal strategy measures how far price deviates from a moving average in terms of standard deviations. The resulting Z-Score highlights statistically stretched conditions that may snap back toward the mean.
 
 A trade is opened long when the Z-Score falls below a negative threshold, signalling an oversold market. A short trade is taken when the Z-Score rises above the positive threshold. The position is closed once the Z-Score crosses back through zero, indicating price has normalized.

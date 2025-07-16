@@ -1,5 +1,6 @@
 # ATR Exhaustion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 A sudden surge in Average True Range indicates expanding volatility that can quickly fade. This strategy looks for ATR readings that spike above a moving average by a configurable multiplier. When coupled with a reversal candle it aims to capture the subsequent contraction.
 
 Each bar updates ATR and its own average. If ATR exceeds the average by the multiplier and the candle closes opposite the prior move, a trade is opened. The stop-loss uses an ATR multiple as well, anchoring risk to current volatility levels.

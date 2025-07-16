@@ -1,5 +1,6 @@
 # Vwap Stochastic Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy combining VWAP and Stochastic indicators. Buys when price is below VWAP and Stochastic is oversold. Sells when price is above VWAP and Stochastic is overbought.
 
 VWAP marks the average trading level and Stochastic shows overbought or oversold conditions. Longs trigger below VWAP with a rising oscillator, shorts above VWAP with a falling one.

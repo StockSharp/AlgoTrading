@@ -1,5 +1,6 @@
 # Implied Volatility Spike
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy watches implied volatility for sudden jumps relative to the prior value. A strong spike paired with price trading against the moving average can signal a short-term reversal.
 
 When implied volatility increases by the configured threshold, the system enters in the opposite direction of the price move, expecting volatility to revert.

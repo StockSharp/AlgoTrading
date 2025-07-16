@@ -1,5 +1,6 @@
 # Williams R
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Williams %R indicator
 
 Williams %R identifies overbought and oversold zones. When the indicator rises above the upper threshold it signals potential weakness for shorts; readings below the lower threshold suggest longs. Positions close once %R moves toward neutral.

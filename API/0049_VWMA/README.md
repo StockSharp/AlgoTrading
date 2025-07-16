@@ -1,5 +1,6 @@
 # VWMA Cross
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The Volume Weighted Moving Average (VWMA) emphasizes price levels with higher trading volume. This strategy trades crossovers between price and the VWMA.
 
 A close above VWMA after being below it generates a long entry, while a drop below VWMA prompts a short trade. Positions exit when price crosses back in the opposite direction.

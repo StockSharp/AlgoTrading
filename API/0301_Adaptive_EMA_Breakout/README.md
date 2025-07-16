@@ -1,5 +1,6 @@
 # Adaptive EMA Breakout
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Adaptive EMA Breakout** strategy is built around Adaptive EMA breakout with trend confirmation.
 
 Signals trigger when its indicators confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.

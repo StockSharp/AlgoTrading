@@ -1,5 +1,6 @@
 # Volume Spike Trend
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Volume Spike Trend monitors sudden surges in traded volume. When current volume exceeds the recent average by a set multiplier, it signals strong participation.
 
 If volume spikes and price is above the moving average, the strategy buys; if volume spikes below the average, it sells short. Trades exit when volume falls back under the average or the stop-loss is reached.

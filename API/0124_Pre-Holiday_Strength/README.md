@@ -1,5 +1,6 @@
 # Pre-Holiday Strength Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Pre-Holiday Strength refers to the bullish tendency just before major market holidays when volume is lighter and sentiment optimistic.
 Traders often position ahead of the break, pushing prices higher in the final session or two.
 

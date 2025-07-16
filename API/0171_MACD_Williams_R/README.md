@@ -1,5 +1,6 @@
 # Macd Williams R Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on MACD and Williams %R indicators. Enters long when MACD > Signal and Williams %R is oversold (< -80) Enters short when MACD < Signal and Williams %R is overbought (> -20)
 
 MACD indicates the larger momentum shift, while Williams %R pinpoints near-term reversals. Both signals must line up to initiate a trade.

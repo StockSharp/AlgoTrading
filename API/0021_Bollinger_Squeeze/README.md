@@ -1,5 +1,6 @@
 # Bollinger Squeeze
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Bollinger Bands squeeze
 
 Bollinger Squeeze waits for narrow band width indicating low volatility. A break outside the bands starts a trade in that direction and it exits when momentum fails or an opposite break appears.

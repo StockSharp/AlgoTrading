@@ -1,5 +1,6 @@
 # ATR Range Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 ATR Range Breakout measures price movement over a fixed number of bars and compares it with the average true range. When the move exceeds the ATR, a position is opened in the direction of the move.
 
 The strategy checks price every N bars and uses the moving average for exit signals. It aims to capture momentum when volatility expands beyond normal levels.

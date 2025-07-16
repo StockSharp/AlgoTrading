@@ -1,5 +1,6 @@
 # Supertrend Stochastic Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Supertrend + Stochastic strategy. Strategy enters trades when Supertrend indicates trend direction and Stochastic confirms with oversold/overbought conditions.
 
 Supertrend marks the trend, and Stochastic points out temporary counter moves. Entries happen once Stochastic exits oversold or overbought against the trend.

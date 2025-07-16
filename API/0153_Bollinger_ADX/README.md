@@ -1,5 +1,6 @@
 # Bollinger Adx Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy combining Bollinger Bands and ADX indicators. Looks for breakouts with strong trend confirmation.
 
 Price movements outside Bollinger bands are filtered through ADX for strength. Trades engage when a band break coincides with high ADX.

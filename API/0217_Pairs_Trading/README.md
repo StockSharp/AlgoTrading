@@ -1,5 +1,6 @@
 # Pairs Trading Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This pairs trading strategy monitors the price spread between two correlated instruments. By comparing the spread to its historical mean and standard deviation, the system attempts to exploit temporary divergences that eventually revert.
 
 A long spread is entered when the spread drops below its mean by more than the specified deviation multiplier. This means buying the first asset and selling the second. A short spread does the opposite when the spread rises above the mean by the same amount. Positions are closed once the spread returns to the average level.

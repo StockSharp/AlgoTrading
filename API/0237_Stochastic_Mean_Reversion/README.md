@@ -1,5 +1,6 @@
 # Stochastic Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This strategy measures the Stochastic oscillator against its own moving average to locate overextended swings. When %K moves several standard deviations away from its mean, the expectation is for the indicator to drift back toward typical values.
 
 A long trade is placed when Stochastic %K falls below the lower band defined by the average minus `Multiplier` times the standard deviation. A short trade occurs when %K exceeds the upper band. Positions are closed once %K crosses back through its average line.

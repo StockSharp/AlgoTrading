@@ -1,5 +1,6 @@
 # ADX DI
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on ADX and Directional Movement indicators
 
 ADX DI focuses on the crossing of +DI and -DI with rising ADX. A bullish cross of +DI over -DI coupled with strong ADX opens longs, while the opposite opens shorts. Positions close on a weakening ADX or opposite cross.

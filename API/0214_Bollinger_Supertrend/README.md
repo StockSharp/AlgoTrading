@@ -1,5 +1,6 @@
 # Bollinger Supertrend Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy blends Bollinger Bands with the Supertrend indicator to pinpoint entries during strong directional moves. Bollinger Bands gauge volatility expansion while the Supertrend line tracks the overall trend and acts as a trailing stop.
 
 A long trade triggers when price closes above the upper Bollinger Band and remains above the Supertrend line, confirming momentum and trend alignment. A short trade occurs when price closes below the lower band while staying under the Supertrend level. Trades are exited once price crosses back through the Supertrend, indicating momentum has faded.

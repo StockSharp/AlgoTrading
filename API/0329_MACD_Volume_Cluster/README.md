@@ -1,5 +1,6 @@
 # MACD Volume Cluster
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **MACD Volume Cluster** strategy is built around MACD Volume Cluster.
 
 Signals trigger when its indicators confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.

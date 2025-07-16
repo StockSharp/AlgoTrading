@@ -1,5 +1,6 @@
 # Super Trend
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Supertrend indicator
 
 Super Trend calculates a dynamic line from ATR that flips between support and resistance. Price crossing above it turns the bias bullish, and crossing below turns it bearish. The trade ends when the line reverses.

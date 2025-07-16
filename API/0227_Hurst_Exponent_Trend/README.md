@@ -1,5 +1,6 @@
 # Hurst Exponent Trend Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This system uses the Hurst exponent to determine whether the market is exhibiting trending behaviour. Values above the threshold indicate persistence, while values below suggest noise or mean reversion. A moving average provides additional direction confirmation.
 
 The strategy buys when the Hurst exponent is greater than the threshold and price closes above the moving average. It sells short when the Hurst exponent is high and price closes below the average. If the Hurst exponent drops below the threshold, existing positions are closed to avoid trading in choppy markets.

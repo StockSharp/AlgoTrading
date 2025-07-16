@@ -1,5 +1,6 @@
 # Correlation Mean Reversion
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Correlation Mean Reversion strategy focuses on extreme readings of the Correlation to exploit reversion. Wide departures from the typical level rarely last.
 
 Trades trigger when the indicator swings far from its mean and then begins to reverse. Both long and short setups include a protective stop.

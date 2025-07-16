@@ -1,5 +1,6 @@
 # VWAP Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This strategy fades moves away from the volume weighted average price. ATR is used to gauge how far price must deviate from VWAP before a reversal trade is considered.
 
 A long position opens when price drops below VWAP by more than `K` times the ATR. A short is taken when price rallies above VWAP by the same amount. Trades exit as soon as price returns to the VWAP line.

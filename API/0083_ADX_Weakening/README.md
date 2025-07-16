@@ -1,5 +1,6 @@
 # ADX Weakening Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Average Directional Index measures trend strength. When ADX begins to decline it often signals that the current move is losing momentum. This system trades against that weakening trend when price is on the opposite side of a simple moving average.
 
 For each bar the strategy computes ADX and an MA. If ADX decreases compared to the prior value and price is above the MA, a long entry is placed. If ADX falls while price is below the MA, it goes short. A fixed stop-loss protects the position.

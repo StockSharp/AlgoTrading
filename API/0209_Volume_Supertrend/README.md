@@ -1,5 +1,6 @@
 # Volume Supertrend Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy uses Volume Supertrend indicators to generate signals.
 Long entry occurs when Volume > Avg(Volume) && Price > Supertrend (volume surge with uptrend). Short entry occurs when Volume > Avg(Volume) && Price < Supertrend (volume surge with downtrend).
 It is suitable for traders seeking opportunities in trend markets.

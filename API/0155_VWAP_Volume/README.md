@@ -1,5 +1,6 @@
 # Vwap Volume Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy combining VWAP and Volume indicators. Buys/sells on VWAP breakouts confirmed by above-average volume.
 
 This strategy references VWAP to gauge value and requires volume confirmation before trades. The idea is to join moves backed by strong participation.

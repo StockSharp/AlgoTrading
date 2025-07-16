@@ -1,5 +1,6 @@
 # Bollinger Band Squeeze Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This setup monitors the width of the Bollinger Bands to detect periods of low volatility. When the bands contract relative to their recent average, it signals a potential volatility expansion is near.
 
 Once a squeeze is identified, the strategy waits for price to break outside the bands. A close above the upper band initiates a long, while a close below the lower band opens a short. The trade is closed if price returns toward the middle of the bands or if a stop-loss is triggered.

@@ -1,5 +1,6 @@
 # Wyckoff Accumulation Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Wyckoff Accumulation describes a basing phase where large interests quietly build positions after a decline.
 Volume and price action form a series of tests of support followed by higher lows, hinting at growing demand.
 

@@ -1,5 +1,6 @@
 # Quarterly Expiry Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Quarterly Expiry weeks see futures and options contracts roll over, often creating volatility as positions are closed or rolled.
 Price swings can accelerate as hedges are adjusted and liquidity temporarily dries up.
 

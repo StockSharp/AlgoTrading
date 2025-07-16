@@ -1,5 +1,6 @@
 # RSI Overbought/Oversold
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This system trades reversals using the Relative Strength Index. When RSI drops below the oversold level, it buys after closing any shorts. When RSI climbs above the overbought level, it sells after closing longs.
 
 Positions exit when RSI returns to a neutral zone or the stop-loss is reached.

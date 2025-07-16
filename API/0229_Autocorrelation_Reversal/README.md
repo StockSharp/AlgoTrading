@@ -1,5 +1,6 @@
 # Autocorrelation Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy analyzes short-term price autocorrelation to gauge whether recent moves are likely to reverse. Negative autocorrelation suggests successive price changes tend to alternate direction, creating mean-reverting conditions.
 
 When the calculated autocorrelation falls below the threshold and price is below a moving average, the system buys in anticipation of a bounce. If autocorrelation is negative and price is above the average, a short position is opened. Exits occur once price crosses the average or autocorrelation rises above the threshold.

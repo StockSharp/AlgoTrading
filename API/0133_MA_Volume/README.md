@@ -1,5 +1,6 @@
 # MA Volume Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 MA Volume combines a moving average trend filter with volume surges to time entries.
 Rising volume alongside price above the average signals strong accumulation; falling volume below the average indicates distribution.
 

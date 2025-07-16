@@ -1,5 +1,6 @@
 # RSI Breakout Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The RSI Breakout strategy looks for momentum bursts when the Relative Strength Index pushes beyond its typical range. By measuring RSI deviations from its moving average, the system aims to catch new trends as they begin.
 
 A long position is opened when RSI closes above the average plus `Multiplier` times the standard deviation. A short position is taken when RSI falls below the average minus that multiplier. Positions are closed once RSI crosses back through its average value.

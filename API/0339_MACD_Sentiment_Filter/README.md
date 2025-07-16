@@ -1,5 +1,6 @@
 # MACD Sentiment Filter
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **MACD Sentiment Filter** strategy is built around MACD Sentiment Filter.
 
 Signals trigger when its indicators confirms filtered entries on intraday (15m) data. This makes the method suitable for active traders.

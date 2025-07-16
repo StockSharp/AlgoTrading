@@ -1,5 +1,6 @@
 # Donchian Rsi Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy combining Donchian Channels and RSI indicators. Buys on Donchian breakouts when RSI confirms trend is not overextended.
 
 Donchian channels identify breakout levels, while RSI checks whether momentum supports the move. Positions follow when a breakout aligns with RSI direction.

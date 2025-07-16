@@ -1,5 +1,6 @@
 # Keltner Williams R Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy uses Keltner Williams R indicators to generate signals.
 Long entry occurs when Price < lower Keltner band && Williams %R < -80 (oversold at lower band). Short entry occurs when Price > upper Keltner band && Williams %R > -20 (overbought at upper band).
 It is suitable for traders seeking opportunities in mixed markets.

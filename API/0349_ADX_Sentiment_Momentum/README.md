@@ -1,5 +1,6 @@
 # ADX Sentiment Momentum
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **ADX Sentiment Momentum** strategy is built around ADX Sentiment Momentum.
 
 Signals trigger when its indicators confirms momentum shifts on intraday (5m) data. This makes the method suitable for active traders.

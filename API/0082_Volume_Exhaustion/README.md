@@ -1,5 +1,6 @@
 # Volume Exhaustion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Sharp spikes in volume often signal the end of a move as traders rush to exit or enter positions. This strategy measures current volume against an average to spot exhaustion. When combined with candle direction and a moving average filter it can pinpoint reversal entries.
 
 Each candle updates the average volume. If the new bar's volume exceeds this average by a set multiplier and the candle closes in the direction opposite the prevailing trend, the system enters a trade. A stop based on ATR protects the position.

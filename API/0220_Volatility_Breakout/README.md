@@ -1,5 +1,6 @@
 # Volatility Breakout Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The Volatility Breakout strategy seeks strong directional moves when price escapes from its average range. By measuring the distance from a simple moving average using the Average True Range, the algorithm defines breakout thresholds that scale with volatility.
 
 A buy order is triggered when the close rises above the SMA by more than `Multiplier` times the ATR. A sell signal appears when the close falls below the SMA by the same distance. Positions remain open until an opposite breakout occurs or a protective stop is hit.

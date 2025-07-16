@@ -1,5 +1,6 @@
 # Adx Stochastic Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy that combines ADX (Average Directional Index) for trend strength and Stochastic Oscillator for entry timing with oversold/overbought conditions.
 
 ADX highlights trend strength while Stochastic pinpoints pullbacks. Long or short signals appear when momentum turns while ADX stays high.

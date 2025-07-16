@@ -1,5 +1,6 @@
 # Cumulative Delta Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Cumulative Delta sums the difference between buy and sell volume. This strategy watches the running total and trades when it breaks above its highest value or below its lowest value within the lookback period.
 
 A break of cumulative delta often precedes price follow-through. The strategy closes trades when delta crosses back through zero or a stop-loss level.

@@ -1,5 +1,6 @@
 # Donchian Sentiment Spike
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The **Donchian Sentiment Spike** strategy is built around Donchian Sentiment Spike.
 
 Signals trigger when Donchian confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.

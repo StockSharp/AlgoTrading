@@ -1,5 +1,6 @@
 # Vwap Macd Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on VWAP and MACD. Enters long when price is above VWAP and MACD > Signal. Enters short when price is below VWAP and MACD < Signal. Exits when MACD crosses its signal line in the opposite direction.
 
 VWAP guides intraday value, and MACD crossovers reveal momentum shifts. Trades are launched as MACD turns near the VWAP level.

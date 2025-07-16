@@ -1,5 +1,6 @@
 # VIX Trigger
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 VIX Trigger reacts to changes in the Volatility Index. A rising VIX signals fear and possible reversals in the underlying instrument. The strategy compares VIX direction with price relative to a moving average.
 
 When VIX increases and price is below the moving average, it buys expecting a recovery. Conversely, rising VIX with price above the average invites a short position.

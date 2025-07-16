@@ -1,5 +1,6 @@
 # OBV Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 On Balance Volume (OBV) tracks cumulative volume flow to determine whether buyers or sellers are dominant. This strategy waits for OBV to diverge sharply from its average and then trades in anticipation of a return to typical levels.
 
 A buy signal occurs when OBV falls below its average minus `Multiplier` times the standard deviation and price is below the moving average. A sell signal is generated when OBV rises above the upper band with price above the average. Positions close when OBV crosses back through its mean line.

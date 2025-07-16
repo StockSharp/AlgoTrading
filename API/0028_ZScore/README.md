@@ -1,5 +1,6 @@
 # ZScore
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Z-Score indicator for mean reversion trading
 
 ZScore measures price deviation from a moving average. Extreme high or low z-scores suggest overextension and prompt trades in the opposite direction. The trade ends when the z-score normalizes.

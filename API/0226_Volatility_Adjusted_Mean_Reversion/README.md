@@ -1,5 +1,6 @@
 # Volatility Adjusted Mean Reversion Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This variation of mean reversion scales entry thresholds by the ratio of ATR to standard deviation. When volatility increases relative to typical noise, the distance needed to trigger a trade grows, helping avoid premature signals during chaotic swings.
 
 A long position opens when price falls below the moving average by more than the adjusted threshold. A short position opens when price rises above the average by the same measure. Positions exit once price closes back near the average level.

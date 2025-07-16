@@ -1,5 +1,6 @@
 # Three-Bar Reversal Down Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 A mirror image of the bullish version, this setup looks for quick bearish reversals. After two strong up candles that push to new highs, a decisive bearish candle closes below the prior bar's low. A brief uptrend beforehand helps confirm buyer exhaustion.
 
 The algorithm tracks a rolling window of three candles. When the pattern appears and any uptrend requirement is met, a short position is taken with the stop above the pattern high. The rules are straightforward so signals occur immediately at candle close.

@@ -1,5 +1,6 @@
 # Shooting Star Pattern
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 The shooting star candlestick often appears after an advance and warns of a reversal. This strategy looks for a long upper shadow relative to the body with little lower shadow.
 
 If confirmation is required, the next candle must close lower before entering short. Otherwise the trade can be taken immediately. Stops are placed above the pattern high.

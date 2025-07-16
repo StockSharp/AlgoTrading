@@ -1,5 +1,6 @@
 # RSI Hook Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The RSI Hook Reversal tries to catch short-term turning points when the RSI exits an extreme.
 After an overbought or oversold push the indicator often "hooks" back toward the midline before price reacts.
 

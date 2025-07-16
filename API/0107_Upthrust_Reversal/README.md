@@ -1,5 +1,6 @@
 # Upthrust Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Upthrust Reversal is the bearish companion to the spring and occurs when price briefly breaks above resistance but quickly falls back.
 The move flushes out late buyers before reversing lower.
 

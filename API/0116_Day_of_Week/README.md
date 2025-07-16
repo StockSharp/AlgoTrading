@@ -1,5 +1,6 @@
 # Day of Week Effect Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Day of Week Effect exploits tendencies for markets to exhibit recurring behavior on specific weekdays.
 Some indices show consistent strength midweek while Monday or Friday can be relatively weak.
 

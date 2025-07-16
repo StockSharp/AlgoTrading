@@ -1,5 +1,6 @@
 # ATR Reversion
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 ATR Reversion looks for sudden moves measured in multiples of Average True Range (ATR). When price surges beyond the ATR multiplier, the system expects a mean reversion.
 
 The strategy opens a trade opposite the direction of the spike and uses a moving average to judge momentum.

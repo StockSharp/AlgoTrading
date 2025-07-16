@@ -1,5 +1,6 @@
 # Williams %R Divergence Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 The Williams %R oscillator gauges overbought and oversold conditions. When price makes a new low but %R forms a higher low, or when price prints a new high but %R turns lower, momentum may reverse. This strategy hunts for such divergences at the extremes of the indicator.
 
 Every bar the system records the latest close and %R value to compare with the prior reading. A bullish divergence combined with an oversold level below -80 triggers a long entry, while a bearish divergence and a reading above -20 produces a short. Stops are set using a percentage of price.

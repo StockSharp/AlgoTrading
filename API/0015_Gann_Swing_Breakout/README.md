@@ -1,5 +1,6 @@
 # Gann Swing Breakout
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Gann Swing Breakout technique
 
 Gann Swing Breakout tracks swing highs and lows from Gann analysis. A breakout beyond the latest swing starts a trade in that direction and it stays open until an opposing swing is breached.

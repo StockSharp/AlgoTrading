@@ -1,5 +1,6 @@
 # Hull MA Trend
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on Hull Moving Average trend
 
 The Hull MA Trend strategy monitors the slope of the Hull Moving Average. Rising slopes prompt longs and falling slopes prompt shorts, with an ATR trailing stop protecting each trade.

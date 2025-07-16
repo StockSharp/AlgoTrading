@@ -1,5 +1,6 @@
 # Cointegration Pairs Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy trades two assets that share a long-term cointegration relationship. By calculating the residual between the first asset and a beta-adjusted second asset, it looks for deviations that historically revert back to equilibrium.
 
 A long position buys the first asset and sells the second when the residual z-score drops below `-EntryThreshold`. A short position sells the first and buys the second when the z-score rises above the threshold. Positions are closed once the spread normalizes toward zero.

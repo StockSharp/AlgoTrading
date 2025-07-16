@@ -1,5 +1,6 @@
 # Parabolic Sar Stochastic Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Implementation of strategy #158 - Parabolic SAR + Stochastic. Buy when price is above SAR and Stochastic %K is below 20 (oversold). Sell when price is below SAR and Stochastic %K is above 80 (overbought).
 
 Parabolic SAR supplies the trend and Stochastic refines entry on pullbacks. Signals flip when SAR changes side.

@@ -1,5 +1,6 @@
 # MACD RSI Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 MACD RSI combines momentum from the Moving Average Convergence Divergence with overbought/oversold readings from RSI.
 When both indicators align, the probability of a sustained move increases.
 

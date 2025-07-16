@@ -1,5 +1,6 @@
 # Volatility Adjusted Moving Average
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This technique modifies a moving average band by a multiple of ATR. When price moves beyond the adjusted band, it indicates an accelerated trend.
 
 Long trades are opened above the upper band, shorts below the lower band. A cross back through the baseline moving average closes the position.

@@ -1,5 +1,6 @@
 # Spring Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Spring Reversal is a Wyckoff concept where price briefly breaks support and then springs back above it.
 This shakeout traps late sellers and often marks the beginning of an uptrend.
 

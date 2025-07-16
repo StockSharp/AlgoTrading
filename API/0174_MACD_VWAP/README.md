@@ -1,5 +1,6 @@
 # Macd Vwap Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 Strategy based on MACD and VWAP indicators. Enters long when MACD > Signal and price > VWAP Enters short when MACD < Signal and price < VWAP
 
 MACD momentum is gauged relative to the VWAP line. Long trades look for MACD strength below VWAP, whereas shorts take form above it.

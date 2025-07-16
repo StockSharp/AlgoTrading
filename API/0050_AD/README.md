@@ -1,5 +1,6 @@
 # Accumulation/Distribution Trend
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This strategy uses the Accumulation/Distribution (A/D) indicator to gauge buying and selling pressure. Rising A/D alongside price above the moving average signals accumulation, while falling A/D below the average indicates distribution.
 
 Trades are taken in the direction of the A/D trend relative to the moving average. A change in A/D direction acts as an exit signal.

@@ -1,5 +1,6 @@
 # Bollinger Band Reversal Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 Price extremes outside the Bollinger Bands often snap back toward the middle band. This approach fades those extensions, buying dips below the lower band when the candle finishes green and selling rallies above the upper band after a red candle.
 
 The algorithm calculates Bollinger Bands on each bar and checks whether the close breaches the outer band. If a bullish candle closes below the lower band a long is opened; if a bearish candle closes above the upper band a short is taken. The stop relies on an ATR multiple while exits occur when price returns to the middle band.

@@ -1,5 +1,6 @@
 # Stochastic Breakout Strategy
-
+[Русский](README_ru.md) | [中文](README_zh.md)
+ 
 This breakout approach monitors the Stochastic oscillator for sharp moves away from its recent average. When the %K line breaks above or below a volatility-adjusted threshold, it signals a burst of momentum that may start a trend.
 
 A long position is triggered when %K crosses above the upper threshold after a period of contraction. A short position is taken when %K breaks below the lower threshold. The trade is closed when the oscillator drifts back toward its average or hits a protective stop.

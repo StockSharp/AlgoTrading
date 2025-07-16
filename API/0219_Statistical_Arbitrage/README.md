@@ -1,5 +1,6 @@
 # Statistical Arbitrage Strategy
-
+[Русский](README_ru.md) | [中文](README_cn.md)
+ 
 This statistical arbitrage approach trades a pair of related securities based on their relative positioning around moving averages. By comparing each asset to its own average, the strategy seeks to exploit short-term dislocations that should converge over time.
 
 A long position is initiated when the first asset trades below its moving average while the second asset trades above its own average. A short position occurs when the first asset is above its average and the second is below. Positions are closed when the first asset crosses back through its moving average, signalling the spread has normalized.
