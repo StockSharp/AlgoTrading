@@ -101,10 +101,9 @@ class atr_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(2, UnitTypes.Absolute)   # Stop loss at 2*ATR
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(2, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, sma_value, atr_value):
         if candle.State != CandleStates.Finished:
             return

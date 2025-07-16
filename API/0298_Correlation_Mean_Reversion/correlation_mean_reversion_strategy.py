@@ -180,11 +180,10 @@ class correlation_mean_reversion_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent),  # Stop loss in percent
-            False  # No trailing stop
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=False
         )
-
     def ProcessSecurity1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return

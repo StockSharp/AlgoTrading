@@ -104,8 +104,10 @@ class keltner_williams_r_strategy(Strategy):
         subscription.BindEx(keltner, williams_r, self.ProcessIndicators).Start()
 
         # Enable stop-loss protection based on ATR
-        self.StartProtection(None, Unit(2, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(2, UnitTypes.Absolute)
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

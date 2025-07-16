@@ -122,10 +122,9 @@ class williams_r_breakout_strategy(Strategy):
 
         # Enable stop loss protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),
-            Unit(self.StopLoss, UnitTypes.Percent)
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
-
         # Create chart area for visualization
         area = self.CreateChartArea()
         if area is not None:

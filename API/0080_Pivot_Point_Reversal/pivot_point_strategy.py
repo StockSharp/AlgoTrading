@@ -103,10 +103,9 @@ class pivot_point_reversal_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessDailyCandle(self, candle):
         """
         Process daily candles to get previous day's OHLC data.

@@ -189,10 +189,9 @@ class keltner_macd_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         self.StartProtection(
-            Unit(0),  # No take profit - use MACD cross for exit
-            Unit(self.StopLossPercent, UnitTypes.Absolute)
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, ema_value, atr_value, macd_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

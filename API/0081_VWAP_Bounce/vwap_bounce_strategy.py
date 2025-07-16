@@ -61,12 +61,11 @@ class vwap_bounce_strategy(Strategy):
 
         # Enable position protection using stop-loss
         self.StartProtection(
-            None,  # No take profit
-            self.StopLoss,  # Stop loss
-            False,  # Not trailing
-            True   # Use market orders
+            takeProfit=None,
+            stopLoss=self.StopLoss,
+            isStopTrailing=False,
+            useMarketOrders=True
         )
-
         # Initialize VWAP
         self._prevVwap = 0.0
 

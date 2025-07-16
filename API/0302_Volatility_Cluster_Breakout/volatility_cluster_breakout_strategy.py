@@ -125,11 +125,10 @@ class volatility_cluster_breakout_strategy(Strategy):
 
         # Enable position protection with dynamic stops
         self.StartProtection(
-            takeProfit=Unit(0),  # We'll handle exits in the strategy logic
-            stopLoss=Unit(0),    # We'll handle stops in the strategy logic
+            takeProfit=Unit(0),
+            stopLoss=Unit(0),
             useMarketOrders=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

@@ -129,8 +129,10 @@ class dmi_power_move_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protection with ATR-based stop loss
-        self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
+        )
     def ProcessCandle(self, candle, adx_value, atr_value):
         """
         Processes each finished candle and executes DMI-based trading logic.

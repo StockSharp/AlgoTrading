@@ -93,12 +93,11 @@ class adx_weakening_strategy(Strategy):
 
         # Enable position protection using stop-loss
         self.StartProtection(
-            None,            # takeProfit: null
-            self.StopLoss,   # stopLoss
-            False,           # isStopTrailing
-            True             # useMarketOrders
+            takeProfit=None,
+            stopLoss=self.StopLoss,
+            isStopTrailing=False,
+            useMarketOrders=True
         )
-
         # Initialize previous ADX value
         self._prevAdxValue = 0.0
 

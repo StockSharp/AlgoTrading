@@ -128,7 +128,6 @@ class parabolic_sar_volume_strategy(Strategy):
             stopLoss=Unit(0, UnitTypes.Absolute),
             isStopTrailing=True
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

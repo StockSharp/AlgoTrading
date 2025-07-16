@@ -159,8 +159,10 @@ class rsi_williams_r_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protective orders
-        self.StartProtection(Unit(0, UnitTypes.Absolute), self.stop_loss)
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=self.stop_loss
+        )
     def ProcessCandle(self, candle, rsi_value, williams_r_value):
         if candle.State != CandleStates.Finished:
             return

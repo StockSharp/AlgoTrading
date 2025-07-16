@@ -135,10 +135,9 @@ class adaptive_rsi_volume_strategy(Strategy):
 
         # Start position protection with percentage-based stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),  # No fixed take profit
-            stopLoss=Unit(2, UnitTypes.Percent)  # 2% stop-loss
+            takeProfit=Unit(0),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, atr_value, rsi_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

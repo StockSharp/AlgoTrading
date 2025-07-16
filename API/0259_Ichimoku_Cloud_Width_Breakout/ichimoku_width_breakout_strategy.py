@@ -149,8 +149,10 @@ class ichimoku_width_breakout_strategy(Strategy):
         subscription.BindEx(self._ichimoku, self.ProcessIchimoku).Start()
 
         # Enable stop loss protection
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self.stop_loss, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss, UnitTypes.Percent)
+        )
         # Create chart area for visualization
         area = self.CreateChartArea()
         if area is not None:

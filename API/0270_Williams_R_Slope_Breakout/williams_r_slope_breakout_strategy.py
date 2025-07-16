@@ -126,8 +126,10 @@ class williams_r_slope_breakout_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Enable position protection
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, williams_r_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

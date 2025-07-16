@@ -117,10 +117,9 @@ class vwap_adx_trend_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, vwap_value, adx_value, di_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

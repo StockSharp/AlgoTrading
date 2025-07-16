@@ -100,8 +100,10 @@ class adx_di_strategy(Strategy):
         subscription.BindEx(adx, atr, self.ProcessCandle).Start()
 
         # Enable position protection
-        self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
+        )
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

@@ -141,8 +141,10 @@ class bollinger_cci_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protective orders
-        self.StartProtection(Unit(0, UnitTypes.Absolute), self.StopLoss)
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=self.StopLoss
+        )
     def ProcessCandle(self, candle, bollingerValue, cciValue):
         if candle.State != CandleStates.Finished:
             return

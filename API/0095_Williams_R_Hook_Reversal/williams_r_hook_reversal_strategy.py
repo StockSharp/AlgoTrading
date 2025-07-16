@@ -120,7 +120,6 @@ class williams_r_hook_reversal_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-
         # Initialize previous Williams %R value
         self._prevWillR = 0.0
 

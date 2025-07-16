@@ -122,10 +122,9 @@ class hv_breakout_strategy(Strategy):
 
         # Setup protection with stop-loss
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss as percentage
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, stdDevValue, smaValue):
         """
         Process candle and check for HV breakout signals

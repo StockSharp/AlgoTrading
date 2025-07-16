@@ -138,10 +138,9 @@ class hurst_volatility_filter_strategy(Strategy):
 
         # Enable position protection with stop loss
         self.StartProtection(
-            takeProfit=Unit(0),  # No take-profit, using custom exit conditions
-            stopLoss=Unit(self.StopLoss, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle: ICandleMessage, sma_value: float, atr_value: float):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -131,10 +131,9 @@ class adx_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            takeProfit=None,  # We'll manage exits ourselves based on ADX
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, adx_value):
         """
         Process candle with ADX indicator value.

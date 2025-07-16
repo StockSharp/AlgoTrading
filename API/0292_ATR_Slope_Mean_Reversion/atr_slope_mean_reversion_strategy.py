@@ -152,8 +152,10 @@ class atr_slope_mean_reversion_strategy(Strategy):
             self.DrawIndicator(area, self._atr)
             self.DrawOwnTrades(area)
 
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle: ICandleMessage, atrValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

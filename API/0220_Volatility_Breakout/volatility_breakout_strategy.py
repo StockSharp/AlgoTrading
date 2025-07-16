@@ -99,10 +99,9 @@ class volatility_breakout_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.Multiplier, UnitTypes.Absolute)  # Stop loss at 2*ATR
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.Multiplier, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle: ICandleMessage, sma_value: float, atr_value: float):
         """Process candle with SMA and ATR values."""
         # Skip unfinished candles

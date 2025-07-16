@@ -115,8 +115,10 @@ class bollinger_percent_b_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Setup protection with stop-loss
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, bollinger_value):
         """
         Process candle and calculate Bollinger %B

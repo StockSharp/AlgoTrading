@@ -129,8 +129,10 @@ class triple_ma_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protection with stop loss
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, short_ma_value, middle_ma_value, long_ma_value):
         """
         Processes each finished candle and executes Triple MA trading logic.

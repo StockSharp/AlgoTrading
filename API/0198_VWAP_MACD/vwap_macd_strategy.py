@@ -105,9 +105,10 @@ class vwap_macd_strategy(Strategy):
         self._prev_signal = 0
 
         # Enable position protection
-        self.StartProtection(Unit(self.stop_loss_percent, UnitTypes.Percent),
-                             Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
 

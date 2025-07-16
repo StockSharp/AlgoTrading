@@ -102,8 +102,12 @@ class rsi_hook_reversal_strategy(Strategy):
         super(rsi_hook_reversal_strategy, self).OnStarted(time)
 
         # Enable position protection using stop-loss
-        self.StartProtection(None, self.stop_loss, False, True)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.stop_loss,
+            isStopTrailing=False,
+            useMarketOrders=True
+        )
         # Initialize previous RSI value
         self._prev_rsi = 0.0
 

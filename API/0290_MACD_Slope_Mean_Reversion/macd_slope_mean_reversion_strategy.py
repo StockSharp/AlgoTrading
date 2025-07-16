@@ -167,10 +167,9 @@ class macd_slope_mean_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, macd_value):
         """Processes each finished candle and executes trading logic."""
         # Skip unfinished candles

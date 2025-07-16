@@ -101,11 +101,10 @@ class open_drive_strategy(Strategy):
 
         # Start position protection using ATR for stops
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(2 * self.atr_multiplier, UnitTypes.Absolute),  # 2 * ATR for stop loss
-            True
+            takeProfit=Unit(0),
+            stopLoss=Unit(2 * self.atr_multiplier, UnitTypes.Absolute),
+            isStopTrailing=True
         )
-
     def ProcessCandle(self, candle, sma_value, atr_value):
         """Process candle and execute trading logic."""
         # Skip if we don't have the previous close price yet

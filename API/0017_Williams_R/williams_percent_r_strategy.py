@@ -83,8 +83,10 @@ class williams_percent_r_strategy(Strategy):
         subscription.BindEx(williams_r, self.ProcessCandle).Start()
             
         # Enable position protection
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

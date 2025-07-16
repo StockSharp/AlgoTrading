@@ -83,8 +83,10 @@ class cci_breakout_strategy(Strategy):
         subscription.BindEx(cci, self.ProcessCandle).Start()
 
         # Enable stop loss protection
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

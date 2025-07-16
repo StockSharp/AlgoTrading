@@ -124,10 +124,9 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
 
         # Enable position protection with stop-loss
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.StopLoss, UnitTypes.Percent)
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, vwapValue):
         """Process each candle and VWAP value."""
         # Skip unfinished candles

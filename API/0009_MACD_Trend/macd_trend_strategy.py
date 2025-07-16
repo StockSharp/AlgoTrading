@@ -124,8 +124,10 @@ class macd_trend_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protection with stop loss
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, macd_value):
         """
         Processes each finished candle and executes MACD-based trading logic.

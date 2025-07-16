@@ -105,7 +105,6 @@ class obv_mean_reversion_strategy(Strategy):
             takeProfit=Unit(5, UnitTypes.Percent),
             stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessObv(self, candle, obv_value):
         if candle.State != CandleStates.Finished:
             return

@@ -148,8 +148,10 @@ class hull_ma_rsi_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protective orders
-        self.StartProtection(None, self.stop_loss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.stop_loss
+        )
     def ProcessCandle(self, candle, hma_value, rsi_value):
         """Process candle and apply trading rules."""
         if candle.State != CandleStates.Finished:

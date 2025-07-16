@@ -111,8 +111,10 @@ class rsi_hull_ma_strategy(Strategy):
         subscription.Bind(rsi, hull_ma, atr, self.ProcessIndicators).Start()
 
         # Enable ATR-based stop protection
-        self.StartProtection(None, Unit(self.AtrMultiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.AtrMultiplier, UnitTypes.Absolute)
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

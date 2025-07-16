@@ -90,10 +90,9 @@ class stochastic_overbought_oversold_strategy(Strategy):
 
         # Setup stop loss/take profit protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),  # Take profit
-            Unit(2, UnitTypes.Percent)   # Stop loss
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

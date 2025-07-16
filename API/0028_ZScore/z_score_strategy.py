@@ -135,8 +135,10 @@ class z_score_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Setup protection with stop-loss
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, ma_value, std_dev_value):
         """
         Process candle and calculate Z-Score

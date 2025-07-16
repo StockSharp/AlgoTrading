@@ -148,10 +148,9 @@ class stochastic_slope_mean_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit (use exit rule instead)
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

@@ -81,10 +81,9 @@ class monday_weakness_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ma_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

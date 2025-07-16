@@ -141,10 +141,9 @@ class bollinger_volume_strategy(Strategy):
 
         # Setup position protection with ATR-based stop loss
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossAtr, UnitTypes.Absolute)  # ATR-based stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossAtr, UnitTypes.Absolute)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

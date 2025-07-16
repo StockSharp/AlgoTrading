@@ -111,8 +111,10 @@ class dark_pool_prints_strategy(Strategy):
         subscription.BindEx(self._ma, self._volume_average, self._adx, self._atr, self.ProcessCandle).Start()
 
         # Enable stop-loss protection
-        self.StartProtection(Unit(0), Unit(self.AtrMultiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.AtrMultiplier, UnitTypes.Absolute)
+        )
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

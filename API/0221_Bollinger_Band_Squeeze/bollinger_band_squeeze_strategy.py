@@ -122,10 +122,9 @@ class bollinger_band_squeeze_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),  # No take profit
-            stopLoss=Unit(2, UnitTypes.Absolute)     # Stop loss at 2*ATR
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(2, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, bollingerValue, atrValue):
         if candle.State != CandleStates.Finished:
             return

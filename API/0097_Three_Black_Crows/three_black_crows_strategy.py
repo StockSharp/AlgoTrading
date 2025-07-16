@@ -99,8 +99,10 @@ class three_black_crows_strategy(Strategy):
         subscription.Bind(ma, self.ProcessCandle).Start()
 
         # Setup protection with stop loss
-        self.StartProtection(None, Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

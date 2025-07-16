@@ -140,8 +140,10 @@ class volume_slope_breakout_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Enable position protection
-        self.StartProtection(Unit(0), Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, volumeValue):
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

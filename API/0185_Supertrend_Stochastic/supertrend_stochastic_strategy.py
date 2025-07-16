@@ -152,10 +152,9 @@ class supertrend_stochastic_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         self.StartProtection(
-            Unit(),
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=Unit(),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, supertrend_value, stochastic_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -119,11 +119,10 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
 
         # Enable position protection with percentage stop-loss
         self.StartProtection(
-            Unit(0),  # we'll handle exits in the strategy logic
-            Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
             useMarketOrders=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

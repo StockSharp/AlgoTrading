@@ -121,11 +121,10 @@ class adaptive_ema_breakout_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(0),  # We'll handle exits in the strategy logic
-            Unit(0),  # We'll handle stops in the strategy logic
-            True       # Use market orders
+            takeProfit=Unit(0),
+            stopLoss=Unit(0),
+            isStopTrailing=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

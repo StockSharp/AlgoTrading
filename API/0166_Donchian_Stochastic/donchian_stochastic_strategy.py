@@ -117,8 +117,10 @@ class donchian_stochastic_strategy(Strategy):
         # Enable position protection
         take_profit = Unit(0, UnitTypes.Absolute)  # No take profit - we'll exit based on strategy rules
         stop_loss = Unit(self.StopLossPercent, UnitTypes.Percent)
-        self.StartProtection(take_profit, stop_loss)
-
+        self.StartProtection(
+            takeProfit=take_profit,
+            stopLoss=stop_loss
+        )
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(self._donchian, self._stochastic, self.ProcessCandle).Start()

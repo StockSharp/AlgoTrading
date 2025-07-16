@@ -128,10 +128,9 @@ class bollinger_kmeans_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, bollinger_value, rsi_value, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -122,10 +122,9 @@ class rsi_donchian_strategy(Strategy):
 
         # Enable position protection with stop-loss
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take-profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop-loss as percentage
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

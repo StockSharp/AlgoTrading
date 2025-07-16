@@ -153,11 +153,10 @@ class volatility_adjusted_momentum_strategy(Strategy):
 
         # Set up position protection
         self.StartProtection(
-            None,  # We'll handle exits via strategy logic
-            self.StopLoss,
-            True
+            takeProfit=None,
+            stopLoss=self.StopLoss,
+            isStopTrailing=True
         )
-
     def ProcessCandle(self, candle, momentum_value, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -134,7 +134,6 @@ class williams_percent_r_with_momentum_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def ProcessStrategy(self, candle, williamsRValue, momentumValue, momentumAvg):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

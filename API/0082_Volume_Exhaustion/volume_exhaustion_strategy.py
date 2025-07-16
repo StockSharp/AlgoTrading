@@ -131,11 +131,10 @@ class volume_exhaustion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent),  # Stop loss
-            True  # Use market orders
+            takeProfit=Unit(),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=True
         )
-
     def ProcessCandle(self, candle, maValue, atrValue, volumeAvgValue):
         """
         Process candle with indicator values.

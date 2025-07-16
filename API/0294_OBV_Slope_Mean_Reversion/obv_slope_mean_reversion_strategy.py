@@ -147,10 +147,9 @@ class obv_slope_mean_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(self.StopLossPercent, UnitTypes.Percent),
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         super(obv_slope_mean_reversion_strategy, self).OnStarted(time)
 
     def ProcessCandle(self, candle):

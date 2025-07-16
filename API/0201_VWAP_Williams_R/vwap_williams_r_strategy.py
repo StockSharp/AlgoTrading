@@ -82,8 +82,10 @@ class vwap_williams_r_strategy(Strategy):
         subscription.Bind(vwap, williams_r, self.ProcessCandle).Start()
 
         # Enable stop-loss protection
-        self.StartProtection(Unit(self.stop_loss_percent, UnitTypes.Percent), None)
-
+        self.StartProtection(
+            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            stopLoss=None
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

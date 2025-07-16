@@ -125,10 +125,9 @@ class rsi_slope_breakout_strategy(Strategy):
 
         # Set up position protection
         self.StartProtection(
-            takeProfit=None,  # We'll handle exits via strategy logic
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, rsi_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

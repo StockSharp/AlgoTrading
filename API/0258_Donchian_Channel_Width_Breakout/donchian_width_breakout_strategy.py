@@ -134,7 +134,6 @@ class donchian_width_breakout_strategy(Strategy):
             takeProfit=Unit(0, UnitTypes.Absolute),
             stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
-
         # Create chart area for visualization
         area = self.CreateChartArea()
         if area is not None:

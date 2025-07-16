@@ -169,9 +169,8 @@ class donchian_volatility_contraction_strategy(Strategy):
         # Setup position protection
         self.StartProtection(
             takeProfit=Unit(2, UnitTypes.Percent),
-            stopLoss=Unit(1, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def ProcessStrategy(self, candle, donchian_high, donchian_low, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

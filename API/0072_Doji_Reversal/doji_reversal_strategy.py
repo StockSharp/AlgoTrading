@@ -96,10 +96,9 @@ class doji_reversal_strategy(Strategy):
         
         # Start protection with dynamic stop-loss
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit, relying on exit signal
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle):
         """
         Process candle and execute trading logic

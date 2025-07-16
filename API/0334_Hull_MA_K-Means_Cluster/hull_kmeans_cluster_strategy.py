@@ -123,10 +123,9 @@ class hull_kmeans_cluster_strategy(Strategy):
 
         # Start position protection with ATR-based stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),  # No fixed take profit
-            stopLoss=Unit(2, UnitTypes.Absolute)  # 2 ATR stop-loss
+            takeProfit=Unit(0),
+            stopLoss=Unit(2, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, hull_value, rsi_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

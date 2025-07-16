@@ -128,10 +128,9 @@ class ema_slope_breakout_strategy(Strategy):
 
         # Set up position protection
         self.StartProtection(
-            None,  # takeProfit: null, we handle exits via strategy logic
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ema_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -125,8 +125,10 @@ class obv_slope_breakout_strategy(Strategy):
         subscription.Bind(self._obv, self.ProcessObv).Start()
 
         # Set up position protection
-        self.StartProtection(Unit(), Unit(self.StopLoss, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
+        )
         # Create chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
