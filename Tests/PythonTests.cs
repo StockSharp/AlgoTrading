@@ -10,7 +10,7 @@ using StockSharp.Algo.Compilation;
 [TestClass]
 public class PythonTests
 {
-	public static async Task RunStrategy(string filePath)
+	public static async Task RunStrategy(string filePath, Action<Strategy, Security> extra = null)
 	{
 		var strategyPath = Path.Combine("../../../../API/", filePath);
 
@@ -28,7 +28,7 @@ public class PythonTests
 
 		var strategy = code.ObjectType.CreateInstance<Strategy>();
 
-		await AsmInit.RunStrategy(strategy);
+		await AsmInit.RunStrategy(strategy, extra);
 	}
 
 	[TestMethod]
@@ -885,7 +885,11 @@ public class PythonTests
 
 	[TestMethod]
 	public Task DeltaNeutralArbitrageStrategy()
-		=> RunStrategy("0230_Delta_Neutral_Arbitrage/delta_neutral_arbitrage_strategy.py");
+		=> RunStrategy("0230_Delta_Neutral_Arbitrage/delta_neutral_arbitrage_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Asset2Security"].Value = sec;
+			stra.Parameters["Asset2Portfolio"].Value = stra.Portfolio;
+		});
 
 	[TestMethod]
 	public Task VolatilitySkewArbitrageStrategy()
@@ -1125,7 +1129,10 @@ public class PythonTests
 
 	[TestMethod]
 	public Task PairsTradingVolatilityFilterStrategy()
-		=> RunStrategy("0295_Pairs_Trading_Volatility_Filter/pairs_trading_volatility_filter_strategy.py");
+		=> RunStrategy("0295_Pairs_Trading_Volatility_Filter/pairs_trading_volatility_filter_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Security2"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task ZscoreVolumeFilterStrategy()

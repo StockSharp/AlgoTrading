@@ -5,12 +5,12 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates, Subscription
+from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.BusinessEntities import Security
+from StockSharp.BusinessEntities import Security, Subscription
 
 class pairs_trading_strategy(Strategy):
     """
@@ -44,7 +44,7 @@ class pairs_trading_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._second_security = self.Param("SecondSecurity", None) \
+        self._second_security = self.Param[Security]("SecondSecurity", None) \
             .SetDisplay("Second Security", "Second security in the pair", "General") \
             .SetRequired()
 

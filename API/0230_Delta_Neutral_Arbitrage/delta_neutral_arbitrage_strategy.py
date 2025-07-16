@@ -1,10 +1,12 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Sides
+from StockSharp.BusinessEntities import Security, Portfolio
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -20,11 +22,11 @@ class delta_neutral_arbitrage_strategy(Strategy):
         super(delta_neutral_arbitrage_strategy, self).__init__()
 
         # Secondary security for pair trading.
-        self._asset2_security = self.Param("Asset2Security") \
+        self._asset2_security = self.Param[Security]("Asset2Security") \
             .SetDisplay("Asset 2", "Secondary asset for arbitrage", "Securities")
 
         # Portfolio for trading second asset.
-        self._asset2_portfolio = self.Param("Asset2Portfolio") \
+        self._asset2_portfolio = self.Param[Portfolio]("Asset2Portfolio") \
             .SetDisplay("Portfolio 2", "Portfolio for trading Asset 2", "Portfolios")
 
         # Period for spread statistics calculation.
