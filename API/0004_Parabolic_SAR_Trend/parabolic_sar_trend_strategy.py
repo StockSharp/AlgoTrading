@@ -16,7 +16,6 @@ class parabolic_sar_trend_strategy(Strategy):
     Strategy based on Parabolic SAR indicator.
     It enters long position when price is above SAR and short position when price is below SAR.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

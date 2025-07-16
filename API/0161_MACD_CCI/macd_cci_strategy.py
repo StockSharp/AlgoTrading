@@ -21,7 +21,6 @@ class macd_cci_strategy(Strategy):
     Buy when MACD is above Signal line and CCI is below -100 (oversold).
     Sell when MACD is below Signal line and CCI is above 100 (overbought).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

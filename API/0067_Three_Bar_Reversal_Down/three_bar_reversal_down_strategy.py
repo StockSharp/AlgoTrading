@@ -27,7 +27,6 @@ class three_bar_reversal_down_strategy(Strategy):
     2. Second bar is bullish with a higher high than the first
     3. Third bar is bearish and closes below the low of the second bar
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(three_bar_reversal_down_strategy, self).__init__()

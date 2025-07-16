@@ -17,7 +17,6 @@ class keltner_width_breakout_strategy(Strategy):
     When Keltner Channel width increases significantly above its average,
     it enters position in the direction determined by price movement.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

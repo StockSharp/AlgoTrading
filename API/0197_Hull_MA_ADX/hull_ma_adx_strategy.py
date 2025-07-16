@@ -16,7 +16,6 @@ class hull_ma_adx_strategy(Strategy):
     Enters short when HMA decreases and ADX > 25 (strong trend).
     Exits when ADX < 20 (weakening trend).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

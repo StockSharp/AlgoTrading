@@ -17,7 +17,6 @@ class cci_hook_reversal_strategy(Strategy):
     Enters long when CCI forms an upward hook from oversold conditions.
     Enters short when CCI forms a downward hook from overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

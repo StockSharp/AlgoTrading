@@ -15,7 +15,6 @@ class donchian_volume_strategy(Strategy):
     and volume confirmation to filter signals.
     Enters positions when price breaks above/below Donchian Channel with increased volume.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

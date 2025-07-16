@@ -25,7 +25,6 @@ class choppiness_index_breakout_strategy(Strategy):
     Long entry: Choppiness Index falls below 38.2 and price is above MA
     Short entry: Choppiness Index falls below 38.2 and price is below MA
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(choppiness_index_breakout_strategy, self).__init__()

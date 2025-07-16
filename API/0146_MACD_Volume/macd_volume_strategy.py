@@ -14,7 +14,6 @@ class macd_volume_strategy(Strategy):
     Strategy combining MACD (Moving Average Convergence Divergence) with volume confirmation.
     Enters positions when MACD line crosses the Signal line and confirms with increased volume.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

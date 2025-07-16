@@ -24,7 +24,6 @@ class keltner_channel_reversal_strategy(Strategy):
     The strategy enters long when price is below lower Keltner Channel and a bullish candle appears,
     enters short when price is above upper Keltner Channel and a bearish candle appears.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(keltner_channel_reversal_strategy, self).__init__()

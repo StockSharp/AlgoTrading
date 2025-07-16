@@ -19,7 +19,6 @@ class macd_volume_cluster_strategy(Strategy):
     MACD with Volume Cluster strategy.
     Enters positions when MACD signal coincides with abnormal volume spike.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

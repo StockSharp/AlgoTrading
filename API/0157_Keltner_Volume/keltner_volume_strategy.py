@@ -20,7 +20,6 @@ class keltner_volume_strategy(Strategy):
     Buy when price breaks above upper Keltner Channel with above average volume.
     Sell when price breaks below lower Keltner Channel with above average volume.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(keltner_volume_strategy, self).__init__()

@@ -14,7 +14,6 @@ class pre_holiday_strength_strategy(Strategy):
     Implementation of Pre-Holiday Strength trading strategy.
     The strategy enters long position before a holiday and exits after the holiday.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

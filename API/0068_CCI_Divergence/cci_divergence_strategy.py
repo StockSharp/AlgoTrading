@@ -22,7 +22,6 @@ class cci_divergence_strategy(Strategy):
     CCI Divergence strategy that looks for divergences between price and CCI
     as potential reversal signals.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(cci_divergence_strategy, self).__init__()

@@ -15,7 +15,6 @@ class three_white_soldiers_strategy(Strategy):
     This strategy looks for three consecutive bullish candles with
     closing prices higher than previous candle, indicating a strong uptrend.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

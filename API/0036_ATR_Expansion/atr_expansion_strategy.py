@@ -17,7 +17,6 @@ class atr_expansion_strategy(Strategy):
     It enters positions when ATR is increasing (volatility expansion) and price is above/below MA,
     and exits when volatility starts to contract (ATR decreasing).
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

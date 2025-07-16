@@ -17,7 +17,6 @@ class vwap_adx_strategy(Strategy):
     Enters short when price is below VWAP and ADX > 25.
     Exits when ADX < 20.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

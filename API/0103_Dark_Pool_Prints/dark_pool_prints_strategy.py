@@ -15,7 +15,6 @@ class dark_pool_prints_strategy(Strategy):
     """
     Strategy that detects unusually high volume (dark pool prints) and enters positions based on that.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

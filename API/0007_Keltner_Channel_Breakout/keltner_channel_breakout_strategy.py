@@ -17,7 +17,6 @@ class keltner_channel_breakout_strategy(Strategy):
     It enters long position when price breaks through the upper band 
     and short position when price breaks through the lower band.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

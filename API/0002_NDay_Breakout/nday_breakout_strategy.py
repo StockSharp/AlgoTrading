@@ -18,7 +18,6 @@ class nday_breakout_strategy(Strategy):
     Enters short when price breaks below the N-day low.
     Exits when price crosses the moving average.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

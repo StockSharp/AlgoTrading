@@ -15,7 +15,6 @@ class first_day_of_month_strategy(Strategy):
     Implementation of First Day of Month trading strategy.
     The strategy enters long position on the 1st day of the month and exits on the 5th day.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

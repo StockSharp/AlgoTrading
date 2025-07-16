@@ -17,7 +17,6 @@ class macd_trend_strategy(Strategy):
     It enters long position when MACD crosses above signal line 
     and short position when MACD crosses below signal line.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

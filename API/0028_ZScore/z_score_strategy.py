@@ -16,7 +16,6 @@ class z_score_strategy(Strategy):
     Strategy based on Z-Score indicator for mean reversion trading.
     Z-Score measures the distance from the price to its moving average in standard deviations.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -14,7 +14,6 @@ class volatility_adjusted_mean_reversion_strategy(Strategy):
     Volatility Adjusted Mean Reversion strategy.
     Uses ATR and Standard Deviation to create adaptive entry thresholds.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

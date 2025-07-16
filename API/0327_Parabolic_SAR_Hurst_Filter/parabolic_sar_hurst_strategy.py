@@ -16,7 +16,6 @@ class parabolic_sar_hurst_strategy(Strategy):
     Parabolic SAR with Hurst Filter Strategy.
     Enters a position when price crosses SAR and Hurst exponent indicates a persistent trend.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

@@ -23,7 +23,6 @@ class pivot_point_reversal_strategy(Strategy):
     The strategy calculates daily pivot points and their support/resistance levels,
     and enters positions when price bounces off these levels with confirmation.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(pivot_point_reversal_strategy, self).__init__()

@@ -22,7 +22,6 @@ class outside_bar_reversal_strategy(Strategy):
     The strategy looks for outside bar patterns (a bar with higher high and lower low than the previous bar)
     and takes positions based on the direction (bullish or bearish) of the outside bar.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(outside_bar_reversal_strategy, self).__init__()

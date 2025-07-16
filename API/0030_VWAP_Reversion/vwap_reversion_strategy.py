@@ -17,7 +17,6 @@ class vwap_reversion_strategy(Strategy):
     It opens positions when price deviates by a specified percentage from VWAP
     and exits when price returns to VWAP.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

@@ -22,7 +22,6 @@ class macd_divergence_strategy(Strategy):
     MACD Divergence strategy that looks for divergences between price and MACD
     as potential reversal signals.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(macd_divergence_strategy, self).__init__()

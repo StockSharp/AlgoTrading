@@ -14,7 +14,6 @@ class volume_mean_reversion_strategy(Strategy):
     Volume Mean Reversion strategy.
     This strategy enters positions when trading volume is significantly below or above its average value.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

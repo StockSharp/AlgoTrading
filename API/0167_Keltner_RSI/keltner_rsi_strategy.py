@@ -17,7 +17,6 @@ class keltner_rsi_strategy(Strategy):
     Looks for mean reversion opportunities when price touches channel boundaries
     and RSI confirms oversold/overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

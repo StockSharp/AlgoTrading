@@ -19,7 +19,6 @@ class ma_crossover_strategy(Strategy):
     Enters short when fast MA crosses below slow MA.
     Implements stop-loss as a percentage of entry price.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

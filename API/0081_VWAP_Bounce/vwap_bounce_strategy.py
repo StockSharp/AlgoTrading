@@ -22,7 +22,6 @@ class vwap_bounce_strategy(Strategy):
     Enters long when price is below VWAP and a bullish candle forms.
     Enters short when price is above VWAP and a bearish candle forms.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(vwap_bounce_strategy, self).__init__()

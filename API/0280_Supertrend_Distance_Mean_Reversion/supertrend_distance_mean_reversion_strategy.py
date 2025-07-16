@@ -15,7 +15,6 @@ class supertrend_distance_mean_reversion_strategy(Strategy):
     """Supertrend Distance Mean Reversion Strategy.
     This strategy trades based on the mean reversion of the distance between price and Supertrend indicator.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

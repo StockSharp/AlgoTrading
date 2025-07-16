@@ -25,7 +25,6 @@ class vwma_strategy(Strategy):
     Short entry: Price crosses below VWMA
     Exit: Price crosses back through VWMA
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(vwma_strategy, self).__init__()

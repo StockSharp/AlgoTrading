@@ -16,7 +16,6 @@ class macd_williams_r_strategy(Strategy):
     Enters long when MACD > Signal and Williams %R is oversold (< -80)
     Enters short when MACD < Signal and Williams %R is overbought (> -20)
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

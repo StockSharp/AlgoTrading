@@ -14,7 +14,6 @@ class turnaround_tuesday_strategy(Strategy):
     Implementation of Turnaround Tuesday trading strategy.
     The strategy enters long position on Tuesday after a price decline on Monday.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

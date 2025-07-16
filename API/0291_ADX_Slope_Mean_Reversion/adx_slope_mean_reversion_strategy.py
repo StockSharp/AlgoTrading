@@ -14,7 +14,6 @@ class adx_slope_mean_reversion_strategy(Strategy):
     ADX Slope Mean Reversion Strategy.
     This strategy trades based on ADX slope reversions to the mean.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

@@ -18,7 +18,6 @@ class autocorrelation_reversion_strategy(Strategy):
     Buys when autocorrelation is negative and price is below average.
     Sells when autocorrelation is negative and price is above average.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

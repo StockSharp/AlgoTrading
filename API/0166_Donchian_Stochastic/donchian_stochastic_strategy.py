@@ -19,7 +19,6 @@ class donchian_stochastic_strategy(Strategy):
     Donchian Channel + Stochastic strategy.
     Strategy enters the market when the price breaks out of Donchian Channel with Stochastic confirming oversold/overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

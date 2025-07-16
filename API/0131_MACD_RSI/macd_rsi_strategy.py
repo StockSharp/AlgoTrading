@@ -16,7 +16,6 @@ class macd_rsi_strategy(Strategy):
     Strategy that combines MACD and RSI indicators to identify potential trading opportunities.
     It looks for trend direction with MACD and enters on extreme RSI values in the trend direction.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

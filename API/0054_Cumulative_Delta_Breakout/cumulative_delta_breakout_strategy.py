@@ -26,7 +26,6 @@ class cumulative_delta_breakout_strategy(Strategy):
     Short entry: Cumulative Delta breaks below its N-period lowest
     Exit: Cumulative Delta changes sign (crosses zero)
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(cumulative_delta_breakout_strategy, self).__init__()

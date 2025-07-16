@@ -16,7 +16,6 @@ class rsi_williams_r_strategy(Strategy):
     Buy when RSI is below 30 and Williams %R is below -80 (double oversold condition).
     Sell when RSI is above 70 and Williams %R is above -20 (double overbought condition).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

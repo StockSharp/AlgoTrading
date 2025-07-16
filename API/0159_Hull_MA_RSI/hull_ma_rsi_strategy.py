@@ -20,7 +20,6 @@ class hull_ma_rsi_strategy(Strategy):
     Buy when HMA is rising and RSI is below 30 (oversold).
     Sell when HMA is falling and RSI is above 70 (overbought).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

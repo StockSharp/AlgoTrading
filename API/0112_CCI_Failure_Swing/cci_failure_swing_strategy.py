@@ -14,7 +14,6 @@ class cci_failure_swing_strategy(Strategy):
     Strategy that trades based on CCI (Commodity Channel Index) Failure Swing pattern.
     A failure swing occurs when CCI reverses direction without crossing through centerline.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

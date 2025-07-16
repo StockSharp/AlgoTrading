@@ -21,7 +21,6 @@ class morning_star_strategy(Strategy):
     Morning Star candle pattern strategy.
     The strategy looks for a Morning Star pattern - first bearish candle, second small candle (doji), third bullish candle that closes above the midpoint of the first.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(morning_star_strategy, self).__init__()

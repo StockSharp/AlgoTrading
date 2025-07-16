@@ -16,7 +16,6 @@ class adx_slope_breakout_strategy(Strategy):
     """
     ADX Slope Breakout Strategy
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

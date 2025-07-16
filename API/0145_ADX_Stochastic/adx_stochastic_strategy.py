@@ -16,7 +16,6 @@ class adx_stochastic_strategy(Strategy):
     Strategy that combines ADX (Average Directional Index) for trend strength
     and Stochastic Oscillator for entry timing with oversold/overbought conditions.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

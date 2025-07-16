@@ -14,7 +14,6 @@ class hull_ma_volume_strategy(Strategy):
     Strategy that uses Hull Moving Average for trend direction
     and volume confirmation for trade entries.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

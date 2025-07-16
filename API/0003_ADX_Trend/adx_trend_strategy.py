@@ -17,7 +17,6 @@ class adx_trend_strategy(Strategy):
     It enters long position when ADX > 25 and price > MA, 
     and short position when ADX > 25 and price < MA.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

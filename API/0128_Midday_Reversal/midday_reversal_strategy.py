@@ -13,7 +13,6 @@ class midday_reversal_strategy(Strategy):
     Implementation of Midday Reversal trading strategy.
     The strategy trades on price reversals that occur around noon (12:00).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

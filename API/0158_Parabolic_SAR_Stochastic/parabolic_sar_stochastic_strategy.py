@@ -19,7 +19,6 @@ class parabolic_sar_stochastic_strategy(Strategy):
     Buy when price is above SAR and Stochastic %K is below 20 (oversold).
     Sell when price is below SAR and Stochastic %K is above 80 (overbought).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(parabolic_sar_stochastic_strategy, self).__init__()

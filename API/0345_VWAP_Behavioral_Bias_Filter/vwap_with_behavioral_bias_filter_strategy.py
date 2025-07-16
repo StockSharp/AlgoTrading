@@ -23,7 +23,6 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
     Long: Price > VWAP
     Short: Price < VWAP
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

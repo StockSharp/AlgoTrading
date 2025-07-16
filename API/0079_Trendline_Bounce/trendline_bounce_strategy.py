@@ -26,7 +26,6 @@ class trendline_bounce_strategy(Strategy):
     The strategy automatically identifies trendlines by connecting highs or lows
     and enters positions when price bounces off a trendline with confirmation.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(trendline_bounce_strategy, self).__init__()

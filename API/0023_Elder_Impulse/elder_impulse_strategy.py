@@ -18,7 +18,6 @@ class elder_impulse_strategy(Strategy):
     Green bar: EMA rising and MACD histogram positive
     Red bar: EMA falling and MACD histogram negative
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

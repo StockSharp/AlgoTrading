@@ -22,7 +22,6 @@ class williams_percent_r_divergence_strategy(Strategy):
     Williams %R Divergence strategy.
     The strategy looks for divergences between price and Williams %R indicator to identify potential reversal points.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(williams_percent_r_divergence_strategy, self).__init__()

@@ -23,7 +23,6 @@ class double_top_strategy(Strategy):
     Double Top reversal strategy: looks for two similar tops with confirmation.
     This pattern often indicates a trend reversal from bullish to bearish.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(double_top_strategy, self).__init__()

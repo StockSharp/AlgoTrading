@@ -17,7 +17,6 @@ class williams_percent_r_strategy(Strategy):
     It uses Williams %R overbought/oversold levels to generate trading signals.
     Williams %R values are negative, typically from 0 to -100.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

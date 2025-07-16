@@ -17,7 +17,6 @@ class stochastic_rsi_cross_strategy(Strategy):
     It trades the crossover of %K and %D lines in overbought/oversold zones.
     Note: This uses regular Stochastic as StockSharp doesn't have built-in Stochastic RSI.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

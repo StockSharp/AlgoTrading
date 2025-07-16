@@ -15,7 +15,6 @@ class rsi_supertrend_strategy(Strategy):
     Enters long when RSI is oversold (< 30) and price is above Supertrend
     Enters short when RSI is overbought (> 70) and price is below Supertrend
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

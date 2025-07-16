@@ -16,7 +16,6 @@ class rsi_failure_swing_strategy(Strategy):
     Strategy that trades based on RSI Failure Swing pattern.
     A failure swing occurs when RSI reverses direction without crossing through centerline.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(rsi_failure_swing_strategy, self).__init__()

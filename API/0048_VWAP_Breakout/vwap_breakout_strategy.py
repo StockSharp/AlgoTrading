@@ -25,7 +25,6 @@ class vwap_breakout_strategy(Strategy):
     Short entry: Price breaks below VWAP
     Exit when price crosses back through VWAP
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(vwap_breakout_strategy, self).__init__()

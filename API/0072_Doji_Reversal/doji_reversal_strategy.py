@@ -21,7 +21,6 @@ class doji_reversal_strategy(Strategy):
     Doji Reversal strategy.
     The strategy looks for doji candlestick patterns after a trend and takes a reversal position.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(doji_reversal_strategy, self).__init__()

@@ -16,7 +16,6 @@ class macd_histogram_reversal_strategy(Strategy):
     Enters long when MACD histogram crosses above zero.
     Enters short when MACD histogram crosses below zero.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

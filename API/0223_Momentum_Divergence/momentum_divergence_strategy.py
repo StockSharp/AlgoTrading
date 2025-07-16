@@ -19,7 +19,6 @@ class momentum_divergence_strategy(Strategy):
     Momentum Divergence strategy.
     Trades based on divergence between price and momentum.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

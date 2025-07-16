@@ -21,7 +21,6 @@ class rsi_overbought_oversold_strategy(Strategy):
     """
     RSI Overbought/Oversold strategy that buys when RSI is oversold and sells when RSI is overbought.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(rsi_overbought_oversold_strategy, self).__init__()

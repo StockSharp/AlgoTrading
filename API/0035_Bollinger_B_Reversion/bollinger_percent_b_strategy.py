@@ -17,7 +17,6 @@ class bollinger_percent_b_strategy(Strategy):
     Bollinger %B shows where price is relative to the Bollinger Bands.
     Values below 0 or above 1 indicate price outside the bands.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     
     def __init__(self):

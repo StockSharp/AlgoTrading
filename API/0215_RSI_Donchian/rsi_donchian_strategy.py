@@ -17,7 +17,6 @@ class rsi_donchian_strategy(Strategy):
     Enters short when RSI is above 70 (overbought) and price breaks below Donchian low.
     Uses middle line of Donchian Channel for exit signals.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

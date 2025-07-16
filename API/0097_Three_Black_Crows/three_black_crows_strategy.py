@@ -24,7 +24,6 @@ class three_black_crows_strategy(Strategy):
     It can also be used to exit longs that were opened by other systems if the pattern forms at resistance.
     Risk is managed with a tight percent stop above the pattern high, and trades exit if price closes back above that level.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

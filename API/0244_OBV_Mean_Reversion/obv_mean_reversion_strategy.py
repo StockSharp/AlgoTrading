@@ -15,7 +15,6 @@ class obv_mean_reversion_strategy(Strategy):
     Enter when OBV deviates from its average by a certain multiple of standard deviation.
     Exit when OBV returns to its average.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

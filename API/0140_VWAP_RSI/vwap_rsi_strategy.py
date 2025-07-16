@@ -17,7 +17,6 @@ class vwap_rsi_strategy(Strategy):
     Enters positions when price is below VWAP and RSI is oversold (for longs)
     or when price is above VWAP and RSI is overbought (for shorts).
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

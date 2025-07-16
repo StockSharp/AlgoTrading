@@ -14,7 +14,6 @@ class quarterly_expiry_strategy(Strategy):
     Implementation of Quarterly Expiry trading strategy.
     The strategy trades on quarterly expiration days based on price relative to MA.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

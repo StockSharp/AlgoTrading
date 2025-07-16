@@ -25,7 +25,6 @@ class volume_divergence_strategy(Strategy):
     Short entry: Price rises but volume increases (possible distribution)
     Exit: Price crosses MA
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(volume_divergence_strategy, self).__init__()

@@ -23,7 +23,6 @@ class adx_macd_strategy(Strategy):
     Strategy that combines ADX and MACD indicators to identify strong trends
     and potential entry points.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

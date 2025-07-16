@@ -15,7 +15,6 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
     """
     Strategy based on Stochastic Oscillator with Dynamic Overbought/Oversold Zones.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

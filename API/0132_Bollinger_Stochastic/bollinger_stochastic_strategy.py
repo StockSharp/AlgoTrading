@@ -16,7 +16,6 @@ class bollinger_stochastic_strategy(Strategy):
     Strategy that combines Bollinger Bands and Stochastic oscillator to identify
     potential mean-reversion trading opportunities when price is at extremes.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

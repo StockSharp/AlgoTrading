@@ -15,7 +15,6 @@ class adx_bollinger_strategy(Strategy):
     Enters long when ADX > 25 and price breaks above upper Bollinger band
     Enters short when ADX > 25 and price breaks below lower Bollinger band
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

@@ -18,7 +18,6 @@ class rsi_slope_mean_reversion_strategy(Strategy):
 
     Suited for swing traders expecting oscillations, the strategy closes out once the RSI returns toward balance. Starting parameter `RsiPeriod` = 14.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

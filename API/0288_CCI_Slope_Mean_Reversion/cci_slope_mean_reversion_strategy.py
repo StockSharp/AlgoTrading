@@ -13,7 +13,6 @@ from datatype_extensions import *
 class cci_slope_mean_reversion_strategy(Strategy):
     """CCI Slope Mean Reversion Strategy - strategy based on mean reversion of CCI slope.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

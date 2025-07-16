@@ -23,7 +23,6 @@ class obv_divergence_strategy(Strategy):
     OBV (On-Balance Volume) Divergence strategy.
     The strategy uses divergence between price and OBV indicator to identify potential reversal points.
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(obv_divergence_strategy, self).__init__()

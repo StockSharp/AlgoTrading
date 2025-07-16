@@ -15,7 +15,6 @@ class adx_breakout_strategy(Strategy):
     Strategy that trades on ADX breakouts.
     When ADX breaks out above its average, it enters position in the direction determined by price.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

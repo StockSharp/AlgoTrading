@@ -16,7 +16,6 @@ class january_effect_strategy(Strategy):
     Implementation of January Effect trading strategy.
     The strategy enters long position in January and exits in February.
 
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
 
     def __init__(self):

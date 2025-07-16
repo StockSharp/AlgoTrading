@@ -28,7 +28,6 @@ class obv_breakout_strategy(Strategy):
     Short entry: OBV breaks below its lowest level over N periods
     Exit when OBV crosses below/above its moving average
     
-    See more examples: https://github.com/StockSharp/AlgoTrading
     """
     def __init__(self):
         super(obv_breakout_strategy, self).__init__()
