@@ -3,8 +3,10 @@ namespace StockSharp.Tests;
 using System.Collections;
 using System.Reflection;
 
+using Ecng.Configuration;
 using Ecng.Logging;
 
+using StockSharp.Algo;
 using StockSharp.Algo.Compilation;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Storages;
@@ -52,8 +54,14 @@ public static class AsmInit
 		var secId1 = Paths.HistoryDefaultSecurity;
 		Security1 = new Security { Id = secId1 };
 
-		var secId2 = Paths.HistoryDefaultSecurity;
+		var secId2 = Paths.HistoryDefaultSecurity2;
 		Security2 = new Security { Id = secId2 };
+
+		var pf = Portfolio.CreateSimulator();
+		pf.CurrentValue = 1000000m;
+
+		ConfigManager.RegisterService<ISecurityProvider>(new CollectionSecurityProvider([Security1, Security2]));
+		ConfigManager.RegisterService<IPortfolioProvider>(new CollectionPortfolioProvider([pf]));
 	}
 
 	public static async Task RunStrategy(Strategy strategy)
@@ -65,10 +73,7 @@ public static class AsmInit
 		var startTime = Paths.HistoryBeginDate;
 		var stopTime = Paths.HistoryEndDate;
 
-		var pf = Portfolio.CreateSimulator();
-		pf.CurrentValue = 1000000m;
-
-		var connector = new HistoryEmulationConnector([Security1, Security2], [pf], storageRegistry)
+		var connector = new HistoryEmulationConnector(ServicesRegistry.SecurityProvider, ServicesRegistry.PortfolioProvider, storageRegistry)
 		{
 			HistoryMessageAdapter =
 			{
@@ -78,7 +83,7 @@ public static class AsmInit
 			}
 		};
 
-		strategy.Portfolio = pf;
+		strategy.Portfolio = ServicesRegistry.PortfolioProvider.Portfolios.First();
 		strategy.Security = Security1;
 		strategy.Connector = connector;
 		strategy.Volume = 1;
