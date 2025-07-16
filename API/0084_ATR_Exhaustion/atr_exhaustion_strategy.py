@@ -152,7 +152,7 @@ class atr_exhaustion_strategy(Strategy):
             return
 
         # Update ATR average
-        atr_avg_value = to_float(self._atr_avg.Process(atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        atr_avg_value = to_float(process_float(self._atr_avg, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Determine candle direction
         is_bullish_candle = candle.ClosePrice > candle.OpenPrice

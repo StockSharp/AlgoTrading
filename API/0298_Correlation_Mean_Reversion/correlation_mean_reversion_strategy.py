@@ -235,8 +235,8 @@ class correlation_mean_reversion_strategy(Strategy):
         self._current_correlation = self.CalculateCorrelationCoefficient(series1, series2)
 
         # Process indicators
-        self._average_correlation = to_float(self._correlation_sma.Process(self._current_correlation, time, is_final))
-        self._correlation_std_deviation = to_float(self._correlation_std_dev.Process(self._current_correlation, time, is_final))
+        self._average_correlation = to_float(process_float(self._correlation_sma, self._current_correlation, time, is_final))
+        self._correlation_std_deviation = to_float(process_float(self._correlation_std_dev, self._current_correlation, time, is_final))
 
         if self._correlation_std_deviation == 0:
             return

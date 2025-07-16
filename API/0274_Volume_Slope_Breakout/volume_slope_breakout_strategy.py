@@ -148,7 +148,7 @@ class volume_slope_breakout_strategy(Strategy):
             return
 
         # Process volume SMA
-        volumeSma = to_float(self._volumeSma.Process(volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
+        volumeSma = to_float(process_float(self._volumeSma, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Process price EMA for trend direction
         priceEma = to_float(self._priceEma.Process(candle))
@@ -158,7 +158,7 @@ class volume_slope_breakout_strategy(Strategy):
         volumeRatio = volumeValue / volumeSma
 
         # We use LinearRegression to calculate slope of this ratio
-        currentSlopeTyped = self._volumeSlope.Process(volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished)
+        currentSlopeTyped = process_float(self._volumeSlope, volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished)
 
         if not isinstance(currentSlopeTyped, LinearRegressionValue) or currentSlopeTyped.LinearReg is None:
             return  # Skip if slope is not available

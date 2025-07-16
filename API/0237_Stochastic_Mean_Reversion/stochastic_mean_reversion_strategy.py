@@ -151,8 +151,8 @@ class stochastic_mean_reversion_strategy(Strategy):
             return
 
         # Process Stochastic %K through average and standard deviation indicators
-        stoch_avg_value = to_float(self._stoch_average.Process(k_value, candle.ServerTime, candle.State == CandleStates.Finished))
-        stoch_stddev_value = to_float(self._stoch_stddev.Process(k_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        stoch_avg_value = to_float(process_float(self._stoch_average, k_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        stoch_stddev_value = to_float(process_float(self._stoch_stddev, k_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Store previous Stochastic %K value for changes detection
         current_stoch_k_value = k_value

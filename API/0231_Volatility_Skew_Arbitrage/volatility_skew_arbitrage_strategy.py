@@ -137,7 +137,7 @@ class volatility_skew_arbitrage_strategy(Strategy):
             return
 
         # Process volatility skew through the indicator
-        std_dev_value = self._vol_skew_std_dev.Process(vol_skew, time, is_final)
+        std_dev_value = process_float(self._vol_skew_std_dev, vol_skew, time, is_final)
 
         # Update running average for the first LookbackPeriod bars
         if self._bar_count < self.lookback_period:

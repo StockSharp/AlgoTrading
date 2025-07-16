@@ -97,7 +97,7 @@ class volume_supertrend_strategy(Strategy):
         # Bind indicators to handle each candle
         def handle_candle(candle, atr_value):
             # Calculate volume average
-            volume_value = to_float(volume_ma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+            volume_value = to_float(process_float(volume_ma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Calculate Supertrend
             if not atr.IsFormed:

@@ -144,7 +144,7 @@ class williams_r_breakout_strategy(Strategy):
         currentWilliamsR = to_float(williamsRValue)
 
         # Process Williams %R through average indicator
-        williamsRAvgValue = self._williamsRAverage.Process(currentWilliamsR, candle.ServerTime, candle.State == CandleStates.Finished)
+        williamsRAvgValue = process_float(self._williamsRAverage, currentWilliamsR, candle.ServerTime, candle.State == CandleStates.Finished)
         currentWilliamsRAvg = to_float(williamsRAvgValue)
 
         # For first values, just save and skip

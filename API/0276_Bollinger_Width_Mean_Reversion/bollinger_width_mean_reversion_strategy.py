@@ -179,8 +179,8 @@ class bollinger_width_mean_reversion_strategy(Strategy):
         lastWidth = float(bollingerTyped.UpBand) - float(bollingerTyped.LowBand)
 
         # Calculate width's average and standard deviation
-        widthAvg = self._widthAvg.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished)
-        widthStdDev = self._widthStdDev.Process(lastWidth, candle.ServerTime, candle.State == CandleStates.Finished)
+        widthAvg = process_float(self._widthAvg, lastWidth, candle.ServerTime, candle.State == CandleStates.Finished)
+        widthStdDev = process_float(self._widthStdDev, lastWidth, candle.ServerTime, candle.State == CandleStates.Finished)
 
         if widthAvg.IsFinal and widthStdDev.IsFinal:
             self._lastWidthAvg = float(widthAvg)

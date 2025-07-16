@@ -148,8 +148,8 @@ class rsi_breakout_strategy(Strategy):
         self._currentRsiValue = rsi_value
 
         # Process RSI through average and standard deviation indicators
-        avg_value = self._rsiAverage.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
-        std_dev_value = self._rsiStdDev.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
+        avg_value = process_float(self._rsiAverage, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
+        std_dev_value = process_float(self._rsiStdDev, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
 
         self._currentRsiAvg = to_float(avg_value)
         self._currentRsiStdDev = to_float(std_dev_value)

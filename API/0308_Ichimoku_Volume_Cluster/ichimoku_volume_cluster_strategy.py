@@ -160,8 +160,8 @@ class ichimoku_volume_cluster_strategy(Strategy):
 
         volume = candle.TotalVolume
 
-        volume_avg_value = to_float(self._volume_avg.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished))
-        volume_std_dev_value = to_float(self._volume_std_dev.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished))
+        volume_avg_value = to_float(process_float(self._volume_avg, volume, candle.ServerTime, candle.State == CandleStates.Finished))
+        volume_std_dev_value = to_float(process_float(self._volume_std_dev, volume, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():
