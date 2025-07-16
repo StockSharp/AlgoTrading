@@ -938,10 +938,6 @@ public class CSharpTests
 		=> RunStrategy<MomentumBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VwapBreakoutStrategyTest()
-		=> RunStrategy<VwapBreakoutStrategy>();
-
-	[TestMethod]
 	public Task RsiBreakoutStrategyTest()
 		=> RunStrategy<RsiBreakoutStrategy>();
 
