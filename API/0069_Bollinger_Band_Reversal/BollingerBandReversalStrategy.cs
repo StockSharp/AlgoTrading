@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #69: Bollinger Band Reversal strategy.
+	/// Bollinger Band Reversal strategy.
 	/// The strategy enters long position when price is below the lower Bollinger Band and the candle is bullish,
 	/// enters short position when price is above the upper Bollinger Band and the candle is bearish.
 	/// </summary>

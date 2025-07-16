@@ -18,7 +18,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class williams_percent_r_divergence_strategy(Strategy):
     """
-    Strategy #74: Williams %R Divergence strategy.
+    Williams %R Divergence strategy.
     The strategy looks for divergences between price and Williams %R indicator to identify potential reversal points.
     
     See more examples: https://github.com/StockSharp/AlgoTrading

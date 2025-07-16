@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// MACD Slope Breakout Strategy (Strategy #271)
+	/// MACD Slope Breakout Strategy
 	/// </summary>
 	public class MacdSlopeBreakoutStrategy : Strategy
 	{

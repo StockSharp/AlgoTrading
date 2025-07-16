@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class adx_slope_breakout_strategy(Strategy):
     """
-    ADX Slope Breakout Strategy (Strategy #272)
+    ADX Slope Breakout Strategy
 
     See more examples: https://github.com/StockSharp/AlgoTrading
     """

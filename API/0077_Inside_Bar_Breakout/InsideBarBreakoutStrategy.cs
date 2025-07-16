@@ -8,7 +8,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #77: Inside Bar Breakout strategy.
+	/// Inside Bar Breakout strategy.
 	/// The strategy looks for inside bar patterns (a bar with high lower than the previous bar's high and low higher than the previous bar's low)
 	/// and enters positions on breakouts of the inside bar's high or low.
 	/// </summary>

@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #76: Fibonacci Retracement Reversal strategy.
+	/// Fibonacci Retracement Reversal strategy.
 	/// The strategy identifies significant swings in price and looks for reversals at key Fibonacci retracement levels.
 	/// </summary>
 	public class FibonacciRetracementReversalStrategy : Strategy

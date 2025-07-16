@@ -21,7 +21,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class trendline_bounce_strategy(Strategy):
     """
-    Strategy #79: Trendline Bounce strategy.
+    Trendline Bounce strategy.
     The strategy automatically identifies trendlines by connecting highs or lows
     and enters positions when price bounces off a trendline with confirmation.
     

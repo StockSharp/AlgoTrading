@@ -10,7 +10,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #79: Trendline Bounce strategy.
+	/// Trendline Bounce strategy.
 	/// The strategy automatically identifies trendlines by connecting highs or lows
 	/// and enters positions when price bounces off a trendline with confirmation.
 	/// </summary>

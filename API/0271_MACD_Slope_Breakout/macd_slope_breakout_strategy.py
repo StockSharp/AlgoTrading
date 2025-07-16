@@ -12,7 +12,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class macd_slope_breakout_strategy(Strategy):
     """
-    MACD Slope Breakout Strategy (Strategy #271)
+    MACD Slope Breakout Strategy
     """
 
     def __init__(self):

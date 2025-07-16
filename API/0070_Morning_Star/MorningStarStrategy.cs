@@ -8,7 +8,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #70: Morning Star candle pattern strategy.
+	/// Morning Star candle pattern strategy.
 	/// The strategy looks for a Morning Star pattern - first bearish candle, second small candle (doji), third bullish candle that closes above the midpoint of the first.
 	/// </summary>
 	public class MorningStarStrategy : Strategy

@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Volume Slope Breakout Strategy (Strategy #274)
+	/// Volume Slope Breakout Strategy
 	/// </summary>
 	public class VolumeSlopeBreakoutStrategy : Strategy
 	{

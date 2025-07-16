@@ -19,7 +19,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class keltner_channel_reversal_strategy(Strategy):
     """
-    Strategy #73: Keltner Channel Reversal strategy.
+    Keltner Channel Reversal strategy.
     The strategy enters long when price is below lower Keltner Channel and a bullish candle appears,
     enters short when price is above upper Keltner Channel and a bearish candle appears.
     
