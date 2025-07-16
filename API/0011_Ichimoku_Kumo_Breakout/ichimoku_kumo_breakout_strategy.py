@@ -110,7 +110,7 @@ class ichimoku_kumo_breakout_strategy(Strategy):
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(ichimoku, self.ProcessCandle).Start()
+        subscription.BindEx(ichimoku, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

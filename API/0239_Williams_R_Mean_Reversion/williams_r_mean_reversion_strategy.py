@@ -119,7 +119,7 @@ class williams_r_mean_reversion_strategy(Strategy):
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(williams_r, self.ProcessCandle).Start()
+        subscription.BindEx(williams_r, self.ProcessCandle).Start()
 
         # Setup chart visualization
         area = self.CreateChartArea()

@@ -125,7 +125,7 @@ class ichimoku_volume_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
 
         # Bind Ichimoku indicator to candles
-        subscription.Bind(ichimoku, self.ProcessCandle).Start()
+        subscription.BindEx(ichimoku, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

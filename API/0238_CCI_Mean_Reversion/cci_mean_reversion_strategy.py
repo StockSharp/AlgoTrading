@@ -121,7 +121,7 @@ class cci_mean_reversion_strategy(Strategy):
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(cci, self.ProcessCandle).Start()
+        subscription.BindEx(cci, self.ProcessCandle).Start()
 
         # Setup chart visualization
         area = self.CreateChartArea()

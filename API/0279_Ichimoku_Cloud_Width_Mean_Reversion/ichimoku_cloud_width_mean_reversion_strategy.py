@@ -138,7 +138,7 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
-        subscription.Bind(self._ichimoku, self.ProcessIchimoku).Start()
+        subscription.BindEx(self._ichimoku, self.ProcessIchimoku).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()

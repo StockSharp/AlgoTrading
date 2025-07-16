@@ -80,7 +80,7 @@ class cci_breakout_strategy(Strategy):
 
         # Subscribe to candles and bind the indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(cci, self.ProcessCandle).Start()
+        subscription.BindEx(cci, self.ProcessCandle).Start()
 
         # Enable stop loss protection
         self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))

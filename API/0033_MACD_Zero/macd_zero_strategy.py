@@ -113,7 +113,7 @@ class macd_zero_strategy(Strategy):
 
         # Create subscription and bind MACD indicator
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(macd, self.ProcessCandle).Start()
+        subscription.BindEx(macd, self.ProcessCandle).Start()
 
         # Configure chart
         area = self.CreateChartArea()

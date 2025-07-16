@@ -97,7 +97,7 @@ class adx_di_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         
         # Bind indicators and process candles
-        subscription.Bind(adx, atr, self.ProcessCandle).Start()
+        subscription.BindEx(adx, atr, self.ProcessCandle).Start()
 
         # Enable position protection
         self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))
