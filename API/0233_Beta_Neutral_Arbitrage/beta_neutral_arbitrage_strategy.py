@@ -1,10 +1,12 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
+from StockSharp.BusinessEntities import Security
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -21,13 +23,13 @@ class beta_neutral_arbitrage_strategy(Strategy):
         super(beta_neutral_arbitrage_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._asset1_param = self.Param("Asset1") \
+        self._asset1_param = self.Param[Security]("Asset1") \
             .SetDisplay("Asset 1", "First asset for beta-neutral arbitrage", "Instruments")
 
-        self._asset2_param = self.Param("Asset2") \
+        self._asset2_param = self.Param[Security]("Asset2") \
             .SetDisplay("Asset 2", "Second asset for beta-neutral arbitrage", "Instruments")
 
-        self._market_index_param = self.Param("MarketIndex") \
+        self._market_index_param = self.Param[Security]("MarketIndex") \
             .SetDisplay("Market Index", "Market index for beta calculation", "Instruments")
 
         self._candle_type_param = self.Param("CandleType", tf(5)) \

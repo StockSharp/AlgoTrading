@@ -130,7 +130,7 @@ class bollinger_band_width_breakout_strategy(Strategy):
         # Bind Bollinger Bands
         subscription.BindEx(self._bollinger, self._atr, self.ProcessBollinger).Start()
 
-        self.SubscribeOrderBook().BindEx(self._update_best_prices).Start()
+        self.SubscribeOrderBook().Bind(self._update_best_prices).Start()
 
         # Create chart area for visualization
         area = self.CreateChartArea()
