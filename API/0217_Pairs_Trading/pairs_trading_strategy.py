@@ -10,7 +10,7 @@ from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.BusinessEntities import Security, Subscription
+from StockSharp.BusinessEntities import Security
 
 class pairs_trading_strategy(Strategy):
     """
@@ -128,7 +128,7 @@ class pairs_trading_strategy(Strategy):
 
         # Create subscriptions for both securities
         first_subscription = self.SubscribeCandles(self.candle_type)
-        second_subscription = self.SubscribeCandles(Subscription(self.candle_type, self.second_security))
+        second_subscription = self.SubscribeCandles(self.candle_type, self.second_security)
 
         # Bind to first security candles
         first_subscription.Bind(self.ProcessFirstSecurityCandle).Start()
