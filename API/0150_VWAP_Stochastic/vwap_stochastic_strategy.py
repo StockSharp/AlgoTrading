@@ -4,8 +4,7 @@ clr.AddReference("System.Drawing")
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from System import Math
+from System import TimeSpan, Math
 from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy

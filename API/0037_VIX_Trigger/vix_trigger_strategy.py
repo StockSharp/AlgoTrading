@@ -5,19 +5,13 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from System import Math
+from System import TimeSpan, Math
 from System.Drawing import Color
-from StockSharp.Messages import UnitTypes
-from StockSharp.Messages import Unit
-from StockSharp.Messages import DataType
-from StockSharp.Messages import ICandleMessage
-from StockSharp.Messages import CandleStates
-from StockSharp.Messages import Sides
+from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 from StockSharp.BusinessEntities import Security, Subscription
+from datatype_extensions import *
 
 class vix_trigger_strategy(Strategy):
     """

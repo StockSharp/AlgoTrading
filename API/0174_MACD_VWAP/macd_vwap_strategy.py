@@ -3,10 +3,8 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
-from System import Math
-from StockSharp.Messages import DataType, Unit, UnitTypes
-from StockSharp.Messages import CandleStates
+from System import TimeSpan, Math
+from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *

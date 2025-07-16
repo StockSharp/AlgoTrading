@@ -7,9 +7,9 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Security
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.BusinessEntities import Security
 
 class statistical_arbitrage_strategy(Strategy):
     """

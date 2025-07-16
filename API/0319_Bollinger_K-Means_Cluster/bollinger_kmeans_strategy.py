@@ -7,8 +7,8 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
-from datatype_extensions import *
 from enum import Enum
+from datatype_extensions import *
 
 
 class ClusterState(Enum):

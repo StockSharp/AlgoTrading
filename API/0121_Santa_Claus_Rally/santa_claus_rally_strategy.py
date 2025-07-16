@@ -4,8 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates
-from StockSharp.Messages import ICandleMessage
+from StockSharp.Messages import UnitTypes, Unit, DataType, CandleStates, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *

@@ -8,9 +8,9 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Security, Subscription
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.BusinessEntities import Security
 
 class pairs_trading_strategy(Strategy):
     """

@@ -5,8 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
-from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange
-from StockSharp.Algo.Indicators import VolumeIndicator
+from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, VolumeIndicator
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
