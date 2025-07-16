@@ -153,10 +153,9 @@ class keltner_kalman_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ema_value, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -73,10 +73,9 @@ class lunch_break_fade_strategy(Strategy):
 
         # Set up stop loss protection
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss based on parameter
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Create candle subscription for the specified timeframe
         subscription = self.SubscribeCandles(self.CandleType)
 

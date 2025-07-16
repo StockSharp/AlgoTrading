@@ -91,10 +91,9 @@ class overnight_gap_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),  # No take profit
-            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ma_value):
         """Processes each finished candle and executes trading logic.
 

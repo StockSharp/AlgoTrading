@@ -123,8 +123,10 @@ class cci_slope_breakout_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Enable position protection
-        self.StartProtection(None, Unit(self.StopLossPercent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, cciValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

@@ -141,8 +141,10 @@ class hull_ma_volume_strategy(Strategy):
         subscription.Bind(volume_avg, hull_ma, atr, self.ProcessIndicators).Start()
 
         # Setup position protection with ATR-based stop loss
-        self.StartProtection(Unit(0, UnitTypes.Absolute), Unit(self.stop_loss_atr, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_atr, UnitTypes.Absolute)
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

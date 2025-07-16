@@ -135,11 +135,10 @@ class ichimoku_volume_cluster_strategy(Strategy):
 
         # Setup stop-loss at Kijun-sen level
         self.StartProtection(
-            Unit(0),  # We'll handle exits in the strategy logic
-            Unit(0),   # Using Kijun-sen as dynamic stop-loss
-            True
+            takeProfit=Unit(0),
+            stopLoss=Unit(0),
+            isStopTrailing=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

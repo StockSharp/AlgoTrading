@@ -119,7 +119,6 @@ class bollinger_kalman_filter_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(1, UnitTypes.Percent)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

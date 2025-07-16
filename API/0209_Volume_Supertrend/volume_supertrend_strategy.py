@@ -148,8 +148,8 @@ class volume_supertrend_strategy(Strategy):
         subscription.Bind(atr, handle_candle).Start()
 
         # Enable dynamic stop protection based on Supertrend value
-        self.StartProtection()
-
+        self.StartProtection(
+        )
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

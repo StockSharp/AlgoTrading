@@ -128,8 +128,10 @@ class wyckoff_distribution_strategy(Strategy):
         subscription.Bind(self._ma, self._volume_avg, self._highest, self._lowest, self.ProcessCandle).Start()
 
         # Enable stop-loss protection
-        self.StartProtection(Unit(0), Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

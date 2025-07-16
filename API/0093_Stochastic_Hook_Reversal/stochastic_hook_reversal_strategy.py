@@ -130,8 +130,10 @@ class stochastic_hook_reversal_strategy(Strategy):
         super(stochastic_hook_reversal_strategy, self).OnStarted(time)
 
         # Enable position protection using stop-loss
-        self.StartProtection(None, self.StopLoss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.StopLoss
+        )
         # Initialize previous K value
         self._prev_k = 0.0
 

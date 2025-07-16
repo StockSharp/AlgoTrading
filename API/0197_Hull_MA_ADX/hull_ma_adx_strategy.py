@@ -143,10 +143,9 @@ class hull_ma_adx_strategy(Strategy):
                 self.DrawIndicator(adx_area, self._adx)
 
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.stop_loss_percent, UnitTypes.Absolute),
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, hma_value, adx_value, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

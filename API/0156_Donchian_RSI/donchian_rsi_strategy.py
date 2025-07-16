@@ -133,12 +133,11 @@ class donchian_rsi_strategy(Strategy):
 
         # Enable stop-loss
         self.StartProtection(
-            None,
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
-            False,
-            True
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            isStopTrailing=False,
+            useMarketOrders=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

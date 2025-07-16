@@ -135,7 +135,6 @@ class hull_ma_volume_spike_strategy(Strategy):
             takeProfit=Unit(2, UnitTypes.Percent),
             stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def ProcessStrategy(self, candle, hma_value, volume, volume_avg, volume_std_dev):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

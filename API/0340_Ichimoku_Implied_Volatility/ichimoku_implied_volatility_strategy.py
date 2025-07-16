@@ -143,10 +143,9 @@ class ichimoku_implied_volatility_strategy(Strategy):
 
         # Enable position protection using Kijun-Sen as stop-loss
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(0)   # Dynamic stop-loss will be handled manually
+            takeProfit=Unit(0),
+            stopLoss=Unit(0)
         )
-
     def ProcessCandle(self, candle, ichimoku_value):
         """Process each candle and Ichimoku values."""
         # Skip unfinished candles

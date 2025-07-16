@@ -153,10 +153,9 @@ class adx_slope_mean_reversion_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(self.StopLossPercent, UnitTypes.Percent),
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, adx_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

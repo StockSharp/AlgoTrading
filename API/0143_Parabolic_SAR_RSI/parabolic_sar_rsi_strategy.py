@@ -130,10 +130,9 @@ class parabolic_sar_rsi_strategy(Strategy):
 
         # Enable dynamic stop-loss using Parabolic SAR
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(0, UnitTypes.Absolute)   # No fixed stop loss - using dynamic SAR
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(0, UnitTypes.Absolute)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

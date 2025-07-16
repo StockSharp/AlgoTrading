@@ -138,8 +138,10 @@ class ma_parabolic_sar_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protection by take profit and stop loss (like SmaStrategy)
-        self.StartProtection(self.TakeValue, self.StopValue)
-
+        self.StartProtection(
+            takeProfit=self.TakeValue,
+            stopLoss=self.StopValue
+        )
     def ProcessCandle(self, candle, ma_value, sar_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

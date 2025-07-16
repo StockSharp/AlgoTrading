@@ -161,10 +161,9 @@ class macd_volume_cluster_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(1, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

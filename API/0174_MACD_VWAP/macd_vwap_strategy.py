@@ -93,8 +93,10 @@ class macd_vwap_strategy(Strategy):
         vwap = VolumeWeightedMovingAverage()
 
         # Enable position protection with stop-loss
-        self.StartProtection(Unit(0), Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(macd, vwap, self.ProcessCandle).Start()

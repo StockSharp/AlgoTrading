@@ -124,10 +124,9 @@ class volume_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            takeProfit=Unit(0),  # We'll manage exits ourselves based on Volume
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle):
         """
         Process candle and execute trading logic based on volume statistics.

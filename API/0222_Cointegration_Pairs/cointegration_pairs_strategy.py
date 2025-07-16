@@ -153,10 +153,9 @@ class cointegration_pairs_strategy(Strategy):
 
         # Enable position protection with stop loss
         self.StartProtection(
-            takeProfit=Unit(0, UnitTypes.Absolute),  # No take profit
-            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss percentage
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessAsset1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return

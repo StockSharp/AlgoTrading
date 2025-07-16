@@ -111,11 +111,10 @@ class three_bar_reversal_down_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit (manual exit or on next pattern)
-            Unit(self.StopLossPercent, UnitTypes.Percent),  # Stop loss above pattern's high
-            False  # No trailing
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=False
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

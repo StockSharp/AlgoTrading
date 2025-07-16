@@ -96,8 +96,10 @@ class rsi_divergence_strategy(Strategy):
         subscription.BindEx(rsi, self.ProcessCandle).Start()
 
         # Enable position protection
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

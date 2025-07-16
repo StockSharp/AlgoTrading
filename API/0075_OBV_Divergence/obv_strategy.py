@@ -115,10 +115,9 @@ class obv_divergence_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, obvValue, maValue):
         """
         Process each finished candle and execute trading logic.

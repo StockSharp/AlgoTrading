@@ -158,8 +158,10 @@ class beta_neutral_arbitrage_strategy(Strategy):
         else:
             self.LogWarning("Assets or market index not specified. Strategy won't work properly.")
 
-        self.StartProtection(None, Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessAsset1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return

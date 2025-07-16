@@ -124,10 +124,9 @@ class donchian_hurst_strategy(Strategy):
 
         # Start position protection with percentage-based stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),  # No take profit, using Donchian Channel for exit
+            takeProfit=Unit(0),
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessIndicators(self, candle, donchianValue, fractalDimensionValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

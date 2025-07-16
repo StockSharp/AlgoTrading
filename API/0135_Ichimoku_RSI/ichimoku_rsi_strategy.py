@@ -143,10 +143,9 @@ class ichimoku_rsi_strategy(Strategy):
 
         # Set up stop loss protection
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss based on parameter
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Create indicators
         ichimoku = Ichimoku()
         ichimoku.Tenkan.Length = self.TenkanPeriod

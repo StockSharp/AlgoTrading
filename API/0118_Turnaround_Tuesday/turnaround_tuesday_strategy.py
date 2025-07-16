@@ -84,8 +84,10 @@ class turnaround_tuesday_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start position protection
-        self.StartProtection(Unit(0), Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
     def ProcessCandle(self, candle, ma_value):
         """Process each finished candle."""
         # Skip unfinished candles

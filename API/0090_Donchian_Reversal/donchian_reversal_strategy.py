@@ -82,12 +82,11 @@ class donchian_reversal_strategy(Strategy):
 
         # Enable position protection using stop-loss
         self.StartProtection(
-            None,
-            self.StopLoss,
-            False,
-            True
+            takeProfit=None,
+            stopLoss=self.StopLoss,
+            isStopTrailing=False,
+            useMarketOrders=True
         )
-
         # Initialize state
         self._previous_close = 0.0
         self._is_first_candle = True

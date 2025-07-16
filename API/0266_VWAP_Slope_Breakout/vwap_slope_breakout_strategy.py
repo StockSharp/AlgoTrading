@@ -127,10 +127,9 @@ class vwap_slope_breakout_strategy(Strategy):
 
         # Set up position protection
         self.StartProtection(
-            None,  # takeProfit: we'll handle exits via strategy logic
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
         super(vwap_slope_breakout_strategy, self).OnStarted(time)
 
     def ProcessCandle(self, candle, vwap_value):

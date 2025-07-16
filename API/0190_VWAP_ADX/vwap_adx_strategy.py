@@ -81,10 +81,9 @@ class vwap_adx_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(self.StopLossPercent, UnitTypes.Percent),
-            Unit(self.StopLossPercent, UnitTypes.Percent)
+            takeProfit=Unit(self.StopLossPercent, UnitTypes.Percent),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
         # Create subscription and subscribe to VWAP
         subscription = self.SubscribeCandles(self.CandleType)
 

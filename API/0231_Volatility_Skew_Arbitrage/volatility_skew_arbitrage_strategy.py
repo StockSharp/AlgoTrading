@@ -118,10 +118,9 @@ class volatility_skew_arbitrage_strategy(Strategy):
 
         # Start position protection with stop-loss
         self.StartProtection(
-            None,
-            Unit(self.stop_loss_percent, UnitTypes.Percent)
+            takeProfit=None,
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
     def ProcessLowOptionImpliedVolatility(self, data):
         low_iv = data.TryGetDecimal(Level1Fields.ImpliedVolatility) or 0
         high_iv = self._current_vol_skew + low_iv

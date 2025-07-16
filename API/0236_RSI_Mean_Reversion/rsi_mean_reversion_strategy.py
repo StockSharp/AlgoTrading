@@ -111,10 +111,9 @@ class rsi_mean_reversion_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(5, UnitTypes.Percent),
-            Unit(2, UnitTypes.Percent)
+            takeProfit=Unit(5, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessRsi(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return

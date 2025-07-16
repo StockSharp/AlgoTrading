@@ -135,8 +135,10 @@ class ichimoku_volume_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protective orders (stop-loss)
-        self.StartProtection(None, self.stop_loss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.stop_loss
+        )
     def ProcessCandle(self, candle, ichimoku_value):
         """Processes each finished candle and executes Ichimoku + Volume trading logic."""
         # Skip unfinished candles

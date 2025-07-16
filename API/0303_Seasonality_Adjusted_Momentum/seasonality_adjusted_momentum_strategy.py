@@ -114,11 +114,10 @@ class seasonality_adjusted_momentum_strategy(Strategy):
 
         # Enable position protection with percentage stop-loss
         self.StartProtection(
-            takeProfit=Unit(0),  # We'll handle exits in the strategy logic
+            takeProfit=Unit(0),
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
             useMarketOrders=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

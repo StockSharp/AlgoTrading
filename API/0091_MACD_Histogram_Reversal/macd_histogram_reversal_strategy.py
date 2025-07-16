@@ -104,8 +104,10 @@ class macd_histogram_reversal_strategy(Strategy):
         super(macd_histogram_reversal_strategy, self).OnStarted(time)
 
         # Enable position protection using stop-loss
-        self.StartProtection(None, self.StopLoss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.StopLoss
+        )
         # Initialize state
         self._prevHistogram = None
 

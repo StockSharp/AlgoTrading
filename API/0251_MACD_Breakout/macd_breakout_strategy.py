@@ -155,10 +155,9 @@ class macd_breakout_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
-            Unit(self.stop_loss_percent * 1.5, UnitTypes.Percent)
+            takeProfit=Unit(self.stop_loss_percent, UnitTypes.Percent),
+            stopLoss=Unit(self.stop_loss_percent * 1.5, UnitTypes.Percent)
         )
-
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

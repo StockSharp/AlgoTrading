@@ -134,10 +134,9 @@ class keltner_rsi_divergence_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),
-            Unit(1, UnitTypes.Percent)
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(1, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, ema_value, atr_value, rsi_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

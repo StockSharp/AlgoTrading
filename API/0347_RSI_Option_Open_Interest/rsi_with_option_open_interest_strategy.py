@@ -155,10 +155,9 @@ class rsi_with_option_open_interest_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),   # Take profit 2%
-            Unit(self.StopLoss, UnitTypes.Percent)  # Stop loss based on parameter
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, rsi_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

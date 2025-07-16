@@ -129,10 +129,9 @@ class williams_ichimoku_strategy(Strategy):
         # Set stop-loss at Kijun-sen level
         # The actual stop level will be updated in the ProcessCandle method
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take-profit
-            Unit(0, UnitTypes.Absolute)   # Will be dynamic based on Kijun-sen
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(0, UnitTypes.Absolute)
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

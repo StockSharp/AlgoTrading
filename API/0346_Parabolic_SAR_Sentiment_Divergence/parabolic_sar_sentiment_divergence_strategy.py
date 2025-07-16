@@ -94,11 +94,10 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(2, UnitTypes.Percent),   # Take profit 2%
-            Unit(2, UnitTypes.Percent),   # Stop loss 2%
-            True  # Use trailing stop
+            takeProfit=Unit(2, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent),
+            isStopTrailing=True
         )
-
     def ProcessCandle(self, candle, sar_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

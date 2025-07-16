@@ -108,10 +108,9 @@ class momentum_divergence_strategy(Strategy):
 
         # Enable position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(2, UnitTypes.Percent)    # 2% stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, momentumValue, smaValue):
         """
         Process candle and execute divergence-based trading logic.

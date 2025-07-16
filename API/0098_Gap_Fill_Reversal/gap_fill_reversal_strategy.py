@@ -85,7 +85,6 @@ class gap_fill_reversal_strategy(Strategy):
             stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent),
             isStopTrailing=False
         )
-
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:

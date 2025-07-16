@@ -98,10 +98,9 @@ class cumulative_delta_breakout_strategy(Strategy):
         
         # Configure protection
         self.StartProtection(
-            Unit(3, UnitTypes.Percent),  # Take profit
-            Unit(2, UnitTypes.Percent)   # Stop loss
+            takeProfit=Unit(3, UnitTypes.Percent),
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
         # Setup chart visualization
         area = self.CreateChartArea()
         if area is not None:

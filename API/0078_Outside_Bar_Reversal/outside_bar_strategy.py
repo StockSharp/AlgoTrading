@@ -74,10 +74,9 @@ class outside_bar_reversal_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent)  # Stop loss
+            takeProfit=Unit(),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle):
         """
         Process each finished candle and execute trading logic.

@@ -116,10 +116,9 @@ class keltner_channel_reversal_strategy(Strategy):
 
         # Start position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossAtrMultiplier, UnitTypes.Absolute)  # Stop loss
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossAtrMultiplier, UnitTypes.Absolute)
         )
-
     def ProcessCandle(self, candle, keltnerValue, atrValue):
         """
         Process each finished candle and execute trading logic.

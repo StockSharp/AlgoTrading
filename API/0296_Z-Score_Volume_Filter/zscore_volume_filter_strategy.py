@@ -121,11 +121,10 @@ class zscore_volume_filter_strategy(Strategy):
 
         # Setup position protection
         self.StartProtection(
-            Unit(0, UnitTypes.Absolute),  # No take profit
-            Unit(self.StopLossPercent, UnitTypes.Percent),  # Stop loss in percent
-            False  # No trailing stop
+            takeProfit=Unit(0, UnitTypes.Absolute),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
+            isStopTrailing=False
         )
-
     def ProcessCandle(self, candle, price_sma_value, price_std_dev_value, volume_sma_value):
         """Process candle and compute indicator values."""
         if candle.State != CandleStates.Finished:

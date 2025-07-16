@@ -134,8 +134,10 @@ class adx_trend_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protection for positions
-        self.StartProtection(None, Unit(self.atr_multiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
+        )
     def ProcessCandle(self, candle, adx_value, ma_value, atr_value):
         """
         Processes each finished candle and executes ADX-based trading logic.

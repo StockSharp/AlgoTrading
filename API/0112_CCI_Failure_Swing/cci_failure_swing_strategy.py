@@ -125,8 +125,10 @@ class cci_failure_swing_strategy(Strategy):
         subscription.Bind(self._cci, self.ProcessCandle).Start()
 
         # Enable stop-loss protection
-        self.StartProtection(Unit(0), Unit(self.stop_loss_percent, UnitTypes.Percent))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
+        )
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

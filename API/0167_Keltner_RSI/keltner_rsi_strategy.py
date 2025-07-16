@@ -154,7 +154,6 @@ class keltner_rsi_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:

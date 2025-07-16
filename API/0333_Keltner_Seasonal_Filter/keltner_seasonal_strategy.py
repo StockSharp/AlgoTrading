@@ -124,8 +124,10 @@ class keltner_seasonal_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start position protection with ATR-based stop-loss
-        self.StartProtection(Unit(0), Unit(self.atr_multiplier, UnitTypes.Absolute))
-
+        self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.atr_multiplier, UnitTypes.Absolute)
+        )
     def ProcessKeltner(self, candle, ema_value, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

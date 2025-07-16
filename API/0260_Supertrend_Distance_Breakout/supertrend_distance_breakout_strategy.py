@@ -134,10 +134,9 @@ class supertrend_distance_breakout_strategy(Strategy):
 
         # Set up position protection with dynamic stop-loss
         self.StartProtection(
-            takeProfit=None,  # We'll handle exits via our strategy logic
-            stopLoss=Unit(2, UnitTypes.Percent)  # 2% stop-loss
+            takeProfit=None,
+            stopLoss=Unit(2, UnitTypes.Percent)
         )
-
     def ProcessCandle(self, candle, supertrendPrice):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

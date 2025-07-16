@@ -123,10 +123,9 @@ class macd_williams_r_strategy(Strategy):
 
         # Enable position protection with stop-loss
         self.StartProtection(
-            Unit(0),  # No take profit
-            Unit(self.stop_loss_percent, UnitTypes.Percent),
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
-
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(macd, williams_r, self.ProcessCandle).Start()

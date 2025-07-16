@@ -120,8 +120,10 @@ class vwap_cci_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         # Start protective orders
-        self.StartProtection(None, self.stop_loss)
-
+        self.StartProtection(
+            takeProfit=None,
+            stopLoss=self.stop_loss
+        )
     def ProcessCandle(self, candle, vwap_value, cci_value):
         if candle.State != CandleStates.Finished:
             return
