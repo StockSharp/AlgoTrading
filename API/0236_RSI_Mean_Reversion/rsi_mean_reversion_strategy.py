@@ -120,8 +120,8 @@ class rsi_mean_reversion_strategy(Strategy):
             return
 
         # Process RSI through average and standard deviation indicators
-        rsi_avg_value = to_float(self._rsi_average.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished))
-        rsi_std_dev_value = to_float(self._rsi_std_dev.Process(rsi_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        rsi_avg_value = to_float(process_float(self._rsi_average, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        rsi_std_dev_value = to_float(process_float(self._rsi_std_dev, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Store previous RSI value for changes detection
         current_rsi_value = rsi_value

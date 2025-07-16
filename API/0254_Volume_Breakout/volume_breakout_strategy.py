@@ -122,12 +122,12 @@ class volume_breakout_strategy(Strategy):
         volume = candle.TotalVolume
 
         # Calculate volume average
-        avg_value = self._volume_average.Process(volume, candle.ServerTime, candle.State == CandleStates.Finished)
+        avg_value = process_float(self._volume_average, volume, candle.ServerTime, candle.State == CandleStates.Finished)
         avg_volume = float(avg_value)
 
         # Calculate standard deviation approximation
         deviation = Math.Abs(volume - avg_volume)
-        std_dev_value = self._volume_std_dev.Process(deviation, candle.ServerTime, candle.State == CandleStates.Finished)
+        std_dev_value = process_float(self._volume_std_dev, deviation, candle.ServerTime, candle.State == CandleStates.Finished)
         std_dev = float(std_dev_value)
 
         # Skip the first N candles until we have enough data

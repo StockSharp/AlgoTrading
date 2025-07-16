@@ -201,8 +201,8 @@ class delta_neutral_arbitrage_strategy(Strategy):
         self._current_spread = self._last_asset1_price - self._last_asset2_price
 
         # Process the spread with our indicators
-        spread_value = self._spread_sma.Process(self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished)
-        std_dev_value = self._spread_std_dev.Process(self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished)
+        spread_value = process_float(self._spread_sma, self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished)
+        std_dev_value = process_float(self._spread_std_dev, self._current_spread, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Check if indicators are formed
         if not self._spread_sma.IsFormed or not self._spread_std_dev.IsFormed:

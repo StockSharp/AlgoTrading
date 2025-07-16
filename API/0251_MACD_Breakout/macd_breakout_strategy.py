@@ -184,8 +184,8 @@ class macd_breakout_strategy(Strategy):
         macd = float(macd_typed.Macd)
 
         # Process indicators for MACD histogram
-        macd_hist_sma_value = float(to_float(self._macd_hist_sma.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished)))
-        macd_hist_stddev_value = float(to_float(self._macd_hist_stddev.Process(macd, candle.ServerTime, candle.State == CandleStates.Finished)))
+        macd_hist_sma_value = float(to_float(process_float(self._macd_hist_sma, macd, candle.ServerTime, candle.State == CandleStates.Finished)))
+        macd_hist_stddev_value = float(to_float(process_float(self._macd_hist_stddev, macd, candle.ServerTime, candle.State == CandleStates.Finished)))
 
         # Store previous values on first call
         if self._prev_macd_hist_value == 0 and self._prev_macd_hist_sma_value == 0:

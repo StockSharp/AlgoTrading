@@ -158,7 +158,7 @@ class bollinger_band_width_breakout_strategy(Strategy):
         last_width = upper_band - lower_band
 
         # Process width through average
-        width_avg_value = self._width_average.Process(last_width, candle.ServerTime, candle.State == CandleStates.Finished)
+        width_avg_value = process_float(self._width_average, last_width, candle.ServerTime, candle.State == CandleStates.Finished)
         avg_width = to_float(width_avg_value)
 
         # Calculate width standard deviation (simplified approach)

@@ -172,8 +172,8 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
         self._currentSlope = (self._currentHullMa - self._prevHullMa) / self._prevHullMa * 100  # As percentage
 
         # Calculate average and standard deviation of slope
-        slopeAverage = to_float(self._slopeAverage.Process(self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
-        slopeStdDev = to_float(self._slopeStdDev.Process(self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
+        slopeAverage = to_float(process_float(self._slopeAverage, self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
+        slopeStdDev = to_float(process_float(self._slopeStdDev, self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip until we have enough slope data
         if self._prevSlope == 0:

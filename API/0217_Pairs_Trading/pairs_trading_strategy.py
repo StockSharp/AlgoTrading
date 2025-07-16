@@ -164,8 +164,8 @@ class pairs_trading_strategy(Strategy):
         self._spread = candle.ClosePrice - self._last_second_price
 
         # Process the spread through indicators
-        ma_value = self._spread_ma.Process(self._spread, candle.ServerTime, True)
-        std_dev_value = self._spread_std_dev.Process(self._spread, candle.ServerTime, True)
+        ma_value = process_float(self._spread_ma, self._spread, candle.ServerTime, True)
+        std_dev_value = process_float(self._spread_std_dev, self._spread, candle.ServerTime, True)
 
         # Skip until indicators are formed
         if not self._spread_ma.IsFormed or not self._spread_std_dev.IsFormed:

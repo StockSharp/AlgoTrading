@@ -221,7 +221,7 @@ class statistical_arbitrage_strategy(Strategy):
         self._last_second_price = candle.ClosePrice
 
         # Process through MA indicator
-        self._second_ma.Process(candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished)
+        process_float(self._second_ma, candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished)
 
     def CreateClone(self):
         """
