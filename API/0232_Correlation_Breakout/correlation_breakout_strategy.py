@@ -7,9 +7,9 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Security
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.BusinessEntities import Security
 
 class correlation_breakout_strategy(Strategy):
     """

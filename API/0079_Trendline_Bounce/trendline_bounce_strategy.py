@@ -5,17 +5,10 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("System.Collections")
 
-from System import TimeSpan
-from System import Math
-from System import DateTimeOffset
+from System import TimeSpan, Math, DateTimeOffset
 from System.Drawing import Color
 from System.Collections.Generic import Queue
-from StockSharp.Messages import UnitTypes
-from StockSharp.Messages import Unit
-from StockSharp.Messages import DataType
-from StockSharp.Messages import ICandleMessage
-from StockSharp.Messages import CandleStates
-from StockSharp.Messages import Sides
+from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates, Sides
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *

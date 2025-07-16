@@ -5,8 +5,7 @@ clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
 from System import Math
-from StockSharp.Messages import DataType, Level1Fields, Level1ChangeMessage
-from StockSharp.Messages import Sides, OrderTypes
+from StockSharp.Messages import DataType, Level1Fields, Level1ChangeMessage, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Portfolio, Subscription, Order
 from datatype_extensions import *

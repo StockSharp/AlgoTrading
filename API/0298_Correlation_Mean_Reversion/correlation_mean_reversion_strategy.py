@@ -11,9 +11,9 @@ from System.Collections.Generic import Queue
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Security
 from datatype_extensions import *
 from indicator_extensions import *
-from StockSharp.BusinessEntities import Security
 
 
 class correlation_mean_reversion_strategy(Strategy):

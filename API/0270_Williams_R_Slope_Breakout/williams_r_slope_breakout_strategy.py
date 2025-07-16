@@ -7,9 +7,9 @@ from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import WilliamsR, LinearRegression
 from StockSharp.Algo.Strategies import Strategy
+from collections import deque
 from datatype_extensions import *
 from indicator_extensions import *
-from collections import deque
 
 
 class williams_r_slope_breakout_strategy(Strategy):

@@ -8,9 +8,9 @@ from System import TimeSpan
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ParabolicSar
 from StockSharp.Algo.Strategies import Strategy
+from Ecng.Common import RandomGen
 from datatype_extensions import *
 from indicator_extensions import *
-from Ecng.Common import RandomGen
 
 class parabolic_sar_sentiment_divergence_strategy(Strategy):
     """Parabolic SAR strategy with sentiment divergence."""
