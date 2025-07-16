@@ -9,7 +9,7 @@ from StockSharp.Algo.Indicators import VolumeIndicator, SimpleMovingAverage, Exp
 from StockSharp.Algo.Strategies import Strategy
 
 class volume_slope_breakout_strategy(Strategy):
-    """Volume Slope Breakout Strategy (Strategy #274)"""
+    """Volume Slope Breakout Strategy"""
 
     def __init__(self):
         super(volume_slope_breakout_strategy, self).__init__()

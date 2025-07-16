@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// ADX Slope Breakout Strategy (Strategy #272)
+	/// ADX Slope Breakout Strategy
 	/// </summary>
 	public class AdxSlopeBreakoutStrategy : Strategy
 	{

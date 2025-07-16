@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #80: Pivot Point Reversal strategy.
+	/// Pivot Point Reversal strategy.
 	/// The strategy calculates daily pivot points and their support/resistance levels,
 	/// and enters positions when price bounces off these levels with confirmation.
 	/// </summary>

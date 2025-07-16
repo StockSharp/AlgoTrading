@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #74: Williams %R Divergence strategy.
+	/// Williams %R Divergence strategy.
 	/// The strategy looks for divergences between price and Williams %R indicator to identify potential reversal points.
 	/// </summary>
 	public class WilliamsPercentRDivergenceStrategy : Strategy

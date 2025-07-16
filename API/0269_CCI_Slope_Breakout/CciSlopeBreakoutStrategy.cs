@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// CCI Slope Breakout Strategy (Strategy #269)
+	/// CCI Slope Breakout Strategy
 	/// </summary>
 	public class CciSlopeBreakoutStrategy : Strategy
 	{

@@ -10,7 +10,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class atr_slope_breakout_strategy(Strategy):
     """
-    ATR Slope Breakout Strategy (Strategy #273)
+    ATR Slope Breakout Strategy
     """
 
     def __init__(self):

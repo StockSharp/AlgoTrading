@@ -8,7 +8,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #72: Doji Reversal strategy.
+	/// Doji Reversal strategy.
 	/// The strategy looks for doji candlestick patterns after a trend and takes a reversal position.
 	/// </summary>
 	public class DojiReversalStrategy : Strategy

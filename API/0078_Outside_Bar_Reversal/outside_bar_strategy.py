@@ -17,7 +17,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class outside_bar_reversal_strategy(Strategy):
     """
-    Strategy #78: Outside Bar Reversal strategy.
+    Outside Bar Reversal strategy.
     The strategy looks for outside bar patterns (a bar with higher high and lower low than the previous bar)
     and takes positions based on the direction (bullish or bearish) of the outside bar.
     

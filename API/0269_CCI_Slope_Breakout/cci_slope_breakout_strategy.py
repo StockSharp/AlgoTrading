@@ -9,7 +9,7 @@ from StockSharp.Algo.Indicators import CommodityChannelIndex, LinearRegression, 
 from StockSharp.Algo.Strategies import Strategy
 
 class cci_slope_breakout_strategy(Strategy):
-    """CCI Slope Breakout Strategy (Strategy #269)"""
+    """CCI Slope Breakout Strategy"""
 
     def __init__(self):
         super(cci_slope_breakout_strategy, self).__init__()

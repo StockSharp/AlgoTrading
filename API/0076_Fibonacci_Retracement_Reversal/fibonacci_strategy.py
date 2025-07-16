@@ -17,7 +17,7 @@ from StockSharp.Algo.Strategies import Strategy
 
 class fibonacci_retracement_reversal_strategy(Strategy):
     """
-    Strategy #76: Fibonacci Retracement Reversal strategy.
+    Fibonacci Retracement Reversal strategy.
     The strategy identifies significant swings in price and looks for reversals at key Fibonacci retracement levels.
     
     See more examples: https://github.com/StockSharp/AlgoTrading

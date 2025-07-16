@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #75: OBV (On-Balance Volume) Divergence strategy.
+	/// OBV (On-Balance Volume) Divergence strategy.
 	/// The strategy uses divergence between price and OBV indicator to identify potential reversal points.
 	/// </summary>
 	public class OBVDivergenceStrategy : Strategy

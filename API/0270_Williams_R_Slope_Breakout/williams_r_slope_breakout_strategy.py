@@ -11,7 +11,7 @@ from collections import deque
 
 
 class williams_r_slope_breakout_strategy(Strategy):
-    """Williams %R Slope Breakout Strategy (Strategy #270)"""
+    """Williams %R Slope Breakout Strategy"""
 
     def __init__(self):
         super(williams_r_slope_breakout_strategy, self).__init__()

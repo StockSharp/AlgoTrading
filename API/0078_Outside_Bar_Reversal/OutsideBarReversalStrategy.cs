@@ -8,7 +8,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy #78: Outside Bar Reversal strategy.
+	/// Outside Bar Reversal strategy.
 	/// The strategy looks for outside bar patterns (a bar with higher high and lower low than the previous bar)
 	/// and takes positions based on the direction (bullish or bearish) of the outside bar.
 	/// </summary>
