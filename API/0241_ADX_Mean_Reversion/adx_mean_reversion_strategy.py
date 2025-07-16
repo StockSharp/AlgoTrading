@@ -146,12 +146,12 @@ class adx_mean_reversion_strategy(Strategy):
             return
 
         adx_typed = adx_value
-        if not hasattr(adx_typed, 'MovingAverage') or adx_typed.MovingAverage is None:
+        if adx_typed.MovingAverage is None:
             return
         current_adx = float(adx_typed.MovingAverage)
 
         dx = getattr(adx_typed, 'Dx', None)
-        if dx is None or not hasattr(dx, 'Plus') or dx.Plus is None or not hasattr(dx, 'Minus') or dx.Minus is None:
+        if dx is None or dx.Plus is None or dx.Minus is None:
             return
         plus_di = float(dx.Plus)
         minus_di = float(dx.Minus)

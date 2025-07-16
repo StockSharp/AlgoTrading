@@ -165,7 +165,7 @@ class adx_slope_mean_reversion_strategy(Strategy):
             return
 
         adx_typed = adx_value
-        if not hasattr(adx_typed, 'MovingAverage') or adx_typed.MovingAverage is None:
+        if adx_typed.MovingAverage is None:
             return
 
         adx = float(adx_typed.MovingAverage)

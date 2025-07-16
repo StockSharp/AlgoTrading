@@ -162,13 +162,12 @@ class bollinger_adx_strategy(Strategy):
             bollinger_up = float(bollinger_value.UpBand)
             bollinger_down = float(bollinger_value.LowBand)
             middle_band = float(bollinger_value.MovingAverage)
-        except:
+        except Exception:
             return
 
-        try:
-            adx_ma = float(adx_value.MovingAverage)
-        except:
-            adx_ma = 0.0
+        if adx_value.MovingAverage is None:
+            return
+        adx_ma = float(adx_value.MovingAverage)
 
         if adx_ma > self.adx_threshold:
             # Strong trend detected

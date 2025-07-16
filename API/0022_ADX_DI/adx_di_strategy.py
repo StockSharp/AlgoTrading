@@ -128,27 +128,13 @@ class adx_di_strategy(Strategy):
             return
 
         # Get ADX and +DI/-DI values
-        try:
-            if hasattr(adx_value, 'MovingAverage') and adx_value.MovingAverage is not None:
-                adx_main = float(adx_value.MovingAverage)
-            else:
-                return
-                
-            if hasattr(adx_value, 'Dx') and adx_value.Dx is not None:
-                if hasattr(adx_value.Dx, 'Plus') and adx_value.Dx.Plus is not None:
-                    plus_di = float(adx_value.Dx.Plus)
-                else:
-                    return
-                    
-                if hasattr(adx_value.Dx, 'Minus') and adx_value.Dx.Minus is not None:
-                    minus_di = float(adx_value.Dx.Minus)
-                else:
-                    return
-            else:
-                return
-        except:
-            # If we can't extract values, skip this candle
+        if adx_value.MovingAverage is None:
             return
+        if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
+            return
+        adx_main = float(adx_value.MovingAverage)
+        plus_di = float(adx_value.Dx.Plus)
+        minus_di = float(adx_value.Dx.Minus)
 
         # Trading logic
         if adx_main >= self.adx_threshold:

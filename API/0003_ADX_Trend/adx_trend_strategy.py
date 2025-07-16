@@ -155,17 +155,9 @@ class adx_trend_strategy(Strategy):
             return
 
         # Extract ADX moving average value
-        # In Python, we need to handle the ADX value properly
-        try:
-            # ADX indicator returns AverageDirectionalIndexValue with MovingAverage property
-            if hasattr(adx_value, 'MovingAverage') and adx_value.MovingAverage is not None:
-                adx_ma = float(adx_value.MovingAverage)
-            else:
-                # Fallback to direct value if MovingAverage is not available
-                adx_ma = float(adx_value)
-        except:
-            # If we can't get ADX value, skip this candle
+        if adx_value.MovingAverage is None:
             return
+        adx_ma = float(adx_value.MovingAverage)
 
         # Convert ma_value to decimal
         ma_decimal = float(ma_value)

@@ -151,10 +151,9 @@ class hull_ma_adx_strategy(Strategy):
             return
 
         typed_adx = adx_value
-        if hasattr(typed_adx, 'MovingAverage') and typed_adx.MovingAverage is not None:
-            adx = float(typed_adx.MovingAverage)
-        else:
+        if typed_adx.MovingAverage is None:
             return
+        adx = float(typed_adx.MovingAverage)
 
         hma = float(hma_value)
 

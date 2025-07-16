@@ -149,28 +149,13 @@ class dmi_power_move_strategy(Strategy):
             return
 
         # Extract ADX and DI values
-        try:
-            # Get individual components from DMI indicator value
-            if hasattr(adx_value, 'MovingAverage') and adx_value.MovingAverage is not None:
-                adx = float(adx_value.MovingAverage)
-            else:
-                return
-                
-            if hasattr(adx_value, 'Dx') and adx_value.Dx is not None:
-                if hasattr(adx_value.Dx, 'Plus') and adx_value.Dx.Plus is not None:
-                    plus_di_value = float(adx_value.Dx.Plus)
-                else:
-                    return
-                    
-                if hasattr(adx_value.Dx, 'Minus') and adx_value.Dx.Minus is not None:
-                    minus_di_value = float(adx_value.Dx.Minus)
-                else:
-                    return
-            else:
-                return
-        except:
-            # If we can't extract values, skip this candle
+        if adx_value.MovingAverage is None:
             return
+        if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
+            return
+        adx = float(adx_value.MovingAverage)
+        plus_di_value = float(adx_value.Dx.Plus)
+        minus_di_value = float(adx_value.Dx.Minus)
 
         # Calculate the difference between +DI and -DI
         di_difference = plus_di_value - minus_di_value
