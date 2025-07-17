@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class zscore_volume_filter_strategy(Strategy):
     """
@@ -135,9 +136,9 @@ class zscore_volume_filter_strategy(Strategy):
         self._current_volume = float(candle.TotalVolume)
 
         # Process indicators
-        self._average_price = float(price_sma_value)
-        self._price_std_deviation = float(price_std_dev_value)
-        self._average_volume = float(volume_sma_value)
+        self._average_price = to_float(price_sma_value)
+        self._price_std_deviation = to_float(price_std_dev_value)
+        self._average_volume = to_float(volume_sma_value)
 
         # Check trading signals
         self.CheckSignal()

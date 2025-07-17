@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import BollingerBands, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class bollinger_cci_strategy(Strategy):
     """

@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class rsi_reversion_strategy(Strategy):
     """
@@ -143,7 +144,7 @@ class rsi_reversion_strategy(Strategy):
             return
 
         # Get RSI value
-        rsi = float(rsi_value)
+        rsi = to_float(rsi_value)
 
         # Entry logic for mean reversion
         if rsi < self.oversold_threshold and self.Position <= 0:

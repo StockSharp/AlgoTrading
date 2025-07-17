@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, SimpleMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class adx_trend_strategy(Strategy):
     """
@@ -158,7 +159,7 @@ class adx_trend_strategy(Strategy):
         adx_ma = float(adx_value.MovingAverage)
 
         # Convert ma_value to decimal
-        ma_decimal = float(ma_value)
+        ma_decimal = to_float(ma_value)
 
         # Check ADX threshold for entry conditions
         is_adx_enough_for_entry = adx_ma > 25

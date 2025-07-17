@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, StochasticOscillator, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class hull_ma_stochastic_strategy(Strategy):
     """
@@ -165,14 +166,14 @@ class hull_ma_stochastic_strategy(Strategy):
             return
 
         # Get indicator values
-        hma = float(hma_value)
+        hma = to_float(hma_value)
 
         stoch_typed = stoch_value
         if stoch_typed.K is None:
             return
         stoch_k = float(stoch_typed.K)
 
-        atr = float(atr_value)
+        atr = to_float(atr_value)
 
         # Skip first candle after initialization
         if self._prev_hma_value == 0:

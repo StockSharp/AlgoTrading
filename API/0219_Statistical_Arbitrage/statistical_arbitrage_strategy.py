@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
@@ -36,7 +37,7 @@ class statistical_arbitrage_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._second_security = self.Param("SecondSecurity", None) \
+        self._second_security = self.Param[Security]("SecondSecurity", None) \
             .SetDisplay("Second Security", "Second security in the pair", "General") \
             .SetRequired()
 

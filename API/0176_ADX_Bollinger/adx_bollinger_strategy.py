@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, BollingerBands, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class adx_bollinger_strategy(Strategy):
     """
@@ -160,7 +161,7 @@ class adx_bollinger_strategy(Strategy):
         price = float(candle.ClosePrice)
 
         # Stop-loss size based on ATR
-        stop_size = float(atr_value) * self.atr_multiplier
+        stop_size = to_float(atr_value) * self.atr_multiplier
 
         adx_typed = adx_value
 

@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class adx_cci_strategy(Strategy):
     """
@@ -118,12 +119,12 @@ class adx_cci_strategy(Strategy):
 
         # For the first value, just store and skip trading
         if self._is_first_value:
-            self._prev_cci_value = float(cci_value)
+            self._prev_cci_value = to_float(cci_value)
             self._is_first_value = False
             return
 
         # Store for the next iteration
-        self._prev_cci_value = float(cci_value)
+        self._prev_cci_value = to_float(cci_value)
 
         # Extract ADX moving average value
         if adx_value.MovingAverage is None:

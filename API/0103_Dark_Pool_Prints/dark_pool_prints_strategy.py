@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class dark_pool_prints_strategy(Strategy):
     """
@@ -134,13 +135,13 @@ class dark_pool_prints_strategy(Strategy):
             return
         adx_ma = float(adx.MovingAverage)
 
-        ma_decimal = float(ma)
+        ma_decimal = to_float(ma)
 
         # Check if we have a strong trend (ADX > 25)
         isStrongTrend = adx_ma > 25
 
         # Check if current volume is significantly higher than average
-        isHighVolume = candle.TotalVolume > float(volume_avg) * self.VolumeMultiplier
+        isHighVolume = candle.TotalVolume > to_float(volume_avg) * self.VolumeMultiplier
 
         if not isHighVolume or not isStrongTrend:
             return

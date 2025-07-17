@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import HullMovingAverage, AverageDirectionalIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class hull_ma_adx_strategy(Strategy):
     """
@@ -155,7 +156,7 @@ class hull_ma_adx_strategy(Strategy):
             return
         adx = float(typed_adx.MovingAverage)
 
-        hma = float(hma_value)
+        hma = to_float(hma_value)
 
         # Detect HMA direction
         hma_increasing = hma > self._prev_hma_value

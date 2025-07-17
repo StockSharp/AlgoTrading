@@ -166,7 +166,7 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
             return
 
         # Get the Parabolic SAR value
-        self._sar_value = float(value)
+        self._sar_value = to_float(value)
 
         # Calculate distances
         self._current_distance_long = float(candle.ClosePrice - self._sar_value)

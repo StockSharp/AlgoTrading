@@ -138,7 +138,6 @@ class stochastic_keltner_strategy(Strategy):
         stochastic.D.Length = self.StochD
 
         keltner = KeltnerChannels()
-        keltner.K = self.KeltnerMultiplier
         keltner.Length = self.EmaPeriod
 
         atr = AverageTrueRange()

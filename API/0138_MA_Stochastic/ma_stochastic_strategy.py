@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class ma_stochastic_strategy(Strategy):
     """
@@ -175,7 +176,7 @@ class ma_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ma_dec = float(ma_value)
+        ma_dec = to_float(ma_value)
         stoch_typed = stoch_value
         stoch_k_value = stoch_typed.K
 

@@ -833,7 +833,10 @@ public class PythonTests
 
 	[TestMethod]
 	public Task PairsTradingStrategy()
-		=> RunStrategy("0217_Pairs_Trading/pairs_trading_strategy.py");
+		=> RunStrategy("0217_Pairs_Trading/pairs_trading_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["SecondSecurity"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task ZScoreReversalStrategy()
@@ -841,7 +844,10 @@ public class PythonTests
 
 	[TestMethod]
 	public Task StatisticalArbitrageStrategy()
-		=> RunStrategy("0219_Statistical_Arbitrage/statistical_arbitrage_strategy.py");
+		=> RunStrategy("0219_Statistical_Arbitrage/statistical_arbitrage_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["SecondSecurity"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task VolatilityBreakoutStrategy()

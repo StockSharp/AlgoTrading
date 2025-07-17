@@ -9,7 +9,7 @@ from StockSharp.Algo.Indicators import BollingerBands, RelativeStrengthIndex, Av
 from StockSharp.Algo.Strategies import Strategy
 from enum import Enum
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class ClusterState(Enum):
     """Cluster state tracking."""
@@ -153,8 +153,8 @@ class bollinger_kmeans_strategy(Strategy):
         bollinger_middle = float(bollinger_typed.MovingAverage)
         bollinger_lower = float(bollinger_typed.LowBand)
 
-        rsi = float(rsi_value)
-        self._atr_value = float(atr_value)
+        rsi = to_float(rsi_value)
+        self._atr_value = to_float(atr_value)
 
         # Update data for clustering
         self.UpdateClusterData(candle, rsi)

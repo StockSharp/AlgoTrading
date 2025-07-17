@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class cci_breakout_strategy(Strategy):
     """
@@ -106,7 +107,7 @@ class cci_breakout_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        cci_value = float(value)
+        cci_value = to_float(value)
 
         # Entry logic
         if cci_value > 100 and self.Position <= 0:

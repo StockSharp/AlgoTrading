@@ -150,9 +150,9 @@ class adx_mean_reversion_strategy(Strategy):
             return
         current_adx = float(adx_typed.MovingAverage)
 
-        dx = getattr(adx_typed, 'Dx', None)
-        if dx is None or dx.Plus is None or dx.Minus is None:
+        if adx_typed.Dx is None or dx.Plus is None or dx.Minus is None:
             return
+        dx = adx_typed.Dx
         plus_di = float(dx.Plus)
         minus_di = float(dx.Minus)
 

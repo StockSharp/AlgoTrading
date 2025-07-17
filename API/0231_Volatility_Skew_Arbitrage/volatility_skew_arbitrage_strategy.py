@@ -1,12 +1,14 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import Math
 from StockSharp.Messages import Level1Fields, Unit, UnitTypes
 from StockSharp.Algo.Indicators import StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Security
 from datatype_extensions import *
 from indicator_extensions import *
 
@@ -18,11 +20,11 @@ class volatility_skew_arbitrage_strategy(Strategy):
         super(volatility_skew_arbitrage_strategy, self).__init__()
 
         # Option with lower implied volatility.
-        self._option_with_low_vol_param = self.Param("OptionWithLowVol") \
+        self._option_with_low_vol_param = self.Param[Security]("OptionWithLowVol") \
             .SetDisplay("Option with Low Vol", "The option instrument with lower implied volatility", "Instruments")
 
         # Option with higher implied volatility.
-        self._option_with_high_vol_param = self.Param("OptionWithHighVol") \
+        self._option_with_high_vol_param = self.Param[Security]("OptionWithHighVol") \
             .SetDisplay("Option with High Vol", "The option instrument with higher implied volatility", "Instruments")
 
         # Period for calculating average volatility skew.

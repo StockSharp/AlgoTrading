@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class keltner_macd_strategy(Strategy):
     """
@@ -196,8 +197,8 @@ class keltner_macd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        ema = float(ema_value)
-        atr = float(atr_value)
+        ema = to_float(ema_value)
+        atr = to_float(atr_value)
 
         # Calculate Keltner Channels
         upperBand = ema + self.Multiplier * atr

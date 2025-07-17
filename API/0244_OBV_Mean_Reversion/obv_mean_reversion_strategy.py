@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import OnBalanceVolume, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class obv_mean_reversion_strategy(Strategy):
     """
@@ -109,14 +110,14 @@ class obv_mean_reversion_strategy(Strategy):
             return
 
         # Extract OBV value
-        self._current_obv = float(obv_value)
+        self._current_obv = to_float(obv_value)
 
         # Process OBV through average and standard deviation indicators
         avg_indicator_value = self._obv_average.Process(obv_value)
         std_dev_indicator_value = self._obv_std_dev.Process(obv_value)
 
-        self._obv_avg_value = float(avg_indicator_value)
-        self._obv_std_dev_value = float(std_dev_indicator_value)
+        self._obv_avg_value = to_float(avg_indicator_value)
+        self._obv_std_dev_value = to_float(std_dev_indicator_value)
 
         # Check if strategy is ready for trading
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._obv_average.IsFormed or not self._obv_std_dev.IsFormed:

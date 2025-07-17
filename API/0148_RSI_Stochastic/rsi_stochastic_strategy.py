@@ -8,7 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class rsi_stochastic_strategy(Strategy):
     """
@@ -213,7 +213,7 @@ class rsi_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rsi = float(rsi_value)
+        rsi = to_float(rsi_value)
         stoch_typed = stoch_value
         stoch_k = stoch_typed.K
 

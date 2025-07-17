@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SuperTrend, StochasticOscillator
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class supertrend_stochastic_strategy(Strategy):
     """
@@ -163,8 +164,8 @@ class supertrend_stochastic_strategy(Strategy):
             return
 
         # Get indicator values
-        supertrend_line = float(supertrend_value)
-        is_bullish = getattr(supertrend_value, 'IsUpTrend', True)
+        supertrend_line = to_float(supertrend_value)
+        is_bullish = supertrend_value.IsUpTrend
         is_bearish = not is_bullish
 
         if stochastic_value.K is None:

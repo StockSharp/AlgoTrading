@@ -160,18 +160,18 @@ class supertrend_distance_mean_reversion_strategy(Strategy):
             return
 
         # Get the Supertrend value
-        self._supertrend_value = float(supertrend_value)
+        self._supertrend_value = to_float(supertrend_value)
 
         # Calculate distances
         self._current_distance_long = float(candle.ClosePrice - self._supertrend_value)
         self._current_distance_short = float(self._supertrend_value - candle.ClosePrice)
 
         # Calculate averages and standard deviations for both distances
-        long_distance_avg = float(process_float(self._distance_average, self._current_distance_long, candle.ServerTime, candle.State == CandleStates.Finished))
-        long_distance_std_dev = float(process_float(self._distance_std_dev, self._current_distance_long, candle.ServerTime, candle.State == CandleStates.Finished))
+        long_distance_avg = to_float(process_float(self._distance_average, self._current_distance_long, candle.ServerTime, candle.State == CandleStates.Finished))
+        long_distance_std_dev = to_float(process_float(self._distance_std_dev, self._current_distance_long, candle.ServerTime, candle.State == CandleStates.Finished))
 
-        short_distance_avg = float(process_float(self._distance_average, self._current_distance_short, candle.ServerTime, candle.State == CandleStates.Finished))
-        short_distance_std_dev = float(process_float(self._distance_std_dev, self._current_distance_short, candle.ServerTime, candle.State == CandleStates.Finished))
+        short_distance_avg = to_float(process_float(self._distance_average, self._current_distance_short, candle.ServerTime, candle.State == CandleStates.Finished))
+        short_distance_std_dev = to_float(process_float(self._distance_std_dev, self._current_distance_short, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip the first value
         if self._prev_distance_long == 0 or self._prev_distance_short == 0:

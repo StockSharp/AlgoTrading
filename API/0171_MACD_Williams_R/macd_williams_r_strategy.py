@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class macd_williams_r_strategy(Strategy):
     """
@@ -160,7 +161,7 @@ class macd_williams_r_strategy(Strategy):
         # Get additional values from MACD (signal line)
         macd_line = float(macd_value.Macd)
         signal_line = float(macd_value.Signal)
-        williams_r = float(williams_r_value)
+        williams_r = to_float(williams_r_value)
 
         # Trading logic
         if macd_line > signal_line:  # MACD above signal line - bullish

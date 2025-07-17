@@ -155,14 +155,14 @@ class volume_slope_mean_reversion_strategy(Strategy):
             return
 
         # Process volume through SMA
-        volume_indicator_value = volume_ma_value
+        volume_indicator_value = float(volume_ma_value)
 
         # Skip if indicator is not formed yet
         if not self._volume_ma.IsFormed:
             return
 
         # Calculate volume ratio (current volume / average volume)
-        volume_ratio = candle.TotalVolume / to_float(volume_indicator_value)
+        volume_ratio = candle.TotalVolume / volume_indicator_value
 
         # Calculate volume ratio slope
         if self._is_first_calculation:

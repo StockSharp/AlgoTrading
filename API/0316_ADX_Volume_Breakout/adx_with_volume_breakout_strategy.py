@@ -107,9 +107,9 @@ class adx_with_volume_breakout_strategy(Strategy):
             if adx_typed.MovingAverage is None:
                 return
             adx_ma = adx_typed.MovingAverage
-            dx = getattr(adx_typed, 'Dx', None)
-            if dx is None or dx.Plus is None or dx.Minus is None:
+            if adx_typed.Dx is None or dx.Plus is None or dx.Minus is None:
                 return
+            dx = adx_typed.Dx
             plus_di = dx.Plus
             minus_di = dx.Minus
 

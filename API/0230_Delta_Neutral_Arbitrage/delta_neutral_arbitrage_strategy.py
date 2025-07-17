@@ -211,8 +211,8 @@ class delta_neutral_arbitrage_strategy(Strategy):
         if not self._spread_sma.IsFormed or not self._spread_std_dev.IsFormed:
             return
 
-        spread_sma = float(spread_value)
-        spread_std_dev = float(std_dev_value)
+        spread_sma = to_float(spread_value)
+        spread_std_dev = to_float(std_dev_value)
 
         # Calculate z-score
         z_score = 0 if spread_std_dev == 0 else (self._current_spread - spread_sma) / spread_std_dev

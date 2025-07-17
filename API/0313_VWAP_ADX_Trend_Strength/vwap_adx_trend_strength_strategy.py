@@ -1,3 +1,5 @@
+import clr
+
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
@@ -6,7 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import AverageDirectionalIndex, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class vwap_adx_trend_strength_strategy(Strategy):
     """
@@ -104,7 +106,7 @@ class vwap_adx_trend_strength_strategy(Strategy):
         di_minus = adx_typed.Dx.Minus  # -DI value
 
         # Get VWAP
-        vwap_dec = float(vwap_value)
+        vwap_dec = to_float(vwap_value)
 
         # Check for strong trend
         is_strong_trend = adx_ma > self.AdxThreshold

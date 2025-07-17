@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class laguerre_rsi_strategy(Strategy):
     """
@@ -109,7 +110,7 @@ class laguerre_rsi_strategy(Strategy):
             return
 
         # Get RSI value and normalize it to 0-1 range (Laguerre RSI uses 0-1 scale)
-        rsi = float(rsi_value)
+        rsi = to_float(rsi_value)
         norm_rsi = rsi / 100.0  # Convert standard RSI (0-100) to Laguerre RSI scale (0-1)
 
         # Get price direction

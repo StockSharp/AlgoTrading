@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceSignal, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class macd_volume_strategy(Strategy):
     """
@@ -179,7 +180,7 @@ class macd_volume_strategy(Strategy):
             return
 
         if volume_avg_value.IsFinal:
-            self._avg_volume = float(volume_avg_value)
+            self._avg_volume = to_float(volume_avg_value)
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading() or self._avg_volume <= 0:

@@ -2,7 +2,6 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
-clr.AddReference("System.Collections")
 
 from System import TimeSpan, Math
 from System.Collections.Generic import Queue
@@ -10,6 +9,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class volatility_mean_reversion_strategy(Strategy):
     """

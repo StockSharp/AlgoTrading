@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class rsi_divergence_strategy(Strategy):
     """
@@ -120,7 +121,7 @@ class rsi_divergence_strategy(Strategy):
             return
 
         current_price = float(candle.ClosePrice)
-        current_rsi = float(rsi_value)
+        current_rsi = to_float(rsi_value)
 
         # For the first candle, just store values and return
         if self._is_first_candle:

@@ -122,11 +122,11 @@ class donchian_reversal_strategy(Strategy):
             self._is_first_candle = False
             return
 
-        lower_band = getattr(donchian_value, 'LowerBand', None)
-        upper_band = getattr(donchian_value, 'UpperBand', None)
-
-        if lower_band is None or upper_band is None:
+        if donchian_value.LowerBand is None or donchian_value.UpperBand is None:
             return
+
+        lower_band = float(donchian_value.LowerBand)
+        upper_band = float(donchian_value.UpperBand)
 
         # Check for price bounce from Donchian bands
         bounced_from_lower = self._previous_close < lower_band and candle.ClosePrice > lower_band

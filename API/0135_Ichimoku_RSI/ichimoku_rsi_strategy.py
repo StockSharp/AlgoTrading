@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import Ichimoku, RelativeStrengthIndex
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class ichimoku_rsi_strategy(Strategy):
     """
@@ -205,7 +206,7 @@ class ichimoku_rsi_strategy(Strategy):
         senkou_span_b = float(ichimoku_value.SenkouB)
 
         # Extract RSI value
-        rsi_indicator_value = float(rsi_value)
+        rsi_indicator_value = to_float(rsi_value)
 
         # Check cloud status (Kumo)
         price_above_cloud = candle.ClosePrice > Math.Max(senkou_span_a, senkou_span_b)

@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import KalmanFilter, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class kalman_filter_trend_strategy(Strategy):
     """
@@ -98,7 +99,7 @@ class kalman_filter_trend_strategy(Strategy):
             return
 
         # Calculate trend direction
-        trend = 1 if candle.ClosePrice > kalman_value else -1
+        trend = 1 if candle.ClosePrice > to_float(kalman_value) else -1
 
         # Trading logic based on price position relative to Kalman filter
         if trend > 0 and self.Position <= 0:

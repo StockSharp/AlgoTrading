@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, MovingAverageConvergenceDivergenceSignal
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class elder_impulse_strategy(Strategy):
     """
@@ -162,7 +163,7 @@ class elder_impulse_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ema_decimal = float(ema_value)
+        ema_decimal = to_float(ema_value)
 
         if self._is_first_candle:
             self._previous_ema = ema_decimal

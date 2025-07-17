@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class williams_percent_r_strategy(Strategy):
     """
@@ -106,7 +107,7 @@ class williams_percent_r_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        williams_r_value = float(value)
+        williams_r_value = to_float(value)
 
         # Note: Williams %R values are negative, typically from 0 to -100
         # Oversold: Below -80

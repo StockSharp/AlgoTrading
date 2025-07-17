@@ -144,7 +144,7 @@ class adx_breakout_strategy(Strategy):
 
         # Process ADX through average indicator
         adxAvgValue = process_float(self._adx_average, currentAdx, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentAdxAvg = float(to_float(adxAvgValue))
+        currentAdxAvg = to_float(adxAvgValue)
 
         # For first values, just save and skip
         if self._prev_adx_value == 0:

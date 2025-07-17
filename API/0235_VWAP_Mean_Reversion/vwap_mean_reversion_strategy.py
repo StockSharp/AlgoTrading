@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import AverageTrueRange, VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class vwap_mean_reversion_strategy(Strategy):
     """
@@ -107,8 +108,8 @@ class vwap_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        self._current_vwap = process_candle(self._vwap, candle)
-        self._current_vwap = float(self._current_vwap) if self._current_vwap is not None else 0
+        self._current_vwap = to_float(process_candle(self._vwap, candle))
+        self._current_vwap = self._current_vwap if self._current_vwap is not None else 0
 
         self._current_atr = atr_value
         self.ProcessStrategy(candle.ClosePrice)

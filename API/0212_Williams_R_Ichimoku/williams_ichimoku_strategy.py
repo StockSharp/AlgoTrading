@@ -8,7 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import WilliamsR, Ichimoku
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class williams_ichimoku_strategy(Strategy):
     """
@@ -164,7 +164,7 @@ class williams_ichimoku_strategy(Strategy):
         is_price_above_kumo = candle.ClosePrice > kumo_top
         is_price_below_kumo = candle.ClosePrice < kumo_bottom
 
-        williams_r_dec = float(williams_r_value)
+        williams_r_dec = to_float(williams_r_value)
 
         # Save current Kijun for stop-loss
         self._last_kijun = kijun

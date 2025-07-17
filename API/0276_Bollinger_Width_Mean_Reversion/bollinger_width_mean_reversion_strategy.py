@@ -170,7 +170,7 @@ class bollinger_width_mean_reversion_strategy(Strategy):
             return
 
         # Process ATR
-        lastAtr = float(atr_value)
+        lastAtr = to_float(atr_value)
 
         bollingerTyped = bollinger_value
         if bollingerTyped.UpBand is None or bollingerTyped.LowBand is None:
@@ -184,8 +184,8 @@ class bollinger_width_mean_reversion_strategy(Strategy):
         widthStdDev = process_float(self._widthStdDev, lastWidth, candle.ServerTime, candle.State == CandleStates.Finished)
 
         if widthAvg.IsFinal and widthStdDev.IsFinal:
-            self._lastWidthAvg = float(widthAvg)
-            self._lastWidthStdDev = float(widthStdDev)
+            self._lastWidthAvg = to_float(widthAvg)
+            self._lastWidthStdDev = to_float(widthStdDev)
 
             # Check if strategy is ready to trade
             if not self.IsFormedAndOnlineAndAllowTrading():

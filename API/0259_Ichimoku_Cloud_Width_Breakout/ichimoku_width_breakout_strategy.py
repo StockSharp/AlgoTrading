@@ -171,19 +171,19 @@ class ichimoku_width_breakout_strategy(Strategy):
         # The structure of values depends on the implementation, this is just an example
         ichimoku_typed = ichimoku_value
 
-        if getattr(ichimoku_typed, 'Tenkan', None) is None:
+        if ichimoku_typed.Tenkan is None:
             return
         tenkan = float(ichimoku_typed.Tenkan)
 
-        if getattr(ichimoku_typed, 'Kijun', None) is None:
+        if ichimoku_typed.Kijun is None:
             return
         kijun = float(ichimoku_typed.Kijun)
 
-        if getattr(ichimoku_typed, 'SenkouA', None) is None:
+        if ichimoku_typed.SenkouA is None:
             return
         senkou_span_a = float(ichimoku_typed.SenkouA)
 
-        if getattr(ichimoku_typed, 'SenkouB', None) is None:
+        if ichimoku_typed.SenkouB is None:
             return
         senkou_span_b = float(ichimoku_typed.SenkouB)
 

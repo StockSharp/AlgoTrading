@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, UnitTypes, Unit
 from StockSharp.Algo.Indicators import KeltnerChannels, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class keltner_williams_r_strategy(Strategy):
     """Strategy based on Keltner Channels and Williams %R indicators (#203)"""
@@ -129,7 +130,7 @@ class keltner_williams_r_strategy(Strategy):
         lower = keltner_typed.Lower
         middle = keltner_typed.Middle
 
-        williams_r = float(williams_r_value)
+        williams_r = to_float(williams_r_value)
 
         price = float(candle.ClosePrice)
 

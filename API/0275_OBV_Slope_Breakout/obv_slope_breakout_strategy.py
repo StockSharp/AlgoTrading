@@ -159,7 +159,7 @@ class obv_slope_breakout_strategy(Strategy):
         # Store values for decision making
         self._lastObvValue = obvValue
 
-        if getattr(avgValue, 'IsFinal', True) and getattr(stdDevValue, 'IsFinal', True):
+        if avgValue.IsFinal and stdDevValue.IsFinal:
             self._lastSlopeAvg = to_float(avgValue)
             self._lastSlopeStdDev = to_float(stdDevValue)
 
