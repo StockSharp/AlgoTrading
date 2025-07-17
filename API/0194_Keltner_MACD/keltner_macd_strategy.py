@@ -204,7 +204,7 @@ class keltner_macd_strategy(Strategy):
         lowerBand = ema - self.Multiplier * atr
 
         macd_typed = macd_value
-        if not hasattr(macd_typed, 'Macd') or not hasattr(macd_typed, 'Signal'):
+        if macd_typed.Macd is None or macd_typed.Signal is None:
             return
 
         macd = float(macd_typed.Macd)

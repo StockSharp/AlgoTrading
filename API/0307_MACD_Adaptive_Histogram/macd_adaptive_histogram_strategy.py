@@ -193,7 +193,7 @@ class macd_adaptive_histogram_strategy(Strategy):
             return
 
         macd_typed = macd_value
-        if not hasattr(macd_typed, "Macd") or not hasattr(macd_typed, "Signal"):
+        if macd_typed.Macd is None or macd_typed.Signal is None:
             return
 
         # Extract MACD values

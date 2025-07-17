@@ -174,7 +174,7 @@ class macd_with_sentiment_filter_strategy(Strategy):
         self.UpdateSentimentScore(candle)
 
         macd_typed = macd_value
-        if not hasattr(macd_typed, "Macd") or not hasattr(macd_typed, "Signal"):
+        if macd_typed.Macd is None or macd_typed.Signal is None:
             return
 
         # Store previous MACD values for state tracking

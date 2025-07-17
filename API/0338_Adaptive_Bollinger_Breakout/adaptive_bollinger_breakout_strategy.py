@@ -188,8 +188,11 @@ class adaptive_bollinger_breakout_strategy(Strategy):
 
             bollinger_typed = bollinger_value
 
-            if (not hasattr(bollinger_typed, 'UpBand') or not hasattr(bollinger_typed, 'LowBand') or
-                    not hasattr(bollinger_typed, 'MovingAverage')):
+            if (
+                bollinger_typed.UpBand is None
+                or bollinger_typed.LowBand is None
+                or bollinger_typed.MovingAverage is None
+            ):
                 return  # Not enough data to calculate bands
 
             upper_band = bollinger_typed.UpBand
