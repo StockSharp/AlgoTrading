@@ -127,7 +127,7 @@ class obv_divergence_strategy(Strategy):
         self._previousPrice = self._currentPrice
         self._previousObv = self._currentObv
         
-        self._currentPrice = candle.ClosePrice
+        self._currentPrice = float(candle.ClosePrice)
         self._currentObv = obvValue
         
         maPrice = maValue

@@ -131,7 +131,7 @@ class keltner_williams_r_strategy(Strategy):
 
         williams_r = float(williams_r_value)
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic:
         # Long: Price < lower Keltner band && Williams %R < -80 (oversold at lower band)

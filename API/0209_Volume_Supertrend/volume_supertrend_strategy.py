@@ -104,7 +104,7 @@ class volume_supertrend_strategy(Strategy):
 
             high_price = candle.HighPrice
             low_price = candle.LowPrice
-            close_price = candle.ClosePrice
+            close_price = float(candle.ClosePrice)
 
             # Calculate bands
             multiplier = self.supertrend_multiplier

@@ -176,7 +176,7 @@ class ma_williams_r_strategy(Strategy):
             return
 
         # Current price
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Determine if price is above or below MA
         isPriceAboveMA = price > maValue

@@ -189,7 +189,7 @@ class correlation_mean_reversion_strategy(Strategy):
             return
 
         # Store the last price
-        self._security1_last_price = candle.ClosePrice
+        self._security1_last_price = float(candle.ClosePrice)
         self._security1_updated = True
 
         # Update correlation and check for signals
@@ -200,7 +200,7 @@ class correlation_mean_reversion_strategy(Strategy):
             return
 
         # Store the last price
-        self._security2_last_price = candle.ClosePrice
+        self._security2_last_price = float(candle.ClosePrice)
         self._security2_updated = True
 
         # Update correlation and check for signals

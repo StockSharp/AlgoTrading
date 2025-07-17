@@ -118,7 +118,7 @@ class donchian_reversal_strategy(Strategy):
 
         # If this is the first candle, just store the close price
         if self._is_first_candle:
-            self._previous_close = candle.ClosePrice
+            self._previous_close = float(candle.ClosePrice)
             self._is_first_candle = False
             return
 
@@ -142,7 +142,7 @@ class donchian_reversal_strategy(Strategy):
             self.LogInfo(f"Short entry: Price bounced from upper Donchian band ({upper_band})")
 
         # Store current close price for next candle comparison
-        self._previous_close = candle.ClosePrice
+        self._previous_close = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

@@ -130,7 +130,7 @@ class momentum_percentage_strategy(Strategy):
         # Calculate the percentage change
         # Momentum indicator returns the difference between current price and price N periods ago
         # To get percentage change: (momentum / (close - momentum)) * 100
-        close_price = candle.ClosePrice
+        close_price = float(candle.ClosePrice)
         previous_price = close_price - momentum_decimal
         
         if previous_price == 0:

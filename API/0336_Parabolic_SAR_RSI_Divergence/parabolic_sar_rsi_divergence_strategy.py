@@ -141,7 +141,7 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
 
         # Store previous values for next comparison
         self._prev_rsi = rsi_value
-        self._prev_price = candle.ClosePrice
+        self._prev_price = float(candle.ClosePrice)
 
     def CheckRsiDivergence(self, current_price, current_rsi):
         # If we have previous values to compare

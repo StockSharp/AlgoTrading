@@ -148,7 +148,7 @@ class atr_reversion_strategy(Strategy):
 
         # Initialize _prev_close on first formed candle
         if self._prev_close == 0:
-            self._prev_close = candle.ClosePrice
+            self._prev_close = float(candle.ClosePrice)
             return
 
         # Calculate price change from previous candle
@@ -187,7 +187,7 @@ class atr_reversion_strategy(Strategy):
                     candle.ClosePrice, sma_decimal))
 
         # Update previous close price
-        self._prev_close = candle.ClosePrice
+        self._prev_close = float(candle.ClosePrice)
 
     def CreateClone(self):
         """

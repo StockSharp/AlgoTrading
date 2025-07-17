@@ -169,7 +169,7 @@ class cci_divergence_strategy(Strategy):
             self._previousCci = self._currentCci
 
         # Update current values
-        self._currentPrice = candle.ClosePrice
+        self._currentPrice = float(candle.ClosePrice)
         self._currentCci = cciValue
 
         self.LogInfo("Candle: {0}, Close: {1}, CCI: {2:F2}".format(

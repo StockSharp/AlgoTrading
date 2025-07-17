@@ -159,8 +159,16 @@ class keltner_width_breakout_strategy(Strategy):
 
     def OnOrderBookReceived(self, orderBook):
         # Get best bid and ask from order book
-        bestBid = orderBook.Bids is not None and len(orderBook.Bids) > 0 and orderBook.Bids[0].Price or 0
-        bestAsk = orderBook.Asks is not None and len(orderBook.Asks) > 0 and orderBook.Asks[0].Price or 0
+        bestBid = (
+            float(orderBook.Bids[0].Price)
+            if orderBook.Bids is not None and len(orderBook.Bids) > 0
+            else 0
+        )
+        bestAsk = (
+            float(orderBook.Asks[0].Price)
+            if orderBook.Asks is not None and len(orderBook.Asks) > 0
+            else 0
+        )
         self._lastBid = bestBid
         self._lastAsk = bestAsk
 

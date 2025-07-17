@@ -164,7 +164,7 @@ class donchian_macd_strategy(Strategy):
             # Enter long position
             volume = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(volume)
-            self._entryPrice = candle.ClosePrice
+            self._entryPrice = float(candle.ClosePrice)
 
             self.LogInfo("Long entry signal: Price {0} broke above Donchian high {1} with MACD confirmation".format(candle.ClosePrice, self._previousHighest))
         # Short entry: Price breaks below Donchian low and MACD < Signal
@@ -175,7 +175,7 @@ class donchian_macd_strategy(Strategy):
             # Enter short position
             volume = self.Volume + Math.Abs(self.Position)
             self.SellMarket(volume)
-            self._entryPrice = candle.ClosePrice
+            self._entryPrice = float(candle.ClosePrice)
 
             self.LogInfo("Short entry signal: Price {0} broke below Donchian low {1} with MACD confirmation".format(candle.ClosePrice, self._previousLowest))
         # MACD trend reversal exit

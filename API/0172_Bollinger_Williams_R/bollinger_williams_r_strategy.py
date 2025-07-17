@@ -140,7 +140,7 @@ class bollinger_williams_r_strategy(Strategy):
         lower_band = bollinger_typed.LowBand
 
         # Current price (close of the candle)
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Stop-loss size based on ATR
         stop_size = to_float(atr_value) * self.AtrMultiplier

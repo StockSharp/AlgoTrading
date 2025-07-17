@@ -107,7 +107,7 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
         sar_price = to_float(sar_value)
 
         # Get current price and sentiment
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
         sentiment = self.GetSentiment()  # In real implementation, this would come from external API
 
         # Skip first candle to initialize previous values

@@ -116,7 +116,7 @@ class tweezer_top_strategy(Strategy):
         if isTweezerTop and self.Position == 0:
             self.LogInfo("Tweezer Top pattern detected. Going short.")
             self.SellMarket(self.Volume)
-            self._entryPrice = candle.ClosePrice
+            self._entryPrice = float(candle.ClosePrice)
         # Check for exit condition
         elif self.Position < 0 and candle.LowPrice < self._entryPrice:
             self.LogInfo("Price below entry low. Taking profit.")

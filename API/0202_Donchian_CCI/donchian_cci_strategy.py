@@ -118,7 +118,7 @@ class donchian_cci_strategy(Strategy):
         middle_band = donchian_typed.Middle
 
         cci_dec = cci_value
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic:
         # Long: Price > Donchian Upper && CCI < -100 (breakout up with oversold conditions)

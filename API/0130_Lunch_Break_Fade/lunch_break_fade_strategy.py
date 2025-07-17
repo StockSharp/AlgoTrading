@@ -103,13 +103,13 @@ class lunch_break_fade_strategy(Strategy):
         if candle.OpenTime.Hour != self.LunchHour:
             # Update previous candles data
             self._twoCandlesBackClose = self._previousCandleClose
-            self._previousCandleClose = candle.ClosePrice
+            self._previousCandleClose = float(candle.ClosePrice)
             return
 
         # Trading logic can only be applied if we have enough historical data
         if self._previousCandleClose is None or self._twoCandlesBackClose is None:
             self._twoCandlesBackClose = self._previousCandleClose
-            self._previousCandleClose = candle.ClosePrice
+            self._previousCandleClose = float(candle.ClosePrice)
             return
 
         # Lunch break fade logic:
@@ -136,7 +136,7 @@ class lunch_break_fade_strategy(Strategy):
 
         # Update previous candles data
         self._twoCandlesBackClose = self._previousCandleClose
-        self._previousCandleClose = candle.ClosePrice
+        self._previousCandleClose = float(candle.ClosePrice)
 
     def OnStopped(self):
         self._previousCandleClose = None

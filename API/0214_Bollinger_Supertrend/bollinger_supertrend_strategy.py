@@ -185,7 +185,7 @@ class bollinger_supertrend_strategy(Strategy):
                     # Trend remains down, adjust supertrend value
                     self._supertrend_value = min(upper_band2, self._supertrend_value)
 
-        self._last_close = candle.ClosePrice
+        self._last_close = float(candle.ClosePrice)
 
         # Trading logic
         is_price_above_supertrend = candle.ClosePrice > self._supertrend_value

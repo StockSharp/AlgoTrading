@@ -123,7 +123,7 @@ class macd_vwap_strategy(Strategy):
         vwap = to_float(vwap_value)
 
         # Current price (close of the candle)
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic
         if macd_line > signal_line and price > vwap and self.Position <= 0:

@@ -108,7 +108,7 @@ class pivot_point_reversal_strategy(Strategy):
         # Store previous day's OHLC for pivot point calculation
         self._prevHigh = candle.HighPrice
         self._prevLow = candle.LowPrice
-        self._prevClose = candle.ClosePrice
+        self._prevClose = float(candle.ClosePrice)
         
         # Calculate pivot points for the new day
         self.CalculatePivotPoints()

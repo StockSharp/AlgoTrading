@@ -145,7 +145,7 @@ class parabolic_sar_volume_strategy(Strategy):
             return
 
         # Get current price and volume
-        currentPrice = candle.ClosePrice
+        currentPrice = float(candle.ClosePrice)
         currentVolume = candle.TotalVolume
         isPriceAboveSar = currentPrice > sarValue
 

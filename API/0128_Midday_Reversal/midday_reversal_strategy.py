@@ -86,12 +86,12 @@ class midday_reversal_strategy(Strategy):
 
         # Initialize price history first
         if self._prev_candle_close == 0:
-            self._prev_candle_close = candle.ClosePrice
+            self._prev_candle_close = float(candle.ClosePrice)
             return
 
         if self._prev_prev_candle_close == 0:
             self._prev_prev_candle_close = self._prev_candle_close
-            self._prev_candle_close = candle.ClosePrice
+            self._prev_candle_close = float(candle.ClosePrice)
             return
 
         # Check for midday reversal conditions
@@ -133,7 +133,7 @@ class midday_reversal_strategy(Strategy):
 
         # Update price history
         self._prev_prev_candle_close = self._prev_candle_close
-        self._prev_candle_close = candle.ClosePrice
+        self._prev_candle_close = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

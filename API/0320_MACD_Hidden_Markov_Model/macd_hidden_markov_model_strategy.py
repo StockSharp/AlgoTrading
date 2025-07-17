@@ -177,7 +177,7 @@ class macd_hidden_markov_model_strategy(Strategy):
                 self._price_changes.pop(0)
                 self._volumes.pop(0)
 
-        self._prev_price = candle.ClosePrice
+        self._prev_price = float(candle.ClosePrice)
 
     def CalculateMarketState(self):
         # Only perform state calculation when we have enough data

@@ -121,7 +121,7 @@ class momentum_divergence_strategy(Strategy):
         self._prevMomentum = self._currentMomentum
 
         # Update current values
-        self._currentPrice = candle.ClosePrice
+        self._currentPrice = float(candle.ClosePrice)
         self._currentMomentum = momentumValue
 
         # Skip first candle after indicators become formed

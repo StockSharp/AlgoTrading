@@ -134,7 +134,7 @@ class atr_range_strategy(Strategy):
 
         # Store price for first bar of lookback period
         if self._barCounter == 1 or self._barCounter % self.LookbackPeriod == 1:
-            self._nBarsAgoPrice = candle.ClosePrice
+            self._nBarsAgoPrice = float(candle.ClosePrice)
             self.LogInfo("Storing reference price: {0} at bar {1}".format(self._nBarsAgoPrice, self._barCounter))
             return
 

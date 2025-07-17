@@ -121,7 +121,7 @@ class hurst_exponent_reversion_strategy(Strategy):
             return
 
         # Store current price
-        self._current_price = candle.ClosePrice
+        self._current_price = float(candle.ClosePrice)
 
         # Calculate Hurst exponent (simplified approach)
         # In a real implementation, you would use a proper Hurst exponent calculation

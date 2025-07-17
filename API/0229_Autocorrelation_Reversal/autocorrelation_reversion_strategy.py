@@ -120,7 +120,7 @@ class autocorrelation_reversion_strategy(Strategy):
             return
 
         # Update current price and price history
-        self._current_price = candle.ClosePrice
+        self._current_price = float(candle.ClosePrice)
 
         # Update price history queue
         self._price_history.append(self._current_price)

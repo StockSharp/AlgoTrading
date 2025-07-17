@@ -119,7 +119,7 @@ class rsi_divergence_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        current_price = candle.ClosePrice
+        current_price = float(candle.ClosePrice)
         current_rsi = float(rsi_value)
 
         # For the first candle, just store values and return

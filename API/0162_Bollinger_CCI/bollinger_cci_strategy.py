@@ -163,7 +163,7 @@ class bollinger_cci_strategy(Strategy):
         cciTyped = float(cciValue)
 
         # Current price
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         self.LogInfo(
             "Candle: {0}, Close: {1}, Upper Band: {2}, Middle Band: {3}, Lower Band: {4}, CCI: {5}".format(

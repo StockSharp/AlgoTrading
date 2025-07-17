@@ -112,7 +112,7 @@ class vwma_strategy(Strategy):
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:
-            self._previousClosePrice = candle.ClosePrice
+            self._previousClosePrice = float(candle.ClosePrice)
             self._previousVWMA = vwmaPrice
             self._isFirstCandle = False
             return
@@ -152,7 +152,7 @@ class vwma_strategy(Strategy):
             self.BuyMarket(Math.Abs(self.Position))
 
         # Store current values for next comparison
-        self._previousClosePrice = candle.ClosePrice
+        self._previousClosePrice = float(candle.ClosePrice)
         self._previousVWMA = vwmaPrice
 
     def CreateClone(self):

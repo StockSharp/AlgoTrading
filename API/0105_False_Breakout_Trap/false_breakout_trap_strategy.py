@@ -188,7 +188,7 @@ class false_breakout_trap_strategy(Strategy):
                 # Potential upside breakout
                 self._breakoutDetected = True
                 self._breakoutSide = Sides.Buy
-                self._breakoutPrice = candle.ClosePrice
+                self._breakoutPrice = float(candle.ClosePrice)
 
                 self.LogInfo("Potential upside breakout detected at {0}. Watching for false breakout pattern.".format(
                     candle.HighPrice))
@@ -196,7 +196,7 @@ class false_breakout_trap_strategy(Strategy):
                 # Potential downside breakout
                 self._breakoutDetected = True
                 self._breakoutSide = Sides.Sell
-                self._breakoutPrice = candle.ClosePrice
+                self._breakoutPrice = float(candle.ClosePrice)
 
                 self.LogInfo("Potential downside breakout detected at {0}. Watching for false breakout pattern.".format(
                     candle.LowPrice))

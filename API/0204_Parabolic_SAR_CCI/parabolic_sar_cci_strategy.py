@@ -106,7 +106,7 @@ class parabolic_sar_cci_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic:
         # Long: Price > SAR && CCI < -100 (trend up with oversold conditions)

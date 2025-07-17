@@ -100,7 +100,7 @@ class vwap_breakout_strategy(Strategy):
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:
-            self._previousClosePrice = candle.ClosePrice
+            self._previousClosePrice = float(candle.ClosePrice)
             self._previousVWAP = vwapPrice
             self._isFirstCandle = False
             return
@@ -138,7 +138,7 @@ class vwap_breakout_strategy(Strategy):
             self.BuyMarket(Math.Abs(self.Position))
 
         # Store current values for next comparison
-        self._previousClosePrice = candle.ClosePrice
+        self._previousClosePrice = float(candle.ClosePrice)
         self._previousVWAP = vwapPrice
 
     def CreateClone(self):
