@@ -145,9 +145,10 @@ class obv_slope_breakout_strategy(Strategy):
         if hasattr(slopeTyped, 'IsFinal') and not slopeTyped.IsFinal:
             return
 
-        slopeValue = getattr(slopeTyped, 'LinearReg', None)
-        if slopeValue is None:
+        if slopeTyped.LinearReg is None:
             return
+
+        slopeValue = float(slopeTyped.LinearReg)
 
         self._lastObvSlope = slopeValue
 

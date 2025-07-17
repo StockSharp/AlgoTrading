@@ -183,7 +183,7 @@ class donchian_rsi_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rsi_dec = to_float(rsi_value) if hasattr(rsi_value, 'ToDecimal') else float(rsi_value)
+        rsi_dec = to_float(rsi_value)
 
         # Detect breakouts by comparing current price to previous Donchian bands
         upper_breakout = candle.ClosePrice > self._prev_upper_band
