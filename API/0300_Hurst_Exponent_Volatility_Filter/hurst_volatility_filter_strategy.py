@@ -171,12 +171,15 @@ class hurst_volatility_filter_strategy(Strategy):
         # logic that estimates the Hurst exponent based on recent price behavior.
 
         # Process current price through the displacement indicator
-        hurst_value = to_float(process_candle(self._hurst_exponent, candle))
+        hurst_value = process_candle(self._hurst_exponent, candle)
+
+        if hurst_value.IsEmpty:
+            return None
 
         # For demonstration purposes - in a real implementation you'd use
         # a proper Hurst exponent calculation library or algorithm
         # This is just a placeholder that gives a value between 0 and 1
-        return hurst_value if hurst_value is not None else None
+        return to_float(hurst_value)
 
     def UpdateAverageAtr(self, atr_value):
         if self._average_atr == 0:
