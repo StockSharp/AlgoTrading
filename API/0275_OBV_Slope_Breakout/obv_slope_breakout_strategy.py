@@ -142,7 +142,7 @@ class obv_slope_breakout_strategy(Strategy):
 
         # Calculate OBV slope
         slopeTyped = process_float(self._obvSlope, obvValue, candle.ServerTime, candle.State == CandleStates.Finished)
-        if hasattr(slopeTyped, 'IsFinal') and not slopeTyped.IsFinal:
+        if not slopeTyped.IsFinal:
             return
 
         if slopeTyped.LinearReg is None:
