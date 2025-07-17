@@ -155,11 +155,10 @@ class stochastic_breakout_strategy(Strategy):
             return
 
         # Get stochastic value (K line)
-        stochTyped = stochValue
-        if stochTyped.K is None:
+        if stochValue.K is None:
             return
 
-        stochK = stochTyped.K
+        stochK = stochValue.K
 
         # Calculate average and standard deviation of stochastic
         stochAvgValue = to_float(process_float(self._stochAverage, stochK, candle.ServerTime, candle.State == CandleStates.Finished))

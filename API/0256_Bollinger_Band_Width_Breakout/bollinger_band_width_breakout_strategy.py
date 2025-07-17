@@ -147,13 +147,12 @@ class bollinger_band_width_breakout_strategy(Strategy):
         current_atr = to_float(atr_value)
 
         # Calculate Bollinger Band width
-        bollinger_typed = bollinger_value
-        if bollinger_typed.UpBand is None:
+        if bollinger_value.UpBand is None:
             return
-        if bollinger_typed.LowBand is None:
+        if bollinger_value.LowBand is None:
             return
-        upper_band = float(bollinger_typed.UpBand)
-        lower_band = float(bollinger_typed.LowBand)
+        upper_band = float(bollinger_value.UpBand)
+        lower_band = float(bollinger_value.LowBand)
 
         last_width = upper_band - lower_band
 

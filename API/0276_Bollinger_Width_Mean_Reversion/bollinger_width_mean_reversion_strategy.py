@@ -172,12 +172,11 @@ class bollinger_width_mean_reversion_strategy(Strategy):
         # Process ATR
         lastAtr = to_float(atr_value)
 
-        bollingerTyped = bollinger_value
-        if bollingerTyped.UpBand is None or bollingerTyped.LowBand is None:
+        if bollinger_value.UpBand is None or bollinger_value.LowBand is None:
             return
 
         # Calculate Bollinger width
-        lastWidth = float(bollingerTyped.UpBand) - float(bollingerTyped.LowBand)
+        lastWidth = float(bollinger_value.UpBand) - float(bollinger_value.LowBand)
 
         # Calculate width's average and standard deviation
         widthAvg = process_float(self._widthAvg, lastWidth, candle.ServerTime, candle.State == CandleStates.Finished)

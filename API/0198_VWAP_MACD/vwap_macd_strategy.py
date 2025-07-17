@@ -134,15 +134,14 @@ class vwap_macd_strategy(Strategy):
         # Get VWAP value (calculated per day)
         vwap = to_float(process_candle(self._vwap, candle))
 
-        macd_typed = macd_value
 
         # Check if MACD and Signal values are available
-        if macd_typed.Macd is None or macd_typed.Signal is None:
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
         # Extract MACD and Signal values
-        macd = float(macd_typed.Macd)
-        signal = float(macd_typed.Signal)
+        macd = float(macd_value.Macd)
+        signal = float(macd_value.Signal)
 
         # Detect MACD crosses
         macd_crossed_above_signal = self._prev_macd <= self._prev_signal and macd > signal

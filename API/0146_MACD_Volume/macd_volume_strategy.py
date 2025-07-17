@@ -186,9 +186,8 @@ class macd_volume_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading() or self._avg_volume <= 0:
             return
 
-        macd_typed = macd_value
-        macd_line = macd_typed.Macd
-        signal_line = macd_typed.Signal
+        macd_line = macd_value.Macd
+        signal_line = macd_value.Signal
 
         # Check if we have previous values to compare
         if self._prev_macd is not None and self._prev_signal is not None:

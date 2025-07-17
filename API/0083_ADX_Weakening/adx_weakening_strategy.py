@@ -134,12 +134,11 @@ class adx_weakening_strategy(Strategy):
 
         ma = to_float(maValue)
 
-        adxTyped = adxValue
-        if adxTyped.MovingAverage is None:
+        if adxValue.MovingAverage is None:
             return
-        adx_val = float(adxTyped.MovingAverage)
+        adx_val = float(adxValue.MovingAverage)
 
-        dx = adxTyped.Dx
+        dx = adxValue.Dx
         if dx.Plus is None or dx.Minus is None:
             return
 

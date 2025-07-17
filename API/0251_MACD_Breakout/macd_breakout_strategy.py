@@ -174,13 +174,12 @@ class macd_breakout_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        macd_typed = macd_value
 
         # Extract the histogram value (MACD Line - Signal Line)
-        if macd_typed.Macd is None or macd_typed.Signal is None:
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
-        macd = float(macd_typed.Macd)
+        macd = float(macd_value.Macd)
 
         # Process indicators for MACD histogram
         macd_hist_sma_value = to_float(process_float(self._macd_hist_sma, macd, candle.ServerTime, candle.State == CandleStates.Finished))

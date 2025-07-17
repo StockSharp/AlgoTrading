@@ -142,12 +142,10 @@ class supertrend_adx_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_typed = adx_value
-        supertrend_typed = supertrend_value
 
         # Determine current position relative to Supertrend
-        is_above_supertrend = candle.ClosePrice > supertrend_typed.Value
-        is_strong_trend = adx_typed.MovingAverage > self.AdxThreshold
+        is_above_supertrend = candle.ClosePrice > supertrend_value.Value
+        is_strong_trend = adx_value.MovingAverage > self.AdxThreshold
 
         # Log current state
         self.LogInfo(f"Close: {candle.ClosePrice}, Supertrend: {supertrend_value}, ADX: {adx_value}, Above: {is_above_supertrend}, Strong Trend: {is_strong_trend}")
@@ -176,7 +174,7 @@ class supertrend_adx_strategy(Strategy):
                 self.LogInfo(f"Exit short position: Price crossed above Supertrend ({supertrend_value})")
 
         # Save current state
-        self._last_supertrend = supertrend_typed.Value
+        self._last_supertrend = supertrend_value.Value
         self._is_above_supertrend = is_above_supertrend
 
     def CreateClone(self):

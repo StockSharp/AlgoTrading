@@ -214,8 +214,7 @@ class rsi_stochastic_strategy(Strategy):
             return
 
         rsi = to_float(rsi_value)
-        stoch_typed = stoch_value
-        stoch_k = stoch_typed.K
+        stoch_k = stoch_value.K
 
         # Long entry: double confirmation of oversold condition
         if rsi < self.rsi_oversold and stoch_k < self.stoch_oversold and self.Position <= 0:

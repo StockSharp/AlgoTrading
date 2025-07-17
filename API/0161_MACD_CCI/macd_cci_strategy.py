@@ -174,9 +174,8 @@ class macd_cci_strategy(Strategy):
 
         # Get MACD line and Signal line values
         # This approach is not ideal - in a proper implementation, these values should come from the Bind parameters
-        macdTyped = macdValue
-        macdLine = macdTyped.Macd  # The main MACD line
-        signalLine = macdTyped.Signal  # Signal line
+        macdLine = macdValue.Macd  # The main MACD line
+        signalLine = macdValue.Signal  # Signal line
 
         # Determine if MACD is above or below signal line
         isMacdAboveSignal = macdLine > signalLine

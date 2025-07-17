@@ -170,32 +170,31 @@ class bollinger_cci_strategy(Strategy):
         if bb.LowBand is None:
             return
         lowerBand = float(bb.LowBand)
-        cciTyped = to_float(cciValue)
 
         # Current price
         price = float(candle.ClosePrice)
 
         self.LogInfo(
             "Candle: {0}, Close: {1}, Upper Band: {2}, Middle Band: {3}, Lower Band: {4}, CCI: {5}".format(
-                candle.OpenTime, price, upperBand, middleBand, lowerBand, cciTyped))
+                candle.OpenTime, price, upperBand, middleBand, lowerBand, cciValue))
 
         # Trading rules
-        if price < lowerBand and cciTyped < self.CciOversold and self.Position <= 0:
+        if price < lowerBand and cciValue < self.CciOversold and self.Position <= 0:
             # Buy signal - price below lower band and CCI oversold
             volume = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(volume)
 
             self.LogInfo(
                 "Buy signal: Price below lower Bollinger Band and CCI oversold ({0} < {1}). Volume: {2}".format(
-                    cciTyped, self.CciOversold, volume))
-        elif price > upperBand and cciTyped > self.CciOverbought and self.Position >= 0:
+                    cciValue, self.CciOversold, volume))
+        elif price > upperBand and cciValue > self.CciOverbought and self.Position >= 0:
             # Sell signal - price above upper band and CCI overbought
             volume = self.Volume + Math.Abs(self.Position)
             self.SellMarket(volume)
 
             self.LogInfo(
                 "Sell signal: Price above upper Bollinger Band and CCI overbought ({0} > {1}). Volume: {2}".format(
-                    cciTyped, self.CciOverbought, volume))
+                    cciValue, self.CciOverbought, volume))
         # Exit conditions
         elif price > middleBand and self.Position > 0:
             # Exit long position when price returns to the middle band

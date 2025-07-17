@@ -98,12 +98,11 @@ class vwap_adx_trend_strength_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_typed = adx_value
 
         # Extract values from ADX composite indicator
-        adx_ma = adx_typed.MovingAverage  # ADX value
-        di_plus = adx_typed.Dx.Plus  # +DI value
-        di_minus = adx_typed.Dx.Minus  # -DI value
+        adx_ma = adx_value.MovingAverage  # ADX value
+        di_plus = adx_value.Dx.Plus  # +DI value
+        di_minus = adx_value.Dx.Minus  # -DI value
 
         # Get VWAP
         vwap_dec = to_float(vwap_value)

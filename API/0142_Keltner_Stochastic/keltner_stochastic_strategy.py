@@ -210,22 +210,20 @@ class keltner_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        keltner_typed = keltner_value  # KeltnerChannelsValue
-        ema_value = keltner_typed.Middle
-        atr_value = keltner_typed.Upper - keltner_typed.Middle  # ATR is the distance from middle to upper band
+        ema_value = keltner_value.Middle
+        atr_value = keltner_value.Upper - keltner_value.Middle  # ATR is the distance from middle to upper band
 
-        stoch_typed = stoch_value  # StochasticOscillatorValue
 
         # Calculate Keltner Channel bands
         upper_band = ema_value + (atr_value * self.KeltnerMultiplier)
         lower_band = ema_value - (atr_value * self.KeltnerMultiplier)
 
         # Long entry: price below lower Keltner band and Stochastic oversold
-        if candle.ClosePrice < lower_band and stoch_typed.K < self.StochOversold and self.Position <= 0:
+        if candle.ClosePrice < lower_band and stoch_value.K < self.StochOversold and self.Position <= 0:
             volume = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(volume)
         # Short entry: price above upper Keltner band and Stochastic overbought
-        elif candle.ClosePrice > upper_band and stoch_typed.K > self.StochOverbought and self.Position >= 0:
+        elif candle.ClosePrice > upper_band and stoch_value.K > self.StochOverbought and self.Position >= 0:
             volume = self.Volume + Math.Abs(self.Position)
             self.SellMarket(volume)
         # Long exit: price returns to EMA line (middle band)

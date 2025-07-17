@@ -168,10 +168,9 @@ class hull_ma_stochastic_strategy(Strategy):
         # Get indicator values
         hma = to_float(hma_value)
 
-        stoch_typed = stoch_value
-        if stoch_typed.K is None:
+        if stoch_value.K is None:
             return
-        stoch_k = float(stoch_typed.K)
+        stoch_k = float(stoch_value.K)
 
         atr = to_float(atr_value)
 

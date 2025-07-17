@@ -165,11 +165,10 @@ class stochastic_slope_mean_reversion_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stoch_typed = stoch_value
-        if stoch_typed.K is None:
+        if stoch_value.K is None:
             return
 
-        stoch_k = float(stoch_typed.K)
+        stoch_k = float(stoch_value.K)
 
         # Calculate Stochastic %K slope only if we have previous %K value
         if self._previous_stoch_k_value != 0:

@@ -162,18 +162,17 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
             return
 
         # Extract values from the Ichimoku indicator
-        ichimokuTyped = ichimokuValue
 
-        tenkan = ichimokuTyped.Tenkan
+        tenkan = ichimokuValue.Tenkan
         if tenkan is None:
             return
-        kijun = ichimokuTyped.Kijun
+        kijun = ichimokuValue.Kijun
         if kijun is None:
             return
-        senkouA = ichimokuTyped.SenkouA
+        senkouA = ichimokuValue.SenkouA
         if senkouA is None:
             return
-        senkouB = ichimokuTyped.SenkouB
+        senkouB = ichimokuValue.SenkouB
         if senkouB is None:
             return
 

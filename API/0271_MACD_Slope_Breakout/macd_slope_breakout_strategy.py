@@ -168,16 +168,15 @@ class macd_slope_breakout_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        macd_typed = macd_value
-        if macd_typed.Macd is None or macd_typed.Signal is None:
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
         # Calculate MACD histogram value (MACD - Signal)
-        macd_hist = macd_typed.Macd - macd_typed.Signal
+        macd_hist = macd_value.Macd - macd_value.Signal
 
         # Calculate MACD histogram slope
-        current_slope_typed = process_float(self._macd_hist_slope, macd_hist, candle.ServerTime, candle.State == CandleStates.Finished)
-        current_slope_value = current_slope_typed.LinearReg
+        current_slope = process_float(self._macd_hist_slope, macd_hist, candle.ServerTime, candle.State == CandleStates.Finished)
+        current_slope_value = current_slope.LinearReg
         if current_slope_value is None:
             return
 

@@ -125,12 +125,11 @@ class vwap_adx_trend_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        adx_typed = adx_value
-        if adx_typed.MovingAverage is None:
+        if adx_value.MovingAverage is None:
             return
-        adx = adx_typed.MovingAverage
+        adx = adx_value.MovingAverage
 
-        dx = adx_typed.Dx
+        dx = adx_value.Dx
         if dx.Plus is None or dx.Minus is None:
             return
         plus_di = dx.Plus

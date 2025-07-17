@@ -157,8 +157,8 @@ class adx_slope_breakout_strategy(Strategy):
             return
 
         # Calculate ADX slope
-        currentSlopeTyped = process_float(self._adxSlope, adx, candle.ServerTime, candle.State == CandleStates.Finished)
-        currentSlopeValue = currentSlopeTyped.LinearReg
+        currentSlope = process_float(self._adxSlope, adx, candle.ServerTime, candle.State == CandleStates.Finished)
+        currentSlopeValue = currentSlope.LinearReg
         if currentSlopeValue is None:
             return
 
