@@ -205,7 +205,7 @@ class atr_slope_mean_reversion_strategy(Strategy):
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
 
             # Calculate and set stop loss based on ATR
-            stopPrice = candle.ClosePrice - atrValue * self.StopLossMultiplier
+            stopPrice = float(candle.ClosePrice - atrValue * self.StopLossMultiplier)
             self.LogInfo(f"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {self.StopLossMultiplier})")
         elif self._currentAtrSlope > shortEntryThreshold and self.Position >= 0:
             # Short entry: slope is significantly higher than average (mean reversion expected)
@@ -213,7 +213,7 @@ class atr_slope_mean_reversion_strategy(Strategy):
             self.SellMarket(self.Volume + Math.Abs(self.Position))
 
             # Calculate and set stop loss based on ATR
-            stopPrice = candle.ClosePrice + atrValue * self.StopLossMultiplier
+            stopPrice = float(candle.ClosePrice + atrValue * self.StopLossMultiplier)
             self.LogInfo(f"Setting stop loss at {stopPrice} (ATR: {atrValue}, Multiplier: {self.StopLossMultiplier})")
         elif self.Position > 0 and self._currentAtrSlope > self._averageSlope:
             # Exit long when slope returns to or above average

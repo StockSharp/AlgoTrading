@@ -167,32 +167,32 @@ class volatility_cluster_breakout_strategy(Strategy):
             # Exit positions when volatility drops
             if self.Position > 0:
                 self.SellMarket(Math.Abs(self.Position))
-                self.LogInfo("Long exit on volatility drop: Price={0}, ATR={1}".format(candle.ClosePrice, atr_value))
+                self.LogInfo("Long exit on volatility drop: Price= float({0}, ATR={1}".format(candle.ClosePrice, atr_value)))
             elif self.Position < 0:
                 self.BuyMarket(Math.Abs(self.Position))
-                self.LogInfo("Short exit on volatility drop: Price={0}, ATR={1}".format(candle.ClosePrice, atr_value))
+                self.LogInfo("Short exit on volatility drop: Price= float({0}, ATR={1}".format(candle.ClosePrice, atr_value)))
         elif long_entry_condition:
             # Calculate position size
             position_size = self.Volume + Math.Abs(self.Position)
 
             # Calculate stop loss level
-            stop_price = candle.ClosePrice - atr_value * self.stop_multiplier
+            stop_price = float(candle.ClosePrice - atr_value * self.stop_multiplier)
 
             # Enter long position
             self.BuyMarket(position_size)
 
-            self.LogInfo("Long entry: Price={0}, Upper={1}, ATR={2}, Stop={3}".format(candle.ClosePrice, upper_level, atr_value, stop_price))
+            self.LogInfo("Long entry: Price= float({0}, Upper={1}, ATR={2}, Stop={3}".format(candle.ClosePrice, upper_level, atr_value, stop_price)))
         elif short_entry_condition:
             # Calculate position size
             position_size = self.Volume + Math.Abs(self.Position)
 
             # Calculate stop loss level
-            stop_price = candle.ClosePrice + atr_value * self.stop_multiplier
+            stop_price = float(candle.ClosePrice + atr_value * self.stop_multiplier)
 
             # Enter short position
             self.SellMarket(position_size)
 
-            self.LogInfo("Short entry: Price={0}, Lower={1}, ATR={2}, Stop={3}".format(candle.ClosePrice, lower_level, atr_value, stop_price))
+            self.LogInfo("Short entry: Price= float({0}, Lower={1}, ATR={2}, Stop={3}".format(candle.ClosePrice, lower_level, atr_value, stop_price)))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

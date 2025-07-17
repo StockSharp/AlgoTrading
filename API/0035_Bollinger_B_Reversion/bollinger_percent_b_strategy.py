@@ -143,7 +143,7 @@ class bollinger_percent_b_strategy(Strategy):
         # Calculate Bollinger %B: (Price - Lower Band) / (Upper Band - Lower Band)
         percent_b = 0.0
         if upper_band != lower_band:
-            percent_b = (candle.ClosePrice - lower_band) / (upper_band - lower_band)
+            percent_b = float((candle.ClosePrice - lower_band) / (upper_band - lower_band))
 
         if self.Position == 0:
             # No position - check for entry signals

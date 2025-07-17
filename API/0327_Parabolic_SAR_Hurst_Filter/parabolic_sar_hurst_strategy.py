@@ -154,7 +154,7 @@ class parabolic_sar_hurst_strategy(Strategy):
 
                 # Open long position
                 self.BuyMarket(self.Volume)
-                self.LogInfo(f"Long signal: SAR={sar_price}, Price={candle.ClosePrice}, Hurst={self._hurst_value}")
+                self.LogInfo(f"Long signal: SAR= float({sar_price}, Price={candle.ClosePrice}, Hurst={self._hurst_value}"))
             # Short signal: Price crossed below SAR
             elif candle.ClosePrice < sar_price and self.Position >= 0:
                 # Close any existing long position
@@ -163,7 +163,7 @@ class parabolic_sar_hurst_strategy(Strategy):
 
                 # Open short position
                 self.SellMarket(self.Volume)
-                self.LogInfo(f"Short signal: SAR={sar_price}, Price={candle.ClosePrice}, Hurst={self._hurst_value}")
+                self.LogInfo(f"Short signal: SAR= float({sar_price}, Price={candle.ClosePrice}, Hurst={self._hurst_value}"))
         else:
             # If Hurst < 0.5, consider closing positions as market is not trending
             if self.Position != 0:

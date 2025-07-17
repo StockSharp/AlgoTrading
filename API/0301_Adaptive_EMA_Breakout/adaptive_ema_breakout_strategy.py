@@ -164,7 +164,7 @@ class adaptive_ema_breakout_strategy(Strategy):
             position_size = self.Volume + Math.Abs(self.Position)
 
             # Calculate stop loss level
-            stop_price = candle.ClosePrice - atr_value * self.StopMultiplier
+            stop_price = float(candle.ClosePrice - atr_value * self.StopMultiplier)
 
             # Enter long position
             self.BuyMarket(position_size)
@@ -176,7 +176,7 @@ class adaptive_ema_breakout_strategy(Strategy):
             position_size = self.Volume + Math.Abs(self.Position)
 
             # Calculate stop loss level
-            stop_price = candle.ClosePrice + atr_value * self.StopMultiplier
+            stop_price = float(candle.ClosePrice + atr_value * self.StopMultiplier)
 
             # Enter short position
             self.SellMarket(position_size)

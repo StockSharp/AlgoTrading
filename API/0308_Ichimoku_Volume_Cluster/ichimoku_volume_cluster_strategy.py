@@ -156,7 +156,7 @@ class ichimoku_volume_cluster_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        volume = candle.TotalVolume
+        volume = float(candle.TotalVolume)
 
         volume_avg_value = to_float(process_float(self._volume_avg, volume, candle.ServerTime, candle.State == CandleStates.Finished))
         volume_std_dev_value = to_float(process_float(self._volume_std_dev, volume, candle.ServerTime, candle.State == CandleStates.Finished))

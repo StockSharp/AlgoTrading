@@ -126,16 +126,16 @@ class heikin_ashi_consecutive_strategy(Strategy):
         # Calculate Heikin-Ashi values
         if self._prev_ha_open == 0:
             # First candle - initialize Heikin-Ashi values
-            ha_open = (candle.OpenPrice + candle.ClosePrice) / 2
-            ha_close = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4
-            ha_high = candle.HighPrice
-            ha_low = candle.LowPrice
+            ha_open = float((candle.OpenPrice + candle.ClosePrice) / 2)
+            ha_close = float((candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4)
+            ha_high = float(candle.HighPrice)
+            ha_low = float(candle.LowPrice)
         else:
             # Calculate Heikin-Ashi values based on previous HA candle
             ha_open = (self._prev_ha_open + self._prev_ha_close) / 2
-            ha_close = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4
-            ha_high = max(max(candle.HighPrice, ha_open), ha_close)
-            ha_low = min(min(candle.LowPrice, ha_open), ha_close)
+            ha_close = float((candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4)
+            ha_high = float(max(max(candle.HighPrice, ha_open), ha_close))
+            ha_low = float(min(min(candle.LowPrice, ha_open), ha_close))
 
         # Determine if Heikin-Ashi candle is bullish or bearish
         is_bullish = ha_close > ha_open

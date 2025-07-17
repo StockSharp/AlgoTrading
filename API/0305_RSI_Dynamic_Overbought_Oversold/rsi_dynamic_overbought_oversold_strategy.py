@@ -172,17 +172,17 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         if longEntryCondition:
             positionSize = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(positionSize)
-            self.LogInfo(f"Long entry: Price={candle.ClosePrice}, RSI={rsiValue}, Oversold={dynamicOversold}")
+            self.LogInfo(f"Long entry: Price= float({candle.ClosePrice}, RSI={rsiValue}, Oversold={dynamicOversold}"))
         elif shortEntryCondition:
             positionSize = self.Volume + Math.Abs(self.Position)
             self.SellMarket(positionSize)
-            self.LogInfo(f"Short entry: Price={candle.ClosePrice}, RSI={rsiValue}, Overbought={dynamicOverbought}")
+            self.LogInfo(f"Short entry: Price= float({candle.ClosePrice}, RSI={rsiValue}, Overbought={dynamicOverbought}"))
         elif longExitCondition:
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Long exit: Price={candle.ClosePrice}, RSI={rsiValue}")
+            self.LogInfo(f"Long exit: Price= float({candle.ClosePrice}, RSI={rsiValue}"))
         elif shortExitCondition:
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Short exit: Price={candle.ClosePrice}, RSI={rsiValue}")
+            self.LogInfo(f"Short exit: Price= float({candle.ClosePrice}, RSI={rsiValue}"))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

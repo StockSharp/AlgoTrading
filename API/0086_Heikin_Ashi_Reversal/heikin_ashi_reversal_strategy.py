@@ -92,24 +92,24 @@ class heikin_ashi_reversal_strategy(Strategy):
         # Calculate Heikin-Ashi candle values
         if self._prevIsBullish is None:
             # First candle - initialize HA values
-            ha_open = (candle.OpenPrice + candle.ClosePrice) / 2
-            ha_close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4
-            ha_high = Math.Max(candle.HighPrice, Math.Max(ha_open, ha_close))
-            ha_low = Math.Min(candle.LowPrice, Math.Min(ha_open, ha_close))
+            ha_open = float((candle.OpenPrice + candle.ClosePrice) / 2)
+            ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
+            ha_high = float(Math.Max(candle.HighPrice, Math.Max(ha_open, ha_close)))
+            ha_low = float(Math.Min(candle.LowPrice, Math.Min(ha_open, ha_close)))
 
             # Store the initial bullish/bearish state
             self._prevIsBullish = ha_close > ha_open
             return
 
         # Calculate previous HA open/close based on previous state
-        prev_ha_open = self._prevIsBullish and min(candle.OpenPrice, candle.ClosePrice) or max(candle.OpenPrice, candle.ClosePrice)
-        prev_ha_close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4
+        prev_ha_open = float(self._prevIsBullish and min(candle.OpenPrice, candle.ClosePrice) or max(candle.OpenPrice, candle.ClosePrice))
+        prev_ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
 
         # Calculate current HA values
         ha_open = (prev_ha_open + prev_ha_close) / 2
-        ha_close = (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4
-        ha_high = Math.Max(candle.HighPrice, Math.Max(ha_open, ha_close))
-        ha_low = Math.Min(candle.LowPrice, Math.Min(ha_open, ha_close))
+        ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
+        ha_high = float(Math.Max(candle.HighPrice, Math.Max(ha_open, ha_close)))
+        ha_low = float(Math.Min(candle.LowPrice, Math.Min(ha_open, ha_close)))
 
         # Determine if current HA candle is bullish or bearish
         is_bullish = ha_close > ha_open

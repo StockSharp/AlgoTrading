@@ -152,7 +152,7 @@ class atr_reversion_strategy(Strategy):
             return
 
         # Calculate price change from previous candle
-        price_change = candle.ClosePrice - self._prev_close
+        price_change = float(candle.ClosePrice - self._prev_close)
         
         # Normalize price change by ATR
         normalized_change = 0.0

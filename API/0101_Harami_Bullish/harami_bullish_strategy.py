@@ -117,7 +117,7 @@ class harami_bullish_strategy(Strategy):
             self.BuyMarket(volume)
 
             # Set stop-loss level
-            stopLossLevel = candle.LowPrice * (1 - self.StopLossPercent / 100)
+            stopLossLevel = float(candle.LowPrice * (1 - self.StopLossPercent / 100))
 
             self.LogInfo("Harami Bullish detected. Buying at {0}. Stop-loss set at {1}".format(
                 candle.ClosePrice, stopLossLevel))

@@ -111,9 +111,9 @@ class gap_fill_reversal_strategy(Strategy):
         # Calculate gap size as a percentage
         gap_size = 0.0
         if has_gap_up:
-            gap_size = (self._current_candle.OpenPrice - self._previous_candle.ClosePrice) / self._previous_candle.ClosePrice * 100
+            gap_size = float((self._current_candle.OpenPrice - self._previous_candle.ClosePrice) / self._previous_candle.ClosePrice * 100)
         elif has_gap_down:
-            gap_size = (self._previous_candle.ClosePrice - self._current_candle.OpenPrice) / self._previous_candle.ClosePrice * 100
+            gap_size = float((self._previous_candle.ClosePrice - self._current_candle.OpenPrice) / self._previous_candle.ClosePrice * 100)
 
         # Check if gap is large enough
         if gap_size < self.min_gap_percent:

@@ -135,7 +135,7 @@ class ma_deviation_strategy(Strategy):
         atr_decimal = float(atr_value)
 
         # Calculate deviation from MA as a percentage
-        deviation = (candle.ClosePrice - ma_decimal) / ma_decimal * 100
+        deviation = float((candle.ClosePrice - ma_decimal) / ma_decimal * 100)
         
         # Calculate stop-loss level based on ATR
         stop_loss = atr_decimal * self.atr_multiplier

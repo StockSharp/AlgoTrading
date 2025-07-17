@@ -165,8 +165,8 @@ class rsi_supertrend_strategy(Strategy):
 
         # Calculate Supertrend
         close_price = float(candle.ClosePrice)
-        high_price = candle.HighPrice
-        low_price = candle.LowPrice
+        high_price = float(candle.HighPrice)
+        low_price = float(candle.LowPrice)
 
         # Basic bands calculation
         basic_upper_band = (high_price + low_price) / 2 + self.supertrend_multiplier * atr_value

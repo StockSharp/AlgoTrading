@@ -201,7 +201,7 @@ class obv_slope_mean_reversion_strategy(Strategy):
         short_entry_threshold = self._average_slope + self.DeviationMultiplier * self._slope_std_dev
 
         # OBV divergence check (price vs OBV)
-        price_change = candle.ClosePrice - candle.OpenPrice
+        price_change = float(candle.ClosePrice - candle.OpenPrice)
         obv_change_relative_to_price = 0 if price_change == 0 else (self._current_obv_slope / abs(price_change))
 
         # Trading logic

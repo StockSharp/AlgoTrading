@@ -114,8 +114,8 @@ class rejection_candle_strategy(Strategy):
         # 1. Bearish Rejection (Pin Bar): Made a higher high but closed lower with a long upper wick
         if made_higher_high and is_bearish and has_upper_wick:
             # Calculate upper wick size as a percentage of candle body
-            body_size = Math.Abs(candle.ClosePrice - candle.OpenPrice)
-            upper_wick_size = candle.HighPrice - max(candle.OpenPrice, candle.ClosePrice)
+            body_size = float(Math.Abs(candle.ClosePrice - candle.OpenPrice))
+            upper_wick_size = float(candle.HighPrice - max(candle.OpenPrice, candle.ClosePrice))
 
             # Upper wick should be significant compared to body
             if upper_wick_size > body_size * 1.5:
@@ -136,8 +136,8 @@ class rejection_candle_strategy(Strategy):
         # 2. Bullish Rejection (Pin Bar): Made a lower low but closed higher with a long lower wick
         elif made_lower_low and is_bullish and has_lower_wick:
             # Calculate lower wick size as a percentage of candle body
-            body_size = Math.Abs(candle.ClosePrice - candle.OpenPrice)
-            lower_wick_size = min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice
+            body_size = float(Math.Abs(candle.ClosePrice - candle.OpenPrice))
+            lower_wick_size = float(min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice)
 
             # Lower wick should be significant compared to body
             if lower_wick_size > body_size * 1.5:

@@ -156,7 +156,7 @@ class adaptive_bollinger_breakout_strategy(Strategy):
             self._atr_sum += atr
             self._atr_count += 1
             avg_atr = self._atr_sum / self._atr_count if self._atr_count > 0 else atr
-            volatility_ratio = max(min(atr / (candle.ClosePrice * 0.01), 1), 0)
+            volatility_ratio = float(max(min(atr / (candle.ClosePrice * 0.01), 1), 0))
 
             # Higher volatility = shorter period and wider bands
             new_period = self.max_bollinger_period - int(round(volatility_ratio * (self.max_bollinger_period - self.min_bollinger_period)))

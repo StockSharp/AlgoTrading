@@ -213,7 +213,7 @@ class bollinger_stochastic_strategy(Strategy):
                     candle.ClosePrice, lower_band, k))
 
                 # Set stop loss
-                stop_price = candle.ClosePrice - stop_loss_distance
+                stop_price = float(candle.ClosePrice - stop_loss_distance)
                 self.RegisterOrder(self.CreateOrder(Sides.Sell, stop_price, max(Math.Abs(self.Position + self.Volume), self.Volume)))
 
         # Trading logic for short positions
@@ -225,7 +225,7 @@ class bollinger_stochastic_strategy(Strategy):
                     candle.ClosePrice, upper_band, k))
 
                 # Set stop loss
-                stop_price = candle.ClosePrice + stop_loss_distance
+                stop_price = float(candle.ClosePrice + stop_loss_distance)
                 self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, max(Math.Abs(self.Position + self.Volume), self.Volume)))
 
         # Exit conditions

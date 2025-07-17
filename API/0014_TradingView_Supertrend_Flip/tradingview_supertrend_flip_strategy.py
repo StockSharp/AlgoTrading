@@ -141,7 +141,7 @@ class tradingview_supertrend_flip_strategy(Strategy):
         atr_decimal = float(atr_value)
 
         # Calculate Supertrend components
-        median_price = (candle.HighPrice + candle.LowPrice) / 2
+        median_price = float((candle.HighPrice + candle.LowPrice) / 2)
         basic_upper_band = median_price + self.supertrend_multiplier * atr_decimal
         basic_lower_band = median_price - self.supertrend_multiplier * atr_decimal
 
@@ -156,7 +156,7 @@ class tradingview_supertrend_flip_strategy(Strategy):
             
             # Initialize volume tracking
             self._volume_queue.append(candle.TotalVolume)
-            self._avg_volume = candle.TotalVolume
+            self._avg_volume = float(candle.TotalVolume)
             return
 
         # Determine current Supertrend value based on previous value and current price

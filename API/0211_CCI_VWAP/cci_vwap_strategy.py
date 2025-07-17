@@ -125,19 +125,19 @@ class cci_vwap_strategy(Strategy):
         # Long signal: CCI below -100 and price below VWAP
         if cci_value < -100 and candle.ClosePrice < self._current_vwap and self.Position <= 0:
             self.BuyMarket(self.Volume)
-            self.LogInfo(f"Buy signal: CCI={cci_value:.2f}, Price={candle.ClosePrice}, VWAP={self._current_vwap}")
+            self.LogInfo(f"Buy signal: CCI= float({cci_value:.2f}, Price={candle.ClosePrice}, VWAP={self._current_vwap}"))
         # Short signal: CCI above 100 and price above VWAP
         elif cci_value > 100 and candle.ClosePrice > self._current_vwap and self.Position >= 0:
             self.SellMarket(self.Volume)
-            self.LogInfo(f"Sell signal: CCI={cci_value:.2f}, Price={candle.ClosePrice}, VWAP={self._current_vwap}")
+            self.LogInfo(f"Sell signal: CCI= float({cci_value:.2f}, Price={candle.ClosePrice}, VWAP={self._current_vwap}"))
         # Exit long position: Price crosses above VWAP
         elif self.Position > 0 and candle.ClosePrice > self._current_vwap:
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Exit long: Price={candle.ClosePrice}, VWAP={self._current_vwap}")
+            self.LogInfo(f"Exit long: Price= float({candle.ClosePrice}, VWAP={self._current_vwap}"))
         # Exit short position: Price crosses below VWAP
         elif self.Position < 0 and candle.ClosePrice < self._current_vwap:
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Exit short: Price={candle.ClosePrice}, VWAP={self._current_vwap}")
+            self.LogInfo(f"Exit short: Price= float({candle.ClosePrice}, VWAP={self._current_vwap}"))
 
     def CreateClone(self):
         """

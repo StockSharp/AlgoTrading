@@ -159,13 +159,13 @@ class bollinger_supertrend_strategy(Strategy):
 
         # Calculate Supertrend (simplified)
         atr_val = to_float(atr_value) * self.SupertrendMultiplier
-        upper_band2 = (candle.HighPrice + candle.LowPrice) / 2 + atr_val
-        lower_band2 = (candle.HighPrice + candle.LowPrice) / 2 - atr_val
+        upper_band2 = float((candle.HighPrice + candle.LowPrice) / 2 + atr_val)
+        lower_band2 = float((candle.HighPrice + candle.LowPrice) / 2 - atr_val)
 
         # Determine Supertrend value and direction
         if self._last_close == 0:
             # First candle initialization
-            median_price = (candle.HighPrice + candle.LowPrice) / 2
+            median_price = float((candle.HighPrice + candle.LowPrice) / 2)
             self._supertrend_value = lower_band2 if candle.ClosePrice > median_price else upper_band2
             self._is_long_trend = candle.ClosePrice > self._supertrend_value
         else:

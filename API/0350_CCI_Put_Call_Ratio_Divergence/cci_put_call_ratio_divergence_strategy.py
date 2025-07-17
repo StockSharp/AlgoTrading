@@ -167,7 +167,7 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
 
         # Base PCR on price movement (inverse relation usually exists)
         price_up = candle.OpenPrice < candle.ClosePrice
-        price_change = Math.Abs((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice)
+        price_change = float(Math.Abs((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice))
 
         rand = Random(int(candle.OpenTime.Ticks))
         if price_up:
@@ -195,4 +195,3 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return cci_put_call_ratio_divergence_strategy()
-

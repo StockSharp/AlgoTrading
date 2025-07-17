@@ -102,8 +102,8 @@ class volume_supertrend_strategy(Strategy):
             if not atr.IsFormed:
                 return
 
-            high_price = candle.HighPrice
-            low_price = candle.LowPrice
+            high_price = float(candle.HighPrice)
+            low_price = float(candle.LowPrice)
             close_price = float(candle.ClosePrice)
 
             # Calculate bands
@@ -139,7 +139,7 @@ class volume_supertrend_strategy(Strategy):
                     supertrend_value = lower_band
 
             # Current volume
-            current_volume = candle.TotalVolume
+            current_volume = float(candle.TotalVolume)
 
             # Process trading signals
             self.ProcessSignals(candle, current_volume, volume_value, supertrend_value, supertrend_direction)

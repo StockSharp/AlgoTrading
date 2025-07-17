@@ -139,7 +139,7 @@ class volume_mean_reversion_strategy(Strategy):
             return
 
         # Extract Volume value (for candles, this is TotalVolume)
-        current_volume = candle.TotalVolume
+        current_volume = float(candle.TotalVolume)
 
         # Update Volume statistics
         self.UpdateVolumeStatistics(current_volume)

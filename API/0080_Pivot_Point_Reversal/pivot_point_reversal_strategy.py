@@ -106,8 +106,8 @@ class pivot_point_reversal_strategy(Strategy):
             return
         
         # Store previous day's OHLC for pivot point calculation
-        self._prevHigh = candle.HighPrice
-        self._prevLow = candle.LowPrice
+        self._prevHigh = float(candle.HighPrice)
+        self._prevLow = float(candle.LowPrice)
         self._prevClose = float(candle.ClosePrice)
         
         # Calculate pivot points for the new day
@@ -188,7 +188,7 @@ class pivot_point_reversal_strategy(Strategy):
         isBearish = candle.ClosePrice < candle.OpenPrice
         
         # Calculate proximity to pivot points
-        priceThreshold = candle.ClosePrice * 0.001  # 0.1% threshold
+        priceThreshold = float(candle.ClosePrice * 0.001  # 0.1% threshold)
         
         # Check if price is near S1 and bullish
         nearS1 = abs(candle.LowPrice - self._s1) <= priceThreshold

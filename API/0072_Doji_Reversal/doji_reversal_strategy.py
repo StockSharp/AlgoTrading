@@ -165,10 +165,10 @@ class doji_reversal_strategy(Strategy):
         :return: True if the candle is a doji
         """
         # Calculate the body size (absolute difference between open and close)
-        bodySize = Math.Abs(candle.OpenPrice - candle.ClosePrice)
+        bodySize = float(Math.Abs(candle.OpenPrice - candle.ClosePrice))
         
         # Calculate the total range of the candle
-        totalRange = candle.HighPrice - candle.LowPrice
+        totalRange = float(candle.HighPrice - candle.LowPrice)
         
         # Avoid division by zero
         if totalRange == 0:

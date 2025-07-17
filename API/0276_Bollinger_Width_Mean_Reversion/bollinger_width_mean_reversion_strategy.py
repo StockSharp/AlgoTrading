@@ -202,7 +202,7 @@ class bollinger_width_mean_reversion_strategy(Strategy):
 
                 # Set ATR-based stop loss
                 if lastAtr > 0:
-                    stopPrice = candle.ClosePrice - self.AtrMultiplier * lastAtr
+                    stopPrice = float(candle.ClosePrice - self.AtrMultiplier * lastAtr)
                     self.PlaceStopLoss(stopPrice)
             elif lastWidth > upperThreshold and self.Position >= 0:
                 # Width is expanded - Short signal (expecting contraction)
@@ -210,7 +210,7 @@ class bollinger_width_mean_reversion_strategy(Strategy):
 
                 # Set ATR-based stop loss
                 if lastAtr > 0:
-                    stopPrice = candle.ClosePrice + self.AtrMultiplier * lastAtr
+                    stopPrice = float(candle.ClosePrice + self.AtrMultiplier * lastAtr)
                     self.PlaceStopLoss(stopPrice)
             # Exit logic
             elif lastWidth > self._lastWidthAvg and self.Position > 0:
@@ -232,4 +232,3 @@ class bollinger_width_mean_reversion_strategy(Strategy):
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_width_mean_reversion_strategy()
-

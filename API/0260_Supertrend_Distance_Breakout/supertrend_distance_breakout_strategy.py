@@ -152,10 +152,10 @@ class supertrend_distance_breakout_strategy(Strategy):
 
         # If price is above Supertrend, calculate distance for long case
         if candle.ClosePrice > supertrendPrice:
-            longDistance = candle.ClosePrice - supertrendPrice
+            longDistance = float(candle.ClosePrice - supertrendPrice)
         # If price is below Supertrend, calculate distance for short case
         elif candle.ClosePrice < supertrendPrice:
-            shortDistance = supertrendPrice - candle.ClosePrice
+            shortDistance = float(supertrendPrice - candle.ClosePrice)
 
         # Update statistics
         self.UpdateDistanceStatistics(longDistance, shortDistance)

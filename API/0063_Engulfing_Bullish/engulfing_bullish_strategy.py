@@ -150,7 +150,7 @@ class engulfing_bullish_strategy(Strategy):
             if (isPreviousBearish and isCurrentBullish and 
                 isPreviousEngulfed and isDowntrendPresent):
                 # Bullish engulfing pattern detected
-                patternLow = Math.Min(candle.LowPrice, self._previousCandle.LowPrice)
+                patternLow = float(Math.Min(candle.LowPrice, self._previousCandle.LowPrice))
                 
                 # Buy signal
                 self.BuyMarket(self.Volume)

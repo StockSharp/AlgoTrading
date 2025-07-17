@@ -214,8 +214,8 @@ class macd_with_sentiment_filter_strategy(Strategy):
         """Update sentiment score based on candle data (simulation)."""
         # Simple simulation of sentiment based on candle pattern
         # In reality, this would be a call to a sentiment API or database
-        body_size = abs(candle.ClosePrice - candle.OpenPrice)
-        total_size = candle.HighPrice - candle.LowPrice
+        body_size = float(abs(candle.ClosePrice - candle.OpenPrice))
+        total_size = float(candle.HighPrice - candle.LowPrice)
 
         if total_size == 0:
             return

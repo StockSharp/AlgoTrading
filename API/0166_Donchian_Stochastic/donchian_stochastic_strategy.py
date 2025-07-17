@@ -162,19 +162,19 @@ class donchian_stochastic_strategy(Strategy):
         # Buy when price breaks above upper Donchian band with Stochastic showing oversold condition
         if candle.ClosePrice >= upper_band and stoch_k < 20 and self.Position <= 0:
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Long entry: Price={0}, Upper Band={1}, Stochastic %K={2}".format(candle.ClosePrice, upper_band, stoch_k))
+            self.LogInfo("Long entry: Price= float({0}, Upper Band={1}, Stochastic %K={2}".format(candle.ClosePrice, upper_band, stoch_k)))
         # Sell when price breaks below lower Donchian band with Stochastic showing overbought condition
         elif candle.ClosePrice <= lower_band and stoch_k > 80 and self.Position >= 0:
             self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo("Short entry: Price={0}, Lower Band={1}, Stochastic %K={2}".format(candle.ClosePrice, lower_band, stoch_k))
+            self.LogInfo("Short entry: Price= float({0}, Lower Band={1}, Stochastic %K={2}".format(candle.ClosePrice, lower_band, stoch_k)))
         # Exit long position when price falls below middle band
         elif self.Position > 0 and candle.ClosePrice < middle_band:
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Long exit: Price={0}, Middle Band={1}".format(candle.ClosePrice, middle_band))
+            self.LogInfo("Long exit: Price= float({0}, Middle Band={1}".format(candle.ClosePrice, middle_band)))
         # Exit short position when price rises above middle band
         elif self.Position < 0 and candle.ClosePrice > middle_band:
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Short exit: Price={0}, Middle Band={1}".format(candle.ClosePrice, middle_band))
+            self.LogInfo("Short exit: Price= float({0}, Middle Band={1}".format(candle.ClosePrice, middle_band)))
 
     def CreateClone(self):
         """

@@ -182,16 +182,16 @@ class macd_volume_cluster_strategy(Strategy):
         # Using exponential moving average approach for volume statistics
         # to avoid keeping large arrays of historical volumes
         if self._processed_candles == 1:
-            self._avg_volume = candle.TotalVolume
+            self._avg_volume = float(candle.TotalVolume)
             self._volume_std_dev = 0
         else:
             # Update average volume with smoothing factor
             alpha = 2.0 / (self.volume_period + 1)
             old_avg = self._avg_volume
-            self._avg_volume = alpha * candle.TotalVolume + (1 - alpha) * self._avg_volume
+            self._avg_volume = float(alpha * candle.TotalVolume + (1 - alpha) * self._avg_volume)
 
             # Update standard deviation (simplified approach)
-            volume_dev = Math.Abs(candle.TotalVolume - old_avg)
+            volume_dev = float(Math.Abs(candle.TotalVolume - old_avg))
             self._volume_std_dev = alpha * volume_dev + (1 - alpha) * self._volume_std_dev
 
         # Check if strategy is ready to trade

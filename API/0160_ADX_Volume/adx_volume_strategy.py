@@ -131,7 +131,7 @@ class adx_volume_strategy(Strategy):
             return
 
         # Update average volume calculation
-        current_volume = candle.TotalVolume
+        current_volume = float(candle.TotalVolume)
 
         if self._volume_counter < self.volume_avg_period:
             self._volume_counter += 1

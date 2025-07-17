@@ -272,13 +272,13 @@ class macd_adaptive_histogram_strategy(Strategy):
             # Exit long position
             self.SellMarket(Math.Abs(self.Position))
             self.LogInfo(
-                "Long exit: Price={0}, Histogram={1}".format(candle.ClosePrice, histogram)
+                "Long exit: Price= float({0}, Histogram={1}".format(candle.ClosePrice, histogram))
             )
         elif short_exit_condition:
             # Exit short position
             self.BuyMarket(Math.Abs(self.Position))
             self.LogInfo(
-                "Short exit: Price={0}, Histogram={1}".format(candle.ClosePrice, histogram)
+                "Short exit: Price= float({0}, Histogram={1}".format(candle.ClosePrice, histogram))
             )
 
     def CreateClone(self):

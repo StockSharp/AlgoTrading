@@ -129,7 +129,7 @@ class z_score_reversal_strategy(Strategy):
             return
 
         # Calculate Z-Score: (Price - Mean) / StdDev
-        z_score = (candle.ClosePrice - ma_value) / std_dev_value
+        z_score = float((candle.ClosePrice - ma_value) / std_dev_value)
 
         self.LogInfo(
             "Current Z-Score: {0:.4f}, Mean: {1:.4f}, StdDev: {2:.4f}".format(

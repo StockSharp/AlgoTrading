@@ -152,7 +152,7 @@ class atr_trailing_strategy(Strategy):
             # Long position - update and check trailing stop
             
             # Calculate potential new trailing stop level
-            newTrailingStopLevel = candle.ClosePrice - trailingStopDistance
+            newTrailingStopLevel = float(candle.ClosePrice - trailingStopDistance)
             
             # Only move the trailing stop up, never down (for long positions)
             if newTrailingStopLevel > self._trailingStopLevel:
@@ -166,7 +166,7 @@ class atr_trailing_strategy(Strategy):
             # Short position - update and check trailing stop
             
             # Calculate potential new trailing stop level
-            newTrailingStopLevel = candle.ClosePrice + trailingStopDistance
+            newTrailingStopLevel = float(candle.ClosePrice + trailingStopDistance)
             
             # Only move the trailing stop down, never up (for short positions)
             if newTrailingStopLevel < self._trailingStopLevel or self._trailingStopLevel == 0:

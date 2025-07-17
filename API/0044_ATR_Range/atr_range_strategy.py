@@ -143,7 +143,7 @@ class atr_range_strategy(Strategy):
             return
 
         # Calculate price movement over the lookback period
-        priceMovement = candle.ClosePrice - self._nBarsAgoPrice
+        priceMovement = float(candle.ClosePrice - self._nBarsAgoPrice)
         absMovement = Math.Abs(priceMovement)
         
         # Log current values

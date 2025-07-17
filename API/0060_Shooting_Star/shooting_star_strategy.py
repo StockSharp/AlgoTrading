@@ -178,9 +178,9 @@ class shooting_star_strategy(Strategy):
             isAdvance = candle.HighPrice > highestValue
             
             # Calculate candle body and shadows
-            bodyLength = Math.Abs(candle.ClosePrice - candle.OpenPrice)
-            upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice)
-            lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice
+            bodyLength = float(Math.Abs(candle.ClosePrice - candle.OpenPrice))
+            upperShadow = float(candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice))
+            lowerShadow = float(Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice)
             
             # Check for bearish shooting star pattern
             isBearish = candle.ClosePrice < candle.OpenPrice
@@ -189,8 +189,8 @@ class shooting_star_strategy(Strategy):
             
             # Identify shooting star
             if (isNearHighs or isAdvance) and hasLongUpperShadow and hasSmallLowerShadow:
-                self._shootingStarHigh = candle.HighPrice
-                self._shootingStarLow = candle.LowPrice
+                self._shootingStarHigh = float(candle.HighPrice)
+                self._shootingStarLow = float(candle.LowPrice)
                 self._patternDetected = True
                 
                 self.LogInfo("Potential shooting star detected at {0}: high={1}, body ratio={2:F2}".format(
