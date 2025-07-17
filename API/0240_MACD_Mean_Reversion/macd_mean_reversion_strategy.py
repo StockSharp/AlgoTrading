@@ -182,8 +182,6 @@ class macd_mean_reversion_strategy(Strategy):
             return
 
         # Extract MACD Histogram value
-        if not isinstance(macd_value, MovingAverageConvergenceDivergenceHistogramValue):
-            return
         macd = float(macd_value.Macd)
         signal = float(macd_value.Signal)
 

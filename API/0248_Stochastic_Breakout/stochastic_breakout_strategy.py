@@ -155,8 +155,8 @@ class stochastic_breakout_strategy(Strategy):
             return
 
         # Get stochastic value (K line)
-        stochTyped = stochValue if isinstance(stochValue, StochasticOscillatorValue) else None
-        if stochTyped is None or stochTyped.K is None:
+        stochTyped = stochValue
+        if stochTyped.K is None:
             return
 
         stochK = stochTyped.K

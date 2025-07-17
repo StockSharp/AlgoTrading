@@ -148,8 +148,8 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
             stopLoss=Unit(1, UnitTypes.Percent)
         )
     def ProcessStochastic(self, candle, stoch_value):
-        stoch_typed = stoch_value if isinstance(stoch_value, StochasticOscillatorValue) else None
-        if stoch_typed is None or stoch_typed.K is None:
+        stoch_typed = stoch_value
+        if stoch_typed.K is None:
             return
 
         # Calculate dynamic zones

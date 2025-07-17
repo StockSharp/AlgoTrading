@@ -137,8 +137,6 @@ class vwap_macd_strategy(Strategy):
         macd_typed = macd_value
 
         # Extract MACD and Signal values
-        if not isinstance(macd_typed.Macd, float) or not isinstance(macd_typed.Signal, float):
-            return
         macd = macd_typed.Macd
         signal = macd_typed.Signal
 
