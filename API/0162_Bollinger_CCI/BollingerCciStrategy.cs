@@ -223,17 +223,5 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Exit short: Price returned to middle band. Position: {Position}");
 			}
 		}
-
-		private T GetIndicator<T>() where T : IIndicator
-		{
-			// Helper method to find an indicator by type in the Indicators collection
-			foreach (var indicator in Indicators)
-			{
-				if (indicator is T typedIndicator)
-					return typedIndicator;
-			}
-
-			return default;
-		}
 	}
 }

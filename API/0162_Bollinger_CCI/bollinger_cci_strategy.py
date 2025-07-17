@@ -205,13 +205,6 @@ class bollinger_cci_strategy(Strategy):
             self.BuyMarket(Math.Abs(self.Position))
             self.LogInfo("Exit short: Price returned to middle band. Position: {0}".format(self.Position))
 
-    def GetIndicator(self, indicator_type):
-        # Helper method to find an indicator by type in the Indicators collection
-        for indicator in self.Indicators:
-            if isinstance(indicator, indicator_type):
-                return indicator
-        return None
-
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_cci_strategy()
