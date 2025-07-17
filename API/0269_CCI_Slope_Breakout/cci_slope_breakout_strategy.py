@@ -137,9 +137,14 @@ class cci_slope_breakout_strategy(Strategy):
             return
 
         # Calculate CCI slope
-        currentSlopeTyped = process_float(self._cciSlope, cciValue, candle.ServerTime, candle.State == CandleStates.Finished)
+        currentSlopeTyped = process_float(
+            self._cciSlope,
+            cciValue,
+            candle.ServerTime,
+            candle.State == CandleStates.Finished,
+        )
 
-        if not hasattr(currentSlopeTyped, 'LinearReg') or currentSlopeTyped.LinearReg is None:
+        if currentSlopeTyped.LinearReg is None:
             return
 
         currentSlopeValue = float(currentSlopeTyped.LinearReg)

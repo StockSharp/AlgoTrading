@@ -177,7 +177,7 @@ class macd_breakout_strategy(Strategy):
         macd_typed = macd_value
 
         # Extract the histogram value (MACD Line - Signal Line)
-        if not hasattr(macd_typed, 'Macd') or not hasattr(macd_typed, 'Signal'):
+        if macd_typed.Macd is None or macd_typed.Signal is None:
             return
 
         macd = float(macd_typed.Macd)

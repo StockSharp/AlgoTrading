@@ -165,7 +165,7 @@ class stochastic_failure_swing_strategy(Strategy):
             return
 
         # Get current K value (we use %K for the strategy, not %D)
-        k_value = float(stochastic_value.K) if hasattr(stochastic_value, 'K') else None
+        k_value = float(stochastic_value.K) if stochastic_value.K is not None else None
         if k_value is None:
             return
 

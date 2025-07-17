@@ -140,8 +140,13 @@ class williams_r_slope_breakout_strategy(Strategy):
             return
 
         # Calculate Williams %R slope
-        current_slope_typed = process_float(self._williams_r_slope, williams_r_value, candle.ServerTime, candle.State == CandleStates.Finished)
-        if not hasattr(current_slope_typed, 'LinearReg'):
+        current_slope_typed = process_float(
+            self._williams_r_slope,
+            williams_r_value,
+            candle.ServerTime,
+            candle.State == CandleStates.Finished,
+        )
+        if current_slope_typed.LinearReg is None:
             return  # Skip if slope is not available
         current_slope_value = current_slope_typed.LinearReg
 

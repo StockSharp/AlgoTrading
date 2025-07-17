@@ -167,7 +167,7 @@ class supertrend_stochastic_strategy(Strategy):
         is_bullish = getattr(supertrend_value, 'IsUpTrend', True)
         is_bearish = not is_bullish
 
-        if not hasattr(stochastic_value, 'K'):
+        if stochastic_value.K is None:
             return
         stochK = float(stochastic_value.K)
 
