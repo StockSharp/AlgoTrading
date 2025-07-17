@@ -3,12 +3,14 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math, Random
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes, ICandleMessage
 from StockSharp.Algo.Indicators import StochasticOscillator, SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
+
+import random
 
 class stochastic_implied_volatility_skew_strategy(Strategy):
     """Stochastic strategy with Implied Volatility Skew."""
@@ -192,7 +194,6 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         # IV Skew measures the difference in IV between calls and puts at equidistant strikes
 
         # Create pseudo-random but somewhat realistic values
-        random = Random()
 
         # Base IV Skew values on price movement and volatility
         price_up = candle.OpenPrice < candle.ClosePrice
@@ -202,13 +203,13 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         # When prices are falling, calls become relatively cheaper (positive skew)
         if price_up:
             # During uptrends, skew tends to be more negative
-            self._current_iv_skew = -0.1 - candle_range - random.NextDouble() * 0.2
+            self._current_iv_skew = -0.1 - candle_range - random.random() * 0.2
         else:
             # During downtrends, skew can become less negative or even positive
-            self._current_iv_skew = 0.05 - candle_range + random.NextDouble() * 0.2
+            self._current_iv_skew = 0.05 - candle_range + random.random() * 0.2
 
         # Add some randomness for market events
-        if random.NextDouble() > 0.95:
+        if random.random() > 0.95:
             # Occasional extreme skew events (e.g., market fear or greed)
             self._current_iv_skew *= 1.5
 
