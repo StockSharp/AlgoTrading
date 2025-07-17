@@ -136,9 +136,13 @@ class vwap_macd_strategy(Strategy):
 
         macd_typed = macd_value
 
+        # Check if MACD and Signal values are available
+        if macd_typed.Macd is None or macd_typed.Signal is None:
+            return
+
         # Extract MACD and Signal values
-        macd = macd_typed.Macd
-        signal = macd_typed.Signal
+        macd = float(macd_typed.Macd)
+        signal = float(macd_typed.Signal)
 
         # Detect MACD crosses
         macd_crossed_above_signal = self._prev_macd <= self._prev_signal and macd > signal

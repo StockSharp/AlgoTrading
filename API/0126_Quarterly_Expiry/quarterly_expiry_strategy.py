@@ -141,7 +141,10 @@ class quarterly_expiry_strategy(Strategy):
         first_day = DateTimeOffset(date.Year, date.Month, 1, 0, 0, 0, date.Offset)
 
         # Find the first Friday
-        days_until_first_friday = ((DayOfWeek.Friday - first_day.DayOfWeek + 7) % 7)
+        # Convert DayOfWeek to int for calculation
+        friday_int = int(DayOfWeek.Friday)
+        first_day_int = int(first_day.DayOfWeek)
+        days_until_first_friday = ((friday_int - first_day_int + 7) % 7)
         first_friday = first_day.AddDays(days_until_first_friday)
 
         # Calculate the third Friday

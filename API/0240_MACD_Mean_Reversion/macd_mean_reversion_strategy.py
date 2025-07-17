@@ -5,7 +5,7 @@ clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
-from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceHistogram, MovingAverageConvergenceDivergenceHistogramValue
+from StockSharp.Algo.Indicators import MovingAverageConvergenceDivergenceHistogram, MovingAverageConvergenceDivergenceHistogramValue, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 
@@ -151,7 +151,7 @@ class macd_mean_reversion_strategy(Strategy):
         macd.Macd.LongMa.Length = self.slow_macd_period
         macd.SignalMa.Length = self.signal_period
 
-        macd_histogram = MovingAverageConvergenceDivergenceHistogram(macd.Macd, None)
+        macd_histogram = MovingAverageConvergenceDivergenceHistogram(macd.Macd, ExponentialMovingAverage())
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)

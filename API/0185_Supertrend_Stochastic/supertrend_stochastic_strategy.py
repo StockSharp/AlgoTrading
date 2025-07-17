@@ -179,19 +179,19 @@ class supertrend_stochastic_strategy(Strategy):
         # Buy when price is above Supertrend line (bullish) and Stochastic shows oversold condition
         if is_above_supertrend and is_bullish and stochK < 20 and self.Position <= 0:
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo(f"Long entry: Price= float({candle.ClosePrice}, Supertrend={supertrend_line}, Stochastic %K={stochK}"))
+            self.LogInfo("Long entry: Price={0}, Supertrend={1}, Stochastic %K={2}".format(candle.ClosePrice, supertrend_line, stochK))
         # Sell when price is below Supertrend line (bearish) and Stochastic shows overbought condition
         elif is_below_supertrend and is_bearish and stochK > 80 and self.Position >= 0:
             self.SellMarket(self.Volume + Math.Abs(self.Position))
-            self.LogInfo(f"Short entry: Price= float({candle.ClosePrice}, Supertrend={supertrend_line}, Stochastic %K={stochK}"))
+            self.LogInfo("Short entry: Price={0}, Supertrend={1}, Stochastic %K={2}".format(candle.ClosePrice, supertrend_line, stochK))
         # Exit long position when price falls below Supertrend line
         elif self.Position > 0 and is_below_supertrend:
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Long exit: Price= float({candle.ClosePrice}, Below Supertrend={supertrend_line}"))
+            self.LogInfo("Long exit: Price={0}, Below Supertrend={1}".format(candle.ClosePrice, supertrend_line))
         # Exit short position when price rises above Supertrend line
         elif self.Position < 0 and is_above_supertrend:
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Short exit: Price= float({candle.ClosePrice}, Above Supertrend={supertrend_line}"))
+            self.LogInfo("Short exit: Price={0}, Above Supertrend={1}".format(candle.ClosePrice, supertrend_line))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

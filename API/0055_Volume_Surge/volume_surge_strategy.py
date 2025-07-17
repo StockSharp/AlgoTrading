@@ -131,7 +131,7 @@ class volume_surge_strategy(Strategy):
         # Log current values
         self.LogInfo("Candle Close: {0}, MA: {1}, Volume: {2}".format(
             candle.ClosePrice, maValue, candle.TotalVolume))
-        self.LogInfo("Volume MA: {0}, Volume Surge Ratio: {1:P2}".format(
+        self.LogInfo("Volume MA: {0}, Volume Surge Ratio: {1:.2%}".format(
             volumeMAValue, volumeSurgeRatio - 1))
         self.LogInfo("Is Volume Surge: {0}, Threshold: {1}".format(
             isVolumeSurge, self.VolumeSurgeMultiplier))
@@ -141,12 +141,12 @@ class volume_surge_strategy(Strategy):
         if isVolumeSurge:
             # Long: Volume surge and price above MA
             if candle.ClosePrice > maValue and self.Position <= 0:
-                self.LogInfo("Buy Signal: Volume Surge ({0:P2}) and Price ({1}) > MA ({2})".format(
+                self.LogInfo("Buy Signal: Volume Surge ({0:.2%}) and Price ({1}) > MA ({2})".format(
                     volumeSurgeRatio - 1, candle.ClosePrice, maValue))
                 self.BuyMarket(self.Volume + Math.Abs(self.Position))
             # Short: Volume surge and price below MA
             elif candle.ClosePrice < maValue and self.Position >= 0:
-                self.LogInfo("Sell Signal: Volume Surge ({0:P2}) and Price ({1}) < MA ({2})".format(
+                self.LogInfo("Sell Signal: Volume Surge ({0:.2%}) and Price ({1}) < MA ({2})".format(
                     volumeSurgeRatio - 1, candle.ClosePrice, maValue))
                 self.SellMarket(self.Volume + Math.Abs(self.Position))
         

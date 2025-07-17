@@ -144,7 +144,7 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             seasonal_strength = self._seasonal_strength_by_month[current_month]
 
         # Log seasonality data
-        self.LogInfo(f"Month: {current_month}, Seasonality Strength: {seasonal_strength}, Momentum: {momentum_value}, Avg Momentum: {momentum_avg_value}")
+        self.LogInfo("Month: {0}, Seasonality Strength: {1}, Momentum: {2}, Avg Momentum: {3}".format(current_month, seasonal_strength, momentum_value, momentum_avg_value))
 
         # Define entry conditions with seasonality adjustment
         longEntryCondition = momentum_value > momentum_avg_value and \
@@ -167,7 +167,7 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             # Enter long position
             self.BuyMarket(positionSize)
 
-            self.LogInfo(f"Long entry: Price= float({candle.ClosePrice}, Momentum={momentum_value}, Avg={momentum_avg_value}, Seasonality={seasonal_strength}"))
+            self.LogInfo("Long entry: Price={0}, Momentum={1}, Avg={2}, Seasonality={3}".format(candle.ClosePrice, momentum_value, momentum_avg_value, seasonal_strength))
         elif shortEntryCondition:
             # Calculate position size
             positionSize = self.Volume + Math.Abs(self.Position)
@@ -175,15 +175,15 @@ class seasonality_adjusted_momentum_strategy(Strategy):
             # Enter short position
             self.SellMarket(positionSize)
 
-            self.LogInfo(f"Short entry: Price= float({candle.ClosePrice}, Momentum={momentum_value}, Avg={momentum_avg_value}, Seasonality={seasonal_strength}"))
+            self.LogInfo("Short entry: Price={0}, Momentum={1}, Avg={2}, Seasonality={3}".format(candle.ClosePrice, momentum_value, momentum_avg_value, seasonal_strength))
         elif longExitCondition:
             # Exit long position
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Long exit: Price= float({candle.ClosePrice}, Momentum={momentum_value}, Avg={momentum_avg_value}"))
+            self.LogInfo("Long exit: Price={0}, Momentum={1}, Avg={2}".format(candle.ClosePrice, momentum_value, momentum_avg_value))
         elif shortExitCondition:
             # Exit short position
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Short exit: Price= float({candle.ClosePrice}, Momentum={momentum_value}, Avg={momentum_avg_value}"))
+            self.LogInfo("Short exit: Price={0}, Momentum={1}, Avg={2}".format(candle.ClosePrice, momentum_value, momentum_avg_value))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

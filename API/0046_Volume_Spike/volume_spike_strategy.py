@@ -137,22 +137,22 @@ class volume_spike_strategy(Strategy):
         # Log current values
         self.LogInfo("Candle Close: {0}, MA: {1}, Volume: {2}".format(
             candle.ClosePrice, maValue, candle.TotalVolume))
-        self.LogInfo("Previous Volume: {0}, Volume Change: {1:P2}, Average Volume: {2}".format(
+        self.LogInfo("Previous Volume: {0}, Volume Change: {1:.2%}, Average Volume: {2}".format(
             self._previousVolume, volumeChange - 1, volumeMAValue))
 
         # Trading logic:
         # Check for volume spike
         if volumeChange >= self.VolumeSpikeMultiplier:
-            self.LogInfo("Volume Spike detected: {0:P2}".format(volumeChange - 1))
+            self.LogInfo("Volume Spike detected: {0:.2%}".format(volumeChange - 1))
 
             # Long: Volume spike and price above MA
             if candle.ClosePrice > maValue and self.Position <= 0:
-                self.LogInfo("Buy Signal: Volume Spike ({0:P2}) and Price ({1}) > MA ({2})".format(
+                self.LogInfo("Buy Signal: Volume Spike ({0:.2%}) and Price ({1}) > MA ({2})".format(
                     volumeChange - 1, candle.ClosePrice, maValue))
                 self.BuyMarket(self.Volume + Math.Abs(self.Position))
             # Short: Volume spike and price below MA
             elif candle.ClosePrice < maValue and self.Position >= 0:
-                self.LogInfo("Sell Signal: Volume Spike ({0:P2}) and Price ({1}) < MA ({2})".format(
+                self.LogInfo("Sell Signal: Volume Spike ({0:.2%}) and Price ({1}) < MA ({2})".format(
                     volumeChange - 1, candle.ClosePrice, maValue))
                 self.SellMarket(self.Volume + Math.Abs(self.Position))
         

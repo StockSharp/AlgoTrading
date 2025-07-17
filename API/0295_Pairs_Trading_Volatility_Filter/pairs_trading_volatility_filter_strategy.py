@@ -22,7 +22,7 @@ class pairs_trading_volatility_filter_strategy(Strategy):
         super(pairs_trading_volatility_filter_strategy, self).__init__()
 
         # Initialize strategy parameters
-        self._security2 = self.Param("Security2", None) \
+        self._security2 = self.Param[Security]("Security2", None) \
             .SetDisplay("Second Security", "Second security of the pair", "Parameters")
 
         self._lookback_period = self.Param("LookbackPeriod", 20) \

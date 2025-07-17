@@ -188,7 +188,7 @@ class pivot_point_reversal_strategy(Strategy):
         isBearish = candle.ClosePrice < candle.OpenPrice
         
         # Calculate proximity to pivot points
-        priceThreshold = float(candle.ClosePrice * 0.001  # 0.1% threshold)
+        priceThreshold = float(candle.ClosePrice * 0.001)  # 0.1% threshold
         
         # Check if price is near S1 and bullish
         nearS1 = abs(candle.LowPrice - self._s1) <= priceThreshold

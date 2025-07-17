@@ -158,7 +158,7 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         dynamicOversold = Math.Max(dynamicOversold, 10.0)
 
         # Log current values
-        self.LogInfo(f"RSI: {rsiValue}, MA: {priceSmaValue}, DynamicOverbought: {dynamicOverbought}, DynamicOversold: {dynamicOversold}")
+        self.LogInfo("RSI: {0}, MA: {1}, DynamicOverbought: {2}, DynamicOversold: {3}".format(rsiValue, priceSmaValue, dynamicOverbought, dynamicOversold))
 
         # Define entry conditions
         longEntryCondition = rsiValue < dynamicOversold and candle.ClosePrice > priceSmaValue and self.Position <= 0
@@ -172,17 +172,17 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         if longEntryCondition:
             positionSize = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(positionSize)
-            self.LogInfo(f"Long entry: Price= float({candle.ClosePrice}, RSI={rsiValue}, Oversold={dynamicOversold}"))
+            self.LogInfo("Long entry: Price={0}, RSI={1}, Oversold={2}".format(candle.ClosePrice, rsiValue, dynamicOversold))
         elif shortEntryCondition:
             positionSize = self.Volume + Math.Abs(self.Position)
             self.SellMarket(positionSize)
-            self.LogInfo(f"Short entry: Price= float({candle.ClosePrice}, RSI={rsiValue}, Overbought={dynamicOverbought}"))
+            self.LogInfo("Short entry: Price={0}, RSI={1}, Overbought={2}".format(candle.ClosePrice, rsiValue, dynamicOverbought))
         elif longExitCondition:
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Long exit: Price= float({candle.ClosePrice}, RSI={rsiValue}"))
+            self.LogInfo("Long exit: Price={0}, RSI={1}".format(candle.ClosePrice, rsiValue))
         elif shortExitCondition:
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Short exit: Price= float({candle.ClosePrice}, RSI={rsiValue}"))
+            self.LogInfo("Short exit: Price={0}, RSI={1}".format(candle.ClosePrice, rsiValue))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
