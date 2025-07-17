@@ -164,16 +164,16 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         # Extract values from the Ichimoku indicator
         ichimokuTyped = ichimokuValue
 
-        tenkan = ichimokuTyped.Tenkan if isinstance(ichimokuTyped.Tenkan, float) or isinstance(ichimokuTyped.Tenkan, int) else None
+        tenkan = ichimokuTyped.Tenkan
         if tenkan is None:
             return
-        kijun = ichimokuTyped.Kijun if isinstance(ichimokuTyped.Kijun, float) or isinstance(ichimokuTyped.Kijun, int) else None
+        kijun = ichimokuTyped.Kijun
         if kijun is None:
             return
-        senkouA = ichimokuTyped.SenkouA if isinstance(ichimokuTyped.SenkouA, float) or isinstance(ichimokuTyped.SenkouA, int) else None
+        senkouA = ichimokuTyped.SenkouA
         if senkouA is None:
             return
-        senkouB = ichimokuTyped.SenkouB if isinstance(ichimokuTyped.SenkouB, float) or isinstance(ichimokuTyped.SenkouB, int) else None
+        senkouB = ichimokuTyped.SenkouB
         if senkouB is None:
             return
 

@@ -165,8 +165,8 @@ class stochastic_slope_mean_reversion_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stoch_typed = stoch_value if isinstance(stoch_value, StochasticOscillatorValue) else None
-        if stoch_typed is None or stoch_typed.K is None:
+        stoch_typed = stoch_value
+        if stoch_typed.K is None:
             return
 
         stoch_k = float(stoch_typed.K)

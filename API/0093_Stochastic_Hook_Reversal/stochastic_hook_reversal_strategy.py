@@ -169,12 +169,9 @@ class stochastic_hook_reversal_strategy(Strategy):
             return
 
         # Extract %K value
-        if isinstance(stoch_value, StochasticOscillatorValue):
-            if stoch_value.K is None:
-                return
-            stoch_k = float(stoch_value.K)
-        else:
-            stoch_k = float(stoch_value)
+        if stoch_value.K is None:
+            return
+        stoch_k = float(stoch_value.K)
 
         # If this is the first calculation, just store the value
         if self._prev_k == 0:
