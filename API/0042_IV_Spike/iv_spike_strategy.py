@@ -135,22 +135,22 @@ class iv_spike_strategy(Strategy):
         ivChange = float(ivValue) / self._previousIV if self._previousIV != 0 else 1
 
         # Log current values
-        self.LogInfo("Candle Close: {0}, MA: {1}, IV: {2}, IV Change: {3:P2}".format(
+        self.LogInfo("Candle Close: {0}, MA: {1}, IV: {2}, IV Change: {3:.2%}".format(
             candle.ClosePrice, maValue, ivValue, ivChange - 1))
 
         # Trading logic:
         # Check for IV spike
         if ivChange >= self.IVSpikeThreshold:
-            self.LogInfo("IV Spike detected: {0:P2}".format(ivChange - 1))
+            self.LogInfo("IV Spike detected: {0:.2%}".format(ivChange - 1))
 
             # Long: IV spike and price below MA
             if candle.ClosePrice < maValue and self.Position <= 0:
-                self.LogInfo("Buy Signal: IV Spike ({0:P2}) and Price ({1}) < MA ({2})".format(
+                self.LogInfo("Buy Signal: IV Spike ({0:.2%}) and Price ({1}) < MA ({2})".format(
                     ivChange - 1, candle.ClosePrice, maValue))
                 self.BuyMarket(self.Volume + Math.Abs(self.Position))
             # Short: IV spike and price above MA
             elif candle.ClosePrice > maValue and self.Position >= 0:
-                self.LogInfo("Sell Signal: IV Spike ({0:P2}) and Price ({1}) > MA ({2})".format(
+                self.LogInfo("Sell Signal: IV Spike ({0:.2%}) and Price ({1}) > MA ({2})".format(
                     ivChange - 1, candle.ClosePrice, maValue))
                 self.SellMarket(self.Volume + Math.Abs(self.Position))
 
