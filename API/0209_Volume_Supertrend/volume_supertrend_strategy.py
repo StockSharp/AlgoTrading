@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
-from StockSharp.Messages import DataType, CandleStates
+from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, VolumeIndicator
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -34,6 +34,13 @@ class volume_supertrend_strategy(Strategy):
             .SetRange(1.0, 5.0) \
             .SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Supertrend") \
             .SetCanOptimize(True)
+
+        # Stop-loss percentage
+        self._stop_loss_percent = self.Param("StopLossPercent", 2.0) \
+            .SetGreaterThanZero() \
+            .SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management") \
+            .SetCanOptimize(True) \
+            .SetOptimize(1.0, 3.0, 0.5)
 
         # Candle type for strategy
         self._candle_type = self.Param("CandleType", tf(5)) \
@@ -74,6 +81,15 @@ class volume_supertrend_strategy(Strategy):
     @candle_type.setter
     def candle_type(self, value):
         self._candle_type.Value = value
+
+    @property
+    def StopLossPercent(self):
+        """Stop-loss percentage."""
+        return self._stop_loss_percent.Value
+
+    @StopLossPercent.setter
+    def StopLossPercent(self, value):
+        self._stop_loss_percent.Value = value
 
     def OnStarted(self, time):
         super(volume_supertrend_strategy, self).OnStarted(time)
@@ -146,8 +162,10 @@ class volume_supertrend_strategy(Strategy):
 
         subscription.Bind(atr, handle_candle).Start()
 
-        # Enable dynamic stop protection based on Supertrend value
+        # Enable position protection
         self.StartProtection(
+            takeProfit=Unit(0),
+            stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
         # Setup chart visualization if available
         area = self.CreateChartArea()
