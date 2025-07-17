@@ -154,7 +154,7 @@ class supertrend_put_call_ratio_strategy(Strategy):
         bullishPcrThreshold = self._pcrAverage - self.PCRMultiplier * self._pcrStdDev
         bearishPcrThreshold = self._pcrAverage + self.PCRMultiplier * self._pcrStdDev
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
         priceAboveSupertrend = price > supertrend_value
         priceBelowSupertrend = price < supertrend_value
 

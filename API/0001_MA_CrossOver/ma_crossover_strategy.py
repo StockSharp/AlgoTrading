@@ -163,7 +163,7 @@ class ma_crossover_strategy(Strategy):
             if not is_fast_less_than_slow:  # Fast MA crossed above Slow MA
                 # Buy signal
                 if self.Position <= 0:
-                    self._entry_price = candle.ClosePrice
+                    self._entry_price = float(candle.ClosePrice)
                     self._is_long_position = True
                     volume = self.Volume + Math.Abs(self.Position)
                     self.BuyMarket(volume)
@@ -171,7 +171,7 @@ class ma_crossover_strategy(Strategy):
             else:  # Fast MA crossed below Slow MA
                 # Sell signal
                 if self.Position >= 0:
-                    self._entry_price = candle.ClosePrice
+                    self._entry_price = float(candle.ClosePrice)
                     self._is_long_position = False
                     volume = self.Volume + Math.Abs(self.Position)
                     self.SellMarket(volume)

@@ -158,14 +158,14 @@ class correlation_breakout_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset1_prices[self._current_index] = candle.ClosePrice
+        self._asset1_prices[self._current_index] = float(candle.ClosePrice)
         self.CalculateCorrelation(candle)
 
     def ProcessAsset2Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset2_prices[self._current_index] = candle.ClosePrice
+        self._asset2_prices[self._current_index] = float(candle.ClosePrice)
         self.CalculateCorrelation(candle)
 
     def CalculateCorrelation(self, candle):

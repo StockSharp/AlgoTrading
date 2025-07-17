@@ -106,7 +106,7 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
             return
 
         # Get current price
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Simulate Put/Call Ratio (in real implementation, this would come from options data)
         self.UpdatePutCallRatio(candle)

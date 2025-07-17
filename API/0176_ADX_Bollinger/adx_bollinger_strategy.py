@@ -154,7 +154,7 @@ class adx_bollinger_strategy(Strategy):
         middle_band = (upper_band - lower_band) / 2 + lower_band
 
         # Current price (close of the candle)
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Stop-loss size based on ATR
         stop_size = float(atr_value) * self.atr_multiplier

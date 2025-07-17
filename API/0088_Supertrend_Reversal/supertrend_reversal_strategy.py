@@ -122,7 +122,7 @@ class supertrend_reversal_strategy(Strategy):
             self._prev_highest = upper_band
             self._prev_lowest = lower_band
             self._prev_supertrend = upper_band if candle.ClosePrice <= upper_band else lower_band
-            self._prev_close = candle.ClosePrice
+            self._prev_close = float(candle.ClosePrice)
             self._is_first_update = False
             return
 
@@ -164,7 +164,7 @@ class supertrend_reversal_strategy(Strategy):
             self._prev_highest = current_upper_band
             self._prev_lowest = current_lower_band
             self._prev_supertrend = supertrend
-            self._prev_close = candle.ClosePrice
+            self._prev_close = float(candle.ClosePrice)
             return
 
         # Check for Supertrend reversal
@@ -185,7 +185,7 @@ class supertrend_reversal_strategy(Strategy):
         self._prev_highest = current_upper_band
         self._prev_lowest = current_lower_band
         self._prev_supertrend = supertrend
-        self._prev_close = candle.ClosePrice
+        self._prev_close = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

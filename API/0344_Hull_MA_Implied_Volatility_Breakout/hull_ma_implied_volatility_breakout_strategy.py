@@ -168,7 +168,7 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
             self._prevHmaValue = hmaValue
             return
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Determine HMA direction
         hmaRising = hmaValue > self._prevHmaValue

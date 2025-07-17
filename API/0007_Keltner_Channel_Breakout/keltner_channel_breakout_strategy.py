@@ -145,7 +145,7 @@ class keltner_channel_breakout_strategy(Strategy):
 
         # Skip the first received value for proper comparison
         if self._prev_upper_band == 0:
-            self._prev_close_price = candle.ClosePrice
+            self._prev_close_price = float(candle.ClosePrice)
             self._prev_upper_band = upper_value
             self._prev_lower_band = lower_value
             self._prev_ema = middle_value
@@ -183,7 +183,7 @@ class keltner_channel_breakout_strategy(Strategy):
                 candle.ClosePrice, self._prev_ema))
 
         # Update previous values
-        self._prev_close_price = candle.ClosePrice
+        self._prev_close_price = float(candle.ClosePrice)
         self._prev_upper_band = upper_value
         self._prev_lower_band = lower_value
         self._prev_ema = middle_value

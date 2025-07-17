@@ -175,7 +175,7 @@ class delta_neutral_arbitrage_strategy(Strategy):
             return
 
         # Update asset1 price
-        self._last_asset1_price = candle.ClosePrice
+        self._last_asset1_price = float(candle.ClosePrice)
 
         # Process spread if we have both prices
         self.ProcessSpreadIfReady(candle)
@@ -186,7 +186,7 @@ class delta_neutral_arbitrage_strategy(Strategy):
             return
 
         # Update asset2 price
-        self._last_asset2_price = candle.ClosePrice
+        self._last_asset2_price = float(candle.ClosePrice)
 
         # Process spread if we have both prices
         self.ProcessSpreadIfReady(candle)

@@ -132,7 +132,7 @@ class vwap_cci_strategy(Strategy):
             return
 
         # Current price
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Determine if price is above or below VWAP
         is_price_above_vwap = price > vwap_value

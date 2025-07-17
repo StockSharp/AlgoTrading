@@ -119,7 +119,7 @@ class turnaround_tuesday_strategy(Strategy):
             self.LogInfo("Closing position on Friday: Position={0}".format(self.Position))
 
         # Store current close price for next candle
-        self._prev_close_price = candle.ClosePrice
+        self._prev_close_price = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

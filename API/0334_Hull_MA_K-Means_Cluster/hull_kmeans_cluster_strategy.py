@@ -163,7 +163,7 @@ class hull_kmeans_cluster_strategy(Strategy):
         self._prev_hull_value = hull_value
 
         # Update last price
-        self._last_price = candle.ClosePrice
+        self._last_price = float(candle.ClosePrice)
 
     def UpdateFeatureData(self, candle, rsi_value):
         # Calculate price change percentage

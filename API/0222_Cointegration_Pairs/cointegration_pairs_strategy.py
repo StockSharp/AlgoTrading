@@ -160,14 +160,14 @@ class cointegration_pairs_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset1Price = candle.ClosePrice
+        self._asset1Price = float(candle.ClosePrice)
         self.ProcessPair()
 
     def ProcessAsset2Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset2Price = candle.ClosePrice
+        self._asset2Price = float(candle.ClosePrice)
         self.ProcessPair()
 
     def ProcessPair(self):

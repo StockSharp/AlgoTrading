@@ -161,7 +161,7 @@ class donchian_with_sentiment_spike_strategy(Strategy):
         bullish_threshold = self._sentiment_average + self.sentiment_multiplier * self._sentiment_std_dev
         bearish_threshold = self._sentiment_average - self.sentiment_multiplier * self._sentiment_std_dev
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic
         # Entry conditions

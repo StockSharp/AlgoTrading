@@ -207,7 +207,7 @@ class fibonacci_retracement_reversal_strategy(Strategy):
 
         swingHigh = self._swingHigh
         swingLow = self._swingLow
-        currentPrice = candle.ClosePrice
+        currentPrice = float(candle.ClosePrice)
         isBullish = candle.ClosePrice > candle.OpenPrice
         isBearish = candle.ClosePrice < candle.OpenPrice
 

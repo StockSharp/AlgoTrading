@@ -111,7 +111,7 @@ class vwap_williams_r_strategy(Strategy):
         # Long: Price < VWAP && Williams %R < -80 (oversold below VWAP)
         # Short: Price > VWAP && Williams %R > -20 (overbought above VWAP)
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         if price < vwap_value and williams_r_value < -80 and self.Position <= 0:
             # Buy signal - oversold condition below VWAP

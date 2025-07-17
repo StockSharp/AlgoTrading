@@ -135,7 +135,7 @@ class atr_trailing_strategy(Strategy):
                 self.BuyMarket(self.Volume)
                 
                 # Record entry price
-                self._entryPrice = candle.ClosePrice
+                self._entryPrice = float(candle.ClosePrice)
                 
                 # Set initial trailing stop
                 self._trailingStopLevel = self._entryPrice - trailingStopDistance
@@ -144,7 +144,7 @@ class atr_trailing_strategy(Strategy):
                 self.SellMarket(self.Volume)
                 
                 # Record entry price
-                self._entryPrice = candle.ClosePrice
+                self._entryPrice = float(candle.ClosePrice)
                 
                 # Set initial trailing stop
                 self._trailingStopLevel = self._entryPrice + trailingStopDistance

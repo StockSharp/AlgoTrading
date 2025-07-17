@@ -183,7 +183,7 @@ class keltner_volume_strategy(Strategy):
             upperBand, lowerBand, currentVolume, self._averageVolume))
 
         # Check crossovers - only valid after we have a last price
-        currentPrice = candle.ClosePrice
+        currentPrice = float(candle.ClosePrice)
 
         # Skip if this is the first processed candle
         if self._lastPrice != 0:

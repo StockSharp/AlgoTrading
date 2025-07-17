@@ -164,7 +164,7 @@ class rsi_supertrend_strategy(Strategy):
             return
 
         # Calculate Supertrend
-        close_price = candle.ClosePrice
+        close_price = float(candle.ClosePrice)
         high_price = candle.HighPrice
         low_price = candle.LowPrice
 

@@ -190,7 +190,7 @@ class ichimoku_implied_volatility_strategy(Strategy):
 
         # First run, just store values
         if self._prev_price == 0:
-            self._prev_price = candle.ClosePrice
+            self._prev_price = float(candle.ClosePrice)
             self._prev_above_kumo = price_above_kumo
             self._prev_tenkan_above_kijun = tenkan_above_kijun
             return
@@ -221,7 +221,7 @@ class ichimoku_implied_volatility_strategy(Strategy):
         self.ApplyKijunAsStop(candle.ClosePrice, kijun)
 
         # Update previous values
-        self._prev_price = candle.ClosePrice
+        self._prev_price = float(candle.ClosePrice)
         self._prev_above_kumo = price_above_kumo
         self._prev_tenkan_above_kijun = tenkan_above_kijun
 

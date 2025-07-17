@@ -138,7 +138,7 @@ class bollinger_reversion_strategy(Strategy):
         middle = float(bollinger_value.MovingAverage)
 
         # Get current price
-        close_price = candle.ClosePrice
+        close_price = float(candle.ClosePrice)
 
         # Entry logic
         if close_price < lower and self.Position <= 0:

@@ -101,7 +101,7 @@ class overnight_gap_strategy(Strategy):
         """
         # Skip if we don't have previous close price yet
         if self._prev_close_price == 0:
-            self._prev_close_price = candle.ClosePrice
+            self._prev_close_price = float(candle.ClosePrice)
             return
 
         # Skip unfinished candles
@@ -141,7 +141,7 @@ class overnight_gap_strategy(Strategy):
                     self.Position, self._prev_close_price))
 
         # Update previous close price for next candle
-        self._prev_close_price = candle.ClosePrice
+        self._prev_close_price = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

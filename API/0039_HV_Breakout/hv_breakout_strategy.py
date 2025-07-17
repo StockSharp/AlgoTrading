@@ -140,7 +140,7 @@ class hv_breakout_strategy(Strategy):
 
         # On first formed candle, set reference price
         if not self._isReferenceSet:
-            self._referencePrice = candle.ClosePrice
+            self._referencePrice = float(candle.ClosePrice)
             self._isReferenceSet = True
             return
 
@@ -155,13 +155,13 @@ class hv_breakout_strategy(Strategy):
                 self.BuyMarket(self.Volume)
                 
                 # Update reference price after breakout
-                self._referencePrice = candle.ClosePrice
+                self._referencePrice = float(candle.ClosePrice)
             elif candle.ClosePrice < lowerBreakoutLevel:
                 # Price broke below lower level - sell (short)
                 self.SellMarket(self.Volume)
                 
                 # Update reference price after breakout
-                self._referencePrice = candle.ClosePrice
+                self._referencePrice = float(candle.ClosePrice)
         elif self.Position > 0:
             # Long position - check for exit signal
             if candle.ClosePrice < smaValue:

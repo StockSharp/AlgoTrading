@@ -152,7 +152,7 @@ class statistical_arbitrage_strategy(Strategy):
             return
 
         # Store current price
-        self._last_first_price = candle.ClosePrice
+        self._last_first_price = float(candle.ClosePrice)
 
         # Skip if we don't have both prices or if indicators aren't formed
         if self._last_second_price == 0 or not self._first_ma.IsFormed or not self._second_ma.IsFormed:
@@ -218,7 +218,7 @@ class statistical_arbitrage_strategy(Strategy):
             return
 
         # Store current price
-        self._last_second_price = candle.ClosePrice
+        self._last_second_price = float(candle.ClosePrice)
 
         # Process through MA indicator
         process_float(self._second_ma, candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished)

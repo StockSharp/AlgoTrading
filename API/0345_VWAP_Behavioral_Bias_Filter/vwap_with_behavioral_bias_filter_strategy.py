@@ -135,7 +135,7 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
         # Update behavioral bias score
         self.UpdateBehavioralBias(candle)
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
         priceBelowVwap = price < vwapValue
         priceAboveVwap = price > vwapValue
 

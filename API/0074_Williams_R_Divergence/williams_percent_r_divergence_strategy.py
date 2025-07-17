@@ -123,7 +123,7 @@ class williams_percent_r_divergence_strategy(Strategy):
         self._previousPrice = self._currentPrice
         self._previousWilliamsR = self._currentWilliamsR
         
-        self._currentPrice = candle.ClosePrice
+        self._currentPrice = float(candle.ClosePrice)
         self._currentWilliamsR = williamsRValue
 
         # We need at least two points to detect divergence

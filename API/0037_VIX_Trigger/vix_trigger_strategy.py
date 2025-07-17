@@ -132,7 +132,7 @@ class vix_trigger_strategy(Strategy):
             return
 
         # Store latest VIX value
-        self._latestVix = candle.ClosePrice
+        self._latestVix = float(candle.ClosePrice)
 
         # Initialize _prevVix on first VIX candle
         if self._prevVix == 0:

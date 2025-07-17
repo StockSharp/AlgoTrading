@@ -182,7 +182,7 @@ class ichimoku_stochastic_strategy(Strategy):
         senkou_b = float(ichimoku_typed.SenkouB)
 
         # Current price (close of the candle)
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Check if price is above/below Kumo cloud
         is_above_kumo = price > Math.Max(senkou_a, senkou_b)

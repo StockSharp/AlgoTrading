@@ -165,14 +165,14 @@ class beta_neutral_arbitrage_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset1_last_price = candle.ClosePrice
+        self._asset1_last_price = float(candle.ClosePrice)
         self.UpdateSpread(candle)
 
     def ProcessAsset2Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
 
-        self._asset2_last_price = candle.ClosePrice
+        self._asset2_last_price = float(candle.ClosePrice)
         self.UpdateSpread(candle)
 
     def ProcessMarketCandle(self, candle):

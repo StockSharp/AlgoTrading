@@ -180,7 +180,7 @@ class macd_divergence_strategy(Strategy):
             self._previousMacd = self._currentMacd
 
         # Update current values
-        self._currentPrice = candle.ClosePrice
+        self._currentPrice = float(candle.ClosePrice)
         self._currentMacd = macd
 
         self.LogInfo("Candle: {0}, Close: {1}, MACD: {2:F4}, Signal: {3:F4}".format(

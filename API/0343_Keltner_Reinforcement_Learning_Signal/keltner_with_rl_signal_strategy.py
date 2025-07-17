@@ -177,13 +177,13 @@ class keltner_with_rl_signal_strategy(Strategy):
         current_atr = (upper_band - middle_band) / self.AtrMultiplier
 
         # Update price and RL state
-        self._last_price = candle.ClosePrice
+        self._last_price = float(candle.ClosePrice)
 
         # Generate RL signal based on current state
         self.UpdateRLSignal(candle, middle_band, current_atr)
 
         # Trading logic
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
         price_above_upper_band = price > upper_band
         price_below_lower_band = price < lower_band
 

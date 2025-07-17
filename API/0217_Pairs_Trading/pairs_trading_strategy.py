@@ -214,7 +214,7 @@ class pairs_trading_strategy(Strategy):
     def ProcessSecondSecurityCandle(self, candle):
         # Store the close price of the second security for spread calculation
         if candle.State == CandleStates.Finished:
-            self._last_second_price = candle.ClosePrice
+            self._last_second_price = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

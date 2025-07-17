@@ -152,7 +152,7 @@ class adx_donchian_strategy(Strategy):
         middle_band = donchian_value.Middle
         lower_band = donchian_value.LowerBand
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic:
         # Long: ADX > AdxThreshold && Price >= upperBorder (strong trend with breakout up)

@@ -171,7 +171,7 @@ class stochastic_keltner_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         upperBand = float(keltnerValue.Upper)
         lowerBand = float(keltnerValue.Lower)

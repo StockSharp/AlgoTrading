@@ -131,7 +131,7 @@ class zscore_volume_filter_strategy(Strategy):
             return
 
         # Store current values
-        self._current_price = candle.ClosePrice
+        self._current_price = float(candle.ClosePrice)
         self._current_volume = candle.TotalVolume
 
         # Process indicators

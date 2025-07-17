@@ -124,7 +124,7 @@ class volume_divergence_strategy(Strategy):
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:
-            self._previousClose = candle.ClosePrice
+            self._previousClose = float(candle.ClosePrice)
             self._previousVolume = candle.TotalVolume
             self._isFirstCandle = False
             return
@@ -165,7 +165,7 @@ class volume_divergence_strategy(Strategy):
             self.BuyMarket(Math.Abs(self.Position))
 
         # Store current values for next comparison
-        self._previousClose = candle.ClosePrice
+        self._previousClose = float(candle.ClosePrice)
         self._previousVolume = candle.TotalVolume
 
     def CreateClone(self):

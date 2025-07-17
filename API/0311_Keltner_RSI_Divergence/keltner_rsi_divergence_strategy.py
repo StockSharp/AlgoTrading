@@ -148,7 +148,7 @@ class keltner_rsi_divergence_strategy(Strategy):
 
         # Skip if it's the first valid candle
         if self._prev_price == 0:
-            self._prev_price = candle.ClosePrice
+            self._prev_price = float(candle.ClosePrice)
             self._prev_rsi = rsi_value
             return
 
@@ -188,7 +188,7 @@ class keltner_rsi_divergence_strategy(Strategy):
 
         # Update previous values
         self._prev_rsi = rsi_value
-        self._prev_price = candle.ClosePrice
+        self._prev_price = float(candle.ClosePrice)
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

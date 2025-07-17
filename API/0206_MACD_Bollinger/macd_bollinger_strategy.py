@@ -187,7 +187,7 @@ class macd_bollinger_strategy(Strategy):
         macd_line = macdValue.Macd
         signal_line = macdValue.Signal
 
-        price = candle.ClosePrice
+        price = float(candle.ClosePrice)
 
         # Trading logic:
         # Long: MACD > Signal && Price < BB_lower (trend up with oversold conditions)
