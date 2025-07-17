@@ -166,9 +166,18 @@ class bollinger_rsi_strategy(Strategy):
             return
 
         bollingerTyped = bollingerValue
-        upperBand = bollingerTyped.UpBand
-        lowerBand = bollingerTyped.LowBand
-        middleBand = bollingerTyped.MovingAverage
+
+        if bollingerTyped.UpBand is None:
+            return
+        upperBand = float(bollingerTyped.UpBand)
+
+        if bollingerTyped.LowBand is None:
+            return
+        lowerBand = float(bollingerTyped.LowBand)
+
+        if bollingerTyped.MovingAverage is None:
+            return
+        middleBand = float(bollingerTyped.MovingAverage)
         rsiTyped = to_float(rsiValue)
 
         # Long entry: price below lower Bollinger Band and RSI oversold

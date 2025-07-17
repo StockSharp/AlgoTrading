@@ -118,9 +118,18 @@ class bollinger_band_reversal_strategy(Strategy):
 
         # Get current Bollinger Bands values
         bollingerTyped = bollingerValue
-        upperBand = bollingerTyped.UpBand
-        lowerBand = bollingerTyped.LowBand
-        middleBand = bollingerTyped.MovingAverage
+
+        if bollingerTyped.UpBand is None:
+            return
+        upperBand = float(bollingerTyped.UpBand)
+
+        if bollingerTyped.LowBand is None:
+            return
+        lowerBand = float(bollingerTyped.LowBand)
+
+        if bollingerTyped.MovingAverage is None:
+            return
+        middleBand = float(bollingerTyped.MovingAverage)
 
         # Determine if the candle is bullish or bearish
         isBullish = candle.ClosePrice > candle.OpenPrice

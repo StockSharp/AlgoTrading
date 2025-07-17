@@ -145,6 +145,12 @@ class donchian_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
+        if (
+            donchian_value.UpperBand is None
+            or donchian_value.LowerBand is None
+            or donchian_value.Middle is None
+        ):
+            return
         upper_band = float(donchian_value.UpperBand)
         lower_band = float(donchian_value.LowerBand)
         middle_band = float(donchian_value.Middle)

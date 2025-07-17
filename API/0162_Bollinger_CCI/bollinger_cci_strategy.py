@@ -157,9 +157,18 @@ class bollinger_cci_strategy(Strategy):
 
         # Get Bollinger Bands values from the indicator
         bb = bollingerValue
-        middleBand = bb.MovingAverage
-        upperBand = bb.UpBand
-        lowerBand = bb.LowBand
+
+        if bb.MovingAverage is None:
+            return
+        middleBand = float(bb.MovingAverage)
+
+        if bb.UpBand is None:
+            return
+        upperBand = float(bb.UpBand)
+
+        if bb.LowBand is None:
+            return
+        lowerBand = float(bb.LowBand)
         cciTyped = float(cciValue)
 
         # Current price

@@ -195,9 +195,9 @@ class adaptive_bollinger_breakout_strategy(Strategy):
             ):
                 return  # Not enough data to calculate bands
 
-            upper_band = bollinger_typed.UpBand
-            lower_band = bollinger_typed.LowBand
-            middle_band = bollinger_typed.MovingAverage
+            upper_band = float(bollinger_typed.UpBand)
+            lower_band = float(bollinger_typed.LowBand)
+            middle_band = float(bollinger_typed.MovingAverage)
 
             if is_high_volatility:
                 # Breakout above upper band - Sell signal

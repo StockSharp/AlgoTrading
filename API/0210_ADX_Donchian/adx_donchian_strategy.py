@@ -148,9 +148,15 @@ class adx_donchian_strategy(Strategy):
         adx_ma = float(adx_value.MovingAverage)
 
         # Get Donchian Channel values
-        upper_band = donchian_value.UpperBand
-        middle_band = donchian_value.Middle
-        lower_band = donchian_value.LowerBand
+        if (
+            donchian_value.UpperBand is None
+            or donchian_value.LowerBand is None
+            or donchian_value.Middle is None
+        ):
+            return
+        upper_band = float(donchian_value.UpperBand)
+        middle_band = float(donchian_value.Middle)
+        lower_band = float(donchian_value.LowerBand)
 
         price = float(candle.ClosePrice)
 

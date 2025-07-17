@@ -173,6 +173,8 @@ class bollinger_width_mean_reversion_strategy(Strategy):
         lastAtr = float(atr_value)
 
         bollingerTyped = bollinger_value
+        if bollingerTyped.UpBand is None or bollingerTyped.LowBand is None:
+            return
 
         # Calculate Bollinger width
         lastWidth = float(bollingerTyped.UpBand) - float(bollingerTyped.LowBand)
