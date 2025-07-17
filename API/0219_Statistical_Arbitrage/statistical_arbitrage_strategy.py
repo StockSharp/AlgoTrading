@@ -47,6 +47,7 @@ class statistical_arbitrage_strategy(Strategy):
         self._last_first_price = 0
         self._last_second_price = 0
         self._entry_spread = 0
+        self._second_ma_value = 0
 
     @property
     def LookbackPeriod(self):
@@ -93,6 +94,7 @@ class statistical_arbitrage_strategy(Strategy):
         self._last_first_price = 0
         self._last_second_price = 0
         self._entry_spread = 0
+        self._second_ma_value = 0
 
     def OnStarted(self, time):
         """
@@ -105,6 +107,7 @@ class statistical_arbitrage_strategy(Strategy):
         self._last_first_price = 0
         self._last_second_price = 0
         self._entry_spread = 0
+        self._second_ma_value = 0
 
         if self.SecondSecurity is None:
             raise Exception("Second security is not specified.")
@@ -159,8 +162,8 @@ class statistical_arbitrage_strategy(Strategy):
         if self._last_second_price == 0 or not self._first_ma.IsFormed or not self._second_ma.IsFormed:
             return
 
-        # Get last second MA value
-        second_ma_value = self._second_ma.GetCurrentValue()
+        # Get last second MA value stored earlier
+        second_ma_value = self._second_ma_value
 
         # Trading logic
         is_first_below_ma = self._last_first_price < first_ma_value
@@ -221,8 +224,15 @@ class statistical_arbitrage_strategy(Strategy):
         # Store current price
         self._last_second_price = float(candle.ClosePrice)
 
-        # Process through MA indicator
-        process_float(self._second_ma, candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished)
+        # Process through MA indicator and remember the result
+        self._second_ma_value = to_float(
+            process_float(
+                self._second_ma,
+                candle.ClosePrice,
+                candle.ServerTime,
+                candle.State == CandleStates.Finished,
+            )
+        )
 
     def CreateClone(self):
         """
