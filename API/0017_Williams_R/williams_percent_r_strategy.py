@@ -106,7 +106,7 @@ class williams_percent_r_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        williams_r_value = float(value)
+        williams_r_value = to_float(value)
 
         # Note: Williams %R values are negative, typically from 0 to -100
         # Oversold: Below -80

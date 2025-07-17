@@ -143,7 +143,7 @@ class rsi_reversion_strategy(Strategy):
             return
 
         # Get RSI value
-        rsi = float(rsi_value)
+        rsi = to_float(rsi_value)
 
         # Entry logic for mean reversion
         if rsi < self.oversold_threshold and self.Position <= 0:
