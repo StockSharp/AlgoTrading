@@ -165,37 +165,34 @@ class macd_divergence_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        try:
-            # Extract MACD values - be careful with the order of indexes
-            macdTyped = macdValue
-            
-            if macdTyped.Macd is None or macdTyped.Signal is None:
-                return
-            
-            macd = macdTyped.Macd
-            signal = macdTyped.Signal
+        # Extract MACD values - be careful with the order of indexes
+        macdTyped = macdValue
+        
+        if macdTyped.Macd is None or macdTyped.Signal is None:
+            return
+        
+        macd = macdTyped.Macd
+        signal = macdTyped.Signal
 
-            # Store previous values before updating
-            if self._currentPrice is not None and self._currentMacd is not None:
-                self._previousPrice = self._currentPrice
-                self._previousMacd = self._currentMacd
+        # Store previous values before updating
+        if self._currentPrice is not None and self._currentMacd is not None:
+            self._previousPrice = self._currentPrice
+            self._previousMacd = self._currentMacd
 
-            # Update current values
-            self._currentPrice = candle.ClosePrice
-            self._currentMacd = macd
+        # Update current values
+        self._currentPrice = candle.ClosePrice
+        self._currentMacd = macd
 
-            self.LogInfo("Candle: {0}, Close: {1}, MACD: {2:F4}, Signal: {3:F4}".format(
-                candle.OpenTime, candle.ClosePrice, macd, signal))
+        self.LogInfo("Candle: {0}, Close: {1}, MACD: {2:F4}, Signal: {3:F4}".format(
+            candle.OpenTime, candle.ClosePrice, macd, signal))
 
-            # Look for divergences once we have enough data
-            if (self._previousPrice is not None and self._previousMacd is not None and 
-                self._currentPrice is not None and self._currentMacd is not None):
-                self.CheckForDivergences()
+        # Look for divergences once we have enough data
+        if (self._previousPrice is not None and self._previousMacd is not None and 
+            self._currentPrice is not None and self._currentMacd is not None):
+            self.CheckForDivergences()
 
-            # Process signals based on detected divergences
-            self.ProcessDivergenceSignals(candle, macd, signal)
-        except Exception as ex:
-            self.LogError("Error processing MACD values: {0}".format(str(ex)))
+        # Process signals based on detected divergences
+        self.ProcessDivergenceSignals(candle, macd, signal)
 
     def CheckForDivergences(self):
         """

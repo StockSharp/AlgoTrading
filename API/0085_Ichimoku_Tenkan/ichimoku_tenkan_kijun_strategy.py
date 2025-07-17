@@ -138,21 +138,18 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
             return
 
         # Get current Ichimoku values
-        try:
-            if ichimoku_value.Tenkan is None:
-                return
-            tenkan = float(ichimoku_value.Tenkan)
-            if ichimoku_value.Kijun is None:
-                return
-            kijun = float(ichimoku_value.Kijun)
-            if ichimoku_value.SenkouA is None:
-                return
-            senkou_a = float(ichimoku_value.SenkouA)
-            if ichimoku_value.SenkouB is None:
-                return
-            senkou_b = float(ichimoku_value.SenkouB)
-        except:
+        if ichimoku_value.Tenkan is None:
             return
+        tenkan = float(ichimoku_value.Tenkan)
+        if ichimoku_value.Kijun is None:
+            return
+        kijun = float(ichimoku_value.Kijun)
+        if ichimoku_value.SenkouA is None:
+            return
+        senkou_a = float(ichimoku_value.SenkouA)
+        if ichimoku_value.SenkouB is None:
+            return
+        senkou_b = float(ichimoku_value.SenkouB)
 
         # If first calculation, just store values
         if self._prev_tenkan == 0 or self._prev_kijun == 0:

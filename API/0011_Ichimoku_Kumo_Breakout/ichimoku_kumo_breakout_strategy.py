@@ -132,25 +132,21 @@ class ichimoku_kumo_breakout_strategy(Strategy):
             return
 
         # Extract values from Ichimoku indicator
-        try:
-            if ichimoku_value.Tenkan is None:
-                return
-            tenkan = float(ichimoku_value.Tenkan)
-
-            if ichimoku_value.Kijun is None:
-                return
-            kijun = float(ichimoku_value.Kijun)
-
-            if ichimoku_value.SenkouA is None:
-                return
-            senkou_a = float(ichimoku_value.SenkouA)
-
-            if ichimoku_value.SenkouB is None:
-                return
-            senkou_b = float(ichimoku_value.SenkouB)
-        except:
-            # If we can't extract values, skip this candle
+        if ichimoku_value.Tenkan is None:
             return
+        tenkan = float(ichimoku_value.Tenkan)
+
+        if ichimoku_value.Kijun is None:
+            return
+        kijun = float(ichimoku_value.Kijun)
+
+        if ichimoku_value.SenkouA is None:
+            return
+        senkou_a = float(ichimoku_value.SenkouA)
+
+        if ichimoku_value.SenkouB is None:
+            return
+        senkou_b = float(ichimoku_value.SenkouB)
 
         # Skip if any value is zero (indicator initializing)
         if tenkan == 0 or kijun == 0 or senkou_a == 0 or senkou_b == 0:

@@ -146,12 +146,9 @@ class donchian_seasonal_filter_strategy(Strategy):
             return
 
         # Extract Donchian Channel values
-        try:
-            upper_band = float(donchian_value.UpperBand)
-            lower_band = float(donchian_value.LowerBand)
-            middle_band = float(donchian_value.Middle)
-        except Exception:
-            return
+        upper_band = float(donchian_value.UpperBand)
+        lower_band = float(donchian_value.LowerBand)
+        middle_band = float(donchian_value.Middle)
 
         # Save current Donchian Channel values
         self._upper_band = upper_band

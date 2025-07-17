@@ -164,17 +164,13 @@ class stochastic_rsi_cross_strategy(Strategy):
             return
 
         # Extract Stochastic values
-        try:
-            if stoch_value.K is None:
-                return
-            k_value = float(stoch_value.K)
-
-            if stoch_value.D is None:
-                return
-            d_value = float(stoch_value.D)
-        except:
-            # If we can't extract values, skip this candle
+        if stoch_value.K is None:
             return
+        k_value = float(stoch_value.K)
+
+        if stoch_value.D is None:
+            return
+        d_value = float(stoch_value.D)
 
         # For the first candle, just store values and return
         if self._is_first_candle:

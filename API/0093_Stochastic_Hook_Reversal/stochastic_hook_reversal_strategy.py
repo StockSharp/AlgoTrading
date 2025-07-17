@@ -174,10 +174,7 @@ class stochastic_hook_reversal_strategy(Strategy):
                 return
             stoch_k = float(stoch_value.K)
         else:
-            try:
-                stoch_k = float(stoch_value)
-            except:
-                return
+            stoch_k = float(stoch_value)
 
         # If this is the first calculation, just store the value
         if self._prev_k == 0:

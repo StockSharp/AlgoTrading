@@ -150,13 +150,10 @@ class williams_ichimoku_strategy(Strategy):
             return
 
         # Extract Ichimoku values
-        try:
-            tenkan = float(ichimoku_value.Tenkan) if ichimoku_value.Tenkan is not None else None
-            kijun = float(ichimoku_value.Kijun) if ichimoku_value.Kijun is not None else None
-            senkou_a = float(ichimoku_value.SenkouA) if ichimoku_value.SenkouA is not None else None
-            senkou_b = float(ichimoku_value.SenkouB) if ichimoku_value.SenkouB is not None else None
-        except Exception:
-            return
+        tenkan = float(ichimoku_value.Tenkan) if ichimoku_value.Tenkan is not None else None
+        kijun = float(ichimoku_value.Kijun) if ichimoku_value.Kijun is not None else None
+        senkou_a = float(ichimoku_value.SenkouA) if ichimoku_value.SenkouA is not None else None
+        senkou_b = float(ichimoku_value.SenkouB) if ichimoku_value.SenkouB is not None else None
 
         if tenkan is None or kijun is None or senkou_a is None or senkou_b is None:
             return

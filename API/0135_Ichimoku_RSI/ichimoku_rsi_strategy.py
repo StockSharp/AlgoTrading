@@ -188,24 +188,21 @@ class ichimoku_rsi_strategy(Strategy):
             return
 
         # Extract values from Ichimoku indicator
-        try:
-            if ichimoku_value.Tenkan is None:
-                return
-            tenkan = float(ichimoku_value.Tenkan)
-
-            if ichimoku_value.Kijun is None:
-                return
-            kijun = float(ichimoku_value.Kijun)
-
-            if ichimoku_value.SenkouA is None:
-                return
-            senkou_span_a = float(ichimoku_value.SenkouA)
-
-            if ichimoku_value.SenkouB is None:
-                return
-            senkou_span_b = float(ichimoku_value.SenkouB)
-        except Exception:
+        if ichimoku_value.Tenkan is None:
             return
+        tenkan = float(ichimoku_value.Tenkan)
+
+        if ichimoku_value.Kijun is None:
+            return
+        kijun = float(ichimoku_value.Kijun)
+
+        if ichimoku_value.SenkouA is None:
+            return
+        senkou_span_a = float(ichimoku_value.SenkouA)
+
+        if ichimoku_value.SenkouB is None:
+            return
+        senkou_span_b = float(ichimoku_value.SenkouB)
 
         # Extract RSI value
         rsi_indicator_value = float(rsi_value)

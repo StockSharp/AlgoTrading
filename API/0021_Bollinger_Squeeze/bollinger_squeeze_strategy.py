@@ -128,21 +128,17 @@ class bollinger_squeeze_strategy(Strategy):
             return
 
         # Extract values from Bollinger Bands indicator
-        try:
-            if bollinger_value.UpBand is None:
-                return
-            upper_band = float(bollinger_value.UpBand)
-
-            if bollinger_value.LowBand is None:
-                return
-            lower_band = float(bollinger_value.LowBand)
-
-            if bollinger_value.MovingAverage is None:
-                return
-            middle_band = float(bollinger_value.MovingAverage)
-        except:
-            # If we can't extract values, skip this candle
+        if bollinger_value.UpBand is None:
             return
+        upper_band = float(bollinger_value.UpBand)
+
+        if bollinger_value.LowBand is None:
+            return
+        lower_band = float(bollinger_value.LowBand)
+
+        if bollinger_value.MovingAverage is None:
+            return
+        middle_band = float(bollinger_value.MovingAverage)
 
         # Calculate Bollinger Bands width relative to the middle band
         band_width = (upper_band - lower_band) / middle_band

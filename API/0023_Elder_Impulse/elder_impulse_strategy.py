@@ -173,17 +173,13 @@ class elder_impulse_strategy(Strategy):
         is_ema_rising = ema_decimal > self._previous_ema
 
         # Extract MACD values
-        try:
-            if macd_value.Macd is None:
-                return
-            macd_line = float(macd_value.Macd)
-
-            if macd_value.Signal is None:
-                return
-            signal = float(macd_value.Signal)
-        except:
-            # If we can't extract MACD values, skip this candle
+        if macd_value.Macd is None:
             return
+        macd_line = float(macd_value.Macd)
+
+        if macd_value.Signal is None:
+            return
+        signal = float(macd_value.Signal)
 
         # Get MACD histogram value (MACD - Signal)
         macd_histogram = macd_line - signal

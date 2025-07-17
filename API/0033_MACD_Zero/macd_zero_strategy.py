@@ -140,17 +140,13 @@ class macd_zero_strategy(Strategy):
             return
 
         # Extract MACD values
-        try:
-            if macd_value.Macd is None:
-                return
-            macd = float(macd_value.Macd)
-
-            if macd_value.Signal is None:
-                return
-            signal = float(macd_value.Signal)
-        except:
-            # If we can't extract values, skip this candle
+        if macd_value.Macd is None:
             return
+        macd = float(macd_value.Macd)
+
+        if macd_value.Signal is None:
+            return
+        signal = float(macd_value.Signal)
 
         # Initialize _prev_macd on first formed candle
         if self._prev_macd == 0:

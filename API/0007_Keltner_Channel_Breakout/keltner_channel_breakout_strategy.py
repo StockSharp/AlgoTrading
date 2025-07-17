@@ -131,21 +131,17 @@ class keltner_channel_breakout_strategy(Strategy):
             return
 
         # Extract values from Keltner Channel indicator
-        try:
-            if keltner_value.Upper is None:
-                return
-            upper_value = float(keltner_value.Upper)
-
-            if keltner_value.Lower is None:
-                return
-            lower_value = float(keltner_value.Lower)
-
-            if keltner_value.Middle is None:
-                return
-            middle_value = float(keltner_value.Middle)
-        except:
-            # If we can't extract values, skip this candle
+        if keltner_value.Upper is None:
             return
+        upper_value = float(keltner_value.Upper)
+
+        if keltner_value.Lower is None:
+            return
+        lower_value = float(keltner_value.Lower)
+
+        if keltner_value.Middle is None:
+            return
+        middle_value = float(keltner_value.Middle)
 
         # Skip the first received value for proper comparison
         if self._prev_upper_band == 0:

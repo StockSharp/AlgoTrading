@@ -125,21 +125,17 @@ class bollinger_reversion_strategy(Strategy):
             return
 
         # Extract Bollinger Bands values
-        try:
-            if bollinger_value.UpBand is None:
-                return
-            upper = float(bollinger_value.UpBand)
-
-            if bollinger_value.LowBand is None:
-                return
-            lower = float(bollinger_value.LowBand)
-
-            if bollinger_value.MovingAverage is None:
-                return
-            middle = float(bollinger_value.MovingAverage)
-        except:
-            # If we can't extract values, skip this candle
+        if bollinger_value.UpBand is None:
             return
+        upper = float(bollinger_value.UpBand)
+
+        if bollinger_value.LowBand is None:
+            return
+        lower = float(bollinger_value.LowBand)
+
+        if bollinger_value.MovingAverage is None:
+            return
+        middle = float(bollinger_value.MovingAverage)
 
         # Get current price
         close_price = candle.ClosePrice
