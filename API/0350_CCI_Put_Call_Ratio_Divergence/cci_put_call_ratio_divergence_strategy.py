@@ -128,21 +128,21 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
         if cci_value < -100 and bullish_divergence and self.Position <= 0:
             # CCI oversold with bullish PCR divergence - Long entry
             self.BuyMarket(self.Volume)
-            self.LogInfo(f"Buy Signal: CCI={cci_value}, PCR={self._current_pcr}, Price={price}, Bullish Divergence")
+            self.LogInfo("Buy Signal: CCI={0}, PCR={1}, Price={2}, Bullish Divergence".format(cci_value, self._current_pcr, price))
         elif cci_value > 100 and bearish_divergence and self.Position >= 0:
             # CCI overbought with bearish PCR divergence - Short entry
             self.SellMarket(self.Volume)
-            self.LogInfo(f"Sell Signal: CCI={cci_value}, PCR={self._current_pcr}, Price={price}, Bearish Divergence")
+            self.LogInfo("Sell Signal: CCI={0}, PCR={1}, Price={2}, Bearish Divergence".format(cci_value, self._current_pcr, price))
 
         # Exit logic
         if self.Position > 0 and cci_value > 0:
             # Exit long position when CCI crosses above zero
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Exit Long: CCI={cci_value}")
+            self.LogInfo("Exit Long: CCI={0}".format(cci_value))
         elif self.Position < 0 and cci_value < 0:
             # Exit short position when CCI crosses below zero
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo(f"Exit Short: CCI={cci_value}")
+            self.LogInfo("Exit Short: CCI={0}".format(cci_value))
 
         # Dynamic stop loss using ATR
         if self.Position != 0:
@@ -190,7 +190,7 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
         # This could be done via order modification or canceling existing stops and placing new ones
 
         # For this example, we'll just log the new stop level
-        self.LogInfo(f"Updated Stop Loss: {stop_price}")
+        self.LogInfo("Updated Stop Loss: {0}".format(stop_price))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
