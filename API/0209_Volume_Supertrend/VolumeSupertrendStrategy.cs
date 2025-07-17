@@ -17,6 +17,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _supertrendPeriod;
 		private readonly StrategyParam<decimal> _supertrendMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
+		private readonly StrategyParam<decimal> _stopLossPercent;
 
 		/// <summary>
 		/// Volume average period
@@ -55,6 +56,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// Stop-loss percentage parameter.
+		/// </summary>
+		public decimal StopLossPercent
+		{
+			get => _stopLossPercent.Value;
+			set => _stopLossPercent.Value = value;
+		}
+
+		/// <summary>
 		/// Constructor
 		/// </summary>
 		public VolumeSupertrendStrategy()
@@ -73,6 +83,12 @@ namespace StockSharp.Samples.Strategies
 				.SetRange(1m, 5m)
 				.SetDisplay("Supertrend Multiplier", "Multiplier for Supertrend calculation", "Supertrend")
 				.SetCanOptimize(true);
+
+			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
+				.SetGreaterThanZero()
+				.SetDisplay("Stop-loss %", "Stop-loss as percentage of entry price", "Risk Management")
+				.SetCanOptimize(true)
+				.SetOptimize(1m, 3m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -164,9 +180,12 @@ namespace StockSharp.Samples.Strategies
 					ProcessSignals(candle, currentVolume, volumeValue, supertrendValue, supertrendDirection);
 				})
 				.Start();
-			
-			// Enable dynamic stop protection based on Supertrend value
-			StartProtection(default, default);
+
+			// Enable position protection
+			StartProtection(
+				takeProfit: new Unit(0, UnitTypes.Absolute), // No take-profit
+				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop-loss as percentage
+			);
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
