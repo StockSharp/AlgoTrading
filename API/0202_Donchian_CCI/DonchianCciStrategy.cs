@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on Donchian Channels and CCI indicators (#202)
+	/// Strategy based on Donchian Channels and CCI indicators
 	/// </summary>
 	public class DonchianCciStrategy : Strategy
 	{

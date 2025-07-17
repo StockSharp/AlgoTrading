@@ -11,7 +11,7 @@ from datatype_extensions import *
 from indicator_extensions import *
 
 class volume_supertrend_strategy(Strategy):
-    """Strategy based on Volume and Supertrend indicators (#209)"""
+    """Strategy based on Volume and Supertrend indicators"""
 
     def __init__(self):
         """Constructor"""

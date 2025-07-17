@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on MACD and Bollinger Bands indicators (#206)
+	/// Strategy based on MACD and Bollinger Bands indicators
 	/// </summary>
 	public class MacdBollingerStrategy : Strategy
 	{

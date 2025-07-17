@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on ADX and Donchian Channel indicators (#210)
+	/// Strategy based on ADX and Donchian Channel indicators
 	/// </summary>
 	public class AdxDonchianStrategy : Strategy
 	{

@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on Volume and Supertrend indicators (#209)
+	/// Strategy based on Volume and Supertrend indicators
 	/// </summary>
 	public class VolumeSupertrendStrategy : Strategy
 	{

@@ -11,7 +11,7 @@ from datatype_extensions import *
 from indicator_extensions import *
 
 class keltner_williams_r_strategy(Strategy):
-    """Strategy based on Keltner Channels and Williams %R indicators (#203)"""
+    """Strategy based on Keltner Channels and Williams %R indicators"""
 
     def __init__(self):
         super(keltner_williams_r_strategy, self).__init__()

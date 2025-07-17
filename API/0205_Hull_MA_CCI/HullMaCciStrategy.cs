@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on Hull Moving Average and CCI indicators (#205)
+	/// Strategy based on Hull Moving Average and CCI indicators
 	/// </summary>
 	public class HullMaCciStrategy : Strategy
 	{
