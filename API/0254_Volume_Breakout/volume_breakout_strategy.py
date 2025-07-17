@@ -119,7 +119,7 @@ class volume_breakout_strategy(Strategy):
             return
 
         # Calculate volume indicators
-        volume = candle.TotalVolume
+        volume = float(candle.TotalVolume)
 
         # Calculate volume average
         avg_value = process_float(self._volume_average, volume, candle.ServerTime, candle.State == CandleStates.Finished)

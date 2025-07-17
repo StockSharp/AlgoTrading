@@ -182,7 +182,7 @@ class adx_sentiment_momentum_strategy(Strategy):
     def SimulateSentiment(self, candle):
         # Base sentiment on price movement (up = positive sentiment, down = negative sentiment)
         price_up = candle.OpenPrice < candle.ClosePrice
-        price_change = (candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice
+        price_change = float((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice)
 
         # Calculate base sentiment from price change
         base_sentiment = price_change * 10  # Scale up for easier interpretation

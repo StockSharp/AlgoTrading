@@ -154,10 +154,10 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
 
         # If SAR is below price, it's in uptrend
         if sar_value < candle.ClosePrice:
-            long_distance = candle.ClosePrice - sar_value
+            long_distance = float(candle.ClosePrice - sar_value)
         # If SAR is above price, it's in downtrend
         elif sar_value > candle.ClosePrice:
-            short_distance = sar_value - candle.ClosePrice
+            short_distance = float(sar_value - candle.ClosePrice)
 
         # Update statistics
         self.UpdateDistanceStatistics(long_distance, short_distance)

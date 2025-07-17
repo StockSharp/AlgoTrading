@@ -107,7 +107,7 @@ class harami_bearish_strategy(Strategy):
             self.SellMarket(volume)
 
             # Set stop-loss level
-            stop_loss_level = candle.HighPrice * (1 + self.StopLossPercent / 100)
+            stop_loss_level = float(candle.HighPrice * (1 + self.StopLossPercent / 100))
 
             self.LogInfo("Harami Bearish detected. Selling at {0}. Stop-loss set at {1}".format(
                 candle.ClosePrice, stop_loss_level))

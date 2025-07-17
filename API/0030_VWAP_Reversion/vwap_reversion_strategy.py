@@ -112,7 +112,7 @@ class vwap_reversion_strategy(Strategy):
         deviation_ratio = 0.0
         
         if vwap_decimal > 0:
-            deviation_ratio = (candle.ClosePrice - vwap_decimal) / vwap_decimal
+            deviation_ratio = float((candle.ClosePrice - vwap_decimal) / vwap_decimal)
 
         # Convert ratio to percentage
         deviation_percent = deviation_ratio * 100

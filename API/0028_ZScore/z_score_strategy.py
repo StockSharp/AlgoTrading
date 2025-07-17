@@ -161,7 +161,7 @@ class z_score_strategy(Strategy):
         if std_dev_decimal == 0:
             return
 
-        z_score = (candle.ClosePrice - ma_decimal) / std_dev_decimal
+        z_score = float((candle.ClosePrice - ma_decimal) / std_dev_decimal)
 
         # Process trading signals
         if self.Position == 0:

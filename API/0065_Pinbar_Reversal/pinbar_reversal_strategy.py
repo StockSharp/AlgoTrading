@@ -137,9 +137,9 @@ class pinbar_reversal_strategy(Strategy):
             return
 
         # Calculate candle body and shadows
-        bodyLength = Math.Abs(candle.ClosePrice - candle.OpenPrice)
-        upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice)
-        lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice
+        bodyLength = float(Math.Abs(candle.ClosePrice - candle.OpenPrice))
+        upperShadow = float(candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice))
+        lowerShadow = float(Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice)
         
         # Check for bullish pinbar (long lower shadow)
         isBullishPinbar = (lowerShadow > bodyLength * self.TailToBodyRatio and 

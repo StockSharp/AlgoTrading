@@ -219,7 +219,7 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
     def UpdateImpliedVolatility(self, candle):
         # Simple IV simulation based on candle's high-low range and volume
         # In reality, this would come from option pricing data
-        rangeValue = (candle.HighPrice - candle.LowPrice) / candle.LowPrice
+        rangeValue = float((candle.HighPrice - candle.LowPrice) / candle.LowPrice)
         volume = candle.TotalVolume if candle.TotalVolume > 0 else 1
 
         # Simulate IV based on range and volume with some randomness

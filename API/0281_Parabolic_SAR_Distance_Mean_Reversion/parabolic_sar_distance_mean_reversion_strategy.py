@@ -169,8 +169,8 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
         self._sar_value = float(value)
 
         # Calculate distances
-        self._current_distance_long = candle.ClosePrice - self._sar_value
-        self._current_distance_short = self._sar_value - candle.ClosePrice
+        self._current_distance_long = float(candle.ClosePrice - self._sar_value)
+        self._current_distance_short = float(self._sar_value - candle.ClosePrice)
 
         # Calculate averages and standard deviations for both distances
         long_distance_avg = to_float(process_float(self._distance_average, self._current_distance_long, candle.ServerTime, True))

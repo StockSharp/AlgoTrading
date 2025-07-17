@@ -120,7 +120,7 @@ class vcp_strategy(Strategy):
             return
 
         # Calculate current candle range
-        currentCandleRange = candle.HighPrice - candle.LowPrice
+        currentCandleRange = float(candle.HighPrice - candle.LowPrice)
         
         # If first candle, just store the range and return
         if self._prevCandleRange == 0:

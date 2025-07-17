@@ -168,7 +168,7 @@ class hull_kmeans_cluster_strategy(Strategy):
     def UpdateFeatureData(self, candle, rsi_value):
         # Calculate price change percentage
         if self._last_price != 0:
-            price_change = (candle.ClosePrice - self._last_price) / self._last_price * 100
+            price_change = float((candle.ClosePrice - self._last_price) / self._last_price * 100)
 
             # Maintain price change data queue
             self._price_change_data.Enqueue(price_change)
@@ -182,10 +182,10 @@ class hull_kmeans_cluster_strategy(Strategy):
 
         # Calculate volume ratio and maintain queue
         if self._avg_volume == 0:
-            self._avg_volume = candle.TotalVolume
+            self._avg_volume = float(candle.TotalVolume)
         else:
             # Exponential smoothing for average volume
-            self._avg_volume = 0.9 * self._avg_volume + 0.1 * candle.TotalVolume
+            self._avg_volume = float(0.9 * self._avg_volume + 0.1 * candle.TotalVolume)
 
         volume_ratio = candle.TotalVolume / (self._avg_volume if self._avg_volume != 0 else 1)
         self._volume_ratio_data.Enqueue(volume_ratio)

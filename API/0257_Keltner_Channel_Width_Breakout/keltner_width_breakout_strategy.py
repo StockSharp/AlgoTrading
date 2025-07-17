@@ -221,8 +221,8 @@ class keltner_width_breakout_strategy(Strategy):
             priceDirection = False
 
             # If price is closer to upper band, go long. If closer to lower band, go short.
-            upperDistance = abs(candle.ClosePrice - upperBand)
-            lowerDistance = abs(candle.ClosePrice - lowerBand)
+            upperDistance = float(abs(candle.ClosePrice - upperBand))
+            lowerDistance = float(abs(candle.ClosePrice - lowerBand))
 
             if upperDistance < lowerDistance:
                 # Price is closer to upper band, likely bullish

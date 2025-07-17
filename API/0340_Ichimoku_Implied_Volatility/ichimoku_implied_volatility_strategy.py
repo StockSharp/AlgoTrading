@@ -230,7 +230,7 @@ class ichimoku_implied_volatility_strategy(Strategy):
         In a real implementation, this would fetch data from market."""
         # Simple IV simulation based on candle's high-low range
         # In reality, this would come from option pricing data
-        iv = (candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100
+        iv = float((candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100)
 
         # Add some random fluctuation to simulate IV behavior
         iv *= 0.8 + 0.4 * random.random()

@@ -113,7 +113,7 @@ class overnight_gap_strategy(Strategy):
             return
 
         # Calculate gap
-        gap = candle.OpenPrice - self._prev_close_price
+        gap = float(candle.OpenPrice - self._prev_close_price)
         is_gap_up = gap > 0
         is_gap_down = gap < 0
 

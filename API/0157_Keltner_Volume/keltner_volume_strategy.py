@@ -165,7 +165,7 @@ class keltner_volume_strategy(Strategy):
         lowerBand = emaValue - (self.Multiplier * atrValue)
 
         # Update average volume calculation
-        currentVolume = candle.TotalVolume
+        currentVolume = float(candle.TotalVolume)
 
         if self._volumeCounter < self.VolumeAvgPeriod:
             self._volumeCounter += 1

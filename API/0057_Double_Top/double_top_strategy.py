@@ -158,7 +158,7 @@ class double_top_strategy(Strategy):
         if self._firstTopHigh is None:
             # Looking for first top
             if candle.HighPrice == highestValue:
-                self._firstTopHigh = candle.HighPrice
+                self._firstTopHigh = float(candle.HighPrice)
                 self._barsSinceFirstTop = 0
                 self.LogInfo("Potential first top detected at price {0}".format(self._firstTopHigh))
         else:
@@ -168,10 +168,10 @@ class double_top_strategy(Strategy):
             if (self._barsSinceFirstTop >= self.Distance and 
                 self._secondTopHigh is None):
                 # Check if current high is close to first top
-                priceDifference = Math.Abs((candle.HighPrice - self._firstTopHigh) / self._firstTopHigh * 100)
+                priceDifference = float(Math.Abs((candle.HighPrice - self._firstTopHigh) / self._firstTopHigh * 100))
                 
                 if priceDifference <= self.SimilarityPercent:
-                    self._secondTopHigh = candle.HighPrice
+                    self._secondTopHigh = float(candle.HighPrice)
                     self._patternConfirmed = True
                     self.LogInfo("Double Top pattern confirmed. First: {0}, Second: {1}".format(
                         self._firstTopHigh, self._secondTopHigh))

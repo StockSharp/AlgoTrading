@@ -222,11 +222,11 @@ class rsi_with_option_open_interest_strategy(Strategy):
         # Simulate bullish sentiment with higher call OI when price is rising
         # Simulate bearish sentiment with higher put OI when price is falling
         if price_up:
-            self._current_call_oi = candle.TotalVolume * (1 + rand.NextDouble() * 0.5)
-            self._current_put_oi = candle.TotalVolume * (0.7 + rand.NextDouble() * 0.3)
+            self._current_call_oi = float(candle.TotalVolume * (1 + rand.NextDouble() * 0.5))
+            self._current_put_oi = float(candle.TotalVolume * (0.7 + rand.NextDouble() * 0.3))
         else:
-            self._current_call_oi = candle.TotalVolume * (0.7 + rand.NextDouble() * 0.3)
-            self._current_put_oi = candle.TotalVolume * (1 + rand.NextDouble() * 0.5)
+            self._current_call_oi = float(candle.TotalVolume * (0.7 + rand.NextDouble() * 0.3))
+            self._current_put_oi = float(candle.TotalVolume * (1 + rand.NextDouble() * 0.5))
 
         # Add some randomness for spikes
         if rand.NextDouble() > 0.9:

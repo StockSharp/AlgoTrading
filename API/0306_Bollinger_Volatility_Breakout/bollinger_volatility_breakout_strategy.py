@@ -190,7 +190,7 @@ class bollinger_volatility_breakout_strategy(Strategy):
             position_size = self.Volume + Math.Abs(self.Position)
 
             # Calculate stop loss level
-            stop_price = candle.ClosePrice - atr_dec * self.StopLossMultiplier
+            stop_price = float(candle.ClosePrice - atr_dec * self.StopLossMultiplier)
 
             # Enter long position
             self.BuyMarket(position_size)
@@ -204,7 +204,7 @@ class bollinger_volatility_breakout_strategy(Strategy):
             position_size = self.Volume + Math.Abs(self.Position)
 
             # Calculate stop loss level
-            stop_price = candle.ClosePrice + atr_dec * self.StopLossMultiplier
+            stop_price = float(candle.ClosePrice + atr_dec * self.StopLossMultiplier)
 
             # Enter short position
             self.SellMarket(position_size)
@@ -217,15 +217,14 @@ class bollinger_volatility_breakout_strategy(Strategy):
             # Exit long position
             self.SellMarket(Math.Abs(self.Position))
             self.LogInfo(
-                "Long exit: Price={0}, BB Middle={1}".format(candle.ClosePrice, bb_middle))
+                "Long exit: Price= float({0}, BB Middle={1}".format(candle.ClosePrice, bb_middle)))
 
         elif short_exit_condition:
             # Exit short position
             self.BuyMarket(Math.Abs(self.Position))
             self.LogInfo(
-                "Short exit: Price={0}, BB Middle={1}".format(candle.ClosePrice, bb_middle))
+                "Short exit: Price= float({0}, BB Middle={1}".format(candle.ClosePrice, bb_middle)))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return bollinger_volatility_breakout_strategy()
-

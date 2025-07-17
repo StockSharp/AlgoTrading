@@ -198,7 +198,7 @@ class wyckoff_accumulation_strategy(Strategy):
         elif self._currentPhase == WyckoffPhase.PhaseC:
             # Phase C includes a spring (price briefly goes below support)
             if candle.LowPrice < self._lastRangeLow and candle.ClosePrice > self._lastRangeLow:
-                self._springLow = candle.LowPrice
+                self._springLow = float(candle.LowPrice)
                 self._currentPhase = WyckoffPhase.PhaseD
                 self.LogInfo("Entering Wyckoff Phase D: Spring detected at {0}".format(self._springLow))
         elif self._currentPhase == WyckoffPhase.PhaseD:
@@ -234,4 +234,3 @@ class wyckoff_accumulation_strategy(Strategy):
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return wyckoff_accumulation_strategy()
-

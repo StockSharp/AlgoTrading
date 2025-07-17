@@ -196,7 +196,7 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
 
         # Base IV Skew values on price movement and volatility
         price_up = candle.OpenPrice < candle.ClosePrice
-        candle_range = (candle.HighPrice - candle.LowPrice) / candle.LowPrice
+        candle_range = float((candle.HighPrice - candle.LowPrice) / candle.LowPrice)
 
         # When prices are rising, puts are often bid up for protection (negative skew)
         # When prices are falling, calls become relatively cheaper (positive skew)

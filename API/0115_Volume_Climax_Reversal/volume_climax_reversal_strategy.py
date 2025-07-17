@@ -137,7 +137,7 @@ class volume_climax_reversal_strategy(Strategy):
             return
 
         # Get current candle information
-        currentVolume = candle.TotalVolume
+        currentVolume = float(candle.TotalVolume)
         isBullishCandle = candle.ClosePrice > candle.OpenPrice
         isBearishCandle = candle.ClosePrice < candle.OpenPrice
 

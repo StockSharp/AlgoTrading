@@ -186,7 +186,7 @@ class wyckoff_distribution_strategy(Strategy):
         elif self._current_phase == self.WyckoffPhase.PHASE_C:
             # Phase C includes an upthrust (price briefly goes above resistance)
             if candle.HighPrice > self._last_range_high and candle.ClosePrice < self._last_range_high:
-                self._upthrust_high = candle.HighPrice
+                self._upthrust_high = float(candle.HighPrice)
                 self._current_phase = self.WyckoffPhase.PHASE_D
                 self.LogInfo("Entering Wyckoff Phase D: Upthrust detected at {0}".format(self._upthrust_high))
         elif self._current_phase == self.WyckoffPhase.PHASE_D:

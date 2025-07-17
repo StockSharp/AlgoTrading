@@ -175,7 +175,7 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
         # Calculate price movement %
         priceChange = 0
         if candle.OpenPrice != 0:
-            priceChange = (candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice * 100
+            priceChange = float((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice * 100)
 
         # Add to queue
         self._recentPriceMovements.append(priceChange)
@@ -212,8 +212,8 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
             previousMove = movement
 
         # 4. Current candle characteristics
-        bodySize = abs(candle.ClosePrice - candle.OpenPrice)
-        totalSize = candle.HighPrice - candle.LowPrice
+        bodySize = float(abs(candle.ClosePrice - candle.OpenPrice))
+        totalSize = float(candle.HighPrice - candle.LowPrice)
         bodyRatio = bodySize / totalSize if totalSize > 0 else 0
 
         # Combined bias score calculation

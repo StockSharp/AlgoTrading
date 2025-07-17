@@ -107,7 +107,7 @@ class january_effect_strategy(Strategy):
             volume = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(volume)
             self.LogInfo(
-                f"Buy signal in January: Date={date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={ma_value}, Volume={volume}")
+                f"Buy signal in January: Date= float({date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={ma_value}, Volume={volume}"))
         # February - EXIT signal (Month = 2)
         elif month == 2 and self.Position > 0:
             self.ClosePosition()

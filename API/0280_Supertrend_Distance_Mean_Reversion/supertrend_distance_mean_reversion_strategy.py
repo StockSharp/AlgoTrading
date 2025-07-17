@@ -163,8 +163,8 @@ class supertrend_distance_mean_reversion_strategy(Strategy):
         self._supertrend_value = float(supertrend_value)
 
         # Calculate distances
-        self._current_distance_long = candle.ClosePrice - self._supertrend_value
-        self._current_distance_short = self._supertrend_value - candle.ClosePrice
+        self._current_distance_long = float(candle.ClosePrice - self._supertrend_value)
+        self._current_distance_short = float(self._supertrend_value - candle.ClosePrice)
 
         # Calculate averages and standard deviations for both distances
         long_distance_avg = float(process_float(self._distance_average, self._current_distance_long, candle.ServerTime, candle.State == CandleStates.Finished))

@@ -132,7 +132,7 @@ class vwap_volume_strategy(Strategy):
 
         # Calculate VWAP manually for the current candle
         vwap = 0
-        typical_price = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3
+        typical_price = float((candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3)
 
         if candle.TotalVolume > 0:
             # Simple VWAP calculation for a single candle

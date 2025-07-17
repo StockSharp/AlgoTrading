@@ -168,7 +168,7 @@ class macd_hidden_markov_model_strategy(Strategy):
     def UpdateHmmData(self, candle):
         # Calculate price change
         if self._prev_price > 0:
-            price_change = candle.ClosePrice - self._prev_price
+            price_change = float(candle.ClosePrice - self._prev_price)
             self._price_changes.append(price_change)
             self._volumes.append(candle.TotalVolume)
 
@@ -228,4 +228,3 @@ class macd_hidden_markov_model_strategy(Strategy):
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return macd_hidden_markov_model_strategy()
-

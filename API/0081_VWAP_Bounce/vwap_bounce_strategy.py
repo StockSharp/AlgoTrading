@@ -88,7 +88,7 @@ class vwap_bounce_strategy(Strategy):
 
         # Calculate VWAP for current candle
         if candle.TotalVolume != 0:
-            vwap = candle.TotalPrice / candle.TotalVolume
+            vwap = float(candle.TotalPrice / candle.TotalVolume)
         else:
             vwap = float(candle.ClosePrice)
 

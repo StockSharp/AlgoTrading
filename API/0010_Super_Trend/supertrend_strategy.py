@@ -117,7 +117,7 @@ class supertrend_strategy(Strategy):
         atr_decimal = float(atr_value)
 
         # Calculate Supertrend components
-        median_price = (candle.HighPrice + candle.LowPrice) / 2
+        median_price = float((candle.HighPrice + candle.LowPrice) / 2)
         basic_upper_band = median_price + self.multiplier * atr_decimal
         basic_lower_band = median_price - self.multiplier * atr_decimal
 

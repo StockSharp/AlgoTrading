@@ -161,7 +161,7 @@ class pairs_trading_strategy(Strategy):
             return
 
         # Calculate the spread: Asset1 - Asset2
-        self._spread = candle.ClosePrice - self._last_second_price
+        self._spread = float(candle.ClosePrice - self._last_second_price)
 
         # Process the spread through indicators
         ma_value = process_float(self._spread_ma, self._spread, candle.ServerTime, True)

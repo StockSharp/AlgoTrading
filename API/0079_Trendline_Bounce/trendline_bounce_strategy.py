@@ -239,7 +239,7 @@ class trendline_bounce_strategy(Strategy):
                    candle.ClosePrice, supportValue, resistanceValue)
         
         # Determine if price is near a trendline
-        bounceThreshold = candle.ClosePrice * (self.BounceThresholdPercent / 100)
+        bounceThreshold = float(candle.ClosePrice * (self.BounceThresholdPercent / 100))
         
         nearSupport = abs(candle.LowPrice - supportValue) <= bounceThreshold
         nearResistance = abs(candle.HighPrice - resistanceValue) <= bounceThreshold

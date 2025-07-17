@@ -202,8 +202,8 @@ class donchian_with_sentiment_spike_strategy(Strategy):
         # Simple sentiment simulation based on price action
         # In reality, this would come from social media or news sentiment API
 
-        body_size = abs(candle.ClosePrice - candle.OpenPrice)
-        total_size = candle.HighPrice - candle.LowPrice
+        body_size = float(abs(candle.ClosePrice - candle.OpenPrice))
+        total_size = float(candle.HighPrice - candle.LowPrice)
 
         if total_size == 0:
             sentiment = 0
@@ -245,4 +245,3 @@ class donchian_with_sentiment_spike_strategy(Strategy):
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""
         return donchian_with_sentiment_spike_strategy()
-

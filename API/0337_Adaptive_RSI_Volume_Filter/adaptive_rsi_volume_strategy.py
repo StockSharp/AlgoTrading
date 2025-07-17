@@ -153,7 +153,7 @@ class adaptive_rsi_volume_strategy(Strategy):
             # Normalize ATR to a value between 0 and 1 using historical range
             # This is a simplified approach - in a real implementation you would
             # track ATR range over a longer period
-            normalizedAtr = Math.Min(Math.Max(atr / (candle.ClosePrice * 0.1), 0), 1)
+            normalizedAtr = float(Math.Min(Math.Max(atr / (candle.ClosePrice * 0.1), 0), 1))
 
             # Adjust RSI period - higher volatility (ATR) = shorter period
             newPeriod = self.MaxRsiPeriod - int(Math.Round(normalizedAtr * (self.MaxRsiPeriod - self.MinRsiPeriod)))

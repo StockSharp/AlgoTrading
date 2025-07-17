@@ -136,7 +136,7 @@ class hv_breakout_strategy(Strategy):
         # Calculate historical volatility based on standard deviation
         # HV is annualized by multiplying by sqrt(252) for daily data
         # Note: We're using a simplified approach for demonstration
-        self._historicalVolatility = stdDevValue / candle.ClosePrice
+        self._historicalVolatility = float(stdDevValue / candle.ClosePrice)
 
         # On first formed candle, set reference price
         if not self._isReferenceSet:

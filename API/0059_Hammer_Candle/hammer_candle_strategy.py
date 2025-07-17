@@ -98,9 +98,9 @@ class hammer_candle_strategy(Strategy):
         # 2. Small or no upper shadow
         # 3. Current low is lower than previous low (downtrend)
 
-        bodySize = Math.Abs(candle.OpenPrice - candle.ClosePrice)
-        lowerShadow = Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice
-        upperShadow = candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice)
+        bodySize = float(Math.Abs(candle.OpenPrice - candle.ClosePrice))
+        lowerShadow = float(Math.Min(candle.OpenPrice, candle.ClosePrice) - candle.LowPrice)
+        upperShadow = float(candle.HighPrice - Math.Max(candle.OpenPrice, candle.ClosePrice))
 
         isHammer = (lowerShadow > bodySize * 2 and
                    upperShadow < bodySize * 0.5 and

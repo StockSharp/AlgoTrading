@@ -158,7 +158,7 @@ class double_bottom_strategy(Strategy):
         if self._firstBottomLow is None:
             # Looking for first bottom
             if candle.LowPrice == lowestValue:
-                self._firstBottomLow = candle.LowPrice
+                self._firstBottomLow = float(candle.LowPrice)
                 self._barsSinceFirstBottom = 0
                 self.LogInfo("Potential first bottom detected at price {0}".format(self._firstBottomLow))
         else:
@@ -168,10 +168,10 @@ class double_bottom_strategy(Strategy):
             if (self._barsSinceFirstBottom >= self.Distance and 
                 self._secondBottomLow is None):
                 # Check if current low is close to first bottom
-                priceDifference = Math.Abs((candle.LowPrice - self._firstBottomLow) / self._firstBottomLow * 100)
+                priceDifference = float(Math.Abs((candle.LowPrice - self._firstBottomLow) / self._firstBottomLow * 100))
                 
                 if priceDifference <= self.SimilarityPercent:
-                    self._secondBottomLow = candle.LowPrice
+                    self._secondBottomLow = float(candle.LowPrice)
                     self._patternConfirmed = True
                     self.LogInfo("Double Bottom pattern confirmed. First: {0}, Second: {1}".format(
                         self._firstBottomLow, self._secondBottomLow))

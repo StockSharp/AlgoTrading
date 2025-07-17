@@ -150,7 +150,7 @@ class engulfing_bearish_strategy(Strategy):
             if (isPreviousBullish and isCurrentBearish and 
                 isPreviousEngulfed and isUptrendPresent):
                 # Bearish engulfing pattern detected
-                patternHigh = Math.Max(candle.HighPrice, self._previousCandle.HighPrice)
+                patternHigh = float(Math.Max(candle.HighPrice, self._previousCandle.HighPrice))
                 
                 # Sell signal
                 self.SellMarket(self.Volume)

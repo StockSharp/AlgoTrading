@@ -178,8 +178,8 @@ class bollinger_band_width_breakout_strategy(Strategy):
             price_direction = False
 
             # If price is closer to upper band, go long. If closer to lower band, go short.
-            upper_distance = Math.Abs(candle.ClosePrice - upper_band)
-            lower_distance = Math.Abs(candle.ClosePrice - lower_band)
+            upper_distance = float(Math.Abs(candle.ClosePrice - upper_band))
+            lower_distance = float(Math.Abs(candle.ClosePrice - lower_band))
 
             if upper_distance < lower_distance:
                 # Price is closer to upper band, likely bullish

@@ -120,7 +120,7 @@ class open_drive_strategy(Strategy):
             return
 
         # Calculate gap size compared to previous close
-        gap = candle.OpenPrice - self._prev_close_price
+        gap = float(candle.OpenPrice - self._prev_close_price)
         gap_size = Math.Abs(gap)
 
         # Check if we have a significant gap (> ATR * multiplier)

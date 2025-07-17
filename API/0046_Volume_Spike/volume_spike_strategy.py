@@ -128,7 +128,7 @@ class volume_spike_strategy(Strategy):
 
         # Skip first candle, just store volume
         if self._previousVolume == 0:
-            self._previousVolume = candle.TotalVolume
+            self._previousVolume = float(candle.TotalVolume)
             return
 
         # Calculate volume change
@@ -168,7 +168,7 @@ class volume_spike_strategy(Strategy):
                 self.BuyMarket(Math.Abs(self.Position))
 
         # Store current volume for next comparison
-        self._previousVolume = candle.TotalVolume
+        self._previousVolume = float(candle.TotalVolume)
 
     def CreateClone(self):
         """

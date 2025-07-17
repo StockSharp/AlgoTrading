@@ -114,7 +114,7 @@ class supertrend_reversal_strategy(Strategy):
             return
 
         # Calculate Supertrend value
-        median_price = (candle.HighPrice + candle.LowPrice) / 2
+        median_price = float((candle.HighPrice + candle.LowPrice) / 2)
         upper_band = median_price + (self.multiplier * atr_value)
         lower_band = median_price - (self.multiplier * atr_value)
 

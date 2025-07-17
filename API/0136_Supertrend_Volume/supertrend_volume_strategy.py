@@ -190,7 +190,7 @@ class supertrend_volume_strategy(Strategy):
         :param candle: Candle to process.
         :param atrValue: ATR value.
         """
-        basicPrice = (candle.HighPrice + candle.LowPrice) / 2
+        basicPrice = float((candle.HighPrice + candle.LowPrice) / 2)
 
         newUpperBand = basicPrice + (self.SupertrendMultiplier * atrValue)
         newLowerBand = basicPrice - (self.SupertrendMultiplier * atrValue)
