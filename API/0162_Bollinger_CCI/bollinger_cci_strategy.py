@@ -169,7 +169,7 @@ class bollinger_cci_strategy(Strategy):
         if bb.LowBand is None:
             return
         lowerBand = float(bb.LowBand)
-        cciTyped = float(cciValue)
+        cciTyped = to_float(cciValue)
 
         # Current price
         price = float(candle.ClosePrice)

@@ -140,7 +140,7 @@ class bollinger_band_squeeze_strategy(Strategy):
             return
         lowerBand = float(bollingerTyped.LowBand)
 
-        atr = float(atrValue)
+        atr = to_float(atrValue)
 
         # Calculate Bollinger width (upper - lower)
         bollingerWidth = upperBand - lowerBand
