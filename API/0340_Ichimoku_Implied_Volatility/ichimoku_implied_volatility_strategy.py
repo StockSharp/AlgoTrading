@@ -158,9 +158,20 @@ class ichimoku_implied_volatility_strategy(Strategy):
 
         # Get Ichimoku values
         try:
+            if ichimoku_value.Tenkan is None:
+                return
             tenkan = float(ichimoku_value.Tenkan)
+
+            if ichimoku_value.Kijun is None:
+                return
             kijun = float(ichimoku_value.Kijun)
+
+            if ichimoku_value.SenkouA is None:
+                return
             senkou_a = float(ichimoku_value.SenkouA)
+
+            if ichimoku_value.SenkouB is None:
+                return
             senkou_b = float(ichimoku_value.SenkouB)
         except Exception:
             return

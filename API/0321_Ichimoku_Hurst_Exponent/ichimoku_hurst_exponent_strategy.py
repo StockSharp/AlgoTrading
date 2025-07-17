@@ -140,9 +140,20 @@ class ichimoku_hurst_exponent_strategy(Strategy):
         # Store Ichimoku values
         ichimoku_typed = ichimoku_value
         try:
+            if ichimoku_typed.Tenkan is None:
+                return
             tenkan = float(ichimoku_typed.Tenkan)
+
+            if ichimoku_typed.Kijun is None:
+                return
             kijun = float(ichimoku_typed.Kijun)
+
+            if ichimoku_typed.SenkouA is None:
+                return
             senkou_a = float(ichimoku_typed.SenkouA)
+
+            if ichimoku_typed.SenkouB is None:
+                return
             senkou_b = float(ichimoku_typed.SenkouB)
         except Exception:
             return
