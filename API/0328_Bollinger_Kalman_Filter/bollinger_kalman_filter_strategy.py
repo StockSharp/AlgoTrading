@@ -140,12 +140,15 @@ class bollinger_kalman_filter_strategy(Strategy):
         upper_band = bollinger_value.UpBand
         if upper_band is None:
             return
+        upper_band = float(upper_band)
         lower_band = bollinger_value.LowBand
         if lower_band is None:
             return
+        lower_band = float(lower_band)
         mid_band = bollinger_value.MovingAverage
         if mid_band is None:
             return
+        mid_band = float(mid_band)
 
         kalman_filter_value = to_float(kalman_value)
 

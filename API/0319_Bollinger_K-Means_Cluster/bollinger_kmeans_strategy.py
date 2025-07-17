@@ -143,9 +143,15 @@ class bollinger_kmeans_strategy(Strategy):
         bollinger_typed = bollinger_value
 
         # Extract values from indicators
-        bollinger_upper = bollinger_typed.UpBand
-        bollinger_middle = bollinger_typed.MovingAverage
-        bollinger_lower = bollinger_typed.LowBand
+        if (
+            bollinger_typed.UpBand is None
+            or bollinger_typed.LowBand is None
+            or bollinger_typed.MovingAverage is None
+        ):
+            return
+        bollinger_upper = float(bollinger_typed.UpBand)
+        bollinger_middle = float(bollinger_typed.MovingAverage)
+        bollinger_lower = float(bollinger_typed.LowBand)
 
         rsi = float(rsi_value)
         self._atr_value = float(atr_value)

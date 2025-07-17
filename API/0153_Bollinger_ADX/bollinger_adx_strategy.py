@@ -158,8 +158,16 @@ class bollinger_adx_strategy(Strategy):
             return
 
         # Trading logic - only trade when ADX indicates strong trend
+        if bollinger_value.UpBand is None:
+            return
         bollinger_up = float(bollinger_value.UpBand)
+
+        if bollinger_value.LowBand is None:
+            return
         bollinger_down = float(bollinger_value.LowBand)
+
+        if bollinger_value.MovingAverage is None:
+            return
         middle_band = float(bollinger_value.MovingAverage)
 
         if adx_value.MovingAverage is None:

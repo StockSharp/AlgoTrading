@@ -149,8 +149,11 @@ class adx_bollinger_strategy(Strategy):
         # Get additional values from Bollinger Bands
         bollinger_typed = bollinger_value
 
-        upper_band = bollinger_typed.UpBand
-        lower_band = bollinger_typed.LowBand
+        if bollinger_typed.UpBand is None or bollinger_typed.LowBand is None:
+            return
+
+        upper_band = float(bollinger_typed.UpBand)
+        lower_band = float(bollinger_typed.LowBand)
         middle_band = (upper_band - lower_band) / 2 + lower_band
 
         # Current price (close of the candle)

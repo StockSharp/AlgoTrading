@@ -149,6 +149,12 @@ class donchian_hurst_strategy(Strategy):
             return
 
         # Convert indicator values to decimal
+        if (
+            donchianValue.UpperBand is None
+            or donchianValue.LowerBand is None
+            or donchianValue.Middle is None
+        ):
+            return
         upper = float(donchianValue.UpperBand)
         lower = float(donchianValue.LowerBand)
         middle = float(donchianValue.Middle)

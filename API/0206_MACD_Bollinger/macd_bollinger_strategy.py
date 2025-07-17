@@ -180,9 +180,11 @@ class macd_bollinger_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        upperBand = bollingerValue.UpBand
-        lowerBand = bollingerValue.LowBand
-        middleBand = bollingerValue.MovingAverage
+        if bollingerValue.UpBand is None or bollingerValue.LowBand is None or bollingerValue.MovingAverage is None:
+            return
+        upperBand = float(bollingerValue.UpBand)
+        lowerBand = float(bollingerValue.LowBand)
+        middleBand = float(bollingerValue.MovingAverage)
 
         macd_line = macdValue.Macd
         signal_line = macdValue.Signal

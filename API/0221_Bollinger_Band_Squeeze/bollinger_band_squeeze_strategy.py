@@ -131,16 +131,14 @@ class bollinger_band_squeeze_strategy(Strategy):
             return
 
         bollingerTyped = bollingerValue
-        if not isinstance(bollingerTyped, BollingerBandsValue):
-            bollingerTyped = BollingerBandsValue(bollingerTyped)
 
-        upperBand = bollingerTyped.UpBand if isinstance(bollingerTyped.UpBand, float) or isinstance(bollingerTyped.UpBand, int) else None
-        if upperBand is None:
+        if bollingerTyped.UpBand is None:
             return
+        upperBand = float(bollingerTyped.UpBand)
 
-        lowerBand = bollingerTyped.LowBand if isinstance(bollingerTyped.LowBand, float) or isinstance(bollingerTyped.LowBand, int) else None
-        if lowerBand is None:
+        if bollingerTyped.LowBand is None:
             return
+        lowerBand = float(bollingerTyped.LowBand)
 
         atr = float(atrValue)
 

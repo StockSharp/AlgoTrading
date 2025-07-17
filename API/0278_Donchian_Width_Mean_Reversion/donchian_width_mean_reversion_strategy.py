@@ -146,6 +146,8 @@ class donchian_width_mean_reversion_strategy(Strategy):
             return
 
         # Extract upper and lower bands from the indicator value
+        if donchian_value.UpperBand is None or donchian_value.LowerBand is None:
+            return
         upper_band = float(donchian_value.UpperBand)
         lower_band = float(donchian_value.LowerBand)
 

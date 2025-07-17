@@ -150,9 +150,12 @@ class bollinger_supertrend_strategy(Strategy):
 
         # Extract Bollinger Band values
         bb = bollinger_value
-        middle_band = bb.MovingAverage
-        upper_band = bb.UpBand
-        lower_band = bb.LowBand
+
+        if bb.MovingAverage is None or bb.UpBand is None or bb.LowBand is None:
+            return
+        middle_band = float(bb.MovingAverage)
+        upper_band = float(bb.UpBand)
+        lower_band = float(bb.LowBand)
 
         # Calculate Supertrend (simplified)
         atr_val = to_float(atr_value) * self.SupertrendMultiplier

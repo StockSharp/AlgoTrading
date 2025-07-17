@@ -150,6 +150,12 @@ class donchian_with_sentiment_spike_strategy(Strategy):
         self.UpdateSentiment(candle)
 
         # Extract Donchian Channel values
+        if (
+            donchian_value.UpperBand is None
+            or donchian_value.LowerBand is None
+            or donchian_value.Middle is None
+        ):
+            return
         upper_band = float(donchian_value.UpperBand)
         lower_band = float(donchian_value.LowerBand)
         middle_band = float(donchian_value.Middle)

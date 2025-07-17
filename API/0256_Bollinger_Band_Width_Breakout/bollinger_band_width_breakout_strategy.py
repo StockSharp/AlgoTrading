@@ -152,8 +152,8 @@ class bollinger_band_width_breakout_strategy(Strategy):
             return
         if bollinger_typed.LowBand is None:
             return
-        upper_band = bollinger_typed.UpBand
-        lower_band = bollinger_typed.LowBand
+        upper_band = float(bollinger_typed.UpBand)
+        lower_band = float(bollinger_typed.LowBand)
 
         last_width = upper_band - lower_band
 

@@ -128,8 +128,8 @@ class bollinger_band_width_strategy(Strategy):
         if bollingerValue.UpBand is None or bollingerValue.LowBand is None:
             return
 
-        upperBand = bollingerValue.UpBand
-        lowerBand = bollingerValue.LowBand
+        upperBand = float(bollingerValue.UpBand)
+        lowerBand = float(bollingerValue.LowBand)
 
         # Calculate Bollinger Band Width
         bbWidth = upperBand - lowerBand

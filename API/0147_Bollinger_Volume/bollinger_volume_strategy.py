@@ -158,9 +158,18 @@ class bollinger_volume_strategy(Strategy):
             return
 
         bb = bollingerValue  # BollingerBandsValue
-        middleBand = bb.MovingAverage
-        upperBand = bb.UpBand
-        lowerBand = bb.LowBand
+
+        if bb.MovingAverage is None:
+            return
+        middleBand = float(bb.MovingAverage)
+
+        if bb.UpBand is None:
+            return
+        upperBand = float(bb.UpBand)
+
+        if bb.LowBand is None:
+            return
+        lowerBand = float(bb.LowBand)
 
         atr = to_float(atrValue)
 

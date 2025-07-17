@@ -113,9 +113,15 @@ class donchian_cci_strategy(Strategy):
             return
 
         donchian_typed = donchian_value
-        upper_band = donchian_typed.UpperBand
-        lower_band = donchian_typed.LowerBand
-        middle_band = donchian_typed.Middle
+        if (
+            donchian_typed.UpperBand is None
+            or donchian_typed.LowerBand is None
+            or donchian_typed.Middle is None
+        ):
+            return
+        upper_band = float(donchian_typed.UpperBand)
+        lower_band = float(donchian_typed.LowerBand)
+        middle_band = float(donchian_typed.Middle)
 
         cci_dec = cci_value
         price = float(candle.ClosePrice)

@@ -153,9 +153,11 @@ class bollinger_volatility_breakout_strategy(Strategy):
             return
 
         bb = bb_value  # BollingerBandsValue
-        bb_upper = bb.UpBand
-        bb_lower = bb.LowBand
-        bb_middle = bb.MovingAverage
+        if bb.UpBand is None or bb.LowBand is None or bb.MovingAverage is None:
+            return
+        bb_upper = float(bb.UpBand)
+        bb_lower = float(bb.LowBand)
+        bb_middle = float(bb.MovingAverage)
 
         atr_dec = to_float(atr_value)
 

@@ -182,9 +182,18 @@ class bollinger_stochastic_strategy(Strategy):
 
         # Extract values from indicators
         bb = bollinger_value
-        middle_band = bb.MovingAverage
-        upper_band = bb.UpBand
-        lower_band = bb.LowBand
+
+        if bb.MovingAverage is None:
+            return
+        middle_band = float(bb.MovingAverage)
+
+        if bb.UpBand is None:
+            return
+        upper_band = float(bb.UpBand)
+
+        if bb.LowBand is None:
+            return
+        lower_band = float(bb.LowBand)
 
         stochastic_typed = stochastic_value
         k = stochastic_typed.K
