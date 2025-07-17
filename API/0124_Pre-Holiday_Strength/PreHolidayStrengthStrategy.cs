@@ -75,8 +75,6 @@ namespace StockSharp.Samples.Strategies
 			
 			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for strategy", "Strategy");
-			
-			_inPreHolidayPosition = false;
 		}
 
 		/// <inheritdoc />
@@ -89,7 +87,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_inPreHolidayPosition = false;
+
 			// Create a simple moving average indicator
 			var sma = new SimpleMovingAverage { Length = MaPeriod };
 			

@@ -22,6 +22,10 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal _prevVix;
 
+		// Latest VIX value and trend flags
+		private decimal _latestVix;
+		private bool _isVixRising;
+
 		/// <summary>
 		/// Period for Moving Average calculation (default: 20)
 		/// </summary>
@@ -99,6 +103,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Reset state variables
 			_prevVix = 0;
+			_latestVix = 0;
+			_isVixRising = false;
 
 			// Create indicator
 			var sma = new SimpleMovingAverage { Length = MAPeriod };
@@ -132,10 +138,6 @@ namespace StockSharp.Samples.Strategies
 				new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage of entry price
 			);
 		}
-
-		// Latest VIX value and trend flags
-		private decimal _latestVix;
-		private bool _isVixRising;
 
 		/// <summary>
 		/// Process VIX candle to track VIX movements

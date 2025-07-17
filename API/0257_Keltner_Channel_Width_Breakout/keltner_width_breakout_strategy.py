@@ -191,7 +191,7 @@ class keltner_width_breakout_strategy(Strategy):
         width = upperBand - lowerBand
 
         # Process width through average
-        widthAvgValue = process_float(self._widthAverage, width, candle.ServerTime, candle.State == CandleStates.Finished)
+        widthAvgValue = to_float(process_float(self._widthAverage, width, candle.ServerTime, candle.State == CandleStates.Finished))
         avgWidth = widthAvgValue
 
         # For first values, just save and skip

@@ -192,6 +192,9 @@ namespace StockSharp.Samples.Strategies
 			_averageSpread = 0;
 			_spreadStdDev = 0;
 			_entrySpread = 0;
+			_asset1Price = 0;
+			_asset2Price = 0;
+			_isLong = false;
 
 			// Handle price updates for Asset1
 			SubscribeLevel1(Asset1)

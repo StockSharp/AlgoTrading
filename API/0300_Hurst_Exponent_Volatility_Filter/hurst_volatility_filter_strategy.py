@@ -8,6 +8,7 @@ from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates, ICandle
 from StockSharp.Algo.Indicators import SimpleMovingAverage, AverageTrueRange, HurstExponent
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+from indicator_extensions import *
 
 class hurst_volatility_filter_strategy(Strategy):
     """
@@ -141,7 +142,7 @@ class hurst_volatility_filter_strategy(Strategy):
             takeProfit=Unit(0),
             stopLoss=Unit(self.StopLoss, UnitTypes.Percent)
         )
-    def ProcessCandle(self, candle: ICandleMessage, sma_value: float, atr_value: float):
+    def ProcessCandle(self, candle, sma_value, atr_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
@@ -164,7 +165,7 @@ class hurst_volatility_filter_strategy(Strategy):
         else:
             self.CheckEntryConditions(candle.ClosePrice, float(sma_value), hurst_value, float(atr_value))
 
-    def CalculateHurstExponentValue(self, candle: ICandleMessage):
+    def CalculateHurstExponentValue(self, candle):
         # In a real implementation, this would use R/S analysis or other methods
         # to calculate the Hurst exponent. For this example, we'll use a placeholder
         # logic that estimates the Hurst exponent based on recent price behavior.
@@ -177,14 +178,14 @@ class hurst_volatility_filter_strategy(Strategy):
         # This is just a placeholder that gives a value between 0 and 1
         return float(hurst_value) if hurst_value is not None else None
 
-    def UpdateAverageAtr(self, atr_value: float):
+    def UpdateAverageAtr(self, atr_value):
         if self._average_atr == 0:
             self._average_atr = atr_value
         else:
             # Simple exponential smoothing
             self._average_atr = 0.9 * self._average_atr + 0.1 * atr_value
 
-    def CheckEntryConditions(self, price: float, sma_value: float, hurst_value: float, atr_value: float):
+    def CheckEntryConditions(self, price, sma_value, hurst_value, atr_value):
         # Check for mean-reversion markets (Hurst < 0.5)
         if hurst_value < 0.5:
             # Check volatility is lower than average (filtered condition)
@@ -196,14 +197,14 @@ class hurst_volatility_filter_strategy(Strategy):
                 elif price > sma_value:
                     self.EnterShort(price)
 
-    def CheckExitConditions(self, price: float, sma_value: float):
+    def CheckExitConditions(self, price, sma_value):
         # Mean reversion exit strategy
         if self._is_long_position and price > sma_value:
             self.ExitPosition(price)
         elif not self._is_long_position and price < sma_value:
             self.ExitPosition(price)
 
-    def EnterLong(self, price: float):
+    def EnterLong(self, price):
         # Create and send a buy market order
         volume = self.Volume
         self.BuyMarket(volume)
@@ -214,7 +215,7 @@ class hurst_volatility_filter_strategy(Strategy):
 
         self.LogInfo(f"Enter LONG at {price}, Hurst shows mean-reversion market with low volatility")
 
-    def EnterShort(self, price: float):
+    def EnterShort(self, price):
         # Create and send a sell market order
         volume = self.Volume
         self.SellMarket(volume)
@@ -225,7 +226,7 @@ class hurst_volatility_filter_strategy(Strategy):
 
         self.LogInfo(f"Enter SHORT at {price}, Hurst shows mean-reversion market with low volatility")
 
-    def ExitPosition(self, price: float):
+    def ExitPosition(self, price):
         # Close position at market
         self.ClosePosition()
 

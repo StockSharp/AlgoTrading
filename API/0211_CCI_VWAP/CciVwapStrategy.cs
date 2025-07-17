@@ -80,7 +80,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
+
+			_currentVwap = default;
+
 			// Initialize CCI indicator
 			_cci = new CommodityChannelIndex
 			{

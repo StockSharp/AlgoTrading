@@ -102,7 +102,7 @@ class volatility_breakout_strategy(Strategy):
             takeProfit=Unit(0, UnitTypes.Absolute),
             stopLoss=Unit(self.Multiplier, UnitTypes.Absolute)
         )
-    def ProcessCandle(self, candle: ICandleMessage, sma_value: float, atr_value: float):
+    def ProcessCandle(self, candle, sma_value, atr_value):
         """Process candle with SMA and ATR values."""
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

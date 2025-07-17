@@ -94,8 +94,8 @@ class heikin_ashi_reversal_strategy(Strategy):
             # First candle - initialize HA values
             ha_open = float((candle.OpenPrice + candle.ClosePrice) / 2)
             ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
-            ha_high = float(Math.Max(candle.HighPrice, Math.Max(ha_open, ha_close)))
-            ha_low = float(Math.Min(candle.LowPrice, Math.Min(ha_open, ha_close)))
+            ha_high = Math.Max(float(candle.HighPrice), Math.Max(ha_open, ha_close))
+            ha_low = Math.Min(float(candle.LowPrice), Math.Min(ha_open, ha_close))
 
             # Store the initial bullish/bearish state
             self._prevIsBullish = ha_close > ha_open
@@ -108,8 +108,8 @@ class heikin_ashi_reversal_strategy(Strategy):
         # Calculate current HA values
         ha_open = (prev_ha_open + prev_ha_close) / 2
         ha_close = float((candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4)
-        ha_high = float(Math.Max(candle.HighPrice, Math.Max(ha_open, ha_close)))
-        ha_low = float(Math.Min(candle.LowPrice, Math.Min(ha_open, ha_close)))
+        ha_high = Math.Max(float(candle.HighPrice), Math.Max(ha_open, ha_close))
+        ha_low = Math.Min(float(candle.LowPrice), Math.Min(ha_open, ha_close))
 
         # Determine if current HA candle is bullish or bearish
         is_bullish = ha_close > ha_open

@@ -106,7 +106,7 @@ class cumulative_delta_breakout_strategy(Strategy):
         :param trade: The trade message.
         """
         # Calculate delta: positive for buy trades, negative for sell trades
-        delta = trade.Volume if trade.OriginSide == Sides.Buy else -trade.Volume
+        delta = trade.TradeVolume if trade.OriginSide == Sides.Buy else -trade.TradeVolume
         
         # Add to cumulative delta
         self._cumulativeDelta += delta

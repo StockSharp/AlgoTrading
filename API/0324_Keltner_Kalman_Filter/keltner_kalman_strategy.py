@@ -8,7 +8,7 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class keltner_kalman_strategy(Strategy):
     """
@@ -162,18 +162,18 @@ class keltner_kalman_strategy(Strategy):
             return
 
         # Save indicator values
-        self._ema_value = ema_value
-        self._atr_value = atr_value
+        self._ema_value = to_float(ema_value)
+        self._atr_value = to_float(atr_value)
 
         # Calculate Keltner Channels
         self._upper_band = self._ema_value + (self._atr_value * self.AtrMultiplier)
         self._lower_band = self._ema_value - (self._atr_value * self.AtrMultiplier)
 
         # Update Kalman filter
-        self.UpdateKalmanFilter(candle.ClosePrice)
+        self.UpdateKalmanFilter(float(candle.ClosePrice))
 
         # Store prices for slope calculation
-        self._prices.append(candle.ClosePrice)
+        self._prices.append(float(candle.ClosePrice))
         if len(self._prices) > 10:
             self._prices.pop(0)
 

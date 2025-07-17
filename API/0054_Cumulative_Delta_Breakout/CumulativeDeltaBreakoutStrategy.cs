@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal? _highestDelta;
 		private decimal? _lowestDelta;
 		private int _barCount;
-		private readonly Queue<decimal> _deltaWindow = new();
+		private readonly Queue<decimal> _deltaWindow = [];
 
 		/// <summary>
 		/// Lookback Period for highest/lowest delta

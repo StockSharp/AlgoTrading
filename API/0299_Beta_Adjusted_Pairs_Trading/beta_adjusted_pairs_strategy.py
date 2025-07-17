@@ -28,11 +28,11 @@ class beta_adjusted_pairs_strategy(Strategy):
             .SetDisplay("Asset 2 Portfolio", "Portfolio for trading Asset 2", "Portfolios") \
             .SetRequired()
 
-        self._betaAsset1Param = self.Param[Security]("BetaAsset1", 1.0) \
+        self._betaAsset1Param = self.Param("BetaAsset1", 1.0) \
             .SetDisplay("Beta Asset 1", "Beta coefficient for Asset 1 relative to market", "Parameters") \
             .SetNotNegative()
 
-        self._betaAsset2Param = self.Param[Security]("BetaAsset2", 1.0) \
+        self._betaAsset2Param = self.Param("BetaAsset2", 1.0) \
             .SetDisplay("Beta Asset 2", "Beta coefficient for Asset 2 relative to market", "Parameters") \
             .SetNotNegative()
 

@@ -105,7 +105,7 @@ class hull_ma_reversal_strategy(Strategy):
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent),
             useMarketOrders=True
         )
-    def ProcessCandle(self, candle: ICandleMessage, hmaValue: float, atrValue: float):
+    def ProcessCandle(self, candle, hmaValue, atrValue):
         """
         Process candle with indicator values.
 

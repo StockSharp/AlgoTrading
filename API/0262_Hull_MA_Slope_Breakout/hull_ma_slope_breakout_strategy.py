@@ -131,7 +131,7 @@ class hull_ma_slope_breakout_strategy(Strategy):
         )
         super(hull_ma_slope_breakout_strategy, self).OnStarted(time)
 
-    def ProcessCandle(self, candle: ICandleMessage, hullValue: float, atrValue: float):
+    def ProcessCandle(self, candle, hullValue, atrValue):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:
             return
