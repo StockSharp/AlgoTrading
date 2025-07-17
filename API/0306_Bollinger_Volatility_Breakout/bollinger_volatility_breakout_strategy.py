@@ -217,13 +217,13 @@ class bollinger_volatility_breakout_strategy(Strategy):
             # Exit long position
             self.SellMarket(Math.Abs(self.Position))
             self.LogInfo(
-                "Long exit: Price= float({0}, BB Middle={1}".format(candle.ClosePrice, bb_middle)))
+                 "Long exit: Price={0}, BB Middle={1}".format(candle.ClosePrice, bb_middle))
 
         elif short_exit_condition:
             # Exit short position
             self.BuyMarket(Math.Abs(self.Position))
             self.LogInfo(
-                "Short exit: Price= float({0}, BB Middle={1}".format(candle.ClosePrice, bb_middle)))
+                 "Short exit: Price={0}, BB Middle={1}".format(candle.ClosePrice, bb_middle))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

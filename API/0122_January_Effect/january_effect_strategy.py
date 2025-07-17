@@ -107,12 +107,14 @@ class january_effect_strategy(Strategy):
             volume = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(volume)
             self.LogInfo(
-                f"Buy signal in January: Date= float({date:yyyy-MM-dd}, Price={candle.ClosePrice}, MA={ma_value}, Volume={volume}"))
+                "Buy signal in January: Date={0}, Price={1}, MA={2}, Volume={3}".format(
+                    date.ToString("yyyy-MM-dd"), candle.ClosePrice, ma_value, volume))
         # February - EXIT signal (Month = 2)
         elif month == 2 and self.Position > 0:
             self.ClosePosition()
             self.LogInfo(
-                f"Closing position in February: Date={date:yyyy-MM-dd}, Position={self.Position}")
+                "Closing position in February: Date={0}, Position={1}".format(
+                    date.ToString("yyyy-MM-dd"), self.Position))
 
     def CreateClone(self):
         """

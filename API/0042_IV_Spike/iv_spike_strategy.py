@@ -128,11 +128,11 @@ class iv_spike_strategy(Strategy):
 
         # Initialize previous IV on first candle
         if self._previousIV == 0 and ivValue > 0:
-            self._previousIV = ivValue
+            self._previousIV = float(ivValue)
             return
 
         # Calculate IV change
-        ivChange = ivValue / self._previousIV if self._previousIV != 0 else 1
+        ivChange = float(ivValue) / self._previousIV if self._previousIV != 0 else 1
 
         # Log current values
         self.LogInfo("Candle Close: {0}, MA: {1}, IV: {2}, IV Change: {3:P2}".format(

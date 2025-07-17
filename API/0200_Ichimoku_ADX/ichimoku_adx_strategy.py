@@ -171,26 +171,26 @@ class ichimoku_adx_strategy(Strategy):
 
         if adx_value.MovingAverage is None:
             return
-        adx = adx_value.MovingAverage
+        adx = float(adx_value.MovingAverage)
 
         self._last_adx_value = adx
 
         # Get Ichimoku values
         if ichimoku_value.Tenkan is None:
             return
-        tenkan = ichimoku_value.Tenkan
+        tenkan = float(ichimoku_value.Tenkan)
 
         if ichimoku_value.Kijun is None:
             return
-        kijun = ichimoku_value.Kijun
+        kijun = float(ichimoku_value.Kijun)
 
         if ichimoku_value.SenkouA is None:
             return
-        senkou_a = ichimoku_value.SenkouA
+        senkou_a = float(ichimoku_value.SenkouA)
 
         if ichimoku_value.SenkouB is None:
             return
-        senkou_b = ichimoku_value.SenkouB
+        senkou_b = float(ichimoku_value.SenkouB)
 
         # Determine cloud boundaries
         cloud_top = Math.Max(senkou_a, senkou_b)
@@ -203,7 +203,7 @@ class ichimoku_adx_strategy(Strategy):
 
         # Log current state
         self.LogInfo(
-            "Close: {0}, Tenkan: {1:N2}, Kijun: {2:N2}, Cloud Top: {3:N2}, Cloud Bottom: {4:N2}, ADX: {5:N2}".format(
+            "Close: {0}, Tenkan: {1:.2f}, Kijun: {2:.2f}, Cloud Top: {3:.2f}, Cloud Bottom: {4:.2f}, ADX: {5:.2f}".format(
                 candle.ClosePrice, tenkan, kijun, cloud_top, cloud_bottom, self._last_adx_value))
 
         is_price_relative_to_cloud_changed = self._is_price_above_cloud != is_price_above_cloud

@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import TimeSpan, Math
@@ -165,11 +166,11 @@ class pairs_trading_volatility_filter_strategy(Strategy):
 
         # Subscribe to ticks for both securities to track last prices
         self.SubscribeTicks(self.Security1) \
-            .Bind(lambda tick: self._set_last_price1(tick.Price)) \
+            .Bind(lambda tick: self._set_last_price1(tick.TradePrice)) \
             .Start()
 
         self.SubscribeTicks(self.Security2) \
-            .Bind(lambda tick: self._set_last_price2(tick.Price)) \
+            .Bind(lambda tick: self._set_last_price2(tick.TradePrice)) \
             .Start()
 
         # Process data and calculate spread

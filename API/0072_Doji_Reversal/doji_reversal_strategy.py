@@ -180,8 +180,8 @@ class doji_reversal_strategy(Strategy):
         # It's a doji if the body size is smaller than the threshold
         isDoji = bodySizePercentage < self.DojiThreshold
         
-        self.LogInfo("Candle analysis: Body size: {0}, Total range: {1}, Body %: {2:P2}, Is Doji: {3}".format(
-            bodySize, totalRange, bodySizePercentage, isDoji))
+        self.LogInfo("Candle analysis: Body size: {0}, Total range: {1}, Body %: {2:.4f}, Is Doji: {3}".format(
+             bodySize, totalRange, bodySizePercentage, isDoji))
         
         return isDoji
 
