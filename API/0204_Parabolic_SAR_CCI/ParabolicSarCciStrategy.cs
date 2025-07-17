@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on Parabolic SAR and CCI indicators (#204)
+	/// Strategy based on Parabolic SAR and CCI indicators
 	/// </summary>
 	public class ParabolicSarCciStrategy : Strategy
 	{

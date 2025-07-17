@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on RSI and Hull Moving Average indicators (#207)
+	/// Strategy based on RSI and Hull Moving Average indicators
 	/// </summary>
 	public class RsiHullMaStrategy : Strategy
 	{

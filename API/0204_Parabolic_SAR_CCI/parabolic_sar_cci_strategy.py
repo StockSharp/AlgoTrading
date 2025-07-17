@@ -11,7 +11,7 @@ from datatype_extensions import *
 
 
 class parabolic_sar_cci_strategy(Strategy):
-    """Strategy based on Parabolic SAR and CCI indicators (#204)"""
+    """Strategy based on Parabolic SAR and CCI indicators"""
 
     def __init__(self):
         super(parabolic_sar_cci_strategy, self).__init__()

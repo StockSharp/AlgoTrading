@@ -11,7 +11,7 @@ from datatype_extensions import *
 
 class macd_bollinger_strategy(Strategy):
     """
-    Strategy based on MACD and Bollinger Bands indicators (#206)
+    Strategy based on MACD and Bollinger Bands indicators
     """
 
     def __init__(self):

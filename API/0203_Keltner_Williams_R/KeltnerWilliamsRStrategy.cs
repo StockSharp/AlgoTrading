@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on Keltner Channels and Williams %R indicators (#203)
+	/// Strategy based on Keltner Channels and Williams %R indicators
 	/// </summary>
 	public class KeltnerWilliamsRStrategy : Strategy
 	{

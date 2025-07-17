@@ -11,7 +11,7 @@ from datatype_extensions import *
 
 class adx_donchian_strategy(Strategy):
     """
-    Strategy based on ADX and Donchian Channel indicators (#210)
+    Strategy based on ADX and Donchian Channel indicators
     
     """
 

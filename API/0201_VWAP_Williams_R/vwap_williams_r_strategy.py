@@ -12,7 +12,7 @@ from datatype_extensions import *
 
 class vwap_williams_r_strategy(Strategy):
     """
-    Strategy based on VWAP and Williams %R indicators (#201)
+    Strategy based on VWAP and Williams %R indicators
     """
 
     def __init__(self):
