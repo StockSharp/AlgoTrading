@@ -149,12 +149,9 @@ class donchian_hurst_strategy(Strategy):
             return
 
         # Convert indicator values to decimal
-        try:
-            upper = float(donchianValue.UpperBand)
-            lower = float(donchianValue.LowerBand)
-            middle = float(donchianValue.Middle)
-        except Exception:
-            return
+        upper = float(donchianValue.UpperBand)
+        lower = float(donchianValue.LowerBand)
+        middle = float(donchianValue.Middle)
 
         # Check for Hurst Exponent indicating trend persistence
         if self._hurstValue > self.HurstThreshold:

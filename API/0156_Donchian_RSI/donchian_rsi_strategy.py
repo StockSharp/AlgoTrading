@@ -158,12 +158,9 @@ class donchian_rsi_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        try:
-            upper_band = float(donchian_value.UpperBand)
-            lower_band = float(donchian_value.LowerBand)
-            middle_band = float(donchian_value.Middle)
-        except Exception:
-            return
+        upper_band = float(donchian_value.UpperBand)
+        lower_band = float(donchian_value.LowerBand)
+        middle_band = float(donchian_value.Middle)
 
         # Store current bands before comparison
         current_upper = upper_band

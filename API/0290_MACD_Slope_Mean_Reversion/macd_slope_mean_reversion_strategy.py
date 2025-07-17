@@ -181,11 +181,8 @@ class macd_slope_mean_reversion_strategy(Strategy):
             return
 
         # Extract MACD and Signal values
-        try:
-            macd = float(macd_value.Macd)
-            signal = float(macd_value.Signal)
-        except Exception:
-            return
+        macd = float(macd_value.Macd)
+        signal = float(macd_value.Signal)
 
         # Calculate MACD histogram
         histogram = macd - signal

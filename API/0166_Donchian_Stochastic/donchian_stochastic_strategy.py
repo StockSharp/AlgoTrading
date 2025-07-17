@@ -145,18 +145,12 @@ class donchian_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        try:
-            upper_band = float(donchian_value.UpperBand)
-            lower_band = float(donchian_value.LowerBand)
-            middle_band = float(donchian_value.Middle)
-        except Exception:
-            return
+        upper_band = float(donchian_value.UpperBand)
+        lower_band = float(donchian_value.LowerBand)
+        middle_band = float(donchian_value.Middle)
 
-        try:
-            stoch_k = float(stoch_value.K)
-            stoch_d = float(stoch_value.D)
-        except Exception:
-            return
+        stoch_k = float(stoch_value.K)
+        stoch_d = float(stoch_value.D)
 
         # Trading logic:
         # Buy when price breaks above upper Donchian band with Stochastic showing oversold condition

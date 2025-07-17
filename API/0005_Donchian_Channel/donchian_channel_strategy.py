@@ -103,21 +103,17 @@ class donchian_channel_strategy(Strategy):
             return
 
         # Extract values from Donchian Channel indicator
-        try:
-            if donchian_value.UpperBand is None:
-                return
-            upper_value = float(donchian_value.UpperBand)
-
-            if donchian_value.LowerBand is None:
-                return
-            lower_value = float(donchian_value.LowerBand)
-
-            if donchian_value.Middle is None:
-                return
-            mid_value = float(donchian_value.Middle)
-        except:
-            # If we can't extract values, skip this candle
+        if donchian_value.UpperBand is None:
             return
+        upper_value = float(donchian_value.UpperBand)
+
+        if donchian_value.LowerBand is None:
+            return
+        lower_value = float(donchian_value.LowerBand)
+
+        if donchian_value.Middle is None:
+            return
+        mid_value = float(donchian_value.Middle)
 
         # Skip the first received value for proper comparison
         if self._prev_upper_band == 0:

@@ -172,11 +172,8 @@ class adx_macd_strategy(Strategy):
         adxIndicatorValue = typedAdx.MovingAverage
 
         macdTyped = macdValue
-        try:
-            macdLine = macdTyped.Macd
-            signalLine = macdTyped.Signal
-        except AttributeError:
-            return
+        macdLine = macdTyped.Macd
+        signalLine = macdTyped.Signal
 
         atrIndicatorValue = to_float(atrValue)
 

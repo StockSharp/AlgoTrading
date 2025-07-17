@@ -132,17 +132,13 @@ class bollinger_percent_b_strategy(Strategy):
             return
 
         # Extract Bollinger Bands values
-        try:
-            if bollinger_value.UpBand is None:
-                return
-            upper_band = float(bollinger_value.UpBand)
-
-            if bollinger_value.LowBand is None:
-                return
-            lower_band = float(bollinger_value.LowBand)
-        except:
-            # If we can't extract values, skip this candle
+        if bollinger_value.UpBand is None:
             return
+        upper_band = float(bollinger_value.UpBand)
+
+        if bollinger_value.LowBand is None:
+            return
+        lower_band = float(bollinger_value.LowBand)
 
         # Calculate Bollinger %B: (Price - Lower Band) / (Upper Band - Lower Band)
         percent_b = 0.0

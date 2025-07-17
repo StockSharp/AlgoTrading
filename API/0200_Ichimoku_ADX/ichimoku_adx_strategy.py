@@ -176,24 +176,21 @@ class ichimoku_adx_strategy(Strategy):
         self._last_adx_value = adx
 
         # Get Ichimoku values
-        try:
-            if ichimoku_value.Tenkan is None:
-                return
-            tenkan = ichimoku_value.Tenkan
-
-            if ichimoku_value.Kijun is None:
-                return
-            kijun = ichimoku_value.Kijun
-
-            if ichimoku_value.SenkouA is None:
-                return
-            senkou_a = ichimoku_value.SenkouA
-
-            if ichimoku_value.SenkouB is None:
-                return
-            senkou_b = ichimoku_value.SenkouB
-        except AttributeError:
+        if ichimoku_value.Tenkan is None:
             return
+        tenkan = ichimoku_value.Tenkan
+
+        if ichimoku_value.Kijun is None:
+            return
+        kijun = ichimoku_value.Kijun
+
+        if ichimoku_value.SenkouA is None:
+            return
+        senkou_a = ichimoku_value.SenkouA
+
+        if ichimoku_value.SenkouB is None:
+            return
+        senkou_b = ichimoku_value.SenkouB
 
         # Determine cloud boundaries
         cloud_top = Math.Max(senkou_a, senkou_b)

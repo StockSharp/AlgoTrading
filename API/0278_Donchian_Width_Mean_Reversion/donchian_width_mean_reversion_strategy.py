@@ -146,11 +146,8 @@ class donchian_width_mean_reversion_strategy(Strategy):
             return
 
         # Extract upper and lower bands from the indicator value
-        try:
-            upper_band = float(donchian_value.UpperBand)
-            lower_band = float(donchian_value.LowerBand)
-        except Exception:
-            return  # Not enough data to calculate bands
+        upper_band = float(donchian_value.UpperBand)
+        lower_band = float(donchian_value.LowerBand)
 
         # Calculate the Donchian channel width
         self._current_width = upper_band - lower_band
