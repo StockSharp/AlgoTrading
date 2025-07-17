@@ -19,6 +19,7 @@ It is suitable for traders seeking opportunities in trend markets.
   - `SupertrendPeriod` = 10
   - `SupertrendMultiplier` = 3m
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `StopLossPercent` = 2.0m
 - **Filters**:
   - Category: Trend
   - Direction: Both

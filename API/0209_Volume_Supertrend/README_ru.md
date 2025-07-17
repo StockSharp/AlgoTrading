@@ -19,6 +19,7 @@
   - `SupertrendPeriod` = 10
   - `SupertrendMultiplier` = 3m
   - `CandleType` = TimeSpan.FromMinutes(5)
+  - `StopLossPercent` = 2.0m
 - **Фильтры**:
   - Категория: Тренд
   - Направление: Оба
