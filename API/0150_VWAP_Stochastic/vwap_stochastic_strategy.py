@@ -171,8 +171,7 @@ class vwap_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stochTyped = stochValue
-        kValue = stochTyped.K
+        kValue = stochValue.K
 
         vwapDec = to_float(vwapValue)
 

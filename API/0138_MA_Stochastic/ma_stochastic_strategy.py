@@ -177,8 +177,7 @@ class ma_stochastic_strategy(Strategy):
             return
 
         ma_dec = to_float(ma_value)
-        stoch_typed = stoch_value
-        stoch_k_value = stoch_typed.K
+        stoch_k_value = stoch_value.K
 
         # Long entry: price above MA and Stochastic is oversold
         if candle.ClosePrice > ma_dec and stoch_k_value < self.StochOversold and self.Position <= 0:

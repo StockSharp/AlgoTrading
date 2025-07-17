@@ -151,9 +151,8 @@ class donchian_macd_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        macdTyped = macdValue
-        signalValue = macdTyped.Signal
-        macdDec = macdTyped.Macd
+        signalValue = macdValue.Signal
+        macdDec = macdValue.Macd
 
         # Check for breakouts with MACD trend confirmation
         # Long entry: Price breaks above Donchian high and MACD > Signal
@@ -187,13 +186,12 @@ class donchian_macd_strategy(Strategy):
 
             self.LogInfo("Exit signal: MACD trend reversal. MACD: {0}, Signal: {1}".format(macdDec, signalValue))
 
-        donchianTyped = donchianValue
-        if donchianTyped.UpperBand is None or donchianTyped.LowerBand is None:
+        if donchianValue.UpperBand is None or donchianValue.LowerBand is None:
             return
 
         # Update previous values for next candle
-        self._previousHighest = float(donchianTyped.UpperBand)
-        self._previousLowest = float(donchianTyped.LowerBand)
+        self._previousHighest = float(donchianValue.UpperBand)
+        self._previousLowest = float(donchianValue.LowerBand)
         self._previousMacd = macdDec
         self._previousSignal = signalValue
 

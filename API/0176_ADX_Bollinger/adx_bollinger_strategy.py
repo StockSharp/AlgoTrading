@@ -148,13 +148,12 @@ class adx_bollinger_strategy(Strategy):
             return
 
         # Get additional values from Bollinger Bands
-        bollinger_typed = bollinger_value
 
-        if bollinger_typed.UpBand is None or bollinger_typed.LowBand is None:
+        if bollinger_value.UpBand is None or bollinger_value.LowBand is None:
             return
 
-        upper_band = float(bollinger_typed.UpBand)
-        lower_band = float(bollinger_typed.LowBand)
+        upper_band = float(bollinger_value.UpBand)
+        lower_band = float(bollinger_value.LowBand)
         middle_band = (upper_band - lower_band) / 2 + lower_band
 
         # Current price (close of the candle)
@@ -163,10 +162,9 @@ class adx_bollinger_strategy(Strategy):
         # Stop-loss size based on ATR
         stop_size = to_float(atr_value) * self.atr_multiplier
 
-        adx_typed = adx_value
 
         # Trading logic
-        if adx_typed.MovingAverage > 25:  # Strong trend
+        if adx_value.MovingAverage > 25:  # Strong trend
             if price > upper_band and self.Position <= 0:
                 # Buy signal: price above upper Bollinger band with strong trend
                 self.BuyMarket(self.Volume + Math.Abs(self.Position))
@@ -181,7 +179,7 @@ class adx_bollinger_strategy(Strategy):
                 # Set stop-loss
                 stop_price = price + stop_size
                 self.RegisterOrder(self.CreateOrder(Sides.Buy, stop_price, max(Math.Abs(self.Position + self.Volume), self.Volume)))
-        elif adx_typed.MovingAverage < 20:
+        elif adx_value.MovingAverage < 20:
             # Trend is weakening - close any position
             if self.Position > 0:
                 self.SellMarket(self.Position)

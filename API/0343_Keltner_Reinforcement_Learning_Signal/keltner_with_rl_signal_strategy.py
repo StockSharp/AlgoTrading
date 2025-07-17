@@ -164,11 +164,10 @@ class keltner_with_rl_signal_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        keltner_typed = keltner_value  # KeltnerChannelsValue
 
-        upper_band = keltner_typed.Upper
-        lower_band = keltner_typed.Lower
-        middle_band = keltner_typed.Middle
+        upper_band = keltner_value.Upper
+        lower_band = keltner_value.Lower
+        middle_band = keltner_value.Middle
 
         if upper_band is None or lower_band is None or middle_band is None:
             return

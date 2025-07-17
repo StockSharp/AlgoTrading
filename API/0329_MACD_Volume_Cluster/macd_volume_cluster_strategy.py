@@ -198,9 +198,8 @@ class macd_volume_cluster_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        macd_typed = macd_value
-        macd_line = macd_typed.Macd
-        signal_line = macd_typed.Signal
+        macd_line = macd_value.Macd
+        signal_line = macd_value.Signal
 
         # Determine if we have a volume spike
         is_volume_spike = candle.TotalVolume > (self._avg_volume + self.volume_deviation_factor * self._volume_std_dev)

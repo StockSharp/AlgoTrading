@@ -173,17 +173,16 @@ class macd_with_sentiment_filter_strategy(Strategy):
         # Update sentiment score (in a real system this would come from external source)
         self.UpdateSentimentScore(candle)
 
-        macd_typed = macd_value
-        if macd_typed.Macd is None or macd_typed.Signal is None:
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
         # Store previous MACD values for state tracking
         prev_macd_over_signal = self._prev_macd > self._prev_signal
-        curr_macd_over_signal = macd_typed.Macd > macd_typed.Signal
+        curr_macd_over_signal = macd_value.Macd > macd_value.Signal
 
         # Update previous values for next candle
-        self._prev_macd = macd_typed.Macd
-        self._prev_signal = macd_typed.Signal
+        self._prev_macd = macd_value.Macd
+        self._prev_signal = macd_value.Signal
 
         # First candle, just store values
         if self.IsFirstRun():

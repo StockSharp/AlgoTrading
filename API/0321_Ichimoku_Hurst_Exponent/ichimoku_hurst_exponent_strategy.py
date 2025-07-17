@@ -138,22 +138,21 @@ class ichimoku_hurst_exponent_strategy(Strategy):
             return
 
         # Store Ichimoku values
-        ichimoku_typed = ichimoku_value
-        if ichimoku_typed.Tenkan is None:
+        if ichimoku_value.Tenkan is None:
             return
-        tenkan = float(ichimoku_typed.Tenkan)
+        tenkan = float(ichimoku_value.Tenkan)
 
-        if ichimoku_typed.Kijun is None:
+        if ichimoku_value.Kijun is None:
             return
-        kijun = float(ichimoku_typed.Kijun)
+        kijun = float(ichimoku_value.Kijun)
 
-        if ichimoku_typed.SenkouA is None:
+        if ichimoku_value.SenkouA is None:
             return
-        senkou_a = float(ichimoku_typed.SenkouA)
+        senkou_a = float(ichimoku_value.SenkouA)
 
-        if ichimoku_typed.SenkouB is None:
+        if ichimoku_value.SenkouB is None:
             return
-        senkou_b = float(ichimoku_typed.SenkouB)
+        senkou_b = float(ichimoku_value.SenkouB)
 
         # Update price data for Hurst exponent calculation
         self._prices.append(candle.ClosePrice)

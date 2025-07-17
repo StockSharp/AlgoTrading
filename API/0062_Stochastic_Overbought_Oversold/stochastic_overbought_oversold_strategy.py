@@ -108,9 +108,8 @@ class stochastic_overbought_oversold_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stochTyped = stochValue
-        kValue = stochTyped.K
-        dValue = stochTyped.D
+        kValue = stochValue.K
+        dValue = stochValue.D
 
         self.LogInfo("Stochastic %K: {0}, %D: {1}".format(kValue, dValue))
 

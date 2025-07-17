@@ -165,22 +165,21 @@ class ichimoku_volume_cluster_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ichimoku_typed = ichimoku_value
 
         # Extract Ichimoku values
-        if ichimoku_typed.Tenkan is None:
+        if ichimoku_value.Tenkan is None:
             return
-        if ichimoku_typed.Kijun is None:
+        if ichimoku_value.Kijun is None:
             return
-        if ichimoku_typed.SenkouA is None:
+        if ichimoku_value.SenkouA is None:
             return
-        if ichimoku_typed.SenkouB is None:
+        if ichimoku_value.SenkouB is None:
             return
 
-        tenkan = ichimoku_typed.Tenkan
-        kijun = ichimoku_typed.Kijun
-        senkou_a = ichimoku_typed.SenkouA
-        senkou_b = ichimoku_typed.SenkouB
+        tenkan = ichimoku_value.Tenkan
+        kijun = ichimoku_value.Kijun
+        senkou_a = ichimoku_value.SenkouA
+        senkou_b = ichimoku_value.SenkouB
 
         # Determine cloud position
         price_above_cloud = candle.ClosePrice > Math.Max(senkou_a, senkou_b)

@@ -195,9 +195,8 @@ class bollinger_stochastic_strategy(Strategy):
             return
         lower_band = float(bb.LowBand)
 
-        stochastic_typed = stochastic_value
-        k = stochastic_typed.K
-        d = stochastic_typed.D
+        k = stochastic_value.K
+        d = stochastic_value.D
 
         atr_val = to_float(atr_value)
 

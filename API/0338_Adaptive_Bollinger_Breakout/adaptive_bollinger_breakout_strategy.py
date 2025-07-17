@@ -186,18 +186,17 @@ class adaptive_bollinger_breakout_strategy(Strategy):
             # use running average
             is_high_volatility = atr_val > (self._atr_sum / self._atr_count if self._atr_count > 0 else atr_val)
 
-            bollinger_typed = bollinger_value
 
             if (
-                bollinger_typed.UpBand is None
-                or bollinger_typed.LowBand is None
-                or bollinger_typed.MovingAverage is None
+                bollinger_value.UpBand is None
+                or bollinger_value.LowBand is None
+                or bollinger_value.MovingAverage is None
             ):
                 return  # Not enough data to calculate bands
 
-            upper_band = float(bollinger_typed.UpBand)
-            lower_band = float(bollinger_typed.LowBand)
-            middle_band = float(bollinger_typed.MovingAverage)
+            upper_band = float(bollinger_value.UpBand)
+            lower_band = float(bollinger_value.LowBand)
+            middle_band = float(bollinger_value.MovingAverage)
 
             if is_high_volatility:
                 # Breakout above upper band - Sell signal

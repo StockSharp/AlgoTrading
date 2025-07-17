@@ -3,13 +3,14 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math, Random
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, Unit, UnitTypes, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, SimpleMovingAverage, StandardDeviation
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 from indicator_extensions import *
 
+import random
 
 class rsi_with_option_open_interest_strategy(Strategy):
     """
@@ -217,23 +218,22 @@ class rsi_with_option_open_interest_strategy(Strategy):
 
         # Base OI values on price movement
         price_up = candle.OpenPrice < candle.ClosePrice
-        rand = Random(int(candle.ServerTime.Ticks))
 
         # Simulate bullish sentiment with higher call OI when price is rising
         # Simulate bearish sentiment with higher put OI when price is falling
         if price_up:
-            self._current_call_oi = float(candle.TotalVolume * (1 + rand.NextDouble() * 0.5))
-            self._current_put_oi = float(candle.TotalVolume * (0.7 + rand.NextDouble() * 0.3))
+            self._current_call_oi = float(candle.TotalVolume * (1 + random.random() * 0.5))
+            self._current_put_oi = float(candle.TotalVolume * (0.7 + random.random() * 0.3))
         else:
-            self._current_call_oi = float(candle.TotalVolume * (0.7 + rand.NextDouble() * 0.3))
-            self._current_put_oi = float(candle.TotalVolume * (1 + rand.NextDouble() * 0.5))
+            self._current_call_oi = float(candle.TotalVolume * (0.7 + random.random() * 0.3))
+            self._current_put_oi = float(candle.TotalVolume * (1 + random.random() * 0.5))
 
         # Add some randomness for spikes
-        if rand.NextDouble() > 0.9:
+        if random.random() > 0.9:
             # Occasional spikes in OI
             self._current_call_oi *= 1.5
 
-        if rand.NextDouble() > 0.9:
+        if random.random() > 0.9:
             # Occasional spikes in OI
             self._current_put_oi *= 1.5
 

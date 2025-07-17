@@ -3,12 +3,13 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math, Random
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import CommodityChannelIndex, AverageTrueRange
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 
+import random
 
 class cci_put_call_ratio_divergence_strategy(Strategy):
     """CCI strategy with Put/Call Ratio Divergence."""
@@ -169,16 +170,15 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
         price_up = candle.OpenPrice < candle.ClosePrice
         price_change = float(Math.Abs((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice))
 
-        rand = Random(int(candle.OpenTime.Ticks))
         if price_up:
             # When price rises, PCR often falls (less put buying)
-            self._current_pcr = 0.7 - price_change + rand.NextDouble() * 0.2
+            self._current_pcr = 0.7 - price_change + random.random() * 0.2
         else:
             # When price falls, PCR often rises (more put buying for protection)
-            self._current_pcr = 1.0 + price_change + rand.NextDouble() * 0.3
+            self._current_pcr = 1.0 + price_change + random.random() * 0.3
 
         # Add some randomness for market events
-        if rand.NextDouble() > 0.9:
+        if random.random() > 0.9:
             # Occasional PCR spikes
             self._current_pcr *= 1.3
 

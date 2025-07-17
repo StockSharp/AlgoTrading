@@ -174,10 +174,9 @@ class parabolic_sar_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stochTyped = stochValue
-        if stochTyped.K is None:
+        if stochValue.K is None:
             return
-        stochK = float(stochTyped.K)
+        stochK = float(stochValue.K)
 
         sarDec = to_float(sarValue)
 

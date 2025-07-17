@@ -3,11 +3,13 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan, Math, Random
+from System import TimeSpan, Math
 from StockSharp.Messages import DataType, UnitTypes, Unit, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
+
+import random
 
 class hurst_exponent_reversion_strategy(Strategy):
     """
@@ -150,8 +152,7 @@ class hurst_exponent_reversion_strategy(Strategy):
 
         # For demonstration only - in a real implementation,
         # use a proper Hurst exponent calculation based on R/S analysis or similar method
-        rand = Random(int(candle.OpenTime.Ticks))
-        return 0.3 + rand.NextDouble() * 0.4  # Returns value between 0.3 and 0.7
+        return 0.3 + random.random() * 0.4  # Returns value between 0.3 and 0.7
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

@@ -141,14 +141,14 @@ class obv_slope_breakout_strategy(Strategy):
             return
 
         # Calculate OBV slope
-        slopeTyped = process_float(self._obvSlope, obvValue, candle.ServerTime, candle.State == CandleStates.Finished)
-        if not slopeTyped.IsFinal:
+        slope = process_float(self._obvSlope, obvValue, candle.ServerTime, candle.State == CandleStates.Finished)
+        if not slope.IsFinal:
             return
 
-        if slopeTyped.LinearReg is None:
+        if slope.LinearReg is None:
             return
 
-        slopeValue = float(slopeTyped.LinearReg)
+        slopeValue = float(slope.LinearReg)
 
         self._lastObvSlope = slopeValue
 

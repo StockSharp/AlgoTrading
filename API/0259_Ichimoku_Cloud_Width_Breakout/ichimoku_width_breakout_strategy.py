@@ -169,23 +169,22 @@ class ichimoku_width_breakout_strategy(Strategy):
 
         # Get current Ichimoku values
         # The structure of values depends on the implementation, this is just an example
-        ichimoku_typed = ichimoku_value
 
-        if ichimoku_typed.Tenkan is None:
+        if ichimoku_value.Tenkan is None:
             return
-        tenkan = float(ichimoku_typed.Tenkan)
+        tenkan = float(ichimoku_value.Tenkan)
 
-        if ichimoku_typed.Kijun is None:
+        if ichimoku_value.Kijun is None:
             return
-        kijun = float(ichimoku_typed.Kijun)
+        kijun = float(ichimoku_value.Kijun)
 
-        if ichimoku_typed.SenkouA is None:
+        if ichimoku_value.SenkouA is None:
             return
-        senkou_span_a = float(ichimoku_typed.SenkouA)
+        senkou_span_a = float(ichimoku_value.SenkouA)
 
-        if ichimoku_typed.SenkouB is None:
+        if ichimoku_value.SenkouB is None:
             return
-        senkou_span_b = float(ichimoku_typed.SenkouB)
+        senkou_span_b = float(ichimoku_value.SenkouB)
 
         # Calculate Cloud width (absolute difference between Senkou lines)
         width = Math.Abs(senkou_span_a - senkou_span_b)
