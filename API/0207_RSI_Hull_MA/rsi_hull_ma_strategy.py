@@ -12,7 +12,7 @@ from datatype_extensions import *
 
 class rsi_hull_ma_strategy(Strategy):
     """
-    Strategy based on RSI and Hull Moving Average indicators (#207)
+    Strategy based on RSI and Hull Moving Average indicators
     """
 
     def __init__(self):

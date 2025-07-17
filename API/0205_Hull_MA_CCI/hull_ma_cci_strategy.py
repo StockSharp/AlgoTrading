@@ -11,7 +11,7 @@ from datatype_extensions import *
 
 
 class hull_ma_cci_strategy(Strategy):
-    """Strategy based on Hull Moving Average and CCI indicators (#205)."""
+    """Strategy based on Hull Moving Average and CCI indicators."""
 
     # Constructor
     def __init__(self):

@@ -11,7 +11,7 @@ from datatype_extensions import *
 
 class donchian_cci_strategy(Strategy):
     """
-    Strategy based on Donchian Channels and CCI indicators (#202)
+    Strategy based on Donchian Channels and CCI indicators
     """
 
     def __init__(self):

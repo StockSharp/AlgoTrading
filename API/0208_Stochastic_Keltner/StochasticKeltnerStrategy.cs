@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on Stochastic Oscillator and Keltner Channels indicators (#208)
+	/// Strategy based on Stochastic Oscillator and Keltner Channels indicators
 	/// </summary>
 	public class StochasticKeltnerStrategy : Strategy
 	{

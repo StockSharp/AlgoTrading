@@ -9,7 +9,7 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Strategy based on VWAP and Williams %R indicators (#201)
+	/// Strategy based on VWAP and Williams %R indicators
 	/// </summary>
 	public class VwapWilliamsRStrategy : Strategy
 	{

@@ -11,7 +11,7 @@ from datatype_extensions import *
 
 class stochastic_keltner_strategy(Strategy):
     """
-    Strategy based on Stochastic Oscillator and Keltner Channels indicators (#208)
+    Strategy based on Stochastic Oscillator and Keltner Channels indicators
     """
 
     def __init__(self):
