@@ -145,14 +145,13 @@ class adx_mean_reversion_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_typed = adx_value
-        if adx_typed.MovingAverage is None:
+        if adx_value.MovingAverage is None:
             return
-        current_adx = float(adx_typed.MovingAverage)
+        current_adx = float(adx_value.MovingAverage)
 
-        if adx_typed.Dx is None or adx_typed.Dx.Plus is None or adx_typed.Dx.Minus is None:
+        if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
             return
-        dx = adx_typed.Dx
+        dx = adx_value.Dx
         plus_di = float(dx.Plus)
         minus_di = float(dx.Minus)
 

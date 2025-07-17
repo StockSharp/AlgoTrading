@@ -134,19 +134,18 @@ class bollinger_williams_r_strategy(Strategy):
             return
 
         # Get additional values from Bollinger Bands
-        bollinger_typed = bollinger_value
 
-        if bollinger_typed.MovingAverage is None:
+        if bollinger_value.MovingAverage is None:
             return
-        middle_band = float(bollinger_typed.MovingAverage)  # Middle band is returned by default
+        middle_band = float(bollinger_value.MovingAverage)  # Middle band is returned by default
 
-        if bollinger_typed.UpBand is None:
+        if bollinger_value.UpBand is None:
             return
-        upper_band = float(bollinger_typed.UpBand)
+        upper_band = float(bollinger_value.UpBand)
 
-        if bollinger_typed.LowBand is None:
+        if bollinger_value.LowBand is None:
             return
-        lower_band = float(bollinger_typed.LowBand)
+        lower_band = float(bollinger_value.LowBand)
 
         # Current price (close of the candle)
         price = float(candle.ClosePrice)

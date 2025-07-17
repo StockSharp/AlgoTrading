@@ -148,12 +148,11 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
             stopLoss=Unit(1, UnitTypes.Percent)
         )
     def ProcessStochastic(self, candle, stoch_value):
-        stoch_typed = stoch_value
-        if stoch_typed.K is None:
+        if stoch_value.K is None:
             return
 
         # Calculate dynamic zones
-        stoch_k = float(stoch_typed.K)
+        stoch_k = float(stoch_value.K)
         stoch_k_avg = to_float(process_float(self._stoch_sma, stoch_k, candle.ServerTime, candle.State == CandleStates.Finished))
         stoch_k_std_dev = to_float(process_float(self._stoch_std_dev, stoch_k, candle.ServerTime, candle.State == CandleStates.Finished))
 

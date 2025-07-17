@@ -160,11 +160,11 @@ class volume_slope_breakout_strategy(Strategy):
         volumeRatio = volumeValue / volumeSma
 
         # We use LinearRegression to calculate slope of this ratio
-        currentSlopeTyped = process_float(self._volumeSlope, volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished)
+        currentSlope = process_float(self._volumeSlope, volumeRatio, candle.ServerTime, candle.State == CandleStates.Finished)
 
-        if currentSlopeTyped.LinearReg is None:
+        if currentSlope.LinearReg is None:
             return  # Skip if slope is not available
-        currentSlopeValue = currentSlopeTyped.LinearReg
+        currentSlopeValue = currentSlope.LinearReg
 
         # Update slope stats when we have 2 values to calculate slope
         if self._prevSlopeValue != 0:

@@ -163,23 +163,22 @@ class ichimoku_stochastic_strategy(Strategy):
             return
 
         # Get additional values from Ichimoku
-        ichimoku_typed = ichimoku_value
 
-        if ichimoku_typed.Tenkan is None:
+        if ichimoku_value.Tenkan is None:
             return
-        tenkan = float(ichimoku_typed.Tenkan)
+        tenkan = float(ichimoku_value.Tenkan)
 
-        if ichimoku_typed.Kijun is None:
+        if ichimoku_value.Kijun is None:
             return
-        kijun = float(ichimoku_typed.Kijun)
+        kijun = float(ichimoku_value.Kijun)
 
-        if ichimoku_typed.SenkouA is None:
+        if ichimoku_value.SenkouA is None:
             return
-        senkou_a = float(ichimoku_typed.SenkouA)
+        senkou_a = float(ichimoku_value.SenkouA)
 
-        if ichimoku_typed.SenkouB is None:
+        if ichimoku_value.SenkouB is None:
             return
-        senkou_b = float(ichimoku_typed.SenkouB)
+        senkou_b = float(ichimoku_value.SenkouB)
 
         # Current price (close of the candle)
         price = float(candle.ClosePrice)
@@ -192,12 +191,11 @@ class ichimoku_stochastic_strategy(Strategy):
         is_bullish_cross = tenkan > kijun
         is_bearish_cross = tenkan < kijun
 
-        stoch_typed = stoch_value
 
         # Get Stochastic %K value
-        if stoch_typed.K is None:
+        if stoch_value.K is None:
             return
-        stochastic_k = float(stoch_typed.K)
+        stochastic_k = float(stoch_value.K)
 
         # Trading logic
         if is_above_kumo and is_bullish_cross and stochastic_k < 20 and self.Position <= 0:

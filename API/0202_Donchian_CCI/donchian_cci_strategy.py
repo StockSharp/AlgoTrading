@@ -112,16 +112,15 @@ class donchian_cci_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        donchian_typed = donchian_value
         if (
-            donchian_typed.UpperBand is None
-            or donchian_typed.LowerBand is None
-            or donchian_typed.Middle is None
+            donchian_value.UpperBand is None
+            or donchian_value.LowerBand is None
+            or donchian_value.Middle is None
         ):
             return
-        upper_band = float(donchian_typed.UpperBand)
-        lower_band = float(donchian_typed.LowerBand)
-        middle_band = float(donchian_typed.Middle)
+        upper_band = float(donchian_value.UpperBand)
+        lower_band = float(donchian_value.LowerBand)
+        middle_band = float(donchian_value.Middle)
 
         cci_dec = cci_value
         price = float(candle.ClosePrice)

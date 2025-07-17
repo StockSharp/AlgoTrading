@@ -131,15 +131,14 @@ class bollinger_band_squeeze_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        bollingerTyped = bollingerValue
 
-        if bollingerTyped.UpBand is None:
+        if bollingerValue.UpBand is None:
             return
-        upperBand = float(bollingerTyped.UpBand)
+        upperBand = float(bollingerValue.UpBand)
 
-        if bollingerTyped.LowBand is None:
+        if bollingerValue.LowBand is None:
             return
-        lowerBand = float(bollingerTyped.LowBand)
+        lowerBand = float(bollingerValue.LowBand)
 
         atr = to_float(atrValue)
 

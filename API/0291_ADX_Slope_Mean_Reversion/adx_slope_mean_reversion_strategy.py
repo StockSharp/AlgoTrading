@@ -164,12 +164,11 @@ class adx_slope_mean_reversion_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        adx_typed = adx_value
-        if adx_typed.MovingAverage is None:
+        if adx_value.MovingAverage is None:
             return
 
-        adx = float(adx_typed.MovingAverage)
-        dx = adx_typed.Dx
+        adx = float(adx_value.MovingAverage)
+        dx = adx_value.Dx
         if dx is None or dx.Plus is None or dx.Minus is None:
             return
 

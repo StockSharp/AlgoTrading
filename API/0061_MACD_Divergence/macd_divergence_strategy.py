@@ -166,13 +166,12 @@ class macd_divergence_strategy(Strategy):
             return
 
         # Extract MACD values - be careful with the order of indexes
-        macdTyped = macdValue
         
-        if macdTyped.Macd is None or macdTyped.Signal is None:
+        if macdValue.Macd is None or macdValue.Signal is None:
             return
         
-        macd = macdTyped.Macd
-        signal = macdTyped.Signal
+        macd = macdValue.Macd
+        signal = macdValue.Signal
 
         # Store previous values before updating
         if self._currentPrice is not None and self._currentMacd is not None:

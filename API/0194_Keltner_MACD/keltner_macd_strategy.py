@@ -204,12 +204,11 @@ class keltner_macd_strategy(Strategy):
         upperBand = ema + self.Multiplier * atr
         lowerBand = ema - self.Multiplier * atr
 
-        macd_typed = macd_value
-        if macd_typed.Macd is None or macd_typed.Signal is None:
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
-        macd = float(macd_typed.Macd)
-        signal = float(macd_typed.Signal)
+        macd = float(macd_value.Macd)
+        signal = float(macd_value.Signal)
 
         # Detect MACD crosses
         macdCrossedAboveSignal = self._prevMacd <= self._prevSignal and macd > signal

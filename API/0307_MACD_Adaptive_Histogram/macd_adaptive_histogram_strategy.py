@@ -192,13 +192,12 @@ class macd_adaptive_histogram_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        macd_typed = macd_value
-        if macd_typed.Macd is None or macd_typed.Signal is None:
+        if macd_value.Macd is None or macd_value.Signal is None:
             return
 
         # Extract MACD values
-        macd = macd_typed.Macd
-        signal = macd_typed.Signal
+        macd = macd_value.Macd
+        signal = macd_value.Signal
         histogram = macd - signal
 
         # Process the histogram through the statistics indicators

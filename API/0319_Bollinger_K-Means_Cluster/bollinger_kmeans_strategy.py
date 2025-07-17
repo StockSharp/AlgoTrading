@@ -140,18 +140,17 @@ class bollinger_kmeans_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        bollinger_typed = bollinger_value
 
         # Extract values from indicators
         if (
-            bollinger_typed.UpBand is None
-            or bollinger_typed.LowBand is None
-            or bollinger_typed.MovingAverage is None
+            bollinger_value.UpBand is None
+            or bollinger_value.LowBand is None
+            or bollinger_value.MovingAverage is None
         ):
             return
-        bollinger_upper = float(bollinger_typed.UpBand)
-        bollinger_middle = float(bollinger_typed.MovingAverage)
-        bollinger_lower = float(bollinger_typed.LowBand)
+        bollinger_upper = float(bollinger_value.UpBand)
+        bollinger_middle = float(bollinger_value.MovingAverage)
+        bollinger_lower = float(bollinger_value.LowBand)
 
         rsi = to_float(rsi_value)
         self._atr_value = to_float(atr_value)

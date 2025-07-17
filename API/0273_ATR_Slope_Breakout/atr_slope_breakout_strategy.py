@@ -155,15 +155,15 @@ class atr_slope_breakout_strategy(Strategy):
         price_above_ema = candle.ClosePrice > ema_value
 
         # Calculate ATR slope
-        current_slope_typed = process_float(
+        current_slope = process_float(
             self._atr_slope,
             atr,
             candle.ServerTime,
             candle.State == CandleStates.Finished,
         )
-        if current_slope_typed.LinearReg is None:
+        if current_slope.LinearReg is None:
             return  # Skip if we can't get the slope value
-        current_slope_value = float(current_slope_typed.LinearReg)
+        current_slope_value = float(current_slope.LinearReg)
 
         # Update slope stats when we have 2 values to calculate slope
         if self._prev_slope_value != 0:

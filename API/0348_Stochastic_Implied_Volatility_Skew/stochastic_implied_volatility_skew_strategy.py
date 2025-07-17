@@ -164,9 +164,8 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        stoch_typed = stoch_value
-        stoch_k = stoch_typed.K
-        stoch_d = stoch_typed.D
+        stoch_k = stoch_value.K
+        stoch_d = stoch_value.D
 
         # Entry logic
         if stoch_k < 20 and self._current_iv_skew > self._avg_iv_skew and self.Position <= 0:

@@ -174,8 +174,7 @@ class stochastic_slope_breakout_strategy(Strategy):
 
         # Extract Stochastic %K value - the main line that we'll track the slope of
         # Stochastic returns a complex value with both %K and %D values
-        stochTyped = stochValue
-        kValue = stochTyped.K
+        kValue = stochValue.K
         if kValue is None:
             return
 

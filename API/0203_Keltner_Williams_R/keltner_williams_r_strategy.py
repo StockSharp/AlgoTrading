@@ -125,10 +125,9 @@ class keltner_williams_r_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        keltner_typed = keltner_value  # KeltnerChannelsValue
-        upper = keltner_typed.Upper
-        lower = keltner_typed.Lower
-        middle = keltner_typed.Middle
+        upper = keltner_value.Upper
+        lower = keltner_value.Lower
+        middle = keltner_value.Middle
 
         williams_r = to_float(williams_r_value)
 

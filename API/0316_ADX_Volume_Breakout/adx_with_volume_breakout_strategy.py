@@ -103,13 +103,12 @@ class adx_with_volume_breakout_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
 
         def process(candle, adx_value):
-            adx_typed = adx_value
-            if adx_typed.MovingAverage is None:
+            if adx_value.MovingAverage is None:
                 return
-            adx_ma = adx_typed.MovingAverage
-            if adx_typed.Dx is None or adx_typed.Dx.Plus is None or adx_typed.Dx.Minus is None:
+            adx_ma = adx_value.MovingAverage
+            if adx_value.Dx is None or adx_value.Dx.Plus is None or adx_value.Dx.Minus is None:
                 return
-            dx = adx_typed.Dx
+            dx = adx_value.Dx
             plus_di = dx.Plus
             minus_di = dx.Minus
 
