@@ -25,6 +25,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal _lastFirstPrice;
 		private decimal _lastSecondPrice;
 		private decimal _entrySpread;
+		private decimal _secondMAValue;
 		
 		/// <summary>
 		/// Period for calculating moving averages.
@@ -105,6 +106,7 @@ namespace StockSharp.Samples.Strategies
 			_lastFirstPrice = 0;
 			_lastSecondPrice = 0;
 			_entrySpread = 0;
+			_secondMAValue = 0;
 
 			if (SecondSecurity == null)
 				throw new InvalidOperationException("Second security is not specified.");
@@ -160,8 +162,8 @@ namespace StockSharp.Samples.Strategies
 			if (_lastSecondPrice == 0 || !_firstMA.IsFormed || !_secondMA.IsFormed)
 				return;
 			
-			// Get last second MA value
-			decimal secondMAValue = _secondMA.GetCurrentValue();
+			// Get last second MA value stored earlier
+			decimal secondMAValue = _secondMAValue;
 			
 			// Trading logic
 			bool isFirstBelowMA = _lastFirstPrice < firstMAValue;
@@ -227,8 +229,9 @@ namespace StockSharp.Samples.Strategies
 			// Store current price
 			_lastSecondPrice = candle.ClosePrice;
 		
-			// Process through MA indicator
-			_secondMA.Process(candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished);
+			// Process through MA indicator and store last value
+			var maValue = _secondMA.Process(candle.ClosePrice, candle.ServerTime, candle.State == CandleStates.Finished);
+			_secondMAValue = maValue.ToDecimal();
 		}
 	}
 }
