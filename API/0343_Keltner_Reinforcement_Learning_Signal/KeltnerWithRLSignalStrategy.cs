@@ -157,13 +157,7 @@ namespace StockSharp.Samples.Strategies
 			subscription
 				.BindEx(keltner, ProcessCandle)
 				.Start();
-			
-			// Subscribe to own trades for reinforcement learning feedback
-			this
-				.WhenOwnTradeReceived()
-				.Do(ProcessOwnTrade)
-				.Apply(this);
-			
+
 			// Create chart visualization if available
 			var area = CreateChartArea();
 			if (area != null)
@@ -173,7 +167,7 @@ namespace StockSharp.Samples.Strategies
 				DrawOwnTrades(area);
 			}
 		}
-		
+
 		/// <summary>
 		/// Process each candle and Keltner Channel values.
 		/// </summary>
@@ -301,11 +295,11 @@ namespace StockSharp.Samples.Strategies
 				// Otherwise keep current signal
 			}
 		}
-		
+
 		/// <summary>
 		/// Process own trades for reinforcement learning feedback.
 		/// </summary>
-		private void ProcessOwnTrade(MyTrade trade)
+		protected override void OnOwnTradeReceived(MyTrade trade)
 		{
 			// Skip if we don't have a previous signal price (first trade)
 			if (_previousSignalPrice == 0)

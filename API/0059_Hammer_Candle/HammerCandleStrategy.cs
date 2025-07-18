@@ -66,13 +66,12 @@ namespace StockSharp.Samples.Strategies
 				DrawCandles(area, subscription);
 				DrawOwnTrades(area);
 			}
+		}
 
-			this.WhenPositionChanged().Do(() =>
-			{
-				if (Position == 0)
-					_isPositionOpen = false;
-			})
-			.Apply(this);
+		protected override void OnPositionReceived(Position position)
+		{
+			if (Position == 0)
+				_isPositionOpen = false;
 		}
 
 		private void ProcessCandle(ICandleMessage candle)
