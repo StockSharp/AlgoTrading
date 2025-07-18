@@ -150,7 +150,7 @@ class volatility_mean_reversion_strategy(Strategy):
             return
 
         # Extract ATR value
-        currentAtr = to_float(atrValue)
+        currentAtr = float(atrValue)
 
         # Update ATR statistics
         self.UpdateAtrStatistics(currentAtr)

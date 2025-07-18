@@ -160,7 +160,7 @@ class adx_bollinger_strategy(Strategy):
         price = float(candle.ClosePrice)
 
         # Stop-loss size based on ATR
-        stop_size = to_float(atr_value) * self.atr_multiplier
+        stop_size = float(atr_value) * self.atr_multiplier
 
 
         # Trading logic

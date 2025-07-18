@@ -129,8 +129,8 @@ class parabolic_sar_volatility_expansion_strategy(Strategy):
 
     def _on_candle(self, candle, sar_value, atr_value):
         # Calculate ATR average and standard deviation
-        atr_avg = to_float(process_float(self._atr_sma, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
-        atr_std = to_float(process_float(self._atr_std_dev, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        atr_avg = float(process_float(self._atr_sma, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
+        atr_std = float(process_float(self._atr_std_dev, atr_value, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Process the strategy logic
         self.ProcessStrategy(candle, sar_value, atr_value, atr_avg, atr_std)

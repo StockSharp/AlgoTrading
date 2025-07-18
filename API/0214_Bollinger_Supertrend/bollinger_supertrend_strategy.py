@@ -158,7 +158,7 @@ class bollinger_supertrend_strategy(Strategy):
         lower_band = float(bb.LowBand)
 
         # Calculate Supertrend (simplified)
-        atr_val = to_float(atr_value) * self.SupertrendMultiplier
+        atr_val = float(atr_value) * self.SupertrendMultiplier
         upper_band2 = float((candle.HighPrice + candle.LowPrice) / 2 + atr_val)
         lower_band2 = float((candle.HighPrice + candle.LowPrice) / 2 - atr_val)
 

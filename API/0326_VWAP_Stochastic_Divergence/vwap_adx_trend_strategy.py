@@ -136,7 +136,7 @@ class vwap_adx_trend_strategy(Strategy):
         minus_di = dx.Minus
 
         # Extract values from indicators
-        self._vwap_value = to_float(vwap_value)
+        self._vwap_value = float(vwap_value)
         self._adx_value = adx
         self._plus_di_value = plus_di  # +DI
         self._minus_di_value = minus_di  # -DI

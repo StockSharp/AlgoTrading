@@ -180,7 +180,7 @@ class macd_volume_strategy(Strategy):
             return
 
         if volume_avg_value.IsFinal:
-            self._avg_volume = to_float(volume_avg_value)
+            self._avg_volume = float(volume_avg_value)
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading() or self._avg_volume <= 0:

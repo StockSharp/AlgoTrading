@@ -143,7 +143,7 @@ class williams_r_mean_reversion_strategy(Strategy):
             return
 
         # Extract Williams %R value
-        current_williams_r = to_float(williams_r_value)
+        current_williams_r = float(williams_r_value)
 
         # Update Williams %R statistics
         self.UpdateWilliamsRStatistics(current_williams_r)

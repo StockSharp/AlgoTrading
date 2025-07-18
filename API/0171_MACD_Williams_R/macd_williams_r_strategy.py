@@ -161,7 +161,7 @@ class macd_williams_r_strategy(Strategy):
         # Get additional values from MACD (signal line)
         macd_line = float(macd_value.Macd)
         signal_line = float(macd_value.Signal)
-        williams_r = to_float(williams_r_value)
+        williams_r = float(williams_r_value)
 
         # Trading logic
         if macd_line > signal_line:  # MACD above signal line - bullish

@@ -150,7 +150,7 @@ class bollinger_kalman_filter_strategy(Strategy):
             return
         mid_band = float(mid_band)
 
-        kalman_filter_value = to_float(kalman_value)
+        kalman_filter_value = float(kalman_value)
 
         # Log the values
         self.LogInfo(

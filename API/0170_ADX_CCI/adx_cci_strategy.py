@@ -119,12 +119,12 @@ class adx_cci_strategy(Strategy):
 
         # For the first value, just store and skip trading
         if self._is_first_value:
-            self._prev_cci_value = to_float(cci_value)
+            self._prev_cci_value = float(cci_value)
             self._is_first_value = False
             return
 
         # Store for the next iteration
-        self._prev_cci_value = to_float(cci_value)
+        self._prev_cci_value = float(cci_value)
 
         # Extract ADX moving average value
         if adx_value.MovingAverage is None:

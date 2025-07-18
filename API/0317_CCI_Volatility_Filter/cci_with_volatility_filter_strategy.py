@@ -125,7 +125,7 @@ class cci_with_volatility_filter_strategy(Strategy):
         )
     def _on_candle(self, candle, cci_value, atr_value):
         # Calculate ATR average
-        atr_avg = to_float(
+        atr_avg = float(
             process_float(
                 self._atrSma,
                 atr_value,

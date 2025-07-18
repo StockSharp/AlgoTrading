@@ -146,7 +146,7 @@ class bollinger_band_width_strategy(Strategy):
         isPriceAboveMiddleBand = candle.ClosePrice > bollingerValue.MovingAverage
         
         # Calculate stop-loss amount based on ATR
-        stopLossAmount = to_float(atrValue) * self.AtrMultiplier
+        stopLossAmount = float(atrValue) * self.AtrMultiplier
 
         if self.Position == 0:
             # No position - check for entry signals

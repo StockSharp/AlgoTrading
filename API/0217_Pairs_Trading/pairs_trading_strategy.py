@@ -171,8 +171,8 @@ class pairs_trading_strategy(Strategy):
         if not self._spread_ma.IsFormed or not self._spread_std_dev.IsFormed:
             return
 
-        spread_mean = to_float(ma_value)
-        spread_std_dev = to_float(std_dev_value)
+        spread_mean = float(ma_value)
+        spread_std_dev = float(std_dev_value)
 
         # Calculate entry thresholds
         upper_threshold = spread_mean + (spread_std_dev * self.deviation_multiplier)

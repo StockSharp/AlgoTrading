@@ -99,7 +99,7 @@ class kalman_filter_trend_strategy(Strategy):
             return
 
         # Calculate trend direction
-        trend = 1 if candle.ClosePrice > to_float(kalman_value) else -1
+        trend = 1 if candle.ClosePrice > float(kalman_value) else -1
 
         # Trading logic based on price position relative to Kalman filter
         if trend > 0 and self.Position <= 0:

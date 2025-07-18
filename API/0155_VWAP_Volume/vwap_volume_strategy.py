@@ -121,7 +121,7 @@ class vwap_volume_strategy(Strategy):
 
     def ProcessCandle(self, candle):
         # Process volume with indicator
-        volume_ma = to_float(
+        volume_ma = float(
             process_float(
                 self._volumeMA,
                 candle.TotalVolume,

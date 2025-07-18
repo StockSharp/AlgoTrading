@@ -161,8 +161,8 @@ class stochastic_breakout_strategy(Strategy):
         stochK = stochValue.K
 
         # Calculate average and standard deviation of stochastic
-        stochAvgValue = to_float(process_float(self._stochAverage, stochK, candle.ServerTime, candle.State == CandleStates.Finished))
-        tempStdDevValue = to_float(process_float(self._stochStdDev, stochK, candle.ServerTime, candle.State == CandleStates.Finished))
+        stochAvgValue = float(process_float(self._stochAverage, stochK, candle.ServerTime, candle.State == CandleStates.Finished))
+        tempStdDevValue = float(process_float(self._stochStdDev, stochK, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # First values initialization - skip trading decision
         if self._prevStochValue == 0:

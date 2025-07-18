@@ -166,18 +166,18 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
             return
 
         # Get the Parabolic SAR value
-        self._sar_value = to_float(value)
+        self._sar_value = float(value)
 
         # Calculate distances
         self._current_distance_long = float(candle.ClosePrice - self._sar_value)
         self._current_distance_short = float(self._sar_value - candle.ClosePrice)
 
         # Calculate averages and standard deviations for both distances
-        long_distance_avg = to_float(process_float(self._distance_average, self._current_distance_long, candle.ServerTime, True))
-        long_distance_std = to_float(process_float(self._distance_std_dev, self._current_distance_long, candle.ServerTime, True))
+        long_distance_avg = float(process_float(self._distance_average, self._current_distance_long, candle.ServerTime, True))
+        long_distance_std = float(process_float(self._distance_std_dev, self._current_distance_long, candle.ServerTime, True))
 
-        short_distance_avg = to_float(process_float(self._distance_average, self._current_distance_short, candle.ServerTime, True))
-        short_distance_std = to_float(process_float(self._distance_std_dev, self._current_distance_short, candle.ServerTime, True))
+        short_distance_avg = float(process_float(self._distance_average, self._current_distance_short, candle.ServerTime, True))
+        short_distance_std = float(process_float(self._distance_std_dev, self._current_distance_short, candle.ServerTime, True))
 
         # Skip the first value
         if self._prev_distance_long == 0 or self._prev_distance_short == 0:

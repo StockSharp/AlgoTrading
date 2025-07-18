@@ -147,7 +147,7 @@ class bollinger_volume_strategy(Strategy):
     def ProcessIndicators(self, candle, volumeAvgValue, bollingerValue, atrValue):
         """Process Bollinger Bands and ATR indicator values."""
         if volumeAvgValue.IsFinal:
-            self._avgVolume = to_float(volumeAvgValue)
+            self._avgVolume = float(volumeAvgValue)
 
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:
@@ -171,7 +171,7 @@ class bollinger_volume_strategy(Strategy):
             return
         lowerBand = float(bb.LowBand)
 
-        atr = to_float(atrValue)
+        atr = float(atrValue)
 
         # Check volume confirmation
         isVolumeHighEnough = candle.TotalVolume > self._avgVolume * self.VolumeMultiplier

@@ -135,13 +135,13 @@ class dark_pool_prints_strategy(Strategy):
             return
         adx_ma = float(adx.MovingAverage)
 
-        ma_decimal = to_float(ma)
+        ma_decimal = float(ma)
 
         # Check if we have a strong trend (ADX > 25)
         isStrongTrend = adx_ma > 25
 
         # Check if current volume is significantly higher than average
-        isHighVolume = candle.TotalVolume > to_float(volume_avg) * self.VolumeMultiplier
+        isHighVolume = candle.TotalVolume > float(volume_avg) * self.VolumeMultiplier
 
         if not isHighVolume or not isStrongTrend:
             return

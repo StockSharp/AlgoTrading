@@ -180,8 +180,8 @@ class keltner_width_breakout_strategy(Strategy):
         emaValue = process_candle(self._ema, candle)
         atrValue = process_candle(self._atr, candle)
 
-        self._currentEma = to_float(emaValue)
-        self._currentAtr = to_float(atrValue)
+        self._currentEma = float(emaValue)
+        self._currentAtr = float(atrValue)
 
         # Calculate Keltner Channel boundaries
         upperBand = self._currentEma + self.ATRMultiplier * self._currentAtr
@@ -191,7 +191,7 @@ class keltner_width_breakout_strategy(Strategy):
         width = upperBand - lowerBand
 
         # Process width through average
-        widthAvgValue = to_float(process_float(self._widthAverage, width, candle.ServerTime, candle.State == CandleStates.Finished))
+        widthAvgValue = float(process_float(self._widthAverage, width, candle.ServerTime, candle.State == CandleStates.Finished))
         avgWidth = widthAvgValue
 
         # For first values, just save and skip

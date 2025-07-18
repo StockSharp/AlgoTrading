@@ -178,7 +178,7 @@ class parabolic_sar_stochastic_strategy(Strategy):
             return
         stochK = float(stochValue.K)
 
-        sarDec = to_float(sarValue)
+        sarDec = float(sarValue)
 
         currentPrice = float(candle.ClosePrice)
         priceAboveSar = currentPrice > sarDec

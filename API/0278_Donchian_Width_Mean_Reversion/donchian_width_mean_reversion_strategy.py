@@ -155,8 +155,8 @@ class donchian_width_mean_reversion_strategy(Strategy):
         self._current_width = upper_band - lower_band
 
         # Calculate the average and standard deviation of the width
-        width_average = to_float(process_float(self._width_average, self._current_width, candle.ServerTime, True))
-        width_std_dev = to_float(process_float(self._width_std_dev, self._current_width, candle.ServerTime, True))
+        width_average = float(process_float(self._width_average, self._current_width, candle.ServerTime, True))
+        width_std_dev = float(process_float(self._width_std_dev, self._current_width, candle.ServerTime, True))
 
         # Skip the first value
         if self._prev_width == 0:

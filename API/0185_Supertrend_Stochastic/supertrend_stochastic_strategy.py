@@ -164,7 +164,7 @@ class supertrend_stochastic_strategy(Strategy):
             return
 
         # Get indicator values
-        supertrend_line = to_float(supertrend_value)
+        supertrend_line = float(supertrend_value)
         is_bullish = supertrend_value.IsUpTrend
         is_bearish = not is_bullish
 

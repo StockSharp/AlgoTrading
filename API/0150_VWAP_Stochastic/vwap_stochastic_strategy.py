@@ -173,7 +173,7 @@ class vwap_stochastic_strategy(Strategy):
 
         kValue = stochValue.K
 
-        vwapDec = to_float(vwapValue)
+        vwapDec = float(vwapValue)
 
         # Trading logic
         if candle.ClosePrice < vwapDec and kValue < self.OversoldLevel and self.Position <= 0:

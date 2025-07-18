@@ -105,7 +105,7 @@ class vwap_adx_trend_strength_strategy(Strategy):
         di_minus = adx_value.Dx.Minus  # -DI value
 
         # Get VWAP
-        vwap_dec = to_float(vwap_value)
+        vwap_dec = float(vwap_value)
 
         # Check for strong trend
         is_strong_trend = adx_ma > self.AdxThreshold

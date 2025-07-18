@@ -129,11 +129,11 @@ class donchian_volatility_contraction_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
 
         def handler(candle, high_value):
-            high_price = to_float(high_value)
+            high_price = float(high_value)
 
             # Process Donchian Low separately
             low_value = process_candle(donchian_low, candle)
-            low_price = to_float(low_value)
+            low_price = float(low_value)
 
             # Process ATR
             atr_value = process_candle(atr, candle)
@@ -155,11 +155,11 @@ class donchian_volatility_contraction_strategy(Strategy):
                 candle.State == CandleStates.Finished,
             )
 
-            self._avg_dc_width = to_float(sma_value)
-            self._std_dev_dc_width = to_float(std_dev_value)
+            self._avg_dc_width = float(sma_value)
+            self._std_dev_dc_width = float(std_dev_value)
 
             # Process the strategy logic
-            self.ProcessStrategy(candle, high_price, low_price, to_float(atr_value))
+            self.ProcessStrategy(candle, high_price, low_price, float(atr_value))
 
         subscription.BindEx(donchian_high, handler).Start()
 

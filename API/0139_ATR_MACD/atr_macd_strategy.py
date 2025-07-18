@@ -203,13 +203,13 @@ class atr_macd_strategy(Strategy):
             return
 
         # Process ATR through averaging indicator
-        current_atr = to_float(atr_value)
+        current_atr = float(atr_value)
         avg_value = self._atr_avg.Process(atr_value)
         if not avg_value.IsFinal:
             return
 
         # Store current ATR average value
-        current_atr_avg = to_float(avg_value)
+        current_atr_avg = float(avg_value)
         self._prev_atr_avg = current_atr_avg
 
         # Skip unfinished candles

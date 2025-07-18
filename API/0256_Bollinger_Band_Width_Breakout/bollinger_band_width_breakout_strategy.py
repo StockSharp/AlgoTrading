@@ -144,7 +144,7 @@ class bollinger_band_width_breakout_strategy(Strategy):
             return
 
         # Process candle through ATR
-        current_atr = to_float(atr_value)
+        current_atr = float(atr_value)
 
         # Calculate Bollinger Band width
         if bollinger_value.UpBand is None:
@@ -158,7 +158,7 @@ class bollinger_band_width_breakout_strategy(Strategy):
 
         # Process width through average
         width_avg_value = process_float(self._width_average, last_width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = to_float(width_avg_value)
+        avg_width = float(width_avg_value)
 
         # Calculate width standard deviation (simplified approach)
         std_dev = Math.Abs(last_width - avg_width) * 1.5

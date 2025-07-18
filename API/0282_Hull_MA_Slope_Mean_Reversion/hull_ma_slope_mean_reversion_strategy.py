@@ -158,10 +158,10 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        self._currentAtr = to_float(atrValue)
+        self._currentAtr = float(atrValue)
 
         # Get the Hull MA value
-        self._currentHullMa = to_float(hullValue)
+        self._currentHullMa = float(hullValue)
 
         # First value handling
         if self._prevHullMa == 0:
@@ -172,8 +172,8 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
         self._currentSlope = (self._currentHullMa - self._prevHullMa) / self._prevHullMa * 100  # As percentage
 
         # Calculate average and standard deviation of slope
-        slopeAverage = to_float(process_float(self._slopeAverage, self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
-        slopeStdDev = to_float(process_float(self._slopeStdDev, self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
+        slopeAverage = float(process_float(self._slopeAverage, self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
+        slopeStdDev = float(process_float(self._slopeStdDev, self._currentSlope, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip until we have enough slope data
         if self._prevSlope == 0:

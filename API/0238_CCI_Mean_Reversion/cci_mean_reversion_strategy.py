@@ -147,7 +147,7 @@ class cci_mean_reversion_strategy(Strategy):
             return
 
         # Extract CCI value
-        current_cci = to_float(cci_value)
+        current_cci = float(cci_value)
 
         # Update CCI statistics
         self.UpdateCciStatistics(current_cci)

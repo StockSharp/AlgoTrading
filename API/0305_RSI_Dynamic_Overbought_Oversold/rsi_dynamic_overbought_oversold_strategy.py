@@ -144,8 +144,8 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         stdDevValue = process_float(self._rsiStdDev, rsiValue, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Get values from indicators
-        rsiSmaValue = to_float(smaValue)
-        rsiStdDevValue = to_float(stdDevValue)
+        rsiSmaValue = float(smaValue)
+        rsiStdDevValue = float(stdDevValue)
 
         # Get the indicator containers using container names
 

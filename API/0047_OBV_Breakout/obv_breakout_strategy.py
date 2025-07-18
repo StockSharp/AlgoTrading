@@ -132,18 +132,18 @@ class obv_breakout_strategy(Strategy):
             return
         
         # Process the OBV value through other indicators
-        obvMAValue = to_float(self._obvMA.Process(obvValue))
-        obvVal = to_float(obvValue)
+        obvMAValue = float(self._obvMA.Process(obvValue))
+        obvVal = float(obvValue)
         
         if not self._isFirstCandle:
             # Calculate highest and lowest OBV values
             if self._highest.IsFormed and self._highestOBV is not None:
-                highestValue = to_float(self._highest.Process(obvValue))
+                highestValue = float(self._highest.Process(obvValue))
             else:
                 highestValue = Math.Max(self._highestOBV or obvVal, obvVal) if self._highestOBV is not None else obvVal
             
             if self._lowest.IsFormed and self._lowestOBV is not None:
-                lowestValue = to_float(self._lowest.Process(obvValue))
+                lowestValue = float(self._lowest.Process(obvValue))
             else:
                 lowestValue = Math.Min(self._lowestOBV or obvVal, obvVal) if self._lowestOBV is not None else obvVal
             

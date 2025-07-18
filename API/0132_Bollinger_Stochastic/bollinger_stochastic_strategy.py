@@ -198,7 +198,7 @@ class bollinger_stochastic_strategy(Strategy):
         k = stochastic_value.K
         d = stochastic_value.D
 
-        atr_val = to_float(atr_value)
+        atr_val = float(atr_value)
 
         # Calculate stop loss distance based on ATR
         stop_loss_distance = atr_val * self.atr_multiplier

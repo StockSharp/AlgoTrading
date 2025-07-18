@@ -121,7 +121,7 @@ class rsi_divergence_strategy(Strategy):
             return
 
         current_price = float(candle.ClosePrice)
-        current_rsi = to_float(rsi_value)
+        current_rsi = float(rsi_value)
 
         # For the first candle, just store values and return
         if self._is_first_candle:

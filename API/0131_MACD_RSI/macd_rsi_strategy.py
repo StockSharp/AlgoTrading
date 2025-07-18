@@ -189,7 +189,7 @@ class macd_rsi_strategy(Strategy):
 
         macd_dec = macd_value.Macd
         signal_value = macd_value.Signal
-        rsi_dec = to_float(rsi_value)
+        rsi_dec = float(rsi_value)
 
         # Trading logic: Combine MACD trend with RSI extreme values
 

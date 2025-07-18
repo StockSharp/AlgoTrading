@@ -111,7 +111,7 @@ class volume_surge_strategy(Strategy):
         :param candle: The candle message.
         :param maValue: The Moving Average value.
         """
-        volumeMAValue = to_float(
+        volumeMAValue = float(
             process_float(
                 self._volumeMA,
                 candle.TotalVolume,

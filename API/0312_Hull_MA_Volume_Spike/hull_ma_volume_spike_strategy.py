@@ -115,10 +115,10 @@ class hull_ma_volume_spike_strategy(Strategy):
             # Process the strategy logic
             self.ProcessStrategy(
                 candle,
-                to_float(hma_value),
+                float(hma_value),
                 float(candle.TotalVolume),
-                to_float(volume_sma_value),
-                to_float(volume_std_dev_value)
+                float(volume_sma_value),
+                float(volume_std_dev_value)
             )
 
         subscription.BindEx(hma, process).Start()

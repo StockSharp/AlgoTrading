@@ -132,7 +132,7 @@ class adx_weakening_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ma = to_float(maValue)
+        ma = float(maValue)
 
         if adxValue.MovingAverage is None:
             return

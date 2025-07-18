@@ -180,7 +180,7 @@ class macd_cci_strategy(Strategy):
         # Determine if MACD is above or below signal line
         isMacdAboveSignal = macdLine > signalLine
 
-        cciDec = to_float(cciValue)
+        cciDec = float(cciValue)
 
         self.LogInfo(
             "Candle: {0}, Close: {1}, MACD: {2}, Signal: {3}, MACD > Signal: {4}, CCI: {5}".format(

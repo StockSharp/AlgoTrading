@@ -151,9 +151,9 @@ class bollinger_williams_r_strategy(Strategy):
         price = float(candle.ClosePrice)
 
         # Stop-loss size based on ATR
-        stop_size = to_float(atr_value) * self.AtrMultiplier
+        stop_size = float(atr_value) * self.AtrMultiplier
 
-        williams_value_dec = to_float(williams_r_value)
+        williams_value_dec = float(williams_r_value)
 
         # Trading logic
         if price <= lower_band and williams_value_dec < -80 and self.Position <= 0:

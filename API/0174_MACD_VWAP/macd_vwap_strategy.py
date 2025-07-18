@@ -119,7 +119,7 @@ class macd_vwap_strategy(Strategy):
         # Get additional values from MACD (signal line)
         macd_line = macd_value.Macd
         signal_line = macd_value.Signal
-        vwap = to_float(vwap_value)
+        vwap = float(vwap_value)
 
         # Current price (close of the candle)
         price = float(candle.ClosePrice)

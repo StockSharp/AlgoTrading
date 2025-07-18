@@ -132,7 +132,7 @@ class donchian_hurst_strategy(Strategy):
             return
 
         # --- FractalDimension logic (was ProcessFractalDimension) ---
-        fractalDimension = to_float(fractalDimensionValue)
+        fractalDimension = float(fractalDimensionValue)
         self._hurstValue = 2 - fractalDimension
 
         # Log Hurst Exponent value periodically

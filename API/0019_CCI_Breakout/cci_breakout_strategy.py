@@ -107,7 +107,7 @@ class cci_breakout_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        cci_value = to_float(value)
+        cci_value = float(value)
 
         # Entry logic
         if cci_value > 100 and self.Position <= 0:

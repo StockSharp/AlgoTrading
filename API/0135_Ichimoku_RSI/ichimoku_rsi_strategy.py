@@ -206,7 +206,7 @@ class ichimoku_rsi_strategy(Strategy):
         senkou_span_b = float(ichimoku_value.SenkouB)
 
         # Extract RSI value
-        rsi_indicator_value = to_float(rsi_value)
+        rsi_indicator_value = float(rsi_value)
 
         # Check cloud status (Kumo)
         price_above_cloud = candle.ClosePrice > Math.Max(senkou_span_a, senkou_span_b)

@@ -164,7 +164,7 @@ class williams_ichimoku_strategy(Strategy):
         is_price_above_kumo = candle.ClosePrice > kumo_top
         is_price_below_kumo = candle.ClosePrice < kumo_bottom
 
-        williams_r_dec = to_float(williams_r_value)
+        williams_r_dec = float(williams_r_value)
 
         # Save current Kijun for stop-loss
         self._last_kijun = kijun

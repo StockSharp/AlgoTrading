@@ -151,7 +151,7 @@ class adaptive_bollinger_breakout_strategy(Strategy):
 
         # --- ATR logic (was ProcessAtr) ---
         if atr_value.IsFinal:
-            atr = to_float(atr_value)
+            atr = float(atr_value)
             # Maintain running average for ATR
             self._atr_sum += atr
             self._atr_count += 1
@@ -182,7 +182,7 @@ class adaptive_bollinger_breakout_strategy(Strategy):
             return
 
         if bollinger_value.IsFinal and self._atr.IsFormed:
-            atr_val = to_float(atr_value)  # use current ATR value
+            atr_val = float(atr_value)  # use current ATR value
             # use running average
             is_high_volatility = atr_val > (self._atr_sum / self._atr_count if self._atr_count > 0 else atr_val)
 

@@ -174,7 +174,7 @@ class adx_macd_strategy(Strategy):
         macdLine = macdValue.Macd
         signalLine = macdValue.Signal
 
-        atrIndicatorValue = to_float(atrValue)
+        atrIndicatorValue = float(atrValue)
 
         # ADX trend strength check
         strongTrend = adxIndicatorValue > self.AdxThreshold

@@ -159,11 +159,11 @@ class bollinger_volatility_breakout_strategy(Strategy):
         bb_lower = float(bb.LowBand)
         bb_middle = float(bb.MovingAverage)
 
-        atr_dec = to_float(atr_value)
+        atr_dec = float(atr_value)
 
         # Get values from indicators
-        atr_sma_value = to_float(process_float(self._atr_sma, atr_dec, candle.ServerTime, True))  # Default to current ATR if SMA not available
-        atr_std_dev_value = to_float(process_float(self._atr_std_dev, atr_dec, candle.ServerTime, True)) * 0.2  # Default to 20% of ATR if StdDev not available
+        atr_sma_value = float(process_float(self._atr_sma, atr_dec, candle.ServerTime, True))  # Default to current ATR if SMA not available
+        atr_std_dev_value = float(process_float(self._atr_std_dev, atr_dec, candle.ServerTime, True)) * 0.2  # Default to 20% of ATR if StdDev not available
 
         # Calculate volatility threshold for breakout confirmation
         volatility_threshold = atr_sma_value + self.AtrDeviationMultiplier * atr_std_dev_value

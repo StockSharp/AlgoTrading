@@ -176,7 +176,7 @@ class ma_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ma_dec = to_float(ma_value)
+        ma_dec = float(ma_value)
         stoch_k_value = stoch_value.K
 
         # Long entry: price above MA and Stochastic is oversold

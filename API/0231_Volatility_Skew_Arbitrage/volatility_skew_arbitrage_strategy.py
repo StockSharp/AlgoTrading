@@ -157,7 +157,7 @@ class volatility_skew_arbitrage_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        std_dev = to_float(std_dev_value)
+        std_dev = float(std_dev_value)
 
         # Trading logic for volatility skew arbitrage
         if vol_skew > self._avg_vol_skew + self.threshold * std_dev and self.Position <= 0:

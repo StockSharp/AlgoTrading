@@ -108,7 +108,7 @@ class vwma_strategy(Strategy):
             return
 
         # Extract VWMA value from indicator result
-        vwmaPrice = to_float(vwmaValue)
+        vwmaPrice = float(vwmaValue)
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:

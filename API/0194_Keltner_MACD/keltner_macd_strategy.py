@@ -197,8 +197,8 @@ class keltner_macd_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        ema = to_float(ema_value)
-        atr = to_float(atr_value)
+        ema = float(ema_value)
+        atr = float(atr_value)
 
         # Calculate Keltner Channels
         upperBand = ema + self.Multiplier * atr

@@ -153,8 +153,8 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
 
         # Calculate dynamic zones
         stoch_k = float(stoch_value.K)
-        stoch_k_avg = to_float(process_float(self._stoch_sma, stoch_k, candle.ServerTime, candle.State == CandleStates.Finished))
-        stoch_k_std_dev = to_float(process_float(self._stoch_std_dev, stoch_k, candle.ServerTime, candle.State == CandleStates.Finished))
+        stoch_k_avg = float(process_float(self._stoch_sma, stoch_k, candle.ServerTime, candle.State == CandleStates.Finished))
+        stoch_k_std_dev = float(process_float(self._stoch_std_dev, stoch_k, candle.ServerTime, candle.State == CandleStates.Finished))
 
         dynamic_oversold = stoch_k_avg - (self.StandardDeviationFactor * stoch_k_std_dev)
         dynamic_overbought = stoch_k_avg + (self.StandardDeviationFactor * stoch_k_std_dev)

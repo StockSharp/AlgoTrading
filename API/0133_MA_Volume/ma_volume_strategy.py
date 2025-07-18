@@ -137,10 +137,10 @@ class ma_volume_strategy(Strategy):
             return
 
         # Process indicators
-        sma_value = to_float(process_candle(self._price_sma, candle))
+        sma_value = float(process_candle(self._price_sma, candle))
 
         # Handle volume
-        volume_sma_value = to_float(
+        volume_sma_value = float(
             process_float(
                 self._volume_sma,
                 candle.TotalVolume,

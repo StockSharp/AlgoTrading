@@ -144,15 +144,15 @@ class donchian_width_breakout_strategy(Strategy):
             return
 
         # Process candle through Highest and Lowest indicators
-        highest_value = to_float(process_candle(self._highest, candle))
-        lowest_value = to_float(process_candle(self._lowest, candle))
+        highest_value = float(process_candle(self._highest, candle))
+        lowest_value = float(process_candle(self._lowest, candle))
 
         # Calculate Donchian Channel width
         width = highest_value - lowest_value
 
         # Process width through average
         width_avg_value = process_float(self._width_average, width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = to_float(width_avg_value)
+        avg_width = float(width_avg_value)
 
         # For first values, just save and skip
         if self._last_width == 0:

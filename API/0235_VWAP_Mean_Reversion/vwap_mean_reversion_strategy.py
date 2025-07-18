@@ -108,7 +108,7 @@ class vwap_mean_reversion_strategy(Strategy):
         if candle.State != CandleStates.Finished:
             return
 
-        self._current_vwap = to_float(process_candle(self._vwap, candle))
+        self._current_vwap = float(process_candle(self._vwap, candle))
         self._current_vwap = self._current_vwap if self._current_vwap is not None else 0
 
         self._current_atr = atr_value

@@ -96,7 +96,7 @@ class vwap_breakout_strategy(Strategy):
             return
 
         # Extract VWAP value from indicator result
-        vwapPrice = to_float(vwapValue)
+        vwapPrice = float(vwapValue)
         
         # Skip the first candle, just initialize values
         if self._isFirstCandle:

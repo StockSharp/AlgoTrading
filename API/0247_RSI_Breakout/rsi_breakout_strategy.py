@@ -150,8 +150,8 @@ class rsi_breakout_strategy(Strategy):
         avg_value = process_float(self._rsiAverage, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
         std_dev_value = process_float(self._rsiStdDev, rsi_value, candle.ServerTime, candle.State == CandleStates.Finished)
 
-        self._currentRsiAvg = to_float(avg_value)
-        self._currentRsiStdDev = to_float(std_dev_value)
+        self._currentRsiAvg = float(avg_value)
+        self._currentRsiStdDev = float(std_dev_value)
 
         # Check if strategy is ready for trading
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._rsiAverage.IsFormed or not self._rsiStdDev.IsFormed:

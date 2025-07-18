@@ -134,7 +134,7 @@ class parabolic_sar_volume_strategy(Strategy):
             self.DrawOwnTrades(area)
 
     def ProcessIndicators(self, candle, sarValue, volumeValue):
-        self._currentAvgVolume = to_float(process_float(self._volumeAverage, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
+        self._currentAvgVolume = float(process_float(self._volumeAverage, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

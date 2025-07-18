@@ -142,14 +142,14 @@ class donchian_volume_strategy(Strategy):
             return
 
         if volume_avg_value.IsFinal:
-            self._average_volume = to_float(volume_avg_value)
+            self._average_volume = float(volume_avg_value)
 
         # Check if strategy is ready to trade
         if (not self.IsFormedAndOnlineAndAllowTrading()) or self._average_volume <= 0:
             return
 
-        highest_dec = to_float(highest_value)
-        lowest_dec = to_float(lowest_value)
+        highest_dec = float(highest_value)
+        lowest_dec = float(lowest_value)
 
         # Calculate middle line of Donchian Channel
         middle_line = (highest_dec + lowest_dec) / 2

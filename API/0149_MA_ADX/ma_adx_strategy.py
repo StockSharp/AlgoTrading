@@ -152,7 +152,7 @@ class ma_adx_strategy(Strategy):
             return
 
         # Save ATR value for stop-loss calculation
-        self._atr_value = to_float(atr_value)
+        self._atr_value = float(atr_value)
 
         # Skip the first candle to have previous values to compare
         if self._is_first_candle:
@@ -169,7 +169,7 @@ class ma_adx_strategy(Strategy):
 
         # Trading logic
         if adx_ma > 25:
-            ma_dec = to_float(ma_value)
+            ma_dec = float(ma_value)
 
             # Strong trend detected
             if candle.ClosePrice > ma_dec and self.Position <= 0:

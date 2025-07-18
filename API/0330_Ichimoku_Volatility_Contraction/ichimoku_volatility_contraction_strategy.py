@@ -159,7 +159,7 @@ class ichimoku_volatility_contraction_strategy(Strategy):
             return
 
         # Get ATR value and calculate statistics
-        current_atr = to_float(atr_value)
+        current_atr = float(atr_value)
         self._processed_candles += 1
 
         # Using exponential moving average approach for ATR statistics

@@ -129,7 +129,7 @@ class keltner_williams_r_strategy(Strategy):
         lower = keltner_value.Lower
         middle = keltner_value.Middle
 
-        williams_r = to_float(williams_r_value)
+        williams_r = float(williams_r_value)
 
         price = float(candle.ClosePrice)
 

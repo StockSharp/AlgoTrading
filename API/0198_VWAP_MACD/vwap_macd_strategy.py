@@ -132,7 +132,7 @@ class vwap_macd_strategy(Strategy):
             return
 
         # Get VWAP value (calculated per day)
-        vwap = to_float(process_candle(self._vwap, candle))
+        vwap = float(process_candle(self._vwap, candle))
 
 
         # Check if MACD and Signal values are available

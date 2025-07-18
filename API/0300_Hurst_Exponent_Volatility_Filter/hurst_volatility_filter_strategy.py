@@ -179,7 +179,7 @@ class hurst_volatility_filter_strategy(Strategy):
         # For demonstration purposes - in a real implementation you'd use
         # a proper Hurst exponent calculation library or algorithm
         # This is just a placeholder that gives a value between 0 and 1
-        return to_float(hurst_value)
+        return float(hurst_value)
 
     def UpdateAverageAtr(self, atr_value):
         if self._average_atr == 0:

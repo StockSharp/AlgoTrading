@@ -113,8 +113,8 @@ class adx_with_volume_breakout_strategy(Strategy):
             minus_di = dx.Minus
 
             # Process volume indicators
-            sma_val = to_float(process_float(volume_sma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
-            std_dev_val = to_float(process_float(volume_std_dev, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+            sma_val = float(process_float(volume_sma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+            std_dev_val = float(process_float(volume_std_dev, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Process the strategy logic
             self.ProcessStrategy(

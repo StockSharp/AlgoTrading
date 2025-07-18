@@ -129,8 +129,8 @@ class parabolic_sar_hurst_strategy(Strategy):
             return
 
         # Get SAR and Hurst values
-        sar_price = to_float(sar_value)
-        self._hurst_value = to_float(hurst_value)
+        sar_price = float(sar_value)
+        self._hurst_value = float(hurst_value)
 
         # Store previous SAR for comparison
         current_sar_value = sar_price

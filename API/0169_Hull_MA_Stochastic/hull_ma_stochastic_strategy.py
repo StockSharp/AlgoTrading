@@ -166,13 +166,13 @@ class hull_ma_stochastic_strategy(Strategy):
             return
 
         # Get indicator values
-        hma = to_float(hma_value)
+        hma = float(hma_value)
 
         if stoch_value.K is None:
             return
         stoch_k = float(stoch_value.K)
 
-        atr = to_float(atr_value)
+        atr = float(atr_value)
 
         # Skip first candle after initialization
         if self._prev_hma_value == 0:

@@ -160,8 +160,8 @@ class obv_slope_breakout_strategy(Strategy):
         self._lastObvValue = obvValue
 
         if avgValue.IsFinal and stdDevValue.IsFinal:
-            self._lastSlopeAvg = to_float(avgValue)
-            self._lastSlopeStdDev = to_float(stdDevValue)
+            self._lastSlopeAvg = float(avgValue)
+            self._lastSlopeStdDev = float(stdDevValue)
 
             # Check if strategy is ready to trade
             if not self.IsFormedAndOnlineAndAllowTrading():

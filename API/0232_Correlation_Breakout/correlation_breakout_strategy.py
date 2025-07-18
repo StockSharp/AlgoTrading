@@ -207,7 +207,7 @@ class correlation_breakout_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        std_dev = to_float(std_dev_value)
+        std_dev = float(std_dev_value)
 
         # Trading logic for correlation breakout
         if self._last_correlation < self._avg_correlation - self.Threshold * std_dev and self._get_position_value(self.Asset1) <= 0 and self._get_position_value(self.Asset2) >= 0:

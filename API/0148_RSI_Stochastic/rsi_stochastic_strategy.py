@@ -213,7 +213,7 @@ class rsi_stochastic_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rsi = to_float(rsi_value)
+        rsi = float(rsi_value)
         stoch_k = stoch_value.K
 
         # Long entry: double confirmation of oversold condition

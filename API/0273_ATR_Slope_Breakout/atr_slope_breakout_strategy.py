@@ -147,11 +147,11 @@ class atr_slope_breakout_strategy(Strategy):
             return
 
         # Get ATR value and track it for stop loss calculations
-        atr = to_float(atr_value)
+        atr = float(atr_value)
         self._last_atr = atr
 
         # Process price for trend direction
-        ema_value = to_float(process_candle(self._price_ema, candle))
+        ema_value = float(process_candle(self._price_ema, candle))
         price_above_ema = candle.ClosePrice > ema_value
 
         # Calculate ATR slope

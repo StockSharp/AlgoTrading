@@ -132,8 +132,8 @@ class momentum_breakout_strategy(Strategy):
         avg_val = process_float(self._momentum_average, momentum_value, candle.ServerTime, candle.State == CandleStates.Finished)
         std_val = process_float(self._momentum_stddev, momentum_value, candle.ServerTime, candle.State == CandleStates.Finished)
 
-        self._momentum_avg_value = to_float(avg_val)
-        self._momentum_stddev_value = to_float(std_val)
+        self._momentum_avg_value = float(avg_val)
+        self._momentum_stddev_value = float(std_val)
 
         # Check if strategy is ready for trading
         if not self.IsFormedAndOnlineAndAllowTrading() or not self._momentum_average.IsFormed or not self._momentum_stddev.IsFormed:

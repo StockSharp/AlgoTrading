@@ -225,7 +225,7 @@ class statistical_arbitrage_strategy(Strategy):
         self._last_second_price = float(candle.ClosePrice)
 
         # Process through MA indicator and remember the result
-        self._second_ma_value = to_float(
+        self._second_ma_value = float(
             process_float(
                 self._second_ma,
                 candle.ClosePrice,

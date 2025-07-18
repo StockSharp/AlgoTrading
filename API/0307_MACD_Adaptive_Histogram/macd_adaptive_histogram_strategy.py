@@ -201,7 +201,7 @@ class macd_adaptive_histogram_strategy(Strategy):
         histogram = macd - signal
 
         # Process the histogram through the statistics indicators
-        hist_avg_value = to_float(
+        hist_avg_value = float(
             process_float(
                 self._hist_avg,
                 histogram,
@@ -209,7 +209,7 @@ class macd_adaptive_histogram_strategy(Strategy):
                 macd_value.IsFinal,
             )
         )
-        hist_std_dev_value = to_float(
+        hist_std_dev_value = float(
             process_float(
                 self._hist_std_dev,
                 histogram,

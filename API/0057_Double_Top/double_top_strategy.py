@@ -129,7 +129,7 @@ class double_top_strategy(Strategy):
             return
 
         # Process the candle with the Highest indicator
-        highestValue = to_float(process_candle(self._highestIndicator, candle))
+        highestValue = float(process_candle(self._highestIndicator, candle))
 
         # If strategy is not ready yet, return
         if not self.IsFormedAndOnlineAndAllowTrading():

@@ -158,7 +158,7 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
 
         # Process IV Skew with SMA
         iv_skew_sma_value = process_float(self._iv_skew_sma, self._current_iv_skew, candle.ServerTime, candle.State == CandleStates.Finished)
-        self._avg_iv_skew = to_float(iv_skew_sma_value)
+        self._avg_iv_skew = float(iv_skew_sma_value)
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

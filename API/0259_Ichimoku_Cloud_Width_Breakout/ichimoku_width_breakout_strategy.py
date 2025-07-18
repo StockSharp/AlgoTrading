@@ -191,7 +191,7 @@ class ichimoku_width_breakout_strategy(Strategy):
 
         # Process width through average
         width_avg_value = process_float(self._width_average, width, candle.ServerTime, candle.State == CandleStates.Finished)
-        avg_width = to_float(width_avg_value)
+        avg_width = float(width_avg_value)
 
         # For first values, just save and skip
         if self._last_width == 0:

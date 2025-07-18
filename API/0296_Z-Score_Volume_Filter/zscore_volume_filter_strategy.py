@@ -136,9 +136,9 @@ class zscore_volume_filter_strategy(Strategy):
         self._current_volume = float(candle.TotalVolume)
 
         # Process indicators
-        self._average_price = to_float(price_sma_value)
-        self._price_std_deviation = to_float(price_std_dev_value)
-        self._average_volume = to_float(volume_sma_value)
+        self._average_price = float(price_sma_value)
+        self._price_std_deviation = float(price_std_dev_value)
+        self._average_volume = float(volume_sma_value)
 
         # Check trading signals
         self.CheckSignal()

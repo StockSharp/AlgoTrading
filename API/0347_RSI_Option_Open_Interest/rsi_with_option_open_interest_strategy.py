@@ -165,7 +165,7 @@ class rsi_with_option_open_interest_strategy(Strategy):
             return
 
         # Get current RSI value
-        rsi = to_float(rsi_value)
+        rsi = float(rsi_value)
 
         # Simulate option open interest data (in real implementation, this would come from a data provider)
         self.SimulateOptionOI(candle)
@@ -178,10 +178,10 @@ class rsi_with_option_open_interest_strategy(Strategy):
         put_oi_value_stddev = process_float(self._put_oi_stddev, self._current_put_oi, candle.ServerTime, candle.State == CandleStates.Finished)
 
         # Update state variables
-        self._avg_call_oi = to_float(call_oi_value_sma)
-        self._avg_put_oi = to_float(put_oi_value_sma)
-        self._stddev_call_oi = to_float(call_oi_value_stddev)
-        self._stddev_put_oi = to_float(put_oi_value_stddev)
+        self._avg_call_oi = float(call_oi_value_sma)
+        self._avg_put_oi = float(put_oi_value_sma)
+        self._stddev_call_oi = float(call_oi_value_stddev)
+        self._stddev_put_oi = float(put_oi_value_stddev)
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

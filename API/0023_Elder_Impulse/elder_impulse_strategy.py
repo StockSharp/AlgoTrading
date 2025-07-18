@@ -163,7 +163,7 @@ class elder_impulse_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        ema_decimal = to_float(ema_value)
+        ema_decimal = float(ema_value)
 
         if self._is_first_candle:
             self._previous_ema = ema_decimal

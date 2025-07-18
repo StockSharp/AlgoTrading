@@ -156,7 +156,7 @@ class hull_ma_adx_strategy(Strategy):
             return
         adx = float(typed_adx.MovingAverage)
 
-        hma = to_float(hma_value)
+        hma = float(hma_value)
 
         # Detect HMA direction
         hma_increasing = hma > self._prev_hma_value

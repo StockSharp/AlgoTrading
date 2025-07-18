@@ -130,7 +130,7 @@ class volume_climax_reversal_strategy(Strategy):
             return
 
         # Process indicators
-        volumeAverageValue = to_float(process_float(self._volumeAverage, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+        volumeAverageValue = float(process_float(self._volumeAverage, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
         # Check if strategy is ready to trade
         if not self.IsFormedAndOnlineAndAllowTrading():

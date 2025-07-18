@@ -152,8 +152,8 @@ class bollinger_kmeans_strategy(Strategy):
         bollinger_middle = float(bollinger_value.MovingAverage)
         bollinger_lower = float(bollinger_value.LowBand)
 
-        rsi = to_float(rsi_value)
-        self._atr_value = to_float(atr_value)
+        rsi = float(rsi_value)
+        self._atr_value = float(atr_value)
 
         # Update data for clustering
         self.UpdateClusterData(candle, rsi)

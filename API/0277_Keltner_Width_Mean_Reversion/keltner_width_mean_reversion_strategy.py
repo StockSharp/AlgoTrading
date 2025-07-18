@@ -180,12 +180,12 @@ class keltner_width_mean_reversion_strategy(Strategy):
         # Process EMA
         emaValue = process_candle(self._ema, candle)
         if emaValue.IsFinal:
-            self._lastEma = to_float(emaValue)
+            self._lastEma = float(emaValue)
 
         # Process ATR
         atrValue = process_candle(self._atr, candle)
         if atrValue.IsFinal:
-            self._lastAtr = to_float(atrValue)
+            self._lastAtr = float(atrValue)
 
         # Calculate Keltner Channel
         if self._lastEma > 0 and self._lastAtr > 0:
@@ -202,8 +202,8 @@ class keltner_width_mean_reversion_strategy(Strategy):
             widthStdDevValue = process_float(self._widthStdDev, channelWidth, candle.ServerTime, candle.State == CandleStates.Finished)
 
             if widthAvgValue.IsFinal and widthStdDevValue.IsFinal:
-                self._lastWidthAvg = to_float(widthAvgValue)
-                self._lastWidthStdDev = to_float(widthStdDevValue)
+                self._lastWidthAvg = float(widthAvgValue)
+                self._lastWidthStdDev = float(widthStdDevValue)
 
                 # Check if strategy is ready to trade
                 if not self.IsFormedAndOnlineAndAllowTrading():

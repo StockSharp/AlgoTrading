@@ -162,8 +162,8 @@ class keltner_kalman_strategy(Strategy):
             return
 
         # Save indicator values
-        self._ema_value = to_float(ema_value)
-        self._atr_value = to_float(atr_value)
+        self._ema_value = float(ema_value)
+        self._atr_value = float(atr_value)
 
         # Calculate Keltner Channels
         self._upper_band = self._ema_value + (self._atr_value * self.AtrMultiplier)
