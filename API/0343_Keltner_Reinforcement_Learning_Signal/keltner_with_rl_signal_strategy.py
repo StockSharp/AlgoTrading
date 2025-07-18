@@ -144,8 +144,7 @@ class keltner_with_rl_signal_strategy(Strategy):
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(keltner, self.ProcessCandle).Start()
 
-        # Subscribe to own trades for reinforcement learning feedback
-        self.WhenOwnTradeReceived().Do(self.ProcessOwnTrade).Apply(self)
+        # Reinforcement learning feedback handled in OnOwnTradeReceived
 
         # Create chart visualization if available
         area = self.CreateChartArea()
@@ -254,8 +253,8 @@ class keltner_with_rl_signal_strategy(Strategy):
                 self.LogInfo("RL Signal: None (high volatility)")
             # Otherwise keep current signal
 
-    def ProcessOwnTrade(self, trade):
-        """Process own trades for reinforcement learning feedback."""
+    def OnOwnTradeReceived(self, trade):
+        """Handle own trades for reinforcement learning feedback."""
         # Skip if we don't have a previous signal price (first trade)
         if self._previous_signal_price == 0:
             return
