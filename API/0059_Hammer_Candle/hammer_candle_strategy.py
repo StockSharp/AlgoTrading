@@ -65,15 +65,7 @@ class hammer_candle_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawOwnTrades(area)
 
-        # Monitor position changes
-        self.WhenPositionChanged().Do(self.OnPositionChanged).Apply(self)
-
-    def OnPositionChanged(self):
-        """
-        Called when position changes.
-        """
-        if self.Position == 0:
-            self._isPositionOpen = False
+        # Position events will be handled in OnPositionReceived
 
     def ProcessCandle(self, candle):
         """
@@ -113,6 +105,12 @@ class hammer_candle_strategy(Strategy):
 
             self.LogInfo("Hammer pattern detected. Low: {0}, Body size: {1}, Lower shadow: {2}".format(
                 candle.LowPrice, bodySize, lowerShadow))
+
+    def OnPositionReceived(self, position):
+        """Handle position information when strategy is started."""
+        super(hammer_candle_strategy, self).OnPositionReceived(position)
+        if self.Position == 0:
+            self._isPositionOpen = False
 
     def CreateClone(self):
         """
