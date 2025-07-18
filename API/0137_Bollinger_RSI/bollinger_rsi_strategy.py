@@ -165,7 +165,6 @@ class bollinger_rsi_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-
         if bollingerValue.UpBand is None:
             return
         upperBand = float(bollingerValue.UpBand)
@@ -178,12 +177,14 @@ class bollinger_rsi_strategy(Strategy):
             return
         middleBand = float(bollingerValue.MovingAverage)
 
+        rsiValueDec = float(rsiValue)
+
         # Long entry: price below lower Bollinger Band and RSI oversold
-        if candle.ClosePrice < lowerBand and rsiValue < self.RsiOversold and self.Position <= 0:
+        if candle.ClosePrice < lowerBand and rsiValueDec < self.RsiOversold and self.Position <= 0:
             volume = self.Volume + Math.Abs(self.Position)
             self.BuyMarket(volume)
         # Short entry: price above upper Bollinger Band and RSI overbought
-        elif candle.ClosePrice > upperBand and rsiValue > self.RsiOverbought and self.Position >= 0:
+        elif candle.ClosePrice > upperBand and rsiValueDec > self.RsiOverbought and self.Position >= 0:
             volume = self.Volume + Math.Abs(self.Position)
             self.SellMarket(volume)
         # Long exit: price returns to middle band

@@ -125,29 +125,31 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
         bullish_divergence = price < self._prev_price and self._current_pcr > self._prev_pcr
         bearish_divergence = price > self._prev_price and self._current_pcr < self._prev_pcr
 
+        cci_valueFloat = float(cci_value)
+
         # Entry logic - using CCI with PCR divergence
-        if cci_value < -100 and bullish_divergence and self.Position <= 0:
+        if cci_valueFloat < -100 and bullish_divergence and self.Position <= 0:
             # CCI oversold with bullish PCR divergence - Long entry
             self.BuyMarket(self.Volume)
             self.LogInfo("Buy Signal: CCI={0}, PCR={1}, Price={2}, Bullish Divergence".format(cci_value, self._current_pcr, price))
-        elif cci_value > 100 and bearish_divergence and self.Position >= 0:
+        elif cci_valueFloat > 100 and bearish_divergence and self.Position >= 0:
             # CCI overbought with bearish PCR divergence - Short entry
             self.SellMarket(self.Volume)
             self.LogInfo("Sell Signal: CCI={0}, PCR={1}, Price={2}, Bearish Divergence".format(cci_value, self._current_pcr, price))
 
         # Exit logic
-        if self.Position > 0 and cci_value > 0:
+        if self.Position > 0 and cci_valueFloat > 0:
             # Exit long position when CCI crosses above zero
             self.SellMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit Long: CCI={0}".format(cci_value))
-        elif self.Position < 0 and cci_value < 0:
+            self.LogInfo("Exit Long: CCI={0}".format(cci_valueFloat))
+        elif self.Position < 0 and cci_valueFloat < 0:
             # Exit short position when CCI crosses below zero
             self.BuyMarket(Math.Abs(self.Position))
-            self.LogInfo("Exit Short: CCI={0}".format(cci_value))
+            self.LogInfo("Exit Short: CCI={0}".format(cci_valueFloat))
 
         # Dynamic stop loss using ATR
         if self.Position != 0:
-            stop_distance = atr_value * self.AtrMultiplier
+            stop_distance = float(atr_value) * self.AtrMultiplier
 
             if self.Position > 0:
                 # For long positions, set stop below entry price - ATR*multiplier
