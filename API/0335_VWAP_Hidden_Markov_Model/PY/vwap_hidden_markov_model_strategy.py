@@ -8,11 +8,9 @@ from StockSharp.Messages import DataType, CandleStates, Unit, UnitTypes
 from StockSharp.Algo.Indicators import VolumeWeightedMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from collections import deque
-from enum import Enum
 from datatype_extensions import *
 
-
-class MarketState(Enum):
+class MarketState:
     """Market states for Hidden Markov Model."""
     Neutral = 0
     Bullish = 1

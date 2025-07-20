@@ -8,6 +8,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="$(MsTestSdkVer)" />
     <PackageReference Include="MSTest.TestAdapter" Version="$(MsTestVer)" />
     <PackageReference Include="MSTest.TestFramework" Version="$(MsTestVer)" />
+    <PackageReference Include="IronPython.StdLib" Version="$(IronPythonVer)" />
     <PackageReference Include="StockSharp.Algo" Version="$(StockSharpVer)" />
     <PackageReference Include="StockSharp.Algo.Compilation" Version="$(StockSharpVer)" />
     <PackageReference Include="StockSharp.Samples.HistoryData" Version="$(StockSharpVer)" />

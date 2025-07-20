@@ -9,10 +9,9 @@ from System.Drawing import Color
 from StockSharp.Messages import UnitTypes, Unit, DataType, ICandleMessage, CandleStates
 from StockSharp.Algo.Indicators import SimpleMovingAverage, ExponentialMovingAverage, WeightedMovingAverage, SmoothedMovingAverage, HullMovingAverage, WilliamsR
 from StockSharp.Algo.Strategies import Strategy
-from enum import Enum
 from datatype_extensions import *
 
-class MovingAverageTypeEnum(Enum):
+class MovingAverageTypeEnum:
     """Enum for Moving Average types."""
     Simple = 0
     Exponential = 1

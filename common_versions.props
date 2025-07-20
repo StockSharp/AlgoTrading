@@ -4,6 +4,7 @@
 
     <EcngVer>1.0.*</EcngVer>
     <StockSharpVer>5.*</StockSharpVer>
+    <IronPythonVer>3.4.2</IronPythonVer>
 
     <MsTestVer>3.*</MsTestVer>
     <MsTestSdkVer>17.*</MsTestSdkVer>
