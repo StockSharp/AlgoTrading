@@ -16,6 +16,14 @@ class ClusterState:
     Neutral = 1
     Overbought = 2
 
+    @staticmethod
+    def get_name(state):
+        if state == ClusterState.Oversold:
+            return "Oversold"
+        elif state == ClusterState.Overbought:
+            return "Overbought"
+        else:
+            return "Neutral"
 
 class bollinger_kmeans_strategy(Strategy):
     """
@@ -221,7 +229,7 @@ class bollinger_kmeans_strategy(Strategy):
 
         self.LogInfo(
             "Cluster State: {0}, Normalized RSI: {1:F2}, Normalized Price: {2:F2}".format(
-                self._current_cluster_state.name, normalized_rsi, normalized_price))
+                ClusterState.get_name(self._current_cluster_state), normalized_rsi, normalized_price))
 
     def CreateClone(self):
         """!! REQUIRED!! Creates a new instance of the strategy."""

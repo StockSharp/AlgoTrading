@@ -232,7 +232,7 @@ class vwap_hidden_markov_model_strategy(Strategy):
                     max_index = i
 
             # Add state to sequence
-            state_sequence.append(MarketState(max_index))
+            state_sequence.append(max_index)
 
             # Update current probabilities
             current_state_probabilities = new_probabilities
