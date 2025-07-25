@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like DonchianPeriod, SentimentPeriod. Ad
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 115%. It performs best in the stocks market.

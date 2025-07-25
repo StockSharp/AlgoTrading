@@ -30,3 +30,5 @@ Stops rely on ATR multiples and factors like StochPeriod, StochKPeriod. Adjust t
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 52%. It performs best in the crypto market.

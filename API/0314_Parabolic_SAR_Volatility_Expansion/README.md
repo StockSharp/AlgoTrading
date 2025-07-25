@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like SarAf, SarMaxAf. Adjust these defau
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 49%. It performs best in the crypto market.

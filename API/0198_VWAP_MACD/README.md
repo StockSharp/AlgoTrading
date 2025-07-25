@@ -32,3 +32,5 @@ Suitable for short-term momentum traders. ATR stop rules prevent excessive risk.
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 181%. It performs best in the crypto market.

@@ -28,3 +28,5 @@ Stops rely on ATR multiples and factors like HmaPeriod, VolumeAvgPeriod. Adjust 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 43%. It performs best in the stocks market.

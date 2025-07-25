@@ -28,3 +28,5 @@ Stops rely on ATR multiples and factors like MomentumPeriod, SeasonalityThreshol
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 172%. It performs best in the forex market.

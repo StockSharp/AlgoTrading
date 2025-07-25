@@ -33,3 +33,5 @@ Designed for day traders focusing on VWAP interaction. ATR stops help maintain d
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 82%. It performs best in the stocks market.

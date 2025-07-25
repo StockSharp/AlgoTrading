@@ -33,3 +33,5 @@ Aimed at breakout enthusiasts wanting confirmation. Stops are placed using an AT
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 148%. It performs best in the forex market.

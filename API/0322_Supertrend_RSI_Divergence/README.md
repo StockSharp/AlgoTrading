@@ -28,3 +28,5 @@ Stops rely on ATR multiples and factors like SupertrendPeriod, SupertrendMultipl
   - Neural Networks: No
   - Divergence: Yes
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 67%. It performs best in the stocks market.

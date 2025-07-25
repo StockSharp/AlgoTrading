@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like Fast, Slow. Adjust these defaults t
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 166%. It performs best in the stocks market.

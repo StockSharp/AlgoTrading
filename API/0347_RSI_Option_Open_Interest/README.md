@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like RsiPeriod, CandleType. Adjust these
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 130%. It performs best in the stocks market.

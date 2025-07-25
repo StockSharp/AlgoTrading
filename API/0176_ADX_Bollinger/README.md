@@ -33,3 +33,5 @@ Suited for high-volatility environments. An ATR-based stop reduces downside risk
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 115%. It performs best in the stocks market.

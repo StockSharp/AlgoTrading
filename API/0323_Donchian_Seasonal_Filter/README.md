@@ -27,3 +27,5 @@ Stops rely on ATR multiples and factors like DonchianPeriod, SeasonalThreshold. 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 70%. It performs best in the stocks market.

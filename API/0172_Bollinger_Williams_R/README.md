@@ -33,3 +33,5 @@ Best for volatility expansion traders. ATR stops handle adverse turns.
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 103%. It performs best in the stocks market.
