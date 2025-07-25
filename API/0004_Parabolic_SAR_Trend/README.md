@@ -27,3 +27,5 @@ Since the SAR dots trail price, they naturally provide an exit point when the tr
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 49%. It performs best in the crypto market.

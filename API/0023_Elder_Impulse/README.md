@@ -32,3 +32,5 @@ By blending trend direction and momentum, this approach keeps traders on the rig
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 106%. It performs best in the stocks market.

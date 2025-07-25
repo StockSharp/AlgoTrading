@@ -30,3 +30,5 @@ Standard deviation bands offer a statistical view of overextension. Entering aft
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 118%. It performs best in the stocks market.

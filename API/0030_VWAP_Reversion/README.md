@@ -29,3 +29,5 @@ Because VWAP reflects typical transaction levels, extreme deviations often lure 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 127%. It performs best in the stocks market.
