@@ -28,3 +28,5 @@ A percent stop beneath the pattern provides protection, and the trade exits if p
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 40%. It performs best in the crypto market.

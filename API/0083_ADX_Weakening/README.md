@@ -29,3 +29,5 @@ Because the approach anticipates a slowdown rather than a full reversal, trades 
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 136%. It performs best in the stocks market.

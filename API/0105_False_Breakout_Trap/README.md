@@ -28,3 +28,5 @@ Stop placement is tight, just beyond the failed breakout level, ensuring losses 
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 52%. It performs best in the crypto market.

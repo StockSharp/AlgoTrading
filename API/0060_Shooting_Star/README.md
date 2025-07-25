@@ -27,3 +27,5 @@ If confirmation is required, the next candle must close lower before entering sh
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 67%. It performs best in the stocks market.

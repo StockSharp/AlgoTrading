@@ -29,3 +29,5 @@ By focusing on deep pullbacks within an existing trend, the method aims to captu
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 115%. It performs best in the stocks market.

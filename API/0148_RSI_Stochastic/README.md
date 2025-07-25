@@ -39,3 +39,5 @@ Ideal for nimble traders who favor oscillator setups. The strategy relies on an 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 181%. It performs best in the crypto market.

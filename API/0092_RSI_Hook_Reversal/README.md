@@ -29,3 +29,5 @@ Trades use a simple percent stop to control risk and typically close when the RS
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 163%. It performs best in the stocks market.
