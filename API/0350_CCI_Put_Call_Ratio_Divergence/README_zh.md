@@ -3,6 +3,8 @@
 
 **CCI Put Call Ratio Divergence** 策略基于 CCI Put Call Ratio Divergence。
 
+测试表明年均收益约为 133%，该策略在加密市场表现最佳。
+
 当 Divergence confirms divergence setups 在日内（5m）数据上得到确认时触发信号，适合积极交易者。
 
 止损依赖于 ATR 倍数以及 CciPeriod, AtrMultiplier 等参数，可根据需要调整以平衡风险与收益。
@@ -28,4 +30,3 @@
   - 背离: 是
   - 风险等级: 中等
 
-测试表明年均收益约为 133%，该策略在加密市场表现最佳。

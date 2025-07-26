@@ -3,6 +3,8 @@
 
 **Parabolic SAR Hurst Filter** 策略基于 Parabolic SAR Hurst Filter。
 
+测试表明年均收益约为 82%，该策略在股票市场表现最佳。
+
 当 Parabolic confirms filtered entries 在日内（5m）数据上得到确认时触发信号，适合积极交易者。
 
 止损依赖于 ATR 倍数以及 SarAccelerationFactor, SarMaxAccelerationFactor 等参数，可根据需要调整以平衡风险与收益。
@@ -29,4 +31,3 @@
   - 背离: 否
   - 风险等级: 中等
 
-测试表明年均收益约为 82%，该策略在股票市场表现最佳。

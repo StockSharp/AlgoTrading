@@ -3,6 +3,8 @@
  
 Strategy based on Average Directional Index (ADX) trend The ADX Trend strategy gauges market strength using the ADX indicator. When ADX is above a threshold and price is on the correct side of its moving average, the system trades in that direction. Positions close once ADX weakens or the opposite setup appears.
 
+Testing indicates an average annual return of about 46%. It performs best in the stocks market.
+
 By waiting for a solid ADX reading, the approach only trades when momentum is firmly established. Stops typically use an ATR multiple so risk adjusts with volatility.
 
 
@@ -30,4 +32,3 @@ By waiting for a solid ADX reading, the approach only trades when momentum is fi
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 46%. It performs best in the stocks market.

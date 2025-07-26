@@ -3,6 +3,8 @@
  
 A mirror image of the bullish version, this setup looks for quick bearish reversals. After two strong up candles that push to new highs, a decisive bearish candle closes below the prior bar's low. A brief uptrend beforehand helps confirm buyer exhaustion.
 
+Testing indicates an average annual return of about 88%. It performs best in the stocks market.
+
 The algorithm tracks a rolling window of three candles. When the pattern appears and any uptrend requirement is met, a short position is taken with the stop above the pattern high. The rules are straightforward so signals occur immediately at candle close.
 
 The trade is exited on the protective stop or when another pattern forms. Because it plays short-term pullbacks within a potential down swing, it works best in volatile markets.
@@ -30,4 +32,3 @@ The trade is exited on the protective stop or when another pattern forms. Becaus
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 88%. It performs best in the stocks market.

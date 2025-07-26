@@ -3,6 +3,8 @@
  
 The **CCI Volatility Filter** strategy is built around CCI with Volatility Filter.
 
+Testing indicates an average annual return of about 58%. It performs best in the stocks market.
+
 Signals trigger when its indicators confirms filtered entries on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like CciPeriod, AtrPeriod. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like CciPeriod, AtrPeriod. Adjust these 
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 58%. It performs best in the stocks market.

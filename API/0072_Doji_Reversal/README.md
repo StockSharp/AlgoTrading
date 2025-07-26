@@ -3,6 +3,8 @@
  
 Doji candles reflect a temporary balance of buyers and sellers. When a doji appears after a strong directional move it can precede a reversal as momentum fades. This strategy measures the candle body relative to its range to decide if a true doji formed.
 
+Testing indicates an average annual return of about 103%. It performs best in the stocks market.
+
 Once a doji is detected, the previous candles are checked for an uptrend or downtrend. A doji following a decline may trigger a long entry while one after a rise can open a short. Stops are placed at a percentage distance from the entry and exits occur if price breaks beyond the doji's extremes.
 
 The method aims to capture the first reaction away from the doji and is best suited for intraday charts where quick reversals often unfold.
@@ -29,4 +31,3 @@ The method aims to capture the first reaction away from the doji and is best sui
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 103%. It performs best in the stocks market.

@@ -3,6 +3,8 @@
  
 Strategy based on Laguerre RSI
 
+Testing indicates an average annual return of about 109%. It performs best in the crypto market.
+
 Laguerre RSI smooths the standard RSI to reduce noise. The strategy buys when the Laguerre value crosses up from oversold and sells when it crosses down from overbought, exiting when it returns to mid-levels.
 
 Laguerre filtering helps avoid choppy conditions that plague regular RSI signals. The method is popular for capturing swings on intraday charts while ignoring minor fluctuations.
@@ -30,4 +32,3 @@ Laguerre filtering helps avoid choppy conditions that plague regular RSI signals
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 109%. It performs best in the crypto market.

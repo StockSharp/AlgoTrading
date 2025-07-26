@@ -3,6 +3,8 @@
  
 Ichimoku indicators provide a full trend-following system. This approach focuses on the Tenkan-sen crossing the Kijun-sen while price trades relative to the Kumo cloud. A bullish cross above the cloud signals trend continuation higher, whereas a bearish cross below the cloud suggests weakness.
 
+Testing indicates an average annual return of about 142%. It performs best in the stocks market.
+
 During operation the strategy calculates the Ichimoku components on each bar. When Tenkan rises above Kijun and price sits above the cloud, a long trade is initiated with a stop near Kijun. A cross in the opposite direction below the cloud triggers a short with a similar stop placement.
 
 The system stays in the trade until the stop is hit or the cross reverses, aiming to catch sustained moves that follow the direction of the cloud.
@@ -30,4 +32,3 @@ The system stays in the trade until the stop is hit or the cross reverses, aimin
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 142%. It performs best in the stocks market.

@@ -3,6 +3,8 @@
  
 This approach trades around fluctuations in market volatility. When the ATR deviates markedly from its moving average, it suggests volatility has become unusually high or low and may revert.
 
+Testing indicates an average annual return of about 73%. It performs best in the crypto market.
+
 The strategy goes long when ATR drops below the average minus `DeviationMultiplier` times the standard deviation and price is below the moving average. It shorts when ATR exceeds the upper band and price is above the average. Positions exit once ATR returns toward its mean level.
 
 Such setups work for traders who like to fade volatility extremes rather than price direction. A protective stop-loss is used in case volatility keeps expanding.
@@ -33,4 +35,3 @@ Such setups work for traders who like to fade volatility extremes rather than pr
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 73%. It performs best in the crypto market.

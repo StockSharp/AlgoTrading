@@ -3,6 +3,8 @@
  
 Strategy based on Parabolic SAR indicator Parabolic SAR Trend follows the dots of the Parabolic SAR indicator. A flip of price from one side of the SAR to the other marks a potential trend change. If price crosses back, the trade is closed.
 
+Testing indicates an average annual return of about 49%. It performs best in the crypto market.
+
 Since the SAR dots trail price, they naturally provide an exit point when the trend shifts. The method trades both long and short without using additional stops beyond the SAR reversal.
 
 
@@ -28,4 +30,3 @@ Since the SAR dots trail price, they naturally provide an exit point when the tr
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 49%. It performs best in the crypto market.

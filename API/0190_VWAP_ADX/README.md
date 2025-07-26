@@ -3,6 +3,8 @@
  
 Strategy based on VWAP and ADX indicators. Enters long when price is above VWAP and ADX > 25. Enters short when price is below VWAP and ADX > 25. Exits when ADX < 20.
 
+Testing indicates an average annual return of about 157%. It performs best in the crypto market.
+
 VWAP acts as the session benchmark, and ADX measures conviction. Entries appear when price departs from VWAP with ADX showing strength.
 
 Fits intraday trend traders. Protective stops use ATR multiples.
@@ -31,4 +33,3 @@ Fits intraday trend traders. Protective stops use ATR multiples.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 157%. It performs best in the crypto market.

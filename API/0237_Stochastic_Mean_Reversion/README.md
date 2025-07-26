@@ -3,6 +3,8 @@
  
 This strategy measures the Stochastic oscillator against its own moving average to locate overextended swings. When %K moves several standard deviations away from its mean, the expectation is for the indicator to drift back toward typical values.
 
+Testing indicates an average annual return of about 64%. It performs best in the forex market.
+
 A long trade is placed when Stochastic %K falls below the lower band defined by the average minus `Multiplier` times the standard deviation. A short trade occurs when %K exceeds the upper band. Positions are closed once %K crosses back through its average line.
 
 The method is designed for short-term traders who like to trade overbought and oversold extremes. The stop-loss protects against sustained momentum that fails to mean revert.
@@ -35,4 +37,3 @@ The method is designed for short-term traders who like to trade overbought and o
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 64%. It performs best in the forex market.

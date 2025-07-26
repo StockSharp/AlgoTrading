@@ -3,6 +3,8 @@
  
 This system trades momentum shifts when the Moving Average Convergence Divergence (MACD) histogram approaches the zero line. A rising MACD below zero or falling MACD above zero signals a potential reversal.
 
+Testing indicates an average annual return of about 136%. It performs best in the stocks market.
+
 The strategy waits for the MACD line to trend toward zero while still on the opposite side. Once momentum fades, it enters anticipating a swing in price.
 
 Trades exit when MACD crosses its signal line or a stop-loss is triggered.
@@ -31,4 +33,3 @@ Trades exit when MACD crosses its signal line or a stop-loss is triggered.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 136%. It performs best in the stocks market.

@@ -3,6 +3,8 @@
  
 Strategy based on Hull Moving Average trend
 
+Testing indicates an average annual return of about 61%. It performs best in the crypto market.
+
 The Hull MA Trend strategy monitors the slope of the Hull Moving Average. Rising slopes prompt longs and falling slopes prompt shorts, with an ATR trailing stop protecting each trade.
 
 Its responsive calculation reduces lag compared with traditional moving averages, allowing the system to react quickly to new momentum. The ATR stop helps avoid large drawdowns if the slope changes abruptly.
@@ -31,4 +33,3 @@ Its responsive calculation reduces lag compared with traditional moving averages
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 61%. It performs best in the crypto market.

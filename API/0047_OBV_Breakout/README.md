@@ -3,6 +3,8 @@
  
 On-Balance Volume (OBV) tracks buying and selling pressure by accumulating volume. This strategy looks for OBV to break above a high or below a low over the lookback window while price confirms the move.
 
+Testing indicates an average annual return of about 178%. It performs best in the stocks market.
+
 A breakout in OBV suggests strong interest. The system goes long if OBV exceeds its previous maximum, or short if it breaks the minimum. Crossing the OBV moving average signals an exit.
 
 This combines volume momentum with price action.
@@ -29,4 +31,3 @@ This combines volume momentum with price action.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 178%. It performs best in the stocks market.

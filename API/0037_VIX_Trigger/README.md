@@ -3,6 +3,8 @@
  
 VIX Trigger reacts to changes in the Volatility Index. A rising VIX signals fear and possible reversals in the underlying instrument. The strategy compares VIX direction with price relative to a moving average.
 
+Testing indicates an average annual return of about 148%. It performs best in the forex market.
+
 When VIX increases and price is below the moving average, it buys expecting a recovery. Conversely, rising VIX with price above the average invites a short position.
 
 Positions close when VIX falls or the stop-loss percentage is reached.
@@ -29,4 +31,3 @@ Positions close when VIX falls or the stop-loss percentage is reached.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 148%. It performs best in the forex market.

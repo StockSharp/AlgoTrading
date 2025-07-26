@@ -3,6 +3,8 @@
  
 Strategy based on Bollinger Bands mean reversion
 
+Testing indicates an average annual return of about 118%. It performs best in the stocks market.
+
 Bollinger Reversion fades moves outside the Bollinger Bands. Trades open against closes beyond the bands and close once price returns inside or hits a stop.
 
 Standard deviation bands offer a statistical view of overextension. Entering after extreme closes aims to profit from the snap back toward the middle band.
@@ -31,4 +33,3 @@ Standard deviation bands offer a statistical view of overextension. Entering aft
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 118%. It performs best in the stocks market.

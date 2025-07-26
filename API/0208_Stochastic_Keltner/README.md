@@ -5,6 +5,8 @@ This strategy uses Stochastic Keltner indicators to generate signals.
 Long entry occurs when Stoch %K < 20 && Price < Keltner lower band (oversold at lower band). Short entry occurs when Stoch %K > 80 && Price > Keltner upper band (overbought at upper band).
 It is suitable for traders seeking opportunities in mixed markets.
 
+Testing indicates an average annual return of about 61%. It performs best in the crypto market.
+
 ## Details
 - **Entry Criteria**:
   - **Long**: Stoch %K < 20 && Price < Keltner lower band (oversold at lower band)
@@ -35,4 +37,3 @@ It is suitable for traders seeking opportunities in mixed markets.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 61%. It performs best in the crypto market.

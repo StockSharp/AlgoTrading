@@ -3,6 +3,8 @@
  
 Strategy based on Triple Moving Average crossover
 
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.
+
 Triple MA aligns three moving averages to define direction. When the shortest average is above the middle and long averages a long entry occurs. The reverse alignment opens shorts, and a cross of the short and middle lines closes the trade.
 
 Using three averages helps filter out noise present in single-MA systems. This layered approach seeks to confirm momentum before committing to a trade.
@@ -32,4 +34,3 @@ Using three averages helps filter out noise present in single-MA systems. This l
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 55%. It performs best in the stocks market.

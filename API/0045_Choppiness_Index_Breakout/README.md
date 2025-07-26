@@ -3,6 +3,8 @@
  
 The Choppiness Index gauges whether the market is trending or ranging. When the indicator drops below a threshold, it signals the start of a trend from a choppy environment.
 
+Testing indicates an average annual return of about 172%. It performs best in the forex market.
+
 This strategy enters in the direction of price relative to its moving average when choppiness falls. It exits if choppiness rises back above a high threshold or a stop-loss hits.
 
 The goal is to catch new trends emerging from consolidation periods.
@@ -31,4 +33,3 @@ The goal is to catch new trends emerging from consolidation periods.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 172%. It performs best in the forex market.

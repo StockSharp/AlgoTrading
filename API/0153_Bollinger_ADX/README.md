@@ -3,6 +3,8 @@
  
 Strategy combining Bollinger Bands and ADX indicators. Looks for breakouts with strong trend confirmation.
 
+Testing indicates an average annual return of about 46%. It performs best in the stocks market.
+
 Price movements outside Bollinger bands are filtered through ADX for strength. Trades engage when a band break coincides with high ADX.
 
 Useful for volatility surges accompanied by strong trends. Stop size is driven by ATR.
@@ -35,4 +37,3 @@ Useful for volatility surges accompanied by strong trends. Stop size is driven b
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 46%. It performs best in the stocks market.

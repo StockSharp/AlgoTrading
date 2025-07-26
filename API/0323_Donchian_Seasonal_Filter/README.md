@@ -3,6 +3,8 @@
  
 The **Donchian Seasonal Filter** strategy is built around Donchian Channels with seasonal filter.
 
+Testing indicates an average annual return of about 70%. It performs best in the stocks market.
+
 Signals trigger when Donchian confirms filtered entries on intraday (15m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like DonchianPeriod, SeasonalThreshold. Adjust these defaults to balance risk and reward.
@@ -28,4 +30,3 @@ Stops rely on ATR multiples and factors like DonchianPeriod, SeasonalThreshold. 
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 70%. It performs best in the stocks market.

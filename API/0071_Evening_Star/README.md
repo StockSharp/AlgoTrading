@@ -3,6 +3,8 @@
  
 The Evening Star mirrors the Morning Star but indicates a potential top. It begins with a strong bullish candle, followed by a small indecision candle, and ends with a bearish candle closing below the midpoint of the first bar.
 
+Testing indicates an average annual return of about 100%. It performs best in the forex market.
+
 The algorithm watches sequences of three candles. When the pattern forms, it enters short with a stop above the small middle candle's high. Positions exit once price drops beneath the confirmation candle's low or if the stop is triggered.
 
 Since the setup anticipates a quick reversal from overbought conditions, trades typically aim for short, momentum-driven moves lower.
@@ -28,4 +30,3 @@ Since the setup anticipates a quick reversal from overbought conditions, trades 
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 100%. It performs best in the forex market.

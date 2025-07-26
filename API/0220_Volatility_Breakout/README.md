@@ -3,6 +3,8 @@
  
 The Volatility Breakout strategy seeks strong directional moves when price escapes from its average range. By measuring the distance from a simple moving average using the Average True Range, the algorithm defines breakout thresholds that scale with volatility.
 
+Testing indicates an average annual return of about 97%. It performs best in the crypto market.
+
 A buy order is triggered when the close rises above the SMA by more than `Multiplier` times the ATR. A sell signal appears when the close falls below the SMA by the same distance. Positions remain open until an opposite breakout occurs or a protective stop is hit.
 
 This technique caters to intraday traders who thrive on momentum surges. Using ATR-based thresholds helps filter out noise so only significant moves generate trades.
@@ -32,4 +34,3 @@ This technique caters to intraday traders who thrive on momentum surges. Using A
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 97%. It performs best in the crypto market.

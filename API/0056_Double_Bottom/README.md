@@ -3,6 +3,8 @@
  
 This pattern-based strategy scans for two consecutive lows at roughly the same price separated by a set distance. After the second bottom forms, a bullish candle confirms the reversal.
 
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.
+
 When confirmation occurs, the system buys with a stop below the pattern lows. The setup aims to capture sharp rebounds from exhausted selling.
 
 Exits rely on a predefined stop-loss or manual profit targets.
@@ -30,4 +32,3 @@ Exits rely on a predefined stop-loss or manual profit targets.
   - Divergence: Yes
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 55%. It performs best in the stocks market.

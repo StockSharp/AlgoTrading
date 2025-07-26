@@ -3,6 +3,8 @@
  
 Strategy that combines ADX (Average Directional Index) for trend strength and Stochastic Oscillator for entry timing with oversold/overbought conditions.
 
+Testing indicates an average annual return of about 172%. It performs best in the forex market.
+
 ADX highlights trend strength while Stochastic pinpoints pullbacks. Long or short signals appear when momentum turns while ADX stays high.
 
 It suits traders who combine trend following with oscillator timing. Protective ATR stops help control drawdowns.
@@ -38,4 +40,3 @@ It suits traders who combine trend following with oscillator timing. Protective 
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 172%. It performs best in the forex market.

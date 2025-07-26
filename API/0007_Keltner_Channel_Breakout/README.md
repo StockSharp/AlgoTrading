@@ -3,6 +3,8 @@
  
 Strategy based on Keltner Channel breakout
 
+Testing indicates an average annual return of about 58%. It performs best in the stocks market.
+
 Keltner Channel Breakout uses volatility bands derived from ATR. Breakouts above the upper band or below the lower band trigger entries. Price moving back through the EMA center or hitting a stop exits the position.
 
 Because the bands expand and contract with volatility, this breakout method aims to capture early stages of a strong move while still allowing price room to breathe within the channel.
@@ -31,4 +33,3 @@ Because the bands expand and contract with volatility, this breakout method aims
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 58%. It performs best in the stocks market.

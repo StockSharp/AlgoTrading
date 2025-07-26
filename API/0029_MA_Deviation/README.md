@@ -3,6 +3,8 @@
  
 Strategy that trades when price deviates significantly from its moving average
 
+Testing indicates an average annual return of about 124%. It performs best in the forex market.
+
 MA Deviation enters when price deviates a set percentage from its moving average, anticipating a return to the mean. The position is exited when price converges back toward the average.
 
 Deviation thresholds can be widened or narrowed depending on volatility. Using ATR for position sizing keeps risk consistent across markets.
@@ -32,4 +34,3 @@ Deviation thresholds can be widened or narrowed depending on volatility. Using A
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 124%. It performs best in the forex market.

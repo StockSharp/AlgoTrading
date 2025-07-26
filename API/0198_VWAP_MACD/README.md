@@ -3,6 +3,8 @@
  
 Strategy based on VWAP and MACD. Enters long when price is above VWAP and MACD > Signal. Enters short when price is below VWAP and MACD < Signal. Exits when MACD crosses its signal line in the opposite direction.
 
+Testing indicates an average annual return of about 181%. It performs best in the crypto market.
+
 VWAP guides intraday value, and MACD crossovers reveal momentum shifts. Trades are launched as MACD turns near the VWAP level.
 
 Suitable for short-term momentum traders. ATR stop rules prevent excessive risk.
@@ -33,4 +35,3 @@ Suitable for short-term momentum traders. ATR stop rules prevent excessive risk.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 181%. It performs best in the crypto market.

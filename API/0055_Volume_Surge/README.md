@@ -3,6 +3,8 @@
  
 Volume Surge identifies unusually high volume relative to the moving average. When the ratio exceeds the defined multiplier, it signals strong interest and potential continuation in the direction of price relative to its moving average.
 
+Testing indicates an average annual return of about 52%. It performs best in the crypto market.
+
 Trades are initiated only on a surge and closed once volume falls back below average or when the stop-loss is reached.
 
 This simple approach captures momentum sparked by sudden participation.
@@ -30,4 +32,3 @@ This simple approach captures momentum sparked by sudden participation.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 52%. It performs best in the crypto market.

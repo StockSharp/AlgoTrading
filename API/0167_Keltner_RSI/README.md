@@ -3,6 +3,8 @@
  
 Strategy combining Keltner Channels and RSI indicators. Looks for mean reversion opportunities when price touches channel boundaries and RSI confirms oversold/overbought conditions.
 
+Testing indicates an average annual return of about 88%. It performs best in the stocks market.
+
 Keltner Channels map recent volatility while RSI measures momentum extremes. Entries occur when RSI supports a move beyond the channel.
 
 Great for bounce traders around volatility envelopes. Stops rely on an ATR multiplier.
@@ -37,4 +39,3 @@ Great for bounce traders around volatility envelopes. Stops rely on an ATR multi
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 88%. It performs best in the stocks market.

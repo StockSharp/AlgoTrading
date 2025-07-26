@@ -4,6 +4,8 @@
 Strategy that uses Bollinger Bands breakouts with volume confirmation.
 Enters positions when price breaks above/below Bollinger Bands with increased volume.
 
+Testing indicates an average annual return of about 178%. It performs best in the stocks market.
+
 Bollinger bands show volatility expansion and volume confirms the breakout. Positions are taken when price closes outside a band with strong activity.
 
 Suited for breakout players expecting continuation. A stop based on ATR keeps losses manageable.
@@ -37,4 +39,3 @@ Suited for breakout players expecting continuation. A stop based on ATR keeps lo
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 178%. It performs best in the stocks market.

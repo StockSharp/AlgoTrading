@@ -3,6 +3,8 @@
 
 **Hull MA Volatility Contraction** 策略基于 Hull Moving Average with volatility contraction filter。
 
+测试表明年均收益约为 76%，该策略在外汇市场表现最佳。
+
 当 its indicators confirms volatility contraction patterns 在日内（15m）数据上得到确认时触发信号，适合积极交易者。
 
 止损依赖于 ATR 倍数以及 HmaPeriod, AtrPeriod 等参数，可根据需要调整以平衡风险与收益。
@@ -29,4 +31,3 @@
   - 背离: 否
   - 风险等级: 中等
 
-测试表明年均收益约为 76%，该策略在外汇市场表现最佳。

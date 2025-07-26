@@ -3,6 +3,8 @@
  
 Implementation of strategy - Keltner Channels + Volume. Buy when price breaks above upper Keltner Channel with above average volume. Sell when price breaks below lower Keltner Channel with above average volume.
 
+Testing indicates an average annual return of about 58%. It performs best in the stocks market.
+
 Keltner Channel boundaries define potential reversals, and increased volume signals conviction. The system trades when price touches a band with volume expanding.
 
 Traders wanting volume confirmation around volatility bands may prefer this setup. Stops are computed from ATR.
@@ -35,4 +37,3 @@ Traders wanting volume confirmation around volatility bands may prefer this setu
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 58%. It performs best in the stocks market.

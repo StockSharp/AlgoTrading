@@ -4,6 +4,8 @@
 MACD RSI combines momentum from the Moving Average Convergence Divergence with overbought/oversold readings from RSI.
 When both indicators align, the probability of a sustained move increases.
 
+Testing indicates an average annual return of about 130%. It performs best in the stocks market.
+
 The strategy enters long when MACD crosses up and RSI rises from oversold, or sells short when MACD crosses down with RSI falling from overbought.
 
 Stops based on a percentage of price help contain losses if the indicators diverge after entry.
@@ -29,4 +31,3 @@ Stops based on a percentage of price help contain losses if the indicators diver
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 130%. It performs best in the stocks market.

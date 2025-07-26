@@ -3,6 +3,8 @@
  
 Strategy combining Moving Average and CCI indicators. Buys when price is above MA and CCI is oversold. Sells when price is below MA and CCI is overbought.
 
+Testing indicates an average annual return of about 49%. It performs best in the crypto market.
+
 A moving average guides the trend while CCI looks for deviations from that average. Entries happen on CCI extremes in the direction of the MA.
 
 Ideal for swing traders entering on pullbacks. ATR stops guard against sudden whipsaws.
@@ -35,4 +37,3 @@ Ideal for swing traders entering on pullbacks. ATR stops guard against sudden wh
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 49%. It performs best in the crypto market.

@@ -3,6 +3,8 @@
  
 Strategy based on ADX and CCI indicators. Enters long when ADX > 25 and CCI is oversold (< -100) Enters short when ADX > 25 and CCI is overbought (> 100)
 
+Testing indicates an average annual return of about 97%. It performs best in the crypto market.
+
 ADX assesses whether a trend has strength and CCI identifies entry timing after pullbacks. Longs and shorts follow the ADX direction.
 
 Geared toward momentum traders entering on retracements. ATR multiples manage risk.
@@ -32,4 +34,3 @@ Geared toward momentum traders entering on retracements. ATR multiples manage ri
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 97%. It performs best in the crypto market.

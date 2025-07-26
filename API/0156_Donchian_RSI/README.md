@@ -3,6 +3,8 @@
  
 Strategy combining Donchian Channels and RSI indicators. Buys on Donchian breakouts when RSI confirms trend is not overextended.
 
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.
+
 Donchian channels identify breakout levels, while RSI checks whether momentum supports the move. Positions follow when a breakout aligns with RSI direction.
 
 Best for traders expecting a sustained breakout rather than a fakeout. Risk is limited through an ATR stop.
@@ -35,4 +37,3 @@ Best for traders expecting a sustained breakout rather than a fakeout. Risk is l
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 55%. It performs best in the stocks market.

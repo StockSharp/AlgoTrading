@@ -3,6 +3,8 @@
  
 Double Top identifies two peaks separated by a number of bars with similar prices. After the second peak forms, a bearish candle confirms the reversal.
 
+Testing indicates an average annual return of about 58%. It performs best in the stocks market.
+
 The strategy sells short upon confirmation with a stop above the pattern highs, aiming to profit from a trend change after buyers are exhausted.
 
 Positions are closed via stop-loss or discretionary targets.
@@ -30,4 +32,3 @@ Positions are closed via stop-loss or discretionary targets.
   - Divergence: Yes
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 58%. It performs best in the stocks market.

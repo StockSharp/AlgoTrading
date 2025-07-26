@@ -4,6 +4,8 @@
 The CCI Hook Reversal uses the Commodity Channel Index as a trigger when it hooks away from an extreme reading.
 After the indicator pushes above +100 or below -100 it often snaps back quickly as momentum stalls.
 
+Testing indicates an average annual return of about 169%. It performs best in the crypto market.
+
 Long trades occur when CCI turns up from oversold while price still prints a marginal new low.
 Shorts are initiated when CCI rolls over from overbought with price poking to new highs.
 
@@ -30,4 +32,3 @@ Each trade carries a small fixed stop and is exited when the CCI hooks back in t
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 169%. It performs best in the crypto market.

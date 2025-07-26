@@ -3,6 +3,8 @@
  
 The ATR Mean Reversion strategy measures how far price travels away from a moving average relative to recent volatility. The Average True Range (ATR) provides an adaptive gauge so thresholds expand during active periods and contract when markets quiet down.
 
+Testing indicates an average annual return of about 109%. It performs best in the crypto market.
+
 A long setup occurs when price closes below the moving average by more than `Multiplier` times the ATR. A short setup appears when price closes above the moving average by the same distance. Positions are exited once price returns to the moving average.
 
 This technique is intended for short-term traders expecting prices to revert after excessive moves. The ATR-based stop keeps risk proportional to current market conditions.
@@ -33,4 +35,3 @@ This technique is intended for short-term traders expecting prices to revert aft
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 109%. It performs best in the crypto market.

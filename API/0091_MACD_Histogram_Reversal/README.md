@@ -3,6 +3,8 @@
  
 The MACD histogram represents the difference between the MACD line and its signal line. Crosses above or below zero often mark shifts in momentum. This strategy trades those zero-line crosses and manages risk with a percent stop.
 
+Testing indicates an average annual return of about 160%. It performs best in the forex market.
+
 On each candle the MACD histogram is computed. When it transitions from negative to positive, a long position is opened. A flip from positive to negative triggers a short sale. Because the strategy only looks for the zero crossover, trades are straightforward and typically short term.
 
 Stops are used to contain losses if momentum fails to continue in the expected direction.
@@ -31,4 +33,3 @@ Stops are used to contain losses if momentum fails to continue in the expected d
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 160%. It performs best in the forex market.

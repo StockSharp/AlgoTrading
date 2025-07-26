@@ -3,6 +3,8 @@
  
 The Donchian Width Mean Reversion strategy focuses on extreme readings of the Donchian to exploit reversion. Wide departures from the normal level rarely last.
 
+Testing indicates an average annual return of about 121%. It performs best in the crypto market.
+
 Trades trigger when the indicator swings far from its mean and then begins to reverse. Both long and short setups include a protective stop.
 
 Suited for swing traders expecting oscillations, the strategy closes out once the Donchian returns toward balance. Starting parameter `DonchianPeriod` = 20.
@@ -31,4 +33,3 @@ Suited for swing traders expecting oscillations, the strategy closes out once th
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 121%. It performs best in the crypto market.

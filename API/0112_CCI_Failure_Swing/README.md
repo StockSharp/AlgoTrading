@@ -4,6 +4,8 @@
 The CCI Failure Swing is based on the Commodity Channel Index forming a lower high above +100 or a higher low below -100.
 This inability to make a new extreme often signals the end of the prior trend.
 
+Testing indicates an average annual return of about 73%. It performs best in the crypto market.
+
 The strategy goes long when CCI holds above -100 and turns up, or short when it fails near +100 and turns down.
 
 A percent stop keeps risk small and trades exit if the CCI crosses back through the previous swing level.
@@ -29,4 +31,3 @@ A percent stop keeps risk small and trades exit if the CCI crosses back through 
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 73%. It performs best in the crypto market.

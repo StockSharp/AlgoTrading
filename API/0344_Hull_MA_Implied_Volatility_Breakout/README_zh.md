@@ -3,6 +3,8 @@
 
 **Hull MA Implied Volatility Breakout** 策略基于 Hull MA Implied Volatility Breakout。
 
+测试表明年均收益约为 121%，该策略在加密市场表现最佳。
+
 当 its indicators confirms breakout opportunities 在日内（15m）数据上得到确认时触发信号，适合积极交易者。
 
 止损依赖于 ATR 倍数以及 HmaPeriod, IVPeriod 等参数，可根据需要调整以平衡风险与收益。
@@ -30,4 +32,3 @@
   - 背离: 否
   - 风险等级: 中等
 
-测试表明年均收益约为 121%，该策略在加密市场表现最佳。

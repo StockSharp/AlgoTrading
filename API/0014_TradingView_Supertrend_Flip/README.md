@@ -3,6 +3,8 @@
  
 Strategy based on Supertrend indicator flips with volume confirmation
 
+Testing indicates an average annual return of about 79%. It performs best in the stocks market.
+
 TradingView Supertrend Flip emulates the popular indicator's color changes. A flip from red to green signals a long entry and green to red signals a short. The strategy exits on the next flip.
 
 Volume confirmation can be used to avoid whipsaws during thin trading periods. By only acting on flips with supporting volume, the method aims to capture more reliable reversals.
@@ -31,4 +33,3 @@ Volume confirmation can be used to avoid whipsaws during thin trading periods. B
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 79%. It performs best in the stocks market.

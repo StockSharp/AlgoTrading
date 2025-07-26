@@ -4,6 +4,8 @@
 Post-Holiday Weakness is the tendency for prices to drift lower immediately after a major holiday when volume remains thin.
 With many participants still away, counter-trend moves can gain traction.
 
+Testing indicates an average annual return of about 112%. It performs best in the forex market.
+
 The strategy sells short the day after a holiday and covers quickly once normal participation returns.
 
 A small stop is used to avoid excessive losses during low-liquidity trading.
@@ -29,4 +31,3 @@ A small stop is used to avoid excessive losses during low-liquidity trading.
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 112%. It performs best in the forex market.
