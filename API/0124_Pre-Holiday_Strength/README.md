@@ -4,6 +4,8 @@
 Pre-Holiday Strength refers to the bullish tendency just before major market holidays when volume is lighter and sentiment optimistic.
 Traders often position ahead of the break, pushing prices higher in the final session or two.
 
+Testing indicates an average annual return of about 109%. It performs best in the crypto market.
+
 The strategy goes long on the day before a holiday and exits the following session or at the close, capturing that short-term bias.
 
 A tight stop is used in case the expected lift doesn't occur.
@@ -29,4 +31,3 @@ A tight stop is used in case the expected lift doesn't occur.
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 109%. It performs best in the crypto market.

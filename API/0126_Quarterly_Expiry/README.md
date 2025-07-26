@@ -4,6 +4,8 @@
 Quarterly Expiry weeks see futures and options contracts roll over, often creating volatility as positions are closed or rolled.
 Price swings can accelerate as hedges are adjusted and liquidity temporarily dries up.
 
+Testing indicates an average annual return of about 115%. It performs best in the stocks market.
+
 The strategy trades in the direction of the prevailing trend at the start of the week, exiting before settlement day to avoid chaos.
 
 A fixed stop keeps risk in line if volatility proves too extreme.
@@ -29,4 +31,3 @@ A fixed stop keeps risk in line if volatility proves too extreme.
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 115%. It performs best in the stocks market.

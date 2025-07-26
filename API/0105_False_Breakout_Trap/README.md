@@ -4,6 +4,8 @@
 The False Breakout Trap aims to capitalize on breaks that fail to hold beyond key support or resistance.
 Traders often jump into a breakout only to see price quickly reverse, leaving them trapped.
 
+Testing indicates an average annual return of about 52%. It performs best in the crypto market.
+
 This strategy waits for that failure, entering in the opposite direction once price closes back inside the range.
 
 Stop placement is tight, just beyond the failed breakout level, ensuring losses stay small if the reversal doesn't materialize.
@@ -29,4 +31,3 @@ Stop placement is tight, just beyond the failed breakout level, ensuring losses 
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 52%. It performs best in the crypto market.

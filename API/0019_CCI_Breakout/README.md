@@ -3,6 +3,8 @@
  
 Strategy based on CCI (Commodity Channel Index) breakout
 
+Testing indicates an average annual return of about 94%. It performs best in the stocks market.
+
 CCI Breakout uses the Commodity Channel Index to spot powerful moves. Surges beyond positive or negative CCI thresholds generate entries. Exits happen when CCI retreats toward zero or an opposite signal forms.
 
 Because CCI measures deviation from a moving average, extreme readings imply unsustainable prices. This system waits for those extremes and then attempts to profit from the follow-through.
@@ -30,4 +32,3 @@ Because CCI measures deviation from a moving average, extreme readings imply uns
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 94%. It performs best in the stocks market.

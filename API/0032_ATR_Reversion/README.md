@@ -3,6 +3,8 @@
  
 ATR Reversion looks for sudden moves measured in multiples of Average True Range (ATR). When price surges beyond the ATR multiplier, the system expects a mean reversion.
 
+Testing indicates an average annual return of about 133%. It performs best in the crypto market.
+
 The strategy opens a trade opposite the direction of the spike and uses a moving average to judge momentum.
 
 Positions close on a moving-average crossover or when the volatility stop is hit.
@@ -31,4 +33,3 @@ Positions close on a moving-average crossover or when the volatility stop is hit
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 133%. It performs best in the crypto market.

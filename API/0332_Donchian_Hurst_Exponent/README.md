@@ -3,6 +3,8 @@
  
 The **Donchian Hurst Exponent** strategy is built around that trades based on Donchian Channel breakouts with Hurst Exponent filter.
 
+Testing indicates an average annual return of about 91%. It performs best in the stocks market.
+
 Signals trigger when Donchian confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like DonchianPeriod, HurstPeriod. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like DonchianPeriod, HurstPeriod. Adjust
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 91%. It performs best in the stocks market.

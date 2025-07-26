@@ -3,6 +3,8 @@
  
 The **Supertrend Put Call Ratio** strategy is built around Supertrend Put Call Ratio.
 
+Testing indicates an average annual return of about 112%. It performs best in the forex market.
+
 Signals trigger when its indicators confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like Period, Multiplier. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like Period, Multiplier. Adjust these de
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 112%. It performs best in the forex market.

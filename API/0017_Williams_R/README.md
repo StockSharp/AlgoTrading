@@ -3,6 +3,8 @@
  
 Strategy based on Williams %R indicator
 
+Testing indicates an average annual return of about 88%. It performs best in the stocks market.
+
 Williams %R identifies overbought and oversold zones. When the indicator rises above the upper threshold it signals potential weakness for shorts; readings below the lower threshold suggest longs. Positions close once %R moves toward neutral.
 
 Because %R oscillates quickly, the strategy can generate many signals in volatile markets. Some traders combine it with other filters to reduce noise.
@@ -30,4 +32,3 @@ Because %R oscillates quickly, the strategy can generate many signals in volatil
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 88%. It performs best in the stocks market.

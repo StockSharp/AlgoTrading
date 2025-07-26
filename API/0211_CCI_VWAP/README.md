@@ -3,6 +3,8 @@
  
 The CCI VWAP approach attempts to capture intraday reversals when momentum and price align away from the volume weighted average price. By observing the Commodity Channel Index alongside the VWAP level, the system measures the strength of recent swings relative to a fair value benchmark.
 
+Testing indicates an average annual return of about 70%. It performs best in the stocks market.
+
 A buy setup emerges when the CCI falls below -100 and the market trades beneath VWAP, signalling that selling pressure may be exhausted. A short occurs when the CCI rises above +100 with price above VWAP, highlighting a stretched rally vulnerable to a setback. Positions are closed once price reclaims the VWAP in the opposite direction.
 
 This strategy is designed for day traders who like to fade extremes yet still rely on objective levels for exits. The defined stop-loss helps manage risk if momentum does not quickly mean revert.
@@ -32,4 +34,3 @@ This strategy is designed for day traders who like to fade extremes yet still re
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 70%. It performs best in the stocks market.

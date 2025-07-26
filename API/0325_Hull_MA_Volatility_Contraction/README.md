@@ -3,6 +3,8 @@
  
 The **Hull MA Volatility Contraction** strategy is built around Hull Moving Average with volatility contraction filter.
 
+Testing indicates an average annual return of about 76%. It performs best in the forex market.
+
 Signals trigger when its indicators confirms volatility contraction patterns on intraday (15m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like HmaPeriod, AtrPeriod. Adjust these defaults to balance risk and reward.
@@ -29,4 +31,3 @@ Stops rely on ATR multiples and factors like HmaPeriod, AtrPeriod. Adjust these 
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 76%. It performs best in the forex market.

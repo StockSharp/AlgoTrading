@@ -4,6 +4,8 @@
 End of Month Strength observes that equities often rally during the last few trading days as portfolio managers adjust holdings.
 Buying pressure tied to window dressing can create a reliable upward bias ahead of the monthly close.
 
+Testing indicates an average annual return of about 94%. It performs best in the stocks market.
+
 The strategy buys near the final days of the month and exits on the first trading day of the new month to capture that tendency.
 
 Stops are placed below recent support to guard against unexpected weakness.
@@ -29,4 +31,3 @@ Stops are placed below recent support to guard against unexpected weakness.
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 94%. It performs best in the stocks market.

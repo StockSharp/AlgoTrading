@@ -3,6 +3,8 @@
  
 This strategy blends Bollinger Bands with the Supertrend indicator to pinpoint entries during strong directional moves. Bollinger Bands gauge volatility expansion while the Supertrend line tracks the overall trend and acts as a trailing stop.
 
+Testing indicates an average annual return of about 79%. It performs best in the stocks market.
+
 A long trade triggers when price closes above the upper Bollinger Band and remains above the Supertrend line, confirming momentum and trend alignment. A short trade occurs when price closes below the lower band while staying under the Supertrend level. Trades are exited once price crosses back through the Supertrend, indicating momentum has faded.
 
 Because the system waits for breakouts beyond normal volatility, it suits traders looking to capture sustained runs rather than quick reversals. The Supertrend stop dynamically adjusts to market swings, helping manage risk without manual intervention.
@@ -34,4 +36,3 @@ Because the system waits for breakouts beyond normal volatility, it suits trader
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 79%. It performs best in the stocks market.

@@ -3,6 +3,8 @@
  
 This pattern catches quick bullish turns after a short decline. It requires two consecutive down candles followed by a strong up candle that closes above the prior bar's high. The logic optionally checks that price was trending lower beforehand.
 
+Testing indicates an average annual return of about 85%. It performs best in the crypto market.
+
 The strategy keeps the last three candles in memory. Once the sequence matches the criteria and any downtrend filter is satisfied, a long position is opened. A volatility stop below the pattern low caps risk on the trade.
 
 After entry the system waits for either a stop hit or the appearance of another setup in the opposite direction. This simple approach suits markets prone to sharp bounces from oversold conditions.
@@ -30,4 +32,3 @@ After entry the system waits for either a stop hit or the appearance of another 
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 85%. It performs best in the crypto market.

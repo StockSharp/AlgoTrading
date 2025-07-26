@@ -3,6 +3,8 @@
  
 Strategy based on RSI divergence
 
+Testing indicates an average annual return of about 85%. It performs best in the crypto market.
+
 RSI Divergence searches for price extremes unconfirmed by the RSI oscillator. A bullish divergence leads to a buy and a bearish divergence prompts a sell. The trade lasts until RSI reverses or a stop fires.
 
 Divergence setups often emerge near the end of long trends. By comparing the oscillator's behavior with price action, the strategy attempts to catch early reversals with controlled risk.
@@ -30,4 +32,3 @@ Divergence setups often emerge near the end of long trends. By comparing the osc
   - Divergence: Yes
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 85%. It performs best in the crypto market.

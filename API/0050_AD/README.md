@@ -3,6 +3,8 @@
  
 This strategy uses the Accumulation/Distribution (A/D) indicator to gauge buying and selling pressure. Rising A/D alongside price above the moving average signals accumulation, while falling A/D below the average indicates distribution.
 
+Testing indicates an average annual return of about 187%. It performs best in the stocks market.
+
 Trades are taken in the direction of the A/D trend relative to the moving average. A change in A/D direction acts as an exit signal.
 
 Stops are optional but can help manage risk.
@@ -28,4 +30,3 @@ Stops are optional but can help manage risk.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 187%. It performs best in the stocks market.

@@ -3,6 +3,8 @@
  
 ATR Range Breakout measures price movement over a fixed number of bars and compares it with the average true range. When the move exceeds the ATR, a position is opened in the direction of the move.
 
+Testing indicates an average annual return of about 169%. It performs best in the crypto market.
+
 The strategy checks price every N bars and uses the moving average for exit signals. It aims to capture momentum when volatility expands beyond normal levels.
 
 Trades close when price crosses back through the moving average or when the stop based on ATR fires.
@@ -30,4 +32,3 @@ Trades close when price crosses back through the moving average or when the stop
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 169%. It performs best in the crypto market.

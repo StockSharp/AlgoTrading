@@ -3,6 +3,8 @@
  
 The **ADX Volume Breakout** strategy is built around ADX with Volume Breakout.
 
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.
+
 Signals trigger when its indicators confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like AdxPeriod, AdxThreshold. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like AdxPeriod, AdxThreshold. Adjust the
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 55%. It performs best in the stocks market.

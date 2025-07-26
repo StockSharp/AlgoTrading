@@ -3,6 +3,8 @@
  
 The Commodity Channel Index (CCI) measures how far price moves from its statistical average. This strategy enters when CCI deviates from its own mean by a large margin, expecting a snap back once momentum fades.
 
+Testing indicates an average annual return of about 151%. It performs best in the stocks market.
+
 A long trade occurs when CCI drops below the average minus `DeviationMultiplier` times the standard deviation. A short trade is opened when CCI rises above the average plus that multiplier. The position exits when CCI crosses back through the mean value.
 
 This system is suited to short-term traders who favour contrarian setups. A stop-loss based on percentage move helps cap risk if the market fails to revert quickly.
@@ -33,4 +35,3 @@ This system is suited to short-term traders who favour contrarian setups. A stop
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 151%. It performs best in the stocks market.

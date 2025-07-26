@@ -3,6 +3,8 @@
  
 The **MACD Adaptive Histogram** strategy is built around MACD with adaptive histogram threshold.
 
+Testing indicates an average annual return of about 184%. It performs best in the crypto market.
+
 Signals trigger when Histogram confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like FastPeriod, SlowPeriod. Adjust these defaults to balance risk and reward.
@@ -32,4 +34,3 @@ Stops rely on ATR multiples and factors like FastPeriod, SlowPeriod. Adjust thes
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 184%. It performs best in the crypto market.

@@ -3,6 +3,8 @@
  
 Strategy based on Hull Moving Average and ADX. Enters long when HMA increases and ADX > 25 (strong trend). Enters short when HMA decreases and ADX > 25 (strong trend). Exits when ADX < 20 (weakening trend).
 
+Testing indicates an average annual return of about 178%. It performs best in the stocks market.
+
 Hull MA shows the trend, while ADX confirms its intensity. Entries follow the Hull slope when ADX indicates strength.
 
 Effective for traders who focus on smooth trends with confirmation. ATR stops keep losses under control.
@@ -32,4 +34,3 @@ Effective for traders who focus on smooth trends with confirmation. ATR stops ke
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 178%. It performs best in the stocks market.

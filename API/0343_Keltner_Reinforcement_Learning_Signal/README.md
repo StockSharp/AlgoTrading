@@ -3,6 +3,8 @@
  
 The **Keltner Reinforcement Learning Signal** strategy is built around Keltner Reinforcement Learning Signal.
 
+Testing indicates an average annual return of about 118%. It performs best in the stocks market.
+
 Signals trigger when Keltner confirms trend changes on intraday (15m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like EmaPeriod, AtrPeriod. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like EmaPeriod, AtrPeriod. Adjust these 
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 118%. It performs best in the stocks market.

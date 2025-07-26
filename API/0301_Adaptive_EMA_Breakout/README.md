@@ -3,6 +3,8 @@
  
 The **Adaptive EMA Breakout** strategy is built around Adaptive EMA breakout with trend confirmation.
 
+Testing indicates an average annual return of about 166%. It performs best in the stocks market.
+
 Signals trigger when its indicators confirms breakout opportunities on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like Fast, Slow. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like Fast, Slow. Adjust these defaults t
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 166%. It performs best in the stocks market.

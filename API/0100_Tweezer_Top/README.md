@@ -4,6 +4,8 @@
 The Tweezer Top mirrors the bottom version but appears after an advance.
 Two candles share nearly the same high, showing that buyers could not push beyond a certain level.
 
+Testing indicates an average annual return of about 187%. It performs best in the stocks market.
+
 The strategy opens a short once the second candle confirms the ceiling, expecting a pullback as bullish momentum stalls.
 
 A tight stop above the twin highs keeps risk in check and the trade exits if price climbs back above that resistance.
@@ -29,4 +31,3 @@ A tight stop above the twin highs keeps risk in check and the trade exits if pri
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 187%. It performs best in the stocks market.

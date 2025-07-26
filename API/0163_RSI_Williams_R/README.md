@@ -3,6 +3,8 @@
  
 Implementation of strategy - RSI + Williams %R. Buy when RSI is below 30 and Williams %R is below -80 (double oversold condition). Sell when RSI is above 70 and Williams %R is above -20 (double overbought condition).
 
+Testing indicates an average annual return of about 76%. It performs best in the forex market.
+
 RSI outlines the overall momentum, while Williams %R gives a quicker signal of reversal. Trades act on agreement between the two oscillators.
 
 Good for active traders chasing short swings. ATR-based stops are employed.
@@ -37,4 +39,3 @@ Good for active traders chasing short swings. ATR-based stops are employed.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 76%. It performs best in the forex market.

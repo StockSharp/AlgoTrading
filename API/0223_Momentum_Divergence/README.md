@@ -3,6 +3,8 @@
  
 The Momentum Divergence strategy compares momentum readings with price direction to spot early signs of a reversal. Divergences occur when price makes a new extreme yet the momentum indicator fails to confirm, hinting at weakening strength.
 
+Testing indicates an average annual return of about 106%. It performs best in the stocks market.
+
 A bullish setup happens when price records a lower low while the momentum oscillator prints a higher low. A bearish setup forms when price pushes to a higher high but momentum fails to follow. Positions are closed when momentum crosses back through zero or the divergence is invalidated.
 
 This approach appeals to traders looking to anticipate turning points rather than chase trends. Stops are used to control risk in case the market continues to move against the divergence signal.
@@ -32,4 +34,3 @@ This approach appeals to traders looking to anticipate turning points rather tha
   - Divergence: Yes
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 106%. It performs best in the stocks market.

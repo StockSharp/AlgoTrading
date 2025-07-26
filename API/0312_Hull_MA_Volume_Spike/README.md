@@ -3,6 +3,8 @@
  
 The **Hull MA Volume Spike** strategy is built around Hull Moving Average with Volume Spike detection.
 
+Testing indicates an average annual return of about 43%. It performs best in the stocks market.
+
 Signals trigger when Spike confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like HmaPeriod, VolumeAvgPeriod. Adjust these defaults to balance risk and reward.
@@ -29,4 +31,3 @@ Stops rely on ATR multiples and factors like HmaPeriod, VolumeAvgPeriod. Adjust 
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 43%. It performs best in the stocks market.

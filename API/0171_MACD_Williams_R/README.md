@@ -3,6 +3,8 @@
  
 Strategy based on MACD and Williams %R indicators. Enters long when MACD > Signal and Williams %R is oversold (< -80) Enters short when MACD < Signal and Williams %R is overbought (> -20)
 
+Testing indicates an average annual return of about 100%. It performs best in the forex market.
+
 MACD indicates the larger momentum shift, while Williams %R pinpoints near-term reversals. Both signals must line up to initiate a trade.
 
 Good for those who like to combine trend and countertrend cues. Stops hinge on an ATR factor.
@@ -34,4 +36,3 @@ Good for those who like to combine trend and countertrend cues. Stops hinge on a
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 100%. It performs best in the forex market.

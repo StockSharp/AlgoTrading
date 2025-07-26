@@ -3,6 +3,8 @@
  
 Strategy based on Gann Swing Breakout technique
 
+Testing indicates an average annual return of about 82%. It performs best in the stocks market.
+
 Gann Swing Breakout tracks swing highs and lows from Gann analysis. A breakout beyond the latest swing starts a trade in that direction and it stays open until an opposing swing is breached.
 
 The method is designed for traders who view past swing points as important support and resistance. By trading the break, it attempts to ride the next leg of a trend.
@@ -30,4 +32,3 @@ The method is designed for traders who view past swing points as important suppo
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 82%. It performs best in the stocks market.

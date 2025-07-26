@@ -3,6 +3,8 @@
  
 This system looks for unusually high or low trading volume relative to its historical average. Significant volume spikes often revert as activity normalizes, offering potential fade trades.
 
+Testing indicates an average annual return of about 76%. It performs best in the forex market.
+
 A long entry is made when volume drops below the average minus `DeviationMultiplier` times the standard deviation and price is below the moving average. A short entry occurs when volume rises above the upper band with price above the average. Trades exit once volume returns toward its mean level.
 
 The strategy benefits traders who watch for exhaustion after volume surges. A percentage stop-loss guards against scenarios where volume keeps expanding in the same direction.
@@ -33,4 +35,3 @@ The strategy benefits traders who watch for exhaustion after volume surges. A pe
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 76%. It performs best in the forex market.

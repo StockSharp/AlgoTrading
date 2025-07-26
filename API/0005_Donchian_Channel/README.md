@@ -3,6 +3,8 @@
  
 Strategy based on Donchian Channel
 
+Testing indicates an average annual return of about 52%. It performs best in the crypto market.
+
 Donchian Channel Breakout trades new highs and lows based on the channel range. A close beyond the upper band signals strength, while a drop below the lower band invites shorts. Exits occur when price returns to the midpoint.
 
 The channel is calculated from the highest high and lowest low over a lookback window. When price pierces these bounds, the system expects volatility expansion and positions accordingly.
@@ -29,4 +31,3 @@ The channel is calculated from the highest high and lowest low over a lookback w
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 52%. It performs best in the crypto market.

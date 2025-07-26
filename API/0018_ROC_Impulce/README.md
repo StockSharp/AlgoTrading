@@ -3,6 +3,8 @@
  
 Strategy based on Rate of Change (ROC) impulse
 
+Testing indicates an average annual return of about 91%. It performs best in the stocks market.
+
 ROC Impulse captures sudden bursts in the Rate of Change indicator. Sharp positive spikes lead to long trades and sharp negatives to short trades. When momentum fades back toward zero the position is closed.
 
 The trigger levels can be tuned to react only to exceptional momentum events. ATR-based stops help prevent large losses if the spike quickly reverses.
@@ -30,4 +32,3 @@ The trigger levels can be tuned to react only to exceptional momentum events. AT
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 91%. It performs best in the stocks market.

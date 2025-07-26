@@ -4,6 +4,8 @@
 ATR MACD uses volatility from the Average True Range to adjust position size while trading MACD crossovers.
 Larger ATR readings result in smaller trade size, keeping risk consistent across market regimes.
 
+Testing indicates an average annual return of about 154%. It performs best in the stocks market.
+
 Entries occur when MACD crosses its signal line, with exits triggered by the opposite crossover or a volatility-based stop.
 
 This combination seeks to capture momentum while accounting for changing volatility.
@@ -29,4 +31,3 @@ This combination seeks to capture momentum while accounting for changing volatil
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 154%. It performs best in the stocks market.

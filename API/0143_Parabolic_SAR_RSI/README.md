@@ -3,6 +3,8 @@
  
 Strategy that combines Parabolic SAR for trend direction and RSI for entry confirmation with oversold/overbought conditions.
 
+Testing indicates an average annual return of about 166%. It performs best in the stocks market.
+
 Here the Parabolic SAR outlines the prevailing trend and RSI measures exhaustion. Trades are opened once both indicators signal the same direction.
 
 The combination is appealing to those who like trailing stops, since SAR also provides a dynamic exit. The stop placement follows the SAR curve.
@@ -36,4 +38,3 @@ The combination is appealing to those who like trailing stops, since SAR also pr
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 166%. It performs best in the stocks market.

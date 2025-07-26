@@ -3,6 +3,8 @@
  
 The Volume Weighted Moving Average (VWMA) emphasizes price levels with higher trading volume. This strategy trades crossovers between price and the VWMA.
 
+Testing indicates an average annual return of about 184%. It performs best in the crypto market.
+
 A close above VWMA after being below it generates a long entry, while a drop below VWMA prompts a short trade. Positions exit when price crosses back in the opposite direction.
 
 Using a volume-weighted average reduces noise from low-volume periods.
@@ -28,4 +30,3 @@ Using a volume-weighted average reduces noise from low-volume periods.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 184%. It performs best in the crypto market.

@@ -3,6 +3,8 @@
  
 This strategy follows bursts of volatility using the Average True Range. When ATR is rising compared to the previous bar and price trades relative to a moving average, it looks to ride the breakout.
 
+Testing indicates an average annual return of about 145%. It performs best in the crypto market.
+
 Expansion of ATR implies a strong move is underway. Entries align with the direction of price relative to the moving average, while contractions in volatility trigger exits.
 
 Stops are set using an ATR multiple to let trades breathe during high volatility.
@@ -30,4 +32,3 @@ Stops are set using an ATR multiple to let trades breathe during high volatility
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 145%. It performs best in the crypto market.

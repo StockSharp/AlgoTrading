@@ -3,6 +3,8 @@
  
 Strategy based on price momentum percentage change
 
+Testing indicates an average annual return of about 97%. It performs best in the crypto market.
+
 Momentum Percentage tracks percent change in price. Trades trigger when momentum exceeds positive or negative levels and exit on the counter signal or a volatility stop.
 
 By measuring returns over a set lookback, the system adapts to different markets. The volatility stop ensures large adverse moves exit quickly.
@@ -31,4 +33,3 @@ By measuring returns over a set lookback, the system adapts to different markets
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 97%. It performs best in the crypto market.

@@ -4,6 +4,8 @@
 The Three White Soldiers pattern is a classic bullish reversal consisting of three consecutive strong up candles.
 After a downtrend, this sequence often marks the start of a sustained move higher as buying pressure overwhelms sellers.
 
+Testing indicates an average annual return of about 175%. It performs best in the stocks market.
+
 The strategy enters long once the third soldier forms, expecting follow-through from the surge in momentum.
 Short trades are not taken because the setup is purely bullish, but the system does allow exiting short positions initiated by other methods.
 
@@ -30,4 +32,3 @@ Stops are placed a short distance below the pattern to guard against false signa
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 175%. It performs best in the stocks market.

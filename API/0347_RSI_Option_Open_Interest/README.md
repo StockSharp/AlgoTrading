@@ -3,6 +3,8 @@
  
 The **RSI Option Open Interest** strategy is built around RSI Option Open Interest.
 
+Testing indicates an average annual return of about 130%. It performs best in the stocks market.
+
 Signals trigger when Option confirms trend changes on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like RsiPeriod, CandleType. Adjust these defaults to balance risk and reward.
@@ -30,4 +32,3 @@ Stops rely on ATR multiples and factors like RsiPeriod, CandleType. Adjust these
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 130%. It performs best in the stocks market.

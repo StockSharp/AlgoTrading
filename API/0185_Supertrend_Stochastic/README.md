@@ -3,6 +3,8 @@
  
 Supertrend + Stochastic strategy. Strategy enters trades when Supertrend indicates trend direction and Stochastic confirms with oversold/overbought conditions.
 
+Testing indicates an average annual return of about 142%. It performs best in the stocks market.
+
 Supertrend marks the trend, and Stochastic points out temporary counter moves. Entries happen once Stochastic exits oversold or overbought against the trend.
 
 Best for momentum traders needing clear trend cues. ATR values define the stop distance.
@@ -34,4 +36,3 @@ Best for momentum traders needing clear trend cues. ATR values define the stop d
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 142%. It performs best in the stocks market.

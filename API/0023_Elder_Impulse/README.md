@@ -3,6 +3,8 @@
  
 Strategy based on Elder's Impulse System
 
+Testing indicates an average annual return of about 106%. It performs best in the stocks market.
+
 Elder Impulse combines EMA direction with MACD histogram color. Green bars above the EMA prompt longs, red bars below prompt shorts, and neutral bars signal exits.
 
 By blending trend direction and momentum, this approach keeps traders on the right side of strong moves. Exits are straightforward, relying on the histogram color change or the EMA slope reversing.
@@ -33,4 +35,3 @@ By blending trend direction and momentum, this approach keeps traders on the rig
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 106%. It performs best in the stocks market.

@@ -4,6 +4,8 @@
 Three Black Crows is the bearish counterpart to Three White Soldiers, consisting of three long down candles after an advance.
 The pattern suggests that sellers have seized control as each close lands near the session low.
 
+Testing indicates an average annual return of about 178%. It performs best in the stocks market.
+
 This strategy initiates a short position once the third crow appears, expecting momentum to continue lower.
 It can also be used to exit longs that were opened by other systems if the pattern forms at resistance.
 
@@ -30,4 +32,3 @@ Risk is managed with a tight percent stop above the pattern high, and trades exi
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 178%. It performs best in the stocks market.

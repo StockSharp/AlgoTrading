@@ -3,6 +3,8 @@
  
 The Volatility Adjusted Momentum strategy monitors the Volatility for rapid expansions. When readings jump beyond their average range, price often starts a new move.
 
+Testing indicates an average annual return of about 130%. It performs best in the stocks market.
+
 A position opens once the indicator pierces a band derived from recent data and a deviation multiplier. Long and short trades are possible with a stop attached.
 
 This system fits momentum traders seeking early breakouts. Trades close as the Volatility falls back toward the mean. Defaults start with `MomentumPeriod` = 14.
@@ -32,4 +34,3 @@ This system fits momentum traders seeking early breakouts. Trades close as the V
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 130%. It performs best in the stocks market.

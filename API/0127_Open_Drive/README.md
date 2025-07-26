@@ -4,6 +4,8 @@
 Open Drive refers to strong directional movement right from the opening bell, often after an overnight news catalyst.
 Traders look for heavy volume and sustained momentum in the first few minutes.
 
+Testing indicates an average annual return of about 118%. It performs best in the stocks market.
+
 The strategy joins that momentum, entering long or short within the opening range and trailing a stop as price extends.
 
 Positions close quickly if the drive stalls, keeping losses small during choppy opens.
@@ -29,4 +31,3 @@ Positions close quickly if the drive stalls, keeping losses small during choppy 
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 118%. It performs best in the stocks market.

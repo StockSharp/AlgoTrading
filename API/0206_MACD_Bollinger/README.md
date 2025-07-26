@@ -5,6 +5,8 @@ This strategy uses MACD Bollinger indicators to generate signals.
 Long entry occurs when MACD > Signal && Price < BB_lower (trend up with oversold conditions). Short entry occurs when MACD < Signal && Price > BB_upper (trend down with overbought conditions).
 It is suitable for traders seeking opportunities in mixed markets.
 
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.
+
 ## Details
 - **Entry Criteria**:
   - **Long**: MACD > Signal && Price < BB_lower (trend up with oversold conditions)
@@ -35,4 +37,3 @@ It is suitable for traders seeking opportunities in mixed markets.
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 55%. It performs best in the stocks market.

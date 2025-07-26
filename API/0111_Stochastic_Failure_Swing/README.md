@@ -4,6 +4,8 @@
 The Stochastic Failure Swing monitors the oscillator for a lower high above 80 or a higher low below 20.
 When the indicator fails to reach a new extreme and then reverses, it often signals a trend shift.
 
+Testing indicates an average annual return of about 70%. It performs best in the stocks market.
+
 The strategy buys when a higher low forms below 20 and %K crosses back above %D, or sells when a lower high occurs above 80 and %K crosses under.
 
 Trades employ a small percent stop and close when the stochastic crosses back through the prior swing level.
@@ -29,4 +31,3 @@ Trades employ a small percent stop and close when the stochastic crosses back th
   - Divergence: No
   - Risk level: Medium
 
-Testing indicates an average annual return of about 70%. It performs best in the stocks market.

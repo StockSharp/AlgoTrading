@@ -3,6 +3,8 @@
  
 The Keltner Width Mean Reversion strategy focuses on extreme readings of the Keltner to exploit reversion. Wide departures from the normal level rarely last.
 
+Testing indicates an average annual return of about 160%. It performs best in the forex market.
+
 Trades trigger when the indicator swings far from its mean and then begins to reverse. Both long and short setups include a protective stop.
 
 Suited for swing traders expecting oscillations, the strategy closes out once the Keltner returns toward balance. Starting parameter `EmaPeriod` = 20.
@@ -33,4 +35,3 @@ Suited for swing traders expecting oscillations, the strategy closes out once th
   - Divergence: No
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 160%. It performs best in the forex market.

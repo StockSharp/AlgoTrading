@@ -3,6 +3,8 @@
  
 This system trades reversals using the Relative Strength Index. When RSI drops below the oversold level, it buys after closing any shorts. When RSI climbs above the overbought level, it sells after closing longs.
 
+Testing indicates an average annual return of about 61%. It performs best in the crypto market.
+
 Positions exit when RSI returns to a neutral zone or the stop-loss is reached.
 
 ## Details
@@ -30,4 +32,3 @@ Positions exit when RSI returns to a neutral zone or the stop-loss is reached.
   - Divergence: Yes
   - Risk Level: Medium
 
-Testing indicates an average annual return of about 61%. It performs best in the crypto market.
