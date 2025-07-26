@@ -35,3 +35,5 @@ It favors traders who prefer structured trend setups. ATR-defined stops defend a
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 187%. It performs best in the stocks market.

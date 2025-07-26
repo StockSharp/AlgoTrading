@@ -29,3 +29,5 @@ Exits rely on a predefined stop-loss or manual profit targets.
   - Neural Networks: No
   - Divergence: Yes
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.

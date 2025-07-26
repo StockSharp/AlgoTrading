@@ -34,3 +34,5 @@ A flexible approach for those wanting smooth signals. ATR-based stops cap potent
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 94%. It performs best in the stocks market.

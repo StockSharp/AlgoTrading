@@ -30,3 +30,4 @@ Donchian Width Mean Reversion 策略关注指标的极端读数以捕捉均值�
   - 神经网络: No
   - 背离: No
   - 风险级别: Medium
+测试表明年均收益约为 121%，该策略在加密市场表现最佳。

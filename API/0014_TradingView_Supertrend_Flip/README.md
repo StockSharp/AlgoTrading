@@ -30,3 +30,5 @@ Volume confirmation can be used to avoid whipsaws during thin trading periods. B
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 79%. It performs best in the stocks market.

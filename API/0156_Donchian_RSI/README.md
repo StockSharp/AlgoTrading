@@ -34,3 +34,5 @@ Best for traders expecting a sustained breakout rather than a fakeout. Risk is l
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.

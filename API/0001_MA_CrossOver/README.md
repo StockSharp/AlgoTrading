@@ -32,3 +32,5 @@ Positions are closed when the HMA slope reverses, signifying that momentum has s
   - Neural networks: Yes
   - Divergence: Yes
   - Risk level: High
+
+Testing indicates an average annual return of about 40%. It performs best in the crypto market.

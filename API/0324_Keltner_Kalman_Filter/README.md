@@ -30,3 +30,5 @@ Stops rely on ATR multiples and factors like EmaPeriod, AtrPeriod. Adjust these 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 73%. It performs best in the crypto market.

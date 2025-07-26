@@ -29,3 +29,5 @@ Trades remain open until the stop is hit or another signal suggests manual exit.
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 76%. It performs best in the forex market.

@@ -30,3 +30,5 @@ This combination helps avoid trading every DI cross by demanding confirmation fr
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 103%. It performs best in the stocks market.

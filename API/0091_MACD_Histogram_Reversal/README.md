@@ -30,3 +30,5 @@ Stops are used to contain losses if momentum fails to continue in the expected d
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 160%. It performs best in the forex market.

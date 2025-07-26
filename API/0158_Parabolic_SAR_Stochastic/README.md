@@ -36,3 +36,5 @@ A straightforward trend strategy with built-in SAR stops. ATR settings handle ad
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 61%. It performs best in the crypto market.

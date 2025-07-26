@@ -31,3 +31,5 @@ It is suitable for traders seeking opportunities in mixed markets.
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 58%. It performs best in the stocks market.

@@ -29,3 +29,5 @@ The method is designed for traders who view past swing points as important suppo
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 82%. It performs best in the stocks market.

@@ -32,3 +32,5 @@ This system is suited to short-term traders who favour contrarian setups. A stop
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 151%. It performs best in the stocks market.

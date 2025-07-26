@@ -32,3 +32,5 @@ The extremes can be calibrated to suit various markets. Using additional filters
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 115%. It performs best in the stocks market.

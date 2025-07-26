@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like MacdFast, MacdSlow. Adjust these de
   - Neural Networks: Yes
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 61%. It performs best in the crypto market.

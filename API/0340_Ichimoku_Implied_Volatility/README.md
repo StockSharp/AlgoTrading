@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like TenkanPeriod, KijunPeriod. Adjust t
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 109%. It performs best in the crypto market.

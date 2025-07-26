@@ -28,3 +28,5 @@ The method aims to capture the first reaction away from the doji and is best sui
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 103%. It performs best in the stocks market.

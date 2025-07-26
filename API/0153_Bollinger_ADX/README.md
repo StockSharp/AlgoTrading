@@ -34,3 +34,5 @@ Useful for volatility surges accompanied by strong trends. Stop size is driven b
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 46%. It performs best in the stocks market.

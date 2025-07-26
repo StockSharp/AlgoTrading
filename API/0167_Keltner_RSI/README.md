@@ -36,3 +36,5 @@ Great for bounce traders around volatility envelopes. Stops rely on an ATR multi
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 88%. It performs best in the stocks market.

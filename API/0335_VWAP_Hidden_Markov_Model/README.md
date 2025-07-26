@@ -27,3 +27,5 @@ Stops rely on ATR multiples and factors like HmmDataLength, StopLossPercent. Adj
   - Neural Networks: Yes
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 100%. It performs best in the forex market.

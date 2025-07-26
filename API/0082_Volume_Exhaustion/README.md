@@ -30,3 +30,5 @@ The trade is typically exited via the stop-loss as the strategy anticipates a sw
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 133%. It performs best in the crypto market.

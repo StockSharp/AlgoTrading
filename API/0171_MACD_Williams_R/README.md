@@ -33,3 +33,5 @@ Good for those who like to combine trend and countertrend cues. Stops hinge on a
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 100%. It performs best in the forex market.

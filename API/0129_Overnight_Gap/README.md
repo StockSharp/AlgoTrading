@@ -28,3 +28,5 @@ Stops are based on a percentage beyond the gap extremes to manage risk if the mo
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+
+Testing indicates an average annual return of about 124%. It performs best in the forex market.

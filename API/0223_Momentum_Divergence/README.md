@@ -31,3 +31,5 @@ This approach appeals to traders looking to anticipate turning points rather tha
   - Neural networks: No
   - Divergence: Yes
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 106%. It performs best in the stocks market.

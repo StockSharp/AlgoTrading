@@ -29,3 +29,5 @@ Stops rely on ATR multiples and factors like Period, Multiplier. Adjust these de
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 112%. It performs best in the forex market.

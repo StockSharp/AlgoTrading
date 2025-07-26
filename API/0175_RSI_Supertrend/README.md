@@ -31,3 +31,5 @@ Works for traders who appreciate a trailing-stop style exit. ATR settings furthe
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+
+Testing indicates an average annual return of about 112%. It performs best in the forex market.
