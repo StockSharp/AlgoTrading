@@ -1,4 +1,3 @@
-
 // BitcoinIntradaySeasonalityStrategy.cs
 // -----------------------------------------------------------------------------
 // Goes long BTC during historically strong hours, flat otherwise.
@@ -48,9 +47,8 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
 
-            SubscribeCandles(BTC, _tf)
-                .Bind(CandleStates.Finished)
-                .Do(c => OnHourClose(c))
+            SubscribeCandles(_tf, true, BTC)
+                .Bind(c => OnHourClose(c))
                 .Start();
         }
 

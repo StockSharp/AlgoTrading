@@ -1,4 +1,3 @@
-
 // BettingAgainstBetaStocksStrategy.cs (candle-driven, param TF)
 // Long lowest-beta decile, short highest-beta; monthly rebalance.
 // Date: 2 August 2025
@@ -57,9 +56,8 @@ namespace StockSharp.Samples.Strategies
             {
                 _wins[sec] = new RollingWindow<decimal>(WindowDays + 1);
 
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         _wins[sec].Add(c.ClosePrice);
                         var d = c.OpenTime.Date;
