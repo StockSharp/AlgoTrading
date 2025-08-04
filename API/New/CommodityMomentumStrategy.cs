@@ -1,4 +1,3 @@
-
 // CommodityMomentumStrategy.cs
 // -----------------------------------------------------------------------------
 // Long commodities with highest 12‑month momentum (skip last month).
@@ -50,9 +49,8 @@ namespace StockSharp.Samples.Strategies
             foreach (var (s, tf) in GetWorkingSecurities())
             {
                 _px[s] = new RollingWin(252 + 1);
-                SubscribeCandles(s, tf)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => OnDaily((Security)c.SecurityId, c))
+                SubscribeCandles(tf, true, s)
+                    .Bind(c => OnDaily(s, c))
                     .Start();
             }
         }
