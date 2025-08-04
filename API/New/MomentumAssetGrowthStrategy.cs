@@ -78,7 +78,7 @@ namespace StockSharp.Samples.Strategies
             _last = d;
             if (d.Month == 1)
                 return; // skip January
-            if (d.Day != 1 || !Exchange.IsTradingDay(d))
+            if (d.Day != 1)
                 return;
             Rebalance();
         }

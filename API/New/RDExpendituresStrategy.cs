@@ -44,7 +44,7 @@ namespace StockSharp.Samples.Strategies
             if (d == _last)
                 return;
             _last = d;
-            if (d.Day != 1 || !Exchange.IsTradingDay(d))
+            if (d.Day != 1)
                 return;
             Rebalance();
         }

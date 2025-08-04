@@ -51,7 +51,7 @@ namespace StockSharp.Samples.Strategies
                         if (d == _lastProcessed)
                             return;
                         _lastProcessed = d;
-                        if (d.Month == 7 && d.Day == 1 && Exchange.IsTradingDay(d))
+                        if (d.Month == 7 && d.Day == 1)
                             Rebalance();
                     }).Start();
             }

@@ -60,7 +60,7 @@ namespace StockSharp.Samples.Strategies
         private bool IsQuarterRebalanceDay(DateTime d)
         {
             return (d.Month == 2 || d.Month == 5 || d.Month == 8 || d.Month == 11) &&
-                   d.Day <= 3 && Exchange.IsTradingDay(d);
+                   d.Day <= 3;
         }
 
         private void Rebalance()

@@ -78,7 +78,7 @@ namespace StockSharp.Samples.Strategies
                 }
             }
 
-            if (d.Day != 1 || !Exchange.IsTradingDay(d))
+            if (d.Day != 1)
                 return;
 
             if (_prices.Values.Any(w => !w.IsFull()))

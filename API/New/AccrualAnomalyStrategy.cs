@@ -49,7 +49,7 @@ namespace StockSharp.Samples.Strategies
                         if (d == _lastDay)
                             return;
                         _lastDay = d;
-                        if (d.Month == 5 && Exchange.IsTradingDay(d) && d.Day == 1)
+                        if (d.Month == 5 && d.Day == 1)
                             Rebalance();
                     })
                     .Start();

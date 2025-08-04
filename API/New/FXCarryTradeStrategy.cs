@@ -53,7 +53,7 @@ namespace StockSharp.Samples.Strategies
                         return;
                     _lastDay = day;
 
-                    if (day.Day == 1 && Exchange.IsTradingDay(day))
+                    if (day.Day == 1)
                         Rebalance();
                 }).Start();
         }
