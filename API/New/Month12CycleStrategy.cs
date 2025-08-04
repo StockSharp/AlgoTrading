@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies
     /// 3. Rank by that return, long the top decile, short the bottom decile (value‑weighted by market cap).
     /// 4. Rebalance to target weights.
     /// <para>
-    /// <b>The <see cref="Universe"/> property is mandatory.</b> Populate it in the S# Designer, optimiser or code
+    /// <b>The <see cref="Universe"/> property is mandatory.</b> Populate it in the S# Designer, optimiser or code
     /// before starting the strategy.
     /// </para>
     /// </summary>
@@ -44,8 +44,9 @@ namespace StockSharp.Samples.Strategies
 
         #endregion
 
-        private readonly Dictionary<Security, RollingWindow<decimal>> _monthCloses = new();
+        private readonly Dictionary<Security, Month12RollingWindow> _monthCloses = new();
         private readonly Dictionary<Security, decimal> _cap = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private readonly Dictionary<Security, decimal> _targetWeights = new();
 
         public Month12CycleStrategy()
@@ -84,21 +85,25 @@ namespace StockSharp.Samples.Strategies
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
                 SubscribeCandles(dt, true, sec)
-                    .Bind(OnCandleFinished)
+                    .Bind(c => ProcessCandle(c, sec))
                     .Start();
 
-                _monthCloses[sec] = new RollingWindow<decimal>(13); // 13‑month window
+                _monthCloses[sec] = new(13); // 13‑month window
             }
-
-            Schedule(TimeSpan.FromMinutes(10), Exchange.TradingDay.Ends, Rebalance);
 
             LogInfo($"12‑Month Cycle strategy started. Universe = {Universe.Count()} tickers, Deciles = {DecileSize}");
         }
 
-        protected override void OnCandleFinished(ICandleMessage candle)
+        private void ProcessCandle(ICandleMessage candle, Security security)
         {
-            var sec = (Security)candle.SecurityId;
-            if (!_monthCloses.TryGetValue(sec, out var window))
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            if (!_monthCloses.TryGetValue(security, out var window))
                 return;
 
             window.Add(candle.ClosePrice);
@@ -120,7 +125,10 @@ namespace StockSharp.Samples.Strategies
             var perf = ready.ToDictionary(kv => kv.Key, kv => kv.Value[1] / kv.Value[0] - 1);
 
             foreach (var sec in perf.Keys)
-                _cap[sec] = sec.Price * (sec.VolumeStep ?? 1m);
+            {
+                var price = GetLatestPrice(sec);
+                _cap[sec] = price * (sec.VolumeStep ?? 1m);
+            }
 
             var ranked = perf.OrderByDescending(p => p.Value).ToList();
             int decileLen = ranked.Count / DecileSize;
@@ -135,6 +143,11 @@ namespace StockSharp.Samples.Strategies
 
             ComputeWeights(winners, losers);
             ExecuteTrades();
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void ComputeWeights(IEnumerable<KeyValuePair<Security, decimal>> winners,
@@ -154,16 +167,21 @@ namespace StockSharp.Samples.Strategies
 
         private void ExecuteTrades()
         {
-            foreach (var pos in Positions.Where(p => !_targetWeights.ContainsKey(p.Key)))
-                SendOrder(pos.Key, -pos.Value);
+            foreach (var pos in Positions.Where(p => !_targetWeights.ContainsKey(p.Security)))
+                SendOrder(pos.Security, -(pos.CurrentValue ?? 0));
 
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _targetWeights)
             {
                 var sec = kv.Key;
-                var tgt = kv.Value * Portfolio.CurrentValue / sec.Price;
+                var price = GetLatestPrice(sec);
+                if (price <= 0)
+                    continue;
+
+                var tgt = kv.Value * portfolioValue / price;
                 var diff = tgt - PositionBy(sec);
 
-                if (diff.Abs() * sec.Price < 50)
+                if (diff.Abs() * price < 50)
                     continue;
 
                 SendOrder(sec, diff);
@@ -195,20 +213,20 @@ namespace StockSharp.Samples.Strategies
 		#endregion
 	}
 
-    #region RollingWindow helper
+    #region Month12RollingWindow helper
 
-    public class RollingWindow<T>
+    public class Month12RollingWindow
     {
-        private readonly Queue<T> _data;
+        private readonly Queue<decimal> _data;
         private readonly int _size;
 
-        public RollingWindow(int size)
+        public Month12RollingWindow(int size)
         {
             _size = size;
-            _data = new Queue<T>(size);
+            _data = new Queue<decimal>(size);
         }
 
-        public void Add(T value)
+        public void Add(decimal value)
         {
             if (_data.Count == _size)
                 _data.Dequeue();
@@ -217,7 +235,7 @@ namespace StockSharp.Samples.Strategies
 
         public bool IsFull() => _data.Count == _size;
 
-        public T this[int idx] => _data.ElementAt(idx);
+        public decimal this[int idx] => _data.ElementAt(idx);
     }
 
     #endregion

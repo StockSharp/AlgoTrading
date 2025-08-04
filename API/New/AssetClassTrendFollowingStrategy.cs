@@ -27,6 +27,7 @@ namespace StockSharp.Samples.Strategies
         public DataType CandleType => _candleType.Value;
 
         private readonly Dictionary<Security, SimpleMovingAverage> _sma = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private readonly HashSet<Security> _held = new();
         private DateTime _lastDay = DateTime.MinValue;
 
@@ -50,24 +51,41 @@ namespace StockSharp.Samples.Strategies
                 _sma[sec] = sma;
 
                 SubscribeCandles(dt, true, sec)
-                    .Bind(c =>
-                    {
-                        sma.Process(c);
-                        var d = c.OpenTime.Date;
-                        if (d == _lastDay)
-                            return;
-                        _lastDay = d;
-                        if (d.Day == 1)
-                            TryRebalance();
-                    })
+                    .Bind(c => ProcessCandle(c, sec))
                     .Start();
             }
         }
 
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            // Process the candle through the SMA indicator
+            var sma = _sma[security];
+            sma.Process(candle);
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+            
+            if (d.Day == 1)
+                TryRebalance();
+        }
+
         private void TryRebalance()
         {
-            var longs = _sma.Where(kv => kv.Value.IsFormed &&
-                                         kv.Key.LastPrice > kv.Value.GetCurrentValue<decimal>())
+            var longs = _sma.Where(kv => kv.Value.IsFormed)
+                            .Where(kv => 
+                            {
+                                var price = GetLatestPrice(kv.Key);
+                                return price > 0 && price > kv.Value.GetCurrentValue<decimal>();
+                            })
                             .Select(kv => kv.Key).ToList();
 
             foreach (var sec in _held.Where(h => !longs.Contains(h)).ToList())
@@ -75,19 +93,30 @@ namespace StockSharp.Samples.Strategies
 
             if (longs.Any())
             {
-                decimal cap = Portfolio.CurrentValue / longs.Count;
+                var portfolioValue = Portfolio.CurrentValue ?? 0m;
+                decimal cap = portfolioValue / longs.Count;
                 foreach (var sec in longs)
-                    Move(sec, cap / sec.Price);
+                {
+                    var price = GetLatestPrice(sec);
+                    if (price > 0)
+                        Move(sec, cap / price);
+                }
             }
 
             _held.Clear();
             _held.UnionWith(longs);
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {

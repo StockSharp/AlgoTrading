@@ -1,4 +1,3 @@
-
 // EarningsAnnouncementPremiumStrategy.cs
 // ------------------------------------------------------------
 // Long DaysBefore days BEFORE earnings announcement,
@@ -36,6 +35,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private readonly Dictionary<Security, DateTimeOffset> _exitSchedule = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastProcessed = DateTime.MinValue;
 
         public EarningsAnnouncementPremiumStrategy()
@@ -60,16 +60,25 @@ namespace StockSharp.Samples.Strategies
             foreach (var (sec, tf) in GetWorkingSecurities())
             {
                 SubscribeCandles(tf, true, sec)
-                    .Bind(c =>
-                    {
-                        var day = c.OpenTime.Date;
-                        if (day == _lastProcessed)
-                            return;
-                        _lastProcessed = day;
-                        DailyScan(day);
-                    })
+                    .Bind(c => ProcessCandle(c, sec))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var day = candle.OpenTime.Date;
+            if (day == _lastProcessed)
+                return;
+            _lastProcessed = day;
+            DailyScan(day);
         }
 
         private void DailyScan(DateTime today)
@@ -83,8 +92,12 @@ namespace StockSharp.Samples.Strategies
                 var diff = (earnDate.Date - today).TotalDays;
                 if (diff == DaysBefore && !_exitSchedule.ContainsKey(stock))
                 {
-                    var qty = CapitalPerTradeUsd / stock.Price;
-                    if (qty * stock.Price >= MinTradeUsd)
+                    var price = GetLatestPrice(stock);
+                    if (price <= 0)
+                        continue;
+                        
+                    var qty = CapitalPerTradeUsd / price;
+                    if (qty * price >= MinTradeUsd)
                     {
                         Place(stock, qty, Sides.Buy, "Enter");
                         _exitSchedule[stock] = earnDate.Date.AddDays(DaysAfter);
@@ -102,6 +115,11 @@ namespace StockSharp.Samples.Strategies
                     Place(kv.Key, pos, Sides.Sell, "Exit");
                 _exitSchedule.Remove(kv.Key);
             }
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         #region Helpers

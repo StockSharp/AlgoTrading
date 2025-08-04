@@ -1,4 +1,3 @@
-
 // ConsistentMomentumStrategy.cs (revised)
 // Uses rolling windows on daily candles; tranches monthly; CandleType param.
 // Date: 2 August 2025
@@ -28,6 +27,7 @@ namespace StockSharp.Samples.Strategies
         public decimal MinTradeUsd => _minUsd.Value;
 
         private readonly Dictionary<Security, RollingWindow<decimal>> _prices = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private readonly List<Tranche> _tranches = new();
         private DateTime _lastDay = DateTime.MinValue;
 
@@ -49,16 +49,26 @@ namespace StockSharp.Samples.Strategies
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
                 _prices[sec] = new RollingWindow<decimal>(LookbackDays + 1);
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => ProcessDaily(c))
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c => ProcessCandle(c, sec))
                     .Start();
             }
         }
 
-        private void ProcessDaily(ICandleMessage c)
+        private void ProcessCandle(ICandleMessage candle, Security security)
         {
-            var sec = (Security)c.SecurityId;
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            ProcessDaily(candle, security);
+        }
+
+        private void ProcessDaily(ICandleMessage c, Security sec)
+        {
             _prices[sec].Add(c.ClosePrice);
 
             var d = c.OpenTime.Date;
@@ -103,30 +113,44 @@ namespace StockSharp.Samples.Strategies
             if (!longs.Any() || !shorts.Any())
                 return;
 
-            decimal cap = Portfolio.CurrentValue;
+            decimal cap = Portfolio.CurrentValue ?? 0m;
             decimal wl = cap * 0.5m / longs.Count;
             decimal ws = cap * 0.5m / shorts.Count;
 
             var tranche = new Tranche();
             foreach (var s in longs)
             {
-                var qty = wl / s.Price;
-                Move(s, qty);
-                tranche.Pos.Add((s, qty));
+                var price = GetLatestPrice(s);
+                if (price > 0)
+                {
+                    var qty = wl / price;
+                    Move(s, qty);
+                    tranche.Pos.Add((s, qty));
+                }
             }
             foreach (var s in shorts)
             {
-                var qty = -ws / s.Price;
-                Move(s, qty);
-                tranche.Pos.Add((s, qty));
+                var price = GetLatestPrice(s);
+                if (price > 0)
+                {
+                    var qty = -ws / price;
+                    Move(s, qty);
+                    tranche.Pos.Add((s, qty));
+                }
             }
             _tranches.Add(tranche);
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ConsMom" });
         }
@@ -147,5 +171,4 @@ namespace StockSharp.Samples.Strategies
         }
         #endregion
 
-    }
-}
+    }}

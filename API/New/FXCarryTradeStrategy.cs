@@ -26,6 +26,7 @@ namespace StockSharp.Samples.Strategies
         public DataType CandleType => _tf.Value;
 
         private readonly Dictionary<Security, decimal> _weights = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public FXCarryTradeStrategy()
@@ -46,16 +47,26 @@ namespace StockSharp.Samples.Strategies
 
             // Use ONLY ONE currency's daily candle to trigger monthly rebalance
             SubscribeCandles(CandleType, true, first)
-                .Bind(c =>
-                {
-                    var day = c.OpenTime.Date;
-                    if (day == _lastDay)
-                        return;
-                    _lastDay = day;
+                .Bind(c => ProcessCandle(c, first))
+                .Start();
+        }
 
-                    if (day.Day == 1)
-                        Rebalance();
-                }).Start();
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var day = candle.OpenTime.Date;
+            if (day == _lastDay)
+                return;
+            _lastDay = day;
+
+            if (day.Day == 1)
+                Rebalance();
         }
 
         private void Rebalance()
@@ -79,17 +90,29 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in bot)
                 _weights[s] = ws;
 
-            foreach (var pos in Positions.Keys.Where(s => !_weights.ContainsKey(s)))
-                Move(pos, 0);
+            foreach (var position in Positions)
+                if (!_weights.ContainsKey(position.Security))
+                    Move(position.Security, 0);
 
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _weights)
-                Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    Move(kv.Key, kv.Value * portfolioValue / price);
+            }
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgtQty)
         {
             var diff = tgtQty - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {

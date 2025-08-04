@@ -21,6 +21,8 @@ namespace StockSharp.Samples.Strategies
         public Security ETF { get => _etf.Value; set => _etf.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
 
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
+
         public OptionExpirationWeekStrategy()
         {
             _etf = Param<Security>(nameof(ETF), null);
@@ -38,16 +40,32 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
             SubscribeCandles(_tf, true, ETF)
-                .Bind(c => OnDaily(c.OpenTime.Date))
+                .Bind(c => ProcessCandle(c, ETF))
                 .Start();
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(candle.OpenTime.Date);
         }
 
         private void OnDaily(DateTime d)
         {
             bool inExp = IsOptionExpWeek(d);
-            var tgt = inExp ? Portfolio.CurrentValue / ETF.Price : 0;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            var price = GetLatestPrice(ETF);
+            
+            var tgt = inExp && price > 0 ? portfolioValue / price : 0;
             var diff = tgt - PositionBy(ETF);
-            if (Math.Abs(diff) * ETF.Price < MinTradeUsd)
+            
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order
@@ -59,6 +77,11 @@ namespace StockSharp.Samples.Strategies
                 Type = OrderTypes.Market,
                 Comment = "OpExp"
             });
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private bool IsOptionExpWeek(DateTime d)

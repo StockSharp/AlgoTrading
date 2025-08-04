@@ -1,4 +1,3 @@
-
 // FScoreReversalStrategy.cs
 // Combines Piotroski F‑Score with 1‑month reversal.
 // Long losers (1‑month return < 0) with FScore ≥ 7; short winners (return > 0) with FScore ≤ 3.
@@ -33,10 +32,12 @@ namespace StockSharp.Samples.Strategies
         public decimal MinTradeUsd => _minUsd.Value;
         #endregion
 
-        private readonly Dictionary<Security, RollingWindow<decimal>> _prices = new();
+        private readonly Dictionary<Security, FScoreRollingWindow> _prices = new();
         private readonly Dictionary<Security, decimal> _ret = new();
         private readonly Dictionary<Security, int> _fscore = new();
         private readonly Dictionary<Security, decimal> _w = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
+        private DateTime _lastRebalance = DateTime.MinValue;
 
         public FScoreReversalStrategy()
         {
@@ -60,20 +61,34 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
-                SubscribeCandles(sec, dt).Start();
-                _prices[sec] = new RollingWindow<decimal>(Lookback + 1);
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c => ProcessCandle(c, sec))
+                    .Start();
+                _prices[sec] = new FScoreRollingWindow(Lookback + 1);
             }
-            Schedule(TimeSpan.Zero, _ => CurrentTime.Day == 1, Rebalance);
         }
 
-        protected override void OnCandleFinished(ICandleMessage candle)
+        private void ProcessCandle(ICandleMessage candle, Security security)
         {
-            var sec = (Security)candle.SecurityId;
-            if (!_prices.TryGetValue(sec, out var win))
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            if (!_prices.TryGetValue(security, out var win))
                 return;
             win.Add(candle.ClosePrice);
             if (win.IsFull())
-                _ret[sec] = (win.Last() - win[0]) / win[0];
+                _ret[security] = (win.Last() - win[0]) / win[0];
+
+            var d = candle.OpenTime.Date;
+            if (d.Day == 1 && _lastRebalance != d)
+            {
+                _lastRebalance = d;
+                Rebalance();
+            }
         }
 
         private void Rebalance()
@@ -100,16 +115,27 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in shorts)
                 _w[s] = ws;
 
-            foreach (var pos in Positions.Keys.Where(s => !_w.ContainsKey(s)))
-                Order(pos, -PositionBy(pos));
+            foreach (var position in Positions)
+                if (!_w.ContainsKey(position.Security))
+                    Order(position.Security, -PositionBy(position.Security));
 
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _w)
             {
-                var tgt = kv.Value * Portfolio.CurrentValue / kv.Key.Price;
-                var diff = tgt - PositionBy(kv.Key);
-                if (Math.Abs(diff) * kv.Key.Price >= MinTradeUsd)
-                    Order(kv.Key, diff);
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                {
+                    var tgt = kv.Value * portfolioValue / price;
+                    var diff = tgt - PositionBy(kv.Key);
+                    if (Math.Abs(diff) * price >= MinTradeUsd)
+                        Order(kv.Key, diff);
+                }
             }
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Order(Security s, decimal qty)
@@ -138,15 +164,17 @@ namespace StockSharp.Samples.Strategies
         #endregion
     }
 
-    #region RollingWindow
-    public class RollingWindow<T>
+    #region FScoreRollingWindow
+    internal class FScoreRollingWindow
     {
-        private readonly Queue<T> _q = new(); private readonly int _size;
-        public RollingWindow(int size) { _size = size; }
-        public void Add(T v) { if (_q.Count == _size) _q.Dequeue(); _q.Enqueue(v); }
+        private readonly Queue<decimal> _q = new(); 
+        private readonly int _size;
+        
+        public FScoreRollingWindow(int size) { _size = size; }
+        public void Add(decimal v) { if (_q.Count == _size) _q.Dequeue(); _q.Enqueue(v); }
         public bool IsFull() => _q.Count == _size;
-        public T Last() => _q.Last();
-        public T this[int idx] => _q.ElementAt(idx);
+        public decimal Last() => _q.Last();
+        public decimal this[int idx] => _q.ElementAt(idx);
         public int Count => _q.Count;
     }
     #endregion

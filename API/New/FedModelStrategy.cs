@@ -15,7 +15,7 @@
 // EarnYieldSym : earnings‑yield series (Security)
 // RegressionMonths (default 12)
 // ----------------------------------------------------------------------------
-// Date: 2 Aug 2025
+// Date: 2 Aug 2025
 // ----------------------------------------------------------------------------
 
 using System;
@@ -49,6 +49,7 @@ namespace StockSharp.Samples.Strategies
         private readonly RollingWin _eq = new();
         private readonly RollingWin _gap = new();
         private readonly RollingWin _rf = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastMonth = DateTime.MinValue;
 
         public FedModelStrategy()
@@ -81,8 +82,20 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(t);
             foreach (var (s, tf) in GetWorkingSecurities())
                 SubscribeCandles(tf, true, s)
-                    .Bind(c => OnDaily(c))
+                    .Bind(c => ProcessCandle(c, s))
                     .Start();
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(candle);
         }
 
         private void OnDaily(ICandleMessage c)
@@ -92,7 +105,7 @@ namespace StockSharp.Samples.Strategies
                 return;
             _lastMonth = d;
 
-            if (c.SecurityId != Universe.First())
+            if (c.SecurityId != Universe.First().ToSecurityId())
                 return;
 
             _eq.Add(c.ClosePrice);
@@ -144,13 +157,24 @@ namespace StockSharp.Samples.Strategies
             }
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Move(Security s, decimal weight)
         {
             if (s == null)
                 return;
-            var tgt = weight * Portfolio.CurrentValue / s.Price;
+                
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            var price = GetLatestPrice(s);
+            if (price <= 0)
+                return;
+                
+            var tgt = weight * portfolioValue / price;
             var diff = tgt - Pos(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            if (Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order

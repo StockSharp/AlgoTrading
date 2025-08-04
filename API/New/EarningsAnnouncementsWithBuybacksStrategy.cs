@@ -1,4 +1,3 @@
-
 // EarningsAnnouncementsWithBuybacksStrategy.cs — candle‑stream version
 // Universe: IEnumerable<Security>
 // Subscribes to daily candles (CandleType param) and runs DailyScan once per day
@@ -34,6 +33,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private readonly Dictionary<Security, DateTimeOffset> _exit = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastProcessed = DateTime.MinValue;
 
         public EarningsAnnouncementsWithBuybacksStrategy()
@@ -58,15 +58,25 @@ namespace StockSharp.Samples.Strategies
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
                 SubscribeCandles(dt, true, sec)
-                    .Bind(c =>
-                    {
-                        var d = c.OpenTime.Date;
-                        if (d == _lastProcessed)
-                            return;
-                        _lastProcessed = d;
-                        DailyScan(d);
-                    }).Start();
+                    .Bind(c => ProcessCandle(c, sec))
+                    .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastProcessed)
+                return;
+            _lastProcessed = d;
+            DailyScan(d);
         }
 
         private void DailyScan(DateTime today)
@@ -79,8 +89,12 @@ namespace StockSharp.Samples.Strategies
                 var diff = (earnDate.Date - today).TotalDays;
                 if (diff == DaysBefore && !_exit.ContainsKey(stock) && TryHasActiveBuyback(stock))
                 {
-                    var qty = CapitalPerTradeUsd / stock.Price;
-                    if (qty * stock.Price >= MinTradeUsd)
+                    var price = GetLatestPrice(stock);
+                    if (price <= 0)
+                        continue;
+                        
+                    var qty = CapitalPerTradeUsd / price;
+                    if (qty * price >= MinTradeUsd)
                     {
                         Place(stock, qty, Sides.Buy, "Enter");
                         _exit[stock] = earnDate.Date.AddDays(DaysAfter);
@@ -100,6 +114,13 @@ namespace StockSharp.Samples.Strategies
             }
         }
 
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Place(Security s, decimal qty, Sides side, string tag)
         {
             RegisterOrder(new Order
@@ -112,8 +133,6 @@ namespace StockSharp.Samples.Strategies
                 Comment = $"EarnBuyback-{tag}"
             });
         }
-
-        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
         private bool TryGetNextEarningsDate(Security s, out DateTimeOffset dt) { dt = DateTimeOffset.MinValue; return false; }
         private bool TryHasActiveBuyback(Security s) => false;

@@ -11,6 +11,7 @@ using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
 namespace StockSharp.Samples.Strategies
 {
     public class TimeSeriesMomentumStrategy : Strategy
@@ -23,11 +24,14 @@ namespace StockSharp.Samples.Strategies
         private class Win { public Queue<decimal> Px = new(); }
         private readonly Dictionary<Security, Win> _map = new();
         private readonly Dictionary<Security, decimal> _w = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _last = DateTime.MinValue;
+
         public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
         public int Lookback => _look.Value;
         public int VolWindow => _vol.Value;
         public decimal MinTradeUsd => _minUsd.Value;
+
         public TimeSeriesMomentumStrategy()
         {
             _univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
@@ -35,16 +39,31 @@ namespace StockSharp.Samples.Strategies
             _vol = Param(nameof(VolWindow), 60);
             _minUsd = Param(nameof(MinTradeUsd), 200m);
         }
+
         public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
+
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
             foreach (var (s, tf) in GetWorkingSecurities())
             {
                 _map[s] = new Win();
-                SubscribeCandles(tf, true, s).Bind(c => OnDaily((Security)c.SecurityId, c)).Start();
+                SubscribeCandles(tf, true, s).Bind(c => ProcessCandle(c, s)).Start();
             }
         }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(security, candle);
+        }
+
         private void OnDaily(Security s, ICandleMessage c)
         {
             var q = _map[s].Px;
@@ -59,6 +78,7 @@ namespace StockSharp.Samples.Strategies
                 return;
             Rebalance();
         }
+
         private void Rebalance()
         {
             var sig = new Dictionary<Security, (decimal perf, double vol)>();
@@ -85,18 +105,32 @@ namespace StockSharp.Samples.Strategies
             var norm = _w.Values.Sum(x => Math.Abs(x));
             foreach (var k in _w.Keys.ToList())
                 _w[k] /= norm;
-            foreach (var p in Positions.Keys.Where(x => !_w.ContainsKey(x)))
-                Trade(p, 0);
+            foreach (var position in Positions)
+                if (!_w.ContainsKey(position.Security))
+                    Trade(position.Security, 0);
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _w)
-                Trade(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    Trade(kv.Key, kv.Value * portfolioValue / price);
+            }
         }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Trade(Security s, decimal tgt)
         {
             var diff = tgt - Pos(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "TSMom" });
         }
+
         private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
     }
 }

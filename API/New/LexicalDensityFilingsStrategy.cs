@@ -26,6 +26,7 @@ namespace StockSharp.Samples.Strategies
         public DataType CandleType => _tf.Value;
 
         private readonly Dictionary<Security, decimal> _weights = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public LexicalDensityFilingsStrategy()
@@ -45,16 +46,26 @@ namespace StockSharp.Samples.Strategies
             var trigger = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty.");
 
             SubscribeCandles(CandleType, true, trigger)
-                .Bind(c =>
-                {
-                    var d = c.OpenTime.Date;
-                    if (d == _lastDay)
-                        return;
-                    _lastDay = d;
+                .Bind(c => ProcessCandle(c, trigger))
+                .Start();
+        }
 
-                    if (IsQuarterRebalanceDay(d))
-                        Rebalance();
-                }).Start();
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+
+            if (IsQuarterRebalanceDay(d))
+                Rebalance();
         }
 
         private bool IsQuarterRebalanceDay(DateTime d)
@@ -85,17 +96,24 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in shortSide)
                 _weights[s] = ws;
 
-            foreach (var p in Positions.Keys.Where(s => !_weights.ContainsKey(s)))
-                TradeTo(p, 0);
+            foreach (var position in Positions)
+                if (!_weights.ContainsKey(position.Security))
+                    TradeTo(position.Security, 0);
 
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _weights)
-                TradeTo(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    TradeTo(kv.Key, kv.Value * portfolioValue / price);
+            }
         }
 
         private void TradeTo(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {
@@ -110,5 +128,10 @@ namespace StockSharp.Samples.Strategies
 
         private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         private bool TryGetLexicalDensity(Security s, out decimal v) { v = 0; return false; }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
     }
 }

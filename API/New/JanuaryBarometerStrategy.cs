@@ -1,4 +1,3 @@
-
 // JanuaryBarometerStrategy.cs
 // -----------------------------------------------------------------------------
 // If January monthly return is positive, stay long equity index ETF for rest
@@ -31,6 +30,7 @@ namespace StockSharp.Samples.Strategies
         public decimal MinTradeUsd => _minUsd.Value;
         #endregion
 
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private decimal _janOpenPrice = 0m;
 
         public JanuaryBarometerStrategy()
@@ -52,8 +52,20 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(t);
 
             SubscribeCandles(_tf, true, EquityETF)
-                .Bind(c => OnDaily(c))
+                .Bind(c => ProcessCandle(c, EquityETF))
                 .Start();
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(candle);
         }
 
         private void OnDaily(ICandleMessage c)
@@ -87,11 +99,21 @@ namespace StockSharp.Samples.Strategies
             }
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Move(Security s, decimal weight)
         {
-            var tgt = weight * Portfolio.CurrentValue / s.Price;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            var price = GetLatestPrice(s);
+            if (price <= 0)
+                return;
+                
+            var tgt = weight * portfolioValue / price;
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            if (Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order

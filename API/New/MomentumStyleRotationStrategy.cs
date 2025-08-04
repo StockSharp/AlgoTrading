@@ -1,4 +1,3 @@
-
 // MomentumStyleRotationStrategy.cs
 // -----------------------------------------------------------------------------
 // Rotates among Factor ETFs (e.g., Momentum, Value, Quality) and Market ETF
@@ -34,6 +33,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private readonly Dictionary<Security, RollingWin> _px = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public MomentumStyleRotationStrategy()
@@ -60,9 +60,21 @@ namespace StockSharp.Samples.Strategies
             {
                 _px[s] = new RollingWin(LookbackDays + 1);
                 SubscribeCandles(tf, true, s)
-                    .Bind(c => OnDaily((Security)c.SecurityId, c))
+                    .Bind(c => ProcessCandle(c, s))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(security, candle);
         }
 
         private void OnDaily(Security s, ICandleMessage c)
@@ -87,15 +99,27 @@ namespace StockSharp.Samples.Strategies
             if (perf.Count == 0)
                 return;
             var best = perf.OrderByDescending(kv => kv.Value).First().Key;
-            foreach (var pos in Positions.Keys.Where(s => s != best))
-                Move(pos, 0);
-            Move(best, Portfolio.CurrentValue / best.Price);
+            
+            foreach (var position in Positions)
+                if (position.Security != best)
+                    Move(position.Security, 0);
+                    
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            var price = GetLatestPrice(best);
+            if (price > 0)
+                Move(best, portfolioValue / price);
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "StyleRot" });
         }

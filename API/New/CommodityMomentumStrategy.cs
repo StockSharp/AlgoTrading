@@ -30,6 +30,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private readonly Dictionary<Security, RollingWin> _px = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public CommodityMomentumStrategy()
@@ -50,9 +51,21 @@ namespace StockSharp.Samples.Strategies
             {
                 _px[s] = new RollingWin(252 + 1);
                 SubscribeCandles(tf, true, s)
-                    .Bind(c => OnDaily(s, c))
+                    .Bind(c => ProcessCandle(c, s))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(security, candle);
         }
 
         private void OnDaily(Security s, ICandleMessage c)
@@ -81,21 +94,34 @@ namespace StockSharp.Samples.Strategies
             if (mom.Count < TopN)
                 return;
             var winners = mom.OrderByDescending(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();
-            foreach (var pos in Positions.Keys.Where(s => !winners.Contains(s)))
-                Move(pos, 0);
+            foreach (var position in Positions)
+                if (!winners.Contains(position.Security))
+                    Move(position.Security, 0);
             decimal w = 1m / winners.Count;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var s in winners)
-                Move(s, w * Portfolio.CurrentValue / s.Price);
+            {
+                var price = GetLatestPrice(s);
+                if (price > 0)
+                    Move(s, w * portfolioValue / price);
+            }
+        }
+
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ComMom" });
         }
-        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
         private class RollingWin
         {

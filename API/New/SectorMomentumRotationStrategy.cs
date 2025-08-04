@@ -13,6 +13,7 @@ using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
 namespace StockSharp.Samples.Strategies
 {
     public class SectorMomentumRotationStrategy : Strategy
@@ -22,27 +23,58 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<decimal> _minUsd;
         private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
         private readonly Dictionary<Security, RollingWin> _px = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _last = DateTime.MinValue;
+
         public IEnumerable<Security> SectorETFs { get => _sects.Value; set => _sects.Value = value; }
         public int LookbackDays => _look.Value;
         public decimal MinTradeUsd => _minUsd.Value;
+
         public SectorMomentumRotationStrategy()
         {
             _sects = Param<IEnumerable<Security>>(nameof(SectorETFs), Array.Empty<Security>());
             _look = Param(nameof(LookbackDays), 126);
             _minUsd = Param(nameof(MinTradeUsd), 200m);
         }
+
         public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => SectorETFs.Select(s => (s, _tf));
+
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
             var trig = SectorETFs.FirstOrDefault() ?? throw new InvalidOperationException("Sectors empty");
-            SubscribeCandles(_tf, true, trig).Bind(c => OnDaily(c.OpenTime.Date)).Start();
+            SubscribeCandles(_tf, true, trig).Bind(c => ProcessCandle(c, trig)).Start();
             foreach (var s in SectorETFs)
                 _px[s] = new RollingWin(LookbackDays + 1);
             foreach (var (s, tf) in GetWorkingSecurities())
-                SubscribeCandles(tf, true, s).Bind(c => _px[s].Add(c.ClosePrice)).Start();
+                SubscribeCandles(tf, true, s).Bind(c => ProcessDataCandle(c, s)).Start();
         }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(candle.OpenTime.Date);
+        }
+
+        private void ProcessDataCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+            
+            // Add to price history
+            _px[security].Add(candle.ClosePrice);
+        }
+
         private void OnDaily(DateTime d)
         {
             if (d == _last)
@@ -52,6 +84,7 @@ namespace StockSharp.Samples.Strategies
                 return;
             Rebalance();
         }
+
         private void Rebalance()
         {
             var winners = new List<Security>();
@@ -63,11 +96,31 @@ namespace StockSharp.Samples.Strategies
             if (!winners.Any())
                 return;
             decimal w = 1m / winners.Count;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var s in winners)
-                Move(s, w * Portfolio.CurrentValue / s.Price);
+            {
+                var price = GetLatestPrice(s);
+                if (price > 0)
+                    Move(s, w * portfolioValue / price);
+            }
         }
-        private void Move(Security s, decimal tgt) { var diff = tgt - Pos(s); if (Math.Abs(diff) * s.Price < MinTradeUsd) return; RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SectMom" }); }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
+        private void Move(Security s, decimal tgt) 
+        { 
+            var diff = tgt - Pos(s); 
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd) 
+                return; 
+            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SectMom" }); 
+        }
+
         private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+
         private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
     }
 }

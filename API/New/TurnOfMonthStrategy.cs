@@ -24,6 +24,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<decimal> _minUsd;
         private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private int _tdMonthEnd = int.MaxValue;
         private int _tdMonthStart = 0;
 
@@ -52,8 +53,20 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
 
             SubscribeCandles(_tf, true, ETF)
-                .Bind(c => OnDaily(c.OpenTime.Date))
+                .Bind(c => ProcessCandle(c, ETF))
                 .Start();
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(candle.OpenTime.Date);
         }
 
         private void OnDaily(DateTime d)
@@ -62,14 +75,22 @@ namespace StockSharp.Samples.Strategies
             _tdMonthStart = TradingDayNumber(d);
 
             bool inWindow = (_tdMonthEnd <= DaysPrior) || (_tdMonthStart <= DaysAfter);
-            var tgt = inWindow ? Portfolio.CurrentValue / ETF.Price : 0;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            var price = GetLatestPrice(ETF);
+            var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
             TradeTo(tgt);
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void TradeTo(decimal tgtQty)
         {
             var diff = tgtQty - PositionBy(ETF);
-            if (Math.Abs(diff) * ETF.Price < MinTradeUsd)
+            var price = GetLatestPrice(ETF);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order

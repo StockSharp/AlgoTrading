@@ -33,6 +33,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private Security _a, _b;
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
 
         public SoccerClubsArbitrageStrategy()
         {
@@ -56,16 +57,39 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(time);
 
-            // Use first ticker’s candle as daily trigger
+            // Subscribe to both securities to get price updates
+            foreach (var (s, tf) in GetWorkingSecurities())
+            {
+                SubscribeCandles(tf, true, s)
+                    .Bind(c => ProcessCandle(c, s))
+                    .Start();
+            }
+
+            // Use first ticker's candle as daily trigger
             SubscribeCandles(_tf, true, _a)
-                .Bind(c => OnDaily())
+                .Bind(c => TriggerDaily())
                 .Start();
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+        }
+
+        private void TriggerDaily()
+        {
+            OnDaily();
         }
 
         private void OnDaily()
         {
-            var pxA = _a.LastTrade?.Price ?? 0m;
-            var pxB = _b.LastTrade?.Price ?? 0m;
+            var pxA = GetLatestPrice(_a);
+            var pxB = GetLatestPrice(_b);
             if (pxA == 0 || pxB == 0)
                 return;
 
@@ -83,18 +107,29 @@ namespace StockSharp.Samples.Strategies
                 Hedge(+1);       // B overpriced → long A, short B
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         // dir = +1 ⇒ long A / short B ; dir = –1 ⇒ short A / long B ; dir = 0 ⇒ flat
         private void Hedge(int dir)
         {
-            decimal half = Portfolio.CurrentValue / 2;
-            Move(_a, dir * half / _a.Price);
-            Move(_b, -dir * half / _b.Price);
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            decimal half = portfolioValue / 2;
+            var priceA = GetLatestPrice(_a);
+            var priceB = GetLatestPrice(_b);
+            if (priceA > 0)
+                Move(_a, dir * half / priceA);
+            if (priceB > 0)
+                Move(_b, -dir * half / priceB);
         }
 
         private void Move(Security s, decimal tgtQty)
         {
             var diff = tgtQty - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order

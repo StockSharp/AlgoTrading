@@ -32,6 +32,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private readonly Dictionary<Security, RateOfChange> _roc = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private readonly HashSet<Security> _held = new();
         private DateTime _lastDay = DateTime.MinValue;
 
@@ -56,18 +57,31 @@ namespace StockSharp.Samples.Strategies
                 _roc[sec] = win;
 
                 SubscribeCandles(dt, true, sec)
-                    .Bind(c =>
-                    {
-                        win.Process(c);
-                        var d = c.OpenTime.Date;
-                        if (d == _lastDay)
-                            return;
-                        _lastDay = d;
-                        if (d.Day == 1)
-                            TryRebalance();
-                    })
+                    .Bind(c => ProcessCandle(c, sec))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            // Process the candle through the indicator
+            var win = _roc[security];
+            win.Process(candle);
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+            
+            if (d.Day == 1)
+                TryRebalance();
         }
 
         private void TryRebalance()
@@ -82,18 +96,29 @@ namespace StockSharp.Samples.Strategies
             foreach (var sec in _held.Where(h => !selected.Contains(h)).ToList())
                 Move(sec, 0);
 
-            decimal capEach = Portfolio.CurrentValue / TopN;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            decimal capEach = portfolioValue / TopN;
             foreach (var sec in selected)
-                Move(sec, capEach / sec.Price);
+            {
+                var price = GetLatestPrice(sec);
+                if (price > 0)
+                    Move(sec, capEach / price);
+            }
 
             _held.Clear();
             _held.UnionWith(selected);
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {

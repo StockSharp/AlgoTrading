@@ -38,6 +38,7 @@ namespace StockSharp.Samples.Strategies
 
         private Security _a, _b;
         private readonly Queue<decimal> _ratio = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _last = DateTime.MinValue;
 
         public PairsTradingCountryETFsStrategy()
@@ -62,13 +63,31 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(_tf, true, _a).Bind(c => OnDaily()).Start();
+            SubscribeCandles(_tf, true, _a).Bind(c => ProcessCandle(c, _a)).Start();
+            SubscribeCandles(_tf, true, _b).Bind(c => ProcessCandle(c, _b)).Start();
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var d = candle.OpenTime.Date;
+            if (d == _last)
+                return;
+            _last = d;
+
+            OnDaily();
         }
 
         private void OnDaily()
         {
-            var pxA = _a.LastTrade?.Price ?? 0m;
-            var pxB = _b.LastTrade?.Price ?? 0m;
+            var pxA = GetLatestPrice(_a);
+            var pxB = GetLatestPrice(_b);
             if (pxA == 0 || pxB == 0)
                 return;
 
@@ -104,11 +123,22 @@ namespace StockSharp.Samples.Strategies
             }
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Hedge(int dir) // dir = +1  => long A short B
         {
-            var equity = Portfolio.CurrentValue;
-            var qty = equity / 2 / _a.Price;
-            var qtyB = equity / 2 / _b.Price;
+            var equity = Portfolio.CurrentValue ?? 0m;
+            var priceA = GetLatestPrice(_a);
+            var priceB = GetLatestPrice(_b);
+            
+            if (priceA <= 0 || priceB <= 0)
+                return;
+
+            var qty = equity / 2 / priceA;
+            var qtyB = equity / 2 / priceB;
             Move(_a, dir * qty);
             Move(_b, -dir * qtyB);
         }
@@ -116,7 +146,8 @@ namespace StockSharp.Samples.Strategies
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {

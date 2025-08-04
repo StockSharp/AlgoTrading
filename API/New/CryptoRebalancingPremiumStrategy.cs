@@ -20,22 +20,45 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<Security> _eth;
         private readonly StrategyParam<decimal> _minUsd;
         private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _last = DateTime.MinValue;
+        
         public Security BTC { get => _btc.Value; set => _btc.Value = value; }
         public Security ETH { get => _eth.Value; set => _eth.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
+        
         public CryptoRebalancingPremiumStrategy()
         {
             _btc = Param<Security>(nameof(BTC), null);
             _eth = Param<Security>(nameof(ETH), null);
             _minUsd = Param(nameof(MinTradeUsd), 200m);
         }
+        
         public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => new[] { (BTC, _tf), (ETH, _tf) };
+        
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(_tf, false, BTC).Bind(c => OnTick(c.OpenTime.UtcDateTime)).Start();
+            foreach (var (sec, dt) in GetWorkingSecurities())
+            {
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c => ProcessCandle(c, sec))
+                    .Start();
+            }
         }
+        
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnTick(candle.OpenTime.UtcDateTime);
+        }
+        
         private void OnTick(DateTime utc)
         {
             if (utc == _last)
@@ -45,13 +68,35 @@ namespace StockSharp.Samples.Strategies
                 return;
             Rebalance();
         }
+        
         private void Rebalance()
         {
-            decimal half = Portfolio.CurrentValue / 2;
-            Move(BTC, half / BTC.Price);
-            Move(ETH, half / ETH.Price);
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            decimal half = portfolioValue / 2;
+            
+            var btcPrice = GetLatestPrice(BTC);
+            var ethPrice = GetLatestPrice(ETH);
+            
+            if (btcPrice > 0)
+                Move(BTC, half / btcPrice);
+            if (ethPrice > 0)
+                Move(ETH, half / ethPrice);
         }
-        private void Move(Security s, decimal tgt) { var diff = tgt - Pos(s); if (Math.Abs(diff) * s.Price < MinTradeUsd) return; RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "RebalPrem" }); }
+        
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+        
+        private void Move(Security s, decimal tgt) 
+        { 
+            var diff = tgt - Pos(s); 
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd) 
+                return; 
+            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "RebalPrem" }); 
+        }
+        
         private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
     }
 }

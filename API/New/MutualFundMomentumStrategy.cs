@@ -21,6 +21,7 @@ namespace StockSharp.Samples.Strategies
         public IEnumerable<Security> Funds { get => _funds.Value; set => _funds.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
 
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public MutualFundMomentumStrategy()
@@ -38,16 +39,26 @@ namespace StockSharp.Samples.Strategies
             var trigger = Funds.FirstOrDefault() ?? throw new InvalidOperationException("Funds empty.");
 
             SubscribeCandles(_tf, true, trigger)
-                .Bind(c =>
-                {
-                    var d = c.OpenTime.Date;
-                    if (d == _lastDay)
-                        return;
-                    _lastDay = d;
+                .Bind(c => ProcessCandle(c, trigger))
+                .Start();
+        }
 
-                    if (IsQuarterRebalanceDay(d))
-                        Rebalance();
-                }).Start();
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+
+            if (IsQuarterRebalanceDay(d))
+                Rebalance();
         }
 
         private bool IsQuarterRebalanceDay(DateTime d) =>
@@ -65,18 +76,30 @@ namespace StockSharp.Samples.Strategies
             int dec = perf.Count / 10;
             var longs = perf.OrderByDescending(kv => kv.Value).Take(dec).Select(kv => kv.Key).ToList();
 
-            foreach (var pos in Positions.Keys.Where(s => !longs.Contains(s)))
-                Move(pos, 0);
+            foreach (var position in Positions)
+                if (!longs.Contains(position.Security))
+                    Move(position.Security, 0);
 
             decimal w = 1m / longs.Count;
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var s in longs)
-                Move(s, w * Portfolio.CurrentValue / s.Price);
+            {
+                var price = GetLatestPrice(s);
+                if (price > 0)
+                    Move(s, w * portfolioValue / price);
+            }
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {

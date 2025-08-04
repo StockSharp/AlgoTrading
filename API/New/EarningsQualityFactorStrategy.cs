@@ -1,4 +1,3 @@
-
 // EarningsQualityFactorStrategy.cs — candle‑stream version
 // Rebalance triggered by first finished candle of July 1.
 // Date: 2 August 2025
@@ -24,6 +23,7 @@ namespace StockSharp.Samples.Strategies
         public DataType CandleType => _candleType.Value;
 
         private readonly Dictionary<Security, decimal> _weights = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastProcessed = DateTime.MinValue;
 
         public EarningsQualityFactorStrategy()
@@ -45,15 +45,8 @@ namespace StockSharp.Samples.Strategies
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
                 SubscribeCandles(dt, true, sec)
-                    .Bind(c =>
-                    {
-                        var d = c.OpenTime.Date;
-                        if (d == _lastProcessed)
-                            return;
-                        _lastProcessed = d;
-                        if (d.Month == 7 && d.Day == 1)
-                            Rebalance();
-                    }).Start();
+                    .Bind(c => ProcessCandle(c, sec))
+                    .Start();
             }
         }
 
@@ -79,17 +72,48 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in shorts)
                 _weights[s] = ws;
 
-            foreach (var p in Positions.Keys.Where(s => !_weights.ContainsKey(s)))
-                Move(p, 0);
+            foreach (var position in Positions)
+                if (!_weights.ContainsKey(position.Security))
+                    Move(position.Security, 0);
 
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _weights)
-                Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    Move(kv.Key, kv.Value * portfolioValue / price);
+            }
+        }
+
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastProcessed)
+                return;
+            _lastProcessed = d;
+            if (d.Month == 7 && d.Day == 1)
+                Rebalance();
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order
             {
@@ -102,7 +126,6 @@ namespace StockSharp.Samples.Strategies
             });
         }
 
-        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         private bool TryGetQualityScore(Security s, out decimal score) { score = 0m; return false; }
     }
 }

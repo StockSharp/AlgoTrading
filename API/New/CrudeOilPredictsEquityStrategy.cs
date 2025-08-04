@@ -1,4 +1,3 @@
-
 // CrudeOilPredictsEquityStrategy.cs (daily candles version)
 // If last-month oil return > 0, invest in equity ETF, else stay in cash ETF.
 // Date: 2 August 2025
@@ -28,6 +27,7 @@ namespace StockSharp.Samples.Strategies
         public int Lookback => _lookback.Value;
 
         private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public CrudeOilPredictsEquityStrategy()
@@ -52,20 +52,28 @@ namespace StockSharp.Samples.Strategies
             foreach (var (s, dt) in GetWorkingSecurities())
             {
                 _wins[s] = new RollingWindow<decimal>(Lookback + 1);
-                SubscribeCandles(s, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
-                    {
-                        _wins[s].Add(c.ClosePrice);
-                        var d = c.OpenTime.Date;
-                        if (d == _lastDay)
-                            return;
-                        _lastDay = d;
-                        if (d.Day == 1)
-                            Rebalance();
-                    })
+                SubscribeCandles(dt, true, s)
+                    .Bind(c => ProcessCandle(c, s))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            _wins[security].Add(candle.ClosePrice);
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+            if (d.Day == 1)
+                Rebalance();
         }
 
         private void Rebalance()
@@ -81,15 +89,26 @@ namespace StockSharp.Samples.Strategies
 
         private void MoveTo(Security target)
         {
-            foreach (var pos in Positions.Keys.Where(s => s != target))
-                Move(s, 0);
-            Move(target, Portfolio.CurrentValue / target.Price);
+            foreach (var position in Positions)
+                if (position.Security != target)
+                    Move(position.Security, 0);
+
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            var price = GetLatestPrice(target);
+            if (price > 0)
+                Move(target, portfolioValue / price);
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < 100)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < 100)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "OilEq" });
         }

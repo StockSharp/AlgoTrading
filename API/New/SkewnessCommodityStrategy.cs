@@ -36,6 +36,7 @@ namespace StockSharp.Samples.Strategies
 
         // rolling windows of prices
         private readonly Dictionary<Security, Queue<decimal>> _px = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastProcessed = DateTime.MinValue;
         private readonly Dictionary<Security, decimal> _weight = new();
 
@@ -65,6 +66,13 @@ namespace StockSharp.Samples.Strategies
 
         private void OnDaily(Security s, ICandleMessage candle)
         {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[s] = candle.ClosePrice;
+
             var q = _px[s];
             if (q.Count == WindowDays + 1)
                 q.Dequeue();
@@ -119,17 +127,23 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in shortSide)
                 _weight[s] = ws;
 
-            foreach (var pos in Positions.Keys.Where(sec => !_weight.ContainsKey(sec)))
-                TradeTo(pos, 0);
+            foreach (var pos in Positions.Where(position => !_weight.ContainsKey(position.Security)))
+                TradeTo(pos.Security, 0);
 
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _weight)
-                TradeTo(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    TradeTo(kv.Key, kv.Value * portfolioValue / price);
+            }
         }
 
         private void TradeTo(Security s, decimal tgtQty)
         {
             var diff = tgtQty - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order
@@ -141,6 +155,11 @@ namespace StockSharp.Samples.Strategies
                 Type = OrderTypes.Market,
                 Comment = "SkewCom"
             });
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private decimal PositionBy(Security s) =>

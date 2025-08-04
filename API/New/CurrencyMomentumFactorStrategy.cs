@@ -1,4 +1,3 @@
-
 // CurrencyMomentumFactorStrategy.cs (full, candle-driven)
 // Long top-K momentum currencies, short bottom-K; monthly rebalance.
 // Date: 2 August 2025
@@ -29,6 +28,7 @@ namespace StockSharp.Samples.Strategies
 
         private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
         private readonly Dictionary<Security, decimal> _w = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public CurrencyMomentumFactorStrategy()
@@ -50,14 +50,25 @@ namespace StockSharp.Samples.Strategies
             {
                 _wins[s] = new RollingWindow<decimal>(Lookback + 1);
                 SubscribeCandles(dt, true, s)
-                    .Bind(c => HandleDaily(c))
+                    .Bind(c => ProcessCandle(c, s))
                     .Start();
             }
         }
 
-        private void HandleDaily(ICandleMessage c)
+        private void ProcessCandle(ICandleMessage candle, Security security)
         {
-            var s = (Security)c.SecurityId;
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            HandleDaily(candle, security);
+        }
+
+        private void HandleDaily(ICandleMessage c, Security s)
+        {
             _wins[s].Add(c.ClosePrice);
             var d = c.OpenTime.Date;
             if (d == _lastDay)
@@ -82,16 +93,29 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in bot)
                 _w[s] = ws;
 
-            foreach (var pos in Positions.Keys.Where(s => !_w.ContainsKey(s)))
-                Move(pos, 0);
+            foreach (var position in Positions)
+                if (!_w.ContainsKey(position.Security))
+                    Move(position.Security, 0);
+
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _w)
-                Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    Move(kv.Key, kv.Value * portfolioValue / price);
+            }
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "CurrMom" });
         }

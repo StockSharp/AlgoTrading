@@ -1,4 +1,3 @@
-
 // DispersionTradingStrategy.cs  (revised, candle-stream driven)
 // • Trades equity index vs. constituents based on average correlation (dispersion signal).
 // • Parameters: IndexSec, Constituents (IEnumerable<Security>), CandleType (StrategyParam<DataType>),
@@ -37,6 +36,7 @@ namespace StockSharp.Samples.Strategies
         #endregion
 
         private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
         private bool _open;                                // current dispersion state
 
@@ -66,22 +66,31 @@ namespace StockSharp.Samples.Strategies
                 _wins[sec] = new RollingWindow<decimal>(LookbackDays + 1);
 
                 SubscribeCandles(dt, true, sec)
-                    .Bind(c =>
-                    {
-                        _wins[sec].Add(c.ClosePrice);
-
-                        var d = c.OpenTime.Date;
-                        if (d == _lastDay)
-                            return;
-                        _lastDay = d;
-
-                        if (_wins.Values.Any(w => !w.IsFull()))
-                            return;
-
-                        EvaluateSignal();        // daily check after windows full
-                    })
+                    .Bind(c => ProcessCandle(c, sec))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            _wins[security].Add(candle.ClosePrice);
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+
+            if (_wins.Values.Any(w => !w.IsFull()))
+                return;
+
+            EvaluateSignal();        // daily check after windows full
         }
 
         private void EvaluateSignal()
@@ -103,23 +112,36 @@ namespace StockSharp.Samples.Strategies
         private void OpenDispersion()
         {
             int n = Constituents.Count();
-            decimal capLeg = Portfolio.CurrentValue * 0.5m; // 50% per leg
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
+            decimal capLeg = portfolioValue * 0.5m; // 50% per leg
             decimal eachLong = capLeg / n;
 
             foreach (var s in Constituents)
-                TradeToTarget(s, eachLong / s.Price);
+            {
+                var price = GetLatestPrice(s);
+                if (price > 0)
+                    TradeToTarget(s, eachLong / price);
+            }
 
-            TradeToTarget(IndexSec, -capLeg / IndexSec.Price);   // short index
+            var indexPrice = GetLatestPrice(IndexSec);
+            if (indexPrice > 0)
+                TradeToTarget(IndexSec, -capLeg / indexPrice);   // short index
+                
             _open = true;
             LogInfo("Opened dispersion spread");
         }
 
         private void CloseAll()
         {
-            foreach (var pos in Positions.Keys.ToList())
-                TradeToTarget(pos, 0m);
+            foreach (var position in Positions)
+                TradeToTarget(position.Security, 0m);
             _open = false;
             LogInfo("Closed dispersion spread");
+        }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
         }
 
         #region Helper math / trading
@@ -152,7 +174,8 @@ namespace StockSharp.Samples.Strategies
         private void TradeToTarget(Security s, decimal tgtQty)
         {
             var diff = tgtQty - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
 
             RegisterOrder(new Order

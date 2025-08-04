@@ -12,6 +12,7 @@ using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
 namespace StockSharp.Samples.Strategies
 {
     public class MomentumFactorStocksStrategy : Strategy
@@ -30,9 +31,12 @@ namespace StockSharp.Samples.Strategies
         public decimal MinTradeUsd => _minUsd.Value;
         public DataType CandleType => _tf.Value;
         #endregion
+
         private readonly Dictionary<Security, RollingWin> _px = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _last = DateTime.MinValue;
         private readonly Dictionary<Security, decimal> _w = new();
+
         public MomentumFactorStocksStrategy()
         {
             _univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
@@ -42,7 +46,9 @@ namespace StockSharp.Samples.Strategies
             _minUsd = Param(nameof(MinTradeUsd), 200m);
             _tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
         }
+
         public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, CandleType));
+
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
@@ -50,9 +56,23 @@ namespace StockSharp.Samples.Strategies
             {
                 _px[s] = new RollingWin(LookbackDays + 1);
                 SubscribeCandles(tf, true, s)
-                    .Bind(c => OnDaily((Security)c.SecurityId, c)).Start();
+                    .Bind(c => ProcessCandle(c, s))
+                    .Start();
             }
         }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            OnDaily(security, candle);
+        }
+
         private void OnDaily(Security s, ICandleMessage c)
         {
             _px[s].Add(c.ClosePrice);
@@ -64,6 +84,7 @@ namespace StockSharp.Samples.Strategies
                 return;
             Rebalance();
         }
+
         private void Rebalance()
         {
             var mom = new Dictionary<Security, decimal>();
@@ -81,19 +102,34 @@ namespace StockSharp.Samples.Strategies
                 _w[s] = wl;
             foreach (var s in shorts)
                 _w[s] = ws;
-            foreach (var p in Positions.Keys.Where(s => !_w.ContainsKey(s)))
-                Move(p, 0);
+            foreach (var position in Positions)
+                if (!_w.ContainsKey(position.Security))
+                    Move(position.Security, 0);
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _w)
-                Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    Move(kv.Key, kv.Value * portfolioValue / price);
+            }
         }
+
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - Pos(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "MomStocks" });
         }
+
         private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+
         private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
     }
 }

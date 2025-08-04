@@ -30,6 +30,7 @@ namespace StockSharp.Samples.Strategies
 
         private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
         private readonly Dictionary<Security, decimal> _weights = new();
+        private readonly Dictionary<Security, decimal> _latestPrices = new();
         private DateTime _lastDay = DateTime.MinValue;
 
         public BettingAgainstBetaStrategy()
@@ -57,18 +58,30 @@ namespace StockSharp.Samples.Strategies
                 _wins[sec] = new RollingWindow<decimal>(WindowDays + 1);
 
                 SubscribeCandles(dt, true, sec)
-                    .Bind(c =>
-                    {
-                        _wins[sec].Add(c.ClosePrice);
-                        var d = c.OpenTime.Date;
-                        if (d == _lastDay)
-                            return;
-                        _lastDay = d;
-                        if (d.Day == 1)
-                            TryRebalance();
-                    })
+                    .Bind(candle => ProcessCandle(candle, sec))
                     .Start();
             }
+        }
+
+        private void ProcessCandle(ICandleMessage candle, Security security)
+        {
+            // Skip unfinished candles
+            if (candle.State != CandleStates.Finished)
+                return;
+
+            // Store the latest closing price for this security
+            _latestPrices[security] = candle.ClosePrice;
+
+            // Add closing price to rolling window
+            _wins[security].Add(candle.ClosePrice);
+
+            var d = candle.OpenTime.Date;
+            if (d == _lastDay)
+                return;
+            _lastDay = d;
+            
+            if (d.Day == 1)
+                TryRebalance();
         }
 
         private void TryRebalance()
@@ -100,10 +113,17 @@ namespace StockSharp.Samples.Strategies
             foreach (var s in shorts)
                 _weights[s] = ws;
 
-            foreach (var p in Positions.Keys.Where(s => !_weights.ContainsKey(s)))
-                Move(p, 0);
+            foreach (var position in Positions)
+                if (!_weights.ContainsKey(position.Security))
+                    Move(position.Security, 0);
+
+            var portfolioValue = Portfolio.CurrentValue ?? 0m;
             foreach (var kv in _weights)
-                Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+            {
+                var price = GetLatestPrice(kv.Key);
+                if (price > 0)
+                    Move(kv.Key, kv.Value * portfolioValue / price);
+            }
         }
 
         private decimal[] GetReturns(RollingWindow<decimal> win)
@@ -128,10 +148,16 @@ namespace StockSharp.Samples.Strategies
             return varM != 0 ? cov / varM : 0m;
         }
 
+        private decimal GetLatestPrice(Security security)
+        {
+            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+        }
+
         private void Move(Security s, decimal tgt)
         {
             var diff = tgt - PositionBy(s);
-            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+            var price = GetLatestPrice(s);
+            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
                 return;
             RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "BAB" });
         }
@@ -147,6 +173,7 @@ namespace StockSharp.Samples.Strategies
             public bool IsFull() => _q.Count == _n;
             public T Last() => _q.Last();
             public T this[int i] => _q.ElementAt(i);
+            public T[] ToArray() => _q.ToArray();
         }
         #endregion
 
