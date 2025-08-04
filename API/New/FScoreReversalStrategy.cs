@@ -120,14 +120,14 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = s,
                 Portfolio = Portfolio,
-                Direction = qty > 0 ? Sides.Buy : Sides.Sell,
+                Side = qty > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(qty),
                 Type = OrderTypes.Market,
                 Comment = "FScoreRev"
             });
         }
 
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
         #region Stub FScore
         private bool TryGetFScore(Security s, out int fscore)

@@ -68,9 +68,9 @@ namespace StockSharp.Samples.Strategies
             var diff = tgt - Pos(s);
             if (Math.Abs(diff) * s.Price < MinTradeUsd)
                 return;
-            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "PairSwitch" });
+            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "PairSwitch" });
         }
-        private decimal Pos(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
     }
 }

@@ -107,14 +107,14 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = s,
                 Portfolio = Portfolio,
-                Direction = side,
+                Side = side,
                 Volume = qty,
                 Type = OrderTypes.Market,
                 Comment = $"EarnBuyback-{tag}"
             });
         }
 
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
         private bool TryGetNextEarningsDate(Security s, out DateTimeOffset dt) { dt = DateTimeOffset.MinValue; return false; }
         private bool TryHasActiveBuyback(Security s) => false;

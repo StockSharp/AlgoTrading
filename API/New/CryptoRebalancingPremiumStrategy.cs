@@ -51,7 +51,7 @@ namespace StockSharp.Samples.Strategies
             Move(BTC, half / BTC.Price);
             Move(ETH, half / ETH.Price);
         }
-        private void Move(Security s, decimal tgt) { var diff = tgt - Pos(s); if (Math.Abs(diff) * s.Price < MinTradeUsd) return; RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "RebalPrem" }); }
-        private decimal Pos(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private void Move(Security s, decimal tgt) { var diff = tgt - Pos(s); if (Math.Abs(diff) * s.Price < MinTradeUsd) return; RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "RebalPrem" }); }
+        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
     }
 }

@@ -128,9 +128,9 @@ namespace StockSharp.Samples.Strategies
             var diff = tgt - PositionBy(s);
             if (Math.Abs(diff) * s.Price < MinTradeUsd)
                 return;
-            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ConsMom" });
+            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ConsMom" });
         }
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
         private class Tranche { public List<(Security PosSec, decimal PosQty)> Pos = new(); public int Age; }
 

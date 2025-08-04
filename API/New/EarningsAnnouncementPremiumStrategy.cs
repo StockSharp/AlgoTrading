@@ -112,14 +112,14 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = s,
                 Portfolio = Portfolio,
-                Direction = side,
+                Side = side,
                 Volume = qty,
                 Type = OrderTypes.Market,
                 Comment = $"EarnPrem-{tag}"
             });
         }
 
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         #endregion
 
         #region External data stub

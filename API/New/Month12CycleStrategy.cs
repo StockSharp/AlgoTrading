@@ -181,7 +181,7 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = sec,
                 Portfolio = Portfolio,
-                Direction = side,
+                Side = side,
                 Volume = qty.Abs(),
                 Type = OrderTypes.Market,
                 Comment = "12‑MonthCycle"

@@ -60,7 +60,7 @@ namespace StockSharp.Samples.Strategies
         {
             var diff = tgt - Pos();
             if (Math.Abs(diff) * SPY.Price < MinTradeUsd) return;
-            RegisterOrder(new Order { Security = SPY, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SynLend" });
+            RegisterOrder(new Order { Security = SPY, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SynLend" });
         }
         private decimal Pos() => Positions.TryGetValue(SPY, out var q) ? q : 0m;
         private decimal GetIntensity() => 0m; // stub replace with real feed

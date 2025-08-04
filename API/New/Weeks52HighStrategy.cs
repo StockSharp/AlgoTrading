@@ -217,7 +217,7 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = sec,
                 Portfolio = Portfolio,
-                Direction = qty > 0 ? Sides.Buy : Sides.Sell,
+                Side = qty > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(qty),
                 Type = OrderTypes.Market,
                 Comment = "52‑WeekHigh"

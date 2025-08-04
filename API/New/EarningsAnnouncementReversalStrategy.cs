@@ -86,9 +86,9 @@ namespace StockSharp.Samples.Strategies
             var diff = tgt - Pos(s);
             if (Math.Abs(diff) * s.Price < MinTradeUsd)
                 return;
-            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "EARev" });
+            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "EARev" });
         }
-        private decimal Pos(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         private bool TryGetEarningsDate(Security s, out DateTime dt) { dt = DateTime.MinValue; return false; }
     }
 }

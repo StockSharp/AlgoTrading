@@ -69,8 +69,8 @@ namespace StockSharp.Samples.Strategies
             foreach (var kv in _w)
                 Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
         }
-        private void Move(Security s, decimal tgt) { var diff = tgt - Pos(s); if (Math.Abs(diff) * s.Price < MinTradeUsd) return; RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ROA" }); }
-        private decimal Pos(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private void Move(Security s, decimal tgt) { var diff = tgt - Pos(s); if (Math.Abs(diff) * s.Price < MinTradeUsd) return; RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ROA" }); }
+        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         private bool TryGetROA(Security s, out decimal v) { v = 0; return false; }
     }
 }

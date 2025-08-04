@@ -97,6 +97,6 @@ namespace StockSharp.Samples.Strategies
             { if (Exchange.IsTradingDay(cur)) n++; cur = cur.AddDays(1); }
             return n;
         }
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
     }
 }

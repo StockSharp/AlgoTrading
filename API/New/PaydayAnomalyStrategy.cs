@@ -51,7 +51,7 @@ namespace StockSharp.Samples.Strategies
             var diff = tgt - Pos();
             if (Math.Abs(diff) * ETF.Price < MinTradeUsd)
                 return;
-            RegisterOrder(new Order { Security = ETF, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
+            RegisterOrder(new Order { Security = ETF, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
         }
         private int TradingDaysLeftInMonth(DateTime d)
         {

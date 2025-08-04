@@ -96,14 +96,14 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = s,
                 Portfolio = Portfolio,
-                Direction = diff > 0 ? Sides.Buy : Sides.Sell,
+                Side = diff > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(diff),
                 Type = OrderTypes.Market,
                 Comment = "EQuality"
             });
         }
 
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
         private bool TryGetQualityScore(Security s, out decimal score) { score = 0m; return false; }
     }
 }

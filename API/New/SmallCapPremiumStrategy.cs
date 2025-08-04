@@ -102,7 +102,7 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = s,
                 Portfolio = Portfolio,
-                Direction = diff > 0 ? Sides.Buy : Sides.Sell,
+                Side = diff > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(diff),
                 Type = OrderTypes.Market,
                 Comment = "SmallCap"
@@ -110,7 +110,7 @@ namespace StockSharp.Samples.Strategies
         }
 
         private decimal PositionBy(Security s) =>
-            Positions.TryGetValue(s, out var q) ? q : 0m;
+            GetPositionValue(s, Portfolio) ?? 0;
 
         private bool TryGetMarketCap(Security s, out decimal cap)
         {

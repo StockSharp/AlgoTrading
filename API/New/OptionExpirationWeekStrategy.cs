@@ -55,7 +55,7 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = ETF,
                 Portfolio = Portfolio,
-                Direction = diff > 0 ? Sides.Buy : Sides.Sell,
+                Side = diff > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(diff),
                 Type = OrderTypes.Market,
                 Comment = "OpExp"
@@ -72,6 +72,6 @@ namespace StockSharp.Samples.Strategies
             return d >= third.AddDays(-4) && d <= third;
         }
 
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
     }
 }

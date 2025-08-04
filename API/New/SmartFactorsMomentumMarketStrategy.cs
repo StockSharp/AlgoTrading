@@ -135,10 +135,10 @@ namespace StockSharp.Samples.Strategies
             var tgt = weight * Portfolio.CurrentValue / sec.Price;
             var diff = tgt - PositionBy(sec);
             if (Math.Abs(diff) * sec.Price >= MinTradeUsd)
-                RegisterOrder(new Order { Security = sec, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SmartFactors" });
+                RegisterOrder(new Order { Security = sec, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SmartFactors" });
         }
 
-        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
     }
 
     #region RollingWindow helper

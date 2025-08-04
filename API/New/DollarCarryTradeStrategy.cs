@@ -135,7 +135,7 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = sec,
                 Portfolio = Portfolio,
-                Direction = diff > 0 ? Sides.Buy : Sides.Sell,
+                Side = diff > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(diff),
                 Type = OrderTypes.Market,
                 Comment = "DollarCarry"

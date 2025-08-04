@@ -159,14 +159,14 @@ namespace StockSharp.Samples.Strategies
             {
                 Security = s,
                 Portfolio = Portfolio,
-                Direction = diff > 0 ? Sides.Buy : Sides.Sell,
+                Side = diff > 0 ? Sides.Buy : Sides.Sell,
                 Volume = Math.Abs(diff),
                 Type = OrderTypes.Market,
                 Comment = "FedModel"
             });
         }
 
-        private decimal Pos(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
         private decimal GetRF(DateTime d) => 0.0002m;
 
