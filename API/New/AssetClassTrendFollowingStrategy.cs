@@ -1,4 +1,3 @@
-
 // AssetClassTrendFollowingStrategy.cs  (revised)
 // Uses SMA filter per ETF; monthly rebalance based on daily candle stream.
 // Parameters: Universe (IEnumerable<Security>), CandleType.
@@ -50,9 +49,8 @@ namespace StockSharp.Samples.Strategies
                 var sma = new SimpleMovingAverage { Length = SmaLength };
                 _sma[sec] = sma;
 
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         sma.Process(c);
                         var d = c.OpenTime.Date;

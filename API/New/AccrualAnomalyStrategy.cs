@@ -1,4 +1,3 @@
-
 // AccrualAnomalyStrategy.cs  (revised to candle-driven)
 // Yearly rebalance when first finished candle of May detected.
 // Parameters: Universe (IEnumerable<Security>), CandleType param
@@ -43,9 +42,8 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         var d = c.OpenTime.Date;
                         if (d == _lastDay)

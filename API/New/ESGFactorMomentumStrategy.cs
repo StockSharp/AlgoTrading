@@ -1,4 +1,3 @@
-
 // ESGFactorMomentumStrategy.cs  — parameterized timeframe version
 // * Universe: IEnumerable<Security>
 // * CandleType: StrategyParam<DataType>  (e.g., TimeSpan.FromDays(1).TimeFrame())
@@ -59,9 +58,8 @@ namespace StockSharp.Samples.Strategies
             {
                 _windows[sec] = new RollingWindow<decimal>(LookbackDays + 1);
 
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         var win = _windows[sec];
                         win.Add(c.ClosePrice);

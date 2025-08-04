@@ -39,8 +39,7 @@ namespace StockSharp.Samples.Strategies
             var trig = Universe.FirstOrDefault();
             if (trig == null)
                 throw new InvalidOperationException("Universe empty");
-            SubscribeCandles(trig, _tf).Bind(CandleStates.Finished)
-                  .Do(c => OnDay(c.OpenTime.Date)).Start();
+            SubscribeCandles(_tf, true, trig).Bind(c => OnDay(c.OpenTime.Date)).Start();
         }
 
         private void OnDay(DateTime d)

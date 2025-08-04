@@ -1,4 +1,3 @@
-
 // FedModelStrategy.cs
 // ----------------------------------------------------------------------------
 // Fed‑Model yield‑gap timing (Quantpedia #21):
@@ -81,9 +80,8 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
             foreach (var (s, tf) in GetWorkingSecurities())
-                SubscribeCandles(s, tf)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => OnDaily(c))
+                SubscribeCandles(tf, true, s)
+                    .Bind(c => OnDaily(c))
                     .Start();
         }
 

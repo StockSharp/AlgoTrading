@@ -4,10 +4,10 @@
 // Long TopN most negative-skew, short TopN most positive-skew.
 // Monthly rebalance on the first trading day, triggered by candle-stream
 // (SubscribeCandles → Bind(CandleStates.Finished) → OnDaily).
-// No Schedule() is used.
+ // No Schedule() is used.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 
 using System;
 using System.Collections.Generic;
@@ -57,9 +57,8 @@ namespace StockSharp.Samples.Strategies
             foreach (var (s, tf) in GetWorkingSecurities())
             {
                 _px[s] = new Queue<decimal>();
-                SubscribeCandles(s, tf)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => OnDaily((Security)c.SecurityId, c))
+                SubscribeCandles(tf, true, s)
+                    .Bind(c => OnDaily(s, c))
                     .Start();
             }
         }

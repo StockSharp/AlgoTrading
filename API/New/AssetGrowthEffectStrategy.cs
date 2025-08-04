@@ -1,4 +1,3 @@
-
 // AssetGrowthEffectStrategy.cs (revised, candle-driven)
 // Annual rebalance when first finished candle in July detected (after June close).
 // Params: Universe, CandleType, etc.
@@ -49,9 +48,8 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         var d = c.OpenTime.Date;
                         if (d == _lastDay)

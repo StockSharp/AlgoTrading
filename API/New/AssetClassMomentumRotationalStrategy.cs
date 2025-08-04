@@ -55,9 +55,8 @@ namespace StockSharp.Samples.Strategies
                 var win = new RateOfChange { Length = RocLength };
                 _roc[sec] = win;
 
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         win.Process(c);
                         var d = c.OpenTime.Date;

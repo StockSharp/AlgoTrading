@@ -38,8 +38,8 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(FirstETF, CandleType).Bind(CandleStates.Finished).Do(c => OnDaily(true, c)).Start();
-            SubscribeCandles(SecondETF, CandleType).Bind(CandleStates.Finished).Do(c => OnDaily(false, c)).Start();
+            SubscribeCandles(CandleType, true, FirstETF).Bind(c => OnDaily(true, c)).Start();
+            SubscribeCandles(CandleType, true, SecondETF).Bind(c => OnDaily(false, c)).Start();
         }
         private void OnDaily(bool first, ICandleMessage c)
         {
