@@ -16,95 +16,95 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-    public class PaydayAnomalyStrategy : Strategy
-    {
-        private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
-        private readonly Dictionary<Security, decimal> _latestPrices = new();
+	public class PaydayAnomalyStrategy : Strategy
+	{
+		private readonly StrategyParam<decimal> _minUsd;
+		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
-        public decimal MinTradeUsd => _minUsd.Value;
-        private DateTime _last = DateTime.MinValue;
+		public decimal MinTradeUsd => _minUsd.Value;
+		private DateTime _last = DateTime.MinValue;
 
-        public PaydayAnomalyStrategy()
-        {
-            _minUsd = Param(nameof(MinTradeUsd), 200m);
-        }
+		public PaydayAnomalyStrategy()
+		{
+			_minUsd = Param(nameof(MinTradeUsd), 200m);
+		}
 
-        public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
-        {
-            if (Security == null)
-                throw new InvalidOperationException("Security not set");
-            yield return (Security, _tf);
-        }
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+		{
+			if (Security == null)
+				throw new InvalidOperationException("Security not set");
+			yield return (Security, _tf);
+		}
 
-        protected override void OnStarted(DateTimeOffset t)
-        {
-            base.OnStarted(t);
-            SubscribeCandles(_tf, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
-        }
+		protected override void OnStarted(DateTimeOffset t)
+		{
+			base.OnStarted(t);
+			SubscribeCandles(_tf, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
+		}
 
-        private void ProcessCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
 
-            OnDaily(candle.OpenTime.Date);
-        }
+			OnDaily(candle.OpenTime.Date);
+		}
 
-        private void OnDaily(DateTime d)
-        {
-            if (d == _last)
-                return;
-            _last = d;
-            int tdMonthEnd = TradingDaysLeftInMonth(d);
-            int tdMonthStart = TradingDayNumber(d);
-            bool inWindow = tdMonthEnd <= 2 || tdMonthStart <= 3;
-            var portfolioValue = Portfolio.CurrentValue ?? 0m;
-            var price = GetLatestPrice(Security);
-            var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
-            var diff = tgt - Pos();
-            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-                return;
-            RegisterOrder(new Order { Security = Security, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
-        }
+		private void OnDaily(DateTime d)
+		{
+			if (d == _last)
+				return;
+			_last = d;
+			int tdMonthEnd = TradingDaysLeftInMonth(d);
+			int tdMonthStart = TradingDayNumber(d);
+			bool inWindow = tdMonthEnd <= 2 || tdMonthStart <= 3;
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			var price = GetLatestPrice(Security);
+			var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
+			var diff = tgt - Pos();
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+				return;
+			RegisterOrder(new Order { Security = Security, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
+		}
 
-        private decimal GetLatestPrice(Security security)
-        {
-            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-        }
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
 
-        private int TradingDaysLeftInMonth(DateTime d)
-        {
-            int cnt = 0;
-            var cur = d;
-            while (cur.Month == d.Month)
-            { 
-                // Simple approximation: assume weekdays are trading days
-                if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
-                    cnt++; 
-                cur = cur.AddDays(1); 
-            }
-            return cnt - 1;
-        }
+		private int TradingDaysLeftInMonth(DateTime d)
+		{
+			int cnt = 0;
+			var cur = d;
+			while (cur.Month == d.Month)
+			{ 
+				// Simple approximation: assume weekdays are trading days
+				if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
+					cnt++; 
+				cur = cur.AddDays(1); 
+			}
+			return cnt - 1;
+		}
 
-        private int TradingDayNumber(DateTime d)
-        {
-            int num = 0;
-            var cur = new DateTime(d.Year, d.Month, 1);
-            while (cur <= d)
-            { 
-                // Simple approximation: assume weekdays are trading days
-                if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
-                    num++; 
-                cur = cur.AddDays(1); 
-            }
-            return num;
-        }
+		private int TradingDayNumber(DateTime d)
+		{
+			int num = 0;
+			var cur = new DateTime(d.Year, d.Month, 1);
+			while (cur <= d)
+			{ 
+				// Simple approximation: assume weekdays are trading days
+				if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
+					num++; 
+				cur = cur.AddDays(1); 
+			}
+			return num;
+		}
 
-        private decimal Pos() => GetPositionValue(Security, Portfolio) ?? 0;
-    }
+		private decimal Pos() => GetPositionValue(Security, Portfolio) ?? 0;
+	}
 }

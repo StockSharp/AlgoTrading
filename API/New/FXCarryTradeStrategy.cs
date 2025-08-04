@@ -13,119 +13,119 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-    public class FXCarryTradeStrategy : Strategy
-    {
-        private readonly StrategyParam<IEnumerable<Security>> _univ;
-        private readonly StrategyParam<int> _topK;
-        private readonly StrategyParam<decimal> _minUsd;
-        private readonly StrategyParam<DataType> _tf;
+	public class FXCarryTradeStrategy : Strategy
+	{
+		private readonly StrategyParam<IEnumerable<Security>> _univ;
+		private readonly StrategyParam<int> _topK;
+		private readonly StrategyParam<decimal> _minUsd;
+		private readonly StrategyParam<DataType> _tf;
 
-        public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-        public int TopK => _topK.Value;
-        public decimal MinTradeUsd => _minUsd.Value;
-        public DataType CandleType => _tf.Value;
+		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
+		public int TopK => _topK.Value;
+		public decimal MinTradeUsd => _minUsd.Value;
+		public DataType CandleType => _tf.Value;
 
-        private readonly Dictionary<Security, decimal> _weights = new();
-        private readonly Dictionary<Security, decimal> _latestPrices = new();
-        private DateTime _lastDay = DateTime.MinValue;
+		private readonly Dictionary<Security, decimal> _weights = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private DateTime _lastDay = DateTime.MinValue;
 
-        public FXCarryTradeStrategy()
-        {
-            _univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-            _topK = Param(nameof(TopK), 3);
-            _minUsd = Param(nameof(MinTradeUsd), 200m);
-            _tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-        }
+		public FXCarryTradeStrategy()
+		{
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
+			_topK = Param(nameof(TopK), 3);
+			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+		}
 
-        public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-            Universe.Select(s => (s, CandleType));
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
+			Universe.Select(s => (s, CandleType));
 
-        protected override void OnStarted(DateTimeOffset time)
-        {
-            base.OnStarted(time);
-            var first = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty.");
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+			var first = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty.");
 
-            // Use ONLY ONE currency's daily candle to trigger monthly rebalance
-            SubscribeCandles(CandleType, true, first)
-                .Bind(c => ProcessCandle(c, first))
-                .Start();
-        }
+			// Use ONLY ONE currency's daily candle to trigger monthly rebalance
+			SubscribeCandles(CandleType, true, first)
+				.Bind(c => ProcessCandle(c, first))
+				.Start();
+		}
 
-        private void ProcessCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
 
-            var day = candle.OpenTime.Date;
-            if (day == _lastDay)
-                return;
-            _lastDay = day;
+			var day = candle.OpenTime.Date;
+			if (day == _lastDay)
+				return;
+			_lastDay = day;
 
-            if (day.Day == 1)
-                Rebalance();
-        }
+			if (day.Day == 1)
+				Rebalance();
+		}
 
-        private void Rebalance()
-        {
-            var carry = new Dictionary<Security, decimal>();
-            foreach (var fx in Universe)
-                if (TryGetCarry(fx, out var c))
-                    carry[fx] = c;
+		private void Rebalance()
+		{
+			var carry = new Dictionary<Security, decimal>();
+			foreach (var fx in Universe)
+				if (TryGetCarry(fx, out var c))
+					carry[fx] = c;
 
-            if (carry.Count < TopK * 2)
-                return;
+			if (carry.Count < TopK * 2)
+				return;
 
-            var top = carry.OrderByDescending(kv => kv.Value).Take(TopK).Select(kv => kv.Key).ToList();
-            var bot = carry.OrderBy(kv => kv.Value).Take(TopK).Select(kv => kv.Key).ToList();
+			var top = carry.OrderByDescending(kv => kv.Value).Take(TopK).Select(kv => kv.Key).ToList();
+			var bot = carry.OrderBy(kv => kv.Value).Take(TopK).Select(kv => kv.Key).ToList();
 
-            _weights.Clear();
-            decimal wl = 1m / top.Count;
-            decimal ws = -1m / bot.Count;
-            foreach (var s in top)
-                _weights[s] = wl;
-            foreach (var s in bot)
-                _weights[s] = ws;
+			_weights.Clear();
+			decimal wl = 1m / top.Count;
+			decimal ws = -1m / bot.Count;
+			foreach (var s in top)
+				_weights[s] = wl;
+			foreach (var s in bot)
+				_weights[s] = ws;
 
-            foreach (var position in Positions)
-                if (!_weights.ContainsKey(position.Security))
-                    Move(position.Security, 0);
+			foreach (var position in Positions)
+				if (!_weights.ContainsKey(position.Security))
+					Move(position.Security, 0);
 
-            var portfolioValue = Portfolio.CurrentValue ?? 0m;
-            foreach (var kv in _weights)
-            {
-                var price = GetLatestPrice(kv.Key);
-                if (price > 0)
-                    Move(kv.Key, kv.Value * portfolioValue / price);
-            }
-        }
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			foreach (var kv in _weights)
+			{
+				var price = GetLatestPrice(kv.Key);
+				if (price > 0)
+					Move(kv.Key, kv.Value * portfolioValue / price);
+			}
+		}
 
-        private decimal GetLatestPrice(Security security)
-        {
-            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-        }
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
 
-        private void Move(Security s, decimal tgtQty)
-        {
-            var diff = tgtQty - PositionBy(s);
-            var price = GetLatestPrice(s);
-            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-                return;
-            RegisterOrder(new Order
-            {
-                Security = s,
-                Portfolio = Portfolio,
-                Side = diff > 0 ? Sides.Buy : Sides.Sell,
-                Volume = Math.Abs(diff),
-                Type = OrderTypes.Market,
-                Comment = "FXCarry"
-            });
-        }
+		private void Move(Security s, decimal tgtQty)
+		{
+			var diff = tgtQty - PositionBy(s);
+			var price = GetLatestPrice(s);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+				return;
+			RegisterOrder(new Order
+			{
+				Security = s,
+				Portfolio = Portfolio,
+				Side = diff > 0 ? Sides.Buy : Sides.Sell,
+				Volume = Math.Abs(diff),
+				Type = OrderTypes.Market,
+				Comment = "FXCarry"
+			});
+		}
 
-        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-        private bool TryGetCarry(Security s, out decimal carry) { carry = 0; return false; }
-    }
+		private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private bool TryGetCarry(Security s, out decimal carry) { carry = 0; return false; }
+	}
 }

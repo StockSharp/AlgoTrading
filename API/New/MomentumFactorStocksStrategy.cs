@@ -15,121 +15,121 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-    public class MomentumFactorStocksStrategy : Strategy
-    {
-        #region Params
-        private readonly StrategyParam<IEnumerable<Security>> _univ;
-        private readonly StrategyParam<int> _look;
-        private readonly StrategyParam<int> _skip;
-        private readonly StrategyParam<int> _quint;
-        private readonly StrategyParam<decimal> _minUsd;
-        private readonly StrategyParam<DataType> _tf;
-        public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-        public int LookbackDays => _look.Value;
-        public int SkipDays => _skip.Value;
-        public int Quintile => _quint.Value;
-        public decimal MinTradeUsd => _minUsd.Value;
-        public DataType CandleType => _tf.Value;
-        #endregion
+	public class MomentumFactorStocksStrategy : Strategy
+	{
+		#region Params
+		private readonly StrategyParam<IEnumerable<Security>> _univ;
+		private readonly StrategyParam<int> _look;
+		private readonly StrategyParam<int> _skip;
+		private readonly StrategyParam<int> _quint;
+		private readonly StrategyParam<decimal> _minUsd;
+		private readonly StrategyParam<DataType> _tf;
+		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
+		public int LookbackDays => _look.Value;
+		public int SkipDays => _skip.Value;
+		public int Quintile => _quint.Value;
+		public decimal MinTradeUsd => _minUsd.Value;
+		public DataType CandleType => _tf.Value;
+		#endregion
 
-        private readonly Dictionary<Security, RollingWin> _px = new();
-        private readonly Dictionary<Security, decimal> _latestPrices = new();
-        private DateTime _last = DateTime.MinValue;
-        private readonly Dictionary<Security, decimal> _w = new();
+		private readonly Dictionary<Security, RollingWin> _px = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private DateTime _last = DateTime.MinValue;
+		private readonly Dictionary<Security, decimal> _w = new();
 
-        public MomentumFactorStocksStrategy()
-        {
-            _univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-            _look = Param(nameof(LookbackDays), 252);
-            _skip = Param(nameof(SkipDays), 21);
-            _quint = Param(nameof(Quintile), 5);
-            _minUsd = Param(nameof(MinTradeUsd), 200m);
-            _tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-        }
+		public MomentumFactorStocksStrategy()
+		{
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
+			_look = Param(nameof(LookbackDays), 252);
+			_skip = Param(nameof(SkipDays), 21);
+			_quint = Param(nameof(Quintile), 5);
+			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+		}
 
-        public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, CandleType));
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, CandleType));
 
-        protected override void OnStarted(DateTimeOffset t)
-        {
-            base.OnStarted(t);
-            foreach (var (s, tf) in GetWorkingSecurities())
-            {
-                _px[s] = new RollingWin(LookbackDays + 1);
-                SubscribeCandles(tf, true, s)
-                    .Bind(c => ProcessCandle(c, s))
-                    .Start();
-            }
-        }
+		protected override void OnStarted(DateTimeOffset t)
+		{
+			base.OnStarted(t);
+			foreach (var (s, tf) in GetWorkingSecurities())
+			{
+				_px[s] = new RollingWin(LookbackDays + 1);
+				SubscribeCandles(tf, true, s)
+					.Bind(c => ProcessCandle(c, s))
+					.Start();
+			}
+		}
 
-        private void ProcessCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
 
-            OnDaily(security, candle);
-        }
+			OnDaily(security, candle);
+		}
 
-        private void OnDaily(Security s, ICandleMessage c)
-        {
-            _px[s].Add(c.ClosePrice);
-            var d = c.OpenTime.Date;
-            if (d == _last)
-                return;
-            _last = d;
-            if (d.Day != 1)
-                return;
-            Rebalance();
-        }
+		private void OnDaily(Security s, ICandleMessage c)
+		{
+			_px[s].Add(c.ClosePrice);
+			var d = c.OpenTime.Date;
+			if (d == _last)
+				return;
+			_last = d;
+			if (d.Day != 1)
+				return;
+			Rebalance();
+		}
 
-        private void Rebalance()
-        {
-            var mom = new Dictionary<Security, decimal>();
-            foreach (var kv in _px)
-                if (kv.Value.Full)
-                    mom[kv.Key] = (kv.Value.Data[SkipDays] - kv.Value.Data[LookbackDays]) / kv.Value.Data[LookbackDays];
-            if (mom.Count < Quintile * 2)
-                return;
-            int q = mom.Count / Quintile;
-            var longs = mom.OrderByDescending(kv => kv.Value).Take(q).Select(kv => kv.Key).ToList();
-            var shorts = mom.OrderBy(kv => kv.Value).Take(q).Select(kv => kv.Key).ToList();
-            _w.Clear();
-            decimal wl = 1m / longs.Count, ws = -1m / shorts.Count;
-            foreach (var s in longs)
-                _w[s] = wl;
-            foreach (var s in shorts)
-                _w[s] = ws;
-            foreach (var position in Positions)
-                if (!_w.ContainsKey(position.Security))
-                    Move(position.Security, 0);
-            var portfolioValue = Portfolio.CurrentValue ?? 0m;
-            foreach (var kv in _w)
-            {
-                var price = GetLatestPrice(kv.Key);
-                if (price > 0)
-                    Move(kv.Key, kv.Value * portfolioValue / price);
-            }
-        }
+		private void Rebalance()
+		{
+			var mom = new Dictionary<Security, decimal>();
+			foreach (var kv in _px)
+				if (kv.Value.Full)
+					mom[kv.Key] = (kv.Value.Data[SkipDays] - kv.Value.Data[LookbackDays]) / kv.Value.Data[LookbackDays];
+			if (mom.Count < Quintile * 2)
+				return;
+			int q = mom.Count / Quintile;
+			var longs = mom.OrderByDescending(kv => kv.Value).Take(q).Select(kv => kv.Key).ToList();
+			var shorts = mom.OrderBy(kv => kv.Value).Take(q).Select(kv => kv.Key).ToList();
+			_w.Clear();
+			decimal wl = 1m / longs.Count, ws = -1m / shorts.Count;
+			foreach (var s in longs)
+				_w[s] = wl;
+			foreach (var s in shorts)
+				_w[s] = ws;
+			foreach (var position in Positions)
+				if (!_w.ContainsKey(position.Security))
+					Move(position.Security, 0);
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			foreach (var kv in _w)
+			{
+				var price = GetLatestPrice(kv.Key);
+				if (price > 0)
+					Move(kv.Key, kv.Value * portfolioValue / price);
+			}
+		}
 
-        private decimal GetLatestPrice(Security security)
-        {
-            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-        }
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
 
-        private void Move(Security s, decimal tgt)
-        {
-            var diff = tgt - Pos(s);
-            var price = GetLatestPrice(s);
-            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-                return;
-            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "MomStocks" });
-        }
+		private void Move(Security s, decimal tgt)
+		{
+			var diff = tgt - Pos(s);
+			var price = GetLatestPrice(s);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+				return;
+			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "MomStocks" });
+		}
 
-        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
-        private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
-    }
+		private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
+	}
 }

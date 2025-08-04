@@ -16,166 +16,166 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-    public class FScoreReversalStrategy : Strategy
-    {
-        #region Params
-        private readonly StrategyParam<IEnumerable<Security>> _universe;
-        private readonly StrategyParam<int> _lookback;
-        private readonly StrategyParam<int> _hi;
-        private readonly StrategyParam<int> _lo;
-        private readonly StrategyParam<decimal> _minUsd;
+	public class FScoreReversalStrategy : Strategy
+	{
+		#region Params
+		private readonly StrategyParam<IEnumerable<Security>> _universe;
+		private readonly StrategyParam<int> _lookback;
+		private readonly StrategyParam<int> _hi;
+		private readonly StrategyParam<int> _lo;
+		private readonly StrategyParam<decimal> _minUsd;
 
-        public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-        public int Lookback => _lookback.Value;
-        public int FHi => _hi.Value;
-        public int FLo => _lo.Value;
-        public decimal MinTradeUsd => _minUsd.Value;
-        #endregion
+		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
+		public int Lookback => _lookback.Value;
+		public int FHi => _hi.Value;
+		public int FLo => _lo.Value;
+		public decimal MinTradeUsd => _minUsd.Value;
+		#endregion
 
-        private readonly Dictionary<Security, FScoreRollingWindow> _prices = new();
-        private readonly Dictionary<Security, decimal> _ret = new();
-        private readonly Dictionary<Security, int> _fscore = new();
-        private readonly Dictionary<Security, decimal> _w = new();
-        private readonly Dictionary<Security, decimal> _latestPrices = new();
-        private DateTime _lastRebalance = DateTime.MinValue;
+		private readonly Dictionary<Security, FScoreRollingWindow> _prices = new();
+		private readonly Dictionary<Security, decimal> _ret = new();
+		private readonly Dictionary<Security, int> _fscore = new();
+		private readonly Dictionary<Security, decimal> _w = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private DateTime _lastRebalance = DateTime.MinValue;
 
-        public FScoreReversalStrategy()
-        {
-            _universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-            _lookback = Param(nameof(Lookback), 21);
-            _hi = Param(nameof(FHi), 7);
-            _lo = Param(nameof(FLo), 3);
-            _minUsd = Param(nameof(MinTradeUsd), 50m);
-        }
+		public FScoreReversalStrategy()
+		{
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
+			_lookback = Param(nameof(Lookback), 21);
+			_hi = Param(nameof(FHi), 7);
+			_lo = Param(nameof(FLo), 3);
+			_minUsd = Param(nameof(MinTradeUsd), 50m);
+		}
 
-        public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-        {
-            if (!Universe.Any())
-                throw new InvalidOperationException("Universe empty");
-            var tf = TimeSpan.FromDays(1).TimeFrame();
-            return Universe.Select(s => (s, tf));
-        }
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			if (!Universe.Any())
+				throw new InvalidOperationException("Universe empty");
+			var tf = TimeSpan.FromDays(1).TimeFrame();
+			return Universe.Select(s => (s, tf));
+		}
 
-        protected override void OnStarted(DateTimeOffset time)
-        {
-            base.OnStarted(time);
-            foreach (var (sec, dt) in GetWorkingSecurities())
-            {
-                SubscribeCandles(dt, true, sec)
-                    .Bind(c => ProcessCandle(c, sec))
-                    .Start();
-                _prices[sec] = new FScoreRollingWindow(Lookback + 1);
-            }
-        }
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+			foreach (var (sec, dt) in GetWorkingSecurities())
+			{
+				SubscribeCandles(dt, true, sec)
+					.Bind(c => ProcessCandle(c, sec))
+					.Start();
+				_prices[sec] = new FScoreRollingWindow(Lookback + 1);
+			}
+		}
 
-        private void ProcessCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
 
-            if (!_prices.TryGetValue(security, out var win))
-                return;
-            win.Add(candle.ClosePrice);
-            if (win.IsFull())
-                _ret[security] = (win.Last() - win[0]) / win[0];
+			if (!_prices.TryGetValue(security, out var win))
+				return;
+			win.Add(candle.ClosePrice);
+			if (win.IsFull())
+				_ret[security] = (win.Last() - win[0]) / win[0];
 
-            var d = candle.OpenTime.Date;
-            if (d.Day == 1 && _lastRebalance != d)
-            {
-                _lastRebalance = d;
-                Rebalance();
-            }
-        }
+			var d = candle.OpenTime.Date;
+			if (d.Day == 1 && _lastRebalance != d)
+			{
+				_lastRebalance = d;
+				Rebalance();
+			}
+		}
 
-        private void Rebalance()
-        {
-            _fscore.Clear();
-            foreach (var s in Universe)
-                if (TryGetFScore(s, out var fs))
-                    _fscore[s] = fs;
+		private void Rebalance()
+		{
+			_fscore.Clear();
+			foreach (var s in Universe)
+				if (TryGetFScore(s, out var fs))
+					_fscore[s] = fs;
 
-            var eligible = _ret.Keys.Intersect(_fscore.Keys).ToList();
-            if (eligible.Count < 20)
-                return;
+			var eligible = _ret.Keys.Intersect(_fscore.Keys).ToList();
+			if (eligible.Count < 20)
+				return;
 
-            var longs = eligible.Where(s => _ret[s] < 0 && _fscore[s] >= FHi).ToList();
-            var shorts = eligible.Where(s => _ret[s] > 0 && _fscore[s] <= FLo).ToList();
-            if (!longs.Any() || !shorts.Any())
-                return;
+			var longs = eligible.Where(s => _ret[s] < 0 && _fscore[s] >= FHi).ToList();
+			var shorts = eligible.Where(s => _ret[s] > 0 && _fscore[s] <= FLo).ToList();
+			if (!longs.Any() || !shorts.Any())
+				return;
 
-            _w.Clear();
-            decimal wl = 1m / longs.Count;
-            decimal ws = -1m / shorts.Count;
-            foreach (var s in longs)
-                _w[s] = wl;
-            foreach (var s in shorts)
-                _w[s] = ws;
+			_w.Clear();
+			decimal wl = 1m / longs.Count;
+			decimal ws = -1m / shorts.Count;
+			foreach (var s in longs)
+				_w[s] = wl;
+			foreach (var s in shorts)
+				_w[s] = ws;
 
-            foreach (var position in Positions)
-                if (!_w.ContainsKey(position.Security))
-                    Order(position.Security, -PositionBy(position.Security));
+			foreach (var position in Positions)
+				if (!_w.ContainsKey(position.Security))
+					Order(position.Security, -PositionBy(position.Security));
 
-            var portfolioValue = Portfolio.CurrentValue ?? 0m;
-            foreach (var kv in _w)
-            {
-                var price = GetLatestPrice(kv.Key);
-                if (price > 0)
-                {
-                    var tgt = kv.Value * portfolioValue / price;
-                    var diff = tgt - PositionBy(kv.Key);
-                    if (Math.Abs(diff) * price >= MinTradeUsd)
-                        Order(kv.Key, diff);
-                }
-            }
-        }
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			foreach (var kv in _w)
+			{
+				var price = GetLatestPrice(kv.Key);
+				if (price > 0)
+				{
+					var tgt = kv.Value * portfolioValue / price;
+					var diff = tgt - PositionBy(kv.Key);
+					if (Math.Abs(diff) * price >= MinTradeUsd)
+						Order(kv.Key, diff);
+				}
+			}
+		}
 
-        private decimal GetLatestPrice(Security security)
-        {
-            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-        }
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
 
-        private void Order(Security s, decimal qty)
-        {
-            if (qty == 0)
-                return;
-            RegisterOrder(new Order
-            {
-                Security = s,
-                Portfolio = Portfolio,
-                Side = qty > 0 ? Sides.Buy : Sides.Sell,
-                Volume = Math.Abs(qty),
-                Type = OrderTypes.Market,
-                Comment = "FScoreRev"
-            });
-        }
+		private void Order(Security s, decimal qty)
+		{
+			if (qty == 0)
+				return;
+			RegisterOrder(new Order
+			{
+				Security = s,
+				Portfolio = Portfolio,
+				Side = qty > 0 ? Sides.Buy : Sides.Sell,
+				Volume = Math.Abs(qty),
+				Type = OrderTypes.Market,
+				Comment = "FScoreRev"
+			});
+		}
 
-        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
-        #region Stub FScore
-        private bool TryGetFScore(Security s, out int fscore)
-        {
-            fscore = 0; // TODO integrate fundamentals
-            return false;
-        }
-        #endregion
-    }
+		#region Stub FScore
+		private bool TryGetFScore(Security s, out int fscore)
+		{
+			fscore = 0; // TODO integrate fundamentals
+			return false;
+		}
+		#endregion
+	}
 
-    #region FScoreRollingWindow
-    internal class FScoreRollingWindow
-    {
-        private readonly Queue<decimal> _q = new(); 
-        private readonly int _size;
-        
-        public FScoreRollingWindow(int size) { _size = size; }
-        public void Add(decimal v) { if (_q.Count == _size) _q.Dequeue(); _q.Enqueue(v); }
-        public bool IsFull() => _q.Count == _size;
-        public decimal Last() => _q.Last();
-        public decimal this[int idx] => _q.ElementAt(idx);
-        public int Count => _q.Count;
-    }
-    #endregion
+	#region FScoreRollingWindow
+	internal class FScoreRollingWindow
+	{
+		private readonly Queue<decimal> _q = new(); 
+		private readonly int _size;
+		
+		public FScoreRollingWindow(int size) { _size = size; }
+		public void Add(decimal v) { if (_q.Count == _size) _q.Dequeue(); _q.Enqueue(v); }
+		public bool IsFull() => _q.Count == _size;
+		public decimal Last() => _q.Last();
+		public decimal this[int idx] => _q.ElementAt(idx);
+		public int Count => _q.Count;
+	}
+	#endregion
 }

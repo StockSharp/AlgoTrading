@@ -16,111 +16,111 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-    public class SectorMomentumRotationStrategy : Strategy
-    {
-        private readonly StrategyParam<IEnumerable<Security>> _sects;
-        private readonly StrategyParam<int> _look;
-        private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
-        private readonly Dictionary<Security, RollingWin> _px = new();
-        private readonly Dictionary<Security, decimal> _latestPrices = new();
-        private DateTime _last = DateTime.MinValue;
+	public class SectorMomentumRotationStrategy : Strategy
+	{
+		private readonly StrategyParam<IEnumerable<Security>> _sects;
+		private readonly StrategyParam<int> _look;
+		private readonly StrategyParam<decimal> _minUsd;
+		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly Dictionary<Security, RollingWin> _px = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private DateTime _last = DateTime.MinValue;
 
-        public IEnumerable<Security> SectorETFs { get => _sects.Value; set => _sects.Value = value; }
-        public int LookbackDays => _look.Value;
-        public decimal MinTradeUsd => _minUsd.Value;
+		public IEnumerable<Security> SectorETFs { get => _sects.Value; set => _sects.Value = value; }
+		public int LookbackDays => _look.Value;
+		public decimal MinTradeUsd => _minUsd.Value;
 
-        public SectorMomentumRotationStrategy()
-        {
-            _sects = Param<IEnumerable<Security>>(nameof(SectorETFs), Array.Empty<Security>());
-            _look = Param(nameof(LookbackDays), 126);
-            _minUsd = Param(nameof(MinTradeUsd), 200m);
-        }
+		public SectorMomentumRotationStrategy()
+		{
+			_sects = Param<IEnumerable<Security>>(nameof(SectorETFs), Array.Empty<Security>());
+			_look = Param(nameof(LookbackDays), 126);
+			_minUsd = Param(nameof(MinTradeUsd), 200m);
+		}
 
-        public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => SectorETFs.Select(s => (s, _tf));
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => SectorETFs.Select(s => (s, _tf));
 
-        protected override void OnStarted(DateTimeOffset t)
-        {
-            base.OnStarted(t);
-            var trig = SectorETFs.FirstOrDefault() ?? throw new InvalidOperationException("Sectors empty");
-            SubscribeCandles(_tf, true, trig).Bind(c => ProcessCandle(c, trig)).Start();
-            foreach (var s in SectorETFs)
-                _px[s] = new RollingWin(LookbackDays + 1);
-            foreach (var (s, tf) in GetWorkingSecurities())
-                SubscribeCandles(tf, true, s).Bind(c => ProcessDataCandle(c, s)).Start();
-        }
+		protected override void OnStarted(DateTimeOffset t)
+		{
+			base.OnStarted(t);
+			var trig = SectorETFs.FirstOrDefault() ?? throw new InvalidOperationException("Sectors empty");
+			SubscribeCandles(_tf, true, trig).Bind(c => ProcessCandle(c, trig)).Start();
+			foreach (var s in SectorETFs)
+				_px[s] = new RollingWin(LookbackDays + 1);
+			foreach (var (s, tf) in GetWorkingSecurities())
+				SubscribeCandles(tf, true, s).Bind(c => ProcessDataCandle(c, s)).Start();
+		}
 
-        private void ProcessCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
 
-            OnDaily(candle.OpenTime.Date);
-        }
+			OnDaily(candle.OpenTime.Date);
+		}
 
-        private void ProcessDataCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessDataCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
-            
-            // Add to price history
-            _px[security].Add(candle.ClosePrice);
-        }
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
+			
+			// Add to price history
+			_px[security].Add(candle.ClosePrice);
+		}
 
-        private void OnDaily(DateTime d)
-        {
-            if (d == _last)
-                return;
-            _last = d;
-            if (d.Day != 1)
-                return;
-            Rebalance();
-        }
+		private void OnDaily(DateTime d)
+		{
+			if (d == _last)
+				return;
+			_last = d;
+			if (d.Day != 1)
+				return;
+			Rebalance();
+		}
 
-        private void Rebalance()
-        {
-            var winners = new List<Security>();
-            foreach (var kv in _px)
-                if (kv.Value.Full && kv.Value.Data[0] > kv.Value.Data[^1])
-                    winners.Add(kv.Key);
-            foreach (var s in SectorETFs.Where(x => !winners.Contains(x)))
-                Move(s, 0);
-            if (!winners.Any())
-                return;
-            decimal w = 1m / winners.Count;
-            var portfolioValue = Portfolio.CurrentValue ?? 0m;
-            foreach (var s in winners)
-            {
-                var price = GetLatestPrice(s);
-                if (price > 0)
-                    Move(s, w * portfolioValue / price);
-            }
-        }
+		private void Rebalance()
+		{
+			var winners = new List<Security>();
+			foreach (var kv in _px)
+				if (kv.Value.Full && kv.Value.Data[0] > kv.Value.Data[^1])
+					winners.Add(kv.Key);
+			foreach (var s in SectorETFs.Where(x => !winners.Contains(x)))
+				Move(s, 0);
+			if (!winners.Any())
+				return;
+			decimal w = 1m / winners.Count;
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			foreach (var s in winners)
+			{
+				var price = GetLatestPrice(s);
+				if (price > 0)
+					Move(s, w * portfolioValue / price);
+			}
+		}
 
-        private decimal GetLatestPrice(Security security)
-        {
-            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-        }
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
 
-        private void Move(Security s, decimal tgt) 
-        { 
-            var diff = tgt - Pos(s); 
-            var price = GetLatestPrice(s);
-            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd) 
-                return; 
-            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SectMom" }); 
-        }
+		private void Move(Security s, decimal tgt) 
+		{ 
+			var diff = tgt - Pos(s); 
+			var price = GetLatestPrice(s);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd) 
+				return; 
+			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SectMom" }); 
+		}
 
-        private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
-        private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
-    }
+		private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
+	}
 }

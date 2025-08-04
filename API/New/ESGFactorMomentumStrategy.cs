@@ -14,141 +14,141 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-    public class ESGFactorMomentumStrategy : Strategy
-    {
-        #region Parameters
-        private readonly StrategyParam<IEnumerable<Security>> _universe;
-        private readonly StrategyParam<int> _lookback;
-        private readonly StrategyParam<DataType> _candleType;
-        private readonly StrategyParam<decimal> _minUsd;
+	public class ESGFactorMomentumStrategy : Strategy
+	{
+		#region Parameters
+		private readonly StrategyParam<IEnumerable<Security>> _universe;
+		private readonly StrategyParam<int> _lookback;
+		private readonly StrategyParam<DataType> _candleType;
+		private readonly StrategyParam<decimal> _minUsd;
 
-        public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-        public int LookbackDays => _lookback.Value;
-        public DataType CandleType => _candleType.Value;
-        public decimal MinTradeUsd => _minUsd.Value;
-        #endregion
+		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
+		public int LookbackDays => _lookback.Value;
+		public DataType CandleType => _candleType.Value;
+		public decimal MinTradeUsd => _minUsd.Value;
+		#endregion
 
-        private readonly Dictionary<Security, RollingWindow<decimal>> _windows = new();
-        private readonly Dictionary<Security, decimal> _latestPrices = new();
-        private readonly HashSet<Security> _held = new();
-        private DateTime _lastProc = DateTime.MinValue;
+		private readonly Dictionary<Security, RollingWindow<decimal>> _windows = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private readonly HashSet<Security> _held = new();
+		private DateTime _lastProc = DateTime.MinValue;
 
-        public ESGFactorMomentumStrategy()
-        {
-            _universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
-                .SetDisplay("Universe", "ESG ETFs list", "Universe");
+		public ESGFactorMomentumStrategy()
+		{
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "ESG ETFs list", "Universe");
 
-            _lookback = Param(nameof(LookbackDays), 252);
+			_lookback = Param(nameof(LookbackDays), 252);
 
-            _candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
-                .SetDisplay("Candle TF", "Time‑frame", "General");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle TF", "Time‑frame", "General");
 
-            _minUsd = Param(nameof(MinTradeUsd), 100m);
-        }
+			_minUsd = Param(nameof(MinTradeUsd), 100m);
+		}
 
-        public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-            Universe.Select(s => (s, CandleType));
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
+			Universe.Select(s => (s, CandleType));
 
-        protected override void OnStarted(DateTimeOffset time)
-        {
-            base.OnStarted(time);
-            if (!Universe.Any())
-                throw new InvalidOperationException("Universe empty");
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+			if (!Universe.Any())
+				throw new InvalidOperationException("Universe empty");
 
-            foreach (var (sec, dt) in GetWorkingSecurities())
-            {
-                _windows[sec] = new RollingWindow<decimal>(LookbackDays + 1);
+			foreach (var (sec, dt) in GetWorkingSecurities())
+			{
+				_windows[sec] = new RollingWindow<decimal>(LookbackDays + 1);
 
-                SubscribeCandles(dt, true, sec)
-                    .Bind(candle => ProcessCandle(candle, sec))
-                    .Start();
-            }
-        }
+				SubscribeCandles(dt, true, sec)
+					.Bind(candle => ProcessCandle(candle, sec))
+					.Start();
+			}
+		}
 
-        private void ProcessCandle(ICandleMessage candle, Security security)
-        {
-            // Skip unfinished candles
-            if (candle.State != CandleStates.Finished)
-                return;
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
 
-            // Store the latest closing price for this security
-            _latestPrices[security] = candle.ClosePrice;
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
 
-            var win = _windows[security];
-            win.Add(candle.ClosePrice);
+			var win = _windows[security];
+			win.Add(candle.ClosePrice);
 
-            var d = candle.OpenTime.Date;
-            if (d == _lastProc)
-                return;
-            _lastProc = d;
+			var d = candle.OpenTime.Date;
+			if (d == _lastProc)
+				return;
+			_lastProc = d;
 
-            if (d.Day == 1)
-                TryRebalance();
-        }
+			if (d.Day == 1)
+				TryRebalance();
+		}
 
-        private void TryRebalance()
-        {
-            if (_windows.Values.Any(w => !w.IsFull()))
-                return;
+		private void TryRebalance()
+		{
+			if (_windows.Values.Any(w => !w.IsFull()))
+				return;
 
-            var mom = _windows.ToDictionary(kv => kv.Key,
-                       kv => (kv.Value.Last() - kv.Value[0]) / kv.Value[0]);
+			var mom = _windows.ToDictionary(kv => kv.Key,
+					   kv => (kv.Value.Last() - kv.Value[0]) / kv.Value[0]);
 
-            var best = mom.Values.Max();
-            var winners = mom.Where(kv => kv.Value == best).Select(kv => kv.Key).ToList();
-            decimal w = 1m / winners.Count;
+			var best = mom.Values.Max();
+			var winners = mom.Where(kv => kv.Value == best).Select(kv => kv.Key).ToList();
+			decimal w = 1m / winners.Count;
 
-            foreach (var s in _held.Where(h => !winners.Contains(h)).ToList())
-                Move(s, 0);
+			foreach (var s in _held.Where(h => !winners.Contains(h)).ToList())
+				Move(s, 0);
 
-            var portfolioValue = Portfolio.CurrentValue ?? 0m;
-            foreach (var s in winners)
-            {
-                var price = GetLatestPrice(s);
-                if (price > 0)
-                    Move(s, w * portfolioValue / price);
-            }
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			foreach (var s in winners)
+			{
+				var price = GetLatestPrice(s);
+				if (price > 0)
+					Move(s, w * portfolioValue / price);
+			}
 
-            _held.Clear();
-            _held.UnionWith(winners);
+			_held.Clear();
+			_held.UnionWith(winners);
 
-            LogInfo($"Rebalance TF {CandleType}: {string.Join(',', winners.Select(x => x.Code))}");
-        }
+			LogInfo($"Rebalance TF {CandleType}: {string.Join(',', winners.Select(x => x.Code))}");
+		}
 
-        private void Move(Security s, decimal tgt)
-        {
-            var diff = tgt - PositionBy(s);
-            var price = GetLatestPrice(s);
-            if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-                return;
-            RegisterOrder(new Order
-            {
-                Security = s,
-                Portfolio = Portfolio,
-                Side = diff > 0 ? Sides.Buy : Sides.Sell,
-                Volume = Math.Abs(diff),
-                Type = OrderTypes.Market,
-                Comment = "ESGMom"
-            });
-        }
+		private void Move(Security s, decimal tgt)
+		{
+			var diff = tgt - PositionBy(s);
+			var price = GetLatestPrice(s);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+				return;
+			RegisterOrder(new Order
+			{
+				Security = s,
+				Portfolio = Portfolio,
+				Side = diff > 0 ? Sides.Buy : Sides.Sell,
+				Volume = Math.Abs(diff),
+				Type = OrderTypes.Market,
+				Comment = "ESGMom"
+			});
+		}
 
-        private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 
-        private decimal GetLatestPrice(Security security)
-        {
-            return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-        }
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
 
-        #region RollingWindow
-        private class RollingWindow<T>
-        {
-            private readonly Queue<T> _q = new(); private readonly int _n;
-            public RollingWindow(int n) { _n = n; }
-            public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
-            public bool IsFull() => _q.Count == _n;
-            public T Last() => _q.Last();
-            public T this[int i] => _q.ElementAt(i);
-        }
-        #endregion
-    }
+		#region RollingWindow
+		private class RollingWindow<T>
+		{
+			private readonly Queue<T> _q = new(); private readonly int _n;
+			public RollingWindow(int n) { _n = n; }
+			public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
+			public bool IsFull() => _q.Count == _n;
+			public T Last() => _q.Last();
+			public T this[int i] => _q.ElementAt(i);
+		}
+		#endregion
+	}
 }
