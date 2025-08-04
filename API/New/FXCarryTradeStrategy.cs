@@ -45,9 +45,8 @@ namespace StockSharp.Samples.Strategies
             var first = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty.");
 
             // Use ONLY ONE currency's daily candle to trigger monthly rebalance
-            SubscribeCandles(first, CandleType)
-                .Bind(CandleStates.Finished)
-                .Do(c =>
+            SubscribeCandles(CandleType, true, first)
+                .Bind(c =>
                 {
                     var day = c.OpenTime.Date;
                     if (day == _lastDay)

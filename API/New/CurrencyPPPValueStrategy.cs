@@ -43,10 +43,11 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
             foreach (var (s, dt) in GetWorkingSecurities())
-                SubscribeCandles(s, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => Daily(c))
-                    .Start();
+            {
+				SubscribeCandles(dt, true, s)
+					.Bind(c => Daily(c))
+					.Start();
+			}
         }
 
         private void Daily(ICandleMessage c)

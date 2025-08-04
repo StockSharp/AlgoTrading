@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<decimal> _entry;
         private readonly StrategyParam<decimal> _exit;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public IEnumerable<Security> Pair { get => _pair.Value; set => _pair.Value = value; }
         public decimal EntryThreshold => _entry.Value;
@@ -57,9 +57,8 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
 
             // Use first ticker’s candle as daily trigger
-            SubscribeCandles(_a, _tf)
-                .Bind(CandleStates.Finished)
-                .Do(c => OnDaily())
+            SubscribeCandles(_tf, true, _a)
+                .Bind(c => OnDaily())
                 .Start();
         }
 

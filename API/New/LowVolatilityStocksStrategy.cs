@@ -56,9 +56,8 @@ namespace StockSharp.Samples.Strategies
             foreach (var (s, tf) in GetWorkingSecurities())
             {
                 _ret[s] = new RollingWin(VolWindowDays + 1);
-                SubscribeCandles(s, tf)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => OnDaily((Security)c.SecurityId, c))
+                SubscribeCandles(tf, true, s)
+                    .Bind(c => OnDaily((Security)c.SecurityId, c))
                     .Start();
             }
         }

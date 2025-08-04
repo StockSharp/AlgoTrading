@@ -65,9 +65,8 @@ namespace StockSharp.Samples.Strategies
             {
                 _wins[sec] = new RollingWindow<decimal>(LookbackDays + 1);
 
-                SubscribeCandles(sec, dt)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(dt, true, sec)
+                    .Bind(c =>
                     {
                         _wins[sec].Add(c.ClosePrice);
 

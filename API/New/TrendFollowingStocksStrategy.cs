@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<IEnumerable<Security>> _universe;
         private readonly StrategyParam<int> _atrLen;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         private class StockInfo
         {

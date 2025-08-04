@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<int> _look;
         private readonly StrategyParam<int> _vol;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
         private class Win { public Queue<decimal> Px = new(); }
         private readonly Dictionary<Security, Win> _map = new();
         private readonly Dictionary<Security, decimal> _w = new();
@@ -42,7 +42,7 @@ namespace StockSharp.Samples.Strategies
             foreach (var (s, tf) in GetWorkingSecurities())
             {
                 _map[s] = new Win();
-                SubscribeCandles(s, tf).Bind(CandleStates.Finished).Do(c => OnDaily((Security)c.SecurityId, c)).Start();
+                SubscribeCandles(tf, true, s).Bind(c => OnDaily((Security)c.SecurityId, c)).Start();
             }
         }
         private void OnDaily(Security s, ICandleMessage c)

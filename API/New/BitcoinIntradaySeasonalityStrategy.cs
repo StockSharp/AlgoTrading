@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<Security> _btc;
         private readonly StrategyParam<int[]> _hoursLong;   // e.g.,  0,1,2,3 == midnight–3am UTC
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromHours(1));
+        private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
 
         public Security BTC { get => _btc.Value; set => _btc.Value = value; }
         public int[] HoursLong => _hoursLong.Value;

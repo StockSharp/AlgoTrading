@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<IEnumerable<Security>> _universe;
         private readonly StrategyParam<int> _quint;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
         public int Quintile => _quint.Value;
@@ -48,9 +48,8 @@ namespace StockSharp.Samples.Strategies
             var trigger = Universe.FirstOrDefault() ??
                           throw new InvalidOperationException("Universe is empty");
 
-            SubscribeCandles(trigger, _tf)
-                .Bind(CandleStates.Finished)
-                .Do(c =>
+            SubscribeCandles(_tf, true, trigger)
+                .Bind(c =>
                 {
                     var d = c.OpenTime.Date;
                     if (d == _lastDay)

@@ -70,7 +70,7 @@ namespace StockSharp.Samples.Strategies
             if (Universe == null || !Universe.Any())
                 throw new InvalidOperationException("Universe cannot be empty — populate the Universe property before starting the strategy.");
 
-            var dt = DataType.TimeFrame(TimeSpan.FromDays(1));
+            var dt = TimeSpan.FromDays(1).TimeFrame();
             return Universe.Select(s => (s, dt));
         }
 
@@ -83,8 +83,9 @@ namespace StockSharp.Samples.Strategies
 
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
-                var sub = SubscribeCandles(sec, dt);
-                sub.Start();
+                SubscribeCandles(dt, true, sec)
+                    .Bind(OnCandleFinished)
+                    .Start();
 
                 _monthCloses[sec] = new RollingWindow<decimal>(13); // 13‑month window
             }

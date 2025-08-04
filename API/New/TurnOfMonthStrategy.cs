@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<int> _prior;
         private readonly StrategyParam<int> _after;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         private int _tdMonthEnd = int.MaxValue;
         private int _tdMonthStart = 0;
@@ -50,8 +50,10 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset time)
         {
             base.OnStarted(time);
-            SubscribeCandles(ETF, _tf).Bind(CandleStates.Finished)
-                .Do(c => OnDaily(c.OpenTime.Date)).Start();
+
+            SubscribeCandles(_tf, true, ETF)
+                .Bind(c => OnDaily(c.OpenTime.Date))
+                .Start();
         }
 
         private void OnDaily(DateTime d)

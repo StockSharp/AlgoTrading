@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies
     {
         private readonly StrategyParam<Security> _etf;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public Security ETF { get => _etf.Value; set => _etf.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
@@ -37,9 +37,8 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(ETF, _tf)
-                .Bind(CandleStates.Finished)
-                .Do(c => OnDaily(c.OpenTime.Date))
+            SubscribeCandles(_tf, true, ETF)
+                .Bind(c => OnDaily(c.OpenTime.Date))
                 .Start();
         }
 

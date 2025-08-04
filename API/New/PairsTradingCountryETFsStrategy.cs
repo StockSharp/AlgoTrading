@@ -28,7 +28,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<decimal> _entryZ;
         private readonly StrategyParam<decimal> _exitZ;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
         public int WindowDays => _window.Value;
@@ -62,7 +62,7 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(_a, _tf).Bind(CandleStates.Finished).Do(c => OnDaily()).Start();
+            SubscribeCandles(_tf, true, _a).Bind(c => OnDaily()).Start();
         }
 
         private void OnDaily()

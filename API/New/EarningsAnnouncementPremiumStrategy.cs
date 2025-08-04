@@ -59,9 +59,8 @@ namespace StockSharp.Samples.Strategies
 
             foreach (var (sec, tf) in GetWorkingSecurities())
             {
-                SubscribeCandles(sec, tf)
-                    .Bind(CandleStates.Finished)
-                    .Do(c =>
+                SubscribeCandles(tf, true, sec)
+                    .Bind(c =>
                     {
                         var day = c.OpenTime.Date;
                         if (day == _lastProcessed)

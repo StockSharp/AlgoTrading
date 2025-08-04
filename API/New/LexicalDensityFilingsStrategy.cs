@@ -44,9 +44,8 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
             var trigger = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty.");
 
-            SubscribeCandles(trigger, CandleType)
-                .Bind(CandleStates.Finished)
-                .Do(c =>
+            SubscribeCandles(CandleType, true, trigger)
+                .Bind(c =>
                 {
                     var d = c.OpenTime.Date;
                     if (d == _lastDay)

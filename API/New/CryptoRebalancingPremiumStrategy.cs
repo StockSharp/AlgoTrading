@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<Security> _btc;
         private readonly StrategyParam<Security> _eth;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromHours(1));
+        private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
         private DateTime _last = DateTime.MinValue;
         public Security BTC { get => _btc.Value; set => _btc.Value = value; }
         public Security ETH { get => _eth.Value; set => _eth.Value = value; }
@@ -34,7 +34,7 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(BTC, _tf).Bind(CandleStates.Finished).Do(c => OnTick(c.OpenTime.UtcDateTime)).Start();
+            SubscribeCandles(_tf, false, BTC).Bind(c => OnTick(c.OpenTime.UtcDateTime)).Start();
         }
         private void OnTick(DateTime utc)
         {

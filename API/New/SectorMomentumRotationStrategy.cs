@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<IEnumerable<Security>> _sects;
         private readonly StrategyParam<int> _look;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
         private readonly Dictionary<Security, RollingWin> _px = new();
         private DateTime _last = DateTime.MinValue;
         public IEnumerable<Security> SectorETFs { get => _sects.Value; set => _sects.Value = value; }
@@ -37,11 +37,11 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
             var trig = SectorETFs.FirstOrDefault() ?? throw new InvalidOperationException("Sectors empty");
-            SubscribeCandles(trig, _tf).Bind(CandleStates.Finished).Do(c => OnDaily(c.OpenTime.Date)).Start();
+            SubscribeCandles(_tf, true, trig).Bind(c => OnDaily(c.OpenTime.Date)).Start();
             foreach (var s in SectorETFs)
                 _px[s] = new RollingWin(LookbackDays + 1);
             foreach (var (s, tf) in GetWorkingSecurities())
-                SubscribeCandles(s, tf).Bind(CandleStates.Finished).Do(c => _px[s].Add(c.ClosePrice)).Start();
+                SubscribeCandles(tf, true, s).Bind(c => _px[s].Add(c.ClosePrice)).Start();
         }
         private void OnDaily(DateTime d)
         {

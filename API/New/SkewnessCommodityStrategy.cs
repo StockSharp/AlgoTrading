@@ -26,7 +26,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<int> _window;
         private readonly StrategyParam<int> _topN;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public IEnumerable<Security> Futures { get => _futures.Value; set => _futures.Value = value; }
         public int WindowDays => _window.Value;

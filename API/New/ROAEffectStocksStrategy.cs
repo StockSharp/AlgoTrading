@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<IEnumerable<Security>> _univ;
         private readonly StrategyParam<int> _decile;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
         private readonly Dictionary<Security, decimal> _w = new();
         private DateTime _last = DateTime.MinValue;
         public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
@@ -36,7 +36,7 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
             var trig = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty");
-            SubscribeCandles(trig, _tf).Bind(CandleStates.Finished).Do(c => OnDaily(c.OpenTime.Date)).Start();
+            SubscribeCandles(_tf, true, trig).Bind(c => OnDaily(c.OpenTime.Date)).Start();
         }
         private void OnDaily(DateTime d)
         {

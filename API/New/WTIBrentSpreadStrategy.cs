@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<Security> _brent;
         private readonly StrategyParam<int> _ma;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
         private readonly Queue<decimal> _spr = new();
         public Security WTI { get => _wti.Value; set => _wti.Value = value; }
         public Security Brent { get => _brent.Value; set => _brent.Value = value; }

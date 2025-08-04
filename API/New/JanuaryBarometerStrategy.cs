@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
         private readonly StrategyParam<Security> _equity;
         private readonly StrategyParam<Security> _cash;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public Security EquityETF { get => _equity.Value; set => _equity.Value = value; }
         public Security CashETF { get => _cash.Value; set => _cash.Value = value; }
@@ -51,9 +51,8 @@ namespace StockSharp.Samples.Strategies
         {
             base.OnStarted(t);
 
-            SubscribeCandles(EquityETF, _tf)
-                .Bind(CandleStates.Finished)
-                .Do(c => OnDaily(c))
+            SubscribeCandles(_tf, true, EquityETF)
+                .Bind(c => OnDaily(c))
                 .Start();
         }
 

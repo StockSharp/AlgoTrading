@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
     {
         private readonly StrategyParam<Security> _spy;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromMinutes(1));
+        private readonly DataType _tf = TimeSpan.FromMinutes(1).TimeFrame();
         public Security SPY { get => _spy.Value; set => _spy.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
         private decimal? _intensityT0;
@@ -39,21 +39,21 @@ namespace StockSharp.Samples.Strategies
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(SPY, _tf).Bind(CandleStates.Finished).Do(OnMinute).Start();
+            SubscribeCandles(_tf, true, SPY).Bind(OnMinute).Start();
         }
         private void OnMinute(ICandleMessage c)
         {
             var utc = c.OpenTime.UtcDateTime;
             // 19:57/59 UTC ≈ 15:57/59 ET (summer); adjust in prod
-            if (utc.hour == 19 and utc.minute == 57)
+            if (utc.hour == 19 && utc.minute == 57)
                 _intensityT0 = GetIntensity();
-            else if (utc.hour == 19 and utc.minute == 59 && _intensityT0 != null)
+            else if (utc.hour == 19 && utc.minute == 59 && _intensityT0 != null)
             {
                 var dir = GetIntensity() > _intensityT0 ? 1 : -1;
                 Trade(dir * Portfolio.CurrentValue / SPY.Price);
             }
             // next day exit 19:58 UTC
-            else if (utc.hour == 19 and utc.minute == 58)
+            else if (utc.hour == 19 && utc.minute == 58)
                 Trade(0);
         }
         private void Trade(decimal tgt)

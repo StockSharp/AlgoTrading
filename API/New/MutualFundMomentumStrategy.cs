@@ -16,7 +16,7 @@ namespace StockSharp.Samples.Strategies
     {
         private readonly StrategyParam<IEnumerable<Security>> _funds;
         private readonly StrategyParam<decimal> _minUsd;
-        private readonly DataType _tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+        private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
         public IEnumerable<Security> Funds { get => _funds.Value; set => _funds.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
@@ -37,9 +37,8 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(t);
             var trigger = Funds.FirstOrDefault() ?? throw new InvalidOperationException("Funds empty.");
 
-            SubscribeCandles(trigger, _tf)
-                .Bind(CandleStates.Finished)
-                .Do(c =>
+            SubscribeCandles(_tf, true, trigger)
+                .Bind(c =>
                 {
                     var d = c.OpenTime.Date;
                     if (d == _lastDay)

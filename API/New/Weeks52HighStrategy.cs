@@ -62,7 +62,7 @@ namespace StockSharp.Samples.Strategies
             if (Universe == null || !Universe.Any())
                 throw new InvalidOperationException("Universe cannot be empty — populate Universe before start.");
 
-            var dt = DataType.TimeFrame(TimeSpan.FromDays(1));
+            var dt = TimeSpan.FromDays(1).TimeFrame();
             return Universe.Select(s => (s, dt));
         }
 

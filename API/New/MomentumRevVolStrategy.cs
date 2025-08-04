@@ -72,9 +72,8 @@ namespace StockSharp.Samples.Strategies
             foreach (var (s, tf) in GetWorkingSecurities())
             {
                 _map[s] = new Win { Px = new RollingWin(Lookback12 + 1), Ret = new RollingWin(VolWindow + 1) };
-                SubscribeCandles(s, tf)
-                    .Bind(CandleStates.Finished)
-                    .Do(c => OnDaily((Security)c.SecurityId, c))
+                SubscribeCandles(tf, true, s)
+                    .Bind(c => OnDaily((Security)c.SecurityId, c))
                     .Start();
             }
         }

@@ -52,7 +52,8 @@ namespace StockSharp.Samples.Strategies
                 throw new InvalidOperationException("MarketETF not set");
             if (!Factors.Any())
                 throw new InvalidOperationException("No factors");
-            var tf = DataType.TimeFrame(TimeSpan.FromDays(1));
+
+            var tf = TimeSpan.FromDays(1).TimeFrame();
             return Factors.Values.Append(MarketETF).Select(s => (s, tf));
         }
 
@@ -61,13 +62,15 @@ namespace StockSharp.Samples.Strategies
             base.OnStarted(time);
             foreach (var (sec, dt) in GetWorkingSecurities())
             {
-                SubscribeCandles(sec, dt).Start();
+                SubscribeCandles(dt, true, sec)
+                    .Bind(OnCandleFinished)
+                    .Start();
+
                 _p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
             }
-            Schedule(TimeSpan.Zero, _ => CurrentTime.Day == 1, Rebalance);
         }
 
-        protected override void OnCandleFinished(ICandleMessage candle)
+        private void OnCandleFinished(ICandleMessage candle)
         {
             var sec = (Security)candle.SecurityId;
             if (_p.TryGetValue(sec, out var win))
