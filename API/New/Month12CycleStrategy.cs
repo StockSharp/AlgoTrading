@@ -189,10 +189,11 @@ namespace StockSharp.Samples.Strategies
             });
         }
 
-        private decimal PositionBy(Security sec) => Positions.TryGetValue(sec, out var pos) ? pos : 0m;
+        private decimal PositionBy(Security sec)
+            => GetPositionValue(sec, Portfolio) ?? 0m;
 
-        #endregion
-    }
+		#endregion
+	}
 
     #region RollingWindow helper
 

@@ -143,7 +143,7 @@ namespace StockSharp.Samples.Strategies
         }
 
         private decimal PositionBy(Security sec) =>
-            Positions.TryGetValue(sec, out var q) ? q : 0m;
+            GetPositionValue(sec, Portfolio) ?? 0m;
 
         #region Carry data feed (stub)
         /// <summary>

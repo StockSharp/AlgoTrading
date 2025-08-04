@@ -144,6 +144,6 @@ namespace StockSharp.Samples.Strategies
         }
 
         private decimal PositionBy(Security s) =>
-            Positions.TryGetValue(s, out var v) ? v : 0m;
-    }
+			GetPositionValue(s, Portfolio) ?? 0m;
+	}
 }

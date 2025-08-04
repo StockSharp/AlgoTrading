@@ -80,7 +80,7 @@ namespace StockSharp.Samples.Strategies
             });
         }
 
-        private decimal Pos() => Positions.TryGetValue(EquityETF, out var q) ? q : 0m;
+        private decimal Pos() => GetPositionValue(EquityETF, Portfolio) ?? 0m;
 
         private bool TryGetSentiment(out decimal val) { val = 0; return false; }
     }

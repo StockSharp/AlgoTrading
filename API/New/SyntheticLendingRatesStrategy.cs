@@ -20,26 +20,19 @@ namespace StockSharp.Samples.Strategies
 {
     public class SyntheticLendingRatesStrategy : Strategy
     {
-        private readonly StrategyParam<Security> _spy;
         private readonly StrategyParam<decimal> _minUsd;
         private readonly DataType _tf = TimeSpan.FromMinutes(1).TimeFrame();
-        public Security SPY { get => _spy.Value; set => _spy.Value = value; }
         public decimal MinTradeUsd => _minUsd.Value;
         private decimal? _intensityT0;
         public SyntheticLendingRatesStrategy()
         {
-            _spy = Param<Security>(nameof(SPY), null);
             _minUsd = Param(nameof(MinTradeUsd), 200m);
         }
-        public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
-        {
-            if (SPY == null) throw new InvalidOperationException("Set SPY");
-            yield return (SPY, _tf);
-        }
+
         protected override void OnStarted(DateTimeOffset t)
         {
             base.OnStarted(t);
-            SubscribeCandles(_tf, true, SPY).Bind(OnMinute).Start();
+            SubscribeCandles(_tf, true, Security).Bind(OnMinute).Start();
         }
         private void OnMinute(ICandleMessage c)
         {
@@ -58,11 +51,11 @@ namespace StockSharp.Samples.Strategies
         }
         private void Trade(decimal tgt)
         {
-            var diff = tgt - Pos();
+            var diff = tgt - Position;
             if (Math.Abs(diff) * SPY.Price < MinTradeUsd) return;
             RegisterOrder(new Order { Security = SPY, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SynLend" });
         }
-        private decimal Pos() => Positions.TryGetValue(SPY, out var q) ? q : 0m;
+
         private decimal GetIntensity() => 0m; // stub replace with real feed
     }
 }
