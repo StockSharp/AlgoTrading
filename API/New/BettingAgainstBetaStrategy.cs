@@ -1,0 +1,156 @@
+
+// BettingAgainstBetaStrategy.cs (candle-driven, param TF)
+// Long lowest-beta decile, short highest-beta; monthly rebalance.
+// Date: 2 August 2025
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using StockSharp.Algo;
+using StockSharp.Algo.Candles;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+namespace StockSharp.Samples.Strategies
+{
+    public class BettingAgainstBetaStrategy : Strategy
+    {
+        private readonly StrategyParam<IEnumerable<Security>> _universe;
+        private readonly StrategyParam<Security> _benchmark;
+        private readonly StrategyParam<int> _window;
+        private readonly StrategyParam<DataType> _tf;
+        private readonly StrategyParam<int> _deciles;
+        private readonly StrategyParam<decimal> _minUsd;
+
+        public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
+        public Security Benchmark { get => _benchmark.Value; set => _benchmark.Value = value; }
+        public int WindowDays => _window.Value;
+        public int Deciles => _deciles.Value;
+        public DataType CandleType => _tf.Value;
+        public decimal MinTradeUsd => _minUsd.Value;
+
+        private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
+        private readonly Dictionary<Security, decimal> _weights = new();
+        private DateTime _lastDay = DateTime.MinValue;
+
+        public BettingAgainstBetaStrategy()
+        {
+            _universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
+            _benchmark = Param<Security>(nameof(Benchmark), null);
+            _window = Param(nameof(WindowDays), 252);
+            _deciles = Param(nameof(Deciles), 10);
+            _tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+            _minUsd = Param(nameof(MinTradeUsd), 100m);
+        }
+
+        public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+        {
+            if (Benchmark == null)
+                throw new InvalidOperationException("Benchmark not set");
+            return Universe.Append(Benchmark).Select(s => (s, CandleType));
+        }
+
+        protected override void OnStarted(DateTimeOffset time)
+        {
+            base.OnStarted(time);
+            foreach (var (sec, dt) in GetWorkingSecurities())
+            {
+                _wins[sec] = new RollingWindow<decimal>(WindowDays + 1);
+
+                SubscribeCandles(sec, dt)
+                    .Bind(CandleStates.Finished)
+                    .Do(c =>
+                    {
+                        _wins[sec].Add(c.ClosePrice);
+                        var d = c.OpenTime.Date;
+                        if (d == _lastDay)
+                            return;
+                        _lastDay = d;
+                        if (d.Day == 1 && Exchange.IsTradingDay(d))
+                            TryRebalance();
+                    })
+                    .Start();
+            }
+        }
+
+        private void TryRebalance()
+        {
+            if (_wins.Values.Any(w => !w.IsFull()))
+                return;
+
+            var benchRet = GetReturns(_wins[Benchmark]);
+            var betas = new Dictionary<Security, decimal>();
+
+            foreach (var s in Universe)
+            {
+                var r = GetReturns(_wins[s]);
+                betas[s] = Beta(r, benchRet);
+            }
+
+            int bucket = betas.Count / Deciles;
+            if (bucket == 0)
+                return;
+
+            var sorted = betas.OrderBy(kv => kv.Value).ToList();
+            var longs = sorted.Take(bucket).Select(kv => kv.Key).ToList();
+            var shorts = sorted.Skip(betas.Count - bucket).Select(kv => kv.Key).ToList();
+
+            _weights.Clear();
+            decimal wl = 1m / longs.Count, ws = -1m / shorts.Count;
+            foreach (var s in longs)
+                _weights[s] = wl;
+            foreach (var s in shorts)
+                _weights[s] = ws;
+
+            foreach (var p in Positions.Keys.Where(s => !_weights.ContainsKey(s)))
+                Move(p, 0);
+            foreach (var kv in _weights)
+                Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+        }
+
+        private decimal[] GetReturns(RollingWindow<decimal> win)
+        {
+            var arr = win.ToArray();
+            var r = new decimal[arr.Length - 1];
+            for (int i = 1; i < arr.Length; i++)
+                r[i - 1] = (arr[i] - arr[i - 1]) / arr[i - 1];
+            return r;
+        }
+        private decimal Beta(decimal[] x, decimal[] y)
+        {
+            int n = Math.Min(x.Length, y.Length);
+            var meanX = x.Take(n).Average();
+            var meanY = y.Take(n).Average();
+            decimal cov = 0, varM = 0;
+            for (int i = 0; i < n; i++)
+            {
+                cov += (x[i] - meanX) * (y[i] - meanY);
+                varM += (y[i] - meanY) * (y[i] - meanY);
+            }
+            return varM != 0 ? cov / varM : 0m;
+        }
+
+        private void Move(Security s, decimal tgt)
+        {
+            var diff = tgt - PositionBy(s);
+            if (Math.Abs(diff) * s.Price < MinTradeUsd)
+                return;
+            RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Direction = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "BAB" });
+        }
+        private decimal PositionBy(Security s) => Positions.TryGetValue(s, out var q) ? q : 0m;
+
+        #region RollingWindow
+        private class RollingWindow<T>
+        {
+            private readonly Queue<T> _q = new();
+            private readonly int _n;
+            public RollingWindow(int n) { _n = n; }
+            public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
+            public bool IsFull() => _q.Count == _n;
+            public T Last() => _q.Last();
+            public T this[int i] => _q.ElementAt(i);
+        }
+        #endregion
+
+    }
+}
