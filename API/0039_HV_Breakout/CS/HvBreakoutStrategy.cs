@@ -91,14 +91,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			// Reset state variables
 			_referencePrice = 0;
 			_historicalVolatility = 0;
 			_isReferenceSet = false;
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			var standardDeviation = new StandardDeviation { Length = HvPeriod };

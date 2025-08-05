@@ -90,11 +90,6 @@ class vix_trigger_strategy(Strategy):
         """
         super(vix_trigger_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prevVix = 0
-        self._latestVix = 0
-        self._isVixRising = False
-
         # Create indicator
         sma = SimpleMovingAverage()
         sma.Length = self.MAPeriod

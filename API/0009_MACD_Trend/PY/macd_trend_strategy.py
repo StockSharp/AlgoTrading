@@ -99,9 +99,6 @@ class macd_trend_strategy(Strategy):
         """
         super(macd_trend_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_is_macd_above_signal = False
-
         # Create MACD indicator with signal line
         macd = MovingAverageConvergenceDivergenceSignal()
         # Configure MACD parameters

@@ -84,14 +84,6 @@ class heikin_ashi_consecutive_strategy(Strategy):
         """
         super(heikin_ashi_consecutive_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._bullish_count = 0
-        self._bearish_count = 0
-        self._prev_ha_open = 0.0
-        self._prev_ha_close = 0.0
-        self._prev_ha_high = 0.0
-        self._prev_ha_low = 0.0
-
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
         

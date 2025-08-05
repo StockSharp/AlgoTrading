@@ -96,8 +96,6 @@ class choppiness_index_breakout_strategy(Strategy):
         """
         super(choppiness_index_breakout_strategy, self).OnStarted(time)
 
-        self._prevChoppiness = 100  # Initialize to high value
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

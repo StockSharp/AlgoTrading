@@ -77,10 +77,6 @@ class supertrend_strategy(Strategy):
         """
         super(supertrend_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_is_price_above_supertrend = False
-        self._prev_supertrend_value = 0.0
-
         # Create ATR indicator for Supertrend calculation
         # Since StockSharp doesn't have built-in Supertrend, we calculate it manually
         atr = AverageTrueRange()

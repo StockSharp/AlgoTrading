@@ -85,9 +85,6 @@ class bollinger_band_width_strategy(Strategy):
         """
         super(bollinger_band_width_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prevWidth = 0
-
         # Create indicators
         bollinger = BollingerBands()
         bollinger.Length = self.BollingerPeriod

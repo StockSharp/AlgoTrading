@@ -104,11 +104,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevIsShortAboveMiddle = default;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevIsShortAboveMiddle = default;
 
 			// Create indicators
 			var shortMa = new SimpleMovingAverage { Length = ShortMaPeriod };

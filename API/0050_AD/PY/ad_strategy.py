@@ -65,9 +65,6 @@ class ad_strategy(Strategy):
         """
         super(ad_strategy, self).OnStarted(time)
 
-        self._previousADValue = 0
-        self._isFirstCandle = True
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

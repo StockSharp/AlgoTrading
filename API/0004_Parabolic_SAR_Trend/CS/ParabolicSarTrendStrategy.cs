@@ -75,12 +75,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevSarValue = 0;
+			_prevIsPriceAboveSar = false;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevSarValue = 0;
-			_prevIsPriceAboveSar = false;
 
 			// Create Parabolic SAR indicator
 			var parabolicSar = new ParabolicSar

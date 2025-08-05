@@ -93,12 +93,6 @@ class ichimoku_kumo_breakout_strategy(Strategy):
         """
         super(ichimoku_kumo_breakout_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_tenkan_value = 0.0
-        self._prev_kijun_value = 0.0
-        self._prev_is_tenkan_above_kijun = False
-        self._prev_is_price_above_cloud = False
-
         # Create Ichimoku indicator
         ichimoku = Ichimoku()
         ichimoku.Tenkan.Length = self.tenkan_period

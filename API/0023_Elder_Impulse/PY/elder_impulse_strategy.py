@@ -115,10 +115,6 @@ class elder_impulse_strategy(Strategy):
         """
         super(elder_impulse_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._previous_ema = 0.0
-        self._is_first_candle = True
-
         # Create indicators
         ema = ExponentialMovingAverage()
         ema.Length = self.ema_period

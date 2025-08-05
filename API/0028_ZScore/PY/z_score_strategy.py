@@ -110,9 +110,6 @@ class z_score_strategy(Strategy):
         """
         super(z_score_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prev_z_score = 0.0
-
         # Create indicators
         sma = SimpleMovingAverage()
         sma.Length = self.ma_period

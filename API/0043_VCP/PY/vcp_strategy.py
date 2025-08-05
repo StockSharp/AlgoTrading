@@ -74,8 +74,6 @@ class vcp_strategy(Strategy):
         """
         super(vcp_strategy, self).OnStarted(time)
 
-        self._prevCandleRange = 0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

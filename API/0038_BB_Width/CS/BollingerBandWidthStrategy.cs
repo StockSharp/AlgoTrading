@@ -89,12 +89,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			// Reset state variables
+			_prevWidth = 0;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Reset state variables
-			_prevWidth = 0;
 
 			// Create indicators
 			var bollinger = new BollingerBands

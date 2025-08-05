@@ -91,17 +91,6 @@ class gann_swing_breakout_strategy(Strategy):
         """
         super(gann_swing_breakout_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._last_swing_high = None
-        self._last_swing_low = None
-        self._high_bar_index = 0
-        self._low_bar_index = 0
-        self._current_bar_index = 0
-        self._recent_highs = []
-        self._recent_lows = []
-        self._recent_candles = []
-        self._prev_ma_value = 0.0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.ma_period

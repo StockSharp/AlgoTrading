@@ -84,8 +84,6 @@ class iv_spike_strategy(Strategy):
         """
         super(iv_spike_strategy, self).OnStarted(time)
 
-        self._previousIV = 0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

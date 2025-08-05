@@ -104,12 +104,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			// Reset state variables
+			_prevClose = 0;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Reset state variables
-			_prevClose = 0;
 
 			// Create indicators
 			var atr = new AverageTrueRange { Length = AtrPeriod };

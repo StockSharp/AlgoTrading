@@ -115,11 +115,6 @@ class stochastic_rsi_cross_strategy(Strategy):
         """
         super(stochastic_rsi_cross_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prev_k = 0.0
-        self._prev_d = 0.0
-        self._is_first_candle = True
-
         # Create a StochRsi indicator (simulated using regular Stochastic)
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period

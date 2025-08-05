@@ -99,9 +99,6 @@ class macd_zero_strategy(Strategy):
         """
         super(macd_zero_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prev_macd = 0.0
-
         # Create MACD indicator with signal line
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self.fast_period

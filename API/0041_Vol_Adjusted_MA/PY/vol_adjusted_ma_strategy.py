@@ -85,9 +85,6 @@ class vol_adjusted_ma_strategy(Strategy):
         """
         super(vol_adjusted_ma_strategy, self).OnStarted(time)
 
-        self._prevAdjustedUpperBand = 0
-        self._prevAdjustedLowerBand = 0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

@@ -109,11 +109,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevChoppiness = 100m; // Initialize to high value
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevChoppiness = 100m; // Initialize to high value
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MAPeriod };
