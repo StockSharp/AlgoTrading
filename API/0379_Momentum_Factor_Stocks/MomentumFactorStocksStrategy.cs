@@ -1,13 +1,7 @@
-// MomentumFactorStocksStrategy.cs
-// -----------------------------------------------------------------------------
-// Classic UMD: long top-quintile 12‑1 month momentum, short bottom quintile.
-// Monthly rebalance (first trading day).
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
@@ -15,51 +9,130 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-	public class MomentumFactorStocksStrategy : Strategy
-	{
-		#region Params
-		private readonly StrategyParam<IEnumerable<Security>> _univ;
-		private readonly StrategyParam<int> _look;
-		private readonly StrategyParam<int> _skip;
-		private readonly StrategyParam<int> _quint;
-		private readonly StrategyParam<decimal> _minUsd;
-		private readonly StrategyParam<DataType> _tf;
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int LookbackDays => _look.Value;
-		public int SkipDays => _skip.Value;
-		public int Quintile => _quint.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
-		#endregion
-
-		private readonly Dictionary<Security, RollingWin> _px = new();
-		private readonly Dictionary<Security, decimal> _latestPrices = new();
-		private DateTime _last = DateTime.MinValue;
-		private readonly Dictionary<Security, decimal> _w = new();
-
-		public MomentumFactorStocksStrategy()
+		/// <summary>
+		/// Classic momentum factor strategy: long the top-quintile 12-1 month momentum stocks
+		/// and short the bottom quintile. Rebalanced on the first trading day of each month.
+		/// </summary>
+		public class MomentumFactorStocksStrategy : Strategy
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_look = Param(nameof(LookbackDays), 252);
-			_skip = Param(nameof(SkipDays), 21);
-			_quint = Param(nameof(Quintile), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-		}
+				#region Params
+				private readonly StrategyParam<IEnumerable<Security>> _univ;
+				private readonly StrategyParam<int> _look;
+				private readonly StrategyParam<int> _skip;
+				private readonly StrategyParam<int> _quint;
+				private readonly StrategyParam<decimal> _minUsd;
+				private readonly StrategyParam<DataType> _tf;
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, CandleType));
+				/// <summary>
+				/// Securities universe.
+				/// </summary>
+				public IEnumerable<Security> Universe
+				{
+						get => _univ.Value;
+						set => _univ.Value = value;
+				}
 
-		protected override void OnStarted(DateTimeOffset t)
-		{
-			base.OnStarted(t);
-			foreach (var (s, tf) in GetWorkingSecurities())
-			{
-				_px[s] = new RollingWin(LookbackDays + 1);
-				SubscribeCandles(tf, true, s)
-					.Bind(c => ProcessCandle(c, s))
-					.Start();
-			}
-		}
+				/// <summary>
+				/// Lookback period for momentum in trading days.
+				/// </summary>
+				public int LookbackDays
+				{
+						get => _look.Value;
+						set => _look.Value = value;
+				}
+
+				/// <summary>
+				/// Number of days skipped from the most recent data.
+				/// </summary>
+				public int SkipDays
+				{
+						get => _skip.Value;
+						set => _skip.Value = value;
+				}
+
+				/// <summary>
+				/// Quintile used for ranking momentum.
+				/// </summary>
+				public int Quintile
+				{
+						get => _quint.Value;
+						set => _quint.Value = value;
+				}
+
+				/// <summary>
+				/// Minimum trade value in USD.
+				/// </summary>
+				public decimal MinTradeUsd
+				{
+						get => _minUsd.Value;
+						set => _minUsd.Value = value;
+				}
+
+				/// <summary>
+				/// Candle type used for analysis.
+				/// </summary>
+				public DataType CandleType
+				{
+						get => _tf.Value;
+						set => _tf.Value = value;
+				}
+				#endregion
+
+				private readonly Dictionary<Security, RollingWin> _px = new();
+				private readonly Dictionary<Security, decimal> _latestPrices = new();
+				private DateTime _last = DateTime.MinValue;
+				private readonly Dictionary<Security, decimal> _w = new();
+
+				/// <summary>
+				/// Initializes a new instance of <see cref="MomentumFactorStocksStrategy"/>.
+				/// </summary>
+				public MomentumFactorStocksStrategy()
+				{
+						_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+								.SetDisplay("Universe", "Securities to trade", "General");
+
+						_look = Param(nameof(LookbackDays), 252)
+								.SetGreaterThanZero()
+								.SetDisplay("Lookback", "Trading days for momentum", "Parameters");
+
+						_skip = Param(nameof(SkipDays), 21)
+								.SetGreaterThanZero()
+								.SetDisplay("Skip days", "Days skipped from recent data", "Parameters");
+
+						_quint = Param(nameof(Quintile), 5)
+								.SetGreaterThanZero()
+								.SetDisplay("Quintile", "Quintile for momentum ranking", "Parameters");
+
+						_minUsd = Param(nameof(MinTradeUsd), 200m)
+								.SetGreaterThanZero()
+								.SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters");
+
+						_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+								.SetDisplay("Candle Type", "Time frame for candles", "General");
+				}
+
+				/// <inheritdoc />
+				public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return Universe.Select(s => (s, CandleType));
+				}
+
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset t)
+				{
+						base.OnStarted(t);
+
+						if (Universe == null || !Universe.Any())
+								throw new InvalidOperationException("Universe is empty.");
+
+						foreach (var (s, tf) in GetWorkingSecurities())
+						{
+								_px[s] = new RollingWin(LookbackDays + 1);
+								SubscribeCandles(tf, true, s)
+										.Bind(c => ProcessCandle(c, s))
+										.Start();
+						}
+				}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
 		{

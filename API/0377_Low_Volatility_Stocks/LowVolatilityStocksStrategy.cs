@@ -1,15 +1,7 @@
-// LowVolatilityStocksStrategy.cs
-// -----------------------------------------------------------------------------
-// Long lowest-volatility decile, short highest-volatility decile (stocks).
-// Volatility measured as trailing StdDev of daily returns over VolWindowDays.
-// Rebalanced monthly (first trading day).  Uses daily candles only.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
@@ -17,50 +9,117 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-	public class LowVolatilityStocksStrategy : Strategy
-	{
-		#region Params
-		private readonly StrategyParam<IEnumerable<Security>> _universe;
-		private readonly StrategyParam<int> _window;
-		private readonly StrategyParam<int> _deciles;
-		private readonly StrategyParam<decimal> _minUsd;
-		private readonly StrategyParam<DataType> _tf;
-
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int VolWindowDays => _window.Value;
-		public int Deciles => _deciles.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
-		#endregion
-
-		private readonly Dictionary<Security, RollingWin> _ret = new();
-		private readonly Dictionary<Security, decimal> _w = new();
-		private readonly Dictionary<Security, decimal> _latestPrices = new();
-		private DateTime _lastDay = DateTime.MinValue;
-
-		public LowVolatilityStocksStrategy()
+		/// <summary>
+		/// Long the lowest-volatility decile of stocks and short the highest-volatility decile.
+		/// Volatility is measured as the standard deviation of daily returns over the specified window.
+		/// Rebalanced on the first trading day of each month.
+		/// </summary>
+		public class LowVolatilityStocksStrategy : Strategy
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_window = Param(nameof(VolWindowDays), 60);
-			_deciles = Param(nameof(Deciles), 10);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-		}
+				#region Params
+				private readonly StrategyParam<IEnumerable<Security>> _universe;
+				private readonly StrategyParam<int> _window;
+				private readonly StrategyParam<int> _deciles;
+				private readonly StrategyParam<decimal> _minUsd;
+				private readonly StrategyParam<DataType> _tf;
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, CandleType));
+				/// <summary>
+				/// Securities universe.
+				/// </summary>
+				public IEnumerable<Security> Universe
+				{
+						get => _universe.Value;
+						set => _universe.Value = value;
+				}
 
-		protected override void OnStarted(DateTimeOffset t)
-		{
-			base.OnStarted(t);
-			foreach (var (s, tf) in GetWorkingSecurities())
-			{
-				_ret[s] = new RollingWin(VolWindowDays + 1);
-				SubscribeCandles(tf, true, s)
-					.Bind(c => ProcessCandle(c, s))
-					.Start();
-			}
-		}
+				/// <summary>
+				/// Number of days in the volatility window.
+				/// </summary>
+				public int VolWindowDays
+				{
+						get => _window.Value;
+						set => _window.Value = value;
+				}
+
+				/// <summary>
+				/// Number of deciles to split the universe by volatility.
+				/// </summary>
+				public int Deciles
+				{
+						get => _deciles.Value;
+						set => _deciles.Value = value;
+				}
+
+				/// <summary>
+				/// Minimum trade value in USD.
+				/// </summary>
+				public decimal MinTradeUsd
+				{
+						get => _minUsd.Value;
+						set => _minUsd.Value = value;
+				}
+
+				/// <summary>
+				/// Candle type used for analysis.
+				/// </summary>
+				public DataType CandleType
+				{
+						get => _tf.Value;
+						set => _tf.Value = value;
+				}
+				#endregion
+
+				private readonly Dictionary<Security, RollingWin> _ret = new();
+				private readonly Dictionary<Security, decimal> _w = new();
+				private readonly Dictionary<Security, decimal> _latestPrices = new();
+				private DateTime _lastDay = DateTime.MinValue;
+
+				/// <summary>
+				/// Initializes a new instance of <see cref="LowVolatilityStocksStrategy"/>.
+				/// </summary>
+				public LowVolatilityStocksStrategy()
+				{
+						_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+								.SetDisplay("Universe", "Securities to trade", "General");
+
+						_window = Param(nameof(VolWindowDays), 60)
+								.SetGreaterThanZero()
+								.SetDisplay("Vol window", "Days in volatility window", "Parameters");
+
+						_deciles = Param(nameof(Deciles), 10)
+								.SetGreaterThanZero()
+								.SetDisplay("Deciles", "Number of deciles", "Parameters");
+
+						_minUsd = Param(nameof(MinTradeUsd), 200m)
+								.SetGreaterThanZero()
+								.SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters");
+
+						_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+								.SetDisplay("Candle Type", "Time frame for candles", "General");
+				}
+
+				/// <inheritdoc />
+				public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return Universe.Select(s => (s, CandleType));
+				}
+
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset t)
+				{
+						base.OnStarted(t);
+
+						if (Universe == null || !Universe.Any())
+								throw new InvalidOperationException("Universe is empty.");
+
+						foreach (var (s, tf) in GetWorkingSecurities())
+						{
+								_ret[s] = new RollingWin(VolWindowDays + 1);
+								SubscribeCandles(tf, true, s)
+										.Bind(c => ProcessCandle(c, s))
+										.Start();
+						}
+				}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
 		{

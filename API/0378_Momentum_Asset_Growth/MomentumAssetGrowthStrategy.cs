@@ -1,18 +1,7 @@
-// MomentumAssetGrowthStrategy.cs
-// -----------------------------------------------------------------------------
-// Combine Momentum (12‑1 month) with Asset‑Growth effect (highest asset growth).
-// • Universe: IEnumerable<Security>
-// • External: TryGetAssetGrowth(Security) must return latest YoY asset‑growth %.
-// • Skip January (no positions).
-// • Monthly rebalance on first trading day Feb‑Dec: pick stocks in top decile
-//   of asset growth, then long top‑quintile momentum and short bottom‑quintile.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
@@ -20,55 +9,145 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-	public class MomentumAssetGrowthStrategy : Strategy
-	{
-		#region Params
-		private readonly StrategyParam<IEnumerable<Security>> _univ;
-		private readonly StrategyParam<int> _momLook;
-		private readonly StrategyParam<int> _skip;     // months to skip (1)
-		private readonly StrategyParam<int> _decile;
-		private readonly StrategyParam<int> _quint;
-		private readonly StrategyParam<decimal> _minUsd;
-		private readonly StrategyParam<DataType> _tf;
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int MomLook => _momLook.Value;
-		public int SkipMonths => _skip.Value;
-		public int AssetDecile => _decile.Value;
-		public int Quintile => _quint.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
-		#endregion
-
-		private readonly Dictionary<Security, RollingWin> _px = new();
-		private readonly Dictionary<Security, decimal> _w = new();
-		private readonly Dictionary<Security, decimal> _latestPrices = new();
-		private DateTime _last = DateTime.MinValue;
-
-		public MomentumAssetGrowthStrategy()
+		/// <summary>
+		/// Combines momentum with the asset-growth effect.
+		/// Stocks with the highest asset growth are ranked by momentum and rebalanced monthly.
+		/// January is skipped with no positions.
+		/// </summary>
+		public class MomentumAssetGrowthStrategy : Strategy
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_momLook = Param(nameof(MomLook), 252);
-			_skip = Param(nameof(SkipMonths), 1);
-			_decile = Param(nameof(AssetDecile), 10);
-			_quint = Param(nameof(Quintile), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-		}
+				#region Params
+				private readonly StrategyParam<IEnumerable<Security>> _univ;
+				private readonly StrategyParam<int> _momLook;
+				private readonly StrategyParam<int> _skip;
+				private readonly StrategyParam<int> _decile;
+				private readonly StrategyParam<int> _quint;
+				private readonly StrategyParam<decimal> _minUsd;
+				private readonly StrategyParam<DataType> _tf;
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, CandleType));
+				/// <summary>
+				/// Securities universe.
+				/// </summary>
+				public IEnumerable<Security> Universe
+				{
+						get => _univ.Value;
+						set => _univ.Value = value;
+				}
 
-		protected override void OnStarted(DateTimeOffset t)
-		{
-			base.OnStarted(t);
-			foreach (var (s, tf) in GetWorkingSecurities())
-			{
-				_px[s] = new RollingWin(MomLook + 1);
-				SubscribeCandles(tf, true, s)
-					.Bind(c => ProcessCandle(c, s))
-					.Start();
-			}
-		}
+				/// <summary>
+				/// Lookback period for momentum in trading days.
+				/// </summary>
+				public int MomLook
+				{
+						get => _momLook.Value;
+						set => _momLook.Value = value;
+				}
+
+				/// <summary>
+				/// Number of months skipped from the most recent data.
+				/// </summary>
+				public int SkipMonths
+				{
+						get => _skip.Value;
+						set => _skip.Value = value;
+				}
+
+				/// <summary>
+				/// Decile for selecting high asset-growth stocks.
+				/// </summary>
+				public int AssetDecile
+				{
+						get => _decile.Value;
+						set => _decile.Value = value;
+				}
+
+				/// <summary>
+				/// Quintile used for momentum ranking.
+				/// </summary>
+				public int Quintile
+				{
+						get => _quint.Value;
+						set => _quint.Value = value;
+				}
+
+				/// <summary>
+				/// Minimum trade value in USD.
+				/// </summary>
+				public decimal MinTradeUsd
+				{
+						get => _minUsd.Value;
+						set => _minUsd.Value = value;
+				}
+
+				/// <summary>
+				/// Candle type used for analysis.
+				/// </summary>
+				public DataType CandleType
+				{
+						get => _tf.Value;
+						set => _tf.Value = value;
+				}
+				#endregion
+
+				private readonly Dictionary<Security, RollingWin> _px = new();
+				private readonly Dictionary<Security, decimal> _w = new();
+				private readonly Dictionary<Security, decimal> _latestPrices = new();
+				private DateTime _last = DateTime.MinValue;
+
+				/// <summary>
+				/// Initializes a new instance of <see cref="MomentumAssetGrowthStrategy"/>.
+				/// </summary>
+				public MomentumAssetGrowthStrategy()
+				{
+						_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+								.SetDisplay("Universe", "Securities to trade", "General");
+
+						_momLook = Param(nameof(MomLook), 252)
+								.SetGreaterThanZero()
+								.SetDisplay("Momentum lookback", "Trading days for momentum", "Parameters");
+
+						_skip = Param(nameof(SkipMonths), 1)
+								.SetGreaterThanZero()
+								.SetDisplay("Skip months", "Months skipped from recent data", "Parameters");
+
+						_decile = Param(nameof(AssetDecile), 10)
+								.SetGreaterThanZero()
+								.SetDisplay("Asset decile", "Decile for high asset growth", "Parameters");
+
+						_quint = Param(nameof(Quintile), 5)
+								.SetGreaterThanZero()
+								.SetDisplay("Quintile", "Quintile for momentum ranking", "Parameters");
+
+						_minUsd = Param(nameof(MinTradeUsd), 200m)
+								.SetGreaterThanZero()
+								.SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters");
+
+						_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+								.SetDisplay("Candle Type", "Time frame for candles", "General");
+				}
+
+				/// <inheritdoc />
+				public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return Universe.Select(s => (s, CandleType));
+				}
+
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset t)
+				{
+						base.OnStarted(t);
+
+						if (Universe == null || !Universe.Any())
+								throw new InvalidOperationException("Universe is empty.");
+
+						foreach (var (s, tf) in GetWorkingSecurities())
+						{
+								_px[s] = new RollingWin(MomLook + 1);
+								SubscribeCandles(tf, true, s)
+										.Bind(c => ProcessCandle(c, s))
+										.Start();
+						}
+				}
 
 		private void OnDaily(Security s, ICandleMessage c)
 		{
