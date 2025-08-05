@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _funds;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>List of funds.</summary>
 		public IEnumerable<Security> Funds
@@ -35,6 +35,15 @@ namespace StockSharp.Samples.Strategies
 			set => _minUsd.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
@@ -45,10 +54,13 @@ namespace StockSharp.Samples.Strategies
 
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min USD", "Minimum trade value", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Funds.Select(f => (f, _tf));
+			Funds.Select(f => (f, CandleType));
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
@@ -59,7 +71,7 @@ namespace StockSharp.Samples.Strategies
 
 			var trigger = Funds.First();
 
-			SubscribeCandles(_tf, true, trigger)
+			SubscribeCandles(CandleType, true, trigger)
 				.Bind(c => ProcessCandle(c, trigger))
 				.Start();
 		}

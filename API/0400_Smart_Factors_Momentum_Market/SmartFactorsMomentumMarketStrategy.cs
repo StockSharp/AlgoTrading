@@ -25,6 +25,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _slowM;
 		private readonly StrategyParam<int> _maM;
 		private readonly StrategyParam<decimal> _minUsd;
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>
 		/// Dictionary of smart factor ETFs.
@@ -71,6 +72,15 @@ namespace StockSharp.Samples.Strategies
 			set => _minUsd.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		private readonly Dictionary<Security, RollingWindow<decimal>> _p = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private readonly RollingWindow<decimal> _smartRet;
@@ -101,6 +111,9 @@ namespace StockSharp.Samples.Strategies
 				.SetGreaterThanZero()
 				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
+
 			_smartRet = new RollingWindow<decimal>(_maM.Value);
 			_mktRet = new RollingWindow<decimal>(_maM.Value);
 		}
@@ -112,8 +125,7 @@ namespace StockSharp.Samples.Strategies
 			if (!Factors.Any())
 				throw new InvalidOperationException("No factors");
 
-			var tf = TimeSpan.FromDays(1).TimeFrame();
-			return Factors.Values.Append(Security).Select(s => (s, tf));
+			return Factors.Values.Append(Security).Select(s => (s, CandleType));
 		}
 
 		protected override void OnStarted(DateTimeOffset time)

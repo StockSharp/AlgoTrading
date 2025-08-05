@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<Security> _btc;
 		private readonly StrategyParam<Security> _eth;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
 
@@ -50,6 +50,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
+		/// <summary>
 		/// Initializes a new instance of <see cref="CryptoRebalancingPremiumStrategy"/>.
 		/// </summary>
 		public CryptoRebalancingPremiumStrategy()
@@ -66,12 +75,15 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetGreaterThanZero()
 				.SetDisplay("Min Trade USD", "Minimum dollar amount per trade", "Trading");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			return [(BTC, _tf), (ETH, _tf)];
+			return [(BTC, CandleType), (ETH, CandleType)];
 		}
 
 		/// <inheritdoc />

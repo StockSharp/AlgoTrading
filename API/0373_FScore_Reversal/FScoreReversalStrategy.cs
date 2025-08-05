@@ -28,6 +28,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _hi;
 		private readonly StrategyParam<int> _lo;
 		private readonly StrategyParam<decimal> _minUsd;
+		private readonly StrategyParam<DataType> _candleType;
 		
 		/// <summary>
 		/// Securities universe to trade.
@@ -53,6 +54,11 @@ namespace StockSharp.Samples.Strategies
 		/// Minimum trade value in USD.
 		/// </summary>
 		public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 		#endregion
 
 		private readonly Dictionary<Security, FScoreRollingWindow> _prices = new();
@@ -80,14 +86,16 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 50m)
 				.SetGreaterThanZero()
 				.SetDisplay("Min trade USD", "Minimum order value", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (!Universe.Any())
 				throw new InvalidOperationException("Universe empty");
-			var tf = TimeSpan.FromDays(1).TimeFrame();
-			return Universe.Select(s => (s, tf));
+			return Universe.Select(s => (s, CandleType));
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
