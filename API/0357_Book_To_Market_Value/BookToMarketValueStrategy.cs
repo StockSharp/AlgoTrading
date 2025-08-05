@@ -7,13 +7,18 @@
 // -----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
+using System.Linq;
+
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Book-to-market value strategy.
+	/// Placeholder implementation demonstrating parameter setup and candle subscription.
+	/// </summary>
 	public class BookToMarketValueStrategy : Strategy
 	{
 		// Parameters
@@ -21,28 +26,59 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _min;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public decimal MinTradeUsd => _min.Value;
+		/// <summary>
+		/// Securities universe to analyze.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
 
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _min.Value;
+			set => _min.Value = value;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="BookToMarketValueStrategy"/> class.
+		/// </summary>
 		public BookToMarketValueStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_min = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to process", "General");
+
+			_min = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, _tf));
-
-		protected override void OnStarted(DateTimeOffset t)
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			base.OnStarted(t);
-			var trig = Universe.FirstOrDefault();
-			if (trig == null)
-				throw new InvalidOperationException("Universe empty");
-			SubscribeCandles(_tf, true, trig).Bind(c => OnDay(c.OpenTime.Date)).Start();
+			return Universe.Select(sec => (sec, _tf));
 		}
 
-		private void OnDay(DateTime d)
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty.");
+
+			var trigger = Universe.First();
+
+			SubscribeCandles(_tf, true, trigger)
+				.Bind(candle => OnDay(candle.OpenTime.Date))
+				.Start();
+		}
+
+		private void OnDay(DateTime date)
 		{
 			// TODO: implement factor logic. Placeholder keeps portfolio flat.
 		}
