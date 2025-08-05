@@ -18,30 +18,72 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Trades an equity ETF overnight based on external sentiment indicator.
+	/// </summary>
 	public class OvernightSentimentAnomalyStrategy : Strategy
 	{
 		#region Params
+
 		private readonly StrategyParam<Security> _etf;
 		private readonly StrategyParam<Security> _sentimentSym;
 		private readonly StrategyParam<decimal> _threshold;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _candleType;
 
-		public Security EquityETF { get => _etf.Value; set => _etf.Value = value; }
-		public Security SentimentSymbol { get => _sentimentSym.Value; set => _sentimentSym.Value = value; }
-		public decimal Threshold => _threshold.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+		/// <summary>Equity ETF to trade.</summary>
+		public Security EquityETF
+		{
+			get => _etf.Value;
+			set => _etf.Value = value;
+		}
+
+		/// <summary>Symbol providing sentiment values.</summary>
+		public Security SentimentSymbol
+		{
+			get => _sentimentSym.Value;
+			set => _sentimentSym.Value = value;
+		}
+
+		/// <summary>Sentiment threshold for entry.</summary>
+		public decimal Threshold
+		{
+			get => _threshold.Value;
+			set => _threshold.Value = value;
+		}
+
+		/// <summary>Minimum trade amount in USD.</summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>Candle type for timing entry/exit.</summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		#endregion
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		public OvernightSentimentAnomalyStrategy()
 		{
-			_etf = Param<Security>(nameof(EquityETF), null);
-			_sentimentSym = Param<Security>(nameof(SentimentSymbol), null);
-			_threshold = Param(nameof(Threshold), 0m);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_etf = Param<Security>(nameof(EquityETF), null)
+				.SetDisplay("Equity ETF", "ETF to trade", "Universe");
+
+			_sentimentSym = Param<Security>(nameof(SentimentSymbol), null)
+				.SetDisplay("Sentiment Symbol", "Symbol providing sentiment", "Universe");
+
+			_threshold = Param(nameof(Threshold), 0m)
+				.SetDisplay("Threshold", "Sentiment threshold", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min USD", "Minimum trade value", "Risk");
+
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 				.SetDisplay("Candle Type", "Type of candles for timing entry/exit", "General");
 		}
@@ -50,12 +92,19 @@ namespace StockSharp.Samples.Strategies
 		{
 			if (EquityETF == null)
 				throw new InvalidOperationException("EquityETF not set");
+
 			yield return (EquityETF, CandleType);
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+
+			if (EquityETF == null)
+				throw new InvalidOperationException("EquityETF cannot be null.");
+
+			if (SentimentSymbol == null)
+				throw new InvalidOperationException("SentimentSymbol cannot be null.");
 
 			// Subscribe to candles for timing entry/exit
 			SubscribeCandles(CandleType, true, EquityETF)
