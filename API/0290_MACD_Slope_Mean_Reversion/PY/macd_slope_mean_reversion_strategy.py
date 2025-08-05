@@ -139,14 +139,6 @@ class macd_slope_mean_reversion_strategy(Strategy):
         super(macd_slope_mean_reversion_strategy, self).OnStarted(time)
 
         # Initialize statistics variables
-        self._previous_histogram = 0.0
-        self._current_histogram_slope = 0.0
-        self._average_slope = 0.0
-        self._slope_std_dev = 0.0
-        self._sample_count = 0
-        self._sum_slopes = 0.0
-        self._sum_slopes_squared = 0.0
-        self._is_first_calculation = True
 
         # Initialize indicators
         self._macd = MovingAverageConvergenceDivergenceSignal()

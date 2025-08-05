@@ -128,12 +128,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_bestBidPrice = default;
+			_bestAskPrice = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_bestBidPrice = default;
-			_bestAskPrice = default;
 
 			// Create indicators
 			_bollinger = new BollingerBands

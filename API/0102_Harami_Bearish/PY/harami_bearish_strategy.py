@@ -49,13 +49,14 @@ class harami_bearish_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stop_loss_percent.Value = value
 
+    def OnReseted(self):
+        super(harami_bearish_strategy, self).OnReseted()
+        self._previous_candle = None
+    self._pattern_detected = False
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(harami_bearish_strategy, self).OnStarted(time)
-
-        self._previous_candle = None
-        self._pattern_detected = False
-
         # Create and setup subscription for candles
         subscription = self.SubscribeCandles(self.CandleType)
 

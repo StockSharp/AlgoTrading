@@ -114,6 +114,20 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(hull_ma_slope_mean_reversion_strategy, self).OnReseted()
+        self._currentHullMa = 0
+        self._prevHullMa = 0
+        self._currentSlope = 0
+        self._prevSlope = 0
+        self._prevSlopeAverage = 0
+        self._prevSlopeStdDev = 0
+        self._currentAtr = 0
+
     def OnStarted(self, time):
         super(hull_ma_slope_mean_reversion_strategy, self).OnStarted(time)
 
@@ -128,13 +142,6 @@ class hull_ma_slope_mean_reversion_strategy(Strategy):
         self._slopeStdDev.Length = self.LookbackPeriod
 
         # Reset stored values
-        self._currentHullMa = 0
-        self._prevHullMa = 0
-        self._currentSlope = 0
-        self._prevSlope = 0
-        self._prevSlopeAverage = 0
-        self._prevSlopeStdDev = 0
-        self._currentAtr = 0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

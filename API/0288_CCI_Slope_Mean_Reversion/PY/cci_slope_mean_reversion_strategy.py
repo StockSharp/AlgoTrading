@@ -96,11 +96,12 @@ class cci_slope_mean_reversion_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        """Initialize cci_slope_mean_reversion_strategy."""
-        super(cci_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Reset variables
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(cci_slope_mean_reversion_strategy, self).OnReseted()
         self._previous_cci_value = 0.0
         self._current_slope = 0.0
         self._average_slope = 0.0
@@ -108,6 +109,12 @@ class cci_slope_mean_reversion_strategy(Strategy):
         self._slope_count = 0
         self._sum_slopes = 0.0
         self._sum_squared_diff = 0.0
+
+    def OnStarted(self, time):
+        """Initialize cci_slope_mean_reversion_strategy."""
+        super(cci_slope_mean_reversion_strategy, self).OnStarted(time)
+
+        # Reset variables
 
         # Create CCI indicator
         cci = CommodityChannelIndex()

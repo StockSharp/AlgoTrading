@@ -116,6 +116,17 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         """!! REQUIRED !! Returns securities for strategy."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(ichimoku_cloud_width_mean_reversion_strategy, self).OnReseted()
+        self._currentCloudWidth = 0
+        self._prevCloudWidth = 0
+        self._prevCloudWidthAverage = 0
+        self._prevCloudWidthStdDev = 0
+
     def OnStarted(self, time):
         super(ichimoku_cloud_width_mean_reversion_strategy, self).OnStarted(time)
 
@@ -124,17 +135,12 @@ class ichimoku_cloud_width_mean_reversion_strategy(Strategy):
         self._ichimoku.Tenkan.Length = self.TenkanPeriod
         self._ichimoku.Kijun.Length = self.KijunPeriod
         self._ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
-
         self._cloudWidthAverage = SimpleMovingAverage()
         self._cloudWidthAverage.Length = self.LookbackPeriod
         self._cloudWidthStdDev = StandardDeviation()
         self._cloudWidthStdDev.Length = self.LookbackPeriod
 
         # Reset stored values
-        self._currentCloudWidth = 0
-        self._prevCloudWidth = 0
-        self._prevCloudWidthAverage = 0
-        self._prevCloudWidthStdDev = 0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

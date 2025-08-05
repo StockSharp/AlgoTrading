@@ -102,6 +102,18 @@ class atr_slope_breakout_strategy(Strategy):
         """!! REQUIRED!! Return securities and candle types used."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(atr_slope_breakout_strategy, self).OnReseted()
+        self._prev_slope_value = 0.0
+        self._slope_avg = 0.0
+        self._slope_std_dev = 0.0
+        self._sum_slope = 0.0
+        self._sum_slope_squared = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(atr_slope_breakout_strategy, self).OnStarted(time)
@@ -114,11 +126,6 @@ class atr_slope_breakout_strategy(Strategy):
         self._atr_slope = LinearRegression()
         self._atr_slope.Length = 2  # For calculating slope
 
-        self._prev_slope_value = 0.0
-        self._slope_avg = 0.0
-        self._slope_std_dev = 0.0
-        self._sum_slope = 0.0
-        self._sum_slope_squared = 0.0
         self._slope_values.clear()
         self._last_atr = 0.0
 

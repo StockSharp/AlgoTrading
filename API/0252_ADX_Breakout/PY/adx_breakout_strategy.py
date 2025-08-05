@@ -99,12 +99,19 @@ class adx_breakout_strategy(Strategy):
     def StopLoss(self, value):
         self._stop_loss.Value = value
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(adx_breakout_strategy, self).OnReseted()
+        self._prev_adx_value = 0
+        self._prev_adx_avg_value = 0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(adx_breakout_strategy, self).OnStarted(time)
 
-        self._prev_adx_value = 0
-        self._prev_adx_avg_value = 0
 
         # Create indicators
         self._adx = AverageDirectionalIndex()

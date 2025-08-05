@@ -99,12 +99,12 @@ class rsi_slope_breakout_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercent.Value = value
 
-    def OnStarted(self, time):
-        super(rsi_slope_breakout_strategy, self).OnStarted(time)
 
-        self._rsi = RelativeStrengthIndex()
-        self._rsi.Length = self.RsiPeriod
-
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(rsi_slope_breakout_strategy, self).OnReseted()
         self._prevRsiValue = 0
         self._currentSlope = 0
         self._avgSlope = 0
@@ -112,6 +112,13 @@ class rsi_slope_breakout_strategy(Strategy):
         self._slopes = [0.0] * self.LookbackPeriod
         self._currentIndex = 0
         self._isInitialized = False
+
+    def OnStarted(self, time):
+        super(rsi_slope_breakout_strategy, self).OnStarted(time)
+
+        self._rsi = RelativeStrengthIndex()
+        self._rsi.Length = self.RsiPeriod
+
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._rsi, self.ProcessCandle).Start()

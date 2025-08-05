@@ -108,17 +108,23 @@ class bollinger_band_width_breakout_strategy(Strategy):
         if best_ask is not None:
             self._best_ask_price = best_ask.Price
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(bollinger_band_width_breakout_strategy, self).OnReseted()
+        self._best_bid_price = 0.0
+        self._best_ask_price = 0.0
+
     def OnStarted(self, time):
         super(bollinger_band_width_breakout_strategy, self).OnStarted(time)
 
-        self._best_bid_price = 0.0
-        self._best_ask_price = 0.0
 
         # Create indicators
         self._bollinger = BollingerBands()
         self._bollinger.Length = self.BollingerLength
         self._bollinger.Width = self.BollingerDeviation
-
         self._width_average = SimpleMovingAverage()
         self._width_average.Length = self.AvgPeriod
         self._atr = AverageTrueRange()

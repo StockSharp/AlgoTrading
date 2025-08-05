@@ -99,11 +99,12 @@ class donchian_volume_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        super(donchian_volume_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(donchian_volume_strategy, self).OnReseted()
         self._average_volume = 0.0
 
+    def OnStarted(self, time):
+        super(donchian_volume_strategy, self).OnStarted(time)
         # Create indicators
         donchian_high = Highest()
         donchian_high.Length = self.donchian_period

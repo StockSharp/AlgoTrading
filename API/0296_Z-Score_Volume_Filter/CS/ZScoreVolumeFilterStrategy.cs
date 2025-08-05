@@ -98,6 +98,17 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_currentPrice = default;
+			_currentVolume = default;
+			_averagePrice = default;
+			_priceStdDeviation = default;
+			_averageVolume = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -105,11 +116,6 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("Security is not specified.");
 
-			_currentPrice = default;
-			_currentVolume = default;
-			_averagePrice = default;
-			_priceStdDeviation = default;
-			_averageVolume = default;
 
 			// Initialize indicators
 			_priceSma = new SimpleMovingAverage { Length = LookbackPeriod };

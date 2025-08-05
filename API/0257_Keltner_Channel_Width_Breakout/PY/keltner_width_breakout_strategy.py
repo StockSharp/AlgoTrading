@@ -122,15 +122,22 @@ class keltner_width_breakout_strategy(Strategy):
     def StopMultiplier(self, value):
         self._stopMultiplier.Value = value
 
-    def OnStarted(self, time):
-        super(keltner_width_breakout_strategy, self).OnStarted(time)
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(keltner_width_breakout_strategy, self).OnReseted()
         self._lastWidth = 0
         self._lastAvgWidth = 0
         self._currentEma = 0
         self._currentAtr = 0
         self._lastBid = 0
         self._lastAsk = 0
+
+    def OnStarted(self, time):
+        super(keltner_width_breakout_strategy, self).OnStarted(time)
+
 
         # Create indicators
         self._ema = ExponentialMovingAverage()

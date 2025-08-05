@@ -82,14 +82,12 @@ class upthrust_reversal_strategy(Strategy):
     def OnReseted(self):
         """Resets internal state when strategy is reset."""
         super(upthrust_reversal_strategy, self).OnReseted()
+        self._last_highest_value = 0
         self._last_highest_value = 0.0
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(upthrust_reversal_strategy, self).OnStarted(time)
-
-        self._last_highest_value = 0
-
         # Initialize indicators
         self._ma = SimpleMovingAverage()
         self._ma.Length = self.MaPeriod

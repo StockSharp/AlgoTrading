@@ -126,18 +126,10 @@ class adx_slope_mean_reversion_strategy(Strategy):
 
         # Initialize indicators
         self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.AdxPeriod
+        self._adx.Length = self.ADXPeriod
 
         # Initialize statistics variables
-        self._sample_count = 0
-        self._sum_slopes = 0.0
-        self._sum_slopes_squared = 0.0
-        self._is_first_calculation = True
 
-        self._previous_adx = 0.0
-        self._current_adx_slope = 0.0
-        self._average_slope = 0.0
-        self._slope_std_dev = 0.0
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)

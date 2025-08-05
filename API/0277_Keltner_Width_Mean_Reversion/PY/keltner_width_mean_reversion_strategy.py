@@ -139,15 +139,22 @@ class keltner_width_mean_reversion_strategy(Strategy):
         """Return the security and candle type this strategy works with."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(keltner_width_mean_reversion_strategy, self).OnStarted(time)
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(keltner_width_mean_reversion_strategy, self).OnReseted()
         self._lastEma = 0.0
         self._lastAtr = 0.0
         self._lastChannelWidth = 0.0
         self._lastWidthAvg = 0.0
         self._lastWidthStdDev = 0.0
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(keltner_width_mean_reversion_strategy, self).OnStarted(time)
+
 
         # Initialize indicators
         self._ema = ExponentialMovingAverage()

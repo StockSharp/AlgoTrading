@@ -106,6 +106,10 @@ class wyckoff_accumulation_strategy(Strategy):
     def OnReseted(self):
         """Resets internal state when strategy is reset."""
         super(wyckoff_accumulation_strategy, self).OnReseted()
+        self._ma = None
+        self._volumeAvg = None
+        self._highest = None
+        self._lowest = None
         self._currentPhase = WyckoffPhase.NonePhase
         self._lastRangeHigh = 0
         self._lastRangeLow = 0
@@ -126,13 +130,6 @@ class wyckoff_accumulation_strategy(Strategy):
         self._highest.Length = self.HighestPeriod
         self._lowest = Lowest()
         self._lowest.Length = self.HighestPeriod
-
-        self._currentPhase = WyckoffPhase.NonePhase
-        self._sidewaysCount = 0
-        self._positionOpened = False
-        self._lastRangeHigh = 0
-        self._lastRangeLow = 0
-        self._springLow = 0
 
         # Create and setup subscription for candles
         subscription = self.SubscribeCandles(self.CandleType)

@@ -108,11 +108,12 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        self._parabolic_sar = ParabolicSar()
-        self._parabolic_sar.Acceleration = self.Acceleration
-        self._parabolic_sar.AccelerationMax = self.MaxAcceleration
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(parabolic_sar_distance_breakout_strategy, self).OnReseted()
         self._avg_distance_long = 0
         self._std_dev_distance_long = 0
         self._avg_distance_short = 0
@@ -120,6 +121,12 @@ class parabolic_sar_distance_breakout_strategy(Strategy):
         self._last_long_distance = 0
         self._last_short_distance = 0
         self._samples_count = 0
+
+    def OnStarted(self, time):
+        self._parabolic_sar = ParabolicSar()
+        self._parabolic_sar.Acceleration = self.Acceleration
+        self._parabolic_sar.AccelerationMax = self.MaxAcceleration
+
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._parabolic_sar, self.ProcessCandle).Start()

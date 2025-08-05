@@ -146,12 +146,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_lastWidthAvg = default;
+			_lastWidthStdDev = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_lastWidthAvg = default;
-			_lastWidthStdDev = default;
 
 			// Initialize indicators
 			_bollinger = new BollingerBands

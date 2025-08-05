@@ -103,13 +103,20 @@ class obv_slope_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(obv_slope_breakout_strategy, self).OnStarted(time)
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(obv_slope_breakout_strategy, self).OnReseted()
         self._lastObvSlope = 0
         self._lastObvValue = 0
         self._lastSlopeAvg = 0
         self._lastSlopeStdDev = 0
+
+    def OnStarted(self, time):
+        super(obv_slope_breakout_strategy, self).OnStarted(time)
+
 
         # Initialize indicators
         self._obv = OnBalanceVolume()

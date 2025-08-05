@@ -101,12 +101,12 @@ class hull_ma_slope_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        self._hull_ma = HullMovingAverage()
-        self._hull_ma.Length = self.HullLength
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(hull_ma_slope_breakout_strategy, self).OnReseted()
         self._prev_hull_value = 0.0
         self._current_slope = 0.0
         self._avg_slope = 0.0
@@ -114,6 +114,13 @@ class hull_ma_slope_breakout_strategy(Strategy):
         self._slopes = [0.0] * self.LookbackPeriod
         self._current_index = 0
         self._is_initialized = False
+
+    def OnStarted(self, time):
+        self._hull_ma = HullMovingAverage()
+        self._hull_ma.Length = self.HullLength
+        self._atr = AverageTrueRange()
+        self._atr.Length = 14
+
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._hull_ma, self._atr, self.ProcessCandle).Start()

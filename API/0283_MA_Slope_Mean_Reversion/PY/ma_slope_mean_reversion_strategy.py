@@ -94,10 +94,12 @@ class ma_slope_mean_reversion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(ma_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Reset variables
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(ma_slope_mean_reversion_strategy, self).OnReseted()
         self._previous_ma_value = 0.0
         self._current_slope = 0.0
         self._average_slope = 0.0
@@ -105,6 +107,11 @@ class ma_slope_mean_reversion_strategy(Strategy):
         self._slope_count = 0
         self._sum_slopes = 0.0
         self._sum_squared_diff = 0.0
+
+    def OnStarted(self, time):
+        super(ma_slope_mean_reversion_strategy, self).OnStarted(time)
+
+        # Reset variables
 
         # Create MA indicator
         ma = SimpleMovingAverage()

@@ -119,16 +119,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Initialize indicators
-			_obv = new OnBalanceVolume();
-			_obvSma = new SimpleMovingAverage
-			{
-				Length = ObvSmaPeriod
-			};
-
-			// Initialize statistics variables
+			base.OnReseted();
 			_sampleCount = 0;
 			_sumSlopes = 0;
 			_sumSlopesSquared = 0;
@@ -139,6 +132,19 @@ namespace StockSharp.Samples.Strategies
 			_currentObvSlope = 0;
 			_averageSlope = 0;
 			_slopeStdDev = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			// Initialize indicators
+			_obv = new OnBalanceVolume();
+			_obvSma = new SimpleMovingAverage
+			{
+				Length = ObvSmaPeriod
+			};
+
+			// Initialize statistics variables
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

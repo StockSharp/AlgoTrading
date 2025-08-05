@@ -89,6 +89,13 @@ class dark_pool_prints_strategy(Strategy):
     def AtrMultiplier(self, value):
         self._atr_multiplier.Value = value
 
+    def OnReseted(self):
+        super(dark_pool_prints_strategy, self).OnReseted()
+        self._ma = None
+        self._volume_average = None
+        self._adx = None
+        self._atr = None
+
     def OnStarted(self, time):
         super(dark_pool_prints_strategy, self).OnStarted(time)
 

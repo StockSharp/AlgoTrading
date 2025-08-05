@@ -110,13 +110,12 @@ class obv_slope_mean_reversion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        # Initialize indicators
-        self._obv = OnBalanceVolume()
-        self._obv_sma = SimpleMovingAverage()
-        self._obv_sma.Length = self.ObvSmaPeriod
 
-        # Initialize statistics variables
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(obv_slope_mean_reversion_strategy, self).OnReseted()
         self._sample_count = 0
         self._sum_slopes = 0.0
         self._sum_slopes_squared = 0.0
@@ -127,6 +126,14 @@ class obv_slope_mean_reversion_strategy(Strategy):
         self._current_obv_slope = 0.0
         self._average_slope = 0.0
         self._slope_std_dev = 0.0
+
+    def OnStarted(self, time):
+        # Initialize indicators
+        self._obv = OnBalanceVolume()
+        self._obv_sma = SimpleMovingAverage()
+        self._obv_sma.Length = self.ObvSmaPeriod
+
+        # Initialize statistics variables
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

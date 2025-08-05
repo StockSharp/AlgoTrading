@@ -128,9 +128,12 @@ class pairs_trading_volatility_filter_strategy(Strategy):
             result.append((self.Security2, dt))
         return result
 
-    def OnStarted(self, time):
-        super(pairs_trading_volatility_filter_strategy, self).OnStarted(time)
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(pairs_trading_volatility_filter_strategy, self).OnReseted()
         self._current_atr = 0
         self._average_atr = 0
         self._current_spread = 0
@@ -140,6 +143,10 @@ class pairs_trading_volatility_filter_strategy(Strategy):
         self._entry_price = 0
         self._last_price1 = 0
         self._last_price2 = 0
+
+    def OnStarted(self, time):
+        super(pairs_trading_volatility_filter_strategy, self).OnStarted(time)
+
 
         if self.Security1 is None:
             raise Exception("First security is not specified.")

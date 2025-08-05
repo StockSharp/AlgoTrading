@@ -75,13 +75,17 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 			
 			_previousCandleClose = null;
 			_twoCandlesBackClose = null;
-			
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 			// Set up stop loss protection
 			StartProtection(
 				new Unit(0), // No take profit

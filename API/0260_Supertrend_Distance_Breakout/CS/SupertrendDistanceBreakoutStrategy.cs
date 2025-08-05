@@ -118,11 +118,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			_atr = new AverageTrueRange { Length = SupertrendPeriod };
-			_supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
-
+			base.OnReseted();
 			_avgDistanceLong = 0;
 			_stdDevDistanceLong = 0;
 			_avgDistanceShort = 0;
@@ -130,6 +128,14 @@ namespace StockSharp.Samples.Strategies
 			_lastLongDistance = 0;
 			_lastShortDistance = 0;
 			_samplesCount = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			_atr = new AverageTrueRange { Length = SupertrendPeriod };
+			_supertrend = new SuperTrend { Length = SupertrendPeriod, Multiplier = SupertrendMultiplier };
+
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription

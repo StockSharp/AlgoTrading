@@ -66,10 +66,6 @@ class lunch_break_fade_strategy(Strategy):
 
     def OnStarted(self, time):
         super(lunch_break_fade_strategy, self).OnStarted(time)
-
-        self._previousCandleClose = None
-        self._twoCandlesBackClose = None
-
         # Set up stop loss protection
         self.StartProtection(
             takeProfit=Unit(0),

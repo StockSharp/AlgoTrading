@@ -127,16 +127,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_momentumAtrRatio = 0;
+			_avgRatio = 0;
+			_stdDevRatio = 0;
+			_currentIndex = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			_momentum = new Momentum { Length = MomentumPeriod };
 			_atr = new AverageTrueRange { Length = AtrPeriod };
 			
-			_momentumAtrRatio = 0;
-			_avgRatio = 0;
-			_stdDevRatio = 0;
 			_ratios = new decimal[LookbackPeriod];
-			_currentIndex = 0;
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription

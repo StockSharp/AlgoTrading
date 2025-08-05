@@ -62,10 +62,6 @@ class harami_bullish_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(harami_bullish_strategy, self).OnStarted(time)
-
-        self._previousCandle = None
-        self._patternDetected = False
-
         # Create and setup subscription for candles
         subscription = self.SubscribeCandles(self.CandleType)
 

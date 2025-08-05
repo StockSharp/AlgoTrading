@@ -115,6 +115,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_currentDistanceLong = 0;
+			_currentDistanceShort = 0;
+			_prevDistanceLong = 0;
+			_prevDistanceShort = 0;
+			_prevDistanceAvgLong = 0;
+			_prevDistanceAvgShort = 0;
+			_prevDistanceStdDevLong = 0;
+			_prevDistanceStdDevShort = 0;
+			_sarValue = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -130,15 +145,6 @@ namespace StockSharp.Samples.Strategies
 			_distanceStdDev = new StandardDeviation { Length = LookbackPeriod };
 			
 			// Reset stored values
-			_currentDistanceLong = 0;
-			_currentDistanceShort = 0;
-			_prevDistanceLong = 0;
-			_prevDistanceShort = 0;
-			_prevDistanceAvgLong = 0;
-			_prevDistanceAvgShort = 0;
-			_prevDistanceStdDevLong = 0;
-			_prevDistanceStdDevShort = 0;
-			_sarValue = 0;
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
