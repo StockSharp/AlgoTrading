@@ -1,7 +1,7 @@
 // PairedSwitchingStrategy.cs
 // -----------------------------------------------------------------------------
 // Each quarter hold the ETF (of two) with higher previous‑quarter return.
-// Quarter = calendar quarter.  Rebalance on first trading day of Jan/Apr/Jul/Oct.
+// Quarter = calendar quarter.	Rebalance on first trading day of Jan/Apr/Jul/Oct.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
@@ -15,28 +15,72 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Paired switching strategy.
+	/// Holds the ETF with higher previous-quarter return.
+	/// </summary>
 	public class PairedSwitchingStrategy : Strategy
 	{
 		private readonly StrategyParam<Security> _first;
 		private readonly StrategyParam<Security> _second;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
-		public Security FirstETF { get => _first.Value; set => _first.Value = value; }
-		public Security SecondETF { get => _second.Value; set => _second.Value = value; }
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
 
-		private readonly RollingWin _p1 = new(63 + 1); 
+		/// <summary>
+		/// First ETF.
+		/// </summary>
+		public Security FirstETF
+		{
+			get => _first.Value;
+			set => _first.Value = value;
+		}
+
+		/// <summary>
+		/// Second ETF.
+		/// </summary>
+		public Security SecondETF
+		{
+			get => _second.Value;
+			set => _second.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Candle time frame.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
+
+		private readonly RollingWin _p1 = new(63 + 1);
 		private readonly RollingWin _p2 = new(63 + 1);
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
 
 		public PairedSwitchingStrategy()
 		{
-			_first = Param<Security>(nameof(FirstETF), null);
-			_second = Param<Security>(nameof(SecondETF), null);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_first = Param<Security>(nameof(FirstETF), null)
+				.SetDisplay("First ETF", "First exchange-traded fund", "General");
+
+			_second = Param<Security>(nameof(SecondETF), null)
+				.SetDisplay("Second ETF", "Second exchange-traded fund", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
+
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Candles time frame", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
@@ -44,9 +88,18 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (FirstETF == null || SecondETF == null)
+				throw new InvalidOperationException("FirstETF and SecondETF must be set.");
+
 			base.OnStarted(t);
-			SubscribeCandles(CandleType, true, FirstETF).Bind(c => ProcessCandle(c, FirstETF, true)).Start();
-			SubscribeCandles(CandleType, true, SecondETF).Bind(c => ProcessCandle(c, SecondETF, false)).Start();
+
+			SubscribeCandles(CandleType, true, FirstETF)
+				.Bind(c => ProcessCandle(c, FirstETF, true))
+				.Start();
+
+			SubscribeCandles(CandleType, true, SecondETF)
+				.Bind(c => ProcessCandle(c, SecondETF, false))
+				.Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security, bool isFirst)
@@ -64,12 +117,15 @@ namespace StockSharp.Samples.Strategies
 		private void OnDaily(bool first, ICandleMessage c)
 		{
 			(first ? _p1 : _p2).Add(c.ClosePrice);
+
 			var d = c.OpenTime.Date;
 			if (d == _last)
 				return;
+
 			_last = d;
 			if (!(d.Month % 3 == 1 && d.Day == 1))
-				return; // first trading day quarter
+				return; // first trading day of quarter
+
 			Rebalance();
 		}
 
@@ -77,15 +133,17 @@ namespace StockSharp.Samples.Strategies
 		{
 			if (!_p1.Full || !_p2.Full)
 				return;
+
 			var r1 = (_p1.Data[0] - _p1.Data[^1]) / _p1.Data[^1];
 			var r2 = (_p2.Data[0] - _p2.Data[^1]) / _p2.Data[^1];
 			var longEtf = r1 > r2 ? FirstETF : SecondETF;
 			var other = r1 > r2 ? SecondETF : FirstETF;
-			
+
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
 			var longPrice = GetLatestPrice(longEtf);
 			if (longPrice > 0)
 				Move(longEtf, portfolioValue / longPrice);
+
 			Move(other, 0);
 		}
 
@@ -102,9 +160,39 @@ namespace StockSharp.Samples.Strategies
 			var price = GetLatestPrice(s);
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
-			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "PairSwitch" });
+
+			RegisterOrder(new Order
+			{
+				Security = s,
+				Portfolio = Portfolio,
+				Side = diff > 0 ? Sides.Buy : Sides.Sell,
+				Volume = Math.Abs(diff),
+				Type = OrderTypes.Market,
+				Comment = "PairSwitch"
+			});
 		}
 
-		private class RollingWin { private readonly Queue<decimal> _q = new(); private readonly int _n; public RollingWin(int n) { _n = n; } public bool Full => _q.Count == _n; public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); } public decimal[] Data => _q.ToArray(); }
+		private class RollingWin
+		{
+			private readonly Queue<decimal> _q = new();
+			private readonly int _n;
+
+			public RollingWin(int n)
+			{
+				_n = n;
+			}
+
+			public bool Full => _q.Count == _n;
+
+			public void Add(decimal p)
+			{
+				if (_q.Count == _n)
+					_q.Dequeue();
+
+				_q.Enqueue(p);
+			}
+
+			public decimal[] Data => _q.ToArray();
+		}
 	}
 }

@@ -16,6 +16,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Simplified pairs trading strategy for stocks.
+	/// Trades stock pairs based on the z-score of their price ratio.
+	/// </summary>
 	public class PairsTradingStocksStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<(Security, Security)>> _pairs;
@@ -29,19 +33,67 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<(Security, Security), Win> _hist = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
-		public IEnumerable<(Security A, Security B)> Pairs { get => _pairs.Value; set => _pairs.Value = value; }
-		public int WindowDays => _window.Value;
-		public decimal EntryZ => _entryZ.Value;
-		public decimal ExitZ => _exitZ.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Pairs of securities to trade.
+		/// </summary>
+		public IEnumerable<(Security A, Security B)> Pairs
+		{
+			get => _pairs.Value;
+			set => _pairs.Value = value;
+		}
+
+		/// <summary>
+		/// Rolling window size in days.
+		/// </summary>
+		public int WindowDays
+		{
+			get => _window.Value;
+			set => _window.Value = value;
+		}
+
+		/// <summary>
+		/// Entry z-score threshold.
+		/// </summary>
+		public decimal EntryZ
+		{
+			get => _entryZ.Value;
+			set => _entryZ.Value = value;
+		}
+
+		/// <summary>
+		/// Exit z-score threshold.
+		/// </summary>
+		public decimal ExitZ
+		{
+			get => _exitZ.Value;
+			set => _exitZ.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public PairsTradingStocksStrategy()
 		{
-			_pairs = Param<IEnumerable<(Security, Security)>>(nameof(Pairs), Array.Empty<(Security, Security)>());
-			_window = Param(nameof(WindowDays), 60);
-			_entryZ = Param(nameof(EntryZ), 2m);
-			_exitZ = Param(nameof(ExitZ), 0.5m);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_pairs = Param<IEnumerable<(Security, Security)>>(nameof(Pairs), Array.Empty<(Security, Security)>())
+			.SetDisplay("Pairs", "Pairs of securities", "General");
+			_window = Param(nameof(WindowDays), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Window Days", "Rolling window size in days", "General");
+			_entryZ = Param(nameof(EntryZ), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Z", "Entry z-score threshold", "General");
+			_exitZ = Param(nameof(ExitZ), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Exit Z", "Exit z-score threshold", "General");
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
@@ -52,6 +104,8 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Pairs == null || !Pairs.Any())
+				throw new InvalidOperationException("Pairs must be set.");
 			base.OnStarted(t);
 			foreach (var (a, b) in Pairs)
 			{

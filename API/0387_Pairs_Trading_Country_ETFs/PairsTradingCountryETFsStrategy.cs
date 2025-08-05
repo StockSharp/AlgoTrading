@@ -21,6 +21,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Mean-reversion pairs strategy for country ETFs.
+	/// Trades two ETFs based on the z-score of their price ratio.
+	/// </summary>
 	public class PairsTradingCountryETFsStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -30,11 +34,50 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int WindowDays => _window.Value;
-		public decimal EntryZ => _entryZ.Value;
-		public decimal ExitZ => _exitZ.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Strategy universe containing exactly two ETFs.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Rolling window size in days.
+		/// </summary>
+		public int WindowDays
+		{
+			get => _window.Value;
+			set => _window.Value = value;
+		}
+
+		/// <summary>
+		/// Entry z-score threshold.
+		/// </summary>
+		public decimal EntryZ
+		{
+			get => _entryZ.Value;
+			set => _entryZ.Value = value;
+		}
+
+		/// <summary>
+		/// Exit z-score threshold.
+		/// </summary>
+		public decimal ExitZ
+		{
+			get => _exitZ.Value;
+			set => _exitZ.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private Security _a, _b;
 		private readonly Queue<decimal> _ratio = new();
@@ -43,11 +86,20 @@ namespace StockSharp.Samples.Strategies
 
 		public PairsTradingCountryETFsStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_window = Param(nameof(WindowDays), 60);
-			_entryZ = Param(nameof(EntryZ), 2m);
-			_exitZ = Param(nameof(ExitZ), 0.5m);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+			.SetDisplay("Universe", "Pair of ETFs", "General");
+			_window = Param(nameof(WindowDays), 60)
+			.SetGreaterThanZero()
+			.SetDisplay("Window Days", "Rolling window size in days", "General");
+			_entryZ = Param(nameof(EntryZ), 2m)
+			.SetGreaterThanZero()
+			.SetDisplay("Entry Z", "Entry z-score threshold", "General");
+			_exitZ = Param(nameof(ExitZ), 0.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Exit Z", "Exit z-score threshold", "General");
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
@@ -62,6 +114,8 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Universe == null || Universe.Count() != 2)
+				throw new InvalidOperationException("Universe must contain exactly two ETFs.");
 			base.OnStarted(t);
 			SubscribeCandles(_tf, true, _a).Bind(c => ProcessCandle(c, _a)).Start();
 			SubscribeCandles(_tf, true, _b).Bind(c => ProcessCandle(c, _b)).Start();
