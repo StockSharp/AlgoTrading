@@ -1,8 +1,3 @@
-// AccrualAnomalyStrategy.cs  (revised to candle-driven)
-// Yearly rebalance when first finished candle of May detected.
-// Parameters: Universe (IEnumerable<Security>), CandleType param
-// Date: 2 August 2025
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,33 +8,74 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Strategy implementing the accrual anomaly factor.
+	/// Rebalances annually on the first trading day of May.
+	/// </summary>
 	public class AccrualAnomalyStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
 		private readonly StrategyParam<int> _deciles;
 		private readonly StrategyParam<DataType> _candleType;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int Deciles => _deciles.Value;
-		public DataType CandleType => _candleType.Value;
+		/// <summary>
+		/// Trading universe.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Number of decile buckets.
+		/// </summary>
+		public int Deciles
+		{
+			get => _deciles.Value;
+			set => _deciles.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type used to detect rebalancing date.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 
 		private readonly Dictionary<Security, BalanceSnapshot> _prev = new();
 		private readonly Dictionary<Security, decimal> _weights = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="AccrualAnomalyStrategy"/>.
+		/// </summary>
 		public AccrualAnomalyStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_deciles = Param(nameof(Deciles), 10);
-			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to trade", "General");
+
+			_deciles = Param(nameof(Deciles), 10)
+				.SetGreaterThanZero()
+				.SetDisplay("Deciles", "Number of decile buckets", "General");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Candle type used for rebalancing", "General");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
 			Universe.Select(s => (s, CandleType));
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			base.OnStarted(time);
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{

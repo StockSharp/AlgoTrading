@@ -1,9 +1,3 @@
-// AssetClassMomentumRotationalStrategy.cs  (revised)
-// • Universe = IEnumerable<Security>
-// • CandleType param
-// • Momentum computed on daily candle close; rebalance on 1st trading day of month
-// Date: 2 August 2025
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,41 +9,102 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Momentum rotation strategy across asset classes.
+	/// Calculates rate of change and rebalances on the first trading day of each month.
+	/// </summary>
 	public class AssetClassMomentumRotationalStrategy : Strategy
 	{
-		#region Params
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
 		private readonly StrategyParam<int> _rocLen;
 		private readonly StrategyParam<int> _topN;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _candleType;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int RocLength => _rocLen.Value;
-		public int TopN => _topN.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _candleType.Value;
-		#endregion
+		/// <summary>
+		/// Trading universe.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Rate of change lookback length.
+		/// </summary>
+		public int RocLength
+		{
+			get => _rocLen.Value;
+			set => _rocLen.Value = value;
+		}
+
+		/// <summary>
+		/// Number of top assets to hold.
+		/// </summary>
+		public int TopN
+		{
+			get => _topN.Value;
+			set => _topN.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type used to compute momentum.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 
 		private readonly Dictionary<Security, RateOfChange> _roc = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private readonly HashSet<Security> _held = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="AssetClassMomentumRotationalStrategy"/>.
+		/// </summary>
 		public AssetClassMomentumRotationalStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_rocLen = Param(nameof(RocLength), 252);
-			_topN = Param(nameof(TopN), 3);
-			_minUsd = Param(nameof(MinTradeUsd), 50m);
-			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to trade", "General");
+
+			_rocLen = Param(nameof(RocLength), 252)
+				.SetGreaterThanZero()
+				.SetDisplay("ROC Length", "Rate of change lookback", "General");
+
+			_topN = Param(nameof(TopN), 3)
+				.SetGreaterThanZero()
+				.SetDisplay("Top N", "Number of assets to hold", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 50m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value", "General");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Candle type used for momentum", "General");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
 			Universe.Select(s => (s, CandleType));
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			base.OnStarted(time);
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
