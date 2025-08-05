@@ -1,17 +1,18 @@
-// CurrencyPPPValueStrategy.cs (full, candle-driven)
-// Long undervalued (PPP negative), short overvalued; monthly rebalance.
-// Date: 2 August 2025
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using StockSharp.Algo;
+
 using StockSharp.Algo.Candles;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Currency purchasing power parity value strategy.
+	/// Buys undervalued currencies and sells overvalued ones with monthly rebalancing.
+	/// </summary>
 	public class CurrencyPPPValueStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
@@ -19,29 +20,81 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _tf;
 		private readonly StrategyParam<decimal> _minUsd;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int K => _k.Value;
-		public DataType CandleType => _tf.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Trading universe.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Number of currencies to long and short.
+		/// </summary>
+		public int K
+		{
+			get => _k.Value;
+			set => _k.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type (time-frame) used for analysis.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, decimal> _w = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="CurrencyPPPValueStrategy"/> class.
+		/// </summary>
 		public CurrencyPPPValueStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_k = Param(nameof(K), 3);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-			_minUsd = Param(nameof(MinTradeUsd), 100m);
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to trade", "General");
+
+			_k = Param(nameof(K), 3)
+				.SetGreaterThanZero()
+				.SetDisplay("K", "Number of currencies to long/short", "General");
+
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Time frame of candles", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 100m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade size in USD", "Risk Management");
 		}
 
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, CandleType));
 
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, CandleType));
+		}
+
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty.");
+
 			foreach (var (s, dt) in GetWorkingSecurities())
 			{
 				SubscribeCandles(dt, true, s)
