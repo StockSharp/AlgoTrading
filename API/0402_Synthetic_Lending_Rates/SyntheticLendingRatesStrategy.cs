@@ -18,29 +18,47 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Trades based on changes in synthetic lending-rate intensity.
+	/// </summary>
 	public class SyntheticLendingRatesStrategy : Strategy
 	{
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromMinutes(1).TimeFrame();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
 		private decimal? _intensityT0;
 
 		public SyntheticLendingRatesStrategy()
 		{
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
 			if (Security == null)
 				throw new InvalidOperationException("Security not set");
+
 			yield return (Security, _tf);
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Security == null)
+				throw new InvalidOperationException("Security not set");
+
 			base.OnStarted(t);
 			SubscribeCandles(_tf, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
 		}

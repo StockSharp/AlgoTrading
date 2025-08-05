@@ -19,6 +19,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Implements the 52-week high effect across industry groups.
+	/// </summary>
 	public class Weeks52HighStrategy : Strategy
 	{
 		#region Parameters
@@ -28,10 +31,41 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _holdingMonths; // tranche holding period months
 		private readonly StrategyParam<int> _windowDays;    // 52‑week lookback (trading days)
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int IndustriesCount => _industries.Value;
-		public int HoldingPeriodMonths => _holdingMonths.Value;
-		public int LookbackDays => _windowDays.Value;
+		/// <summary>
+		/// List of securities used by the strategy.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Number of winner and loser industries.
+		/// </summary>
+		public int IndustriesCount
+		{
+			get => _industries.Value;
+			set => _industries.Value = value;
+		}
+
+		/// <summary>
+		/// Tranche holding period in months.
+		/// </summary>
+		public int HoldingPeriodMonths
+		{
+			get => _holdingMonths.Value;
+			set => _holdingMonths.Value = value;
+		}
+
+		/// <summary>
+		/// Lookback window in trading days.
+		/// </summary>
+		public int LookbackDays
+		{
+			get => _windowDays.Value;
+			set => _windowDays.Value = value;
+		}
 
 		#endregion
 
@@ -59,6 +93,7 @@ namespace StockSharp.Samples.Strategies
 
 		#region Universe & candles
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (Universe == null || !Universe.Any())
@@ -68,8 +103,12 @@ namespace StockSharp.Samples.Strategies
 			return Universe.Select(s => (s, dt));
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty — populate Universe before start.");
+
 			base.OnStarted(time);
 
 			foreach (var (sec, dt) in GetWorkingSecurities())

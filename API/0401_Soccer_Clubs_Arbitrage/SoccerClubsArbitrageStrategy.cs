@@ -17,6 +17,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Arbitrage strategy for two share classes of the same soccer club.
+	/// </summary>
 	public class SoccerClubsArbitrageStrategy : Strategy
 	{
 		#region Params
@@ -26,10 +29,41 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Pair { get => _pair.Value; set => _pair.Value = value; }
-		public decimal EntryThreshold => _entry.Value;
-		public decimal ExitThreshold => _exit.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Securities pair used for arbitrage.
+		/// </summary>
+		public IEnumerable<Security> Pair
+		{
+			get => _pair.Value;
+			set => _pair.Value = value;
+		}
+
+		/// <summary>
+		/// Premium threshold to enter a position.
+		/// </summary>
+		public decimal EntryThreshold
+		{
+			get => _entry.Value;
+			set => _entry.Value = value;
+		}
+
+		/// <summary>
+		/// Premium threshold to exit a position.
+		/// </summary>
+		public decimal ExitThreshold
+		{
+			get => _exit.Value;
+			set => _exit.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 		#endregion
 
 		private Security _a, _b;
@@ -37,24 +71,37 @@ namespace StockSharp.Samples.Strategies
 
 		public SoccerClubsArbitrageStrategy()
 		{
-			_pair = Param<IEnumerable<Security>>(nameof(Pair), Array.Empty<Security>());
-			_entry = Param(nameof(EntryThreshold), 0.05m);
-			_exit = Param(nameof(ExitThreshold), 0.01m);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_pair = Param<IEnumerable<Security>>(nameof(Pair), Array.Empty<Security>())
+				.SetDisplay("Pair", "Securities pair to arbitrage", "General");
+
+			_entry = Param(nameof(EntryThreshold), 0.05m)
+				.SetDisplay("Entry Threshold", "Premium difference to open position", "Parameters");
+
+			_exit = Param(nameof(ExitThreshold), 0.01m)
+				.SetDisplay("Exit Threshold", "Premium difference to close position", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
 			if (Pair.Count() != 2)
 				throw new InvalidOperationException("Pair must contain exactly two tickers.");
+
 			_a = Pair.ElementAt(0);
 			_b = Pair.ElementAt(1);
 			yield return (_a, _tf);
 			yield return (_b, _tf);
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Pair == null || !Pair.Any())
+				throw new InvalidOperationException("Pair must contain securities.");
+
 			base.OnStarted(time);
 
 			// Subscribe to both securities to get price updates
