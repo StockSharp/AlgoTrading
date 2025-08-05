@@ -148,8 +148,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
+			base.OnReseted();
 			_previousHistogram = default;
 			_currentHistogramSlope = default;
 			_averageSlope = default;
@@ -158,6 +159,15 @@ namespace StockSharp.Samples.Strategies
 			_sumSlopes = 0;
 			_sumSlopesSquared = 0;
 			_isFirstCalculation = true;
+			_sampleCount = 0;
+			_sumSlopes = 0;
+			_sumSlopesSquared = 0;
+			_isFirstCalculation = true;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
 
 			// Initialize indicators
 
@@ -171,10 +181,6 @@ namespace StockSharp.Samples.Strategies
 				SignalMa = { Length = SignalMacdPeriod }
 			};
 			// Initialize statistics variables
-			_sampleCount = 0;
-			_sumSlopes = 0;
-			_sumSlopesSquared = 0;
-			_isFirstCalculation = true;
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);

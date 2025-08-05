@@ -108,7 +108,12 @@ class volume_slope_mean_reversion_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(volume_slope_mean_reversion_strategy, self).OnReseted()
         self._previous_volume_ratio = 0
         self._current_volume_slope = 0
         self._average_slope = 0
@@ -118,15 +123,13 @@ class volume_slope_mean_reversion_strategy(Strategy):
         self._sum_slopes_squared = 0
         self._is_first_calculation = True
 
+    def OnStarted(self, time):
+
         # Initialize indicators
         self._volume_ma = SimpleMovingAverage()
         self._volume_ma.Length = self.VolumeMaPeriod
 
         # Initialize statistics variables
-        self._sample_count = 0
-        self._sum_slopes = 0
-        self._sum_slopes_squared = 0
-        self._is_first_calculation = True
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

@@ -102,12 +102,12 @@ class ema_slope_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        super(ema_slope_breakout_strategy, self).OnStarted(time)
 
-        self._ema = ExponentialMovingAverage()
-        self._ema.Length = self.ema_length
-
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(ema_slope_breakout_strategy, self).OnReseted()
         self._prev_ema_value = 0.0
         self._current_slope = 0.0
         self._avg_slope = 0.0
@@ -115,6 +115,13 @@ class ema_slope_breakout_strategy(Strategy):
         self._slopes = [0.0] * self.lookback_period
         self._current_index = 0
         self._is_initialized = False
+
+    def OnStarted(self, time):
+        super(ema_slope_breakout_strategy, self).OnStarted(time)
+
+        self._ema = ExponentialMovingAverage()
+        self._ema.Length = self.ema_length
+
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._ema, self.ProcessCandle).Start()

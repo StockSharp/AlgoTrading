@@ -130,15 +130,8 @@ class volatility_adjusted_momentum_strategy(Strategy):
         super(volatility_adjusted_momentum_strategy, self).OnStarted(time)
 
         self._momentum = Momentum()
-        self._momentum.Length = self.MomentumPeriod
         self._atr = AverageTrueRange()
-        self._atr.Length = self.AtrPeriod
 
-        self._momentum_atr_ratio = 0.0
-        self._avg_ratio = 0.0
-        self._std_dev_ratio = 0.0
-        self._ratios = [0.0] * self.LookbackPeriod
-        self._current_index = 0
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._momentum, self._atr, self.ProcessCandle).Start()

@@ -143,10 +143,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
+			base.OnReseted();
 			_prevMacdHistSmaValue = default;
 			_prevMacdHistValue = default;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
 
 			// Initialize indicators
 

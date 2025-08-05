@@ -153,16 +153,22 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-			
+			base.OnReseted();
 			_lastWidth = 0;
 			_lastAvgWidth = 0;
 			_currentEma = 0;
 			_currentAtr = 0;
 			_lastBid = 0;
 			_lastAsk = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+			
 
 			// Create indicators
 			_ema = new ExponentialMovingAverage { Length = EMAPeriod };

@@ -103,6 +103,19 @@ class adx_slope_breakout_strategy(Strategy):
         """!! REQUIRED!! Returns securities this strategy works with."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(adx_slope_breakout_strategy, self).OnReseted()
+        self._prevSlopeValue = 0.0
+        self._slopeAvg = 0.0
+        self._slopeStdDev = 0.0
+        self._sumSlope = 0.0
+        self._sumSlopeSquared = 0.0
+        self._slopeValues = Queue[float]()
+
     def OnStarted(self, time):
         super(adx_slope_breakout_strategy, self).OnStarted(time)
 
@@ -112,12 +125,6 @@ class adx_slope_breakout_strategy(Strategy):
         self._adxSlope = LinearRegression()
         self._adxSlope.Length = 2  # For calculating slope
 
-        self._prevSlopeValue = 0.0
-        self._slopeAvg = 0.0
-        self._slopeStdDev = 0.0
-        self._sumSlope = 0.0
-        self._sumSlopeSquared = 0.0
-        self._slopeValues = Queue[float]()
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)

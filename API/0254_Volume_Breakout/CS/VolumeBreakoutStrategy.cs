@@ -94,12 +94,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_lastAvgVolume = 0;
+			_lastStdDev = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 			
-			_lastAvgVolume = 0;
-			_lastStdDev = 0;
 			
 			// Create indicators for volume analysis
 			_volumeAverage = new SimpleMovingAverage { Length = AvgPeriod };

@@ -132,6 +132,20 @@ class stochastic_slope_breakout_strategy(Strategy):
         """Return the security and candle type this strategy works with."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(stochastic_slope_breakout_strategy, self).OnReseted()
+        self._prevStochKValue = 0.0
+        self._currentSlope = 0.0
+        self._avgSlope = 0.0
+        self._stdDevSlope = 0.0
+        self._slopes = [0.0] * self.LookbackPeriod
+        self._currentIndex = 0
+        self._isInitialized = False
+
     def OnStarted(self, time):
         """Initialize indicators, subscriptions and charting."""
         super(stochastic_slope_breakout_strategy, self).OnStarted(time)
@@ -140,13 +154,6 @@ class stochastic_slope_breakout_strategy(Strategy):
         self._stochastic.K.Length = self.KPeriod
         self._stochastic.D.Length = self.DPeriod
 
-        self._prevStochKValue = 0.0
-        self._currentSlope = 0.0
-        self._avgSlope = 0.0
-        self._stdDevSlope = 0.0
-        self._slopes = [0.0] * self.LookbackPeriod
-        self._currentIndex = 0
-        self._isInitialized = False
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.BindEx(self._stochastic, self.ProcessCandle).Start()

@@ -110,12 +110,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevAdxValue = 0;
+			_prevAdxAvgValue = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 			
-			_prevAdxValue = 0;
-			_prevAdxAvgValue = 0;
 			
 			// Create indicators
 			_adx = new AverageDirectionalIndex { Length = ADXPeriod };

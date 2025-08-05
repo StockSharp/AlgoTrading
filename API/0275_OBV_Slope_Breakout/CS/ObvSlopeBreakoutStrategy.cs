@@ -114,14 +114,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			_lastObvSlope = default;
 			_lastObvValue = default;
 			_lastSlopeAvg = default;
 			_lastSlopeStdDev = default;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
 
 			// Initialize indicators
 			_obv = new OnBalanceVolume();

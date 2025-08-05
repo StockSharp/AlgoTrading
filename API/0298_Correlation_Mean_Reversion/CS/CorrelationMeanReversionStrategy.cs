@@ -144,10 +144,9 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			_currentCorrelation = 0;
 			_averageCorrelation = 0;
 			_correlationStdDeviation = 0;
@@ -157,6 +156,13 @@ namespace StockSharp.Samples.Strategies
 			_security2Updated = false;
 			_security1Prices.Clear();
 			_security2Prices.Clear();
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
 
 			if (Security1 == null)
 				throw new InvalidOperationException("First security is not specified.");

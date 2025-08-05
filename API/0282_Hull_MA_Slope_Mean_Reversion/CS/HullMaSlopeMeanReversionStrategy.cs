@@ -128,6 +128,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_currentHullMa = 0;
+			_prevHullMa = 0;
+			_currentSlope = 0;
+			_prevSlope = 0;
+			_prevSlopeAverage = 0;
+			_prevSlopeStdDev = 0;
+			_currentAtr = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -139,13 +152,6 @@ namespace StockSharp.Samples.Strategies
 			_slopeStdDev = new StandardDeviation { Length = LookbackPeriod };
 			
 			// Reset stored values
-			_currentHullMa = 0;
-			_prevHullMa = 0;
-			_currentSlope = 0;
-			_prevSlope = 0;
-			_prevSlopeAverage = 0;
-			_prevSlopeStdDev = 0;
-			_currentAtr = 0;
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);

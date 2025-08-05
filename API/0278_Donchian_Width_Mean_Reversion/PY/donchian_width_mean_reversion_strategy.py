@@ -103,6 +103,17 @@ class donchian_width_mean_reversion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(donchian_width_mean_reversion_strategy, self).OnReseted()
+        self._current_width = 0.0
+        self._prev_width = 0.0
+        self._prev_width_average = 0.0
+        self._prev_width_std_dev = 0.0
+
     def OnStarted(self, time):
         super(donchian_width_mean_reversion_strategy, self).OnStarted(time)
 
@@ -115,10 +126,6 @@ class donchian_width_mean_reversion_strategy(Strategy):
         self._width_std_dev.Length = self.lookback_period
 
         # Reset stored values
-        self._current_width = 0.0
-        self._prev_width = 0.0
-        self._prev_width_average = 0.0
-        self._prev_width_std_dev = 0.0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)

@@ -132,12 +132,19 @@ class macd_breakout_strategy(Strategy):
         """Return the security and candle type this strategy works with."""
         return [(self.Security, self.candle_type)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(macd_breakout_strategy, self).OnReseted()
+        self._prev_macd_hist_sma_value = 0
+        self._prev_macd_hist_value = 0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(macd_breakout_strategy, self).OnStarted(time)
 
-        self._prev_macd_hist_sma_value = 0
-        self._prev_macd_hist_value = 0
 
         # Initialize indicators
         self._macd = MovingAverageConvergenceDivergenceSignal()

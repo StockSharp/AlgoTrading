@@ -107,14 +107,6 @@ class vwap_slope_breakout_strategy(Strategy):
         # VolumeWeightedMovingAverage is used as VWAP indicator
         self._vwap = VolumeWeightedMovingAverage()
 
-        self._prev_vwap_value = 0.0
-        self._current_slope = 0.0
-        self._avg_slope = 0.0
-        self._std_dev_slope = 0.0
-        self._slopes = [0.0 for _ in range(self.lookback_period)]
-        self._current_index = 0
-        self._is_initialized = False
-
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._vwap, self.ProcessCandle).Start()
 

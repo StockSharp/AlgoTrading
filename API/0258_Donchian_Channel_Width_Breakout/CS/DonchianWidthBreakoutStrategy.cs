@@ -114,12 +114,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_lastWidth = 0;
+			_lastAvgWidth = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 			
-			_lastWidth = 0;
-			_lastAvgWidth = 0;
 			
 			// Create indicators for Donchian Channel components
 			_highest = new Highest { Length = DonchianPeriod };

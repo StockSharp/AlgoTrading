@@ -95,6 +95,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevCciSlopeValue = 0;
+			_slopeAvg = 0;
+			_slopeStdDev = 0;
+			_sumSlope = 0;
+			_sumSlopeSquared = 0;
+			_slopeValues.Clear();
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -103,12 +115,6 @@ namespace StockSharp.Samples.Strategies
 			_cci = new CommodityChannelIndex { Length = CciPeriod };
 			_cciSlope = new LinearRegression { Length = 2 }; // For calculating slope
 			
-			_prevCciSlopeValue = 0;
-			_slopeAvg = 0;
-			_slopeStdDev = 0;
-			_sumSlope = 0;
-			_sumSlopeSquared = 0;
-			_slopeValues.Clear();
 			
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);

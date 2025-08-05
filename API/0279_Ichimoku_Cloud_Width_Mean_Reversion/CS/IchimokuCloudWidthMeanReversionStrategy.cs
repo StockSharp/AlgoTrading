@@ -125,6 +125,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_currentCloudWidth = 0;
+			_prevCloudWidth = 0;
+			_prevCloudWidthAverage = 0;
+			_prevCloudWidthStdDev = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -141,10 +151,6 @@ namespace StockSharp.Samples.Strategies
 			_cloudWidthStdDev = new StandardDeviation { Length = LookbackPeriod };
 			
 			// Reset stored values
-			_currentCloudWidth = 0;
-			_prevCloudWidth = 0;
-			_prevCloudWidthAverage = 0;
-			_prevCloudWidthStdDev = 0;
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);

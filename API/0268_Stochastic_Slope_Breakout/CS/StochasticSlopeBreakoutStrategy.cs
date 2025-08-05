@@ -145,6 +145,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevStochKValue = 0;
+			_currentSlope = 0;
+			_avgSlope = 0;
+			_stdDevSlope = 0;
+			_currentIndex = 0;
+			_isInitialized = false;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			_stochastic = new StochasticOscillator
@@ -153,13 +165,7 @@ namespace StockSharp.Samples.Strategies
 				D = { Length = DPeriod },
 			};
 			
-			_prevStochKValue = 0;
-			_currentSlope = 0;
-			_avgSlope = 0;
-			_stdDevSlope = 0;
 			_slopes = new decimal[LookbackPeriod];
-			_currentIndex = 0;
-			_isInitialized = false;
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription
