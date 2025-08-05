@@ -35,9 +35,6 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._parabolic_sar = None
-        self._prev_sentiment = 0
-        self._prev_price = 0
-        self._is_first_candle = True
 
     @property
     def StartAf(self):
@@ -66,6 +63,13 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(parabolic_sar_sentiment_divergence_strategy, self).OnReseted()
+        self._parabolic_sar = None
+        self._prev_sentiment = 0
+        self._prev_price = 0
+        self._is_first_candle = True
+
     def OnStarted(self, time):
         super(parabolic_sar_sentiment_divergence_strategy, self).OnStarted(time)
 
@@ -74,10 +78,6 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
         self._parabolic_sar.Acceleration = self.StartAf
         self._parabolic_sar.AccelerationMax = self.MaxAf
 
-        # Reset variables
-        self._is_first_candle = True
-        self._prev_sentiment = 0
-        self._prev_price = 0
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

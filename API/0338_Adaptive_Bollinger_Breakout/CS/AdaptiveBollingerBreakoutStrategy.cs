@@ -89,27 +89,27 @@ namespace StockSharp.Samples.Strategies
 		public AdaptiveBollingerBreakoutStrategy()
 		{
 			_minBollingerPeriod = Param(nameof(MinBollingerPeriod), 10)
-				.SetGreaterThanZero()
-				.SetDisplay("Min Bollinger Period", "Minimum period for adaptive Bollinger Bands", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Min Bollinger Period", "Minimum period for adaptive Bollinger Bands", "Indicator Settings");
 
 			_maxBollingerPeriod = Param(nameof(MaxBollingerPeriod), 30)
-				.SetGreaterThanZero()
-				.SetDisplay("Max Bollinger Period", "Maximum period for adaptive Bollinger Bands", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Max Bollinger Period", "Maximum period for adaptive Bollinger Bands", "Indicator Settings");
 
 			_minBollingerDeviation = Param(nameof(MinBollingerDeviation), 1.5m)
-				.SetGreaterThanZero()
-				.SetDisplay("Min Bollinger Deviation", "Minimum standard deviation multiplier", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Min Bollinger Deviation", "Minimum standard deviation multiplier", "Indicator Settings");
 
 			_maxBollingerDeviation = Param(nameof(MaxBollingerDeviation), 2.5m)
-				.SetGreaterThanZero()
-				.SetDisplay("Max Bollinger Deviation", "Maximum standard deviation multiplier", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Max Bollinger Deviation", "Maximum standard deviation multiplier", "Indicator Settings");
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetGreaterThanZero()
-				.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Indicator Settings");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -119,18 +119,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Initialize adaptive parameters
 			_currentBollingerPeriod = MaxBollingerPeriod; // Start with maximum period
 			_currentBollingerDeviation = MinBollingerDeviation; // Start with minimum deviation
-
 			_atr = default;
 			_bollinger = default;
 			_atrSum = default;
 			_atrCount = default;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create ATR indicator for volatility measurement
 			_atr = new AverageTrueRange
@@ -150,8 +153,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to subscription and start
 			subscription
-				.BindEx(_atr, _bollinger, ProcessIndicators)
-				.Start();
+			.BindEx(_atr, _bollinger, ProcessIndicators)
+			.Start();
 
 			// Add chart visualization
 			var area = CreateChartArea();
@@ -164,8 +167,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Start position protection with ATR-based stop-loss
 			StartProtection(
-				takeProfit: new Unit(0), // No fixed take profit
-				stopLoss: new Unit(2, UnitTypes.Absolute) // 2 ATR stop-loss
+			takeProfit: new Unit(0), // No fixed take profit
+			stopLoss: new Unit(2, UnitTypes.Absolute) // 2 ATR stop-loss
 			);
 		}
 
@@ -173,7 +176,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// --- ATR logic (was ProcessAtr) ---
 			if (atrValue.IsFinal)
@@ -208,7 +211,7 @@ namespace StockSharp.Samples.Strategies
 
 			// --- Bollinger logic (was ProcessBollinger) ---
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			if (bollingerValue.IsFinal && _atr.IsFormed)
 			{
@@ -217,10 +220,10 @@ namespace StockSharp.Samples.Strategies
 				bool isHighVolatility = atrVal > (_atrCount > 0 ? _atrSum / _atrCount : atrVal);
 
 				var bollingerTyped = (BollingerBandsValue)bollingerValue;
-				
+
 				if (bollingerTyped.UpBand is not decimal upperBand ||
-					bollingerTyped.LowBand is not decimal lowerBand ||
-					bollingerTyped.MovingAverage is not decimal middleBand)
+				bollingerTyped.LowBand is not decimal lowerBand ||
+				bollingerTyped.MovingAverage is not decimal middleBand)
 				{
 					return; // Not enough data to calculate bands
 				}
@@ -243,7 +246,7 @@ namespace StockSharp.Samples.Strategies
 
 				// Exit logic based on middle band reversion
 				if ((Position > 0 && candle.ClosePrice > middleBand) || 
-					(Position < 0 && candle.ClosePrice < middleBand))
+				(Position < 0 && candle.ClosePrice < middleBand))
 				{
 					LogInfo($"Exit signal: Price ({candle.ClosePrice}) reverted to middle band ({middleBand})");
 					ClosePosition();

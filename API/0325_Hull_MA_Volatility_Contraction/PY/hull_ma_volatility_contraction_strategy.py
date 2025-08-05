@@ -87,14 +87,16 @@ class hull_ma_volatility_contraction_strategy(Strategy):
         """Return security and candle type used by the strategy."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(hull_ma_volatility_contraction_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(hull_ma_volatility_contraction_strategy, self).OnReseted()
         self._prev_hma_value = 0.0
         self._current_hma_value = 0.0
         self._is_long_position = False
         self._is_short_position = False
         self._atr_values = []
+
+    def OnStarted(self, time):
+        super(hull_ma_volatility_contraction_strategy, self).OnStarted(time)
 
         # Create indicators
         self._hma = HullMovingAverage()

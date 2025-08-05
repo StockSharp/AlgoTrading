@@ -28,17 +28,17 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _pcrPeriod;
 		private readonly StrategyParam<decimal> _pcrMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private readonly List<decimal> _pcrHistory = [];
 		private decimal _pcrAverage;
 		private decimal _pcrStdDev;
-		
+
 		private bool _isLong;
 		private bool _isShort;
-		
+
 		// Simulated PCR value (in real implementation this would come from market data)
 		private decimal _currentPcr;
-		
+
 		/// <summary>
 		/// Supertrend period.
 		/// </summary>
@@ -47,7 +47,7 @@ namespace StockSharp.Samples.Strategies
 			get => _period.Value;
 			set => _period.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Supertrend multiplier.
 		/// </summary>
@@ -56,7 +56,7 @@ namespace StockSharp.Samples.Strategies
 			get => _multiplier.Value;
 			set => _multiplier.Value = value;
 		}
-		
+
 		/// <summary>
 		/// PCR averaging period.
 		/// </summary>
@@ -65,7 +65,7 @@ namespace StockSharp.Samples.Strategies
 			get => _pcrPeriod.Value;
 			set => _pcrPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// PCR standard deviation multiplier for thresholds.
 		/// </summary>
@@ -74,7 +74,7 @@ namespace StockSharp.Samples.Strategies
 			get => _pcrMultiplier.Value;
 			set => _pcrMultiplier.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Type of candles to use.
 		/// </summary>
@@ -83,69 +83,73 @@ namespace StockSharp.Samples.Strategies
 			get => _candleType.Value;
 			set => _candleType.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Constructor with default parameters.
 		/// </summary>
 		public SupertrendWithPutCallRatioStrategy()
 		{
 			_period = Param(nameof(Period), 10)
-				.SetGreaterThanZero()
-				.SetDisplay("Supertrend Period", "Supertrend ATR period", "Supertrend Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(5, 20, 3);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Supertrend Period", "Supertrend ATR period", "Supertrend Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 20, 3);
+
 			_multiplier = Param(nameof(Multiplier), 3m)
-				.SetGreaterThanZero()
-				.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(2m, 4m, 0.5m);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Supertrend Multiplier", "Supertrend ATR multiplier", "Supertrend Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(2m, 4m, 0.5m);
+
 			_pcrPeriod = Param(nameof(PCRPeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("PCR Period", "Put/Call Ratio averaging period", "PCR Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 5);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("PCR Period", "Put/Call Ratio averaging period", "PCR Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 5);
+
 			_pcrMultiplier = Param(nameof(PCRMultiplier), 2m)
-				.SetGreaterThanZero()
-				.SetDisplay("PCR Std Dev Multiplier", "Multiplier for PCR standard deviation", "PCR Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(1m, 3m, 0.5m);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("PCR Std Dev Multiplier", "Multiplier for PCR standard deviation", "PCR Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(1m, 3m, 0.5m);
+
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
-		
+
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
-		
+
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-			
-			// Initialize flags
+			base.OnReseted();
+
 			_pcrHistory.Clear();
 			_isLong = default;
 			_isShort = default;
 			_currentPcr = default;
 			_pcrAverage = default;
 			_pcrStdDev = default;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create Supertrend indicator
 			var supertrend = new SuperTrend { Length = Period, Multiplier = Multiplier };
-			
+
 			// Subscribe to candles and bind indicator
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.Bind(supertrend, ProcessCandle)
-				.Start();
-			
+			.Bind(supertrend, ProcessCandle)
+			.Start();
+
 			// Create chart visualization if available
 			var area = CreateChartArea();
 			if (area != null)
@@ -155,7 +159,7 @@ namespace StockSharp.Samples.Strategies
 				DrawOwnTrades(area);
 			}
 		}
-		
+
 		/// <summary>
 		/// Process each candle and Supertrend value.
 		/// </summary>
@@ -163,27 +167,27 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-			
+			return;
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-			
+			return;
+
 			// Update PCR value (in a real system, this would come from market data)
 			UpdatePCR(candle);
-			
+
 			// Calculate PCR thresholds based on historical data
 			var bullishPcrThreshold = _pcrAverage - PCRMultiplier * _pcrStdDev;
 			var bearishPcrThreshold = _pcrAverage + PCRMultiplier * _pcrStdDev;
-			
+
 			var price = candle.ClosePrice;
 			var priceAboveSupertrend = price > supertrendValue;
 			var priceBelowSupertrend = price < supertrendValue;
-			
+
 			// Trading logic
-			
+
 			// Entry conditions
-			
+
 			// Long entry: Price > Supertrend && PCR < bullish threshold (bullish PCR)
 			if (priceAboveSupertrend && _currentPcr < bullishPcrThreshold && !_isLong && Position <= 0)
 			{
@@ -200,9 +204,9 @@ namespace StockSharp.Samples.Strategies
 				_isShort = true;
 				_isLong = false;
 			}
-			
+
 			// Exit conditions (based only on Supertrend, not PCR)
-			
+
 			// Exit long: Price < Supertrend
 			if (_isLong && priceBelowSupertrend && Position > 0)
 			{
@@ -218,7 +222,7 @@ namespace StockSharp.Samples.Strategies
 				_isShort = false;
 			}
 		}
-		
+
 		/// <summary>
 		/// Update Put/Call Ratio value.
 		/// In a real implementation, this would fetch data from market.
@@ -227,7 +231,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Base PCR on candle pattern with some randomness
 			decimal pcr;
-			
+
 			// Bullish candle tends to have lower PCR
 			if (candle.ClosePrice > candle.OpenPrice)
 			{
@@ -238,27 +242,27 @@ namespace StockSharp.Samples.Strategies
 			{
 				pcr = 1.0m + (decimal)(RandomGen.GetDouble() * 0.5);
 			}
-			
+
 			_currentPcr = pcr;
-			
+
 			// Add to history
 			_pcrHistory.Add(_currentPcr);
 			if (_pcrHistory.Count > PCRPeriod)
 			{
 				_pcrHistory.RemoveAt(0);
 			}
-			
+
 			// Calculate average
 			decimal sum = 0;
 			foreach (var value in _pcrHistory)
 			{
 				sum += value;
 			}
-			
+
 			_pcrAverage = _pcrHistory.Count > 0 
-				? sum / _pcrHistory.Count 
-				: 1.0m; // Default to neutral (1.0)
-				
+			? sum / _pcrHistory.Count 
+			: 1.0m; // Default to neutral (1.0)
+
 			// Calculate standard deviation
 			if (_pcrHistory.Count > 1)
 			{
@@ -268,14 +272,14 @@ namespace StockSharp.Samples.Strategies
 					var diff = value - _pcrAverage;
 					sumSquaredDiffs += diff * diff;
 				}
-				
+
 				_pcrStdDev = (decimal)Math.Sqrt((double)(sumSquaredDiffs / (_pcrHistory.Count - 1)));
 			}
 			else
 			{
 				_pcrStdDev = 0.1m; // Default value until we have enough data
 			}
-			
+
 			LogInfo($"PCR: {_currentPcr}, Avg: {_pcrAverage}, StdDev: {_pcrStdDev}");
 		}
 	}

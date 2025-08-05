@@ -99,17 +99,20 @@ class adx_sentiment_momentum_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(adx_sentiment_momentum_strategy, self).OnReseted()
+        if self._adx:
+            self._adx.Reset()
+        self._prev_sentiment = 0
+        self._current_sentiment = 0
+        self._sentiment_momentum = 0
+
     def OnStarted(self, time):
         super(adx_sentiment_momentum_strategy, self).OnStarted(time)
 
         # Create ADX Indicator
         self._adx = AverageDirectionalIndex()
         self._adx.Length = self.AdxPeriod
-
-        # Initialize sentiment values
-        self._prev_sentiment = 0
-        self._current_sentiment = 0
-        self._sentiment_momentum = 0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

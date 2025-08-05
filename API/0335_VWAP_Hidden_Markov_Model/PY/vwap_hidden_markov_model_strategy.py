@@ -76,17 +76,18 @@ class vwap_hidden_markov_model_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(vwap_hidden_markov_model_strategy, self).OnStarted(time)
-
-        # Reset state variables
+    def OnReseted(self):
+        super(vwap_hidden_markov_model_strategy, self).OnReseted()
         self._current_market_state = MarketState.Neutral
         self._price_data.clear()
         self._volume_data.clear()
 
+    def OnStarted(self, time):
+        super(vwap_hidden_markov_model_strategy, self).OnStarted(time)
+
         # Create Vwap indicator
         vwap = VolumeWeightedMovingAverage()
-
+        
         # Create subscription for candles
         subscription = self.SubscribeCandles(self.CandleType)
 

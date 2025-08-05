@@ -17,10 +17,10 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _cciPeriod;
 		private readonly StrategyParam<decimal> _atrMultiplier;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private CommodityChannelIndex _cci;
 		private AverageTrueRange _atr;
-		
+
 		private decimal _prevPcr;
 		private decimal _currentPcr;
 		private decimal _prevPrice;
@@ -58,23 +58,36 @@ namespace StockSharp.Samples.Strategies
 		public CciPutCallRatioDivergenceStrategy()
 		{
 			_cciPeriod = Param(nameof(CciPeriod), 20)
-				.SetRange(10, 50)
-				.SetCanOptimize(true)
-				.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
+			.SetRange(10, 50)
+			.SetCanOptimize(true)
+			.SetDisplay("CCI Period", "Period for CCI calculation", "Indicators");
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2m)
-				.SetRange(1m, 5m)
-				.SetCanOptimize(true)
-				.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop loss", "Risk Management");
+			.SetRange(1m, 5m)
+			.SetCanOptimize(true)
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR-based stop loss", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_cci?.Reset();
+			_atr?.Reset();
+
+			_prevPcr = 0;
+			_currentPcr = 0;
+			_prevPrice = 0;
 		}
 
 		/// <inheritdoc />
@@ -93,18 +106,13 @@ namespace StockSharp.Samples.Strategies
 				Length = 14 // Standard ATR period
 			};
 
-			// Initialize state variables
-			_prevPcr = 0;
-			_currentPcr = 0;
-			_prevPrice = 0;
-
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			// Bind indicators
 			subscription
-				.Bind(_cci, _atr, ProcessCandle)
-				.Start();
+			.Bind(_cci, _atr, ProcessCandle)
+			.Start();
 
 			// Setup chart visualization
 			var area = CreateChartArea();
@@ -121,7 +129,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Get current price
 			var price = candle.ClosePrice;
@@ -139,7 +147,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			// Check for divergences
 			bool bullishDivergence = price < _prevPrice && _currentPcr > _prevPcr;
@@ -177,7 +185,7 @@ namespace StockSharp.Samples.Strategies
 			if (Position != 0)
 			{
 				decimal stopDistance = atr * AtrMultiplier;
-				
+
 				if (Position > 0)
 				{
 					// For long positions, set stop below entry price - ATR*multiplier
@@ -201,11 +209,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			// This is a placeholder for real Put/Call Ratio data
 			// In a real implementation, this would connect to an options data provider
-			
+
 			// Base PCR on price movement (inverse relation usually exists)
 			bool priceUp = candle.OpenPrice < candle.ClosePrice;
 			decimal priceChange = Math.Abs((candle.ClosePrice - candle.OpenPrice) / candle.OpenPrice);
-			
+
 			if (priceUp)
 			{
 				// When price rises, PCR often falls (less put buying)
@@ -216,14 +224,14 @@ namespace StockSharp.Samples.Strategies
 				// When price falls, PCR often rises (more put buying for protection)
 				_currentPcr = 1.0m + priceChange + (decimal)(RandomGen.GetDouble() * 0.3);
 			}
-			
+
 			// Add some randomness for market events
 			if (RandomGen.GetDouble() > 0.9)
 			{
 				// Occasional PCR spikes
 				_currentPcr *= 1.3m;
 			}
-			
+
 			// Keep PCR in realistic bounds
 			_currentPcr = Math.Max(0.5m, Math.Min(2.0m, _currentPcr));
 		}
@@ -232,7 +240,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// In a real implementation, this would update the stop loss level
 			// This could be done via order modification or canceling existing stops and placing new ones
-			
+
 			// For this example, we'll just log the new stop level
 			LogInfo($"Updated Stop Loss: {stopPrice}");
 		}

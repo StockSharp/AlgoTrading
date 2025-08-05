@@ -104,9 +104,8 @@ class donchian_with_sentiment_spike_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(donchian_with_sentiment_spike_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(donchian_with_sentiment_spike_strategy, self).OnReseted()
         # Initialize flags
         self._is_long = False
         self._is_short = False
@@ -115,6 +114,9 @@ class donchian_with_sentiment_spike_strategy(Strategy):
         self._sentiment_average = 0.0
         self._sentiment_std_dev = 0.0
         self._current_sentiment = 0.0
+
+    def OnStarted(self, time):
+        super(donchian_with_sentiment_spike_strategy, self).OnStarted(time)
 
         # Create Donchian Channel indicator
         donchian = DonchianChannels()

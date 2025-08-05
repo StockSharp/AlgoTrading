@@ -27,13 +27,13 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _threshold;
 		private readonly StrategyParam<decimal> _stopLoss;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		// Sentiment score from external data source (simplified with simulation for this example)
 		private decimal _sentimentScore;
 		// Last MACD and Signal values stored from the previous candle
 		private decimal _prevMacd;
 		private decimal _prevSignal;
-		
+
 		/// <summary>
 		/// MACD Fast period.
 		/// </summary>
@@ -42,7 +42,7 @@ namespace StockSharp.Samples.Strategies
 			get => _macdFast.Value;
 			set => _macdFast.Value = value;
 		}
-		
+
 		/// <summary>
 		/// MACD Slow period.
 		/// </summary>
@@ -51,7 +51,7 @@ namespace StockSharp.Samples.Strategies
 			get => _macdSlow.Value;
 			set => _macdSlow.Value = value;
 		}
-		
+
 		/// <summary>
 		/// MACD Signal period.
 		/// </summary>
@@ -60,7 +60,7 @@ namespace StockSharp.Samples.Strategies
 			get => _macdSignal.Value;
 			set => _macdSignal.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Sentiment threshold for entry signal.
 		/// </summary>
@@ -69,7 +69,7 @@ namespace StockSharp.Samples.Strategies
 			get => _threshold.Value;
 			set => _threshold.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Stop-loss percentage.
 		/// </summary>
@@ -78,7 +78,7 @@ namespace StockSharp.Samples.Strategies
 			get => _stopLoss.Value;
 			set => _stopLoss.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Type of candles to use.
 		/// </summary>
@@ -87,60 +87,65 @@ namespace StockSharp.Samples.Strategies
 			get => _candleType.Value;
 			set => _candleType.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Constructor with default parameters.
 		/// </summary>
 		public MacdWithSentimentFilterStrategy()
 		{
 			_macdFast = Param(nameof(MacdFast), 12)
-				.SetGreaterThanZero()
-				.SetDisplay("MACD Fast", "Fast moving average period for MACD", "MACD Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(8, 20, 1);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Fast", "Fast moving average period for MACD", "MACD Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(8, 20, 1);
+
 			_macdSlow = Param(nameof(MacdSlow), 26)
-				.SetGreaterThanZero()
-				.SetDisplay("MACD Slow", "Slow moving average period for MACD", "MACD Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(20, 34, 2);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Slow", "Slow moving average period for MACD", "MACD Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 34, 2);
+
 			_macdSignal = Param(nameof(MacdSignal), 9)
-				.SetGreaterThanZero()
-				.SetDisplay("MACD Signal", "Signal line period for MACD", "MACD Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(5, 13, 1);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal", "Signal line period for MACD", "MACD Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 13, 1);
+
 			_threshold = Param(nameof(Threshold), 0.5m)
-				.SetGreaterThanZero()
-				.SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(0.2m, 0.8m, 0.1m);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Sentiment Threshold", "Threshold for sentiment filter", "Sentiment Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(0.2m, 0.8m, 0.1m);
+
 			_stopLoss = Param(nameof(StopLoss), 2m)
-				.SetGreaterThanZero()
-				.SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
-				.SetCanOptimize(true)
-				.SetOptimize(1m, 3m, 0.5m);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss (%)", "Stop Loss percentage from entry price", "Risk Management")
+			.SetCanOptimize(true)
+			.SetOptimize(1m, 3m, 0.5m);
+
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
-		
+
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
-		
+
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_prevMacd = default;
 			_prevSignal = default;
 			_sentimentScore = default;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create MACD indicator
 
@@ -153,15 +158,12 @@ namespace StockSharp.Samples.Strategies
 				},
 				SignalMa = { Length = MacdSignal }
 			};
-			// Initialize sentiment score
-			_sentimentScore = 0;
-			
 			// Subscribe to candles and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(macd, ProcessCandle)
-				.Start();
-			
+			.BindEx(macd, ProcessCandle)
+			.Start();
+
 			// Create chart visualization if available
 			var area = CreateChartArea();
 			if (area != null)
@@ -170,14 +172,14 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, macd);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Enable position protection with stop-loss
 			StartProtection(
-				new Unit(0), // No take profit
-				new Unit(StopLoss, UnitTypes.Percent) // Stop-loss as percentage
+			new Unit(0), // No take profit
+			new Unit(StopLoss, UnitTypes.Percent) // Stop-loss as percentage
 			);
 		}
-		
+
 		/// <summary>
 		/// Process each candle and MACD values.
 		/// </summary>
@@ -185,12 +187,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-			
+			return;
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-			
+			return;
+
 			// Update sentiment score (in a real system this would come from external source)
 			UpdateSentimentScore(candle);
 
@@ -203,15 +205,15 @@ namespace StockSharp.Samples.Strategies
 			// Store previous MACD values for state tracking
 			var prevMacdOverSignal = _prevMacd > _prevSignal;
 			var currMacdOverSignal = macd > signal;
-			
+
 			// Update previous values for next candle
 			_prevMacd = macd;
 			_prevSignal = signal;
-			
+
 			// First candle, just store values
 			if (IsFirstRun())
-				return;
-			
+			return;
+
 			// Entry conditions with sentiment filter
 			if (prevMacdOverSignal != currMacdOverSignal)
 			{
@@ -245,7 +247,7 @@ namespace StockSharp.Samples.Strategies
 				}
 			}
 		}
-		
+
 		/// <summary>
 		/// Update sentiment score based on candle data (simulation).
 		/// In a real implementation, this would fetch data from an external source.
@@ -254,15 +256,15 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Simple simulation of sentiment based on candle pattern
 			// In reality, this would be a call to a sentiment API or database
-			
+
 			var bodySize = Math.Abs(candle.ClosePrice - candle.OpenPrice);
 			var totalSize = candle.HighPrice - candle.LowPrice;
-			
+
 			if (totalSize == 0)
-				return;
-			
+			return;
+
 			var bodyRatio = bodySize / totalSize;
-			
+
 			// Bullish candle with strong body
 			if (candle.ClosePrice > candle.OpenPrice && bodyRatio > 0.7m)
 			{
@@ -279,10 +281,10 @@ namespace StockSharp.Samples.Strategies
 				_sentimentScore += (decimal)((RandomGen.GetDouble() - 0.5) * 0.1);
 				_sentimentScore = Math.Max(Math.Min(_sentimentScore, 1m), -1m);
 			}
-			
+
 			LogInfo($"Updated sentiment score: {_sentimentScore}");
 		}
-		
+
 		/// <summary>
 		/// Check if this is the first run to avoid trading on first candle.
 		/// </summary>

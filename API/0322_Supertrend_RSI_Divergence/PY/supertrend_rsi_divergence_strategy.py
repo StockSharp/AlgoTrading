@@ -90,15 +90,17 @@ class supertrend_rsi_divergence_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(supertrend_rsi_divergence_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(supertrend_rsi_divergence_strategy, self).OnReseted()
         self._prices = []
         self._rsi_values = []
         self._is_long_position = False
         self._is_short_position = False
         self._trend_direction = None
         self._supertrend_value = 0
+
+    def OnStarted(self, time):
+        super(supertrend_rsi_divergence_strategy, self).OnStarted(time)
 
         # Create indicators
         self._supertrend = SuperTrend()

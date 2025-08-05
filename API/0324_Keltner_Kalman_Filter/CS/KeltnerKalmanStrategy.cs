@@ -101,32 +101,32 @@ namespace StockSharp.Samples.Strategies
 		public KeltnerKalmanStrategy()
 		{
 			_emaPeriod = Param(nameof(EmaPeriod), 20)
-				.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner Channel")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 5);
+			.SetDisplay("EMA Period", "EMA period for Keltner Channel", "Keltner Channel")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 5);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplay("ATR Period", "ATR period for Keltner Channel", "Keltner Channel")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 20, 2);
+			.SetDisplay("ATR Period", "ATR period for Keltner Channel", "Keltner Channel")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 20, 2);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 2.0m)
-				.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel", "Keltner Channel")
-				.SetCanOptimize(true)
-				.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetDisplay("ATR Multiplier", "ATR multiplier for Keltner Channel", "Keltner Channel")
+			.SetCanOptimize(true)
+			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 			_kalmanProcessNoise = Param(nameof(KalmanProcessNoise), 0.01m)
-				.SetDisplay("Kalman Process Noise (Q)", "Kalman filter process noise parameter", "Kalman Filter")
-				.SetCanOptimize(true)
-				.SetOptimize(0.001m, 0.1m, 0.005m);
+			.SetDisplay("Kalman Process Noise (Q)", "Kalman filter process noise parameter", "Kalman Filter")
+			.SetCanOptimize(true)
+			.SetOptimize(0.001m, 0.1m, 0.005m);
 
 			_kalmanMeasurementNoise = Param(nameof(KalmanMeasurementNoise), 0.1m)
-				.SetDisplay("Kalman Measurement Noise (R)", "Kalman filter measurement noise parameter", "Kalman Filter")
-				.SetCanOptimize(true)
-				.SetOptimize(0.01m, 1.0m, 0.05m);
+			.SetDisplay("Kalman Measurement Noise (R)", "Kalman filter measurement noise parameter", "Kalman Filter")
+			.SetCanOptimize(true)
+			.SetOptimize(0.01m, 1.0m, 0.05m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -136,11 +136,10 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Initialize Kalman filter
 			_kalmanEstimate = 0;
 			_kalmanError = 1;
 			_prices.Clear();
@@ -150,6 +149,11 @@ namespace StockSharp.Samples.Strategies
 			_atrValue = 0;
 			_upperBand = 0;
 			_lowerBand = 0;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_ema = new ExponentialMovingAverage
@@ -166,8 +170,8 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(_ema, _atr, ProcessCandle)
-				.Start();
+			.Bind(_ema, _atr, ProcessCandle)
+			.Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -180,8 +184,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Setup position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent),
-				new Unit(2, UnitTypes.Percent)
+			new Unit(2, UnitTypes.Percent),
+			new Unit(2, UnitTypes.Percent)
 			);
 		}
 
@@ -189,7 +193,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Save indicator values
 			_emaValue = emaValue;
@@ -205,13 +209,13 @@ namespace StockSharp.Samples.Strategies
 			// Store prices for slope calculation
 			_prices.Add(candle.ClosePrice);
 			if (_prices.Count > 10)
-				_prices.RemoveAt(0);
+			_prices.RemoveAt(0);
 
 			// Calculate Kalman slope (trend direction)
 			decimal kalmanSlope = CalculateKalmanSlope();
 
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			// Trading logic
 			// Buy when price is above EMA+k*ATR (upper band) and Kalman filter shows uptrend
@@ -265,7 +269,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Need at least a few points to calculate a slope
 			if (_prices.Count < 3)
-				return 0;
+			return 0;
 
 			// Simple linear regression slope calculation
 			int n = _prices.Count;
@@ -288,7 +292,7 @@ namespace StockSharp.Samples.Strategies
 			decimal denominator = n * sumX2 - sumX * sumX;
 
 			if (denominator == 0)
-				return 0;
+			return 0;
 
 			decimal slope = (n * sumXY - sumX * sumY) / denominator;
 			return slope;

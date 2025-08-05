@@ -17,7 +17,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _startAf;
 		private readonly StrategyParam<decimal> _maxAf;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private ParabolicSar _parabolicSar;
 		private decimal _prevSentiment;
 		private decimal _prevPrice;
@@ -56,23 +56,34 @@ namespace StockSharp.Samples.Strategies
 		public ParabolicSarSentimentDivergenceStrategy()
 		{
 			_startAf = Param(nameof(StartAf), 0.02m)
-				.SetRange(0.01m, 0.1m)
-				.SetCanOptimize(true)
-				.SetDisplay("Starting AF", "Starting acceleration factor for Parabolic SAR", "SAR Parameters");
+			.SetRange(0.01m, 0.1m)
+			.SetCanOptimize(true)
+			.SetDisplay("Starting AF", "Starting acceleration factor for Parabolic SAR", "SAR Parameters");
 
 			_maxAf = Param(nameof(MaxAf), 0.2m)
-				.SetRange(0.1m, 0.5m)
-				.SetCanOptimize(true)
-				.SetDisplay("Maximum AF", "Maximum acceleration factor for Parabolic SAR", "SAR Parameters");
+			.SetRange(0.1m, 0.5m)
+			.SetCanOptimize(true)
+			.SetDisplay("Maximum AF", "Maximum acceleration factor for Parabolic SAR", "SAR Parameters");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_parabolicSar = null;
+			_prevSentiment = default;
+			_prevPrice = default;
+			_isFirstCandle = true;
 		}
 
 		/// <inheritdoc />
@@ -87,18 +98,14 @@ namespace StockSharp.Samples.Strategies
 				AccelerationMax = MaxAf,
 			};
 
-			// Reset variables
-			_isFirstCandle = true;
-			_prevSentiment = 0;
-			_prevPrice = 0;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			// Bind indicator and processor
 			subscription
-				.BindEx(_parabolicSar, ProcessCandle)
-				.Start();
+			.BindEx(_parabolicSar, ProcessCandle)
+			.Start();
 
 			// Setup visualization
 			var area = CreateChartArea();
@@ -111,9 +118,9 @@ namespace StockSharp.Samples.Strategies
 
 			// Start position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent),   // Take profit 2%
-				new Unit(2, UnitTypes.Percent),   // Stop loss 2%
-				true							 // Use trailing stop
+			new Unit(2, UnitTypes.Percent),   // Take profit 2%
+			new Unit(2, UnitTypes.Percent),   // Stop loss 2%
+			true							 // Use trailing stop
 			);
 		}
 
@@ -121,11 +128,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Get SAR value
 			var sarPrice = sarValue.ToDecimal();
-			
+
 			// Get current price and sentiment
 			var price = candle.ClosePrice;
 			var sentiment = GetSentiment();  // In real implementation, this would come from external API
@@ -141,11 +148,11 @@ namespace StockSharp.Samples.Strategies
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			// Bullish divergence: Price falling but sentiment rising
 			bool bullishDivergence = price < _prevPrice && sentiment > _prevSentiment;
-			
+
 			// Bearish divergence: Price rising but sentiment falling
 			bool bearishDivergence = price > _prevPrice && sentiment < _prevSentiment;
 

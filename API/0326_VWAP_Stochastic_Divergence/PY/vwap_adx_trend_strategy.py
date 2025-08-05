@@ -85,17 +85,19 @@ class vwap_adx_trend_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        super(vwap_adx_trend_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(vwap_adx_trend_strategy, self).OnReseted()
         self._vwap_value = 0.0
         self._adx_value = 0.0
         self._plus_di_value = 0.0
         self._minus_di_value = 0.0
 
+    def OnStarted(self, time):
+        super(vwap_adx_trend_strategy, self).OnStarted(time)
+
         # Create indicators
         self._vwap = VolumeWeightedMovingAverage()
-
+        
         self._adx = AverageDirectionalIndex()
         self._adx.Length = self.adx_period
 

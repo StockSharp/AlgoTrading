@@ -119,10 +119,8 @@ class keltner_kalman_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(keltner_kalman_strategy, self).OnStarted(time)
-
-        # Initialize Kalman filter
+    def OnReseted(self):
+        super(keltner_kalman_strategy, self).OnReseted()
         self._kalman_estimate = 0
         self._kalman_error = 1
         self._prices.clear()
@@ -132,6 +130,9 @@ class keltner_kalman_strategy(Strategy):
         self._atr_value = 0
         self._upper_band = 0
         self._lower_band = 0
+
+    def OnStarted(self, time):
+        super(keltner_kalman_strategy, self).OnStarted(time)
 
         # Create indicators
         self._ema = ExponentialMovingAverage()

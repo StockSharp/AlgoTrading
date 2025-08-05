@@ -114,9 +114,8 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(hull_ma_implied_volatility_breakout_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(hull_ma_implied_volatility_breakout_strategy, self).OnReseted()
         # Initialize flags
         self._isLong = False
         self._isShort = False
@@ -126,6 +125,9 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
         self._ivAverage = 0.0
         self._ivStdDev = 0.0
         self._impliedVolatilityHistory[:] = []
+
+    def OnStarted(self, time):
+        super(hull_ma_implied_volatility_breakout_strategy, self).OnStarted(time)
 
         # Create indicators
         hma = HullMovingAverage()

@@ -111,6 +111,25 @@ class rsi_with_option_open_interest_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(rsi_with_option_open_interest_strategy, self).OnReseted()
+        if self._rsi:
+            self._rsi.Reset()
+        if self._call_oi_sma:
+            self._call_oi_sma.Reset()
+        if self._put_oi_sma:
+            self._put_oi_sma.Reset()
+        if self._call_oi_stddev:
+            self._call_oi_stddev.Reset()
+        if self._put_oi_stddev:
+            self._put_oi_stddev.Reset()
+        self._current_call_oi = 0
+        self._current_put_oi = 0
+        self._avg_call_oi = 0
+        self._avg_put_oi = 0
+        self._stddev_call_oi = 0
+        self._stddev_put_oi = 0
+
     def OnStarted(self, time):
         super(rsi_with_option_open_interest_strategy, self).OnStarted(time)
 
@@ -131,14 +150,6 @@ class rsi_with_option_open_interest_strategy(Strategy):
 
         self._put_oi_stddev = StandardDeviation()
         self._put_oi_stddev.Length = self.OiPeriod
-
-        # Reset state variables
-        self._current_call_oi = 0
-        self._current_put_oi = 0
-        self._avg_call_oi = 0
-        self._avg_put_oi = 0
-        self._stddev_call_oi = 0
-        self._stddev_put_oi = 0
 
         # Create candle subscription and bind RSI
         subscription = self.SubscribeCandles(self.CandleType)

@@ -129,20 +129,20 @@ class macd_with_sentiment_filter_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(macd_with_sentiment_filter_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(macd_with_sentiment_filter_strategy, self).OnReseted()
         self._prev_macd = 0.0
         self._prev_signal = 0.0
         self._sentiment_score = 0.0
+
+    def OnStarted(self, time):
+        super(macd_with_sentiment_filter_strategy, self).OnStarted(time)
 
         # Create MACD indicator
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self.macd_fast
         macd.Macd.LongMa.Length = self.macd_slow
         macd.SignalMa.Length = self.macd_signal
-        # Initialize sentiment score
-        self._sentiment_score = 0.0
 
         # Subscribe to candles and bind indicator
         subscription = self.SubscribeCandles(self.candle_type)

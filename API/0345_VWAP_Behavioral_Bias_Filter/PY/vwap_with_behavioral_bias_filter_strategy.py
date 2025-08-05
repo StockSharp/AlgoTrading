@@ -94,18 +94,20 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
             (self.Security, self.CandleType)
         ]
 
-    def OnStarted(self, time):
-        super(vwap_with_behavioral_bias_filter_strategy, self).OnStarted(time)
-
-        # Initialize flags
+    def OnReseted(self):
+        super(vwap_with_behavioral_bias_filter_strategy, self).OnReseted()
         self._isLong = False
         self._isShort = False
         self._currentBiasScore = 0
         self._recentPriceMovements = []
+        self._vwap = None
+
+    def OnStarted(self, time):
+        super(vwap_with_behavioral_bias_filter_strategy, self).OnStarted(time)
 
         # Initialize VWAP indicator
         self._vwap = VolumeWeightedMovingAverage()
-
+        
         # Subscribe to candles and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._vwap, self.ProcessCandle).Start()

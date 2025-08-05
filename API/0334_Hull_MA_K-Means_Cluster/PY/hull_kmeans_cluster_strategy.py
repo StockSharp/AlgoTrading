@@ -48,7 +48,6 @@ class hull_kmeans_cluster_strategy(Strategy):
         self._volume_ratio_data = Queue[float]()
 
         self._prev_hull_value = 0.0
-        self._current_market_state = self._MarketState.Neutral
         self._last_price = 0.0
         self._avg_volume = 0.0
 
@@ -87,18 +86,20 @@ class hull_kmeans_cluster_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(hull_kmeans_cluster_strategy, self).OnStarted(time)
-
-        # Reset state variables
+    def OnReseted(self):
+        super(hull_kmeans_cluster_strategy, self).OnReseted()
         self._prev_hull_value = 0
         self._current_market_state = self._MarketState.Neutral
         self._last_price = 0
         self._avg_volume = 0
-
         self._price_change_data.Clear()
         self._rsi_data.Clear()
         self._volume_ratio_data.Clear()
+
+    def OnStarted(self, time):
+        super(hull_kmeans_cluster_strategy, self).OnStarted(time)
+
+
 
         # Create Hull Moving Average indicator
         hull_ma = HullMovingAverage()
