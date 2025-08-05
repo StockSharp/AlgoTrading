@@ -16,6 +16,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Piotroski F-Score reversal strategy combining fundamental strength
+	/// with 1-month price reversal.
+	/// </summary>
 	public class FScoreReversalStrategy : Strategy
 	{
 		#region Params
@@ -24,12 +28,31 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _hi;
 		private readonly StrategyParam<int> _lo;
 		private readonly StrategyParam<decimal> _minUsd;
-
+		
+		/// <summary>
+		/// Securities universe to trade.
+		/// </summary>
 		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int Lookback => _lookback.Value;
-		public int FHi => _hi.Value;
-		public int FLo => _lo.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		
+		/// <summary>
+		/// Lookback period for 1-month return.
+		/// </summary>
+		public int Lookback { get => _lookback.Value; set => _lookback.Value = value; }
+		
+		/// <summary>
+		/// Minimum F-Score for long positions.
+		/// </summary>
+		public int FHi { get => _hi.Value; set => _hi.Value = value; }
+		
+		/// <summary>
+		/// Maximum F-Score for short positions.
+		/// </summary>
+		public int FLo { get => _lo.Value; set => _lo.Value = value; }
+		
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
 		#endregion
 
 		private readonly Dictionary<Security, FScoreRollingWindow> _prices = new();
@@ -41,11 +64,22 @@ namespace StockSharp.Samples.Strategies
 
 		public FScoreReversalStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_lookback = Param(nameof(Lookback), 21);
-			_hi = Param(nameof(FHi), 7);
-			_lo = Param(nameof(FLo), 3);
-			_minUsd = Param(nameof(MinTradeUsd), 50m);
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities universe", "General");
+			
+			_lookback = Param(nameof(Lookback), 21)
+				.SetGreaterThanZero()
+				.SetDisplay("Lookback", "Lookback period in days", "General");
+			
+			_hi = Param(nameof(FHi), 7)
+				.SetDisplay("High F-Score", "Minimum F-Score for longs", "General");
+			
+			_lo = Param(nameof(FLo), 3)
+				.SetDisplay("Low F-Score", "Maximum F-Score for shorts", "General");
+			
+			_minUsd = Param(nameof(MinTradeUsd), 50m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min trade USD", "Minimum order value", "Risk");
 		}
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -58,12 +92,17 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe empty");
+
 			base.OnStarted(time);
+
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
 				SubscribeCandles(dt, true, sec)
 					.Bind(c => ProcessCandle(c, sec))
 					.Start();
+
 				_prices[sec] = new FScoreRollingWindow(Lookback + 1);
 			}
 		}
