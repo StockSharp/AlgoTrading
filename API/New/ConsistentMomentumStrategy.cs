@@ -96,7 +96,7 @@ namespace StockSharp.Samples.Strategies
 
 			// momentum windows
 			int m7 = 7 * 21;
-			int m6 = 6 * 21;
+			//int m6 = 6 * 21;
 			var m71 = _prices.ToDictionary(kv => kv.Key,
 					   kv => (kv.Value[m7 - 21] - kv.Value[0]) / kv.Value[0]);
 			var m60 = _prices.ToDictionary(kv => kv.Key,

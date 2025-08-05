@@ -38,6 +38,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, RollingWindow<decimal>> _priceWin = new();
 		private readonly Dictionary<Security, decimal> _cap = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private DateTime _lastRebalanceDate = DateTime.MinValue;
 
 		private readonly List<Tranche> _tranches = new();
 
@@ -93,6 +94,14 @@ namespace StockSharp.Samples.Strategies
 			_latestPrices[security] = candle.ClosePrice;
 
 			OnCandleFinished(candle, security);
+
+			// Check for monthly rebalancing (first trading day of month)
+			var candleDate = candle.OpenTime.Date;
+			if (candleDate.Day == 1 && candleDate != _lastRebalanceDate)
+			{
+				_lastRebalanceDate = candleDate;
+				MonthlyRebalance();
+			}
 		}
 
 		private void OnCandleFinished(ICandleMessage candle, Security sec)
@@ -113,11 +122,12 @@ namespace StockSharp.Samples.Strategies
 				return;
 			}
 
-			// Group by Morningstar industry
+			// Group by industry (using simplified grouping)
 			var groups = new Dictionary<int, List<Security>>();
 			foreach (var sec in Universe)
 			{
-				if (!sec.Attributes.TryGetValue("MorningstarIndustryGroupCode", out var codeObj) || codeObj is not int code || code == 0)
+				var code = GetIndustryGroupCode(sec);
+				if (code == 0)
 					continue;
 
 				if (!groups.TryGetValue(code, out var list))
@@ -142,7 +152,8 @@ namespace StockSharp.Samples.Strategies
 						continue;
 					var ratio = price / high;
 
-					var cap = sec.Price * (sec.VolumeStep ?? 1m);
+					var latestPrice = GetLatestPrice(sec);
+					var cap = latestPrice * (sec.VolumeStep ?? 1m);
 					totalCap += cap;
 					weighted += ratio * cap;
 				}
@@ -166,7 +177,8 @@ namespace StockSharp.Samples.Strategies
 
 			foreach (var sec in Universe)
 			{
-				if (!sec.Attributes.TryGetValue("MorningstarIndustryGroupCode", out var codeObj) || codeObj is not int code || code == 0)
+				var code = GetIndustryGroupCode(sec);
+				if (code == 0)
 					continue;
 				if (top.Contains(code))
 					longs.Add(sec);
@@ -186,15 +198,23 @@ namespace StockSharp.Samples.Strategies
 				return;
 			}
 
-			decimal capitalPerLeg = Portfolio.CurrentValue / HoldingPeriodMonths;
+			decimal capitalPerLeg = (Portfolio.CurrentValue ?? 0m) / HoldingPeriodMonths;
 			decimal longWeight = capitalPerLeg / longs.Count;
 			decimal shortWeight = capitalPerLeg / shorts.Count;
 
 			var orders = new List<(Security sec, decimal qty)>();
 			foreach (var sec in longs)
-				orders.Add((sec, Math.Floor(longWeight / sec.Price)));
+			{
+				var price = GetLatestPrice(sec);
+				if (price > 0)
+					orders.Add((sec, Math.Floor(longWeight / price)));
+			}
 			foreach (var sec in shorts)
-				orders.Add((sec, -Math.Floor(shortWeight / sec.Price)));
+			{
+				var price = GetLatestPrice(sec);
+				if (price > 0)
+					orders.Add((sec, -Math.Floor(shortWeight / price)));
+			}
 
 			_tranches.Add(new Tranche { Orders = orders });
 		}
@@ -270,5 +290,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		#endregion
+
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
+
+		private int GetIndustryGroupCode(Security security)
+		{
+			// TODO: Replace with external industry data provider
+			// For now, return a simple hash-based grouping for demonstration
+			return Math.Abs(security.Id.GetHashCode()) % 20 + 1; // 20 industry groups
+		}
 	}
 }

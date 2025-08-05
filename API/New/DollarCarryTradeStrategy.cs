@@ -1,8 +1,7 @@
-
 // DollarCarryTradeStrategy.cs
 // Simple dollar carry trade: go long USD versus the K lowest‑yielding G10 currencies,
 // short USD versus the K highest‑yielding. Carry = deposit‑rate differential (USD – FX).
-// Rebalanced on the first trading day of each month.
+// Rebalanced on the first trading day of each month using candle-based timing.
 // Date: 2 August 2025
 
 using System;
@@ -10,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using StockSharp.Algo;
+using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
@@ -48,6 +48,9 @@ namespace StockSharp.Samples.Strategies
 
 		private readonly Dictionary<Security, decimal> _carry = new();
 		private readonly Dictionary<Security, decimal> _weights = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private DateTime _lastRebalanceDate = DateTime.MinValue;
 
 		public DollarCarryTradeStrategy()
 		{
@@ -66,18 +69,41 @@ namespace StockSharp.Samples.Strategies
 			if (!Pairs.Any())
 				throw new InvalidOperationException("Pairs list is empty – populate before start.");
 
-			// We don’t need candles for carry; subscribe to nothing.
-			return Array.Empty<(Security, DataType)>();
+			// Subscribe to daily candles for monthly rebalancing trigger
+			return Pairs.Select(s => (s, _tf));
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Rebalance on first trading day of each month at market open
-			Schedule(TimeSpan.Zero, d => CurrentTime.Day == 1, Rebalance);
+			// Subscribe to daily candles for timing monthly rebalancing
+			foreach (var pair in Pairs)
+			{
+				SubscribeCandles(_tf, true, pair)
+					.Bind(c => ProcessCandle(c, pair))
+					.Start();
+			}
 
 			LogInfo($"Dollar Carry strategy started. Universe = {Pairs.Count()} pairs, K = {K}");
+		}
+
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
+
+			// Check for monthly rebalancing (first trading day of month)
+			var candleDate = candle.OpenTime.Date;
+			if (candleDate.Day == 1 && candleDate != _lastRebalanceDate)
+			{
+				_lastRebalanceDate = candleDate;
+				Rebalance();
+			}
 		}
 
 		private void Rebalance()
@@ -111,24 +137,35 @@ namespace StockSharp.Samples.Strategies
 				_weights[s] = wShort;
 
 			// 4. Exit obsolete positions
-			foreach (var pos in Positions.Keys.Where(s => !_weights.ContainsKey(s)))
-				TradeToTarget(pos, 0m);
+			foreach (var position in Positions.Where(pos => !_weights.ContainsKey(pos.Security)))
+				TradeToTarget(position.Security, 0m);
 
 			// 5. Align to target
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
 			foreach (var kv in _weights)
 			{
 				var sec = kv.Key;
-				var tgtQty = kv.Value * Portfolio.CurrentValue / sec.Price;
-				TradeToTarget(sec, tgtQty);
+				var price = GetLatestPrice(sec);
+				if (price > 0)
+				{
+					var tgtQty = kv.Value * portfolioValue / price;
+					TradeToTarget(sec, tgtQty);
+				}
 			}
 
 			LogInfo($"Rebalanced: Long {lowCarry.Count} | Short {highCarry.Count}");
 		}
 
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
+
 		private void TradeToTarget(Security sec, decimal tgtQty)
 		{
 			var diff = tgtQty - PositionBy(sec);
-			if (Math.Abs(diff) * sec.Price < MinTradeUsd)
+			var price = GetLatestPrice(sec);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 
 			RegisterOrder(new Order
