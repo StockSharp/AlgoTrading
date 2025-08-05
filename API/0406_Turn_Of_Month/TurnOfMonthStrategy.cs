@@ -16,6 +16,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Turn-of-the-month effect strategy for index ETFs.
+	/// </summary>
 	public class TurnOfMonthStrategy : Strategy
 	{
 		private readonly StrategyParam<Security> _etf;
@@ -28,28 +31,72 @@ namespace StockSharp.Samples.Strategies
 		private int _tdMonthEnd = int.MaxValue;
 		private int _tdMonthStart = 0;
 
-		public Security ETF { get => _etf.Value; set => _etf.Value = value; }
-		public int DaysPrior => _prior.Value;  // enter N days before month-end
-		public int DaysAfter => _after.Value;  // exit D days into new month
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// ETF used for trading.
+		/// </summary>
+		public Security ETF
+		{
+			get => _etf.Value;
+			set => _etf.Value = value;
+		}
+
+		/// <summary>
+		/// Number of trading days before month-end to enter.
+		/// </summary>
+		public int DaysPrior
+		{
+			get => _prior.Value;
+			set => _prior.Value = value;
+		}
+
+		/// <summary>
+		/// Number of trading days into new month to exit.
+		/// </summary>
+		public int DaysAfter
+		{
+			get => _after.Value;
+			set => _after.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public TurnOfMonthStrategy()
 		{
-			_etf = Param<Security>(nameof(ETF), null);
-			_prior = Param(nameof(DaysPrior), 1);
-			_after = Param(nameof(DaysAfter), 3);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_etf = Param<Security>(nameof(ETF), null)
+				.SetDisplay("ETF", "Security to trade", "Universe");
+
+			_prior = Param(nameof(DaysPrior), 1)
+				.SetDisplay("Days Prior", "Trading days before month end", "Parameters");
+
+			_after = Param(nameof(DaysAfter), 3)
+				.SetDisplay("Days After", "Trading days into new month", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
 			if (ETF == null)
 				throw new InvalidOperationException("Set ETF");
+
 			yield return (ETF, _tf);
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (ETF == null)
+				throw new InvalidOperationException("ETF must be set.");
+
 			base.OnStarted(time);
 
 			SubscribeCandles(_tf, true, ETF)

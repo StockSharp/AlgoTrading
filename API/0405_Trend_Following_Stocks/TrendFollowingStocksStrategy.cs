@@ -15,6 +15,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Breakout trend-following strategy with ATR trailing stop.
+	/// </summary>
 	public class TrendFollowingStocksStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
@@ -30,22 +33,57 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, StockInfo> _info = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int AtrLen => _atrLen.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// List of securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// ATR period length.
+		/// </summary>
+		public int AtrLen
+		{
+			get => _atrLen.Value;
+			set => _atrLen.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public TrendFollowingStocksStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_atrLen = Param(nameof(AtrLen), 10);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "List of securities to trade", "Universe");
+
+			_atrLen = Param(nameof(AtrLen), 10)
+				.SetDisplay("ATR Length", "ATR period length", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, _tf));
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, _tf));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			base.OnStarted(t);
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{

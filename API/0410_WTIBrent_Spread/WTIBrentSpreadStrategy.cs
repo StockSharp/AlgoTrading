@@ -14,6 +14,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Trades the spread between WTI and Brent based on a moving average.
+	/// </summary>
 	public class WTIBrentSpreadStrategy : Strategy
 	{
 		private readonly StrategyParam<Security> _wti;
@@ -24,27 +27,73 @@ namespace StockSharp.Samples.Strategies
 		private readonly Queue<decimal> _spr = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
-		public Security WTI { get => _wti.Value; set => _wti.Value = value; }
-		public Security Brent { get => _brent.Value; set => _brent.Value = value; }
-		public int MaPeriod => _ma.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// WTI security.
+		/// </summary>
+		public Security WTI
+		{
+			get => _wti.Value;
+			set => _wti.Value = value;
+		}
+
+		/// <summary>
+		/// Brent security.
+		/// </summary>
+		public Security Brent
+		{
+			get => _brent.Value;
+			set => _brent.Value = value;
+		}
+
+		/// <summary>
+		/// Moving average period for spread.
+		/// </summary>
+		public int MaPeriod
+		{
+			get => _ma.Value;
+			set => _ma.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public WTIBrentSpreadStrategy()
 		{
-			_wti = Param<Security>(nameof(WTI), null);
-			_brent = Param<Security>(nameof(Brent), null);
-			_ma = Param(nameof(MaPeriod), 20);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_wti = Param<Security>(nameof(WTI), null)
+				.SetDisplay("WTI", "WTI security", "Universe");
+
+			_brent = Param<Security>(nameof(Brent), null)
+				.SetDisplay("Brent", "Brent security", "Universe");
+
+			_ma = Param(nameof(MaPeriod), 20)
+				.SetDisplay("MA Period", "Moving average period", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() 
-		{ 
-			yield return (WTI, _tf); 
-			yield return (Brent, _tf); 
+		/// <inheritdoc />
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+		{
+			if (WTI == null || Brent == null)
+				throw new InvalidOperationException("WTI and Brent must be set.");
+
+			yield return (WTI, _tf);
+			yield return (Brent, _tf);
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (WTI == null || Brent == null)
+				throw new InvalidOperationException("WTI and Brent must be set.");
+
 			base.OnStarted(t);
 			SubscribeCandles(_tf, true, WTI).Bind(c => ProcessCandle(c, WTI)).Start();
 			SubscribeCandles(_tf, true, Brent).Bind(c => ProcessCandle(c, Brent)).Start();

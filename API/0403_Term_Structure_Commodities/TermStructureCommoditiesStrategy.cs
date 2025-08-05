@@ -15,6 +15,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Roll-return cross-section strategy for commodities term structure.
+	/// </summary>
 	public class TermStructureCommoditiesStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -25,23 +28,60 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int Quintile => _quint.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// List of securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Number of quintile buckets.
+		/// </summary>
+		public int Quintile
+		{
+			get => _quint.Value;
+			set => _quint.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public TermStructureCommoditiesStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_quint = Param(nameof(Quintile), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "List of futures to trade", "Universe");
+
+			_quint = Param(nameof(Quintile), 5)
+				.SetDisplay("Quintile", "Number of ranking buckets", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, _tf));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			base.OnStarted(t);
-			var trig = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty");
+
+			var trig = Universe.First();
 			SubscribeCandles(_tf, true, trig).Bind(c => ProcessCandle(c, trig)).Start();
 		}
 

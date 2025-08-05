@@ -14,6 +14,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Placeholder strategy combining value and momentum across assets.
+	/// </summary>
 	public class ValueMomentumAcrossAssetsStrategy : Strategy
 	{
 		// Parameters
@@ -21,23 +24,48 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _min;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public decimal MinTradeUsd => _min.Value;
+		/// <summary>
+		/// List of securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _min.Value;
+			set => _min.Value = value;
+		}
 
 		public ValueMomentumAcrossAssetsStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_min = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "List of securities to trade", "Universe");
+
+			_min = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, _tf));
+		/// <inheritdoc />
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, _tf));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe empty");
+
 			base.OnStarted(t);
 
-			var trig = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty");
+			var trig = Universe.First();
 
 			SubscribeCandles(_tf, true, trig).Bind(c => OnDay(c.OpenTime.Date)).Start();
 		}

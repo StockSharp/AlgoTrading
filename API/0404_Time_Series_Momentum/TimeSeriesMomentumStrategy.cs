@@ -14,6 +14,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Time series momentum strategy with volatility scaling.
+	/// </summary>
 	public class TimeSeriesMomentumStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -27,24 +30,71 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int Lookback => _look.Value;
-		public int VolWindow => _vol.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// List of securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Lookback period in trading days.
+		/// </summary>
+		public int Lookback
+		{
+			get => _look.Value;
+			set => _look.Value = value;
+		}
+
+		/// <summary>
+		/// Window for volatility calculation.
+		/// </summary>
+		public int VolWindow
+		{
+			get => _vol.Value;
+			set => _vol.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public TimeSeriesMomentumStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_look = Param(nameof(Lookback), 252);
-			_vol = Param(nameof(VolWindow), 60);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "List of securities to trade", "Universe");
+
+			_look = Param(nameof(Lookback), 252)
+				.SetDisplay("Lookback", "Performance lookback in days", "Parameters");
+
+			_vol = Param(nameof(VolWindow), 60)
+				.SetDisplay("Vol Window", "Volatility window in days", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, _tf));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			base.OnStarted(t);
+
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{
 				_map[s] = new Win();
