@@ -1329,4 +1329,248 @@ public class CSharpTests
 	[TestMethod]
 	public Task CciPutCallRatioDivergenceStrategyTest()
 		=> RunStrategy<CciPutCallRatioDivergenceStrategy>();
+
+	[TestMethod]
+	public Task AccrualAnomalyStrategyTest()
+		=> RunStrategy<AccrualAnomalyStrategy>();
+
+	[TestMethod]
+	public Task AssetClassMomentumRotationalStrategyTest()
+		=> RunStrategy<AssetClassMomentumRotationalStrategy>();
+
+	[TestMethod]
+	public Task AssetClassTrendFollowingStrategyTest()
+		=> RunStrategy<AssetClassTrendFollowingStrategy>();
+
+	[TestMethod]
+	public Task AssetGrowthEffectStrategyTest()
+		=> RunStrategy<AssetGrowthEffectStrategy>();
+
+	[TestMethod]
+	public Task BettingAgainstBetaStocksStrategyTest()
+		=> RunStrategy<BettingAgainstBetaStocksStrategy>();
+
+	[TestMethod]
+	public Task BettingAgainstBetaStrategyTest()
+		=> RunStrategy<BettingAgainstBetaStrategy>();
+
+	[TestMethod]
+	public Task BitcoinIntradaySeasonalityStrategyTest()
+		=> RunStrategy<BitcoinIntradaySeasonalityStrategy>();
+
+	[TestMethod]
+	public Task BookToMarketValueStrategyTest()
+		=> RunStrategy<BookToMarketValueStrategy>();
+
+	[TestMethod]
+	public Task CommodityMomentumStrategyTest()
+		=> RunStrategy<CommodityMomentumStrategy>();
+
+	[TestMethod]
+	public Task ConsistentMomentumStrategyTest()
+		=> RunStrategy<ConsistentMomentumStrategy>();
+
+	[TestMethod]
+	public Task CountryValueFactorStrategyTest()
+		=> RunStrategy<CountryValueFactorStrategy>();
+
+	[TestMethod]
+	public Task CrudeOilPredictsEquityStrategyTest()
+		=> RunStrategy<CrudeOilPredictsEquityStrategy>();
+
+	[TestMethod]
+	public Task CryptoRebalancingPremiumStrategyTest()
+		=> RunStrategy<CryptoRebalancingPremiumStrategy>();
+
+	[TestMethod]
+	public Task CurrencyMomentumFactorStrategyTest()
+		=> RunStrategy<CurrencyMomentumFactorStrategy>();
+
+	[TestMethod]
+	public Task CurrencyPPPValueStrategyTest()
+		=> RunStrategy<CurrencyPPPValueStrategy>();
+
+	[TestMethod]
+	public Task DispersionTradingStrategyTest()
+		=> RunStrategy<DispersionTradingStrategy>();
+
+	[TestMethod]
+	public Task DollarCarryTradeStrategyTest()
+		=> RunStrategy<DollarCarryTradeStrategy>();
+
+	[TestMethod]
+	public Task EarningsAnnouncementPremiumStrategyTest()
+		=> RunStrategy<EarningsAnnouncementPremiumStrategy>();
+
+	[TestMethod]
+	public Task EarningsAnnouncementReversalStrategyTest()
+		=> RunStrategy<EarningsAnnouncementReversalStrategy>();
+
+	[TestMethod]
+	public Task EarningsAnnouncementsWithBuybacksStrategyTest()
+		=> RunStrategy<EarningsAnnouncementsWithBuybacksStrategy>();
+
+	[TestMethod]
+	public Task EarningsQualityFactorStrategyTest()
+		=> RunStrategy<EarningsQualityFactorStrategy>();
+
+	[TestMethod]
+	public Task ESGFactorMomentumStrategyTest()
+		=> RunStrategy<ESGFactorMomentumStrategy>();
+
+	[TestMethod]
+	public Task FedModelStrategyTest()
+		=> RunStrategy<FedModelStrategy>();
+
+	[TestMethod]
+	public Task FScoreReversalStrategyTest()
+		=> RunStrategy<FScoreReversalStrategy>();
+
+	[TestMethod]
+	public Task FXCarryTradeStrategyTest()
+		=> RunStrategy<FXCarryTradeStrategy>();
+
+	[TestMethod]
+	public Task JanuaryBarometerStrategyTest()
+		=> RunStrategy<JanuaryBarometerStrategy>();
+
+	[TestMethod]
+	public Task LexicalDensityFilingsStrategyTest()
+		=> RunStrategy<LexicalDensityFilingsStrategy>();
+
+	[TestMethod]
+	public Task LowVolatilityStocksStrategyTest()
+		=> RunStrategy<LowVolatilityStocksStrategy>();
+
+	[TestMethod]
+	public Task MomentumAssetGrowthStrategyTest()
+		=> RunStrategy<MomentumAssetGrowthStrategy>();
+
+	[TestMethod]
+	public Task MomentumFactorStocksStrategyTest()
+		=> RunStrategy<MomentumFactorStocksStrategy>();
+
+	[TestMethod]
+	public Task MomentumRevVolStrategyTest()
+		=> RunStrategy<MomentumRevVolStrategy>();
+
+	[TestMethod]
+	public Task MomentumStyleRotationStrategyTest()
+		=> RunStrategy<MomentumStyleRotationStrategy>();
+
+	[TestMethod]
+	public Task Month12CycleStrategyTest()
+		=> RunStrategy<Month12CycleStrategy>();
+
+	[TestMethod]
+	public Task MutualFundMomentumStrategyTest()
+		=> RunStrategy<MutualFundMomentumStrategy>();
+
+	[TestMethod]
+	public Task OptionExpirationWeekStrategyTest()
+		=> RunStrategy<OptionExpirationWeekStrategy>();
+
+	[TestMethod]
+	public Task OvernightSentimentAnomalyStrategyTest()
+		=> RunStrategy<OvernightSentimentAnomalyStrategy>();
+
+	[TestMethod]
+	public Task PairedSwitchingStrategyTest()
+		=> RunStrategy<PairedSwitchingStrategy>();
+
+	[TestMethod]
+	public Task PairsTradingCountryETFsStrategyTest()
+		=> RunStrategy<PairsTradingCountryETFsStrategy>();
+
+	[TestMethod]
+	public Task PairsTradingStocksStrategyTest()
+		=> RunStrategy<PairsTradingStocksStrategy>();
+
+	[TestMethod]
+	public Task PaydayAnomalyStrategyTest()
+		=> RunStrategy<PaydayAnomalyStrategy>();
+
+	[TestMethod]
+	public Task RDExpendituresStrategyTest()
+		=> RunStrategy<RDExpendituresStrategy>();
+
+	[TestMethod]
+	public Task ResidualMomentumFactorStrategyTest()
+		=> RunStrategy<ResidualMomentumFactorStrategy>();
+
+	[TestMethod]
+	public Task ReturnAsymmetryCommodityStrategyTest()
+		=> RunStrategy<ReturnAsymmetryCommodityStrategy>();
+
+	[TestMethod]
+	public Task ROAEffectStocksStrategyTest()
+		=> RunStrategy<ROAEffectStocksStrategy>();
+
+	[TestMethod]
+	public Task SectorMomentumRotationStrategyTest()
+		=> RunStrategy<SectorMomentumRotationStrategy>();
+
+	[TestMethod]
+	public Task ShortInterestEffectStrategyTest()
+		=> RunStrategy<ShortInterestEffectStrategy>();
+
+	[TestMethod]
+	public Task ShortTermReversalFuturesStrategyTest()
+		=> RunStrategy<ShortTermReversalFuturesStrategy>();
+
+	[TestMethod]
+	public Task ShortTermReversalStocksStrategyTest()
+		=> RunStrategy<ShortTermReversalStocksStrategy>();
+
+	[TestMethod]
+	public Task SkewnessCommodityStrategyTest()
+		=> RunStrategy<SkewnessCommodityStrategy>();
+
+	[TestMethod]
+	public Task SmallCapPremiumStrategyTest()
+		=> RunStrategy<SmallCapPremiumStrategy>();
+
+	[TestMethod]
+	public Task SmartFactorsMomentumMarketStrategyTest()
+		=> RunStrategy<SmartFactorsMomentumMarketStrategy>();
+
+	[TestMethod]
+	public Task SoccerClubsArbitrageStrategyTest()
+		=> RunStrategy<SoccerClubsArbitrageStrategy>();
+
+	[TestMethod]
+	public Task SyntheticLendingRatesStrategyTest()
+		=> RunStrategy<SyntheticLendingRatesStrategy>();
+
+	[TestMethod]
+	public Task TermStructureCommoditiesStrategyTest()
+		=> RunStrategy<TermStructureCommoditiesStrategy>();
+
+	[TestMethod]
+	public Task TimeSeriesMomentumStrategyTest()
+		=> RunStrategy<TimeSeriesMomentumStrategy>();
+
+	[TestMethod]
+	public Task TrendFollowingStocksStrategyTest()
+		=> RunStrategy<TrendFollowingStocksStrategy>();
+
+	[TestMethod]
+	public Task TurnOfMonthStrategyTest()
+		=> RunStrategy<TurnOfMonthStrategy>();
+
+	[TestMethod]
+	public Task ValueMomentumAcrossAssetsStrategyTest()
+		=> RunStrategy<ValueMomentumAcrossAssetsStrategy>();
+
+	[TestMethod]
+	public Task VolatilityRiskPremiumStrategyTest()
+		=> RunStrategy<VolatilityRiskPremiumStrategy>();
+
+	[TestMethod]
+	public Task Weeks52HighStrategyTest()
+		=> RunStrategy<Weeks52HighStrategy>();
+
+	[TestMethod]
+	public Task WTIBrentSpreadStrategyTest()
+		=> RunStrategy<WTIBrentSpreadStrategy>();
 }
