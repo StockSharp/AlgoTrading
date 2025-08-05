@@ -93,16 +93,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_lastHighestValue = 0;
 			_lastLowestValue = 0;
 			_breakoutDetected = false;
 			_breakoutSide = default;
 			_breakoutPrice = 0;
+		}
 
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 			// Initialize indicators
 			_ma = new SimpleMovingAverage { Length = MaPeriod };
 			_highest = new Highest { Length = LookbackPeriod };

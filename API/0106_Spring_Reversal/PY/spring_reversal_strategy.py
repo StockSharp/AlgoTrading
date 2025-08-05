@@ -73,14 +73,15 @@ class spring_reversal_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stop_loss_percent_param.Value = value
 
+    def OnReseted(self):
+        super(spring_reversal_strategy, self).OnReseted()
+        self._last_lowest_value = 0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(spring_reversal_strategy, self).OnStarted(time)
-
-        self._last_lowest_value = 0
-
         # Initialize indicators
         self._ma = SimpleMovingAverage()
         self._ma.Length = self.MaPeriod

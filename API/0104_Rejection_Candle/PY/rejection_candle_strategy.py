@@ -62,11 +62,6 @@ class rejection_candle_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(rejection_candle_strategy, self).OnStarted(time)
-
-        self._previous_candle = None
-        self._in_position = False
-        self._current_position_side = None
-
         # Create and setup subscription for candles
         subscription = self.SubscribeCandles(self.candle_type)
 

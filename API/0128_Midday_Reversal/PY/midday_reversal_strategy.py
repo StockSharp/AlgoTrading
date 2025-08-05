@@ -51,12 +51,13 @@ class midday_reversal_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(midday_reversal_strategy, self).OnReseted()
+        self._prev_candle_close = 0.0
+    self._prev_prev_candle_close = 0.0
+
     def OnStarted(self, time):
         super(midday_reversal_strategy, self).OnStarted(time)
-
-        self._prev_candle_close = 0.0
-        self._prev_prev_candle_close = 0.0
-
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.ProcessCandle).Start()

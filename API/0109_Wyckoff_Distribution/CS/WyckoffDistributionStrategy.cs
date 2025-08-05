@@ -120,6 +120,24 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_ma = default;
+			_volumeAvg = default;
+			_highest = default;
+			_lowest = default;
+
+			_currentPhase = WyckoffPhase.None;
+			_lastRangeHigh = 0;
+			_lastRangeLow = 0;
+			_sidewaysCount = 0;
+			_upthrustHigh = 0;
+			_positionOpened = false;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -130,13 +148,6 @@ namespace StockSharp.Samples.Strategies
 			_highest = new Highest { Length = HighestPeriod };
 			_lowest = new Lowest { Length = HighestPeriod };
 			
-			_currentPhase = WyckoffPhase.None;
-			_sidewaysCount = 0;
-			_positionOpened = false;
-			_lastRangeHigh = 0;
-			_lastRangeLow = 0;
-			_upthrustHigh = 0;
-
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			

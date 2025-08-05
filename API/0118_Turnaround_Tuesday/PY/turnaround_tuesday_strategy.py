@@ -60,13 +60,14 @@ class turnaround_tuesday_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(turnaround_tuesday_strategy, self).OnReseted()
+        self._prev_close_price = 0.0
+    self._is_price_lower_on_monday = False
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(turnaround_tuesday_strategy, self).OnStarted(time)
-
-        self._prev_close_price = 0.0
-        self._is_price_lower_on_monday = False
-
         # Create a simple moving average indicator
         sma = SimpleMovingAverage()
         sma.Length = self.ma_period

@@ -71,12 +71,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevClosePrice = 0;
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevClosePrice = 0;
-
 			// Create indicators
 			var sma = new SimpleMovingAverage { Length = MaPeriod };
 			
