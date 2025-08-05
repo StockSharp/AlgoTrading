@@ -151,11 +151,7 @@ public static class AsmInit
 		//var tradesSpan = (lastTradeTime - firstTradeTime).TotalSeconds / totalPeriod;
 		//(tradesSpan > 0.7).AssertTrue($"Trades are not distributed enough: {tradesSpan:P0}");
 
-		//var onStarted = typeof(Strategy).GetMethod("OnStarted", BindingFlags.Instance | BindingFlags.NonPublic, [typeof(DateTimeOffset)]);
-		//onStarted.Invoke(strategy, [DateTimeOffset.UtcNow]);
 		strategy.Reset();
-
-		//onStarted.Invoke(clone, [DateTimeOffset.UtcNow]);
 		clone.Reset();
 
 		static void validateSettingsStorage(SettingsStorage s1, SettingsStorage s2, string name)

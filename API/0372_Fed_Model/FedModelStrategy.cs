@@ -273,7 +273,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			public decimal[] Data;
 
-			public int Size => Data.Length;
+		 	public int Size => Data?.Length ?? 0;
 
 			private int _n;
 
@@ -300,6 +300,27 @@ namespace StockSharp.Samples.Strategies
 			{
 				Data = default;
 				_n = 0;
+			}
+
+			public override int GetHashCode()
+				=> Data?.Aggregate(0, (hash, v) => hash ^ v.GetHashCode()) ?? 0;
+
+			public override bool Equals(object obj)
+			{
+				ArgumentNullException.ThrowIfNull(obj);
+
+				var otherWin = (RollingWin)obj;
+
+				if (otherWin.Size != Size)
+					return false;
+
+				for (var i = 0; i < Size; i++)
+				{
+					if (Data[i] != otherWin.Data[i])
+						return false;
+				}
+
+				return true;
 			}
 		}
 	}

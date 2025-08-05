@@ -1677,7 +1677,7 @@ public class CSharpTests
 	public Task SmartFactorsMomentumMarketStrategyTest()
 		=> RunStrategy<SmartFactorsMomentumMarketStrategy>((stra, sec) =>
 		{
-			//stra.Factors = [sec];
+			stra.Factors = [sec];
 		});
 
 	[TestMethod]

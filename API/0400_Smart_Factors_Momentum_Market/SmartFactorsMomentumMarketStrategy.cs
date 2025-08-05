@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class SmartFactorsMomentumMarketStrategy : Strategy
 	{
-		private readonly StrategyParam<Dictionary<string, Security>> _factors;
+		private readonly StrategyParam<IEnumerable<Security>> _factors;
 		private readonly StrategyParam<int> _fastM;
 		private readonly StrategyParam<int> _slowM;
 		private readonly StrategyParam<int> _maM;
@@ -30,7 +30,7 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Dictionary of smart factor ETFs.
 		/// </summary>
-		public Dictionary<string, Security> Factors
+		public IEnumerable<Security> Factors
 		{
 			get => _factors.Value;
 			set => _factors.Value = value;
@@ -92,7 +92,7 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public SmartFactorsMomentumMarketStrategy()
 		{
-			_factors = Param(nameof(Factors), new Dictionary<string, Security>())
+			_factors = Param<IEnumerable<Security>>(nameof(Factors), [])
 				.SetDisplay("Factors", "Smart factor ETFs", "General");
 
 			_fastM = Param(nameof(FastMonths), 1)
@@ -125,7 +125,7 @@ namespace StockSharp.Samples.Strategies
 			if (!Factors.Any())
 				throw new InvalidOperationException("No factors");
 
-			return Factors.Values.Append(Security).Select(s => (s, CandleType));
+			return Factors.Append(Security).Select(s => (s, CandleType));
 		}
 
 
@@ -147,7 +147,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("MarketETF not set");
 
-			if (Factors == null || Factors.Count == 0)
+			if (Factors == null || !Factors.Any())
 				throw new InvalidOperationException("No factors");
 
 			foreach (var (sec, dt) in GetWorkingSecurities())
@@ -193,7 +193,7 @@ namespace StockSharp.Samples.Strategies
 
 			var fastSig = new Dictionary<Security, decimal>();
 			var slowSig = new Dictionary<Security, decimal>();
-			foreach (var sec in Factors.Values)
+			foreach (var sec in Factors)
 			{
 				var win = _p[sec];
 				int fastIndex = FastMonths * 21 + 1;
@@ -202,11 +202,11 @@ namespace StockSharp.Samples.Strategies
 				slowSig[sec] = (win.Last() - win[win.Count - slowIndex]) / win[win.Count - slowIndex];
 			}
 
-			int rankSum = Enumerable.Range(1, Factors.Count).Sum();
+			int rankSum = Enumerable.Range(1, Factors.Count()).Sum();
 			var wFast = RankWeights(fastSig, rankSum);
 			var wSlow = RankWeights(slowSig, rankSum);
 
-			var wTotal = Factors.Values.ToDictionary(s => s, s => 0.75m * wFast[s] + 0.25m * wSlow[s]);
+			var wTotal = Factors.ToDictionary(s => s, s => 0.75m * wFast[s] + 0.25m * wSlow[s]);
 
 			var smart1M = wTotal.Sum(kv => kv.Value * fastSig[kv.Key]);
 			var mkt1M = (_p[Security].Last() - _p[Security][_p[Security].Count - 22]) / _p[Security][_p[Security].Count - 22];
@@ -280,6 +280,20 @@ namespace StockSharp.Samples.Strategies
 		public IEnumerable<T> Take(int n) => _q.Reverse().Take(n);
 
 		public void Clear() => _q.Clear();
+
+		public override int GetHashCode()
+			=> _q.Aggregate(0, (hash, item) => hash ^ (item?.GetHashCode() ?? 0));
+
+		public override bool Equals(object obj)
+		{
+			if (obj is not RollingWindow<T> other || other._size != _size)
+				return false;
+
+			if (_q.Count != other._q.Count)
+				return false;
+
+			return _q.SequenceEqual(other._q);
+		}
 	}
 	#endregion
 }

@@ -117,8 +117,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			if (Universe.Count() != 2)
 				throw new InvalidOperationException("Universe must contain exactly two ETFs.");
-			_a = Universe.ElementAt(0);
-			_b = Universe.ElementAt(1);
+			
 			yield return (_a, CandleType);
 			yield return (_b, CandleType);
 		}
@@ -139,6 +138,10 @@ namespace StockSharp.Samples.Strategies
 			if (Universe == null || Universe.Count() != 2)
 				throw new InvalidOperationException("Universe must contain exactly two ETFs.");
 			base.OnStarted(t);
+
+			_a = Universe.ElementAt(0);
+			_b = Universe.ElementAt(1);
+
 			SubscribeCandles(CandleType, true, _a).Bind(c => ProcessCandle(c, _a)).Start();
 			SubscribeCandles(CandleType, true, _b).Bind(c => ProcessCandle(c, _b)).Start();
 		}

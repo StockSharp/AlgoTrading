@@ -5,13 +5,14 @@
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Linq;
 
 namespace StockSharp.Samples.Strategies
 {
@@ -201,6 +202,27 @@ namespace StockSharp.Samples.Strategies
 			public decimal[] Data => _q.ToArray();
 
 			public void Clear() => _q.Clear();
+
+			public override int GetHashCode()
+				=> Data.Aggregate(0, (hash, value) => hash ^ value.GetHashCode());
+
+			public override bool Equals(object obj)
+			{
+				ArgumentNullException.ThrowIfNull(obj);
+
+				var otherWin = (RollingWin)obj;
+
+				if (otherWin.Data.Length != Data.Length)
+					return false;
+
+				for (var i = 0; i < Data.Length; i++)
+				{
+					if (Data[i] != otherWin.Data[i])
+						return false;
+				}
+
+				return true;
+			}
 		}
 	}
 }
