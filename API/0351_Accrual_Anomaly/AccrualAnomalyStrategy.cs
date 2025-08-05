@@ -70,6 +70,16 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
 			Universe.Select(s => (s, CandleType));
 
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+			_weights.Clear();
+			_prev.Clear();
+			_lastDay = default;
+		}
+
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
@@ -77,11 +87,6 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Universe cannot be empty.");
 
 			base.OnStarted(time);
-
-			_latestPrices.Clear();
-			_weights.Clear();
-			_prev.Clear();
-			_lastDay = default;
 
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{

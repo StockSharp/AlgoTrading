@@ -105,15 +105,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prev.Clear();
+			_w.Clear();
+			_latestPrices.Clear();
+			_lastDay = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
 			if (Universe == null || !Universe.Any())
 				throw new InvalidOperationException("Universe cannot be empty.");
-
-			_prev.Clear();
-			_w.Clear();
 
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
