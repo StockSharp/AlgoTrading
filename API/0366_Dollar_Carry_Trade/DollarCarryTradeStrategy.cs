@@ -29,22 +29,36 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class DollarCarryTradeStrategy : Strategy
 	{
-		#region Parameters
-
 		private readonly StrategyParam<IEnumerable<Security>> _pairs;
 		private readonly StrategyParam<int> _k;
 		private readonly StrategyParam<decimal> _minUsd;
 
-		/// <summary>FX pairs or currency futures.</summary>
-		public IEnumerable<Security> Pairs { get => _pairs.Value; set => _pairs.Value = value; }
+		/// <summary>
+		/// FX pairs or currency futures.
+		/// </summary>
+		public IEnumerable<Security> Pairs
+		{
+			get => _pairs.Value;
+			set => _pairs.Value = value;
+		}
 
-		/// <summary>Number of currencies in each carry leg.</summary>
-		public int K => _k.Value;
+		/// <summary>
+		/// Number of currencies in each carry leg.
+		/// </summary>
+		public int K
+		{
+			get => _k.Value;
+			set => _k.Value = value;
+		}
 
-		/// <summary>Ignore trades whose notional is below this threshold.</summary>
-		public decimal MinTradeUsd => _minUsd.Value;
-
-		#endregion
+		/// <summary>
+		/// Ignore trades whose notional is below this threshold.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, decimal> _carry = new();
 		private readonly Dictionary<Security, decimal> _weights = new();
@@ -52,18 +66,25 @@ namespace StockSharp.Samples.Strategies
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 		private DateTime _lastRebalanceDate = DateTime.MinValue;
 
+		/// <summary>
+		/// Constructor.
+		/// </summary>
 		public DollarCarryTradeStrategy()
 		{
+			// Currency pairs to trade.
 			_pairs = Param<IEnumerable<Security>>(nameof(Pairs), Array.Empty<Security>())
 				.SetDisplay("Pairs", "USD crosses (required)", "Universe");
 
+			// Number of currencies per carry leg.
 			_k = Param(nameof(K), 3)
 				.SetDisplay("K", "# of currencies per leg", "Ranking");
 
+			// Minimum notional for rebalancing trades.
 			_minUsd = Param(nameof(MinTradeUsd), 100m)
 				.SetDisplay("Min Trade $", "Ignore tiny rebalances", "Risk");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (!Pairs.Any())
@@ -73,9 +94,13 @@ namespace StockSharp.Samples.Strategies
 			return Pairs.Select(s => (s, _tf));
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			if (!Pairs.Any())
+				throw new InvalidOperationException("Pairs list is empty – populate before start.");
 
 			// Subscribe to daily candles for timing monthly rebalancing
 			foreach (var pair in Pairs)
@@ -182,7 +207,6 @@ namespace StockSharp.Samples.Strategies
 		private decimal PositionBy(Security sec) =>
 			GetPositionValue(sec, Portfolio) ?? 0m;
 
-		#region Carry data feed (stub)
 		/// <summary>
 		/// Retrieve latest interest‑rate differential: positive if USD yield &gt; FX yield.
 		/// Replace this stub with call to your rates database or API.
@@ -192,6 +216,5 @@ namespace StockSharp.Samples.Strategies
 			carry = 0m;
 			return false;
 		}
-		#endregion
 	}
 }
