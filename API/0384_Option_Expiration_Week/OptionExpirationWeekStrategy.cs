@@ -12,33 +12,55 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Goes long the specified ETF only during option‑expiration week.
+	/// </summary>
 	public class OptionExpirationWeekStrategy : Strategy
 	{
 		private readonly StrategyParam<Security> _etf;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public Security ETF { get => _etf.Value; set => _etf.Value = value; }
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>ETF to trade.</summary>
+		public Security ETF
+		{
+			get => _etf.Value;
+			set => _etf.Value = value;
+		}
+
+		/// <summary>Minimum trade amount in USD.</summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		public OptionExpirationWeekStrategy()
 		{
-			_etf = Param<Security>(nameof(ETF), null);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_etf = Param<Security>(nameof(ETF), null)
+				.SetDisplay("ETF", "ETF to trade", "Universe");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min USD", "Minimum trade value", "Risk");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
 			if (ETF == null)
 				throw new InvalidOperationException("ETF not set.");
+
 			return new[] { (ETF, _tf) };
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+
+			if (ETF == null)
+				throw new InvalidOperationException("ETF cannot be null.");
+
 			SubscribeCandles(_tf, true, ETF)
 				.Bind(c => ProcessCandle(c, ETF))
 				.Start();

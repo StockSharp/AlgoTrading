@@ -37,11 +37,33 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _yearsBack;
 
 		/// <summary>Investment universe (must be non‑empty).</summary>
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int DecileSize => _decileSize.Value;
-		public decimal Leverage => _leverage.Value;
-		public int YearsBack => _yearsBack.Value;
-
+		public IEnumerable<Security> Universe
+			{
+				get => _universe.Value;
+				set => _universe.Value = value;
+			}
+		
+		/// <summary>Number of deciles.</summary>
+		public int DecileSize
+		{
+			get => _decileSize.Value;
+				set => _decileSize.Value = value;
+		}
+		
+		/// <summary>Leverage per leg.</summary>
+		public decimal Leverage
+			{
+				get => _leverage.Value;
+				set => _leverage.Value = value;
+		}
+		
+		/// <summary>Lag in years for the return measurement.</summary>
+			public int YearsBack
+				{
+				get => _yearsBack.Value;
+				set => _yearsBack.Value = value;
+		}
+		
 		#endregion
 
 		private readonly Dictionary<Security, Month12RollingWindow> _monthCloses = new();

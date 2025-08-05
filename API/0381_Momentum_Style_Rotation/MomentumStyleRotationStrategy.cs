@@ -16,20 +16,54 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Rotates among factor ETFs and a market ETF based on 3‑month performance.
+	/// </summary>
 	public class MomentumStyleRotationStrategy : Strategy
 	{
 		#region Params
+
 		private readonly StrategyParam<IEnumerable<Security>> _factors;
 		private readonly StrategyParam<Security> _market;
 		private readonly StrategyParam<int> _look;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
 
-		public IEnumerable<Security> FactorETFs { get => _factors.Value; set => _factors.Value = value; }
-		public Security MarketETF { get => _market.Value; set => _market.Value = value; }
-		public int LookbackDays => _look.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
+		/// <summary>List of factor ETFs.</summary>
+		public IEnumerable<Security> FactorETFs
+		{
+			get => _factors.Value;
+			set => _factors.Value = value;
+		}
+
+		/// <summary>Benchmark market ETF.</summary>
+		public Security MarketETF
+		{
+			get => _market.Value;
+			set => _market.Value = value;
+		}
+
+		/// <summary>Performance lookback in days.</summary>
+		public int LookbackDays
+		{
+			get => _look.Value;
+			set => _look.Value = value;
+		}
+
+		/// <summary>Minimum trade amount in USD.</summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>Candle type for calculations.</summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
+
 		#endregion
 
 		private readonly Dictionary<Security, RollingWin> _px = new();
@@ -38,17 +72,27 @@ namespace StockSharp.Samples.Strategies
 
 		public MomentumStyleRotationStrategy()
 		{
-			_factors = Param<IEnumerable<Security>>(nameof(FactorETFs), Array.Empty<Security>());
-			_market = Param<Security>(nameof(MarketETF), null);
-			_look = Param(nameof(LookbackDays), 63);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_factors = Param<IEnumerable<Security>>(nameof(FactorETFs), Array.Empty<Security>())
+				.SetDisplay("Factor ETFs", "List of factor ETFs", "Universe");
+
+			_market = Param<Security>(nameof(MarketETF), null)
+				.SetDisplay("Market ETF", "Benchmark ETF", "Universe");
+
+			_look = Param(nameof(LookbackDays), 63)
+				.SetDisplay("Lookback", "Performance lookback in days", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min USD", "Minimum trade value", "Risk");
+
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles used", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
 			foreach (var s in FactorETFs)
 				yield return (s, CandleType);
+
 			if (MarketETF != null)
 				yield return (MarketETF, CandleType);
 		}
@@ -56,6 +100,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+
+			if (FactorETFs == null || !FactorETFs.Any())
+				throw new InvalidOperationException("FactorETFs cannot be empty.");
+
+			if (MarketETF == null)
+				throw new InvalidOperationException("MarketETF cannot be null.");
+
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{
 				_px[s] = new RollingWin(LookbackDays + 1);

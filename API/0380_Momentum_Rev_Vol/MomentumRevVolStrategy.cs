@@ -1,8 +1,8 @@
 // MomentumRevVolStrategy.cs
 // -----------------------------------------------------------------------------
 // Composite score =  (12m momentum  * weights.Wm)
-//                 + (-1m reversal   * weights.Wr)
-//                 + (-volatility    * weights.Wv)
+//		   + (-1m reversal   * weights.Wr)
+//		   + (-volatility    * weights.Wv)
 // Long top decile, short bottom decile monthly.
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
@@ -18,9 +18,14 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Momentum / reversal / volatility composite strategy.
+	/// Ranks securities by 12‑month momentum, 1‑month reversal and volatility.
+	/// </summary>
 	public class MomentumRevVolStrategy : Strategy
 	{
 		#region Params
+
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
 		private readonly StrategyParam<int> _look12;
 		private readonly StrategyParam<int> _look1;
@@ -30,15 +35,70 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _wV;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int Lookback12 => _look12.Value;
-		public int Lookback1 => _look1.Value;
-		public int VolWindow => _volWindow.Value;
-		public decimal WM => _wM.Value;
-		public decimal WR => _wR.Value;
-		public decimal WV => _wV.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
+
+		/// <summary>Trading universe.</summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>Lookback for momentum in days (12 months).</summary>
+		public int Lookback12
+		{
+			get => _look12.Value;
+			set => _look12.Value = value;
+		}
+
+		/// <summary>Lookback for reversal in days (1 month).</summary>
+		public int Lookback1
+		{
+			get => _look1.Value;
+			set => _look1.Value = value;
+		}
+
+		/// <summary>Volatility calculation window.</summary>
+		public int VolWindow
+		{
+			get => _volWindow.Value;
+			set => _volWindow.Value = value;
+		}
+
+		/// <summary>Momentum weight.</summary>
+		public decimal WM
+		{
+			get => _wM.Value;
+			set => _wM.Value = value;
+		}
+
+		/// <summary>Reversal weight.</summary>
+		public decimal WR
+		{
+			get => _wR.Value;
+			set => _wR.Value = value;
+		}
+
+		/// <summary>Volatility weight.</summary>
+		public decimal WV
+		{
+			get => _wV.Value;
+			set => _wV.Value = value;
+		}
+
+		/// <summary>Minimum trade amount in USD.</summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>Candle type for calculations.</summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
+
 		#endregion
 
 		private class Win
@@ -52,15 +112,32 @@ namespace StockSharp.Samples.Strategies
 
 		public MomentumRevVolStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_look12 = Param(nameof(Lookback12), 252);
-			_look1 = Param(nameof(Lookback1), 21);
-			_volWindow = Param(nameof(VolWindow), 60);
-			_wM = Param(nameof(WM), 1m);
-			_wR = Param(nameof(WR), 1m);
-			_wV = Param(nameof(WV), 1m);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to trade", "Universe");
+
+			_look12 = Param(nameof(Lookback12), 252)
+				.SetDisplay("Momentum Lookback", "Days for 12M momentum", "Parameters");
+
+			_look1 = Param(nameof(Lookback1), 21)
+				.SetDisplay("Reversal Lookback", "Days for 1M reversal", "Parameters");
+
+			_volWindow = Param(nameof(VolWindow), 60)
+				.SetDisplay("Vol Window", "Window for volatility", "Parameters");
+
+			_wM = Param(nameof(WM), 1m)
+				.SetDisplay("Momentum Weight", "Weight for momentum", "Weights");
+
+			_wR = Param(nameof(WR), 1m)
+				.SetDisplay("Reversal Weight", "Weight for reversal", "Weights");
+
+			_wV = Param(nameof(WV), 1m)
+				.SetDisplay("Volatility Weight", "Weight for volatility", "Weights");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min USD", "Minimum trade value", "Risk");
+
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles used", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
@@ -69,6 +146,10 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{
 				_map[s] = new Win { Px = new RollingWin(Lookback12 + 1), Ret = new RollingWin(VolWindow + 1) };

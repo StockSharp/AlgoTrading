@@ -12,22 +12,39 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Quarterly momentum rotation among mutual funds.
+	/// </summary>
 	public class MutualFundMomentumStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _funds;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Funds { get => _funds.Value; set => _funds.Value = value; }
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>List of funds.</summary>
+		public IEnumerable<Security> Funds
+		{
+			get => _funds.Value;
+			set => _funds.Value = value;
+		}
+
+		/// <summary>Minimum trade amount in USD.</summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
 		public MutualFundMomentumStrategy()
 		{
-			_funds = Param<IEnumerable<Security>>(nameof(Funds), Array.Empty<Security>());
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_funds = Param<IEnumerable<Security>>(nameof(Funds), Array.Empty<Security>())
+				.SetDisplay("Funds", "List of mutual funds", "Universe");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min USD", "Minimum trade value", "Risk");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
@@ -36,7 +53,11 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
-			var trigger = Funds.FirstOrDefault() ?? throw new InvalidOperationException("Funds empty.");
+
+			if (Funds == null || !Funds.Any())
+				throw new InvalidOperationException("Funds cannot be empty.");
+
+			var trigger = Funds.First();
 
 			SubscribeCandles(_tf, true, trigger)
 				.Bind(c => ProcessCandle(c, trigger))
