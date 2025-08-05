@@ -1,7 +1,3 @@
-// CrudeOilPredictsEquityStrategy.cs (daily candles version)
-// If last-month oil return > 0, invest in equity ETF, else stay in cash ETF.
-// Date: 2 August 2025
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,46 +8,111 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Strategy that invests in an equity ETF when the last month's crude oil return is positive;
+	/// otherwise, it holds a cash ETF.
+	/// </summary>
 	public class CrudeOilPredictsEquityStrategy : Strategy
 	{
 		private readonly StrategyParam<Security> _equity;
 		private readonly StrategyParam<Security> _oil;
 		private readonly StrategyParam<Security> _cash;
-		private readonly StrategyParam<DataType> _tf;
+		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _lookback;
 
-		public Security Equity { get => _equity.Value; set => _equity.Value = value; }
-		public Security Oil { get => _oil.Value; set => _oil.Value = value; }
-		public Security CashEtf { get => _cash.Value; set => _cash.Value = value; }
-		public DataType CandleType => _tf.Value;
-		public int Lookback => _lookback.Value;
+		/// <summary>
+		/// Equity ETF to invest in.
+		/// </summary>
+		public Security Equity
+		{
+			get => _equity.Value;
+			set => _equity.Value = value;
+		}
+
+		/// <summary>
+		/// Crude oil security used for signal calculation.
+		/// </summary>
+		public Security Oil
+		{
+			get => _oil.Value;
+			set => _oil.Value = value;
+		}
+
+		/// <summary>
+		/// Cash ETF to hold when oil return is negative.
+		/// </summary>
+		public Security CashEtf
+		{
+			get => _cash.Value;
+			set => _cash.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type used for calculations.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
+		/// <summary>
+		/// Number of candles to look back for return calculation.
+		/// </summary>
+		public int Lookback
+		{
+			get => _lookback.Value;
+			set => _lookback.Value = value;
+		}
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="CrudeOilPredictsEquityStrategy"/>.
+		/// </summary>
 		public CrudeOilPredictsEquityStrategy()
 		{
-			_equity = Param<Security>(nameof(Equity), null);
-			_oil = Param<Security>(nameof(Oil), null);
-			_cash = Param<Security>(nameof(CashEtf), null);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-			_lookback = Param(nameof(Lookback), 22); // 1 month
+			_equity = Param<Security>(nameof(Equity), null)
+				.SetDisplay("Equity", "Equity ETF to invest in", "General");
+
+			_oil = Param<Security>(nameof(Oil), null)
+				.SetDisplay("Oil", "Crude oil security for signal", "General");
+
+			_cash = Param<Security>(nameof(CashEtf), null)
+				.SetDisplay("Cash ETF", "Cash ETF when not invested", "General");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Timeframe for analysis", "General");
+
+			_lookback = Param(nameof(Lookback), 22)
+				.SetGreaterThanZero()
+				.SetDisplay("Lookback", "Number of candles for return calculation", "General");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (Equity == null || Oil == null || CashEtf == null)
 				throw new InvalidOperationException("Set securities");
+
 			return new[] { (Equity, CandleType), (Oil, CandleType), (CashEtf, CandleType) };
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			foreach (var (s, dt) in GetWorkingSecurities())
+
+			var securities = GetWorkingSecurities().ToArray();
+			if (securities.Length == 0)
+				throw new InvalidOperationException("No securities configured.");
+
+			foreach (var (s, dt) in securities)
 			{
 				_wins[s] = new RollingWindow<decimal>(Lookback + 1);
+
 				SubscribeCandles(dt, true, s)
 					.Bind(c => ProcessCandle(c, s))
 					.Start();
