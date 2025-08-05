@@ -17,6 +17,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// January barometer strategy rotating between equity and cash ETFs
+	/// based on January performance.
+	/// </summary>
 	public class JanuaryBarometerStrategy : Strategy
 	{
 		#region Params
@@ -24,10 +28,21 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<Security> _cash;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
-
+		
+		/// <summary>
+		/// Equity ETF to hold when January is bullish.
+		/// </summary>
 		public Security EquityETF { get => _equity.Value; set => _equity.Value = value; }
+		
+		/// <summary>
+		/// Cash proxy ETF.
+		/// </summary>
 		public Security CashETF { get => _cash.Value; set => _cash.Value = value; }
-		public decimal MinTradeUsd => _minUsd.Value;
+		
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
 		#endregion
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
@@ -35,10 +50,16 @@ namespace StockSharp.Samples.Strategies
 
 		public JanuaryBarometerStrategy()
 		{
-			_equity = Param<Security>(nameof(EquityETF), null);
-			_cash = Param<Security>(nameof(CashETF), null);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-		}
+			_equity = Param<Security>(nameof(EquityETF), null)
+				.SetDisplay("Equity ETF", "Risk asset", "General");
+			
+			_cash = Param<Security>(nameof(CashETF), null)
+				.SetDisplay("Cash ETF", "Safe asset", "General");
+			
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min trade USD", "Minimum order value", "Risk");
+			}
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
@@ -49,11 +70,14 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (EquityETF == null || CashETF == null)
+				throw new InvalidOperationException("Both equity and cash ETFs must be set.");
+
 			base.OnStarted(t);
 
 			SubscribeCandles(_tf, true, EquityETF)
 				.Bind(c => ProcessCandle(c, EquityETF))
-				.Start();
+					.Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)

@@ -13,17 +13,35 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// FX carry trade strategy going long top carry currencies and short bottom ones.
+	/// </summary>
 	public class FXCarryTradeStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
 		private readonly StrategyParam<int> _topK;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
-
+		
+		/// <summary>
+		/// Universe of FX securities.
+		/// </summary>
 		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int TopK => _topK.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
+		
+		/// <summary>
+		/// Number of currencies to long and short.
+		/// </summary>
+		public int TopK { get => _topK.Value; set => _topK.Value = value; }
+		
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
+		
+		/// <summary>
+		/// Candle type for calculations.
+		/// </summary>
+		public DataType CandleType { get => _tf.Value; set => _tf.Value = value; }
 
 		private readonly Dictionary<Security, decimal> _weights = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
@@ -31,10 +49,19 @@ namespace StockSharp.Samples.Strategies
 
 		public FXCarryTradeStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_topK = Param(nameof(TopK), 3);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Currencies to trade", "General");
+			
+			_topK = Param(nameof(TopK), 3)
+				.SetGreaterThanZero()
+				.SetDisplay("Top K", "Number of currencies to long and short", "General");
+			
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min trade USD", "Minimum order value", "Risk");
+			
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Time frame for candles", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
@@ -42,13 +69,16 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe empty.");
+
 			base.OnStarted(time);
-			var first = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty.");
+			var first = Universe.First();
 
 			// Use ONLY ONE currency's daily candle to trigger monthly rebalance
-			SubscribeCandles(CandleType, true, first)
-				.Bind(c => ProcessCandle(c, first))
-				.Start();
+				SubscribeCandles(CandleType, true, first)
+					.Bind(c => ProcessCandle(c, first))
+					.Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
