@@ -1,6 +1,6 @@
-// ESGFactorMomentumStrategy.cs  — parameterized timeframe version
+// ESGFactorMomentumStrategy.cs - parameterized timeframe version
 // * Universe: IEnumerable<Security>
-// * CandleType: StrategyParam<DataType>  (e.g., TimeSpan.FromDays(1).TimeFrame())
+// * CandleType: StrategyParam<DataType> (e.g., TimeSpan.FromDays(1).TimeFrame())
 // Date: 2 August 2025
 
 using System;
@@ -14,6 +14,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Momentum strategy based on ESG factors. Rebalances to the best performing
+	/// security from the universe using a momentum lookback period.
+	/// </summary>
 	public class ESGFactorMomentumStrategy : Strategy
 	{
 		#region Parameters
@@ -22,10 +26,41 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<decimal> _minUsd;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int LookbackDays => _lookback.Value;
-		public DataType CandleType => _candleType.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// The universe of securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Momentum lookback period in days.
+		/// </summary>
+		public int LookbackDays
+		{
+			get => _lookback.Value;
+			set => _lookback.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type used for price data.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade amount in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 		#endregion
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _windows = new();
@@ -33,27 +68,39 @@ namespace StockSharp.Samples.Strategies
 		private readonly HashSet<Security> _held = new();
 		private DateTime _lastProc = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="ESGFactorMomentumStrategy"/>.
+		/// </summary>
 		public ESGFactorMomentumStrategy()
 		{
+			// Universe parameter
 			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
 				.SetDisplay("Universe", "ESG ETFs list", "Universe");
 
+			// Lookback period parameter
 			_lookback = Param(nameof(LookbackDays), 252);
 
+			// Candle type parameter
 			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
-				.SetDisplay("Candle TF", "Time‑frame", "General");
+				.SetDisplay("Candle TF", "Time-frame", "General");
 
+			// Minimum trade amount parameter
 			_minUsd = Param(nameof(MinTradeUsd), 100m);
 		}
 
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, CandleType));
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, CandleType));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			if (!Universe.Any())
-				throw new InvalidOperationException("Universe empty");
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty.");
 
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
@@ -92,11 +139,11 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			var mom = _windows.ToDictionary(kv => kv.Key,
-					   kv => (kv.Value.Last() - kv.Value[0]) / kv.Value[0]);
+				kv => (kv.Value.Last() - kv.Value[0]) / kv.Value[0]);
 
 			var best = mom.Values.Max();
 			var winners = mom.Where(kv => kv.Value == best).Select(kv => kv.Key).ToList();
-			decimal w = 1m / winners.Count;
+			var w = 1m / winners.Count;
 
 			foreach (var s in _held.Where(h => !winners.Contains(h)).ToList())
 				Move(s, 0);
@@ -119,8 +166,10 @@ namespace StockSharp.Samples.Strategies
 		{
 			var diff = tgt - PositionBy(s);
 			var price = GetLatestPrice(s);
+
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
+
 			RegisterOrder(new Order
 			{
 				Security = s,
@@ -128,11 +177,14 @@ namespace StockSharp.Samples.Strategies
 				Side = diff > 0 ? Sides.Buy : Sides.Sell,
 				Volume = Math.Abs(diff),
 				Type = OrderTypes.Market,
-				Comment = "ESGMom"
+				Comment = "ESGMom",
 			});
 		}
 
-		private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private decimal PositionBy(Security s)
+		{
+			return GetPositionValue(s, Portfolio) ?? 0m;
+		}
 
 		private decimal GetLatestPrice(Security security)
 		{
@@ -142,12 +194,36 @@ namespace StockSharp.Samples.Strategies
 		#region RollingWindow
 		private class RollingWindow<T>
 		{
-			private readonly Queue<T> _q = new(); private readonly int _n;
-			public RollingWindow(int n) { _n = n; }
-			public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
-			public bool IsFull() => _q.Count == _n;
-			public T Last() => _q.Last();
-			public T this[int i] => _q.ElementAt(i);
+			private readonly Queue<T> _q = new();
+			private readonly int _n;
+
+			public RollingWindow(int n)
+			{
+				_n = n;
+			}
+
+			public void Add(T v)
+			{
+				if (_q.Count == _n)
+					_q.Dequeue();
+
+				_q.Enqueue(v);
+			}
+
+			public bool IsFull()
+			{
+				return _q.Count == _n;
+			}
+
+			public T Last()
+			{
+				return _q.Last();
+			}
+
+			public T this[int i]
+			{
+				get => _q.ElementAt(i);
+			}
 		}
 		#endregion
 	}
