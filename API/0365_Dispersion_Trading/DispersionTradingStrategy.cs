@@ -1,69 +1,130 @@
-// DispersionTradingStrategy.cs  (revised, candle-stream driven)
-// • Trades equity index vs. constituents based on average correlation (dispersion signal).
-// • Parameters: IndexSec, Constituents (IEnumerable<Security>), CandleType (StrategyParam<DataType>),
-//   LookbackDays, CorrThreshold, MinTradeUsd.
-// • Subscribes to daily candles; on each finished candle checks if new day → recompute correlation;
-//   if avgCorr < threshold => open dispersion (long constituents, short index), else flat.
-// Date: 2 August 2025
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Candles;
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Dispersion trading strategy.
+	/// Trades an equity index against its constituent securities when the average correlation falls below a threshold.
+	/// </summary>
 	public class DispersionTradingStrategy : Strategy
 	{
-		#region Params
-		private readonly StrategyParam<Security> _index;
-		private readonly StrategyParam<IEnumerable<Security>> _const;
-		private readonly StrategyParam<int> _lookback;
-		private readonly StrategyParam<decimal> _corrThresh;
-		private readonly StrategyParam<decimal> _minUsd;
-		private readonly StrategyParam<DataType> _tf;
+		private readonly StrategyParam<Security> _indexSec;
+		private readonly StrategyParam<IEnumerable<Security>> _constituents;
+		private readonly StrategyParam<int> _lookbackDays;
+		private readonly StrategyParam<decimal> _corrThreshold;
+		private readonly StrategyParam<decimal> _minTradeUsd;
+		private readonly StrategyParam<DataType> _candleType;
 
-		public Security IndexSec { get => _index.Value; set => _index.Value = value; }
-		public IEnumerable<Security> Constituents { get => _const.Value; set => _const.Value = value; }
-		public int LookbackDays => _lookback.Value;
-		public decimal CorrThreshold => _corrThresh.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
-		#endregion
-
-		private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
+		private readonly Dictionary<Security, RollingWindow<decimal>> _windows = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
-		private bool _open;                                // current dispersion state
+		private bool _open;
 
-		public DispersionTradingStrategy()
+		/// <summary>
+		/// Equity index to trade.
+		/// </summary>
+		public Security IndexSec
 		{
-			_index = Param<Security>(nameof(IndexSec), null);
-			_const = Param<IEnumerable<Security>>(nameof(Constituents), Array.Empty<Security>());
-			_lookback = Param(nameof(LookbackDays), 60);
-			_corrThresh = Param(nameof(CorrThreshold), 0.4m);
-			_minUsd = Param(nameof(MinTradeUsd), 100m);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			get => _indexSec.Value;
+			set => _indexSec.Value = value;
 		}
 
+		/// <summary>
+		/// Securities representing index constituents.
+		/// </summary>
+		public IEnumerable<Security> Constituents
+		{
+			get => _constituents.Value;
+			set => _constituents.Value = value;
+		}
+
+		/// <summary>
+		/// Number of days used for correlation calculation.
+		/// </summary>
+		public int LookbackDays
+		{
+			get => _lookbackDays.Value;
+			set => _lookbackDays.Value = value;
+		}
+
+		/// <summary>
+		/// Correlation threshold for opening dispersion.
+		/// </summary>
+		public decimal CorrThreshold
+		{
+			get => _corrThreshold.Value;
+			set => _corrThreshold.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minTradeUsd.Value;
+			set => _minTradeUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type used for analysis.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="DispersionTradingStrategy"/>.
+		/// </summary>
+		public DispersionTradingStrategy()
+		{
+			_indexSec = Param<Security>(nameof(IndexSec), null)
+				.SetDisplay("Index", "Equity index security", "General");
+
+			_constituents = Param<IEnumerable<Security>>(nameof(Constituents), Array.Empty<Security>())
+				.SetDisplay("Constituents", "Index constituent securities", "General");
+
+			_lookbackDays = Param(nameof(LookbackDays), 60)
+				.SetDisplay("Lookback Days", "Days for rolling correlation", "Parameters");
+
+			_corrThreshold = Param(nameof(CorrThreshold), 0.4m)
+				.SetDisplay("Correlation Threshold", "Average correlation threshold", "Parameters");
+
+			_minTradeUsd = Param(nameof(MinTradeUsd), 100m)
+				.SetDisplay("Minimum Trade USD", "Minimal order value", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Time frame for analysis", "General");
+		}
+
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			if (IndexSec == null || !Constituents.Any())
-				throw new InvalidOperationException("Set IndexSec and Constituents");
 			return Constituents.Append(IndexSec).Select(s => (s, CandleType));
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
+			if (IndexSec == null)
+				throw new InvalidOperationException("IndexSec is not set.");
+
+			if (Constituents == null || !Constituents.Any())
+				throw new InvalidOperationException("Constituents collection is empty.");
+
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
-				_wins[sec] = new RollingWindow<decimal>(LookbackDays + 1);
+				_windows[sec] = new RollingWindow<decimal>(LookbackDays + 1);
 
 				SubscribeCandles(dt, true, sec)
 					.Bind(c => ProcessCandle(c, sec))
@@ -73,33 +134,35 @@ namespace StockSharp.Samples.Strategies
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
 		{
-			// Skip unfinished candles
+			// Skip unfinished candles.
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Store the latest closing price for this security
+			// Store the latest closing price for this security.
 			_latestPrices[security] = candle.ClosePrice;
 
-			_wins[security].Add(candle.ClosePrice);
+			_windows[security].Add(candle.ClosePrice);
 
-			var d = candle.OpenTime.Date;
-			if (d == _lastDay)
-				return;
-			_lastDay = d;
-
-			if (_wins.Values.Any(w => !w.IsFull()))
+			var day = candle.OpenTime.Date;
+			if (day == _lastDay)
 				return;
 
-			EvaluateSignal();        // daily check after windows full
+			_lastDay = day;
+
+			if (_windows.Values.Any(w => !w.IsFull()))
+				return;
+
+			// Daily check after windows are full.
+			EvaluateSignal();
 		}
 
 		private void EvaluateSignal()
 		{
-			var indexRet = Returns(_wins[IndexSec]);
+			var indexRet = Returns(_windows[IndexSec]);
 
 			var corrs = new List<decimal>();
 			foreach (var s in Constituents)
-				corrs.Add(Corr(Returns(_wins[s]), indexRet));
+				corrs.Add(Corr(Returns(_windows[s]), indexRet));
 
 			var avg = corrs.Average();
 
@@ -111,10 +174,10 @@ namespace StockSharp.Samples.Strategies
 
 		private void OpenDispersion()
 		{
-			int n = Constituents.Count();
+			var count = Constituents.Count();
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			decimal capLeg = portfolioValue * 0.5m; // 50% per leg
-			decimal eachLong = capLeg / n;
+			var capLeg = portfolioValue * 0.5m;
+			var eachLong = capLeg / count;
 
 			foreach (var s in Constituents)
 			{
@@ -125,8 +188,8 @@ namespace StockSharp.Samples.Strategies
 
 			var indexPrice = GetLatestPrice(IndexSec);
 			if (indexPrice > 0)
-				TradeToTarget(IndexSec, -capLeg / indexPrice);   // short index
-				
+				TradeToTarget(IndexSec, -capLeg / indexPrice); // short index
+
 			_open = true;
 			LogInfo("Opened dispersion spread");
 		}
@@ -135,6 +198,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			foreach (var position in Positions)
 				TradeToTarget(position.Security, 0m);
+
 			_open = false;
 			LogInfo("Closed dispersion spread");
 		}
@@ -145,22 +209,27 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		#region Helper math / trading
+
 		private decimal[] Returns(RollingWindow<decimal> win)
 		{
 			var arr = win.ToArray();
 			var r = new decimal[arr.Length - 1];
-			for (int i = 1; i < arr.Length; i++)
+
+			for (var i = 1; i < arr.Length; i++)
 				r[i - 1] = (arr[i] - arr[i - 1]) / arr[i - 1];
+
 			return r;
 		}
 
 		private decimal Corr(decimal[] x, decimal[] y)
 		{
-			int n = Math.Min(x.Length, y.Length);
+			var n = Math.Min(x.Length, y.Length);
 			var meanX = x.Take(n).Average();
 			var meanY = y.Take(n).Average();
+
 			decimal num = 0, dx = 0, dy = 0;
-			for (int i = 0; i < n; i++)
+
+			for (var i = 0; i < n; i++)
 			{
 				var a = x[i] - meanX;
 				var b = y[i] - meanY;
@@ -168,6 +237,7 @@ namespace StockSharp.Samples.Strategies
 				dx += a * a;
 				dy += b * b;
 			}
+
 			return dx > 0 && dy > 0 ? num / (decimal)Math.Sqrt((double)(dx * dy)) : 0m;
 		}
 
@@ -175,6 +245,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			var diff = tgtQty - PositionBy(s);
 			var price = GetLatestPrice(s);
+
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 
@@ -194,16 +265,33 @@ namespace StockSharp.Samples.Strategies
 		#endregion
 
 		#region RollingWindow
+
 		private class RollingWindow<T>
 		{
-			private readonly Queue<T> _q = new();
-			private readonly int _n;
-			public RollingWindow(int n) { _n = n; }
-			public void Add(T v) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(v); }
-			public bool IsFull() => _q.Count == _n;
-			public T Last() => _q.Last();
-			public T[] ToArray() => _q.ToArray();
+			private readonly Queue<T> _queue = new();
+			private readonly int _size;
+
+			public RollingWindow(int size)
+			{
+				_size = size;
+			}
+
+			public void Add(T value)
+			{
+				if (_queue.Count == _size)
+					_queue.Dequeue();
+
+				_queue.Enqueue(value);
+			}
+
+			public bool IsFull() => _queue.Count == _size;
+
+			public T Last() => _queue.Last();
+
+			public T[] ToArray() => _queue.ToArray();
 		}
+
 		#endregion
 	}
 }
+
