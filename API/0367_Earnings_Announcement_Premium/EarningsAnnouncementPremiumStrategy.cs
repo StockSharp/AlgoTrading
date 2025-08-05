@@ -16,6 +16,11 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Earnings announcement premium strategy.
+	/// Buys <see cref="DaysBefore"/> days before an earnings announcement
+	/// and exits <see cref="DaysAfter"/> days after the announcement.
+	/// </summary>
 	public class EarningsAnnouncementPremiumStrategy : Strategy
 	{
 		#region Parameters
@@ -26,35 +31,99 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _candleType;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int DaysBefore => _daysBefore.Value;
-		public int DaysAfter => _daysAfter.Value;
-		public decimal CapitalPerTradeUsd => _capitalUsd.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _candleType.Value;
+		/// <summary>
+		/// The securities universe.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Number of days before earnings to enter.
+		/// </summary>
+		public int DaysBefore
+		{
+			get => _daysBefore.Value;
+			set => _daysBefore.Value = value;
+		}
+
+		/// <summary>
+		/// Number of days after earnings to exit.
+		/// </summary>
+		public int DaysAfter
+		{
+			get => _daysAfter.Value;
+			set => _daysAfter.Value = value;
+		}
+
+		/// <summary>
+		/// Capital per trade in USD.
+		/// </summary>
+		public decimal CapitalPerTradeUsd
+		{
+			get => _capitalUsd.Value;
+			set => _capitalUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>
+		/// The candle type to use for calculations.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		#endregion
 
 		private readonly Dictionary<Security, DateTimeOffset> _exitSchedule = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastProcessed = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="EarningsAnnouncementPremiumStrategy"/>.
+		/// </summary>
 		public EarningsAnnouncementPremiumStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_daysBefore = Param(nameof(DaysBefore), 5);
-			_daysAfter = Param(nameof(DaysAfter), 1);
-			_capitalUsd = Param(nameof(CapitalPerTradeUsd), 5000m);
-			_minUsd = Param(nameof(MinTradeUsd), 100m);
-			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to trade", "General");
+
+			_daysBefore = Param(nameof(DaysBefore), 5)
+				.SetDisplay("Days Before", "Days before earnings to enter", "General");
+
+			_daysAfter = Param(nameof(DaysAfter), 1)
+				.SetDisplay("Days After", "Days after earnings to exit", "General");
+
+			_capitalUsd = Param(nameof(CapitalPerTradeUsd), 5000m)
+				.SetDisplay("Capital per Trade (USD)", "Capital allocated per trade", "Risk");
+
+			_minUsd = Param(nameof(MinTradeUsd), 100m)
+				.SetDisplay("Minimum Trade (USD)", "Minimal trade value", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to process", "General");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
 			Universe.Select(s => (s, CandleType));
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			if (!Universe.Any())
+
+			if (Universe == null || !Universe.Any())
 				throw new InvalidOperationException("Universe is empty.");
 
 			foreach (var (sec, tf) in GetWorkingSecurities())
