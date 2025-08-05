@@ -109,6 +109,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_wins.Clear();
+			_weights.Clear();
+			_latestPrices.Clear();
+			_lastDay = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			if (Security == null)

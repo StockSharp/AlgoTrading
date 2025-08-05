@@ -98,6 +98,20 @@ namespace StockSharp.Samples.Strategies
 			return Universe.Select(s => (s, CandleType));
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prices.Clear();
+			_ret.Clear();
+			_fscore.Clear();
+			_w.Clear();
+			_latestPrices.Clear();
+			_lastRebalance = default;
+			_q.Clear();
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			if (Universe == null || !Universe.Any())

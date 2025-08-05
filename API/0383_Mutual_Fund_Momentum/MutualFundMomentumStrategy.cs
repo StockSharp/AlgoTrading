@@ -62,6 +62,15 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
 			Funds.Select(f => (f, CandleType));
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+			_lastDay = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);

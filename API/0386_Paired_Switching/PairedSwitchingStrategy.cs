@@ -86,6 +86,17 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
 			new[] { (FirstETF, CandleType), (SecondETF, CandleType) };
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_p1.Clear();
+			_p2.Clear();
+			_latestPrices.Clear();
+			_last = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			if (FirstETF == null || SecondETF == null)

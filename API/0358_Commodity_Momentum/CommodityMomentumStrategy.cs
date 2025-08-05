@@ -85,6 +85,16 @@ namespace StockSharp.Samples.Strategies
 			Universe.Select(s => (s, CandleType));
 
 		/// <inheritdoc />
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_px.Clear();
+			_latestPrices.Clear();
+			_lastDay = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);

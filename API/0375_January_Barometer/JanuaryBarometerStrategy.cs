@@ -76,6 +76,15 @@ namespace StockSharp.Samples.Strategies
 			return new[] { (EquityETF, CandleType) };
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+			_janOpenPrice = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			if (EquityETF == null || CashETF == null)
