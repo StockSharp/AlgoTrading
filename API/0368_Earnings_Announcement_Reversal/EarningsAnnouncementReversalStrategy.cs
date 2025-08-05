@@ -1,21 +1,18 @@
-// EarningsAnnouncementReversalStrategy.cs
-// -----------------------------------------------------------------------------
-// For each stock in Universe, if today is EarningsDate +/- 1 trading day,
-// trade short-term reversal: short 5-day winners, long 5-day losers.
-// Exits after HoldingDays. Triggered by daily candles of each stock.
-// Requires TryGetEarningsDate(Security, out DateTime).
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Trades short-term reversals around earnings announcements.
+	/// Shorts recent winners and buys losers on earnings dates.
+	/// </summary>
 	public class EarningsAnnouncementReversalStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -24,33 +21,92 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int LookbackDays => _look.Value;
-		public int HoldingDays => _hold.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Securities universe to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
 
-		private class Win { public Queue<decimal> Px = new(); public int Held; }
+		/// <summary>
+		/// Lookback period in days used to determine winners and losers.
+		/// </summary>
+		public int LookbackDays
+		{
+			get => _look.Value;
+			set => _look.Value = value;
+		}
+
+		/// <summary>
+		/// Number of days to hold the position.
+		/// </summary>
+		public int HoldingDays
+		{
+			get => _hold.Value;
+			set => _hold.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade size in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		private class Win
+		{
+			public readonly Queue<decimal> Px = new();
+			public int Held;
+		}
+
 		private readonly Dictionary<Security, Win> _map = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="EarningsAnnouncementReversalStrategy"/>.
+		/// </summary>
 		public EarningsAnnouncementReversalStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_look = Param(nameof(LookbackDays), 5);
-			_hold = Param(nameof(HoldingDays), 3);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Collection of securities to trade", "General");
+
+			_look = Param(nameof(LookbackDays), 5)
+				.SetGreaterThanZero()
+				.SetDisplay("Lookback Days", "Number of days to calculate returns", "Parameters");
+
+			_hold = Param(nameof(HoldingDays), 3)
+				.SetGreaterThanZero()
+				.SetDisplay("Holding Days", "Days to hold position", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
-
-		protected override void OnStarted(DateTimeOffset t)
+		/// <inheritdoc />
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
-			base.OnStarted(t);
-			foreach (var (s, tf) in GetWorkingSecurities())
+			return Universe.Select(s => (s, _tf));
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
+			foreach (var (sec, tf) in GetWorkingSecurities())
 			{
-				_map[s] = new Win();
-				SubscribeCandles(tf, true, s)
-					.Bind(c => ProcessCandle(c, s))
+				_map[sec] = new Win();
+
+				SubscribeCandles(tf, true, sec)
+					.Bind(c => ProcessCandle(c, sec))
 					.Start();
 			}
 		}
@@ -61,61 +117,84 @@ namespace StockSharp.Samples.Strategies
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Store the latest closing price for this security
+			// Store the latest closing price
 			_latestPrices[security] = candle.ClosePrice;
 
 			OnDaily(security, candle);
 		}
 
-		private void OnDaily(Security s, ICandleMessage c)
+		private void OnDaily(Security security, ICandleMessage candle)
 		{
-			var w = _map[s];
-			if (w.Px.Count == LookbackDays + 1)
-				w.Px.Dequeue();
-			w.Px.Enqueue(c.ClosePrice);
+			var win = _map[security];
 
-			if (!TryGetEarningsDate(s, out var ed))
-				return;
-			var d = c.OpenTime.Date;
-			if (Math.Abs((d - ed.Date).TotalDays) > 1)
-				return; // window
+			if (win.Px.Count == LookbackDays + 1)
+				win.Px.Dequeue();
 
-			if (w.Px.Count < LookbackDays + 1)
+			win.Px.Enqueue(candle.ClosePrice);
+
+			if (!TryGetEarningsDate(security, out var ed))
 				return;
-			var arr = w.Px.ToArray();
+
+			var day = candle.OpenTime.Date;
+			if (Math.Abs((day - ed.Date).TotalDays) > 1)
+				return;
+
+			if (win.Px.Count < LookbackDays + 1)
+				return;
+
+			var arr = win.Px.ToArray();
 			var ret = (arr[0] - arr[^1]) / arr[^1];
 
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var price = GetLatestPrice(s);
+			var price = GetLatestPrice(security);
 			if (price <= 0)
 				return;
 
 			if (ret > 0)
-			{ // winner -> short
-				Move(s, -portfolioValue / Universe.Count() / price);
+			{
+				// winner -> short
+				Move(security, -portfolioValue / Universe.Count() / price);
 			}
 			else
-			{ // loser -> long
-				Move(s, portfolioValue / Universe.Count() / price);
+			{
+				// loser -> long
+				Move(security, portfolioValue / Universe.Count() / price);
 			}
-			w.Held = 0;
+
+			win.Held = 0;
 		}
 
-		private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
+		private decimal Pos(Security security) => GetPositionValue(security, Portfolio) ?? 0;
 
 		private decimal GetLatestPrice(Security security)
 		{
 			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
 		}
 
-		private void Move(Security s, decimal tgt)
+		private void Move(Security security, decimal tgt)
 		{
-			var diff = tgt - Pos(s);
-			var price = GetLatestPrice(s);
+			var diff = tgt - Pos(security);
+			var price = GetLatestPrice(security);
+
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
-			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "EARev" });
+
+			RegisterOrder(new Order
+			{
+				Security = security,
+				Portfolio = Portfolio,
+				Side = diff > 0 ? Sides.Buy : Sides.Sell,
+				Volume = Math.Abs(diff),
+				Type = OrderTypes.Market,
+				Comment = "EARev"
+			});
 		}
-		private bool TryGetEarningsDate(Security s, out DateTime dt) { dt = DateTime.MinValue; return false; }
+
+		private bool TryGetEarningsDate(Security security, out DateTime date)
+		{
+			date = DateTime.MinValue;
+			return false;
+		}
 	}
 }
+
