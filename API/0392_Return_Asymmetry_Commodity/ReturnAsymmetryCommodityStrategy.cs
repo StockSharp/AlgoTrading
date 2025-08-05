@@ -8,10 +8,10 @@
 // -----------------------------------------------------------------------------
 // Date: 2 Aug 2025
 // -----------------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
@@ -19,41 +19,99 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Strategy that ranks commodity futures by return asymmetry and trades the top
+	/// and bottom groups each month.
+	/// </summary>
 	public class ReturnAsymmetryCommodityStrategy : Strategy
 	{
 		#region Params
+
 		private readonly StrategyParam<IEnumerable<Security>> _futs;
 		private readonly StrategyParam<int> _window;
 		private readonly StrategyParam<int> _top;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Futures { get => _futs.Value; set => _futs.Value = value; }
-		public int WindowDays => _window.Value;
-		public int TopN => _top.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Commodity futures to trade.
+		/// </summary>
+		public IEnumerable<Security> Futures
+		{
+			get => _futs.Value;
+			set => _futs.Value = value;
+		}
+
+		/// <summary>
+		/// Lookback window in days.
+		/// </summary>
+		public int WindowDays
+		{
+			get => _window.Value;
+			set => _window.Value = value;
+		}
+
+		/// <summary>
+		/// Number of instruments to long/short.
+		/// </summary>
+		public int TopN
+		{
+			get => _top.Value;
+			set => _top.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum dollar value per trade.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
 		#endregion
 
-		private class Win { public Queue<decimal> Px = new(); }
+		private class Win
+		{
+			public Queue<decimal> Px = new();
+		}
+
 		private readonly Dictionary<Security, Win> _map = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 		private readonly Dictionary<Security, decimal> _w = new();
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ReturnAsymmetryCommodityStrategy"/> class.
+		/// </summary>
 		public ReturnAsymmetryCommodityStrategy()
 		{
-			_futs = Param<IEnumerable<Security>>(nameof(Futures), Array.Empty<Security>());
-			_window = Param(nameof(WindowDays), 120);
-			_top = Param(nameof(TopN), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_futs = Param<IEnumerable<Security>>(nameof(Futures), Array.Empty<Security>())
+				.SetDisplay("Futures", "Commodity futures to trade", "General");
+
+			_window = Param(nameof(WindowDays), 120)
+				.SetDisplay("Window", "Lookback window in days", "General");
+
+			_top = Param(nameof(TopN), 5)
+				.SetDisplay("Top N", "Number of instruments to long/short", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Futures.Select(s => (s, _tf));
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Futures.Select(s => (s, _tf));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			if (Futures == null || !Futures.Any())
+				throw new InvalidOperationException("Futures cannot be empty.");
 
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
@@ -90,6 +148,7 @@ namespace StockSharp.Samples.Strategies
 
 			if (d.Day != 1)
 				return;
+
 			Rebalance();
 		}
 
@@ -118,14 +177,17 @@ namespace StockSharp.Samples.Strategies
 
 			if (asym.Count < TopN * 2)
 				return;
+
 			var longs = asym.OrderByDescending(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();
 			var shorts = asym.OrderBy(kv => kv.Value).Take(TopN).Select(kv => kv.Key).ToList();
 
 			_w.Clear();
 			decimal wl = 1m / longs.Count;
 			decimal ws = -1m / shorts.Count;
+
 			foreach (var s in longs)
 				_w[s] = wl;
+
 			foreach (var s in shorts)
 				_w[s] = ws;
 
@@ -133,6 +195,7 @@ namespace StockSharp.Samples.Strategies
 				Move(position.Security, 0);
 
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+
 			foreach (var kv in _w)
 			{
 				var price = GetLatestPrice(kv.Key);
@@ -152,6 +215,7 @@ namespace StockSharp.Samples.Strategies
 			var price = GetLatestPrice(s);
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
+
 			RegisterOrder(new Order
 			{
 				Security = s,
@@ -159,7 +223,7 @@ namespace StockSharp.Samples.Strategies
 				Side = diff > 0 ? Sides.Buy : Sides.Sell,
 				Volume = Math.Abs(diff),
 				Type = OrderTypes.Market,
-				Comment = "AsymCom"
+				Comment = "AsymCom",
 			});
 		}
 
