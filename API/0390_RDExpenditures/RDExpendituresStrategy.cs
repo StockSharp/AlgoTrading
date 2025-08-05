@@ -16,6 +16,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// R&D expenditures strategy.
+	/// Long high R&D-to-market-value stocks and short low ones.
+	/// </summary>
 	public class RDExpendituresStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -26,21 +30,51 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int Quintile => _quint.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Strategy universe.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Number of quintiles to split the universe.
+		/// </summary>
+		public int Quintile
+		{
+			get => _quint.Value;
+			set => _quint.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		public RDExpendituresStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_quint = Param(nameof(Quintile), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+			.SetDisplay("Universe", "Securities to trade", "General");
+			_quint = Param(nameof(Quintile), 5)
+			.SetGreaterThanZero()
+			.SetDisplay("Quintile", "Number of quintiles", "General");
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe must not be empty.");
 			base.OnStarted(t);
 			var trig = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty");
 			SubscribeCandles(_tf, true, trig).Bind(c => ProcessCandle(c, trig)).Start();

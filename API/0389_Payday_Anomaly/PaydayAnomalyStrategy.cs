@@ -16,18 +16,31 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Payday anomaly strategy.
+	/// Holds market ETF during the payday window.
+	/// </summary>
 	public class PaydayAnomalyStrategy : Strategy
 	{
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 		private DateTime _last = DateTime.MinValue;
 
 		public PaydayAnomalyStrategy()
 		{
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+			.SetGreaterThanZero()
+			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
@@ -39,6 +52,8 @@ namespace StockSharp.Samples.Strategies
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
+			if (Security == null)
+				throw new InvalidOperationException("Security not set");
 			base.OnStarted(t);
 			SubscribeCandles(_tf, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
 		}
