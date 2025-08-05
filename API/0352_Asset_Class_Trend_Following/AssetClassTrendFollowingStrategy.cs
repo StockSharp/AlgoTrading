@@ -1,8 +1,3 @@
-// AssetClassTrendFollowingStrategy.cs  (revised)
-// Uses SMA filter per ETF; monthly rebalance based on daily candle stream.
-// Parameters: Universe (IEnumerable<Security>), CandleType.
-// Date: 2 August 2025
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +9,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Asset class trend following strategy.
+	/// Uses the simple moving average filter and rebalances monthly.
+	/// </summary>
 	public class AssetClassTrendFollowingStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
@@ -21,30 +20,81 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _candleType;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int SmaLength => _smaLen.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _candleType.Value;
+		/// <summary>
+		/// Universe of securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Length of the simple moving average filter.
+		/// </summary>
+		public int SmaLength
+		{
+			get => _smaLen.Value;
+			set => _smaLen.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum dollar amount for a trade.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>
+		/// The type of candles to use.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 
 		private readonly Dictionary<Security, SimpleMovingAverage> _sma = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private readonly HashSet<Security> _held = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="AssetClassTrendFollowingStrategy"/>.
+		/// </summary>
 		public AssetClassTrendFollowingStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_smaLen = Param(nameof(SmaLength), 210);
-			_minUsd = Param(nameof(MinTradeUsd), 50m);
-			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities to trade", "General");
+
+			_smaLen = Param(nameof(SmaLength), 210)
+				.SetGreaterThanZero()
+				.SetDisplay("SMA Length", "Period of the SMA filter", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 50m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimal dollar amount per trade", "General");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, CandleType));
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, CandleType));
+		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty.");
+
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
 				var sma = new SimpleMovingAverage { Length = SmaLength };
