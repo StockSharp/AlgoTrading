@@ -5,6 +5,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
@@ -12,6 +13,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Betting Against Beta strategy.
+	/// Longs the lowest beta decile and shorts the highest beta decile.
+	/// </summary>
 	public class BettingAgainstBetaStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
@@ -21,37 +26,110 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _deciles;
 		private readonly StrategyParam<decimal> _minUsd;
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public Security Benchmark { get => _benchmark.Value; set => _benchmark.Value = value; }
-		public int WindowDays => _window.Value;
-		public int Deciles => _deciles.Value;
-		public DataType CandleType => _tf.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Securities universe.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Benchmark security for beta calculation.
+		/// </summary>
+		public Security Benchmark
+		{
+			get => _benchmark.Value;
+			set => _benchmark.Value = value;
+		}
+
+		/// <summary>
+		/// Lookback window length in days.
+		/// </summary>
+		public int WindowDays
+		{
+			get => _window.Value;
+			set => _window.Value = value;
+		}
+
+		/// <summary>
+		/// Number of deciles for long/short groups.
+		/// </summary>
+		public int Deciles
+		{
+			get => _deciles.Value;
+			set => _deciles.Value = value;
+		}
+
+		/// <summary>
+		/// Candle time frame used by the strategy.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _wins = new();
 		private readonly Dictionary<Security, decimal> _weights = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes a new instance of the <see cref="BettingAgainstBetaStrategy"/> class.
+		/// </summary>
 		public BettingAgainstBetaStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_benchmark = Param<Security>(nameof(Benchmark), null);
-			_window = Param(nameof(WindowDays), 252);
-			_deciles = Param(nameof(Deciles), 10);
-			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
-			_minUsd = Param(nameof(MinTradeUsd), 100m);
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Securities universe", "General");
+
+			_benchmark = Param<Security>(nameof(Benchmark), null)
+				.SetDisplay("Benchmark", "Benchmark security", "General");
+
+			_window = Param(nameof(WindowDays), 252)
+				.SetDisplay("Window Days", "Lookback window length", "General")
+				.SetGreaterThanZero();
+
+			_deciles = Param(nameof(Deciles), 10)
+				.SetDisplay("Deciles", "Number of deciles", "General")
+				.SetGreaterThanZero();
+
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Candle time frame", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 100m)
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General")
+				.SetGreaterThanZero();
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (Benchmark == null)
 				throw new InvalidOperationException("Benchmark not set");
+
 			return Universe.Append(Benchmark).Select(s => (s, CandleType));
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			if (Benchmark == null)
+				throw new InvalidOperationException("Benchmark not set");
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty");
+
 			base.OnStarted(time);
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
