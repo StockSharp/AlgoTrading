@@ -1,4 +1,3 @@
-
 // SmartFactorsMomentumMarketStrategy.cs
 // Smart factors momentum blended with market; monthly rotation.
 // Date: 2 August 2025
@@ -30,8 +29,10 @@ namespace StockSharp.Samples.Strategies
 		public decimal MinTradeUsd => _minUsd.Value;
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _p = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private readonly RollingWindow<decimal> _smartRet;
 		private readonly RollingWindow<decimal> _mktRet;
+		private DateTime _lastRebalanceDate = DateTime.MinValue;
 
 		public SmartFactorsMomentumMarketStrategy()
 		{
@@ -63,18 +64,37 @@ namespace StockSharp.Samples.Strategies
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
 				SubscribeCandles(dt, true, sec)
-					.Bind(OnCandleFinished)
+					.Bind(c => ProcessCandle(c, sec))
 					.Start();
 
 				_p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
 			}
 		}
 
-		private void OnCandleFinished(ICandleMessage candle)
+		private void ProcessCandle(ICandleMessage candle, Security security)
 		{
-			var sec = (Security)candle.SecurityId;
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
+
+			OnCandleFinished(candle, security);
+		}
+
+		private void OnCandleFinished(ICandleMessage candle, Security sec)
+		{
 			if (_p.TryGetValue(sec, out var win))
 				win.Add(candle.ClosePrice);
+
+			// Check for monthly rebalancing (first trading day of month)
+			var candleDate = candle.OpenTime.Date;
+			if (candleDate.Day == 1 && candleDate != _lastRebalanceDate)
+			{
+				_lastRebalanceDate = candleDate;
+				Rebalance();
+			}
 		}
 
 		private void Rebalance()
@@ -87,8 +107,10 @@ namespace StockSharp.Samples.Strategies
 			foreach (var sec in Factors.Values)
 			{
 				var win = _p[sec];
-				fastSig[sec] = (win.Last() - win[^(FastMonths * 21 + 1)]) / win[^(FastMonths * 21 + 1)];
-				slowSig[sec] = (win.Last() - win[^(SlowMonths * 21 + 1)]) / win[^(SlowMonths * 21 + 1)];
+				int fastIndex = FastMonths * 21 + 1;
+				int slowIndex = SlowMonths * 21 + 1;
+				fastSig[sec] = (win.Last() - win[win.Count - fastIndex]) / win[win.Count - fastIndex];
+				slowSig[sec] = (win.Last() - win[win.Count - slowIndex]) / win[win.Count - slowIndex];
 			}
 
 			int rankSum = Enumerable.Range(1, Factors.Count).Sum();
@@ -98,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 			var wTotal = Factors.Values.ToDictionary(s => s, s => 0.75m * wFast[s] + 0.25m * wSlow[s]);
 
 			var smart1M = wTotal.Sum(kv => kv.Value * fastSig[kv.Key]);
-			var mkt1M = (_p[MarketETF].Last() - _p[MarketETF][^22]) / _p[MarketETF][^22];
+			var mkt1M = (_p[MarketETF].Last() - _p[MarketETF][_p[MarketETF].Count - 22]) / _p[MarketETF][_p[MarketETF].Count - 22];
 			_smartRet.Add(smart1M);
 			_mktRet.Add(mkt1M);
 			if (!_smartRet.IsFull())
@@ -120,8 +142,8 @@ namespace StockSharp.Samples.Strategies
 			TradeToTarget(MarketETF, wMarket);
 			foreach (var kv in wTotal)
 				TradeToTarget(kv.Key, wSmart * kv.Value);
-			foreach (var pos in Positions.Keys.Where(s => s != MarketETF && !wTotal.ContainsKey(s)))
-				TradeToTarget(pos, 0m);
+			foreach (var position in Positions.Where(p => p.Security != MarketETF && !wTotal.ContainsKey(p.Security)))
+				TradeToTarget(position.Security, 0m);
 		}
 
 		private Dictionary<Security, decimal> RankWeights(Dictionary<Security, decimal> sig, int rankSum)
@@ -133,11 +155,21 @@ namespace StockSharp.Samples.Strategies
 			return d;
 		}
 
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
+
 		private void TradeToTarget(Security sec, decimal weight)
 		{
-			var tgt = weight * Portfolio.CurrentValue / sec.Price;
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+			var price = GetLatestPrice(sec);
+			if (price <= 0)
+				return;
+
+			var tgt = weight * portfolioValue / price;
 			var diff = tgt - PositionBy(sec);
-			if (Math.Abs(diff) * sec.Price >= MinTradeUsd)
+			if (Math.Abs(diff) * price >= MinTradeUsd)
 				RegisterOrder(new Order { Security = sec, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "SmartFactors" });
 		}
 
@@ -148,6 +180,9 @@ namespace StockSharp.Samples.Strategies
 	public class RollingWindow<T>
 	{
 		private readonly Queue<T> _q = new(); private readonly int _size;
+
+		public int Count => _q.Count;
+
 		public RollingWindow(int size) { _size = size; }
 		public void Add(T v) { if (_q.Count == _size) _q.Dequeue(); _q.Enqueue(v); }
 		public bool IsFull() => _q.Count == _size;

@@ -27,6 +27,7 @@ namespace StockSharp.Samples.Strategies
 
 		private class Win { public Queue<decimal> R = new(); }
 		private readonly Dictionary<(Security, Security), Win> _hist = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		public IEnumerable<(Security A, Security B)> Pairs { get => _pairs.Value; set => _pairs.Value = value; }
 		public int WindowDays => _window.Value;
@@ -55,8 +56,21 @@ namespace StockSharp.Samples.Strategies
 			foreach (var (a, b) in Pairs)
 			{
 				_hist[(a, b)] = new Win();
-				SubscribeCandles(_tf, true, a).Bind(c => OnDaily()).Start();
+				SubscribeCandles(_tf, true, a).Bind(c => ProcessCandle(c, a)).Start();
+				SubscribeCandles(_tf, true, b).Bind(c => ProcessCandle(c, b)).Start();
 			}
+		}
+
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
+
+			OnDaily();
 		}
 
 		private void OnDaily()
@@ -64,8 +78,8 @@ namespace StockSharp.Samples.Strategies
 			foreach (var pair in Pairs)
 			{
 				var (a, b) = pair;
-				var priceA = a.Price;
-				var priceB = b.Price;
+				var priceA = GetLatestPrice(a);
+				var priceB = GetLatestPrice(b);
 				if (priceA == 0 || priceB == 0)
 					continue;
 				var r = priceA / priceB;
@@ -85,7 +99,8 @@ namespace StockSharp.Samples.Strategies
 				if (Math.Abs(z) < ExitZ)
 				{ Move(a, 0); Move(b, 0); continue; }
 
-				var notional = Portfolio.CurrentValue / 2;
+				var portfolioValue = Portfolio.CurrentValue ?? 0m;
+				var notional = portfolioValue / 2;
 				if (z > EntryZ) // A overpriced
 				{
 					Move(a, -notional / priceA);
@@ -99,10 +114,16 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+		}
+
 		private void Move(Security s, decimal tgt)
 		{
 			var diff = tgt - PositionBy(s);
-			if (Math.Abs(diff) * s.Price < MinTradeUsd)
+			var price = GetLatestPrice(s);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Pairs" });
 		}

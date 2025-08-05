@@ -36,6 +36,7 @@ namespace StockSharp.Samples.Strategies
 
 		private class Win { public Queue<decimal> Px = new(); }
 		private readonly Dictionary<Security, Win> _map = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 		private readonly Dictionary<Security, decimal> _w = new();
 
@@ -58,9 +59,21 @@ namespace StockSharp.Samples.Strategies
 			{
 				_map[sec] = new Win();
 				SubscribeCandles(dt, true, sec)
-					.Bind(c => OnDaily((Security)c.SecurityId, c))
+					.Bind(c => ProcessCandle(c, sec))
 					.Start();
 			}
+		}
+
+		private void ProcessCandle(ICandleMessage candle, Security security)
+		{
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
+
+			OnDaily(security, candle);
 		}
 
 		private void OnDaily(Security s, ICandleMessage c)
@@ -116,17 +129,28 @@ namespace StockSharp.Samples.Strategies
 			foreach (var s in shorts)
 				_w[s] = ws;
 
-			foreach (var pos in Positions.Keys.Where(sec => !_w.ContainsKey(sec)))
-				Move(pos, 0);
+			foreach (var position in Positions.Where(pos => !_w.ContainsKey(pos.Security)))
+				Move(position.Security, 0);
 
+			var portfolioValue = Portfolio.CurrentValue ?? 0m;
 			foreach (var kv in _w)
-				Move(kv.Key, kv.Value * Portfolio.CurrentValue / kv.Key.Price);
+			{
+				var price = GetLatestPrice(kv.Key);
+				if (price > 0)
+					Move(kv.Key, kv.Value * portfolioValue / price);
+			}
+		}
+
+		private decimal GetLatestPrice(Security security)
+		{
+			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
 		}
 
 		private void Move(Security s, decimal tgtQty)
 		{
 			var diff = tgtQty - PositionBy(s);
-			if (Math.Abs(diff) * s.Price < MinTradeUsd)
+			var price = GetLatestPrice(s);
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 			RegisterOrder(new Order
 			{

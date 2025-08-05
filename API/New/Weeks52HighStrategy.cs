@@ -37,6 +37,7 @@ namespace StockSharp.Samples.Strategies
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _priceWin = new();
 		private readonly Dictionary<Security, decimal> _cap = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		private readonly List<Tranche> _tranches = new();
 
@@ -72,20 +73,30 @@ namespace StockSharp.Samples.Strategies
 
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
-				var sub = SubscribeCandles(sec, dt);
-				sub.Start();
+				SubscribeCandles(dt, true, sec)
+					.Bind(c => ProcessCandle(c, sec))
+					.Start();
 
 				_priceWin[sec] = new RollingWindow<decimal>(LookbackDays);
 			}
 
-			Schedule(TimeSpan.FromMinutes(10), Exchange.TradingDay.Ends, MonthlyRebalance);
-
 			LogInfo($"52‑Week High strategy started. Universe={Universe.Count()} securities, Industries={IndustriesCount}");
 		}
 
-		protected override void OnCandleFinished(ICandleMessage candle)
+		private void ProcessCandle(ICandleMessage candle, Security security)
 		{
-			var sec = (Security)candle.SecurityId;
+			// Skip unfinished candles
+			if (candle.State != CandleStates.Finished)
+				return;
+
+			// Store the latest closing price for this security
+			_latestPrices[security] = candle.ClosePrice;
+
+			OnCandleFinished(candle, security);
+		}
+
+		private void OnCandleFinished(ICandleMessage candle, Security sec)
+		{
 			if (_priceWin.TryGetValue(sec, out var win))
 				win.Add(candle.ClosePrice);
 		}

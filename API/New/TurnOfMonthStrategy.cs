@@ -109,15 +109,26 @@ namespace StockSharp.Samples.Strategies
 			int cnt = 0;
 			var cur = d;
 			while (cur.Month == d.Month)
-			{ if (Exchange.IsTradingDay(cur)) cnt++; cur = cur.AddDays(1); }
+			{ 
+				// Simple approximation: assume weekdays are trading days (Monday-Friday)
+				if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
+					cnt++; 
+				cur = cur.AddDays(1); 
+			}
 			return cnt - 1;
 		}
+
 		private int TradingDayNumber(DateTime d)
 		{
 			int n = 0;
 			var cur = new DateTime(d.Year, d.Month, 1);
 			while (cur <= d)
-			{ if (Exchange.IsTradingDay(cur)) n++; cur = cur.AddDays(1); }
+			{ 
+				// Simple approximation: assume weekdays are trading days (Monday-Friday)
+				if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
+					n++; 
+				cur = cur.AddDays(1); 
+			}
 			return n;
 		}
 		private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
