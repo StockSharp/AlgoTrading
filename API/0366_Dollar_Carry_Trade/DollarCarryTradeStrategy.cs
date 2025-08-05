@@ -32,6 +32,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<IEnumerable<Security>> _pairs;
 		private readonly StrategyParam<int> _k;
 		private readonly StrategyParam<decimal> _minUsd;
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>
 		/// FX pairs or currency futures.
@@ -60,10 +61,18 @@ namespace StockSharp.Samples.Strategies
 			set => _minUsd.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		private readonly Dictionary<Security, decimal> _carry = new();
 		private readonly Dictionary<Security, decimal> _weights = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 		private DateTime _lastRebalanceDate = DateTime.MinValue;
 
 		/// <summary>
@@ -82,6 +91,9 @@ namespace StockSharp.Samples.Strategies
 			// Minimum notional for rebalancing trades.
 			_minUsd = Param(nameof(MinTradeUsd), 100m)
 				.SetDisplay("Min Trade $", "Ignore tiny rebalances", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -91,7 +103,7 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Pairs list is empty – populate before start.");
 
 			// Subscribe to daily candles for monthly rebalancing trigger
-			return Pairs.Select(s => (s, _tf));
+			return Pairs.Select(s => (s, CandleType));
 		}
 
 		/// <inheritdoc />
@@ -105,7 +117,7 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to daily candles for timing monthly rebalancing
 			foreach (var pair in Pairs)
 			{
-				SubscribeCandles(_tf, true, pair)
+				SubscribeCandles(CandleType, true, pair)
 					.Bind(c => ProcessCandle(c, pair))
 					.Start();
 			}

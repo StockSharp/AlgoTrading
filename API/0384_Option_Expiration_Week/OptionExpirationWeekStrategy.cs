@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies
 	public class OptionExpirationWeekStrategy : Strategy
 	{
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>Minimum trade amount in USD.</summary>
 		public decimal MinTradeUsd
@@ -27,12 +27,24 @@ namespace StockSharp.Samples.Strategies
 			set => _minUsd.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		public OptionExpirationWeekStrategy()
 		{
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min USD", "Minimum trade value", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
@@ -40,7 +52,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("ETF not set.");
 
-			return new[] { (Security, _tf) };
+			return new[] { (Security, CandleType) };
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
@@ -50,7 +62,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("ETF cannot be null.");
 
-			SubscribeCandles(_tf, true, Security)
+			SubscribeCandles(CandleType, true, Security)
 				.Bind(c => ProcessCandle(c, Security))
 				.Start();
 		}

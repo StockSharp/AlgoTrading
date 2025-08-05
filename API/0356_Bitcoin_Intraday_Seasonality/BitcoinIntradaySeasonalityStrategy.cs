@@ -15,7 +15,7 @@ namespace StockSharp.Samples.Strategies
 	{
 		private readonly StrategyParam<int[]> _hoursLong;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>
 		/// UTC hours when the strategy holds a long position.
@@ -35,6 +35,15 @@ namespace StockSharp.Samples.Strategies
 			set => _minUsd.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		/// <summary>
@@ -50,6 +59,9 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetGreaterThanZero()
 				.SetDisplay("Min Trade USD", "Minimum order value in USD", "Trading");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -58,7 +70,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("BTC security not set.");
 
-			return new[] { (Security, _tf) };
+			return new[] { (Security, CandleType) };
 		}
 
 		/// <inheritdoc />
@@ -72,7 +84,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("BTC security not set.");
 
-			SubscribeCandles(_tf, true, Security)
+			SubscribeCandles(CandleType, true, Security)
 				.Bind(c => ProcessCandle(c, Security))
 				.Start();
 		}

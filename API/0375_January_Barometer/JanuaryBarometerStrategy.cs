@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<Security> _equity;
 		private readonly StrategyParam<Security> _cash;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 		
 		/// <summary>
 		/// Equity ETF to hold when January is bullish.
@@ -43,6 +43,11 @@ namespace StockSharp.Samples.Strategies
 		/// Minimum trade value in USD.
 		/// </summary>
 		public decimal MinTradeUsd { get => _minUsd.Value; set => _minUsd.Value = value; }
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 		#endregion
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
@@ -59,13 +64,16 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetGreaterThanZero()
 				.SetDisplay("Min trade USD", "Minimum order value", "Risk");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 			}
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (EquityETF == null || CashETF == null)
 				throw new InvalidOperationException("Both equity and cash ETFs must be set.");
-			return new[] { (EquityETF, _tf) };
+			return new[] { (EquityETF, CandleType) };
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
@@ -75,7 +83,7 @@ namespace StockSharp.Samples.Strategies
 
 			base.OnStarted(t);
 
-			SubscribeCandles(_tf, true, EquityETF)
+			SubscribeCandles(CandleType, true, EquityETF)
 				.Bind(c => ProcessCandle(c, EquityETF))
 					.Start();
 		}

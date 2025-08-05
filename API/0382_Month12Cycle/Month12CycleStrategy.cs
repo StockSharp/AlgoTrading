@@ -35,6 +35,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _decileSize;
 		private readonly StrategyParam<decimal> _leverage;
 		private readonly StrategyParam<int> _yearsBack;
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>Investment universe (must be non‑empty).</summary>
 		public IEnumerable<Security> Universe
@@ -63,6 +64,15 @@ namespace StockSharp.Samples.Strategies
 				get => _yearsBack.Value;
 				set => _yearsBack.Value = value;
 		}
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		
 		#endregion
 
@@ -84,6 +94,9 @@ namespace StockSharp.Samples.Strategies
 
 			_yearsBack = Param(nameof(YearsBack), 1)
 				.SetDisplay("Years Back", "Lag in years (12 months)", "Ranking");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		#region Universe & candles
@@ -93,8 +106,7 @@ namespace StockSharp.Samples.Strategies
 			if (Universe == null || !Universe.Any())
 				throw new InvalidOperationException("Universe cannot be empty — populate the Universe property before starting the strategy.");
 
-			var dt = TimeSpan.FromDays(1).TimeFrame();
-			return Universe.Select(s => (s, dt));
+			return Universe.Select(s => (s, CandleType));
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
