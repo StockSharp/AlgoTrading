@@ -96,6 +96,14 @@ namespace StockSharp.Samples.Strategies
 			yield return (EquityETF, CandleType);
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);

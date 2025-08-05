@@ -128,6 +128,19 @@ namespace StockSharp.Samples.Strategies
 			return Factors.Values.Append(Security).Select(s => (s, CandleType));
 		}
 
+		
+		protected override void OnReseted()
+			{
+			base.OnReseted();
+				
+				_p.Clear();
+				_latestPrices.Clear();
+				_smartRet.Clear();
+				_mktRet.Clear();
+				_lastRebalanceDate = default;
+				_q.Clear();
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);

@@ -113,6 +113,15 @@ namespace StockSharp.Samples.Strategies
 			{ yield return (a, CandleType); yield return (b, CandleType); }
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_hist.Clear();
+			_latestPrices.Clear();
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			if (Pairs == null || !Pairs.Any())

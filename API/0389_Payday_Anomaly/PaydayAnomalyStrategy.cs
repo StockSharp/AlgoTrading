@@ -61,6 +61,15 @@ namespace StockSharp.Samples.Strategies
 			yield return (Security, CandleType);
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+			_last = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			if (Security == null)

@@ -103,6 +103,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prices.Clear();
+			_latestPrices.Clear();
+			_tranches.Clear();
+			_lastDay = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			if (Universe == null || !Universe.Any())

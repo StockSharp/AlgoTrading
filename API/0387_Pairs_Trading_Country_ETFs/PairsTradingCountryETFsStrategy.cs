@@ -123,6 +123,17 @@ namespace StockSharp.Samples.Strategies
 			yield return (_b, CandleType);
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_a = _b = null;
+			_ratio.Clear();
+			_latestPrices.Clear();
+			_last = default;
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			if (Universe == null || Universe.Count() != 2)

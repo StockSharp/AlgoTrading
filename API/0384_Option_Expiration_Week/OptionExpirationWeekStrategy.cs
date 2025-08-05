@@ -55,6 +55,14 @@ namespace StockSharp.Samples.Strategies
 			return new[] { (Security, CandleType) };
 		}
 
+		
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+		}
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);

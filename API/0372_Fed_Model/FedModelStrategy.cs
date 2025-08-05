@@ -123,7 +123,19 @@ namespace StockSharp.Samples.Strategies
 				yield return (EarningsYieldSym, CandleType);
 		}
 
-                protected override void OnStarted(DateTimeOffset time)
+                
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_eq.Clear();
+			_gap.Clear();
+			_rf.Clear();
+			_latestPrices.Clear();
+			_lastMonth = default;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
                 {
                         if (Universe == null || !Universe.Any())
                         {
