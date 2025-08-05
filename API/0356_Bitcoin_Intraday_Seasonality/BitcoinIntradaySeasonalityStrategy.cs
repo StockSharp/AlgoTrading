@@ -1,11 +1,3 @@
-// BitcoinIntradaySeasonalityStrategy.cs
-// -----------------------------------------------------------------------------
-// Goes long BTC during historically strong hours, flat otherwise.
-// Hourly candle subscription; seasons defined by parameter HoursLong.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,38 +8,83 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Strategy that goes long on Bitcoin during predefined strong intraday hours.
+	/// </summary>
 	public class BitcoinIntradaySeasonalityStrategy : Strategy
 	{
-		#region Parameters
 		private readonly StrategyParam<Security> _btc;
-		private readonly StrategyParam<int[]> _hoursLong;   // e.g.,  0,1,2,3 == midnight–3am UTC
+		private readonly StrategyParam<int[]> _hoursLong;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
 
-		public Security BTC { get => _btc.Value; set => _btc.Value = value; }
-		public int[] HoursLong => _hoursLong.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		#endregion
+		/// <summary>
+		/// Bitcoin security to trade.
+		/// </summary>
+		public Security BTC
+		{
+			get => _btc.Value;
+			set => _btc.Value = value;
+		}
+
+		/// <summary>
+		/// UTC hours when the strategy holds a long position.
+		/// </summary>
+		public int[] HoursLong
+		{
+			get => _hoursLong.Value;
+			set => _hoursLong.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
+		/// <summary>
+		/// Initializes a new instance of <see cref="BitcoinIntradaySeasonalityStrategy"/>.
+		/// </summary>
 		public BitcoinIntradaySeasonalityStrategy()
 		{
-			_btc = Param<Security>(nameof(BTC), null);
-			_hoursLong = Param(nameof(HoursLong), new[] { 0, 1, 2, 3 });
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			// Bitcoin security.
+			_btc = Param<Security>(nameof(BTC), null)
+				.SetDisplay("BTC Security", "Security representing Bitcoin", "General");
+
+			// Hours to stay long (UTC).
+			_hoursLong = Param(nameof(HoursLong), new[] { 0, 1, 2, 3 })
+				.SetDisplay("Long Hours", "UTC hours when the strategy stays long", "General");
+
+			// Minimum trade size.
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum order value in USD", "Trading");
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			if (BTC == null)
 				throw new InvalidOperationException("BTC security not set.");
+
 			return new[] { (BTC, _tf) };
 		}
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+
+			if (HoursLong == null || HoursLong.Length == 0)
+				throw new InvalidOperationException("HoursLong cannot be empty.");
+
+			if (BTC == null)
+				throw new InvalidOperationException("BTC security not set.");
 
 			SubscribeCandles(_tf, true, BTC)
 				.Bind(c => ProcessCandle(c, BTC))
@@ -68,15 +105,15 @@ namespace StockSharp.Samples.Strategies
 
 		private void OnHourClose(ICandleMessage c)
 		{
-			var hour = c.OpenTime.UtcDateTime.Hour;   // assume server UTC
-			bool inSeason = HoursLong.Contains(hour);
+			var hour = c.OpenTime.UtcDateTime.Hour; // assume server UTC
+			var inSeason = HoursLong.Contains(hour);
 
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
 			var price = GetLatestPrice(BTC);
-			
+
 			var tgt = inSeason && price > 0 ? portfolioValue / price : 0m;
 			var diff = tgt - PositionBy(BTC);
-			
+
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 
@@ -87,7 +124,7 @@ namespace StockSharp.Samples.Strategies
 				Side = diff > 0 ? Sides.Buy : Sides.Sell,
 				Volume = Math.Abs(diff),
 				Type = OrderTypes.Market,
-				Comment = "BTCSeason"
+				Comment = "BTCSeason",
 			});
 		}
 
@@ -99,3 +136,4 @@ namespace StockSharp.Samples.Strategies
 		private decimal PositionBy(Security s) => GetPositionValue(s, Portfolio) ?? 0;
 	}
 }
+
