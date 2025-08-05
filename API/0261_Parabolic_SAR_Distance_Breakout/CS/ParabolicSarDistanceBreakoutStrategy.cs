@@ -116,6 +116,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_avgDistanceLong = 0;
+			_stdDevDistanceLong = 0;
+			_avgDistanceShort = 0;
+			_stdDevDistanceShort = 0;
+			_lastLongDistance = 0;
+			_lastShortDistance = 0;
+			_samplesCount = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			_parabolicSar = new ParabolicSar
@@ -124,13 +137,6 @@ namespace StockSharp.Samples.Strategies
 				AccelerationMax = MaxAcceleration
 			};
 
-			_avgDistanceLong = 0;
-			_stdDevDistanceLong = 0;
-			_avgDistanceShort = 0;
-			_stdDevDistanceShort = 0;
-			_lastLongDistance = 0;
-			_lastShortDistance = 0;
-			_samplesCount = 0;
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription

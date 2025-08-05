@@ -121,6 +121,21 @@ class atr_slope_mean_reversion_strategy(Strategy):
         """!! REQUIRED !! Return securities used by the strategy."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(atr_slope_mean_reversion_strategy, self).OnReseted()
+        self._sampleCount = 0
+        self._sumSlopes = 0.0
+        self._sumSlopesSquared = 0.0
+        self._isFirstCalculation = True
+        self._previousAtr = 0.0
+        self._currentAtrSlope = 0.0
+        self._averageSlope = 0.0
+        self._slopeStdDev = 0.0
+
     def OnStarted(self, time):
         """
         Initialize indicators, statistics and charting when the strategy starts.
@@ -132,14 +147,6 @@ class atr_slope_mean_reversion_strategy(Strategy):
         self._atr.Length = self.AtrPeriod
 
         # Initialize statistics variables
-        self._sampleCount = 0
-        self._sumSlopes = 0.0
-        self._sumSlopesSquared = 0.0
-        self._isFirstCalculation = True
-        self._previousAtr = 0.0
-        self._currentAtrSlope = 0.0
-        self._averageSlope = 0.0
-        self._slopeStdDev = 0.0
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)

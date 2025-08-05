@@ -108,11 +108,18 @@ class donchian_width_breakout_strategy(Strategy):
         """Return securities used by the strategy."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(donchian_width_breakout_strategy, self).OnReseted()
+        self._last_width = 0
+        self._last_avg_width = 0
+
     def OnStarted(self, time):
         super(donchian_width_breakout_strategy, self).OnStarted(time)
 
-        self._last_width = 0
-        self._last_avg_width = 0
 
         # Create indicators for Donchian Channel components
         self._highest = Highest()

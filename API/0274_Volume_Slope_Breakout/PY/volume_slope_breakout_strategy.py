@@ -110,18 +110,9 @@ class volume_slope_breakout_strategy(Strategy):
         # Initialize indicators
         self._volumeIndicator = VolumeIndicator()
         self._volumeSma = SimpleMovingAverage()
-        self._volumeSma.Length = self.VolumeSMAPeriod
         self._priceEma = ExponentialMovingAverage()
-        self._priceEma.Length = 20  # For trend direction
         self._volumeSlope = LinearRegression()
-        self._volumeSlope.Length = 2  # For calculating slope
 
-        self._prevSlopeValue = 0
-        self._slopeAvg = 0
-        self._slopeStdDev = 0
-        self._sumSlope = 0
-        self._sumSlopeSquared = 0
-        self._slopeValues = []
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

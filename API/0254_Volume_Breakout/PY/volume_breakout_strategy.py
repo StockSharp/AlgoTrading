@@ -85,11 +85,18 @@ class volume_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(volume_breakout_strategy, self).OnReseted()
+        self._last_avg_volume = 0
+        self._last_std_dev = 0
+
     def OnStarted(self, time):
         super(volume_breakout_strategy, self).OnStarted(time)
 
-        self._last_avg_volume = 0
-        self._last_std_dev = 0
 
         # Create indicators for volume analysis
         self._volume_average = SimpleMovingAverage()

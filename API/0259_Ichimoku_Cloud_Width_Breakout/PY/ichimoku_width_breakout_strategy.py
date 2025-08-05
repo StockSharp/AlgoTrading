@@ -130,17 +130,11 @@ class ichimoku_width_breakout_strategy(Strategy):
         """Called when the strategy starts."""
         super(ichimoku_width_breakout_strategy, self).OnStarted(time)
 
-        self._last_width = 0.0
-        self._last_avg_width = 0.0
 
         # Create indicators
         self._ichimoku = Ichimoku()
-        self._ichimoku.Tenkan.Length = self.tenkan_period
-        self._ichimoku.Kijun.Length = self.kijun_period
-        self._ichimoku.SenkouB.Length = self.senkou_span_b_period
 
         self._width_average = SimpleMovingAverage()
-        self._width_average.Length = self.avg_period
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)

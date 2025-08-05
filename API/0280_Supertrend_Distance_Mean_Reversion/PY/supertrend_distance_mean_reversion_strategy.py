@@ -109,25 +109,12 @@ class supertrend_distance_mean_reversion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(supertrend_distance_mean_reversion_strategy, self).OnStarted(time)
 
-        # Initialize indicators
-        self._atr = AverageTrueRange()
-        self._atr.Length = self.atr_period
-
-        self._supertrend = SuperTrend()
-        self._supertrend.Length = self.atr_period
-        self._supertrend.Multiplier = self.multiplier
-
-        self._distance_average = SimpleMovingAverage()
-        self._distance_average.Length = self.lookback_period
-
-        self._distance_std_dev = StandardDeviation()
-        self._distance_std_dev.Length = self.lookback_period
-
-        # Reset stored values
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(supertrend_distance_mean_reversion_strategy, self).OnReseted()
         self._current_distance_long = 0.0
         self._current_distance_short = 0.0
         self._prev_distance_long = 0.0
@@ -137,6 +124,23 @@ class supertrend_distance_mean_reversion_strategy(Strategy):
         self._prev_distance_std_dev_long = 0.0
         self._prev_distance_std_dev_short = 0.0
         self._supertrend_value = 0.0
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(supertrend_distance_mean_reversion_strategy, self).OnStarted(time)
+
+        # Initialize indicators
+        self._atr = AverageTrueRange()
+        self._atr.Length = self.atr_period
+        self._supertrend = SuperTrend()
+        self._supertrend.Length = self.atr_period
+        self._supertrend.Multiplier = self.multiplier
+        self._distance_average = SimpleMovingAverage()
+        self._distance_average.Length = self.lookback_period
+        self._distance_std_dev = StandardDeviation()
+        self._distance_std_dev.Length = self.lookback_period
+
+        # Reset stored values
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)

@@ -126,24 +126,11 @@ class parabolic_sar_distance_mean_reversion_strategy(Strategy):
 
         # Initialize indicators
         self._parabolic_sar = ParabolicSar()
-        self._parabolic_sar.Acceleration = self.acceleration_factor
-        self._parabolic_sar.AccelerationMax = self.acceleration_limit
 
         self._distance_average = SimpleMovingAverage()
-        self._distance_average.Length = self.lookback_period
         self._distance_std_dev = StandardDeviation()
-        self._distance_std_dev.Length = self.lookback_period
 
         # Reset stored values
-        self._current_distance_long = 0.0
-        self._current_distance_short = 0.0
-        self._prev_distance_long = 0.0
-        self._prev_distance_short = 0.0
-        self._prev_distance_avg_long = 0.0
-        self._prev_distance_avg_short = 0.0
-        self._prev_distance_std_dev_long = 0.0
-        self._prev_distance_std_dev_short = 0.0
-        self._sar_value = 0.0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)

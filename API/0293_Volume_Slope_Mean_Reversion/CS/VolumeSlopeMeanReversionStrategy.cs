@@ -116,8 +116,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
+			base.OnReseted();
 			_previousVolumeRatio = 0;
 			_currentVolumeSlope = 0;
 			_averageSlope = 0;
@@ -126,6 +127,15 @@ namespace StockSharp.Samples.Strategies
 			_sumSlopes = 0;
 			_sumSlopesSquared = 0;
 			_isFirstCalculation = true;
+			_sampleCount = 0;
+			_sumSlopes = 0;
+			_sumSlopesSquared = 0;
+			_isFirstCalculation = true;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
 
 			// Initialize indicators
 			_volumeMa = new SimpleMovingAverage
@@ -134,10 +144,6 @@ namespace StockSharp.Samples.Strategies
 			};
 
 			// Initialize statistics variables
-			_sampleCount = 0;
-			_sumSlopes = 0;
-			_sumSlopesSquared = 0;
-			_isFirstCalculation = true;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

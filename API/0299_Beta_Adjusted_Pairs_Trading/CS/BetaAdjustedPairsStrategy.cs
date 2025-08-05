@@ -168,6 +168,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_spreadHistory.Clear();
+			_inPosition = false;
+			_currentSpread = 0;
+			_averageSpread = 0;
+			_spreadStdDev = 0;
+			_entrySpread = 0;
+			_asset1Price = 0;
+			_asset2Price = 0;
+			_isLong = false;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -186,15 +201,6 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Asset2Portfolio is not specified.");
 
 			// Reset internal state
-			_spreadHistory.Clear();
-			_inPosition = false;
-			_currentSpread = 0;
-			_averageSpread = 0;
-			_spreadStdDev = 0;
-			_entrySpread = 0;
-			_asset1Price = 0;
-			_asset2Price = 0;
-			_isLong = false;
 
 			// Handle price updates for Asset1
 			SubscribeLevel1(Asset1)

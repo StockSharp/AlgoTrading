@@ -103,13 +103,12 @@ class ma_slope_breakout_strategy(Strategy):
     def stop_loss_percent(self, value):
         self._stop_loss_percent.Value = value
 
-    def OnStarted(self, time):
-        """Initialize indicators, chart, and position protection."""
-        super(ma_slope_breakout_strategy, self).OnStarted(time)
 
-        self._sma = SimpleMovingAverage()
-        self._sma.Length = self.ma_length
-
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(ma_slope_breakout_strategy, self).OnReseted()
         self._prev_ma_value = 0.0
         self._current_slope = 0.0
         self._avg_slope = 0.0
@@ -117,6 +116,14 @@ class ma_slope_breakout_strategy(Strategy):
         self._slopes = [0.0] * self.lookback_period
         self._current_index = 0
         self._is_initialized = False
+
+    def OnStarted(self, time):
+        """Initialize indicators, chart, and position protection."""
+        super(ma_slope_breakout_strategy, self).OnStarted(time)
+
+        self._sma = SimpleMovingAverage()
+        self._sma.Length = self.ma_length
+
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._sma, self.ProcessCandle).Start()

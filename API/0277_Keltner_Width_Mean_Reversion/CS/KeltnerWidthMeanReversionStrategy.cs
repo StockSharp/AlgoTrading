@@ -148,15 +148,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			_lastEma = default;
 			_lastAtr = default;
 			_lastChannelWidth = default;
 			_lastWidthAvg = default;
 			_lastWidthStdDev = default;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
 
 
 			// Initialize indicators

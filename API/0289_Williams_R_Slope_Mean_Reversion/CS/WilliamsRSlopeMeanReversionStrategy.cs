@@ -116,6 +116,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_sampleCount = 0;
+			_sumSlopes = 0;
+			_sumSlopesSquared = 0;
+			_isFirstCalculation = true;
+			_previousSlopeValue = 0;
+			_currentSlopeValue = 0;
+			_averageSlope = 0;
+			_slopeStdDev = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			// Initialize indicators
@@ -125,14 +139,6 @@ namespace StockSharp.Samples.Strategies
 			};
 
 			// Initialize statistics variables
-			_sampleCount = 0;
-			_sumSlopes = 0;
-			_sumSlopesSquared = 0;
-			_isFirstCalculation = true;
-			_previousSlopeValue = 0;
-			_currentSlopeValue = 0;
-			_averageSlope = 0;
-			_slopeStdDev = 0;
 
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);

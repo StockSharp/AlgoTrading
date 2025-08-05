@@ -139,9 +139,12 @@ class correlation_mean_reversion_strategy(Strategy):
             ]
         return []
 
-    def OnStarted(self, time):
-        super(correlation_mean_reversion_strategy, self).OnStarted(time)
 
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(correlation_mean_reversion_strategy, self).OnReseted()
         self._current_correlation = 0
         self._average_correlation = 0
         self._correlation_std_deviation = 0
@@ -149,6 +152,10 @@ class correlation_mean_reversion_strategy(Strategy):
         self._security2_last_price = 0
         self._security1_updated = False
         self._security2_updated = False
+
+    def OnStarted(self, time):
+        super(correlation_mean_reversion_strategy, self).OnStarted(time)
+
         self._security1_prices.Clear()
         self._security2_prices.Clear()
 

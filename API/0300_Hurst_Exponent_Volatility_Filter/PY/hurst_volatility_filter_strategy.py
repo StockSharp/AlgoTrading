@@ -106,13 +106,20 @@ class hurst_volatility_filter_strategy(Strategy):
         """See base class for details."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(hurst_volatility_filter_strategy, self).OnReseted()
+        self._is_long_position = False
+        self._position_entry_price = 0
+        self._average_atr = 0
+
     def OnStarted(self, time):
         super(hurst_volatility_filter_strategy, self).OnStarted(time)
 
         # Reset state
-        self._is_long_position = False
-        self._position_entry_price = 0
-        self._average_atr = 0
 
         # Create indicators
         self._sma = SimpleMovingAverage()
@@ -120,8 +127,8 @@ class hurst_volatility_filter_strategy(Strategy):
         self._atr = AverageTrueRange()
         self._atr.Length = self.ATRPeriod
         self._hurst_exponent = HurstExponent()
-        # Configure Hurst exponent displacement indicator
         self._hurst_exponent.Length = self.HurstPeriod
+        # Configure Hurst exponent displacement indicator
 
         # Subscribe to candles
         subscription = self.SubscribeCandles(self.CandleType)

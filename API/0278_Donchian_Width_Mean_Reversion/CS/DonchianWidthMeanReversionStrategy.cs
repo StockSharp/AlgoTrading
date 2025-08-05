@@ -110,6 +110,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_currentWidth = 0;
+			_prevWidth = 0;
+			_prevWidthAverage = 0;
+			_prevWidthStdDev = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -120,10 +130,6 @@ namespace StockSharp.Samples.Strategies
 			_widthStdDev = new StandardDeviation { Length = LookbackPeriod };
 			
 			// Reset stored values
-			_currentWidth = 0;
-			_prevWidth = 0;
-			_prevWidthAverage = 0;
-			_prevWidthStdDev = 0;
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);

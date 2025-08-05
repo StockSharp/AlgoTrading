@@ -98,6 +98,18 @@ class williams_r_slope_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(williams_r_slope_breakout_strategy, self).OnReseted()
+        self._prev_slope_value = 0
+        self._slope_avg = 0
+        self._slope_std_dev = 0
+        self._sum_slope = 0
+        self._sum_slope_squared = 0
+
     def OnStarted(self, time):
         super(williams_r_slope_breakout_strategy, self).OnStarted(time)
 
@@ -107,11 +119,6 @@ class williams_r_slope_breakout_strategy(Strategy):
         self._williams_r_slope = LinearRegression()
         self._williams_r_slope.Length = 2  # For calculating slope
 
-        self._prev_slope_value = 0
-        self._slope_avg = 0
-        self._slope_std_dev = 0
-        self._sum_slope = 0
-        self._sum_slope_squared = 0
         self._slope_values.clear()
 
         # Create subscription and bind indicator

@@ -135,17 +135,23 @@ class bollinger_width_mean_reversion_strategy(Strategy):
         """!! REQUIRED!! Returns securities and data types the strategy works with."""
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(bollinger_width_mean_reversion_strategy, self).OnReseted()
+        self._lastWidthAvg = 0.0
+        self._lastWidthStdDev = 0.0
+
     def OnStarted(self, time):
         super(bollinger_width_mean_reversion_strategy, self).OnStarted(time)
 
-        self._lastWidthAvg = 0.0
-        self._lastWidthStdDev = 0.0
 
         # Initialize indicators
         self._bollinger = BollingerBands()
         self._bollinger.Length = self.BollingerLength
         self._bollinger.Width = self.BollingerDeviation
-
         self._widthAvg = SimpleMovingAverage()
         self._widthAvg.Length = self.WidthLookbackPeriod
         self._widthStdDev = StandardDeviation()

@@ -118,14 +118,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_isLongPosition = false;
+			_positionEntryPrice = 0;
+			_averageAtr = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 			
 			// Reset state
-			_isLongPosition = false;
-			_positionEntryPrice = 0;
-			_averageAtr = 0;
 
 			// Create indicators
 			_sma = new() { Length = MAPeriod };

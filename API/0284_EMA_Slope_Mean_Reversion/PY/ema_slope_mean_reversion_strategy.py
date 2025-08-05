@@ -96,11 +96,12 @@ class ema_slope_mean_reversion_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(ema_slope_mean_reversion_strategy, self).OnStarted(time)
 
-        # Reset variables
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(ema_slope_mean_reversion_strategy, self).OnReseted()
         self._previousEmaValue = 0
         self._currentSlope = 0
         self._averageSlope = 0
@@ -108,6 +109,12 @@ class ema_slope_mean_reversion_strategy(Strategy):
         self._slopeCount = 0
         self._sumSlopes = 0
         self._sumSquaredDiff = 0
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(ema_slope_mean_reversion_strategy, self).OnStarted(time)
+
+        # Reset variables
 
         # Create EMA indicator
         ema = ExponentialMovingAverage()

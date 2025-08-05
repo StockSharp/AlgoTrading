@@ -105,6 +105,20 @@ class supertrend_distance_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(supertrend_distance_breakout_strategy, self).OnReseted()
+        self._avgDistanceLong = 0
+        self._stdDevDistanceLong = 0
+        self._avgDistanceShort = 0
+        self._stdDevDistanceShort = 0
+        self._lastLongDistance = 0
+        self._lastShortDistance = 0
+        self._samplesCount = 0
+
     def OnStarted(self, time):
         super(supertrend_distance_breakout_strategy, self).OnStarted(time)
 
@@ -114,13 +128,6 @@ class supertrend_distance_breakout_strategy(Strategy):
         self._supertrend.Length = self.SupertrendPeriod
         self._supertrend.Multiplier = self.SupertrendMultiplier
 
-        self._avgDistanceLong = 0
-        self._stdDevDistanceLong = 0
-        self._avgDistanceShort = 0
-        self._stdDevDistanceShort = 0
-        self._lastLongDistance = 0
-        self._lastShortDistance = 0
-        self._samplesCount = 0
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._supertrend, self.ProcessCandle).Start()

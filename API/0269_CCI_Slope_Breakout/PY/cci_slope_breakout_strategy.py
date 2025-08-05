@@ -95,6 +95,18 @@ class cci_slope_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+
+    def OnReseted(self):
+        """
+        Resets internal state when strategy is reset.
+        """
+        super(cci_slope_breakout_strategy, self).OnReseted()
+        self._prevCciSlopeValue = 0.0
+        self._slopeAvg = 0.0
+        self._slopeStdDev = 0.0
+        self._sumSlope = 0.0
+        self._sumSlopeSquared = 0.0
+
     def OnStarted(self, time):
         super(cci_slope_breakout_strategy, self).OnStarted(time)
 
@@ -104,11 +116,6 @@ class cci_slope_breakout_strategy(Strategy):
         self._cciSlope = LinearRegression()  # For calculating slope
         self._cciSlope.Length = 2
 
-        self._prevCciSlopeValue = 0.0
-        self._slopeAvg = 0.0
-        self._slopeStdDev = 0.0
-        self._sumSlope = 0.0
-        self._sumSlopeSquared = 0.0
         self._slopeValues.clear()
 
         # Create subscription and bind indicator
