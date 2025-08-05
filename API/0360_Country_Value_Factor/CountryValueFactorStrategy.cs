@@ -1,48 +1,78 @@
-// CountryValueFactorStrategy.cs
-// -----------------------------------------------------------------------------
-// Value factor within countries via CAPE (annual)
-// Rebalance frequency and data feeds stubbed; candle-trigger only.
-// -----------------------------------------------------------------------------
-// Date: 2 Aug 2025
-// -----------------------------------------------------------------------------
 using System;
 using System.Collections.Generic;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
+using System.Linq;
+
+using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Country value factor strategy based on CAPE ratio.
+	/// </summary>
 	public class CountryValueFactorStrategy : Strategy
 	{
-		// Parameters
-		private readonly StrategyParam<IEnumerable<Security>> _univ;
-		private readonly StrategyParam<decimal> _min;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<IEnumerable<Security>> _universe;
+		private readonly StrategyParam<decimal> _minTradeUsd;
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public decimal MinTradeUsd => _min.Value;
+		private readonly DataType _timeFrame = TimeSpan.FromDays(1).TimeFrame();
 
+		/// <summary>
+		/// Securities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade size in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minTradeUsd.Value;
+			set => _minTradeUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of <see cref="CountryValueFactorStrategy"/>.
+		/// </summary>
 		public CountryValueFactorStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_min = Param(nameof(MinTradeUsd), 200m);
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Trading securities collection", "General");
+
+			_minTradeUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimal trade size in USD", "General");
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, _tf));
-
-		protected override void OnStarted(DateTimeOffset t)
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			base.OnStarted(t);
-			var trig = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty");
-			SubscribeCandles(_tf, true, trig).Bind(c => OnDay(c.OpenTime.Date)).Start();
+			return Universe?.Select(s => (s, _timeFrame)) ?? Array.Empty<(Security, DataType)>();
 		}
 
-		private void OnDay(DateTime d)
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty.");
+
+			var trigger = Universe.First();
+
+			SubscribeCandles(_timeFrame, true, trigger)
+				.Bind(c => OnDay(c.OpenTime.Date))
+				.Start();
+		}
+
+		private void OnDay(DateTime date)
 		{
 			// TODO: implement factor logic. Placeholder keeps portfolio flat.
 		}
 	}
 }
+
