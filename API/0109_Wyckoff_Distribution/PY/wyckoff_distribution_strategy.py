@@ -100,6 +100,19 @@ class wyckoff_distribution_strategy(Strategy):
     def stop_loss_percent(self, value):
         self._stop_loss_percent.Value = value
 
+    def OnReseted(self):
+        super(wyckoff_distribution_strategy, self).OnReseted()
+        self._ma = None
+        self._volume_avg = None
+        self._highest = None
+        self._lowest = None
+        self._current_phase = self.WyckoffPhase.NONE
+        self._last_range_high = 0.0
+        self._last_range_low = 0.0
+        self._sideways_count = 0
+        self._upthrust_high = 0.0
+        self._position_opened = False
+
     def OnStarted(self, time):
         """Called when the strategy starts. Initializes indicators and subscriptions."""
         super(wyckoff_distribution_strategy, self).OnStarted(time)
@@ -113,13 +126,6 @@ class wyckoff_distribution_strategy(Strategy):
         self._highest.Length = self.highest_period
         self._lowest = Lowest()
         self._lowest.Length = self.highest_period
-
-        self._current_phase = self.WyckoffPhase.NONE
-        self._sideways_count = 0
-        self._position_opened = False
-        self._last_range_high = 0.0
-        self._last_range_low = 0.0
-        self._upthrust_high = 0.0
 
         # Create and setup subscription for candles
         subscription = self.SubscribeCandles(self.candle_type)

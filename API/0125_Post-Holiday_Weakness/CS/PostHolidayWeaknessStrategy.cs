@@ -84,12 +84,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_inPostHolidayPosition = false;
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_inPostHolidayPosition = false;
-
 			// Create a simple moving average indicator
 			var sma = new SimpleMovingAverage { Length = MaPeriod };
 			

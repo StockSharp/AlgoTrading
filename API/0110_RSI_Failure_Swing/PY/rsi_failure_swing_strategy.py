@@ -86,17 +86,20 @@ class rsi_failure_swing_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercent.Value = value
 
+    def OnReseted(self):
+        super(rsi_failure_swing_strategy, self).OnReseted()
+        self._rsi = None
+        self._prevRsiValue = 0.0
+        self._prevPrevRsiValue = 0.0
+        self._inPosition = False
+        self._positionSide = None
+
     def OnStarted(self, time):
         super(rsi_failure_swing_strategy, self).OnStarted(time)
 
         # Initialize indicators
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.RsiPeriod
-
-        self._prevRsiValue = 0.0
-        self._prevPrevRsiValue = 0.0
-        self._inPosition = False
-        self._positionSide = None
 
         # Create and setup subscription for candles
         subscription = self.SubscribeCandles(self.CandleType)

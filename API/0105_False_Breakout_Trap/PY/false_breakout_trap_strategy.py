@@ -94,13 +94,6 @@ class false_breakout_trap_strategy(Strategy):
 
     def OnStarted(self, time):
         super(false_breakout_trap_strategy, self).OnStarted(time)
-
-        self._lastHighestValue = 0.0
-        self._lastLowestValue = 0.0
-        self._breakoutDetected = False
-        self._breakoutSide = None
-        self._breakoutPrice = 0.0
-
         # Initialize indicators
         self._ma = SimpleMovingAverage()
         self._ma.Length = self.ma_period

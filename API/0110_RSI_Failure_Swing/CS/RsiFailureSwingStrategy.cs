@@ -105,6 +105,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_rsi = default;
+			_prevRsiValue = 0;
+			_prevPrevRsiValue = 0;
+			_inPosition = false;
+			_positionSide = default;
+		}
+
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -112,10 +125,6 @@ namespace StockSharp.Samples.Strategies
 			// Initialize indicators
 			_rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 			
-			_prevRsiValue = 0;
-			_prevPrevRsiValue = 0;
-			_inPosition = false;
-			_positionSide = default;
 			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);

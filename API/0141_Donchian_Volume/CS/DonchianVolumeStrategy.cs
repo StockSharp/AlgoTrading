@@ -108,12 +108,16 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_averageVolume = 0;
+		}
+
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_averageVolume = 0;
-
 			// Create indicators
 			var donchianHigh = new Highest
 			{

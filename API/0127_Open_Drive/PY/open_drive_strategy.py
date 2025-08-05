@@ -72,12 +72,13 @@ class open_drive_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(open_drive_strategy, self).OnReseted()
+        self._prev_close_price = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(open_drive_strategy, self).OnStarted(time)
-
-        self._prev_close_price = 0.0
-
         # Create indicators
         sma = SimpleMovingAverage()
         sma.Length = self.ma_period
