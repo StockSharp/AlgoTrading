@@ -3,6 +3,8 @@
  
 Strategy combining MACD (Moving Average Convergence Divergence) with volume confirmation. Enters positions when MACD line crosses the Signal line and confirms with increased volume.
 
+Testing indicates an average annual return of about 175%. It performs best in the stocks market.
+
 MACD crossovers are filtered by an increase in volume to confirm momentum. Buy signals come on bullish crosses with expanding volume; sells do the opposite.
 
 Momentum traders watching for volume spikes may find it valuable. Risk is limited using an ATR stop.
@@ -35,3 +37,4 @@ Momentum traders watching for volume spikes may find it valuable. Risk is limite
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

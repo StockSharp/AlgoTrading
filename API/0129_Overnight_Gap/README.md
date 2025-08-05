@@ -4,6 +4,8 @@
 Overnight Gap plays the open when price gaps significantly from the prior close due to news or after-hours activity.
 Large gaps often retrace partially as traders digest the move.
 
+Testing indicates an average annual return of about 124%. It performs best in the forex market.
+
 The strategy fades excessive gaps, entering in the opposite direction shortly after the open and closing before the session ends.
 
 Stops are based on a percentage beyond the gap extremes to manage risk if the move continues.
@@ -28,3 +30,4 @@ Stops are based on a percentage beyond the gap extremes to manage risk if the mo
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

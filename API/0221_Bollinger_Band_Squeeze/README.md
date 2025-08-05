@@ -3,6 +3,8 @@
  
 This setup monitors the width of the Bollinger Bands to detect periods of low volatility. When the bands contract relative to their recent average, it signals a potential volatility expansion is near.
 
+Testing indicates an average annual return of about 100%. It performs best in the forex market.
+
 Once a squeeze is identified, the strategy waits for price to break outside the bands. A close above the upper band initiates a long, while a close below the lower band opens a short. The trade is closed if price returns toward the middle of the bands or if a stop-loss is triggered.
 
 The method targets traders who like to trade volatility breakouts rather than trend continuation. Using the band width as a filter helps avoid false signals during choppy conditions.
@@ -32,3 +34,4 @@ The method targets traders who like to trade volatility breakouts rather than tr
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+

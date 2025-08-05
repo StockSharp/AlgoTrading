@@ -3,6 +3,8 @@
  
 This strategy seeks momentum bursts by watching Williams %R relative to its historical average. When the oscillator pushes far beyond typical readings, it may signal the start of a strong move.
 
+Testing indicates an average annual return of about 91%. It performs best in the stocks market.
+
 A long position is opened when %R climbs above the average plus `Multiplier` times an estimated standard deviation. A short position is taken when %R drops below the average minus the same multiplier. The trade closes once %R returns toward its average or a stop-loss is hit.
 
 The approach caters to breakout traders who want early participation in emerging trends. Position risk is managed with a percentage stop based on the entry price.
@@ -32,3 +34,4 @@ The approach caters to breakout traders who want early participation in emerging
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+

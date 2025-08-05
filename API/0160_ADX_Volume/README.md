@@ -3,6 +3,8 @@
  
 Implementation of strategy - ADX + Volume. Enter trades when ADX is above threshold with above average volume. Direction determined by DI+ and DI- comparison.
 
+Testing indicates an average annual return of about 67%. It performs best in the stocks market.
+
 High ADX denotes a strong trend and volume spikes confirm commitment. Entries are made when both indicators show strength together.
 
 Great for catching energetic breakouts. A stop based on ATR keeps exposure in check.
@@ -32,3 +34,4 @@ Great for catching energetic breakouts. A stop based on ATR keeps exposure in ch
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

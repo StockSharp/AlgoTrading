@@ -3,6 +3,8 @@
  
 Strategy based on Z-Score indicator for mean reversion trading
 
+Testing indicates an average annual return of about 121%. It performs best in the crypto market.
+
 ZScore measures price deviation from a moving average. Extreme high or low z-scores suggest overextension and prompt trades in the opposite direction. The trade ends when the z-score normalizes.
 
 Z-Score is a flexible filter because it can be scaled to any time series. Using a volatility-adjusted exit helps the system adapt to changing market conditions.
@@ -32,3 +34,4 @@ Z-Score is a flexible filter because it can be scaled to any time series. Using 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

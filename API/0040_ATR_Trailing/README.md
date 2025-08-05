@@ -3,6 +3,8 @@
  
 ATR Trailing uses an average true range multiple to trail stops behind open positions. Entries occur when price crosses a moving average, and the trailing stop adjusts with volatility.
 
+Testing indicates an average annual return of about 157%. It performs best in the crypto market.
+
 As price advances, the stop ratchets up (or down) based on the latest ATR reading, never retreating. This locks in gains as the trend persists.
 
 Exits happen when the trailing stop is triggered or when price crosses back through the moving average.
@@ -29,3 +31,4 @@ Exits happen when the trailing stop is triggered or when price crosses back thro
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

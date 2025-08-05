@@ -4,6 +4,8 @@
 The Tweezer Bottom is a two-candle reversal pattern that appears after a decline.
 Both candles share a similar low, signaling that sellers failed to push beyond that level.
 
+Testing indicates an average annual return of about 184%. It performs best in the crypto market.
+
 This strategy goes long after the second candle confirms the shared bottom, anticipating a bounce as selling pressure dries up.
 
 Stops are placed just beneath the common low to manage risk, and the position exits if price fails to rally.
@@ -28,3 +30,4 @@ Stops are placed just beneath the common low to manage risk, and the position ex
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

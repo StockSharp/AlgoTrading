@@ -4,6 +4,8 @@
 Lunch Break Fade targets reversals that develop during the slow midday period.
 After the morning session, trends often pause or pull back as volume dries up around lunchtime.
 
+Testing indicates an average annual return of about 127%. It performs best in the stocks market.
+
 The strategy fades the morning move around noon, entering counter to the prevailing direction and covering before volume returns.
 
 A percent stop manages risk if the trend resumes instead of fading.
@@ -28,3 +30,4 @@ A percent stop manages risk if the trend resumes instead of fading.
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

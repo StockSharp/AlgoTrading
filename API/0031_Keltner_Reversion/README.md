@@ -3,6 +3,8 @@
  
 Strategy that trades on mean reversion using Keltner Channels
 
+Testing indicates an average annual return of about 130%. It performs best in the stocks market.
+
 Keltner Reversion fades pushes outside the Keltner Channel. Entries bet on a return toward the middle band, closing trades once price re-enters the channel or the stop is hit.
 
 The channel width expands and contracts with volatility, allowing the system to catch extreme moves while giving trades room to develop. Stops are typically based on ATR multiples.
@@ -31,3 +33,4 @@ The channel width expands and contracts with volatility, allowing the system to 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

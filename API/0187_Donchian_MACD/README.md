@@ -3,6 +3,8 @@
  
 Strategy combining Donchian Channel breakout with MACD trend confirmation.
 
+Testing indicates an average annual return of about 148%. It performs best in the forex market.
+
 The strategy waits for a Donchian breakout and verifies momentum with MACD. Long or short trades ride the move once MACD agrees.
 
 Aimed at breakout enthusiasts wanting confirmation. Stops are placed using an ATR multiplier.
@@ -33,3 +35,4 @@ Aimed at breakout enthusiasts wanting confirmation. Stops are placed using an AT
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

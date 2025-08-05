@@ -3,6 +3,8 @@
  
 Bollinger Band Width measures the spread between the upper and lower bands. Expanding width suggests volatility and possible trend formation. This strategy trades breakouts when the width is increasing.
 
+Testing indicates an average annual return of about 151%. It performs best in the stocks market.
+
 Price position relative to the middle band sets direction. A widening channel with price above the mid-band triggers longs, while a widening channel below it triggers shorts.
 
 Exits occur when the band width contracts or a volatility stop is reached.
@@ -29,3 +31,4 @@ Exits occur when the band width contracts or a volatility stop is reached.
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

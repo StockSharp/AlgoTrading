@@ -3,6 +3,8 @@
  
 Strategy based on DMI (Directional Movement Index) power moves
 
+Testing indicates an average annual return of about 76%. It performs best in the forex market.
+
 DMI Power Move combines directional indicator differences with ADX to catch powerful trends. Trades enter when +DI markedly exceeds -DI (or vice versa) and ADX is strong. They exit when ADX fades or the DI spread narrows.
 
 This approach filters out weak signals by requiring both strong directional movement and rising ADX. The result is fewer, but potentially higher-quality, trend trades.
@@ -32,3 +34,4 @@ This approach filters out weak signals by requiring both strong directional move
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

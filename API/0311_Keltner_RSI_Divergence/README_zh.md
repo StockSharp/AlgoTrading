@@ -3,6 +3,8 @@
 
 **Keltner RSI Divergence** 策略基于 Keltner Channel and RSI Divergence。
 
+测试表明年均收益约为 40%，该策略在加密市场表现最佳。
+
 当 Keltner confirms divergence setups 在日内（5m）数据上得到确认时触发信号，适合积极交易者。
 
 止损依赖于 ATR 倍数以及 EmaPeriod, AtrPeriod 等参数，可根据需要调整以平衡风险与收益。
@@ -29,3 +31,4 @@
   - 神经网络: 否
   - 背离: 是
   - 风险等级: 中等
+

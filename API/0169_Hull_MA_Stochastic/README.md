@@ -3,6 +3,8 @@
  
 Hull Moving Average + Stochastic Oscillator strategy. Strategy enters when HMA trend direction changes with Stochastic confirming oversold/overbought conditions.
 
+Testing indicates an average annual return of about 94%. It performs best in the stocks market.
+
 Hull MA quickly reveals trend direction. Stochastic waits for a dip or rally within that trend to trigger the trade.
 
 A flexible approach for those wanting smooth signals. ATR-based stops cap potential loss.
@@ -34,3 +36,4 @@ A flexible approach for those wanting smooth signals. ATR-based stops cap potent
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

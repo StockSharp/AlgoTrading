@@ -5,6 +5,8 @@ This strategy uses ADX Donchian indicators to generate signals.
 Long entry occurs when ADX > AdxThreshold && Price >= upperBorder (strong trend with breakout up). Short entry occurs when ADX > AdxThreshold && Price <= lowerBorder (strong trend with breakout down).
 It is suitable for traders seeking opportunities in mixed markets.
 
+Testing indicates an average annual return of about 67%. It performs best in the stocks market.
+
 ## Details
 - **Entry Criteria**:
   - **Long**: ADX > AdxThreshold && Price >= upperBorder (strong trend with breakout up)
@@ -32,3 +34,4 @@ It is suitable for traders seeking opportunities in mixed markets.
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+

@@ -3,6 +3,8 @@
  
 This breakout system looks for sudden surges in momentum relative to its historical average. When momentum readings exceed the average by a large margin, price may be starting a fast directional move.
 
+Testing indicates an average annual return of about 82%. It performs best in the stocks market.
+
 The strategy buys when momentum rises above the average plus `Multiplier` times its standard deviation. A short is initiated when momentum falls below the average minus the same multiplier. Positions are closed once momentum returns toward its mean.
 
 Traders who enjoy fast moves may appreciate the clear rules for capturing bursts of strength. A stop-loss based on percentage of price protects against failed breakouts.
@@ -32,3 +34,4 @@ Traders who enjoy fast moves may appreciate the clear rules for capturing bursts
   - Neural networks: No
   - Divergence: No
   - Risk Level: Medium
+

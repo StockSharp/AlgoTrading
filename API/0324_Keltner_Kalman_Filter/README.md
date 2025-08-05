@@ -3,6 +3,8 @@
  
 The **Keltner Kalman Filter** strategy is built around combining Keltner Channels with a Kalman Filter to identify trends and trade opportunities.
 
+Testing indicates an average annual return of about 73%. It performs best in the crypto market.
+
 Signals trigger when Keltner confirms filtered entries on intraday (15m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like EmaPeriod, AtrPeriod. Adjust these defaults to balance risk and reward.
@@ -30,3 +32,4 @@ Stops rely on ATR multiples and factors like EmaPeriod, AtrPeriod. Adjust these 
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

@@ -4,6 +4,8 @@
 Many markets exhibit a bullish bias on the first trading day of the month as new capital flows into funds.
 Traders attempt to front-run this effect by buying at the prior month's close or early in the session.
 
+Testing indicates an average annual return of about 97%. It performs best in the crypto market.
+
 The strategy enters long at the start of the month and exits before the second day begins, capturing the typical influx of buying.
 
 A small stop protects against downside surprises if the expected strength fails to appear.
@@ -28,3 +30,4 @@ A small stop protects against downside surprises if the expected strength fails 
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

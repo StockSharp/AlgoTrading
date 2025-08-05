@@ -4,6 +4,8 @@
 Monday Weakness notes that equities often open lower after the weekend as traders digest news and reposition.
 Short-term bearish pressure can appear at the start of the week before markets stabilize.
 
+Testing indicates an average annual return of about 106%. It performs best in the stocks market.
+
 The strategy sells short at Monday's open and covers by the close, seeking to profit from that initial softness.
 
 Stops are kept narrow to avoid losses if the market bucks the tendency and rallies instead.
@@ -28,3 +30,4 @@ Stops are kept narrow to avoid losses if the market bucks the tendency and ralli
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

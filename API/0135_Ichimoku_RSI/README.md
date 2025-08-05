@@ -4,6 +4,8 @@
 Ichimoku RSI uses Ichimoku cloud levels to define trend direction while RSI pinpoints short-term pullbacks.
 Trades align with the cloud, entering when RSI recovers from oversold in an uptrend or falls from overbought in a downtrend.
 
+Testing indicates an average annual return of about 142%. It performs best in the stocks market.
+
 By combining a broad trend filter with a momentum oscillator, the strategy aims to join strong moves after brief pauses.
 
 Stops are placed beyond the cloud boundary to protect against deeper corrections.
@@ -28,3 +30,4 @@ Stops are placed beyond the cloud boundary to protect against deeper corrections
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

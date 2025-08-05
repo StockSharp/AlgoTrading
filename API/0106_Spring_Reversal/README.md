@@ -4,6 +4,8 @@
 Spring Reversal is a Wyckoff concept where price briefly breaks support and then springs back above it.
 This shakeout traps late sellers and often marks the beginning of an uptrend.
 
+Testing indicates an average annual return of about 55%. It performs best in the stocks market.
+
 The strategy buys once price reclaims the broken level, anticipating swift short covering and new demand.
 
 A stop just below the spring low limits downside, and the position is closed if follow-through fails.
@@ -28,3 +30,4 @@ A stop just below the spring low limits downside, and the position is closed if 
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

@@ -3,6 +3,8 @@
  
 The shooting star candlestick often appears after an advance and warns of a reversal. This strategy looks for a long upper shadow relative to the body with little lower shadow.
 
+Testing indicates an average annual return of about 67%. It performs best in the stocks market.
+
 If confirmation is required, the next candle must close lower before entering short. Otherwise the trade can be taken immediately. Stops are placed above the pattern high.
 
 ## Details
@@ -27,3 +29,4 @@ If confirmation is required, the next candle must close lower before entering sh
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

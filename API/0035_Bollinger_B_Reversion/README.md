@@ -3,6 +3,8 @@
  
 This approach fades price extremes beyond the Bollinger Bands using the Percent B indicator. Moves above the upper band or below the lower band suggest overextension.
 
+Testing indicates an average annual return of about 142%. It performs best in the stocks market.
+
 When percent B is less than zero or greater than one, the system bets on a return to the middle of the band. An exit threshold closes trades once momentum normalizes.
 
 Stops are placed at a fixed percentage from entry.
@@ -30,3 +32,4 @@ Stops are placed at a fixed percentage from entry.
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

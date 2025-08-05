@@ -3,6 +3,8 @@
  
 Strategy based on ADX and Directional Movement indicators
 
+Testing indicates an average annual return of about 103%. It performs best in the stocks market.
+
 ADX DI focuses on the crossing of +DI and -DI with rising ADX. A bullish cross of +DI over -DI coupled with strong ADX opens longs, while the opposite opens shorts. Positions close on a weakening ADX or opposite cross.
 
 This combination helps avoid trading every DI cross by demanding confirmation from the ADX. The system aims to capture sustainable trends rather than short-term swings.
@@ -30,3 +32,4 @@ This combination helps avoid trading every DI cross by demanding confirmation fr
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

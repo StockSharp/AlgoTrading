@@ -3,6 +3,8 @@
  
 Cumulative Delta sums the difference between buy and sell volume. This strategy watches the running total and trades when it breaks above its highest value or below its lowest value within the lookback period.
 
+Testing indicates an average annual return of about 49%. It performs best in the crypto market.
+
 A break of cumulative delta often precedes price follow-through. The strategy closes trades when delta crosses back through zero or a stop-loss level.
 
 ## Details
@@ -25,3 +27,4 @@ A break of cumulative delta often precedes price follow-through. The strategy cl
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

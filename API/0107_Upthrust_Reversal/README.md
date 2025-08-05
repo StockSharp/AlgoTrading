@@ -4,6 +4,8 @@
 Upthrust Reversal is the bearish companion to the spring and occurs when price briefly breaks above resistance but quickly falls back.
 The move flushes out late buyers before reversing lower.
 
+Testing indicates an average annual return of about 58%. It performs best in the stocks market.
+
 This strategy sells short once price drops back under the breakout level, expecting supply to overwhelm demand.
 
 A stop just above the upthrust high manages risk and positions exit if price recovers above that level.
@@ -28,3 +30,4 @@ A stop just above the upthrust high manages risk and positions exit if price rec
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

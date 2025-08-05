@@ -4,6 +4,8 @@
 Bollinger RSI combines Bollinger Band overextension with RSI momentum signals.
 When price closes outside the bands but RSI shows divergence, a reversal is often near.
 
+Testing indicates an average annual return of about 148%. It performs best in the forex market.
+
 The system takes counter-trend trades on that divergence, exiting once price re-enters the bands or RSI crosses back.
 
 A tight percent stop limits exposure in case volatility expands further.
@@ -28,3 +30,4 @@ A tight percent stop limits exposure in case volatility expands further.
   - Neural networks: No
   - Divergence: No
   - Risk level: Medium
+

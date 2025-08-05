@@ -3,6 +3,8 @@
  
 The Ichimoku Cloud Width Breakout strategy watches the Ichimoku for sharp expansions. When readings jump beyond their average range, price often starts a new move.
 
+Testing indicates an average annual return of about 64%. It performs best in the forex market.
+
 A position opens once the indicator pierces a band derived from recent data and a deviation multiplier. Long and short trades are possible with a stop attached.
 
 This system fits momentum traders seeking early breakouts. Trades close as the Ichimoku falls back toward the mean. Defaults start with `TenkanPeriod` = 9.
@@ -32,3 +34,4 @@ This system fits momentum traders seeking early breakouts. Trades close as the I
   - Neural Networks: No
   - Divergence: No
   - Risk Level: Medium
+

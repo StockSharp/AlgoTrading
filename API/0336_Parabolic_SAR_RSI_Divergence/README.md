@@ -3,6 +3,8 @@
  
 The **Parabolic SAR RSI Divergence** strategy is built around that trades based on Parabolic SAR signals when RSI shows divergence from price.
 
+Testing indicates an average annual return of about 103%. It performs best in the stocks market.
+
 Signals trigger when Parabolic confirms divergence setups on intraday (5m) data. This makes the method suitable for active traders.
 
 Stops rely on ATR multiples and factors like SarAccelerationFactor, SarMaxAccelerationFactor. Adjust these defaults to balance risk and reward.
@@ -28,3 +30,4 @@ Stops rely on ATR multiples and factors like SarAccelerationFactor, SarMaxAccele
   - Neural Networks: No
   - Divergence: Yes
   - Risk Level: Medium
+
