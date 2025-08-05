@@ -30,7 +30,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _window;
 		private readonly StrategyParam<int> _topN;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>
 		/// Futures contracts to evaluate.
@@ -67,6 +67,15 @@ namespace StockSharp.Samples.Strategies
 			get => _minUsd.Value;
 			set => _minUsd.Value = value;
 		}
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		#endregion
 
 		// rolling windows of prices
@@ -94,10 +103,12 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetGreaterThanZero()
 				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
-			Futures.Select(f => (f, _tf));
+			Futures.Select(f => (f, CandleType));
 
 		protected override void OnStarted(DateTimeOffset time)
 		{

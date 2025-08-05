@@ -27,7 +27,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _entry;
 		private readonly StrategyParam<decimal> _exit;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>
 		/// Securities pair used for arbitrage.
@@ -64,6 +64,15 @@ namespace StockSharp.Samples.Strategies
 			get => _minUsd.Value;
 			set => _minUsd.Value = value;
 		}
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		#endregion
 
 		private Security _a, _b;
@@ -82,6 +91,8 @@ namespace StockSharp.Samples.Strategies
 
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -92,8 +103,8 @@ namespace StockSharp.Samples.Strategies
 
 			_a = Pair.ElementAt(0);
 			_b = Pair.ElementAt(1);
-			yield return (_a, _tf);
-			yield return (_b, _tf);
+			yield return (_a, CandleType);
+			yield return (_b, CandleType);
 		}
 
 		/// <inheritdoc />
@@ -113,7 +124,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Use first ticker's candle as daily trigger
-			SubscribeCandles(_tf, true, _a)
+			SubscribeCandles(CandleType, true, _a)
 				.Bind(c => TriggerDaily())
 				.Start();
 		}

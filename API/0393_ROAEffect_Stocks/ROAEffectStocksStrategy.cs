@@ -24,7 +24,16 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
 		private readonly StrategyParam<int> _decile;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		private readonly Dictionary<Security, decimal> _w = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
@@ -69,12 +78,14 @@ namespace StockSharp.Samples.Strategies
 
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			return Universe.Select(s => (s, _tf));
+			return Universe.Select(s => (s, CandleType));
 		}
 
 		/// <inheritdoc />
@@ -86,7 +97,7 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Universe cannot be empty.");
 
 			var trig = Universe.First();
-			SubscribeCandles(_tf, true, trig)
+			SubscribeCandles(CandleType, true, trig)
 				.Bind(c => ProcessCandle(c, trig))
 				.Start();
 		}
