@@ -19,6 +19,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Skewness-based commodity strategy.
+	/// Longs negatively skewed futures and shorts positively skewed ones.
+	/// </summary>
 	public class SkewnessCommodityStrategy : Strategy
 	{
 		#region Parameters
@@ -28,10 +32,41 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Futures { get => _futures.Value; set => _futures.Value = value; }
-		public int WindowDays => _window.Value;
-		public int TopN => _topN.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Futures contracts to evaluate.
+		/// </summary>
+		public IEnumerable<Security> Futures
+		{
+			get => _futures.Value;
+			set => _futures.Value = value;
+		}
+
+		/// <summary>
+		/// Window length in days for skewness calculation.
+		/// </summary>
+		public int WindowDays
+		{
+			get => _window.Value;
+			set => _window.Value = value;
+		}
+
+		/// <summary>
+		/// Number of contracts per side to trade.
+		/// </summary>
+		public int TopN
+		{
+			get => _topN.Value;
+			set => _topN.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 		#endregion
 
 		// rolling windows of prices
@@ -40,12 +75,25 @@ namespace StockSharp.Samples.Strategies
 		private DateTime _lastProcessed = DateTime.MinValue;
 		private readonly Dictionary<Security, decimal> _weight = new();
 
+		/// <summary>
+		/// Initializes strategy parameters.
+		/// </summary>
 		public SkewnessCommodityStrategy()
 		{
-			_futures = Param<IEnumerable<Security>>(nameof(Futures), Array.Empty<Security>());
-			_window = Param(nameof(WindowDays), 120);
-			_topN = Param(nameof(TopN), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_futures = Param<IEnumerable<Security>>(nameof(Futures), Array.Empty<Security>())
+				.SetDisplay("Futures", "Contracts to analyze", "General");
+
+			_window = Param(nameof(WindowDays), 120)
+				.SetGreaterThanZero()
+				.SetDisplay("Window Days", "Window length for skewness", "Parameters");
+
+			_topN = Param(nameof(TopN), 5)
+				.SetGreaterThanZero()
+				.SetDisplay("Top N", "Number of contracts per side", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 		}
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() =>
@@ -54,6 +102,9 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			if (Futures == null || !Futures.Any())
+				throw new InvalidOperationException("Futures set is empty");
 
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{

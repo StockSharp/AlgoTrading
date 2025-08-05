@@ -16,6 +16,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Small-cap premium strategy.
+	/// Longs small-cap stocks and shorts large-cap stocks.
+	/// </summary>
 	public class SmallCapPremiumStrategy : Strategy
 	{
 		#region Params
@@ -24,20 +28,53 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
 
-		public IEnumerable<Security> Universe { get => _universe.Value; set => _universe.Value = value; }
-		public int Quintile => _quint.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Universe of stocks to rank by market capitalization.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _universe.Value;
+			set => _universe.Value = value;
+		}
+
+		/// <summary>
+		/// Number of buckets to split universe into.
+		/// </summary>
+		public int Quintile
+		{
+			get => _quint.Value;
+			set => _quint.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 		#endregion
 
 		private readonly Dictionary<Security, decimal> _weights = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes strategy parameters.
+		/// </summary>
 		public SmallCapPremiumStrategy()
 		{
-			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_quint = Param(nameof(Quintile), 5);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Stocks to rank", "General");
+
+			_quint = Param(nameof(Quintile), 5)
+				.SetGreaterThanZero()
+				.SetDisplay("Quintiles", "Number of buckets", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
@@ -46,8 +83,11 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
-			var trigger = Universe.FirstOrDefault() ??
-						  throw new InvalidOperationException("Universe is empty");
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty");
+
+			var trigger = Universe.First();
 
 			SubscribeCandles(_tf, true, trigger)
 				.Bind(c => ProcessCandle(c, trigger))
