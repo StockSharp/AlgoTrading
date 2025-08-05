@@ -16,6 +16,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Longs commodities with highest 12-month momentum (skipping last month).
+	/// Rebalances on the first trading day of each month.
+	/// </summary>
 	public class CommodityMomentumStrategy : Strategy
 	{
 		#region Params
@@ -23,10 +27,41 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _topN;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int TopN => _topN.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-		public DataType CandleType => _tf.Value;
+		/// <summary>
+		/// Universe of commodities to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Number of top momentum commodities to hold.
+		/// </summary>
+		public int TopN
+		{
+			get => _topN.Value;
+			set => _topN.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum USD amount per trade.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Candle type used for calculations.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
 		#endregion
 
 		private readonly Dictionary<Security, RollingWin> _px = new();
@@ -35,18 +70,27 @@ namespace StockSharp.Samples.Strategies
 
 		public CommodityMomentumStrategy()
 		{
+			// Universe of commodities to trade.
 			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
+			// Number of top commodities to hold.
 			_topN = Param(nameof(TopN), 5);
+			// Minimum USD amount for a trade.
 			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			// Candle type for calculations.
 			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame());
 		}
 
+		/// <inheritdoc />
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
 			Universe.Select(s => (s, CandleType));
 
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{
 				_px[s] = new RollingWin(252 + 1);
@@ -120,15 +164,37 @@ namespace StockSharp.Samples.Strategies
 			var price = GetLatestPrice(s);
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
-			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ComMom" });
+			RegisterOrder(new Order
+				{
+					Security = s,
+					Portfolio = Portfolio,
+					Side = diff > 0 ? Sides.Buy : Sides.Sell,
+					Volume = Math.Abs(diff),
+					Type = OrderTypes.Market,
+					Comment = "ComMom"
+				});
 		}
 
 		private class RollingWin
 		{
-			private readonly Queue<decimal> _q = new(); private readonly int _n;
-			public RollingWin(int n) { _n = n; }
+			private readonly Queue<decimal> _q = new();
+			private readonly int _n;
+
+			public RollingWin(int n)
+			{
+				_n = n;
+			}
+
 			public bool Full => _q.Count == _n;
-			public void Add(decimal p) { if (_q.Count == _n) _q.Dequeue(); _q.Enqueue(p); }
+
+			public void Add(decimal p)
+			{
+				if (_q.Count == _n)
+					_q.Dequeue();
+
+				_q.Enqueue(p);
+			}
+
 			public decimal[] Data => _q.ToArray();
 		}
 	}
