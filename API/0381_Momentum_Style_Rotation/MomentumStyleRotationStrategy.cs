@@ -24,7 +24,6 @@ namespace StockSharp.Samples.Strategies
 		#region Params
 
 		private readonly StrategyParam<IEnumerable<Security>> _factors;
-		private readonly StrategyParam<Security> _market;
 		private readonly StrategyParam<int> _look;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
@@ -34,13 +33,6 @@ namespace StockSharp.Samples.Strategies
 		{
 			get => _factors.Value;
 			set => _factors.Value = value;
-		}
-
-		/// <summary>Benchmark market ETF.</summary>
-		public Security MarketETF
-		{
-			get => _market.Value;
-			set => _market.Value = value;
 		}
 
 		/// <summary>Performance lookback in days.</summary>
@@ -75,9 +67,6 @@ namespace StockSharp.Samples.Strategies
 			_factors = Param<IEnumerable<Security>>(nameof(FactorETFs), Array.Empty<Security>())
 				.SetDisplay("Factor ETFs", "List of factor ETFs", "Universe");
 
-			_market = Param<Security>(nameof(MarketETF), null)
-				.SetDisplay("Market ETF", "Benchmark ETF", "Universe");
-
 			_look = Param(nameof(LookbackDays), 63)
 				.SetDisplay("Lookback", "Performance lookback in days", "Parameters");
 
@@ -93,8 +82,8 @@ namespace StockSharp.Samples.Strategies
 			foreach (var s in FactorETFs)
 				yield return (s, CandleType);
 
-			if (MarketETF != null)
-				yield return (MarketETF, CandleType);
+			if (Security != null)
+				yield return (Security, CandleType);
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
@@ -104,7 +93,7 @@ namespace StockSharp.Samples.Strategies
 			if (FactorETFs == null || !FactorETFs.Any())
 				throw new InvalidOperationException("FactorETFs cannot be empty.");
 
-			if (MarketETF == null)
+			if (Security == null)
 				throw new InvalidOperationException("MarketETF cannot be null.");
 
 			foreach (var (s, tf) in GetWorkingSecurities())

@@ -13,19 +13,9 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class BitcoinIntradaySeasonalityStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _btc;
 		private readonly StrategyParam<int[]> _hoursLong;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromHours(1).TimeFrame();
-
-		/// <summary>
-		/// Bitcoin security to trade.
-		/// </summary>
-		public Security BTC
-		{
-			get => _btc.Value;
-			set => _btc.Value = value;
-		}
 
 		/// <summary>
 		/// UTC hours when the strategy holds a long position.
@@ -52,10 +42,6 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public BitcoinIntradaySeasonalityStrategy()
 		{
-			// Bitcoin security.
-			_btc = Param<Security>(nameof(BTC), null)
-				.SetDisplay("BTC Security", "Security representing Bitcoin", "General");
-
 			// Hours to stay long (UTC).
 			_hoursLong = Param(nameof(HoursLong), new[] { 0, 1, 2, 3 })
 				.SetDisplay("Long Hours", "UTC hours when the strategy stays long", "General");
@@ -69,10 +55,10 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			if (BTC == null)
+			if (Security == null)
 				throw new InvalidOperationException("BTC security not set.");
 
-			return new[] { (BTC, _tf) };
+			return new[] { (Security, _tf) };
 		}
 
 		/// <inheritdoc />
@@ -83,11 +69,11 @@ namespace StockSharp.Samples.Strategies
 			if (HoursLong == null || HoursLong.Length == 0)
 				throw new InvalidOperationException("HoursLong cannot be empty.");
 
-			if (BTC == null)
+			if (Security == null)
 				throw new InvalidOperationException("BTC security not set.");
 
-			SubscribeCandles(_tf, true, BTC)
-				.Bind(c => ProcessCandle(c, BTC))
+			SubscribeCandles(_tf, true, Security)
+				.Bind(c => ProcessCandle(c, Security))
 				.Start();
 		}
 
@@ -109,17 +95,17 @@ namespace StockSharp.Samples.Strategies
 			var inSeason = HoursLong.Contains(hour);
 
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var price = GetLatestPrice(BTC);
+			var price = GetLatestPrice(Security);
 
 			var tgt = inSeason && price > 0 ? portfolioValue / price : 0m;
-			var diff = tgt - PositionBy(BTC);
+			var diff = tgt - PositionBy(Security);
 
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 
 			RegisterOrder(new Order
 			{
-				Security = BTC,
+				Security = Security,
 				Portfolio = Portfolio,
 				Side = diff > 0 ? Sides.Buy : Sides.Sell,
 				Volume = Math.Abs(diff),

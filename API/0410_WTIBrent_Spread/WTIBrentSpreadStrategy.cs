@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<Security> _brent;
 		private readonly StrategyParam<int> _ma;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 		private readonly Queue<decimal> _spr = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
@@ -63,6 +63,15 @@ namespace StockSharp.Samples.Strategies
 			set => _minUsd.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		public WTIBrentSpreadStrategy()
 		{
 			_wti = Param<Security>(nameof(WTI), null)
@@ -76,6 +85,9 @@ namespace StockSharp.Samples.Strategies
 
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		/// <inheritdoc />
@@ -84,8 +96,8 @@ namespace StockSharp.Samples.Strategies
 			if (WTI == null || Brent == null)
 				throw new InvalidOperationException("WTI and Brent must be set.");
 
-			yield return (WTI, _tf);
-			yield return (Brent, _tf);
+			yield return (WTI, CandleType);
+			yield return (Brent, CandleType);
 		}
 
 		/// <inheritdoc />
@@ -95,8 +107,8 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("WTI and Brent must be set.");
 
 			base.OnStarted(t);
-			SubscribeCandles(_tf, true, WTI).Bind(c => ProcessCandle(c, WTI)).Start();
-			SubscribeCandles(_tf, true, Brent).Bind(c => ProcessCandle(c, Brent)).Start();
+			SubscribeCandles(CandleType, true, WTI).Bind(c => ProcessCandle(c, WTI)).Start();
+			SubscribeCandles(CandleType, true, Brent).Bind(c => ProcessCandle(c, Brent)).Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)

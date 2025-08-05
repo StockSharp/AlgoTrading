@@ -21,7 +21,6 @@ namespace StockSharp.Samples.Strategies
 	public class SmartFactorsMomentumMarketStrategy : Strategy
 	{
 		private readonly StrategyParam<Dictionary<string, Security>> _factors;
-		private readonly StrategyParam<Security> _market;
 		private readonly StrategyParam<int> _fastM;
 		private readonly StrategyParam<int> _slowM;
 		private readonly StrategyParam<int> _maM;
@@ -34,15 +33,6 @@ namespace StockSharp.Samples.Strategies
 		{
 			get => _factors.Value;
 			set => _factors.Value = value;
-		}
-
-		/// <summary>
-		/// Market ETF used for timing.
-		/// </summary>
-		public Security MarketETF
-		{
-			get => _market.Value;
-			set => _market.Value = value;
 		}
 
 		/// <summary>
@@ -95,9 +85,6 @@ namespace StockSharp.Samples.Strategies
 			_factors = Param(nameof(Factors), new Dictionary<string, Security>())
 				.SetDisplay("Factors", "Smart factor ETFs", "General");
 
-			_market = Param<Security>(nameof(MarketETF), null)
-				.SetDisplay("Market ETF", "Market benchmark", "General");
-
 			_fastM = Param(nameof(FastMonths), 1)
 				.SetGreaterThanZero()
 				.SetDisplay("Fast Months", "Fast momentum lookback", "Parameters");
@@ -120,33 +107,34 @@ namespace StockSharp.Samples.Strategies
 
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			if (MarketETF is null)
+			if (Security is null)
 				throw new InvalidOperationException("MarketETF not set");
 			if (!Factors.Any())
 				throw new InvalidOperationException("No factors");
 
 			var tf = TimeSpan.FromDays(1).TimeFrame();
-			return Factors.Values.Append(MarketETF).Select(s => (s, tf));
+			return Factors.Values.Append(Security).Select(s => (s, tf));
 		}
 
-protected override void OnStarted(DateTimeOffset time)
-{
-base.OnStarted(time);
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-if (MarketETF == null)
-throw new InvalidOperationException("MarketETF not set");
-if (Factors == null || Factors.Count == 0)
-throw new InvalidOperationException("No factors");
+			if (Security == null)
+				throw new InvalidOperationException("MarketETF not set");
 
-foreach (var (sec, dt) in GetWorkingSecurities())
-{
-SubscribeCandles(dt, true, sec)
-.Bind(c => ProcessCandle(c, sec))
-.Start();
+			if (Factors == null || Factors.Count == 0)
+				throw new InvalidOperationException("No factors");
 
-_p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
-}
-}
+			foreach (var (sec, dt) in GetWorkingSecurities())
+			{
+				SubscribeCandles(dt, true, sec)
+				.Bind(c => ProcessCandle(c, sec))
+				.Start();
+
+				_p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
+			}
+		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
 		{
@@ -197,7 +185,7 @@ _p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
 			var wTotal = Factors.Values.ToDictionary(s => s, s => 0.75m * wFast[s] + 0.25m * wSlow[s]);
 
 			var smart1M = wTotal.Sum(kv => kv.Value * fastSig[kv.Key]);
-			var mkt1M = (_p[MarketETF].Last() - _p[MarketETF][_p[MarketETF].Count - 22]) / _p[MarketETF][_p[MarketETF].Count - 22];
+			var mkt1M = (_p[Security].Last() - _p[Security][_p[Security].Count - 22]) / _p[Security][_p[Security].Count - 22];
 			_smartRet.Add(smart1M);
 			_mktRet.Add(mkt1M);
 			if (!_smartRet.IsFull())
@@ -216,10 +204,10 @@ _p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
 			decimal wSmart = scoreSmart / (decimal)MaMonths;
 			decimal wMarket = scoreMkt / (decimal)MaMonths;
 
-			TradeToTarget(MarketETF, wMarket);
+			TradeToTarget(Security, wMarket);
 			foreach (var kv in wTotal)
 				TradeToTarget(kv.Key, wSmart * kv.Value);
-			foreach (var position in Positions.Where(p => p.Security != MarketETF && !wTotal.ContainsKey(p.Security)))
+			foreach (var position in Positions.Where(p => p.Security != Security && !wTotal.ContainsKey(p.Security)))
 				TradeToTarget(position.Security, 0m);
 		}
 

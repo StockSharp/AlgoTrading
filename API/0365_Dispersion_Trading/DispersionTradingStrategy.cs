@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class DispersionTradingStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _indexSec;
 		private readonly StrategyParam<IEnumerable<Security>> _constituents;
 		private readonly StrategyParam<int> _lookbackDays;
 		private readonly StrategyParam<decimal> _corrThreshold;
@@ -26,15 +25,6 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _lastDay = DateTime.MinValue;
 		private bool _open;
-
-		/// <summary>
-		/// Equity index to trade.
-		/// </summary>
-		public Security IndexSec
-		{
-			get => _indexSec.Value;
-			set => _indexSec.Value = value;
-		}
 
 		/// <summary>
 		/// Securities representing index constituents.
@@ -86,9 +76,6 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public DispersionTradingStrategy()
 		{
-			_indexSec = Param<Security>(nameof(IndexSec), null)
-				.SetDisplay("Index", "Equity index security", "General");
-
 			_constituents = Param<IEnumerable<Security>>(nameof(Constituents), Array.Empty<Security>())
 				.SetDisplay("Constituents", "Index constituent securities", "General");
 
@@ -108,7 +95,7 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			return Constituents.Append(IndexSec).Select(s => (s, CandleType));
+			return Constituents.Append(Security).Select(s => (s, CandleType));
 		}
 
 		/// <inheritdoc />
@@ -116,7 +103,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
-			if (IndexSec == null)
+			if (Security == null)
 				throw new InvalidOperationException("IndexSec is not set.");
 
 			if (Constituents == null || !Constituents.Any())
@@ -158,7 +145,7 @@ namespace StockSharp.Samples.Strategies
 
 		private void EvaluateSignal()
 		{
-			var indexRet = Returns(_windows[IndexSec]);
+			var indexRet = Returns(_windows[Security]);
 
 			var corrs = new List<decimal>();
 			foreach (var s in Constituents)
@@ -186,9 +173,9 @@ namespace StockSharp.Samples.Strategies
 					TradeToTarget(s, eachLong / price);
 			}
 
-			var indexPrice = GetLatestPrice(IndexSec);
+			var indexPrice = GetLatestPrice(Security);
 			if (indexPrice > 0)
-				TradeToTarget(IndexSec, -capLeg / indexPrice); // short index
+				TradeToTarget(Security, -capLeg / indexPrice); // short index
 
 			_open = true;
 			LogInfo("Opened dispersion spread");

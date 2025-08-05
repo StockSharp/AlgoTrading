@@ -112,6 +112,9 @@ namespace StockSharp.Samples.Strategies
 			if (Universe == null || !Universe.Any())
 				throw new InvalidOperationException("Universe cannot be empty.");
 
+			_prev.Clear();
+			_w.Clear();
+
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
 				SubscribeCandles(dt, true, sec)

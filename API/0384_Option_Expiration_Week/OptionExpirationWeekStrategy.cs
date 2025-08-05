@@ -17,16 +17,8 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class OptionExpirationWeekStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _etf;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
-
-		/// <summary>ETF to trade.</summary>
-		public Security ETF
-		{
-			get => _etf.Value;
-			set => _etf.Value = value;
-		}
 
 		/// <summary>Minimum trade amount in USD.</summary>
 		public decimal MinTradeUsd
@@ -39,30 +31,27 @@ namespace StockSharp.Samples.Strategies
 
 		public OptionExpirationWeekStrategy()
 		{
-			_etf = Param<Security>(nameof(ETF), null)
-				.SetDisplay("ETF", "ETF to trade", "Universe");
-
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min USD", "Minimum trade value", "Risk");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
-			if (ETF == null)
+			if (Security == null)
 				throw new InvalidOperationException("ETF not set.");
 
-			return new[] { (ETF, _tf) };
+			return new[] { (Security, _tf) };
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
 
-			if (ETF == null)
+			if (Security == null)
 				throw new InvalidOperationException("ETF cannot be null.");
 
-			SubscribeCandles(_tf, true, ETF)
-				.Bind(c => ProcessCandle(c, ETF))
+			SubscribeCandles(_tf, true, Security)
+				.Bind(c => ProcessCandle(c, Security))
 				.Start();
 		}
 
@@ -82,17 +71,17 @@ namespace StockSharp.Samples.Strategies
 		{
 			bool inExp = IsOptionExpWeek(d);
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var price = GetLatestPrice(ETF);
+			var price = GetLatestPrice(Security);
 			
 			var tgt = inExp && price > 0 ? portfolioValue / price : 0;
-			var diff = tgt - PositionBy(ETF);
+			var diff = tgt - PositionBy(Security);
 			
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 
 			RegisterOrder(new Order
 			{
-				Security = ETF,
+				Security = Security,
 				Portfolio = Portfolio,
 				Side = diff > 0 ? Sides.Buy : Sides.Sell,
 				Volume = Math.Abs(diff),

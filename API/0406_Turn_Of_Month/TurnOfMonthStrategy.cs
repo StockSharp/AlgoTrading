@@ -21,7 +21,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class TurnOfMonthStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _etf;
 		private readonly StrategyParam<int> _prior;
 		private readonly StrategyParam<int> _after;
 		private readonly StrategyParam<decimal> _minUsd;
@@ -30,15 +29,6 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private int _tdMonthEnd = int.MaxValue;
 		private int _tdMonthStart = 0;
-
-		/// <summary>
-		/// ETF used for trading.
-		/// </summary>
-		public Security ETF
-		{
-			get => _etf.Value;
-			set => _etf.Value = value;
-		}
 
 		/// <summary>
 		/// Number of trading days before month-end to enter.
@@ -69,9 +59,6 @@ namespace StockSharp.Samples.Strategies
 
 		public TurnOfMonthStrategy()
 		{
-			_etf = Param<Security>(nameof(ETF), null)
-				.SetDisplay("ETF", "Security to trade", "Universe");
-
 			_prior = Param(nameof(DaysPrior), 1)
 				.SetDisplay("Days Prior", "Trading days before month end", "Parameters");
 
@@ -85,22 +72,22 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
-			if (ETF == null)
+			if (Security == null)
 				throw new InvalidOperationException("Set ETF");
 
-			yield return (ETF, _tf);
+			yield return (Security, _tf);
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			if (ETF == null)
+			if (Security == null)
 				throw new InvalidOperationException("ETF must be set.");
 
 			base.OnStarted(time);
 
-			SubscribeCandles(_tf, true, ETF)
-				.Bind(c => ProcessCandle(c, ETF))
+			SubscribeCandles(_tf, true, Security)
+				.Bind(c => ProcessCandle(c, Security))
 				.Start();
 		}
 
@@ -123,7 +110,7 @@ namespace StockSharp.Samples.Strategies
 
 			bool inWindow = (_tdMonthEnd <= DaysPrior) || (_tdMonthStart <= DaysAfter);
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var price = GetLatestPrice(ETF);
+			var price = GetLatestPrice(Security);
 			var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
 			TradeTo(tgt);
 		}
@@ -135,14 +122,14 @@ namespace StockSharp.Samples.Strategies
 
 		private void TradeTo(decimal tgtQty)
 		{
-			var diff = tgtQty - PositionBy(ETF);
-			var price = GetLatestPrice(ETF);
+			var diff = tgtQty - PositionBy(Security);
+			var price = GetLatestPrice(Security);
 			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
 				return;
 
 			RegisterOrder(new Order
 			{
-				Security = ETF,
+				Security = Security,
 				Portfolio = Portfolio,
 				Side = diff > 0 ? Sides.Buy : Sides.Sell,
 				Volume = Math.Abs(diff),

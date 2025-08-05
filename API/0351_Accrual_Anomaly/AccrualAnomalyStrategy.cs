@@ -77,6 +77,12 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Universe cannot be empty.");
 
 			base.OnStarted(time);
+
+			_latestPrices.Clear();
+			_weights.Clear();
+			_prev.Clear();
+			_lastDay = default;
+
 			foreach (var (sec, dt) in GetWorkingSecurities())
 			{
 				SubscribeCandles(dt, true, sec)

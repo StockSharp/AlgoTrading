@@ -30,6 +30,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _industries;    // winners/losers industries count
 		private readonly StrategyParam<int> _holdingMonths; // tranche holding period months
 		private readonly StrategyParam<int> _windowDays;    // 52‑week lookback (trading days)
+		private readonly StrategyParam<DataType> _candleType; // candle data type
 
 		/// <summary>
 		/// List of securities used by the strategy.
@@ -67,6 +68,15 @@ namespace StockSharp.Samples.Strategies
 			set => _windowDays.Value = value;
 		}
 
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
 		#endregion
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _priceWin = new();
@@ -89,6 +99,9 @@ namespace StockSharp.Samples.Strategies
 
 			_windowDays = Param(nameof(LookbackDays), 252)
 				.SetDisplay("Lookback Days", "52‑week window (trading days)", "Data");
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 
 		#region Universe & candles
@@ -99,8 +112,7 @@ namespace StockSharp.Samples.Strategies
 			if (Universe == null || !Universe.Any())
 				throw new InvalidOperationException("Universe cannot be empty — populate Universe before start.");
 
-			var dt = TimeSpan.FromDays(1).TimeFrame();
-			return Universe.Select(s => (s, dt));
+			return Universe.Select(s => (s, CandleType));
 		}
 
 		/// <inheritdoc />

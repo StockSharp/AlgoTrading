@@ -18,6 +18,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _entryThreshold;
 		private readonly StrategyParam<decimal> _exitThreshold;
 		private readonly StrategyParam<decimal> _stopLossPercent;
+		private readonly StrategyParam<DataType> _candleType;
 		
 		private decimal _currentSpread;
 		private decimal _previousSpread;
@@ -93,6 +94,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
+
+		/// <summary>
 		/// Constructor.
 		/// </summary>
 		public PairsTradingVolatilityFilterStrategy()
@@ -119,18 +129,19 @@ namespace StockSharp.Samples.Strategies
 				.SetRange(0.5m, 5.0m)
 				.SetDisplay("Stop Loss", "Stop loss percentage from entry price", "Parameters")
 				.SetCanOptimize(true);
+
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "Data");
 		}
 		
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			var dt = TimeSpan.FromMinutes(5).TimeFrame();
-
 			if (Security1 != null)
-				yield return (Security1, dt);
+				yield return (Security1, CandleType);
 
 			if (Security2 != null)
-				yield return (Security2, dt);
+				yield return (Security2, CandleType);
 		}
 
 		/// <inheritdoc />
@@ -164,8 +175,8 @@ namespace StockSharp.Samples.Strategies
 			_volumeRatio = CalculateVolumeRatio();
 			
 			// Subscribe to both securities' candles
-			var subscription1 = SubscribeCandles(TimeSpan.FromMinutes(5), false, Security1);
-			var subscription2 = SubscribeCandles(TimeSpan.FromMinutes(5), false, Security2);
+			var subscription1 = SubscribeCandles(CandleType, false, Security1);
+			var subscription2 = SubscribeCandles(CandleType, false, Security2);
 			
 			// Subscribe to ticks for both securities to track last prices
 			

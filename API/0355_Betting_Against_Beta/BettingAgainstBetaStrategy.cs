@@ -20,7 +20,6 @@ namespace StockSharp.Samples.Strategies
 	public class BettingAgainstBetaStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
-		private readonly StrategyParam<Security> _benchmark;
 		private readonly StrategyParam<int> _window;
 		private readonly StrategyParam<DataType> _tf;
 		private readonly StrategyParam<int> _deciles;
@@ -33,15 +32,6 @@ namespace StockSharp.Samples.Strategies
 		{
 			get => _universe.Value;
 			set => _universe.Value = value;
-		}
-
-		/// <summary>
-		/// Benchmark security for beta calculation.
-		/// </summary>
-		public Security Benchmark
-		{
-			get => _benchmark.Value;
-			set => _benchmark.Value = value;
 		}
 
 		/// <summary>
@@ -93,9 +83,6 @@ namespace StockSharp.Samples.Strategies
 			_universe = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
 				.SetDisplay("Universe", "Securities universe", "General");
 
-			_benchmark = Param<Security>(nameof(Benchmark), null)
-				.SetDisplay("Benchmark", "Benchmark security", "General");
-
 			_window = Param(nameof(WindowDays), 252)
 				.SetDisplay("Window Days", "Lookback window length", "General")
 				.SetGreaterThanZero();
@@ -115,16 +102,16 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			if (Benchmark == null)
+			if (Security == null)
 				throw new InvalidOperationException("Benchmark not set");
 
-			return Universe.Append(Benchmark).Select(s => (s, CandleType));
+			return Universe.Append(Security).Select(s => (s, CandleType));
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			if (Benchmark == null)
+			if (Security == null)
 				throw new InvalidOperationException("Benchmark not set");
 
 			if (Universe == null || !Universe.Any())
@@ -167,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 			if (_wins.Values.Any(w => !w.IsFull()))
 				return;
 
-			var benchRet = GetReturns(_wins[Benchmark]);
+			var benchRet = GetReturns(_wins[Security]);
 			var betas = new Dictionary<Security, decimal>();
 
 			foreach (var s in Universe)
