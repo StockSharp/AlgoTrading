@@ -25,7 +25,6 @@ namespace StockSharp.Samples.Strategies
 	{
 		#region Params
 
-		private readonly StrategyParam<Security> _etf;
 		private readonly StrategyParam<Security> _sentimentSym;
 		private readonly StrategyParam<decimal> _threshold;
 		private readonly StrategyParam<decimal> _minUsd;
@@ -34,8 +33,8 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>Equity ETF to trade.</summary>
 		public Security EquityETF
 		{
-			get => _etf.Value;
-			set => _etf.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 
 		/// <summary>Symbol providing sentiment values.</summary>
@@ -72,9 +71,6 @@ namespace StockSharp.Samples.Strategies
 
 		public OvernightSentimentAnomalyStrategy()
 		{
-			_etf = Param<Security>(nameof(EquityETF), null)
-				.SetDisplay("Equity ETF", "ETF to trade", "Universe");
-
 			_sentimentSym = Param<Security>(nameof(SentimentSymbol), null)
 				.SetDisplay("Sentiment Symbol", "Symbol providing sentiment", "Universe");
 

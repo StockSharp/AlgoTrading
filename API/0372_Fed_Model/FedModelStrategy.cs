@@ -8,122 +8,121 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
-        /// <summary>
-        /// Fed Model yield-gap timing strategy (Quantpedia #21).
-        /// Compares earnings yield with the 10-year Treasury yield and switches between
-        /// an equity index ETF and a cash ETF based on the one-month excess return forecast.
-        /// </summary>
-        public class FedModelStrategy : Strategy
-        {
-                private readonly StrategyParam<IEnumerable<Security>> _univ;
-                private readonly StrategyParam<Security> _bond;
-                private readonly StrategyParam<Security> _earn;
-                private readonly StrategyParam<int> _months;
-                private readonly StrategyParam<DataType> _tf;
-                private readonly StrategyParam<decimal> _minUsd;
+	/// <summary>
+	/// Fed Model yield-gap timing strategy (Quantpedia #21).
+	/// Compares earnings yield with the 10-year Treasury yield and switches between
+	/// an equity index ETF and a cash ETF based on the one-month excess return forecast.
+	/// </summary>
+	public class FedModelStrategy : Strategy
+	{
+		private readonly StrategyParam<IEnumerable<Security>> _univ;
+		private readonly StrategyParam<Security> _bond;
+		private readonly StrategyParam<Security> _earn;
+		private readonly StrategyParam<int> _months;
+		private readonly StrategyParam<DataType> _tf;
+		private readonly StrategyParam<decimal> _minUsd;
 
-                /// <summary>
-                /// Securities to trade (equity index first, optional cash ETF second).
-                /// </summary>
-                public IEnumerable<Security> Universe
-                {
-                        get => _univ.Value;
-                        set => _univ.Value = value;
-                }
+		/// <summary>
+		/// Securities to trade (equity index first, optional cash ETF second).
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
 
-                /// <summary>
-                /// Security representing 10-year Treasury yield.
-                /// </summary>
-                public Security BondYieldSym
-                {
-                        get => _bond.Value;
-                        set => _bond.Value = value;
-                }
+		/// <summary>
+		/// Security representing 10-year Treasury yield.
+		/// </summary>
+		public Security BondYieldSym
+		{
+			get => _bond.Value;
+			set => _bond.Value = value;
+		}
 
-                /// <summary>
-                /// Security representing earnings yield.
-                /// </summary>
-                public Security EarningsYieldSym
-                {
-                        get => _earn.Value;
-                        set => _earn.Value = value;
-                }
+		/// <summary>
+		/// Security representing earnings yield.
+		/// </summary>
+		public Security EarningsYieldSym
+		{
+			get => _earn.Value;
+			set => _earn.Value = value;
+		}
 
-                /// <summary>
-                /// Number of months in regression window.
-                /// </summary>
-                public int RegressionMonths
-                {
-                        get => _months.Value;
-                        set => _months.Value = value;
-                }
+		/// <summary>
+		/// Number of months in regression window.
+		/// </summary>
+		public int RegressionMonths
+		{
+			get => _months.Value;
+			set => _months.Value = value;
+		}
 
-                /// <summary>
-                /// Type of candles used for processing.
-                /// </summary>
-                public DataType CandleType
-                {
-                        get => _tf.Value;
-                        set => _tf.Value = value;
-                }
+		/// <summary>
+		/// Type of candles used for processing.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _tf.Value;
+			set => _tf.Value = value;
+		}
 
-                /// <summary>
-                /// Minimum dollar value per trade.
-                /// </summary>
-                public decimal MinTradeUsd
-                {
-                        get => _minUsd.Value;
-                        set => _minUsd.Value = value;
-                }
+		/// <summary>
+		/// Minimum dollar value per trade.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
-                private readonly RollingWin _eq = new();
-                private readonly RollingWin _gap = new();
-                private readonly RollingWin _rf = new();
-                private readonly Dictionary<Security, decimal> _latestPrices = new();
-                private DateTime _lastMonth = DateTime.MinValue;
+		private readonly RollingWin _eq = new();
+		private readonly RollingWin _gap = new();
+		private readonly RollingWin _rf = new();
+		private readonly Dictionary<Security, decimal> _latestPrices = new();
+		private DateTime _lastMonth = DateTime.MinValue;
 
-                /// <summary>
-                /// Initializes a new instance of the strategy.
-                /// </summary>
-                public FedModelStrategy()
-                {
-                        _univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
-                                .SetDisplay("Universe", "Securities to trade", "General");
+		/// <summary>
+		/// Initializes a new instance of the strategy.
+		/// </summary>
+		public FedModelStrategy()
+		{
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+					.SetDisplay("Universe", "Securities to trade", "General");
 
-                        _bond = Param<Security>(nameof(BondYieldSym), null)
-                                .SetDisplay("Bond Yield", "10-year Treasury yield security", "Data");
+			_bond = Param<Security>(nameof(BondYieldSym), null)
+					.SetDisplay("Bond Yield", "10-year Treasury yield security", "Data");
 
-                        _earn = Param<Security>(nameof(EarningsYieldSym), null)
-                                .SetDisplay("Earnings Yield", "Earnings yield security", "Data");
+			_earn = Param<Security>(nameof(EarningsYieldSym), null)
+					.SetDisplay("Earnings Yield", "Earnings yield security", "Data");
 
-                        _months = Param(nameof(RegressionMonths), 12)
-                                .SetGreaterThanZero()
-                                .SetDisplay("Regression Months", "Months in regression window", "Settings");
+			_months = Param(nameof(RegressionMonths), 12)
+					.SetGreaterThanZero()
+					.SetDisplay("Regression Months", "Months in regression window", "Settings");
 
-                        _tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
-                                .SetDisplay("Candle Type", "Type of candles", "General");
+			_tf = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+					.SetDisplay("Candle Type", "Type of candles", "General");
 
-                        _minUsd = Param(nameof(MinTradeUsd), 200m)
-                                .SetGreaterThanZero()
-                                .SetDisplay("Min Trade USD", "Minimum trade value in USD", "Risk Management");
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+					.SetGreaterThanZero()
+					.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Risk Management");
 
-                        var n = RegressionMonths + 1;
-                        _eq.SetSize(n);
-                        _gap.SetSize(n);
-                        _rf.SetSize(n);
-                }
+			var n = RegressionMonths + 1;
+			_eq.SetSize(n);
+			_gap.SetSize(n);
+			_rf.SetSize(n);
+		}
 
-                public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
-                {
-                        foreach (var s in Universe)
-                                yield return (s, CandleType);
+		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+		{
+			foreach (var s in Universe)
+				yield return (s, CandleType);
 			if (BondYieldSym != null)
 				yield return (BondYieldSym, CandleType);
 			if (EarningsYieldSym != null)
 				yield return (EarningsYieldSym, CandleType);
 		}
 
-                
 		protected override void OnReseted()
 		{
 			base.OnReseted();
@@ -136,22 +135,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
-                {
-                        if (Universe == null || !Universe.Any())
-                        {
-                                if (Security != null)
-                                        Universe = new[] { Security };
-                                else
-                                        throw new InvalidOperationException("Universe is empty.");
-                        }
+		{
+			if (Universe == null || !Universe.Any())
+			{
+				if (Security != null)
+					Universe = new[] { Security };
+				else
+					throw new InvalidOperationException("Universe is empty.");
+			}
 
-                        base.OnStarted(time);
+			base.OnStarted(time);
 
-                        foreach (var (s, tf) in GetWorkingSecurities())
-                                SubscribeCandles(tf, true, s)
-                                        .Bind(c => ProcessCandle(c, s))
-                                        .Start();
-                }
+			foreach (var (s, tf) in GetWorkingSecurities())
+				SubscribeCandles(tf, true, s)
+						.Bind(c => ProcessCandle(c, s))
+						.Start();
+		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
 		{
@@ -233,12 +232,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			if (s == null)
 				return;
-				
+
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
 			var price = GetLatestPrice(s);
 			if (price <= 0)
 				return;
-				
+
 			var tgt = weight * portfolioValue / price;
 			var diff = tgt - Pos(s);
 			if (Math.Abs(diff) * price < MinTradeUsd)
@@ -270,32 +269,38 @@ namespace StockSharp.Samples.Strategies
 
 		private bool SeriesVal(Security s, DateTime d, out decimal v) { v = 0; return false; }
 
-                private class RollingWin
-                {
-                        public decimal[] Data;
+		private class RollingWin
+		{
+			public decimal[] Data;
 
-                        public int Size => Data.Length;
+			public int Size => Data.Length;
 
-                        private int _n;
+			private int _n;
 
-                        public bool Full => _n == Data.Length;
+			public bool Full => _n == Data.Length;
 
-                        public void SetSize(int n)
-                        {
-                                Data = new decimal[n];
-                                _n = 0;
-                        }
+			public void SetSize(int n)
+			{
+				Data = new decimal[n];
+				_n = 0;
+			}
 
-                        public void Add(decimal v)
-                        {
-                                if (_n < Data.Length)
-                                        _n++;
+			public void Add(decimal v)
+			{
+				if (_n < Data.Length)
+					_n++;
 
-                                for (int i = Data.Length - 1; i > 0; i--)
-                                        Data[i] = Data[i - 1];
+				for (int i = Data.Length - 1; i > 0; i--)
+					Data[i] = Data[i - 1];
 
-                                Data[0] = v;
-                        }
-                }
+				Data[0] = v;
+			}
+
+			public void Clear()
+			{
+				Data = default;
+				_n = 0;
+			}
+		}
 	}
 }

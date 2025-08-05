@@ -109,7 +109,6 @@ namespace StockSharp.Samples.Strategies
 			_w.Clear();
 			_latestPrices.Clear();
 			_lastRebalance = default;
-			_q.Clear();
 		}
 
 		protected override void OnStarted(DateTimeOffset time)

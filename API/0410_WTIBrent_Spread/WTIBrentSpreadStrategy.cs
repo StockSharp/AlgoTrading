@@ -19,7 +19,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class WTIBrentSpreadStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _wti;
 		private readonly StrategyParam<Security> _brent;
 		private readonly StrategyParam<int> _ma;
 		private readonly StrategyParam<decimal> _minUsd;
@@ -32,8 +31,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Security WTI
 		{
-			get => _wti.Value;
-			set => _wti.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 
 		/// <summary>
@@ -74,9 +73,6 @@ namespace StockSharp.Samples.Strategies
 
 		public WTIBrentSpreadStrategy()
 		{
-			_wti = Param<Security>(nameof(WTI), null)
-				.SetDisplay("WTI", "WTI security", "Universe");
-
 			_brent = Param<Security>(nameof(Brent), null)
 				.SetDisplay("Brent", "Brent security", "Universe");
 
@@ -98,6 +94,15 @@ namespace StockSharp.Samples.Strategies
 
 			yield return (WTI, CandleType);
 			yield return (Brent, CandleType);
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_latestPrices.Clear();
+			_spr.Clear();
 		}
 
 		/// <inheritdoc />

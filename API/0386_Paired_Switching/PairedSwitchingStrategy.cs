@@ -21,7 +21,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class PairedSwitchingStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _first;
 		private readonly StrategyParam<Security> _second;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _tf;
@@ -31,8 +30,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Security FirstETF
 		{
-			get => _first.Value;
-			set => _first.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 
 		/// <summary>
@@ -69,9 +68,6 @@ namespace StockSharp.Samples.Strategies
 
 		public PairedSwitchingStrategy()
 		{
-			_first = Param<Security>(nameof(FirstETF), null)
-				.SetDisplay("First ETF", "First exchange-traded fund", "General");
-
 			_second = Param<Security>(nameof(SecondETF), null)
 				.SetDisplay("Second ETF", "Second exchange-traded fund", "General");
 
@@ -86,7 +82,6 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
 			new[] { (FirstETF, CandleType), (SecondETF, CandleType) };
 
-		
 		protected override void OnReseted()
 		{
 			base.OnReseted();
@@ -204,6 +199,8 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			public decimal[] Data => _q.ToArray();
+
+			public void Clear() => _q.Clear();
 		}
 	}
 }

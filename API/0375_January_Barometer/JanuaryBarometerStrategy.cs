@@ -75,7 +75,6 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Both equity and cash ETFs must be set.");
 			return new[] { (EquityETF, CandleType) };
 		}
-
 		
 		protected override void OnReseted()
 		{

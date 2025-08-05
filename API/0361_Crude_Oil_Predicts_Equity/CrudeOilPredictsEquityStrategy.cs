@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class CrudeOilPredictsEquityStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _equity;
 		private readonly StrategyParam<Security> _oil;
 		private readonly StrategyParam<Security> _cash;
 		private readonly StrategyParam<DataType> _candleType;
@@ -25,8 +24,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Security Equity
 		{
-			get => _equity.Value;
-			set => _equity.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 
 		/// <summary>
@@ -74,9 +73,6 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public CrudeOilPredictsEquityStrategy()
 		{
-			_equity = Param<Security>(nameof(Equity), null)
-				.SetDisplay("Equity", "Equity ETF to invest in", "General");
-
 			_oil = Param<Security>(nameof(Oil), null)
 				.SetDisplay("Oil", "Crude oil security for signal", "General");
 
@@ -101,7 +97,6 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		
 		protected override void OnReseted()
 		{
 			base.OnReseted();

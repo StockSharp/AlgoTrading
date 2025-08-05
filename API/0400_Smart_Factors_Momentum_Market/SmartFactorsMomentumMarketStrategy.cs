@@ -128,17 +128,16 @@ namespace StockSharp.Samples.Strategies
 			return Factors.Values.Append(Security).Select(s => (s, CandleType));
 		}
 
-		
+
 		protected override void OnReseted()
-			{
+		{
 			base.OnReseted();
-				
-				_p.Clear();
-				_latestPrices.Clear();
-				_smartRet.Clear();
-				_mktRet.Clear();
-				_lastRebalanceDate = default;
-				_q.Clear();
+
+			_p.Clear();
+			_latestPrices.Clear();
+			_smartRet.Clear();
+			_mktRet.Clear();
+			_lastRebalanceDate = default;
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
@@ -279,6 +278,8 @@ namespace StockSharp.Samples.Strategies
 		public T Last() => _q.Last();
 		public T this[int idx] => _q.ElementAt(idx);
 		public IEnumerable<T> Take(int n) => _q.Reverse().Take(n);
+
+		public void Clear() => _q.Clear();
 	}
 	#endregion
 }

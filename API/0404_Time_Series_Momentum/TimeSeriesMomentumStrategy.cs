@@ -99,6 +99,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_w.Clear();
+			_latestPrices.Clear();
+			_last = DateTime.MinValue;
+			_map.Clear();
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			if (Universe == null || !Universe.Any())

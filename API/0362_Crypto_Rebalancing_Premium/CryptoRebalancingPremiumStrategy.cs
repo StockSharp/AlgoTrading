@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies
 	/// </summary>
 	public class CryptoRebalancingPremiumStrategy : Strategy
 	{
-		private readonly StrategyParam<Security> _btc;
 		private readonly StrategyParam<Security> _eth;
 		private readonly StrategyParam<decimal> _minUsd;
 		private readonly StrategyParam<DataType> _candleType;
@@ -27,8 +26,8 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public Security BTC
 		{
-			get => _btc.Value;
-			set => _btc.Value = value;
+			get => Security;
+			set => Security = value;
 		}
 
 		/// <summary>
@@ -63,10 +62,6 @@ namespace StockSharp.Samples.Strategies
 		/// </summary>
 		public CryptoRebalancingPremiumStrategy()
 		{
-			// BTC security parameter.
-			_btc = Param<Security>(nameof(BTC), null)
-				.SetDisplay("BTC", "Bitcoin security", "General");
-
 			// ETH security parameter.
 			_eth = Param<Security>(nameof(ETH), null)
 				.SetDisplay("ETH", "Ethereum security", "General");
@@ -87,7 +82,6 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		
 		protected override void OnReseted()
 		{
 			base.OnReseted();

@@ -118,7 +118,6 @@ namespace StockSharp.Samples.Strategies
 			_cap.Clear();
 			_latestPrices.Clear();
 			_targetWeights.Clear();
-			_data.Clear();
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
@@ -282,6 +281,8 @@ namespace StockSharp.Samples.Strategies
 		public bool IsFull() => _data.Count == _size;
 
 		public decimal this[int idx] => _data.ElementAt(idx);
+
+		public void Clear() => _data.Clear();
 	}
 
 	#endregion
