@@ -14,6 +14,10 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Smart factors momentum blended with market momentum.
+	/// Rotates monthly between factor basket and market ETF.
+	/// </summary>
 	public class SmartFactorsMomentumMarketStrategy : Strategy
 	{
 		private readonly StrategyParam<Dictionary<string, Security>> _factors;
@@ -23,10 +27,59 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _maM;
 		private readonly StrategyParam<decimal> _minUsd;
 
-		public Dictionary<string, Security> Factors { get => _factors.Value; set => _factors.Value = value; }
-		public Security MarketETF { get => _market.Value; set => _market.Value = value; }
-		public int FastMonths => _fastM.Value; public int SlowMonths => _slowM.Value; public int MaMonths => _maM.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
+		/// <summary>
+		/// Dictionary of smart factor ETFs.
+		/// </summary>
+		public Dictionary<string, Security> Factors
+		{
+			get => _factors.Value;
+			set => _factors.Value = value;
+		}
+
+		/// <summary>
+		/// Market ETF used for timing.
+		/// </summary>
+		public Security MarketETF
+		{
+			get => _market.Value;
+			set => _market.Value = value;
+		}
+
+		/// <summary>
+		/// Fast momentum lookback in months.
+		/// </summary>
+		public int FastMonths
+		{
+			get => _fastM.Value;
+			set => _fastM.Value = value;
+		}
+
+		/// <summary>
+		/// Slow momentum lookback in months.
+		/// </summary>
+		public int SlowMonths
+		{
+			get => _slowM.Value;
+			set => _slowM.Value = value;
+		}
+
+		/// <summary>
+		/// Moving average window in months.
+		/// </summary>
+		public int MaMonths
+		{
+			get => _maM.Value;
+			set => _maM.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
 
 		private readonly Dictionary<Security, RollingWindow<decimal>> _p = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
@@ -34,14 +87,32 @@ namespace StockSharp.Samples.Strategies
 		private readonly RollingWindow<decimal> _mktRet;
 		private DateTime _lastRebalanceDate = DateTime.MinValue;
 
+		/// <summary>
+		/// Initializes strategy parameters.
+		/// </summary>
 		public SmartFactorsMomentumMarketStrategy()
 		{
-			_factors = Param(nameof(Factors), new Dictionary<string, Security>());
-			_market = Param<Security>(nameof(MarketETF), null);
-			_fastM = Param(nameof(FastMonths), 1);
-			_slowM = Param(nameof(SlowMonths), 12);
-			_maM = Param(nameof(MaMonths), 12);
-			_minUsd = Param(nameof(MinTradeUsd), 50m);
+			_factors = Param(nameof(Factors), new Dictionary<string, Security>())
+				.SetDisplay("Factors", "Smart factor ETFs", "General");
+
+			_market = Param<Security>(nameof(MarketETF), null)
+				.SetDisplay("Market ETF", "Market benchmark", "General");
+
+			_fastM = Param(nameof(FastMonths), 1)
+				.SetGreaterThanZero()
+				.SetDisplay("Fast Months", "Fast momentum lookback", "Parameters");
+
+			_slowM = Param(nameof(SlowMonths), 12)
+				.SetGreaterThanZero()
+				.SetDisplay("Slow Months", "Slow momentum lookback", "Parameters");
+
+			_maM = Param(nameof(MaMonths), 12)
+				.SetGreaterThanZero()
+				.SetDisplay("MA Months", "Moving average window", "Parameters");
+
+			_minUsd = Param(nameof(MinTradeUsd), 50m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 
 			_smartRet = new RollingWindow<decimal>(_maM.Value);
 			_mktRet = new RollingWindow<decimal>(_maM.Value);
@@ -58,18 +129,24 @@ namespace StockSharp.Samples.Strategies
 			return Factors.Values.Append(MarketETF).Select(s => (s, tf));
 		}
 
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-			foreach (var (sec, dt) in GetWorkingSecurities())
-			{
-				SubscribeCandles(dt, true, sec)
-					.Bind(c => ProcessCandle(c, sec))
-					.Start();
+protected override void OnStarted(DateTimeOffset time)
+{
+base.OnStarted(time);
 
-				_p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
-			}
-		}
+if (MarketETF == null)
+throw new InvalidOperationException("MarketETF not set");
+if (Factors == null || Factors.Count == 0)
+throw new InvalidOperationException("No factors");
+
+foreach (var (sec, dt) in GetWorkingSecurities())
+{
+SubscribeCandles(dt, true, sec)
+.Bind(c => ProcessCandle(c, sec))
+.Start();
+
+_p[sec] = new RollingWindow<decimal>(Math.Max(SlowMonths * 21 + 1, 260));
+}
+}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
 		{

@@ -14,6 +14,10 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Short-term reversal strategy for futures.
+	/// Buys prior losers and sells prior winners on a weekly basis.
+	/// </summary>
 	public class ShortTermReversalFuturesStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -24,19 +28,60 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _w = new();
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int LookbackDays => _look.Value;
-		public decimal MinTradeUsd => _min.Value;
+
+		/// <summary>
+		/// Universe of futures to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
+		{
+			get => _univ.Value;
+			set => _univ.Value = value;
+		}
+
+		/// <summary>
+		/// Lookback period in days for reversal calculation.
+		/// </summary>
+		public int LookbackDays
+		{
+			get => _look.Value;
+			set => _look.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum trade value in USD.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _min.Value;
+			set => _min.Value = value;
+		}
+
+		/// <summary>
+		/// Initializes strategy parameters.
+		/// </summary>
 		public ShortTermReversalFuturesStrategy()
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_look = Param(nameof(LookbackDays), 5);
-			_min = Param(nameof(MinTradeUsd), 200m);
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Futures contracts to trade", "General");
+
+			_look = Param(nameof(LookbackDays), 5)
+				.SetGreaterThanZero()
+				.SetDisplay("Lookback Days", "Lookback period for reversal", "Parameters");
+
+			_min = Param(nameof(MinTradeUsd), 200m)
+				.SetGreaterThanZero()
+				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
 		}
+
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
+
 		protected override void OnStarted(DateTimeOffset t)
 		{
 			base.OnStarted(t);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe is empty");
+
 			foreach (var (s, tf) in GetWorkingSecurities())
 			{
 				_px[s] = new Queue<decimal>();
