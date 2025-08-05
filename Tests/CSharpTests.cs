@@ -1406,11 +1406,18 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task CrudeOilPredictsEquityStrategyTest()
-		=> RunStrategy<CrudeOilPredictsEquityStrategy>();
+		=> RunStrategy<CrudeOilPredictsEquityStrategy>((stra, sec) =>
+		{
+			stra.Oil = sec;
+			stra.CashEtf = sec;
+		});
 
 	[TestMethod]
 	public Task CryptoRebalancingPremiumStrategyTest()
-		=> RunStrategy<CryptoRebalancingPremiumStrategy>();
+		=> RunStrategy<CryptoRebalancingPremiumStrategy>((stra, sec) =>
+		{
+			stra.ETH = sec;
+		});
 
 	[TestMethod]
 	public Task CurrencyMomentumFactorStrategyTest()
@@ -1428,11 +1435,17 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task DispersionTradingStrategyTest()
-		=> RunStrategy<DispersionTradingStrategy>();
+		=> RunStrategy<DispersionTradingStrategy>((stra, sec) =>
+		{
+			stra.Constituents = [sec];
+		});
 
 	[TestMethod]
 	public Task DollarCarryTradeStrategyTest()
-		=> RunStrategy<DollarCarryTradeStrategy>();
+		=> RunStrategy<DollarCarryTradeStrategy>((stra, sec) =>
+		{
+			stra.Pairs = [sec];
+		});
 
 	[TestMethod]
 	public Task EarningsAnnouncementPremiumStrategyTest()
@@ -1492,7 +1505,11 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task JanuaryBarometerStrategyTest()
-		=> RunStrategy<JanuaryBarometerStrategy>();
+		=> RunStrategy<JanuaryBarometerStrategy>((stra, sec) =>
+		{
+			stra.EquityETF = sec;
+			stra.CashETF = sec;
+		});
 
 	[TestMethod]
 	public Task LexicalDensityFilingsStrategyTest()
@@ -1531,7 +1548,10 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task MomentumStyleRotationStrategyTest()
-		=> RunStrategy<MomentumStyleRotationStrategy>();
+		=> RunStrategy<MomentumStyleRotationStrategy>((stra, sec) =>
+		{
+			stra.FactorETFs = [sec];
+		});
 
 	[TestMethod]
 	public Task Month12CycleStrategyTest()
@@ -1542,7 +1562,10 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task MutualFundMomentumStrategyTest()
-		=> RunStrategy<MutualFundMomentumStrategy>();
+		=> RunStrategy<MutualFundMomentumStrategy>((stra, sec) =>
+		{
+			stra.Funds = [sec];
+		});
 
 	[TestMethod]
 	public Task OptionExpirationWeekStrategyTest()
@@ -1550,22 +1573,31 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task OvernightSentimentAnomalyStrategyTest()
-		=> RunStrategy<OvernightSentimentAnomalyStrategy>();
+		=> RunStrategy<OvernightSentimentAnomalyStrategy>((stra, sec) =>
+		{
+			stra.SentimentSymbol = sec;
+		});
 
 	[TestMethod]
 	public Task PairedSwitchingStrategyTest()
-		=> RunStrategy<PairedSwitchingStrategy>();
+		=> RunStrategy<PairedSwitchingStrategy>((stra, sec) =>
+		{
+			stra.SecondETF = sec;
+		});
 
 	[TestMethod]
 	public Task PairsTradingCountryETFsStrategyTest()
 		=> RunStrategy<PairsTradingCountryETFsStrategy>((stra, sec) =>
 		{
-			stra.Universe = [sec];
+			stra.Universe = [stra.Security, sec];
 		});
 
 	[TestMethod]
 	public Task PairsTradingStocksStrategyTest()
-		=> RunStrategy<PairsTradingStocksStrategy>();
+		=> RunStrategy<PairsTradingStocksStrategy>((stra, sec) =>
+		{
+			stra.Pairs = [(stra.Security, sec)];
+		});
 
 	[TestMethod]
 	public Task PaydayAnomalyStrategyTest()
@@ -1587,7 +1619,10 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task ReturnAsymmetryCommodityStrategyTest()
-		=> RunStrategy<ReturnAsymmetryCommodityStrategy>();
+		=> RunStrategy<ReturnAsymmetryCommodityStrategy>((stra, sec) =>
+		{
+			stra.Futures = [sec];
+		});
 
 	[TestMethod]
 	public Task ROAEffectStocksStrategyTest()
@@ -1598,7 +1633,10 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task SectorMomentumRotationStrategyTest()
-		=> RunStrategy<SectorMomentumRotationStrategy>();
+		=> RunStrategy<SectorMomentumRotationStrategy>((stra, sec) =>
+		{
+			stra.SectorETFs = [sec];
+		});
 
 	[TestMethod]
 	public Task ShortInterestEffectStrategyTest()
@@ -1616,11 +1654,17 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task ShortTermReversalStocksStrategyTest()
-		=> RunStrategy<ShortTermReversalStocksStrategy>();
+		=> RunStrategy<ShortTermReversalStocksStrategy>((stra, sec) =>
+		{
+			stra.Universe = [sec];
+		});
 
 	[TestMethod]
 	public Task SkewnessCommodityStrategyTest()
-		=> RunStrategy<SkewnessCommodityStrategy>();
+		=> RunStrategy<SkewnessCommodityStrategy>((stra, sec) =>
+		{
+			stra.Futures = [sec];
+		});
 
 	[TestMethod]
 	public Task SmallCapPremiumStrategyTest()
@@ -1631,11 +1675,17 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task SmartFactorsMomentumMarketStrategyTest()
-		=> RunStrategy<SmartFactorsMomentumMarketStrategy>();
+		=> RunStrategy<SmartFactorsMomentumMarketStrategy>((stra, sec) =>
+		{
+			//stra.Factors = [sec];
+		});
 
 	[TestMethod]
 	public Task SoccerClubsArbitrageStrategyTest()
-		=> RunStrategy<SoccerClubsArbitrageStrategy>();
+		=> RunStrategy<SoccerClubsArbitrageStrategy>((stra, sec) =>
+		{
+			stra.Pair = [stra.Security, sec];
+		});
 
 	[TestMethod]
 	public Task SyntheticLendingRatesStrategyTest()
@@ -1689,5 +1739,8 @@ public class CSharpTests
 
 	[TestMethod]
 	public Task WTIBrentSpreadStrategyTest()
-		=> RunStrategy<WTIBrentSpreadStrategy>();
+		=> RunStrategy<WTIBrentSpreadStrategy>((stra, sec) =>
+		{
+			stra.Brent = sec;
+		});
 }
