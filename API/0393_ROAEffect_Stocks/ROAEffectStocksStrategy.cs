@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+
 using StockSharp.Algo;
 using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
@@ -15,6 +16,9 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
 {
+	/// <summary>
+	/// Strategy that selects stocks based on return on assets (ROA).
+	/// </summary>
 	public class ROAEffectStocksStrategy : Strategy
 	{
 		private readonly StrategyParam<IEnumerable<Security>> _univ;
@@ -25,24 +29,66 @@ namespace StockSharp.Samples.Strategies
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private DateTime _last = DateTime.MinValue;
 
-		public IEnumerable<Security> Universe { get => _univ.Value; set => _univ.Value = value; }
-		public int Decile => _decile.Value;
-		public decimal MinTradeUsd => _minUsd.Value;
-
-		public ROAEffectStocksStrategy()
+		/// <summary>
+		/// Universe of stocks to trade.
+		/// </summary>
+		public IEnumerable<Security> Universe
 		{
-			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>());
-			_decile = Param(nameof(Decile), 10);
-			_minUsd = Param(nameof(MinTradeUsd), 200m);
+			get => _univ.Value;
+			set => _univ.Value = value;
 		}
 
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() => Universe.Select(s => (s, _tf));
-
-		protected override void OnStarted(DateTimeOffset t)
+		/// <summary>
+		/// Number of deciles used for ranking.
+		/// </summary>
+		public int Decile
 		{
-			base.OnStarted(t);
-			var trig = Universe.FirstOrDefault() ?? throw new InvalidOperationException("Universe empty");
-			SubscribeCandles(_tf, true, trig).Bind(c => ProcessCandle(c, trig)).Start();
+			get => _decile.Value;
+			set => _decile.Value = value;
+		}
+
+		/// <summary>
+		/// Minimum dollar value per trade.
+		/// </summary>
+		public decimal MinTradeUsd
+		{
+			get => _minUsd.Value;
+			set => _minUsd.Value = value;
+		}
+
+		/// <summary>
+		/// Initializes a new instance of the <see cref="ROAEffectStocksStrategy"/> class.
+		/// </summary>
+		public ROAEffectStocksStrategy()
+		{
+			_univ = Param<IEnumerable<Security>>(nameof(Universe), Array.Empty<Security>())
+				.SetDisplay("Universe", "Stocks to trade", "General");
+
+			_decile = Param(nameof(Decile), 10)
+				.SetDisplay("Decile", "Number of deciles for ranking", "General");
+
+			_minUsd = Param(nameof(MinTradeUsd), 200m)
+				.SetDisplay("Min Trade USD", "Minimum dollar value per trade", "General");
+		}
+
+		/// <inheritdoc />
+		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		{
+			return Universe.Select(s => (s, _tf));
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
+			if (Universe == null || !Universe.Any())
+				throw new InvalidOperationException("Universe cannot be empty.");
+
+			var trig = Universe.First();
+			SubscribeCandles(_tf, true, trig)
+				.Bind(c => ProcessCandle(c, trig))
+				.Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
@@ -61,9 +107,12 @@ namespace StockSharp.Samples.Strategies
 		{
 			if (d == _last)
 				return;
+
 			_last = d;
+
 			if (d.Day != 1)
 				return;
+
 			Rebalance();
 		}
 
@@ -71,23 +120,36 @@ namespace StockSharp.Samples.Strategies
 		{
 			var roa = new Dictionary<Security, decimal>();
 			foreach (var s in Universe)
+			{
 				if (TryGetROA(s, out var val))
 					roa[s] = val;
+			}
+
 			if (roa.Count < Decile * 2)
 				return;
+
 			int bucket = roa.Count / Decile;
 			var longs = roa.OrderByDescending(kv => kv.Value).Take(bucket).Select(kv => kv.Key).ToList();
 			var shorts = roa.OrderBy(kv => kv.Value).Take(bucket).Select(kv => kv.Key).ToList();
+
 			_w.Clear();
-			decimal wl = 1m / longs.Count, ws = -1m / shorts.Count;
+			decimal wl = 1m / longs.Count;
+			decimal ws = -1m / shorts.Count;
+
 			foreach (var s in longs)
 				_w[s] = wl;
+
 			foreach (var s in shorts)
 				_w[s] = ws;
+
 			foreach (var position in Positions)
+			{
 				if (!_w.ContainsKey(position.Security))
 					Move(position.Security, 0);
+			}
+
 			var portfolioValue = Portfolio.CurrentValue ?? 0m;
+
 			foreach (var kv in _w)
 			{
 				var price = GetLatestPrice(kv.Key);
@@ -101,16 +163,30 @@ namespace StockSharp.Samples.Strategies
 			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
 		}
 
-		private void Move(Security s, decimal tgt) 
-		{ 
-			var diff = tgt - Pos(s); 
+		private void Move(Security s, decimal tgt)
+		{
+			var diff = tgt - Pos(s);
 			var price = GetLatestPrice(s);
-			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd) 
-				return; 
-			RegisterOrder(new Order { Security = s, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "ROA" }); 
+			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+				return;
+
+			RegisterOrder(new Order
+			{
+				Security = s,
+				Portfolio = Portfolio,
+				Side = diff > 0 ? Sides.Buy : Sides.Sell,
+				Volume = Math.Abs(diff),
+				Type = OrderTypes.Market,
+				Comment = "ROA",
+			});
 		}
 
 		private decimal Pos(Security s) => GetPositionValue(s, Portfolio) ?? 0;
-		private bool TryGetROA(Security s, out decimal v) { v = 0; return false; }
+
+		private bool TryGetROA(Security s, out decimal v)
+		{
+			v = 0;
+			return false;
+		}
 	}
 }
