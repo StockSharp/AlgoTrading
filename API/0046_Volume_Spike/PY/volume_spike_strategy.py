@@ -85,8 +85,6 @@ class volume_spike_strategy(Strategy):
         """
         super(volume_spike_strategy, self).OnStarted(time)
 
-        self._previousVolume = 0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

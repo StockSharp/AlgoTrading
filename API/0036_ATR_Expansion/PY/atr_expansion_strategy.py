@@ -87,9 +87,6 @@ class atr_expansion_strategy(Strategy):
         """
         super(atr_expansion_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prev_atr = 0.0
-
         # Create indicators
         atr = AverageTrueRange()
         atr.Length = self.atr_period

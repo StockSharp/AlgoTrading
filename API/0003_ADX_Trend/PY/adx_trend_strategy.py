@@ -104,11 +104,6 @@ class adx_trend_strategy(Strategy):
         """
         super(adx_trend_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._adx_above_threshold = False
-        self._prev_adx_value = 0.0
-        self._prev_ma_value = 0.0
-
         # Create indicators
         adx = AverageDirectionalIndex()
         adx.Length = self.adx_period

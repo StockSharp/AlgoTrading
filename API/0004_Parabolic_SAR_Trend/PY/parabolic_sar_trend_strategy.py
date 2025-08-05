@@ -76,10 +76,6 @@ class parabolic_sar_trend_strategy(Strategy):
         """
         super(parabolic_sar_trend_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_sar_value = 0.0
-        self._prev_is_price_above_sar = False
-
         # Create Parabolic SAR indicator
         parabolic_sar = ParabolicSar()
         parabolic_sar.Acceleration = self.acceleration_factor

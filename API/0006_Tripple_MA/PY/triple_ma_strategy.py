@@ -99,9 +99,6 @@ class triple_ma_strategy(Strategy):
         """
         super(triple_ma_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_is_short_above_middle = False
-
         # Create indicators
         short_ma = SimpleMovingAverage()
         short_ma.Length = self.short_ma_period

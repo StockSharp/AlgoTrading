@@ -120,14 +120,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			// Reset state variables
 			_prevK = 0;
 			_prevD = 0;
 			_isFirstCandle = true;
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create a StochRsi indicator
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

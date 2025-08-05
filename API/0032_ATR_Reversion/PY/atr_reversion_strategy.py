@@ -99,9 +99,6 @@ class atr_reversion_strategy(Strategy):
         """
         super(atr_reversion_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prev_close = 0.0
-
         # Create indicators
         atr = AverageTrueRange()
         atr.Length = self.atr_period

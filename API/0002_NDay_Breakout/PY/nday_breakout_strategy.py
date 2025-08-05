@@ -97,11 +97,6 @@ class nday_breakout_strategy(Strategy):
         """
         super(nday_breakout_strategy, self).OnStarted(time)
 
-        # Initialize tracking variables
-        self._n_day_high = 0.0
-        self._n_day_low = float('inf')
-        self._is_formed = False
-
         # Create indicators
         self._highest = Highest()
         self._highest.Length = self.lookback_period

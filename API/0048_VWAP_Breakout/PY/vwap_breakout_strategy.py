@@ -57,10 +57,6 @@ class vwap_breakout_strategy(Strategy):
         """
         super(vwap_breakout_strategy, self).OnStarted(time)
 
-        self._previousClosePrice = 0
-        self._previousVWAP = 0
-        self._isFirstCandle = True
-
         # Create VWAP indicator
         vwap = VolumeWeightedMovingAverage()
 

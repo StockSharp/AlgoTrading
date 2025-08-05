@@ -93,12 +93,6 @@ class keltner_channel_breakout_strategy(Strategy):
         """
         super(keltner_channel_breakout_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_close_price = 0.0
-        self._prev_upper_band = 0.0
-        self._prev_lower_band = 0.0
-        self._prev_ema = 0.0
-
         # Create indicators
         keltner_channel = KeltnerChannels()
         keltner_channel.Length = self.ema_period

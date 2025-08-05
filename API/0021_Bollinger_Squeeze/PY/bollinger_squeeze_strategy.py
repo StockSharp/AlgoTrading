@@ -91,11 +91,6 @@ class bollinger_squeeze_strategy(Strategy):
         """
         super(bollinger_squeeze_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._previous_band_width = 0.0
-        self._is_first_value = True
-        self._is_in_squeeze = False
-
         # Create Bollinger Bands indicator
         bollinger_bands = BollingerBands()
         bollinger_bands.Length = self.bollinger_period

@@ -46,13 +46,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			_previousClosePrice = 0;
 			_previousVWAP = 0;
 			_isFirstCandle = true;
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create VWAP indicator
 			var vwap = new VolumeWeightedMovingAverage();

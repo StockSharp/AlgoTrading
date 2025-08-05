@@ -79,10 +79,6 @@ class obv_breakout_strategy(Strategy):
         """
         super(obv_breakout_strategy, self).OnStarted(time)
 
-        self._highestOBV = None
-        self._lowestOBV = None
-        self._isFirstCandle = True
-
         # Create indicators
         obv = OnBalanceVolume()
         

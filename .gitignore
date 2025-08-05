@@ -166,3 +166,5 @@ pub/
 .idea/
 !Net.HPSocket/HPSocket/Src/Common/debug/
 !Net.HPSocket/**/Dependent/**/x64/
+
+__pycache__/

@@ -101,14 +101,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			// Initialize tracking variables
 			_nDayHigh = 0;
 			_nDayLow = decimal.MaxValue;
 			_isFormed = false;
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_highest = new Highest { Length = LookbackPeriod };

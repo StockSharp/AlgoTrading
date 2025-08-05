@@ -86,10 +86,6 @@ class atr_trailing_strategy(Strategy):
         """
         super(atr_trailing_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._entryPrice = 0
-        self._trailingStopLevel = 0
-
         # Create indicators
         atr = AverageTrueRange()
         atr.Length = self.AtrPeriod

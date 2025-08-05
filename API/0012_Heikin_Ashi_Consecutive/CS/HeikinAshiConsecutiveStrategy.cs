@@ -80,16 +80,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			_bullishCount = default;
 			_bearishCount = default;
 			_prevHaOpen = default;
 			_prevHaClose = default;
 			_prevHaHigh = default;
 			_prevHaLow = default;
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

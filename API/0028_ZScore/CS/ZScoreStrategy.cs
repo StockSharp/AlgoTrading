@@ -118,12 +118,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			// Reset state variables
+			_prevZScore = 0;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Reset state variables
-			_prevZScore = 0;
 
 			// Create indicators
 			var sma = new SimpleMovingAverage { Length = MAPeriod };

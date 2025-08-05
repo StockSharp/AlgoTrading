@@ -98,11 +98,6 @@ class ma_crossover_strategy(Strategy):
         """
         super(ma_crossover_strategy, self).OnStarted(time)
 
-        # Initialize state variables
-        self._entry_price = 0.0
-        self._is_long_position = False
-        self._is_initialized = False
-
         # Create indicators
         fast_ma = SMA()
         fast_ma.Length = self.fast_length

@@ -68,10 +68,6 @@ class vwma_strategy(Strategy):
         """
         super(vwma_strategy, self).OnStarted(time)
 
-        self._previousClosePrice = 0
-        self._previousVWMA = 0
-        self._isFirstCandle = True
-
         # Create VWMA indicator
         vwma = VolumeWeightedMovingAverage()
         vwma.Length = self.VWMAPeriod

@@ -75,12 +75,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevIsPriceAboveSupertrend = false;
+			_prevSupertrendValue = 0;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevIsPriceAboveSupertrend = false;
-			_prevSupertrendValue = 0;
 
 			// Create custom supertrend indicator
 			// Since StockSharp doesn't have a built-in Supertrend indicator,

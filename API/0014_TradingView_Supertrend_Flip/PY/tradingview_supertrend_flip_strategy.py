@@ -96,13 +96,6 @@ class tradingview_supertrend_flip_strategy(Strategy):
         """
         super(tradingview_supertrend_flip_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_supertrend_value = 0.0
-        self._prev_is_price_above_supertrend = False
-        self._avg_volume = 0.0
-        self._supertrend_value = 0.0
-        self._volume_queue = []
-
         # Create custom indicators
         # Since StockSharp doesn't have built-in Supertrend, we use ATR and customize calculation
         atr = AverageTrueRange()

@@ -77,10 +77,6 @@ class roc_impulse_strategy(Strategy):
         """
         super(roc_impulse_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._previous_roc = 0.0
-        self._is_first_candle = True
-
         # Create indicators
         roc = RateOfChange()
         roc.Length = self.roc_period

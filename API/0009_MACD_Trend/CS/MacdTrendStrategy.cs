@@ -104,11 +104,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevIsMacdAboveSignal = false;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevIsMacdAboveSignal = false;
 
 			// Create MACD indicator with signal line
 

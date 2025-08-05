@@ -92,11 +92,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_previousIV = default;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_previousIV = default;
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MAPeriod };

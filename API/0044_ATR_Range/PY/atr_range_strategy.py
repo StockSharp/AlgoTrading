@@ -86,9 +86,6 @@ class atr_range_strategy(Strategy):
         """
         super(atr_range_strategy, self).OnStarted(time)
 
-        self._nBarsAgoPrice = 0
-        self._barCounter = 0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

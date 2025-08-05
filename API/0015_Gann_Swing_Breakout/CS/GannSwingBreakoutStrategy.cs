@@ -83,10 +83,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			_lastSwingHigh = default;
 			_lastSwingLow = default;
 			_highBarIndex = default;
@@ -96,6 +95,13 @@ namespace StockSharp.Samples.Strategies
 			_recentHighs.Clear();
 			_recentLows.Clear();
 			_recentCandles.Clear();
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MaPeriod };

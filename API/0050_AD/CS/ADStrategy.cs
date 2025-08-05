@@ -62,12 +62,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_previousADValue = 0;
+			_isFirstCandle = true;
+
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_previousADValue = 0;
-			_isFirstCandle = true;
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MAPeriod };

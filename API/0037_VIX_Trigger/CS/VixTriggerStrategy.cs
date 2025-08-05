@@ -97,14 +97,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
 			// Reset state variables
 			_prevVix = 0;
 			_latestVix = 0;
 			_isVixRising = false;
+
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicator
 			var sma = new SimpleMovingAverage { Length = MAPeriod };

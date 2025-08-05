@@ -113,10 +113,6 @@ class low_vol_reversion_strategy(Strategy):
         """
         super(low_vol_reversion_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._avg_atr = 0.0
-        self._lookback_counter = 0
-
         # Create indicators
         sma = SimpleMovingAverage()
         sma.Length = self.ma_period

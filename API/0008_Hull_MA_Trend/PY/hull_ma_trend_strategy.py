@@ -87,9 +87,6 @@ class hull_ma_trend_strategy(Strategy):
         """
         super(hull_ma_trend_strategy, self).OnStarted(time)
 
-        # Initialize state
-        self._prev_hma_value = 0.0
-
         # Create indicators
         hma = HullMovingAverage()
         hma.Length = self.hma_period

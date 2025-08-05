@@ -88,11 +88,6 @@ class hv_breakout_strategy(Strategy):
         """
         super(hv_breakout_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._referencePrice = 0
-        self._historicalVolatility = 0
-        self._isReferenceSet = False
-
         # Create indicators
         standardDeviation = StandardDeviation()
         standardDeviation.Length = self.HvPeriod

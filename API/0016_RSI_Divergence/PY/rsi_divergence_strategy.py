@@ -80,11 +80,6 @@ class rsi_divergence_strategy(Strategy):
         """
         super(rsi_divergence_strategy, self).OnStarted(time)
 
-        # Reset state variables
-        self._prev_price = 0.0
-        self._prev_rsi = 0.0
-        self._is_first_candle = True
-
         # Create RSI indicator
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period
