@@ -27,7 +27,16 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _entryZ;
 		private readonly StrategyParam<decimal> _exitZ;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 
 		private class Win { public Queue<decimal> R = new(); }
 		private readonly Dictionary<(Security, Security), Win> _hist = new();
@@ -94,12 +103,14 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
 		{
 			foreach (var (a, b) in Pairs)
-			{ yield return (a, _tf); yield return (b, _tf); }
+			{ yield return (a, CandleType); yield return (b, CandleType); }
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
@@ -110,8 +121,8 @@ namespace StockSharp.Samples.Strategies
 			foreach (var (a, b) in Pairs)
 			{
 				_hist[(a, b)] = new Win();
-				SubscribeCandles(_tf, true, a).Bind(c => ProcessCandle(c, a)).Start();
-				SubscribeCandles(_tf, true, b).Bind(c => ProcessCandle(c, b)).Start();
+				SubscribeCandles(CandleType, true, a).Bind(c => ProcessCandle(c, a)).Start();
+				SubscribeCandles(CandleType, true, b).Bind(c => ProcessCandle(c, b)).Start();
 			}
 		}
 

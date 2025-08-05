@@ -24,7 +24,16 @@ namespace StockSharp.Samples.Strategies
 	public class SyntheticLendingRatesStrategy : Strategy
 	{
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromMinutes(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 
 		/// <summary>
@@ -42,6 +51,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -50,7 +61,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("Security not set");
 
-			yield return (Security, _tf);
+			yield return (Security, CandleType);
 		}
 
 		/// <inheritdoc />
@@ -60,7 +71,7 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Security not set");
 
 			base.OnStarted(t);
-			SubscribeCandles(_tf, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
+			SubscribeCandles(CandleType, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)

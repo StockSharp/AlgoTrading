@@ -24,7 +24,16 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _prior;
 		private readonly StrategyParam<int> _after;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 
 		private readonly Dictionary<Security, decimal> _latestPrices = new();
 		private int _tdMonthEnd = int.MaxValue;
@@ -67,6 +76,8 @@ namespace StockSharp.Samples.Strategies
 
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetDisplay("Min Trade USD", "Minimum notional value for orders", "Risk Management");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -75,7 +86,7 @@ namespace StockSharp.Samples.Strategies
 			if (Security == null)
 				throw new InvalidOperationException("Set ETF");
 
-			yield return (Security, _tf);
+			yield return (Security, CandleType);
 		}
 
 		/// <inheritdoc />
@@ -86,7 +97,7 @@ namespace StockSharp.Samples.Strategies
 
 			base.OnStarted(time);
 
-			SubscribeCandles(_tf, true, Security)
+			SubscribeCandles(CandleType, true, Security)
 				.Bind(c => ProcessCandle(c, Security))
 				.Start();
 		}

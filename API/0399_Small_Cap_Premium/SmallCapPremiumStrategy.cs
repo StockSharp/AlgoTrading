@@ -26,7 +26,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<IEnumerable<Security>> _universe;
 		private readonly StrategyParam<int> _quint;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
 
 		/// <summary>
 		/// Universe of stocks to rank by market capitalization.
@@ -54,6 +54,15 @@ namespace StockSharp.Samples.Strategies
 			get => _minUsd.Value;
 			set => _minUsd.Value = value;
 		}
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 		#endregion
 
 		private readonly Dictionary<Security, decimal> _weights = new();
@@ -75,10 +84,12 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 				.SetGreaterThanZero()
 				.SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities() =>
-			Universe.Select(s => (s, _tf));
+			Universe.Select(s => (s, CandleType));
 
 		protected override void OnStarted(DateTimeOffset t)
 		{
@@ -89,7 +100,7 @@ namespace StockSharp.Samples.Strategies
 
 			var trigger = Universe.First();
 
-			SubscribeCandles(_tf, true, trigger)
+			SubscribeCandles(CandleType, true, trigger)
 				.Bind(c => ProcessCandle(c, trigger))
 				.Start();
 		}

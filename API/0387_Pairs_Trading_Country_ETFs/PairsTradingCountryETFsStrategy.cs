@@ -32,7 +32,16 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _entryZ;
 		private readonly StrategyParam<decimal> _exitZ;
 		private readonly StrategyParam<decimal> _minUsd;
-		private readonly DataType _tf = TimeSpan.FromDays(1).TimeFrame();
+		private readonly StrategyParam<DataType> _candleType;
+
+		/// <summary>
+		/// The type of candles to use for strategy calculation.
+		/// </summary>
+		public DataType CandleType
+		{
+			get => _candleType.Value;
+			set => _candleType.Value = value;
+		}
 
 		/// <summary>
 		/// Strategy universe containing exactly two ETFs.
@@ -100,6 +109,8 @@ namespace StockSharp.Samples.Strategies
 			_minUsd = Param(nameof(MinTradeUsd), 200m)
 			.SetGreaterThanZero()
 			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
+			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
@@ -108,8 +119,8 @@ namespace StockSharp.Samples.Strategies
 				throw new InvalidOperationException("Universe must contain exactly two ETFs.");
 			_a = Universe.ElementAt(0);
 			_b = Universe.ElementAt(1);
-			yield return (_a, _tf);
-			yield return (_b, _tf);
+			yield return (_a, CandleType);
+			yield return (_b, CandleType);
 		}
 
 		protected override void OnStarted(DateTimeOffset t)
@@ -117,8 +128,8 @@ namespace StockSharp.Samples.Strategies
 			if (Universe == null || Universe.Count() != 2)
 				throw new InvalidOperationException("Universe must contain exactly two ETFs.");
 			base.OnStarted(t);
-			SubscribeCandles(_tf, true, _a).Bind(c => ProcessCandle(c, _a)).Start();
-			SubscribeCandles(_tf, true, _b).Bind(c => ProcessCandle(c, _b)).Start();
+			SubscribeCandles(CandleType, true, _a).Bind(c => ProcessCandle(c, _a)).Start();
+			SubscribeCandles(CandleType, true, _b).Bind(c => ProcessCandle(c, _b)).Start();
 		}
 
 		private void ProcessCandle(ICandleMessage candle, Security security)
