@@ -46,6 +46,9 @@ class volume_supertrend_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._supertrend_value = 0.0
+        self._supertrend_direction = 0
+
     @property
     def volume_avg_period(self):
         """Volume average period"""
@@ -91,6 +94,11 @@ class volume_supertrend_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stop_loss_percent.Value = value
 
+    def OnReseted(self):
+        super(volume_supertrend_strategy, self).OnReseted()
+        self._supertrend_value = 0.0
+        self._supertrend_direction = 0
+
     def OnStarted(self, time):
         super(volume_supertrend_strategy, self).OnStarted(time)
 
@@ -104,10 +112,6 @@ class volume_supertrend_strategy(Strategy):
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
-
-        # Current Supertrend state variables
-        supertrend_value = 0.0
-        supertrend_direction = 0  # 1 for up (bullish), -1 for down (bearish)
 
         # Bind indicators to handle each candle
         def handle_candle(candle, atr_value):
@@ -129,36 +133,34 @@ class volume_supertrend_strategy(Strategy):
             upper_band = ((high_price + low_price) / 2) + atr_amount
             lower_band = ((high_price + low_price) / 2) - atr_amount
 
-            nonlocal supertrend_value, supertrend_direction
-
             # Initialize Supertrend
-            if supertrend_value == 0 and supertrend_direction == 0:
-                supertrend_value = close_price
-                supertrend_direction = 1
+            if self._supertrend_value == 0 and self._supertrend_direction == 0:
+                self._supertrend_value = close_price
+                self._supertrend_direction = 1
 
             # Update Supertrend
-            if supertrend_direction == 1:  # Previous trend was up
+            if self._supertrend_direction == 1:  # Previous trend was up
                 # Update lower band only - trailing
-                supertrend_value = Math.Max(lower_band, supertrend_value)
+                self._supertrend_value = Math.Max(lower_band, self._supertrend_value)
 
                 # Check for trend reversal
-                if close_price < supertrend_value:
-                    supertrend_direction = -1
-                    supertrend_value = upper_band
+                if close_price < self._supertrend_value:
+                    self._supertrend_direction = -1
+                    self._supertrend_value = upper_band
             else:  # Previous trend was down
                 # Update upper band only - trailing
-                supertrend_value = Math.Min(upper_band, supertrend_value)
+                self._supertrend_value = Math.Min(upper_band, self._supertrend_value)
 
                 # Check for trend reversal
-                if close_price > supertrend_value:
-                    supertrend_direction = 1
-                    supertrend_value = lower_band
+                if close_price > self._supertrend_value:
+                    self._supertrend_direction = 1
+                    self._supertrend_value = lower_band
 
             # Current volume
             current_volume = float(candle.TotalVolume)
 
             # Process trading signals
-            self.ProcessSignals(candle, current_volume, volume_value, supertrend_value, supertrend_direction)
+            self.ProcessSignals(candle, current_volume, volume_value, self._supertrend_value, self._supertrend_direction)
 
         subscription.Bind(atr, handle_candle).Start()
 

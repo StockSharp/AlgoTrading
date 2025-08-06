@@ -74,6 +74,9 @@ class parabolic_sar_cci_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(parabolic_sar_cci_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         super(parabolic_sar_cci_strategy, self).OnStarted(time)
 

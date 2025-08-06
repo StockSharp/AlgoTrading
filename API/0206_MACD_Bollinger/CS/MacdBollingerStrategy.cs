@@ -139,15 +139,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+			{
+					return [(Security, CandleType)];
+			}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
 		{
-			return [(Security, CandleType)];
+			base.OnReseted();
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
 
 			// Initialize indicators
 			var macd = new MovingAverageConvergenceDivergenceSignal

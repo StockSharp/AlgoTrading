@@ -96,11 +96,12 @@ class rsi_hull_ma_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(rsi_hull_ma_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(rsi_hull_ma_strategy, self).OnReseted()
         self._previous_hull_value = 0
 
+    def OnStarted(self, time):
+        super(rsi_hull_ma_strategy, self).OnStarted(time)
         # Initialize indicators
         rsi = RelativeStrengthIndex(); rsi.Length = self.RsiPeriod
         hull_ma = HullMovingAverage(); hull_ma.Length = self.HullPeriod

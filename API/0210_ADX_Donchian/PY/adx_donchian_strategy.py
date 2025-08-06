@@ -101,6 +101,9 @@ class adx_donchian_strategy(Strategy):
     def multiplier(self, value):
         self._multiplier.Value = value
 
+    def OnReseted(self):
+        super(adx_donchian_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Initializes indicators, subscriptions, and charting.

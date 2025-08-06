@@ -128,6 +128,9 @@ class stochastic_keltner_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(stochastic_keltner_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(stochastic_keltner_strategy, self).OnStarted(time)
