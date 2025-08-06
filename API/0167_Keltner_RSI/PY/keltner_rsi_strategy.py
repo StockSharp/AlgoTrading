@@ -122,6 +122,13 @@ class keltner_rsi_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(keltner_rsi_strategy, self).OnReseted()
+        self._ema = None
+        self._atr = None
+        self._rsi = None
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.

@@ -114,14 +114,14 @@ class hull_ma_stochastic_strategy(Strategy):
     def OnReseted(self):
         """Resets internal state when strategy is reset."""
         super(hull_ma_stochastic_strategy, self).OnReseted()
+        self._hma = None
+        self._stochastic = None
+        self._atr = None
         self._prev_hma_value = 0.0
 
     def OnStarted(self, time):
         """Called when the strategy starts. Sets up indicators, subscriptions, and charting."""
         super(hull_ma_stochastic_strategy, self).OnStarted(time)
-
-        # Initialize the previous HMA value
-        self._prev_hma_value = 0.0
 
         # Create indicators
         self._hma = HullMovingAverage()

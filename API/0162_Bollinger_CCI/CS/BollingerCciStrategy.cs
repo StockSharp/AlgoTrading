@@ -119,15 +119,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
+
+			Indicators.Clear();
+		}
+
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
 
 			// Create indicators
 			var bollinger = new BollingerBands
@@ -189,8 +197,8 @@ namespace StockSharp.Samples.Strategies
 			var price = candle.ClosePrice;
 
 			LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
-				   $"Upper Band: {upperBand}, Middle Band: {middleBand}, Lower Band: {lowerBand}, " +
-				   $"CCI: {cciTyped}");
+				$"Upper Band: {upperBand}, Middle Band: {middleBand}, Lower Band: {lowerBand}, " +
+				$"CCI: {cciTyped}");
 
 			// Trading rules
 			if (price < lowerBand && cciTyped < CciOversold && Position <= 0)

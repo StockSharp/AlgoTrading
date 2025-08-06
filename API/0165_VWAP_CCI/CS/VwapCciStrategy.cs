@@ -91,15 +91,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
+
+			Indicators.Clear();
+		}
+
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
 
 			// Create indicators
 			var vwap = new VolumeWeightedMovingAverage();
@@ -149,8 +157,8 @@ namespace StockSharp.Samples.Strategies
 			var isPriceAboveVWAP = price > vwapValue;
 
 			LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
-				   $"VWAP: {vwapValue}, Price > VWAP: {isPriceAboveVWAP}, " +
-				   $"CCI: {cciValue}");
+				$"VWAP: {vwapValue}, Price > VWAP: {isPriceAboveVWAP}, " +
+				$"CCI: {cciValue}");
 
 			// Trading rules
 			if (!isPriceAboveVWAP && cciValue < CciOversold && Position <= 0)

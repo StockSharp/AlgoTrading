@@ -87,15 +87,24 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
+
+			_prevCciValue = 0;
+			_isFirstValue = true;
+		}
+
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
 
 			// Create indicators
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };

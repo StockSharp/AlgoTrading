@@ -120,15 +120,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
+
+			Indicators.Clear();
+		}
+
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
 
 			// Create indicators
 			LengthIndicator<decimal> ma;
@@ -200,8 +208,8 @@ namespace StockSharp.Samples.Strategies
 			var isPriceAboveMA = price > maValue;
 
 			LogInfo($"Candle: {candle.OpenTime}, Close: {price}, " +
-				   $"MA: {maValue}, Price > MA: {isPriceAboveMA}, " +
-				   $"Williams %R: {williamsRValue}");
+				$"MA: {maValue}, Price > MA: {isPriceAboveMA}, " +
+				$"Williams %R: {williamsRValue}");
 
 			// Trading rules
 			if (isPriceAboveMA && williamsRValue < WilliamsROversold && Position <= 0)

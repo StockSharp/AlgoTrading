@@ -124,6 +124,11 @@ class rsi_williams_r_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(rsi_williams_r_strategy, self).OnReseted()
+        self.Indicators.Clear()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Creates indicators, subscriptions, and charting.

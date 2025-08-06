@@ -73,6 +73,11 @@ class adx_cci_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(adx_cci_strategy, self).OnReseted()
+        self._prev_cci_value = 0.0
+        self._is_first_value = True
+
     def OnStarted(self, time):
         super(adx_cci_strategy, self).OnStarted(time)
 
@@ -81,10 +86,6 @@ class adx_cci_strategy(Strategy):
         adx.Length = self.AdxPeriod
         cci = CommodityChannelIndex()
         cci.Length = self.CciPeriod
-
-        # Reset state variables
-        self._prev_cci_value = 0.0
-        self._is_first_value = True
 
         # Enable position protection with stop-loss
         self.StartProtection(
