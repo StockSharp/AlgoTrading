@@ -73,10 +73,6 @@ class doji_reversal_strategy(Strategy):
         """
         super(doji_reversal_strategy, self).OnStarted(time)
 
-        # Reset candle storage
-        self._previousCandle = None
-        self._previousPreviousCandle = None
-
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

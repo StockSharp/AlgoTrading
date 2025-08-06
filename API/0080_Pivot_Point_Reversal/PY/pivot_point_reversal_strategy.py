@@ -57,23 +57,25 @@ class pivot_point_reversal_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
-    def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
-        super(pivot_point_reversal_strategy, self).OnStarted(time)
-
-        # Initialize variables
-        self._prevHigh = 0.0
-        self._prevLow = 0.0
-        self._prevClose = 0.0
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(pivot_point_reversal_strategy, self).OnReseted()
         self._pivot = 0.0
         self._r1 = 0.0
         self._r2 = 0.0
         self._s1 = 0.0
         self._s2 = 0.0
+        self._prevHigh = 0.0
+        self._prevLow = 0.0
+        self._prevClose = 0.0
         self._currentDay = DateTimeOffset.MinValue
-        self._newDayStarted = True
+        self._newDayStarted = False
+
+    def OnStarted(self, time):
+        """
+        Called when the strategy starts.
+        """
+        super(pivot_point_reversal_strategy, self).OnStarted(time)
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

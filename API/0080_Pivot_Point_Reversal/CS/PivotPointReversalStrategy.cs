@@ -72,11 +72,10 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Initialize variables
 			_prevHigh = 0;
 			_prevLow = 0;
 			_prevClose = 0;
@@ -86,7 +85,13 @@ namespace StockSharp.Samples.Strategies
 			_s1 = 0;
 			_s2 = 0;
 			_currentDay = DateTimeOffset.MinValue;
-			_newDayStarted = true;
+			_newDayStarted = false;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

@@ -98,15 +98,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Initialize values
+			_obv = null;
+			_ma = null;
 			_previousPrice = 0;
 			_previousObv = 0;
 			_currentPrice = 0;
 			_currentObv = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_obv = new OnBalanceVolume();
@@ -117,7 +124,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
 				.Bind(_obv, _ma, ProcessCandle)
 				.Start();

@@ -75,13 +75,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_previousCandle = null;
+			_previousPreviousCandle = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Reset candle storage
-			_previousCandle = null;
-			_previousPreviousCandle = null;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

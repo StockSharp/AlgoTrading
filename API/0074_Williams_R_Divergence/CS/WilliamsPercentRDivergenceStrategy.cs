@@ -97,15 +97,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Initialize values
+			_williamsR = null;
 			_previousPrice = 0;
 			_previousWilliamsR = 0;
 			_currentPrice = 0;
 			_currentWilliamsR = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create Williams %R indicator
 			_williamsR = new WilliamsR

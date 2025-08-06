@@ -74,17 +74,20 @@ class williams_percent_r_divergence_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(williams_percent_r_divergence_strategy, self).OnReseted()
+        self._williamsR = None
+        self._previousPrice = 0.0
+        self._previousWilliamsR = 0.0
+        self._currentPrice = 0.0
+        self._currentWilliamsR = 0.0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(williams_percent_r_divergence_strategy, self).OnStarted(time)
-
-        # Initialize values
-        self._previousPrice = 0.0
-        self._previousWilliamsR = 0.0
-        self._currentPrice = 0.0
-        self._currentWilliamsR = 0.0
 
         # Create Williams %R indicator
         self._williamsR = WilliamsR()
