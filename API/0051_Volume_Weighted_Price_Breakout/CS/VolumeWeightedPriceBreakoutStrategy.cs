@@ -75,33 +75,39 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Create indicators
-			var ma = new SimpleMovingAverage { Length = MAPeriod };
-			var vwma = new VolumeWeightedMovingAverage { Length = VWAPPeriod };
+				// Create indicators
+				var ma = new SimpleMovingAverage { Length = MAPeriod };
+				var vwma = new VolumeWeightedMovingAverage { Length = VWAPPeriod };
 
-			// Create subscription and bind indicators
-			var subscription = SubscribeCandles(CandleType);
-			
-			subscription
-				.Bind(ma, vwma, ProcessCandle)
-				.Start();
+				// Create subscription and bind indicators
+				var subscription = SubscribeCandles(CandleType);
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
+				subscription
+					.Bind(ma, vwma, ProcessCandle)
+					.Start();
 
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
+				// Configure protection
+				StartProtection(
+					takeProfit: new Unit(3, UnitTypes.Percent),
+					stopLoss: new Unit(2, UnitTypes.Percent)
+				);
+
+				// Setup chart visualization
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawIndicator(area, ma);
 				DrawIndicator(area, vwma);
 				DrawOwnTrades(area);
 			}
@@ -133,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Sell Signal: Price ({candle.ClosePrice}) < VWMA ({vwmaValue})");
 				SellMarket(Volume + Math.Abs(Position));
 			}
-			
+
 			// Exit logic: Price crosses MA in the opposite direction
 			if (Position > 0 && candle.ClosePrice < maValue)
 			{

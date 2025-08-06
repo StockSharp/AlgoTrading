@@ -40,33 +40,38 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_isPositionOpen = false;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_isPositionOpen = false;
-
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);
 
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
+				subscription
+					.Bind(ProcessCandle)
+					.Start();
 
-			// Setup stop loss/take profit protection
-			StartProtection(
-				takeProfit: new Unit(2, UnitTypes.Percent),
-				stopLoss: new Unit(1, UnitTypes.Percent)
-			);
+				// Setup stop loss/take profit protection
+				StartProtection(
+					takeProfit: new Unit(2, UnitTypes.Percent),
+					stopLoss: new Unit(1, UnitTypes.Percent)
+				);
 
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
+				// Setup chart visualization if available
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawOwnTrades(area);
+				}
 			}
-		}
 
 		protected override void OnPositionReceived(Position position)
 		{

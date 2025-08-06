@@ -92,38 +92,45 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_volumeMA = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Create indicators
-			var ma = new SimpleMovingAverage { Length = MAPeriod };
-			
-			_volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+				// Create indicators
+				var ma = new SimpleMovingAverage { Length = MAPeriod };
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Regular price MA binding for signals and visualization
-			subscription
-				.Bind(ma, ProcessCandle)
-				.Start();
+				_volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
+				// Create subscription
+				var subscription = SubscribeCandles(CandleType);
 
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
-				DrawOwnTrades(area);
+				// Regular price MA binding for signals and visualization
+				subscription
+					.Bind(ma, ProcessCandle)
+					.Start();
+
+				// Configure protection
+				StartProtection(
+					takeProfit: new Unit(3, UnitTypes.Percent),
+					stopLoss: new Unit(2, UnitTypes.Percent)
+				);
+
+				// Setup chart visualization
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawIndicator(area, ma);
+					DrawOwnTrades(area);
+				}
 			}
-		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal maValue)
 		{
@@ -136,7 +143,7 @@ namespace StockSharp.Samples.Strategies
 			// Calculate volume surge ratio
 			var volumeSurgeRatio = candle.TotalVolume / volumeMAValue;
 			var isVolumeSurge = volumeSurgeRatio >= VolumeSurgeMultiplier;
-			
+
 			// Log current values
 			LogInfo($"Candle Close: {candle.ClosePrice}, MA: {maValue}, Volume: {candle.TotalVolume}");
 			LogInfo($"Volume MA: {volumeMAValue}, Volume Surge Ratio: {volumeSurgeRatio:P2}");
@@ -159,7 +166,7 @@ namespace StockSharp.Samples.Strategies
 					SellMarket(Volume + Math.Abs(Position));
 				}
 			}
-			
+
 			// Exit logic: Volume falls below average
 			if (candle.TotalVolume < volumeMAValue)
 			{

@@ -48,8 +48,6 @@ class hammer_candle_strategy(Strategy):
         """
         super(hammer_candle_strategy, self).OnStarted(time)
 
-        self._isPositionOpen = False
-
         # Subscribe to candles
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

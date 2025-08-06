@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal? _secondTopHigh;
 		private int _barsSinceFirstTop;
 		private bool _patternConfirmed;
-		
+
 		private Highest _highestIndicator;
 
 		/// <summary>
@@ -93,41 +93,48 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_firstTopHigh = null;
 			_secondTopHigh = null;
 			_barsSinceFirstTop = 0;
 			_patternConfirmed = false;
+			_highestIndicator = null;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicator to find highest values
 			_highestIndicator = new Highest { Length = Distance * 2 };
 
-			// Subscribe to candles
-			var subscription = SubscribeCandles(CandleType);
+				// Subscribe to candles
+				var subscription = SubscribeCandles(CandleType);
 
-			// Bind candle processing 
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
+				// Bind candle processing 
+				subscription
+					.Bind(ProcessCandle)
+					.Start();
 
-			// Enable position protection
-			StartProtection(
-				new Unit(0, UnitTypes.Absolute), // No take profit (manual exit)
-				new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-				false // No trailing
-			);
+				// Enable position protection
+				StartProtection(
+					new Unit(0, UnitTypes.Absolute), // No take profit (manual exit)
+					new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
+					false // No trailing
+				);
 
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
+				// Setup chart visualization if available
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawOwnTrades(area);
+				}
 			}
-		}
 
 		private void ProcessCandle(ICandleMessage candle)
 		{
@@ -152,7 +159,7 @@ namespace StockSharp.Samples.Strategies
 				// Sell signal - Double Top with confirmation candle
 				SellMarket(Volume);
 				LogInfo($"Double Top signal: Sell at {candle.ClosePrice}, Stop Loss at {Math.Max(_firstTopHigh.Value, _secondTopHigh.Value) * (1 + StopLossPercent / 100)}");
-				
+
 				// Reset pattern detection
 				_patternConfirmed = false;
 				_firstTopHigh = null;
@@ -181,7 +188,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Check if current high is close to first top
 					var priceDifference = Math.Abs((candle.HighPrice - _firstTopHigh.Value) / _firstTopHigh.Value * 100);
-					
+
 					if (priceDifference <= SimilarityPercent)
 					{
 						_secondTopHigh = candle.HighPrice;

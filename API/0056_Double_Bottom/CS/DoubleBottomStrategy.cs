@@ -23,7 +23,7 @@ namespace StockSharp.Samples.Strategies
 		private decimal? _secondBottomLow;
 		private int _barsSinceFirstBottom;
 		private bool _patternConfirmed;
-		
+
 		private Lowest _lowestIndicator;
 
 		/// <summary>
@@ -93,41 +93,48 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_firstBottomLow = null;
 			_secondBottomLow = null;
 			_barsSinceFirstBottom = 0;
 			_patternConfirmed = false;
+			_lowestIndicator = null;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicator to find lowest values
 			_lowestIndicator = new Lowest { Length = Distance * 2 };
 
-			// Subscribe to candles
-			var subscription = SubscribeCandles(CandleType);
+				// Subscribe to candles
+				var subscription = SubscribeCandles(CandleType);
 
-			// Bind candle processing 
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
+				// Bind candle processing 
+				subscription
+					.Bind(ProcessCandle)
+					.Start();
 
-			// Enable position protection
-			StartProtection(
-				new Unit(0, UnitTypes.Absolute), // No take profit (manual exit)
-				new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-				false // No trailing
-			);
+				// Enable position protection
+				StartProtection(
+					new Unit(0, UnitTypes.Absolute), // No take profit (manual exit)
+					new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
+					false // No trailing
+				);
 
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
+				// Setup chart visualization if available
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawOwnTrades(area);
+				}
 			}
-		}
 
 		private void ProcessCandle(ICandleMessage candle)
 		{
@@ -152,7 +159,7 @@ namespace StockSharp.Samples.Strategies
 				// Buy signal - Double Bottom with confirmation candle
 				BuyMarket(Volume);
 				LogInfo($"Double Bottom signal: Buy at {candle.ClosePrice}, Stop Loss at {Math.Min(_firstBottomLow.Value, _secondBottomLow.Value) * (1 - StopLossPercent / 100)}");
-				
+
 				// Reset pattern detection
 				_patternConfirmed = false;
 				_firstBottomLow = null;
@@ -181,7 +188,7 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Check if current low is close to first bottom
 					var priceDifference = Math.Abs((candle.LowPrice - _firstBottomLow.Value) / _firstBottomLow.Value * 100);
-					
+
 					if (priceDifference <= SimilarityPercent)
 					{
 						_secondBottomLow = candle.LowPrice;
