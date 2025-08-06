@@ -122,15 +122,21 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevStochValue = 0;
+			_prevStochAverage = 0;
+			_prevStochStdDev = 0;
+		}
+
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevStochAverage = default;
-			_prevStochStdDev = default;
-			_prevStochValue = default;
 
 			// Initialize indicators
 			_stochastic = new StochasticOscillator
@@ -142,11 +148,6 @@ namespace StockSharp.Samples.Strategies
 			_stochAverage = new SimpleMovingAverage { Length = LookbackPeriod };
 			_stochStdDev = new StandardDeviation { Length = LookbackPeriod };
 			
-			// Reset stored values
-			_prevStochValue = 0;
-			_prevStochAverage = 0;
-			_prevStochStdDev = 0;
-
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription

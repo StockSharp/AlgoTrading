@@ -115,11 +115,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Reset variables
+			base.OnReseted();
+
 			_prevAdx = 0;
 			_avgAdx = 0;
 			_stdDevAdx = 0;
@@ -127,7 +127,12 @@ namespace StockSharp.Samples.Strategies
 			_sumSquaresAdx = 0;
 			_count = 0;
 			_adxValues.Clear();
+		}
 
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
 			// Create ADX indicator
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
 

@@ -96,15 +96,21 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_currentMomentum = default;
+			_momentumAvgValue = default;
+			_momentumStdDevValue = default;
+		}
+
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_currentMomentum = default;
-			_momentumAvgValue = default;
-			_momentumStdDevValue = default;
 
 			// Create indicators
 			_momentum = new Momentum { Length = MomentumPeriod };

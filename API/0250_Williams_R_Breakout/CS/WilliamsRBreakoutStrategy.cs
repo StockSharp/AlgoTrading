@@ -109,14 +109,20 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevWilliamsRValue = 0;
+			_prevWilliamsRAvgValue = 0;
+		}
+
 		
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-			
-			_prevWilliamsRValue = 0;
-			_prevWilliamsRAvgValue = 0;
 			
 			// Create indicators
 			_williamsR = new WilliamsR { Length = WilliamsRPeriod };

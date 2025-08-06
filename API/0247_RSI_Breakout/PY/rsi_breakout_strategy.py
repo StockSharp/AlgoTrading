@@ -106,11 +106,6 @@ class rsi_breakout_strategy(Strategy):
         """Called when the strategy starts."""
         super(rsi_breakout_strategy, self).OnStarted(time)
 
-        self._prevRsiValue = 0.0
-        self._currentRsiValue = 0.0
-        self._currentRsiAvg = 0.0
-        self._currentRsiStdDev = 0.0
-
         # Create indicators
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.RsiPeriod

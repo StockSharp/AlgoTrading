@@ -102,11 +102,13 @@ class williams_r_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(williams_r_breakout_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(williams_r_breakout_strategy, self).OnReseted()
         self._prevWilliamsRValue = 0
         self._prevWilliamsRAvgValue = 0
+
+    def OnStarted(self, time):
+        super(williams_r_breakout_strategy, self).OnStarted(time)
 
         # Create indicators
         self._williamsR = WilliamsR()

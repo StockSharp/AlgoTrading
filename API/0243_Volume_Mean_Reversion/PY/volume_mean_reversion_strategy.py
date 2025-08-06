@@ -88,19 +88,20 @@ class volume_mean_reversion_strategy(Strategy):
         """Return security and timeframe used by the strategy."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        """
-        Reset variables and initialize indicators, subscriptions and charting.
-        """
-        super(volume_mean_reversion_strategy, self).OnStarted(time)
-
-        # Reset variables
+    def OnReseted(self):
+        super(volume_mean_reversion_strategy, self).OnReseted()
         self._avg_volume = 0.0
         self._std_dev_volume = 0.0
         self._sum_volume = 0.0
         self._sum_squares_volume = 0.0
         self._count = 0
         self._volume_values = []
+
+    def OnStarted(self, time):
+        """
+        Initialize indicators, subscriptions and charting.
+        """
+        super(volume_mean_reversion_strategy, self).OnStarted(time)
 
         # Create Volume indicator (for visualization)
         volume = VolumeIndicator()

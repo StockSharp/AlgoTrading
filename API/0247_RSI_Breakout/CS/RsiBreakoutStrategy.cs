@@ -97,16 +97,22 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_prevRsiValue = default;
 			_currentRsiValue = default;
 			_currentRsiAvg = default;
 			_currentRsiStdDev = default;
+		}
+
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_rsi = new RelativeStrengthIndex { Length = RsiPeriod };

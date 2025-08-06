@@ -115,11 +115,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Reset variables
+			base.OnReseted();
+
 			_prevAtr = 0;
 			_avgAtr = 0;
 			_stdDevAtr = 0;
@@ -127,7 +127,12 @@ namespace StockSharp.Samples.Strategies
 			_sumSquaresAtr = 0;
 			_count = 0;
 			_atrValues.Clear();
+		}
 
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
 			// Create ATR indicator
 			var atr = new AverageTrueRange { Length = AtrPeriod };
 

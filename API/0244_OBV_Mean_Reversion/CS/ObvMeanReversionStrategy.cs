@@ -80,15 +80,21 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_currentObv = default;
+			_obvAvgValue = default;
+			_obvStdDevValue = default;
+		}
+
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_currentObv = default;
-			_obvAvgValue = default;
-			_obvStdDevValue = default;
 
 			// Create indicators
 			_obv = new OnBalanceVolume();

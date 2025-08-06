@@ -87,13 +87,15 @@ class momentum_breakout_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(momentum_breakout_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(momentum_breakout_strategy, self).OnReseted()
         self._current_momentum = None
         self._momentum_avg_value = None
         self._momentum_stddev_value = None
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(momentum_breakout_strategy, self).OnStarted(time)
 
         # Create indicators
         self._momentum = Momentum()
