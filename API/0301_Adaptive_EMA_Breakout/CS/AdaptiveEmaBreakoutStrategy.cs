@@ -111,8 +111,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_isFirstCandle = true;
 			_prevAdaptiveEmaValue = default;
+			_isFirstCandle = true;
 		}
 
 		/// <inheritdoc />
