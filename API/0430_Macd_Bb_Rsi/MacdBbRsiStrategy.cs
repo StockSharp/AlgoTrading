@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -36,7 +37,7 @@ public class MacdBbRsiStrategy : Strategy
 	private readonly StrategyParam<bool> _useTP;
 	private readonly StrategyParam<Unit> _takeValue;
 
-	private MovingAverageConvergenceDivergence _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private BollingerBands _bollinger;
 	private RelativeStrengthIndex _rsi;
 	private DirectionalIndex _dmi;
@@ -221,16 +222,22 @@ public class MacdBbRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
 
 		// Initialize indicators
-		_macd = new MovingAverageConvergenceDivergence
+		_macd = new()
 		{
-			FastLength = MacdFastLength,
-			SlowLength = MacdSlowLength,
-			SignalLength = MacdSignalLength
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength }
+			}
 		};
 
 		_bollinger = new BollingerBands
@@ -258,13 +265,13 @@ public class MacdBbRsiStrategy : Strategy
 		if (UseDmiFilter)
 		{
 			subscription
-				.Bind(_macd, _bollinger, _rsi, _dmi, OnProcess)
+				.BindEx(_macd, _bollinger, _rsi, _dmi, OnProcessWithDmi)
 				.Start();
 		}
 		else
 		{
 			subscription
-				.Bind(_macd, _bollinger, _rsi, OnProcess)
+				.BindEx(_macd, _bollinger, _rsi, OnProcessWithoutDmi)
 				.Start();
 		}
 
@@ -292,7 +299,17 @@ public class MacdBbRsiStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, params IIndicatorValue[] values)
+	private void OnProcessWithDmi(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue dmiValue)
+	{
+		ProcessCandle(candle, macdValue, bollingerValue, rsiValue.ToDecimal(), dmiValue);
+	}
+
+	private void OnProcessWithoutDmi(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
+	{
+		ProcessCandle(candle, macdValue, bollingerValue, rsiValue.ToDecimal(), null);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue, IIndicatorValue bollingerValue, decimal rsiValue, IIndicatorValue dmiValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -306,30 +323,27 @@ public class MacdBbRsiStrategy : Strategy
 			return;
 
 		// Get indicator values
-		var macdValue = _macd.GetCurrentValue<MacdValue>();
-		var macdLine = macdValue.Macd;
-		var signalLine = macdValue.Signal;
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var macdLine = macdTyped.Macd;
+		var signalLine = macdTyped.Signal;
 
-		var bbValue = _bollinger.GetCurrentValue<BollingerBand>();
-		var upper = bbValue.UpperBand;
-		var lower = bbValue.LowerBand;
-		var basis = bbValue.MiddleBand;
-
-		var rsiValue = _rsi.GetCurrentValue();
+		var bollingerTyped = (BollingerBandsValue)bollingerValue;
+		var upper = bollingerTyped.UpBand;
+		var lower = bollingerTyped.LowBand;
+		var basis = bollingerTyped.MovingAverage;
 
 		// Get previous MACD values for crossover detection
-		var prevMacdValue = _macd.GetValue<MacdValue>(1);
-		var prevMacdLine = prevMacdValue.Macd;
-		var prevSignalLine = prevMacdValue.Signal;
+		var prevMacdTyped = _macd.GetValue<MovingAverageConvergenceDivergenceSignalValue>(1);
+		var prevMacdLine = prevMacdTyped.Macd;
+		var prevSignalLine = prevMacdTyped.Signal;
 
 		// DMI filter
 		var dmiFilter = true;
-		if (UseDmiFilter)
+		if (UseDmiFilter && dmiValue != null)
 		{
-			var dmiData = _dmi.GetCurrentValue<DirectionalIndexValue>();
-			var diPlus = dmiData.Plus;
-			var diMinus = dmiData.Minus;
-			var adx = dmiData.Adx;
+			var dmiTyped = (DirectionalIndexValue)dmiValue;
+			var diPlus = dmiTyped.Plus ?? 0m;
+			var diMinus = dmiTyped.Minus ?? 0m;
 
 			// Long filter: DI+ > ADX key level
 			// Short filter: DI- > ADX key level

@@ -28,6 +28,7 @@ public class GridBotStrategy : Strategy
 	private int _lastSignal;
 	private int _lastSignalIndex;
 	private decimal _signalLine;
+	private ICandleMessage _previousCandle;
 
 	public GridBotStrategy()
 	{
@@ -87,6 +88,10 @@ public class GridBotStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -105,11 +110,8 @@ public class GridBotStrategy : Strategy
 		// Subscribe to candles
 		var subscription = this.SubscribeCandles(CandleType);
 		subscription
-			.WhenCandlesFinished()
-			.Do(ProcessCandle)
-			.Apply(this);
-
-		subscription.Start();
+			.Bind(ProcessCandle)
+			.Start();
 
 		// Setup chart
 		var area = CreateChartArea();
@@ -124,6 +126,10 @@ public class GridBotStrategy : Strategy
 	{
 		// Skip if strategy is not ready
 		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		// Skip non-finished candles
+		if (candle.State != CandleStates.Finished)
 			return;
 
 		var buyIndex = GetBuyLineIndex(candle);
@@ -207,6 +213,9 @@ public class GridBotStrategy : Strategy
 				SellMarket(volume);
 			}
 		}
+
+		// Store previous candle for next iteration
+		_previousCandle = candle;
 	}
 
 	private int GetBuyLineIndex(ICandleMessage candle)
@@ -219,12 +228,12 @@ public class GridBotStrategy : Strategy
 
 			if (UseExtremes)
 			{
-				if (candle.GetCandle(1)?.HighPrice > buyValue && candle.LowPrice <= buyValue)
+				if (_previousCandle?.HighPrice > buyValue && candle.LowPrice <= buyValue)
 					index = i;
 			}
 			else
 			{
-				if (candle.GetCandle(1)?.ClosePrice > buyValue && candle.ClosePrice <= buyValue)
+				if (_previousCandle?.ClosePrice > buyValue && candle.ClosePrice <= buyValue)
 					index = i;
 			}
 		}
@@ -242,12 +251,12 @@ public class GridBotStrategy : Strategy
 
 			if (UseExtremes)
 			{
-				if (candle.GetCandle(1)?.LowPrice < sellValue && candle.HighPrice >= sellValue)
+				if (_previousCandle?.LowPrice < sellValue && candle.HighPrice >= sellValue)
 					index = i;
 			}
 			else
 			{
-				if (candle.GetCandle(1)?.ClosePrice < sellValue && candle.ClosePrice >= sellValue)
+				if (_previousCandle?.ClosePrice < sellValue && candle.ClosePrice >= sellValue)
 					index = i;
 			}
 		}

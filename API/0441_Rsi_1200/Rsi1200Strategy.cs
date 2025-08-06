@@ -127,13 +127,13 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(5, 30, 2);
 
 			_rsiOverbought = Param(nameof(RsiOverbought), 72)
-				.SetValidator(new IntRangeAttribute(50, 95))
+				.SetRange(50, 95)
 				.SetDisplay("RSI Overbought", "RSI overbought level", "RSI")
 				.SetCanOptimize(true)
 				.SetOptimize(65, 85, 5);
 
 			_rsiOversold = Param(nameof(RsiOversold), 28)
-				.SetValidator(new IntRangeAttribute(5, 50))
+				.SetRange(5, 50)
 				.SetDisplay("RSI Oversold", "RSI oversold level", "RSI")
 				.SetCanOptimize(true)
 				.SetOptimize(15, 35, 5);
@@ -154,7 +154,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Short Entries", "Enable short entries", "Strategy");
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 0.10m)
-				.SetValidator(new DecimalRangeAttribute(0.01m, 0.50m))
+				.SetRange(0.01m, 0.50m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Strategy")
 				.SetCanOptimize(true)
 				.SetOptimize(0.05m, 0.20m, 0.02m);

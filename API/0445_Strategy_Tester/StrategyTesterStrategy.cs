@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<bool> _exitByMomentum;
 		private readonly StrategyParam<bool> _exitByStrategy;
 
-		private LinearRegressionLine _momentum;
+		private LinearRegression _momentum;
 		private Highest _highest;
 		private Lowest _lowest;
 		private SimpleMovingAverage _closeSma;
@@ -153,7 +153,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 21, 2);
 
 			_adxKeyLevel = Param(nameof(AdxKeyLevel), 23)
-				.SetValidator(new IntRangeAttribute(10, 50))
+				.SetRange(10, 50)
 				.SetDisplay("ADX Key Level", "Key level for ADX", "Directional Movement Index")
 				.SetCanOptimize(true)
 				.SetOptimize(15, 35, 5);
@@ -165,7 +165,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 21, 2);
 
 			_atrMultiplier = Param(nameof(AtrMultiplier), 1.6m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
+				.SetRange(0.1m, 10.0m)
 				.SetDisplay("ATR Multiplier", "ATR multiplier for stop loss", "Average True Range")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.3m);
@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 			_highest = new Highest { Length = MomentumLength };
 			_lowest = new Lowest { Length = MomentumLength };
 			_closeSma = new SimpleMovingAverage { Length = MomentumLength };
-			_momentum = new LinearRegressionLine { Length = MomentumLength };
+			_momentum = new LinearRegression { Length = MomentumLength };
 			_adx = new DirectionalIndex { Length = DiLength };
 			_atr = new AverageTrueRange { Length = AtrLength };
 

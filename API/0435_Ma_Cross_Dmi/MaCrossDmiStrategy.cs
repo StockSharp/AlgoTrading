@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -148,6 +149,10 @@ public class MaCrossDmiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -172,7 +177,7 @@ public class MaCrossDmiStrategy : Strategy
 		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma1, _ma2, _dmi, OnProcess)
+			.BindEx(_ma1, _ma2, _dmi, OnProcess)
 			.Start();
 
 		// Setup chart
@@ -192,7 +197,7 @@ public class MaCrossDmiStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal ma1Value, decimal ma2Value, IIndicatorValue dmiValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue ma1Value, IIndicatorValue ma2Value, IIndicatorValue dmiValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -202,22 +207,26 @@ public class MaCrossDmiStrategy : Strategy
 		if (!_ma1.IsFormed || !_ma2.IsFormed || !_dmi.IsFormed)
 			return;
 
+		// Get MA values
+		var ma1Price = ma1Value.ToDecimal();
+		var ma2Price = ma2Value.ToDecimal();
+
 		// Get previous MA values for crossover detection
 		var prevMa1 = _ma1.GetValue(1);
 		var prevMa2 = _ma2.GetValue(1);
 
 		// Get DMI values
-		var dmiData = dmiValue.GetValue<DirectionalIndexValue>();
-		var diPlus = dmiData.Plus;
-		var diMinus = dmiData.Minus;
+		var dmiData = (DirectionalIndexValue)dmiValue;
+		var diPlus = dmiData.Plus ?? 0m;
+		var diMinus = dmiData.Minus ?? 0m;
 
 		// DMI conditions (commented out in original, but keeping for reference)
 		// var longCond = diPlus < diMinus && prevDiPlus < prevDiMinus;
 		// var shortCond = diPlus > diMinus && prevDiPlus > prevDiMinus;
 
 		// MA crossover conditions
-		var longEntry = ma1Value > ma2Value && prevMa1 <= prevMa2;
-		var shortEntry = ma1Value < ma2Value && prevMa1 >= prevMa2;
+		var longEntry = ma1Price > ma2Price && prevMa1 <= prevMa2;
+		var shortEntry = ma1Price < ma2Price && prevMa1 >= prevMa2;
 
 		// Execute trades based on settings
 		if (ShowLong && !ShowShort)

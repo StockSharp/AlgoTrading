@@ -107,7 +107,6 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 30, 5);
 
 			_bbMultiplier = Param(nameof(BbMultiplier), 2.0m)
-				.SetValidator(new DecimalRangeAttribute(1.0m, 5.0m))
 				.SetDisplay("BB Multiplier", "Bollinger Bands standard deviation multiplier", "Bollinger Bands")
 				.SetCanOptimize(true)
 				.SetOptimize(1.5m, 3.0m, 0.5m);
@@ -125,13 +124,11 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(30, 70, 10);
 
 			_highestPercentile = Param(nameof(HighestPercentile), 0.85m)
-				.SetValidator(new DecimalRangeAttribute(0.5m, 1.0m))
 				.SetDisplay("Highest Percentile", "Highest percentile threshold", "Williams VIX Fix")
 				.SetCanOptimize(true)
 				.SetOptimize(0.75m, 0.95m, 0.05m);
 
 			_lowestPercentile = Param(nameof(LowestPercentile), 0.99m)
-				.SetValidator(new DecimalRangeAttribute(0.5m, 1.0m))
 				.SetDisplay("Lowest Percentile", "Lowest percentile threshold", "Williams VIX Fix")
 				.SetCanOptimize(true)
 				.SetOptimize(0.90m, 1.0m, 0.02m);
@@ -160,7 +157,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_bollingerBands, _highestClose, _lowestClose, ProcessCandle)
+				.BindEx(_bollingerBands, _highestClose, _lowestClose, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -173,7 +170,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal bbMiddle, decimal highestValue, decimal lowestValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -188,28 +185,28 @@ namespace StockSharp.Samples.Strategies
 			var highPrice = candle.HighPrice;
 
 			// Calculate Williams VIX Fix
-			var wvf = ((highestValue - lowPrice) / highestValue) * 100;
+			var wvf = ((highestValue.ToDecimal() - lowPrice) / highestValue.ToDecimal()) * 100;
 			
-			// Process WVF through SMA and StdDev
-			var wvfSmaValue = _wvfSma.Process(wvf);
-			var wvfStdDevValue = _wvfStdDev.Process(wvf);
+			// Process WVF through SMA and StdDev using manual calculation
+			var wvfSmaValue = _wvfSma.Process(wvf, candle.ServerTime, candle.State == CandleStates.Finished);
+			var wvfStdDevValue = _wvfStdDev.Process(wvf, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			if (!wvfSmaValue.IsFormed || !wvfStdDevValue.IsFormed)
 				return;
 
-			var wvfUpperBand = wvfSmaValue.GetValue<decimal>() + (BbMultiplier * wvfStdDevValue.GetValue<decimal>());
+			var wvfUpperBand = wvfSmaValue.ToDecimal() + (BbMultiplier * wvfStdDevValue.ToDecimal());
 
 			// Calculate Williams VIX Fix Inverted
-			var wvfInv = ((highPrice - lowestValue) / lowestValue) * 100;
+			var wvfInv = ((highPrice - lowestValue.ToDecimal()) / lowestValue.ToDecimal()) * 100;
 			
-			// Process WVF Inverted through SMA and StdDev
-			var wvfInvSmaValue = _wvfInvSma.Process(wvfInv);
-			var wvfInvStdDevValue = _wvfInvStdDev.Process(wvfInv);
+			// Process WVF Inverted through SMA and StdDev using manual calculation
+			var wvfInvSmaValue = _wvfInvSma.Process(wvfInv, candle.ServerTime, candle.State == CandleStates.Finished);
+			var wvfInvStdDevValue = _wvfInvStdDev.Process(wvfInv, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			if (!wvfInvSmaValue.IsFormed || !wvfInvStdDevValue.IsFormed)
 				return;
 
-			var wvfInvUpperBand = wvfInvSmaValue.GetValue<decimal>() + (BbMultiplier * wvfInvStdDevValue.GetValue<decimal>());
+			var wvfInvUpperBand = wvfInvSmaValue.ToDecimal() + (BbMultiplier * wvfInvStdDevValue.ToDecimal());
 
 			CheckEntryExitConditions(candle, wvf, wvfUpperBand, wvfInv, wvfInvUpperBand);
 		}
@@ -217,8 +214,8 @@ namespace StockSharp.Samples.Strategies
 		private void CheckEntryExitConditions(ICandleMessage candle, decimal wvf, decimal wvfUpperBand, decimal wvfInv, decimal wvfInvUpperBand)
 		{
 			var currentPrice = candle.ClosePrice;
-			var bbLower = _bollingerBands.LowBand.GetCurrentValue();
-			var bbUpper = _bollingerBands.UpBand.GetCurrentValue();
+			var bbLower = _bollingerBands.LowBand.GetValue(0);
+			var bbUpper = _bollingerBands.UpBand.GetValue(0);
 
 			// Simplified range calculations (original uses complex percentile logic)
 			var rangeHigh = wvf * HighestPercentile; // Simplified

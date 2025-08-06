@@ -106,7 +106,7 @@ namespace StockSharp.Samples.Strategies
 			var subscription = SubscribeCandles(CandleType);
 
 			subscription
-				.Bind(bollinger, OnProcess)
+				.BindEx(bollinger, OnProcess)
 				.Start();
 
 			// Configure chart
@@ -120,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void OnProcess(ICandleMessage candle, BollingerBand bollingerValue)
+		private void OnProcess(ICandleMessage candle, IIndicatorValue bollingerValue)
 		{
 			// Only process finished candles
 			if (candle.State != CandleStates.Finished)
@@ -131,9 +131,10 @@ namespace StockSharp.Samples.Strategies
 			var highPrice = candle.HighPrice;
 			var lowPrice = candle.LowPrice;
 			
-			var upperBand = bollingerValue.UpBand;
-			var lowerBand = bollingerValue.LowBand;
-			var middleBand = bollingerValue.MiddleBand;
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
+			var middleBand = bollingerTyped.MovingAverage;
 
 			// Check for divergence
 			var buySignal = false;
@@ -182,8 +183,8 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Update previous bands
-			_prevUpperBand = upperBand;
-			_prevLowerBand = lowerBand;
+			_prevUpperBand = upperBand.Value;
+			_prevLowerBand = lowerBand.Value;
 		}
 	}
 }

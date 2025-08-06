@@ -2,6 +2,7 @@ namespace StockSharp.Samples.Strategies;
 
 using System;
 using System.Drawing;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -213,6 +214,10 @@ public class BollingerBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -255,25 +260,25 @@ public class BollingerBreakoutStrategy : Strategy
 		if (UseRSI && UseAroon && UseMA)
 		{
 			subscription
-				.Bind(_bollinger, _rsi, _aroon, _ma, OnProcess)
+				.BindEx(_bollinger, _rsi, _aroon, _ma, OnProcessWithAllIndicators)
 				.Start();
 		}
 		else if (UseRSI && UseMA)
 		{
 			subscription
-				.Bind(_bollinger, _rsi, _ma, OnProcess)
+				.BindEx(_bollinger, _rsi, _ma, OnProcessWithRsiAndMa)
 				.Start();
 		}
 		else if (UseRSI)
 		{
 			subscription
-				.Bind(_bollinger, _rsi, OnProcess)
+				.BindEx(_bollinger, _rsi, OnProcessWithRsi)
 				.Start();
 		}
 		else
 		{
 			subscription
-				.Bind(_bollinger, OnProcess)
+				.BindEx(_bollinger, OnProcessWithBollingerOnly)
 				.Start();
 		}
 
@@ -295,7 +300,27 @@ public class BollingerBreakoutStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, params IIndicatorValue[] values)
+	private void OnProcessWithAllIndicators(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue aroonValue, IIndicatorValue maValue)
+	{
+		ProcessCandle(candle, bollingerValue, rsiValue, aroonValue, maValue);
+	}
+
+	private void OnProcessWithRsiAndMa(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue maValue)
+	{
+		ProcessCandle(candle, bollingerValue, rsiValue, null, maValue);
+	}
+
+	private void OnProcessWithRsi(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
+	{
+		ProcessCandle(candle, bollingerValue, rsiValue, null, null);
+	}
+
+	private void OnProcessWithBollingerOnly(ICandleMessage candle, IIndicatorValue bollingerValue)
+	{
+		ProcessCandle(candle, bollingerValue, null, null, null);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue = null, IIndicatorValue aroonValue = null, IIndicatorValue maValue = null)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -315,14 +340,14 @@ public class BollingerBreakoutStrategy : Strategy
 			return;
 
 		// Get indicator values
-		var bbValue = _bollinger.GetCurrentValue<BollingerBand>();
-		var upper = bbValue.UpperBand;
-		var lower = bbValue.LowerBand;
-		var basis = bbValue.MiddleBand;
+		var bollingerTyped = (BollingerBandsValue)bollingerValue;
+		var upper = bollingerTyped.UpBand;
+		var lower = bollingerTyped.LowBand;
+		var basis = bollingerTyped.MovingAverage;
 
-		var rsiValue = UseRSI ? _rsi.GetCurrentValue() : 50m;
-		var aroonUp = UseAroon ? _aroon.GetCurrentValue<AroonLine>().Up : 100m;
-		var maValue = UseMA ? _ma.GetCurrentValue() : candle.ClosePrice;
+		var rsiValueDecimal = UseRSI ? rsiValue.ToDecimal() : 50m;
+		var aroonUp = UseAroon ? ((AroonValue)aroonValue).Up.Value : 100m;
+		var maValueDecimal = UseMA ? maValue.ToDecimal() : candle.ClosePrice;
 
 		// Calculate candle metrics
 		var candleSize = candle.HighPrice - candle.LowPrice;
@@ -330,12 +355,12 @@ public class BollingerBreakoutStrategy : Strategy
 		var sellZone = candle.HighPrice - candleSize * CandlePercent;
 
 		// Check filters
-		var buyRSIFilter = !UseRSI || rsiValue < RSIOversold;
-		var sellRSIFilter = !UseRSI || rsiValue > RSIOverbought;
+		var buyRSIFilter = !UseRSI || rsiValueDecimal < RSIOversold;
+		var sellRSIFilter = !UseRSI || rsiValueDecimal > RSIOverbought;
 		var buyAroonFilter = !UseAroon || aroonUp > AroonConfirmation;
 		var sellAroonFilter = !UseAroon || aroonUp < AroonStop;
-		var buyMAFilter = !UseMA || candle.ClosePrice > maValue;
-		var sellMAFilter = !UseMA || candle.ClosePrice < maValue;
+		var buyMAFilter = !UseMA || candle.ClosePrice > maValueDecimal;
+		var sellMAFilter = !UseMA || candle.ClosePrice < maValueDecimal;
 
 		// Entry conditions
 		var buySignal = buyZone < lower && 

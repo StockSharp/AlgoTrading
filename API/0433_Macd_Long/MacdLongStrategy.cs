@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -31,7 +32,7 @@ public class MacdLongStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackBars;
 
 	private RelativeStrengthIndex _rsi;
-	private MovingAverageConvergenceDivergence _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	
 	private int _barsSinceOversold;
 	private int _barsSinceOverbought;
@@ -163,6 +164,10 @@ public class MacdLongStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -173,17 +178,20 @@ public class MacdLongStrategy : Strategy
 			Length = RsiLength
 		};
 
-		_macd = new MovingAverageConvergenceDivergence
+		_macd = new()
 		{
-			FastLength = MacdFastLength,
-			SlowLength = MacdSlowLength,
-			SignalLength = MacdSignalLength
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength },
 		};
 
 		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _macd, OnProcess)
+			.BindEx(_rsi, _macd, OnProcess)
 			.Start();
 
 		// Setup chart
@@ -207,7 +215,7 @@ public class MacdLongStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal rsiValue, IIndicatorValue macdValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue macdValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -217,8 +225,10 @@ public class MacdLongStrategy : Strategy
 		if (!_rsi.IsFormed || !_macd.IsFormed)
 			return;
 
+		var rsiPrice = rsiValue.ToDecimal();
+
 		// Update RSI condition trackers
-		if (rsiValue <= RsiOverSold)
+		if (rsiPrice <= RsiOverSold)
 		{
 			_barsSinceOversold = 0;
 		}
@@ -227,7 +237,7 @@ public class MacdLongStrategy : Strategy
 			_barsSinceOversold++;
 		}
 
-		if (rsiValue >= RsiOverBought)
+		if (rsiPrice >= RsiOverBought)
 		{
 			_barsSinceOverbought = 0;
 		}
@@ -240,15 +250,15 @@ public class MacdLongStrategy : Strategy
 		var wasOversold = _barsSinceOversold <= LookbackBars;
 		var wasOverbought = _barsSinceOverbought <= LookbackBars;
 
-		// Get MACD values
-		var macdData = macdValue.GetValue<MacdValue>();
-		var macdLine = macdData.Macd;
-		var signalLine = macdData.Signal;
+		// Get MACD values from complex indicator
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+		var macdLine = macdTyped.Macd;
+		var signalLine = macdTyped.SignalMa;
 
 		// Get previous MACD values for crossover detection
-		var prevMacdValue = _macd.GetValue<MacdValue>(1);
-		var prevMacdLine = prevMacdValue.Macd;
-		var prevSignalLine = prevMacdValue.Signal;
+		var prevMacdTyped = (MovingAverageConvergenceDivergenceSignalValue)_macd.GetValue(1);
+		var prevMacdLine = prevMacdTyped.Macd;
+		var prevSignalLine = prevMacdTyped.SignalMa;
 
 		// Detect crossovers
 		var crossoverBull = macdLine > signalLine && prevMacdLine <= prevSignalLine;

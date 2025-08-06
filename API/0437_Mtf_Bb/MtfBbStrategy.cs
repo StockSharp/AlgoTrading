@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -124,6 +125,10 @@ public class MtfBbStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType), (Security, MtfCandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -152,31 +157,30 @@ public class MtfBbStrategy : Strategy
 		// Subscribe to MTF candles
 		var mtfSubscription = SubscribeCandles(MtfCandleType);
 		
-		// Process MTF candles for indicator
+		// Process MTF candles for MTF Bollinger Bands indicator
 		mtfSubscription
-			.BindEx(_mtfBollinger, OnProcess)
+			.BindEx(_mtfBollinger, OnProcessMtf)
 			.Start();
 
 		// Process main timeframe
 		if (UseMaFilter)
 		{
+			// Subscribe MTF candles for MA filter
 			mtfSubscription
-				.WhenCandlesFinished()
-				.Do(candle => _ma.Process(candle))
-				.Apply(this);
+				.BindEx(_ma, OnProcessMa)
+				.Start();
 
+			// Process main timeframe with Bollinger Bands
 			subscription
-				.Bind(_bollinger, OnProcess)
+				.BindEx(_bollinger, OnProcess)
 				.Start();
 		}
 		else
 		{
 			subscription
-				.Bind(_bollinger, OnProcess)
+				.BindEx(_bollinger, OnProcess)
 				.Start();
 		}
-
-		mtfSubscription.Start();
 
 		// Setup chart
 		var area = CreateChartArea();
@@ -192,8 +196,20 @@ public class MtfBbStrategy : Strategy
 		// Enable protection
 		if (UseSL)
 		{
-			StartProtection(null, new Unit(SLPercent, UnitTypes.Percent));
+			StartProtection(new(), new Unit(SLPercent, UnitTypes.Percent));
 		}
+	}
+
+	private void OnProcessMtf(ICandleMessage candle, IIndicatorValue mtfBbValue)
+	{
+		// Just update the MTF Bollinger Bands indicator, don't trade here
+		// Trading logic is in OnProcess method
+	}
+
+	private void OnProcessMa(ICandleMessage candle, IIndicatorValue maValue)
+	{
+		// Just update the MA indicator, don't trade here
+		// Trading logic is in OnProcess method
 	}
 
 	private void OnProcess(ICandleMessage candle, IIndicatorValue bbValue)
@@ -210,14 +226,13 @@ public class MtfBbStrategy : Strategy
 			return;
 
 		// Get current timeframe BB values
-		var bb = bbValue.GetValue<BollingerBand>();
-		var upper = bb.UpperBand;
-		var lower = bb.LowerBand;
+		var bollingerTyped = (BollingerBandsValue)bbValue;
+		var upper = bollingerTyped.UpBand;
+		var lower = bollingerTyped.LowBand;
 
-		// Get MTF BB values
-		var mtfBb = _mtfBollinger.GetCurrentValue<BollingerBand>();
-		var mtfUpper = mtfBb.UpperBand;
-		var mtfLower = mtfBb.LowerBand;
+		// Get MTF BB values - access the bands directly
+		var mtfUpper = _mtfBollinger.UpBand.GetValue(0);
+		var mtfLower = _mtfBollinger.LowBand.GetValue(0);
 
 		// MA filter
 		var buyMaFilter = true;
@@ -225,7 +240,7 @@ public class MtfBbStrategy : Strategy
 		
 		if (UseMaFilter && _ma != null)
 		{
-			var maValue = _ma.GetCurrentValue();
+			var maValue = _ma.GetValue(0);
 			buyMaFilter = candle.ClosePrice > maValue;
 			sellMaFilter = candle.ClosePrice < maValue;
 		}

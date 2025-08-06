@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -71,6 +72,10 @@ public class HaUniversalStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -82,11 +87,8 @@ public class HaUniversalStrategy : Strategy
 		// Subscribe to candles
 		var subscription = this.SubscribeCandles(CandleType);
 		subscription
-			.WhenCandlesFinished()
-			.Do(ProcessCandle)
-			.Apply(this);
-
-		subscription.Start();
+			.Bind(ProcessCandle)
+			.Start();
 
 		// Setup chart
 		var area = CreateChartArea();
@@ -109,6 +111,10 @@ public class HaUniversalStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		// Skip non-finished candles
+		if (candle.State != CandleStates.Finished)
+			return;
+
 		// Calculate Heikin-Ashi values
 		decimal haOpen, haClose, haHigh, haLow;
 
@@ -129,9 +135,9 @@ public class HaUniversalStrategy : Strategy
 			haLow = Math.Min(Math.Min(candle.LowPrice, haOpen), haClose);
 		}
 
-		// Process indicators with HA values
-		var highValue = _smaHigh.Process(haHigh);
-		var lowValue = _smaLow.Process(haLow);
+		// Process indicators with HA values using candle's time
+		var highValue = _smaHigh.Process(haHigh, candle.ServerTime, candle.State == CandleStates.Finished);
+		var lowValue = _smaLow.Process(haLow, candle.ServerTime, candle.State == CandleStates.Finished);
 
 		if (!_smaHigh.IsFormed || !_smaLow.IsFormed)
 		{
@@ -142,8 +148,8 @@ public class HaUniversalStrategy : Strategy
 		}
 
 		// Calculate SSL Channel
-		var smaHighValue = highValue.GetValue<decimal>();
-		var smaLowValue = lowValue.GetValue<decimal>();
+		var smaHighValue = highValue.ToDecimal();
+		var smaLowValue = lowValue.ToDecimal();
 
 		// Update HLV (High-Low Value)
 		if (haClose > smaHighValue)

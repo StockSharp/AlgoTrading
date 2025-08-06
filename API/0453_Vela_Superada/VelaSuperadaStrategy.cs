@@ -122,13 +122,11 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Short Entries", "Enable short entries", "Strategy");
 
 			_tpPercent = Param(nameof(TpPercent), 1.2m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
 				.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.3m);
 
 			_slPercent = Param(nameof(SlPercent), 1.8m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
 				.SetDisplay("SL Percent", "Stop loss percentage", "Stop Loss")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 5.0m, 0.5m);
@@ -148,12 +146,16 @@ namespace StockSharp.Samples.Strategies
 			// Initialize indicators
 			_ema = new ExponentialMovingAverage { Length = EmaLength };
 			_rsi = new RelativeStrengthIndex { Length = RsiLength };
-			_macd = new MovingAverageConvergenceDivergence { ShortPeriod = 12, LongPeriod = 26, SignalPeriod = 9 };
+			_macd = new MovingAverageConvergenceDivergence 
+			{ 
+				ShortMa = { Length = 12 }, 
+				LongMa = { Length = 26 }
+			};
 
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_ema, _rsi, _macd, ProcessCandle)
+				.BindEx(_ema, _rsi, _macd, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -169,7 +171,7 @@ namespace StockSharp.Samples.Strategies
 			StartProtection(new Unit(TpPercent / 100m, UnitTypes.Percent), new Unit(SlPercent / 100m, UnitTypes.Percent));
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal emaValue, decimal rsiValue, decimal macdValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue rsiValue, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -186,13 +188,13 @@ namespace StockSharp.Samples.Strategies
 			var bullishPattern = _previousClose < _previousOpen && currentPrice > openPrice; // Previous red, current green
 			var bearishPattern = _previousClose > _previousOpen && currentPrice < openPrice; // Previous green, current red
 
-			CheckEntryConditions(candle, emaValue, rsiValue, macdValue, bullishPattern, bearishPattern);
+			CheckEntryConditions(candle, emaValue.ToDecimal(), rsiValue.ToDecimal(), macdValue.ToDecimal(), bullishPattern, bearishPattern);
 			UpdateTrailingStops(candle);
 
 			// Store previous values
 			_previousClose = currentPrice;
 			_previousOpen = openPrice;
-			_previousMacd = macdValue;
+			_previousMacd = macdValue.ToDecimal();
 
 			// Update entry price when position opened
 			if (Position != 0 && _entryPrice == 0)
@@ -265,9 +267,9 @@ namespace StockSharp.Samples.Strategies
 			if (Position < 0)
 			{
 				var basicStop = _entryPrice * (1 + SlPercent / 100m);
-				var avgTpPrice = (_entryPrice * (1 - TpPercent / 100m) + _entryPrice) / 2;
+				var avgTpPriceShort = (_entryPrice * (1 - TpPercent / 100m) + _entryPrice) / 2;
 				
-				if (currentPrice < avgTpPrice)
+				if (currentPrice < avgTpPriceShort)
 				{
 					// Move to breakeven minus small profit when below average TP
 					_trailingStopShort = _entryPrice * 0.998m;

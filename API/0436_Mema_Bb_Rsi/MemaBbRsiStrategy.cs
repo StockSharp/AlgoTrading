@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -152,6 +153,10 @@ public class MemaBbRsiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -169,7 +174,7 @@ public class MemaBbRsiStrategy : Strategy
 		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ma1, _ma2, _bollinger, _rsi, OnProcess)
+			.BindEx(_ma1, _ma2, _bollinger, _rsi, OnProcess)
 			.Start();
 
 		// Setup chart
@@ -184,7 +189,7 @@ public class MemaBbRsiStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal ma1Value, decimal ma2Value, IIndicatorValue bbValue, decimal rsiValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue ma1Value, IIndicatorValue ma2Value, IIndicatorValue bbValue, IIndicatorValue rsiValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -194,18 +199,23 @@ public class MemaBbRsiStrategy : Strategy
 		if (!_ma1.IsFormed || !_ma2.IsFormed || !_bollinger.IsFormed || !_rsi.IsFormed)
 			return;
 
+		// Get indicator values
+		var ma1Price = ma1Value.ToDecimal();
+		var ma2Price = ma2Value.ToDecimal();
+		var rsiPrice = rsiValue.ToDecimal();
+
 		// Get Bollinger Bands values
-		var bb = bbValue.GetValue<BollingerBand>();
-		var upper = bb.UpperBand;
-		var lower = bb.LowerBand;
-		var basis = bb.MiddleBand;
+		var bollingerTyped = (BollingerBandsValue)bbValue;
+		var upper = bollingerTyped.UpBand;
+		var lower = bollingerTyped.LowBand;
+		var basis = bollingerTyped.MovingAverage;
 
 		// Entry conditions
-		var entryLong = candle.ClosePrice > ma1Value && candle.LowPrice < lower;
-		var entryShort = candle.ClosePrice < ma1Value && candle.HighPrice > upper && rsiValue > 50;
+		var entryLong = candle.ClosePrice > ma1Price && candle.LowPrice < lower;
+		var entryShort = candle.ClosePrice < ma1Price && candle.HighPrice > upper && rsiPrice > 50;
 
 		// Exit conditions
-		var exitLong = rsiValue > RSIOversold;
+		var exitLong = rsiPrice > RSIOversold;
 		var exitShort = candle.ClosePrice < lower;
 
 		// Track bars in position

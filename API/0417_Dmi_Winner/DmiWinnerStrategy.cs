@@ -194,13 +194,13 @@ namespace StockSharp.Samples.Strategies
 			if (UseMA)
 			{
 				subscription
-					.Bind(dmi, adx, ma, OnProcessWithMA)
+					.BindEx(dmi, adx, ma, OnProcessWithMA)
 					.Start();
 			}
 			else
 			{
 				subscription
-					.Bind(dmi, adx, OnProcessWithoutMA)
+					.BindEx(dmi, adx, OnProcessWithoutMA)
 					.Start();
 			}
 
@@ -224,19 +224,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		private void OnProcessWithMA(ICandleMessage candle, 
-			DirectionalIndexValue dmiValue, decimal adxValue, decimal maValue)
+			IIndicatorValue dmiValue, IIndicatorValue adxValue, IIndicatorValue maValue)
 		{
-			ProcessCandle(candle, dmiValue, adxValue, maValue);
+			ProcessCandle(candle, dmiValue, adxValue, maValue.ToDecimal());
 		}
 
 		private void OnProcessWithoutMA(ICandleMessage candle, 
-			DirectionalIndexValue dmiValue, decimal adxValue)
+			IIndicatorValue dmiValue, IIndicatorValue adxValue)
 		{
 			ProcessCandle(candle, dmiValue, adxValue, 0);
 		}
 
 		private void ProcessCandle(ICandleMessage candle, 
-			DirectionalIndexValue dmiValue, decimal adxValue, decimal maValue)
+			IIndicatorValue dmiValue, IIndicatorValue adxValue, decimal maValue)
 		{
 			// Only process finished candles
 			if (candle.State != CandleStates.Finished)
@@ -245,8 +245,10 @@ namespace StockSharp.Samples.Strategies
 			var closePrice = candle.ClosePrice;
 			var openPrice = candle.OpenPrice;
 			
-			var diPlus = dmiValue.Plus;
-			var diMinus = dmiValue.Minus;
+			var dmiTyped = (DirectionalIndexValue)dmiValue;
+			var diPlus = dmiTyped.Plus ?? 0m;
+			var diMinus = dmiTyped.Minus ?? 0m;
+			var adxValueDecimal = adxValue.ToDecimal();
 
 			// Check for 3 consecutive bars condition
 			var longCond = false;
@@ -269,8 +271,8 @@ namespace StockSharp.Samples.Strategies
 			var sellMAFilter = !UseMA || closePrice < maValue;
 
 			// Entry conditions
-			var longEntry = longCond && adxValue > KeyLevel && buyMAFilter && closePrice > openPrice;
-			var shortEntry = shortCond && adxValue > KeyLevel && sellMAFilter && closePrice < openPrice;
+			var longEntry = longCond && adxValueDecimal > KeyLevel && buyMAFilter && closePrice > openPrice;
+			var shortEntry = shortCond && adxValueDecimal > KeyLevel && sellMAFilter && closePrice < openPrice;
 
 			// Execute trades based on enabled directions
 			if (ShowLong && !ShowShort)

@@ -24,7 +24,7 @@ namespace StockSharp.Samples.Strategies
 		private Highest _highest;
 		private Lowest _lowest;
 		private SimpleMovingAverage _closeSma;
-		private LinearRegressionLine _momentum;
+		private LinearRegression _momentum;
 		private RelativeStrengthIndex _rsi;
 
 		private decimal _previousMomentum;
@@ -99,7 +99,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Enable Take Profit", "Use take profit", "Take Profit");
 
 			_tpPercent = Param(nameof(TpPercent), 1.2m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
+				.SetRange(0.1m, 10.0m)
 				.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.3m);
@@ -122,7 +122,7 @@ namespace StockSharp.Samples.Strategies
 			_highest = new Highest { Length = SqueezeLength };
 			_lowest = new Lowest { Length = SqueezeLength };
 			_closeSma = new SimpleMovingAverage { Length = SqueezeLength };
-			_momentum = new LinearRegressionLine { Length = SqueezeLength };
+			_momentum = new LinearRegression { Length = SqueezeLength };
 			_rsi = new RelativeStrengthIndex { Length = RsiLength };
 
 			// Create subscription for candles

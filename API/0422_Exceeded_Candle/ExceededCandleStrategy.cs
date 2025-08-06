@@ -86,7 +86,7 @@ namespace StockSharp.Samples.Strategies
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(bollinger, OnProcess)
+				.BindEx(bollinger, OnProcess)
 				.Start();
 
 			// Configure chart
@@ -99,7 +99,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void OnProcess(ICandleMessage candle, BollingerBand bollingerValue)
+		private void OnProcess(ICandleMessage candle, IIndicatorValue bollingerValue)
 		{
 			// Only process finished candles
 			if (candle.State != CandleStates.Finished)
@@ -107,8 +107,10 @@ namespace StockSharp.Samples.Strategies
 
 			var closePrice = candle.ClosePrice;
 			var openPrice = candle.OpenPrice;
-			var upperBand = bollingerValue.UpBand;
-			var middleBand = bollingerValue.MiddleBand;
+			
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var middleBand = bollingerTyped.MovingAverage;
 
 			// Check for exceeded candle patterns
 			var greenExceeded = false;

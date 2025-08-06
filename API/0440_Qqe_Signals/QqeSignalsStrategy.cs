@@ -96,13 +96,9 @@ public class QqeSignalsStrategy : Strategy
 		_dar = new ExponentialMovingAverage { Length = wildersPeriod };
 
 		// Subscribe to candles
-		var subscription = this.SubscribeCandles(CandleType);
-		subscription
-			.WhenCandlesFinished()
-			.Do(ProcessCandle)
-			.Apply(this);
-
-		subscription.Start();
+		var subscription = SubscribeCandles(CandleType)
+			.Bind(ProcessCandle)
+			.Start();
 
 		// Setup chart
 		var area = CreateChartArea();
@@ -136,7 +132,7 @@ public class QqeSignalsStrategy : Strategy
 		var atrRsiValue = Math.Abs(prevRsiMa - rsIndex);
 		
 		// Calculate MA of ATR RSI
-		var maAtrRsiValue = _maAtrRsi.Process(atrRsiValue);
+		var maAtrRsiValue = _maAtrRsi.Process(atrRsiValue, candle.ServerTime, candle.State == CandleStates.Finished);
 		if (!_maAtrRsi.IsFormed)
 			return;
 

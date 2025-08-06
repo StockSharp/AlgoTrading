@@ -282,13 +282,13 @@ namespace StockSharp.Samples.Strategies
 			if (UseAroon)
 			{
 				subscription
-					.Bind(bollinger, rsi, aroon, ma, OnProcessWithAroon)
+					.BindEx(bollinger, rsi, aroon, ma, OnProcessWithAroon)
 					.Start();
 			}
 			else
 			{
 				subscription
-					.Bind(bollinger, rsi, ma, OnProcessWithoutAroon)
+					.BindEx(bollinger, rsi, ma, OnProcessWithoutAroon)
 					.Start();
 			}
 
@@ -313,26 +313,27 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		private void OnProcessWithAroon(ICandleMessage candle, 
-			BollingerBand bollingerValue, decimal rsiValue, 
-			AroonLine aroonValue, decimal maValue)
+			IIndicatorValue bollingerValue, IIndicatorValue rsiValue, 
+			IIndicatorValue aroonValue, IIndicatorValue maValue)
 		{
-			_rsiValue = rsiValue;
-			_aroonUpValue = aroonValue.Up;
-			_maValue = maValue;
+			_rsiValue = rsiValue.ToDecimal();
+			var aroonTyped = (AroonValue)aroonValue;
+			_aroonUpValue = aroonTyped.Up.Value;
+			_maValue = maValue.ToDecimal();
 			
 			ProcessCandle(candle, bollingerValue);
 		}
 
 		private void OnProcessWithoutAroon(ICandleMessage candle, 
-			BollingerBand bollingerValue, decimal rsiValue, decimal maValue)
+			IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue maValue)
 		{
-			_rsiValue = rsiValue;
-			_maValue = maValue;
+			_rsiValue = rsiValue.ToDecimal();
+			_maValue = maValue.ToDecimal();
 			
 			ProcessCandle(candle, bollingerValue);
 		}
 
-		private void ProcessCandle(ICandleMessage candle, BollingerBand bollingerValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue)
 		{
 			// Only process finished candles
 			if (candle.State != CandleStates.Finished)
@@ -343,8 +344,9 @@ namespace StockSharp.Samples.Strategies
 			var highPrice = candle.HighPrice;
 			var lowPrice = candle.LowPrice;
 			
-			var upperBand = bollingerValue.UpBand;
-			var lowerBand = bollingerValue.LowBand;
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var upperBand = bollingerTyped.UpBand;
+			var lowerBand = bollingerTyped.LowBand;
 
 			// Calculate entry zones
 			var candleSize = highPrice - lowPrice;

@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -77,6 +78,10 @@ public class HeikinAshiV2Strategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -104,13 +109,13 @@ public class HeikinAshiV2Strategy : Strategy
 		if (UseMacdFilter)
 		{
 			subscription
-				.BindEx(_fastEma, _slowEma, _macd, OnProcess)
+				.BindEx(_fastEma, _slowEma, _macd, OnProcessWithMacd)
 				.Start();
 		}
 		else
 		{
 			subscription
-				.BindEx(_fastEma, _slowEma, OnProcess)
+				.BindEx(_fastEma, _slowEma, OnProcessWithoutMacd)
 				.Start();
 		}
 
@@ -125,7 +130,17 @@ public class HeikinAshiV2Strategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, params IIndicatorValue[] values)
+	private void OnProcessWithMacd(ICandleMessage candle, IIndicatorValue fastEmaValue, IIndicatorValue slowEmaValue, IIndicatorValue macdValue)
+	{
+		ProcessCandle(candle, fastEmaValue.ToDecimal(), slowEmaValue.ToDecimal(), macdValue);
+	}
+
+	private void OnProcessWithoutMacd(ICandleMessage candle, IIndicatorValue fastEmaValue, IIndicatorValue slowEmaValue)
+	{
+		ProcessCandle(candle, fastEmaValue.ToDecimal(), slowEmaValue.ToDecimal(), null);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, decimal fastEmaValue, decimal slowEmaValue, IIndicatorValue macdValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -154,21 +169,17 @@ public class HeikinAshiV2Strategy : Strategy
 			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
 		}
 
-		// Process EMAs with HA close
-		var fastEmaValue = _fastEma.Process(haClose).GetValue<decimal>();
-		var slowEmaValue = _slowEma.Process(haClose).GetValue<decimal>();
-
 		// Get previous values for crossover detection
 		var prevFastEma = _fastEma.GetValue(1);
 		var prevSlowEma = _slowEma.GetValue(1);
 
 		// MACD filter
 		var macdFilter = true;
-		if (UseMacdFilter)
+		if (UseMacdFilter && macdValue != null)
 		{
-			var macdValue = _macd.GetCurrentValue<MacdValue>();
-			var macdLine = macdValue.Macd;
-			var signalLine = macdValue.Signal;
+			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+			var macdLine = macdTyped.Macd;
+			var signalLine = macdTyped.Signal;
 
 			// For long: MACD > Signal, for short: MACD < Signal
 			macdFilter = Position <= 0 ? macdLine > signalLine : macdLine < signalLine;

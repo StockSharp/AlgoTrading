@@ -25,15 +25,17 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<bool> _showShort;
 
 		private RelativeStrengthIndex _rsi;
-		private StochasticOscillator _stochRsi;
+		private Highest _stochRsiHigh;
+		private Lowest _stochRsiLow;
 		private SimpleMovingAverage _smoothKSma;
 		private SimpleMovingAverage _smoothDSma;
 		private IIndicator _trendMa;
-		private Supertrend _supertrend;
+		private AverageTrueRange _atr;
 
 		private decimal _previousK;
 		private decimal _previousD;
-		private decimal _previousSupertrendDirection;
+		private decimal _previousSupertrendValue;
+		private decimal _previousClose;
 		private bool _kCrossedOverD;
 		private bool _kCrossedUnderD;
 
@@ -175,7 +177,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 15, 2);
 
 			_atrFactor = Param(nameof(AtrFactor), 2.0m)
-				.SetValidator(new DecimalRangeAttribute(0.5m, 10.0m))
+				.SetRange(0.5m, 10.0m)
 				.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
@@ -197,10 +199,11 @@ namespace StockSharp.Samples.Strategies
 
 			// Initialize indicators
 			_rsi = new RelativeStrengthIndex { Length = RsiLength };
-			_stochRsi = new StochasticOscillator { Length = StochLength };
+			_stochRsiHigh = new Highest { Length = StochLength };
+			_stochRsiLow = new Lowest { Length = StochLength };
 			_smoothKSma = new SimpleMovingAverage { Length = SmoothK };
 			_smoothDSma = new SimpleMovingAverage { Length = SmoothD };
-			_supertrend = new Supertrend { Length = AtrPeriod, Multiplier = AtrFactor };
+			_atr = new AverageTrueRange { Length = AtrPeriod };
 
 			_trendMa = MaType == "SMA" 
 				? (IIndicator)new SimpleMovingAverage { Length = MaLength }
@@ -209,7 +212,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_rsi, _trendMa, _supertrend, ProcessCandle)
+				.BindEx(_rsi, _trendMa, _atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -218,33 +221,51 @@ namespace StockSharp.Samples.Strategies
 			{
 				DrawCandles(area, subscription);
 				DrawIndicator(area, _trendMa);
-				DrawIndicator(area, _supertrend);
 				DrawOwnTrades(area);
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal maValue, decimal supertrendValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue maValue, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Process Stochastic RSI manually
-			var stochRsiValue = _stochRsi.Process(rsiValue);
-			if (!stochRsiValue.IsFormed)
+			// Wait for indicators to form
+			if (!_rsi.IsFormed || !_trendMa.IsFormed || !_atr.IsFormed)
 				return;
 
-			var kValue = _smoothKSma.Process(stochRsiValue.GetValue<decimal>());
-			var dValue = _smoothDSma.Process(kValue.GetValue<decimal>());
+			// Calculate Stochastic RSI manually
+			var rsiPrice = rsiValue.ToDecimal();
+			var highestRsi = _stochRsiHigh.Process(new DecimalIndicatorValue(_stochRsiHigh, rsiPrice));
+			var lowestRsi = _stochRsiLow.Process(new DecimalIndicatorValue(_stochRsiLow, rsiPrice));
 
-			if (!kValue.IsFormed || !dValue.IsFormed || !_supertrend.IsFormed)
+			if (!highestRsi.IsFormed || !lowestRsi.IsFormed)
 				return;
 
-			var k = kValue.GetValue<decimal>();
-			var d = dValue.GetValue<decimal>();
+			// Calculate %K
+			var highVal = highestRsi.ToDecimal();
+			var lowVal = lowestRsi.ToDecimal();
+			var stochRsi = highVal != lowVal ? (rsiPrice - lowVal) / (highVal - lowVal) * 100 : 50;
+
+			var kValue = _smoothKSma.Process(new DecimalIndicatorValue(_smoothKSma, stochRsi));
+			var dValue = _smoothDSma.Process(new DecimalIndicatorValue(_smoothDSma, kValue.ToDecimal()));
+
+			if (!kValue.IsFormed || !dValue.IsFormed)
+				return;
+
+			var k = kValue.ToDecimal();
+			var d = dValue.ToDecimal();
 			var currentPrice = candle.ClosePrice;
 
-			// Get Supertrend direction (< 0 means uptrend, > 0 means downtrend)
+			// Calculate simple SuperTrend-like signal using ATR
+			var hl2 = (candle.HighPrice + candle.LowPrice) / 2;
+			var atrVal = atrValue.ToDecimal();
+			var upperBand = hl2 + (AtrFactor * atrVal);
+			var lowerBand = hl2 - (AtrFactor * atrVal);
+
+			// SuperTrend calculation - simplified version
+			var supertrendValue = currentPrice > _previousSupertrendValue ? lowerBand : upperBand;
 			var supertrendDirection = currentPrice > supertrendValue ? -1 : 1;
 
 			// Detect crossovers
@@ -254,13 +275,14 @@ namespace StockSharp.Samples.Strategies
 				_kCrossedUnderD = _previousK >= _previousD && k < d;
 			}
 
-			CheckEntryConditions(candle, k, d, maValue, supertrendDirection);
-			CheckExitConditions(k, d, supertrendDirection);
+			CheckEntryConditions(candle, k, d, maValue.ToDecimal(), supertrendDirection);
+			CheckExitConditions(candle, k, d, supertrendDirection);
 
 			// Store previous values
 			_previousK = k;
 			_previousD = d;
-			_previousSupertrendDirection = supertrendDirection;
+			_previousSupertrendValue = supertrendValue;
+			_previousClose = currentPrice;
 		}
 
 		private void CheckEntryConditions(ICandleMessage candle, decimal k, decimal d, decimal maValue, decimal supertrendDirection)
@@ -289,18 +311,20 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void CheckExitConditions(decimal k, decimal d, decimal supertrendDirection)
+		private void CheckExitConditions(ICandleMessage candle, decimal k, decimal d, decimal supertrendDirection)
 		{
+			var currentPrice = candle.ClosePrice;
+
 			// Exit long: K > 80 and K crosses under D
 			if (Position > 0 && k > 80 && _kCrossedUnderD)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
+				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 			}
 
 			// Exit short: K < 20 and K crosses over D
 			if (Position < 0 && k < 20 && _kCrossedOverD)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, _previousClose, Math.Abs(Position)));
+				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 			}
 		}
 

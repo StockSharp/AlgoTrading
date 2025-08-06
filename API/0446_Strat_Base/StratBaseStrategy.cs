@@ -120,7 +120,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Enable Take Profit", "Use take profit", "Take Profit");
 
 			_tpPercent = Param(nameof(TpPercent), 1.2m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
+				.SetRange(0.1m, 10.0m)
 				.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.3m);
@@ -129,7 +129,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Enable Stop Loss", "Use stop loss", "Stop Loss");
 
 			_slPercent = Param(nameof(SlPercent), 1.8m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
+				.SetRange(0.1m, 10.0m)
 				.SetDisplay("SL Percent", "Stop loss percentage", "Stop Loss")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 5.0m, 0.5m);

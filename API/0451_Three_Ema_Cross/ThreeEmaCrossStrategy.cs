@@ -110,7 +110,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(50, 200, 25);
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 99.0m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 100.0m))
+				.SetRange(0.1m, 100.0m)
 				.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 10.0m, 1.0m);

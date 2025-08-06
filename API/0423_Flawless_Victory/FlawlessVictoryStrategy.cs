@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -85,6 +86,10 @@ public class FlawlessVictoryStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -114,19 +119,19 @@ public class FlawlessVictoryStrategy : Strategy
 		if (Version == 3)
 		{
 			subscription
-				.Bind(_bollinger1, _rsi, _mfi, OnProcess)
+				.BindEx(_bollinger1, _rsi, _mfi, OnProcessWithMfi)
 				.Start();
 		}
 		else if (Version == 2)
 		{
 			subscription
-				.Bind(_bollinger2, _rsi, OnProcess)
+				.BindEx(_bollinger2, _rsi, OnProcessWithoutMfi)
 				.Start();
 		}
 		else // Version 1
 		{
 			subscription
-				.Bind(_bollinger1, _rsi, OnProcess)
+				.BindEx(_bollinger1, _rsi, OnProcessWithoutMfi)
 				.Start();
 		}
 
@@ -159,7 +164,17 @@ public class FlawlessVictoryStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, params IIndicatorValue[] values)
+	private void OnProcessWithMfi(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue, IIndicatorValue mfiValue)
+	{
+		ProcessCandle(candle, bollingerValue, rsiValue.ToDecimal(), mfiValue.ToDecimal());
+	}
+
+	private void OnProcessWithoutMfi(ICandleMessage candle, IIndicatorValue bollingerValue, IIndicatorValue rsiValue)
+	{
+		ProcessCandle(candle, bollingerValue, rsiValue.ToDecimal(), 0m);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue bollingerValue, decimal rsiValue, decimal mfiValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -175,18 +190,10 @@ public class FlawlessVictoryStrategy : Strategy
 		if ((Version == 2 && !_bollinger2.IsFormed) || (Version != 2 && !_bollinger1.IsFormed))
 			return;
 
-		// Get indicator values
-		var rsiValue = _rsi.GetCurrentValue();
-		var mfiValue = Version == 3 ? _mfi.GetCurrentValue() : 0m;
-
-		BollingerBand bbValue;
-		if (Version == 2)
-			bbValue = _bollinger2.GetCurrentValue<BollingerBand>();
-		else
-			bbValue = _bollinger1.GetCurrentValue<BollingerBand>();
-
-		var upper = bbValue.UpperBand;
-		var lower = bbValue.LowerBand;
+		// Get Bollinger Bands values
+		var bollingerTyped = (BollingerBandsValue)bollingerValue;
+		var upper = bollingerTyped.UpBand;
+		var lower = bollingerTyped.LowBand;
 
 		// Define strategy parameters based on version
 		bool buySignal = false;

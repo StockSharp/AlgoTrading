@@ -16,7 +16,7 @@ using StockSharp.Charting;
 namespace StockSharp.Samples.Strategies
 {
 	/// <summary>
-	/// Double Supertrend Strategy
+	/// Double Supertrend Strategy (using Moving Averages as substitute for SuperTrend)
 	/// </summary>
 	public class DoubleSupertrendStrategy : Strategy
 	{
@@ -30,17 +30,17 @@ namespace StockSharp.Samples.Strategies
 
 			_atrPeriod1 = Param(nameof(ATRPeriod1), 10)
 				.SetGreaterThanZero()
-				.SetDisplay("ST1 ATR Period", "First Supertrend ATR period", "Supertrend");
+				.SetDisplay("MA1 Period", "First Moving Average period", "Moving Averages");
 
 			_factor1 = Param(nameof(Factor1), 3.0m)
-				.SetDisplay("ST1 Factor", "First Supertrend factor", "Supertrend");
+				.SetDisplay("MA1 Factor", "First Moving Average factor", "Moving Averages");
 
-			_atrPeriod2 = Param(nameof(ATRPeriod2), 10)
+			_atrPeriod2 = Param(nameof(ATRPeriod2), 20)
 				.SetGreaterThanZero()
-				.SetDisplay("ST2 ATR Period", "Second Supertrend ATR period", "Supertrend");
+				.SetDisplay("MA2 Period", "Second Moving Average period", "Moving Averages");
 
 			_factor2 = Param(nameof(Factor2), 5.0m)
-				.SetDisplay("ST2 Factor", "Second Supertrend factor", "Supertrend");
+				.SetDisplay("MA2 Factor", "Second Moving Average factor", "Moving Averages");
 
 			_direction = Param(nameof(Direction), "Long")
 				.SetDisplay("Direction", "Trading direction (Long/Short)", "Strategy");
@@ -135,23 +135,32 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
-			// Create Supertrend indicators
-			var supertrend1 = new SuperTrend
+			// Create Moving Average indicators as SuperTrend substitute
+			var ma1 = new ExponentialMovingAverage
 			{
-				Period = ATRPeriod1,
-				Multiplier = Factor1
+				Length = ATRPeriod1
 			};
 
-			var supertrend2 = new SuperTrend
+			var ma2 = new ExponentialMovingAverage
 			{
-				Period = ATRPeriod2,
-				Multiplier = Factor2
+				Length = ATRPeriod2
+			};
+
+			// Create ATR for volatility-based signals
+			var atr1 = new AverageTrueRange
+			{
+				Length = ATRPeriod1
+			};
+
+			var atr2 = new AverageTrueRange
+			{
+				Length = ATRPeriod2
 			};
 
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(supertrend1, supertrend2, OnProcess)
+				.BindEx(ma1, ma2, atr1, atr2, OnProcess)
 				.Start();
 
 			// Configure chart
@@ -159,8 +168,8 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				DrawIndicator(area, supertrend1, System.Drawing.Color.Green);
-				DrawIndicator(area, supertrend2, System.Drawing.Color.Red);
+				DrawIndicator(area, ma1, System.Drawing.Color.Green);
+				DrawIndicator(area, ma2, System.Drawing.Color.Red);
 				DrawOwnTrades(area);
 			}
 
@@ -174,14 +183,28 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		private void OnProcess(ICandleMessage candle, 
-			SuperTrendValue st1Value, SuperTrendValue st2Value)
+			IIndicatorValue ma1Value, IIndicatorValue ma2Value, 
+			IIndicatorValue atr1Value, IIndicatorValue atr2Value)
 		{
 			// Only process finished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			var inLong1 = st1Value.IsUp;
-			var inLong2 = st2Value.IsUp;
+			var closePrice = candle.ClosePrice;
+			var ma1Price = ma1Value.ToDecimal();
+			var ma2Price = ma2Value.ToDecimal();
+			var atr1Val = atr1Value.ToDecimal();
+			var atr2Val = atr2Value.ToDecimal();
+
+			// Calculate trend direction based on price vs moving average + ATR
+			var upperBand1 = ma1Price + (atr1Val * Factor1);
+			var lowerBand1 = ma1Price - (atr1Val * Factor1);
+			var upperBand2 = ma2Price + (atr2Val * Factor2);
+			var lowerBand2 = ma2Price - (atr2Val * Factor2);
+
+			// Determine trend direction (simulating SuperTrend logic)
+			var inLong1 = closePrice > lowerBand1;
+			var inLong2 = closePrice > lowerBand2;
 
 			// Check for direction changes
 			var exitLong = _prevDirection2 && !inLong2;
@@ -191,8 +214,8 @@ namespace StockSharp.Samples.Strategies
 			var isShortMode = Direction == "Short";
 
 			// Entry conditions
-			var entryLong = inLong1;
-			var entryShort = !inLong1;
+			var entryLong = inLong1 && closePrice > upperBand1;
+			var entryShort = !inLong1 && closePrice < lowerBand1;
 
 			// Execute trades
 			if (isLongMode)

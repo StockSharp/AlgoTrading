@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -56,6 +57,10 @@ public class JavoV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -67,11 +72,8 @@ public class JavoV1Strategy : Strategy
 		// Subscribe to candles
 		var subscription = this.SubscribeCandles(CandleType);
 		subscription
-			.WhenCandlesFinished()
-			.Do(ProcessCandle)
-			.Apply(this);
-
-		subscription.Start();
+			.Bind(ProcessCandle)
+			.Start();
 
 		// Setup chart
 		var area = CreateChartArea();
@@ -90,6 +92,10 @@ public class JavoV1Strategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
+		// Skip non-finished candles
+		if (candle.State != CandleStates.Finished)
+			return;
+
 		// Calculate Heikin-Ashi values
 		decimal haOpen, haClose;
 
@@ -106,9 +112,9 @@ public class JavoV1Strategy : Strategy
 			haClose = (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4;
 		}
 
-		// Process EMAs with HA close
-		var fastEmaValue = _fastEma.Process(haClose);
-		var slowEmaValue = _slowEma.Process(haClose);
+		// Process EMAs with HA close using proper indicator value
+		var fastEmaValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, haClose));
+		var slowEmaValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, haClose));
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{
@@ -119,8 +125,8 @@ public class JavoV1Strategy : Strategy
 		}
 
 		// Get numeric values
-		var fma = fastEmaValue.GetValue<decimal>();
-		var sma = slowEmaValue.GetValue<decimal>();
+		var fma = fastEmaValue.ToDecimal();
+		var sma = slowEmaValue.ToDecimal();
 
 		// Get previous values for crossover detection
 		var prevFma = _fastEma.GetValue(1);

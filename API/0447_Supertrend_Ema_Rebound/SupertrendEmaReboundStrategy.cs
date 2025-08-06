@@ -22,7 +22,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<string> _tpType;
 		private readonly StrategyParam<decimal> _tpPercent;
 
-		private Supertrend _supertrend;
+		private SuperTrend _supertrend;
 		private ExponentialMovingAverage _ema;
 		private decimal _previousSupertrendDirection;
 		private decimal _previousClose;
@@ -115,7 +115,7 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(7, 15, 2);
 
 			_atrFactor = Param(nameof(AtrFactor), 3.0m)
-				.SetValidator(new DecimalRangeAttribute(0.5m, 10.0m))
+				.SetRange(0.5m, 10.0m)
 				.SetDisplay("ATR Factor", "ATR factor for Supertrend", "Supertrend")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
@@ -136,7 +136,7 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("TP Type", "Take profit type (Supertrend or %)", "Take Profit");
 
 			_tpPercent = Param(nameof(TpPercent), 1.5m)
-				.SetValidator(new DecimalRangeAttribute(0.1m, 10.0m))
+				.SetRange(0.1m, 10.0m)
 				.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.3m);
@@ -154,8 +154,8 @@ namespace StockSharp.Samples.Strategies
 			base.OnStarted(time);
 
 			// Initialize indicators
-			_supertrend = new Supertrend { Length = AtrPeriod, Multiplier = AtrFactor };
-			_ema = new ExponentialMovingAverage { Length = EmaLength };
+			_supertrend = new() { Length = AtrPeriod, Multiplier = AtrFactor };
+			_ema = new() { Length = EmaLength };
 
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);

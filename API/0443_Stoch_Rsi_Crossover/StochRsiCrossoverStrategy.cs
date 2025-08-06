@@ -26,7 +26,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _atrProfitMultiplier;
 
 		private RelativeStrengthIndex _rsi;
-		private StochasticOscillator _stochRsi;
+		private Highest _stochRsiHigh;
+		private Lowest _stochRsiLow;
 		private SimpleMovingAverage _smoothKSma;
 		private SimpleMovingAverage _smoothDSma;
 		private ExponentialMovingAverage _ema1;
@@ -195,13 +196,13 @@ namespace StockSharp.Samples.Strategies
 				.SetOptimize(10, 20, 2);
 
 			_atrLossMultiplier = Param(nameof(AtrLossMultiplier), 3.0m)
-				.SetValidator(new DecimalRangeAttribute(0.5m, 10.0m))
+				.SetRange(0.5m, 10.0m)
 				.SetDisplay("ATR Loss Multiplier", "ATR multiplier for stop loss", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(1.0m, 5.0m, 0.5m);
 
 			_atrProfitMultiplier = Param(nameof(AtrProfitMultiplier), 1.0m)
-				.SetValidator(new DecimalRangeAttribute(0.5m, 10.0m))
+				.SetRange(0.5m, 10.0m)
 				.SetDisplay("ATR Profit Multiplier", "ATR multiplier for take profit", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.5m);
@@ -220,7 +221,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Initialize indicators
 			_rsi = new RelativeStrengthIndex { Length = RsiLength };
-			_stochRsi = new StochasticOscillator { Length = StochLength };
+			_stochRsiHigh = new Highest { Length = StochLength };
+			_stochRsiLow = new Lowest { Length = StochLength };
 			_smoothKSma = new SimpleMovingAverage { Length = SmoothK };
 			_smoothDSma = new SimpleMovingAverage { Length = SmoothD };
 			_ema1 = new ExponentialMovingAverage { Length = Ema1Length };
@@ -231,7 +233,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_rsi, _ema1, _ema2, _ema3, _atr, ProcessCandle)
+				.BindEx(_rsi, _ema1, _ema2, _ema3, _atr, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -246,26 +248,38 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal ema1Value, decimal ema2Value, decimal ema3Value, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue ema1Value, IIndicatorValue ema2Value, IIndicatorValue ema3Value, IIndicatorValue atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
 
-			// Process Stochastic RSI manually since it's complex
-			var stochRsiValue = _stochRsi.Process(rsiValue);
-			if (!stochRsiValue.IsFormed)
+			// Wait for indicators to form
+			if (!_rsi.IsFormed || !_ema1.IsFormed || !_ema2.IsFormed || !_ema3.IsFormed || !_atr.IsFormed)
 				return;
 
+			// Calculate Stochastic RSI manually
+			var rsiPrice = rsiValue.ToDecimal();
+			var highestRsi = _stochRsiHigh.Process(new DecimalIndicatorValue(_stochRsiHigh, candle.ServerTime, rsiPrice));
+			var lowestRsi = _stochRsiLow.Process(new DecimalIndicatorValue(_stochRsiLow, candle.ServerTime, rsiPrice));
+
+			if (!highestRsi.IsFormed || !lowestRsi.IsFormed)
+				return;
+
+			// Calculate %K
+			var highVal = highestRsi.ToDecimal();
+			var lowVal = lowestRsi.ToDecimal();
+			var stochRsi = highVal != lowVal ? (rsiPrice - lowVal) / (highVal - lowVal) * 100 : 50;
+
 			// Calculate smoothed K and D values
-			var kValue = _smoothKSma.Process(stochRsiValue.GetValue<decimal>());
-			var dValue = _smoothDSma.Process(kValue.GetValue<decimal>());
+			var kValue = _smoothKSma.Process(new DecimalIndicatorValue(_smoothKSma, candle.ServerTime, stochRsi));
+			var dValue = _smoothDSma.Process(new DecimalIndicatorValue(_smoothDSma, candle.ServerTime, kValue.ToDecimal()));
 
 			if (!kValue.IsFormed || !dValue.IsFormed)
 				return;
 
-			var k = kValue.GetValue<decimal>();
-			var d = dValue.GetValue<decimal>();
+			var k = kValue.ToDecimal();
+			var d = dValue.ToDecimal();
 
 			// Detect crossovers
 			if (_previousK != 0 && _previousD != 0)
@@ -274,7 +288,7 @@ namespace StockSharp.Samples.Strategies
 				_kCrossedUnderD = _previousK >= _previousD && k < d;
 			}
 
-			CheckEntryConditions(candle, k, d, ema1Value, ema2Value, ema3Value, atrValue);
+			CheckEntryConditions(candle, k, d, ema1Value.ToDecimal(), ema2Value.ToDecimal(), ema3Value.ToDecimal(), atrValue.ToDecimal());
 
 			// Store previous values
 			_previousK = k;
