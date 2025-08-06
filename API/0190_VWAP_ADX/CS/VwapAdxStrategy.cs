@@ -75,13 +75,19 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevAdxValue = default;
+			_adx = null;
+			_vwap = null;
+		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_prevAdxValue = default;
 
 			// Create ADX indicator
 			_adx = new() { Length = AdxPeriod };

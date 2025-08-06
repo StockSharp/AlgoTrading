@@ -121,6 +121,11 @@ class supertrend_stochastic_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercent.Value = value
 
+    def OnReseted(self):
+        super(supertrend_stochastic_strategy, self).OnReseted()
+        self._supertrend = None
+        self._stochastic = None
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(supertrend_stochastic_strategy, self).OnStarted(time)

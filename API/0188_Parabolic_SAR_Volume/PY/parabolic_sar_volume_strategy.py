@@ -104,11 +104,6 @@ class parabolic_sar_volume_strategy(Strategy):
         self._volumeAverage = SimpleMovingAverage()
         self._volumeAverage.Length = self.VolumePeriod
 
-        # Reset state variables
-        self._prevSar = 0
-        self._currentAvgVolume = 0
-        self._prevPriceAboveSar = False
-
         # Create candle subscription
         subscription = self.SubscribeCandles(self.CandleType)
 
@@ -132,6 +127,15 @@ class parabolic_sar_volume_strategy(Strategy):
             self.DrawIndicator(volumeArea, self._volumeAverage)
 
             self.DrawOwnTrades(area)
+
+    def OnReseted(self):
+        super(parabolic_sar_volume_strategy, self).OnReseted()
+        self._prevSar = 0
+        self._currentAvgVolume = 0
+        self._prevPriceAboveSar = False
+        self._parabolicSar = None
+        self._volumeIndicator = None
+        self._volumeAverage = None
 
     def ProcessIndicators(self, candle, sarValue, volumeValue):
         self._currentAvgVolume = float(process_float(self._volumeAverage, volumeValue, candle.ServerTime, candle.State == CandleStates.Finished))
