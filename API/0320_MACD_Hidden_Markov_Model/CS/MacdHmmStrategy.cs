@@ -23,9 +23,9 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _macdSignal;
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _hmmHistoryLength;
-		
+
 		private MovingAverageConvergenceDivergenceSignal _macd;
-		
+
 		// Hidden Markov Model states
 		private enum MarketState
 		{
@@ -33,14 +33,14 @@ namespace StockSharp.Samples.Strategies
 			Neutral,
 			Bearish
 		}
-		
+
 		private MarketState _currentState = MarketState.Neutral;
-		
+
 		// Data for HMM calculations
 		private readonly SynchronizedList<decimal> _priceChanges = [];
 		private readonly SynchronizedList<decimal> _volumes = [];
 		private decimal _prevPrice;
-		
+
 		/// <summary>
 		/// MACD fast period.
 		/// </summary>
@@ -76,7 +76,7 @@ namespace StockSharp.Samples.Strategies
 			get => _candleType.Value;
 			set => _candleType.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Length of history for Hidden Markov Model.
 		/// </summary>
@@ -92,27 +92,27 @@ namespace StockSharp.Samples.Strategies
 		public MacdHmmStrategy()
 		{
 			_macdFast = Param(nameof(MacdFast), 12)
-				.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(8, 20, 2);
+			.SetDisplay("MACD Fast Period", "Fast EMA period for MACD", "Indicators")
+			.SetCanOptimize(true)
+			.SetOptimize(8, 20, 2);
 
 			_macdSlow = Param(nameof(MacdSlow), 26)
-				.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(20, 40, 2);
+			.SetDisplay("MACD Slow Period", "Slow EMA period for MACD", "Indicators")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 40, 2);
 
 			_macdSignal = Param(nameof(MacdSignal), 9)
-				.SetDisplay("MACD Signal Period", "Signal EMA period for MACD", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(7, 15, 1);
+			.SetDisplay("MACD Signal Period", "Signal EMA period for MACD", "Indicators")
+			.SetCanOptimize(true)
+			.SetOptimize(7, 15, 1);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
-				
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+
 			_hmmHistoryLength = Param(nameof(HmmHistoryLength), 100)
-				.SetDisplay("HMM History Length", "Length of history for Hidden Markov Model", "HMM Parameters")
-				.SetCanOptimize(true)
-				.SetOptimize(50, 200, 10);
+			.SetDisplay("HMM History Length", "Length of history for Hidden Markov Model", "HMM Parameters")
+			.SetCanOptimize(true)
+			.SetOptimize(50, 200, 10);
 		}
 
 		/// <inheritdoc />
@@ -122,14 +122,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_currentState = MarketState.Neutral;
 			_prevPrice = 0;
 			_priceChanges.Clear();
 			_volumes.Clear();
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create MACD indicator
 
@@ -144,10 +150,10 @@ namespace StockSharp.Samples.Strategies
 			};
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.BindEx(_macd, ProcessCandle)
-				.Start();
+			.BindEx(_macd, ProcessCandle)
+			.Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -157,27 +163,27 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _macd);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Setup position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent), 
-				new Unit(2, UnitTypes.Percent)
+			new Unit(2, UnitTypes.Percent), 
+			new Unit(2, UnitTypes.Percent)
 			);
 		}
-		
+
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-			
+			return;
+
 			// Update HMM data
 			UpdateHmmData(candle);
-			
+
 			// Determine market state using HMM
 			CalculateMarketState();
 
@@ -199,14 +205,14 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Sell Signal: MACD ({macd:F6}) < Signal ({signal:F6}) in Bearish state");
 			}
 			else if ((Position > 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bearish)) ||
-					 (Position < 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bullish)))
+			(Position < 0 && (_currentState == MarketState.Neutral || _currentState == MarketState.Bullish)))
 			{
 				// Exit position if market state changes
 				ClosePosition();
 				LogInfo($"Exit Position: Market state changed to {_currentState}");
 			}
 		}
-		
+
 		private void UpdateHmmData(ICandleMessage candle)
 		{
 			// Calculate price change
@@ -215,7 +221,7 @@ namespace StockSharp.Samples.Strategies
 				decimal priceChange = candle.ClosePrice - _prevPrice;
 				_priceChanges.Add(priceChange);
 				_volumes.Add(candle.TotalVolume);
-				
+
 				// Maintain the desired history length
 				while (_priceChanges.Count > HmmHistoryLength)
 				{
@@ -223,30 +229,30 @@ namespace StockSharp.Samples.Strategies
 					_volumes.RemoveAt(0);
 				}
 			}
-			
+
 			_prevPrice = candle.ClosePrice;
 		}
-		
+
 		private void CalculateMarketState()
 		{
 			// Only perform state calculation when we have enough data
 			if (_priceChanges.Count < 10)
-				return;
-				
+			return;
+
 			// Simple HMM approximation using recent price changes and volume patterns
 			// Note: This is a simplified implementation - a real HMM would use proper state transition probabilities
-			
+
 			// Calculate statistics of recent price changes
 			var recentChanges = _priceChanges.Skip(Math.Max(0, _priceChanges.Count - 10)).ToList();
 			var positiveChanges = recentChanges.Count(c => c > 0);
 			var negativeChanges = recentChanges.Count(c => c < 0);
-			
+
 			// Calculate average volume for up and down days
 			decimal upVolume = 0;
 			decimal downVolume = 0;
 			int upCount = 0;
 			int downCount = 0;
-			
+
 			for (int i = Math.Max(0, _priceChanges.Count - 10); i < _priceChanges.Count; i++)
 			{
 				if (_priceChanges[i] > 0)
@@ -260,10 +266,10 @@ namespace StockSharp.Samples.Strategies
 					downCount++;
 				}
 			}
-			
+
 			upVolume = upCount > 0 ? upVolume / upCount : 0;
 			downVolume = downCount > 0 ? downVolume / downCount : 0;
-			
+
 			// Determine market state based on price change direction and volume
 			if (positiveChanges >= 7 || (positiveChanges >= 6 && upVolume > downVolume * 1.5m))
 			{
@@ -277,7 +283,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				_currentState = MarketState.Neutral;
 			}
-			
+
 			LogInfo($"Market State: {_currentState}, Positive Changes: {positiveChanges}, Negative Changes: {negativeChanges}");
 		}
 	}

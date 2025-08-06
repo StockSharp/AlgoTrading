@@ -105,17 +105,18 @@ class adaptive_bollinger_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        super(adaptive_bollinger_breakout_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(adaptive_bollinger_breakout_strategy, self).OnReseted()
         # Initialize adaptive parameters
         self._current_bollinger_period = self.max_bollinger_period  # Start with maximum period
         self._current_bollinger_deviation = self.min_bollinger_deviation  # Start with minimum deviation
-
         self._atr = None
         self._bollinger = None
         self._atr_sum = 0.0
         self._atr_count = 0
+
+    def OnStarted(self, time):
+        super(adaptive_bollinger_breakout_strategy, self).OnStarted(time)
 
         # Create ATR indicator for volatility measurement
         self._atr = AverageTrueRange()

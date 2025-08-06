@@ -26,19 +26,19 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _ivMultiplier;
 		private readonly StrategyParam<decimal> _stopLossAtr;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private readonly List<decimal> _impliedVolatilityHistory = [];
 		private decimal _ivAverage;
 		private decimal _ivStdDev;
 		private decimal _currentIv;
-		
+
 		private decimal _prevHmaValue;
 		private decimal _currentAtr;
-		
+
 		// Track trade direction
 		private bool _isLong;
 		private bool _isShort;
-		
+
 		/// <summary>
 		/// Hull Moving Average period.
 		/// </summary>
@@ -47,7 +47,7 @@ namespace StockSharp.Samples.Strategies
 			get => _hmaPeriod.Value;
 			set => _hmaPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Implied Volatility averaging period.
 		/// </summary>
@@ -56,7 +56,7 @@ namespace StockSharp.Samples.Strategies
 			get => _ivPeriod.Value;
 			set => _ivPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// IV standard deviation multiplier for breakout threshold.
 		/// </summary>
@@ -65,7 +65,7 @@ namespace StockSharp.Samples.Strategies
 			get => _ivMultiplier.Value;
 			set => _ivMultiplier.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Stop loss in ATR multiples.
 		/// </summary>
@@ -74,7 +74,7 @@ namespace StockSharp.Samples.Strategies
 			get => _stopLossAtr.Value;
 			set => _stopLossAtr.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Type of candles to use.
 		/// </summary>
@@ -83,52 +83,51 @@ namespace StockSharp.Samples.Strategies
 			get => _candleType.Value;
 			set => _candleType.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Constructor with default parameters.
 		/// </summary>
 		public HullMAWithImpliedVolatilityBreakoutStrategy()
 		{
 			_hmaPeriod = Param(nameof(HmaPeriod), 9)
-				.SetGreaterThanZero()
-				.SetDisplay("HMA Period", "Hull Moving Average period", "HMA Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(5, 15, 2);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("HMA Period", "Hull Moving Average period", "HMA Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 15, 2);
+
 			_ivPeriod = Param(nameof(IVPeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 5);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 5);
+
 			_ivMultiplier = Param(nameof(IVMultiplier), 2m)
-				.SetGreaterThanZero()
-				.SetDisplay("IV StdDev Multiplier", "Multiplier for IV standard deviation", "Volatility Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(1.5m, 3m, 0.5m);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("IV StdDev Multiplier", "Multiplier for IV standard deviation", "Volatility Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(1.5m, 3m, 0.5m);
+
 			_stopLossAtr = Param(nameof(StopLossAtr), 2m)
-				.SetGreaterThanZero()
-				.SetDisplay("Stop Loss (ATR)", "Stop Loss in multiples of ATR", "Risk Management")
-				.SetCanOptimize(true)
-				.SetOptimize(1m, 3m, 0.5m);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss (ATR)", "Stop Loss in multiples of ATR", "Risk Management")
+			.SetCanOptimize(true)
+			.SetOptimize(1m, 3m, 0.5m);
+
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
-		
+
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
-		
+
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-			
-			// Initialize flags
+			base.OnReseted();
+
 			_isLong = default;
 			_isShort = default;
 			_prevHmaValue = default;
@@ -137,19 +136,24 @@ namespace StockSharp.Samples.Strategies
 			_ivAverage = default;
 			_ivStdDev = default;
 			_impliedVolatilityHistory.Clear();
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			var hma = new HullMovingAverage { Length = HmaPeriod };
 			var atr = new AverageTrueRange { Length = 14 }; // Fixed ATR period for stop-loss
-			
+
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			// We need to bind both HMA and ATR
 			subscription
-				.Bind(hma, atr, ProcessCandle)
-				.Start();
-			
+			.Bind(hma, atr, ProcessCandle)
+			.Start();
+
 			// Create chart visualization if available
 			var area = CreateChartArea();
 			if (area != null)
@@ -160,7 +164,7 @@ namespace StockSharp.Samples.Strategies
 				DrawOwnTrades(area);
 			}
 		}
-		
+
 		/// <summary>
 		/// Process each candle with HMA and ATR values.
 		/// </summary>
@@ -168,39 +172,39 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-			
+			return;
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-			
+			return;
+
 			// Store ATR value for stop-loss calculation
 			_currentAtr = atrValue;
-			
+
 			// Update implied volatility (in a real system, this would come from market data)
 			UpdateImpliedVolatility(candle);
-			
+
 			// First run, just store the HMA value
 			if (_prevHmaValue == 0)
 			{
 				_prevHmaValue = hmaValue;
 				return;
 			}
-			
+
 			var price = candle.ClosePrice;
-			
+
 			// Determine HMA direction
 			var hmaRising = hmaValue > _prevHmaValue;
 			var hmaFalling = hmaValue < _prevHmaValue;
-			
+
 			// Calculate IV breakout threshold
 			var ivBreakoutThreshold = _ivAverage + IVMultiplier * _ivStdDev;
 			var ivBreakout = _currentIv > ivBreakoutThreshold;
-			
+
 			// Trading logic
-			
+
 			// Entry conditions
-			
+
 			// Long entry: HMA rising and IV breakout
 			if (hmaRising && ivBreakout && !_isLong && Position <= 0)
 			{
@@ -217,9 +221,9 @@ namespace StockSharp.Samples.Strategies
 				_isShort = true;
 				_isLong = false;
 			}
-			
+
 			// Exit conditions
-			
+
 			// Exit long: HMA starts falling
 			if (_isLong && hmaFalling && Position > 0)
 			{
@@ -234,14 +238,14 @@ namespace StockSharp.Samples.Strategies
 				BuyMarket(Math.Abs(Position));
 				_isShort = false;
 			}
-			
+
 			// Apply ATR-based stop loss
 			ApplyAtrStopLoss(price);
-			
+
 			// Store HMA value for next iteration
 			_prevHmaValue = hmaValue;
 		}
-		
+
 		/// <summary>
 		/// Update implied volatility value.
 		/// In a real implementation, this would fetch data from market.
@@ -252,33 +256,33 @@ namespace StockSharp.Samples.Strategies
 			// In reality, this would come from option pricing data
 			var range = (candle.HighPrice - candle.LowPrice) / candle.LowPrice;
 			var volume = candle.TotalVolume > 0 ? candle.TotalVolume : 1;
-			
+
 			// Simulate IV based on range and volume with some randomness
 			decimal iv = (decimal)(range * (1 + 0.5m * (decimal)RandomGen.GetDouble()) * 100);
-			
+
 			// Add volume factor - higher volume often correlates with higher IV
 			iv *= (decimal)Math.Min(1.5, 1 + Math.Log10((double)volume) * 0.1);
-			
+
 			_currentIv = iv;
-			
+
 			// Add to history
 			_impliedVolatilityHistory.Add(_currentIv);
 			if (_impliedVolatilityHistory.Count > IVPeriod)
 			{
 				_impliedVolatilityHistory.RemoveAt(0);
 			}
-			
+
 			// Calculate average
 			decimal sum = 0;
 			foreach (var value in _impliedVolatilityHistory)
 			{
 				sum += value;
 			}
-			
+
 			_ivAverage = _impliedVolatilityHistory.Count > 0 
-				? sum / _impliedVolatilityHistory.Count 
-				: 0;
-				
+			? sum / _impliedVolatilityHistory.Count 
+			: 0;
+
 			// Calculate standard deviation
 			if (_impliedVolatilityHistory.Count > 1)
 			{
@@ -288,17 +292,17 @@ namespace StockSharp.Samples.Strategies
 					var diff = value - _ivAverage;
 					sumSquaredDiffs += diff * diff;
 				}
-				
+
 				_ivStdDev = (decimal)Math.Sqrt((double)(sumSquaredDiffs / (_impliedVolatilityHistory.Count - 1)));
 			}
 			else
 			{
 				_ivStdDev = 0.5m; // Default value until we have enough data
 			}
-			
+
 			LogInfo($"IV: {_currentIv}, Avg: {_ivAverage}, StdDev: {_ivStdDev}");
 		}
-		
+
 		/// <summary>
 		/// Apply ATR-based stop loss.
 		/// </summary>
@@ -306,8 +310,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Only apply stop-loss if ATR is available and position exists
 			if (_currentAtr <= 0 || Position == 0)
-				return;
-				
+			return;
+
 			// Calculate stop levels
 			if (Position > 0) // Long position
 			{

@@ -111,16 +111,17 @@ class supertrend_put_call_ratio_strategy(Strategy):
         """!! REQUIRED !! Returns securities for strategy."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(supertrend_put_call_ratio_strategy, self).OnStarted(time)
-
-        # Initialize flags
+    def OnReseted(self):
+        super(supertrend_put_call_ratio_strategy, self).OnReseted()
         self._pcrHistory.clear()
         self._isLong = False
         self._isShort = False
         self._currentPcr = 0.0
         self._pcrAverage = 0.0
         self._pcrStdDev = 0.0
+
+    def OnStarted(self, time):
+        super(supertrend_put_call_ratio_strategy, self).OnStarted(time)
 
         # Create Supertrend indicator
         self._supertrend = SuperTrend()

@@ -26,15 +26,15 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _senkouSpanBPeriod;
 		private readonly StrategyParam<int> _ivPeriod;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private readonly List<decimal> _impliedVolatilityHistory = [];
 		private decimal _avgImpliedVolatility;
-		
+
 		// Store previous indicator values for easier tracking
 		private decimal _prevPrice;
 		private bool _prevAboveKumo;
 		private bool _prevTenkanAboveKijun;
-		
+
 		/// <summary>
 		/// Tenkan-Sen period.
 		/// </summary>
@@ -43,7 +43,7 @@ namespace StockSharp.Samples.Strategies
 			get => _tenkanPeriod.Value;
 			set => _tenkanPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Kijun-Sen period.
 		/// </summary>
@@ -52,7 +52,7 @@ namespace StockSharp.Samples.Strategies
 			get => _kijunPeriod.Value;
 			set => _kijunPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Senkou Span B period.
 		/// </summary>
@@ -61,7 +61,7 @@ namespace StockSharp.Samples.Strategies
 			get => _senkouSpanBPeriod.Value;
 			set => _senkouSpanBPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Implied Volatility averaging period.
 		/// </summary>
@@ -70,7 +70,7 @@ namespace StockSharp.Samples.Strategies
 			get => _ivPeriod.Value;
 			set => _ivPeriod.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Type of candles to use.
 		/// </summary>
@@ -79,56 +79,61 @@ namespace StockSharp.Samples.Strategies
 			get => _candleType.Value;
 			set => _candleType.Value = value;
 		}
-		
+
 		/// <summary>
 		/// Constructor with default parameters.
 		/// </summary>
 		public IchimokuWithImpliedVolatilityStrategy()
 		{
 			_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
-				.SetGreaterThanZero()
-				.SetDisplay("Tenkan-Sen Period", "Tenkan-Sen (Conversion Line) period", "Ichimoku Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(5, 13, 2);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Tenkan-Sen Period", "Tenkan-Sen (Conversion Line) period", "Ichimoku Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 13, 2);
+
 			_kijunPeriod = Param(nameof(KijunPeriod), 26)
-				.SetGreaterThanZero()
-				.SetDisplay("Kijun-Sen Period", "Kijun-Sen (Base Line) period", "Ichimoku Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(20, 30, 2);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Kijun-Sen Period", "Kijun-Sen (Base Line) period", "Ichimoku Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 30, 2);
+
 			_senkouSpanBPeriod = Param(nameof(SenkouSpanBPeriod), 52)
-				.SetGreaterThanZero()
-				.SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(40, 60, 4);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("Senkou Span B Period", "Senkou Span B (2nd Leading Span) period", "Ichimoku Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(40, 60, 4);
+
 			_ivPeriod = Param(nameof(IVPeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 5);
-				
+			.SetGreaterThanZero()
+			.SetDisplay("IV Period", "Implied Volatility averaging period", "Volatility Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 5);
+
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
-		
+
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
 		}
-		
+
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_prevAboveKumo = default;
 			_prevTenkanAboveKijun = default;
 			_prevPrice = default;
 			_avgImpliedVolatility = default;
 			_impliedVolatilityHistory.Clear();
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create Ichimoku indicator
 			var ichimoku = new Ichimoku
@@ -137,14 +142,14 @@ namespace StockSharp.Samples.Strategies
 				Kijun = { Length = KijunPeriod },
 				SenkouB = { Length = SenkouSpanBPeriod }
 			};
-			
+
 			// Subscribe to candles and bind indicator
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.BindEx(ichimoku, ProcessCandle)
-				.Start();
-			
+			.BindEx(ichimoku, ProcessCandle)
+			.Start();
+
 			// Create chart visualization if available
 			var area = CreateChartArea();
 			if (area != null)
@@ -153,14 +158,14 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, ichimoku);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Enable position protection using Kijun-Sen as stop-loss
 			StartProtection(
-				new Unit(0), // No take profit
-				new Unit(0)  // Dynamic stop-loss will be handled manually
+			new Unit(0), // No take profit
+			new Unit(0)  // Dynamic stop-loss will be handled manually
 			);
 		}
-		
+
 		/// <summary>
 		/// Process each candle and Ichimoku values.
 		/// </summary>
@@ -168,42 +173,42 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
-			
+			return;
+
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-			
+			return;
+
 			// Get Ichimoku values
 			var ichimokuTyped = (IchimokuValue)ichimokuValue;
 
 			if (ichimokuTyped.Tenkan is not decimal tenkan)
-				return;
+			return;
 
 			if (ichimokuTyped.Kijun is not decimal kijun)
-				return;
+			return;
 
 			if (ichimokuTyped.SenkouA is not decimal senkouA)
-				return;
+			return;
 
 			if (ichimokuTyped.SenkouB is not decimal senkouB)
-				return;
+			return;
 
 			// Determine if price is above Kumo (cloud)
 			var kumoTop = Math.Max(senkouA, senkouB);
 			var kumoBottom = Math.Min(senkouA, senkouB);
 			var priceAboveKumo = candle.ClosePrice > kumoTop;
 			var priceBelowKumo = candle.ClosePrice < kumoBottom;
-			
+
 			// Check Tenkan/Kijun cross
 			var tenkanAboveKijun = tenkan > kijun;
-			
+
 			// Update Implied Volatility (in a real system, this would come from market data)
 			UpdateImpliedVolatility(candle);
-			
+
 			// Check IV condition
 			var ivHigherThanAverage = GetImpliedVolatility() > _avgImpliedVolatility;
-			
+
 			// First run, just store values
 			if (_prevPrice == 0)
 			{
@@ -212,9 +217,9 @@ namespace StockSharp.Samples.Strategies
 				_prevTenkanAboveKijun = tenkanAboveKijun;
 				return;
 			}
-			
+
 			// Trading logic based on Ichimoku and IV
-			
+
 			// Long entry condition
 			if (priceAboveKumo && tenkanAboveKijun && ivHigherThanAverage && Position <= 0)
 			{
@@ -227,9 +232,9 @@ namespace StockSharp.Samples.Strategies
 				LogInfo("Short signal: Price below Kumo, Tenkan below Kijun, IV elevated");
 				SellMarket(Volume);
 			}
-			
+
 			// Exit conditions
-			
+
 			// Exit long if price falls below Kumo
 			if (Position > 0 && !priceAboveKumo)
 			{
@@ -242,16 +247,16 @@ namespace StockSharp.Samples.Strategies
 				LogInfo("Exit short: Price rose above Kumo");
 				BuyMarket(Math.Abs(Position));
 			}
-			
+
 			// Use Kijun-Sen as trailing stop
 			ApplyKijunAsStop(candle.ClosePrice, kijun);
-			
+
 			// Update previous values
 			_prevPrice = candle.ClosePrice;
 			_prevAboveKumo = priceAboveKumo;
 			_prevTenkanAboveKijun = tenkanAboveKijun;
 		}
-		
+
 		/// <summary>
 		/// Update implied volatility value.
 		/// In a real implementation, this would fetch data from market.
@@ -261,41 +266,41 @@ namespace StockSharp.Samples.Strategies
 			// Simple IV simulation based on candle's high-low range
 			// In reality, this would come from option pricing data
 			decimal iv = (candle.HighPrice - candle.LowPrice) / candle.OpenPrice * 100;
-			
+
 			// Add some random fluctuation to simulate IV behavior
 			iv *= (decimal)(0.8 + 0.4 * RandomGen.GetDouble());
-			
+
 			// Add to history and maintain history length
 			_impliedVolatilityHistory.Add(iv);
 			if (_impliedVolatilityHistory.Count > IVPeriod)
 			{
 				_impliedVolatilityHistory.RemoveAt(0);
 			}
-			
+
 			// Calculate average IV
 			decimal sum = 0;
 			foreach (var value in _impliedVolatilityHistory)
 			{
 				sum += value;
 			}
-			
+
 			_avgImpliedVolatility = _impliedVolatilityHistory.Count > 0 
-				? sum / _impliedVolatilityHistory.Count 
-				: 0;
-				
+			? sum / _impliedVolatilityHistory.Count 
+			: 0;
+
 			LogInfo($"IV: {iv}, Avg IV: {_avgImpliedVolatility}");
 		}
-		
+
 		/// <summary>
 		/// Get current implied volatility.
 		/// </summary>
 		private decimal GetImpliedVolatility()
 		{
 			return _impliedVolatilityHistory.Count > 0 
-				? _impliedVolatilityHistory[_impliedVolatilityHistory.Count - 1] 
-				: 0;
+			? _impliedVolatilityHistory[_impliedVolatilityHistory.Count - 1] 
+			: 0;
 		}
-		
+
 		/// <summary>
 		/// Use Kijun-Sen as a trailing stop level.
 		/// </summary>

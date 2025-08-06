@@ -116,6 +116,15 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         """!! REQUIRED !! Returns securities for strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(stochastic_implied_volatility_skew_strategy, self).OnReseted()
+        if self._stochastic:
+            self._stochastic.Reset()
+        if self._iv_skew_sma:
+            self._iv_skew_sma.Reset()
+        self._current_iv_skew = 0
+        self._avg_iv_skew = 0
+
     def OnStarted(self, time):
         super(stochastic_implied_volatility_skew_strategy, self).OnStarted(time)
 
@@ -127,10 +136,6 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         # Create IV Skew SMA
         self._iv_skew_sma = SimpleMovingAverage()
         self._iv_skew_sma.Length = self.IvPeriod
-
-        # Reset state variables
-        self._current_iv_skew = 0
-        self._avg_iv_skew = 0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

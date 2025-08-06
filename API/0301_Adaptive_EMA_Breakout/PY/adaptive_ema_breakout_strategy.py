@@ -50,8 +50,6 @@ class adaptive_ema_breakout_strategy(Strategy):
             .SetDisplay("Candle type", "Type of candles for strategy", "General")
 
         # Internal state variables
-        self._prevAdaptiveEmaValue = 0.0
-        self._isFirstCandle = True
 
     @property
     def Fast(self):
@@ -98,6 +96,11 @@ class adaptive_ema_breakout_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(adaptive_ema_breakout_strategy, self).OnReseted()
+        self._isFirstCandle = True
+        self._prevAdaptiveEmaValue = 0.0
+
     def OnStarted(self, time):
         super(adaptive_ema_breakout_strategy, self).OnStarted(time)
 
@@ -109,9 +112,6 @@ class adaptive_ema_breakout_strategy(Strategy):
         atr = AverageTrueRange()
         atr.Length = 14
 
-        # Reset state variables
-        self._isFirstCandle = True
-        self._prevAdaptiveEmaValue = 0.0
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

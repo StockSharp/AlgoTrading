@@ -22,10 +22,10 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _atrPeriod;
 		private readonly StrategyParam<decimal> _volatilityContractionFactor;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private HullMovingAverage _hma;
 		private AverageTrueRange _atr;
-		
+
 		// Store values for analysis
 		private readonly SynchronizedList<decimal> _atrValues = [];
 		private decimal _prevHmaValue;
@@ -75,22 +75,22 @@ namespace StockSharp.Samples.Strategies
 		public HullMaVolatilityContractionStrategy()
 		{
 			_hmaPeriod = Param(nameof(HmaPeriod), 9)
-				.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
-				.SetCanOptimize(true)
-				.SetOptimize(5, 20, 1);
+			.SetDisplay("Hull MA Period", "Hull Moving Average period", "Hull MA")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 20, 1);
 
 			_atrPeriod = Param(nameof(AtrPeriod), 14)
-				.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Volatility")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 2);
+			.SetDisplay("ATR Period", "Period for ATR volatility calculation", "Volatility")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 2);
 
 			_volatilityContractionFactor = Param(nameof(VolatilityContractionFactor), 2.0m)
-				.SetDisplay("Volatility Contraction Factor", "Standard deviation multiplier for volatility contraction", "Volatility")
-				.SetCanOptimize(true)
-				.SetOptimize(1.0m, 3.0m, 0.5m);
+			.SetDisplay("Volatility Contraction Factor", "Standard deviation multiplier for volatility contraction", "Volatility")
+			.SetCanOptimize(true)
+			.SetOptimize(1.0m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -100,22 +100,27 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_prevHmaValue = default;
 			_currentHmaValue = default;
 			_isLongPosition = false;
 			_isShortPosition = false;
 			_atrValues.Clear();
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_hma = new HullMovingAverage
 			{
 				Length = HmaPeriod
 			};
-			
+
 			_atr = new AverageTrueRange
 			{
 				Length = AtrPeriod
@@ -123,10 +128,10 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.Bind(_hma, _atr, ProcessCandle)
-				.Start();
+			.Bind(_hma, _atr, ProcessCandle)
+			.Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -137,51 +142,51 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _atr);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Setup position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent), 
-				new Unit(2, UnitTypes.Percent)
+			new Unit(2, UnitTypes.Percent), 
+			new Unit(2, UnitTypes.Percent)
 			);
 		}
-		
+
 		private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Save previous HMA value
 			_prevHmaValue = _currentHmaValue;
-			
+
 			// Extract values from indicators
 			_currentHmaValue = hmaValue;
 			decimal atr = atrValue;
-			
+
 			// Store ATR values for volatility analysis
 			_atrValues.Add(atr);
-			
+
 			// Keep only needed history
 			while (_atrValues.Count > AtrPeriod * 2)
-				_atrValues.RemoveAt(0);
-			
+			_atrValues.RemoveAt(0);
+
 			// Check for volatility contraction
 			bool isVolatilityContracted = IsVolatilityContracted();
-			
+
 			// Determine HMA trend direction
 			bool isHmaRising = _currentHmaValue > _prevHmaValue;
 			bool isHmaFalling = _currentHmaValue < _prevHmaValue;
-			
+
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-				
+			return;
+
 			// Log current status
 			if (_atrValues.Count >= AtrPeriod)
 			{
 				decimal avgAtr = _atrValues.Skip(Math.Max(0, _atrValues.Count - AtrPeriod)).Average();
 				LogInfo($"HMA: {_currentHmaValue:F2} (Prev: {_prevHmaValue:F2}), ATR: {atr:F2}, Avg ATR: {avgAtr:F2}, Volatility Contracted: {isVolatilityContracted}");
 			}
-			
+
 			// Trading logic
 			// Buy when HMA is rising and volatility is contracted
 			if (isHmaRising && isVolatilityContracted && Position <= 0)
@@ -214,33 +219,33 @@ namespace StockSharp.Samples.Strategies
 				_isShortPosition = false;
 			}
 		}
-		
+
 		private bool IsVolatilityContracted()
 		{
 			// Need enough ATR values for calculation
 			if (_atrValues.Count < AtrPeriod)
-				return false;
-				
+			return false;
+
 			// Get recent ATR values for analysis
 			var recentAtrValues = _atrValues.Skip(Math.Max(0, _atrValues.Count - AtrPeriod)).ToList();
-			
+
 			// Calculate mean and standard deviation
 			decimal mean = recentAtrValues.Average();
 			decimal sumSquaredDifferences = recentAtrValues.Sum(x => (x - mean) * (x - mean));
 			decimal standardDeviation = (decimal)Math.Sqrt((double)(sumSquaredDifferences / recentAtrValues.Count));
-			
+
 			// Get current ATR (latest)
 			decimal currentAtr = _atrValues.Last();
-			
+
 			// Check if current ATR is less than mean minus standard deviation * factor
 			bool isContracted = currentAtr < (mean - standardDeviation * VolatilityContractionFactor);
-			
+
 			// Log details if contraction is detected
 			if (isContracted)
 			{
 				LogInfo($"Volatility Contraction Detected: Current ATR {currentAtr:F2} < Mean {mean:F2} - (StdDev {standardDeviation:F2} * Factor {VolatilityContractionFactor})");
 			}
-			
+
 			return isContracted;
 		}
 	}

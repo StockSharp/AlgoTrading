@@ -72,6 +72,16 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(cci_put_call_ratio_divergence_strategy, self).OnReseted()
+        if self._cci:
+            self._cci.Reset()
+        if self._atr:
+            self._atr.Reset()
+        self._prev_pcr = 0.0
+        self._current_pcr = 0.0
+        self._prev_price = 0.0
+
     def OnStarted(self, time):
         super(cci_put_call_ratio_divergence_strategy, self).OnStarted(time)
 
@@ -81,11 +91,6 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
 
         self._atr = AverageTrueRange()
         self._atr.Length = 14  # Standard ATR period
-
-        # Initialize state variables
-        self._prev_pcr = 0.0
-        self._current_pcr = 0.0
-        self._prev_price = 0.0
 
         # Create candle subscription
         subscription = self.SubscribeCandles(self.CandleType)

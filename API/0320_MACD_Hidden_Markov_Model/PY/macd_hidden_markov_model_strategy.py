@@ -103,13 +103,15 @@ class macd_hidden_markov_model_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(macd_hidden_markov_model_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(macd_hidden_markov_model_strategy, self).OnReseted()
         self._current_state = self.MarketState.Neutral
         self._prev_price = 0
         self._price_changes = []
         self._volumes = []
+
+    def OnStarted(self, time):
+        super(macd_hidden_markov_model_strategy, self).OnStarted(time)
 
         # Create MACD indicator
         self._macd = MovingAverageConvergenceDivergenceSignal()

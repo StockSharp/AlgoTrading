@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _sentimentPeriod;
 		private readonly StrategyParam<decimal> _stopLoss;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private ADX _adx;
 		private decimal _prevSentiment;
 		private decimal _currentSentiment;
@@ -78,33 +78,44 @@ namespace StockSharp.Samples.Strategies
 		public AdxSentimentMomentumStrategy()
 		{
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetRange(5, 30)
-				.SetCanOptimize(true)
-				.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
+			.SetRange(5, 30)
+			.SetCanOptimize(true)
+			.SetDisplay("ADX Period", "Period for ADX calculation", "Indicators");
 
 			_adxThreshold = Param(nameof(AdxThreshold), 25m)
-				.SetRange(15m, 35m)
-				.SetCanOptimize(true)
-				.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
+			.SetRange(15m, 35m)
+			.SetCanOptimize(true)
+			.SetDisplay("ADX Threshold", "Threshold for strong trend identification", "Indicators");
 
 			_sentimentPeriod = Param(nameof(SentimentPeriod), 5)
-				.SetRange(3, 10)
-				.SetCanOptimize(true)
-				.SetDisplay("Sentiment Period", "Period for sentiment momentum calculation", "Sentiment");
+			.SetRange(3, 10)
+			.SetCanOptimize(true)
+			.SetDisplay("Sentiment Period", "Period for sentiment momentum calculation", "Sentiment");
 
 			_stopLoss = Param(nameof(StopLoss), 2m)
-				.SetRange(1m, 5m)
-				.SetCanOptimize(true)
-				.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
+			.SetRange(1m, 5m)
+			.SetCanOptimize(true)
+			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_adx?.Reset();
+			_prevSentiment = 0;
+			_currentSentiment = 0;
+			_sentimentMomentum = 0;
 		}
 
 		/// <inheritdoc />
@@ -118,16 +129,11 @@ namespace StockSharp.Samples.Strategies
 				Length = AdxPeriod
 			};
 
-			// Initialize sentiment values
-			_prevSentiment = 0;
-			_currentSentiment = 0;
-			_sentimentMomentum = 0;
-
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(_adx, ProcessCandle)
-				.Start();
+			.BindEx(_adx, ProcessCandle)
+			.Start();
 
 			// Setup chart visualization
 			var area = CreateChartArea();
@@ -140,8 +146,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Start position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent),   // Take profit 2%
-				new Unit(StopLoss, UnitTypes.Percent)  // Stop loss based on parameter
+			new Unit(2, UnitTypes.Percent),   // Take profit 2%
+			new Unit(StopLoss, UnitTypes.Percent)  // Stop loss based on parameter
 			);
 		}
 
@@ -149,14 +155,14 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Simulate sentiment data and calculate momentum
 			UpdateSentiment(candle);
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			var typedAdx = (AverageDirectionalIndexValue)adxValue;
 			var adxMain = typedAdx.MovingAverage;
@@ -198,13 +204,13 @@ namespace StockSharp.Samples.Strategies
 		{
 			// This is a placeholder for real sentiment analysis data
 			// In a real implementation, this would connect to a sentiment data provider
-			
+
 			// Update sentiment values
 			_prevSentiment = _currentSentiment;
-			
+
 			// Simulate sentiment based on price action and some randomness
 			_currentSentiment = SimulateSentiment(candle);
-			
+
 			// Calculate momentum as the change in sentiment
 			_sentimentMomentum = _currentSentiment - _prevSentiment;
 		}
@@ -220,13 +226,13 @@ namespace StockSharp.Samples.Strategies
 
 			// Add noise to simulate real-world sentiment data
 			var noise = (decimal)(RandomGen.GetDouble() * 0.2 - 0.1);
-			
+
 			// Sometimes sentiment can diverge from price action
 			if (RandomGen.GetDouble() > 0.7)
 			{
 				noise *= 2; // Occasionally larger divergences
 			}
-			
+
 			return baseSentiment + noise;
 		}
 	}

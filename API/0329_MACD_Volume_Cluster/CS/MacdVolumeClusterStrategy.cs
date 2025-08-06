@@ -20,7 +20,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _volumePeriod;
 		private readonly StrategyParam<decimal> _volumeDeviationFactor;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private decimal _avgVolume;
 		private decimal _volumeStdDev;
 		private int _processedCandles;
@@ -85,37 +85,37 @@ namespace StockSharp.Samples.Strategies
 		public MacdVolumeClusterStrategy()
 		{
 			_fastMacdPeriod = Param(nameof(FastMacdPeriod), 12)
-				.SetGreaterThanZero()
-				.SetDisplay("Fast MACD Period", "Period for fast EMA in MACD calculation", "MACD Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(8, 16, 2);
+			.SetGreaterThanZero()
+			.SetDisplay("Fast MACD Period", "Period for fast EMA in MACD calculation", "MACD Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(8, 16, 2);
 
 			_slowMacdPeriod = Param(nameof(SlowMacdPeriod), 26)
-				.SetGreaterThanZero()
-				.SetDisplay("Slow MACD Period", "Period for slow EMA in MACD calculation", "MACD Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(20, 30, 2);
+			.SetGreaterThanZero()
+			.SetDisplay("Slow MACD Period", "Period for slow EMA in MACD calculation", "MACD Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 30, 2);
 
 			_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
-				.SetGreaterThanZero()
-				.SetDisplay("MACD Signal Period", "Period for signal line in MACD calculation", "MACD Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(7, 12, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Signal Period", "Period for signal line in MACD calculation", "MACD Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(7, 12, 1);
 
 			_volumePeriod = Param(nameof(VolumePeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume Period", "Period for volume moving average calculation", "Volume Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Period", "Period for volume moving average calculation", "Volume Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 5);
 
 			_volumeDeviationFactor = Param(nameof(VolumeDeviationFactor), 2.0m)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume Deviation Factor", "Factor multiplied by standard deviation to detect volume spikes", "Volume Settings")
-				.SetCanOptimize(true)
-				.SetOptimize(1.5m, 3.0m, 0.5m);
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Deviation Factor", "Factor multiplied by standard deviation to detect volume spikes", "Volume Settings")
+			.SetCanOptimize(true)
+			.SetOptimize(1.5m, 3.0m, 0.5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -125,14 +125,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Initialize values
 			_avgVolume = 0;
 			_volumeStdDev = 0;
 			_processedCandles = 0;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create MACD indicator
 			var macd = new MovingAverageConvergenceDivergenceSignal
@@ -158,16 +162,16 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			// Bind MACD and process volume separately
 			subscription
-				.BindEx(macd, ProcessMacdAndVolume)
-				.Start();
+			.BindEx(macd, ProcessMacdAndVolume)
+			.Start();
 
 			// Start position protection
 			StartProtection(
-				takeProfit: new Unit(2, UnitTypes.Percent),
-				stopLoss: new Unit(1, UnitTypes.Percent)
+			takeProfit: new Unit(2, UnitTypes.Percent),
+			stopLoss: new Unit(1, UnitTypes.Percent)
 			);
 
 			// Setup chart visualization if available
@@ -184,11 +188,11 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Calculate volume statistics
 			_processedCandles++;
-			
+
 			// Using exponential moving average approach for volume statistics
 			// to avoid keeping large arrays of historical volumes
 			if (_processedCandles == 1)
@@ -202,7 +206,7 @@ namespace StockSharp.Samples.Strategies
 				decimal alpha = 2.0m / (VolumePeriod + 1);
 				decimal oldAvg = _avgVolume;
 				_avgVolume = alpha * candle.TotalVolume + (1 - alpha) * _avgVolume;
-				
+
 				// Update standard deviation (simplified approach)
 				decimal volumeDev = Math.Abs(candle.TotalVolume - oldAvg);
 				_volumeStdDev = alpha * volumeDev + (1 - alpha) * _volumeStdDev;
@@ -210,7 +214,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
 			var macd = macdTyped.Macd;
@@ -218,10 +222,10 @@ namespace StockSharp.Samples.Strategies
 
 			// Determine if we have a volume spike
 			bool isVolumeSpike = candle.TotalVolume > (_avgVolume + VolumeDeviationFactor * _volumeStdDev);
-			
+
 			// Log the values
 			LogInfo($"MACD: {macd}, Signal: {signal}, Volume: {candle.TotalVolume}, " +
-							$"Avg Volume: {_avgVolume}, StdDev: {_volumeStdDev}, Volume Spike: {isVolumeSpike}");
+			$"Avg Volume: {_avgVolume}, StdDev: {_volumeStdDev}, Volume Spike: {isVolumeSpike}");
 
 			// Trading logic
 			if (isVolumeSpike)
@@ -231,8 +235,8 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Close any existing short position
 					if (Position < 0)
-						BuyMarket(Math.Abs(Position));
-					
+					BuyMarket(Math.Abs(Position));
+
 					// Open long position
 					BuyMarket(Volume);
 					LogInfo($"Buy signal: MACD ({macd}) > Signal ({signal}) with volume spike ({candle.TotalVolume})");
@@ -242,17 +246,17 @@ namespace StockSharp.Samples.Strategies
 				{
 					// Close any existing long position
 					if (Position > 0)
-						SellMarket(Math.Abs(Position));
-					
+					SellMarket(Math.Abs(Position));
+
 					// Open short position
 					SellMarket(Volume);
 					LogInfo($"Sell signal: MACD ({macd}) < Signal ({signal}) with volume spike ({candle.TotalVolume})");
 				}
 			}
-			
+
 			// Exit logic: MACD crosses back
 			if ((Position > 0 && macd < signal) || 
-				(Position < 0 && macd > signal))
+			(Position < 0 && macd > signal))
 			{
 				ClosePosition();
 				LogInfo($"Exit signal: MACD and Signal crossed. Position closed at {candle.ClosePrice}");

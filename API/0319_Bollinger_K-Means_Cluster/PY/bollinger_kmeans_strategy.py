@@ -101,15 +101,17 @@ class bollinger_kmeans_strategy(Strategy):
     def KMeansHistoryLength(self, value):
         self._kmeans_history_length.Value = value
 
-    def OnStarted(self, time):
-        """Initialize indicators, subscription and charting."""
-        super(bollinger_kmeans_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(bollinger_kmeans_strategy, self).OnReseted()
         self._atr_value = 0.0
         self._current_cluster_state = ClusterState.Neutral
         self._rsi_values.clear()
         self._price_values.clear()
         self._volume_values.clear()
+
+    def OnStarted(self, time):
+        """Initialize indicators, subscription and charting."""
+        super(bollinger_kmeans_strategy, self).OnStarted(time)
 
         # Create indicators
         self._bollinger = BollingerBands()

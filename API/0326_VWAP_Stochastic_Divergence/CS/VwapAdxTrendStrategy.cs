@@ -19,11 +19,11 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _adxThreshold;
 		private readonly StrategyParam<decimal> _adxExitThreshold;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private VolumeWeightedMovingAverage _vwap;
 		private AverageDirectionalIndex _adx;
 		private DirectionalIndex _di;
-		
+
 		private decimal _vwapValue;
 		private decimal _adxValue;
 		private decimal _plusDiValue;
@@ -46,7 +46,7 @@ namespace StockSharp.Samples.Strategies
 			get => _adxThreshold.Value;
 			set => _adxThreshold.Value = value;
 		}
-		
+
 		/// <summary>
 		/// ADX threshold for trend strength exit.
 		/// </summary>
@@ -71,22 +71,22 @@ namespace StockSharp.Samples.Strategies
 		public VwapAdxTrendStrategy()
 		{
 			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetDisplay("ADX Period", "Period for ADX and Directional Index calculations", "ADX")
-				.SetCanOptimize(true)
-				.SetOptimize(8, 20, 2);
+			.SetDisplay("ADX Period", "Period for ADX and Directional Index calculations", "ADX")
+			.SetCanOptimize(true)
+			.SetOptimize(8, 20, 2);
 
 			_adxThreshold = Param(nameof(AdxThreshold), 25m)
-				.SetDisplay("ADX Threshold", "ADX threshold for trend strength entry", "ADX")
-				.SetCanOptimize(true)
-				.SetOptimize(20m, 40m, 5m);
-				
+			.SetDisplay("ADX Threshold", "ADX threshold for trend strength entry", "ADX")
+			.SetCanOptimize(true)
+			.SetOptimize(20m, 40m, 5m);
+
 			_adxExitThreshold = Param(nameof(AdxExitThreshold), 20m)
-				.SetDisplay("ADX Exit Threshold", "ADX threshold for trend strength exit", "ADX")
-				.SetCanOptimize(true)
-				.SetOptimize(10m, 25m, 5m);
+			.SetDisplay("ADX Exit Threshold", "ADX threshold for trend strength exit", "ADX")
+			.SetCanOptimize(true)
+			.SetOptimize(10m, 25m, 5m);
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -96,23 +96,28 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_vwapValue = default;
 			_adxValue = default;
 			_plusDiValue = default;
 			_minusDiValue = default;
+		}
+
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_vwap = new VolumeWeightedMovingAverage();
-			
+
 			_adx = new AverageDirectionalIndex
 			{
 				Length = AdxPeriod
 			};
-			
+
 			_di = new DirectionalIndex
 			{
 				Length = AdxPeriod
@@ -120,14 +125,14 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.BindEx(
-					_vwap,
-					_adx,
-					_di,
-					ProcessCandle)
-				.Start();
+			.BindEx(
+			_vwap,
+			_adx,
+			_di,
+			ProcessCandle)
+			.Start();
 
 			// Setup chart visualization if available
 			var area = CreateChartArea();
@@ -138,42 +143,42 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _adx);
 				DrawOwnTrades(area);
 			}
-			
+
 			// Setup position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent), 
-				new Unit(2, UnitTypes.Percent)
+			new Unit(2, UnitTypes.Percent), 
+			new Unit(2, UnitTypes.Percent)
 			);
 		}
-		
+
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue vwapValue, IIndicatorValue adxValue, IIndicatorValue diValue)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			var adxTyped = (AverageDirectionalIndexValue)adxValue;
 
 			if (adxTyped.MovingAverage is not decimal adx)
-				return;
+			return;
 
 			var dx = adxTyped.Dx;
 
 			if (dx.Plus is not decimal plusDi || dx.Minus is not decimal minusDi)
-				return;
+			return;
 
 			// Extract values from indicators
 			_vwapValue = vwapValue.ToDecimal();
 			_adxValue = adx;
 			_plusDiValue = plusDi;  // +DI
 			_minusDiValue = minusDi; // -DI
-			
+
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-				
+			return;
+
 			// Log current values
 			LogInfo($"VWAP: {_vwapValue:F2}, ADX: {_adxValue:F2}, +DI: {_plusDiValue:F2}, -DI: {_minusDiValue:F2}");
-			
+
 			// Trading logic
 			// Buy when price is above VWAP, ADX > threshold, and +DI > -DI (strong uptrend)
 			if (candle.ClosePrice > _vwapValue && _adxValue > AdxThreshold && _plusDiValue > _minusDiValue && Position <= 0)

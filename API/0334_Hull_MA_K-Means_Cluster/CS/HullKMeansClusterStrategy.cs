@@ -80,19 +80,19 @@ namespace StockSharp.Samples.Strategies
 		public HullKMeansClusterStrategy()
 		{
 			_hullPeriod = Param(nameof(HullPeriod), 9)
-				.SetGreaterThanZero()
-				.SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Hull MA Period", "Period for Hull Moving Average", "Indicator Settings");
 
 			_clusterDataLength = Param(nameof(ClusterDataLength), 50)
-				.SetGreaterThanZero()
-				.SetDisplay("Cluster Data Length", "Number of periods to use for clustering", "Clustering Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("Cluster Data Length", "Number of periods to use for clustering", "Clustering Settings");
 
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetGreaterThanZero()
-				.SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings");
+			.SetGreaterThanZero()
+			.SetDisplay("RSI Period", "Period for RSI calculation as a clustering feature", "Indicator Settings");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
 		/// <inheritdoc />
@@ -102,19 +102,26 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevHullValue = default;
+			_currentMarketState = MarketState.Neutral;
+			_lastPrice = default;
+			_avgVolume = default;
+
+			_priceChangeData.Clear();
+			_rsiData.Clear();
+			_volumeRatioData.Clear();
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Reset state variables
-			_prevHullValue = 0;
-			_currentMarketState = MarketState.Neutral;
-			_lastPrice = 0;
-			_avgVolume = 0;
-			
-			_priceChangeData.Clear();
-			_rsiData.Clear();
-			_volumeRatioData.Clear();
+
 
 			// Create Hull Moving Average indicator
 			var hullMa = new HullMovingAverage
@@ -133,8 +140,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Bind indicators to subscription and start
 			subscription
-				.Bind(hullMa, rsi, ProcessCandle)
-				.Start();
+			.Bind(hullMa, rsi, ProcessCandle)
+			.Start();
 
 			// Add chart visualization
 			var area = CreateChartArea();
@@ -147,8 +154,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Start position protection with ATR-based stop-loss
 			StartProtection(
-				takeProfit: new Unit(0), // No fixed take profit
-				stopLoss: new Unit(2, UnitTypes.Absolute) // 2 ATR stop-loss
+			takeProfit: new Unit(0), // No fixed take profit
+			stopLoss: new Unit(2, UnitTypes.Absolute) // 2 ATR stop-loss
 			);
 		}
 
@@ -156,19 +163,19 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			// Update feature data for clustering
 			UpdateFeatureData(candle, rsiValue);
 
 			// Perform K-Means clustering when enough data is collected
 			if (_priceChangeData.Count >= ClusterDataLength && 
-				_rsiData.Count >= ClusterDataLength && 
-				_volumeRatioData.Count >= ClusterDataLength)
+			_rsiData.Count >= ClusterDataLength && 
+			_volumeRatioData.Count >= ClusterDataLength)
 			{
 				// Perform K-Means clustering for market state detection
 				_currentMarketState = DetectMarketState();
@@ -194,7 +201,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Store Hull MA value for next comparison
 			_prevHullValue = hullValue;
-			
+
 			// Update last price
 			_lastPrice = candle.ClosePrice;
 		}
@@ -205,17 +212,17 @@ namespace StockSharp.Samples.Strategies
 			if (_lastPrice != 0)
 			{
 				decimal priceChange = (candle.ClosePrice - _lastPrice) / _lastPrice * 100;
-				
+
 				// Maintain price change data queue
 				_priceChangeData.Enqueue(priceChange);
 				if (_priceChangeData.Count > ClusterDataLength)
-					_priceChangeData.Dequeue();
+				_priceChangeData.Dequeue();
 			}
 
 			// Maintain RSI data queue
 			_rsiData.Enqueue(rsiValue);
 			if (_rsiData.Count > ClusterDataLength)
-				_rsiData.Dequeue();
+			_rsiData.Dequeue();
 
 			// Calculate volume ratio and maintain queue
 			if (_avgVolume == 0)
@@ -231,24 +238,24 @@ namespace StockSharp.Samples.Strategies
 			decimal volumeRatio = candle.TotalVolume / (_avgVolume == 0 ? 1 : _avgVolume);
 			_volumeRatioData.Enqueue(volumeRatio);
 			if (_volumeRatioData.Count > ClusterDataLength)
-				_volumeRatioData.Dequeue();
+			_volumeRatioData.Dequeue();
 		}
 
 		private MarketState DetectMarketState()
 		{
 			// Simplified implementation of K-Means clustering for market state detection
 			// This is a basic approach - a full implementation would use proper K-Means algorithm
-			
+
 			// Calculate feature averages to represent cluster centers
 			decimal avgPriceChange = _priceChangeData.Average();
 			decimal avgRsi = _rsiData.Average();
 			decimal avgVolumeRatio = _volumeRatioData.Average();
-			
+
 			// Detect market state based on features
 			// Higher RSI, positive price change and higher volume -> Bullish
 			// Lower RSI, negative price change and higher volume -> Bearish
 			// Otherwise -> Neutral
-			
+
 			if (avgRsi > 60 && avgPriceChange > 0.1m && avgVolumeRatio > 1.1m)
 			{
 				return MarketState.Bullish;

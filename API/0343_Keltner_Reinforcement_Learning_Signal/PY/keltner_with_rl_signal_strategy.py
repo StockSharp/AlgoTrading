@@ -122,9 +122,8 @@ class keltner_with_rl_signal_strategy(Strategy):
         """!! REQUIRED!! override to return securities used by the strategy."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(keltner_with_rl_signal_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(keltner_with_rl_signal_strategy, self).OnReseted()
         # Initialize RL state variables
         self._current_signal = self._RLSignal.None_
         self._consecutive_wins = 0
@@ -134,6 +133,9 @@ class keltner_with_rl_signal_strategy(Strategy):
         self._previous_atr = 0
         self._previous_price = 0
         self._previous_signal_price = 0
+
+    def OnStarted(self, time):
+        super(keltner_with_rl_signal_strategy, self).OnStarted(time)
 
         # Create Keltner Channels using EMA and ATR
         keltner = KeltnerChannels()

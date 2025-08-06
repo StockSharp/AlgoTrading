@@ -19,13 +19,13 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _oiPeriod;
 		private readonly StrategyParam<decimal> _oiDeviationFactor;
 		private readonly StrategyParam<decimal> _stopLoss;
-		
+
 		private RelativeStrengthIndex _rsi;
 		private SimpleMovingAverage _callOiSma;
 		private SimpleMovingAverage _putOiSma;
 		private StandardDeviation _callOiStdDev;
 		private StandardDeviation _putOiStdDev;
-		
+
 		private decimal _currentCallOi;
 		private decimal _currentPutOi;
 		private decimal _avgCallOi;
@@ -84,33 +84,52 @@ namespace StockSharp.Samples.Strategies
 		public RsiWithOptionOpenInterestStrategy()
 		{
 			_rsiPeriod = Param(nameof(RsiPeriod), 14)
-				.SetRange(5, 30)
-				.SetCanOptimize(true)
-				.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
+			.SetRange(5, 30)
+			.SetCanOptimize(true)
+			.SetDisplay("RSI Period", "Period for RSI calculation", "Indicators");
 
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 			_oiPeriod = Param(nameof(OiPeriod), 20)
-				.SetRange(10, 50)
-				.SetCanOptimize(true)
-				.SetDisplay("OI Period", "Period for Open Interest averaging", "Options");
+			.SetRange(10, 50)
+			.SetCanOptimize(true)
+			.SetDisplay("OI Period", "Period for Open Interest averaging", "Options");
 
 			_oiDeviationFactor = Param(nameof(OiDeviationFactor), 2m)
-				.SetRange(1m, 3m)
-				.SetCanOptimize(true)
-				.SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options");
+			.SetRange(1m, 3m)
+			.SetCanOptimize(true)
+			.SetDisplay("OI StdDev Factor", "Standard deviation multiplier for OI threshold", "Options");
 
 			_stopLoss = Param(nameof(StopLoss), 2m)
-				.SetRange(1m, 5m)
-				.SetCanOptimize(true)
-				.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
+			.SetRange(1m, 5m)
+			.SetCanOptimize(true)
+			.SetDisplay("Stop Loss %", "Stop Loss percentage", "Risk Management");
 		}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_rsi?.Reset();
+			_callOiSma?.Reset();
+			_putOiSma?.Reset();
+			_callOiStdDev?.Reset();
+			_putOiStdDev?.Reset();
+
+			_currentCallOi = 0;
+			_currentPutOi = 0;
+			_avgCallOi = 0;
+			_avgPutOi = 0;
+			_stdDevCallOi = 0;
+			_stdDevPutOi = 0;
 		}
 
 		/// <inheritdoc />
@@ -146,19 +165,11 @@ namespace StockSharp.Samples.Strategies
 				Length = OiPeriod
 			};
 
-			// Reset state variables
-			_currentCallOi = 0;
-			_currentPutOi = 0;
-			_avgCallOi = 0;
-			_avgPutOi = 0;
-			_stdDevCallOi = 0;
-			_stdDevPutOi = 0;
-
 			// Create candle subscription and bind RSI
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(_rsi, ProcessCandle)
-				.Start();
+			.BindEx(_rsi, ProcessCandle)
+			.Start();
 
 			// Create subscription for option OI data (would be implemented in a real system)
 			// Here we'll just simulate the data in the ProcessCandle method
@@ -174,8 +185,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Start position protection
 			StartProtection(
-				new Unit(2, UnitTypes.Percent),   // Take profit 2%
-				new Unit(StopLoss, UnitTypes.Percent)  // Stop loss based on parameter
+			new Unit(2, UnitTypes.Percent),   // Take profit 2%
+			new Unit(StopLoss, UnitTypes.Percent)  // Stop loss based on parameter
 			);
 		}
 
@@ -183,7 +194,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
-				return;
+			return;
 
 			// Get current RSI value
 			var rsi = rsiValue.ToDecimal();
@@ -194,7 +205,7 @@ namespace StockSharp.Samples.Strategies
 			// Process option OI with indicators
 			var callOiValueSma = _callOiSma.Process(_currentCallOi, candle.ServerTime, candle.State == CandleStates.Finished);
 			var putOiValueSma = _putOiSma.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
-			
+
 			var callOiValueStdDev = _callOiStdDev.Process(_currentCallOi, candle.ServerTime, candle.State == CandleStates.Finished);
 			var putOiValueStdDev = _putOiStdDev.Process(_currentPutOi, candle.ServerTime, candle.State == CandleStates.Finished);
 
@@ -206,7 +217,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
+			return;
 
 			// Calculate OI thresholds
 			decimal callOiThreshold = _avgCallOi + OiDeviationFactor * _stdDevCallOi;
@@ -246,10 +257,10 @@ namespace StockSharp.Samples.Strategies
 			// This is a placeholder for real option open interest data
 			// In a real implementation, this would connect to an options data provider
 			// We'll simulate some values based on price action for demonstration
-			
+
 			// Base OI values on price movement
 			bool priceUp = candle.OpenPrice < candle.ClosePrice;
-			
+
 			// Simulate bullish sentiment with higher call OI when price is rising
 			// Simulate bearish sentiment with higher put OI when price is falling
 			if (priceUp)
@@ -262,14 +273,14 @@ namespace StockSharp.Samples.Strategies
 				_currentCallOi = candle.TotalVolume * (0.7m + (decimal)RandomGen.GetDouble() * 0.3m);
 				_currentPutOi = candle.TotalVolume * (1m + (decimal)RandomGen.GetDouble() * 0.5m);
 			}
-			
+
 			// Add some randomness for spikes
 			if (RandomGen.GetDouble() > 0.9)
 			{
 				// Occasional spikes in OI
 				_currentCallOi *= 1.5m;
 			}
-			
+
 			if (RandomGen.GetDouble() > 0.9)
 			{
 				// Occasional spikes in OI

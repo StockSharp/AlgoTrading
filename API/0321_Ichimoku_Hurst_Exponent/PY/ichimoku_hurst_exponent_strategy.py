@@ -109,11 +109,13 @@ class ichimoku_hurst_exponent_strategy(Strategy):
         """!! REQUIRED !! Return securities used by the strategy."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(ichimoku_hurst_exponent_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(ichimoku_hurst_exponent_strategy, self).OnReseted()
         self._prices.clear()
         self._hurst_exponent = 0.5  # Default Hurst exponent value
+
+    def OnStarted(self, time):
+        super(ichimoku_hurst_exponent_strategy, self).OnStarted(time)
 
         # Create Ichimoku indicator
         self._ichimoku = Ichimoku()
