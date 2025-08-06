@@ -63,7 +63,7 @@ class turnaround_tuesday_strategy(Strategy):
     def OnReseted(self):
         super(turnaround_tuesday_strategy, self).OnReseted()
         self._prev_close_price = 0.0
-    self._is_price_lower_on_monday = False
+        self._is_price_lower_on_monday = False
 
     def OnStarted(self, time):
         """Called when the strategy starts."""

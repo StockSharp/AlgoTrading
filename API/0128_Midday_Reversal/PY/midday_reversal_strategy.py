@@ -54,7 +54,7 @@ class midday_reversal_strategy(Strategy):
     def OnReseted(self):
         super(midday_reversal_strategy, self).OnReseted()
         self._prev_candle_close = 0.0
-    self._prev_prev_candle_close = 0.0
+        self._prev_prev_candle_close = 0.0
 
     def OnStarted(self, time):
         super(midday_reversal_strategy, self).OnStarted(time)

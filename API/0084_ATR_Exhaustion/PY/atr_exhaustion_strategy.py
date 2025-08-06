@@ -112,12 +112,13 @@ class atr_exhaustion_strategy(Strategy):
 
     def OnReseted(self):
         super(atr_exhaustion_strategy, self).OnReseted()
-        self._atr_avg = SimpleMovingAverage()
-        self._atr_avg.Length = self.AtrAvgPeriod
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(atr_exhaustion_strategy, self).OnStarted(time)
+
+        self._atr_avg = SimpleMovingAverage()
+        self._atr_avg.Length = self.AtrAvgPeriod
 
         # Enable position protection using stop-loss
         self.StartProtection(

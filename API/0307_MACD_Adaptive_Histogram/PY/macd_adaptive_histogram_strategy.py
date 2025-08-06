@@ -153,14 +153,15 @@ class macd_adaptive_histogram_strategy(Strategy):
 
     def OnReseted(self):
         super(macd_adaptive_histogram_strategy, self).OnReseted()
-        self._hist_avg = SimpleMovingAverage()
-        self._hist_avg.Length = self.HistogramAvgPeriod
-        self._hist_std_dev = StandardDeviation()
-        self._hist_std_dev.Length = self.HistogramAvgPeriod
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(macd_adaptive_histogram_strategy, self).OnStarted(time)
+
+        self._hist_avg = SimpleMovingAverage()
+        self._hist_avg.Length = self.HistogramAvgPeriod
+        self._hist_std_dev = StandardDeviation()
+        self._hist_std_dev.Length = self.HistogramAvgPeriod
 
         # Create MACD indicator with custom settings
         macd_line = MovingAverageConvergenceDivergenceSignal()

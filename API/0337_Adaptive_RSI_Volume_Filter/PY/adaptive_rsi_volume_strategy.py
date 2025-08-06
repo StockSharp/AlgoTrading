@@ -114,6 +114,9 @@ class adaptive_rsi_volume_strategy(Strategy):
     def OnStarted(self, time):
         super(adaptive_rsi_volume_strategy, self).OnStarted(time)
 
+        self._adaptiveRsiValue = 50
+        self._currentRsiPeriod = self.MaxRsiPeriod
+
         # Create indicators
         self._atr = AverageTrueRange()
         self._atr.Length = self.AtrPeriod

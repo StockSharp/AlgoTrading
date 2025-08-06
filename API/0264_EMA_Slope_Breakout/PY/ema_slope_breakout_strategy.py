@@ -119,6 +119,8 @@ class ema_slope_breakout_strategy(Strategy):
     def OnStarted(self, time):
         super(ema_slope_breakout_strategy, self).OnStarted(time)
 
+        self._slopes = [0.0] * self.lookback_period
+
         self._ema = ExponentialMovingAverage()
         self._ema.Length = self.ema_length
 

@@ -50,6 +50,7 @@ class hull_kmeans_cluster_strategy(Strategy):
         self._prev_hull_value = 0.0
         self._last_price = 0.0
         self._avg_volume = 0.0
+        self._current_market_state = self._MarketState.Neutral
 
     @property
     def HullPeriod(self):

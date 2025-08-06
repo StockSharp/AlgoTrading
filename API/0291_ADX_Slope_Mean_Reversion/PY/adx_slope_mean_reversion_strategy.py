@@ -126,7 +126,7 @@ class adx_slope_mean_reversion_strategy(Strategy):
 
         # Initialize indicators
         self._adx = AverageDirectionalIndex()
-        self._adx.Length = self.ADXPeriod
+        self._adx.Length = self.AdxPeriod
 
         # Initialize statistics variables
 

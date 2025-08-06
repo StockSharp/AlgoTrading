@@ -150,6 +150,8 @@ class stochastic_slope_breakout_strategy(Strategy):
         """Initialize indicators, subscriptions and charting."""
         super(stochastic_slope_breakout_strategy, self).OnStarted(time)
 
+        self._slopes = [0.0] * self.LookbackPeriod
+
         self._stochastic = StochasticOscillator()
         self._stochastic.K.Length = self.KPeriod
         self._stochastic.D.Length = self.DPeriod

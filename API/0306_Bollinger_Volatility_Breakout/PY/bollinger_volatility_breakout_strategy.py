@@ -110,13 +110,14 @@ class bollinger_volatility_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(bollinger_volatility_breakout_strategy, self).OnReseted()
+
+    def OnStarted(self, time):
+        super(bollinger_volatility_breakout_strategy, self).OnStarted(time)
+
         self._atr_sma = SimpleMovingAverage()
         self._atr_sma.Length = self.AtrPeriod
         self._atr_std_dev = StandardDeviation()
         self._atr_std_dev.Length = self.AtrPeriod
-
-    def OnStarted(self, time):
-        super(bollinger_volatility_breakout_strategy, self).OnStarted(time)
 
         # Create indicators
         bollinger_bands = BollingerBands()

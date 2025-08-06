@@ -121,6 +121,7 @@ class hull_ma_slope_breakout_strategy(Strategy):
         self._atr = AverageTrueRange()
         self._atr.Length = 14
 
+        self._slopes = [0.0] * self.LookbackPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._hull_ma, self._atr, self.ProcessCandle).Start()

@@ -122,6 +122,9 @@ class adaptive_bollinger_breakout_strategy(Strategy):
     def OnStarted(self, time):
         super(adaptive_bollinger_breakout_strategy, self).OnStarted(time)
 
+        self._current_bollinger_period = self.max_bollinger_period  # Start with maximum period
+        self._current_bollinger_deviation = self.min_bollinger_deviation  # Start with minimum deviation
+
         # Create ATR indicator for volatility measurement
         self._atr = AverageTrueRange()
         self._atr.Length = self.atr_period

@@ -34,6 +34,8 @@ class donchian_reversal_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._is_first_candle = True
+
         # Internal state
 
     @property
@@ -68,6 +70,7 @@ class donchian_reversal_strategy(Strategy):
         Resets internal state when strategy is reset.
         """
         super(donchian_reversal_strategy, self).OnReseted()
+        self._is_first_candle = True
 
     def OnStarted(self, time):
         """

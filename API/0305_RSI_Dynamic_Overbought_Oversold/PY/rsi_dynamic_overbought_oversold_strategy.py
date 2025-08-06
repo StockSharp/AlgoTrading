@@ -98,14 +98,15 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
 
     def OnReseted(self):
         super(rsi_dynamic_overbought_oversold_strategy, self).OnReseted()
-        self._rsiSma = SimpleMovingAverage()
-        self._rsiSma.Length = self.MovingAvgPeriod
-        self._rsiStdDev = StandardDeviation()
-        self._rsiStdDev.Length = self.MovingAvgPeriod
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(rsi_dynamic_overbought_oversold_strategy, self).OnStarted(time)
+
+        self._rsiSma = SimpleMovingAverage()
+        self._rsiSma.Length = self.MovingAvgPeriod
+        self._rsiStdDev = StandardDeviation()
+        self._rsiStdDev.Length = self.MovingAvgPeriod
 
         # Create indicators
         rsi = RelativeStrengthIndex()

@@ -35,6 +35,7 @@ class parabolic_sar_sentiment_divergence_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._parabolic_sar = None
+        self._is_first_candle = True
 
     @property
     def StartAf(self):

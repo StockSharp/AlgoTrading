@@ -121,6 +121,8 @@ class ma_slope_breakout_strategy(Strategy):
         """Initialize indicators, chart, and position protection."""
         super(ma_slope_breakout_strategy, self).OnStarted(time)
 
+        self._slopes = [0.0] * self.lookback_period
+
         self._sma = SimpleMovingAverage()
         self._sma.Length = self.ma_length
 

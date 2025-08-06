@@ -1,6 +1,7 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
 from System import DateTime, TimeSpan, Math
@@ -22,7 +23,7 @@ class accrual_anomaly_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Deciles", "Number of decile buckets", "General")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Candle type used for rebalancing", "General")
 
         self._prev = {}
@@ -160,6 +161,12 @@ class accrual_anomaly_strategy(Strategy):
 
     def CalcAccrual(self, cur, prev):
         return 0
+
+    def CreateClone(self):
+        """
+        !! REQUIRED!! Creates a new instance of the strategy.
+        """
+        return accrual_anomaly_strategy()
 
 class BalanceSnapshot:
     def __init__(self, a, b):

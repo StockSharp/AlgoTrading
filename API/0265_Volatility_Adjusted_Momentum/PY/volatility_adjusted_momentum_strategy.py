@@ -129,6 +129,8 @@ class volatility_adjusted_momentum_strategy(Strategy):
     def OnStarted(self, time):
         super(volatility_adjusted_momentum_strategy, self).OnStarted(time)
 
+        self._ratios = [0.0] * self.LookbackPeriod
+
         self._momentum = Momentum()
         self._atr = AverageTrueRange()
 

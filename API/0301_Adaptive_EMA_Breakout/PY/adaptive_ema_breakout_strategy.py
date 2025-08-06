@@ -50,6 +50,7 @@ class adaptive_ema_breakout_strategy(Strategy):
             .SetDisplay("Candle type", "Type of candles for strategy", "General")
 
         # Internal state variables
+        self._is_first_candle = True
 
     @property
     def Fast(self):
@@ -99,7 +100,7 @@ class adaptive_ema_breakout_strategy(Strategy):
     def OnReseted(self):
         super(adaptive_ema_breakout_strategy, self).OnReseted()
         self._prevAdaptiveEmaValue = 0.0
-        self._isFirstCandle = True
+        self._is_first_candle = True
 
     def OnStarted(self, time):
         super(adaptive_ema_breakout_strategy, self).OnStarted(time)
@@ -142,9 +143,9 @@ class adaptive_ema_breakout_strategy(Strategy):
             return
 
         # Initialize values on first candle
-        if self._isFirstCandle:
+        if self._is_first_candle:
             self._prevAdaptiveEmaValue = adaptive_ema_value
-            self._isFirstCandle = False
+            self._is_first_candle = False
             return
 
         # Calculate trend direction
