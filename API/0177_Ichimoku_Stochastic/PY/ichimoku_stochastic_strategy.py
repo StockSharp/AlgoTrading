@@ -123,6 +123,9 @@ class ichimoku_stochastic_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(ichimoku_stochastic_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         super(ichimoku_stochastic_strategy, self).OnStarted(time)
 

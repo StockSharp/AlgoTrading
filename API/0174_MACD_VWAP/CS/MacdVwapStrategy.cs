@@ -105,9 +105,15 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
+			/// <inheritdoc />
+			protected override void OnReseted()
+			{
+				base.OnReseted();
+			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
 			base.OnStarted(time);
 
 			// Create indicators

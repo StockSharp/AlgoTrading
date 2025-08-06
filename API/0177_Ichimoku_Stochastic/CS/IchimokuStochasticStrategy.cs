@@ -135,11 +135,17 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
-		}
+			}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
+			/// <inheritdoc />
+			protected override void OnReseted()
+			{
+				base.OnReseted();
+			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
 			base.OnStarted(time);
 
 			// Create indicators
