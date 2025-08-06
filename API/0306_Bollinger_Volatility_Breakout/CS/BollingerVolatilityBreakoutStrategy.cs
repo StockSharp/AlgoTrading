@@ -122,18 +122,12 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-
-			_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
-			_atrStdDev = new StandardDeviation { Length = AtrPeriod };
-		}
-
-		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+			_atrStdDev = new StandardDeviation { Length = AtrPeriod };
 
 			// Create indicators
 			var bollingerBands = new BollingerBands

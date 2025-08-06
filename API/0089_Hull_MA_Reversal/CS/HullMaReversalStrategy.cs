@@ -97,7 +97,6 @@ namespace StockSharp.Samples.Strategies
 			base.OnReseted();
 			_prevHmaValue = 0;
 			_prevPrevHmaValue = 0;
-			_atr = new AverageTrueRange { Length = 14 };
 		}
 
 		/// <inheritdoc />
@@ -105,7 +104,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
-			
+			_atr = new AverageTrueRange { Length = 14 };
+
 			// Create indicators
 			var hma = new HullMovingAverage { Length = HmaPeriod };
 

@@ -110,14 +110,15 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
-			_rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
+			_rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
 
 			// Create indicators
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };

@@ -122,18 +122,12 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-
-			_volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
-			_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
-		}
-
-		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+			_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
 
 			// Create Ichimoku indicator
 			var ichimoku = new Ichimoku

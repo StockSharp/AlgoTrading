@@ -143,6 +143,9 @@ namespace StockSharp.Samples.Strategies
 				Length = AtrPeriod
 			};
 
+			_currentBollingerPeriod = MaxBollingerPeriod; // Start with maximum period
+			_currentBollingerDeviation = MinBollingerDeviation; // Start with minimum deviation
+
 			// Create Bollinger Bands indicator with initial parameters
 			_bollinger = new BollingerBands
 			{

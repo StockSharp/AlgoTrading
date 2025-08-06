@@ -133,6 +133,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevKValue = 0;
+			_prevPrevKValue = 0;
+			_inPosition = false;
+			_positionSide = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -143,11 +154,6 @@ namespace StockSharp.Samples.Strategies
 				K = { Length = KPeriod },
 				D = { Length = DPeriod },
 			};
-			
-			_prevKValue = 0;
-			_prevPrevKValue = 0;
-			_inPosition = false;
-			_positionSide = default;
 			
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);

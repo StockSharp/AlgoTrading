@@ -119,13 +119,6 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-			_atrAvg = new SimpleMovingAverage { Length = AtrAvgPeriod };
-		}
-
-		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -137,6 +130,8 @@ namespace StockSharp.Samples.Strategies
 				isStopTrailing: false,
 				useMarketOrders: true
 			);
+
+			_atrAvg = new SimpleMovingAverage { Length = AtrAvgPeriod };
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MaPeriod };

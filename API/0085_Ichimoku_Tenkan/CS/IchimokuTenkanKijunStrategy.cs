@@ -110,12 +110,6 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnReseted()
 		{
 			base.OnReseted();
-			_ichimoku = new Ichimoku
-			{
-				Tenkan = { Length = TenkanPeriod },
-				Kijun = { Length = KijunPeriod },
-				SenkouB = { Length = SenkouSpanBPeriod }
-			};
 			_prevTenkan = 0;
 			_prevKijun = 0;
 		}
@@ -124,6 +118,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_ichimoku = new Ichimoku
+			{
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanBPeriod }
+			};
 
 
 			// Create subscription

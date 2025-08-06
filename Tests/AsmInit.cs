@@ -179,7 +179,8 @@ public static class AsmInit
 			}
 			else if (fv is IIndicator i)
 			{
-				validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save(), field.Name);
+				if (fv2 is not null)
+					validateSettingsStorage(i.Save(), ((IIndicator)fv2).Save(), field.Name);
 			}
 			else if (fv is IEnumerable e)
 				e.Cast<object>().ToArray().AssertEqual([.. ((IEnumerable)fv2).Cast<object>()], field.Name);

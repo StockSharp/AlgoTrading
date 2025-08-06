@@ -134,6 +134,7 @@ namespace StockSharp.Samples.Strategies
 			_avgRatio = 0;
 			_stdDevRatio = 0;
 			_currentIndex = 0;
+			_ratios = new decimal[LookbackPeriod];
 		}
 
 		/// <inheritdoc />

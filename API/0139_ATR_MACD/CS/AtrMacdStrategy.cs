@@ -175,14 +175,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			// Initialize variables
 			_prevAtrAvg = 0;
 			_prevAtr = 0;
 			_barsSinceLastTrade = 1000;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			var atr = new AverageTrueRange

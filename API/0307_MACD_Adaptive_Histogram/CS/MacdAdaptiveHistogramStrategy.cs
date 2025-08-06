@@ -142,14 +142,15 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
-			_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
+
+			_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
+			_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
 
 			// Create MACD indicator with custom settings
 			var macdLine = new MovingAverageConvergenceDivergenceSignal

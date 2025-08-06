@@ -123,9 +123,6 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_ma = new SimpleMovingAverage { Length = MaPeriod };
-			_atr = new AverageTrueRange { Length = 14 };
-			_volumeAvg = new SimpleMovingAverage { Length = VolumePeriod };
 		}
 
 		/// <inheritdoc />
@@ -133,6 +130,9 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_ma = new SimpleMovingAverage { Length = MaPeriod };
+			_atr = new AverageTrueRange { Length = 14 };
+			_volumeAvg = new SimpleMovingAverage { Length = VolumePeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

@@ -122,6 +122,7 @@ namespace StockSharp.Samples.Strategies
 			_stdDevSlope = 0;
 			_currentIndex = 0;
 			_isInitialized = false;
+			_slopes = new decimal[LookbackPeriod];
 		}
 
 		/// <inheritdoc />

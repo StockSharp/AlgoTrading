@@ -123,6 +123,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_currentRsiPeriod = MaxRsiPeriod;
+
 			// Create indicators
 			_atr = new AverageTrueRange
 			{

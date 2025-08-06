@@ -122,14 +122,15 @@ namespace StockSharp.Samples.Strategies
 			_stdDevSlope = 0;
 			_currentIndex = 0;
 			_isInitialized = false;
+			_slopes = new decimal[LookbackPeriod];
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			_ema = new ExponentialMovingAverage { Length = EmaLength };
-			
 			_slopes = new decimal[LookbackPeriod];
+
+			_ema = new ExponentialMovingAverage { Length = EmaLength };
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription

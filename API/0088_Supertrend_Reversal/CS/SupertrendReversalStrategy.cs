@@ -90,7 +90,6 @@ namespace StockSharp.Samples.Strategies
 			_prevLowest = 0;
 			_prevSupertrend = 0;
 			_prevClose = 0;
-			_atr = new AverageTrueRange { Length = Period };
 		}
 
 		/// <inheritdoc />
@@ -98,6 +97,7 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnStarted(time);
 
+			_atr = new AverageTrueRange { Length = Period };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

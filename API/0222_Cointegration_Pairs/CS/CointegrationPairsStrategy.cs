@@ -144,6 +144,9 @@ namespace StockSharp.Samples.Strategies
 			_residuals.Clear();
 			_asset1Price = 0;
 			_asset2Price = 0;
+
+			// Use the same portfolio for second asset or find another portfolio
+			_asset2Portfolio = Portfolio;
 		}
 
 		/// <inheritdoc />
@@ -154,10 +157,6 @@ namespace StockSharp.Samples.Strategies
 			if (Asset2 == null)
 				throw new InvalidOperationException("Second asset is not specified.");
 			
-			// Use the same portfolio for second asset or find another portfolio
-			_asset2Portfolio = Portfolio;
-
-
 			// Subscribe to Asset1 candles
 			var asset1Subscription = SubscribeCandles(CandleType)
 				.Bind(ProcessAsset1Candle)

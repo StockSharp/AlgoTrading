@@ -122,15 +122,16 @@ namespace StockSharp.Samples.Strategies
 			_stdDevSlope = 0;
 			_currentIndex = 0;
 			_isInitialized = false;
+			_slopes = new decimal[LookbackPeriod];
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
+			_slopes = new decimal[LookbackPeriod];
+
 			_hullMa = new HullMovingAverage { Length = HullLength };
 			_atr = new AverageTrueRange { Length = 14 }; // ATR for stop-loss
-			
-			_slopes = new decimal[LookbackPeriod];
 
 			var subscription = SubscribeCandles(CandleType);
 			subscription

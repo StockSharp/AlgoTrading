@@ -105,17 +105,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevCciValue = 0;
+			_prevPrevCciValue = 0;
+			_inPosition = false;
+			_positionSide = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
 			// Initialize indicators
 			_cci = new CommodityChannelIndex { Length = CciPeriod };
-
-			_prevCciValue = 0;
-			_prevPrevCciValue = 0;
-			_inPosition = false;
-			_positionSide = default;
 
 			// Create and setup subscription for candles
 			var subscription = SubscribeCandles(CandleType);
