@@ -48,16 +48,18 @@ class inside_bar_breakout_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(inside_bar_breakout_strategy, self).OnReseted()
+        self._previousCandle = None
+        self._insideCandle = None
+        self._waitingForBreakout = False
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(inside_bar_breakout_strategy, self).OnStarted(time)
-
-        # Reset variables
-        self._previousCandle = None
-        self._insideCandle = None
-        self._waitingForBreakout = False
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

@@ -92,19 +92,22 @@ class trendline_bounce_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
-    def OnStarted(self, time):
-        """
-        Called when the strategy starts.
-        """
-        super(trendline_bounce_strategy, self).OnStarted(time)
-
-        # Reset variables
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(trendline_bounce_strategy, self).OnReseted()
+        self._ma = None
         self._recentCandles.Clear()
         self._supportSlope = 0.0
         self._supportIntercept = 0.0
         self._resistanceSlope = 0.0
         self._resistanceIntercept = 0.0
         self._lastTrendlineUpdate = DateTimeOffset.MinValue
+
+    def OnStarted(self, time):
+        """
+        Called when the strategy starts.
+        """
+        super(trendline_bounce_strategy, self).OnStarted(time)
 
         # Create MA indicator
         self._ma = SimpleMovingAverage()

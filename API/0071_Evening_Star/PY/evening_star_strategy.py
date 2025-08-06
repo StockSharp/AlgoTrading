@@ -62,10 +62,6 @@ class evening_star_strategy(Strategy):
         """
         super(evening_star_strategy, self).OnStarted(time)
 
-        # Reset candle storage
-        self._firstCandle = None
-        self._secondCandle = None
-
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self.ProcessCandle).Start()

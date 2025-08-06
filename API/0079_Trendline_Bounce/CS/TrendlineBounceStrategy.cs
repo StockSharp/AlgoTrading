@@ -119,17 +119,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Reset variables
+			_ma = null;
 			_recentCandles.Clear();
 			_supportSlope = 0;
 			_supportIntercept = 0;
 			_resistanceSlope = 0;
 			_resistanceIntercept = 0;
 			_lastTrendlineUpdate = DateTimeOffset.MinValue;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create MA indicator
 			_ma = new SimpleMovingAverage
@@ -139,7 +145,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
 				.Bind(_ma, ProcessCandle)
 				.Start();

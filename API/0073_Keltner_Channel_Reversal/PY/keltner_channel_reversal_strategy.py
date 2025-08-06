@@ -81,6 +81,12 @@ class keltner_channel_reversal_strategy(Strategy):
     def StopLossAtrMultiplier(self, value):
         self._stopLossAtrMultiplierParam.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(keltner_channel_reversal_strategy, self).OnReseted()
+        self._keltnerChannel = None
+        self._atr = None
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.

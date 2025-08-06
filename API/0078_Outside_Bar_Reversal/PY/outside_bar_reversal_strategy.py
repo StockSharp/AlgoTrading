@@ -46,14 +46,16 @@ class outside_bar_reversal_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(outside_bar_reversal_strategy, self).OnReseted()
+        self._previousCandle = None
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(outside_bar_reversal_strategy, self).OnStarted(time)
-
-        # Reset variables
-        self._previousCandle = None
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

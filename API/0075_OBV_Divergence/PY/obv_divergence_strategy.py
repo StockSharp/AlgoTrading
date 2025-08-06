@@ -75,21 +75,25 @@ class obv_divergence_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(obv_divergence_strategy, self).OnReseted()
+        self._obv = None
+        self._ma = None
+        self._previousPrice = 0.0
+        self._previousObv = 0.0
+        self._currentPrice = 0.0
+        self._currentObv = 0.0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(obv_divergence_strategy, self).OnStarted(time)
 
-        # Initialize values
-        self._previousPrice = 0.0
-        self._previousObv = 0.0
-        self._currentPrice = 0.0
-        self._currentObv = 0.0
-
         # Create indicators
         self._obv = OnBalanceVolume()
-        
+
         self._ma = SimpleMovingAverage()
         self._ma.Length = self.MAPeriod
 

@@ -75,17 +75,19 @@ class fibonacci_retracement_reversal_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercentParam.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when the strategy is reset."""
+        super(fibonacci_retracement_reversal_strategy, self).OnReseted()
+        self._swingHigh = None
+        self._swingLow = None
+        self._trendIsUp = False
+        self._recentCandles = []
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(fibonacci_retracement_reversal_strategy, self).OnStarted(time)
-
-        # Reset values
-        self._swingHigh = None
-        self._swingLow = None
-        self._trendIsUp = False
-        self._recentCandles = []
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
