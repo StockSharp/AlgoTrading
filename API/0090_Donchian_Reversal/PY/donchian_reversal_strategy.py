@@ -35,8 +35,6 @@ class donchian_reversal_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Internal state
-        self._previous_close = 0.0
-        self._is_first_candle = True
 
     @property
     def Period(self):
@@ -70,8 +68,6 @@ class donchian_reversal_strategy(Strategy):
         Resets internal state when strategy is reset.
         """
         super(donchian_reversal_strategy, self).OnReseted()
-        self._previous_close = 0.0
-        self._is_first_candle = True
 
     def OnStarted(self, time):
         """
@@ -87,8 +83,6 @@ class donchian_reversal_strategy(Strategy):
             useMarketOrders=True
         )
         # Initialize state
-        self._previous_close = 0.0
-        self._is_first_candle = True
 
         # Create Donchian Channel indicator
         donchian = DonchianChannels()

@@ -73,19 +73,19 @@ class hull_ma_reversal_strategy(Strategy):
         """See base class for details."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(hull_ma_reversal_strategy, self).OnReseted()
+        self._prev_hma_value = 0.0
+        self._prev_prev_hma_value = 0.0
+        self._atr = AverageTrueRange()
+        self._atr.Length = 14
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(hull_ma_reversal_strategy, self).OnStarted(time)
-
-        # Initialize previous values
-        self._prev_hma_value = 0.0
-        self._prev_prev_hma_value = 0.0
-
         # Create indicators
         hma = HullMovingAverage()
         hma.Length = self.HmaPeriod
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)
