@@ -55,15 +55,15 @@ namespace StockSharp.Samples.Strategies
 		public TweezerBottomStrategy()
 		{
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						 .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
+							.SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-							  .SetRange(0.1m, 5m)
-							  .SetDisplay("Stop Loss %", "Stop loss as percentage below low", "Risk Management");
+								.SetRange(0.1m, 5m)
+								.SetDisplay("Stop Loss %", "Stop loss as percentage below low", "Risk Management");
 
 			_lowTolerancePercent = Param(nameof(LowTolerancePercent), 0.1m)
-								  .SetRange(0.05m, 1m)
-								  .SetDisplay("Low Tolerance %", "Maximum percentage difference between lows", "Pattern Parameters");
+									.SetRange(0.05m, 1m)
+									.SetDisplay("Low Tolerance %", "Maximum percentage difference between lows", "Pattern Parameters");
 		}
 
 		/// <inheritdoc />
@@ -72,37 +72,42 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Reset candle storage
-			_previousCandle = null;
-			_currentCandle = null;
-			_entryPrice = 0;
-
-			// Create subscription and bind to process candles
-			var subscription = SubscribeCandles(CandleType);
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
-
-			// Setup protection with stop loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-				isStopTrailing: false
-			);
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
+					base.OnReseted();
+
+					_previousCandle = null;
+					_currentCandle = null;
+					_entryPrice = 0;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Create subscription and bind to process candles
+					var subscription = SubscribeCandles(CandleType);
+					subscription
+							.Bind(ProcessCandle)
+							.Start();
+
+		// Setup protection with stop loss
+		StartProtection(
+			takeProfit: null,
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			isStopTrailing: false
+		);
+
+		// Setup chart visualization if available
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
+	}
 
 		private void ProcessCandle(ICandleMessage candle)
 		{

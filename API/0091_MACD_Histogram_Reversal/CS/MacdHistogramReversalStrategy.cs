@@ -103,50 +103,55 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Enable position protection using stop-loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: StopLoss,
-				isStopTrailing: false,
-				useMarketOrders: true
-			);
-
-			// Initialize state
-			_prevHistogram = null;
-			
-			// Create MACD histogram indicator
-			var macdHistogram = new MovingAverageConvergenceDivergenceHistogram
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				Macd =
-				{
-					ShortMa = { Length = FastPeriod },
-					LongMa = { Length = SlowPeriod },
-				},
-				SignalMa = { Length = SignalPeriod }
-			};
+					base.OnReseted();
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Bind indicator and process candles
-			subscription
-				.BindEx(macdHistogram, ProcessCandle)
-				.Start();
-				
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, macdHistogram);
-				DrawOwnTrades(area);
+					_prevHistogram = null;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Enable position protection using stop-loss
+					StartProtection(
+							takeProfit: null,
+							stopLoss: StopLoss,
+							isStopTrailing: false,
+							useMarketOrders: true
+					);
+
+					// Create MACD histogram indicator
+					var macdHistogram = new MovingAverageConvergenceDivergenceHistogram
+					{
+							Macd =
+							{
+									ShortMa = { Length = FastPeriod },
+									LongMa = { Length = SlowPeriod },
+							},
+							SignalMa = { Length = SignalPeriod }
+					};
+
+		// Create subscription
+		var subscription = SubscribeCandles(CandleType);
+		
+		// Bind indicator and process candles
+		subscription
+			.BindEx(macdHistogram, ProcessCandle)
+			.Start();
+			
+		// Setup chart visualization
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, macdHistogram);
+			DrawOwnTrades(area);
 		}
+	}
 
 		/// <summary>
 		/// Process candle with MACD histogram value.

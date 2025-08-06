@@ -79,11 +79,6 @@ class three_white_soldiers_strategy(Strategy):
         """
         super(three_white_soldiers_strategy, self).OnStarted(time)
 
-        # Reset candle storage
-        self._firstCandle = None
-        self._secondCandle = None
-        self._currentCandle = None
-
         # Create a simple moving average indicator for exit signal
         ma = SimpleMovingAverage()
         ma.Length = self.MaLength

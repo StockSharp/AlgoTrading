@@ -63,13 +63,15 @@ class tweezer_bottom_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(tweezer_bottom_strategy, self).OnStarted(time)
-
-        # Reset candle storage
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(tweezer_bottom_strategy, self).OnReseted()
         self._previous_candle = None
         self._current_candle = None
         self._entry_price = 0.0
+
+    def OnStarted(self, time):
+        super(tweezer_bottom_strategy, self).OnStarted(time)
 
         # Create subscription and bind to process candles
         subscription = self.SubscribeCandles(self.CandleType)

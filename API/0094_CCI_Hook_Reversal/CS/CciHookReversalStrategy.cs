@@ -103,42 +103,47 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Enable position protection using stop-loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: StopLoss,
-				isStopTrailing: false,
-				useMarketOrders: true
-			);
-
-			// Initialize previous CCI value
-			_prevCci = 0;
-			
-			// Create CCI indicator
-			var cci = new CommodityChannelIndex { Length = CciPeriod };
-
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Bind indicator and process candles
-			subscription
-				.Bind(cci, ProcessCandle)
-				.Start();
-				
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, cci);
-				DrawOwnTrades(area);
+					base.OnReseted();
+
+					_prevCci = 0;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Enable position protection using stop-loss
+					StartProtection(
+							takeProfit: null,
+							stopLoss: StopLoss,
+							isStopTrailing: false,
+							useMarketOrders: true
+					);
+
+					// Create CCI indicator
+					var cci = new CommodityChannelIndex { Length = CciPeriod };
+
+		// Create subscription
+		var subscription = SubscribeCandles(CandleType);
+		
+		// Bind indicator and process candles
+		subscription
+			.Bind(cci, ProcessCandle)
+			.Start();
+			
+		// Setup chart visualization
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, cci);
+			DrawOwnTrades(area);
 		}
+	}
 
 		/// <summary>
 		/// Process candle with CCI value.
