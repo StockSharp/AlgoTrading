@@ -131,6 +131,7 @@ class macd_with_sentiment_filter_strategy(Strategy):
 
     def OnReseted(self):
         super(macd_with_sentiment_filter_strategy, self).OnReseted()
+        # reset stored values
         self._prev_macd = 0.0
         self._prev_signal = 0.0
         self._sentiment_score = 0.0

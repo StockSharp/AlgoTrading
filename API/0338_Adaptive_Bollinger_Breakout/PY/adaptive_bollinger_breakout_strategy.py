@@ -107,11 +107,15 @@ class adaptive_bollinger_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(adaptive_bollinger_breakout_strategy, self).OnReseted()
+        if self._atr is not None:
+            self._atr.Reset()
+            self._atr = None
+        if self._bollinger is not None:
+            self._bollinger.Reset()
+            self._bollinger = None
         # Initialize adaptive parameters
         self._current_bollinger_period = self.max_bollinger_period  # Start with maximum period
         self._current_bollinger_deviation = self.min_bollinger_deviation  # Start with minimum deviation
-        self._atr = None
-        self._bollinger = None
         self._atr_sum = 0.0
         self._atr_count = 0
 

@@ -92,12 +92,13 @@ class donchian_hurst_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(donchian_hurst_strategy, self).OnStarted(time)
-
-        # Reset state variables
+    def OnReseted(self):
+        super(donchian_hurst_strategy, self).OnReseted()
         self._hurstValue = 0
         self._donchianIsFormed = False
+
+    def OnStarted(self, time):
+        super(donchian_hurst_strategy, self).OnStarted(time)
 
         # Create Donchian Channel indicator
         donchian = DonchianChannels()

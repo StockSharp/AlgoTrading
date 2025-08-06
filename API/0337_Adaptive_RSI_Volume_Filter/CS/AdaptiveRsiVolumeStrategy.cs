@@ -106,14 +106,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_adaptiveRsiValue = 50;
+			_avgVolume = 0;
+			_currentRsiPeriod = MaxRsiPeriod;
+			_atr = default;
+			_rsi = default;
+			_volumeSma = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Initialize state variables
-			_adaptiveRsiValue = 50; // Neutral starting point
-			_avgVolume = 0;
-			_currentRsiPeriod = MaxRsiPeriod; // Start with max period
 
 			// Create indicators
 			_atr = new AverageTrueRange

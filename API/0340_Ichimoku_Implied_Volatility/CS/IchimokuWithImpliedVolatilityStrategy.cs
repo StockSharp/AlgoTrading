@@ -123,12 +123,13 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnReseted()
 		{
 			base.OnReseted();
+			// reset stored values
+			_impliedVolatilityHistory.Clear();
 
 			_prevAboveKumo = default;
 			_prevTenkanAboveKijun = default;
 			_prevPrice = default;
 			_avgImpliedVolatility = default;
-			_impliedVolatilityHistory.Clear();
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
@@ -321,3 +322,4 @@ namespace StockSharp.Samples.Strategies
 		}
 	}
 }
+

@@ -76,13 +76,14 @@ class parabolic_sar_rsi_divergence_strategy(Strategy):
         """!! REQUIRED!!"""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(parabolic_sar_rsi_divergence_strategy, self).OnStarted(time)
-
-        # Reset state variables
+    def OnReseted(self):
+        super(parabolic_sar_rsi_divergence_strategy, self).OnReseted()
         self._prev_rsi = 0
         self._prev_price = 0
         self._divergence_detected = False
+
+    def OnStarted(self, time):
+        super(parabolic_sar_rsi_divergence_strategy, self).OnStarted(time)
 
         # Create Parabolic SAR indicator
         parabolic_sar = ParabolicSar()
