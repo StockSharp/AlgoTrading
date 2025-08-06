@@ -93,6 +93,7 @@ class rsi_supertrend_strategy(Strategy):
         Resets internal state when strategy is reset.
         """
         super(rsi_supertrend_strategy, self).OnReseted()
+        self._atr = None
         self._is_first_value = True
         self._current_trend = 1
         self._down_value = 0
@@ -108,15 +109,6 @@ class rsi_supertrend_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(rsi_supertrend_strategy, self).OnStarted(time)
-
-        # Reset state variables
-        self._is_first_value = True
-        self._current_trend = 1  # Default to uptrend
-        self._down_value = 0
-        self._prev_up_value = 0
-        self._prev_down_value = 0
-        self._prev_close = 0
-        self._up_value = 0
 
         # Create RSI indicator
         rsi = RelativeStrengthIndex()

@@ -100,22 +100,29 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			// Reset state variables
+			_atr = null;
 			_isFirstValue = true;
-			_currentTrend = 1; // Default to uptrend_upValue = 0;
+			_currentTrend = 1;
 			_downValue = 0;
 			_prevUpValue = 0;
 			_prevDownValue = 0;
 			_prevClose = 0;
 			_upValue = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create RSI indicator
 			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-			
+
 			// Create ATR indicator for Supertrend calculation
 			_atr = new AverageTrueRange { Length = SupertrendPeriod };
 			

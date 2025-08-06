@@ -80,6 +80,9 @@ class macd_vwap_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(macd_vwap_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         super(macd_vwap_strategy, self).OnStarted(time)
 

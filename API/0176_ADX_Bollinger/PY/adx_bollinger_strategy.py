@@ -94,6 +94,9 @@ class adx_bollinger_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(adx_bollinger_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.

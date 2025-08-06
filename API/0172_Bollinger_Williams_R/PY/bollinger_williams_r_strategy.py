@@ -92,6 +92,9 @@ class bollinger_williams_r_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(bollinger_williams_r_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         super(bollinger_williams_r_strategy, self).OnStarted(time)
 
