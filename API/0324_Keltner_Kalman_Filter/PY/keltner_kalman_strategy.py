@@ -28,6 +28,8 @@ class keltner_kalman_strategy(Strategy):
         self._atr_value = 0
         self._upper_band = 0
         self._lower_band = 0
+        self._ema = None
+        self._atr = None
         self._is_long_position = False
         self._is_short_position = False
 
@@ -130,6 +132,8 @@ class keltner_kalman_strategy(Strategy):
         self._atr_value = 0
         self._upper_band = 0
         self._lower_band = 0
+        self._ema = None
+        self._atr = None
 
     def OnStarted(self, time):
         super(keltner_kalman_strategy, self).OnStarted(time)

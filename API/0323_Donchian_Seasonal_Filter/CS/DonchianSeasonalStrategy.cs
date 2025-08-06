@@ -112,9 +112,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_isLongPosition = false;
 			_isShortPosition = false;
@@ -122,6 +122,12 @@ namespace StockSharp.Samples.Strategies
 			_middleBand = 0;
 			_lowerBand = 0;
 			_seasonalStrength = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create Donchian Channel indicator
 			_donchian = new DonchianChannels

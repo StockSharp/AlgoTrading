@@ -93,7 +93,9 @@ class hull_ma_volatility_contraction_strategy(Strategy):
         self._current_hma_value = 0.0
         self._is_long_position = False
         self._is_short_position = False
-        self._atr_values = []
+        self._atr_values.clear()
+        self._hma = None
+        self._atr = None
 
     def OnStarted(self, time):
         super(hull_ma_volatility_contraction_strategy, self).OnStarted(time)

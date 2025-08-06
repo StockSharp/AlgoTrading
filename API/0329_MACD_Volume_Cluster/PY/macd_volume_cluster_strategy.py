@@ -127,12 +127,6 @@ class macd_volume_cluster_strategy(Strategy):
         self._volume_std_dev = 0
         self._processed_candles = 0
 
-    def OnReseted(self):
-        super(macd_volume_cluster_strategy, self).OnReseted()
-        self._avg_volume = 0
-        self._volume_std_dev = 0
-        self._processed_candles = 0
-
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.

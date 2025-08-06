@@ -104,6 +104,9 @@ namespace StockSharp.Samples.Strategies
 			_adxValue = default;
 			_plusDiValue = default;
 			_minusDiValue = default;
+			_vwap = null;
+			_adx = null;
+			_di = null;
 		}
 
 		protected override void OnStarted(DateTimeOffset time)

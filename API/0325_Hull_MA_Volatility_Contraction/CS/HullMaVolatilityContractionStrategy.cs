@@ -109,6 +109,8 @@ namespace StockSharp.Samples.Strategies
 			_isLongPosition = false;
 			_isShortPosition = false;
 			_atrValues.Clear();
+			_hma = null;
+			_atr = null;
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
