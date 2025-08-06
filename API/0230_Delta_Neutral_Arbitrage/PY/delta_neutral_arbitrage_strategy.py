@@ -130,12 +130,6 @@ class delta_neutral_arbitrage_strategy(Strategy):
     def OnStarted(self, time):
         super(delta_neutral_arbitrage_strategy, self).OnStarted(time)
 
-        self._current_spread = 0.0
-        self._last_asset1_price = 0.0
-        self._last_asset2_price = 0.0
-        self._asset1_volume = 0.0
-        self._asset2_volume = 0.0
-
         if self.asset2_security is None:
             raise Exception("Asset2Security is not specified.")
 

@@ -87,6 +87,11 @@ class hurst_exponent_trend_strategy(Strategy):
         """Return securities and candle types used by the strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(hurst_exponent_trend_strategy, self).OnReseted()
+        self._hurst = None
+        self._sma = None
+
     def OnStarted(self, time):
         super(hurst_exponent_trend_strategy, self).OnStarted(time)
 

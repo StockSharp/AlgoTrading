@@ -81,6 +81,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevPrice = 0;
+			_prevMomentum = 0;
+			_currentPrice = 0;
+			_currentMomentum = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -89,12 +100,6 @@ namespace StockSharp.Samples.Strategies
 			_momentum = new Momentum { Length = MomentumPeriod };
 			_sma = new SimpleMovingAverage { Length = MaPeriod };
 			
-			// Reset state
-			_prevPrice = 0;
-			_prevMomentum = 0;
-			_currentPrice = 0;
-			_currentMomentum = 0;
-
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			subscription

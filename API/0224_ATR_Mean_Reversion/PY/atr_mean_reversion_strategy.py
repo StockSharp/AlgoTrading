@@ -78,6 +78,11 @@ class atr_mean_reversion_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(atr_mean_reversion_strategy, self).OnReseted()
+        self._sma = None
+        self._atr = None
+
     def OnStarted(self, time):
         super(atr_mean_reversion_strategy, self).OnStarted(time)
 

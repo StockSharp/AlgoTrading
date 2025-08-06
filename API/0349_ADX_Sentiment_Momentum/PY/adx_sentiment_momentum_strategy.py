@@ -103,6 +103,7 @@ class adx_sentiment_momentum_strategy(Strategy):
         super(adx_sentiment_momentum_strategy, self).OnReseted()
         if self._adx:
             self._adx.Reset()
+            self._adx = None
         self._prev_sentiment = 0
         self._current_sentiment = 0
         self._sentiment_momentum = 0

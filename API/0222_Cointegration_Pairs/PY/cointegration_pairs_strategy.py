@@ -117,6 +117,17 @@ class cointegration_pairs_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType), (self.Asset2, self.CandleType)]
 
+    def OnReseted(self):
+        super(cointegration_pairs_strategy, self).OnReseted()
+
+        self._residualMean = 0
+        self._residualStdDev = 0
+        self._residualSum = 0
+        self._squaredResidualSum = 0
+        self._residuals.Clear()
+        self._asset1Price = 0
+        self._asset2Price = 0
+
     def OnStarted(self, time):
         super(cointegration_pairs_strategy, self).OnStarted(time)
 
@@ -126,14 +137,6 @@ class cointegration_pairs_strategy(Strategy):
         # Use the same portfolio for second asset or find another portfolio
         self._asset2Portfolio = self.Portfolio
 
-        # Reset state
-        self._residualMean = 0
-        self._residualStdDev = 0
-        self._residualSum = 0
-        self._squaredResidualSum = 0
-        self._residuals.Clear()
-        self._asset1Price = 0
-        self._asset2Price = 0
 
         # Create subscriptions for both assets
         asset1Subscription = self.SubscribeCandles(self.CandleType)

@@ -84,12 +84,16 @@ class hurst_exponent_reversion_strategy(Strategy):
         """Return security and timeframe used by the strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(hurst_exponent_reversion_strategy, self).OnReseted()
+
+        self._previous_hurst_value = 0.0
+        self._current_price = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(hurst_exponent_reversion_strategy, self).OnStarted(time)
 
-        self._previous_hurst_value = 0.0
-        self._current_price = 0.0
 
         # Initialize the SMA indicator
         self._sma = SimpleMovingAverage()

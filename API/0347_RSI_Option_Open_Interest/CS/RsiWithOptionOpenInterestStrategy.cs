@@ -119,17 +119,22 @@ namespace StockSharp.Samples.Strategies
 			base.OnReseted();
 
 			_rsi?.Reset();
+			_rsi = null;
 			_callOiSma?.Reset();
+			_callOiSma = null;
 			_putOiSma?.Reset();
+			_putOiSma = null;
 			_callOiStdDev?.Reset();
+			_callOiStdDev = null;
 			_putOiStdDev?.Reset();
+			_putOiStdDev = null;
 
-			_currentCallOi = 0;
-			_currentPutOi = 0;
-			_avgCallOi = 0;
-			_avgPutOi = 0;
-			_stdDevCallOi = 0;
-			_stdDevPutOi = 0;
+			_currentCallOi = default;
+			_currentPutOi = default;
+			_avgCallOi = default;
+			_avgPutOi = default;
+			_stdDevCallOi = default;
+			_stdDevPutOi = default;
 		}
 
 		/// <inheritdoc />

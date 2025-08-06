@@ -124,15 +124,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_currentSpread = default;
 			_lastAsset1Price = default;
 			_lastAsset2Price = default;
 			_asset1Volume = default;
 			_asset2Volume = default;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			if (Asset2Security == null)
 				throw new InvalidOperationException("Asset2Security is not specified.");

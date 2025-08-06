@@ -76,18 +76,19 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
 		protected override void OnReseted()
 		{
 			base.OnReseted();
 
 			_cci?.Reset();
+			_cci = null;
 			_atr?.Reset();
+			_atr = null;
 
-			_prevPcr = 0;
-			_currentPcr = 0;
-			_prevPrice = 0;
+			_prevPcr = default;
+			_currentPcr = default;
+			_prevPrice = default;
 		}
 
 		/// <inheritdoc />

@@ -120,8 +120,10 @@ class stochastic_implied_volatility_skew_strategy(Strategy):
         super(stochastic_implied_volatility_skew_strategy, self).OnReseted()
         if self._stochastic:
             self._stochastic.Reset()
+            self._stochastic = None
         if self._iv_skew_sma:
             self._iv_skew_sma.Reset()
+            self._iv_skew_sma = None
         self._current_iv_skew = 0
         self._avg_iv_skew = 0
 

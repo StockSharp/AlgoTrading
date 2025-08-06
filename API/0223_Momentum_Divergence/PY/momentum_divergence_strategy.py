@@ -70,6 +70,14 @@ class momentum_divergence_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(momentum_divergence_strategy, self).OnReseted()
+
+        self._prevPrice = 0
+        self._prevMomentum = 0
+        self._currentPrice = 0
+        self._currentMomentum = 0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Initializes indicators and subscriptions.
@@ -82,11 +90,6 @@ class momentum_divergence_strategy(Strategy):
         self._sma = SimpleMovingAverage()
         self._sma.Length = self.MaPeriod
 
-        # Reset state
-        self._prevPrice = 0
-        self._prevMomentum = 0
-        self._currentPrice = 0
-        self._currentMomentum = 0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
