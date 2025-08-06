@@ -117,9 +117,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Reset variables
+			base.OnReseted();
 			_prevCci = 0;
 			_avgCci = 0;
 			_stdDevCci = 0;
@@ -127,6 +127,12 @@ namespace StockSharp.Samples.Strategies
 			_sumSquaresCci = 0;
 			_count = 0;
 			_cciValues.Clear();
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			// Reset variables
 
 			// Create CCI indicator
 			var cci = new CommodityChannelIndex { Length = CciPeriod };

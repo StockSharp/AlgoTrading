@@ -96,11 +96,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevRsiValue = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_prevRsiValue = 0;
 
 			// Create indicators
 			_rsi = new RelativeStrengthIndex { Length = RsiPeriod };

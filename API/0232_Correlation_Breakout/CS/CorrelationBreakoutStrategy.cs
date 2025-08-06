@@ -134,6 +134,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_corrStdDev.Reset();
+			_currentIndex = 0;
+			_avgCorrelation = 0;
+			_lastCorrelation = 0;
+			_isInitialized = false;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -141,10 +152,6 @@ namespace StockSharp.Samples.Strategies
 			// Initialize arrays
 			_asset1Prices = new decimal[LookbackPeriod];
 			_asset2Prices = new decimal[LookbackPeriod];
-			_currentIndex = 0;
-			_avgCorrelation = 0;
-			_lastCorrelation = 0;
-			_isInitialized = false;
 
 			// Subscribe to candles for both assets
 			if (Asset1 != null && Asset2 != null && CandleType != null)

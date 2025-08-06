@@ -85,8 +85,6 @@ class rsi_mean_reversion_strategy(Strategy):
         """Called when the strategy starts."""
         super(rsi_mean_reversion_strategy, self).OnStarted(time)
 
-        self._prev_rsi_value = 0
-
         # Create indicators
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.RsiPeriod
@@ -113,6 +111,10 @@ class rsi_mean_reversion_strategy(Strategy):
             takeProfit=Unit(5, UnitTypes.Percent),
             stopLoss=Unit(2, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(rsi_mean_reversion_strategy, self).OnReseted()
+        self._prev_rsi_value = 0
     def ProcessRsi(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return

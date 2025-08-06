@@ -149,9 +149,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Reset variables
+			base.OnReseted();
 			_prevMacdHist = 0;
 			_avgMacdHist = 0;
 			_stdDevMacdHist = 0;
@@ -159,6 +159,12 @@ namespace StockSharp.Samples.Strategies
 			_sumSquaresMacdHist = 0;
 			_count = 0;
 			_macdHistValues.Clear();
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			// Reset variables
 
 			// Create MACD indicator
 			var macd = new MovingAverageConvergenceDivergenceHistogram

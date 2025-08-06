@@ -104,15 +104,6 @@ class williams_r_mean_reversion_strategy(Strategy):
     def OnStarted(self, time):
         super(williams_r_mean_reversion_strategy, self).OnStarted(time)
 
-        # Reset variables
-        self._prev_williams_r = 0.0
-        self._avg_williams_r = 0.0
-        self._std_dev_williams_r = 0.0
-        self._sum_williams_r = 0.0
-        self._sum_squares_williams_r = 0.0
-        self._count = 0
-        self._williams_r_values.Clear()
-
         # Create Williams %R indicator
         williams_r = WilliamsR()
         williams_r.Length = self.WilliamsRPeriod
@@ -133,6 +124,16 @@ class williams_r_mean_reversion_strategy(Strategy):
             takeProfit=Unit(0),
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(williams_r_mean_reversion_strategy, self).OnReseted()
+        self._prev_williams_r = 0.0
+        self._avg_williams_r = 0.0
+        self._std_dev_williams_r = 0.0
+        self._sum_williams_r = 0.0
+        self._sum_squares_williams_r = 0.0
+        self._count = 0
+        self._williams_r_values.Clear()
     def ProcessCandle(self, candle, williams_r_value):
         # Skip unfinished candles
         if candle.State != CandleStates.Finished:

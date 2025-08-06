@@ -117,9 +117,9 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Reset variables
+			base.OnReseted();
 			_prevWilliamsR = 0;
 			_avgWilliamsR = 0;
 			_stdDevWilliamsR = 0;
@@ -127,6 +127,12 @@ namespace StockSharp.Samples.Strategies
 			_sumSquaresWilliamsR = 0;
 			_count = 0;
 			_williamsRValues.Clear();
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			// Reset variables
 
 			// Create Williams %R indicator
 			var williamsR = new WilliamsR { Length = WilliamsRPeriod };

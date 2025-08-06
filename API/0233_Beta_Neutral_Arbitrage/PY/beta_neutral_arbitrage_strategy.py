@@ -117,14 +117,6 @@ class beta_neutral_arbitrage_strategy(Strategy):
         """Called when the strategy starts. Sets up subscriptions and charting."""
         super(beta_neutral_arbitrage_strategy, self).OnStarted(time)
 
-        self._bar_count = 0
-        self._asset1_beta = 1
-        self._asset2_beta = 1
-        self._avg_spread = 0
-        self._last_spread = 0
-        self._asset1_last_price = 0
-        self._asset2_last_price = 0
-
         self._spread_sma.Length = self.lookback_period
         self._spread_std_dev.Length = self.lookback_period
 
@@ -161,6 +153,18 @@ class beta_neutral_arbitrage_strategy(Strategy):
             takeProfit=None,
             stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(beta_neutral_arbitrage_strategy, self).OnReseted()
+        self._spread_sma.Reset()
+        self._spread_std_dev.Reset()
+        self._bar_count = 0
+        self._asset1_beta = 1
+        self._asset2_beta = 1
+        self._avg_spread = 0
+        self._last_spread = 0
+        self._asset1_last_price = 0
+        self._asset2_last_price = 0
     def ProcessAsset1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return

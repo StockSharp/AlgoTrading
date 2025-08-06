@@ -136,15 +136,6 @@ class macd_mean_reversion_strategy(Strategy):
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
-        # Reset variables
-        self._prev_macd_hist = 0.0
-        self._avg_macd_hist = 0.0
-        self._std_dev_macd_hist = 0.0
-        self._sum_macd_hist = 0.0
-        self._sum_squares_macd_hist = 0.0
-        self._count = 0
-        self._macd_hist_values = []
-
         # Create MACD indicator
         macd = MovingAverageConvergenceDivergenceHistogram()
         macd.Macd.ShortMa.Length = self.fast_macd_period
@@ -171,6 +162,16 @@ class macd_mean_reversion_strategy(Strategy):
             stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
         super(macd_mean_reversion_strategy, self).OnStarted(time)
+
+    def OnReseted(self):
+        super(macd_mean_reversion_strategy, self).OnReseted()
+        self._prev_macd_hist = 0.0
+        self._avg_macd_hist = 0.0
+        self._std_dev_macd_hist = 0.0
+        self._sum_macd_hist = 0.0
+        self._sum_squares_macd_hist = 0.0
+        self._count = 0
+        self._macd_hist_values = []
 
     def ProcessCandle(self, candle, macd_value):
         # Skip unfinished candles

@@ -127,10 +127,6 @@ class correlation_breakout_strategy(Strategy):
         # Initialize arrays
         self._asset1_prices = [0.0] * self.LookbackPeriod
         self._asset2_prices = [0.0] * self.LookbackPeriod
-        self._current_index = 0
-        self._avg_correlation = 0.0
-        self._last_correlation = 0.0
-        self._is_initialized = False
 
         # Subscribe to candles for both assets
         if self.Asset1 is not None and self.Asset2 is not None and self.CandleType is not None:
@@ -154,6 +150,14 @@ class correlation_breakout_strategy(Strategy):
             takeProfit=None,
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(correlation_breakout_strategy, self).OnReseted()
+        self._corr_std_dev.Reset()
+        self._current_index = 0
+        self._avg_correlation = 0.0
+        self._last_correlation = 0.0
+        self._is_initialized = False
     def ProcessAsset1Candle(self, candle):
         if candle.State != CandleStates.Finished:
             return
