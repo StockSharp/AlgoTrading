@@ -127,13 +127,15 @@ class ichimoku_adx_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(ichimoku_adx_strategy, self).OnStarted(time)
+    def OnReseted(self):
+        super(ichimoku_adx_strategy, self).OnReseted()
 
-        # Reset state tracking variables
         self._is_price_above_cloud = False
         self._is_tenkan_above_kijun = False
         self._last_adx_value = 0.0
+
+    def OnStarted(self, time):
+        super(ichimoku_adx_strategy, self).OnStarted(time)
 
         # Create indicators
         ichimoku = Ichimoku()

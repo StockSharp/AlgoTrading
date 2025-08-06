@@ -104,11 +104,14 @@ class supertrend_adx_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(supertrend_adx_strategy, self).OnStarted(time)
+    def OnReseted(self):
+        super(supertrend_adx_strategy, self).OnReseted()
 
         self._last_supertrend = 0
         self._is_above_supertrend = False
+
+    def OnStarted(self, time):
+        super(supertrend_adx_strategy, self).OnStarted(time)
 
         # Create indicators
         atr = AverageTrueRange()

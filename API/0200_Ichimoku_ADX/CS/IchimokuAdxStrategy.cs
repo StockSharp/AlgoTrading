@@ -133,14 +133,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Reset state tracking variables
 			_isPriceAboveCloud = default;
 			_isTenkanAboveKijun = default;
 			_lastAdxValue = default;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			var ichimoku = new Ichimoku

@@ -89,6 +89,17 @@ class vwap_macd_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(vwap_macd_strategy, self).OnReseted()
+
+        if self._macd is not None:
+            self._macd.Reset()
+        if self._vwap is not None:
+            self._vwap.Reset()
+
+        self._prev_macd = 0
+        self._prev_signal = 0
+
     def OnStarted(self, time):
         super(vwap_macd_strategy, self).OnStarted(time)
 
@@ -99,10 +110,6 @@ class vwap_macd_strategy(Strategy):
         self._macd.SignalMa.Length = self.macd_signal_period
         self._vwap = VolumeWeightedMovingAverage()
         self._vwap.Length = self.macd_signal_period
-
-        # Initialize variables
-        self._prev_macd = 0
-        self._prev_signal = 0
 
         # Enable position protection
         self.StartProtection(

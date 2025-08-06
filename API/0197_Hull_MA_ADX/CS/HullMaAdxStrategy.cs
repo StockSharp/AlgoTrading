@@ -111,6 +111,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_hma?.Reset();
+			_adx?.Reset();
+			_atr?.Reset();
+
+			_prevHmaValue = 0;
+			_prevAdxValue = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -119,10 +132,6 @@ namespace StockSharp.Samples.Strategies
 			_hma = new() { Length = HmaPeriod };
 			_adx = new() { Length = AdxPeriod };
 			_atr = new() { Length = 14 };
-
-			// Initialize variables
-			_prevHmaValue = 0;
-			_prevAdxValue = 0;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
