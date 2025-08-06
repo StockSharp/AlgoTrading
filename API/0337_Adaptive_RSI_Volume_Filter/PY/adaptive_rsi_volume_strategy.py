@@ -102,13 +102,17 @@ class adaptive_rsi_volume_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(adaptive_rsi_volume_strategy, self).OnReseted()
+        self._adaptiveRsiValue = 50
+        self._avgVolume = 0
+        self._currentRsiPeriod = self.MaxRsiPeriod
+        self._atr = None
+        self._rsi = None
+        self._volumeSma = None
+
     def OnStarted(self, time):
         super(adaptive_rsi_volume_strategy, self).OnStarted(time)
-
-        # Initialize state variables
-        self._adaptiveRsiValue = 50  # Neutral starting point
-        self._avgVolume = 0
-        self._currentRsiPeriod = self.MaxRsiPeriod  # Start with max period
 
         # Create indicators
         self._atr = AverageTrueRange()

@@ -98,6 +98,10 @@ class keltner_seasonal_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(keltner_seasonal_strategy, self).OnReseted()
+        self._currentSeasonalStrength = 0.0
+
     def OnStarted(self, time):
         super(keltner_seasonal_strategy, self).OnStarted(time)
 

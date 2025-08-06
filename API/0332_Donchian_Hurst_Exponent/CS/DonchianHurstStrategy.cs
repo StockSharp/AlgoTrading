@@ -100,13 +100,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_hurstValue = 0;
+			_donchianIsFormed = false;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Reset state variables
-			_hurstValue = 0;
-			_donchianIsFormed = false;
 
 			// Create Donchian Channel indicator
 			var donchian = new DonchianChannels

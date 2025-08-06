@@ -83,17 +83,22 @@ namespace StockSharp.Samples.Strategies
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
 			return [(Security, CandleType)];
+				}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevRsi = 0;
+			_prevPrice = 0;
+			_divergenceDetected = false;
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Reset state variables
-			_prevRsi = 0;
-			_prevPrice = 0;
-			_divergenceDetected = false;
 
 			// Create Parabolic SAR indicator
 			var parabolicSar = new ParabolicSar

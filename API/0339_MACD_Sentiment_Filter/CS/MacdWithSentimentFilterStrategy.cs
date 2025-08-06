@@ -137,6 +137,7 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnReseted()
 		{
 			base.OnReseted();
+			// reset stored values
 
 			_prevMacd = default;
 			_prevSignal = default;
@@ -294,3 +295,4 @@ namespace StockSharp.Samples.Strategies
 		}
 	}
 }
+

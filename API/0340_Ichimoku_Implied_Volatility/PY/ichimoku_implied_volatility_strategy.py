@@ -116,11 +116,12 @@ class ichimoku_implied_volatility_strategy(Strategy):
 
     def OnReseted(self):
         super(ichimoku_implied_volatility_strategy, self).OnReseted()
+        # reset stored values
+        self._implied_volatility_history.clear()
         self._prev_above_kumo = False
         self._prev_tenkan_above_kijun = False
         self._prev_price = 0.0
         self._avg_implied_volatility = 0.0
-        self._implied_volatility_history.clear()
 
     def OnStarted(self, time):
         super(ichimoku_implied_volatility_strategy, self).OnStarted(time)

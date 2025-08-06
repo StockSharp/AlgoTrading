@@ -122,6 +122,8 @@ namespace StockSharp.Samples.Strategies
 		protected override void OnReseted()
 		{
 			base.OnReseted();
+			_atr?.Reset();
+			_bollinger?.Reset();
 
 			_currentBollingerPeriod = MaxBollingerPeriod; // Start with maximum period
 			_currentBollingerDeviation = MinBollingerDeviation; // Start with minimum deviation
@@ -255,3 +257,4 @@ namespace StockSharp.Samples.Strategies
 		}
 	}
 }
+
