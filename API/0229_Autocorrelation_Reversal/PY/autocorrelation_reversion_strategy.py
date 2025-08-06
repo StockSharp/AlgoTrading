@@ -85,12 +85,16 @@ class autocorrelation_reversion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(autocorrelation_reversion_strategy, self).OnStarted(time)
+    def OnReseted(self):
+        super(autocorrelation_reversion_strategy, self).OnReseted()
 
         self._price_history = []
         self._latest_autocorrelation = 0.0
         self._current_price = 0.0
+
+    def OnStarted(self, time):
+        super(autocorrelation_reversion_strategy, self).OnStarted(time)
+
 
         # Initialize the SMA indicator (using same period as autocorrelation for simplicity)
         self._sma = SimpleMovingAverage()

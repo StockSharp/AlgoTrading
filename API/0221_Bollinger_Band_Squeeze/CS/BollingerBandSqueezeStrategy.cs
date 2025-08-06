@@ -96,6 +96,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevBollingerWidth = 0;
+			_avgBollingerWidth = 0;
+			_bollingerWidthSum = 0;
+			_bollingerWidths.Clear();
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -108,13 +119,6 @@ namespace StockSharp.Samples.Strategies
 			};
 
 			_atr = new AverageTrueRange { Length = BollingerPeriod };
-
-			// Reset state
-			_prevBollingerWidth = 0;
-			_avgBollingerWidth = 0;
-			_bollingerWidthSum = 0;
-			_bollingerWidths.Clear();
-
 			// Create subscription and bind indicator
 			var subscription = SubscribeCandles(CandleType);
 			subscription

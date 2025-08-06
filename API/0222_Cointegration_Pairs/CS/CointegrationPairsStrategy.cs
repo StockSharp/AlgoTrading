@@ -133,6 +133,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_residualMean = 0;
+			_residualStdDev = 0;
+			_residualSum = 0;
+			_squaredResidualSum = 0;
+			_residuals.Clear();
+			_asset1Price = 0;
+			_asset2Price = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -143,14 +157,6 @@ namespace StockSharp.Samples.Strategies
 			// Use the same portfolio for second asset or find another portfolio
 			_asset2Portfolio = Portfolio;
 
-			// Reset state
-			_residualMean = 0;
-			_residualStdDev = 0;
-			_residualSum = 0;
-			_squaredResidualSum = 0;
-			_residuals.Clear();
-			_asset1Price = 0;
-			_asset2Price = 0;
 
 			// Subscribe to Asset1 candles
 			var asset1Subscription = SubscribeCandles(CandleType)

@@ -64,6 +64,11 @@ class kalman_filter_trend_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(kalman_filter_trend_strategy, self).OnReseted()
+        self._kalman_filter = None
+        self._atr = None
+
     def OnStarted(self, time):
         super(kalman_filter_trend_strategy, self).OnStarted(time)
 
