@@ -105,49 +105,49 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnReseted()
-\t\t{
-\t\t\tbase.OnReseted();
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
 
-\t\t\t_rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
-\t\t\t_rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
-\t\t}
+			_rsiSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
+			_rsiStdDev = new StandardDeviation { Length = MovingAvgPeriod };
+		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnStarted(DateTimeOffset time)
-\t\t{
-\t\t\tbase.OnStarted(time);
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-\t\t\t// Create indicators
-\t\t\tvar rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-\t\t\tvar priceSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
+			// Create indicators
+			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+			var priceSma = new SimpleMovingAverage { Length = MovingAvgPeriod };
 
-\t\t\t// Create subscription
-\t\t\tvar subscription = SubscribeCandles(CandleType);
+			// Create subscription
+			var subscription = SubscribeCandles(CandleType);
 
-\t\t\t// Create RSI and price SMA processing
-\t\t\tsubscription
-\t\t\t\t.Bind(rsi, priceSma, ProcessCandle)
-\t\t\t\t.Start();
+			// Create RSI and price SMA processing
+			subscription
+				.Bind(rsi, priceSma, ProcessCandle)
+				.Start();
 
-\t\t\t// Enable position protection with percentage stop-loss
-\t\t\tStartProtection(
-\t\t\t\ttakeProfit: new Unit(0), // We'll handle exits in the strategy logic
-\t\t\t\tstopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-\t\t\t\tuseMarketOrders: true
-\t\t\t);
+			// Enable position protection with percentage stop-loss
+			StartProtection(
+				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
+				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+				useMarketOrders: true
+			);
 
-\t\t\t// Setup chart if available
-\t\t\tvar area = CreateChartArea();
-\t\t\tif (area != null)
-\t\t\t{
-\t\t\t\tDrawCandles(area, subscription);
-\t\t\t\tDrawIndicator(area, rsi);
-\t\t\t\tDrawIndicator(area, priceSma);
-\t\t\t\tDrawOwnTrades(area);
-\t\t\t}
-\t\t}
+			// Setup chart if available
+			var area = CreateChartArea();
+			if (area != null)
+			{
+				DrawCandles(area, subscription);
+				DrawIndicator(area, rsi);
+				DrawIndicator(area, priceSma);
+				DrawOwnTrades(area);
+			}
+		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal priceSmaValue)
 		{

@@ -121,59 +121,59 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnReseted()
-\t\t{
-\t\t\tbase.OnReseted();
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
 
-\t\t\t_volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
-\t\t\t_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
-\t\t}
+			_volumeAvg = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+			_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
+		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnStarted(DateTimeOffset time)
-\t\t{
-\t\t\tbase.OnStarted(time);
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-\t\t\t// Create Ichimoku indicator
-\t\t\tvar ichimoku = new Ichimoku
-\t\t\t{
-\t\t\t\tTenkan = { Length = TenkanPeriod },
-\t\t\t\tKijun = { Length = KijunPeriod },
-\t\t\t\tSenkouB = { Length = SenkouSpanBPeriod },
-\t\t\t};
+			// Create Ichimoku indicator
+			var ichimoku = new Ichimoku
+			{
+				Tenkan = { Length = TenkanPeriod },
+				Kijun = { Length = KijunPeriod },
+				SenkouB = { Length = SenkouSpanBPeriod },
+			};
 
-\t\t\t// Create subscription
-\t\t\tvar subscription = SubscribeCandles(CandleType);
+			// Create subscription
+			var subscription = SubscribeCandles(CandleType);
 
-\t\t\t// Bind Ichimoku to subscription
-\t\t\tsubscription
-\t\t\t\t.BindEx(ichimoku, ProcessCandle)
-\t\t\t\t.Start();
+			// Bind Ichimoku to subscription
+			subscription
+				.BindEx(ichimoku, ProcessCandle)
+				.Start();
 
-\t\t\t// Setup stop-loss at Kijun-sen level
-\t\t\tStartProtection(
-\t\t\t\ttakeProfit: new Unit(0), // We'll handle exits in the strategy logic
-\t\t\t\tstopLoss: new Unit(0),   // Using Kijun-sen as dynamic stop-loss
-\t\t\t\tuseMarketOrders: true
-\t\t\t);
+			// Setup stop-loss at Kijun-sen level
+			StartProtection(
+				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
+				stopLoss: new Unit(0),   // Using Kijun-sen as dynamic stop-loss
+				useMarketOrders: true
+			);
 
-\t\t\t// Setup chart if available
-\t\t\tvar area = CreateChartArea();
-\t\t\tif (area != null)
-\t\t\t{
-\t\t\t\tDrawCandles(area, subscription);
-\t\t\t\tDrawIndicator(area, ichimoku);
-\t\t\t\tDrawOwnTrades(area);
+			// Setup chart if available
+			var area = CreateChartArea();
+			if (area != null)
+			{
+				DrawCandles(area, subscription);
+				DrawIndicator(area, ichimoku);
+				DrawOwnTrades(area);
 
-\t\t\t\t// Create second area for volume
-\t\t\t\tvar volumeArea = CreateChartArea();
-\t\t\t\tif (volumeArea != null)
-\t\t\t\t{
-\t\t\t\t\tDrawIndicator(volumeArea, _volumeAvg);
-\t\t\t\t}
-\t\t\t}
-\t\t}
+				// Create second area for volume
+				var volumeArea = CreateChartArea();
+				if (volumeArea != null)
+				{
+					DrawIndicator(volumeArea, _volumeAvg);
+				}
+			}
+		}
 
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue v)
 		{

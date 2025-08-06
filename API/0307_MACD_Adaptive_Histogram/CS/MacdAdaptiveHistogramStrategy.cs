@@ -137,55 +137,55 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnReseted()
-\t\t{
-\t\t\tbase.OnReseted();
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
 
-\t\t\t_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
-\t\t\t_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
-\t\t}
+			_histAvg = new SimpleMovingAverage { Length = HistogramAvgPeriod };
+			_histStdDev = new StandardDeviation { Length = HistogramAvgPeriod };
+		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnStarted(DateTimeOffset time)
-\t\t{
-\t\t\tbase.OnStarted(time);
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-\t\t\t// Create MACD indicator with custom settings
-\t\t\tvar macdLine = new MovingAverageConvergenceDivergenceSignal
-\t\t\t{
-\t\t\t\tMacd =
-\t\t\t\t{
-\t\t\t\t\tShortMa = { Length = FastPeriod },
-\t\t\t\t\tLongMa = { Length = SlowPeriod },
-\t\t\t\t},
-\t\t\t\tSignalMa = { Length = SignalPeriod }
-\t\t\t};
+			// Create MACD indicator with custom settings
+			var macdLine = new MovingAverageConvergenceDivergenceSignal
+			{
+				Macd =
+				{
+					ShortMa = { Length = FastPeriod },
+					LongMa = { Length = SlowPeriod },
+				},
+				SignalMa = { Length = SignalPeriod }
+			};
 
-\t\t\t// Create subscription
-\t\t\tvar subscription = SubscribeCandles(CandleType);
+			// Create subscription
+			var subscription = SubscribeCandles(CandleType);
 
-\t\t\t// Bind MACD to subscription
-\t\t\tsubscription
-\t\t\t\t.BindEx(macdLine, ProcessCandle)
-\t\t\t\t.Start();
+			// Bind MACD to subscription
+			subscription
+				.BindEx(macdLine, ProcessCandle)
+				.Start();
 
-\t\t\t// Enable position protection with percentage stop-loss
-\t\t\tStartProtection(
-\t\t\t\ttakeProfit: new Unit(0), // We'll handle exits in the strategy logic
-\t\t\t\tstopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-\t\t\t\tuseMarketOrders: true
-\t\t\t);
+			// Enable position protection with percentage stop-loss
+			StartProtection(
+				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
+				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+				useMarketOrders: true
+			);
 
-\t\t\t// Setup chart if available
-\t\t\tvar area = CreateChartArea();
-\t\t\tif (area != null)
-\t\t\t{
-\t\t\t\tDrawCandles(area, subscription);
-\t\t\t\tDrawIndicator(area, macdLine);
-\t\t\t\tDrawOwnTrades(area);
-\t\t\t}
-\t\t}
+			// Setup chart if available
+			var area = CreateChartArea();
+			if (area != null)
+			{
+				DrawCandles(area, subscription);
+				DrawIndicator(area, macdLine);
+				DrawOwnTrades(area);
+			}
+		}
 
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue macdValue)
 		{

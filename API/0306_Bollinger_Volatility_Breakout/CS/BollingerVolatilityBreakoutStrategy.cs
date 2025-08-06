@@ -121,54 +121,54 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnReseted()
-\t\t{
-\t\t\tbase.OnReseted();
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
 
-\t\t\t_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
-\t\t\t_atrStdDev = new StandardDeviation { Length = AtrPeriod };
-\t\t}
+			_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+			_atrStdDev = new StandardDeviation { Length = AtrPeriod };
+		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnStarted(DateTimeOffset time)
-\t\t{
-\t\t\tbase.OnStarted(time);
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-\t\t\t// Create indicators
-\t\t\tvar bollingerBands = new BollingerBands
-\t\t\t{
-\t\t\t\tLength = BollingerPeriod,
-\t\t\t\tWidth = BollingerDeviation
-\t\t\t};
+			// Create indicators
+			var bollingerBands = new BollingerBands
+			{
+				Length = BollingerPeriod,
+				Width = BollingerDeviation
+			};
 
-\t\t\tvar atr = new AverageTrueRange { Length = AtrPeriod };
+			var atr = new AverageTrueRange { Length = AtrPeriod };
 
-\t\t\t// Create subscription
-\t\t\tvar subscription = SubscribeCandles(CandleType);
+			// Create subscription
+			var subscription = SubscribeCandles(CandleType);
 
-\t\t\t// Bind main indicators to subscription
-\t\t\tsubscription
-\t\t\t\t.BindEx(bollingerBands, atr, ProcessCandle)
-\t\t\t\t.Start();
+			// Bind main indicators to subscription
+			subscription
+				.BindEx(bollingerBands, atr, ProcessCandle)
+				.Start();
 
-\t\t\t// Enable position protection
-\t\t\tStartProtection(
-\t\t\t\ttakeProfit: new Unit(0), // We'll handle exits in the strategy logic
-\t\t\t\tstopLoss: new Unit(0),   // We'll handle stops in the strategy logic
-\t\t\t\tuseMarketOrders: true
-\t\t\t);
+			// Enable position protection
+			StartProtection(
+				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
+				stopLoss: new Unit(0),   // We'll handle stops in the strategy logic
+				useMarketOrders: true
+			);
 
-\t\t\t// Setup chart if available
-\t\t\tvar area = CreateChartArea();
-\t\t\tif (area != null)
-\t\t\t{
-\t\t\t\tDrawCandles(area, subscription);
-\t\t\t\tDrawIndicator(area, bollingerBands);
-\t\t\t\tDrawIndicator(area, atr);
-\t\t\t\tDrawOwnTrades(area);
-\t\t\t}
-\t\t}
+			// Setup chart if available
+			var area = CreateChartArea();
+			if (area != null)
+			{
+				DrawCandles(area, subscription);
+				DrawIndicator(area, bollingerBands);
+				DrawIndicator(area, atr);
+				DrawOwnTrades(area);
+			}
+		}
 
 		private void ProcessCandle(ICandleMessage candle, IIndicatorValue bbValue, IIndicatorValue atrValue)
 		{

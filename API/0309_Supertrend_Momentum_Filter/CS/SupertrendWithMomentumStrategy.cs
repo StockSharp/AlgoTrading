@@ -90,54 +90,54 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnReseted()
-\t\t{
-\t\t\tbase.OnReseted();
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
 
-\t\t\t_prevMomentum = default;
-\t\t}
+			_prevMomentum = default;
+		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnStarted(DateTimeOffset time)
-\t\t{
-\t\t\tbase.OnStarted(time);
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-\t\t\t// Create indicators
-\t\t\tvar supertrend = new SuperTrend
-\t\t\t{
-\t\t\t\tLength = SupertrendPeriod,
-\t\t\t\tMultiplier = SupertrendMultiplier
-\t\t\t};
+			// Create indicators
+			var supertrend = new SuperTrend
+			{
+				Length = SupertrendPeriod,
+				Multiplier = SupertrendMultiplier
+			};
 
-\t\t\tvar momentum = new Momentum
-\t\t\t{
-\t\t\t\tLength = MomentumPeriod
-\t\t\t};
+			var momentum = new Momentum
+			{
+				Length = MomentumPeriod
+			};
 
-\t\t\t// Subscribe to candles and bind indicators
-\t\t\tvar subscription = SubscribeCandles(CandleType);
+			// Subscribe to candles and bind indicators
+			var subscription = SubscribeCandles(CandleType);
 
-\t\t\tsubscription
-\t\t\t\t.Bind(supertrend, momentum, ProcessCandle)
-\t\t\t\t.Start();
+			subscription
+				.Bind(supertrend, momentum, ProcessCandle)
+				.Start();
 
-\t\t\t// Setup chart if available
-\t\t\tvar area = CreateChartArea();
-\t\t\tif (area != null)
-\t\t\t{
-\t\t\t\tDrawCandles(area, subscription);
-\t\t\t\tDrawIndicator(area, supertrend);
-\t\t\t\tDrawIndicator(area, momentum);
-\t\t\t\tDrawOwnTrades(area);
-\t\t\t}
+			// Setup chart if available
+			var area = CreateChartArea();
+			if (area != null)
+			{
+				DrawCandles(area, subscription);
+				DrawIndicator(area, supertrend);
+				DrawIndicator(area, momentum);
+				DrawOwnTrades(area);
+			}
 
-\t\t\t// Setup position protection
-\t\t\tStartProtection(
-\t\t\t\ttakeProfit: new Unit(2, UnitTypes.Percent),
-\t\t\t\tstopLoss: new Unit(1, UnitTypes.Percent)
-\t\t\t);
-\t\t}
+			// Setup position protection
+			StartProtection(
+				takeProfit: new Unit(2, UnitTypes.Percent),
+				stopLoss: new Unit(1, UnitTypes.Percent)
+			);
+		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal momentumValue)
 		{

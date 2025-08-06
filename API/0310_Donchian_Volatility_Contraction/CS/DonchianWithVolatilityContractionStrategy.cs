@@ -92,71 +92,71 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-\t\t/// <inheritdoc />
-\t\tprotected override void OnReseted()
-\t\t{
-\t\t\tbase.OnReseted();
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
 
-\t\t\t_avgDcWidth = default;
-\t\t\t_stdDevDcWidth = default;
-\t\t\t_currentDcWidth = default;
-\t\t}
+			_avgDcWidth = default;
+			_stdDevDcWidth = default;
+			_currentDcWidth = default;
+		}
 
-\t\tprotected override void OnStarted(DateTimeOffset time)
-\t\t{
-\t\t\tbase.OnStarted(time);
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
-\t\t\t// Create indicators
-\t\t\tvar donchianHigh = new Highest { Length = DonchianPeriod };
-\t\t\tvar donchianLow = new Lowest { Length = DonchianPeriod };
-\t\t\tvar atr = new AverageTrueRange { Length = AtrPeriod };
-\t\t\tvar sma = new SimpleMovingAverage { Length = DonchianPeriod };
-\t\t\tvar standardDeviation = new StandardDeviation { Length = DonchianPeriod };
+			// Create indicators
+			var donchianHigh = new Highest { Length = DonchianPeriod };
+			var donchianLow = new Lowest { Length = DonchianPeriod };
+			var atr = new AverageTrueRange { Length = AtrPeriod };
+			var sma = new SimpleMovingAverage { Length = DonchianPeriod };
+			var standardDeviation = new StandardDeviation { Length = DonchianPeriod };
 
-\t\t\t// Subscribe to candles and bind indicators
-\t\t\tvar subscription = SubscribeCandles(CandleType);
+			// Subscribe to candles and bind indicators
+			var subscription = SubscribeCandles(CandleType);
 
-\t\t\tsubscription
-\t\t\t\t.BindEx(donchianHigh, (candle, highValue) =>
-\t\t\t\t{
-\t\t\t\t\tvar highPrice = highValue.ToDecimal();
+			subscription
+				.BindEx(donchianHigh, (candle, highValue) =>
+				{
+					var highPrice = highValue.ToDecimal();
 
-\t\t\t\t\t// Process Donchian Low separately
-\t\t\t\t\tvar lowValue = donchianLow.Process(candle);
-\t\t\t\t\tvar lowPrice = lowValue.ToDecimal();
+					// Process Donchian Low separately
+					var lowValue = donchianLow.Process(candle);
+					var lowPrice = lowValue.ToDecimal();
 
-\t\t\t\t\t// Process ATR
-\t\t\t\t\tvar atrValue = atr.Process(candle);
+					// Process ATR
+					var atrValue = atr.Process(candle);
 
-\t\t\t\t\t// Calculate Donchian Channel width
-\t\t\t\t\t_currentDcWidth = highPrice - lowPrice;
+					// Calculate Donchian Channel width
+					_currentDcWidth = highPrice - lowPrice;
 
-\t\t\t\t\t// Process SMA and StdDev for the channel width
-\t\t\t\t\tvar smaValue = sma.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
-\t\t\t\t\tvar stdDevValue = standardDeviation.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+					// Process SMA and StdDev for the channel width
+					var smaValue = sma.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
+					var stdDevValue = standardDeviation.Process(_currentDcWidth, candle.ServerTime, candle.State == CandleStates.Finished);
 
-\t\t\t\t\t_avgDcWidth = smaValue.ToDecimal();
-\t\t\t\t\t_stdDevDcWidth = stdDevValue.ToDecimal();
+					_avgDcWidth = smaValue.ToDecimal();
+					_stdDevDcWidth = stdDevValue.ToDecimal();
 
-\t\t\t\t\t// Process the strategy logic
-\t\t\t\t\tProcessStrategy(candle, highPrice, lowPrice, atrValue.ToDecimal());
-\t\t\t\t})
-\t\t\t\t.Start();
+					// Process the strategy logic
+					ProcessStrategy(candle, highPrice, lowPrice, atrValue.ToDecimal());
+				})
+				.Start();
 
-\t\t\t// Setup chart if available
-\t\t\tvar area = CreateChartArea();
-\t\t\tif (area != null)
-\t\t\t{
-\t\t\t\tDrawCandles(area, subscription);
-\t\t\t\tDrawOwnTrades(area);
-\t\t\t}
+			// Setup chart if available
+			var area = CreateChartArea();
+			if (area != null)
+			{
+				DrawCandles(area, subscription);
+				DrawOwnTrades(area);
+			}
 
-\t\t\t// Setup position protection
-\t\t\tStartProtection(
-\t\t\t\ttakeProfit: new Unit(2, UnitTypes.Percent),
-\t\t\t\tstopLoss: new Unit(1, UnitTypes.Percent)
-\t\t\t);
-\t\t}
+			// Setup position protection
+			StartProtection(
+				takeProfit: new Unit(2, UnitTypes.Percent),
+				stopLoss: new Unit(1, UnitTypes.Percent)
+			);
+		}
 
 		private void ProcessStrategy(ICandleMessage candle, decimal donchianHigh, decimal donchianLow, decimal atrValue)
 		{
