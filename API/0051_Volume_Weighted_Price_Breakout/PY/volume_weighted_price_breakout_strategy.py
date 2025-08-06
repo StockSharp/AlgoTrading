@@ -56,6 +56,10 @@ class volume_weighted_price_breakout_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(volume_weighted_price_breakout_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.

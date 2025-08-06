@@ -88,10 +88,6 @@ class shooting_star_strategy(Strategy):
         """
         super(shooting_star_strategy, self).OnStarted(time)
 
-        self._shootingStarHigh = None
-        self._shootingStarLow = None
-        self._patternDetected = False
-
         # Create highest indicator for trend identification
         highest = Highest()
         highest.Length = 10

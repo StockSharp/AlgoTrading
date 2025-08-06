@@ -71,6 +71,11 @@ class volume_surge_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(volume_surge_strategy, self).OnReseted()
+        self._volumeMA = None
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.

@@ -78,10 +78,6 @@ class volume_divergence_strategy(Strategy):
         """
         super(volume_divergence_strategy, self).OnStarted(time)
 
-        self._previousClose = 0
-        self._previousVolume = 0
-        self._isFirstCandle = True
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MAPeriod

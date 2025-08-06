@@ -82,6 +82,7 @@ class double_bottom_strategy(Strategy):
         self._secondBottomLow = None
         self._barsSinceFirstBottom = 0
         self._patternConfirmed = False
+        self._lowestIndicator = None
 
     def OnStarted(self, time):
         """
@@ -90,11 +91,6 @@ class double_bottom_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(double_bottom_strategy, self).OnStarted(time)
-
-        self._firstBottomLow = None
-        self._secondBottomLow = None
-        self._barsSinceFirstBottom = 0
-        self._patternConfirmed = False
 
         # Create indicator to find lowest values
         self._lowestIndicator = Lowest()

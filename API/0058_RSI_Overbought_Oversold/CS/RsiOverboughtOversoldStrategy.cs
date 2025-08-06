@@ -115,33 +115,39 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Create RSI indicator
-			var rsi = new RelativeStrengthIndex
-			{
-				Length = RsiPeriod
-			};
+				// Create RSI indicator
+				var rsi = new RelativeStrengthIndex
+				{
+					Length = RsiPeriod
+				};
 
-			// Create candle subscription
-			var subscription = SubscribeCandles(CandleType);
+				// Create candle subscription
+				var subscription = SubscribeCandles(CandleType);
 
-			// Bind RSI indicator to candles
-			subscription
-				.Bind(rsi, ProcessCandle)
-				.Start();
+				// Bind RSI indicator to candles
+				subscription
+					.Bind(rsi, ProcessCandle)
+					.Start();
 
-			// Enable position protection
-			StartProtection(
-				new Unit(0, UnitTypes.Absolute), // No take profit (will exit at neutral RSI)
-				new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
-				false // No trailing stop
-			);
+				// Enable position protection
+				StartProtection(
+					new Unit(0, UnitTypes.Absolute), // No take profit (will exit at neutral RSI)
+					new Unit(StopLossPercent, UnitTypes.Percent), // Stop loss at defined percentage
+					false // No trailing stop
+				);
 
-			// Setup chart visualization if available
-			var area = CreateChartArea();
+				// Setup chart visualization if available
+				var area = CreateChartArea();
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
@@ -155,12 +161,12 @@ namespace StockSharp.Samples.Strategies
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
 				return;
-			
+
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
 			LogInfo($"RSI value: {rsiValue}, Position: {Position}");
-			
+
 			// Trading logic
 			if (rsiValue <= OversoldLevel && Position <= 0)
 			{

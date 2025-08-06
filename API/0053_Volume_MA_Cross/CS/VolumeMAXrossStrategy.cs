@@ -18,7 +18,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _fastVolumeMALength;
 		private readonly StrategyParam<int> _slowVolumeMALength;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private decimal _previousFastVolumeMA;
 		private decimal _previousSlowVolumeMA;
 		private bool _isFirstValue;
@@ -80,43 +80,51 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
+			_fastVolumeMA = null;
+			_slowVolumeMA = null;
 			_previousFastVolumeMA = 0;
 			_previousSlowVolumeMA = 0;
 			_isFirstValue = true;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			_fastVolumeMA = new SimpleMovingAverage { Length = FastVolumeMALength };
 			_slowVolumeMA = new SimpleMovingAverage { Length = SlowVolumeMALength };
 			var priceMA = new SimpleMovingAverage { Length = FastVolumeMALength }; // Use same period as fast Volume MA
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Regular price MA binding for chart visualization
-			subscription
-				.Bind(priceMA, ProcessCandle)
-				.Start();
+				// Create subscription
+				var subscription = SubscribeCandles(CandleType);
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
+				// Regular price MA binding for chart visualization
+				subscription
+					.Bind(priceMA, ProcessCandle)
+					.Start();
 
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, priceMA);
-				DrawOwnTrades(area);
+				// Configure protection
+				StartProtection(
+					takeProfit: new Unit(3, UnitTypes.Percent),
+					stopLoss: new Unit(2, UnitTypes.Percent)
+				);
+
+				// Setup chart visualization
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawIndicator(area, priceMA);
+					DrawOwnTrades(area);
+				}
 			}
-		}
-		
+
 		private void ProcessCandle(ICandleMessage candle, decimal priceMAValue)
 		{
 			if (candle.State != CandleStates.Finished)
@@ -131,7 +139,7 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
 			// Skip the first values to initialize previous values
 			if (_isFirstValue)
 			{
@@ -140,11 +148,11 @@ namespace StockSharp.Samples.Strategies
 				_isFirstValue = false;
 				return;
 			}
-			
+
 			// Check for crossovers
 			var crossAbove = _previousFastVolumeMA <= _previousSlowVolumeMA && fastMAValue > slowMAValue;
 			var crossBelow = _previousFastVolumeMA >= _previousSlowVolumeMA && fastMAValue < slowMAValue;
-			
+
 			// Log current values
 			LogInfo($"Candle Close: {candle.ClosePrice}, Price MA: {priceMAValue}");
 			LogInfo($"Fast Volume MA: {fastMAValue}, Slow Volume MA: {slowMAValue}");
@@ -163,7 +171,7 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Sell Signal: Fast Volume MA crossing below Slow Volume MA");
 				SellMarket(Volume + Math.Abs(Position));
 			}
-			
+
 			// Exit logic: Reverse crossover
 			if (Position > 0 && crossBelow)
 			{

@@ -72,12 +72,6 @@ class cumulative_delta_breakout_strategy(Strategy):
         """
         super(cumulative_delta_breakout_strategy, self).OnStarted(time)
 
-        self._cumulativeDelta = 0
-        self._highestDelta = None
-        self._lowestDelta = None
-        self._barCount = 0
-        self._deltaWindow.Clear()
-
         # Create subscription for both candles and ticks
         candleSubscription = self.SubscribeCandles(self.CandleType)
         

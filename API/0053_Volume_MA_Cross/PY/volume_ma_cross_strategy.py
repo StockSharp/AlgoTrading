@@ -72,6 +72,8 @@ class volume_ma_cross_strategy(Strategy):
         self._previousFastVolumeMA = 0
         self._previousSlowVolumeMA = 0
         self._isFirstValue = True
+        self._fastVolumeMA = None
+        self._slowVolumeMA = None
 
     def OnStarted(self, time):
         """
@@ -80,10 +82,6 @@ class volume_ma_cross_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(volume_ma_cross_strategy, self).OnStarted(time)
-
-        self._previousFastVolumeMA = 0
-        self._previousSlowVolumeMA = 0
-        self._isFirstValue = True
 
         # Create indicators
         self._fastVolumeMA = SimpleMovingAverage()

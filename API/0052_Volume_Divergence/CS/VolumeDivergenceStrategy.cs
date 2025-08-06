@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _maPeriod;
 		private readonly StrategyParam<int> _atrPeriod;
 		private readonly StrategyParam<DataType> _candleType;
-		
+
 		private decimal _previousClose;
 		private decimal _previousVolume;
 		private bool _isFirstCandle;
@@ -79,41 +79,47 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
 			_previousClose = 0;
 			_previousVolume = 0;
 			_isFirstCandle = true;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MAPeriod };
 			var atr = new AverageTrueRange { Length = ATRPeriod };
 
-			// Create subscription and bind indicators
-			var subscription = SubscribeCandles(CandleType);
-			
-			subscription
-				.Bind(ma, atr, ProcessCandle)
-				.Start();
+				// Create subscription and bind indicators
+				var subscription = SubscribeCandles(CandleType);
 
-			// Configure protection
-			StartProtection(
-				takeProfit: new Unit(3, UnitTypes.Percent),
-				stopLoss: new Unit(2, UnitTypes.Percent)
-			);
+				subscription
+					.Bind(ma, atr, ProcessCandle)
+					.Start();
 
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
-				DrawIndicator(area, atr);
-				DrawOwnTrades(area);
+				// Configure protection
+				StartProtection(
+					takeProfit: new Unit(3, UnitTypes.Percent),
+					stopLoss: new Unit(2, UnitTypes.Percent)
+				);
+
+				// Setup chart visualization
+				var area = CreateChartArea();
+				if (area != null)
+				{
+					DrawCandles(area, subscription);
+					DrawIndicator(area, ma);
+					DrawIndicator(area, atr);
+					DrawOwnTrades(area);
+				}
 			}
-		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal maValue, decimal atrValue)
 		{
@@ -124,7 +130,7 @@ namespace StockSharp.Samples.Strategies
 			// Check if strategy is ready to trade
 			if (!IsFormedAndOnlineAndAllowTrading())
 				return;
-			
+
 			// Skip the first candle, just initialize values
 			if (_isFirstCandle)
 			{
@@ -133,16 +139,16 @@ namespace StockSharp.Samples.Strategies
 				_isFirstCandle = false;
 				return;
 			}
-			
+
 			// Calculate price change and volume change
 			var priceDown = candle.ClosePrice < _previousClose;
 			var priceUp = candle.ClosePrice > _previousClose;
 			var volumeUp = candle.TotalVolume > _previousVolume;
-			
+
 			// Identify divergences
 			var bullishDivergence = priceDown && volumeUp;  // Price down but volume up (accumulation)
 			var bearishDivergence = priceUp && volumeUp;	// Price up but volume up too much (distribution)
-			
+
 			// Log current values
 			LogInfo($"Candle Close: {candle.ClosePrice}, Previous Close: {_previousClose}, MA: {maValue}");
 			LogInfo($"Volume: {candle.TotalVolume}, Previous Volume: {_previousVolume}");
@@ -161,7 +167,7 @@ namespace StockSharp.Samples.Strategies
 				LogInfo($"Sell Signal: Price up but volume up too much (possible distribution)");
 				SellMarket(Volume + Math.Abs(Position));
 			}
-			
+
 			// Exit logic: Price crosses MA
 			if (Position > 0 && candle.ClosePrice < maValue)
 			{

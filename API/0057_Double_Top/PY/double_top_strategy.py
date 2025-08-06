@@ -82,6 +82,7 @@ class double_top_strategy(Strategy):
         self._secondTopHigh = None
         self._barsSinceFirstTop = 0
         self._patternConfirmed = False
+        self._highestIndicator = None
 
     def OnStarted(self, time):
         """
@@ -90,11 +91,6 @@ class double_top_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(double_top_strategy, self).OnStarted(time)
-
-        self._firstTopHigh = None
-        self._secondTopHigh = None
-        self._barsSinceFirstTop = 0
-        self._patternConfirmed = False
 
         # Create indicator to find highest values
         self._highestIndicator = Highest()

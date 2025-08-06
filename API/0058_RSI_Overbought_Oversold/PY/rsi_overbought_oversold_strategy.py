@@ -86,6 +86,10 @@ class rsi_overbought_oversold_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercent.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(rsi_overbought_oversold_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.
