@@ -100,9 +100,6 @@ class cci_hook_reversal_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-        # Initialize previous CCI value
-        self._prev_cci = 0.0
-
         # Create CCI indicator
         cci = CommodityChannelIndex()
         cci.Length = self.cci_period

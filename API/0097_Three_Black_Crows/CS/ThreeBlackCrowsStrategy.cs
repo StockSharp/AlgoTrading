@@ -56,15 +56,15 @@ namespace StockSharp.Samples.Strategies
 		public ThreeBlackCrowsStrategy()
 		{
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						 .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
+							.SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 1m)
-							  .SetRange(0.1m, 5m)
-							  .SetDisplay("Stop Loss %", "Stop loss as percentage above high of pattern", "Risk Management");
+								.SetRange(0.1m, 5m)
+								.SetDisplay("Stop Loss %", "Stop loss as percentage above high of pattern", "Risk Management");
 
 			_maLength = Param(nameof(MaLength), 20)
-					   .SetRange(10, 50)
-					   .SetDisplay("MA Length", "Period of moving average for exit signal", "Indicators");
+						.SetRange(10, 50)
+						.SetDisplay("MA Length", "Period of moving average for exit signal", "Indicators");
 		}
 
 		/// <inheritdoc />
@@ -73,41 +73,46 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Reset candle storage
-			_firstCandle = null;
-			_secondCandle = null;
-			_currentCandle = null;
-
-			// Create a simple moving average indicator for exit signal
-			var ma = new SimpleMovingAverage { Length = MaLength };
-
-			// Create subscription and bind to process candles
-			var subscription = SubscribeCandles(CandleType);
-			subscription
-				.Bind(ma, ProcessCandle)
-				.Start();
-
-			// Setup protection with stop loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-				isStopTrailing: false
-			);
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, ma);
-				DrawOwnTrades(area);
+					base.OnReseted();
+
+					_firstCandle = null;
+					_secondCandle = null;
+					_currentCandle = null;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Create a simple moving average indicator for exit signal
+					var ma = new SimpleMovingAverage { Length = MaLength };
+
+		// Create subscription and bind to process candles
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+			.Bind(ma, ProcessCandle)
+			.Start();
+
+		// Setup protection with stop loss
+		StartProtection(
+			takeProfit: null,
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			isStopTrailing: false
+		);
+
+		// Setup chart visualization if available
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, ma);
+			DrawOwnTrades(area);
 		}
+	}
 
 		private void ProcessCandle(ICandleMessage candle, decimal maValue)
 		{

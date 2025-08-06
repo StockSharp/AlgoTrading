@@ -148,46 +148,51 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Enable position protection using stop-loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: StopLoss,
-				isStopTrailing: false,
-				useMarketOrders: true
-			);
-
-			// Initialize previous K value
-			_prevK = 0;
-			
-			// Create Stochastic oscillator
-			var stochastic = new StochasticOscillator
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				K = { Length = KPeriod },
-				D = { Length = DPeriod },
-			};
+					base.OnReseted();
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Bind indicator and process candles
-			subscription
-				.BindEx(stochastic, ProcessCandle)
-				.Start();
-				
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, stochastic);
-				DrawOwnTrades(area);
+					_prevK = 0;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Enable position protection using stop-loss
+					StartProtection(
+							takeProfit: null,
+							stopLoss: StopLoss,
+							isStopTrailing: false,
+							useMarketOrders: true
+					);
+
+					// Create Stochastic oscillator
+					var stochastic = new StochasticOscillator
+					{
+							K = { Length = KPeriod },
+							D = { Length = DPeriod },
+					};
+
+		// Create subscription
+		var subscription = SubscribeCandles(CandleType);
+		
+		// Bind indicator and process candles
+		subscription
+			.BindEx(stochastic, ProcessCandle)
+			.Start();
+			
+		// Setup chart visualization
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, stochastic);
+			DrawOwnTrades(area);
 		}
+	}
 
 		/// <summary>
 		/// Process candle with Stochastic values.

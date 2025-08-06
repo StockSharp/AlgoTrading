@@ -79,11 +79,6 @@ class three_black_crows_strategy(Strategy):
         """Called when the strategy starts."""
         super(three_black_crows_strategy, self).OnStarted(time)
 
-        # Reset candle storage
-        self._first_candle = None
-        self._second_candle = None
-        self._current_candle = None
-
         # Create a simple moving average indicator for exit signal
         ma = SMA()
         ma.Length = self.MaLength

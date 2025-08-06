@@ -53,11 +53,11 @@ namespace StockSharp.Samples.Strategies
 		public GapFillReversalStrategy()
 		{
 			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-						 .SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
+							.SetDisplay("Candle Type", "Type of candles for strategy calculation", "General");
 
 			_stopLossPercent = Param(nameof(StopLossPercent), 2m)
-							  .SetRange(0.1m, 5m)
-							  .SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management");
+								.SetRange(0.1m, 5m)
+								.SetDisplay("Stop Loss %", "Stop loss as percentage from entry price", "Risk Management");
 
 			_minGapPercent = Param(nameof(MinGapPercent), 0.5m)
 							.SetRange(0.1m, 3m)
@@ -70,36 +70,41 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Reset candle storage
-			_previousCandle = null;
-			_currentCandle = null;
-
-			// Create subscription and bind to process candles
-			var subscription = SubscribeCandles(CandleType);
-			subscription
-				.Bind(ProcessCandle)
-				.Start();
-
-			// Setup protection with stop loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-				isStopTrailing: false
-			);
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				DrawCandles(area, subscription);
-				DrawOwnTrades(area);
+					base.OnReseted();
+
+					_previousCandle = null;
+					_currentCandle = null;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Create subscription and bind to process candles
+					var subscription = SubscribeCandles(CandleType);
+					subscription
+							.Bind(ProcessCandle)
+							.Start();
+
+		// Setup protection with stop loss
+		StartProtection(
+			takeProfit: null,
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+			isStopTrailing: false
+		);
+
+		// Setup chart visualization if available
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawOwnTrades(area);
 		}
+	}
 
 		private void ProcessCandle(ICandleMessage candle)
 		{
@@ -151,7 +156,7 @@ namespace StockSharp.Samples.Strategies
 			}
 			// Check for exit conditions
 			else if ((Position > 0 && candle.ClosePrice > _previousCandle.ClosePrice) || 
-					 (Position < 0 && candle.ClosePrice < _previousCandle.ClosePrice))
+						(Position < 0 && candle.ClosePrice < _previousCandle.ClosePrice))
 			{
 				LogInfo("Gap filled. Exiting position.");
 				ClosePosition();

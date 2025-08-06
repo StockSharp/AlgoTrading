@@ -121,6 +121,11 @@ class stochastic_hook_reversal_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(stochastic_hook_reversal_strategy, self).OnReseted()
+        self._prev_k = 0.0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
@@ -132,8 +137,6 @@ class stochastic_hook_reversal_strategy(Strategy):
             takeProfit=None,
             stopLoss=self.StopLoss
         )
-        # Initialize previous K value
-        self._prev_k = 0.0
 
         # Create Stochastic oscillator
         stoch = StochasticOscillator()

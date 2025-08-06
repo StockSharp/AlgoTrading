@@ -107,9 +107,6 @@ class rsi_hook_reversal_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-        # Initialize previous RSI value
-        self._prev_rsi = 0.0
-
         # Create RSI indicator
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period

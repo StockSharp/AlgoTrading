@@ -118,42 +118,47 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Enable position protection using stop-loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: StopLoss,
-				isStopTrailing: false,
-				useMarketOrders: true
-			);
-
-			// Initialize previous Williams %R value
-			_prevWillR = 0;
-			
-			// Create Williams %R indicator
-			var williamsR = new WilliamsR { Length = WillRPeriod };
-
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Bind indicator and process candles
-			subscription
-				.Bind(williamsR, ProcessCandle)
-				.Start();
-				
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, williamsR);
-				DrawOwnTrades(area);
+					base.OnReseted();
+
+					_prevWillR = 0;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Enable position protection using stop-loss
+					StartProtection(
+							takeProfit: null,
+							stopLoss: StopLoss,
+							isStopTrailing: false,
+							useMarketOrders: true
+					);
+
+					// Create Williams %R indicator
+					var williamsR = new WilliamsR { Length = WillRPeriod };
+
+		// Create subscription
+		var subscription = SubscribeCandles(CandleType);
+		
+		// Bind indicator and process candles
+		subscription
+			.Bind(williamsR, ProcessCandle)
+			.Start();
+			
+		// Setup chart visualization
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, williamsR);
+			DrawOwnTrades(area);
 		}
+	}
 
 		/// <summary>
 		/// Process candle with Williams %R value.

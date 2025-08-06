@@ -70,10 +70,6 @@ class gap_fill_reversal_strategy(Strategy):
         """Called when the strategy starts."""
         super(gap_fill_reversal_strategy, self).OnStarted(time)
 
-        # Reset candle storage
-        self._previous_candle = None
-        self._current_candle = None
-
         # Create subscription and bind to process candles
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self.ProcessCandle).Start()

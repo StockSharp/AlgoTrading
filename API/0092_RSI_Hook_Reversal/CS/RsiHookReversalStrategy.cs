@@ -118,42 +118,47 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Enable position protection using stop-loss
-			StartProtection(
-				takeProfit: null,
-				stopLoss: StopLoss,
-				isStopTrailing: false,
-				useMarketOrders: true
-			);
-
-			// Initialize previous RSI value
-			_prevRsi = 0;
-			
-			// Create RSI indicator
-			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
-
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Bind indicator and process candles
-			subscription
-				.Bind(rsi, ProcessCandle)
-				.Start();
-				
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
+			/// <inheritdoc />
+			protected override void OnReseted()
 			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, rsi);
-				DrawOwnTrades(area);
+					base.OnReseted();
+
+					_prevRsi = 0;
 			}
+
+			/// <inheritdoc />
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
+
+					// Enable position protection using stop-loss
+					StartProtection(
+							takeProfit: null,
+							stopLoss: StopLoss,
+							isStopTrailing: false,
+							useMarketOrders: true
+					);
+
+					// Create RSI indicator
+					var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+
+		// Create subscription
+		var subscription = SubscribeCandles(CandleType);
+		
+		// Bind indicator and process candles
+		subscription
+			.Bind(rsi, ProcessCandle)
+			.Start();
+			
+		// Setup chart visualization
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, rsi);
+			DrawOwnTrades(area);
 		}
+	}
 
 		/// <summary>
 		/// Process candle with RSI value.

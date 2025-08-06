@@ -106,9 +106,6 @@ class macd_histogram_reversal_strategy(Strategy):
             takeProfit=None,
             stopLoss=self.StopLoss
         )
-        # Initialize state
-        self._prevHistogram = None
-
         # Create MACD histogram indicator
         macdHistogram = MovingAverageConvergenceDivergenceHistogram()
         macdHistogram.Macd.ShortMa.Length = self.FastPeriod

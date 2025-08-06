@@ -68,16 +68,18 @@ class tweezer_top_strategy(Strategy):
         """!! REQUIRED!! Returns securities this strategy works with."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(tweezer_top_strategy, self).OnReseted()
+        self._previousCandle = None
+        self._currentCandle = None
+        self._entryPrice = 0.0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(tweezer_top_strategy, self).OnStarted(time)
-
-        # Reset candle storage
-        self._previousCandle = None
-        self._currentCandle = None
-        self._entryPrice = 0.0
 
         # Create subscription and bind to process candles
         subscription = self.SubscribeCandles(self.CandleType)

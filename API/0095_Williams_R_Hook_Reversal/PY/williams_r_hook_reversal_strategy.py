@@ -110,6 +110,11 @@ class williams_r_hook_reversal_strategy(Strategy):
         """!! REQUIRED !! Returns securities for strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(williams_r_hook_reversal_strategy, self).OnReseted()
+        self._prevWillR = 0.0
+
     def OnStarted(self, time):
         super(williams_r_hook_reversal_strategy, self).OnStarted(time)
 
@@ -120,8 +125,6 @@ class williams_r_hook_reversal_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-        # Initialize previous Williams %R value
-        self._prevWillR = 0.0
 
         # Create Williams %R indicator
         williams_r = WilliamsR()
