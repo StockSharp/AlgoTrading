@@ -85,9 +85,6 @@ class engulfing_bearish_strategy(Strategy):
         """
         super(engulfing_bearish_strategy, self).OnStarted(time)
 
-        self._previousCandle = None
-        self._consecutiveUpBars = 0
-
         # Subscribe to candles
         subscription = self.SubscribeCandles(self.CandleType)
 

@@ -80,6 +80,7 @@ class three_bar_reversal_down_strategy(Strategy):
         """
         super(three_bar_reversal_down_strategy, self).OnReseted()
         self._lastThreeCandles.Clear()
+        self._highestIndicator = None
 
     def OnStarted(self, time):
         """
@@ -88,9 +89,6 @@ class three_bar_reversal_down_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(three_bar_reversal_down_strategy, self).OnStarted(time)
-
-        # Clear candle queue
-        self._lastThreeCandles.Clear()
 
         # Create highest indicator for uptrend identification
         self._highestIndicator = Highest()

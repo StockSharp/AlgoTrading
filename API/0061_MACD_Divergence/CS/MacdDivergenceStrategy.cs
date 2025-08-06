@@ -124,11 +124,10 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Reset variables
 			_previousPrice = null;
 			_previousMacd = null;
 			_currentPrice = null;
@@ -136,6 +135,12 @@ namespace StockSharp.Samples.Strategies
 			_barsSinceDivergence = 0;
 			_bullishDivergence = false;
 			_bearishDivergence = false;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			// Create MACD indicator
 
