@@ -114,11 +114,6 @@ class bollinger_supertrend_strategy(Strategy):
         """Called when the strategy starts."""
         super(bollinger_supertrend_strategy, self).OnStarted(time)
 
-        # Reset state
-        self._is_long_trend = False
-        self._supertrend_value = 0.0
-        self._last_close = 0.0
-
         # Initialize indicators
         bollinger = BollingerBands()
         bollinger.Length = self.BollingerPeriod

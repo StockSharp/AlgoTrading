@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Strategy based on Bollinger Bands and Supertrend indicators.
 	/// Enters long when price breaks above upper Bollinger Band and is above Supertrend.
@@ -114,21 +114,28 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_bollinger = null;
+			_atr = null;
+			_isLongTrend = default;
+			_supertrendValue = default;
+			_lastClose = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_isLongTrend = default;
-			_supertrendValue = default;
-			_lastClose = default;
-
-
-			// Initialize indicators
+// Initialize indicators
 			_bollinger = new BollingerBands
-			{
-				Length = BollingerPeriod,
-				Width = BollingerDeviation
-			};
+		{
+Length = BollingerPeriod,
+Width = BollingerDeviation
+		};
 			
 			_atr = new AverageTrueRange
 			{
@@ -260,4 +267,4 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 	}
-}
+		}

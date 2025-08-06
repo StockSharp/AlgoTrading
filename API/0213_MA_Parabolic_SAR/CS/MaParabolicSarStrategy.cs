@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Strategy based on Moving Average and Parabolic SAR indicators.
 	/// Enters long when price is above MA and above SAR.
@@ -122,11 +122,19 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_ma = null;
+			_parabolicSar = null;
+			_lastSarValue = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_lastSarValue = default;
 
 			// Initialize indicators
 			_ma = new() { Length = MaPeriod };
@@ -207,4 +215,4 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 	}
-}
+		}

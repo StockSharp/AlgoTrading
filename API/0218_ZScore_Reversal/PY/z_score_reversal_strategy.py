@@ -86,10 +86,14 @@ class z_score_reversal_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(z_score_reversal_strategy, self).OnReseted()
+        self._ma = None
+        self._std_dev = None
+        self._last_z_score = 0.0
+
     def OnStarted(self, time):
         super(z_score_reversal_strategy, self).OnStarted(time)
-
-        self._last_z_score = 0.0
 
         # Initialize indicators
         self._ma = SimpleMovingAverage()

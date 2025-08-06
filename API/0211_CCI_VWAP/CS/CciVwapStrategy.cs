@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Strategy that uses CCI and VWAP indicators to identify oversold and overbought conditions.
 	/// Enters long when CCI is below -100 and price is below VWAP.
@@ -77,11 +77,18 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_cci = null;
+			_currentVwap = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_currentVwap = default;
 
 			// Initialize CCI indicator
 			_cci = new CommodityChannelIndex
@@ -163,4 +170,4 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 	}
-}
+		}

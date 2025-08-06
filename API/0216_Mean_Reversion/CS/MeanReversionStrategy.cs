@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Statistical Mean Reversion strategy.
 	/// Enters long when price falls below the mean by a specified number of standard deviations.
@@ -94,11 +94,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_ma = null;
+			_stdDev = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Initialize indicators
+// Initialize indicators
 			_ma = new() { Length = MovingAveragePeriod };
 			_stdDev = new() { Length = MovingAveragePeriod };
 
@@ -176,4 +185,4 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 	}
-}
+		}

@@ -111,10 +111,14 @@ class ma_parabolic_sar_strategy(Strategy):
         """!! REQUIRED !! Returns securities for strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(ma_parabolic_sar_strategy, self).OnReseted()
+        self._ma = None
+        self._parabolic_sar = None
+        self._last_sar_value = 0.0
+
     def OnStarted(self, time):
         super(ma_parabolic_sar_strategy, self).OnStarted(time)
-
-        self._last_sar_value = 0.0
 
         # Initialize indicators
         self._ma = SimpleMovingAverage()

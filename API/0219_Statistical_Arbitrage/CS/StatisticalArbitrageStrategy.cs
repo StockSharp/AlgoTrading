@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Statistical Arbitrage strategy that trades pairs of securities based on their relative mean reversion.
 	/// Enters when one asset is below its mean while the other is above its mean.
@@ -99,14 +99,22 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
+			_firstMA = null;
+			_secondMA = null;
 			_lastFirstPrice = 0;
 			_lastSecondPrice = 0;
 			_entrySpread = 0;
 			_secondMAValue = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
 
 			if (SecondSecurity == null)
 				throw new InvalidOperationException("Second security is not specified.");
@@ -234,4 +242,4 @@ namespace StockSharp.Samples.Strategies
 			_secondMAValue = maValue.ToDecimal();
 		}
 	}
-}
+		}

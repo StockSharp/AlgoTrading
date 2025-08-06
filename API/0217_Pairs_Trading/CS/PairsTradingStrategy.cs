@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Statistical Pairs Trading strategy.
 	/// Trades the spread between two correlated assets, entering positions when
@@ -114,12 +114,20 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_spreadMA = null;
+			_spreadStdDev = null;
+			_spread = 0;
+			_lastSecondPrice = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_spread = 0;
-			_lastSecondPrice = 0;
 
 			if (SecondSecurity == null)
 				throw new InvalidOperationException("Second security is not specified.");
@@ -237,4 +245,4 @@ namespace StockSharp.Samples.Strategies
 			_lastSecondPrice = candle.ClosePrice;
 		}
 	}
-}
+		}
