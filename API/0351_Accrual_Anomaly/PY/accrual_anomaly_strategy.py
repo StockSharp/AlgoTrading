@@ -4,10 +4,10 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class accrual_anomaly_strategy(Strategy):
@@ -16,7 +16,7 @@ class accrual_anomaly_strategy(Strategy):
     def __init__(self):
         super(accrual_anomaly_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to trade", "General")
 
         self._deciles = self.Param("Deciles", 10) \

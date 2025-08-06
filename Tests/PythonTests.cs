@@ -1357,4 +1357,11 @@ public class PythonTests
 	[TestMethod]
 	public Task CciPutCallRatioDivergenceStrategy()
 		=> RunStrategy("0350_CCI_Put_Call_Ratio_Divergence/PY/cci_put_call_ratio_divergence_strategy.py");
+
+	[TestMethod]
+	public Task AccrualAnomalyStrategy()
+		=> RunStrategy("0351_Accrual_Anomaly/PY/accrual_anomaly_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 }
