@@ -66,12 +66,13 @@ class parabolic_sar_reversal_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(parabolic_sar_reversal_strategy, self).OnReseted()
+        self._prev_is_sar_above_price = None
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(parabolic_sar_reversal_strategy, self).OnStarted(time)
-
-        # Initialize previous state
-        self._prev_is_sar_above_price = None
 
         # Create Parabolic SAR indicator
         parabolic_sar = ParabolicSar()

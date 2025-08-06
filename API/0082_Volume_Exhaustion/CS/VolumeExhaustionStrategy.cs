@@ -119,14 +119,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_ma = new SimpleMovingAverage { Length = MaPeriod };
+			_atr = new AverageTrueRange { Length = 14 };
+			_volumeAvg = new SimpleMovingAverage { Length = VolumePeriod };
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Create indicators
-			_ma = new SimpleMovingAverage { Length = MaPeriod };
-			_atr = new AverageTrueRange { Length = 14 };
-			_volumeAvg = new SimpleMovingAverage { Length = VolumePeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

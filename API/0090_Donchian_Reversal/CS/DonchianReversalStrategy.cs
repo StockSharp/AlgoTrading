@@ -75,6 +75,14 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_previousClose = 0;
+			_isFirstCandle = true;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -87,9 +95,6 @@ namespace StockSharp.Samples.Strategies
 				useMarketOrders: true
 			);
 
-			// Initialize state
-			_previousClose = 0;
-			_isFirstCandle = true;
 			
 			// Create Donchian Channel indicator
 			var donchian = new DonchianChannels { Length = Period };

@@ -92,17 +92,22 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevHmaValue = 0;
+			_prevPrevHmaValue = 0;
+			_atr = new AverageTrueRange { Length = 14 };
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Initialize previous values
-			_prevHmaValue = 0;
-			_prevPrevHmaValue = 0;
 			
 			// Create indicators
 			var hma = new HullMovingAverage { Length = HmaPeriod };
-			_atr = new AverageTrueRange { Length = 14 };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

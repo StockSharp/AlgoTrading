@@ -50,6 +50,10 @@ class heikin_ashi_reversal_strategy(Strategy):
     def StopLoss(self, value):
         self._stopLoss.Value = value
 
+    def OnReseted(self):
+        super(heikin_ashi_reversal_strategy, self).OnReseted()
+        self._prevIsBullish = None
+
     def OnStarted(self, time):
         super(heikin_ashi_reversal_strategy, self).OnStarted(time)
 
@@ -60,9 +64,6 @@ class heikin_ashi_reversal_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-        # Initialize previous value
-        self._prevIsBullish = None
-
         # Create subscription to candles
         subscription = self.SubscribeCandles(self.CandleType)
 

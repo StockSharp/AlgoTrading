@@ -81,6 +81,10 @@ class adx_weakening_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(adx_weakening_strategy, self).OnReseted()
+        self._prevAdxValue = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(adx_weakening_strategy, self).OnStarted(time)
@@ -92,9 +96,6 @@ class adx_weakening_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-        # Initialize previous ADX value
-        self._prevAdxValue = 0.0
-
         # Create indicators
         ma = SimpleMovingAverage()
         ma.Length = self.MaPeriod

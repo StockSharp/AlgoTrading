@@ -81,20 +81,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
-			// Initialize previous state
+			base.OnReseted();
 			_prevIsSupertrendAbovePrice = null;
 			_isFirstUpdate = true;
 			_prevHighest = 0;
 			_prevLowest = 0;
 			_prevSupertrend = 0;
 			_prevClose = 0;
-
-			// Create ATR indicator for Supertrend calculation
 			_atr = new AverageTrueRange { Length = Period };
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

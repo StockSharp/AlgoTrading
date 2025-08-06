@@ -89,6 +89,13 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevAdxValue = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -101,8 +108,6 @@ namespace StockSharp.Samples.Strategies
 				useMarketOrders: true
 			);
 
-			// Initialize previous ADX value
-			_prevAdxValue = 0;
 
 			// Create indicators
 			var ma = new SimpleMovingAverage { Length = MaPeriod };

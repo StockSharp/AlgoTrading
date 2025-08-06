@@ -59,6 +59,13 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevIsBullish = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -71,8 +78,6 @@ namespace StockSharp.Samples.Strategies
 				useMarketOrders: true
 			);
 
-			// Initialize previous value
-			_prevIsBullish = null;
 
 			// Create subscription to candles
 			var subscription = SubscribeCandles(CandleType);
