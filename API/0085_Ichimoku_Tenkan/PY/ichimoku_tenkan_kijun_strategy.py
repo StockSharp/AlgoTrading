@@ -94,16 +94,17 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
 
     def OnReseted(self):
         super(ichimoku_tenkan_kijun_strategy, self).OnReseted()
-        self._ichimoku = Ichimoku()
-        self._ichimoku.Tenkan.Length = self.tenkan_period
-        self._ichimoku.Kijun.Length = self.kijun_period
-        self._ichimoku.SenkouB.Length = self.senkou_span_b_period
         self._prev_tenkan = 0.0
         self._prev_kijun = 0.0
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(ichimoku_tenkan_kijun_strategy, self).OnStarted(time)
+
+        self._ichimoku = Ichimoku()
+        self._ichimoku.Tenkan.Length = self.tenkan_period
+        self._ichimoku.Kijun.Length = self.kijun_period
+        self._ichimoku.SenkouB.Length = self.senkou_span_b_period
 
         # Initialize Ichimoku indicator
         # Create subscription

@@ -50,7 +50,7 @@ class rsi_slope_breakout_strategy(Strategy):
         self._currentSlope = 0.0
         self._avgSlope = 0.0
         self._stdDevSlope = 0.0
-        self._slopes = None
+        self._slopes = []
         self._currentIndex = 0
         self._isInitialized = False
 
@@ -119,6 +119,7 @@ class rsi_slope_breakout_strategy(Strategy):
         self._rsi = RelativeStrengthIndex()
         self._rsi.Length = self.RsiPeriod
 
+        self._slopes = [0.0] * self.LookbackPeriod
 
         subscription = self.SubscribeCandles(self.CandleType)
         subscription.Bind(self._rsi, self.ProcessCandle).Start()

@@ -83,12 +83,13 @@ class supertrend_reversal_strategy(Strategy):
         self._prev_lowest = 0
         self._prev_supertrend = 0
         self._prev_close = 0
-        self._atr = AverageTrueRange()
-        self._atr.Length = self.period
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(supertrend_reversal_strategy, self).OnStarted(time)
+
+        self._atr = AverageTrueRange()
+        self._atr.Length = self.period
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
