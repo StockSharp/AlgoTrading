@@ -80,6 +80,7 @@ class three_bar_reversal_up_strategy(Strategy):
         """
         super(three_bar_reversal_up_strategy, self).OnReseted()
         self._lastThreeCandles.Clear()
+        self._lowestIndicator = None
 
     def OnStarted(self, time):
         """
@@ -88,9 +89,6 @@ class three_bar_reversal_up_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(three_bar_reversal_up_strategy, self).OnStarted(time)
-
-        # Clear candle queue
-        self._lastThreeCandles.Clear()
 
         # Create lowest indicator for downtrend identification
         self._lowestIndicator = Lowest()

@@ -85,9 +85,6 @@ class engulfing_bullish_strategy(Strategy):
         """
         super(engulfing_bullish_strategy, self).OnStarted(time)
 
-        self._previousCandle = None
-        self._consecutiveDownBars = 0
-
         # Subscribe to candles
         subscription = self.SubscribeCandles(self.CandleType)
 

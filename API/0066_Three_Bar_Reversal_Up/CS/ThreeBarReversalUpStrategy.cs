@@ -92,15 +92,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_lastThreeCandles.Clear();
+			_lowestIndicator = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Clear candle queue
-			_lastThreeCandles.Clear();
-
-			// Create lowest indicator for downtrend identification
-			_lowestIndicator = new Lowest { Length = DowntrendLength };
+// Create lowest indicator for downtrend identification
+_lowestIndicator = new Lowest { Length = DowntrendLength };
 
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);

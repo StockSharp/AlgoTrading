@@ -117,15 +117,6 @@ class cci_divergence_strategy(Strategy):
         """
         super(cci_divergence_strategy, self).OnStarted(time)
 
-        # Reset variables
-        self._previousPrice = None
-        self._previousCci = None
-        self._currentPrice = None
-        self._currentCci = None
-        self._barsSinceDivergence = 0
-        self._bullishDivergence = False
-        self._bearishDivergence = False
-
         # Create CCI indicator
         cci = CommodityChannelIndex()
         cci.Length = self.CciPeriod

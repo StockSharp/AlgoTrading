@@ -92,15 +92,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_lastThreeCandles.Clear();
+			_highestIndicator = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Clear candle queue
-			_lastThreeCandles.Clear();
-
-			// Create highest indicator for uptrend identification
-			_highestIndicator = new Highest { Length = UptrendLength };
+// Create highest indicator for uptrend identification
+_highestIndicator = new Highest { Length = UptrendLength };
 
 			// Subscribe to candles
 			var subscription = SubscribeCandles(CandleType);

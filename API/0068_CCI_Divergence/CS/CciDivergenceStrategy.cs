@@ -124,11 +124,10 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
-			// Reset variables
 			_previousPrice = null;
 			_previousCci = null;
 			_currentPrice = null;
@@ -136,8 +135,14 @@ namespace StockSharp.Samples.Strategies
 			_barsSinceDivergence = 0;
 			_bullishDivergence = false;
 			_bearishDivergence = false;
+		}
 
-			// Create CCI indicator
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
+// Create CCI indicator
 			var cci = new CommodityChannelIndex
 			{
 				Length = CciPeriod

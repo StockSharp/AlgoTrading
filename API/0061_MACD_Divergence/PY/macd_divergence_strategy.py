@@ -117,15 +117,6 @@ class macd_divergence_strategy(Strategy):
         """
         super(macd_divergence_strategy, self).OnStarted(time)
 
-        # Reset variables
-        self._previousPrice = None
-        self._previousMacd = None
-        self._currentPrice = None
-        self._currentMacd = None
-        self._barsSinceDivergence = 0
-        self._bullishDivergence = False
-        self._bearishDivergence = False
-
         # Create MACD indicator
         macd = MovingAverageConvergenceDivergenceSignal()
         macd.Macd.ShortMa.Length = self.FastMacdPeriod
