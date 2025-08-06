@@ -92,20 +92,20 @@ class ichimoku_tenkan_kijun_strategy(Strategy):
     def stop_loss_percent(self, value):
         self._stop_loss_percent.Value = value
 
+    def OnReseted(self):
+        super(ichimoku_tenkan_kijun_strategy, self).OnReseted()
+        self._ichimoku = Ichimoku()
+        self._ichimoku.Tenkan.Length = self.tenkan_period
+        self._ichimoku.Kijun.Length = self.kijun_period
+        self._ichimoku.SenkouB.Length = self.senkou_span_b_period
+        self._prev_tenkan = 0.0
+        self._prev_kijun = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(ichimoku_tenkan_kijun_strategy, self).OnStarted(time)
 
         # Initialize Ichimoku indicator
-        self._ichimoku = Ichimoku()
-        self._ichimoku.Tenkan.Length = self.tenkan_period
-        self._ichimoku.Kijun.Length = self.kijun_period
-        self._ichimoku.SenkouB.Length = self.senkou_span_b_period
-
-        # Initialize previous values
-        self._prev_tenkan = 0.0
-        self._prev_kijun = 0.0
-
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
 

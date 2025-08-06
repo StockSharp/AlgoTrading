@@ -59,6 +59,15 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			// Reset VWAP value
+			_prevVwap = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -71,8 +80,6 @@ namespace StockSharp.Samples.Strategies
 				useMarketOrders: true
 			);
 
-			// Initialize VWAP
-			_prevVwap = 0;
 
 			// Create subscription to candles
 			var subscription = SubscribeCandles(CandleType);

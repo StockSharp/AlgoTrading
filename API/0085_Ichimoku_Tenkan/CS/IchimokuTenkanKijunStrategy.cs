@@ -107,21 +107,24 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
-			// Initialize Ichimoku indicator
+			base.OnReseted();
 			_ichimoku = new Ichimoku
 			{
 				Tenkan = { Length = TenkanPeriod },
 				Kijun = { Length = KijunPeriod },
 				SenkouB = { Length = SenkouSpanBPeriod }
 			};
-
-			// Initialize previous values
 			_prevTenkan = 0;
 			_prevKijun = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

@@ -110,6 +110,11 @@ class atr_exhaustion_strategy(Strategy):
         """Return the security and candle type this strategy works with."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(atr_exhaustion_strategy, self).OnReseted()
+        self._atr_avg = SimpleMovingAverage()
+        self._atr_avg.Length = self.AtrAvgPeriod
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(atr_exhaustion_strategy, self).OnStarted(time)
@@ -124,8 +129,6 @@ class atr_exhaustion_strategy(Strategy):
         ma.Length = self.MaPeriod
         atr = AverageTrueRange()
         atr.Length = self.AtrPeriod
-        self._atr_avg = SimpleMovingAverage()
-        self._atr_avg.Length = self.AtrAvgPeriod
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

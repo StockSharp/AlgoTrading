@@ -46,6 +46,10 @@ class vwap_bounce_strategy(Strategy):
     def StopLoss(self, value):
         self._stopLossParam.Value = value
 
+    def OnReseted(self):
+        super(vwap_bounce_strategy, self).OnReseted()
+        self._prevVwap = 0.0
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
@@ -59,8 +63,6 @@ class vwap_bounce_strategy(Strategy):
             isStopTrailing=False,
             useMarketOrders=True
         )
-        # Initialize VWAP
-        self._prevVwap = 0.0
 
         # Create subscription to candles
         subscription = self.SubscribeCandles(self.CandleType)

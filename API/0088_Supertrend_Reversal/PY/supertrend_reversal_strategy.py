@@ -75,21 +75,20 @@ class supertrend_reversal_strategy(Strategy):
         """Return security and timeframe used by the strategy."""
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(supertrend_reversal_strategy, self).OnStarted(time)
-
-        # Initialize previous state
+    def OnReseted(self):
+        super(supertrend_reversal_strategy, self).OnReseted()
         self._prev_is_supertrend_above_price = None
         self._is_first_update = True
         self._prev_highest = 0
         self._prev_lowest = 0
         self._prev_supertrend = 0
         self._prev_close = 0
-
-        # Create ATR indicator for Supertrend calculation
         self._atr = AverageTrueRange()
         self._atr.Length = self.period
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(supertrend_reversal_strategy, self).OnStarted(time)
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
