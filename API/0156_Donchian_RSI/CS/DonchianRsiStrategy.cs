@@ -119,24 +119,30 @@ namespace StockSharp.Samples.Strategies
 				.SetDisplay("Candle Type", "Type of candles to use", "General");
 		}
 
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+				/// <inheritdoc />
+				public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return [(Security, CandleType)];
+				}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+				/// <inheritdoc />
+				protected override void OnReseted()
+				{
+						base.OnReseted();
 
-			_prevLowerBand = default;
-			_prevUpperBand = default;
-			_isFirstCalculation = true;
+						_prevLowerBand = default;
+						_prevUpperBand = default;
+						_isFirstCalculation = true;
+				}
 
-			// Create indicators
-			var donchian = new DonchianChannels { Length = DonchianPeriod };
-			var rsi = new RSI { Length = RsiPeriod };
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset time)
+				{
+						base.OnStarted(time);
+
+						// Create indicators
+						var donchian = new DonchianChannels { Length = DonchianPeriod };
+						var rsi = new RSI { Length = RsiPeriod };
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

@@ -100,25 +100,30 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return [(Security, CandleType)];
+				}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+				/// <inheritdoc />
+				protected override void OnReseted()
+				{
+						base.OnReseted();
 
-			// Create ADX indicator
-			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+						_averageVolume = 0;
+						_volumeCounter = 0;
+				}
 
-			// Reset volume tracking
-			_averageVolume = 0;
-			_volumeCounter = 0;
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset time)
+				{
+						base.OnStarted(time);
 
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
+						// Create ADX indicator
+						var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+
+						// Setup candle subscription
+						var subscription = SubscribeCandles(CandleType);
 			
 			// Bind ADX indicator to candles
 			subscription

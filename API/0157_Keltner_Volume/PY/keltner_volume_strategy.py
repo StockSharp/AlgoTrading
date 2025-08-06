@@ -129,11 +129,6 @@ class keltner_volume_strategy(Strategy):
         # Custom Keltner Channels calculation will be done in the processing method
         # as we need both EMA and ATR values together
 
-        # Reset volume tracking
-        self._averageVolume = 0
-        self._volumeCounter = 0
-        self._lastPrice = 0
-
         # Setup candle subscription
         subscription = self.SubscribeCandles(self.CandleType)
 

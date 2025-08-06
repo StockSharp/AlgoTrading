@@ -119,9 +119,6 @@ class hull_ma_rsi_strategy(Strategy):
         rsi = RelativeStrengthIndex()
         rsi.Length = self.rsi_period
 
-        # Reset previous HMA value
-        self._prev_hma_value = 0.0
-
         # Setup candle subscription
         subscription = self.SubscribeCandles(self.candle_type)
 

@@ -129,6 +129,11 @@ class parabolic_sar_stochastic_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(parabolic_sar_stochastic_strategy, self).OnReseted()
+        self._lastStochK = 50
+        self._isAboveSar = False
+
     def OnStarted(self, time):
         super(parabolic_sar_stochastic_strategy, self).OnStarted(time)
 
@@ -140,10 +145,6 @@ class parabolic_sar_stochastic_strategy(Strategy):
         stochastic = StochasticOscillator()
         stochastic.K.Length = self.StochK
         stochastic.D.Length = self.StochD
-
-        # Reset state
-        self._lastStochK = 50
-        self._isAboveSar = False
 
         # Setup candle subscription
         subscription = self.SubscribeCandles(self.CandleType)

@@ -141,36 +141,41 @@ namespace StockSharp.Samples.Strategies
 			_isAboveSar = false;
 		}
 
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+				/// <inheritdoc />
+				public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return [(Security, CandleType)];
+				}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+				/// <inheritdoc />
+				protected override void OnReseted()
+				{
+						base.OnReseted();
 
-			// Create indicators
-			var parabolicSar = new ParabolicSar
-			{
-				AccelerationStep = AccelerationFactor,
-				AccelerationMax = MaxAccelerationFactor
-			};
+						_lastStochK = 50;
+						_isAboveSar = false;
+				}
 
-			var stochastic = new StochasticOscillator
-			{
-				K = { Length = StochK },
-				D = { Length = StochD },
-			};
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset time)
+				{
+						base.OnStarted(time);
 
-			// Reset state
-			_lastStochK = 50;
-			_isAboveSar = false;
+						// Create indicators
+						var parabolicSar = new ParabolicSar
+						{
+								AccelerationStep = AccelerationFactor,
+								AccelerationMax = MaxAccelerationFactor
+						};
 
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
+						var stochastic = new StochasticOscillator
+						{
+								K = { Length = StochK },
+								D = { Length = StochD },
+						};
+
+						// Setup candle subscription
+						var subscription = SubscribeCandles(CandleType);
 			
 			// Bind indicators to candles
 			subscription

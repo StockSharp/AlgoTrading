@@ -101,10 +101,6 @@ class adx_volume_strategy(Strategy):
         adx = AverageDirectionalIndex()
         adx.Length = self.adx_period
 
-        # Reset volume tracking
-        self._average_volume = 0
-        self._volume_counter = 0
-
         # Setup candle subscription
         subscription = self.SubscribeCandles(self.candle_type)
 
