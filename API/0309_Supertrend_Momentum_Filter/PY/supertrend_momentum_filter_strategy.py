@@ -84,11 +84,12 @@ class supertrend_momentum_filter_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(supertrend_momentum_filter_strategy, self).OnReseted()
+        self._prev_momentum = 0.0
+
     def OnStarted(self, time):
         super(supertrend_momentum_filter_strategy, self).OnStarted(time)
-
-        # Initialize previous values
-        self._prev_momentum = 0
 
         # Create indicators
         supertrend = SuperTrend()

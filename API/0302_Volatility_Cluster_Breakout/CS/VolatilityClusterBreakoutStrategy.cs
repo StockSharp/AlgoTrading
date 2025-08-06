@@ -104,42 +104,49 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+\t\t/// <inheritdoc />
+\t\tprotected override void OnReseted()
+\t\t{
+\t\t\tbase.OnReseted();
 
-			// Create indicators
-			var sma = new SimpleMovingAverage { Length = PriceAvgPeriod };
-			var stdDev = new StandardDeviation { Length = PriceAvgPeriod };
-			var atr = new AverageTrueRange { Length = AtrPeriod };
-			_atrAvg = new SimpleMovingAverage { Length = AtrPeriod };
+\t\t\t_atrAvg = new SimpleMovingAverage { Length = AtrPeriod };
+\t\t}
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
-			
-			// Bind indicators to subscription
-			subscription
-				.Bind(sma, stdDev, atr, ProcessCandle)
-				.Start();
+\t\t/// <inheritdoc />
+\t\tprotected override void OnStarted(DateTimeOffset time)
+\t\t{
+\t\t\tbase.OnStarted(time);
 
-			// Enable position protection with dynamic stops
-			StartProtection(
-				takeProfit: new Unit(0), // We'll handle exits in the strategy logic
-				stopLoss: new Unit(0),   // We'll handle stops in the strategy logic  
-				useMarketOrders: true
-			);
+\t\t\t// Create indicators
+\t\t\tvar sma = new SimpleMovingAverage { Length = PriceAvgPeriod };
+\t\t\tvar stdDev = new StandardDeviation { Length = PriceAvgPeriod };
+\t\t\tvar atr = new AverageTrueRange { Length = AtrPeriod };
 
-			// Setup chart if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, sma);
-				DrawIndicator(area, atr);
-				DrawOwnTrades(area);
-			}
-		}
+\t\t\t// Create subscription
+\t\t\tvar subscription = SubscribeCandles(CandleType);
+
+\t\t\t// Bind indicators to subscription
+\t\t\tsubscription
+\t\t\t\t.Bind(sma, stdDev, atr, ProcessCandle)
+\t\t\t\t.Start();
+
+\t\t\t// Enable position protection with dynamic stops
+\t\t\tStartProtection(
+\t\t\t\ttakeProfit: new Unit(0), // We'll handle exits in the strategy logic
+\t\t\t\tstopLoss: new Unit(0),   // We'll handle stops in the strategy logic
+\t\t\t\tuseMarketOrders: true
+\t\t\t);
+
+\t\t\t// Setup chart if available
+\t\t\tvar area = CreateChartArea();
+\t\t\tif (area != null)
+\t\t\t{
+\t\t\t\tDrawCandles(area, subscription);
+\t\t\t\tDrawIndicator(area, sma);
+\t\t\t\tDrawIndicator(area, atr);
+\t\t\t\tDrawOwnTrades(area);
+\t\t\t}
+\t\t}
 
 		private void ProcessCandle(ICandleMessage candle, decimal smaValue, decimal stdDevValue, decimal atrValue)
 		{

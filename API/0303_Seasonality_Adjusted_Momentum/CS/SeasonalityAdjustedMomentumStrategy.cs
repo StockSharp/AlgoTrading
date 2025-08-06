@@ -110,6 +110,15 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_seasonalStrengthByMonth.Clear();
+			InitializeSeasonalityData();
+		}
+
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)

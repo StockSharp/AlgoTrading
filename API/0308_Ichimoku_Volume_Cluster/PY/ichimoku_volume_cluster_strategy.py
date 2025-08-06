@@ -110,6 +110,13 @@ class ichimoku_volume_cluster_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(ichimoku_volume_cluster_strategy, self).OnReseted()
+        self._volume_avg = SimpleMovingAverage()
+        self._volume_avg.Length = self.VolumeAvgPeriod
+        self._volume_std_dev = StandardDeviation()
+        self._volume_std_dev.Length = self.VolumeAvgPeriod
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(ichimoku_volume_cluster_strategy, self).OnStarted(time)
@@ -119,12 +126,6 @@ class ichimoku_volume_cluster_strategy(Strategy):
         ichimoku.Tenkan.Length = self.TenkanPeriod
         ichimoku.Kijun.Length = self.KijunPeriod
         ichimoku.SenkouB.Length = self.SenkouSpanBPeriod
-
-        # Create volume indicators
-        self._volume_avg = SimpleMovingAverage()
-        self._volume_avg.Length = self.VolumeAvgPeriod
-        self._volume_std_dev = StandardDeviation()
-        self._volume_std_dev.Length = self.VolumeAvgPeriod
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

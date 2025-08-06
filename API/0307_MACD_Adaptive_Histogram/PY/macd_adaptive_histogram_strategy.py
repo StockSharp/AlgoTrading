@@ -151,6 +151,13 @@ class macd_adaptive_histogram_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(macd_adaptive_histogram_strategy, self).OnReseted()
+        self._hist_avg = SimpleMovingAverage()
+        self._hist_avg.Length = self.HistogramAvgPeriod
+        self._hist_std_dev = StandardDeviation()
+        self._hist_std_dev.Length = self.HistogramAvgPeriod
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(macd_adaptive_histogram_strategy, self).OnStarted(time)
@@ -160,12 +167,6 @@ class macd_adaptive_histogram_strategy(Strategy):
         macd_line.Macd.ShortMa.Length = self.FastPeriod
         macd_line.Macd.LongMa.Length = self.SlowPeriod
         macd_line.SignalMa.Length = self.SignalPeriod
-
-        # Create indicators for the histogram statistics
-        self._hist_avg = SimpleMovingAverage()
-        self._hist_avg.Length = self.HistogramAvgPeriod
-        self._hist_std_dev = StandardDeviation()
-        self._hist_std_dev.Length = self.HistogramAvgPeriod
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

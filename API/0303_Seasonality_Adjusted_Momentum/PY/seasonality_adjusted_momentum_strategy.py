@@ -97,6 +97,11 @@ class seasonality_adjusted_momentum_strategy(Strategy):
         self._seasonal_strength_by_month[11] = 0.6  # November
         self._seasonal_strength_by_month[12] = 0.9  # December
 
+    def OnReseted(self):
+        super(seasonality_adjusted_momentum_strategy, self).OnReseted()
+        self._seasonal_strength_by_month.clear()
+        self.InitializeSeasonalityData()
+
     def OnStarted(self, time):
         super(seasonality_adjusted_momentum_strategy, self).OnStarted(time)
 

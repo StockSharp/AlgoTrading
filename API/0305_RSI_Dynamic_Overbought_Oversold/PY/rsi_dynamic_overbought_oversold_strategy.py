@@ -96,6 +96,13 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        super(rsi_dynamic_overbought_oversold_strategy, self).OnReseted()
+        self._rsiSma = SimpleMovingAverage()
+        self._rsiSma.Length = self.MovingAvgPeriod
+        self._rsiStdDev = StandardDeviation()
+        self._rsiStdDev.Length = self.MovingAvgPeriod
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(rsi_dynamic_overbought_oversold_strategy, self).OnStarted(time)
@@ -103,10 +110,6 @@ class rsi_dynamic_overbought_oversold_strategy(Strategy):
         # Create indicators
         rsi = RelativeStrengthIndex()
         rsi.Length = self.RsiPeriod
-        self._rsiSma = SimpleMovingAverage()
-        self._rsiSma.Length = self.MovingAvgPeriod
-        self._rsiStdDev = StandardDeviation()
-        self._rsiStdDev.Length = self.MovingAvgPeriod
         priceSma = SimpleMovingAverage()
         priceSma.Length = self.MovingAvgPeriod
 

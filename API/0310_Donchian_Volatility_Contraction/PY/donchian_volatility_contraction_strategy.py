@@ -105,13 +105,14 @@ class donchian_volatility_contraction_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(donchian_volatility_contraction_strategy, self).OnStarted(time)
-
-        # Initialize values
+    def OnReseted(self):
+        super(donchian_volatility_contraction_strategy, self).OnReseted()
         self._avg_dc_width = 0
         self._std_dev_dc_width = 0
         self._current_dc_width = 0
+
+    def OnStarted(self, time):
+        super(donchian_volatility_contraction_strategy, self).OnStarted(time)
 
         # Create indicators
         donchian_high = Highest()

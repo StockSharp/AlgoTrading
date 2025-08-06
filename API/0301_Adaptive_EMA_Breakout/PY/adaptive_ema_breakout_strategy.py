@@ -98,8 +98,8 @@ class adaptive_ema_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(adaptive_ema_breakout_strategy, self).OnReseted()
-        self._isFirstCandle = True
         self._prevAdaptiveEmaValue = 0.0
+        self._isFirstCandle = True
 
     def OnStarted(self, time):
         super(adaptive_ema_breakout_strategy, self).OnStarted(time)

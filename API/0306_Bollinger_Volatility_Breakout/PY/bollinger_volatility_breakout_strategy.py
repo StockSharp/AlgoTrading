@@ -108,6 +108,13 @@ class bollinger_volatility_breakout_strategy(Strategy):
         """Return security and timeframe used by the strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(bollinger_volatility_breakout_strategy, self).OnReseted()
+        self._atr_sma = SimpleMovingAverage()
+        self._atr_sma.Length = self.AtrPeriod
+        self._atr_std_dev = StandardDeviation()
+        self._atr_std_dev.Length = self.AtrPeriod
+
     def OnStarted(self, time):
         super(bollinger_volatility_breakout_strategy, self).OnStarted(time)
 
@@ -118,10 +125,6 @@ class bollinger_volatility_breakout_strategy(Strategy):
 
         atr = AverageTrueRange()
         atr.Length = self.AtrPeriod
-        self._atr_sma = SimpleMovingAverage()
-        self._atr_sma.Length = self.AtrPeriod
-        self._atr_std_dev = StandardDeviation()
-        self._atr_std_dev.Length = self.AtrPeriod
 
         # Create subscription
         subscription = self.SubscribeCandles(self.CandleType)

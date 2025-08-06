@@ -103,6 +103,11 @@ class volatility_cluster_breakout_strategy(Strategy):
         """Return security and timeframe used by the strategy."""
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(volatility_cluster_breakout_strategy, self).OnReseted()
+        self._atr_avg = SimpleMovingAverage()
+        self._atr_avg.Length = self.atr_period
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(volatility_cluster_breakout_strategy, self).OnStarted(time)
@@ -114,8 +119,6 @@ class volatility_cluster_breakout_strategy(Strategy):
         std_dev.Length = self.price_avg_period
         atr = AverageTrueRange()
         atr.Length = self.atr_period
-        self._atr_avg = SimpleMovingAverage()
-        self._atr_avg.Length = self.atr_period
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)
