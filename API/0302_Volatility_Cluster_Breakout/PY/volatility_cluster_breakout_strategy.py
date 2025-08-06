@@ -105,12 +105,13 @@ class volatility_cluster_breakout_strategy(Strategy):
 
     def OnReseted(self):
         super(volatility_cluster_breakout_strategy, self).OnReseted()
-        self._atr_avg = SimpleMovingAverage()
-        self._atr_avg.Length = self.atr_period
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(volatility_cluster_breakout_strategy, self).OnStarted(time)
+
+        self._atr_avg = SimpleMovingAverage()
+        self._atr_avg.Length = self.atr_period
 
         # Create indicators
         sma = SimpleMovingAverage()

@@ -94,17 +94,18 @@ class volume_exhaustion_strategy(Strategy):
 
     def OnReseted(self):
         super(volume_exhaustion_strategy, self).OnReseted()
-        self._ma = SimpleMovingAverage()
-        self._ma.Length = self.MAPeriod
-        self._atr = AverageTrueRange()
-        self._atr.Length = 14
-        self._volumeAvg = SimpleMovingAverage()
 
     def OnStarted(self, time):
         """
         Called when the strategy starts.
         """
         super(volume_exhaustion_strategy, self).OnStarted(time)
+
+        self._ma = SimpleMovingAverage()
+        self._ma.Length = self.MAPeriod
+        self._atr = AverageTrueRange()
+        self._atr.Length = 14
+        self._volumeAvg = SimpleMovingAverage()
 
 
         # Create subscription
