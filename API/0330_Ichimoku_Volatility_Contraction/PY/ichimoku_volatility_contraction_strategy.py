@@ -115,14 +115,15 @@ class ichimoku_volatility_contraction_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        """Initialize strategy."""
-        super(ichimoku_volatility_contraction_strategy, self).OnStarted(time)
-
-        # Initialize values
+    def OnReseted(self):
+        super(ichimoku_volatility_contraction_strategy, self).OnReseted()
         self._avg_atr = 0
         self._atr_std_dev = 0
         self._processed_candles = 0
+
+    def OnStarted(self, time):
+        """Initialize strategy."""
+        super(ichimoku_volatility_contraction_strategy, self).OnStarted(time)
 
         # Create Ichimoku indicator
         ichimoku = Ichimoku()

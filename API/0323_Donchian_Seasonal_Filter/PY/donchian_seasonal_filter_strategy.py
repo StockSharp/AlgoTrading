@@ -110,15 +110,17 @@ class donchian_seasonal_filter_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(donchian_seasonal_filter_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(donchian_seasonal_filter_strategy, self).OnReseted()
         self._is_long_position = False
         self._is_short_position = False
         self._upper_band = 0.0
         self._middle_band = 0.0
         self._lower_band = 0.0
         self._seasonal_strength = 0.0
+
+    def OnStarted(self, time):
+        super(donchian_seasonal_filter_strategy, self).OnStarted(time)
 
         # Create Donchian Channel indicator
         self._donchian = DonchianChannels()

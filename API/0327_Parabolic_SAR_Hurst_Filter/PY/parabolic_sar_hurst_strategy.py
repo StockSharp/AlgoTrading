@@ -85,12 +85,13 @@ class parabolic_sar_hurst_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        super(parabolic_sar_hurst_strategy, self).OnStarted(time)
-
-        # Initialize values
+    def OnReseted(self):
+        super(parabolic_sar_hurst_strategy, self).OnReseted()
         self._prev_sar_value = 0
         self._hurst_value = 0.5  # Default value (random walk)
+
+    def OnStarted(self, time):
+        super(parabolic_sar_hurst_strategy, self).OnStarted(time)
 
         # Create indicators
         parabolic_sar = ParabolicSar()

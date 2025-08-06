@@ -92,13 +92,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevSarValue = 0;
+			_hurstValue = 0.5m;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Initialize values
-			_prevSarValue = 0;
-			_hurstValue = 0.5m; // Default value (random walk)
 
 			// Create indicators
 			var parabolicSar = new ParabolicSar

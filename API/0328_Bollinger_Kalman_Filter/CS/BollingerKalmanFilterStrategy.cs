@@ -19,6 +19,10 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _kalmanQ; // Process noise
 		private readonly StrategyParam<decimal> _kalmanR; // Measurement noise
 		private readonly StrategyParam<DataType> _candleType;
+		private decimal _upperBand;
+		private decimal _lowerBand;
+		private decimal _midBand;
+		private decimal _kalmanValue;
 
 		/// <summary>
 		/// Bollinger Bands length.
@@ -105,6 +109,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_upperBand = 0;
+			_lowerBand = 0;
+			_midBand = 0;
+			_kalmanValue = 0;
+		}
+
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -170,6 +186,10 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			decimal kalmanFilterValue = kalmanValue.ToDecimal();
+			_upperBand = upperBand;
+			_lowerBand = lowerBand;
+			_midBand = midBand;
+			_kalmanValue = kalmanFilterValue;
 			
 			// Log the values
 			LogInfo($"Price: {candle.ClosePrice}, Kalman: {kalmanFilterValue}, BB middle: {midBand}, BB upper: {upperBand}, BB lower: {lowerBand}");

@@ -48,6 +48,12 @@ class bollinger_kalman_filter_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        # Internal state variables
+        self._upper_band = 0.0
+        self._lower_band = 0.0
+        self._mid_band = 0.0
+        self._kalman_value = 0.0
+
     @property
     def BollingerLength(self):
         """Bollinger Bands length."""
@@ -95,6 +101,13 @@ class bollinger_kalman_filter_strategy(Strategy):
 
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
+
+    def OnReseted(self):
+        super(bollinger_kalman_filter_strategy, self).OnReseted()
+        self._upper_band = 0.0
+        self._lower_band = 0.0
+        self._mid_band = 0.0
+        self._kalman_value = 0.0
 
     def OnStarted(self, time):
         super(bollinger_kalman_filter_strategy, self).OnStarted(time)
@@ -151,6 +164,12 @@ class bollinger_kalman_filter_strategy(Strategy):
         mid_band = float(mid_band)
 
         kalman_filter_value = float(kalman_value)
+
+        # Save latest indicator values
+        self._upper_band = upper_band
+        self._lower_band = lower_band
+        self._mid_band = mid_band
+        self._kalman_value = kalman_filter_value
 
         # Log the values
         self.LogInfo(

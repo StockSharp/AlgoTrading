@@ -91,6 +91,9 @@ class vwap_adx_trend_strategy(Strategy):
         self._adx_value = 0.0
         self._plus_di_value = 0.0
         self._minus_di_value = 0.0
+        self._vwap = None
+        self._adx = None
+        self._di = None
 
     def OnStarted(self, time):
         super(vwap_adx_trend_strategy, self).OnStarted(time)

@@ -149,6 +149,8 @@ namespace StockSharp.Samples.Strategies
 			_atrValue = 0;
 			_upperBand = 0;
 			_lowerBand = 0;
+			_ema = null;
+			_atr = null;
 		}
 
 		protected override void OnStarted(DateTimeOffset time)
