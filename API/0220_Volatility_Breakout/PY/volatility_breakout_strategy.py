@@ -72,6 +72,13 @@ class volatility_breakout_strategy(Strategy):
         """See base class for details."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(volatility_breakout_strategy, self).OnReseted()
+        self._sma = None
+        self._atr = None
+        self._prev_sma = 0.0
+        self._prev_atr = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(volatility_breakout_strategy, self).OnStarted(time)
@@ -81,10 +88,6 @@ class volatility_breakout_strategy(Strategy):
         self._sma.Length = self.Period
         self._atr = AverageTrueRange()
         self._atr.Length = self.Period
-
-        # Reset state
-        self._prev_sma = 0.0
-        self._prev_atr = 0.0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

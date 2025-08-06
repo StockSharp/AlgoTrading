@@ -108,14 +108,13 @@ class pairs_trading_strategy(Strategy):
 
     def OnReseted(self):
         super(pairs_trading_strategy, self).OnReseted()
+        self._spread_ma = None
+        self._spread_std_dev = None
         self._spread = 0
         self._last_second_price = 0
 
     def OnStarted(self, time):
         super(pairs_trading_strategy, self).OnStarted(time)
-
-        self._spread = 0
-        self._last_second_price = 0
 
         if self.second_security is None:
             raise Exception("Second security is not specified.")

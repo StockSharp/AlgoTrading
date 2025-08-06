@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Strategy based on RSI and Donchian Channel indicators.
 	/// Enters long when RSI is below 30 (oversold) and price breaks above Donchian high.
@@ -101,21 +101,30 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
+			base.OnReseted();
 
+			_rsi = null;
+			_highestHigh = null;
+			_lowestLow = null;
 			_previousRsi = 0;
 			_donchianHigh = 0;
 			_donchianLow = 0;
 			_donchianMiddle = 0;
 			_currentRsi = 0;
+		}
 
-			// Initialize indicators
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
+// Initialize indicators
 			_rsi = new RelativeStrengthIndex
-			{
-				Length = RsiPeriod
-			};
+		{
+Length = RsiPeriod
+		};
 			
 			_highestHigh = new Highest
 			{
@@ -227,4 +236,4 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 	}
-}
+		}

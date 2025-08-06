@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Strategy that trades based on Z-Score (normalized price deviation from the mean).
 	/// Enters long when Z-Score is below a negative threshold (price significantly below mean).
@@ -96,13 +96,21 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_ma = null;
+			_stdDev = null;
+			_lastZScore = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_lastZScore = default;
-
-			// Initialize indicators
+// Initialize indicators
 			_ma = new() { Length = LookbackPeriod };
 			_stdDev = new() { Length = LookbackPeriod };
 			
@@ -187,4 +195,4 @@ namespace StockSharp.Samples.Strategies
 			_lastZScore = zScore;
 		}
 	}
-}
+		}

@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Strategy based on Williams %R and Ichimoku indicators.
 	/// Enters long when Williams %R is below -80 (oversold) and price is above Ichimoku Cloud with Tenkan-sen > Kijun-sen.
@@ -111,11 +111,19 @@ namespace StockSharp.Samples.Strategies
 		}
 		
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_williamsR = null;
+			_ichimoku = null;
+			_lastKijun = null;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_lastKijun = null;
 
 			// Initialize indicators
 			_williamsR = new WilliamsR
@@ -230,4 +238,4 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 	}
-}
+		}

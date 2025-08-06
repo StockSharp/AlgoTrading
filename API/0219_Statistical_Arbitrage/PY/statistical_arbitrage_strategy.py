@@ -91,6 +91,8 @@ class statistical_arbitrage_strategy(Strategy):
     def OnReseted(self):
         """Resets internal state when strategy is reset."""
         super(statistical_arbitrage_strategy, self).OnReseted()
+        self._first_ma = None
+        self._second_ma = None
         self._last_first_price = 0
         self._last_second_price = 0
         self._entry_spread = 0
@@ -103,11 +105,6 @@ class statistical_arbitrage_strategy(Strategy):
         :param time: The time when the strategy started.
         """
         super(statistical_arbitrage_strategy, self).OnStarted(time)
-
-        self._last_first_price = 0
-        self._last_second_price = 0
-        self._entry_spread = 0
-        self._second_ma_value = 0
 
         if self.SecondSecurity is None:
             raise Exception("Second security is not specified.")

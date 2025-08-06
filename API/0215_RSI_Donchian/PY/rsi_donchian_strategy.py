@@ -93,15 +93,20 @@ class rsi_donchian_strategy(Strategy):
         """Return the security and candle type this strategy works with."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(rsi_donchian_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(rsi_donchian_strategy, self).OnReseted()
+        self._rsi = None
+        self._highest_high = None
+        self._lowest_low = None
         self._previous_rsi = 0
         self._donchian_high = 0
         self._donchian_low = 0
         self._donchian_middle = 0
         self._current_rsi = 0
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(rsi_donchian_strategy, self).OnStarted(time)
 
         # Initialize indicators
         self._rsi = RelativeStrengthIndex()

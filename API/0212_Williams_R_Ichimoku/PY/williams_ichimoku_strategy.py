@@ -106,10 +106,14 @@ class williams_ichimoku_strategy(Strategy):
         """!! REQUIRED !! Returns securities for strategy."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(williams_ichimoku_strategy, self).OnReseted()
+        self._williams_r = None
+        self._ichimoku = None
+        self._last_kijun = None
+
     def OnStarted(self, time):
         super(williams_ichimoku_strategy, self).OnStarted(time)
-
-        self._last_kijun = None
 
         # Initialize indicators
         self._williams_r = WilliamsR()

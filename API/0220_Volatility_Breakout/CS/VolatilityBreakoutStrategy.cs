@@ -7,7 +7,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies
-{
+		{
 	/// <summary>
 	/// Volatility Breakout strategy. Enters trades when price breaks out from average price with volatility threshold.
 	/// </summary>
@@ -78,17 +78,24 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_sma = null;
+			_atr = null;
+			_prevSma = 0;
+			_prevAtr = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			// Create indicators
+// Create indicators
 			_sma = new SimpleMovingAverage { Length = Period };
 			_atr = new AverageTrueRange { Length = Period };
-			
-			// Reset state
-			_prevSma = 0;
-			_prevAtr = 0;
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);
@@ -153,4 +160,4 @@ namespace StockSharp.Samples.Strategies
 			_prevAtr = currentAtr;
 		}
 	}
-}
+		}

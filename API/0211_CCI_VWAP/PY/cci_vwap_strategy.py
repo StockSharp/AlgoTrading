@@ -69,6 +69,7 @@ class cci_vwap_strategy(Strategy):
 
     def OnReseted(self):
         super(cci_vwap_strategy, self).OnReseted()
+        self._cci = None
         self._current_vwap = 0.0
 
     def OnStarted(self, time):

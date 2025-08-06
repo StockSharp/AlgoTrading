@@ -86,6 +86,11 @@ class mean_reversion_strategy(Strategy):
         """See base class for details."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(mean_reversion_strategy, self).OnReseted()
+        self._ma = None
+        self._stdDev = None
+
     def OnStarted(self, time):
         super(mean_reversion_strategy, self).OnStarted(time)
 
