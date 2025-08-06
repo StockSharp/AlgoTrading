@@ -18,6 +18,9 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _volumeAvgPeriod;
 		private readonly StrategyParam<decimal> _volumeThresholdFactor;
 		private readonly StrategyParam<DataType> _candleType;
+		private AverageDirectionalIndex _adx;
+		private SimpleMovingAverage _volumeSma;
+		private StandardDeviation _volumeStdDev;
 
 		/// <summary>
 		/// ADX period parameter.
@@ -104,20 +107,30 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_adx?.Reset();
+			_volumeSma?.Reset();
+			_volumeStdDev?.Reset();
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
 			// Create indicators
-			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-			var volumeSma = new SimpleMovingAverage { Length = VolumeAvgPeriod };
-			var volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
+			_adx = new AverageDirectionalIndex { Length = AdxPeriod };
+			_volumeSma = new SimpleMovingAverage { Length = VolumeAvgPeriod };
+			_volumeStdDev = new StandardDeviation { Length = VolumeAvgPeriod };
 
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.BindEx(adx, (candle, adxValue) =>
+				.BindEx(_adx, (candle, adxValue) =>
 				{
 					var adxTyped = (AverageDirectionalIndexValue)adxValue;
 
@@ -130,8 +143,8 @@ namespace StockSharp.Samples.Strategies
 						return;
 
 					// Process volume indicators
-					var smaVal = volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-					var stdDevVal = volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					var smaVal = _volumeSma.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					var stdDevVal = _volumeStdDev.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(
@@ -151,7 +164,7 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				DrawIndicator(area, adx);
+				DrawIndicator(area, _adx);
 				DrawOwnTrades(area);
 			}
 

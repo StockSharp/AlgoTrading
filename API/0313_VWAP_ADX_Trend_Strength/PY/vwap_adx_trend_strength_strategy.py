@@ -36,6 +36,10 @@ class vwap_adx_trend_strength_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        # Internal indicators
+        self._adx = AverageDirectionalIndex()
+        self._vwap = VolumeWeightedMovingAverage()
+
     @property
     def AdxPeriod(self):
         return self._adx_period.Value
@@ -63,25 +67,28 @@ class vwap_adx_trend_strength_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(vwap_adx_trend_strength_strategy, self).OnReseted()
+        self._adx.Reset()
+        self._vwap.Reset()
+
     def OnStarted(self, time):
         super(vwap_adx_trend_strength_strategy, self).OnStarted(time)
 
         # Create indicators
-        adx = AverageDirectionalIndex()
-        adx.Length = self.AdxPeriod
-
-        vwap = VolumeWeightedMovingAverage()
+        self._adx.Length = self.AdxPeriod
+        self._vwap.Reset()
 
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
 
-        subscription.BindEx(adx, vwap, self.ProcessCandle).Start()
+        subscription.BindEx(self._adx, self._vwap, self.ProcessCandle).Start()
 
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adx)
+            self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
 
         # Setup position protection

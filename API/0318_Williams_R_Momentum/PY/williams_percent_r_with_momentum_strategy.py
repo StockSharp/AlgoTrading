@@ -48,6 +48,10 @@ class williams_percent_r_with_momentum_strategy(Strategy):
         self._candleType = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._williams_r = None
+        self._momentum = None
+        self._momentum_sma = None
+
     @property
     def WilliamsRPeriod(self):
         """Williams %R period parameter."""
@@ -98,35 +102,45 @@ class williams_percent_r_with_momentum_strategy(Strategy):
             (self.Security, self.CandleType)
         ]
 
+    def OnReseted(self):
+        super(williams_percent_r_with_momentum_strategy, self).OnReseted()
+
+        if self._williams_r is not None:
+            self._williams_r.Reset()
+        if self._momentum is not None:
+            self._momentum.Reset()
+        if self._momentum_sma is not None:
+            self._momentum_sma.Reset()
+
     def OnStarted(self, time):
         super(williams_percent_r_with_momentum_strategy, self).OnStarted(time)
 
         # Create indicators
-        williamsR = WilliamsR()
-        williamsR.Length = self.WilliamsRPeriod
-        momentum = Momentum()
-        momentum.Length = self.MomentumPeriod
-        momentumSma = SimpleMovingAverage()
-        momentumSma.Length = self.MomentumPeriod
+        self._williams_r = WilliamsR()
+        self._williams_r.Length = self.WilliamsRPeriod
+        self._momentum = Momentum()
+        self._momentum.Length = self.MomentumPeriod
+        self._momentum_sma = SimpleMovingAverage()
+        self._momentum_sma.Length = self.MomentumPeriod
 
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
 
         def on_process(candle, williamsRValue, momentumValue):
             # Calculate momentum average
-            momentumAvg = float(process_float(momentumSma, momentumValue, candle.ServerTime, candle.State == CandleStates.Finished))
+            momentumAvg = float(process_float(self._momentum_sma, momentumValue, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Process the strategy logic
             self.ProcessStrategy(candle, williamsRValue, momentumValue, momentumAvg)
 
-        subscription.Bind(williamsR, momentum, on_process).Start()
+        subscription.Bind(self._williams_r, self._momentum, on_process).Start()
 
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, williamsR)
-            self.DrawIndicator(area, momentum)
+            self.DrawIndicator(area, self._williams_r)
+            self.DrawIndicator(area, self._momentum)
             self.DrawOwnTrades(area)
 
         # Setup position protection

@@ -16,6 +16,8 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<int> _adxPeriod;
 		private readonly StrategyParam<decimal> _adxThreshold;
 		private readonly StrategyParam<DataType> _candleType;
+		private AverageDirectionalIndex _adx;
+		private VolumeWeightedMovingAverage _vwap;
 
 		/// <summary>
 		/// ADX period parameter.
@@ -71,21 +73,28 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_adx?.Reset();
+			_vwap?.Reset();
+		}
+
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
 			// Create indicators
-			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-
-			var vwap = new VolumeWeightedMovingAverage();
+			_adx = new AverageDirectionalIndex { Length = AdxPeriod };
+			_vwap = new VolumeWeightedMovingAverage();
 
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.BindEx(adx, vwap, ProcessCandle)
+				.BindEx(_adx, _vwap, ProcessCandle)
 				.Start();
 
 			// Setup chart if available
@@ -93,7 +102,7 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				DrawIndicator(area, adx);
+				DrawIndicator(area, _adx);
 				DrawOwnTrades(area);
 			}
 

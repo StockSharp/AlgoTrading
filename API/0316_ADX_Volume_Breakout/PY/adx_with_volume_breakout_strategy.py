@@ -48,6 +48,10 @@ class adx_with_volume_breakout_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
+        self._adx = None
+        self._volume_sma = None
+        self._volume_std_dev = None
+
     @property
     def AdxPeriod(self):
         return self._adx_period.Value
@@ -91,13 +95,23 @@ class adx_with_volume_breakout_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(adx_with_volume_breakout_strategy, self).OnReseted()
+
+        if self._adx is not None:
+            self._adx.Reset()
+        if self._volume_sma is not None:
+            self._volume_sma.Reset()
+        if self._volume_std_dev is not None:
+            self._volume_std_dev.Reset()
+
     def OnStarted(self, time):
         super(adx_with_volume_breakout_strategy, self).OnStarted(time)
 
         # Create indicators
-        adx = AverageDirectionalIndex(); adx.Length = self.AdxPeriod
-        volume_sma = SimpleMovingAverage(); volume_sma.Length = self.VolumeAvgPeriod
-        volume_std_dev = StandardDeviation(); volume_std_dev.Length = self.VolumeAvgPeriod
+        self._adx = AverageDirectionalIndex(); self._adx.Length = self.AdxPeriod
+        self._volume_sma = SimpleMovingAverage(); self._volume_sma.Length = self.VolumeAvgPeriod
+        self._volume_std_dev = StandardDeviation(); self._volume_std_dev.Length = self.VolumeAvgPeriod
 
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
@@ -113,8 +127,8 @@ class adx_with_volume_breakout_strategy(Strategy):
             minus_di = dx.Minus
 
             # Process volume indicators
-            sma_val = float(process_float(volume_sma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
-            std_dev_val = float(process_float(volume_std_dev, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+            sma_val = float(process_float(self._volume_sma, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
+            std_dev_val = float(process_float(self._volume_std_dev, candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished))
 
             # Process the strategy logic
             self.ProcessStrategy(
@@ -127,13 +141,13 @@ class adx_with_volume_breakout_strategy(Strategy):
                 std_dev_val
             )
 
-        subscription.BindEx(adx, process).Start()
+        subscription.BindEx(self._adx, process).Start()
 
         # Setup chart if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, adx)
+            self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
 
         # Setup position protection

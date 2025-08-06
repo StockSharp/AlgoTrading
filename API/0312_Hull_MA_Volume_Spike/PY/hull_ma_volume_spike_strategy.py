@@ -92,10 +92,6 @@ class hull_ma_volume_spike_strategy(Strategy):
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(hull_ma_volume_spike_strategy, self).OnStarted(time)
-
-        # Initialize previous values
-        self._prev_hma_value = 0.0
-
         # Create indicators
         hma = HullMovingAverage()
         hma.Length = self.hma_period

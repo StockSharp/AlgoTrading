@@ -108,13 +108,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevRsi = 50;
+			_prevPrice = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Initialize previous values
-			_prevRsi = 50;
-			_prevPrice = 0;
 
 			// Create indicators
 			var ema = new ExponentialMovingAverage { Length = EmaPeriod };
@@ -123,7 +128,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
 				.Bind(ema, atr, rsi, ProcessCandle)
 				.Start();
