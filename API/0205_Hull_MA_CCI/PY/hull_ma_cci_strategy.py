@@ -95,11 +95,12 @@ class hull_ma_cci_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
-    def OnStarted(self, time):
-        super(hull_ma_cci_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(hull_ma_cci_strategy, self).OnReseted()
         self._previous_hull_value = 0.0
 
+    def OnStarted(self, time):
+        super(hull_ma_cci_strategy, self).OnStarted(time)
         # Initialize indicators
         hull_ma = HullMovingAverage()
         hull_ma.Length = self.hull_period

@@ -15,9 +15,12 @@ namespace StockSharp.Samples.Strategies
 	{
 		private readonly StrategyParam<int> _volumeAvgPeriod;
 		private readonly StrategyParam<int> _supertrendPeriod;
-		private readonly StrategyParam<decimal> _supertrendMultiplier;
-		private readonly StrategyParam<DataType> _candleType;
-		private readonly StrategyParam<decimal> _stopLossPercent;
+			private readonly StrategyParam<decimal> _supertrendMultiplier;
+			private readonly StrategyParam<DataType> _candleType;
+			private readonly StrategyParam<decimal> _stopLossPercent;
+
+			private decimal _supertrendValue;
+			private int _supertrendDirection;
 
 		/// <summary>
 		/// Volume average period
@@ -95,15 +98,24 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+			{
+					return [(Security, CandleType)];
+			}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
 		{
-			return [(Security, CandleType)];
+			base.OnReseted();
+
+			_supertrendValue = default;
+			_supertrendDirection = default;
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
 
 			// Initialize indicators
 			var volumeMA = new SimpleMovingAverage { Length = VolumeAvgPeriod };
@@ -114,16 +126,12 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
 			
-			// Current Supertrend state variables
-			var supertrendValue = 0m;
-			var supertrendDirection = 0; // 1 for up (bullish), -1 for down (bearish)
-			
-			// Bind indicators to handle each candle
-			subscription
-				.Bind(atr, (candle, atrValue) =>
-				{
-					// Calculate volume average
-					var volumeValue = volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					// Bind indicators to handle each candle
+					subscription
+							.Bind(atr, (candle, atrValue) =>
+							{
+									// Calculate volume average
+									var volumeValue = volumeMA.Process(candle.TotalVolume, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					// Calculate Supertrend
 					if (!atr.IsFormed)
@@ -141,45 +149,45 @@ namespace StockSharp.Samples.Strategies
 					var lowerBand = ((highPrice + lowPrice) / 2) - atrAmount;
 					
 					// Initialize Supertrend
-					if (supertrendValue == 0 && supertrendDirection == 0)
-					{
-						supertrendValue = closePrice;
-						supertrendDirection = 1;
-					}
+									if (_supertrendValue == 0 && _supertrendDirection == 0)
+									{
+			_supertrendValue = closePrice;
+			_supertrendDirection = 1;
+									}
 					
 					// Update Supertrend
-					if (supertrendDirection == 1) // Previous trend was up
-					{
-						// Update lower band only - trailing
-						supertrendValue = Math.Max(lowerBand, supertrendValue);
-						
-						// Check for trend reversal
-						if (closePrice < supertrendValue)
-						{
-							supertrendDirection = -1;
-							supertrendValue = upperBand;
-						}
-					}
-					else // Previous trend was down
-					{
-						// Update upper band only - trailing
-						supertrendValue = Math.Min(upperBand, supertrendValue);
-						
-						// Check for trend reversal
-						if (closePrice > supertrendValue)
-						{
-							supertrendDirection = 1;
-							supertrendValue = lowerBand;
-						}
-					}
+									if (_supertrendDirection == 1) // Previous trend was up
+									{
+											// Update lower band only - trailing
+			_supertrendValue = Math.Max(lowerBand, _supertrendValue);
+
+											// Check for trend reversal
+											if (closePrice < _supertrendValue)
+											{
+			_supertrendDirection = -1;
+			_supertrendValue = upperBand;
+											}
+									}
+									else // Previous trend was down
+									{
+											// Update upper band only - trailing
+			_supertrendValue = Math.Min(upperBand, _supertrendValue);
+
+											// Check for trend reversal
+											if (closePrice > _supertrendValue)
+											{
+			_supertrendDirection = 1;
+			_supertrendValue = lowerBand;
+											}
+									}
 					
 					// Current volume
 					var currentVolume = candle.TotalVolume;
 					
 					// Process trading signals
-					ProcessSignals(candle, currentVolume, volumeValue, supertrendValue, supertrendDirection);
-				})
-				.Start();
+									ProcessSignals(candle, currentVolume, volumeValue, _supertrendValue, _supertrendDirection);
+							})
+							.Start();
 
 			// Enable position protection
 			StartProtection(

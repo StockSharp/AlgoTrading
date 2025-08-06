@@ -66,8 +66,8 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <summary>
-		 /// Multiplier for Donchian Channel border sensitivity (in percent, e.g. 0.1 for 0.1%)
-		 /// </summary>
+		/// Multiplier for Donchian Channel border sensitivity (in percent, e.g. 0.1 for 0.1%)
+		/// </summary>
 		public decimal Multiplier
 		{
 			get => _multiplier.Value;
@@ -109,15 +109,21 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+			public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+			{
+					return [(Security, CandleType)];
+			}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
 		{
-			return [(Security, CandleType)];
+			base.OnReseted();
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+			protected override void OnStarted(DateTimeOffset time)
+			{
+					base.OnStarted(time);
 
 			// Initialize indicators
 			var adx = new AverageDirectionalIndex { Length = AdxPeriod };

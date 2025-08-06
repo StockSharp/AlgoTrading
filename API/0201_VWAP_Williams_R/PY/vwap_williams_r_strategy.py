@@ -66,12 +66,13 @@ class vwap_williams_r_strategy(Strategy):
         """!! REQUIRED!! Returns securities this strategy works with."""
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(vwap_williams_r_strategy, self).OnReseted()
+        self._previous_williams_r = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(vwap_williams_r_strategy, self).OnStarted(time)
-
-        self._previous_williams_r = 0.0
-
         # Initialize indicators
         vwap = VolumeWeightedMovingAverage()
         williams_r = WilliamsR()

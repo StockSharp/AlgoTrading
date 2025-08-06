@@ -138,6 +138,9 @@ class macd_bollinger_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(macd_bollinger_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         super(macd_bollinger_strategy, self).OnStarted(time)
 

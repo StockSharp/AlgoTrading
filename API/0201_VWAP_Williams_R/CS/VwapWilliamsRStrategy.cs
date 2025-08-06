@@ -73,12 +73,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+		
+			_previousWilliamsR = default;
+		}
+		
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			_previousWilliamsR = default;
-
+		
 			// Initialize indicators
 			var vwap = new VolumeWeightedMovingAverage();
 			var williamsR = new WilliamsR { Length = WilliamsRPeriod };

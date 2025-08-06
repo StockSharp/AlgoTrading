@@ -88,6 +88,9 @@ class keltner_williams_r_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(keltner_williams_r_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         super(keltner_williams_r_strategy, self).OnStarted(time)
 

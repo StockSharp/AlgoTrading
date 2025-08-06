@@ -76,6 +76,9 @@ class donchian_cci_strategy(Strategy):
         """Overrides base to return working securities"""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(donchian_cci_strategy, self).OnReseted()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.
