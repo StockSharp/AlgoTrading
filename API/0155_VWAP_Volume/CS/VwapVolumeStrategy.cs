@@ -61,29 +61,31 @@ namespace StockSharp.Samples.Strategies
 		/// <summary>
 		/// Initialize strategy.
 		/// </summary>
-		public VwapVolumeStrategy()
-		{
-			_volumePeriod = Param(nameof(VolumePeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 50, 10);
+				public VwapVolumeStrategy()
+				{
+						_volumePeriod = Param(nameof(VolumePeriod), 20)
+								.SetGreaterThanZero()
+								.SetDisplay("Volume MA Period", "Period for volume moving average", "Indicators")
+								.SetCanOptimize(true)
+								.SetOptimize(10, 50, 10);
 
-			_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume Threshold", "Multiplier for average volume to confirm signal", "Trading Levels")
-				.SetCanOptimize(true)
-				.SetOptimize(1.2m, 2.0m, 0.2m);
+						_volumeThreshold = Param(nameof(VolumeThreshold), 1.5m)
+								.SetGreaterThanZero()
+								.SetDisplay("Volume Threshold", "Multiplier for average volume to confirm signal", "Trading Levels")
+								.SetCanOptimize(true)
+								.SetOptimize(1.2m, 2.0m, 0.2m);
 
-			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetGreaterThanZero()
-				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-				.SetCanOptimize(true)
-				.SetOptimize(1.0m, 3.0m, 0.5m);
+						_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+								.SetGreaterThanZero()
+								.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+								.SetCanOptimize(true)
+								.SetOptimize(1.0m, 3.0m, 0.5m);
 
-			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
-		}
+						_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+								.SetDisplay("Candle Type", "Type of candles to use", "General");
+
+						_volumeMA = new SimpleMovingAverage { Length = VolumePeriod };
+				}
 
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -92,16 +94,23 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+				protected override void OnReseted()
+				{
+						base.OnReseted();
 
-			// Create indicators
-			var vwap = new VolumeWeightedMovingAverage();
-			_volumeMA = new SimpleMovingAverage { Length = VolumePeriod };
+						_volumeMA = new SimpleMovingAverage { Length = VolumePeriod };
+				}
 
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset time)
+				{
+						base.OnStarted(time);
+
+						// Create indicators
+						var vwap = new VolumeWeightedMovingAverage();
+
+						// Create subscription
+						var subscription = SubscribeCandles(CandleType);
 
 			// Create custom bind for processing VWAP and volume data
 			subscription

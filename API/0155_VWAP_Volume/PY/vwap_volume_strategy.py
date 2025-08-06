@@ -43,7 +43,8 @@ class vwap_volume_strategy(Strategy):
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         # Indicator for volume
-        self._volumeMA = None
+        self._volumeMA = SimpleMovingAverage()
+        self._volumeMA.Length = self.volume_period
 
     @property
     def volume_period(self):
@@ -81,6 +82,12 @@ class vwap_volume_strategy(Strategy):
     def candle_type(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(vwap_volume_strategy, self).OnReseted()
+        self._volumeMA = SimpleMovingAverage()
+        self._volumeMA.Length = self.volume_period
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Sets up indicators, subscriptions, and charting.
@@ -91,8 +98,6 @@ class vwap_volume_strategy(Strategy):
 
         # Create indicators
         vwap = VolumeWeightedMovingAverage()
-        self._volumeMA = SimpleMovingAverage()
-        self._volumeMA.Length = self.volume_period
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)

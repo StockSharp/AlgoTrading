@@ -115,10 +115,6 @@ class donchian_rsi_strategy(Strategy):
         """
         super(donchian_rsi_strategy, self).OnStarted(time)
 
-        self._prev_upper_band = 0.0
-        self._prev_lower_band = 0.0
-        self._is_first_calculation = True
-
         # Create indicators
         donchian = DonchianChannels()
         donchian.Length = self.donchian_period

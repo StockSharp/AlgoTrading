@@ -117,31 +117,36 @@ namespace StockSharp.Samples.Strategies
 			_lastPrice = 0;
 		}
 
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
+				/// <inheritdoc />
+				public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+				{
+						return [(Security, CandleType)];
+				}
 
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
+				/// <inheritdoc />
+				protected override void OnReseted()
+				{
+						base.OnReseted();
 
-			// Create indicators
-			var ema = new ExponentialMovingAverage { Length = EmaPeriod };
-			var atr = new AverageTrueRange { Length = AtrPeriod };
-			
-			// Custom Keltner Channels calculation will be done in the processing method
-			// as we need both EMA and ATR values together
+						_averageVolume = 0;
+						_volumeCounter = 0;
+						_lastPrice = 0;
+				}
 
-			// Reset volume tracking
-			_averageVolume = 0;
-			_volumeCounter = 0;
-			_lastPrice = 0;
+				/// <inheritdoc />
+				protected override void OnStarted(DateTimeOffset time)
+				{
+						base.OnStarted(time);
 
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
+						// Create indicators
+						var ema = new ExponentialMovingAverage { Length = EmaPeriod };
+						var atr = new AverageTrueRange { Length = AtrPeriod };
+
+						// Custom Keltner Channels calculation will be done in the processing method
+						// as we need both EMA and ATR values together
+
+						// Setup candle subscription
+						var subscription = SubscribeCandles(CandleType);
 			
 			// Bind indicators to candles
 			subscription

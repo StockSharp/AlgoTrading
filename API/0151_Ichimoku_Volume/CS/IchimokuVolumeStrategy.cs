@@ -115,28 +115,33 @@ namespace StockSharp.Samples.Strategies
 		/// <inheritdoc />
 		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 		{
-			return [(Security, CandleType)];
+				return [(Security, CandleType)];
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+				base.OnReseted();
+
+				_averageVolume = 0;
+				_volumeCounter = 0;
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			base.OnStarted(time);
+				base.OnStarted(time);
 
-			// Create Ichimoku indicator
-			var ichimoku = new Ichimoku
-			{
-				Tenkan = { Length = TenkanPeriod },
-				Kijun = { Length = KijunPeriod },
-				SenkouB = { Length = SenkouSpanPeriod }
-			};
+				// Create Ichimoku indicator
+				var ichimoku = new Ichimoku
+				{
+						Tenkan = { Length = TenkanPeriod },
+						Kijun = { Length = KijunPeriod },
+						SenkouB = { Length = SenkouSpanPeriod }
+				};
 
-			// Reset volume tracking
-			_averageVolume = 0;
-			_volumeCounter = 0;
-
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
+				// Setup candle subscription
+				var subscription = SubscribeCandles(CandleType);
 			
 			// Bind Ichimoku indicator to candles
 			subscription

@@ -111,25 +111,30 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+{
+				return [(Security, CandleType)];
+		}
+
+		/// <inheritdoc />
+		protected override void OnReseted()
 		{
-			return [(Security, CandleType)];
+				base.OnReseted();
+
+				_prevHmaValue = 0;
 		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
-			base.OnStarted(time);
+				base.OnStarted(time);
 
-			// Create indicators
-			var hma = new HullMovingAverage { Length = HmaPeriod };
-			var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
+				// Create indicators
+				var hma = new HullMovingAverage { Length = HmaPeriod };
+				var rsi = new RelativeStrengthIndex { Length = RsiPeriod };
 
-			// Reset previous HMA value
-			_prevHmaValue = 0;
-
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
+				// Setup candle subscription
+				var subscription = SubscribeCandles(CandleType);
 			
 			// Bind indicators to candles
 			subscription
