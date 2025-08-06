@@ -115,14 +115,19 @@ class rsi_with_option_open_interest_strategy(Strategy):
         super(rsi_with_option_open_interest_strategy, self).OnReseted()
         if self._rsi:
             self._rsi.Reset()
+            self._rsi = None
         if self._call_oi_sma:
             self._call_oi_sma.Reset()
+            self._call_oi_sma = None
         if self._put_oi_sma:
             self._put_oi_sma.Reset()
+            self._put_oi_sma = None
         if self._call_oi_stddev:
             self._call_oi_stddev.Reset()
+            self._call_oi_stddev = None
         if self._put_oi_stddev:
             self._put_oi_stddev.Reset()
+            self._put_oi_stddev = None
         self._current_call_oi = 0
         self._current_put_oi = 0
         self._avg_call_oi = 0

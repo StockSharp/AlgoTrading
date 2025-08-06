@@ -106,14 +106,9 @@ class donchian_with_sentiment_spike_strategy(Strategy):
 
     def OnReseted(self):
         super(donchian_with_sentiment_spike_strategy, self).OnReseted()
-        # Initialize flags
-        self._is_long = False
-        self._is_short = False
-        self._mid_channel = 0.0
+        self._is_long = self._is_short = False
+        self._mid_channel = self._sentiment_average = self._sentiment_std_dev = self._current_sentiment = 0.0
         self._sentiment_history.clear()
-        self._sentiment_average = 0.0
-        self._sentiment_std_dev = 0.0
-        self._current_sentiment = 0.0
 
     def OnStarted(self, time):
         super(donchian_with_sentiment_spike_strategy, self).OnStarted(time)

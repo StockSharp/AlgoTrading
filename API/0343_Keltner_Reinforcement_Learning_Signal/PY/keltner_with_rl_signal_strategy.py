@@ -126,13 +126,8 @@ class keltner_with_rl_signal_strategy(Strategy):
         super(keltner_with_rl_signal_strategy, self).OnReseted()
         # Initialize RL state variables
         self._current_signal = self._RLSignal.None_
-        self._consecutive_wins = 0
-        self._consecutive_losses = 0
-        self._last_price = 0
-        self._previous_ema = 0
-        self._previous_atr = 0
-        self._previous_price = 0
-        self._previous_signal_price = 0
+        self._consecutive_wins = self._consecutive_losses = 0
+        self._last_price = self._previous_ema = self._previous_atr = self._previous_price = self._previous_signal_price = 0
 
     def OnStarted(self, time):
         super(keltner_with_rl_signal_strategy, self).OnStarted(time)

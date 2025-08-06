@@ -128,13 +128,8 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_isLong = default;
-			_isShort = default;
-			_prevHmaValue = default;
-			_currentAtr = default;
-			_currentIv = default;
-			_ivAverage = default;
-			_ivStdDev = default;
+			_isLong = _isShort = default;
+			_prevHmaValue = _currentAtr = _currentIv = _ivAverage = _ivStdDev = default;
 			_impliedVolatilityHistory.Clear();
 		}
 

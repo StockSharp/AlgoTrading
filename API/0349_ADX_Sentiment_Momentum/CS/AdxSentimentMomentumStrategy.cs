@@ -106,16 +106,16 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
 		protected override void OnReseted()
 		{
 			base.OnReseted();
 
 			_adx?.Reset();
-			_prevSentiment = 0;
-			_currentSentiment = 0;
-			_sentimentMomentum = 0;
+			_adx = null;
+			_prevSentiment = default;
+			_currentSentiment = default;
+			_sentimentMomentum = default;
 		}
 
 		/// <inheritdoc />

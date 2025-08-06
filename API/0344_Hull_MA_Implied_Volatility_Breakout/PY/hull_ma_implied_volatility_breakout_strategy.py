@@ -117,14 +117,9 @@ class hull_ma_implied_volatility_breakout_strategy(Strategy):
     def OnReseted(self):
         super(hull_ma_implied_volatility_breakout_strategy, self).OnReseted()
         # Initialize flags
-        self._isLong = False
-        self._isShort = False
-        self._prevHmaValue = 0.0
-        self._currentAtr = 0.0
-        self._currentIv = 0.0
-        self._ivAverage = 0.0
-        self._ivStdDev = 0.0
-        self._impliedVolatilityHistory[:] = []
+        self._isLong = self._isShort = False
+        self._prevHmaValue = self._currentAtr = self._currentIv = self._ivAverage = self._ivStdDev = 0.0
+        self._impliedVolatilityHistory.clear()
 
     def OnStarted(self, time):
         super(hull_ma_implied_volatility_breakout_strategy, self).OnStarted(time)
