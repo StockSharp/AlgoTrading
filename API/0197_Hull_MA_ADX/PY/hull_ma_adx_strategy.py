@@ -106,6 +106,13 @@ class hull_ma_adx_strategy(Strategy):
     def OnReseted(self):
         """Resets internal state when strategy is reset."""
         super(hull_ma_adx_strategy, self).OnReseted()
+        if getattr(self, '_hma', None) is not None:
+            self._hma.Reset()
+        if getattr(self, '_adx', None) is not None:
+            self._adx.Reset()
+        if getattr(self, '_atr', None) is not None:
+            self._atr.Reset()
+
         self._prev_hma_value = 0.0
         self._prev_adx_value = 0.0
 
@@ -119,10 +126,6 @@ class hull_ma_adx_strategy(Strategy):
         self._adx.Length = self.adx_period
         self._atr = AverageTrueRange()
         self._atr.Length = 14
-
-        # Initialize variables
-        self._prev_hma_value = 0.0
-        self._prev_adx_value = 0.0
 
         # Create subscription
         subscription = self.SubscribeCandles(self.candle_type)

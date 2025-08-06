@@ -153,6 +153,19 @@ class keltner_macd_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(keltner_macd_strategy, self).OnReseted()
+
+        if self._ema is not None:
+            self._ema.Reset()
+        if self._atr is not None:
+            self._atr.Reset()
+        if self._macd is not None:
+            self._macd.Reset()
+
+        self._prevMacd = 0.0
+        self._prevSignal = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(keltner_macd_strategy, self).OnStarted(time)
@@ -168,10 +181,6 @@ class keltner_macd_strategy(Strategy):
         self._macd.Macd.ShortMa.Length = self.MacdFastPeriod
         self._macd.Macd.LongMa.Length = self.MacdSlowPeriod
         self._macd.SignalMa.Length = self.MacdSignalPeriod
-
-        # Reset previous values
-        self._prevMacd = 0.0
-        self._prevSignal = 0.0
 
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
