@@ -36,7 +36,10 @@ class volatility_adjusted_mean_reversion_strategy(Strategy):
         # Candle type for strategy.
         self._candle_type = self.Param("CandleType", tf(5)) \
             .SetDisplay("Candle Type", "Candle type for strategy", "Common")
-
+        # Internal indicators
+        self._sma = None
+        self._atr = None
+        self._std_dev = None
     @property
     def period(self):
         """Period for indicators."""
@@ -67,29 +70,35 @@ class volatility_adjusted_mean_reversion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.candle_type)]
 
+    def OnReseted(self):
+        super(volatility_adjusted_mean_reversion_strategy, self).OnReseted()
+        self._sma = None
+        self._atr = None
+        self._std_dev = None
+
     def OnStarted(self, time):
         super(volatility_adjusted_mean_reversion_strategy, self).OnStarted(time)
 
         # Create indicators
-        sma = SimpleMovingAverage()
-        sma.Length = self.period
-        atr = AverageTrueRange()
-        atr.Length = self.period
-        std_dev = StandardDeviation()
-        std_dev.Length = self.period
+        self._sma = SimpleMovingAverage()
+        self._sma.Length = self.period
+        self._atr = AverageTrueRange()
+        self._atr.Length = self.period
+        self._std_dev = StandardDeviation()
+        self._std_dev.Length = self.period
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.candle_type)
 
         # First, bind SMA and ATR
-        subscription.Bind(sma, atr, std_dev, self.ProcessCandle).Start()
+        subscription.Bind(self._sma, self._atr, self._std_dev, self.ProcessCandle).Start()
 
         # Setup chart visualization if available
         area = self.CreateChartArea()
         if area is not None:
             self.DrawCandles(area, subscription)
-            self.DrawIndicator(area, sma)
-            self.DrawIndicator(area, atr)
+            self.DrawIndicator(area, self._sma)
+            self.DrawIndicator(area, self._atr)
             self.DrawOwnTrades(area)
 
         # Enable position protection

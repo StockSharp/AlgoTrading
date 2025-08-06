@@ -91,6 +91,14 @@ class bollinger_band_squeeze_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(bollinger_band_squeeze_strategy, self).OnReseted()
+
+        self._prevBollingerWidth = 0.0
+        self._avgBollingerWidth = 0.0
+        self._bollingerWidthSum = 0.0
+        self._bollingerWidths = []
+
     def OnStarted(self, time):
         super(bollinger_band_squeeze_strategy, self).OnStarted(time)
 
@@ -102,11 +110,6 @@ class bollinger_band_squeeze_strategy(Strategy):
         self._atr = AverageTrueRange()
         self._atr.Length = self.BollingerPeriod
 
-        # Reset state
-        self._prevBollingerWidth = 0.0
-        self._avgBollingerWidth = 0.0
-        self._bollingerWidthSum = 0.0
-        self._bollingerWidths = []
 
         # Create subscription and bind indicator
         subscription = self.SubscribeCandles(self.CandleType)
