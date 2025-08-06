@@ -114,12 +114,16 @@ class stochastic_with_dynamic_zones_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
+    def OnReseted(self):
+        super(stochastic_with_dynamic_zones_strategy, self).OnReseted()
+        self._prev_stoch_k = 50
+        self._stochastic = None
+        self._stoch_sma = None
+        self._stoch_std_dev = None
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(stochastic_with_dynamic_zones_strategy, self).OnStarted(time)
-
-        # Initialize previous values
-        self._prev_stoch_k = 50
 
         # Create indicators
         self._stochastic = StochasticOscillator()

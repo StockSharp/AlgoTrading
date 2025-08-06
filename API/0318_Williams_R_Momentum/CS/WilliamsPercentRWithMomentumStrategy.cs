@@ -19,6 +19,10 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _williamsROverbought;
 		private readonly StrategyParam<DataType> _candleType;
 
+		private WilliamsR _williamsR;
+		private Momentum _momentum;
+		private SimpleMovingAverage _momentumSma;
+
 		/// <summary>
 		/// Williams %R period parameter.
 		/// </summary>
@@ -102,23 +106,33 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_williamsR?.Reset();
+			_momentum?.Reset();
+			_momentumSma?.Reset();
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
 			// Create indicators
-			var williamsR = new WilliamsR { Length = WilliamsRPeriod };
-			var momentum = new Momentum { Length = MomentumPeriod };
-			var momentumSma = new SimpleMovingAverage { Length = MomentumPeriod };
+			_williamsR = new WilliamsR { Length = WilliamsRPeriod };
+			_momentum = new Momentum { Length = MomentumPeriod };
+			_momentumSma = new SimpleMovingAverage { Length = MomentumPeriod };
 
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
 			
 			subscription
-				.Bind(williamsR, momentum, (candle, williamsRValue, momentumValue) =>
+				 .Bind(_williamsR, _momentum, (candle, williamsRValue, momentumValue) =>
 				{
 					// Calculate momentum average
-					var momentumAvg = momentumSma.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+					var momentumAvg = _momentumSma.Process(momentumValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
 					
 					// Process the strategy logic
 					ProcessStrategy(candle, williamsRValue, momentumValue, momentumAvg);
@@ -130,8 +144,8 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				DrawIndicator(area, williamsR);
-				DrawIndicator(area, momentum);
+				DrawIndicator(area, _williamsR);
+				DrawIndicator(area, _momentum);
 				DrawOwnTrades(area);
 			}
 

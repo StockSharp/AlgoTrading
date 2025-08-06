@@ -99,6 +99,11 @@ class parabolic_sar_volatility_expansion_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(parabolic_sar_volatility_expansion_strategy, self).OnReseted()
+        self._atr_sma = None
+        self._atr_std_dev = None
+
     def OnStarted(self, time):
         super(parabolic_sar_volatility_expansion_strategy, self).OnStarted(time)
 

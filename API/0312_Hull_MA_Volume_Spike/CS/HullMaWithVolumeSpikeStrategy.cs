@@ -91,12 +91,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevHmaValue = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Initialize previous values
-			_prevHmaValue = 0;
 
 			// Create indicators
 			var hma = new HullMovingAverage { Length = HmaPeriod };

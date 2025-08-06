@@ -123,12 +123,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_prevStochK = 50;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
-
-			// Initialize previous values
-			_prevStochK = 50;
 
 			// Create indicators
 			var stochastic = new StochasticOscillator

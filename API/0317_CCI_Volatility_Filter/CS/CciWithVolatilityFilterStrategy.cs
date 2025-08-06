@@ -18,6 +18,9 @@ namespace StockSharp.Samples.Strategies
 		private readonly StrategyParam<decimal> _cciOversold;
 		private readonly StrategyParam<decimal> _cciOverbought;
 		private readonly StrategyParam<DataType> _candleType;
+		private CommodityChannelIndex _cci;
+		private AverageTrueRange _atr;
+		private SimpleMovingAverage _atrSma;
 
 		/// <summary>
 		/// CCI period parameter.
@@ -101,25 +104,34 @@ namespace StockSharp.Samples.Strategies
 			return [(Security, CandleType)];
 		}
 
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_cci?.Reset();
+			_atr?.Reset();
+			_atrSma?.Reset();
+		}
+
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
 			// Create indicators
-			var cci = new CommodityChannelIndex { Length = CciPeriod };
-			var atr = new AverageTrueRange { Length = AtrPeriod };
-			var atrSma = new SimpleMovingAverage { Length = AtrPeriod };
+			_cci = new CommodityChannelIndex { Length = CciPeriod };
+			_atr = new AverageTrueRange { Length = AtrPeriod };
+			_atrSma = new SimpleMovingAverage { Length = AtrPeriod };
 
 			// Subscribe to candles and bind indicators
 			var subscription = SubscribeCandles(CandleType);
-			
+
 			subscription
-				.Bind(cci, atr, (candle, cciValue, atrValue) =>
+				.Bind(_cci, _atr, (candle, cciValue, atrValue) =>
 				{
 					// Calculate ATR average
-					var atrAvg = atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
-					
+					var atrAvg = _atrSma.Process(atrValue, candle.ServerTime, candle.State == CandleStates.Finished).ToDecimal();
+
 					// Process the strategy logic
 					ProcessStrategy(candle, cciValue, atrValue, atrAvg);
 				})
@@ -130,8 +142,8 @@ namespace StockSharp.Samples.Strategies
 			if (area != null)
 			{
 				DrawCandles(area, subscription);
-				DrawIndicator(area, cci);
-				DrawIndicator(area, atr);
+				DrawIndicator(area, _cci);
+				DrawIndicator(area, _atr);
 				DrawOwnTrades(area);
 			}
 

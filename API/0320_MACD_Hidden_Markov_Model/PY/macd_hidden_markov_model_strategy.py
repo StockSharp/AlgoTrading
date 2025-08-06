@@ -110,6 +110,9 @@ class macd_hidden_markov_model_strategy(Strategy):
         self._price_changes = []
         self._volumes = []
 
+        if self._macd is not None:
+            self._macd.Reset()
+
     def OnStarted(self, time):
         super(macd_hidden_markov_model_strategy, self).OnStarted(time)
 

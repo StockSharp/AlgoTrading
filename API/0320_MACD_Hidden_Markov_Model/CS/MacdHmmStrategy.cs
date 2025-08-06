@@ -130,6 +130,8 @@ namespace StockSharp.Samples.Strategies
 			_prevPrice = 0;
 			_priceChanges.Clear();
 			_volumes.Clear();
+
+			_macd?.Reset();
 		}
 
 		/// <inheritdoc />

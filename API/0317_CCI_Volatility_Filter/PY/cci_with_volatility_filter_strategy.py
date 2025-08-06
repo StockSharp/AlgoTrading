@@ -94,6 +94,10 @@ class cci_with_volatility_filter_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(cci_with_volatility_filter_strategy, self).OnReseted()
+        self._atrSma = None
+
     def OnStarted(self, time):
         super(cci_with_volatility_filter_strategy, self).OnStarted(time)
 

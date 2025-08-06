@@ -105,12 +105,16 @@ class keltner_rsi_divergence_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(keltner_rsi_divergence_strategy, self).OnReseted()
+        self._prev_rsi = 50
+        self._prev_price = 0.0
+        self._ema = None
+        self._atr = None
+        self._rsi = None
+
     def OnStarted(self, time):
         super(keltner_rsi_divergence_strategy, self).OnStarted(time)
-
-        # Initialize previous values
-        self._prev_rsi = 50
-        self._prev_price = 0
 
         # Create indicators
         self._ema = ExponentialMovingAverage()

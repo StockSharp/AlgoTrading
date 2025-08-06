@@ -121,6 +121,10 @@ namespace StockSharp.Samples.Strategies
 			_rsiValues.Clear();
 			_priceValues.Clear();
 			_volumeValues.Clear();
+
+			_bollinger?.Reset();
+			_rsi?.Reset();
+			_atr?.Reset();
 		}
 
 		/// <inheritdoc />

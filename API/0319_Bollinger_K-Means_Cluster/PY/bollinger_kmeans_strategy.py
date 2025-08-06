@@ -109,6 +109,13 @@ class bollinger_kmeans_strategy(Strategy):
         self._price_values.clear()
         self._volume_values.clear()
 
+        if self._bollinger is not None:
+            self._bollinger.Reset()
+        if self._rsi is not None:
+            self._rsi.Reset()
+        if self._atr is not None:
+            self._atr.Reset()
+
     def OnStarted(self, time):
         """Initialize indicators, subscription and charting."""
         super(bollinger_kmeans_strategy, self).OnStarted(time)
