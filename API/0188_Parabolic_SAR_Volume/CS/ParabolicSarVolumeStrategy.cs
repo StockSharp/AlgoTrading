@@ -92,6 +92,17 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_prevSar = 0;
+			_currentAvgVolume = 0;
+			_prevPriceAboveSar = false;
+			_parabolicSar = null;
+			_volumeIndicator = null;
+			_volumeAverage = null;
+		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
@@ -111,11 +122,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				Length = VolumePeriod
 			};
-
-			// Reset state variables
-			_prevSar = 0;
-			_currentAvgVolume = 0;
-			_prevPriceAboveSar = false;
 
 			// Create candle subscription
 			var subscription = SubscribeCandles(CandleType);

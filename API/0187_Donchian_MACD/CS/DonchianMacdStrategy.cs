@@ -123,6 +123,18 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
+		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_previousHighest = 0;
+			_previousLowest = decimal.MaxValue;
+			_previousMacd = 0;
+			_previousSignal = 0;
+			_entryPrice = null;
+			_donchian = null;
+			_macd = null;
+		}
 
 		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
@@ -144,13 +156,6 @@ namespace StockSharp.Samples.Strategies
 				},
 				SignalMa = { Length = MacdSignal }
 			};
-
-			// Reset state variables
-			_previousHighest = 0;
-			_previousLowest = decimal.MaxValue;
-			_previousMacd = 0;
-			_previousSignal = 0;
-			_entryPrice = null;
 
 			// Create subscription and bind indicators
 			var subscription = SubscribeCandles(CandleType);

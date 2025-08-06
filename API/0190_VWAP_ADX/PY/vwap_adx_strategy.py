@@ -70,8 +70,6 @@ class vwap_adx_strategy(Strategy):
     def OnStarted(self, time):
         super(vwap_adx_strategy, self).OnStarted(time)
 
-        self._prev_adx_value = 0
-
         # Create ADX indicator
         self._adx = AverageDirectionalIndex()
         self._adx.Length = self.AdxPeriod
@@ -95,6 +93,12 @@ class vwap_adx_strategy(Strategy):
             self.DrawCandles(area, subscription)
             self.DrawIndicator(area, self._adx)
             self.DrawOwnTrades(area)
+
+    def OnReseted(self):
+        super(vwap_adx_strategy, self).OnReseted()
+        self._prev_adx_value = 0
+        self._adx = None
+        self._vwap = None
 
     def ProcessCandle(self, candle, adx_value):
         # Skip unfinished candles

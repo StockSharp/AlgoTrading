@@ -105,6 +105,8 @@ class donchian_macd_strategy(Strategy):
         self._previousMacd = 0
         self._previousSignal = 0
         self._entryPrice = None
+        self._donchian = None
+        self._macd = None
 
     def OnStarted(self, time):
         super(donchian_macd_strategy, self).OnStarted(time)
@@ -117,13 +119,6 @@ class donchian_macd_strategy(Strategy):
         self._macd.Macd.ShortMa.Length = self.MacdFast
         self._macd.Macd.LongMa.Length = self.MacdSlow
         self._macd.SignalMa.Length = self.MacdSignal
-
-        # Reset state variables
-        self._previousHighest = 0
-        self._previousLowest = float('inf')
-        self._previousMacd = 0
-        self._previousSignal = 0
-        self._entryPrice = None
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)
