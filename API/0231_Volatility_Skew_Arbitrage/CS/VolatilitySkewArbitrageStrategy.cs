@@ -100,13 +100,20 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_volSkewStdDev.Reset();
+			_barCount = 0;
+			_avgVolSkew = 0;
+			_currentVolSkew = 0;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_barCount = 0;
-			_avgVolSkew = 0;
-			_currentVolSkew = 0;
 
 			// Subscribe to implied volatility for both options
 			if (OptionWithLowVol != null && OptionWithHighVol != null)

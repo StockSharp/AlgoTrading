@@ -130,17 +130,25 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			base.OnStarted(time);
-
+			base.OnReseted();
+			_spreadSma.Reset();
+			_spreadStdDev.Reset();
 			_barCount = 0;
-			_asset1Beta = 1;  // Default beta until calculated
-			_asset2Beta = 1;  // Default beta until calculated
+			_asset1Beta = 1;
+			_asset2Beta = 1;
 			_avgSpread = 0;
 			_lastSpread = 0;
 			_asset1LastPrice = 0;
 			_asset2LastPrice = 0;
+		}
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
+			base.OnStarted(time);
+
 
 			// Subscribe to candles for assets and market index
 			if (Asset1 != null && Asset2 != null && MarketIndex != null && CandleType != null)

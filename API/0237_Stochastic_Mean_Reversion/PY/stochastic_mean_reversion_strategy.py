@@ -105,8 +105,6 @@ class stochastic_mean_reversion_strategy(Strategy):
         """Called when the strategy starts."""
         super(stochastic_mean_reversion_strategy, self).OnStarted(time)
 
-        self._prev_stoch_k_value = 0.0
-
         # Create indicators
         self._stochastic = StochasticOscillator()
         self._stochastic.K.Length = self.k_period
@@ -135,6 +133,10 @@ class stochastic_mean_reversion_strategy(Strategy):
             takeProfit=Unit(5, UnitTypes.Percent),
             stopLoss=Unit(2, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(stochastic_mean_reversion_strategy, self).OnReseted()
+        self._prev_stoch_k_value = 0.0
     def ProcessStochastic(self, candle, stoch_value):
         if candle.State != CandleStates.Finished:
             return

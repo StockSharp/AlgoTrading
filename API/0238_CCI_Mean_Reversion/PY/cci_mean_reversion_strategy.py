@@ -106,15 +106,6 @@ class cci_mean_reversion_strategy(Strategy):
 
     def OnStarted(self, time):
         """Called when the strategy starts."""
-        # Reset variables
-        self._prev_cci = 0.0
-        self._avg_cci = 0.0
-        self._std_dev_cci = 0.0
-        self._sum_cci = 0.0
-        self._sum_squares_cci = 0.0
-        self._count = 0
-        self._cci_values = []
-
         # Create CCI indicator
         cci = CommodityChannelIndex()
         cci.Length = self.CciPeriod
@@ -136,6 +127,16 @@ class cci_mean_reversion_strategy(Strategy):
             stopLoss=Unit(self.StopLossPercent, UnitTypes.Percent)
         )
         super(cci_mean_reversion_strategy, self).OnStarted(time)
+
+    def OnReseted(self):
+        super(cci_mean_reversion_strategy, self).OnReseted()
+        self._prev_cci = 0.0
+        self._avg_cci = 0.0
+        self._std_dev_cci = 0.0
+        self._sum_cci = 0.0
+        self._sum_squares_cci = 0.0
+        self._count = 0
+        self._cci_values = []
 
     def ProcessCandle(self, candle, cci_value):
         # Skip unfinished candles

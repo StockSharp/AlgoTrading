@@ -102,10 +102,6 @@ class volatility_skew_arbitrage_strategy(Strategy):
     def OnStarted(self, time):
         super(volatility_skew_arbitrage_strategy, self).OnStarted(time)
 
-        self._bar_count = 0
-        self._avg_vol_skew = 0
-        self._current_vol_skew = 0
-
         # Subscribe to implied volatility for both options
         if self.option_with_low_vol is not None and self.option_with_high_vol is not None:
             self.SubscribeLevel1(self.option_with_low_vol) \
@@ -123,6 +119,13 @@ class volatility_skew_arbitrage_strategy(Strategy):
             takeProfit=None,
             stopLoss=Unit(self.stop_loss_percent, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(volatility_skew_arbitrage_strategy, self).OnReseted()
+        self._vol_skew_std_dev.Reset()
+        self._bar_count = 0
+        self._avg_vol_skew = 0
+        self._current_vol_skew = 0
     def ProcessLowOptionImpliedVolatility(self, data):
         low_iv = data.TryGetDecimal(Level1Fields.ImpliedVolatility) or 0
         high_iv = self._current_vol_skew + low_iv

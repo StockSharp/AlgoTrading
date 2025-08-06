@@ -79,12 +79,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+			_currentAtr = default;
+			_currentVwap = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_currentAtr = default;
-			_currentVwap = default;
 
 			// Create indicators
 			_atr = new AverageTrueRange { Length = AtrPeriod };

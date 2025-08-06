@@ -77,9 +77,6 @@ class vwap_mean_reversion_strategy(Strategy):
         """Set up indicators, subscriptions and protection."""
         super(vwap_mean_reversion_strategy, self).OnStarted(time)
 
-        self._current_atr = 0
-        self._current_vwap = 0
-
         # Create indicators
         self._atr = AverageTrueRange()
         self._atr.Length = self.AtrPeriod
@@ -104,6 +101,11 @@ class vwap_mean_reversion_strategy(Strategy):
             takeProfit=Unit(5, UnitTypes.Percent),
             stopLoss=Unit(2, UnitTypes.Percent)
         )
+
+    def OnReseted(self):
+        super(vwap_mean_reversion_strategy, self).OnReseted()
+        self._current_atr = 0
+        self._current_vwap = 0
     def ProcessATR(self, candle, atr_value):
         if candle.State != CandleStates.Finished:
             return
