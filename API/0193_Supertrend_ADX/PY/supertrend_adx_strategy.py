@@ -53,8 +53,6 @@ class supertrend_adx_strategy(Strategy):
         self._candle_type = self.Param("CandleType", tf(15)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
-        self._last_supertrend = 0
-        self._is_above_supertrend = False
 
     @property
     def SupertrendPeriod(self):
@@ -104,11 +102,14 @@ class supertrend_adx_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(supertrend_adx_strategy, self).OnReseted()
+        self._last_supertrend = 0
+        self._is_above_supertrend = False
+
     def OnStarted(self, time):
         super(supertrend_adx_strategy, self).OnStarted(time)
 
-        self._last_supertrend = 0
-        self._is_above_supertrend = False
 
         # Create indicators
         atr = AverageTrueRange()

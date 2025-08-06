@@ -115,12 +115,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_lastSupertrend = default;
+			_isAboveSupertrend = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
 
-			_lastSupertrend = 0;
-			_isAboveSupertrend = false;
 
 			// Create indicators
 			var atr = new AverageTrueRange { Length = SupertrendPeriod };

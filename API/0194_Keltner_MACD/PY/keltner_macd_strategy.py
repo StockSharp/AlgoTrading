@@ -66,8 +66,6 @@ class keltner_macd_strategy(Strategy):
         self._macd = None
 
         # Previous MACD values for cross detection
-        self._prevMacd = 0.0
-        self._prevSignal = 0.0
 
     @property
     def EmaPeriod(self):
@@ -153,6 +151,14 @@ class keltner_macd_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(keltner_macd_strategy, self).OnReseted()
+        self._ema = None
+        self._atr = None
+        self._macd = None
+        self._prevMacd = 0.0
+        self._prevSignal = 0.0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(keltner_macd_strategy, self).OnStarted(time)
@@ -169,9 +175,6 @@ class keltner_macd_strategy(Strategy):
         self._macd.Macd.LongMa.Length = self.MacdSlowPeriod
         self._macd.SignalMa.Length = self.MacdSignalPeriod
 
-        # Reset previous values
-        self._prevMacd = 0.0
-        self._prevSignal = 0.0
 
         # Subscribe to candles and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

@@ -165,6 +165,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_ema = default;
+			_atr = default;
+			_macd = default;
+			_prevMacd = default;
+			_prevSignal = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -182,9 +194,6 @@ namespace StockSharp.Samples.Strategies
 				},
 				SignalMa = { Length = MacdSignalPeriod }
 			};
-			// Initialize variables
-			_prevMacd = 0;
-			_prevSignal = 0;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);

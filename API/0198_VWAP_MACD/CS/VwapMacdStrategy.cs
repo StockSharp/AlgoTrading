@@ -106,6 +106,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_macd = default;
+			_vwap = default;
+			_prevMacd = default;
+			_prevSignal = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -122,9 +133,6 @@ namespace StockSharp.Samples.Strategies
 				SignalMa = { Length = MacdSignalPeriod }
 			};
 			_vwap = new() { Length = MacdSignalPeriod };
-			// Initialize variables
-			_prevMacd = 0;
-			_prevSignal = 0;
 
 			// Enable position protection
 			StartProtection(new Unit(StopLossPercent, UnitTypes.Percent), new Unit(StopLossPercent, UnitTypes.Percent));

@@ -111,6 +111,18 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_hma = default;
+			_adx = default;
+			_atr = default;
+			_prevHmaValue = default;
+			_prevAdxValue = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);
@@ -120,9 +132,6 @@ namespace StockSharp.Samples.Strategies
 			_adx = new() { Length = AdxPeriod };
 			_atr = new() { Length = 14 };
 
-			// Initialize variables
-			_prevHmaValue = 0;
-			_prevAdxValue = 0;
 
 			// Create subscription
 			var subscription = SubscribeCandles(CandleType);
