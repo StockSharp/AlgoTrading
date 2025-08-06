@@ -76,8 +76,10 @@ class cci_put_call_ratio_divergence_strategy(Strategy):
         super(cci_put_call_ratio_divergence_strategy, self).OnReseted()
         if self._cci:
             self._cci.Reset()
+            self._cci = None
         if self._atr:
             self._atr.Reset()
+            self._atr = None
         self._prev_pcr = 0.0
         self._current_pcr = 0.0
         self._prev_price = 0.0

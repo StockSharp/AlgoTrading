@@ -99,7 +99,7 @@ class vwap_with_behavioral_bias_filter_strategy(Strategy):
         self._isLong = False
         self._isShort = False
         self._currentBiasScore = 0
-        self._recentPriceMovements = []
+        self._recentPriceMovements.clear()
         self._vwap = None
 
     def OnStarted(self, time):

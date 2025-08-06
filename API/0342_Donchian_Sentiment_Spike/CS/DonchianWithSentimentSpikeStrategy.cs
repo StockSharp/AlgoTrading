@@ -127,13 +127,9 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_isLong = false;
-			_isShort = false;
-			_midChannel = 0;
+			_isLong = _isShort = default;
+			_midChannel = _sentimentAverage = _sentimentStdDev = _currentSentiment = default;
 			_sentimentHistory.Clear();
-			_sentimentAverage = 0;
-			_sentimentStdDev = 0;
-			_currentSentiment = 0;
 		}
 
 		protected override void OnStarted(DateTimeOffset time)

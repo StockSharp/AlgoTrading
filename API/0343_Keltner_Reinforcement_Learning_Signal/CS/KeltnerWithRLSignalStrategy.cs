@@ -134,14 +134,9 @@ namespace StockSharp.Samples.Strategies
 		{
 			base.OnReseted();
 
-			_currentSignal = RLSignal.None;
-			_consecutiveWins = default;
-			_consecutiveLosses = default;
-			_lastPrice = default;
-			_previousEma = default;
-			_previousAtr = default;
-			_previousPrice = default;
-			_previousSignalPrice = default;
+			_currentSignal = default;
+			_consecutiveWins = _consecutiveLosses = default;
+			_lastPrice = _previousEma = _previousAtr = _previousPrice = _previousSignalPrice = default;
 		}
 
 		protected override void OnStarted(DateTimeOffset time)

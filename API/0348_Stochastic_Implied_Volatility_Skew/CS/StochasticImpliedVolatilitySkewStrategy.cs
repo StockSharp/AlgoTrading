@@ -119,17 +119,18 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
 		protected override void OnReseted()
 		{
 			base.OnReseted();
 
 			_stochastic?.Reset();
+			_stochastic = null;
 			_ivSkewSma?.Reset();
+			_ivSkewSma = null;
 
-			_currentIvSkew = 0;
-			_avgIvSkew = 0;
+			_currentIvSkew = default;
+			_avgIvSkew = default;
 		}
 
 		/// <inheritdoc />

@@ -119,6 +119,7 @@ class supertrend_put_call_ratio_strategy(Strategy):
         self._currentPcr = 0.0
         self._pcrAverage = 0.0
         self._pcrStdDev = 0.0
+        self._supertrend = None
 
     def OnStarted(self, time):
         super(supertrend_put_call_ratio_strategy, self).OnStarted(time)
