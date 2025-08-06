@@ -97,14 +97,8 @@ class adx_mean_reversion_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stop_loss_percent.Value = value
 
-    def OnStarted(self, time):
-        """
-        Called when the strategy starts. Resets statistics, creates indicators,
-        and sets up charting.
-        """
-        super(adx_mean_reversion_strategy, self).OnStarted(time)
-
-        # Reset variables
+    def OnReseted(self):
+        super(adx_mean_reversion_strategy, self).OnReseted()
         self._prev_adx = 0.0
         self._avg_adx = 0.0
         self._std_dev_adx = 0.0
@@ -112,6 +106,13 @@ class adx_mean_reversion_strategy(Strategy):
         self._sum_squares_adx = 0.0
         self._count = 0
         self._adx_values.clear()
+
+    def OnStarted(self, time):
+        """
+        Called when the strategy starts. Resets statistics, creates indicators,
+        and sets up charting.
+        """
+        super(adx_mean_reversion_strategy, self).OnStarted(time)
 
         # Create ADX indicator
         adx = AverageDirectionalIndex()

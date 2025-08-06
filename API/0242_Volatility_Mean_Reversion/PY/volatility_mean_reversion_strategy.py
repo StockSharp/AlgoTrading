@@ -106,11 +106,8 @@ class volatility_mean_reversion_strategy(Strategy):
         """!! REQUIRED!! Return securities and candle types used."""
         return [(self.Security, self.CandleType)]
 
-    def OnStarted(self, time):
-        """Called when the strategy starts."""
-        super(volatility_mean_reversion_strategy, self).OnStarted(time)
-
-        # Reset variables
+    def OnReseted(self):
+        super(volatility_mean_reversion_strategy, self).OnReseted()
         self._prevAtr = 0
         self._avgAtr = 0
         self._stdDevAtr = 0
@@ -118,6 +115,10 @@ class volatility_mean_reversion_strategy(Strategy):
         self._sumSquaresAtr = 0
         self._count = 0
         self._atrValues.Clear()
+
+    def OnStarted(self, time):
+        """Called when the strategy starts."""
+        super(volatility_mean_reversion_strategy, self).OnStarted(time)
 
         # Create ATR indicator
         atr = AverageTrueRange()

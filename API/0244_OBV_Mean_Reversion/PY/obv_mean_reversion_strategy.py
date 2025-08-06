@@ -73,12 +73,14 @@ class obv_mean_reversion_strategy(Strategy):
     def CandleType(self, value):
         self._candle_type.Value = value
 
-    def OnStarted(self, time):
-        super(obv_mean_reversion_strategy, self).OnStarted(time)
-
+    def OnReseted(self):
+        super(obv_mean_reversion_strategy, self).OnReseted()
         self._current_obv = None
         self._obv_avg_value = None
         self._obv_std_dev_value = None
+
+    def OnStarted(self, time):
+        super(obv_mean_reversion_strategy, self).OnStarted(time)
 
         # Create indicators
         self._obv = OnBalanceVolume()

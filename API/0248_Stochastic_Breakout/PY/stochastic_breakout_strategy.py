@@ -106,13 +106,15 @@ class stochastic_breakout_strategy(Strategy):
         """!! REQUIRED!! Return securities and candle types used."""
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        super(stochastic_breakout_strategy, self).OnReseted()
+        self._prevStochValue = 0
+        self._prevStochAverage = 0
+        self._prevStochStdDev = 0
+
     def OnStarted(self, time):
         """Called when the strategy starts."""
         super(stochastic_breakout_strategy, self).OnStarted(time)
-
-        self._prevStochAverage = 0
-        self._prevStochStdDev = 0
-        self._prevStochValue = 0
 
         # Initialize indicators
         self._stochastic = StochasticOscillator()
@@ -123,11 +125,6 @@ class stochastic_breakout_strategy(Strategy):
         self._stochAverage.Length = self.LookbackPeriod
         self._stochStdDev = StandardDeviation()
         self._stochStdDev.Length = self.LookbackPeriod
-
-        # Reset stored values
-        self._prevStochValue = 0
-        self._prevStochAverage = 0
-        self._prevStochStdDev = 0
 
         # Create subscription and bind indicators
         subscription = self.SubscribeCandles(self.CandleType)

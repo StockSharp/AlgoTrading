@@ -98,18 +98,23 @@ namespace StockSharp.Samples.Strategies
 		{
 			return [(Security, CandleType)];
 		}
-
 		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
+		protected override void OnReseted()
 		{
-			// Reset variables
+			base.OnReseted();
+
 			_avgVolume = 0;
 			_stdDevVolume = 0;
 			_sumVolume = 0;
 			_sumSquaresVolume = 0;
 			_count = 0;
 			_volumeValues.Clear();
+		}
 
+
+		/// <inheritdoc />
+		protected override void OnStarted(DateTimeOffset time)
+		{
 			// Create Volume indicator (for visualization)
 			var volume = new VolumeIndicator();
 
