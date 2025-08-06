@@ -111,6 +111,11 @@ class bollinger_cci_strategy(Strategy):
     def GetWorkingSecurities(self):
         return [(self.Security, self.CandleType)]
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(bollinger_cci_strategy, self).OnReseted()
+        self.Indicators.Clear()
+
     def OnStarted(self, time):
         super(bollinger_cci_strategy, self).OnStarted(time)
 

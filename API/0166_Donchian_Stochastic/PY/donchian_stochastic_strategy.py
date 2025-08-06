@@ -92,6 +92,12 @@ class donchian_stochastic_strategy(Strategy):
     def StopLossPercent(self, value):
         self._stopLossPercent.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(donchian_stochastic_strategy, self).OnReseted()
+        self._donchian = None
+        self._stochastic = None
+
     def OnStarted(self, time):
         """
         Called when the strategy starts. Creates indicators, subscriptions and charting.

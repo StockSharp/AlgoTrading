@@ -117,6 +117,11 @@ class ma_williams_r_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(ma_williams_r_strategy, self).OnReseted()
+        self.Indicators.Clear()
+
     def OnStarted(self, time):
         super(ma_williams_r_strategy, self).OnStarted(time)
 

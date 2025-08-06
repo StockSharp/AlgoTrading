@@ -118,6 +118,11 @@ class macd_cci_strategy(Strategy):
     def CandleType(self, value):
         self._candleType.Value = value
 
+    def OnReseted(self):
+        """Resets internal state when strategy is reset."""
+        super(macd_cci_strategy, self).OnReseted()
+        self.Indicators.Clear()
+
     def OnStarted(self, time):
         """
         Called when the strategy starts.

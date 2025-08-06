@@ -86,6 +86,7 @@ class vwap_cci_strategy(Strategy):
         Resets internal state when strategy is reset.
         """
         super(vwap_cci_strategy, self).OnReseted()
+        self.Indicators.Clear()
 
     def OnStarted(self, time):
         """
