@@ -1364,4 +1364,160 @@ public class PythonTests
 		{
 			stra.Parameters["Universe"].Value = new[] { sec };
 		});
+
+	[TestMethod]
+	public Task BollingerAroon()
+		=> RunStrategy("0412_Bollinger_Aroon/PY/bollinger_aroon_strategy.py");
+
+	[TestMethod]
+	public Task BollingerDivergence()
+		=> RunStrategy("0413_Bollinger_Divergence/PY/bollinger_divergence_strategy.py");
+
+	[TestMethod]
+	public Task BollingerWinnerLite()
+		=> RunStrategy("0414_Bollinger_Winner_Lite/PY/bollinger_winner_lite_strategy.py");
+
+	[TestMethod]
+	public Task BollingerWinnerPro()
+		=> RunStrategy("0415_Bollinger_Winner_Pro/PY/bollinger_winner_pro_strategy.py");
+
+	[TestMethod]
+	public Task BollingerBreakout()
+		=> RunStrategy("0416_Bollinger_Breakout/PY/bollinger_breakout_strategy.py");
+
+	[TestMethod]
+	public Task DmiWinner()
+		=> RunStrategy("0417_Dmi_Winner/PY/dmi_winner_strategy.py");
+
+	[TestMethod]
+	public Task DoubleRsi()
+		=> RunStrategy("0418_Double_Rsi/PY/double_rsi_strategy.py");
+
+	[TestMethod]
+	public Task DoubleSupertrend()
+		=> RunStrategy("0419_Double_Supertrend/PY/double_supertrend_strategy.py");
+
+	[TestMethod]
+	public Task EmaMovingAway()
+		=> RunStrategy("0420_Ema_Moving_Away/PY/ema_moving_away_strategy.py");
+
+	[TestMethod]
+	public Task EmaSmaRsi()
+		=> RunStrategy("0421_Ema_Sma_Rsi/PY/ema_sma_rsi_strategy.py");
+
+	[TestMethod]
+	public Task ExceededCandle()
+		=> RunStrategy("0422_Exceeded_Candle/PY/exceeded_candle_strategy.py");
+
+	[TestMethod]
+	public Task FlawlessVictory()
+		=> RunStrategy("0423_Flawless_Victory/PY/flawless_victory_strategy.py");
+
+	[TestMethod]
+	public Task FullCandle()
+		=> RunStrategy("0424_Full_Candle/PY/full_candle_strategy.py");
+
+	[TestMethod]
+	public Task GridBot()
+		=> RunStrategy("0425_Grid_Bot/PY/grid_bot_strategy.py");
+
+	[TestMethod]
+	public Task HaUniversal()
+		=> RunStrategy("0426_Ha_Universal/PY/ha_universal_strategy.py");
+
+	[TestMethod]
+	public Task HeikinAshiV2()
+		=> RunStrategy("0427_Heikin_Ashi_V2/PY/heikin_ashi_v2_strategy.py");
+
+	[TestMethod]
+	public Task Improvisando()
+		=> RunStrategy("0428_Improvisando/PY/improvisando_strategy.py");
+
+	[TestMethod]
+	public Task JavoV1()
+		=> RunStrategy("0429_Javo_V1/PY/javo_v1_strategy.py");
+
+	[TestMethod]
+	public Task MacdBbRsi()
+		=> RunStrategy("0430_Macd_Bb_Rsi/PY/macd_bb_rsi_strategy.py");
+
+	[TestMethod]
+	public Task MacdDmi()
+		=> RunStrategy("0432_Macd_Dmi/PY/macd_dmi_strategy.py");
+
+	[TestMethod]
+	public Task MacdLong()
+		=> RunStrategy("0433_Macd_Long/PY/macd_long_strategy.py");
+
+	[TestMethod]
+	public Task MaCrossDmi()
+		=> RunStrategy("0435_Ma_Cross_Dmi/PY/ma_cross_dmi_strategy.py");
+
+	[TestMethod]
+	public Task MemaBbRsi()
+		=> RunStrategy("0436_Mema_Bb_Rsi/PY/mema_bb_rsi_strategy.py");
+
+	[TestMethod]
+	public Task MtfBb()
+		=> RunStrategy("0437_Mtf_Bb/PY/mtf_bb_strategy.py");
+
+	[TestMethod]
+	public Task OmarMmr()
+		=> RunStrategy("0438_Omar_Mmr/PY/omar_mmr_strategy.py");
+
+	[TestMethod]
+	public Task PinBarMagic()
+		=> RunStrategy("0439_Pin_Bar_Magic/PY/pin_bar_magic_strategy.py");
+
+	[TestMethod]
+	public Task QqeSignals()
+		=> RunStrategy("0440_Qqe_Signals/PY/qqe_signals_strategy.py");
+
+	[TestMethod]
+	public Task RsiPlus1200()
+		=> RunStrategy("0441_Rsi_Plus_1200/PY/rsi_plus_1200_strategy.py");
+
+	[TestMethod]
+	public Task RsiEma()
+		=> RunStrategy("0442_Rsi_Ema/PY/rsi_ema_strategy.py");
+
+	[TestMethod]
+	public Task StochRsiCrossover()
+		=> RunStrategy("0443_Stoch_Rsi_Crossover/PY/stoch_rsi_crossover_strategy.py");
+
+	[TestMethod]
+	public Task StochRsiSupertrend()
+		=> RunStrategy("0444_Stoch_Rsi_Supertrend/PY/stoch_rsi_supertrend_strategy.py");
+
+	[TestMethod]
+	public Task StrategyTester()
+		=> RunStrategy("0445_Strategy_Tester/PY/strategy_tester_strategy.py");
+
+	[TestMethod]
+	public Task StratBase()
+		=> RunStrategy("0446_Strat_Base/PY/strat_base_strategy.py");
+
+	[TestMethod]
+	public Task SupertrendEmaRebound()
+		=> RunStrategy("0447_Supertrend_Ema_Rebound/PY/supertrend_ema_rebound_strategy.py");
+
+	[TestMethod]
+	public Task TendencyEmaRsi()
+		=> RunStrategy("0450_Tendency_Ema_Rsi/PY/tendency_ema_rsi_strategy.py");
+
+	[TestMethod]
+	public Task ThreeEmaCross()
+		=> RunStrategy("0451_Three_Ema_Cross/PY/three_ema_cross_strategy.py");
+
+	[TestMethod]
+	public Task TtmSqueeze()
+		=> RunStrategy("0452_Ttm_Squeeze/PY/ttm_squeeze_strategy.py");
+
+	[TestMethod]
+	public Task VelaSuperada()
+		=> RunStrategy("0453_Vela_Superada/PY/vela_superada_strategy.py");
+
+	[TestMethod]
+	public Task WilliamsVixFix()
+		=> RunStrategy("0454_Williams_Vix_Fix/PY/williams_vix_fix_strategy.py");
 }
