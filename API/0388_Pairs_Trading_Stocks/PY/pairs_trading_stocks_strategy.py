@@ -17,7 +17,7 @@ class pairs_trading_stocks_strategy(Strategy):
     def __init__(self):
         super().__init__()
         self._pairs = self.Param("Pairs", Array.Empty[Security]()) \
-            .SetDisplay("Pairs", "Pairs of securities", "General")
+            .SetDisplay("Pairs", "Securities for pairs (even indices paired with odd)", "General")
         self._window = self.Param("WindowDays", 60) \
             .SetDisplay("Window Days", "Rolling window size in days", "General")
         self._entryZ = self.Param("EntryZ", 2.0) \
@@ -48,9 +48,24 @@ class pairs_trading_stocks_strategy(Strategy):
         self._tf.Value = value
 
     def GetWorkingSecurities(self):
-        for a, b in self.pairs:
-            yield a, self.candle_type
-            yield b, self.candle_type
+        # Convert .NET Array to Python list
+        securities_list = list(self.pairs) if self.pairs is not None else []
+        
+        # Return all unique securities
+        for sec in securities_list:
+            yield sec, self.candle_type
+
+    def get_pairs_tuples(self):
+        """Create pairs from securities list: (0,1), (2,3), (4,5), ..."""
+        securities_list = list(self.pairs) if self.pairs is not None else []
+        
+        # Create pairs from adjacent elements
+        pairs = []
+        for i in range(0, len(securities_list) - 1, 2):
+            if i + 1 < len(securities_list):
+                pairs.append((securities_list[i], securities_list[i + 1]))
+        
+        return pairs
 
     def OnReseted(self):
         super().OnReseted()
@@ -58,13 +73,18 @@ class pairs_trading_stocks_strategy(Strategy):
         self._latest.clear()
 
     def OnStarted(self, time):
-        if not self.pairs:
-            raise Exception("Pairs must be set")
+        if not self.pairs or len(self.pairs) < 2:
+            raise Exception("At least 2 securities must be set for pairs")
         super().OnStarted(time)
-        for a, b in self.pairs:
-            self._hist[(a, b)] = []
-            self.SubscribeCandles(self.candle_type, True, a).Bind(lambda c, s=a: self._process(c, s)).Start()
-            self.SubscribeCandles(self.candle_type, True, b).Bind(lambda c, s=b: self._process(c, s)).Start()
+        
+        # Initialize history for each pair
+        for pair in self.get_pairs_tuples():
+            a, b = pair
+            self._hist[pair] = []
+        
+        # Subscribe to data for all securities
+        for sec, dt in self.GetWorkingSecurities():
+            self.SubscribeCandles(dt, True, sec).Bind(lambda c, s=sec: self._process(c, s)).Start()
 
     def _process(self, candle, sec):
         if candle.State != CandleStates.Finished:
@@ -73,7 +93,7 @@ class pairs_trading_stocks_strategy(Strategy):
         self._on_daily()
 
     def _on_daily(self):
-        for pair in self.pairs:
+        for pair in self.get_pairs_tuples():
             a, b = pair
             priceA = self._latest.get(a, 0)
             priceB = self._latest.get(b, 0)
@@ -110,7 +130,6 @@ class pairs_trading_stocks_strategy(Strategy):
         if price <= 0 or abs(diff) * price < self._min_usd.Value:
             return
         side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order, Security
         self.RegisterOrder(Order(Security=sec, Portfolio=self.Portfolio, Side=side,
                                  Volume=abs(diff), Type=OrderTypes.Market,
                                  Comment="Pairs"))

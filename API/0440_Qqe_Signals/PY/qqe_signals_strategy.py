@@ -8,7 +8,7 @@ from StockSharp.Messages import DataType, CandleStates
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class qqe_signals_strategy(Strategy):
     """QQE Signals strategy based on smoothed RSI bands.
@@ -89,23 +89,23 @@ class qqe_signals_strategy(Strategy):
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
 
-        rsi_val = self._rsi.Process(candle)
+        rsi_val = process_candle(self._rsi, candle)
         if not self._rsi.IsFormed:
             return
-        rsi_ma_val = self._rsi_ma.Process(rsi_val)
+        rsi_ma_val = process_float(self._rsi_ma, rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
         if not self._rsi_ma.IsFormed:
             return
-        rs_index = rsi_ma_val.GetValue[float]()
+        rs_index = float(rsi_ma_val)
 
         prev_rsi_ma = self._rsi_ma.GetValue(1)
         atr_rsi_val = abs(prev_rsi_ma - rs_index)
-        ma_atr_rsi_val = self._ma_atr_rsi.Process(atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
+        ma_atr_rsi_val = process_float(self._ma_atr_rsi, atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
         if not self._ma_atr_rsi.IsFormed:
             return
-        dar_val = self._dar.Process(ma_atr_rsi_val)
+        dar_val = process_float(self._dar, ma_atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
         if not self._dar.IsFormed:
             return
-        delta_fast = dar_val.GetValue[float]() * self._qqe_factor.Value
+        delta_fast = float(dar_val) * self._qqe_factor.Value
 
         new_shortband = rs_index + delta_fast
         new_longband = rs_index - delta_fast

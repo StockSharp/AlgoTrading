@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
 from System import Math
-from StockSharp.Messages import CandleStates, Sides, Unit
+from StockSharp.Messages import CandleStates, Sides, Unit, UnitTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import ExponentialMovingAverage, RelativeStrengthIndex, MovingAverageConvergenceDivergence
 from datatype_extensions import *
@@ -133,7 +133,6 @@ class vela_superada_strategy(Strategy):
             self.DrawIndicator(area, self._macd)
             self.DrawOwnTrades(area)
 
-        from StockSharp.Algo import Unit, UnitTypes
         self.StartProtection(Unit(self.tp_percent / 100.0, UnitTypes.Percent), Unit(self.sl_percent / 100.0, UnitTypes.Percent))
 
     def ProcessCandle(self, candle, ema_value, rsi_value, macd_value):

@@ -8,7 +8,7 @@ from StockSharp.Messages import CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import BollingerBands, Highest, Lowest, SimpleMovingAverage, StandardDeviation
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class williams_vix_fix_strategy(Strategy):
     """Williams VIX Fix strategy.
@@ -110,13 +110,21 @@ class williams_vix_fix_strategy(Strategy):
 
         self._highest_close = Highest()
         self._highest_close.Length = self.wvf_period
+
         self._lowest_close = Lowest()
         self._lowest_close.Length = self.wvf_period
 
-        self._wvf_sma = SimpleMovingAverage(); self._wvf_sma.Length = self.bb_length
-        self._wvf_std = StandardDeviation(); self._wvf_std.Length = self.bb_length
-        self._wvf_inv_sma = SimpleMovingAverage(); self._wvf_inv_sma.Length = self.bb_length
-        self._wvf_inv_std = StandardDeviation(); self._wvf_inv_std.Length = self.bb_length
+        self._wvf_sma = SimpleMovingAverage();
+        self._wvf_sma.Length = self.bb_length
+
+        self._wvf_std = StandardDeviation();
+        self._wvf_std.Length = self.bb_length
+
+        self._wvf_inv_sma = SimpleMovingAverage();
+        self._wvf_inv_sma.Length = self.bb_length
+
+        self._wvf_inv_std = StandardDeviation();
+        self._wvf_inv_std.Length = self.bb_length
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(self._bollinger, self._highest_close, self._lowest_close, self.ProcessCandle).Start()
@@ -139,15 +147,15 @@ class williams_vix_fix_strategy(Strategy):
         high_price = candle.HighPrice
 
         wvf = ((float(highest_value) - low_price) / float(highest_value)) * 100
-        wvf_sma = self._wvf_sma.Process(wvf, candle.ServerTime, True)
-        wvf_std = self._wvf_std.Process(wvf, candle.ServerTime, True)
+        wvf_sma = process_float(self._wvf_sma, wvf, candle.ServerTime, True)
+        wvf_std = process_float(self._wvf_std, wvf, candle.ServerTime, True)
         if not wvf_sma.IsFormed or not wvf_std.IsFormed:
             return
         wvf_upper = float(wvf_sma) + (self.bb_multiplier * float(wvf_std))
 
         wvf_inv = ((high_price - float(lowest_value)) / float(lowest_value)) * 100
-        wvf_inv_sma = self._wvf_inv_sma.Process(wvf_inv, candle.ServerTime, True)
-        wvf_inv_std = self._wvf_inv_std.Process(wvf_inv, candle.ServerTime, True)
+        wvf_inv_sma = process_float(self._wvf_inv_sma, wvf_inv, candle.ServerTime, True)
+        wvf_inv_std = process_float(self._wvf_inv_std, wvf_inv, candle.ServerTime, True)
         if not wvf_inv_sma.IsFormed or not wvf_inv_std.IsFormed:
             return
         wvf_inv_upper = float(wvf_inv_sma) + (self.bb_multiplier * float(wvf_inv_std))
