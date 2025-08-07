@@ -128,7 +128,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(new IIndicator[] { _rsi, _highest, _lowest, _closeSma, _momentum }, ProcessCandle)
+				.BindEx(new IIndicator[] { _rsi, _highest, _lowest, _closeSma, _momentum }, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal[] values)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -157,11 +157,23 @@ namespace StockSharp.Samples.Strategies
 				return;
 
 			// Extract values from array
-			var rsiValue = values[0];
-			var highestValue = values[1];
-			var lowestValue = values[2];
-			var closeSmaValue = values[3];
-			var momentumValue = values[4];
+
+			if (values[0].ToNullableDecimal() is not decimal rsiValue)
+				return; // Skip if RSI value is null
+
+			if (values[1].ToNullableDecimal() is not decimal highestValue)
+				return; // Skip if highest value is null
+
+			if (values[2].ToNullableDecimal() is not decimal lowestValue)
+				return; // Skip if lowest value is null
+
+			if (values[3].ToNullableDecimal() is not decimal closeSmaValue)
+				return; // Skip if close SMA value is null
+
+			var linRegValue = (LinearRegressionValue)values[4];
+
+			if (linRegValue.LinearRegSlope is not decimal momentumValue)
+				return; // Skip if momentum value is not available
 
 			// Process additional indicators manually
 			var bollingerValue = _bollingerBands.Process(candle);
