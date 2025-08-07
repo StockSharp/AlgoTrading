@@ -82,7 +82,9 @@ class currency_momentum_factor_strategy(Strategy):
     # endregion
 
     def GetWorkingSecurities(self):
-        return [(s, self.CandleType) for s in self.Universe]
+        # Преобразуем .NET Array в Python list
+        universe_list = list(self.Universe) if self.Universe is not None else []
+        return [(s, self.CandleType) for s in universe_list]
 
     def OnReseted(self):
         super(currency_momentum_factor_strategy, self).OnReseted()
@@ -156,20 +158,25 @@ class currency_momentum_factor_strategy(Strategy):
         val = self.GetPositionValue(security, self.Portfolio)
         return val if val is not None else 0
 
-    class RollingWindow:
-        def __init__(self, n):
-            self._n = n
-            self._q = []
-        def add(self, v):
-            if len(self._q) == self._n:
-                self._q.pop(0)
-            self._q.append(v)
-        def is_full(self):
-            return len(self._q) == self._n
-        def last(self):
-            return self._q[-1]
-        def __getitem__(self, idx):
-            return self._q[idx]
-
     def CreateClone(self):
         return currency_momentum_factor_strategy()
+
+# Helper class for rolling window functionality
+class RollingWindow:
+    def __init__(self, n):
+        self._n = n
+        self._q = []
+    
+    def add(self, v):
+        if len(self._q) == self._n:
+            self._q.pop(0)
+        self._q.append(v)
+    
+    def is_full(self):
+        return len(self._q) == self._n
+    
+    def last(self):
+        return self._q[-1]
+    
+    def __getitem__(self, idx):
+        return self._q[idx]

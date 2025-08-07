@@ -60,10 +60,10 @@ class flawless_victory_strategy(Strategy):
             return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        rsi = rsi_val
-        mfi = mfi_val
-        up = boll_val.UpBand
-        low = boll_val.LowBand
+        rsi = float(rsi_val)
+        mfi = float(mfi_val)
+        up = float(boll_val.UpBand)
+        low = float(boll_val.LowBand)
 
         entry_long = False
         entry_short = False

@@ -79,6 +79,7 @@ class dispersion_trading_strategy(Strategy):
     # endregion
 
     def GetWorkingSecurities(self):
+        # Преобразуем .NET Array в Python list и объединяем с бенчмарком
         constituents_list = list(self.Constituents) if self.Constituents is not None else []
         securities = constituents_list + [self.Security]
         
@@ -117,7 +118,9 @@ class dispersion_trading_strategy(Strategy):
 
     def CheckDispersion(self):
         index_returns = returns(self._windows[self.Security])
-        cons_returns = [returns(self._windows[s]) for s in self.Constituents]
+        # Преобразуем Constituents в список Python
+        constituents_list = list(self.Constituents) if self.Constituents is not None else []
+        cons_returns = [returns(self._windows[s]) for s in constituents_list]
         if not cons_returns:
             return
         corrs = [corr(index_returns, r) for r in cons_returns]
@@ -128,11 +131,13 @@ class dispersion_trading_strategy(Strategy):
             self.CloseAll()
 
     def OpenDispersion(self):
-        count = len(self.Constituents)
+        # Преобразуем Constituents в список Python
+        constituents_list = list(self.Constituents) if self.Constituents is not None else []
+        count = len(constituents_list)
         portfolio_value = self.Portfolio.CurrentValue or 0
         cap_leg = portfolio_value * 0.5
         each_long = cap_leg / count
-        for s in self.Constituents:
+        for s in constituents_list:
             price = self.GetLatestPrice(s)
             if price > 0:
                 self.TradeToTarget(s, each_long / price)
@@ -167,26 +172,30 @@ class dispersion_trading_strategy(Strategy):
         val = self.GetPositionValue(sec, self.Portfolio)
         return val if val is not None else 0
 
-    class RollingWindow:
-        def __init__(self, n):
-            self._n = n
-            self._q = []
-        def add(self, v):
-            if len(self._q) == self._n:
-                self._q.pop(0)
-            self._q.append(v)
-        def is_full(self):
-            return len(self._q) == self._n
-        def last(self):
-            return self._q[-1]
-        def to_array(self):
-            return list(self._q)
-
     def CreateClone(self):
         return dispersion_trading_strategy()
 
-# Helper functions for returns and correlation
+# Helper class for rolling window functionality
+class RollingWindow:
+    def __init__(self, n):
+        self._n = n
+        self._q = []
+    
+    def add(self, v):
+        if len(self._q) == self._n:
+            self._q.pop(0)
+        self._q.append(v)
+    
+    def is_full(self):
+        return len(self._q) == self._n
+    
+    def last(self):
+        return self._q[-1]
+    
+    def to_array(self):
+        return list(self._q)
 
+# Helper functions for returns and correlation
 def returns(win):
     arr = win.to_array()
     return [(arr[i] - arr[i-1]) / arr[i-1] for i in range(1, len(arr))]

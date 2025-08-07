@@ -146,24 +146,25 @@ class crude_oil_predicts_equity_strategy(Strategy):
         val = self.GetPositionValue(security, self.Portfolio)
         return val if val is not None else 0
 
-    class RollingWindow:
-        def __init__(self, n):
-            self._n = n
-            self._q = []
-
-        def add(self, v):
-            if len(self._q) == self._n:
-                self._q.pop(0)
-            self._q.append(v)
-
-        def is_full(self):
-            return len(self._q) == self._n
-
-        def last(self):
-            return self._q[-1]
-
-        def __getitem__(self, idx):
-            return self._q[idx]
-
     def CreateClone(self):
         return crude_oil_predicts_equity_strategy()
+
+# Helper class for rolling window functionality
+class RollingWindow:
+    def __init__(self, n):
+        self._n = n
+        self._q = []
+
+    def add(self, v):
+        if len(self._q) == self._n:
+            self._q.pop(0)
+        self._q.append(v)
+
+    def is_full(self):
+        return len(self._q) == self._n
+
+    def last(self):
+        return self._q[-1]
+
+    def __getitem__(self, idx):
+        return self._q[idx]
