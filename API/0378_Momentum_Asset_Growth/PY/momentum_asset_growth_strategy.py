@@ -3,10 +3,11 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
+from datatype_extensions import *
 
 class momentum_asset_growth_strategy(Strategy):
     """Combines momentum with the asset-growth effect."""
@@ -14,7 +15,7 @@ class momentum_asset_growth_strategy(Strategy):
     def __init__(self):
         super(momentum_asset_growth_strategy, self).__init__()
 
-        self._univ = self.Param("Universe", []) \
+        self._univ = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to trade", "General")
 
         self._momLook = self.Param("MomLook", 252) \
@@ -37,7 +38,7 @@ class momentum_asset_growth_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
         self._px = {}

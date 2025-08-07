@@ -1,12 +1,13 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 from collections import deque
 
@@ -17,7 +18,7 @@ class betting_against_beta_stocks_strategy(Strategy):
     def __init__(self):
         super(betting_against_beta_stocks_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities universe for strategy", "General")
 
         self._window = self.Param("WindowDays", 252) \
@@ -28,7 +29,7 @@ class betting_against_beta_stocks_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Deciles", "Number of buckets for sorting", "Parameters")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles to process", "General")
 
         self._min_usd = self.Param("MinTradeUsd", 100.0) \

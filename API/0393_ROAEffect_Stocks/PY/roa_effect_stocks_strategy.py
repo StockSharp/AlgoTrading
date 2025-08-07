@@ -3,10 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class roa_effect_stocks_strategy(Strategy):

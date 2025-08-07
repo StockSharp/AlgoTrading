@@ -156,21 +156,21 @@ class stoch_rsi_supertrend_strategy(Strategy):
         if not self._rsi.IsFormed or not self._trend_ma.IsFormed or not self._atr.IsFormed:
             return
 
-        rsi_price = rsi_value.ToDecimal()
-        high_val = self._stoch_high.Process(rsi_price).ToDecimal()
-        low_val = self._stoch_low.Process(rsi_price).ToDecimal()
+        rsi_price = float(rsi_value)
+        high_val = float(self._stoch_high.Process(rsi_price))
+        low_val = float(self._stoch_low.Process(rsi_price))
         if not self._stoch_high.IsFormed or not self._stoch_low.IsFormed:
             return
 
         stoch_rsi = (rsi_price - low_val) / (high_val - low_val) * 100 if high_val != low_val else 50
-        k_val = self._smooth_k_sma.Process(stoch_rsi).ToDecimal()
-        d_val = self._smooth_d_sma.Process(k_val).ToDecimal()
+        k_val = float(self._smooth_k_sma.Process(stoch_rsi))
+        d_val = float(self._smooth_d_sma.Process(k_val))
         if not self._smooth_k_sma.IsFormed or not self._smooth_d_sma.IsFormed:
             return
 
         cur_price = candle.ClosePrice
         hl2 = (candle.HighPrice + candle.LowPrice) / 2
-        atr = atr_value.ToDecimal()
+        atr = float(atr_value)
         upper = hl2 + (self.atr_factor * atr)
         lower = hl2 - (self.atr_factor * atr)
         supertrend = lower if cur_price > self._prev_super else upper
@@ -180,7 +180,7 @@ class stoch_rsi_supertrend_strategy(Strategy):
             self._cross_over = self._prev_k <= self._prev_d and k_val > d_val
             self._cross_under = self._prev_k >= self._prev_d and k_val < d_val
 
-        self.CheckEntry(candle, k_val, d_val, ma_value.ToDecimal(), direction)
+        self.CheckEntry(candle, k_val, d_val, float(ma_value), direction)
         self.CheckExit(candle, k_val, d_val)
 
         self._prev_k = k_val

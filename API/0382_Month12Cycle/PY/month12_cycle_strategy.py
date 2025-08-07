@@ -146,7 +146,7 @@ class month12_cycle_strategy(Strategy):
         if price <= 0 or abs(diff) * price < 50:
             return
         side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order
+        from StockSharp.BusinessEntities import Order, Security
         self.RegisterOrder(Order(Security=sec, Portfolio=self.Portfolio, Side=side,
                                  Volume=abs(diff), Type=OrderTypes.Market,
                                  Comment="12-MonthCycle"))

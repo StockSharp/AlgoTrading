@@ -4,10 +4,10 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Array, Math
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class bitcoin_intraday_seasonality_strategy(Strategy):

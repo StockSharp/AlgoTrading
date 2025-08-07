@@ -2,11 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -16,14 +17,14 @@ class earnings_quality_factor_strategy(Strategy):
     def __init__(self):
         super(earnings_quality_factor_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to trade", "General")
 
         self._min_usd = self.Param("MinTradeUsd", 100.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum trade size in USD", "Risk Management")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles for calculation", "General")
 
         self._weights = {}

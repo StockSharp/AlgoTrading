@@ -3,10 +3,10 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class lexical_density_filings_strategy(Strategy):
@@ -19,7 +19,7 @@ class lexical_density_filings_strategy(Strategy):
     def __init__(self):
         super(lexical_density_filings_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to trade", "General")
 
         self._quintile = self.Param("Quintile", 5) \
@@ -30,7 +30,7 @@ class lexical_density_filings_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum order value in USD", "Parameters")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Time frame for candles", "General")
 
         self._weights = {}

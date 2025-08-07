@@ -2,10 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class country_value_factor_strategy(Strategy):
@@ -14,7 +16,7 @@ class country_value_factor_strategy(Strategy):
     def __init__(self):
         super(country_value_factor_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Trading securities collection", "General")
 
         self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \

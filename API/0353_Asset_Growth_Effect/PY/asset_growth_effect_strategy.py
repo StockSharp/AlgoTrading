@@ -1,12 +1,13 @@
 import clr
 
 clr.AddReference("StockSharp.Messages")
+clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, Math
+from System import DateTime, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class asset_growth_effect_strategy(Strategy):
@@ -16,7 +17,7 @@ class asset_growth_effect_strategy(Strategy):
     def __init__(self):
         super(asset_growth_effect_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities universe to trade", "General")
 
         self._quant = self.Param("Quantiles", 10) \

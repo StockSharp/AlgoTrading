@@ -4,10 +4,10 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.BusinessEntities")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, TimeSpan, Math, Array
+from System import DateTime, TimeSpan, Math, Array, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order, Security
+from StockSharp.BusinessEntities import Order, Security, Security
 from datatype_extensions import *
 
 class accrual_anomaly_strategy(Strategy):

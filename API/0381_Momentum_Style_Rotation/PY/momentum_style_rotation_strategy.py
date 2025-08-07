@@ -125,7 +125,7 @@ class momentum_style_rotation_strategy(Strategy):
         self.RegisterOrder(self._create_order(sec, diff))
 
     def _create_order(self, sec, diff):
-        from StockSharp.BusinessEntities import Order
+        from StockSharp.BusinessEntities import Order, Security
         side = Sides.Buy if diff > 0 else Sides.Sell
         return Order(Security=sec, Portfolio=self.Portfolio, Side=side,
                      Volume=abs(diff), Type=self.OrderTypes.Market,

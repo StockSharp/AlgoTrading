@@ -114,7 +114,7 @@ class rd_expenditures_strategy(Strategy):
         if price <= 0 or abs(diff) * price < self.min_trade_usd:
             return
         side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order
+        from StockSharp.BusinessEntities import Order, Security
         self.RegisterOrder(Order(Security=sec, Portfolio=self.Portfolio, Side=side,
                                  Volume=abs(diff), Type=OrderTypes.Market,
                                  Comment="RDmom"))

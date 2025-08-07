@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Order
@@ -27,7 +27,7 @@ class january_barometer_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min trade USD", "Minimum order value", "Risk")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._latest_prices = {}

@@ -3,10 +3,11 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
+from datatype_extensions import *
 
 class momentum_rev_vol_strategy(Strategy):
     """Momentum / reversal / volatility composite strategy."""
@@ -14,7 +15,7 @@ class momentum_rev_vol_strategy(Strategy):
     def __init__(self):
         super(momentum_rev_vol_strategy, self).__init__()
 
-        self._univ = self.Param("Universe", []) \
+        self._univ = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to trade", "Universe")
 
         self._look12 = self.Param("Lookback12", 252) \
@@ -38,7 +39,7 @@ class momentum_rev_vol_strategy(Strategy):
         self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
             .SetDisplay("Min USD", "Minimum trade value", "Risk")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles used", "General")
 
         self._map = {}

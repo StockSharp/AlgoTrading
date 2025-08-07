@@ -2,11 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -22,7 +23,7 @@ class earnings_announcement_reversal_strategy(Strategy):
     def __init__(self):
         super(earnings_announcement_reversal_strategy, self).__init__()
 
-        self._univ = self.Param("Universe", []) \
+        self._univ = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Collection of securities to trade", "General")
 
         self._look = self.Param("LookbackDays", 5) \
@@ -37,7 +38,7 @@ class earnings_announcement_reversal_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum trade value in USD", "Parameters")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._map = {}

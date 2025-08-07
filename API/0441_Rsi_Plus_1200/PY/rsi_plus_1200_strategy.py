@@ -3,7 +3,7 @@ import clr
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 
-from System import TimeSpan
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, Unit, UnitTypes
 from StockSharp.Algo.Indicators import RelativeStrengthIndex, ExponentialMovingAverage
 from StockSharp.Algo.Strategies import Strategy
@@ -36,7 +36,7 @@ class rsi_plus_1200_strategy(Strategy):
         self._ema_length = self.Param("EmaLength", 150) \
             .SetDisplay("EMA Length", "EMA period for trend filter", "Moving Average")
 
-        self._mtf_timeframe = self.Param("MtfTimeframe", TimeSpan.FromMinutes(120)) \
+        self._mtf_timeframe = self.Param("MtfTimeframe", tf(120)) \
             .SetDisplay("MTF Timeframe", "Multi-timeframe for EMA", "Moving Average")
 
         self._show_long = self.Param("ShowLong", True) \
@@ -112,7 +112,7 @@ class rsi_plus_1200_strategy(Strategy):
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.Bind(self._rsi, self.ProcessMainCandle).Start()
 
-        mtf_sub = self.SubscribeCandles(self.mtf_timeframe.TimeFrame())
+        mtf_sub = self.SubscribeCandles(self.mtf_timeframe)
         mtf_sub.Bind(self._ema, self.ProcessMtfCandle).Start()
 
         area = self.CreateChartArea()

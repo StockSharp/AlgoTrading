@@ -2,11 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.BusinessEntities import Order
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 class crypto_rebalancing_premium_strategy(Strategy):
@@ -22,7 +23,7 @@ class crypto_rebalancing_premium_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum dollar amount per trade", "Trading")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromHours(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._latest_prices = {}

@@ -2,7 +2,7 @@ import clr
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.Messages")
 
-from System import TimeSpan, Math
+from System import TimeSpan, Array, Math
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.Algo.Indicators import ExponentialMovingAverage
 from StockSharp.Messages import CandleStates

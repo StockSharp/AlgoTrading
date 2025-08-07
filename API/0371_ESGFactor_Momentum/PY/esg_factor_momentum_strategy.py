@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Order
@@ -17,13 +17,13 @@ class esg_factor_momentum_strategy(Strategy):
     def __init__(self):
         super(esg_factor_momentum_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "ESG ETFs list", "Universe")
 
         self._lookback = self.Param("LookbackDays", 252) \
             .SetDisplay("Lookback Days", "Momentum lookback period", "General")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle TF", "Time-frame", "General")
 
         self._min_usd = self.Param("MinTradeUsd", 100.0) \

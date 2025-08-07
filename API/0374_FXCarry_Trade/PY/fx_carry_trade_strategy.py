@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Order
@@ -17,7 +17,7 @@ class fx_carry_trade_strategy(Strategy):
     def __init__(self):
         super(fx_carry_trade_strategy, self).__init__()
 
-        self._univ = self.Param("Universe", []) \
+        self._univ = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Currencies to trade", "General")
 
         self._topk = self.Param("TopK", 3) \
@@ -28,7 +28,7 @@ class fx_carry_trade_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min trade USD", "Minimum order value", "Risk")
 
-        self._tf = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._tf = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Time frame", "General")
 
         self._weights = {}

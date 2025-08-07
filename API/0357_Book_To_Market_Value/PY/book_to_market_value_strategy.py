@@ -2,9 +2,11 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import TimeSpan
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType
+from StockSharp.BusinessEntities import Order, Security
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
 
@@ -14,14 +16,14 @@ class book_to_market_value_strategy(Strategy):
     def __init__(self):
         super(book_to_market_value_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to process", "General")
 
         self._min_trade_usd = self.Param("MinTradeUsd", 200.0) \
             .SetGreaterThanZero() \
             .SetDisplay("Min Trade USD", "Minimum trade value in USD", "General")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
     # region Properties

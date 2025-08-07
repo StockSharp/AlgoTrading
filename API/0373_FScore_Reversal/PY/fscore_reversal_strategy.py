@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Order
@@ -17,7 +17,7 @@ class fscore_reversal_strategy(Strategy):
     def __init__(self):
         super(fscore_reversal_strategy, self).__init__()
 
-        self._universe = self.Param("Universe", []) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities universe", "General")
 
         self._lookback = self.Param("Lookback", 21) \
@@ -34,7 +34,7 @@ class fscore_reversal_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Min trade USD", "Minimum order value", "Risk")
 
-        self._candle_type = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._candle_type = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles to use", "General")
 
         self._prices = {}

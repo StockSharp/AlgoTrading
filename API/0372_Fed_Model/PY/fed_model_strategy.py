@@ -4,7 +4,7 @@ clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
 clr.AddReference("StockSharp.BusinessEntities")
 
-from System import DateTime, TimeSpan, Math
+from System import DateTime, TimeSpan, Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
 from StockSharp.BusinessEntities import Security, Order
@@ -17,7 +17,7 @@ class fed_model_strategy(Strategy):
     def __init__(self):
         super(fed_model_strategy, self).__init__()
 
-        self._univ = self.Param("Universe", []) \
+        self._univ = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Securities to trade", "General")
 
         self._bond = self.Param[Security]("BondYieldSym", None) \
@@ -30,7 +30,7 @@ class fed_model_strategy(Strategy):
             .SetGreaterThanZero() \
             .SetDisplay("Regression Months", "Months in regression window", "Settings")
 
-        self._tf = self.Param("CandleType", TimeSpan.FromDays(1).TimeFrame()) \
+        self._tf = self.Param("CandleType", tf(1)) \
             .SetDisplay("Candle Type", "Type of candles", "General")
 
         self._min_usd = self.Param("MinTradeUsd", 200.0) \
