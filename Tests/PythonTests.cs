@@ -1366,6 +1366,246 @@ public class PythonTests
 		});
 
 	[TestMethod]
+	public Task AssetClassTrendFollowing()
+		=> RunStrategy("0352_Asset_Class_Trend_Following/PY/asset_class_trend_following_strategy.py");
+
+	[TestMethod]
+	public Task AssetGrowthEffect()
+		=> RunStrategy("0353_Asset_Growth_Effect/PY/asset_growth_effect_strategy.py");
+
+	[TestMethod]
+	public Task BettingAgainstBetaStocks()
+		=> RunStrategy("0354_Betting_Against_Beta_Stocks/PY/betting_against_beta_stocks_strategy.py");
+
+	[TestMethod]
+	public Task BettingAgainstBeta()
+		=> RunStrategy("0355_Betting_Against_Beta/PY/betting_against_beta_strategy.py");
+
+	[TestMethod]
+	public Task BitcoinIntradaySeasonality()
+		=> RunStrategy("0356_Bitcoin_Intraday_Seasonality/PY/bitcoin_intraday_seasonality_strategy.py");
+
+	[TestMethod]
+	public Task BookToMarketValue()
+		=> RunStrategy("0357_Book_To_Market_Value/PY/book_to_market_value_strategy.py");
+
+	[TestMethod]
+	public Task CommodityMomentum()
+		=> RunStrategy("0358_Commodity_Momentum/PY/commodity_momentum_strategy.py");
+
+	[TestMethod]
+	public Task ConsistentMomentum()
+		=> RunStrategy("0359_Consistent_Momentum/PY/consistent_momentum_strategy.py");
+
+	[TestMethod]
+	public Task CountryValueFactor()
+		=> RunStrategy("0360_Country_Value_Factor/PY/country_value_factor_strategy.py");
+
+	[TestMethod]
+	public Task CrudeOilPredictsEquity()
+		=> RunStrategy("0361_Crude_Oil_Predicts_Equity/PY/crude_oil_predicts_equity_strategy.py");
+
+	[TestMethod]
+	public Task CryptoRebalancingPremium()
+		=> RunStrategy("0362_Crypto_Rebalancing_Premium/PY/crypto_rebalancing_premium_strategy.py");
+
+	[TestMethod]
+	public Task CurrencyMomentumFactor()
+		=> RunStrategy("0363_Currency_Momentum_Factor/PY/currency_momentum_factor_strategy.py");
+
+	[TestMethod]
+	public Task CurrencyPppValue()
+		=> RunStrategy("0364_Currency_PPPValue/PY/currency_ppp_value_strategy.py");
+
+	[TestMethod]
+	public Task DispersionTrading()
+		=> RunStrategy("0365_Dispersion_Trading/PY/dispersion_trading_strategy.py");
+
+	[TestMethod]
+	public Task DollarCarryTrade()
+		=> RunStrategy("0366_Dollar_Carry_Trade/PY/dollar_carry_trade_strategy.py");
+
+	[TestMethod]
+	public Task EarningsAnnouncementPremium()
+		=> RunStrategy("0367_Earnings_Announcement_Premium/PY/earnings_announcement_premium_strategy.py");
+
+	[TestMethod]
+	public Task EarningsAnnouncementReversal()
+		=> RunStrategy("0368_Earnings_Announcement_Reversal/PY/earnings_announcement_reversal_strategy.py");
+
+	[TestMethod]
+	public Task EarningsAnnouncementsWithBuybacks()
+		=> RunStrategy("0369_Earnings_Announcements_With_Buybacks/PY/earnings_announcements_with_buybacks_strategy.py");
+
+	[TestMethod]
+	public Task EarningsQualityFactor()
+		=> RunStrategy("0370_Earnings_Quality_Factor/PY/earnings_quality_factor_strategy.py");
+
+	[TestMethod]
+	public Task EsgFactorMomentum()
+		=> RunStrategy("0371_ESGFactor_Momentum/PY/esg_factor_momentum_strategy.py");
+
+	[TestMethod]
+	public Task FedModel()
+		=> RunStrategy("0372_Fed_Model/PY/fed_model_strategy.py");
+
+	[TestMethod]
+	public Task FscoreReversal()
+		=> RunStrategy("0373_FScore_Reversal/PY/fscore_reversal_strategy.py");
+
+	[TestMethod]
+	public Task FxCarryTrade()
+		=> RunStrategy("0374_FXCarry_Trade/PY/fx_carry_trade_strategy.py");
+
+	[TestMethod]
+	public Task JanuaryBarometer()
+		=> RunStrategy("0375_January_Barometer/PY/january_barometer_strategy.py");
+
+	[TestMethod]
+	public Task LexicalDensityFilings()
+		=> RunStrategy("0376_Lexical_Density_Filings/PY/lexical_density_filings_strategy.py");
+
+	[TestMethod]
+	public Task LowVolatilityStocks()
+		=> RunStrategy("0377_Low_Volatility_Stocks/PY/low_volatility_stocks_strategy.py");
+
+	[TestMethod]
+	public Task MomentumAssetGrowth()
+		=> RunStrategy("0378_Momentum_Asset_Growth/PY/momentum_asset_growth_strategy.py");
+
+	[TestMethod]
+	public Task MomentumFactorStocks()
+		=> RunStrategy("0379_Momentum_Factor_Stocks/PY/momentum_factor_stocks_strategy.py");
+
+	[TestMethod]
+	public Task MomentumRevVol()
+		=> RunStrategy("0380_Momentum_Rev_Vol/PY/momentum_rev_vol_strategy.py");
+
+	[TestMethod]
+	public Task MomentumStyleRotation()
+		=> RunStrategy("0381_Momentum_Style_Rotation/PY/momentum_style_rotation_strategy.py");
+
+	[TestMethod]
+	public Task Month12Cycle()
+		=> RunStrategy("0382_Month12Cycle/PY/month12_cycle_strategy.py");
+
+	[TestMethod]
+	public Task MutualFundMomentum()
+		=> RunStrategy("0383_Mutual_Fund_Momentum/PY/mutual_fund_momentum_strategy.py");
+
+	[TestMethod]
+	public Task OptionExpirationWeek()
+		=> RunStrategy("0384_Option_Expiration_Week/PY/option_expiration_week_strategy.py");
+
+	[TestMethod]
+	public Task OvernightSentimentAnomaly()
+		=> RunStrategy("0385_Overnight_Sentiment_Anomaly/PY/overnight_sentiment_anomaly_strategy.py");
+
+	[TestMethod]
+	public Task PairedSwitching()
+		=> RunStrategy("0386_Paired_Switching/PY/paired_switching_strategy.py");
+
+	[TestMethod]
+	public Task PairsTradingCountryEtfs()
+		=> RunStrategy("0387_Pairs_Trading_Country_ETFs/PY/pairs_trading_country_etfs_strategy.py");
+
+	[TestMethod]
+	public Task PairsTradingStocks()
+		=> RunStrategy("0388_Pairs_Trading_Stocks/PY/pairs_trading_stocks_strategy.py");
+
+	[TestMethod]
+	public Task PaydayAnomaly()
+		=> RunStrategy("0389_Payday_Anomaly/PY/payday_anomaly_strategy.py");
+
+	[TestMethod]
+	public Task RdExpenditures()
+		=> RunStrategy("0390_RDExpenditures/PY/rd_expenditures_strategy.py");
+
+	[TestMethod]
+	public Task ResidualMomentumFactor()
+		=> RunStrategy("0391_Residual_Momentum_Factor/PY/residual_momentum_factor_strategy.py");
+
+	[TestMethod]
+	public Task ReturnAsymmetryCommodity()
+		=> RunStrategy("0392_Return_Asymmetry_Commodity/PY/return_asymmetry_commodity_strategy.py");
+
+	[TestMethod]
+	public Task RoaEffectStocks()
+		=> RunStrategy("0393_ROAEffect_Stocks/PY/roa_effect_stocks_strategy.py");
+
+	[TestMethod]
+	public Task SectorMomentumRotation()
+		=> RunStrategy("0394_Sector_Momentum_Rotation/PY/sector_momentum_rotation_strategy.py");
+
+	[TestMethod]
+	public Task ShortInterestEffect()
+		=> RunStrategy("0395_Short_Interest_Effect/PY/short_interest_effect_strategy.py");
+
+	[TestMethod]
+	public Task ShortTermReversalFutures()
+		=> RunStrategy("0396_Short_Term_Reversal_Futures/PY/short_term_reversal_futures_strategy.py");
+
+	[TestMethod]
+	public Task ShortTermReversalStocks()
+		=> RunStrategy("0397_Short_Term_Reversal_Stocks/PY/short_term_reversal_stocks_strategy.py");
+
+	[TestMethod]
+	public Task SkewnessCommodity()
+		=> RunStrategy("0398_Skewness_Commodity/PY/skewness_commodity_strategy.py");
+
+	[TestMethod]
+	public Task SmallCapPremium()
+		=> RunStrategy("0399_Small_Cap_Premium/PY/small_cap_premium_strategy.py");
+
+	[TestMethod]
+	public Task SmartFactorsMomentumMarket()
+		=> RunStrategy("0400_Smart_Factors_Momentum_Market/PY/smart_factors_momentum_market_strategy.py");
+
+	[TestMethod]
+	public Task SoccerClubsArbitrage()
+		=> RunStrategy("0401_Soccer_Clubs_Arbitrage/PY/soccer_clubs_arbitrage_strategy.py");
+
+	[TestMethod]
+	public Task SyntheticLendingRates()
+		=> RunStrategy("0402_Synthetic_Lending_Rates/PY/synthetic_lending_rates_strategy.py");
+
+	[TestMethod]
+	public Task TermStructureCommodities()
+		=> RunStrategy("0403_Term_Structure_Commodities/PY/term_structure_commodities_strategy.py");
+
+	[TestMethod]
+	public Task TimeSeriesMomentum()
+		=> RunStrategy("0404_Time_Series_Momentum/PY/time_series_momentum_strategy.py");
+
+	[TestMethod]
+	public Task TrendFollowingStocks()
+		=> RunStrategy("0405_Trend_Following_Stocks/PY/trend_following_stocks_strategy.py");
+
+	[TestMethod]
+	public Task TurnOfMonth()
+		=> RunStrategy("0406_Turn_Of_Month/PY/turn_of_month_strategy.py");
+
+	[TestMethod]
+	public Task ValueMomentumAcrossAssets()
+		=> RunStrategy("0407_Value_Momentum_Across_Assets/PY/value_momentum_across_assets_strategy.py");
+
+	[TestMethod]
+	public Task VolatilityRiskPremium()
+		=> RunStrategy("0408_Volatility_Risk_Premium/PY/volatility_risk_premium_strategy.py");
+
+	[TestMethod]
+	public Task Weeks52High()
+		=> RunStrategy("0409_Weeks52High/PY/weeks52_high_strategy.py");
+
+	[TestMethod]
+	public Task WtiBrentSpread()
+		=> RunStrategy("0410_WTIBrent_Spread/PY/wti_brent_spread_strategy.py");
+
+	[TestMethod]
+	public Task AssetClassMomentumRotational()
+		=> RunStrategy("0411_Asset_Class_Momentum_Rotational/PY/asset_class_momentum_rotational_strategy.py");
+
+	[TestMethod]
 	public Task BollingerAroon()
 		=> RunStrategy("0412_Bollinger_Aroon/PY/bollinger_aroon_strategy.py");
 
