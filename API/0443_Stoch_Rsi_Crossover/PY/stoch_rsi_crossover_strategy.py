@@ -2,7 +2,9 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import (
     RelativeStrengthIndex,
@@ -11,10 +13,11 @@ from StockSharp.Algo.Indicators import (
     SimpleMovingAverage,
     ExponentialMovingAverage,
     AverageTrueRange,
+    IIndicator
 )
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class stoch_rsi_crossover_strategy(Strategy):
     """Stochastic RSI crossover strategy with triple EMA trend filter.
@@ -144,14 +147,27 @@ class stoch_rsi_crossover_strategy(Strategy):
         self._smooth_d_sma = SimpleMovingAverage()
         self._smooth_d_sma.Length = self.smooth_d
 
-        self._ema1 = ExponentialMovingAverage(); self._ema1.Length = self.ema1_length
-        self._ema2 = ExponentialMovingAverage(); self._ema2.Length = self.ema2_length
-        self._ema3 = ExponentialMovingAverage(); self._ema3.Length = self.ema3_length
+        self._ema1 = ExponentialMovingAverage();
+        self._ema1.Length = self.ema1_length
 
-        self._atr = AverageTrueRange(); self._atr.Length = self.atr_length
+        self._ema2 = ExponentialMovingAverage();
+        self._ema2.Length = self.ema2_length
+
+        self._ema3 = ExponentialMovingAverage();
+        self._ema3.Length = self.ema3_length
+
+        self._atr = AverageTrueRange();
+        self._atr.Length = self.atr_length
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.Bind(self._rsi, self._ema1, self._ema2, self._ema3, self._atr, self.ProcessCandle).Start()
+        indicators_array = Array.CreateInstance(IIndicator, 5)
+        indicators_array[0] = self._rsi
+        indicators_array[1] = self._ema1
+        indicators_array[2] = self._ema2
+        indicators_array[3] = self._ema3
+        indicators_array[4] = self._atr
+        
+        subscription.BindEx(indicators_array, self.ProcessCandle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -161,16 +177,22 @@ class stoch_rsi_crossover_strategy(Strategy):
             self.DrawIndicator(area, self._ema3)
             self.DrawOwnTrades(area)
 
-    def ProcessCandle(self, candle, rsi_value, ema1_value, ema2_value, ema3_value, atr_value):
+    def ProcessCandle(self, candle, indicator_values):
         if candle.State != CandleStates.Finished:
             return
 
         if not (self._rsi.IsFormed and self._ema1.IsFormed and self._ema2.IsFormed and self._ema3.IsFormed and self._atr.IsFormed):
             return
 
-        rsi_price = rsi_value
-        highest = self._high.Process(rsi_price, candle.ServerTime, True)
-        lowest = self._low.Process(rsi_price, candle.ServerTime, True)
+        rsi_value = float(indicator_values[0])
+        ema1_value = float(indicator_values[1]) 
+        ema2_value = float(indicator_values[2])
+        ema3_value = float(indicator_values[3])
+        atr_value = float(indicator_values[4])
+
+        rsi_price = float(rsi_value)
+        highest = process_float(self._high, rsi_price, candle.ServerTime, True)
+        lowest = process_float(self._low, rsi_price, candle.ServerTime, True)
         if not (highest.IsFormed and lowest.IsFormed):
             return
 
@@ -178,8 +200,8 @@ class stoch_rsi_crossover_strategy(Strategy):
         low_val = float(lowest)
         stoch_rsi = 50 if high_val == low_val else (rsi_price - low_val) / (high_val - low_val) * 100
 
-        k_val = self._smooth_k_sma.Process(stoch_rsi, candle.ServerTime, True)
-        d_val = self._smooth_d_sma.Process(float(k_val), candle.ServerTime, True)
+        k_val = process_float(self._smooth_k_sma, stoch_rsi, candle.ServerTime, True)
+        d_val = process_float(self._smooth_d_sma, k_val, candle.ServerTime, True)
         if not (k_val.IsFormed and d_val.IsFormed):
             return
 
@@ -190,19 +212,23 @@ class stoch_rsi_crossover_strategy(Strategy):
         crossed_under = self._prev_k >= self._prev_d and k < d
 
         price = candle.ClosePrice
+        ema1_val = float(ema1_value)
+        ema2_val = float(ema2_value)
+        ema3_val = float(ema3_value)
+        atr_val = float(atr_value)
 
         if (crossed_over and 10 <= k <= 60 and
-                ema1_value > ema2_value > ema3_value and
-                price > ema1_value and self.Position == 0):
-            stop_loss = price - atr_value * self.atr_loss_multiplier
-            take_profit = price + atr_value * self.atr_profit_multiplier
+                ema1_val > ema2_val > ema3_val and
+                price > ema1_val and self.Position == 0):
+            stop_loss = price - atr_val * self.atr_loss_multiplier
+            take_profit = price + atr_val * self.atr_profit_multiplier
             self.RegisterOrder(self.CreateOrder(Sides.Buy, price, self.Volume))
 
         if (crossed_under and 40 <= k <= 95 and
-                ema3_value > ema2_value > ema1_value and
-                price < ema1_value and self.Position == 0):
-            stop_loss = price + atr_value * self.atr_loss_multiplier
-            take_profit = price - atr_value * self.atr_profit_multiplier
+                ema3_val > ema2_val > ema1_val and
+                price < ema1_val and self.Position == 0):
+            stop_loss = price + atr_val * self.atr_loss_multiplier
+            take_profit = price - atr_val * self.atr_profit_multiplier
             self.RegisterOrder(self.CreateOrder(Sides.Sell, price, self.Volume))
 
         self._prev_k = k

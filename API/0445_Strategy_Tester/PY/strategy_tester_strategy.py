@@ -2,7 +2,9 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
+from System import TimeSpan, Array
 from StockSharp.Messages import DataType, CandleStates, Sides
 from StockSharp.Algo.Indicators import (
     LinearRegression,
@@ -11,6 +13,7 @@ from StockSharp.Algo.Indicators import (
     SimpleMovingAverage,
     AverageDirectionalIndex,
     AverageTrueRange,
+    IIndicator
 )
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
@@ -131,7 +134,16 @@ class strategy_tester_strategy(Strategy):
         self._atr = AverageTrueRange(Length=self.atr_length)
 
         sub = self.SubscribeCandles(self.candle_type)
-        sub.BindEx([self._highest, self._lowest, self._close_sma, self._momentum, self._adx, self._atr], self.ProcessCandle)
+        
+        indicators_array = Array.CreateInstance(IIndicator, 6)
+        indicators_array[0] = self._highest
+        indicators_array[1] = self._lowest
+        indicators_array[2] = self._close_sma
+        indicators_array[3] = self._momentum
+        indicators_array[4] = self._adx
+        indicators_array[5] = self._atr
+        
+        sub.BindEx(indicators_array, self.ProcessCandle)
         sub.Start()
 
         area = self.CreateChartArea()
@@ -151,16 +163,10 @@ class strategy_tester_strategy(Strategy):
         sma_val = float(values[2])
 
         lr_val = values[3]
-        if isinstance(lr_val, LinearRegression.LinearRegressionValue):
-            momentum_val = lr_val.LinearRegSlope
-        else:
-            momentum_val = float(lr_val)
+        momentum_val = float(lr_val.LinearRegSlope)
 
         adx_val_obj = values[4]
-        if isinstance(adx_val_obj, AverageDirectionalIndex.AverageDirectionalIndexValue):
-            adx_val = adx_val_obj.MovingAverage
-        else:
-            adx_val = float(adx_val_obj)
+        adx_val = float(adx_val_obj.MovingAverage)
 
         atr_val = float(values[5])
 
