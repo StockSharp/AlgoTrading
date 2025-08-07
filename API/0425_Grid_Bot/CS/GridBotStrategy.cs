@@ -107,7 +107,7 @@ public class GridBotStrategy : Strategy
 		}
 
 		// Subscribe to candles
-		var subscription = this.SubscribeCandles(CandleType);
+		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();

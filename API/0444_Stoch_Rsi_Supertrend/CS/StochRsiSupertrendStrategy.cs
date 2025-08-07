@@ -296,7 +296,7 @@ namespace StockSharp.Samples.Strategies
 				supertrendDirection < 0 && 
 				Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
 			// Short entry: close < trend MA, K > 80, K crosses under D, Supertrend is bearish
@@ -307,7 +307,7 @@ namespace StockSharp.Samples.Strategies
 				supertrendDirection > 0 && 
 				Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 			}
 		}
 
@@ -318,13 +318,13 @@ namespace StockSharp.Samples.Strategies
 			// Exit long: K > 80 and K crosses under D
 			if (Position > 0 && k > 80 && _kCrossedUnderD)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 			}
 
 			// Exit short: K < 20 and K crosses over D
 			if (Position < 0 && k < 20 && _kCrossedOverD)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 			}
 		}
 

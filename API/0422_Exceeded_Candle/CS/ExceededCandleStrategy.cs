@@ -145,11 +145,11 @@ namespace StockSharp.Samples.Strategies
 			// Execute trades
 			if (buyEntry && Position == 0)
 			{
-				RegisterOrder(this.BuyMarket(Volume));
+				BuyMarket(Volume);
 			}
 			else if (buyExit && Position > 0)
 			{
-				RegisterOrder(this.SellMarket(Position));
+				SellMarket(Position);
 			}
 
 			// Update candle history

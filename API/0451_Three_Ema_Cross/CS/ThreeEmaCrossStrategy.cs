@@ -215,7 +215,7 @@ namespace StockSharp.Samples.Strategies
 
 			if (entryCondition && Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 		}
 
@@ -226,7 +226,7 @@ namespace StockSharp.Samples.Strategies
 				_previousFastEma > _previousSlowEma && 
 				fastEmaValue < slowEmaValue)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
 			}
 		}
 

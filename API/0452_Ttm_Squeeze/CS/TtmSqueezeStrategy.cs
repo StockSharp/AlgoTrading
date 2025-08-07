@@ -212,7 +212,7 @@ namespace StockSharp.Samples.Strategies
 				rsiValue > 30 && 
 				Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
 			// Short entry: momentum > 0, momentum decreasing for 2 bars, RSI < 70
@@ -222,7 +222,7 @@ namespace StockSharp.Samples.Strategies
 				rsiValue < 70 && 
 				Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 			}
 		}
 

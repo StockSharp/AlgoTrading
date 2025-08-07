@@ -222,22 +222,22 @@ namespace StockSharp.Samples.Strategies
 			{
 				if (entryLong && Position == 0)
 				{
-					RegisterOrder(this.BuyMarket(Volume));
+					BuyMarket(Volume);
 				}
 				else if (exitLong && Position > 0)
 				{
-					RegisterOrder(this.SellMarket(Position));
+					SellMarket(Position);
 				}
 			}
 			else if (isShortMode)
 			{
 				if (entryShort && Position == 0)
 				{
-					RegisterOrder(this.SellMarket(Volume));
+					SellMarket(Volume);
 				}
 				else if ((exitShort || inLong1) && Position < 0)
 				{
-					RegisterOrder(this.BuyMarket(Position.Abs()));
+					BuyMarket(Position.Abs());
 				}
 			}
 

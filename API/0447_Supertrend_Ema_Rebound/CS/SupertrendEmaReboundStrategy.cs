@@ -231,7 +231,7 @@ namespace StockSharp.Samples.Strategies
 
 				if (entryLong1 || entryLong2)
 				{
-					RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+					RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 				}
 			}
 
@@ -249,7 +249,7 @@ namespace StockSharp.Samples.Strategies
 
 				if (entryShort1 || entryShort2)
 				{
-					RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+					RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 				}
 			}
 		}
@@ -259,13 +259,13 @@ namespace StockSharp.Samples.Strategies
 			// Exit long when Supertrend changes to downtrend
 			if (Position > 0 && supertrendDirectionChanged && supertrendDirection > 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
 			}
 
 			// Exit short when Supertrend changes to uptrend
 			if (Position < 0 && supertrendDirectionChanged && supertrendDirection < 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, _previousClose, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Buy, _previousClose, Math.Abs(Position)));
 			}
 
 			// Handle take profit based on type

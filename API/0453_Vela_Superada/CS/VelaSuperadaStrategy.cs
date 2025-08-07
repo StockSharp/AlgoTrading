@@ -222,7 +222,7 @@ namespace StockSharp.Samples.Strategies
 				macdValue > _previousMacd && 
 				Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
 			// Short entry: bearish pattern, close < EMA, previous close < EMA, RSI > 35, MACD falling
@@ -234,7 +234,7 @@ namespace StockSharp.Samples.Strategies
 				macdValue < _previousMacd && 
 				Position == 0)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 			}
 		}
 

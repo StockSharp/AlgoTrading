@@ -251,7 +251,7 @@ namespace StockSharp.Samples.Strategies
 				Position == 0)
 			{
 				_entryPrice = openPrice;
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
 			// Short entry: EMA A crosses under EMA B, EMA A < EMA C (trend filter), bearish candle
@@ -262,7 +262,7 @@ namespace StockSharp.Samples.Strategies
 				Position == 0)
 			{
 				_entryPrice = openPrice;
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 			}
 		}
 
@@ -273,14 +273,14 @@ namespace StockSharp.Samples.Strategies
 			// Exit long: RSI > 70
 			if (Position > 0 && rsiValue > 70)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 				return;
 			}
 
 			// Exit short: RSI < 30
 			if (Position < 0 && rsiValue < 30)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 				return;
 			}
 
@@ -292,11 +292,11 @@ namespace StockSharp.Samples.Strategies
 
 				if (isLongProfitable)
 				{
-					RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+					RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 				}
 				else if (isShortProfitable)
 				{
-					RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
+					RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 				}
 			}
 		}

@@ -374,7 +374,7 @@ namespace StockSharp.Samples.Strategies
 			// Execute trades
 			if (ShowLong && buy && Position == 0)
 			{
-				RegisterOrder(this.BuyMarket(Volume));
+				BuyMarket(Volume);
 				_inPosition = true;
 			}
 			else if (_inPosition)
@@ -382,27 +382,27 @@ namespace StockSharp.Samples.Strategies
 				// Close early if enabled and in profit
 				if (CloseEarly && closePrice > upperBand && PnL > 0)
 				{
-					RegisterOrder(this.SellMarket(Position));
+					SellMarket(Position);
 					_inPosition = false;
 				}
 				// Normal exit
 				else if (sell || sellAroonFilter)
 				{
-					RegisterOrder(this.SellMarket(Position));
+					SellMarket(Position);
 					_inPosition = false;
 				}
 			}
 
 			if (ShowShort && sell && Position == 0)
 			{
-				RegisterOrder(this.SellMarket(Volume));
+				SellMarket(Volume);
 				_inPosition = true;
 			}
 			else if (_inPosition && Position < 0)
 			{
 				if (CloseEarly && closePrice < lowerBand && PnL > 0)
 				{
-					RegisterOrder(this.BuyMarket(Position.Abs()));
+					BuyMarket(Position.Abs());
 					_inPosition = false;
 				}
 			}

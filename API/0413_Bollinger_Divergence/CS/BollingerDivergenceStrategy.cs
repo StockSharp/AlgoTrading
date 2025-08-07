@@ -163,23 +163,23 @@ namespace StockSharp.Samples.Strategies
 			// Long entry
 			if (buySignal && buyZone > upperBand && Position == 0)
 			{
-				RegisterOrder(this.BuyMarket(Volume));
+				BuyMarket(Volume);
 			}
 			// Long exit
 			else if (Position > 0 && closePrice < middleBand)
 			{
-				RegisterOrder(this.SellMarket(Position));
+				SellMarket(Position);
 			}
 
 			// Short entry
 			if (sellSignal && sellZone < lowerBand && Position == 0)
 			{
-				RegisterOrder(this.SellMarket(Volume));
+				SellMarket(Volume);
 			}
 			// Short exit
 			else if (Position < 0 && closePrice > middleBand)
 			{
-				RegisterOrder(this.BuyMarket(Position.Abs()));
+				BuyMarket(Position.Abs());
 			}
 
 			// Update previous bands

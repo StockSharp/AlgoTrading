@@ -217,6 +217,14 @@ public class BollingerBreakoutStrategy : Strategy
 		=> new[] { (Security, CandleType) };
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_entryPrice = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

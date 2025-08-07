@@ -85,7 +85,7 @@ public class HaUniversalStrategy : Strategy
 		_smaLow = new Lowest { Length = Period };
 
 		// Subscribe to candles
-		var subscription = this.SubscribeCandles(CandleType);
+		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();

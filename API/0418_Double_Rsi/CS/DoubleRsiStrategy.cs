@@ -146,14 +146,16 @@ namespace StockSharp.Samples.Strategies
 			if (buy && Position <= 0)
 			{
 				if (Position < 0)
-					RegisterOrder(this.BuyMarket(Position.Abs()));
-				RegisterOrder(this.BuyMarket(Volume));
+					BuyMarket(Position.Abs());
+
+				BuyMarket(Volume);
 			}
 			else if (sell && Position >= 0)
 			{
 				if (Position > 0)
-					RegisterOrder(this.SellMarket(Position));
-				RegisterOrder(this.SellMarket(Volume));
+					SellMarket(Position);
+
+				SellMarket(Volume);
 			}
 		}
 	}

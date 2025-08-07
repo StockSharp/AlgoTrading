@@ -265,7 +265,7 @@ namespace StockSharp.Samples.Strategies
 			if ((buyCondition1 || buyCondition2) && Position == 0)
 			{
 				var stopLoss = currentPrice - (atrValue * AtrMultiplier);
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Volume));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			// Short conditions are disabled by default in original script
@@ -277,7 +277,7 @@ namespace StockSharp.Samples.Strategies
 			// Exit long on momentum pivot high (if exit by momentum is enabled)
 			if (Position > 0 && ExitByMomentum && momentumPivotHigh)
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
+				RegisterOrder(CreateOrder(Sides.Sell, _previousClose, Math.Abs(Position)));
 			}
 
 			// Additional exit conditions based on strategy settings

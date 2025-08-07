@@ -104,7 +104,7 @@ public class HeikinAshiV2Strategy : Strategy
 		}
 
 		// Subscribe to candles
-		var subscription = this.SubscribeCandles(CandleType);
+		var subscription = SubscribeCandles(CandleType);
 		
 		if (UseMacdFilter)
 		{

@@ -234,7 +234,7 @@ namespace StockSharp.Samples.Strategies
 				currentPrice > emaValue && 
 				currentPrice <= emaValue * 1.01m) // +1% slack
 			{
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
 			// Short entry conditions: close < EMA, RSI crosses under overbought, price within 1% below EMA  
@@ -242,7 +242,7 @@ namespace StockSharp.Samples.Strategies
 				currentPrice < emaValue && 
 				currentPrice >= emaValue * 0.99m) // -1% slack
 			{
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 			}
 		}
 
@@ -256,7 +256,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				if (rsiValue > RsiOverbought)
 				{
-					RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
+					RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 				}
 				// Note: 5 consecutive red candles logic would need additional state tracking
 				// Simplified to main exit condition for now
@@ -267,7 +267,7 @@ namespace StockSharp.Samples.Strategies
 			{
 				if (rsiValue < RsiOversold)
 				{
-					RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
+					RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 				}
 				// Note: 5 consecutive green candles logic would need additional state tracking
 				// Simplified to main exit condition for now

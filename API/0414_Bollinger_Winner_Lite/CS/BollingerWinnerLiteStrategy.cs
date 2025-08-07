@@ -143,18 +143,18 @@ namespace StockSharp.Samples.Strategies
 			// Long entry
 			if (buy && Position == 0)
 			{
-				RegisterOrder(this.BuyMarket(Volume));
+				BuyMarket(Volume);
 			}
 			// Exit or Short entry
 			else if (sell)
 			{
 				if (Position > 0)
 				{
-					RegisterOrder(this.SellMarket(Position));
+					SellMarket(Position);
 				}
 				else if (ShowShort && Position == 0)
 				{
-					RegisterOrder(this.SellMarket(Volume));
+					SellMarket(Volume);
 				}
 			}
 		}

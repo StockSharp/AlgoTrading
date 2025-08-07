@@ -284,22 +284,22 @@ namespace StockSharp.Samples.Strategies
 			{
 				if (longEntry && Position == 0)
 				{
-					RegisterOrder(this.BuyMarket(Volume));
+					BuyMarket(Volume);
 				}
 				else if (shortEntry && Position > 0)
 				{
-					RegisterOrder(this.SellMarket(Position));
+					SellMarket(Position);
 				}
 			}
 			else if (!ShowLong && ShowShort)
 			{
 				if (shortEntry && Position == 0)
 				{
-					RegisterOrder(this.SellMarket(Volume));
+					SellMarket(Volume);
 				}
 				else if (longEntry && Position < 0)
 				{
-					RegisterOrder(this.BuyMarket(Position.Abs()));
+					BuyMarket(Position.Abs());
 				}
 			}
 			else if (ShowLong && ShowShort)
@@ -308,22 +308,22 @@ namespace StockSharp.Samples.Strategies
 				{
 					if (Position < 0)
 					{
-						RegisterOrder(this.BuyMarket(Position.Abs() + Volume));
+						BuyMarket(Position.Abs() + Volume);
 					}
 					else if (Position == 0)
 					{
-						RegisterOrder(this.BuyMarket(Volume));
+						BuyMarket(Volume);
 					}
 				}
 				else if (shortEntry)
 				{
 					if (Position > 0)
 					{
-						RegisterOrder(this.SellMarket(Position + Volume));
+						SellMarket(Position + Volume);
 					}
 					else if (Position == 0)
 					{
-						RegisterOrder(this.SellMarket(Volume));
+						SellMarket(Volume);
 					}
 				}
 			}

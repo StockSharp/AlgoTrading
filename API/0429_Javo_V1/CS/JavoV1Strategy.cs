@@ -70,7 +70,7 @@ public class JavoV1Strategy : Strategy
 		_slowEma = new ExponentialMovingAverage { Length = SlowEmaPeriod };
 
 		// Subscribe to candles
-		var subscription = this.SubscribeCandles(CandleType);
+		var subscription = SubscribeCandles(CandleType);
 		subscription
 			.Bind(ProcessCandle)
 			.Start();

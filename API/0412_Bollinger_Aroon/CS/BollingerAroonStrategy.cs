@@ -166,13 +166,13 @@ namespace StockSharp.Samples.Strategies
 			// Long entry
 			if (bullish && aroonConfirmed && Position == 0)
 			{
-				RegisterOrder(this.BuyMarket(Volume));
+				BuyMarket(Volume);
 			}
 			
 			// Exit conditions
 			if (Position > 0 && (bearish || aroonStopTriggered))
 			{
-				RegisterOrder(this.SellMarket(Volume));
+				SellMarket(Volume);
 			}
 		}
 	}

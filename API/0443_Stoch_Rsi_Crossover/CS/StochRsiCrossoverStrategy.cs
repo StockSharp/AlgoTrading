@@ -316,7 +316,7 @@ namespace StockSharp.Samples.Strategies
 				var stopLoss = currentPrice - (atrValue * AtrLossMultiplier);
 				var takeProfit = currentPrice + (atrValue * AtrProfitMultiplier);
 
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
 			// Short entry conditions: K crosses under D, K between 40-95, EMA trend is bearish, close < EMA1
@@ -329,7 +329,7 @@ namespace StockSharp.Samples.Strategies
 				var stopLoss = currentPrice + (atrValue * AtrLossMultiplier);
 				var takeProfit = currentPrice - (atrValue * AtrProfitMultiplier);
 
-				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
 			}
 		}
 
