@@ -56,6 +56,11 @@ class mtf_bb_strategy(Strategy):
         self._bb = None
         self._mtf_bb = None
         self._ma = None
+        
+        # Store previous indicator values
+        self._prev_mtf_bb_upper = 0.0
+        self._prev_mtf_bb_lower = 0.0
+        self._prev_ma_value = 0.0
 
     @property
     def candle_type(self):
@@ -64,6 +69,12 @@ class mtf_bb_strategy(Strategy):
     @property
     def mtf_candle_type(self):
         return self._mtf_candle_type.Value
+
+    def OnReseted(self):
+        super(mtf_bb_strategy, self).OnReseted()
+        self._prev_mtf_bb_upper = 0.0
+        self._prev_mtf_bb_lower = 0.0
+        self._prev_ma_value = 0.0
 
     def OnStarted(self, time):
         super(mtf_bb_strategy, self).OnStarted(time)
@@ -100,10 +111,16 @@ class mtf_bb_strategy(Strategy):
             self.StartProtection(Unit(), Unit(self._sl_percent.Value, UnitTypes.Percent))
 
     def OnProcessMtf(self, candle, mtf_bb_val):
-        pass
+        # Store MTF Bollinger Bands values
+        if mtf_bb_val is not None and self._mtf_bb.IsFormed:
+            bb_typed = mtf_bb_val  # BollingerBandsValue
+            self._prev_mtf_bb_upper = float(bb_typed.UpBand) if bb_typed.UpBand is not None else 0.0
+            self._prev_mtf_bb_lower = float(bb_typed.LowBand) if bb_typed.LowBand is not None else 0.0
 
     def OnProcessMa(self, candle, ma_val):
-        pass
+        # Store MA value
+        if ma_val is not None and self._ma.IsFormed:
+            self._prev_ma_value = float(ma_val)
 
     def OnProcess(self, candle, bb_val):
         if candle.State != CandleStates.Finished:
@@ -114,15 +131,18 @@ class mtf_bb_strategy(Strategy):
             return
 
         bb = bb_val
-        upper = bb.UpBand
-        lower = bb.LowBand
-        mtf_upper = self._mtf_bb.UpBand.GetValue(0)
-        mtf_lower = self._mtf_bb.LowBand.GetValue(0)
+        upper = float(bb.UpBand) if bb.UpBand is not None else 0.0
+        lower = float(bb.LowBand) if bb.LowBand is not None else 0.0
+        
+        # Use stored MTF Bollinger Bands values instead of GetValue()
+        mtf_upper = self._prev_mtf_bb_upper
+        mtf_lower = self._prev_mtf_bb_lower
 
         buy_ma_filter = True
         sell_ma_filter = True
         if self._use_ma_filter.Value and self._ma is not None:
-            ma_val = self._ma.GetValue(0)
+            # Use stored MA value instead of GetValue()
+            ma_val = self._prev_ma_value
             buy_ma_filter = candle.ClosePrice > ma_val
             sell_ma_filter = candle.ClosePrice < ma_val
 

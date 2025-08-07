@@ -43,8 +43,13 @@ class qqe_signals_strategy(Strategy):
         self._ma_atr_rsi = None
         self._dar = None
 
+        # Store previous values instead of using GetValue()
+        self._prev_rsi_ma = 0.0
+        self._prev_rs_index = 0.0
         self._longband = 0.0
         self._shortband = 0.0
+        self._prev_longband = 0.0
+        self._prev_shortband = 0.0
         self._trend = 0
         self._qqe_xlong = 0
         self._qqe_xshort = 0
@@ -55,8 +60,12 @@ class qqe_signals_strategy(Strategy):
 
     def OnReseted(self):
         super(qqe_signals_strategy, self).OnReseted()
+        self._prev_rsi_ma = 0.0
+        self._prev_rs_index = 0.0
         self._longband = 0.0
         self._shortband = 0.0
+        self._prev_longband = 0.0
+        self._prev_shortband = 0.0
         self._trend = 0
         self._qqe_xlong = 0
         self._qqe_xshort = 0
@@ -97,34 +106,36 @@ class qqe_signals_strategy(Strategy):
             return
         rs_index = float(rsi_ma_val)
 
-        prev_rsi_ma = self._rsi_ma.GetValue(1)
-        atr_rsi_val = abs(prev_rsi_ma - rs_index)
+        # Use stored previous value instead of GetValue()
+        atr_rsi_val = abs(self._prev_rsi_ma - rs_index)
         ma_atr_rsi_val = process_float(self._ma_atr_rsi, atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
         if not self._ma_atr_rsi.IsFormed:
+            # Store current values for next iteration
+            self._prev_rsi_ma = rs_index
             return
         dar_val = process_float(self._dar, ma_atr_rsi_val, candle.ServerTime, candle.State == CandleStates.Finished)
         if not self._dar.IsFormed:
+            # Store current values for next iteration
+            self._prev_rsi_ma = rs_index
             return
         delta_fast = float(dar_val) * self._qqe_factor.Value
 
         new_shortband = rs_index + delta_fast
         new_longband = rs_index - delta_fast
-        prev_longband = self._longband
-        prev_shortband = self._shortband
-        prev_rs_index = self._rsi_ma.GetValue(1)
 
-        if prev_rs_index > prev_longband and rs_index > prev_longband:
-            self._longband = max(prev_longband, new_longband)
+        # Use stored previous values
+        if self._prev_rs_index > self._prev_longband and rs_index > self._prev_longband:
+            self._longband = max(self._prev_longband, new_longband)
         else:
             self._longband = new_longband
-        if prev_rs_index < prev_shortband and rs_index < prev_shortband:
-            self._shortband = min(prev_shortband, new_shortband)
+        if self._prev_rs_index < self._prev_shortband and rs_index < self._prev_shortband:
+            self._shortband = min(self._prev_shortband, new_shortband)
         else:
             self._shortband = new_shortband
 
-        if rs_index > self._shortband and prev_rs_index <= prev_shortband:
+        if rs_index > self._shortband and self._prev_rs_index <= self._prev_shortband:
             self._trend = 1
-        elif rs_index < self._longband and prev_rs_index >= prev_longband:
+        elif rs_index < self._longband and self._prev_rs_index >= self._prev_longband:
             self._trend = -1
 
         fast_atr_rsi_tl = self._longband if self._trend == 1 else self._shortband
@@ -143,6 +154,12 @@ class qqe_signals_strategy(Strategy):
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
         elif qqe_short and self.Position > 0:
             self.ClosePosition()
+
+        # Store current values for next iteration
+        self._prev_rsi_ma = rs_index
+        self._prev_rs_index = rs_index
+        self._prev_longband = self._longband
+        self._prev_shortband = self._shortband
 
     def CreateClone(self):
         return qqe_signals_strategy()

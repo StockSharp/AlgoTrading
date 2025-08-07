@@ -48,6 +48,10 @@ class macd_dmi_strategy(Strategy):
         self._uptrend = True
         self._max = 0.0
         self._min = 0.0
+        
+        # Store previous MACD values
+        self._prev_macd_line = 0.0
+        self._prev_signal_line = 0.0
 
     @property
     def candle_type(self):
@@ -95,6 +99,8 @@ class macd_dmi_strategy(Strategy):
         self._min = 0.0
         self._vstop = 0.0
         self._uptrend = True
+        self._prev_macd_line = 0.0
+        self._prev_signal_line = 0.0
 
     def OnStarted(self, time):
         super(macd_dmi_strategy, self).OnStarted(time)
@@ -125,16 +131,16 @@ class macd_dmi_strategy(Strategy):
             return
 
         dmi_data = dmi_value
-        pos_dm = dmi_data.Plus
-        neg_dm = dmi_data.Minus
+        pos_dm = float(dmi_data.Plus)
+        neg_dm = float(dmi_data.Minus)
 
         macd_data = macd_value
-        macd_line = macd_data.Macd
-        signal_line = macd_data.Signal
+        macd_line = float(macd_data.Macd)
+        signal_line = float(macd_data.Signal)
 
-        prev = self._macd.GetValue[MovingAverageConvergenceDivergenceSignal](1)
-        prev_macd = prev.Macd
-        prev_signal = prev.Signal
+        # Use stored previous values instead of GetValue()
+        prev_macd = self._prev_macd_line
+        prev_signal = self._prev_signal_line
 
         self._calculate_vstop(candle, float(atr_value))
 
@@ -148,6 +154,10 @@ class macd_dmi_strategy(Strategy):
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
         elif exit_long and self.Position > 0:
             self.ClosePosition()
+
+        # Store current values for next iteration
+        self._prev_macd_line = macd_line
+        self._prev_signal_line = signal_line
 
     def _calculate_vstop(self, candle, atr_value):
         src = candle.ClosePrice

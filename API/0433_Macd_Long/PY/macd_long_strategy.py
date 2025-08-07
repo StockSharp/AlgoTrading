@@ -55,6 +55,10 @@ class macd_long_strategy(Strategy):
         self._macd = None
         self._bars_since_oversold = 1000
         self._bars_since_overbought = 1000
+        
+        # Store previous MACD values
+        self._prev_macd_line = 0.0
+        self._prev_signal_line = 0.0
 
     @property
     def candle_type(self):
@@ -68,6 +72,8 @@ class macd_long_strategy(Strategy):
         super(macd_long_strategy, self).OnReseted()
         self._bars_since_overbought = 1000
         self._bars_since_oversold = 1000
+        self._prev_macd_line = 0.0
+        self._prev_signal_line = 0.0
 
     def OnStarted(self, time):
         super(macd_long_strategy, self).OnStarted(time)
@@ -106,12 +112,12 @@ class macd_long_strategy(Strategy):
             self._bars_since_overbought += 1
 
         macd_data = macd_value
-        macd_line = macd_data.Macd
-        signal_line = macd_data.Signal
+        macd_line = float(macd_data.Macd)
+        signal_line = float(macd_data.Signal)
 
-        prev = self._macd.GetValue[MovingAverageConvergenceDivergenceSignal](1)
-        prev_macd = prev.Macd
-        prev_signal = prev.Signal
+        # Use stored previous values instead of GetValue()
+        prev_macd = self._prev_macd_line
+        prev_signal = self._prev_signal_line
 
         crossover = macd_line > signal_line and prev_macd <= prev_signal
         crossunder = macd_line < signal_line and prev_macd >= prev_signal
@@ -127,6 +133,10 @@ class macd_long_strategy(Strategy):
             self.ClosePosition()
         elif buy_signal and self.Position < 0:
             self.ClosePosition()
+
+        # Store current values for next iteration
+        self._prev_macd_line = macd_line
+        self._prev_signal_line = signal_line
 
     def CreateClone(self):
         return macd_long_strategy()

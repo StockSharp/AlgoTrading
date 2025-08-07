@@ -44,6 +44,10 @@ class ma_cross_dmi_strategy(Strategy):
         self._ma2 = None
         self._dmi = None
 
+        # Store previous MA values
+        self._prev_ma1 = 0.0
+        self._prev_ma2 = 0.0
+
     @property
     def candle_type(self):
         return self._candle_type.Value
@@ -51,6 +55,11 @@ class ma_cross_dmi_strategy(Strategy):
     @candle_type.setter
     def candle_type(self, value):
         self._candle_type.Value = value
+
+    def OnReseted(self):
+        super(ma_cross_dmi_strategy, self).OnReseted()
+        self._prev_ma1 = 0.0
+        self._prev_ma2 = 0.0
 
     def OnStarted(self, time):
         super(ma_cross_dmi_strategy, self).OnStarted(time)
@@ -80,13 +89,14 @@ class ma_cross_dmi_strategy(Strategy):
 
         ma1 = float(ma1_value)
         ma2 = float(ma2_value)
-        prev_ma1 = self._ma1.GetValue(1)
-        prev_ma2 = self._ma2.GetValue(1)
+        # Use stored previous values instead of GetValue()
+        prev_ma1 = self._prev_ma1
+        prev_ma2 = self._prev_ma2
 
         dmi_data = dmi_value
-        di_plus = dmi_data.Plus
-        di_minus = dmi_data.Minus
-        adx = dmi_data.Adx
+        di_plus = float(dmi_data.Plus)
+        di_minus = float(dmi_data.Minus)
+        adx = float(dmi_data.Adx)
 
         long_entry = (
             ma1 > ma2
@@ -109,6 +119,10 @@ class ma_cross_dmi_strategy(Strategy):
             self.ClosePosition()
         elif long_entry and self.Position < 0:
             self.ClosePosition()
+
+        # Store current values for next iteration
+        self._prev_ma1 = ma1
+        self._prev_ma2 = ma2
 
     def CreateClone(self):
         return ma_cross_dmi_strategy()

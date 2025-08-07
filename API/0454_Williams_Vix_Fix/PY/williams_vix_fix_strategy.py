@@ -44,6 +44,10 @@ class williams_vix_fix_strategy(Strategy):
         self._wvf_std = None
         self._wvf_inv_sma = None
         self._wvf_inv_std = None
+        
+        # Store previous Bollinger Bands values
+        self._prev_bb_upper = 0.0
+        self._prev_bb_lower = 0.0
 
     @property
     def candle_type(self):
@@ -101,6 +105,11 @@ class williams_vix_fix_strategy(Strategy):
     def lowest_percentile(self, value):
         self._lowest_percentile.Value = value
 
+    def OnReseted(self):
+        super(williams_vix_fix_strategy, self).OnReseted()
+        self._prev_bb_upper = 0.0
+        self._prev_bb_lower = 0.0
+
     def OnStarted(self, time):
         super(williams_vix_fix_strategy, self).OnStarted(time)
 
@@ -142,6 +151,11 @@ class williams_vix_fix_strategy(Strategy):
         if not self._bollinger.IsFormed or not self._highest_close.IsFormed or not self._lowest_close.IsFormed:
             return
 
+        # Store current Bollinger Bands values
+        bb_typed = bb_value  # BollingerBandsValue
+        current_bb_upper = float(bb_typed.UpBand) if bb_typed.UpBand is not None else 0.0
+        current_bb_lower = float(bb_typed.LowBand) if bb_typed.LowBand is not None else 0.0
+
         price = candle.ClosePrice
         low_price = candle.LowPrice
         high_price = candle.HighPrice
@@ -150,6 +164,9 @@ class williams_vix_fix_strategy(Strategy):
         wvf_sma = process_float(self._wvf_sma, wvf, candle.ServerTime, True)
         wvf_std = process_float(self._wvf_std, wvf, candle.ServerTime, True)
         if not wvf_sma.IsFormed or not wvf_std.IsFormed:
+            # Store current values for next iteration
+            self._prev_bb_upper = current_bb_upper
+            self._prev_bb_lower = current_bb_lower
             return
         wvf_upper = float(wvf_sma) + (self.bb_multiplier * float(wvf_std))
 
@@ -157,15 +174,20 @@ class williams_vix_fix_strategy(Strategy):
         wvf_inv_sma = process_float(self._wvf_inv_sma, wvf_inv, candle.ServerTime, True)
         wvf_inv_std = process_float(self._wvf_inv_std, wvf_inv, candle.ServerTime, True)
         if not wvf_inv_sma.IsFormed or not wvf_inv_std.IsFormed:
+            # Store current values for next iteration
+            self._prev_bb_upper = current_bb_upper
+            self._prev_bb_lower = current_bb_lower
             return
         wvf_inv_upper = float(wvf_inv_sma) + (self.bb_multiplier * float(wvf_inv_std))
 
-        self._check_conditions(candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper)
+        self._check_conditions(candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper, current_bb_upper, current_bb_lower)
+        
+        # Store current values for next iteration
+        self._prev_bb_upper = current_bb_upper
+        self._prev_bb_lower = current_bb_lower
 
-    def _check_conditions(self, candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper):
+    def _check_conditions(self, candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper, bb_upper, bb_lower):
         price = candle.ClosePrice
-        bb_lower = self._bollinger.LowBand.GetValue(0)
-        bb_upper = self._bollinger.UpBand.GetValue(0)
 
         range_high = wvf * self.highest_percentile
         range_high_inv = wvf_inv * self.lowest_percentile

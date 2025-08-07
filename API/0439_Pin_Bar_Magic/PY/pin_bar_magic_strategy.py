@@ -60,6 +60,10 @@ class pin_bar_magic_strategy(Strategy):
         self._pending_short = False
         self._entry_price = 0.0
         self._stop_loss = 0.0
+        
+        # Store previous indicator values
+        self._prev_fast_ema = 0.0
+        self._prev_med_ema = 0.0
 
     @property
     def candle_type(self):
@@ -72,6 +76,8 @@ class pin_bar_magic_strategy(Strategy):
         self._pending_short = False
         self._entry_price = 0.0
         self._stop_loss = 0.0
+        self._prev_fast_ema = 0.0
+        self._prev_med_ema = 0.0
 
     def OnStarted(self, time):
         super(pin_bar_magic_strategy, self).OnStarted(time)
@@ -119,18 +125,23 @@ class pin_bar_magic_strategy(Strategy):
             upper_wick = candle.HighPrice - candle.OpenPrice
             bearish_pin = upper_wick > 0.66 * candle_range
 
-        fan_up = fast_ema > med_ema and med_ema > slow_sma
-        fan_dn = fast_ema < med_ema and med_ema < slow_sma
+        # Convert indicator values to float
+        fast_ema_val = float(fast_ema)
+        med_ema_val = float(med_ema)
+        slow_sma_val = float(slow_sma)
+
+        fan_up = fast_ema_val > med_ema_val and med_ema_val > slow_sma_val
+        fan_dn = fast_ema_val < med_ema_val and med_ema_val < slow_sma_val
 
         bull_pierce = (
-            (candle.LowPrice < fast_ema and candle.OpenPrice > fast_ema and candle.ClosePrice > fast_ema)
-            or (candle.LowPrice < med_ema and candle.OpenPrice > med_ema and candle.ClosePrice > med_ema)
-            or (candle.LowPrice < slow_sma and candle.OpenPrice > slow_sma and candle.ClosePrice > slow_sma)
+            (candle.LowPrice < fast_ema_val and candle.OpenPrice > fast_ema_val and candle.ClosePrice > fast_ema_val)
+            or (candle.LowPrice < med_ema_val and candle.OpenPrice > med_ema_val and candle.ClosePrice > med_ema_val)
+            or (candle.LowPrice < slow_sma_val and candle.OpenPrice > slow_sma_val and candle.ClosePrice > slow_sma_val)
         )
         bear_pierce = (
-            (candle.HighPrice > fast_ema and candle.OpenPrice < fast_ema and candle.ClosePrice < fast_ema)
-            or (candle.HighPrice > med_ema and candle.OpenPrice < med_ema and candle.ClosePrice < med_ema)
-            or (candle.HighPrice > slow_sma and candle.OpenPrice < slow_sma and candle.ClosePrice < slow_sma)
+            (candle.HighPrice > fast_ema_val and candle.OpenPrice < fast_ema_val and candle.ClosePrice < fast_ema_val)
+            or (candle.HighPrice > med_ema_val and candle.OpenPrice < med_ema_val and candle.ClosePrice < med_ema_val)
+            or (candle.HighPrice > slow_sma_val and candle.OpenPrice < slow_sma_val and candle.ClosePrice < slow_sma_val)
         )
 
         long_entry = fan_up and bullish_pin and bull_pierce
@@ -162,20 +173,23 @@ class pin_bar_magic_strategy(Strategy):
         if long_entry and not self._pending_long and not self._pending_short and self.Position == 0:
             self._pending_long = True
             self._entry_price = candle.HighPrice
-            self._stop_loss = candle.LowPrice - atr_val * self._atr_multiplier.Value
+            self._stop_loss = candle.LowPrice - float(atr_val) * self._atr_multiplier.Value
             self._bars_since_signal = 0
         elif short_entry and not self._pending_long and not self._pending_short and self.Position == 0:
             self._pending_short = True
             self._entry_price = candle.LowPrice
-            self._stop_loss = candle.HighPrice + atr_val * self._atr_multiplier.Value
+            self._stop_loss = candle.HighPrice + float(atr_val) * self._atr_multiplier.Value
             self._bars_since_signal = 0
 
-        prev_fast = self._fast_ema.GetValue(1)
-        prev_med = self._med_ema.GetValue(1)
-        if self.Position > 0 and fast_ema < med_ema and prev_fast >= prev_med:
+        # Use stored previous values instead of GetValue()
+        if self.Position > 0 and fast_ema_val < med_ema_val and self._prev_fast_ema >= self._prev_med_ema:
             self.ClosePosition()
-        elif self.Position < 0 and fast_ema > med_ema and prev_fast <= prev_med:
+        elif self.Position < 0 and fast_ema_val > med_ema_val and self._prev_fast_ema <= self._prev_med_ema:
             self.ClosePosition()
+
+        # Store current values for next iteration
+        self._prev_fast_ema = fast_ema_val
+        self._prev_med_ema = med_ema_val
 
     def CreateClone(self):
         return pin_bar_magic_strategy()
