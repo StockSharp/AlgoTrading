@@ -28,7 +28,7 @@ namespace StockSharp.Samples.Strategies
 		private Highest _highest;
 		private Lowest _lowest;
 		private SimpleMovingAverage _closeSma;
-		private DirectionalIndex _adx;
+		private AverageDirectionalIndex _adx;
 		private AverageTrueRange _atr;
 
 		private decimal _previousMomentum;
@@ -196,7 +196,7 @@ namespace StockSharp.Samples.Strategies
 			_lowest = new Lowest { Length = MomentumLength };
 			_closeSma = new SimpleMovingAverage { Length = MomentumLength };
 			_momentum = new LinearRegression { Length = MomentumLength };
-			_adx = new DirectionalIndex { Length = DiLength };
+			_adx = new AverageDirectionalIndex { Length = DiLength };
 			_atr = new AverageTrueRange { Length = AtrLength };
 
 			// Create subscription for candles
@@ -230,8 +230,11 @@ namespace StockSharp.Samples.Strategies
 			var closeSmaValue = values[2].ToDecimal();
 			
 			// LinearRegression is a complex indicator but can be converted to decimal directly
-			var momentumValue = values[3].ToDecimal();
-			
+			var linRegValue = (LinearRegressionValue)values[3];
+
+			if (linRegValue.LinearRegSlope is not decimal momentumValue)
+				return;
+
 			// DirectionalIndex (ADX) is a complex indicator - extract the main ADX value
 			var adxTyped = (AverageDirectionalIndexValue)values[4];
 			if (adxTyped.MovingAverage is not decimal adxValue)

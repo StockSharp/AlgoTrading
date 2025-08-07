@@ -253,7 +253,11 @@ namespace StockSharp.Samples.Strategies
 				return; // Skip if DMI values are not available
 			}
 
-			var adxValueDecimal = adxValue.ToDecimal();
+			var adxTyped = (AverageDirectionalIndexValue)adxValue;
+			if (adxTyped.MovingAverage is not decimal adxValueDecimal)
+			{
+				return; // Skip if ADX value is not available
+			}
 
 			// Check for 3 consecutive bars condition
 			var longCond = false;
