@@ -61,7 +61,6 @@ class ma_cross_dmi_strategy(Strategy):
         self._ma2.Length = self._ma2_length.Value
         self._dmi = DirectionalIndex()
         self._dmi.Length = self._dmi_length.Value
-        self._dmi.AdxSmoothing = self._adx_smoothing.Value
 
         subscription = self.SubscribeCandles(self.candle_type)
         subscription.BindEx(self._ma1, self._ma2, self._dmi, self.OnProcess).Start()

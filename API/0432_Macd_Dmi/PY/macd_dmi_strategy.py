@@ -101,7 +101,6 @@ class macd_dmi_strategy(Strategy):
 
         self._dmi = DirectionalIndex()
         self._dmi.Length = self.dmi_length
-        self._dmi.AdxSmoothing = self.adx_smoothing
 
         self._macd = MovingAverageConvergenceDivergenceSignal()
         self._macd.Macd.ShortMa.Length = 12
