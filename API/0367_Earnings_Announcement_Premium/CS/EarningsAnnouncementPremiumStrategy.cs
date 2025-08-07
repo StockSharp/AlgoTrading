@@ -222,7 +222,7 @@ namespace StockSharp.Samples.Strategies
 		private bool TryGetNextEarningsDate(Security s, out DateTimeOffset dt)
 		{
 			dt = DateTimeOffset.MinValue;
-			return false; // подключите календарь отчётов
+			return false; // TODO
 		}
 		#endregion
 	}

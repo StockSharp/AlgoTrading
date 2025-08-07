@@ -10,865 +10,865 @@ public class CSharpTests
 		=> AsmInit.RunStrategy(TypeHelper.CreateInstance<T>(typeof(T)), extra);
 
 	[TestMethod]
-	public Task MaCrossoverStrategyTest()
+	public Task MaCrossoverStrategy()
 		=> RunStrategy<MaCrossoverStrategy>();
 
 	[TestMethod]
-	public Task NdayBreakoutStrategyTest()
+	public Task NdayBreakoutStrategy()
 		=> RunStrategy<NdayBreakoutStrategy>();
 
 	[TestMethod]
-	public Task AdxTrendStrategyTest()
+	public Task AdxTrendStrategy()
 		=> RunStrategy<AdxTrendStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarTrendStrategyTest()
+	public Task ParabolicSarTrendStrategy()
 		=> RunStrategy<ParabolicSarTrendStrategy>();
 
 	[TestMethod]
-	public Task DonchianChannelStrategyTest()
+	public Task DonchianChannelStrategy()
 		=> RunStrategy<DonchianChannelStrategy>();
 
 	[TestMethod]
-	public Task TripleMAStrategyTest()
+	public Task TripleMAStrategy()
 		=> RunStrategy<TripleMAStrategy>();
 
 	[TestMethod]
-	public Task KeltnerChannelBreakoutStrategyTest()
+	public Task KeltnerChannelBreakoutStrategy()
 		=> RunStrategy<KeltnerChannelBreakoutStrategy>();
 
 	[TestMethod]
-	public Task HullMaTrendStrategyTest()
+	public Task HullMaTrendStrategy()
 		=> RunStrategy<HullMaTrendStrategy>();
 
 	[TestMethod]
-	public Task MacdTrendStrategyTest()
+	public Task MacdTrendStrategy()
 		=> RunStrategy<MacdTrendStrategy>();
 
 	[TestMethod]
-	public Task SupertrendStrategyTest()
+	public Task SupertrendStrategy()
 		=> RunStrategy<SupertrendStrategy>();
 
 	[TestMethod]
-	public Task IchimokuKumoBreakoutStrategyTest()
+	public Task IchimokuKumoBreakoutStrategy()
 		=> RunStrategy<IchimokuKumoBreakoutStrategy>();
 
 	[TestMethod]
-	public Task HeikinAshiConsecutiveStrategyTest()
+	public Task HeikinAshiConsecutiveStrategy()
 		=> RunStrategy<HeikinAshiConsecutiveStrategy>();
 
 	[TestMethod]
-	public Task DmiPowerMoveStrategyTest()
+	public Task DmiPowerMoveStrategy()
 		=> RunStrategy<DmiPowerMoveStrategy>();
 
 	[TestMethod]
-	public Task TradingviewSupertrendFlipStrategyTest()
+	public Task TradingviewSupertrendFlipStrategy()
 		=> RunStrategy<TradingViewSupertrendFlipStrategy>();
 
 	[TestMethod]
-	public Task GannSwingBreakoutStrategyTest()
+	public Task GannSwingBreakoutStrategy()
 		=> RunStrategy<GannSwingBreakoutStrategy>();
 
 	[TestMethod]
-	public Task RsiDivergenceStrategyTest()
+	public Task RsiDivergenceStrategy()
 		=> RunStrategy<RsiDivergenceStrategy>();
 
 	[TestMethod]
-	public Task WilliamsPercentRStrategyTest()
+	public Task WilliamsPercentRStrategy()
 		=> RunStrategy<WilliamsPercentRStrategy>();
 
 	[TestMethod]
-	public Task RocImpulseStrategyTest()
+	public Task RocImpulseStrategy()
 		=> RunStrategy<RocImpulseStrategy>();
 
 	[TestMethod]
-	public Task CciBreakoutStrategyTest()
+	public Task CciBreakoutStrategy()
 		=> RunStrategy<CciBreakoutStrategy>();
 
 	[TestMethod]
-	public Task MomentumPercentageStrategyTest()
+	public Task MomentumPercentageStrategy()
 		=> RunStrategy<MomentumPercentageStrategy>();
 
 	[TestMethod]
-	public Task BollingerSqueezeStrategyTest()
+	public Task BollingerSqueezeStrategy()
 		=> RunStrategy<BollingerSqueezeStrategy>();
 
 	[TestMethod]
-	public Task AdxDiStrategyTest()
+	public Task AdxDiStrategy()
 		=> RunStrategy<AdxDiStrategy>();
 
 	[TestMethod]
-	public Task ElderImpulseStrategyTest()
+	public Task ElderImpulseStrategy()
 		=> RunStrategy<ElderImpulseStrategy>();
 
 	[TestMethod]
-	public Task LaguerreRsiStrategyTest()
+	public Task LaguerreRsiStrategy()
 		=> RunStrategy<LaguerreRsiStrategy>();
 
 	[TestMethod]
-	public Task StochasticRsiCrossStrategyTest()
+	public Task StochasticRsiCrossStrategy()
 		=> RunStrategy<StochasticRsiCrossStrategy>();
 
 	[TestMethod]
-	public Task RsiReversionStrategyTest()
+	public Task RsiReversionStrategy()
 		=> RunStrategy<RsiReversionStrategy>();
 
 	[TestMethod]
-	public Task BollingerReversionStrategyTest()
+	public Task BollingerReversionStrategy()
 		=> RunStrategy<BollingerReversionStrategy>();
 
 	[TestMethod]
-	public Task ZScoreStrategyTest()
+	public Task ZScoreStrategy()
 		=> RunStrategy<ZScoreStrategy>();
 
 	[TestMethod]
-	public Task MADeviationStrategyTest()
+	public Task MADeviationStrategy()
 		=> RunStrategy<MADeviationStrategy>();
 
 	[TestMethod]
-	public Task VwapReversionStrategyTest()
+	public Task VwapReversionStrategy()
 		=> RunStrategy<VwapReversionStrategy>();
 
 	[TestMethod]
-	public Task KeltnerReversionStrategyTest()
+	public Task KeltnerReversionStrategy()
 		=> RunStrategy<KeltnerReversionStrategy>();
 
 	[TestMethod]
-	public Task AtrReversionStrategyTest()
+	public Task AtrReversionStrategy()
 		=> RunStrategy<AtrReversionStrategy>();
 
 	[TestMethod]
-	public Task MacdZeroStrategyTest()
+	public Task MacdZeroStrategy()
 		=> RunStrategy<MacdZeroStrategy>();
 
 	[TestMethod]
-	public Task LowVolReversionStrategyTest()
+	public Task LowVolReversionStrategy()
 		=> RunStrategy<LowVolReversionStrategy>();
 
 	[TestMethod]
-	public Task BollingerPercentBStrategyTest()
+	public Task BollingerPercentBStrategy()
 		=> RunStrategy<BollingerPercentBStrategy>();
 
 	[TestMethod]
-	public Task AtrExpansionStrategyTest()
+	public Task AtrExpansionStrategy()
 		=> RunStrategy<AtrExpansionStrategy>();
 
 	[TestMethod]
-	public Task VixTriggerStrategyTest()
+	public Task VixTriggerStrategy()
 		=> RunStrategy<VixTriggerStrategy>();
 
 	[TestMethod]
-	public Task BollingerBandWidthStrategyTest()
+	public Task BollingerBandWidthStrategy()
 		=> RunStrategy<BollingerBandWidthStrategy>();
 
 	[TestMethod]
-	public Task HvBreakoutStrategyTest()
+	public Task HvBreakoutStrategy()
 		=> RunStrategy<HvBreakoutStrategy>();
 
 	[TestMethod]
-	public Task AtrTrailingStrategyTest()
+	public Task AtrTrailingStrategy()
 		=> RunStrategy<AtrTrailingStrategy>();
 
 	[TestMethod]
-	public Task VolAdjustedMaStrategyTest()
+	public Task VolAdjustedMaStrategy()
 		=> RunStrategy<VolAdjustedMAStrategy>();
 
 	[TestMethod]
-	public Task IVSpikeStrategyTest()
+	public Task IVSpikeStrategy()
 		=> RunStrategy<IVSpikeStrategy>();
 
 	[TestMethod]
-	public Task VCPStrategyTest()
+	public Task VCPStrategy()
 		=> RunStrategy<VCPStrategy>();
 
 	[TestMethod]
-	public Task ATRRangeStrategyTest()
+	public Task ATRRangeStrategy()
 		=> RunStrategy<ATRRangeStrategy>();
 
 	[TestMethod]
-	public Task ChoppinessIndexBreakoutStrategyTest()
+	public Task ChoppinessIndexBreakoutStrategy()
 		=> RunStrategy<ChoppinessIndexBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolumeSpikeStrategyTest()
+	public Task VolumeSpikeStrategy()
 		=> RunStrategy<VolumeSpikeStrategy>();
 
 	[TestMethod]
-	public Task OBVBreakoutStrategyTest()
+	public Task OBVBreakoutStrategy()
 		=> RunStrategy<OBVBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VWAPBreakoutStrategyTest()
+	public Task VWAPBreakoutStrategy()
 		=> RunStrategy<VWAPBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VWMAStrategyTest()
+	public Task VWMAStrategy()
 		=> RunStrategy<VWMAStrategy>();
 
 	[TestMethod]
-	public Task ADStrategyTest()
+	public Task ADStrategy()
 		=> RunStrategy<ADStrategy>();
 
 	[TestMethod]
-	public Task VolumeWeightedPriceBreakoutStrategyTest()
+	public Task VolumeWeightedPriceBreakoutStrategy()
 		=> RunStrategy<VolumeWeightedPriceBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolumeDivergenceStrategyTest()
+	public Task VolumeDivergenceStrategy()
 		=> RunStrategy<VolumeDivergenceStrategy>();
 
 	[TestMethod]
-	public Task VolumeMAXrossStrategyTest()
+	public Task VolumeMAXrossStrategy()
 		=> RunStrategy<VolumeMAXrossStrategy>();
 
 	[TestMethod]
-	public Task CumulativeDeltaBreakoutStrategyTest()
+	public Task CumulativeDeltaBreakoutStrategy()
 		=> RunStrategy<CumulativeDeltaBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolumeSurgeStrategyTest()
+	public Task VolumeSurgeStrategy()
 		=> RunStrategy<VolumeSurgeStrategy>();
 
 	[TestMethod]
-	public Task DoubleBottomStrategyTest()
+	public Task DoubleBottomStrategy()
 		=> RunStrategy<DoubleBottomStrategy>();
 
 	[TestMethod]
-	public Task DoubleTopStrategyTest()
+	public Task DoubleTopStrategy()
 		=> RunStrategy<DoubleTopStrategy>();
 
 	[TestMethod]
-	public Task RsiOverboughtOversoldStrategyTest()
+	public Task RsiOverboughtOversoldStrategy()
 		=> RunStrategy<RsiOverboughtOversoldStrategy>();
 
 	[TestMethod]
-	public Task HammerCandleStrategyTest()
+	public Task HammerCandleStrategy()
 		=> RunStrategy<HammerCandleStrategy>();
 
 	[TestMethod]
-	public Task ShootingStarStrategyTest()
+	public Task ShootingStarStrategy()
 		=> RunStrategy<ShootingStarStrategy>();
 
 	[TestMethod]
-	public Task MacdDivergenceStrategyTest()
+	public Task MacdDivergenceStrategy()
 		=> RunStrategy<MacdDivergenceStrategy>();
 
 	[TestMethod]
-	public Task StochasticOverboughtOversoldStrategyTest()
+	public Task StochasticOverboughtOversoldStrategy()
 		=> RunStrategy<StochasticOverboughtOversoldStrategy>();
 
 	[TestMethod]
-	public Task EngulfingBullishStrategyTest()
+	public Task EngulfingBullishStrategy()
 		=> RunStrategy<EngulfingBullishStrategy>();
 
 	[TestMethod]
-	public Task EngulfingBearishStrategyTest()
+	public Task EngulfingBearishStrategy()
 		=> RunStrategy<EngulfingBearishStrategy>();
 
 	[TestMethod]
-	public Task PinbarReversalStrategyTest()
+	public Task PinbarReversalStrategy()
 		=> RunStrategy<PinbarReversalStrategy>();
 
 	[TestMethod]
-	public Task ThreeBarReversalUpStrategyTest()
+	public Task ThreeBarReversalUpStrategy()
 		=> RunStrategy<ThreeBarReversalUpStrategy>();
 
 	[TestMethod]
-	public Task ThreeBarReversalDownStrategyTest()
+	public Task ThreeBarReversalDownStrategy()
 		=> RunStrategy<ThreeBarReversalDownStrategy>();
 
 	[TestMethod]
-	public Task CciDivergenceStrategyTest()
+	public Task CciDivergenceStrategy()
 		=> RunStrategy<CciDivergenceStrategy>();
 
 	[TestMethod]
-	public Task BollingerBandReversalStrategyTest()
+	public Task BollingerBandReversalStrategy()
 		=> RunStrategy<BollingerBandReversalStrategy>();
 
 	[TestMethod]
-	public Task MorningStarStrategyTest()
+	public Task MorningStarStrategy()
 		=> RunStrategy<MorningStarStrategy>();
 
 	[TestMethod]
-	public Task EveningStarStrategyTest()
+	public Task EveningStarStrategy()
 		=> RunStrategy<EveningStarStrategy>();
 
 	[TestMethod]
-	public Task DojiReversalStrategyTest()
+	public Task DojiReversalStrategy()
 		=> RunStrategy<DojiReversalStrategy>();
 
 	[TestMethod]
-	public Task KeltnerChannelReversalStrategyTest()
+	public Task KeltnerChannelReversalStrategy()
 		=> RunStrategy<KeltnerChannelReversalStrategy>();
 
 	[TestMethod]
-	public Task WilliamsPercentRDivergenceStrategyTest()
+	public Task WilliamsPercentRDivergenceStrategy()
 		=> RunStrategy<WilliamsPercentRDivergenceStrategy>();
 
 	[TestMethod]
-	public Task OBVDivergenceStrategyTest()
+	public Task OBVDivergenceStrategy()
 		=> RunStrategy<OBVDivergenceStrategy>();
 
 	[TestMethod]
-	public Task FibonacciRetracementReversalStrategyTest()
+	public Task FibonacciRetracementReversalStrategy()
 		=> RunStrategy<FibonacciRetracementReversalStrategy>();
 
 	[TestMethod]
-	public Task InsideBarBreakoutStrategyTest()
+	public Task InsideBarBreakoutStrategy()
 		=> RunStrategy<InsideBarBreakoutStrategy>();
 
 	[TestMethod]
-	public Task OutsideBarReversalStrategyTest()
+	public Task OutsideBarReversalStrategy()
 		=> RunStrategy<OutsideBarReversalStrategy>();
 
 	[TestMethod]
-	public Task TrendlineBounceStrategyTest()
+	public Task TrendlineBounceStrategy()
 		=> RunStrategy<TrendlineBounceStrategy>();
 
 	[TestMethod]
-	public Task PivotPointReversalStrategyTest()
+	public Task PivotPointReversalStrategy()
 		=> RunStrategy<PivotPointReversalStrategy>();
 
 	[TestMethod]
-	public Task VwapBounceStrategyTest()
+	public Task VwapBounceStrategy()
 		=> RunStrategy<VwapBounceStrategy>();
 
 	[TestMethod]
-	public Task VolumeExhaustionStrategyTest()
+	public Task VolumeExhaustionStrategy()
 		=> RunStrategy<VolumeExhaustionStrategy>();
 
 	[TestMethod]
-	public Task AdxWeakeningStrategyTest()
+	public Task AdxWeakeningStrategy()
 		=> RunStrategy<AdxWeakeningStrategy>();
 
 	[TestMethod]
-	public Task AtrExhaustionStrategyTest()
+	public Task AtrExhaustionStrategy()
 		=> RunStrategy<AtrExhaustionStrategy>();
 
 	[TestMethod]
-	public Task IchimokuTenkanKijunStrategyTest()
+	public Task IchimokuTenkanKijunStrategy()
 		=> RunStrategy<IchimokuTenkanKijunStrategy>();
 
 	[TestMethod]
-	public Task HeikinAshiReversalStrategyTest()
+	public Task HeikinAshiReversalStrategy()
 		=> RunStrategy<HeikinAshiReversalStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarReversalStrategyTest()
+	public Task ParabolicSarReversalStrategy()
 		=> RunStrategy<ParabolicSarReversalStrategy>();
 
 	[TestMethod]
-	public Task SupertrendReversalStrategyTest()
+	public Task SupertrendReversalStrategy()
 		=> RunStrategy<SupertrendReversalStrategy>();
 
 	[TestMethod]
-	public Task HullMaReversalStrategyTest()
+	public Task HullMaReversalStrategy()
 		=> RunStrategy<HullMaReversalStrategy>();
 
 	[TestMethod]
-	public Task DonchianReversalStrategyTest()
+	public Task DonchianReversalStrategy()
 		=> RunStrategy<DonchianReversalStrategy>();
 
 	[TestMethod]
-	public Task MacdHistogramReversalStrategyTest()
+	public Task MacdHistogramReversalStrategy()
 		=> RunStrategy<MacdHistogramReversalStrategy>();
 
 	[TestMethod]
-	public Task RsiHookReversalStrategyTest()
+	public Task RsiHookReversalStrategy()
 		=> RunStrategy<RsiHookReversalStrategy>();
 
 	[TestMethod]
-	public Task StochasticHookReversalStrategyTest()
+	public Task StochasticHookReversalStrategy()
 		=> RunStrategy<StochasticHookReversalStrategy>();
 
 	[TestMethod]
-	public Task CciHookReversalStrategyTest()
+	public Task CciHookReversalStrategy()
 		=> RunStrategy<CciHookReversalStrategy>();
 
 	[TestMethod]
-	public Task WilliamsRHookReversalStrategyTest()
+	public Task WilliamsRHookReversalStrategy()
 		=> RunStrategy<WilliamsRHookReversalStrategy>();
 
 	[TestMethod]
-	public Task ThreeWhiteSoldiersStrategyTest()
+	public Task ThreeWhiteSoldiersStrategy()
 		=> RunStrategy<ThreeWhiteSoldiersStrategy>();
 
 	[TestMethod]
-	public Task ThreeBlackCrowsStrategyTest()
+	public Task ThreeBlackCrowsStrategy()
 		=> RunStrategy<ThreeBlackCrowsStrategy>();
 
 	[TestMethod]
-	public Task GapFillReversalStrategyTest()
+	public Task GapFillReversalStrategy()
 		=> RunStrategy<GapFillReversalStrategy>();
 
 	[TestMethod]
-	public Task TweezerBottomStrategyTest()
+	public Task TweezerBottomStrategy()
 		=> RunStrategy<TweezerBottomStrategy>();
 
 	[TestMethod]
-	public Task TweezerTopStrategyTest()
+	public Task TweezerTopStrategy()
 		=> RunStrategy<TweezerTopStrategy>();
 
 	[TestMethod]
-	public Task HaramiBullishStrategyTest()
+	public Task HaramiBullishStrategy()
 		=> RunStrategy<HaramiBullishStrategy>();
 
 	[TestMethod]
-	public Task HaramiBearishStrategyTest()
+	public Task HaramiBearishStrategy()
 		=> RunStrategy<HaramiBearishStrategy>();
 
 	[TestMethod]
-	public Task DarkPoolPrintsStrategyTest()
+	public Task DarkPoolPrintsStrategy()
 		=> RunStrategy<DarkPoolPrintsStrategy>();
 
 	[TestMethod]
-	public Task RejectionCandleStrategyTest()
+	public Task RejectionCandleStrategy()
 		=> RunStrategy<RejectionCandleStrategy>();
 
 	[TestMethod]
-	public Task FalseBreakoutTrapStrategyTest()
+	public Task FalseBreakoutTrapStrategy()
 		=> RunStrategy<FalseBreakoutTrapStrategy>();
 
 	[TestMethod]
-	public Task SpringReversalStrategyTest()
+	public Task SpringReversalStrategy()
 		=> RunStrategy<SpringReversalStrategy>();
 
 	[TestMethod]
-	public Task UpthrustReversalStrategyTest()
+	public Task UpthrustReversalStrategy()
 		=> RunStrategy<UpthrustReversalStrategy>();
 
 	[TestMethod]
-	public Task WyckoffAccumulationStrategyTest()
+	public Task WyckoffAccumulationStrategy()
 		=> RunStrategy<WyckoffAccumulationStrategy>();
 
 	[TestMethod]
-	public Task WyckoffDistributionStrategyTest()
+	public Task WyckoffDistributionStrategy()
 		=> RunStrategy<WyckoffDistributionStrategy>();
 
 	[TestMethod]
-	public Task RsiFailureSwingStrategyTest()
+	public Task RsiFailureSwingStrategy()
 		=> RunStrategy<RsiFailureSwingStrategy>();
 
 	[TestMethod]
-	public Task StochasticFailureSwingStrategyTest()
+	public Task StochasticFailureSwingStrategy()
 		=> RunStrategy<StochasticFailureSwingStrategy>();
 
 	[TestMethod]
-	public Task CciFailureSwingStrategyTest()
+	public Task CciFailureSwingStrategy()
 		=> RunStrategy<CciFailureSwingStrategy>();
 
 	[TestMethod]
-	public Task BullishAbandonedBabyStrategyTest()
+	public Task BullishAbandonedBabyStrategy()
 		=> RunStrategy<BullishAbandonedBabyStrategy>();
 
 	[TestMethod]
-	public Task BearishAbandonedBabyStrategyTest()
+	public Task BearishAbandonedBabyStrategy()
 		=> RunStrategy<BearishAbandonedBabyStrategy>();
 
 	[TestMethod]
-	public Task VolumeClimaxReversalStrategyTest()
+	public Task VolumeClimaxReversalStrategy()
 		=> RunStrategy<VolumeClimaxReversalStrategy>();
 
 	[TestMethod]
-	public Task DayOfWeekStrategyTest()
+	public Task DayOfWeekStrategy()
 		=> RunStrategy<DayOfWeekStrategy>();
 
 	[TestMethod]
-	public Task MonthOfYearStrategyTest()
+	public Task MonthOfYearStrategy()
 		=> RunStrategy<MonthOfYearStrategy>();
 
 	[TestMethod]
-	public Task TurnaroundTuesdayStrategyTest()
+	public Task TurnaroundTuesdayStrategy()
 		=> RunStrategy<TurnaroundTuesdayStrategy>();
 
 	[TestMethod]
-	public Task EndOfMonthStrengthStrategyTest()
+	public Task EndOfMonthStrengthStrategy()
 		=> RunStrategy<EndOfMonthStrengthStrategy>();
 
 	[TestMethod]
-	public Task FirstDayOfMonthStrategyTest()
+	public Task FirstDayOfMonthStrategy()
 		=> RunStrategy<FirstDayOfMonthStrategy>();
 
 	[TestMethod]
-	public Task SantaClausRallyStrategyTest()
+	public Task SantaClausRallyStrategy()
 		=> RunStrategy<SantaClausRallyStrategy>();
 
 	[TestMethod]
-	public Task JanuaryEffectStrategyTest()
+	public Task JanuaryEffectStrategy()
 		=> RunStrategy<JanuaryEffectStrategy>();
 
 	[TestMethod]
-	public Task MondayWeaknessStrategyTest()
+	public Task MondayWeaknessStrategy()
 		=> RunStrategy<MondayWeaknessStrategy>();
 
 	[TestMethod]
-	public Task PreHolidayStrengthStrategyTest()
+	public Task PreHolidayStrengthStrategy()
 		=> RunStrategy<PreHolidayStrengthStrategy>();
 
 	[TestMethod]
-	public Task PostHolidayWeaknessStrategyTest()
+	public Task PostHolidayWeaknessStrategy()
 		=> RunStrategy<PostHolidayWeaknessStrategy>();
 
 	[TestMethod]
-	public Task QuarterlyExpiryStrategyTest()
+	public Task QuarterlyExpiryStrategy()
 		=> RunStrategy<QuarterlyExpiryStrategy>();
 
 	[TestMethod]
-	public Task OpenDriveStrategyTest()
+	public Task OpenDriveStrategy()
 		=> RunStrategy<OpenDriveStrategy>();
 
 	[TestMethod]
-	public Task MiddayReversalStrategyTest()
+	public Task MiddayReversalStrategy()
 		=> RunStrategy<MiddayReversalStrategy>();
 
 	[TestMethod]
-	public Task OvernightGapStrategyTest()
+	public Task OvernightGapStrategy()
 		=> RunStrategy<OvernightGapStrategy>();
 
 	[TestMethod]
-	public Task LunchBreakFadeStrategyTest()
+	public Task LunchBreakFadeStrategy()
 		=> RunStrategy<LunchBreakFadeStrategy>();
 
 	[TestMethod]
-	public Task MacdRsiStrategyTest()
+	public Task MacdRsiStrategy()
 		=> RunStrategy<MacdRsiStrategy>();
 
 	[TestMethod]
-	public Task BollingerStochasticStrategyTest()
+	public Task BollingerStochasticStrategy()
 		=> RunStrategy<BollingerStochasticStrategy>();
 
 	[TestMethod]
-	public Task MaVolumeStrategyTest()
+	public Task MaVolumeStrategy()
 		=> RunStrategy<MaVolumeStrategy>();
 
 	[TestMethod]
-	public Task AdxMacdStrategyTest()
+	public Task AdxMacdStrategy()
 		=> RunStrategy<AdxMacdStrategy>();
 
 	[TestMethod]
-	public Task IchimokuRsiStrategyTest()
+	public Task IchimokuRsiStrategy()
 		=> RunStrategy<IchimokuRsiStrategy>();
 
 	[TestMethod]
-	public Task SupertrendVolumeStrategyTest()
+	public Task SupertrendVolumeStrategy()
 		=> RunStrategy<SupertrendVolumeStrategy>();
 
 	[TestMethod]
-	public Task BollingerRsiStrategyTest()
+	public Task BollingerRsiStrategy()
 		=> RunStrategy<BollingerRsiStrategy>();
 
 	[TestMethod]
-	public Task MaStochasticStrategyTest()
+	public Task MaStochasticStrategy()
 		=> RunStrategy<MaStochasticStrategy>();
 
 	[TestMethod]
-	public Task AtrMacdStrategyTest()
+	public Task AtrMacdStrategy()
 		=> RunStrategy<AtrMacdStrategy>();
 
 	[TestMethod]
-	public Task VwapRsiStrategyTest()
+	public Task VwapRsiStrategy()
 		=> RunStrategy<VwapRsiStrategy>();
 
 	[TestMethod]
-	public Task DonchianVolumeStrategyTest()
+	public Task DonchianVolumeStrategy()
 		=> RunStrategy<DonchianVolumeStrategy>();
 
 	[TestMethod]
-	public Task KeltnerStochasticStrategyTest()
+	public Task KeltnerStochasticStrategy()
 		=> RunStrategy<KeltnerStochasticStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarRsiStrategyTest()
+	public Task ParabolicSarRsiStrategy()
 		=> RunStrategy<ParabolicSarRsiStrategy>();
 
 	[TestMethod]
-	public Task HullMaVolumeStrategyTest()
+	public Task HullMaVolumeStrategy()
 		=> RunStrategy<HullMaVolumeStrategy>();
 
 	[TestMethod]
-	public Task AdxStochasticStrategyTest()
+	public Task AdxStochasticStrategy()
 		=> RunStrategy<AdxStochasticStrategy>();
 
 	[TestMethod]
-	public Task MacdVolumeStrategyTest()
+	public Task MacdVolumeStrategy()
 		=> RunStrategy<MacdVolumeStrategy>();
 
 	[TestMethod]
-	public Task BollingerVolumeStrategyTest()
+	public Task BollingerVolumeStrategy()
 		=> RunStrategy<BollingerVolumeStrategy>();
 
 	[TestMethod]
-	public Task RsiStochasticStrategyTest()
+	public Task RsiStochasticStrategy()
 		=> RunStrategy<RsiStochasticStrategy>();
 
 	[TestMethod]
-	public Task MaAdxStrategyTest()
+	public Task MaAdxStrategy()
 		=> RunStrategy<MaAdxStrategy>();
 
 	[TestMethod]
-	public Task VwapStochasticStrategyTest()
+	public Task VwapStochasticStrategy()
 		=> RunStrategy<VwapStochasticStrategy>();
 
 	[TestMethod]
-	public Task IchimokuVolumeStrategyTest()
+	public Task IchimokuVolumeStrategy()
 		=> RunStrategy<IchimokuVolumeStrategy>();
 
 	[TestMethod]
-	public Task SupertrendRsiStrategyTest()
+	public Task SupertrendRsiStrategy()
 		=> RunStrategy<SupertrendRsiStrategy>();
 
 	[TestMethod]
-	public Task BollingerAdxStrategyTest()
+	public Task BollingerAdxStrategy()
 		=> RunStrategy<BollingerAdxStrategy>();
 
 	[TestMethod]
-	public Task MaCciStrategyTest()
+	public Task MaCciStrategy()
 		=> RunStrategy<MaCciStrategy>();
 
 	[TestMethod]
-	public Task VwapVolumeStrategyTest()
+	public Task VwapVolumeStrategy()
 		=> RunStrategy<VwapVolumeStrategy>();
 
 	[TestMethod]
-	public Task DonchianRsiStrategyTest()
+	public Task DonchianRsiStrategy()
 		=> RunStrategy<DonchianRsiStrategy>();
 
 	[TestMethod]
-	public Task KeltnerVolumeStrategyTest()
+	public Task KeltnerVolumeStrategy()
 		=> RunStrategy<KeltnerVolumeStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarStochasticStrategyTest()
+	public Task ParabolicSarStochasticStrategy()
 		=> RunStrategy<ParabolicSarStochasticStrategy>();
 
 	[TestMethod]
-	public Task HullMaRsiStrategyTest()
+	public Task HullMaRsiStrategy()
 		=> RunStrategy<HullMaRsiStrategy>();
 
 	[TestMethod]
-	public Task AdxVolumeStrategyTest()
+	public Task AdxVolumeStrategy()
 		=> RunStrategy<AdxVolumeStrategy>();
 
 	[TestMethod]
-	public Task MacdCciStrategyTest()
+	public Task MacdCciStrategy()
 		=> RunStrategy<MacdCciStrategy>();
 
 	[TestMethod]
-	public Task BollingerCciStrategyTest()
+	public Task BollingerCciStrategy()
 		=> RunStrategy<BollingerCciStrategy>();
 
 	[TestMethod]
-	public Task RsiWilliamsRStrategyTest()
+	public Task RsiWilliamsRStrategy()
 		=> RunStrategy<RsiWilliamsRStrategy>();
 
 	[TestMethod]
-	public Task MaWilliamsRStrategyTest()
+	public Task MaWilliamsRStrategy()
 		=> RunStrategy<MaWilliamsRStrategy>();
 
 	[TestMethod]
-	public Task VwapCciStrategyTest()
+	public Task VwapCciStrategy()
 		=> RunStrategy<VwapCciStrategy>();
 
 	[TestMethod]
-	public Task DonchianStochasticStrategyTest()
+	public Task DonchianStochasticStrategy()
 		=> RunStrategy<DonchianStochasticStrategy>();
 
 	[TestMethod]
-	public Task KeltnerRsiStrategyTest()
+	public Task KeltnerRsiStrategy()
 		=> RunStrategy<KeltnerRsiStrategy>();
 
 	[TestMethod]
-	public Task HullMaStochasticStrategyTest()
+	public Task HullMaStochasticStrategy()
 		=> RunStrategy<HullMaStochasticStrategy>();
 
 	[TestMethod]
-	public Task AdxCciStrategyTest()
+	public Task AdxCciStrategy()
 		=> RunStrategy<AdxCciStrategy>();
 
 	[TestMethod]
-	public Task MacdWilliamsRStrategyTest()
+	public Task MacdWilliamsRStrategy()
 		=> RunStrategy<MacdWilliamsRStrategy>();
 
 	[TestMethod]
-	public Task BollingerWilliamsRStrategyTest()
+	public Task BollingerWilliamsRStrategy()
 		=> RunStrategy<BollingerWilliamsRStrategy>();
 
 	[TestMethod]
-	public Task MacdVwapStrategyTest()
+	public Task MacdVwapStrategy()
 		=> RunStrategy<MacdVwapStrategy>();
 
 	[TestMethod]
-	public Task RsiSupertrendStrategyTest()
+	public Task RsiSupertrendStrategy()
 		=> RunStrategy<RsiSupertrendStrategy>();
 
 	[TestMethod]
-	public Task AdxBollingerStrategyTest()
+	public Task AdxBollingerStrategy()
 		=> RunStrategy<AdxBollingerStrategy>();
 
 	[TestMethod]
-	public Task IchimokuStochasticStrategyTest()
+	public Task IchimokuStochasticStrategy()
 		=> RunStrategy<IchimokuStochasticStrategy>();
 
 	[TestMethod]
-	public Task SupertrendStochasticStrategyTest()
+	public Task SupertrendStochasticStrategy()
 		=> RunStrategy<SupertrendStochasticStrategy>();
 
 	[TestMethod]
-	public Task DonchianMacdStrategyTest()
+	public Task DonchianMacdStrategy()
 		=> RunStrategy<DonchianMacdStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarVolumeStrategyTest()
+	public Task ParabolicSarVolumeStrategy()
 		=> RunStrategy<ParabolicSarVolumeStrategy>();
 
 	[TestMethod]
-	public Task VwapAdxStrategyTest()
+	public Task VwapAdxStrategy()
 		=> RunStrategy<VwapAdxStrategy>();
 
 	[TestMethod]
-	public Task SupertrendAdxStrategyTest()
+	public Task SupertrendAdxStrategy()
 		=> RunStrategy<SupertrendAdxStrategy>();
 
 	[TestMethod]
-	public Task KeltnerMacdStrategyTest()
+	public Task KeltnerMacdStrategy()
 		=> RunStrategy<KeltnerMacdStrategy>();
 
 	[TestMethod]
-	public Task HullMaAdxStrategyTest()
+	public Task HullMaAdxStrategy()
 		=> RunStrategy<HullMaAdxStrategy>();
 
 	[TestMethod]
-	public Task VwapMacdStrategyTest()
+	public Task VwapMacdStrategy()
 		=> RunStrategy<VwapMacdStrategy>();
 
 	[TestMethod]
-	public Task IchimokuAdxStrategyTest()
+	public Task IchimokuAdxStrategy()
 		=> RunStrategy<IchimokuAdxStrategy>();
 
 	[TestMethod]
-	public Task VwapWilliamsRStrategyTest()
+	public Task VwapWilliamsRStrategy()
 		=> RunStrategy<VwapWilliamsRStrategy>();
 
 	[TestMethod]
-	public Task DonchianCciStrategyTest()
+	public Task DonchianCciStrategy()
 		=> RunStrategy<DonchianCciStrategy>();
 
 	[TestMethod]
-	public Task KeltnerWilliamsRStrategyTest()
+	public Task KeltnerWilliamsRStrategy()
 		=> RunStrategy<KeltnerWilliamsRStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarCciStrategyTest()
+	public Task ParabolicSarCciStrategy()
 		=> RunStrategy<ParabolicSarCciStrategy>();
 
 	[TestMethod]
-	public Task HullMaCciStrategyTest()
+	public Task HullMaCciStrategy()
 		=> RunStrategy<HullMaCciStrategy>();
 
 	[TestMethod]
-	public Task MacdBollingerStrategyTest()
+	public Task MacdBollingerStrategy()
 		=> RunStrategy<MacdBollingerStrategy>();
 
 	[TestMethod]
-	public Task RsiHullMaStrategyTest()
+	public Task RsiHullMaStrategy()
 		=> RunStrategy<RsiHullMaStrategy>();
 
 	[TestMethod]
-	public Task StochasticKeltnerStrategyTest()
+	public Task StochasticKeltnerStrategy()
 		=> RunStrategy<StochasticKeltnerStrategy>();
 
 	[TestMethod]
-	public Task VolumeSupertrendStrategyTest()
+	public Task VolumeSupertrendStrategy()
 		=> RunStrategy<VolumeSupertrendStrategy>();
 
 	[TestMethod]
-	public Task AdxDonchianStrategyTest()
+	public Task AdxDonchianStrategy()
 		=> RunStrategy<AdxDonchianStrategy>();
 
 	[TestMethod]
-	public Task CciVwapStrategyTest()
+	public Task CciVwapStrategy()
 		=> RunStrategy<CciVwapStrategy>();
 
 	[TestMethod]
-	public Task WilliamsIchimokuStrategyTest()
+	public Task WilliamsIchimokuStrategy()
 		=> RunStrategy<WilliamsIchimokuStrategy>();
 
 	[TestMethod]
-	public Task MaParabolicSarStrategyTest()
+	public Task MaParabolicSarStrategy()
 		=> RunStrategy<MaParabolicSarStrategy>();
 
 	[TestMethod]
-	public Task BollingerSupertrendStrategyTest()
+	public Task BollingerSupertrendStrategy()
 		=> RunStrategy<BollingerSupertrendStrategy>();
 
 	[TestMethod]
-	public Task RsiDonchianStrategyTest()
+	public Task RsiDonchianStrategy()
 		=> RunStrategy<RsiDonchianStrategy>();
 
 	[TestMethod]
-	public Task MeanReversionStrategyTest()
+	public Task MeanReversionStrategy()
 		=> RunStrategy<MeanReversionStrategy>();
 
 	[TestMethod]
-	public Task PairsTradingStrategyTest()
+	public Task PairsTradingStrategy()
 		=> RunStrategy<PairsTradingStrategy>((strategy, sec) =>
 		{
 			strategy.SecondSecurity = sec;
 		});
 
 	[TestMethod]
-	public Task ZScoreReversalStrategyTest()
+	public Task ZScoreReversalStrategy()
 		=> RunStrategy<ZScoreReversalStrategy>();
 
 	[TestMethod]
-	public Task StatisticalArbitrageStrategyTest()
+	public Task StatisticalArbitrageStrategy()
 		=> RunStrategy<StatisticalArbitrageStrategy>((strategy, sec) =>
 		{
 			strategy.SecondSecurity = sec;
 		});
 
 	[TestMethod]
-	public Task VolatilityBreakoutStrategyTest()
+	public Task VolatilityBreakoutStrategy()
 		=> RunStrategy<VolatilityBreakoutStrategy>();
 
 	[TestMethod]
-	public Task BollingerBandSqueezeStrategyTest()
+	public Task BollingerBandSqueezeStrategy()
 		=> RunStrategy<BollingerBandSqueezeStrategy>();
 
 	[TestMethod]
-	public Task CointegrationPairsStrategyTest()
+	public Task CointegrationPairsStrategy()
 		=> RunStrategy<CointegrationPairsStrategy>((strategy, sec) => strategy.Asset2 = sec);
 
 	[TestMethod]
-	public Task MomentumDivergenceStrategyTest()
+	public Task MomentumDivergenceStrategy()
 		=> RunStrategy<MomentumDivergenceStrategy>();
 
 	[TestMethod]
-	public Task AtrMeanReversionStrategyTest()
+	public Task AtrMeanReversionStrategy()
 		=> RunStrategy<AtrMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task KalmanFilterTrendStrategyTest()
+	public Task KalmanFilterTrendStrategy()
 		=> RunStrategy<KalmanFilterTrendStrategy>();
 
 	[TestMethod]
-	public Task VolatilityAdjustedMeanReversionStrategyTest()
+	public Task VolatilityAdjustedMeanReversionStrategy()
 		=> RunStrategy<VolatilityAdjustedMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task HurstExponentTrendStrategyTest()
+	public Task HurstExponentTrendStrategy()
 		=> RunStrategy<HurstExponentTrendStrategy>();
 
 	[TestMethod]
-	public Task HurstExponentReversionStrategyTest()
+	public Task HurstExponentReversionStrategy()
 		=> RunStrategy<HurstExponentReversionStrategy>();
 
 	[TestMethod]
-	public Task AutocorrelationReversionStrategyTest()
+	public Task AutocorrelationReversionStrategy()
 		=> RunStrategy<AutocorrelationReversionStrategy>();
 
 	[TestMethod]
-	public Task DeltaNeutralArbitrageStrategyTest()
+	public Task DeltaNeutralArbitrageStrategy()
 		=> RunStrategy<DeltaNeutralArbitrageStrategy>((strategy, sec) =>
 		{
 			strategy.Asset2Security = sec;
@@ -876,258 +876,258 @@ public class CSharpTests
 		});
 
 	[TestMethod]
-	public Task VolatilitySkewArbitrageStrategyTest()
+	public Task VolatilitySkewArbitrageStrategy()
 		=> RunStrategy<VolatilitySkewArbitrageStrategy>();
 
 	[TestMethod]
-	public Task CorrelationBreakoutStrategyTest()
+	public Task CorrelationBreakoutStrategy()
 		=> RunStrategy<CorrelationBreakoutStrategy>();
 
 	[TestMethod]
-	public Task BetaNeutralArbitrageStrategyTest()
+	public Task BetaNeutralArbitrageStrategy()
 		=> RunStrategy<BetaNeutralArbitrageStrategy>();
 
 	[TestMethod]
-	public Task VwapMeanReversionStrategyTest()
+	public Task VwapMeanReversionStrategy()
 		=> RunStrategy<VwapMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task RsiMeanReversionStrategyTest()
+	public Task RsiMeanReversionStrategy()
 		=> RunStrategy<RsiMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task StochasticMeanReversionStrategyTest()
+	public Task StochasticMeanReversionStrategy()
 		=> RunStrategy<StochasticMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task CciMeanReversionStrategyTest()
+	public Task CciMeanReversionStrategy()
 		=> RunStrategy<CciMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task WilliamsRMeanReversionStrategyTest()
+	public Task WilliamsRMeanReversionStrategy()
 		=> RunStrategy<WilliamsRMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task MacdMeanReversionStrategyTest()
+	public Task MacdMeanReversionStrategy()
 		=> RunStrategy<MacdMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task AdxMeanReversionStrategyTest()
+	public Task AdxMeanReversionStrategy()
 		=> RunStrategy<AdxMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task VolatilityMeanReversionStrategyTest()
+	public Task VolatilityMeanReversionStrategy()
 		=> RunStrategy<VolatilityMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task VolumeMeanReversionStrategyTest()
+	public Task VolumeMeanReversionStrategy()
 		=> RunStrategy<VolumeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task ObvMeanReversionStrategyTest()
+	public Task ObvMeanReversionStrategy()
 		=> RunStrategy<ObvMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task MomentumBreakoutStrategyTest()
+	public Task MomentumBreakoutStrategy()
 		=> RunStrategy<MomentumBreakoutStrategy>();
 
 	[TestMethod]
-	public Task RsiBreakoutStrategyTest()
+	public Task RsiBreakoutStrategy()
 		=> RunStrategy<RsiBreakoutStrategy>();
 
 	[TestMethod]
-	public Task StochasticBreakoutStrategyTest()
+	public Task StochasticBreakoutStrategy()
 		=> RunStrategy<StochasticBreakoutStrategy>();
 
 	[TestMethod]
-	public Task WilliamsRBreakoutStrategyTest()
+	public Task WilliamsRBreakoutStrategy()
 		=> RunStrategy<WilliamsRBreakoutStrategy>();
 
 	[TestMethod]
-	public Task MacdBreakoutStrategyTest()
+	public Task MacdBreakoutStrategy()
 		=> RunStrategy<MacdBreakoutStrategy>();
 
 	[TestMethod]
-	public Task ADXBreakoutStrategyTest()
+	public Task ADXBreakoutStrategy()
 		=> RunStrategy<ADXBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolumeBreakoutStrategyTest()
+	public Task VolumeBreakoutStrategy()
 		=> RunStrategy<VolumeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task BollingerWidthBreakoutStrategyTest()
+	public Task BollingerWidthBreakoutStrategy()
 		=> RunStrategy<BollingerWidthBreakoutStrategy>();
 
 	[TestMethod]
-	public Task KeltnerWidthBreakoutStrategyTest()
+	public Task KeltnerWidthBreakoutStrategy()
 		=> RunStrategy<KeltnerWidthBreakoutStrategy>();
 
 	[TestMethod]
-	public Task DonchianWidthBreakoutStrategyTest()
+	public Task DonchianWidthBreakoutStrategy()
 		=> RunStrategy<DonchianWidthBreakoutStrategy>();
 
 	[TestMethod]
-	public Task IchimokuWidthBreakoutStrategyTest()
+	public Task IchimokuWidthBreakoutStrategy()
 		=> RunStrategy<IchimokuWidthBreakoutStrategy>();
 
 	[TestMethod]
-	public Task SupertrendDistanceBreakoutStrategyTest()
+	public Task SupertrendDistanceBreakoutStrategy()
 		=> RunStrategy<SupertrendDistanceBreakoutStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarDistanceBreakoutStrategyTest()
+	public Task ParabolicSarDistanceBreakoutStrategy()
 		=> RunStrategy<ParabolicSarDistanceBreakoutStrategy>();
 
 	[TestMethod]
-	public Task HullMaSlopeBreakoutStrategyTest()
+	public Task HullMaSlopeBreakoutStrategy()
 		=> RunStrategy<HullMaSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task MaSlopeBreakoutStrategyTest()
+	public Task MaSlopeBreakoutStrategy()
 		=> RunStrategy<MaSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task EmaSlopeBreakoutStrategyTest()
+	public Task EmaSlopeBreakoutStrategy()
 		=> RunStrategy<EmaSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolatilityAdjustedMomentumStrategyTest()
+	public Task VolatilityAdjustedMomentumStrategy()
 		=> RunStrategy<VolatilityAdjustedMomentumStrategy>();
 
 	[TestMethod]
-	public Task VwapSlopeBreakoutStrategyTest()
+	public Task VwapSlopeBreakoutStrategy()
 		=> RunStrategy<VwapSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task RsiSlopeBreakoutStrategyTest()
+	public Task RsiSlopeBreakoutStrategy()
 		=> RunStrategy<RsiSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task StochasticSlopeBreakoutStrategyTest()
+	public Task StochasticSlopeBreakoutStrategy()
 		=> RunStrategy<StochasticSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task CciSlopeBreakoutStrategyTest()
+	public Task CciSlopeBreakoutStrategy()
 		=> RunStrategy<CciSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task WilliamsRSlopeBreakoutStrategyTest()
+	public Task WilliamsRSlopeBreakoutStrategy()
 		=> RunStrategy<WilliamsRSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task MacdSlopeBreakoutStrategyTest()
+	public Task MacdSlopeBreakoutStrategy()
 		=> RunStrategy<MacdSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task AdxSlopeBreakoutStrategyTest()
+	public Task AdxSlopeBreakoutStrategy()
 		=> RunStrategy<AdxSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task AtrSlopeBreakoutStrategyTest()
+	public Task AtrSlopeBreakoutStrategy()
 		=> RunStrategy<AtrSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolumeSlopeBreakoutStrategyTest()
+	public Task VolumeSlopeBreakoutStrategy()
 		=> RunStrategy<VolumeSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task ObvSlopeBreakoutStrategyTest()
+	public Task ObvSlopeBreakoutStrategy()
 		=> RunStrategy<ObvSlopeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task BollingerWidthMeanReversionStrategyTest()
+	public Task BollingerWidthMeanReversionStrategy()
 		=> RunStrategy<BollingerWidthMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task KeltnerWidthMeanReversionStrategyTest()
+	public Task KeltnerWidthMeanReversionStrategy()
 		=> RunStrategy<KeltnerWidthMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task DonchianWidthMeanReversionStrategyTest()
+	public Task DonchianWidthMeanReversionStrategy()
 		=> RunStrategy<DonchianWidthMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task IchimokuCloudWidthMeanReversionStrategyTest()
+	public Task IchimokuCloudWidthMeanReversionStrategy()
 		=> RunStrategy<IchimokuCloudWidthMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task SupertrendDistanceMeanReversionStrategyTest()
+	public Task SupertrendDistanceMeanReversionStrategy()
 		=> RunStrategy<SupertrendDistanceMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarDistanceMeanReversionStrategyTest()
+	public Task ParabolicSarDistanceMeanReversionStrategy()
 		=> RunStrategy<ParabolicSarDistanceMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task HullMaSlopeMeanReversionStrategyTest()
+	public Task HullMaSlopeMeanReversionStrategy()
 		=> RunStrategy<HullMaSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task MaSlopeMeanReversionStrategyTest()
+	public Task MaSlopeMeanReversionStrategy()
 		=> RunStrategy<MaSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task EmaSlopeMeanReversionStrategyTest()
+	public Task EmaSlopeMeanReversionStrategy()
 		=> RunStrategy<EmaSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task VwapSlopeMeanReversionStrategyTest()
+	public Task VwapSlopeMeanReversionStrategy()
 		=> RunStrategy<VwapSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task RsiSlopeMeanReversionStrategyTest()
+	public Task RsiSlopeMeanReversionStrategy()
 		=> RunStrategy<RsiSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task StochasticSlopeMeanReversionStrategyTest()
+	public Task StochasticSlopeMeanReversionStrategy()
 		=> RunStrategy<StochasticSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task CciSlopeMeanReversionStrategyTest()
+	public Task CciSlopeMeanReversionStrategy()
 		=> RunStrategy<CciSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task WilliamsRSlopeMeanReversionStrategyTest()
+	public Task WilliamsRSlopeMeanReversionStrategy()
 		=> RunStrategy<WilliamsRSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task MacdSlopeMeanReversionStrategyTest()
+	public Task MacdSlopeMeanReversionStrategy()
 		=> RunStrategy<MacdSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task AdxSlopeMeanReversionStrategyTest()
+	public Task AdxSlopeMeanReversionStrategy()
 		=> RunStrategy<AdxSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task AtrSlopeMeanReversionStrategyTest()
+	public Task AtrSlopeMeanReversionStrategy()
 		=> RunStrategy<AtrSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task VolumeSlopeMeanReversionStrategyTest()
+	public Task VolumeSlopeMeanReversionStrategy()
 		=> RunStrategy<VolumeSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task ObvSlopeMeanReversionStrategyTest()
+	public Task ObvSlopeMeanReversionStrategy()
 		=> RunStrategy<ObvSlopeMeanReversionStrategy>();
 
 	[TestMethod]
-	public Task PairsTradingVolatilityFilterStrategyTest()
+	public Task PairsTradingVolatilityFilterStrategy()
 		=> RunStrategy<PairsTradingVolatilityFilterStrategy>((strategy, sec) =>
 		{
 			strategy.Security2 = sec;
 		});
 
 	[TestMethod]
-	public Task ZScoreVolumeFilterStrategyTest()
+	public Task ZScoreVolumeFilterStrategy()
 		=> RunStrategy<ZScoreVolumeFilterStrategy>();
 
 	[TestMethod]
-	public Task CorrelationMeanReversionStrategyTest()
+	public Task CorrelationMeanReversionStrategy()
 		=> RunStrategy<CorrelationMeanReversionStrategy>((strategy, sec) => strategy.Security2 = sec);
 
 	[TestMethod]
-	public Task BetaAdjustedPairsStrategyTest()
+	public Task BetaAdjustedPairsStrategy()
 		=> RunStrategy<BetaAdjustedPairsStrategy>((strategy, sec) =>
 		{
 			strategy.Asset2 = sec;
@@ -1135,277 +1135,277 @@ public class CSharpTests
 		});
 
 	[TestMethod]
-	public Task HurstVolatilityFilterStrategyTest()
+	public Task HurstVolatilityFilterStrategy()
 		=> RunStrategy<HurstVolatilityFilterStrategy>();
 
 	[TestMethod]
-	public Task AdaptiveEmaBreakoutStrategyTest()
+	public Task AdaptiveEmaBreakoutStrategy()
 		=> RunStrategy<AdaptiveEmaBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VolatilityClusterBreakoutStrategyTest()
+	public Task VolatilityClusterBreakoutStrategy()
 		=> RunStrategy<VolatilityClusterBreakoutStrategy>();
 
 	[TestMethod]
-	public Task SeasonalityAdjustedMomentumStrategyTest()
+	public Task SeasonalityAdjustedMomentumStrategy()
 		=> RunStrategy<SeasonalityAdjustedMomentumStrategy>();
 
 	[TestMethod]
-	public Task RsiDynamicOverboughtOversoldStrategyTest()
+	public Task RsiDynamicOverboughtOversoldStrategy()
 		=> RunStrategy<RsiDynamicOverboughtOversoldStrategy>();
 
 	[TestMethod]
-	public Task BollingerVolatilityBreakoutStrategyTest()
+	public Task BollingerVolatilityBreakoutStrategy()
 		=> RunStrategy<BollingerVolatilityBreakoutStrategy>();
 
 	[TestMethod]
-	public Task MacdAdaptiveHistogramStrategyTest()
+	public Task MacdAdaptiveHistogramStrategy()
 		=> RunStrategy<MacdAdaptiveHistogramStrategy>();
 
 	[TestMethod]
-	public Task IchimokuVolumeClusterStrategyTest()
+	public Task IchimokuVolumeClusterStrategy()
 		=> RunStrategy<IchimokuVolumeClusterStrategy>();
 
 	[TestMethod]
-	public Task SupertrendWithMomentumStrategyTest()
+	public Task SupertrendWithMomentumStrategy()
 		=> RunStrategy<SupertrendWithMomentumStrategy>();
 
 	[TestMethod]
-	public Task DonchianWithVolatilityContractionStrategyTest()
+	public Task DonchianWithVolatilityContractionStrategy()
 		=> RunStrategy<DonchianWithVolatilityContractionStrategy>();
 
 	[TestMethod]
-	public Task KeltnerWithRsiDivergenceStrategyTest()
+	public Task KeltnerWithRsiDivergenceStrategy()
 		=> RunStrategy<KeltnerWithRsiDivergenceStrategy>();
 
 	[TestMethod]
-	public Task HullMaWithVolumeSpikeStrategyTest()
+	public Task HullMaWithVolumeSpikeStrategy()
 		=> RunStrategy<HullMaWithVolumeSpikeStrategy>();
 
 	[TestMethod]
-	public Task VwapWithAdxTrendStrengthStrategyTest()
+	public Task VwapWithAdxTrendStrengthStrategy()
 		=> RunStrategy<VwapWithAdxTrendStrengthStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarWithVolatilityExpansionStrategyTest()
+	public Task ParabolicSarWithVolatilityExpansionStrategy()
 		=> RunStrategy<ParabolicSarWithVolatilityExpansionStrategy>();
 
 	[TestMethod]
-	public Task StochasticWithDynamicZonesStrategyTest()
+	public Task StochasticWithDynamicZonesStrategy()
 		=> RunStrategy<StochasticWithDynamicZonesStrategy>();
 
 	[TestMethod]
-	public Task AdxWithVolumeBreakoutStrategyTest()
+	public Task AdxWithVolumeBreakoutStrategy()
 		=> RunStrategy<AdxWithVolumeBreakoutStrategy>();
 
 	[TestMethod]
-	public Task CciWithVolatilityFilterStrategyTest()
+	public Task CciWithVolatilityFilterStrategy()
 		=> RunStrategy<CciWithVolatilityFilterStrategy>();
 
 	[TestMethod]
-	public Task WilliamsPercentRWithMomentumStrategyTest()
+	public Task WilliamsPercentRWithMomentumStrategy()
 		=> RunStrategy<WilliamsPercentRWithMomentumStrategy>();
 
 	[TestMethod]
-	public Task BollingerKMeansStrategyTest()
+	public Task BollingerKMeansStrategy()
 		=> RunStrategy<BollingerKMeansStrategy>();
 
 	[TestMethod]
-	public Task MacdHmmStrategyTest()
+	public Task MacdHmmStrategy()
 		=> RunStrategy<MacdHmmStrategy>();
 
 	[TestMethod]
-	public Task IchimokuHurstStrategyTest()
+	public Task IchimokuHurstStrategy()
 		=> RunStrategy<IchimokuHurstStrategy>();
 
 	[TestMethod]
-	public Task SupertrendRsiDivergenceStrategyTest()
+	public Task SupertrendRsiDivergenceStrategy()
 		=> RunStrategy<SupertrendRsiDivergenceStrategy>();
 
 	[TestMethod]
-	public Task DonchianSeasonalStrategyTest()
+	public Task DonchianSeasonalStrategy()
 		=> RunStrategy<DonchianSeasonalStrategy>();
 
 	[TestMethod]
-	public Task KeltnerKalmanStrategyTest()
+	public Task KeltnerKalmanStrategy()
 		=> RunStrategy<KeltnerKalmanStrategy>();
 
 	[TestMethod]
-	public Task HullMaVolatilityContractionStrategyTest()
+	public Task HullMaVolatilityContractionStrategy()
 		=> RunStrategy<HullMaVolatilityContractionStrategy>();
 
 	[TestMethod]
-	public Task VwapAdxTrendStrategyTest()
+	public Task VwapAdxTrendStrategy()
 		=> RunStrategy<VwapAdxTrendStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarHurstStrategyTest()
+	public Task ParabolicSarHurstStrategy()
 		=> RunStrategy<ParabolicSarHurstStrategy>();
 
 	[TestMethod]
-	public Task BollingerKalmanFilterStrategyTest()
+	public Task BollingerKalmanFilterStrategy()
 		=> RunStrategy<BollingerKalmanFilterStrategy>();
 
 	[TestMethod]
-	public Task MacdVolumeClusterStrategyTest()
+	public Task MacdVolumeClusterStrategy()
 		=> RunStrategy<MacdVolumeClusterStrategy>();
 
 	[TestMethod]
-	public Task IchimokuVolatilityContractionStrategyTest()
+	public Task IchimokuVolatilityContractionStrategy()
 		=> RunStrategy<IchimokuVolatilityContractionStrategy>();
 
 	[TestMethod]
-	public Task DonchianHurstStrategyTest()
+	public Task DonchianHurstStrategy()
 		=> RunStrategy<DonchianHurstStrategy>();
 
 	[TestMethod]
-	public Task KeltnerSeasonalStrategyTest()
+	public Task KeltnerSeasonalStrategy()
 		=> RunStrategy<KeltnerSeasonalStrategy>();
 
 	[TestMethod]
-	public Task HullKMeansClusterStrategyTest()
+	public Task HullKMeansClusterStrategy()
 		=> RunStrategy<HullKMeansClusterStrategy>();
 
 	[TestMethod]
-	public Task VwapHiddenMarkovModelStrategyTest()
+	public Task VwapHiddenMarkovModelStrategy()
 		=> RunStrategy<VwapHiddenMarkovModelStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarRsiDivergenceStrategyTest()
+	public Task ParabolicSarRsiDivergenceStrategy()
 		=> RunStrategy<ParabolicSarRsiDivergenceStrategy>();
 
 	[TestMethod]
-	public Task AdaptiveRsiVolumeStrategyTest()
+	public Task AdaptiveRsiVolumeStrategy()
 		=> RunStrategy<AdaptiveRsiVolumeStrategy>();
 
 	[TestMethod]
-	public Task AdaptiveBollingerBreakoutStrategyTest()
+	public Task AdaptiveBollingerBreakoutStrategy()
 		=> RunStrategy<AdaptiveBollingerBreakoutStrategy>();
 
 	[TestMethod]
-	public Task MacdWithSentimentFilterStrategyTest()
+	public Task MacdWithSentimentFilterStrategy()
 		=> RunStrategy<MacdWithSentimentFilterStrategy>();
 
 	[TestMethod]
-	public Task IchimokuWithImpliedVolatilityStrategyTest()
+	public Task IchimokuWithImpliedVolatilityStrategy()
 		=> RunStrategy<IchimokuWithImpliedVolatilityStrategy>();
 
 	[TestMethod]
-	public Task SupertrendWithPutCallRatioStrategyTest()
+	public Task SupertrendWithPutCallRatioStrategy()
 		=> RunStrategy<SupertrendWithPutCallRatioStrategy>();
 
 	[TestMethod]
-	public Task DonchianWithSentimentSpikeStrategyTest()
+	public Task DonchianWithSentimentSpikeStrategy()
 		=> RunStrategy<DonchianWithSentimentSpikeStrategy>();
 
 	[TestMethod]
-	public Task KeltnerWithRLSignalStrategyTest()
+	public Task KeltnerWithRLSignalStrategy()
 		=> RunStrategy<KeltnerWithRLSignalStrategy>();
 
 	[TestMethod]
-	public Task HullMAWithImpliedVolatilityBreakoutStrategyTest()
+	public Task HullMAWithImpliedVolatilityBreakoutStrategy()
 		=> RunStrategy<HullMAWithImpliedVolatilityBreakoutStrategy>();
 
 	[TestMethod]
-	public Task VwapWithBehavioralBiasFilterStrategyTest()
+	public Task VwapWithBehavioralBiasFilterStrategy()
 		=> RunStrategy<VwapWithBehavioralBiasFilterStrategy>();
 
 	[TestMethod]
-	public Task ParabolicSarSentimentDivergenceStrategyTest()
+	public Task ParabolicSarSentimentDivergenceStrategy()
 		=> RunStrategy<ParabolicSarSentimentDivergenceStrategy>();
 
 	[TestMethod]
-	public Task RsiWithOptionOpenInterestStrategyTest()
+	public Task RsiWithOptionOpenInterestStrategy()
 		=> RunStrategy<RsiWithOptionOpenInterestStrategy>();
 
 	[TestMethod]
-	public Task StochasticImpliedVolatilitySkewStrategyTest()
+	public Task StochasticImpliedVolatilitySkewStrategy()
 		=> RunStrategy<StochasticImpliedVolatilitySkewStrategy>();
 
 	[TestMethod]
-	public Task AdxSentimentMomentumStrategyTest()
+	public Task AdxSentimentMomentumStrategy()
 		=> RunStrategy<AdxSentimentMomentumStrategy>();
 
 	[TestMethod]
-	public Task CciPutCallRatioDivergenceStrategyTest()
+	public Task CciPutCallRatioDivergenceStrategy()
 		=> RunStrategy<CciPutCallRatioDivergenceStrategy>();
 
 	[TestMethod]
-	public Task AccrualAnomalyStrategyTest()
+	public Task AccrualAnomalyStrategy()
 		=> RunStrategy<AccrualAnomalyStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task AssetClassMomentumRotationalStrategyTest()
+	public Task AssetClassMomentumRotationalStrategy()
 		=> RunStrategy<AssetClassMomentumRotationalStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task AssetClassTrendFollowingStrategyTest()
+	public Task AssetClassTrendFollowingStrategy()
 		=> RunStrategy<AssetClassTrendFollowingStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task AssetGrowthEffectStrategyTest()
+	public Task AssetGrowthEffectStrategy()
 		=> RunStrategy<AssetGrowthEffectStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task BettingAgainstBetaStocksStrategyTest()
+	public Task BettingAgainstBetaStocksStrategy()
 		=> RunStrategy<BettingAgainstBetaStocksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task BettingAgainstBetaStrategyTest()
+	public Task BettingAgainstBetaStrategy()
 		=> RunStrategy<BettingAgainstBetaStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task BitcoinIntradaySeasonalityStrategyTest()
+	public Task BitcoinIntradaySeasonalityStrategy()
 		=> RunStrategy<BitcoinIntradaySeasonalityStrategy>();
 
 	[TestMethod]
-	public Task BookToMarketValueStrategyTest()
+	public Task BookToMarketValueStrategy()
 		=> RunStrategy<BookToMarketValueStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task CommodityMomentumStrategyTest()
+	public Task CommodityMomentumStrategy()
 		=> RunStrategy<CommodityMomentumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task ConsistentMomentumStrategyTest()
+	public Task ConsistentMomentumStrategy()
 		=> RunStrategy<ConsistentMomentumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task CountryValueFactorStrategyTest()
+	public Task CountryValueFactorStrategy()
 		=> RunStrategy<CountryValueFactorStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task CrudeOilPredictsEquityStrategyTest()
+	public Task CrudeOilPredictsEquityStrategy()
 		=> RunStrategy<CrudeOilPredictsEquityStrategy>((stra, sec) =>
 		{
 			stra.Oil = sec;
@@ -1413,98 +1413,98 @@ public class CSharpTests
 		});
 
 	[TestMethod]
-	public Task CryptoRebalancingPremiumStrategyTest()
+	public Task CryptoRebalancingPremiumStrategy()
 		=> RunStrategy<CryptoRebalancingPremiumStrategy>((stra, sec) =>
 		{
 			stra.ETH = sec;
 		});
 
 	[TestMethod]
-	public Task CurrencyMomentumFactorStrategyTest()
+	public Task CurrencyMomentumFactorStrategy()
 		=> RunStrategy<CurrencyMomentumFactorStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task CurrencyPPPValueStrategyTest()
+	public Task CurrencyPPPValueStrategy()
 		=> RunStrategy<CurrencyPPPValueStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task DispersionTradingStrategyTest()
+	public Task DispersionTradingStrategy()
 		=> RunStrategy<DispersionTradingStrategy>((stra, sec) =>
 		{
 			stra.Constituents = [sec];
 		});
 
 	[TestMethod]
-	public Task DollarCarryTradeStrategyTest()
+	public Task DollarCarryTradeStrategy()
 		=> RunStrategy<DollarCarryTradeStrategy>((stra, sec) =>
 		{
 			stra.Pairs = [sec];
 		});
 
 	[TestMethod]
-	public Task EarningsAnnouncementPremiumStrategyTest()
+	public Task EarningsAnnouncementPremiumStrategy()
 		=> RunStrategy<EarningsAnnouncementPremiumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task EarningsAnnouncementReversalStrategyTest()
+	public Task EarningsAnnouncementReversalStrategy()
 		=> RunStrategy<EarningsAnnouncementReversalStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task EarningsAnnouncementsWithBuybacksStrategyTest()
+	public Task EarningsAnnouncementsWithBuybacksStrategy()
 		=> RunStrategy<EarningsAnnouncementsWithBuybacksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task EarningsQualityFactorStrategyTest()
+	public Task EarningsQualityFactorStrategy()
 		=> RunStrategy<EarningsQualityFactorStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task ESGFactorMomentumStrategyTest()
+	public Task ESGFactorMomentumStrategy()
 		=> RunStrategy<ESGFactorMomentumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task FedModelStrategyTest()
+	public Task FedModelStrategy()
 		=> RunStrategy<FedModelStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task FScoreReversalStrategyTest()
+	public Task FScoreReversalStrategy()
 		=> RunStrategy<FScoreReversalStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task FXCarryTradeStrategyTest()
+	public Task FXCarryTradeStrategy()
 		=> RunStrategy<FXCarryTradeStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task JanuaryBarometerStrategyTest()
+	public Task JanuaryBarometerStrategy()
 		=> RunStrategy<JanuaryBarometerStrategy>((stra, sec) =>
 		{
 			stra.EquityETF = sec;
@@ -1512,391 +1512,391 @@ public class CSharpTests
 		});
 
 	[TestMethod]
-	public Task LexicalDensityFilingsStrategyTest()
+	public Task LexicalDensityFilingsStrategy()
 		=> RunStrategy<LexicalDensityFilingsStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task LowVolatilityStocksStrategyTest()
+	public Task LowVolatilityStocksStrategy()
 		=> RunStrategy<LowVolatilityStocksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task MomentumAssetGrowthStrategyTest()
+	public Task MomentumAssetGrowthStrategy()
 		=> RunStrategy<MomentumAssetGrowthStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task MomentumFactorStocksStrategyTest()
+	public Task MomentumFactorStocksStrategy()
 		=> RunStrategy<MomentumFactorStocksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task MomentumRevVolStrategyTest()
+	public Task MomentumRevVolStrategy()
 		=> RunStrategy<MomentumRevVolStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task MomentumStyleRotationStrategyTest()
+	public Task MomentumStyleRotationStrategy()
 		=> RunStrategy<MomentumStyleRotationStrategy>((stra, sec) =>
 		{
 			stra.FactorETFs = [sec];
 		});
 
 	[TestMethod]
-	public Task Month12CycleStrategyTest()
+	public Task Month12CycleStrategy()
 		=> RunStrategy<Month12CycleStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task MutualFundMomentumStrategyTest()
+	public Task MutualFundMomentumStrategy()
 		=> RunStrategy<MutualFundMomentumStrategy>((stra, sec) =>
 		{
 			stra.Funds = [sec];
 		});
 
 	[TestMethod]
-	public Task OptionExpirationWeekStrategyTest()
+	public Task OptionExpirationWeekStrategy()
 		=> RunStrategy<OptionExpirationWeekStrategy>();
 
 	[TestMethod]
-	public Task OvernightSentimentAnomalyStrategyTest()
+	public Task OvernightSentimentAnomalyStrategy()
 		=> RunStrategy<OvernightSentimentAnomalyStrategy>((stra, sec) =>
 		{
 			stra.SentimentSymbol = sec;
 		});
 
 	[TestMethod]
-	public Task PairedSwitchingStrategyTest()
+	public Task PairedSwitchingStrategy()
 		=> RunStrategy<PairedSwitchingStrategy>((stra, sec) =>
 		{
 			stra.SecondETF = sec;
 		});
 
 	[TestMethod]
-	public Task PairsTradingCountryETFsStrategyTest()
+	public Task PairsTradingCountryETFsStrategy()
 		=> RunStrategy<PairsTradingCountryETFsStrategy>((stra, sec) =>
 		{
 			stra.Universe = [stra.Security, sec];
 		});
 
 	[TestMethod]
-	public Task PairsTradingStocksStrategyTest()
+	public Task PairsTradingStocksStrategy()
 		=> RunStrategy<PairsTradingStocksStrategy>((stra, sec) =>
 		{
 			stra.Pairs = [(stra.Security, sec)];
 		});
 
 	[TestMethod]
-	public Task PaydayAnomalyStrategyTest()
+	public Task PaydayAnomalyStrategy()
 		=> RunStrategy<PaydayAnomalyStrategy>();
 
 	[TestMethod]
-	public Task RDExpendituresStrategyTest()
+	public Task RDExpendituresStrategy()
 		=> RunStrategy<RDExpendituresStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task ResidualMomentumFactorStrategyTest()
+	public Task ResidualMomentumFactorStrategy()
 		=> RunStrategy<ResidualMomentumFactorStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task ReturnAsymmetryCommodityStrategyTest()
+	public Task ReturnAsymmetryCommodityStrategy()
 		=> RunStrategy<ReturnAsymmetryCommodityStrategy>((stra, sec) =>
 		{
 			stra.Futures = [sec];
 		});
 
 	[TestMethod]
-	public Task ROAEffectStocksStrategyTest()
+	public Task ROAEffectStocksStrategy()
 		=> RunStrategy<ROAEffectStocksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task SectorMomentumRotationStrategyTest()
+	public Task SectorMomentumRotationStrategy()
 		=> RunStrategy<SectorMomentumRotationStrategy>((stra, sec) =>
 		{
 			stra.SectorETFs = [sec];
 		});
 
 	[TestMethod]
-	public Task ShortInterestEffectStrategyTest()
+	public Task ShortInterestEffectStrategy()
 		=> RunStrategy<ShortInterestEffectStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task ShortTermReversalFuturesStrategyTest()
+	public Task ShortTermReversalFuturesStrategy()
 		=> RunStrategy<ShortTermReversalFuturesStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task ShortTermReversalStocksStrategyTest()
+	public Task ShortTermReversalStocksStrategy()
 		=> RunStrategy<ShortTermReversalStocksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task SkewnessCommodityStrategyTest()
+	public Task SkewnessCommodityStrategy()
 		=> RunStrategy<SkewnessCommodityStrategy>((stra, sec) =>
 		{
 			stra.Futures = [sec];
 		});
 
 	[TestMethod]
-	public Task SmallCapPremiumStrategyTest()
+	public Task SmallCapPremiumStrategy()
 		=> RunStrategy<SmallCapPremiumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task SmartFactorsMomentumMarketStrategyTest()
+	public Task SmartFactorsMomentumMarketStrategy()
 		=> RunStrategy<SmartFactorsMomentumMarketStrategy>((stra, sec) =>
 		{
 			stra.Factors = [sec];
 		});
 
 	[TestMethod]
-	public Task SoccerClubsArbitrageStrategyTest()
+	public Task SoccerClubsArbitrageStrategy()
 		=> RunStrategy<SoccerClubsArbitrageStrategy>((stra, sec) =>
 		{
 			stra.Pair = [stra.Security, sec];
 		});
 
 	[TestMethod]
-	public Task SyntheticLendingRatesStrategyTest()
+	public Task SyntheticLendingRatesStrategy()
 		=> RunStrategy<SyntheticLendingRatesStrategy>();
 
 	[TestMethod]
-	public Task TermStructureCommoditiesStrategyTest()
+	public Task TermStructureCommoditiesStrategy()
 		=> RunStrategy<TermStructureCommoditiesStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task TimeSeriesMomentumStrategyTest()
+	public Task TimeSeriesMomentumStrategy()
 		=> RunStrategy<TimeSeriesMomentumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task TrendFollowingStocksStrategyTest()
+	public Task TrendFollowingStocksStrategy()
 		=> RunStrategy<TrendFollowingStocksStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task TurnOfMonthStrategyTest()
+	public Task TurnOfMonthStrategy()
 		=> RunStrategy<TurnOfMonthStrategy>();
 
 	[TestMethod]
-	public Task ValueMomentumAcrossAssetsStrategyTest()
+	public Task ValueMomentumAcrossAssetsStrategy()
 		=> RunStrategy<ValueMomentumAcrossAssetsStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task VolatilityRiskPremiumStrategyTest()
+	public Task VolatilityRiskPremiumStrategy()
 		=> RunStrategy<VolatilityRiskPremiumStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task Weeks52HighStrategyTest()
+	public Task Weeks52HighStrategy()
 		=> RunStrategy<Weeks52HighStrategy>((stra, sec) =>
 		{
 			stra.Universe = [sec];
 		});
 
 	[TestMethod]
-	public Task WTIBrentSpreadStrategyTest()
+	public Task WTIBrentSpreadStrategy()
 		=> RunStrategy<WTIBrentSpreadStrategy>((stra, sec) =>
 		{
 			stra.Brent = sec;
 		});
 
 	[TestMethod]
-	public Task BollingerAroonStrategyTest()
+	public Task BollingerAroonStrategy()
 		=> RunStrategy<BollingerAroonStrategy>();
 
 	[TestMethod]
-	public Task BollingerDivergenceStrategyTest()
+	public Task BollingerDivergenceStrategy()
 		=> RunStrategy<BollingerDivergenceStrategy>();
 
 	[TestMethod]
-	public Task BollingerWinnerLiteStrategyTest()
+	public Task BollingerWinnerLiteStrategy()
 		=> RunStrategy<BollingerWinnerLiteStrategy>();
 
 	[TestMethod]
-	public Task BollingerWinnerProStrategyTest()
+	public Task BollingerWinnerProStrategy()
 		=> RunStrategy<BollingerWinnerProStrategy>();
 
 	[TestMethod]
-	public Task BollingerBreakoutStrategyTest()
+	public Task BollingerBreakoutStrategy()
 		=> RunStrategy<BollingerBreakoutStrategy>();
 
 	[TestMethod]
-	public Task DmiWinnerStrategyTest()
+	public Task DmiWinnerStrategy()
 		=> RunStrategy<DmiWinnerStrategy>();
 
 	[TestMethod]
-	public Task DoubleRsiStrategyTest()
+	public Task DoubleRsiStrategy()
 		=> RunStrategy<DoubleRsiStrategy>();
 
 	[TestMethod]
-	public Task DoubleSupertrendStrategyTest()
+	public Task DoubleSupertrendStrategy()
 		=> RunStrategy<DoubleSupertrendStrategy>();
 
 	[TestMethod]
-	public Task EmaMovingAwayStrategyTest()
+	public Task EmaMovingAwayStrategy()
 		=> RunStrategy<EmaMovingAwayStrategy>();
 
 	[TestMethod]
-	public Task EmaSmaRsiStrategyTest()
+	public Task EmaSmaRsiStrategy()
 		=> RunStrategy<EmaSmaRsiStrategy>();
 
 	[TestMethod]
-	public Task ExceededCandleStrategyTest()
+	public Task ExceededCandleStrategy()
 		=> RunStrategy<ExceededCandleStrategy>();
 
 	[TestMethod]
-	public Task FlawlessVictoryStrategyTest()
+	public Task FlawlessVictoryStrategy()
 		=> RunStrategy<FlawlessVictoryStrategy>();
 
 	[TestMethod]
-	public Task FullCandleStrategyTest()
+	public Task FullCandleStrategy()
 		=> RunStrategy<FullCandleStrategy>();
 
 	[TestMethod]
-	public Task GridBotStrategyTest()
+	public Task GridBotStrategy()
 		=> RunStrategy<GridBotStrategy>();
 
 	[TestMethod]
-	public Task HaUniversalStrategyTest()
+	public Task HaUniversalStrategy()
 		=> RunStrategy<HaUniversalStrategy>();
 
 	[TestMethod]
-	public Task HeikinAshiV2StrategyTest()
+	public Task HeikinAshiV2Strategy()
 		=> RunStrategy<HeikinAshiV2Strategy>();
 
 	[TestMethod]
-	public Task ImprovisandoStrategyTest()
+	public Task ImprovisandoStrategy()
 		=> RunStrategy<ImprovisandoStrategy>();
 
 	[TestMethod]
-	public Task JavoV1StrategyTest()
+	public Task JavoV1Strategy()
 		=> RunStrategy<JavoV1Strategy>();
 
 	[TestMethod]
-	public Task MacdBbRsiStrategyTest()
+	public Task MacdBbRsiStrategy()
 		=> RunStrategy<MacdBbRsiStrategy>();
 
 	[TestMethod]
-	public Task MacdDmiStrategyTest()
+	public Task MacdDmiStrategy()
 		=> RunStrategy<MacdDmiStrategy>();
 
 	[TestMethod]
-	public Task MacdLongStrategyTest()
+	public Task MacdLongStrategy()
 		=> RunStrategy<MacdLongStrategy>();
 
 	[TestMethod]
-	public Task MaCrossDmiStrategyTest()
+	public Task MaCrossDmiStrategy()
 		=> RunStrategy<MaCrossDmiStrategy>();
 
 	[TestMethod]
-	public Task MemaBbRsiStrategyTest()
+	public Task MemaBbRsiStrategy()
 		=> RunStrategy<MemaBbRsiStrategy>();
 
 	[TestMethod]
-	public Task MtfBbStrategyTest()
+	public Task MtfBbStrategy()
 		=> RunStrategy<MtfBbStrategy>();
 
 	[TestMethod]
-	public Task OmarMmrStrategyTest()
+	public Task OmarMmrStrategy()
 		=> RunStrategy<OmarMmrStrategy>();
 
 	[TestMethod]
-	public Task PinBarMagicStrategyTest()
+	public Task PinBarMagicStrategy()
 		=> RunStrategy<PinBarMagicStrategy>();
 
 	[TestMethod]
-	public Task QqeSignalsStrategyTest()
+	public Task QqeSignalsStrategy()
 		=> RunStrategy<QqeSignalsStrategy>();
 
 	[TestMethod]
-	public Task RsiPlus1200StrategyTest()
+	public Task RsiPlus1200Strategy()
 		=> RunStrategy<RsiPlus1200Strategy>();
 
 	[TestMethod]
-	public Task RsiEmaStrategyTest()
+	public Task RsiEmaStrategy()
 		=> RunStrategy<RsiEmaStrategy>();
 
 	[TestMethod]
-	public Task StochRsiCrossoverStrategyTest()
+	public Task StochRsiCrossoverStrategy()
 		=> RunStrategy<StochRsiCrossoverStrategy>();
 
 	[TestMethod]
-	public Task StochRsiSupertrendStrategyTest()
+	public Task StochRsiSupertrendStrategy()
 		=> RunStrategy<StochRsiSupertrendStrategy>();
 
 	[TestMethod]
-	public Task StrategyTesterStrategyTest()
+	public Task StrategyTesterStrategy()
 		=> RunStrategy<StrategyTesterStrategy>();
 
 	[TestMethod]
-	public Task StratBaseStrategyTest()
+	public Task StratBaseStrategy()
 		=> RunStrategy<StratBaseStrategy>();
 
 	[TestMethod]
-	public Task SupertrendEmaReboundStrategyTest()
+	public Task SupertrendEmaReboundStrategy()
 		=> RunStrategy<SupertrendEmaReboundStrategy>();
 
 	[TestMethod]
-	public Task TendencyEmaRsiStrategyTest()
+	public Task TendencyEmaRsiStrategy()
 		=> RunStrategy<TendencyEmaRsiStrategy>();
 
 	[TestMethod]
-	public Task ThreeEmaCrossStrategyTest()
+	public Task ThreeEmaCrossStrategy()
 		=> RunStrategy<ThreeEmaCrossStrategy>();
 
 	[TestMethod]
-	public Task TtmSqueezeStrategyTest()
+	public Task TtmSqueezeStrategy()
 		=> RunStrategy<TtmSqueezeStrategy>();
 
 	[TestMethod]
-	public Task VelaSuperadaStrategyTest()
+	public Task VelaSuperadaStrategy()
 		=> RunStrategy<VelaSuperadaStrategy>();
 
 	[TestMethod]
-	public Task WilliamsVixFixStrategyTest()
+	public Task WilliamsVixFixStrategy()
 		=> RunStrategy<WilliamsVixFixStrategy>();
 }
