@@ -102,9 +102,9 @@ class mema_bb_rsi_strategy(Strategy):
         if not self._ma1.IsFormed or not self._ma2.IsFormed or not self._bb.IsFormed or not self._rsi.IsFormed:
             return
 
-        ma1 = ma1_val.ToDecimal()
-        ma2 = ma2_val.ToDecimal()
-        rsi = rsi_val.ToDecimal()
+        ma1 = float(ma1_val)
+        ma2 = float(ma2_val)
+        rsi = float(rsi_val)
         bb = bb_val
         upper = bb.UpBand
         lower = bb.LowBand

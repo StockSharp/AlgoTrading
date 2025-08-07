@@ -149,12 +149,12 @@ class vela_superada_strategy(Strategy):
         bullish_pattern = self._previous_close < self._previous_open and price > open_price
         bearish_pattern = self._previous_close > self._previous_open and price < open_price
 
-        self._check_entries(candle, ema_value.ToDecimal(), rsi_value.ToDecimal(), macd_value.ToDecimal(), bullish_pattern, bearish_pattern)
+        self._check_entries(candle, float(ema_value), float(rsi_value), float(macd_value), bullish_pattern, bearish_pattern)
         self._update_trailing(candle)
 
         self._previous_close = price
         self._previous_open = open_price
-        self._previous_macd = macd_value.ToDecimal()
+        self._previous_macd = float(macd_value)
 
         if self.Position != 0 and self._entry_price == 0:
             self._entry_price = open_price

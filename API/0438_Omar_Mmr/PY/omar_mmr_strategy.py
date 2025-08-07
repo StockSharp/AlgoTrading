@@ -106,9 +106,9 @@ class omar_mmr_strategy(Strategy):
         if not self._rsi.IsFormed or not self._ema_a.IsFormed or not self._ema_b.IsFormed or not self._ema_c.IsFormed or not self._macd.IsFormed:
             return
 
-        ema_a = self._ema_a.Process(candle).ToDecimal()
-        ema_b = self._ema_b.Process(candle).ToDecimal()
-        ema_c = self._ema_c.Process(candle).ToDecimal()
+        ema_a = float(self._ema_a.Process(candle))
+        ema_b = float(self._ema_b.Process(candle))
+        ema_c = float(self._ema_c.Process(candle))
 
         macd_line = macd_val.Macd
         signal_line = macd_val.Signal
@@ -117,7 +117,7 @@ class omar_mmr_strategy(Strategy):
         prev_signal = prev.Signal
         macd_cross = macd_line > signal_line and prev_macd <= prev_signal
 
-        rsi = rsi_val.ToDecimal()
+        rsi = float(rsi_val)
 
         long_entry = (
             candle.ClosePrice > ema_c

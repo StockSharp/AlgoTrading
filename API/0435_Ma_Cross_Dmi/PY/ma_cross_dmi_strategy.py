@@ -79,8 +79,8 @@ class ma_cross_dmi_strategy(Strategy):
         if not self._ma1.IsFormed or not self._ma2.IsFormed or not self._dmi.IsFormed:
             return
 
-        ma1 = ma1_value.ToDecimal()
-        ma2 = ma2_value.ToDecimal()
+        ma1 = float(ma1_value)
+        ma2 = float(ma2_value)
         prev_ma1 = self._ma1.GetValue(1)
         prev_ma2 = self._ma2.GetValue(1)
 

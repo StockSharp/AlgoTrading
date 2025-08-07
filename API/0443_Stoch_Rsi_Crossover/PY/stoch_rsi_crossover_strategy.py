@@ -174,17 +174,17 @@ class stoch_rsi_crossover_strategy(Strategy):
         if not (highest.IsFormed and lowest.IsFormed):
             return
 
-        high_val = highest.ToDecimal()
-        low_val = lowest.ToDecimal()
+        high_val = float(highest)
+        low_val = float(lowest)
         stoch_rsi = 50 if high_val == low_val else (rsi_price - low_val) / (high_val - low_val) * 100
 
         k_val = self._smooth_k_sma.Process(stoch_rsi, candle.ServerTime, True)
-        d_val = self._smooth_d_sma.Process(k_val.ToDecimal(), candle.ServerTime, True)
+        d_val = self._smooth_d_sma.Process(float(k_val), candle.ServerTime, True)
         if not (k_val.IsFormed and d_val.IsFormed):
             return
 
-        k = k_val.ToDecimal()
-        d = d_val.ToDecimal()
+        k = float(k_val)
+        d = float(d_val)
 
         crossed_over = self._prev_k <= self._prev_d and k > d
         crossed_under = self._prev_k >= self._prev_d and k < d

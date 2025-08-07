@@ -146,23 +146,23 @@ class strategy_tester_strategy(Strategy):
         if not self._momentum.IsFormed or not self._adx.IsFormed or not self._atr.IsFormed:
             return
 
-        high_val = values[0].ToDecimal()
-        low_val = values[1].ToDecimal()
-        sma_val = values[2].ToDecimal()
+        high_val = float(values[0])
+        low_val = float(values[1])
+        sma_val = float(values[2])
 
         lr_val = values[3]
         if isinstance(lr_val, LinearRegression.LinearRegressionValue):
             momentum_val = lr_val.LinearRegSlope
         else:
-            momentum_val = lr_val.ToDecimal()
+            momentum_val = float(lr_val)
 
         adx_val_obj = values[4]
         if isinstance(adx_val_obj, AverageDirectionalIndex.AverageDirectionalIndexValue):
             adx_val = adx_val_obj.MovingAverage
         else:
-            adx_val = adx_val_obj.ToDecimal()
+            adx_val = float(adx_val_obj)
 
-        atr_val = values[5].ToDecimal()
+        atr_val = float(values[5])
 
         momentum_pivot_high = self._prev_momentum != 0 and self._prev_momentum > momentum_val
         adx_pivot_high = self._prev_adx != 0 and self._prev_adx > adx_val

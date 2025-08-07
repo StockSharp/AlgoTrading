@@ -138,19 +138,19 @@ class williams_vix_fix_strategy(Strategy):
         low_price = candle.LowPrice
         high_price = candle.HighPrice
 
-        wvf = ((highest_value.ToDecimal() - low_price) / highest_value.ToDecimal()) * 100
+        wvf = ((float(highest_value) - low_price) / float(highest_value)) * 100
         wvf_sma = self._wvf_sma.Process(wvf, candle.ServerTime, True)
         wvf_std = self._wvf_std.Process(wvf, candle.ServerTime, True)
         if not wvf_sma.IsFormed or not wvf_std.IsFormed:
             return
-        wvf_upper = wvf_sma.ToDecimal() + (self.bb_multiplier * wvf_std.ToDecimal())
+        wvf_upper = float(wvf_sma) + (self.bb_multiplier * float(wvf_std))
 
-        wvf_inv = ((high_price - lowest_value.ToDecimal()) / lowest_value.ToDecimal()) * 100
+        wvf_inv = ((high_price - float(lowest_value)) / float(lowest_value)) * 100
         wvf_inv_sma = self._wvf_inv_sma.Process(wvf_inv, candle.ServerTime, True)
         wvf_inv_std = self._wvf_inv_std.Process(wvf_inv, candle.ServerTime, True)
         if not wvf_inv_sma.IsFormed or not wvf_inv_std.IsFormed:
             return
-        wvf_inv_upper = wvf_inv_sma.ToDecimal() + (self.bb_multiplier * wvf_inv_std.ToDecimal())
+        wvf_inv_upper = float(wvf_inv_sma) + (self.bb_multiplier * float(wvf_inv_std))
 
         self._check_conditions(candle, wvf, wvf_upper, wvf_inv, wvf_inv_upper)
 

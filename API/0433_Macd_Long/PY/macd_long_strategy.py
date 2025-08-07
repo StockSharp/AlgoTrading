@@ -94,7 +94,7 @@ class macd_long_strategy(Strategy):
         if not self._rsi.IsFormed or not self._macd.IsFormed:
             return
 
-        rsi = rsi_value.ToDecimal()
+        rsi = float(rsi_value)
         if rsi <= self._rsi_over_sold.Value:
             self._bars_since_oversold = 0
         else:

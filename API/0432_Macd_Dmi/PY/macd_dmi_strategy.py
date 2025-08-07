@@ -137,7 +137,7 @@ class macd_dmi_strategy(Strategy):
         prev_macd = prev.Macd
         prev_signal = prev.Signal
 
-        self._calculate_vstop(candle, atr_value.ToDecimal())
+        self._calculate_vstop(candle, float(atr_value))
 
         crossover = macd_line > signal_line and prev_macd <= prev_signal
         crossunder = macd_line < signal_line and prev_macd >= prev_signal
