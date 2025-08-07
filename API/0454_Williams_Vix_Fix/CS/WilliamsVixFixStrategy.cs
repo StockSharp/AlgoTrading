@@ -229,18 +229,13 @@ namespace StockSharp.Samples.Strategies
 
 			if (buyCondition && Position == 0)
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			if (Position > 0 && sellCondition)
 			{
 				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

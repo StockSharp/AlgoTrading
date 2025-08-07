@@ -264,7 +264,7 @@ namespace StockSharp.Samples.Strategies
 				Position == 0)
 			{
 				_entryPrice = openPrice;
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			// Short entry: EMA A crosses under EMA B, EMA A < EMA C (trend filter), bearish candle
@@ -275,7 +275,7 @@ namespace StockSharp.Samples.Strategies
 				Position == 0)
 			{
 				_entryPrice = openPrice;
-				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
 			}
 		}
 
@@ -312,11 +312,6 @@ namespace StockSharp.Samples.Strategies
 					RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 				}
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

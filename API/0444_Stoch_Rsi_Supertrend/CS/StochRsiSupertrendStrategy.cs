@@ -296,7 +296,7 @@ namespace StockSharp.Samples.Strategies
 				supertrendDirection < 0 && 
 				Position == 0)
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			// Short entry: close < trend MA, K > 80, K crosses under D, Supertrend is bearish
@@ -307,7 +307,7 @@ namespace StockSharp.Samples.Strategies
 				supertrendDirection > 0 && 
 				Position == 0)
 			{
-				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
 			}
 		}
 
@@ -326,11 +326,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

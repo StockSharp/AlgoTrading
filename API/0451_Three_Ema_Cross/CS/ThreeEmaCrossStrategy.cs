@@ -226,7 +226,7 @@ namespace StockSharp.Samples.Strategies
 
 			if (entryCondition && Position == 0)
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 		}
 
@@ -239,11 +239,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				RegisterOrder(CreateOrder(Sides.Sell, candle.ClosePrice, Math.Abs(Position)));
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

@@ -241,7 +241,7 @@ namespace StockSharp.Samples.Strategies
 
 				if (entryLong1 || entryLong2)
 				{
-					RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+					RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 				}
 			}
 
@@ -259,7 +259,7 @@ namespace StockSharp.Samples.Strategies
 
 				if (entryShort1 || entryShort2)
 				{
-					RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+					RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
 				}
 			}
 		}
@@ -284,11 +284,6 @@ namespace StockSharp.Samples.Strategies
 				// Percentage-based take profit is handled by protection system
 				// Additional logic can be added here if needed
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

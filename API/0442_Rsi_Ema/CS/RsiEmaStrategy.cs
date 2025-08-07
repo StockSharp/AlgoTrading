@@ -197,13 +197,13 @@ namespace StockSharp.Samples.Strategies
 			// Long entry: RSI < oversold and MA1 > MA2 (trend filter)
 			if (rsiValue < RsiOversold && ma1Value > ma2Value && Position == 0)
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			// Short entry: RSI > overbought and MA1 > MA2 (trend filter)
 			if (rsiValue > RsiOverbought && ma1Value > ma2Value && Position == 0)
 			{
-				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
 			}
 
 			// Exit long: RSI > overbought
@@ -217,11 +217,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

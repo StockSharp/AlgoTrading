@@ -197,13 +197,13 @@ namespace StockSharp.Samples.Strategies
 			if (ShowLong && Position == 0)
 			{
 				// Long entry condition placeholder
-				// RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				// RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			if (ShowShort && Position == 0)
 			{
 				// Short entry condition placeholder  
-				// RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				// RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, Volume));
 			}
 		}
 
@@ -221,13 +221,8 @@ namespace StockSharp.Samples.Strategies
 			if (Position < 0)
 			{
 				// Short exit condition placeholder
-				// RegisterOrder(this.CreateOrder(Sides.Buy, candle.ClosePrice, Math.Abs(Position)));
+				// RegisterOrder(CreateOrder(Sides.Buy, candle.ClosePrice, Math.Abs(Position)));
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

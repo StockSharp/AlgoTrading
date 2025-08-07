@@ -245,7 +245,7 @@ namespace StockSharp.Samples.Strategies
 				currentPrice > emaValue && 
 				currentPrice <= emaValue * 1.01m) // +1% slack
 			{
-				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			// Short entry conditions: close < EMA, RSI crosses under overbought, price within 1% below EMA  
@@ -253,7 +253,7 @@ namespace StockSharp.Samples.Strategies
 				currentPrice < emaValue && 
 				currentPrice >= emaValue * 0.99m) // -1% slack
 			{
-				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));
+				RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Volume));
 			}
 		}
 
@@ -283,12 +283,6 @@ namespace StockSharp.Samples.Strategies
 				// Note: 5 consecutive green candles logic would need additional state tracking
 				// Simplified to main exit condition for now
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			// Simple volume calculation - can be enhanced based on risk management
-			return 1;
 		}
 	}
 }
