@@ -14,7 +14,7 @@ from StockSharp.Algo.Indicators import (
 )
 from StockSharp.Algo.Strategies import Strategy
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class stoch_rsi_supertrend_strategy(Strategy):
     """Stochastic RSI combined with SuperTrend and moving‑average trend filter.
@@ -157,14 +157,14 @@ class stoch_rsi_supertrend_strategy(Strategy):
             return
 
         rsi_price = float(rsi_value)
-        high_val = float(self._stoch_high.Process(rsi_price))
-        low_val = float(self._stoch_low.Process(rsi_price))
+        high_val = float(process_float(self._stoch_high, rsi_price, candle.ServerTime, True))
+        low_val = float(process_float(self._stoch_low, rsi_price, candle.ServerTime, True))
         if not self._stoch_high.IsFormed or not self._stoch_low.IsFormed:
             return
 
         stoch_rsi = (rsi_price - low_val) / (high_val - low_val) * 100 if high_val != low_val else 50
-        k_val = float(self._smooth_k_sma.Process(stoch_rsi))
-        d_val = float(self._smooth_d_sma.Process(k_val))
+        k_val = float(process_float(self._smooth_k_sma, stoch_rsi, candle.ServerTime, True))
+        d_val = float(process_float(self._smooth_d_sma, k_val, candle.ServerTime, True))
         if not self._smooth_k_sma.IsFormed or not self._smooth_d_sma.IsFormed:
             return
 

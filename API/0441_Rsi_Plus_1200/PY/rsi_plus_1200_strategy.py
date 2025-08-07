@@ -55,6 +55,9 @@ class rsi_plus_1200_strategy(Strategy):
         self._rsi_crossed_over_oversold = False
         self._rsi_crossed_under_overbought = False
 
+        # Store current EMA value instead of using GetCurrentValue()
+        self._current_ema_value = 0.0
+
     # region parameters properties
     @property
     def candle_type(self):
@@ -99,6 +102,7 @@ class rsi_plus_1200_strategy(Strategy):
         self._previous_close = 0
         self._rsi_crossed_over_oversold = False
         self._rsi_crossed_under_overbought = False
+        self._current_ema_value = 0.0
 
     def OnStarted(self, time):
         super(rsi_plus_1200_strategy, self).OnStarted(time)
@@ -124,21 +128,24 @@ class rsi_plus_1200_strategy(Strategy):
         self.StartProtection(Unit(), Unit(self.stop_loss_percent, UnitTypes.Percent))
 
     def ProcessMtfCandle(self, candle, ema_value):
-        # EMA processed on higher timeframe, no extra logic required
-        pass
+        # Store the EMA value instead of using GetCurrentValue()
+        if self._ema.IsFormed:
+            self._current_ema_value = float(ema_value)
 
     def ProcessMainCandle(self, candle, rsi_value):
         if candle.State != CandleStates.Finished:
             return
 
+        rsi_val = float(rsi_value)
+
         if self._previous_rsi != 0:
-            self._rsi_crossed_over_oversold = self._previous_rsi <= self.rsi_oversold and rsi_value > self.rsi_oversold
-            self._rsi_crossed_under_overbought = self._previous_rsi >= self.rsi_overbought and rsi_value < self.rsi_overbought
+            self._rsi_crossed_over_oversold = self._previous_rsi <= self.rsi_oversold and rsi_val > self.rsi_oversold
+            self._rsi_crossed_under_overbought = self._previous_rsi >= self.rsi_overbought and rsi_val < self.rsi_overbought
 
-        self.CheckEntryConditions(candle, rsi_value)
-        self.CheckExitConditions(rsi_value)
+        self.CheckEntryConditions(candle, rsi_val)
+        self.CheckExitConditions(rsi_val)
 
-        self._previous_rsi = rsi_value
+        self._previous_rsi = rsi_val
         self._previous_close = candle.ClosePrice
 
     def CheckEntryConditions(self, candle, rsi_value):
@@ -146,7 +153,8 @@ class rsi_plus_1200_strategy(Strategy):
             return
 
         price = candle.ClosePrice
-        ema_value = self._ema.GetCurrentValue()
+        # Use stored EMA value instead of GetCurrentValue()
+        ema_value = self._current_ema_value
 
         if (self.show_long and self._rsi_crossed_over_oversold and price > ema_value and price <= ema_value * 1.01 and
                 self.Position <= 0):
@@ -158,7 +166,8 @@ class rsi_plus_1200_strategy(Strategy):
 
     def CheckExitConditions(self, rsi_value):
         price = self._previous_close
-        ema_value = self._ema.GetCurrentValue() if self._ema.IsFormed else 0
+        # Use stored EMA value instead of GetCurrentValue()
+        ema_value = self._current_ema_value if self._ema.IsFormed else 0
 
         if self.Position > 0 and rsi_value > self.rsi_overbought:
             self.RegisterOrder(self.CreateOrder(Sides.Sell, price, abs(self.Position)))

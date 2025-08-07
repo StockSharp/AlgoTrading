@@ -129,10 +129,10 @@ class ttm_squeeze_strategy(Strategy):
         if not self._momentum.IsFormed or not self._rsi.IsFormed:
             return
 
-        rsi_value = values[0].ToNullableDecimal()
-        highest_value = values[1].ToNullableDecimal()
-        lowest_value = values[2].ToNullableDecimal()
-        close_sma_value = values[3].ToNullableDecimal()
+        rsi_value = float(values[0])
+        highest_value = float(values[1])
+        lowest_value = float(values[2])
+        close_sma_value = float(values[3])
         lin_reg_val = values[4]
         if (rsi_value is None or highest_value is None or lowest_value is None or close_sma_value is None):
             return

@@ -40,12 +40,16 @@ class macd_bb_rsi_strategy(Strategy):
 
     def OnStarted(self, time):
         super(macd_bb_rsi_strategy, self).OnStarted(time)
-        self._macd.FastLength = self._macd_fast.Value
-        self._macd.SlowLength = self._macd_slow.Value
-        self._macd.SignalLength = self._macd_signal.Value
+
+        # Initialize MACD correctly - access through Macd.ShortMa/LongMa and SignalMa
+        self._macd.Macd.ShortMa.Length = self._macd_fast.Value
+        self._macd.Macd.LongMa.Length = self._macd_slow.Value
+        self._macd.SignalMa.Length = self._macd_signal.Value
+
         self._boll.Length = self._bb_len.Value
         self._boll.Width = self._bb_mult.Value
         self._rsi.Length = self._rsi_len.Value
+
         sub = self.SubscribeCandles(self.candle_type)
         sub.BindEx(self._macd, self._boll, self._rsi, self._on_process).Start()
 
@@ -54,12 +58,17 @@ class macd_bb_rsi_strategy(Strategy):
             return
         if not self.IsFormedAndOnlineAndAllowTrading():
             return
-        macd_value = macd_val.Signal
-        upper = boll_val.UpBand
-        lower = boll_val.LowBand
+
+        # Access MACD signal value correctly
+        macd_value = float(macd_val.Signal) if macd_val.Signal is not None else 0.0
+        upper = float(boll_val.UpBand) if boll_val.UpBand is not None else 0.0
+        lower = float(boll_val.LowBand) if boll_val.LowBand is not None else 0.0
+        rsi_value = float(rsi_val)
         close = candle.ClosePrice
-        entry_long = macd_value > 0 and close < lower and rsi_val < 30
-        entry_short = macd_value < 0 and close > upper and rsi_val > 70
+
+        entry_long = macd_value > 0 and close < lower and rsi_value < 30
+        entry_short = macd_value < 0 and close > upper and rsi_value > 70
+
         if entry_long and self._show_long.Value and self.Position <= 0:
             self.BuyMarket(self.Volume + Math.Abs(self.Position))
         elif entry_short and self._show_short.Value and self.Position >= 0:

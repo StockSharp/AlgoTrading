@@ -48,6 +48,10 @@ class ema_sma_rsi_strategy(Strategy):
         # state
         self._bars_in_pos = 0
         self._entry_price = 0.0
+        
+        # Store previous EMA values
+        self._prev_emaA = 0.0
+        self._prev_emaB = 0.0
 
     @property
     def candle_type(self):
@@ -61,13 +65,23 @@ class ema_sma_rsi_strategy(Strategy):
         self._rsi = None
         self._bars_in_pos = 0
         self._entry_price = 0.0
+        self._prev_emaA = 0.0
+        self._prev_emaB = 0.0
 
     def OnStarted(self, time):
         super(ema_sma_rsi_strategy, self).OnStarted(time)
-        self._emaA = ExponentialMovingAverage(); self._emaA.Length = self._ema_a.Value
-        self._emaB = ExponentialMovingAverage(); self._emaB.Length = self._ema_b.Value
-        self._emaC = ExponentialMovingAverage(); self._emaC.Length = self._ema_c.Value
-        self._rsi = RelativeStrengthIndex(); self._rsi.Length = self._rsi_len.Value
+
+        self._emaA = ExponentialMovingAverage();
+        self._emaA.Length = self._ema_a.Value
+
+        self._emaB = ExponentialMovingAverage();
+        self._emaB.Length = self._ema_b.Value
+
+        self._emaC = ExponentialMovingAverage();
+        self._emaC.Length = self._ema_c.Value
+
+        self._rsi = RelativeStrengthIndex();
+        self._rsi.Length = self._rsi_len.Value
 
         sub = self.SubscribeCandles(self.candle_type)
         sub.Bind(self._emaA, self._emaB, self._emaC, self._rsi, self._on_process).Start()
@@ -80,14 +94,21 @@ class ema_sma_rsi_strategy(Strategy):
         if not (self._emaA.IsFormed and self._emaB.IsFormed and self._emaC.IsFormed and self._rsi.IsFormed):
             return
 
-        prevA = self._emaA.GetValue(1)
-        prevB = self._emaB.GetValue(1)
+        # Convert indicator values to float
+        emaA_val = float(emaA)
+        emaB_val = float(emaB)
+        emaC_val = float(emaC)
+        rsi_val = float(rsi)
 
-        is_cross_up = prevA <= prevB and emaA > emaB and candle.ClosePrice > emaC and candle.ClosePrice > candle.OpenPrice
-        is_cross_down = prevA >= prevB and emaA < emaB and candle.ClosePrice < emaC and candle.ClosePrice < candle.OpenPrice
+        # Use stored previous values instead of GetValue()
+        prevA = self._prev_emaA
+        prevB = self._prev_emaB
 
-        exit_long = self.Position > 0 and rsi > 70
-        exit_short = self.Position < 0 and rsi < 30
+        is_cross_up = prevA <= prevB and emaA_val > emaB_val and candle.ClosePrice > emaC_val and candle.ClosePrice > candle.OpenPrice
+        is_cross_down = prevA >= prevB and emaA_val < emaB_val and candle.ClosePrice < emaC_val and candle.ClosePrice < candle.OpenPrice
+
+        exit_long = self.Position > 0 and rsi_val > 70
+        exit_short = self.Position < 0 and rsi_val < 30
 
         if self.Position != 0:
             self._bars_in_pos += 1
@@ -113,6 +134,10 @@ class ema_sma_rsi_strategy(Strategy):
             self.SellMarket(self.Volume + Math.Abs(self.Position))
             self._entry_price = candle.ClosePrice
             self._bars_in_pos = 0
+
+        # Store current values for next iteration
+        self._prev_emaA = emaA_val
+        self._prev_emaB = emaB_val
 
     def CreateClone(self):
         return ema_sma_rsi_strategy()
