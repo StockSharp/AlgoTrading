@@ -246,8 +246,13 @@ namespace StockSharp.Samples.Strategies
 			var openPrice = candle.OpenPrice;
 			
 			var dmiTyped = (DirectionalIndexValue)dmiValue;
-			var diPlus = dmiTyped.Plus ?? 0m;
-			var diMinus = dmiTyped.Minus ?? 0m;
+
+			if (dmiTyped.Plus is not decimal diPlus ||
+				dmiTyped.Minus is not decimal diMinus)
+			{
+				return; // Skip if DMI values are not available
+			}
+
 			var adxValueDecimal = adxValue.ToDecimal();
 
 			// Check for 3 consecutive bars condition

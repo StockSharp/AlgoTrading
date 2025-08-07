@@ -217,8 +217,12 @@ public class MaCrossDmiStrategy : Strategy
 
 		// Get DMI values
 		var dmiData = (DirectionalIndexValue)dmiValue;
-		var diPlus = dmiData.Plus ?? 0m;
-		var diMinus = dmiData.Minus ?? 0m;
+
+		if (dmiData.Plus is not decimal diPlus ||
+			dmiData.Minus is not decimal diMinus)
+		{
+			return; // Skip if DMI values are not available
+		}
 
 		// DMI conditions (commented out in original, but keeping for reference)
 		// var longCond = diPlus < diMinus && prevDiPlus < prevDiMinus;

@@ -1,15 +1,13 @@
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using System.Collections.Generic;
-
 using Ecng.Common;
-
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System;
+using System.Collections.Generic;
 
 /// <summary>
 /// MACD + BB + RSI Strategy
@@ -342,8 +340,12 @@ public class MacdBbRsiStrategy : Strategy
 		if (UseDmiFilter && dmiValue != null)
 		{
 			var dmiTyped = (DirectionalIndexValue)dmiValue;
-			var diPlus = dmiTyped.Plus ?? 0m;
-			var diMinus = dmiTyped.Minus ?? 0m;
+
+			if (dmiTyped.Plus is not decimal diPlus ||
+				dmiTyped.Minus is not decimal diMinus)
+			{
+				return; // Skip if DMI values are not available
+			}
 
 			// Long filter: DI+ > ADX key level
 			// Short filter: DI- > ADX key level

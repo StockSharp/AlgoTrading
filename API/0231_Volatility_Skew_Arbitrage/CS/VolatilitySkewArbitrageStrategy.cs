@@ -140,7 +140,9 @@ namespace StockSharp.Samples.Strategies
 
 		private void ProcessLowOptionImpliedVolatility(Level1ChangeMessage data)
 		{
-			var lowIV = data.TryGetDecimal(Level1Fields.ImpliedVolatility) ?? 0;
+			if (data.TryGetDecimal(Level1Fields.ImpliedVolatility) is not decimal lowIV)
+				return;
+
 			var highIV = _currentVolSkew + lowIV;
 			
 			UpdateVolatilitySkew(highIV - lowIV, data.ServerTime, true);
@@ -148,7 +150,9 @@ namespace StockSharp.Samples.Strategies
 
 		private void ProcessHighOptionImpliedVolatility(Level1ChangeMessage data)
 		{
-			var highIV = data.TryGetDecimal(Level1Fields.ImpliedVolatility) ?? 0;
+			if (data.TryGetDecimal(Level1Fields.ImpliedVolatility) is not decimal highIV)
+				return;
+
 			_currentVolSkew = highIV;
 		}
 
