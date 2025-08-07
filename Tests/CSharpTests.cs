@@ -1743,4 +1743,160 @@ public class CSharpTests
 		{
 			stra.Brent = sec;
 		});
+
+	[TestMethod]
+	public Task BollingerAroonStrategyTest()
+		=> RunStrategy<BollingerAroonStrategy>();
+
+	[TestMethod]
+	public Task BollingerDivergenceStrategyTest()
+		=> RunStrategy<BollingerDivergenceStrategy>();
+
+	[TestMethod]
+	public Task BollingerWinnerLiteStrategyTest()
+		=> RunStrategy<BollingerWinnerLiteStrategy>();
+
+	[TestMethod]
+	public Task BollingerWinnerProStrategyTest()
+		=> RunStrategy<BollingerWinnerProStrategy>();
+
+	[TestMethod]
+	public Task BollingerBreakoutStrategyTest()
+		=> RunStrategy<BollingerBreakoutStrategy>();
+
+	[TestMethod]
+	public Task DmiWinnerStrategyTest()
+		=> RunStrategy<DmiWinnerStrategy>();
+
+	[TestMethod]
+	public Task DoubleRsiStrategyTest()
+		=> RunStrategy<DoubleRsiStrategy>();
+
+	[TestMethod]
+	public Task DoubleSupertrendStrategyTest()
+		=> RunStrategy<DoubleSupertrendStrategy>();
+
+	[TestMethod]
+	public Task EmaMovingAwayStrategyTest()
+		=> RunStrategy<EmaMovingAwayStrategy>();
+
+	[TestMethod]
+	public Task EmaSmaRsiStrategyTest()
+		=> RunStrategy<EmaSmaRsiStrategy>();
+
+	[TestMethod]
+	public Task ExceededCandleStrategyTest()
+		=> RunStrategy<ExceededCandleStrategy>();
+
+	[TestMethod]
+	public Task FlawlessVictoryStrategyTest()
+		=> RunStrategy<FlawlessVictoryStrategy>();
+
+	[TestMethod]
+	public Task FullCandleStrategyTest()
+		=> RunStrategy<FullCandleStrategy>();
+
+	[TestMethod]
+	public Task GridBotStrategyTest()
+		=> RunStrategy<GridBotStrategy>();
+
+	[TestMethod]
+	public Task HaUniversalStrategyTest()
+		=> RunStrategy<HaUniversalStrategy>();
+
+	[TestMethod]
+	public Task HeikinAshiV2StrategyTest()
+		=> RunStrategy<HeikinAshiV2Strategy>();
+
+	[TestMethod]
+	public Task ImprovisandoStrategyTest()
+		=> RunStrategy<ImprovisandoStrategy>();
+
+	[TestMethod]
+	public Task JavoV1StrategyTest()
+		=> RunStrategy<JavoV1Strategy>();
+
+	[TestMethod]
+	public Task MacdBbRsiStrategyTest()
+		=> RunStrategy<MacdBbRsiStrategy>();
+
+	[TestMethod]
+	public Task MacdDmiStrategyTest()
+		=> RunStrategy<MacdDmiStrategy>();
+
+	[TestMethod]
+	public Task MacdLongStrategyTest()
+		=> RunStrategy<MacdLongStrategy>();
+
+	[TestMethod]
+	public Task MaCrossDmiStrategyTest()
+		=> RunStrategy<MaCrossDmiStrategy>();
+
+	[TestMethod]
+	public Task MemaBbRsiStrategyTest()
+		=> RunStrategy<MemaBbRsiStrategy>();
+
+	[TestMethod]
+	public Task MtfBbStrategyTest()
+		=> RunStrategy<MtfBbStrategy>();
+
+	[TestMethod]
+	public Task OmarMmrStrategyTest()
+		=> RunStrategy<OmarMmrStrategy>();
+
+	[TestMethod]
+	public Task PinBarMagicStrategyTest()
+		=> RunStrategy<PinBarMagicStrategy>();
+
+	[TestMethod]
+	public Task QqeSignalsStrategyTest()
+		=> RunStrategy<QqeSignalsStrategy>();
+
+	[TestMethod]
+	public Task RsiPlus1200StrategyTest()
+		=> RunStrategy<RsiPlus1200Strategy>();
+
+	[TestMethod]
+	public Task RsiEmaStrategyTest()
+		=> RunStrategy<RsiEmaStrategy>();
+
+	[TestMethod]
+	public Task StochRsiCrossoverStrategyTest()
+		=> RunStrategy<StochRsiCrossoverStrategy>();
+
+	[TestMethod]
+	public Task StochRsiSupertrendStrategyTest()
+		=> RunStrategy<StochRsiSupertrendStrategy>();
+
+	[TestMethod]
+	public Task StrategyTesterStrategyTest()
+		=> RunStrategy<StrategyTesterStrategy>();
+
+	[TestMethod]
+	public Task StratBaseStrategyTest()
+		=> RunStrategy<StratBaseStrategy>();
+
+	[TestMethod]
+	public Task SupertrendEmaReboundStrategyTest()
+		=> RunStrategy<SupertrendEmaReboundStrategy>();
+
+	[TestMethod]
+	public Task TendencyEmaRsiStrategyTest()
+		=> RunStrategy<TendencyEmaRsiStrategy>();
+
+	[TestMethod]
+	public Task ThreeEmaCrossStrategyTest()
+		=> RunStrategy<ThreeEmaCrossStrategy>();
+
+	[TestMethod]
+	public Task TtmSqueezeStrategyTest()
+		=> RunStrategy<TtmSqueezeStrategy>();
+
+	[TestMethod]
+	public Task VelaSuperadaStrategyTest()
+		=> RunStrategy<VelaSuperadaStrategy>();
+
+	[TestMethod]
+	public Task WilliamsVixFixStrategyTest()
+		=> RunStrategy<WilliamsVixFixStrategy>();
 }
