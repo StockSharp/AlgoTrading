@@ -2,13 +2,14 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
+from System import Math, Array
 from StockSharp.Messages import CandleStates, Sides
 from StockSharp.Algo.Strategies import Strategy
-from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, Highest, Lowest, SimpleMovingAverage, LinearRegression, RelativeStrengthIndex
+from StockSharp.Algo.Indicators import BollingerBands, KeltnerChannels, Highest, Lowest, SimpleMovingAverage, LinearRegression, RelativeStrengthIndex, IIndicator
 from datatype_extensions import *
-
+from indicator_extensions import *
 
 class ttm_squeeze_strategy(Strategy):
     """TTM Squeeze strategy.
@@ -111,7 +112,15 @@ class ttm_squeeze_strategy(Strategy):
         self._rsi.Length = self.rsi_length
 
         subscription = self.SubscribeCandles(self.candle_type)
-        subscription.BindEx([self._rsi, self._highest, self._lowest, self._close_sma, self._momentum], self.ProcessCandle).Start()
+        
+        indicators_array = Array.CreateInstance(IIndicator, 5)
+        indicators_array[0] = self._rsi
+        indicators_array[1] = self._highest
+        indicators_array[2] = self._lowest
+        indicators_array[3] = self._close_sma
+        indicators_array[4] = self._momentum
+        
+        subscription.BindEx(indicators_array, self.ProcessCandle).Start()
 
         area = self.CreateChartArea()
         if area is not None:
@@ -119,7 +128,6 @@ class ttm_squeeze_strategy(Strategy):
             self.DrawOwnTrades(area)
 
         if self.use_tp:
-            from StockSharp.Algo import Unit, UnitTypes
             self.StartProtection(Unit(self.tp_percent / 100.0, UnitTypes.Percent), Unit())
 
     def ProcessCandle(self, candle, values):
@@ -141,15 +149,17 @@ class ttm_squeeze_strategy(Strategy):
         if momentum_value is None:
             return
 
-        bb_val = self._bollinger.Process(candle)
-        kc_val = self._keltner.Process(candle)
+        bb_val = process_candle(self._bollinger, candle)
+        kc_val = process_candle(self._keltner, candle)
         if not self._bollinger.IsFormed or not self._keltner.IsFormed:
             return
 
-        bb_upper = bb_val.UpBand if hasattr(bb_val, 'UpBand') else None
-        bb_lower = bb_val.LowBand if hasattr(bb_val, 'LowBand') else None
-        kc_upper = kc_val.Upper if hasattr(kc_val, 'Upper') else None
-        kc_lower = kc_val.Lower if hasattr(kc_val, 'Lower') else None
+        # Cast to typed values to access properties like C# version
+        bb_upper = bb_val.UpBand if bb_val.UpBand is not None else None
+        bb_lower = bb_val.LowBand if bb_val.LowBand is not None else None
+        kc_upper = kc_val.Upper if kc_val.Upper is not None else None
+        kc_lower = kc_val.Lower if kc_val.Lower is not None else None
+        
         if None in (bb_upper, bb_lower, kc_upper, kc_lower):
             return
 

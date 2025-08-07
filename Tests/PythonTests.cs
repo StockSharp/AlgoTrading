@@ -1367,19 +1367,31 @@ public class PythonTests
 
 	[TestMethod]
 	public Task AssetClassTrendFollowing()
-		=> RunStrategy("0352_Asset_Class_Trend_Following/PY/asset_class_trend_following_strategy.py");
+		=> RunStrategy("0352_Asset_Class_Trend_Following/PY/asset_class_trend_following_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task AssetGrowthEffect()
-		=> RunStrategy("0353_Asset_Growth_Effect/PY/asset_growth_effect_strategy.py");
+		=> RunStrategy("0353_Asset_Growth_Effect/PY/asset_growth_effect_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task BettingAgainstBetaStocks()
-		=> RunStrategy("0354_Betting_Against_Beta_Stocks/PY/betting_against_beta_stocks_strategy.py");
+		=> RunStrategy("0354_Betting_Against_Beta_Stocks/PY/betting_against_beta_stocks_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task BettingAgainstBeta()
-		=> RunStrategy("0355_Betting_Against_Beta/PY/betting_against_beta_strategy.py");
+		=> RunStrategy("0355_Betting_Against_Beta/PY/betting_against_beta_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task BitcoinIntradaySeasonality()
@@ -1387,111 +1399,194 @@ public class PythonTests
 
 	[TestMethod]
 	public Task BookToMarketValue()
-		=> RunStrategy("0357_Book_To_Market_Value/PY/book_to_market_value_strategy.py");
+		=> RunStrategy("0357_Book_To_Market_Value/PY/book_to_market_value_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task CommodityMomentum()
-		=> RunStrategy("0358_Commodity_Momentum/PY/commodity_momentum_strategy.py");
+		=> RunStrategy("0358_Commodity_Momentum/PY/commodity_momentum_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task ConsistentMomentum()
-		=> RunStrategy("0359_Consistent_Momentum/PY/consistent_momentum_strategy.py");
+		=> RunStrategy("0359_Consistent_Momentum/PY/consistent_momentum_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task CountryValueFactor()
-		=> RunStrategy("0360_Country_Value_Factor/PY/country_value_factor_strategy.py");
+		=> RunStrategy("0360_Country_Value_Factor/PY/country_value_factor_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task CrudeOilPredictsEquity()
-		=> RunStrategy("0361_Crude_Oil_Predicts_Equity/PY/crude_oil_predicts_equity_strategy.py");
+		=> RunStrategy("0361_Crude_Oil_Predicts_Equity/PY/crude_oil_predicts_equity_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Oil"].Value = sec;
+			stra.Parameters["CashEtf"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task CryptoRebalancingPremium()
-		=> RunStrategy("0362_Crypto_Rebalancing_Premium/PY/crypto_rebalancing_premium_strategy.py");
+		=> RunStrategy("0362_Crypto_Rebalancing_Premium/PY/crypto_rebalancing_premium_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["ETH"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task CurrencyMomentumFactor()
-		=> RunStrategy("0363_Currency_Momentum_Factor/PY/currency_momentum_factor_strategy.py");
+		=> RunStrategy("0363_Currency_Momentum_Factor/PY/currency_momentum_factor_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task CurrencyPppValue()
-		=> RunStrategy("0364_Currency_PPPValue/PY/currency_ppp_value_strategy.py");
+		=> RunStrategy("0364_Currency_PPPValue/PY/currency_ppp_value_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task DispersionTrading()
-		=> RunStrategy("0365_Dispersion_Trading/PY/dispersion_trading_strategy.py");
+		=> RunStrategy("0365_Dispersion_Trading/PY/dispersion_trading_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Constituents"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task DollarCarryTrade()
-		=> RunStrategy("0366_Dollar_Carry_Trade/PY/dollar_carry_trade_strategy.py");
+		=> RunStrategy("0366_Dollar_Carry_Trade/PY/dollar_carry_trade_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Pairs"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task EarningsAnnouncementPremium()
-		=> RunStrategy("0367_Earnings_Announcement_Premium/PY/earnings_announcement_premium_strategy.py");
+		=> RunStrategy("0367_Earnings_Announcement_Premium/PY/earnings_announcement_premium_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task EarningsAnnouncementReversal()
-		=> RunStrategy("0368_Earnings_Announcement_Reversal/PY/earnings_announcement_reversal_strategy.py");
+		=> RunStrategy("0368_Earnings_Announcement_Reversal/PY/earnings_announcement_reversal_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task EarningsAnnouncementsWithBuybacks()
-		=> RunStrategy("0369_Earnings_Announcements_With_Buybacks/PY/earnings_announcements_with_buybacks_strategy.py");
+		=> RunStrategy("0369_Earnings_Announcements_With_Buybacks/PY/earnings_announcements_with_buybacks_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task EarningsQualityFactor()
-		=> RunStrategy("0370_Earnings_Quality_Factor/PY/earnings_quality_factor_strategy.py");
+		=> RunStrategy("0370_Earnings_Quality_Factor/PY/earnings_quality_factor_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task EsgFactorMomentum()
-		=> RunStrategy("0371_ESGFactor_Momentum/PY/esg_factor_momentum_strategy.py");
+		=> RunStrategy("0371_ESGFactor_Momentum/PY/esg_factor_momentum_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task FedModel()
-		=> RunStrategy("0372_Fed_Model/PY/fed_model_strategy.py");
+		=> RunStrategy("0372_Fed_Model/PY/fed_model_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task FscoreReversal()
-		=> RunStrategy("0373_FScore_Reversal/PY/fscore_reversal_strategy.py");
+		=> RunStrategy("0373_FScore_Reversal/PY/fscore_reversal_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task FxCarryTrade()
-		=> RunStrategy("0374_FXCarry_Trade/PY/fx_carry_trade_strategy.py");
+		=> RunStrategy("0374_FXCarry_Trade/PY/fx_carry_trade_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task JanuaryBarometer()
-		=> RunStrategy("0375_January_Barometer/PY/january_barometer_strategy.py");
+		=> RunStrategy("0375_January_Barometer/PY/january_barometer_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["EquityETF"].Value = sec;
+			stra.Parameters["CashETF"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task LexicalDensityFilings()
-		=> RunStrategy("0376_Lexical_Density_Filings/PY/lexical_density_filings_strategy.py");
+		=> RunStrategy("0376_Lexical_Density_Filings/PY/lexical_density_filings_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task LowVolatilityStocks()
-		=> RunStrategy("0377_Low_Volatility_Stocks/PY/low_volatility_stocks_strategy.py");
+		=> RunStrategy("0377_Low_Volatility_Stocks/PY/low_volatility_stocks_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task MomentumAssetGrowth()
-		=> RunStrategy("0378_Momentum_Asset_Growth/PY/momentum_asset_growth_strategy.py");
+		=> RunStrategy("0378_Momentum_Asset_Growth/PY/momentum_asset_growth_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task MomentumFactorStocks()
-		=> RunStrategy("0379_Momentum_Factor_Stocks/PY/momentum_factor_stocks_strategy.py");
+		=> RunStrategy("0379_Momentum_Factor_Stocks/PY/momentum_factor_stocks_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task MomentumRevVol()
-		=> RunStrategy("0380_Momentum_Rev_Vol/PY/momentum_rev_vol_strategy.py");
+		=> RunStrategy("0380_Momentum_Rev_Vol/PY/momentum_rev_vol_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task MomentumStyleRotation()
-		=> RunStrategy("0381_Momentum_Style_Rotation/PY/momentum_style_rotation_strategy.py");
+		=> RunStrategy("0381_Momentum_Style_Rotation/PY/momentum_style_rotation_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["FactorETFs"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task Month12Cycle()
-		=> RunStrategy("0382_Month12Cycle/PY/month12_cycle_strategy.py");
+		=> RunStrategy("0382_Month12Cycle/PY/month12_cycle_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task MutualFundMomentum()
-		=> RunStrategy("0383_Mutual_Fund_Momentum/PY/mutual_fund_momentum_strategy.py");
+		=> RunStrategy("0383_Mutual_Fund_Momentum/PY/mutual_fund_momentum_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Funds"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task OptionExpirationWeek()
@@ -1499,19 +1594,31 @@ public class PythonTests
 
 	[TestMethod]
 	public Task OvernightSentimentAnomaly()
-		=> RunStrategy("0385_Overnight_Sentiment_Anomaly/PY/overnight_sentiment_anomaly_strategy.py");
+		=> RunStrategy("0385_Overnight_Sentiment_Anomaly/PY/overnight_sentiment_anomaly_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["SentimentSymbol"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task PairedSwitching()
-		=> RunStrategy("0386_Paired_Switching/PY/paired_switching_strategy.py");
+		=> RunStrategy("0386_Paired_Switching/PY/paired_switching_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["SecondETF"].Value = sec;
+		});
 
 	[TestMethod]
 	public Task PairsTradingCountryEtfs()
-		=> RunStrategy("0387_Pairs_Trading_Country_ETFs/PY/pairs_trading_country_etfs_strategy.py");
+		=> RunStrategy("0387_Pairs_Trading_Country_ETFs/PY/pairs_trading_country_etfs_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { stra.Security, sec };
+		});
 
 	[TestMethod]
 	public Task PairsTradingStocks()
-		=> RunStrategy("0388_Pairs_Trading_Stocks/PY/pairs_trading_stocks_strategy.py");
+		=> RunStrategy("0388_Pairs_Trading_Stocks/PY/pairs_trading_stocks_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Pairs"].Value = new[] { stra.Security, sec };
+		});
 
 	[TestMethod]
 	public Task PaydayAnomaly()
@@ -1519,19 +1626,31 @@ public class PythonTests
 
 	[TestMethod]
 	public Task RdExpenditures()
-		=> RunStrategy("0390_RDExpenditures/PY/rd_expenditures_strategy.py");
+		=> RunStrategy("0390_RDExpenditures/PY/rd_expenditures_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task ResidualMomentumFactor()
-		=> RunStrategy("0391_Residual_Momentum_Factor/PY/residual_momentum_factor_strategy.py");
+		=> RunStrategy("0391_Residual_Momentum_Factor/PY/residual_momentum_factor_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task ReturnAsymmetryCommodity()
-		=> RunStrategy("0392_Return_Asymmetry_Commodity/PY/return_asymmetry_commodity_strategy.py");
+		=> RunStrategy("0392_Return_Asymmetry_Commodity/PY/return_asymmetry_commodity_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Futures"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task RoaEffectStocks()
-		=> RunStrategy("0393_ROAEffect_Stocks/PY/roa_effect_stocks_strategy.py");
+		=> RunStrategy("0393_ROAEffect_Stocks/PY/roa_effect_stocks_strategy.py", (stra, sec) =>
+		{
+			stra.Parameters["Universe"].Value = new[] { sec };
+		});
 
 	[TestMethod]
 	public Task SectorMomentumRotation()
