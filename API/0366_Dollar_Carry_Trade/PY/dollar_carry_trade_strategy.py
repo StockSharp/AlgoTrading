@@ -17,7 +17,7 @@ class dollar_carry_trade_strategy(Strategy):
     def __init__(self):
         super(dollar_carry_trade_strategy, self).__init__()
 
-        self._pairs = self.Param("Pairs", []) \
+        self._pairs = self.Param("Pairs", Array.Empty[Security]()) \
             .SetDisplay("Pairs", "USD crosses (required)", "Universe")
 
         self._k = self.Param("K", 3) \

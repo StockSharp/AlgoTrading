@@ -94,7 +94,11 @@ class betting_against_beta_strategy(Strategy):
     def GetWorkingSecurities(self):
         if self.Security is None:
             raise Exception("Benchmark not set")
-        return [(s, self.CandleType) for s in self.Universe + [self.Security]]
+        
+        universe_list = list(self.Universe) if self.Universe is not None else []
+        securities = universe_list + [self.Security]
+        
+        return [(s, self.CandleType) for s in securities]
 
     def OnReseted(self):
         super(betting_against_beta_strategy, self).OnReseted()

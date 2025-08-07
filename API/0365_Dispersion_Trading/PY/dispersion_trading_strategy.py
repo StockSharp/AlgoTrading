@@ -16,7 +16,7 @@ class dispersion_trading_strategy(Strategy):
     def __init__(self):
         super(dispersion_trading_strategy, self).__init__()
 
-        self._constituents = self.Param("Constituents", []) \
+        self._constituents = self.Param("Constituents", Array.Empty[Security]()) \
             .SetDisplay("Constituents", "Index constituent securities", "General")
 
         self._lookback_days = self.Param("LookbackDays", 60) \
@@ -79,7 +79,10 @@ class dispersion_trading_strategy(Strategy):
     # endregion
 
     def GetWorkingSecurities(self):
-        return [(s, self.CandleType) for s in self.Constituents + [self.Security]]
+        constituents_list = list(self.Constituents) if self.Constituents is not None else []
+        securities = constituents_list + [self.Security]
+        
+        return [(s, self.CandleType) for s in securities]
 
     def OnReseted(self):
         super(dispersion_trading_strategy, self).OnReseted()
