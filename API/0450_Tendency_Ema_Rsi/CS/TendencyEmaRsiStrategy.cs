@@ -171,6 +171,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_barsInPosition = default;
+			_entryPrice = default;
+			_previousEmaA = default;
+			_previousEmaB = default;
+			_emaCrossedOver = default;
+			_emaCrossedUnder = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);

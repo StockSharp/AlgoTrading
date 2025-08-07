@@ -82,6 +82,15 @@ public class HeikinAshiV2Strategy : Strategy
 		=> new[] { (Security, CandleType) };
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevHaClose = default;
+		_prevHaOpen = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

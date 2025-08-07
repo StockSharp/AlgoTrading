@@ -166,6 +166,17 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_previousClose = default;
+			_previousRsi = default;
+			_rsiCrossedOverOversold = default;
+			_rsiCrossedUnderOverbought = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);

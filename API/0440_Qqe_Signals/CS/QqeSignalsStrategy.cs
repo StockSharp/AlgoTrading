@@ -82,6 +82,18 @@ public class QqeSignalsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_longband = default;
+		_shortband = default;
+		_trend = default;
+		_qqeXlong = default;
+		_qqeXshort = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

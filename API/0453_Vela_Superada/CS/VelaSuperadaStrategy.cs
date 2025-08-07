@@ -139,6 +139,19 @@ namespace StockSharp.Samples.Strategies
 		}
 
 		/// <inheritdoc />
+		protected override void OnReseted()
+		{
+			base.OnReseted();
+
+			_entryPrice = default;
+			_previousClose = default;
+			_previousOpen = default;
+			_previousMacd = default;
+			_trailingStopLong = default;
+			_trailingStopShort = default;
+		}
+
+		/// <inheritdoc />
 		protected override void OnStarted(DateTimeOffset time)
 		{
 			base.OnStarted(time);

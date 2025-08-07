@@ -111,6 +111,18 @@ public class ImprovisandoStrategy : Strategy
 		=> new[] { (Security, CandleType) };
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevClose = default;
+		_prevOpen = default;
+		_prevBullishCandle = default;
+		_prevBearishCandle = default;
+		_prevMacd = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

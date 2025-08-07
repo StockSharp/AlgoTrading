@@ -64,6 +64,15 @@ public class EmaMovingAwayStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastCandleBodyPercent = default;
+		_last4GreenCount = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

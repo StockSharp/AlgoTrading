@@ -224,6 +224,15 @@ public class MacdBbRsiStrategy : Strategy
 		=> new[] { (Security, CandleType) };
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_barsInPosition = default;
+		_entryPrice = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

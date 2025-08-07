@@ -79,6 +79,17 @@ public class MacdDmiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_max = default;
+		_min = default;
+		_vstop = default;
+		_uptrend = true;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

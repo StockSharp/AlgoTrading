@@ -91,6 +91,18 @@ public class GridBotStrategy : Strategy
 		=> new[] { (Security, CandleType) };
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_lastSignalIndex = default;
+		_previousCandle = default;
+		_signalLine = default;
+		_gridInterval = default;
+		_gridLevels = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

@@ -76,6 +76,20 @@ public class HaUniversalStrategy : Strategy
 		=> new[] { (Security, CandleType) };
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_prevHaClose = default;
+		_prevHaOpen = default;
+		_hlv = default;
+		_sslDown = default;
+		_sslUp = default;
+		_prevSslUp = default;
+		_prevSslDown = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);

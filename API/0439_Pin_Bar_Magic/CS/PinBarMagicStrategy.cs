@@ -111,6 +111,18 @@ public class PinBarMagicStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_barsSinceSignal = default;
+		_entryPrice = default;
+		_stopLoss = default;
+		_pendingLong = default;
+		_pendingShort = default;
+	}
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
