@@ -2,10 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
+from System import Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -14,7 +16,7 @@ class pairs_trading_country_etfs_strategy(Strategy):
 
     def __init__(self):
         super().__init__()
-        self._univ = self.Param("Universe", list()) \
+        self._univ = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Pair of ETFs", "General")
         self._window = self.Param("WindowDays", 60) \
             .SetDisplay("Window Days", "Rolling window size in days", "General")
@@ -122,7 +124,6 @@ class pairs_trading_country_etfs_strategy(Strategy):
         if price <= 0 or abs(diff) * price < self._min_usd.Value:
             return
         side = Sides.Buy if diff > 0 else Sides.Sell
-        from StockSharp.BusinessEntities import Order, Security
         self.RegisterOrder(Order(Security=sec, Portfolio=self.Portfolio, Side=side,
                                  Volume=abs(diff), Type=OrderTypes.Market,
                                  Comment="PairsETF"))

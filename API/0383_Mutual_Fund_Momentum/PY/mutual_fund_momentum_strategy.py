@@ -2,10 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
+from System import Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -14,7 +16,7 @@ class mutual_fund_momentum_strategy(Strategy):
 
     def __init__(self):
         super().__init__()
-        self._funds = self.Param("Funds", list()) \
+        self._funds = self.Param("Funds", Array.Empty[Security]()) \
             .SetDisplay("Funds", "List of mutual funds", "Universe")
         self._min_usd = self.Param("MinTradeUsd", 200.0) \
             .SetDisplay("Min USD", "Minimum trade value", "Risk")
@@ -77,7 +79,7 @@ class mutual_fund_momentum_strategy(Strategy):
             self._rebalance()
 
     def _is_quarter_day(self, d):
-        return d.month % 3 == 0 and d.day <= 3
+        return d.Month % 3 == 0 and d.Day <= 3
 
     def _rebalance(self):
         perf = {}

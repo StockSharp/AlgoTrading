@@ -19,7 +19,7 @@ class return_asymmetry_commodity_strategy(Strategy):
     def __init__(self):
         super(return_asymmetry_commodity_strategy, self).__init__()
 
-        self._futs = self.Param("Futures", list()) \
+        self._futs = self.Param("Futures", Array.Empty[Security]()) \
             .SetDisplay("Futures", "Commodity futures to trade", "General")
         self._window = self.Param("WindowDays", 120) \
             .SetDisplay("Window", "Lookback window in days", "General")

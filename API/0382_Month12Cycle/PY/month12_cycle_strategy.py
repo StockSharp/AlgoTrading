@@ -2,10 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
+from System import Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -14,7 +16,7 @@ class month12_cycle_strategy(Strategy):
 
     def __init__(self):
         super().__init__()
-        self._universe = self.Param("Universe", list()) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "List of securities", "Universe")
         self._deciles = self.Param("DecileSize", 10) \
             .SetDisplay("Deciles", "Number of portfolios", "Ranking")

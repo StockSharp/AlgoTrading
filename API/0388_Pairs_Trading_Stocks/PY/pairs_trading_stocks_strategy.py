@@ -2,10 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
+from System import Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -14,7 +16,7 @@ class pairs_trading_stocks_strategy(Strategy):
 
     def __init__(self):
         super().__init__()
-        self._pairs = self.Param("Pairs", list()) \
+        self._pairs = self.Param("Pairs", Array.Empty[Security]()) \
             .SetDisplay("Pairs", "Pairs of securities", "General")
         self._window = self.Param("WindowDays", 60) \
             .SetDisplay("Window Days", "Rolling window size in days", "General")

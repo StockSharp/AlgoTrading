@@ -2,10 +2,12 @@ import clr
 
 clr.AddReference("StockSharp.Messages")
 clr.AddReference("StockSharp.Algo")
+clr.AddReference("StockSharp.BusinessEntities")
 
-from System import Math
+from System import Math, Array
 from StockSharp.Messages import DataType, CandleStates, Sides, OrderTypes
 from StockSharp.Algo.Strategies import Strategy
+from StockSharp.BusinessEntities import Order, Security
 from datatype_extensions import *
 
 
@@ -14,7 +16,7 @@ class momentum_style_rotation_strategy(Strategy):
 
     def __init__(self):
         super().__init__()
-        self._factors = self.Param("FactorETFs", list()) \
+        self._factors = self.Param("FactorETFs", Array.Empty[Security]()) \
             .SetDisplay("Factor ETFs", "List of factor ETFs", "Universe")
         self._look = self.Param("LookbackDays", 63) \
             .SetDisplay("Lookback", "Performance lookback in days", "Parameters")

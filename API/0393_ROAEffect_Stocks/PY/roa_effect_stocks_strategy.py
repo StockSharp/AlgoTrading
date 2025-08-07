@@ -14,7 +14,7 @@ class roa_effect_stocks_strategy(Strategy):
 
     def __init__(self):
         super(roa_effect_stocks_strategy, self).__init__()
-        self._universe = self.Param("Universe", list()) \
+        self._universe = self.Param("Universe", Array.Empty[Security]()) \
             .SetDisplay("Universe", "Stocks to trade", "General")
         self._decile = self.Param("Decile", 10) \
             .SetDisplay("Decile", "Number of deciles for ranking", "General")
