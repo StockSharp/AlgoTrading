@@ -260,8 +260,8 @@ namespace StockSharp.Samples.Strategies
 
 			// Calculate Stochastic RSI manually
 			var rsiPrice = rsiValue.ToDecimal();
-			var highestRsi = _stochRsiHigh.Process(new DecimalIndicatorValue(_stochRsiHigh, candle.ServerTime, rsiPrice));
-			var lowestRsi = _stochRsiLow.Process(new DecimalIndicatorValue(_stochRsiLow, candle.ServerTime, rsiPrice));
+			var highestRsi = _stochRsiHigh.Process(rsiPrice, candle.ServerTime, candle.State == CandleStates.Finished);
+			var lowestRsi = _stochRsiLow.Process(rsiPrice, candle.ServerTime, candle.State == CandleStates.Finished);
 
 			if (!highestRsi.IsFormed || !lowestRsi.IsFormed)
 				return;
@@ -272,8 +272,8 @@ namespace StockSharp.Samples.Strategies
 			var stochRsi = highVal != lowVal ? (rsiPrice - lowVal) / (highVal - lowVal) * 100 : 50;
 
 			// Calculate smoothed K and D values
-			var kValue = _smoothKSma.Process(new DecimalIndicatorValue(_smoothKSma, candle.ServerTime, stochRsi));
-			var dValue = _smoothDSma.Process(new DecimalIndicatorValue(_smoothDSma, candle.ServerTime, kValue.ToDecimal()));
+			var kValue = _smoothKSma.Process(stochRsi, candle.ServerTime, candle.State == CandleStates.Finished);
+			var dValue = _smoothDSma.Process(kValue.ToDecimal(), candle.ServerTime, candle.State == CandleStates.Finished);
 
 			if (!kValue.IsFormed || !dValue.IsFormed)
 				return;

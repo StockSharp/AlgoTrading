@@ -113,8 +113,8 @@ public class JavoV1Strategy : Strategy
 		}
 
 		// Process EMAs with HA close using proper indicator value
-		var fastEmaValue = _fastEma.Process(new DecimalIndicatorValue(_fastEma, haClose));
-		var slowEmaValue = _slowEma.Process(new DecimalIndicatorValue(_slowEma, haClose));
+		var fastEmaValue = _fastEma.Process(haClose, candle.ServerTime, candle.State == CandleStates.Finished);
+		var slowEmaValue = _slowEma.Process(haClose, candle.ServerTime, candle.State == CandleStates.Finished);
 
 		if (!_fastEma.IsFormed || !_slowEma.IsFormed)
 		{
