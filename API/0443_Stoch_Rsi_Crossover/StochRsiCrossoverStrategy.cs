@@ -233,7 +233,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.BindEx(_rsi, _ema1, _ema2, _ema3, _atr, ProcessCandle)
+				.BindEx(new IIndicator[] { _rsi, _ema1, _ema2, _ema3, _atr }, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -248,7 +248,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue ema1Value, IIndicatorValue ema2Value, IIndicatorValue ema3Value, IIndicatorValue atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -257,6 +257,13 @@ namespace StockSharp.Samples.Strategies
 			// Wait for indicators to form
 			if (!_rsi.IsFormed || !_ema1.IsFormed || !_ema2.IsFormed || !_ema3.IsFormed || !_atr.IsFormed)
 				return;
+
+			// Extract values from array
+			var rsiValue = values[0];
+			var ema1Value = values[1];
+			var ema2Value = values[2];
+			var ema3Value = values[3];
+			var atrValue = values[4];
 
 			// Calculate Stochastic RSI manually
 			var rsiPrice = rsiValue.ToDecimal();

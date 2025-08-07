@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies
 	{
 		private readonly StrategyParam<DataType> _candleType;
 		private readonly StrategyParam<int> _rsiLength;
-		private readonly StrategyParam<decimal> _rsiSource;
 		private readonly StrategyParam<int> _rsiOverbought;
 		private readonly StrategyParam<int> _rsiOversold;
 		private readonly StrategyParam<int> _emaLength;

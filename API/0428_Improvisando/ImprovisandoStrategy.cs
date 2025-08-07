@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -34,6 +35,10 @@ public class ImprovisandoStrategy : Strategy
 	private decimal _prevMacd;
 	private bool _prevBullishCandle;
 	private bool _prevBearishCandle;
+	
+	// Хранение данных предыдущей свечи
+	private decimal _prevClose;
+	private decimal _prevOpen;
 
 	public ImprovisandoStrategy()
 	{
@@ -102,6 +107,10 @@ public class ImprovisandoStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -115,7 +124,7 @@ public class ImprovisandoStrategy : Strategy
 		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_ema, _rsi, _macdFast, _macdSlow, OnProcess)
+			.BindEx(_ema, _rsi, _macdFast, _macdSlow, OnProcess)
 			.Start();
 
 		// Setup chart
@@ -128,7 +137,7 @@ public class ImprovisandoStrategy : Strategy
 		}
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal emaValue, decimal rsiValue, decimal macdFastValue, decimal macdSlowValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue emaValue, IIndicatorValue rsiValue, IIndicatorValue macdFastValue, IIndicatorValue macdSlowValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -136,36 +145,42 @@ public class ImprovisandoStrategy : Strategy
 
 		// Wait for indicators to form
 		if (!_ema.IsFormed || !_rsi.IsFormed || !_macdFast.IsFormed || !_macdSlow.IsFormed)
+		{
+			// Store current candle data for next iteration
+			_prevClose = candle.ClosePrice;
+			_prevOpen = candle.OpenPrice;
+			_prevBullishCandle = candle.ClosePrice > candle.OpenPrice;
+			_prevBearishCandle = candle.ClosePrice < candle.OpenPrice;
+			_prevMacd = macdFastValue.ToDecimal() - macdSlowValue.ToDecimal();
 			return;
+		}
 
 		// Calculate MACD
-		var macd = macdFastValue - macdSlowValue;
+		var macd = macdFastValue.ToDecimal() - macdSlowValue.ToDecimal();
+		var emaPrice = emaValue.ToDecimal();
+		var rsiPrice = rsiValue.ToDecimal();
 
 		// Check candle patterns
 		var currentBullish = candle.ClosePrice > candle.OpenPrice;
 		var currentBearish = candle.ClosePrice < candle.OpenPrice;
 
-		// Get previous candle close price
-		var prevClose = candle.GetCandle(1)?.ClosePrice ?? candle.OpenPrice;
-		var prevOpen = candle.GetCandle(1)?.OpenPrice ?? candle.OpenPrice;
-		
 		// Pattern: previous red candle and current green candle crosses above previous high
-		var buyPattern = _prevBearishCandle && candle.ClosePrice > prevOpen;
+		var buyPattern = _prevBearishCandle && candle.ClosePrice > _prevOpen;
 		
 		// Pattern: previous green candle and current red candle crosses below previous low
-		var sellPattern = _prevBullishCandle && candle.ClosePrice < prevOpen;
+		var sellPattern = _prevBullishCandle && candle.ClosePrice < _prevOpen;
 
 		// Entry conditions
 		var entryLong = buyPattern && 
-						candle.ClosePrice > emaValue && 
-						prevClose > emaValue &&
-						rsiValue < 65 && 
+						candle.ClosePrice > emaPrice && 
+						_prevClose > emaPrice &&
+						rsiPrice < 65 && 
 						macd > _prevMacd;
 
 		var entryShort = sellPattern && 
-						 candle.ClosePrice < emaValue && 
-						 prevClose < emaValue &&
-						 rsiValue > 35 && 
+						 candle.ClosePrice < emaPrice && 
+						 _prevClose < emaPrice &&
+						 rsiPrice > 35 && 
 						 macd < _prevMacd;
 
 		// Calculate take profit and stop loss levels
@@ -239,5 +254,7 @@ public class ImprovisandoStrategy : Strategy
 		_prevMacd = macd;
 		_prevBullishCandle = currentBullish;
 		_prevBearishCandle = currentBearish;
+		_prevClose = candle.ClosePrice;
+		_prevOpen = candle.OpenPrice;
 	}
 }

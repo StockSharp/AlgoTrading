@@ -1,6 +1,7 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Collections.Generic;
 
 using Ecng.Common;
 
@@ -30,7 +31,7 @@ public class OmarMmrStrategy : Strategy
 	private ExponentialMovingAverage _emaA;
 	private ExponentialMovingAverage _emaB;
 	private ExponentialMovingAverage _emaC;
-	private MovingAverageConvergenceDivergence _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 
 	public OmarMmrStrategy()
 	{
@@ -130,6 +131,10 @@ public class OmarMmrStrategy : Strategy
 	}
 
 	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+		=> new[] { (Security, CandleType) };
+
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
@@ -139,17 +144,20 @@ public class OmarMmrStrategy : Strategy
 		_emaA = new ExponentialMovingAverage { Length = EmaALength };
 		_emaB = new ExponentialMovingAverage { Length = EmaBLength };
 		_emaC = new ExponentialMovingAverage { Length = EmaCLength };
-		_macd = new MovingAverageConvergenceDivergence
+		_macd = new MovingAverageConvergenceDivergenceSignal
 		{
-			FastLength = MacdFastLength,
-			SlowLength = MacdSlowLength,
-			SignalLength = MacdSignalLength
+			Macd =
+			{
+				ShortMa = { Length = MacdFastLength },
+				LongMa = { Length = MacdSlowLength },
+			},
+			SignalMa = { Length = MacdSignalLength }
 		};
 
 		// Subscribe to candles using high-level API
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			.Bind(_rsi, _emaA, _emaB, _emaC, _macd, OnProcess)
+			.BindEx(_rsi, _macd, OnProcess)
 			.Start();
 
 		// Setup chart
@@ -170,7 +178,7 @@ public class OmarMmrStrategy : Strategy
 		);
 	}
 
-	private void OnProcess(ICandleMessage candle, decimal rsiValue, decimal emaA, decimal emaB, decimal emaC, IIndicatorValue macdValue)
+	private void OnProcess(ICandleMessage candle, IIndicatorValue rsiValue, IIndicatorValue macdValue)
 	{
 		// Process only finished candles
 		if (candle.State != CandleStates.Finished)
@@ -180,25 +188,44 @@ public class OmarMmrStrategy : Strategy
 		if (!_rsi.IsFormed || !_emaA.IsFormed || !_emaB.IsFormed || !_emaC.IsFormed || !_macd.IsFormed)
 			return;
 
+		// Process EMAs manually
+		var emaAValue = _emaA.Process(candle);
+		var emaBValue = _emaB.Process(candle);
+		var emaCValue = _emaC.Process(candle);
+
 		// Get MACD values
-		var macdData = macdValue.GetValue<MacdValue>();
-		var macdLine = macdData.Macd;
-		var signalLine = macdData.Signal;
+		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
+
+		if (macdTyped.Macd is not decimal macdLine)
+			return;
+
+		if (macdTyped.Signal is not decimal signalLine)
+			return;
 
 		// Get previous MACD values for crossover detection
-		var prevMacdValue = _macd.GetValue<MacdValue>(1);
-		var prevMacdLine = prevMacdValue.Macd;
-		var prevSignalLine = prevMacdValue.Signal;
+		var prevMacdValue = _macd.GetValue<MovingAverageConvergenceDivergenceSignalValue>(1);
+
+		if (prevMacdValue.Macd is not decimal prevMacdLine)
+			return;
+
+		if (prevMacdValue.Signal is not decimal prevSignalLine)
+			return;
 
 		// Check MACD crossover
 		var macdCrossover = macdLine > signalLine && prevMacdLine <= prevSignalLine;
+
+		// Get values
+		var emaA = emaAValue.ToDecimal();
+		var emaB = emaBValue.ToDecimal();
+		var emaC = emaCValue.ToDecimal();
+		var rsiPrice = rsiValue.ToDecimal();
 
 		// Entry condition
 		var longEntry = candle.ClosePrice > emaC && 
 						emaA > emaB && 
 						macdCrossover && 
-						rsiValue > 29 && 
-						rsiValue < 70;
+						rsiPrice > 29 && 
+						rsiPrice < 70;
 
 		// Execute trades
 		if (longEntry && Position <= 0)

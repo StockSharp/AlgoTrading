@@ -118,7 +118,7 @@ namespace StockSharp.Samples.Strategies
 
 			// Initialize indicators
 			_bollingerBands = new BollingerBands { Length = SqueezeLength, Width = 2.0m };
-			_keltnerChannels = new KeltnerChannels { Length = SqueezeLength, Multiplier = 1.0m };
+			_keltnerChannels = new KeltnerChannels { Length = SqueezeLength, Multiplier = 1.5m };
 			_highest = new Highest { Length = SqueezeLength };
 			_lowest = new Lowest { Length = SqueezeLength };
 			_closeSma = new SimpleMovingAverage { Length = SqueezeLength };
@@ -128,7 +128,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_rsi, _highest, _lowest, _closeSma, _momentum, ProcessCandle)
+				.Bind(new IIndicator[] { _rsi, _highest, _lowest, _closeSma, _momentum }, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -146,7 +146,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal rsiValue, decimal highestValue, decimal lowestValue, decimal closeSmaValue, decimal momentumValue)
+		private void ProcessCandle(ICandleMessage candle, decimal[] values)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -156,40 +156,70 @@ namespace StockSharp.Samples.Strategies
 			if (!_momentum.IsFormed || !_rsi.IsFormed)
 				return;
 
+			// Extract values from array
+			var rsiValue = values[0];
+			var highestValue = values[1];
+			var lowestValue = values[2];
+			var closeSmaValue = values[3];
+			var momentumValue = values[4];
+
+			// Process additional indicators manually
+			var bollingerValue = _bollingerBands.Process(candle);
+			var keltnerValue = _keltnerChannels.Process(candle);
+
+			// Check if indicators are formed
+			if (!_bollingerBands.IsFormed || !_keltnerChannels.IsFormed)
+				return;
+
+			// Cast to typed values to access properties
+			var bollingerTyped = (BollingerBandsValue)bollingerValue;
+			var keltnerTyped = (KeltnerChannelsValue)keltnerValue;
+
+			// Calculate TTM Squeeze - check if Bollinger Bands are inside Keltner Channels
+			if (bollingerTyped.UpBand is not decimal bbUpper ||
+				bollingerTyped.LowBand is not decimal bbLower ||
+				keltnerTyped.Upper is not decimal kcUpper ||
+				keltnerTyped.Lower is not decimal kcLower)
+			{
+				return; // Skip if any band is null
+			}
+
+			var squeezOn = bbUpper < kcUpper && bbLower > kcLower;
+
 			// Calculate TTM Squeeze momentum oscillator
 			// e1 = (highest + lowest) / 2 + sma(close)
 			var e1 = (highestValue + lowestValue) / 2 + closeSmaValue;
 			_currentMomentum = momentumValue; // LinearRegression of (close - e1/2)
 
-			CheckEntryConditions(candle, rsiValue);
+			CheckEntryConditions(candle, rsiValue, squeezOn);
 
 			// Store previous momentum
 			_previousMomentum = _currentMomentum;
 		}
 
-		private void CheckEntryConditions(ICandleMessage candle, decimal rsiValue)
+		private void CheckEntryConditions(ICandleMessage candle, decimal rsiValue, bool squeezOn)
 		{
 			var currentPrice = candle.ClosePrice;
 
-			// Long entry: momentum < 0, momentum increasing for 2 bars, RSI crosses over 30
+			// Only trade when squeeze is off (expansion phase)
+			if (squeezOn)
+				return;
+
+			// Long entry: momentum < 0, momentum increasing for 2 bars, RSI > 30
 			if (_currentMomentum < 0 && 
 				_previousMomentum != 0 && 
 				_currentMomentum > _previousMomentum && 
-				// Need to track previous RSI values for crossover detection
-				_previousMomentum < _currentMomentum && // momentum trend up (simplified)
-				rsiValue > 30 && // RSI crossover 30 (simplified)
+				rsiValue > 30 && 
 				Position == 0)
 			{
 				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
 			}
 
-			// Short entry: momentum > 0, momentum decreasing for 2 bars, RSI crosses under 70
+			// Short entry: momentum > 0, momentum decreasing for 2 bars, RSI < 70
 			if (_currentMomentum > 0 && 
 				_previousMomentum != 0 && 
 				_currentMomentum < _previousMomentum && 
-				// Need to track previous RSI values for crossover detection
-				_previousMomentum > _currentMomentum && // momentum trend down (simplified)
-				rsiValue < 70 && // RSI crossunder 70 (simplified)
+				rsiValue < 70 && 
 				Position == 0)
 			{
 				RegisterOrder(this.CreateOrder(Sides.Sell, currentPrice, GetOrderVolume()));

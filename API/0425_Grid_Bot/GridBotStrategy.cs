@@ -25,7 +25,6 @@ public class GridBotStrategy : Strategy
 
 	private decimal _gridInterval;
 	private decimal[] _gridLevels;
-	private int _lastSignal;
 	private int _lastSignalIndex;
 	private decimal _signalLine;
 	private ICandleMessage _previousCandle;
@@ -189,7 +188,6 @@ public class GridBotStrategy : Strategy
 		// Update trackers
 		if (buy)
 		{
-			_lastSignal = 1;
 			_lastSignalIndex = buyIndex;
 			_signalLine = LowerLimit + _gridInterval * _lastSignalIndex;
 
@@ -202,7 +200,6 @@ public class GridBotStrategy : Strategy
 		}
 		else if (sell)
 		{
-			_lastSignal = -1;
 			_lastSignalIndex = sellIndex;
 			_signalLine = LowerLimit + _gridInterval * _lastSignalIndex;
 

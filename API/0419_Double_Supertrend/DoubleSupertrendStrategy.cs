@@ -174,7 +174,7 @@ namespace StockSharp.Samples.Strategies
 			}
 
 			// Start protection
-			Unit? takeProfit = null;
+			Unit takeProfit = null;
 			if (TPType == "%")
 				takeProfit = new Unit(TPPercent, UnitTypes.Percent);
 			

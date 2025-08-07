@@ -33,8 +33,7 @@ namespace StockSharp.Samples.Strategies
 
 		private decimal _previousMomentum;
 		private decimal _previousAdx;
-		private bool _momentumPivotHigh;
-		private bool _adxPivotHigh;
+		private decimal _previousClose;
 
 		/// <summary>
 		/// Candle type for strategy calculation.
@@ -203,7 +202,7 @@ namespace StockSharp.Samples.Strategies
 			// Create subscription for candles
 			var subscription = SubscribeCandles(CandleType);
 			subscription
-				.Bind(_highest, _lowest, _closeSma, _momentum, _adx, _atr, ProcessCandle)
+				.BindEx(new IIndicator[] { _highest, _lowest, _closeSma, _momentum, _adx, _atr }, ProcessCandle)
 				.Start();
 
 			// Setup chart visualization
@@ -215,7 +214,7 @@ namespace StockSharp.Samples.Strategies
 			}
 		}
 
-		private void ProcessCandle(ICandleMessage candle, decimal highestValue, decimal lowestValue, decimal closeSmaValue, decimal momentumValue, decimal adxValue, decimal atrValue)
+		private void ProcessCandle(ICandleMessage candle, IIndicatorValue[] values)
 		{
 			// Skip unfinished candles
 			if (candle.State != CandleStates.Finished)
@@ -225,16 +224,32 @@ namespace StockSharp.Samples.Strategies
 			if (!_momentum.IsFormed || !_adx.IsFormed || !_atr.IsFormed)
 				return;
 
+			// Extract and convert values from array to decimal
+			var highestValue = values[0].ToDecimal();
+			var lowestValue = values[1].ToDecimal();
+			var closeSmaValue = values[2].ToDecimal();
+			
+			// LinearRegression is a complex indicator but can be converted to decimal directly
+			var momentumValue = values[3].ToDecimal();
+			
+			// DirectionalIndex (ADX) is a complex indicator - extract the main ADX value
+			var adxTyped = (AverageDirectionalIndexValue)values[4];
+			if (adxTyped.MovingAverage is not decimal adxValue)
+				return;
+			
+			var atrValue = values[5].ToDecimal();
+
 			// Detect pivot highs (simplified)
 			var momentumPivotHigh = _previousMomentum != 0 && _previousMomentum > momentumValue;
 			var adxPivotHigh = _previousAdx != 0 && _previousAdx > adxValue;
 
 			CheckEntryConditions(candle, momentumValue, adxValue, atrValue, momentumPivotHigh, adxPivotHigh);
-			CheckExitConditions(momentumValue, adxValue, momentumPivotHigh);
+			CheckExitConditions(candle, momentumValue, adxValue, momentumPivotHigh);
 
 			// Store previous values
 			_previousMomentum = momentumValue;
 			_previousAdx = adxValue;
+			_previousClose = candle.ClosePrice;
 		}
 
 		private void CheckEntryConditions(ICandleMessage candle, decimal momentumValue, decimal adxValue, decimal atrValue, bool momentumPivotHigh, bool adxPivotHigh)
@@ -250,14 +265,14 @@ namespace StockSharp.Samples.Strategies
 			if ((buyCondition1 || buyCondition2) && Position == 0)
 			{
 				var stopLoss = currentPrice - (atrValue * AtrMultiplier);
-				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, GetOrderVolume()));
+				RegisterOrder(this.CreateOrder(Sides.Buy, currentPrice, Volume));
 			}
 
 			// Short conditions are disabled by default in original script
 			// Can be enabled by setting appropriate conditions
 		}
 
-		private void CheckExitConditions(decimal momentumValue, decimal adxValue, bool momentumPivotHigh)
+		private void CheckExitConditions(ICandleMessage candle, decimal momentumValue, decimal adxValue, bool momentumPivotHigh)
 		{
 			// Exit long on momentum pivot high (if exit by momentum is enabled)
 			if (Position > 0 && ExitByMomentum && momentumPivotHigh)
@@ -270,11 +285,6 @@ namespace StockSharp.Samples.Strategies
 			{
 				// Strategy-specific exit conditions can be added here
 			}
-		}
-
-		private decimal GetOrderVolume()
-		{
-			return 1;
 		}
 	}
 }

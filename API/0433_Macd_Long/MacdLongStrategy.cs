@@ -252,13 +252,21 @@ public class MacdLongStrategy : Strategy
 
 		// Get MACD values from complex indicator
 		var macdTyped = (MovingAverageConvergenceDivergenceSignalValue)macdValue;
-		var macdLine = macdTyped.Macd ?? 0;
-		var signalLine = macdTyped.Signal ?? 0;
+
+		if (macdTyped.Macd is not decimal macdLine)
+			return;
+
+		if (macdTyped.Signal is not decimal signalLine)
+			return;
 
 		// Get previous MACD values for crossover detection
 		var prevMacdValue = _macd.GetValue<MovingAverageConvergenceDivergenceSignalValue>(1);
-		var prevMacdLine = prevMacdValue.Macd ?? 0;
-		var prevSignalLine = prevMacdValue.Signal ?? 0;
+
+		if (prevMacdValue.Macd is not decimal prevMacdLine)
+			return;
+
+		if (prevMacdValue.Signal is not decimal prevSignalLine)
+			return;
 
 		// Detect crossovers
 		var crossoverBull = macdLine > signalLine && prevMacdLine <= prevSignalLine;

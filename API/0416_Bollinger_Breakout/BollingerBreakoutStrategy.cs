@@ -43,7 +43,6 @@ public class BollingerBreakoutStrategy : Strategy
 	private ExponentialMovingAverage _ma;
 	
 	private decimal? _entryPrice;
-	private bool? _isShortLessThenLong;
 
 	public BollingerBreakoutStrategy()
 	{
