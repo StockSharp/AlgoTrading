@@ -37,11 +37,10 @@ class supertrend_ema_rebound_strategy(Strategy):
         self._show_short = self.Param("ShowShort", False) \
             .SetDisplay("Short Entries", "Enable short entries", "Strategy")
 
-        self._tp_type = self.Param("TpType", "%") \
-            .SetDisplay("TP Type", "Take profit type", "Strategy")
-
-        self._tp_percent = self.Param("TpPercent", 1.5) \
-            .SetDisplay("TP Percent", "Take profit percentage", "Strategy")
+        self._take_profit = self.Param("TakeProfit", Unit(1.5, UnitTypes.Percent)) \
+            .SetDisplay("TP", "Take profit", "Take Profit") \
+            .SetCanOptimize(True) \
+            .SetOptimize(Unit(0.5, UnitTypes.Percent), Unit(3.0, UnitTypes.Percent), Unit(0.3, UnitTypes.Percent))
 
         self._supertrend = None
         self._ema = None
@@ -75,12 +74,8 @@ class supertrend_ema_rebound_strategy(Strategy):
         return self._show_short.Value
 
     @property
-    def tp_type(self):
-        return self._tp_type.Value
-
-    @property
-    def tp_percent(self):
-        return self._tp_percent.Value
+    def take_profit(self):
+        return self._take_profit.Value
 
     # endregion
 
@@ -103,9 +98,7 @@ class supertrend_ema_rebound_strategy(Strategy):
             self.DrawIndicator(area, self._ema)
             self.DrawOwnTrades(area)
 
-        if self.tp_type == "%":
-            tp = Unit(self.tp_percent / 100.0, UnitTypes.Percent)
-            self.StartProtection(tp, Unit())
+        self.StartProtection(self.take_profit, Unit())
 
     def ProcessCandle(self, candle, super_val, ema_val):
         if candle.State != CandleStates.Finished:
@@ -153,9 +146,6 @@ class supertrend_ema_rebound_strategy(Strategy):
 
         if self.Position < 0 and dir_changed and direction < 0:
             self.RegisterOrder(self.CreateOrder(Sides.Buy, self._prev_close, abs(self.Position)))
-
-        if self.tp_type == "%" and self.Position != 0:
-            pass  # handled by protection
 
     def CreateClone(self):
         """

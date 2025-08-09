@@ -45,14 +45,11 @@ namespace StockSharp.Samples.Strategies
 			_direction = Param(nameof(Direction), "Long")
 				.SetDisplay("Direction", "Trading direction (Long/Short)", "Strategy");
 
-			_tpType = Param(nameof(TPType), "Supertrend")
-				.SetDisplay("TP Type", "Take profit type (Supertrend/%)", "Take Profit");
+			_takeProfit = Param(nameof(TakeProfit), 1.5m.Percents())
+				.SetDisplay("TP", "Take profit", "Take Profit");
 
-			_tpPercent = Param(nameof(TPPercent), 1.5m)
-				.SetDisplay("TP Percent", "Take profit percentage", "Take Profit");
-
-			_slPercent = Param(nameof(SLPercent), 10m)
-				.SetDisplay("Stop Loss %", "Stop loss percentage", "Stop Loss");
+			_stopLoss = Param(nameof(StopLoss), 10m.Percents())
+				.SetDisplay("SL", "Stop loss", "Stop Loss");
 		}
 
 		private readonly StrategyParam<DataType> _candleTypeParam;
@@ -97,25 +94,18 @@ namespace StockSharp.Samples.Strategies
 			set => _direction.Value = value;
 		}
 
-		private readonly StrategyParam<string> _tpType;
-		public string TPType
+		private readonly StrategyParam<Unit> _takeProfit;
+		public Unit TakeProfit
 		{
-			get => _tpType.Value;
-			set => _tpType.Value = value;
+			get => _takeProfit.Value;
+			set => _takeProfit.Value = value;
 		}
 
-		private readonly StrategyParam<decimal> _tpPercent;
-		public decimal TPPercent
+		private readonly StrategyParam<Unit> _stopLoss;
+		public Unit StopLoss
 		{
-			get => _tpPercent.Value;
-			set => _tpPercent.Value = value;
-		}
-
-		private readonly StrategyParam<decimal> _slPercent;
-		public decimal SLPercent
-		{
-			get => _slPercent.Value;
-			set => _slPercent.Value = value;
+			get => _stopLoss.Value;
+			set => _stopLoss.Value = value;
 		}
 
 		/// <inheritdoc />
@@ -173,13 +163,7 @@ namespace StockSharp.Samples.Strategies
 				DrawOwnTrades(area);
 			}
 
-			// Start protection
-			Unit takeProfit = null;
-			if (TPType == "%")
-				takeProfit = new Unit(TPPercent, UnitTypes.Percent);
-			
-			var stopLoss = new Unit(SLPercent, UnitTypes.Percent);
-			StartProtection(takeProfit, stopLoss);
+			StartProtection(TakeProfit, StopLoss);
 		}
 
 		private void OnProcess(ICandleMessage candle, 

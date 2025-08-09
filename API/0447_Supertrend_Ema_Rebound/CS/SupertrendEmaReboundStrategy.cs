@@ -82,22 +82,11 @@ namespace StockSharp.Samples.Strategies
 			set => _showShort.Value = value;
 		}
 
-		/// <summary>
-		/// Take profit type.
-		/// </summary>
-		public string TpType
+		private readonly StrategyParam<Unit> _takeProfit;
+		public Unit TakeProfit
 		{
-			get => _tpType.Value;
-			set => _tpType.Value = value;
-		}
-
-		/// <summary>
-		/// Take profit percentage.
-		/// </summary>
-		public decimal TpPercent
-		{
-			get => _tpPercent.Value;
-			set => _tpPercent.Value = value;
+			get => _takeProfit.Value;
+			set => _takeProfit.Value = value;
 		}
 
 		/// <summary>
@@ -132,12 +121,9 @@ namespace StockSharp.Samples.Strategies
 			_showShort = Param(nameof(ShowShort), true)
 				.SetDisplay("Short Entries", "Enable short entries", "Strategy");
 
-			_tpType = Param(nameof(TpType), "Supertrend")
-				.SetDisplay("TP Type", "Take profit type (Supertrend or %)", "Take Profit");
-
-			_tpPercent = Param(nameof(TpPercent), 1.5m)
+			_takeProfit = Param(nameof(TakeProfit), 1.5m.Percents())
 				.SetRange(0.1m, 10.0m)
-				.SetDisplay("TP Percent", "Take profit percentage", "Take Profit")
+				.SetDisplay("TP", "Take profit", "Take Profit")
 				.SetCanOptimize(true)
 				.SetOptimize(0.5m, 3.0m, 0.3m);
 		}
@@ -182,6 +168,8 @@ namespace StockSharp.Samples.Strategies
 				DrawIndicator(area, _ema);
 				DrawOwnTrades(area);
 			}
+
+			StartProtection(TakeProfit, new());
 		}
 
 		private void ProcessCandle(ICandleMessage candle, decimal supertrendValue, decimal emaValue)
@@ -276,13 +264,6 @@ namespace StockSharp.Samples.Strategies
 			if (Position < 0 && supertrendDirectionChanged && supertrendDirection < 0)
 			{
 				RegisterOrder(CreateOrder(Sides.Buy, _previousClose, Math.Abs(Position)));
-			}
-
-			// Handle take profit based on type
-			if (TpType == "%" && Position != 0)
-			{
-				// Percentage-based take profit is handled by protection system
-				// Additional logic can be added here if needed
 			}
 		}
 	}
