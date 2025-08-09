@@ -79,7 +79,6 @@ class dispersion_trading_strategy(Strategy):
     # endregion
 
     def GetWorkingSecurities(self):
-        # Преобразуем .NET Array в Python list и объединяем с бенчмарком
         constituents_list = list(self.Constituents) if self.Constituents is not None else []
         securities = constituents_list + [self.Security]
         
@@ -118,7 +117,6 @@ class dispersion_trading_strategy(Strategy):
 
     def CheckDispersion(self):
         index_returns = returns(self._windows[self.Security])
-        # Преобразуем Constituents в список Python
         constituents_list = list(self.Constituents) if self.Constituents is not None else []
         cons_returns = [returns(self._windows[s]) for s in constituents_list]
         if not cons_returns:
@@ -131,7 +129,6 @@ class dispersion_trading_strategy(Strategy):
             self.CloseAll()
 
     def OpenDispersion(self):
-        # Преобразуем Constituents в список Python
         constituents_list = list(self.Constituents) if self.Constituents is not None else []
         count = len(constituents_list)
         portfolio_value = self.Portfolio.CurrentValue or 0

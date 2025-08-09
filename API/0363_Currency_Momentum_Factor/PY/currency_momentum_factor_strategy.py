@@ -82,7 +82,6 @@ class currency_momentum_factor_strategy(Strategy):
     # endregion
 
     def GetWorkingSecurities(self):
-        # Преобразуем .NET Array в Python list
         universe_list = list(self.Universe) if self.Universe is not None else []
         return [(s, self.CandleType) for s in universe_list]
 
