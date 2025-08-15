@@ -6,183 +6,182 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Hull MA Reversal Strategy.
+/// Enters long when Hull MA changes direction from down to up.
+/// Enters short when Hull MA changes direction from up to down.
+/// </summary>
+public class HullMaReversalStrategy : Strategy
 {
+	private readonly StrategyParam<int> _hmaPeriod;
+	private readonly StrategyParam<Unit> _atrMultiplier;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+
+	private decimal _prevHmaValue;
+	private decimal _prevPrevHmaValue;
+	private AverageTrueRange _atr;
+
 	/// <summary>
-	/// Hull MA Reversal Strategy.
-	/// Enters long when Hull MA changes direction from down to up.
-	/// Enters short when Hull MA changes direction from up to down.
+	/// Period for Hull Moving Average.
 	/// </summary>
-	public class HullMaReversalStrategy : Strategy
+	public int HmaPeriod
 	{
-		private readonly StrategyParam<int> _hmaPeriod;
-		private readonly StrategyParam<Unit> _atrMultiplier;
-		private readonly StrategyParam<DataType> _candleType;
-		private readonly StrategyParam<decimal> _stopLossPercent;
+		get => _hmaPeriod.Value;
+		set => _hmaPeriod.Value = value;
+	}
 
-		private decimal _prevHmaValue;
-		private decimal _prevPrevHmaValue;
-		private AverageTrueRange _atr;
+	/// <summary>
+	/// ATR multiplier for stop-loss calculation.
+	/// </summary>
+	public Unit AtrMultiplier
+	{
+		get => _atrMultiplier.Value;
+		set => _atrMultiplier.Value = value;
+	}
 
-		/// <summary>
-		/// Period for Hull Moving Average.
-		/// </summary>
-		public int HmaPeriod
-		{
-			get => _hmaPeriod.Value;
-			set => _hmaPeriod.Value = value;
-		}
+	/// <summary>
+	/// Type of candles to use.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-		/// <summary>
-		/// ATR multiplier for stop-loss calculation.
-		/// </summary>
-		public Unit AtrMultiplier
-		{
-			get => _atrMultiplier.Value;
-			set => _atrMultiplier.Value = value;
-		}
+	/// <summary>
+	/// Stop-loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
 
-		/// <summary>
-		/// Type of candles to use.
-		/// </summary>
-		public DataType CandleType
-		{
-			get => _candleType.Value;
-			set => _candleType.Value = value;
-		}
-
-		/// <summary>
-		/// Stop-loss percentage.
-		/// </summary>
-		public decimal StopLossPercent
-		{
-			get => _stopLossPercent.Value;
-			set => _stopLossPercent.Value = value;
-		}
-
-		/// <summary>
-		/// Initializes a new instance of the <see cref="HullMaReversalStrategy"/>.
-		/// </summary>
-		public HullMaReversalStrategy()
-		{
-			_hmaPeriod = Param(nameof(HmaPeriod), 9)
-				.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicator Settings")
-				.SetRange(5, 20)
-				.SetCanOptimize(true);
-				
-			_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
-				.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
-				.SetRange(1.5m, 3.0m)
-				.SetCanOptimize(true);
-				
-			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
-
-			_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
-				.SetNotNegative()
-				.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
-				.SetCanOptimize(true)
-				.SetOptimize(0.5m, 2.0m, 0.5m);
-		}
-
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
-
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-			_prevHmaValue = 0;
-			_prevPrevHmaValue = 0;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			_atr = new AverageTrueRange { Length = 14 };
-
-			// Create indicators
-			var hma = new HullMovingAverage { Length = HmaPeriod };
-
-			// Create subscription
-			var subscription = SubscribeCandles(CandleType);
+	/// <summary>
+	/// Initializes a new instance of the <see cref="HullMaReversalStrategy"/>.
+	/// </summary>
+	public HullMaReversalStrategy()
+	{
+		_hmaPeriod = Param(nameof(HmaPeriod), 9)
+			.SetDisplay("HMA Period", "Period for Hull Moving Average", "Indicator Settings")
+			.SetRange(5, 20)
+			.SetCanOptimize(true);
 			
-			// Bind indicators and process candles
-			subscription
-				.Bind(hma, _atr, ProcessCandle)
-				.Start();
-				
-			// Setup chart visualization
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, hma);
-				DrawOwnTrades(area);
-			}
+		_atrMultiplier = Param(nameof(AtrMultiplier), new Unit(2, UnitTypes.Absolute))
+			.SetDisplay("ATR Multiplier", "Multiplier for ATR stop-loss", "Risk Management")
+			.SetRange(1.5m, 3.0m)
+			.SetCanOptimize(true);
+			
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
-			StartProtection(
-				new(),
-				new Unit(StopLossPercent, UnitTypes.Percent),
-				useMarketOrders: true
-			);
+		_stopLossPercent = Param(nameof(StopLossPercent), 1.0m)
+			.SetNotNegative()
+			.SetDisplay("Stop Loss %", "Stop loss percentage from entry price", "Risk Management")
+			.SetCanOptimize(true)
+			.SetOptimize(0.5m, 2.0m, 0.5m);
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_prevHmaValue = 0;
+		_prevPrevHmaValue = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
+
+		_atr = new AverageTrueRange { Length = 14 };
+
+		// Create indicators
+		var hma = new HullMovingAverage { Length = HmaPeriod };
+
+		// Create subscription
+		var subscription = SubscribeCandles(CandleType);
+		
+		// Bind indicators and process candles
+		subscription
+			.Bind(hma, _atr, ProcessCandle)
+			.Start();
+			
+		// Setup chart visualization
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, hma);
+			DrawOwnTrades(area);
 		}
 
-		/// <summary>
-		/// Process candle with indicator values.
-		/// </summary>
-		/// <param name="candle">Candle.</param>
-		/// <param name="hmaValue">Hull MA value.</param>
-		/// <param name="atrValue">ATR value.</param>
-		private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrValue)
+		StartProtection(
+			new(),
+			new Unit(StopLossPercent, UnitTypes.Percent),
+			useMarketOrders: true
+		);
+	}
+
+	/// <summary>
+	/// Process candle with indicator values.
+	/// </summary>
+	/// <param name="candle">Candle.</param>
+	/// <param name="hmaValue">Hull MA value.</param>
+	/// <param name="atrValue">ATR value.</param>
+	private void ProcessCandle(ICandleMessage candle, decimal hmaValue, decimal atrValue)
+	{
+		// Skip unfinished candles
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Check if strategy is ready to trade
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		// If this is one of the first calculations, just store the values
+		if (_prevHmaValue == 0)
 		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			// Check if strategy is ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
-			// If this is one of the first calculations, just store the values
-			if (_prevHmaValue == 0)
-			{
-				_prevHmaValue = hmaValue;
-				return;
-			}
-			
-			if (_prevPrevHmaValue == 0)
-			{
-				_prevPrevHmaValue = _prevHmaValue;
-				_prevHmaValue = hmaValue;
-				return;
-			}
-			
-			// Check for Hull MA direction change
-			bool directionChangedUp = _prevHmaValue < _prevPrevHmaValue && hmaValue > _prevHmaValue;
-			bool directionChangedDown = _prevHmaValue > _prevPrevHmaValue && hmaValue < _prevHmaValue;
-			
-			// Long entry: Hull MA changed direction from down to up
-			if (directionChangedUp && Position <= 0)
-			{
-				BuyMarket(Volume + Math.Abs(Position));
-				LogInfo($"Long entry: Hull MA direction changed up ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
-			}
-			// Short entry: Hull MA changed direction from up to down
-			else if (directionChangedDown && Position >= 0)
-			{
-				SellMarket(Volume + Math.Abs(Position));
-				LogInfo($"Short entry: Hull MA direction changed down ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
-			}
-			
-			// Update previous values
+			_prevHmaValue = hmaValue;
+			return;
+		}
+		
+		if (_prevPrevHmaValue == 0)
+		{
 			_prevPrevHmaValue = _prevHmaValue;
 			_prevHmaValue = hmaValue;
+			return;
 		}
+		
+		// Check for Hull MA direction change
+		bool directionChangedUp = _prevHmaValue < _prevPrevHmaValue && hmaValue > _prevHmaValue;
+		bool directionChangedDown = _prevHmaValue > _prevPrevHmaValue && hmaValue < _prevHmaValue;
+		
+		// Long entry: Hull MA changed direction from down to up
+		if (directionChangedUp && Position <= 0)
+		{
+			BuyMarket(Volume + Math.Abs(Position));
+			LogInfo($"Long entry: Hull MA direction changed up ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
+		}
+		// Short entry: Hull MA changed direction from up to down
+		else if (directionChangedDown && Position >= 0)
+		{
+			SellMarket(Volume + Math.Abs(Position));
+			LogInfo($"Short entry: Hull MA direction changed down ({_prevPrevHmaValue} -> {_prevHmaValue} -> {hmaValue})");
+		}
+		
+		// Update previous values
+		_prevPrevHmaValue = _prevHmaValue;
+		_prevHmaValue = hmaValue;
 	}
 }

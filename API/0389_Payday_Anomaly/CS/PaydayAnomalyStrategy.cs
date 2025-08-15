@@ -14,132 +14,131 @@ using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Payday anomaly strategy.
+/// Holds market ETF during the payday window.
+/// </summary>
+public class PaydayAnomalyStrategy : Strategy
 {
+	private readonly StrategyParam<decimal> _minUsd;
+	private readonly StrategyParam<DataType> _candleType;
+
 	/// <summary>
-	/// Payday anomaly strategy.
-	/// Holds market ETF during the payday window.
+	/// The type of candles to use for strategy calculation.
 	/// </summary>
-	public class PaydayAnomalyStrategy : Strategy
+	public DataType CandleType
 	{
-		private readonly StrategyParam<decimal> _minUsd;
-		private readonly StrategyParam<DataType> _candleType;
-
-		/// <summary>
-		/// The type of candles to use for strategy calculation.
-		/// </summary>
-		public DataType CandleType
-		{
-			get => _candleType.Value;
-			set => _candleType.Value = value;
-		}
-		private readonly Dictionary<Security, decimal> _latestPrices = new();
-
-		/// <summary>
-		/// Minimum trade value in USD.
-		/// </summary>
-		public decimal MinTradeUsd
-		{
-			get => _minUsd.Value;
-			set => _minUsd.Value = value;
-		}
-		private DateTime _last = DateTime.MinValue;
-
-		public PaydayAnomalyStrategy()
-		{
-			_minUsd = Param(nameof(MinTradeUsd), 200m)
-			.SetGreaterThanZero()
-			.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
-			_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
-		}
-
-		public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
-		{
-			if (Security == null)
-				throw new InvalidOperationException("Security not set");
-			yield return (Security, CandleType);
-		}
-
-		
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-
-			_latestPrices.Clear();
-			_last = default;
-		}
-
-		protected override void OnStarted(DateTimeOffset t)
-		{
-			if (Security == null)
-				throw new InvalidOperationException("Security not set");
-			base.OnStarted(t);
-			SubscribeCandles(CandleType, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
-		}
-
-		private void ProcessCandle(ICandleMessage candle, Security security)
-		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			// Store the latest closing price for this security
-			_latestPrices[security] = candle.ClosePrice;
-
-			OnDaily(candle.OpenTime.Date);
-		}
-
-		private void OnDaily(DateTime d)
-		{
-			if (d == _last)
-				return;
-			_last = d;
-			int tdMonthEnd = TradingDaysLeftInMonth(d);
-			int tdMonthStart = TradingDayNumber(d);
-			bool inWindow = tdMonthEnd <= 2 || tdMonthStart <= 3;
-			var portfolioValue = Portfolio.CurrentValue ?? 0m;
-			var price = GetLatestPrice(Security);
-			var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
-			var diff = tgt - Pos();
-			if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
-				return;
-			RegisterOrder(new Order { Security = Security, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
-		}
-
-		private decimal GetLatestPrice(Security security)
-		{
-			return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
-		}
-
-		private int TradingDaysLeftInMonth(DateTime d)
-		{
-			int cnt = 0;
-			var cur = d;
-			while (cur.Month == d.Month)
-			{ 
-				// Simple approximation: assume weekdays are trading days
-				if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
-					cnt++; 
-				cur = cur.AddDays(1); 
-			}
-			return cnt - 1;
-		}
-
-		private int TradingDayNumber(DateTime d)
-		{
-			int num = 0;
-			var cur = new DateTime(d.Year, d.Month, 1);
-			while (cur <= d)
-			{ 
-				// Simple approximation: assume weekdays are trading days
-				if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
-					num++; 
-				cur = cur.AddDays(1); 
-			}
-			return num;
-		}
-
-		private decimal Pos() => GetPositionValue(Security, Portfolio) ?? 0;
+		get => _candleType.Value;
+		set => _candleType.Value = value;
 	}
+	private readonly Dictionary<Security, decimal> _latestPrices = [];
+
+	/// <summary>
+	/// Minimum trade value in USD.
+	/// </summary>
+	public decimal MinTradeUsd
+	{
+		get => _minUsd.Value;
+		set => _minUsd.Value = value;
+	}
+	private DateTime _last = DateTime.MinValue;
+
+	public PaydayAnomalyStrategy()
+	{
+		_minUsd = Param(nameof(MinTradeUsd), 200m)
+		.SetGreaterThanZero()
+		.SetDisplay("Min Trade USD", "Minimum trade value in USD", "General");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	public override IEnumerable<(Security, DataType)> GetWorkingSecurities()
+	{
+		if (Security == null)
+			throw new InvalidOperationException("Security not set");
+		yield return (Security, CandleType);
+	}
+
+	
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_latestPrices.Clear();
+		_last = default;
+	}
+
+	protected override void OnStarted(DateTimeOffset t)
+	{
+		if (Security == null)
+			throw new InvalidOperationException("Security not set");
+		base.OnStarted(t);
+		SubscribeCandles(CandleType, true, Security).Bind(c => ProcessCandle(c, Security)).Start();
+	}
+
+	private void ProcessCandle(ICandleMessage candle, Security security)
+	{
+		// Skip unfinished candles
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		// Store the latest closing price for this security
+		_latestPrices[security] = candle.ClosePrice;
+
+		OnDaily(candle.OpenTime.Date);
+	}
+
+	private void OnDaily(DateTime d)
+	{
+		if (d == _last)
+			return;
+		_last = d;
+		int tdMonthEnd = TradingDaysLeftInMonth(d);
+		int tdMonthStart = TradingDayNumber(d);
+		bool inWindow = tdMonthEnd <= 2 || tdMonthStart <= 3;
+		var portfolioValue = Portfolio.CurrentValue ?? 0m;
+		var price = GetLatestPrice(Security);
+		var tgt = inWindow && price > 0 ? portfolioValue / price : 0;
+		var diff = tgt - Pos();
+		if (price <= 0 || Math.Abs(diff) * price < MinTradeUsd)
+			return;
+		RegisterOrder(new Order { Security = Security, Portfolio = Portfolio, Side = diff > 0 ? Sides.Buy : Sides.Sell, Volume = Math.Abs(diff), Type = OrderTypes.Market, Comment = "Payday" });
+	}
+
+	private decimal GetLatestPrice(Security security)
+	{
+		return _latestPrices.TryGetValue(security, out var price) ? price : 0m;
+	}
+
+	private int TradingDaysLeftInMonth(DateTime d)
+	{
+		int cnt = 0;
+		var cur = d;
+		while (cur.Month == d.Month)
+		{ 
+			// Simple approximation: assume weekdays are trading days
+			if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
+				cnt++; 
+			cur = cur.AddDays(1); 
+		}
+		return cnt - 1;
+	}
+
+	private int TradingDayNumber(DateTime d)
+	{
+		int num = 0;
+		var cur = new DateTime(d.Year, d.Month, 1);
+		while (cur <= d)
+		{ 
+			// Simple approximation: assume weekdays are trading days
+			if (cur.DayOfWeek != DayOfWeek.Saturday && cur.DayOfWeek != DayOfWeek.Sunday) 
+				num++; 
+			cur = cur.AddDays(1); 
+		}
+		return num;
+	}
+
+	private decimal Pos() => GetPositionValue(Security, Portfolio) ?? 0;
 }

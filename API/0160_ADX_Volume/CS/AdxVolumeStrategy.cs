@@ -8,224 +8,223 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Implementation of strategy - ADX + Volume.
+/// Enter trades when ADX is above threshold with above average volume.
+/// Direction determined by DI+ and DI- comparison.
+/// </summary>
+public class AdxVolumeStrategy : Strategy
 {
+	private readonly StrategyParam<int> _adxPeriod;
+	private readonly StrategyParam<decimal> _adxThreshold;
+	private readonly StrategyParam<int> _volumeAvgPeriod;
+	private readonly StrategyParam<Unit> _stopLoss;
+	private readonly StrategyParam<DataType> _candleType;
+
+	// For volume tracking
+	private decimal _averageVolume;
+	private int _volumeCounter;
+
 	/// <summary>
-	/// Implementation of strategy - ADX + Volume.
-	/// Enter trades when ADX is above threshold with above average volume.
-	/// Direction determined by DI+ and DI- comparison.
+	/// ADX period.
 	/// </summary>
-	public class AdxVolumeStrategy : Strategy
+	public int AdxPeriod
 	{
-		private readonly StrategyParam<int> _adxPeriod;
-		private readonly StrategyParam<decimal> _adxThreshold;
-		private readonly StrategyParam<int> _volumeAvgPeriod;
-		private readonly StrategyParam<Unit> _stopLoss;
-		private readonly StrategyParam<DataType> _candleType;
+		get => _adxPeriod.Value;
+		set => _adxPeriod.Value = value;
+	}
 
-		// For volume tracking
-		private decimal _averageVolume;
-		private int _volumeCounter;
+	/// <summary>
+	/// ADX threshold value to determine strong trend.
+	/// </summary>
+	public decimal AdxThreshold
+	{
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
+	}
 
-		/// <summary>
-		/// ADX period.
-		/// </summary>
-		public int AdxPeriod
+	/// <summary>
+	/// Volume average period.
+	/// </summary>
+	public int VolumeAvgPeriod
+	{
+		get => _volumeAvgPeriod.Value;
+		set => _volumeAvgPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Stop-loss value.
+	/// </summary>
+	public Unit StopLoss
+	{
+		get => _stopLoss.Value;
+		set => _stopLoss.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type used for strategy.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Initialize <see cref="AdxVolumeStrategy"/>.
+	/// </summary>
+	public AdxVolumeStrategy()
+	{
+		_adxPeriod = Param(nameof(AdxPeriod), 14)
+			.SetGreaterThanZero()
+			.SetDisplay("ADX Period", "Period for ADX indicator", "ADX Parameters");
+
+		_adxThreshold = Param(nameof(AdxThreshold), 25m)
+			.SetRange(10, 50)
+			.SetDisplay("ADX Threshold", "Threshold above which trend is considered strong", "ADX Parameters");
+
+		_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume Parameters");
+
+		_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
+			.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Candle type for strategy", "General");
+
+		_averageVolume = 0;
+		_volumeCounter = 0;
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_averageVolume = 0;
+		_volumeCounter = 0;
+	}
+
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
+
+		// Create ADX indicator
+		var adx = new AverageDirectionalIndex { Length = AdxPeriod };
+
+		// Setup candle subscription
+		var subscription = SubscribeCandles(CandleType);
+
+		// Bind ADX indicator to candles
+		subscription
+			.BindEx(adx, ProcessCandle)
+			.Start();
+
+		// Setup chart visualization if available
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			get => _adxPeriod.Value;
-			set => _adxPeriod.Value = value;
+			DrawCandles(area, subscription);
+			DrawIndicator(area, adx);
+			DrawOwnTrades(area);
 		}
 
-		/// <summary>
-		/// ADX threshold value to determine strong trend.
-		/// </summary>
-		public decimal AdxThreshold
+		// Start protective orders
+		StartProtection(new(), StopLoss);
+	}
+
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+		// Update average volume calculation
+		var currentVolume = candle.TotalVolume;
+		
+		if (_volumeCounter < VolumeAvgPeriod)
 		{
-			get => _adxThreshold.Value;
-			set => _adxThreshold.Value = value;
+			_volumeCounter++;
+			_averageVolume = ((_averageVolume * (_volumeCounter - 1)) + currentVolume) / _volumeCounter;
+		}
+		else
+		{
+			_averageVolume = (_averageVolume * (VolumeAvgPeriod - 1) + currentVolume) / VolumeAvgPeriod;
 		}
 
-		/// <summary>
-		/// Volume average period.
-		/// </summary>
-		public int VolumeAvgPeriod
+		var adxTyped = (AverageDirectionalIndexValue)adxValue;
+		var diPlusValue = adxTyped.Dx.Plus;
+		var diMinusValue = adxTyped.Dx.Minus;
+		var adxMa = adxTyped.MovingAverage;
+
+		// Check if volume is above average
+		var isVolumeAboveAverage = currentVolume > _averageVolume;
+
+		LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
+			   $"ADX: {adxMa}, DI+: {diPlusValue}, DI-: {diMinusValue}, " +
+			   $"Volume: {currentVolume}, Avg Volume: {_averageVolume}");
+
+		// Trading rules
+		if (adxMa > AdxThreshold && isVolumeAboveAverage)
 		{
-			get => _volumeAvgPeriod.Value;
-			set => _volumeAvgPeriod.Value = value;
-		}
-
-		/// <summary>
-		/// Stop-loss value.
-		/// </summary>
-		public Unit StopLoss
-		{
-			get => _stopLoss.Value;
-			set => _stopLoss.Value = value;
-		}
-
-		/// <summary>
-		/// Candle type used for strategy.
-		/// </summary>
-		public DataType CandleType
-		{
-			get => _candleType.Value;
-			set => _candleType.Value = value;
-		}
-
-		/// <summary>
-		/// Initialize <see cref="AdxVolumeStrategy"/>.
-		/// </summary>
-		public AdxVolumeStrategy()
-		{
-			_adxPeriod = Param(nameof(AdxPeriod), 14)
-				.SetGreaterThanZero()
-				.SetDisplay("ADX Period", "Period for ADX indicator", "ADX Parameters");
-
-			_adxThreshold = Param(nameof(AdxThreshold), 25m)
-				.SetRange(10, 50)
-				.SetDisplay("ADX Threshold", "Threshold above which trend is considered strong", "ADX Parameters");
-
-			_volumeAvgPeriod = Param(nameof(VolumeAvgPeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume Average Period", "Period for volume moving average", "Volume Parameters");
-
-			_stopLoss = Param(nameof(StopLoss), new Unit(2, UnitTypes.Absolute))
-				.SetDisplay("Stop Loss", "Stop loss in ATR or value", "Risk Management");
-
-			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Candle type for strategy", "General");
-
-			_averageVolume = 0;
-			_volumeCounter = 0;
-		}
-
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
-
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-
-			_averageVolume = 0;
-			_volumeCounter = 0;
-		}
-
-		/// <inheritdoc />
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-
-			// Create ADX indicator
-			var adx = new AverageDirectionalIndex { Length = AdxPeriod };
-
-			// Setup candle subscription
-			var subscription = SubscribeCandles(CandleType);
-
-			// Bind ADX indicator to candles
-			subscription
-				.BindEx(adx, ProcessCandle)
-				.Start();
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				DrawIndicator(area, adx);
-				DrawOwnTrades(area);
-			}
-
-			// Start protective orders
-			StartProtection(new(), StopLoss);
-		}
-
-		private void ProcessCandle(ICandleMessage candle, IIndicatorValue adxValue)
-		{
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			if (!IsFormedAndOnlineAndAllowTrading())
-				return;
-
-			// Update average volume calculation
-			var currentVolume = candle.TotalVolume;
+			// Strong trend detected with above average volume
 			
-			if (_volumeCounter < VolumeAvgPeriod)
+			if (diPlusValue > diMinusValue && Position <= 0)
 			{
-				_volumeCounter++;
-				_averageVolume = ((_averageVolume * (_volumeCounter - 1)) + currentVolume) / _volumeCounter;
-			}
-			else
-			{
-				_averageVolume = (_averageVolume * (VolumeAvgPeriod - 1) + currentVolume) / VolumeAvgPeriod;
-			}
-
-			var adxTyped = (AverageDirectionalIndexValue)adxValue;
-			var diPlusValue = adxTyped.Dx.Plus;
-			var diMinusValue = adxTyped.Dx.Minus;
-			var adxMa = adxTyped.MovingAverage;
-
-			// Check if volume is above average
-			var isVolumeAboveAverage = currentVolume > _averageVolume;
-
-			LogInfo($"Candle: {candle.OpenTime}, Close: {candle.ClosePrice}, " +
-				   $"ADX: {adxMa}, DI+: {diPlusValue}, DI-: {diMinusValue}, " +
-				   $"Volume: {currentVolume}, Avg Volume: {_averageVolume}");
-
-			// Trading rules
-			if (adxMa > AdxThreshold && isVolumeAboveAverage)
-			{
-				// Strong trend detected with above average volume
+				// Bullish trend - DI+ > DI-
+				var volume = Volume + Math.Abs(Position);
+				BuyMarket(volume);
 				
-				if (diPlusValue > diMinusValue && Position <= 0)
-				{
-					// Bullish trend - DI+ > DI-
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-					
-					LogInfo($"Buy signal: Strong trend (ADX: {adxMa}) with DI+ > DI- and high volume. Volume: {volume}");
-				}
-				else if (diMinusValue > diPlusValue && Position >= 0)
-				{
-					// Bearish trend - DI- > DI+
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-					
-					LogInfo($"Sell signal: Strong trend (ADX: {adxMa}) with DI- > DI+ and high volume. Volume: {volume}");
-				}
+				LogInfo($"Buy signal: Strong trend (ADX: {adxMa}) with DI+ > DI- and high volume. Volume: {volume}");
 			}
-			// Exit conditions
-			else if (adxMa < AdxThreshold * 0.8m)
+			else if (diMinusValue > diPlusValue && Position >= 0)
 			{
-				// Trend weakening - exit all positions
-				if (Position > 0)
-				{
-					SellMarket(Position);
-					LogInfo($"Exit long: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
-				}
-				else if (Position < 0)
-				{
-					BuyMarket(Math.Abs(Position));
-					LogInfo($"Exit short: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
-				}
+				// Bearish trend - DI- > DI+
+				var volume = Volume + Math.Abs(Position);
+				SellMarket(volume);
+				
+				LogInfo($"Sell signal: Strong trend (ADX: {adxMa}) with DI- > DI+ and high volume. Volume: {volume}");
 			}
-			// Check if DI+/DI- cross to exit positions
-			else if (diPlusValue < diMinusValue && Position > 0)
+		}
+		// Exit conditions
+		else if (adxMa < AdxThreshold * 0.8m)
+		{
+			// Trend weakening - exit all positions
+			if (Position > 0)
 			{
-				// DI+ crosses below DI- while in long position
 				SellMarket(Position);
-				LogInfo($"Exit long: DI+ crossed below DI-. Position: {Position}");
+				LogInfo($"Exit long: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
 			}
-			else if (diPlusValue > diMinusValue && Position < 0)
+			else if (Position < 0)
 			{
-				// DI+ crosses above DI- while in short position
 				BuyMarket(Math.Abs(Position));
-				LogInfo($"Exit short: DI+ crossed above DI-. Position: {Position}");
+				LogInfo($"Exit short: ADX weakening below {AdxThreshold * 0.8m}. Position: {Position}");
 			}
+		}
+		// Check if DI+/DI- cross to exit positions
+		else if (diPlusValue < diMinusValue && Position > 0)
+		{
+			// DI+ crosses below DI- while in long position
+			SellMarket(Position);
+			LogInfo($"Exit long: DI+ crossed below DI-. Position: {Position}");
+		}
+		else if (diPlusValue > diMinusValue && Position < 0)
+		{
+			// DI+ crosses above DI- while in short position
+			BuyMarket(Math.Abs(Position));
+			LogInfo($"Exit short: DI+ crossed above DI-. Position: {Position}");
 		}
 	}
 }

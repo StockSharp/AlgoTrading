@@ -6,216 +6,215 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-namespace StockSharp.Samples.Strategies
+namespace StockSharp.Samples.Strategies;
+
+/// <summary>
+/// Strategy that uses Donchian Channels to identify breakouts
+/// and volume confirmation to filter signals.
+/// Enters positions when price breaks above/below Donchian Channel with increased volume.
+/// </summary>
+public class DonchianVolumeStrategy : Strategy
 {
+	private readonly StrategyParam<int> _donchianPeriod;
+	private readonly StrategyParam<int> _volumePeriod;
+	private readonly StrategyParam<decimal> _volumeMultiplier;
+	private readonly StrategyParam<decimal> _stopLossPercent;
+	private readonly StrategyParam<DataType> _candleType;
+
+	private decimal _averageVolume;
+
 	/// <summary>
-	/// Strategy that uses Donchian Channels to identify breakouts
-	/// and volume confirmation to filter signals.
-	/// Enters positions when price breaks above/below Donchian Channel with increased volume.
+	/// Donchian Channels period.
 	/// </summary>
-	public class DonchianVolumeStrategy : Strategy
+	public int DonchianPeriod
 	{
-		private readonly StrategyParam<int> _donchianPeriod;
-		private readonly StrategyParam<int> _volumePeriod;
-		private readonly StrategyParam<decimal> _volumeMultiplier;
-		private readonly StrategyParam<decimal> _stopLossPercent;
-		private readonly StrategyParam<DataType> _candleType;
+		get => _donchianPeriod.Value;
+		set => _donchianPeriod.Value = value;
+	}
 
-		private decimal _averageVolume;
+	/// <summary>
+	/// Volume averaging period.
+	/// </summary>
+	public int VolumePeriod
+	{
+		get => _volumePeriod.Value;
+		set => _volumePeriod.Value = value;
+	}
 
-		/// <summary>
-		/// Donchian Channels period.
-		/// </summary>
-		public int DonchianPeriod
+	/// <summary>
+	/// Volume multiplier for breakout confirmation.
+	/// </summary>
+	public decimal VolumeMultiplier
+	{
+		get => _volumeMultiplier.Value;
+		set => _volumeMultiplier.Value = value;
+	}
+
+	/// <summary>
+	/// Stop loss percentage.
+	/// </summary>
+	public decimal StopLossPercent
+	{
+		get => _stopLossPercent.Value;
+		set => _stopLossPercent.Value = value;
+	}
+
+	/// <summary>
+	/// Candle type for strategy calculation.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
+
+	/// <summary>
+	/// Strategy constructor.
+	/// </summary>
+	public DonchianVolumeStrategy()
+	{
+		_donchianPeriod = Param(nameof(DonchianPeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 50, 10);
+
+		_volumePeriod = Param(nameof(VolumePeriod), 20)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 30, 5);
+
+		_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
+			.SetGreaterThanZero()
+			.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm breakout", "Indicators")
+			.SetCanOptimize(true)
+			.SetOptimize(1.0m, 2.0m, 0.5m);
+
+		_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
+			.SetCanOptimize(true)
+			.SetOptimize(1.0m, 3.0m, 0.5m);
+
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
+	}
+
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
+
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+
+		_averageVolume = 0;
+	}
+
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
+		// Create indicators
+		var donchianHigh = new Highest
 		{
-			get => _donchianPeriod.Value;
-			set => _donchianPeriod.Value = value;
-		}
+			Length = DonchianPeriod
+		};
 
-		/// <summary>
-		/// Volume averaging period.
-		/// </summary>
-		public int VolumePeriod
+		var donchianLow = new Lowest
 		{
-			get => _volumePeriod.Value;
-			set => _volumePeriod.Value = value;
-		}
+			Length = DonchianPeriod
+		};
 
-		/// <summary>
-		/// Volume multiplier for breakout confirmation.
-		/// </summary>
-		public decimal VolumeMultiplier
+		var volumeAverage = new SimpleMovingAverage
 		{
-			get => _volumeMultiplier.Value;
-			set => _volumeMultiplier.Value = value;
-		}
+			Length = VolumePeriod
+		};
 
-		/// <summary>
-		/// Stop loss percentage.
-		/// </summary>
-		public decimal StopLossPercent
+		// Create subscription and bind indicators
+		var subscription = SubscribeCandles(CandleType);
+
+		subscription
+			.BindEx(volumeAverage, donchianHigh, donchianLow, ProcessDonchian)
+			.Start();
+
+		// Setup position protection
+		StartProtection(
+			takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
+			stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage
+		);
+
+		// Setup chart visualization if available
+		var area = CreateChartArea();
+		if (area != null)
 		{
-			get => _stopLossPercent.Value;
-			set => _stopLossPercent.Value = value;
-		}
-
-		/// <summary>
-		/// Candle type for strategy calculation.
-		/// </summary>
-		public DataType CandleType
-		{
-			get => _candleType.Value;
-			set => _candleType.Value = value;
-		}
-
-		/// <summary>
-		/// Strategy constructor.
-		/// </summary>
-		public DonchianVolumeStrategy()
-		{
-			_donchianPeriod = Param(nameof(DonchianPeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("Donchian Period", "Period of the Donchian Channel", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 50, 10);
-
-			_volumePeriod = Param(nameof(VolumePeriod), 20)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume Period", "Period for volume averaging", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(10, 30, 5);
-
-			_volumeMultiplier = Param(nameof(VolumeMultiplier), 1.5m)
-				.SetGreaterThanZero()
-				.SetDisplay("Volume Multiplier", "Multiplier for average volume to confirm breakout", "Indicators")
-				.SetCanOptimize(true)
-				.SetOptimize(1.0m, 2.0m, 0.5m);
-
-			_stopLossPercent = Param(nameof(StopLossPercent), 2.0m)
-				.SetGreaterThanZero()
-				.SetDisplay("Stop Loss %", "Stop loss as percentage of entry price", "Risk Management")
-				.SetCanOptimize(true)
-				.SetOptimize(1.0m, 3.0m, 0.5m);
-
-			_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-				.SetDisplay("Candle Type", "Type of candles to use", "General");
-		}
-
-		/// <inheritdoc />
-		public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
-			return [(Security, CandleType)];
-		}
-
-		/// <inheritdoc />
-		protected override void OnReseted()
-		{
-			base.OnReseted();
-
-			_averageVolume = 0;
-		}
-
-		protected override void OnStarted(DateTimeOffset time)
-		{
-			base.OnStarted(time);
-			// Create indicators
-			var donchianHigh = new Highest
+			DrawCandles(area, subscription);
+			
+			// Create a composite indicator for visualization purposes
+			var donchian = new DonchianChannels
 			{
 				Length = DonchianPeriod
 			};
+			
+			DrawIndicator(area, donchian);
+			DrawOwnTrades(area);
+		}
+	}
 
-			var donchianLow = new Lowest
+	/// <summary>
+	/// Process Donchian Channel values.
+	/// </summary>
+	private void ProcessDonchian(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
+	{
+		// Skip unfinished candles
+		if (candle.State != CandleStates.Finished)
+			return;
+
+		if (volumeAvgValue.IsFinal)
+		{
+			_averageVolume = volumeAvgValue.ToDecimal();
+		}
+
+		// Check if strategy is ready to trade
+		if (!IsFormedAndOnlineAndAllowTrading() || _averageVolume <= 0)
+			return;
+
+		var highestDec = highestValue.ToDecimal();
+		var lowestDec = lowestValue.ToDecimal();
+
+		// Calculate middle line of Donchian Channel
+		var middleLine = (highestDec + lowestDec) / 2;
+
+		// Check if volume condition is met
+		var isVolumeHighEnough = candle.TotalVolume > _averageVolume * VolumeMultiplier;
+
+		if (isVolumeHighEnough)
+		{
+			// Long entry: price breaks above highest high with increased volume
+			if (candle.ClosePrice > highestDec && Position <= 0)
 			{
-				Length = DonchianPeriod
-			};
-
-			var volumeAverage = new SimpleMovingAverage
+				var volume = Volume + Math.Abs(Position);
+				BuyMarket(volume);
+			}
+			// Short entry: price breaks below lowest low with increased volume
+			else if (candle.ClosePrice < lowestDec && Position >= 0)
 			{
-				Length = VolumePeriod
-			};
-
-			// Create subscription and bind indicators
-			var subscription = SubscribeCandles(CandleType);
-
-			subscription
-				.BindEx(volumeAverage, donchianHigh, donchianLow, ProcessDonchian)
-				.Start();
-
-			// Setup position protection
-			StartProtection(
-				takeProfit: new Unit(0, UnitTypes.Absolute), // No take profit
-				stopLoss: new Unit(StopLossPercent, UnitTypes.Percent) // Stop loss as percentage
-			);
-
-			// Setup chart visualization if available
-			var area = CreateChartArea();
-			if (area != null)
-			{
-				DrawCandles(area, subscription);
-				
-				// Create a composite indicator for visualization purposes
-				var donchian = new DonchianChannels
-				{
-					Length = DonchianPeriod
-				};
-				
-				DrawIndicator(area, donchian);
-				DrawOwnTrades(area);
+				var volume = Volume + Math.Abs(Position);
+				SellMarket(volume);
 			}
 		}
 
-		/// <summary>
-		/// Process Donchian Channel values.
-		/// </summary>
-		private void ProcessDonchian(ICandleMessage candle, IIndicatorValue volumeAvgValue, IIndicatorValue highestValue, IIndicatorValue lowestValue)
+		// Exit conditions based on middle line
+		if (Position > 0 && candle.ClosePrice < middleLine)
 		{
-			// Skip unfinished candles
-			if (candle.State != CandleStates.Finished)
-				return;
-
-			if (volumeAvgValue.IsFinal)
-			{
-				_averageVolume = volumeAvgValue.ToDecimal();
-			}
-
-			// Check if strategy is ready to trade
-			if (!IsFormedAndOnlineAndAllowTrading() || _averageVolume <= 0)
-				return;
-
-			var highestDec = highestValue.ToDecimal();
-			var lowestDec = lowestValue.ToDecimal();
-
-			// Calculate middle line of Donchian Channel
-			var middleLine = (highestDec + lowestDec) / 2;
-
-			// Check if volume condition is met
-			var isVolumeHighEnough = candle.TotalVolume > _averageVolume * VolumeMultiplier;
-
-			if (isVolumeHighEnough)
-			{
-				// Long entry: price breaks above highest high with increased volume
-				if (candle.ClosePrice > highestDec && Position <= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					BuyMarket(volume);
-				}
-				// Short entry: price breaks below lowest low with increased volume
-				else if (candle.ClosePrice < lowestDec && Position >= 0)
-				{
-					var volume = Volume + Math.Abs(Position);
-					SellMarket(volume);
-				}
-			}
-
-			// Exit conditions based on middle line
-			if (Position > 0 && candle.ClosePrice < middleLine)
-			{
-				SellMarket(Math.Abs(Position));
-			}
-			else if (Position < 0 && candle.ClosePrice > middleLine)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
+			SellMarket(Math.Abs(Position));
+		}
+		else if (Position < 0 && candle.ClosePrice > middleLine)
+		{
+			BuyMarket(Math.Abs(Position));
 		}
 	}
 }

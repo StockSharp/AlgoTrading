@@ -221,7 +221,7 @@ public class MacdBbRsiStrategy : Strategy
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> new[] { (Security, CandleType) };
+		=> [(Security, CandleType)];
 
 	/// <inheritdoc />
 	protected override void OnReseted()

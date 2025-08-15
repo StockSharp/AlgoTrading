@@ -126,7 +126,7 @@ public class MtfBbStrategy : Strategy
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		=> new[] { (Security, CandleType), (Security, MtfCandleType) };
+		=> [(Security, CandleType), (Security, MtfCandleType)];
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
