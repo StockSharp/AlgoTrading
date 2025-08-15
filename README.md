@@ -11,6 +11,10 @@ This repository provides detailed examples and source code for various algorithm
 - **Community Collaboration**: Encourage the community to contribute their own strategies, enhancements, and insights, sharing knowledge and best practices for trading automation.
 - **Showcase Capabilities**: Demonstrate the versatility and power of the StockSharp platform in developing, testing, and optimizing trading strategies and algorithmic solutions.
 
+## Strategy Source Code
+
+All strategy implementations in source code form are located in the `API` directory. These files can be loaded as standalone programs through the StockSharp API or opened directly in Designer.
+
 ## Contributing
 
 We welcome contributions from all users! If you have a strategy, a feature from the [Strategy Designer](https://doc.stocksharp.com/topics/designer.html), or a piece of code that offers educational insights or is innovative in terms of trading automation, please consider sharing it with the community. To contribute, follow these steps:

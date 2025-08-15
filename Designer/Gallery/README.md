@@ -1,15 +1,15 @@
 # Strategy Source Code Directory
 
-This directory contains the source codes of trading strategies available in the [Strategy Gallery](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) section of the [Designer](https://stocksharp.com/store/strategy-designer/) platform. The strategies are presented in both [schematic form](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) and [C# code](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html), providing users with a range of customizable trading solutions.
+This directory contains schematic representations of trading strategies available in the [Strategy Gallery](https://doc.stocksharp.com/topics/designer/strategy_gallery.html) section of the [Designer](https://stocksharp.com/store/strategy-designer/) platform. Strategy source code files are stored in the [API](../../API) directory, where they can be loaded as standalone programs through the StockSharp API or imported into Designer.
 
 ## Overview
 
-The Strategy Gallery in [Designer](https://stocksharp.com/store/strategy-designer/) offers a diverse collection of trading strategies developed by the community and StockSharp experts. This directory serves as a repository for the source codes of these strategies, enabling users to explore, modify, and potentially enhance the strategies according to their trading needs.
+The Strategy Gallery in [Designer](https://stocksharp.com/store/strategy-designer/) offers a diverse collection of trading strategies developed by the community and StockSharp experts. This directory serves as a repository for schematic versions of these strategies, enabling users to explore, modify, and potentially enhance them according to their trading needs. Source code implementations are available in the [API](../../API) directory.
 
 ## Contents
 
 - **Schematic Strategies**: Diagrammatic representations of trading strategies that [visually depict](https://doc.stocksharp.com/topics/designer/strategies/using_visual_designer.html) the flow and conditions of trading operations. These are ideal for users who prefer a visual approach to strategy design.
-- **C# Code Strategies**: Source code files [written in C#](https://doc.stocksharp.com/topics/designer/strategies/using_csharp.html), offering a deeper level of customization and control. These files cater to users who are comfortable with programming and wish to implement complex logic or algorithms directly.
+- **C# Code Strategies**: Strategy source code files are located in the [API](../../API) directory. They can be loaded as standalone programs via the StockSharp API or imported into Designer for further customization.
 
 ## Usage
 
@@ -17,7 +17,7 @@ Users can download these strategies to study the underlying logic, [test](https:
 
 ## Contributing
 
-While this directory primarily hosts strategies developed for the Designer platform, contributions from the community are welcome. Users who have developed their own strategies and wish to share them with the StockSharp community can submit their schematic or code files for inclusion in the gallery.
+While this directory primarily hosts strategies developed for the Designer platform, contributions from the community are welcome. Users who have developed their own strategies and wish to share them with the StockSharp community can submit their schematic files for inclusion here, while source code contributions should be added to the [API](../../API) directory.
 
 ## Educational Value
 
