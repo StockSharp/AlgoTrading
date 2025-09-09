@@ -1,0 +1,758 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Joris Duyck
+
+//@version=4
+study("Matrix functions -  JD")
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// The arrays provided in Pinescript are linear 1D strucures that can be seen either as a large vertical stack or
+// a horizontal row containing a list of values, colors, bools,..
+//
+// With the FUNCTIONS in this script the 1D ARRAY LIST can be CONVERTED INTO A 2D MATRIX form
+//
+//
+///////////////////////////////////////////
+/// BASIC INFO ON THE MATRIX STRUCTURE: ///
+///////////////////////////////////////////
+//
+// The matrix is set up as an 2D structure and is devided in ROWS and COLUMNS.
+//  following the standard mathematical notation:
+//
+//      a 3 x 4 matrix =          4 columns
+//                                 0 1 2 3  column index
+//                              0 [a b c d]
+//                       3 rows 1 [e f g h]
+//                              2 [i j k l]
+//                            row
+//                           index
+//
+// With the use of some purpose-built functions, values can be placed or retrieved in a specific column of a certain row
+//  this can be done by intuitively using row_nr and column_nr coördinates,
+//  without having to worry on what exact index of the Pine array this value is located (the functions do these conversions for you)
+//
+//
+// the syntax I propose for the 2D Matrix array has the following structure:
+//
+//  - the array starts with 2 VALUES describing the DIMENSION INFORMATION, (rows, columns)
+//      these are ignored in the actual calculations and serve as a metadata header (similar to the "location, time,... etc." data that is stored in photo files)
+//      so the array always carries it's own info about the nr. of rows and columns and doesn't need is seperate "info" file!
+//
+//      To stay consistent with the standard Pinescript (array and [lookback]) indexing:
+//      - indexes for sheets and columns start from 0 (first) and run up to the (total nr of sheets or columns) - 1
+//      - indexes for rows also start from 0 (most recent, cfr.[lookback]) and run up to the (total nr of rows) - 1
+//
+//  - this 2 value metadata header is followed by the actual df data
+//      the actual data array can consist of (100,000 - 2) usable items,
+//
+//      In a theoretical example, you can have a matrix with almost 20,000 rows with each 5 columns of data (eg. open, high, low, close, volume) in it!!!
+//
+///////////////////////////////////
+/// SCHEMATIC OF THE STRUCTURE: ///
+///////////////////////////////////
+//
+////// (metadata header with dimensions info)
+//
+//                (0)             (1)            (array index)
+//       [nr_of_rows/records, nr_of_columns,
+//
+//
+////// (actual matrix array data)
+//
+//                  0             1             2               3                   column_index
+//
+//                 (2)           (3)           (4)             (5)            (array index)
+//        0    record0_val0, record0_val1, record0_val2, record0_val3, ...,
+//
+//                 (6)           (7)           (8)             (9)            (array index)
+//        1    record1_val0, record1_val1, record1_val2, record1_val3, ...,
+//
+//                 (10)          (11)          (12)            (13)            (array index)
+//        2    record2_val0, record2_val1, record2_val2, record2_val3, ...,
+//
+//        3    ...
+//
+// row_index
+//
+////////////////////////////////////
+/// DATA MANIPULATION FUNCTIONS: ///
+////////////////////////////////////
+//
+// A set of functions are implemented to write info to and retrieve info from the dataframe.
+//  Of course the possibilities are not limited to the functions here, these were written because they were needed for the script!
+//  A whole list of other functions can be easily written for other manipulation purposes.
+//  The ones written in the script are 2D versions of most of the functions that are provided for normal 1D arrays.
+//
+//  Feel free to use the functions library below in your scripts! A little shoutout would be nice, of course!!
+//
+//
+///////////////////////////////////////////////////////////////////////
+/// LIST OF FUNCTIONS contained in this script:                     ///
+/// (many other can of course be written, using the same structure) ///
+///////////////////////////////////////////////////////////////////////
+//
+// - INFO functions
+//      * get the number of COLUMNS
+//      * get the number of ROWS
+//      * get the total SIZE (number of columns, number of rows)
+//
+// - INITIALISATION and SET functions (commands to build the 2D matrix)
+//      * MATRIX INITIALISATION function, builds 2D matrix with dimensional metadata/size in first 2 values //
+//          a new matrix array is built (cfr. the conventions I propose above) containing a certain nr of rows and columns
+//      * function to SET a single value in a certain row/lookback period and column
+//
+// - GET functions (to retrieve info from the 2D matrix)
+//      * function to GET/retrieve a single VALUE from a certain row/lookback period and column
+//      * function to cut of the metadata header and return the array body (as an array)
+//      * function to GET/retrieve the values from a ROW/RECORD from a certain row/lookback period, the values are returned as an array
+//
+// - 1D - 2D COORDINATE CONVERSION FUNCTIONS (handy with for loop indexes) ///
+//      * function to get the ROW INDEX in a 2D matrix from the 1D array index
+//      * function to get the COLUMN INDEX in a 2D matrix from the 1D array index
+//      * function to get (row, column) coordinates in a 2D matrix from the 1D array index
+//      * function to get the 1D array index from (row, column) coordinates in a 2D matrix
+//
+// - Matrix MANIPULATION functions
+//      * function to ADD a ROW/RECORD on the TOP of the array, shift the whole list one down and REMOVE the OLDEST row/record
+//          (2D version of "unshift" + "pop" but with a whole row at once)
+//      * function to REMOVE one or more ROWS/RECORDS from a 2D matrix
+//          (if from_row == to_row, only this row is removed)
+//      * function to REMOVE one or more COLUMNS from a 2D matrix
+//          (if from_column == to_column, only this column is removed)
+//      * function to INSERT an ARRAY of ROWS/RECORDS at a certain row number in a 2D matrix
+//      * function to INSERT an ARRAY of COLUMNS at a certain column number in a 2D matrix
+//      * function to APPEND/ADD an ARRAY of ROWS/RECORDS to the BOTTOM of a 2D matrix
+//      * function to APPEND/ADD an ARRAY of COLUMNS to the SIDE of a 2D matrix
+//      * function to POP/REMOVE and return the last ROW/RECORD from the BOTTOM of a 2D matrix
+//      * function to POP/REMOVE and return the last column from the SIDE of a 2D matrix
+//
+// - function to print a matrix
+//      This function is mainly used for debugging purposes and displays the array as a 2D matrix notation
+//
+//
+// Enjoy!
+// JD.
+//
+// #NotTradingAdvice #DYOR
+//
+//  Disclaimer.
+// I AM NOT A FINANCIAL ADVISOR.
+// THESE IDEAS ARE NOT ADVICE AND ARE FOR EDUCATION PURPOSES ONLY.
+// ALWAYS DO YOUR OWN RESEARCH!
+//}
+
+// Function declarations //
+//{
+/////////////////////////////////////////////////////////////////////////////////
+///                             Matrix Functions                              ///
+/////////////////////////////////////////////////////////////////////////////////
+//{
+
+/// MATRIX INFO FUNCTIONS ///
+//{
+// function to get total number of rows from a 2D matrix
+f_matrix_get_nr_of_rows(_m) =>
+//{
+    _rows = int(array.get(_m, 0))
+    _rows
+//}
+
+// function to get total number of columns from a 2D matrix
+f_matrix_get_nr_of_columns(_m) =>
+//{
+    _columns = int(array.get(_m, 1))
+    _columns
+//}
+
+// function to get total number of columns and rows from a 2D matrix
+f_matrix_get_size(_m) =>
+//{
+    _rows    = int(array.get(_m, 0))
+    _columns = int(array.get(_m, 1))
+    [_rows, _columns]
+//}
+//}
+
+/// INITIALISATION AND SET FUNCTIONS ///
+//{
+// 2D matrix init function, builds 2D matrix with dimensional metadata in first two values //
+f_matrix_init(_nr_of_rows, _nr_of_columns, _fill) =>
+//{
+    _size = int(_nr_of_rows * _nr_of_columns)
+    _m    = array.new_float(_size + 2, _fill)
+    array.set(_m, 0, _nr_of_rows), array.set(_m, 1, _nr_of_columns)
+    _m
+//}
+
+// 2D matrix init function, builds 2D matrix with dimensional metadata in first two values
+// the list of matrix elements are omported using array.from()
+f_matrix_from_list(_nr_of_rows, _nr_of_columns, _list) =>
+//{
+    _size = int(_nr_of_rows * _nr_of_columns)
+    _m    = array.new_float(_size + 2, 0)
+    array.set(_m, 0, _nr_of_rows), array.set(_m, 1, _nr_of_columns)
+    if array.size(_list) <= array.size(_m) - 2
+        for i = 0 to array.size(_list) - 1
+            array.set(_m, i + 2, array.get(_list, i))
+    _m
+//}
+
+// function to set values in 2D matrix with (row index, column index) (index for rows and columns both starts at 0 !!)
+f_matrix_set(_m, _row_index, _column_index, _val) =>
+//{
+    _columns = f_matrix_get_nr_of_columns(_m)
+    array.set(_m, 2 + int((_row_index * _columns) + _column_index), _val)
+//}
+
+// function to set all elements in a 2D matrix with a value
+f_matrix_fill(_m, _val) =>
+//{
+    array.fill(_m, _val, 2)
+//}
+//}
+
+/// GET FUNCTIONS ///
+//{
+// function to get values from 2D matrix with (row index, column index) (index for rows and columns both starts at 0 !!)
+f_matrix_get(_m, _row_index, _column_index) =>
+//{
+    _columns = f_matrix_get_nr_of_columns(_m)
+    _val     = array.get(_m, 2 + int((_row_index * _columns) + _column_index))
+    _val
+//}
+
+// function to cut of the metadata header and return the array body
+f_matrix_copy_slice_body(_m, _do_slice) =>
+//{  '_do_slice' variable should be set as:
+//      - 'false' to only make a copy,
+//         changes to the new array copy will NOT ALTER the ORIGINAL
+//      - 'true' to make a slice
+//         changes to the new array slice WILL(!) ALTER the ORIGINAL
+    _matrix_slice = array.slice(_m, 2, array.size(_m))
+    _matrix_body  = _do_slice ? _matrix_slice : array.copy(_matrix_slice)
+    // for i = 0 to 1
+    //     array.remove(_matrix_body, 0)
+    _matrix_body
+//}
+
+// function to GET/retrieve the values from a ROW/RECORD from a certain row/lookback period, the values are returned as an array
+f_matrix_get_record(_m, _row_index) =>
+//{
+    _nr_of_columns = f_matrix_get_nr_of_columns(_m)
+    _start_index   = int(2 + _row_index * _nr_of_columns)
+    _row_slice = array.slice(_m, _start_index , _start_index + _nr_of_columns)
+    _record    = array.copy(_row_slice)
+    _record
+//}
+//}
+
+/// 1D - 2D COORDINATE CONVERSION FUNCTIONS (handy with for loop indexes) ///
+//{
+// function to get row nr. in a 2D matrix from 1D index (index for rows and columns both starts at 0 !!)
+f_matrix_get_row_index(_m, _array_index) =>
+//{
+    _columns   = f_matrix_get_nr_of_columns(_m)
+    _row_index = int(floor(_array_index / _columns))
+    _row_index
+//}
+
+// function to get column nr. in a 2D matrix from 1D index (index for rows and columns both starts at 0 !!)
+f_matrix_get_column_index(_m, _array_index) =>
+//{
+    _columns      = f_matrix_get_nr_of_columns(_m)
+    _column_index = int(_array_index % _columns)
+    _column_index
+//}
+
+// function to get (row, column) coordinates in 2D matrix from 1D index (index starts at 0 and does not include the header!!)
+f_matrix_get_row_column_index(_m, _array_index) =>
+//{
+    _columns = f_matrix_get_nr_of_columns(_m)
+    _row     = int(floor(_array_index / _columns))
+    _column  = int(      _array_index % _columns)
+    [_row, _column]
+//}
+
+// function to get 1D index from (row, column) coordinates in 2D matrix (index for row and column both starts at 0 !! Index starts at 0 and does not include the header!!)
+f_matrix_get_array_index(_m, _row_index, _column_index) =>
+//{
+    _columns = f_matrix_get_nr_of_columns(_m)
+    _array_index = int(_row_index * _column_index + _column_index)
+    _array_index
+//}
+//}
+
+/// MANIPULATION FUNCTIONS ///
+//{
+// function to ADD a ROW/RECORD on the TOP of a sheet, shift the whole list one down and REMOVE the OLDEST row/record
+//          (2D version of "unshift" + "pop" but with a whole row at once)
+f_matrix_add_row(_m, _insert_array) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    [_rows_insert_array, _columns_insert_array] = f_matrix_get_size(_insert_array)
+    _size_insert_array = _columns_insert_array * _rows_insert_array
+    if _columns == _columns_insert_array
+        _insert_array_body  = f_matrix_copy_slice_body(_insert_array, false)
+        for index = (_size_insert_array - 1) to 0
+            array.insert(_m, 2, array.get(_insert_array_body, index))
+            array.pop(_m)
+        array.set(_m, 0, _rows + _rows_insert_array)
+    _m
+//}
+
+// function to remove one or more rows/records from a 2D matrix (if from_row = to_row, only this row is removed)
+f_matrix_remove_rows(_m, _from_row, _to_row) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    if not(_from_row == 0 and _to_row == _rows - 1) and not(_to_row < _from_row)
+        _start_remove_index = 2 + _from_row * _columns
+        for i = 1 to (min(_rows - 1, _to_row) - _from_row + 1) * _columns
+            array.remove(_m, max(_start_remove_index, 2))
+        array.set(_m, 0, _rows - (min(_rows - 1, _to_row) - _from_row) - 1)
+    _m
+//}
+
+// function to remove one or more columns from a 2D matrix (if from_column = to_column, only this column is removed)
+f_matrix_remove_columns(_m, _from_column, _to_column) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    if not(_from_column == 0 and _to_column == _columns - 1) and not(_to_column < _from_column)
+        for _row_nr = (_rows - 1)  to 0
+            _start_remove_index = 2 + _row_nr * _columns + _from_column
+            for i = _from_column to _to_column
+                array.remove(_m, max(_start_remove_index, 2))
+        array.set(_m, 1, _columns - (min(_columns, _to_column) - _from_column) - 1)
+    _m
+//}
+
+// function to insert an array of rows/records at a certain row number in a 2D matrix
+f_matrix_insert_array_of_rows(_m, _insert_array, _from_row) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    [_rows_insert_array, _columns_insert_array] = f_matrix_get_size(_insert_array)
+    _size_insert_array = _columns_insert_array * _rows_insert_array
+    if _columns == _columns_insert_array
+        _insert_array_body  = f_matrix_copy_slice_body(_insert_array, false)
+        _start_insert_index = 2 + min(_rows, _from_row) * _columns
+        for index = (_size_insert_array - 1) to 0
+            array.insert(_m, _start_insert_index, array.get(_insert_array_body, index))
+        array.set(_m, 0, _rows + _rows_insert_array)
+    _m
+//}
+
+// function to insert an array of columns at a certain column number in a 2D matrix
+f_matrix_insert_array_of_columns(_m, _insert_array, _from_column) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    [_rows_insert_array, _columns_insert_array] = f_matrix_get_size(_insert_array)
+    _size_insert_array = _columns_insert_array * _rows_insert_array
+    if _rows == _rows_insert_array
+        for _row_nr = (_rows - 1)  to 0
+            _start_insert_index = 2 + _row_nr * _columns + min(_columns - 1, _from_column)
+            for index = 0 to (_columns_insert_array - 1)
+                array.insert(_m,
+                 max(_start_insert_index, 2),
+                  array.get(_insert_array, int(2 + (_size_insert_array - 1) - index - ((_rows_insert_array - 1) - _row_nr) * _columns_insert_array)))
+        array.set(_m, 1, _columns + _columns_insert_array)
+    _m
+//}
+
+// function to append/add an array of rows/records to the bottom of a 2D matrix
+f_matrix_append_array_of_rows(_m, _append_array) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    [_rows_append_array, _columns_append_array] = f_matrix_get_size(_append_array)
+    if _columns == _columns_append_array
+        _append_array_body = f_matrix_copy_slice_body(_append_array, false)
+        array.concat(_m, _append_array_body)
+        array.set(_m, 0, _rows + _rows_append_array)
+    _m
+//}
+
+// function to append/add an array of columns to the side of a 2D matrix
+f_matrix_append_array_of_columns(_m, _append_array) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    [_rows_append_array, _columns_append_array] = f_matrix_get_size(_append_array)
+    _size_append_array = _columns_append_array * _rows_append_array
+    if _rows == _rows_append_array
+        for _row_nr = (_rows - 1)  to 0
+            _start_append_index = 2 + _row_nr * _columns + _columns
+            for index = 0 to (_columns_append_array - 1)
+                array.insert(_m,
+                 max(_start_append_index, 2),
+                  array.get(_append_array, int(2 + (_size_append_array - 1) - index - ((_rows_append_array - 1) - _row_nr) * _columns_append_array)))
+        array.set(_m, 1, _columns + _columns_append_array)
+    _m
+//}
+
+// function to remove the last row/record from a 2D matrix
+f_matrix_pop_row(_m) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    _return_array = array.new_float()
+    _start_remove_index = 2 + (_rows - 1) * _columns
+    for i = 1 to _columns
+        array.push(_return_array, array.get(_m, max(_start_remove_index, 2)))
+        array.remove(_m, max(_start_remove_index, 2))
+    array.set(_m, 0, _rows - 1)
+    _return_array
+//}
+
+// function to remove and return the last column from a 2D matrix
+f_matrix_pop_column(_m) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    _return_array = array.new_float()
+    for _row_nr = (_rows - 1)  to 0
+        _start_remove_index = 2 + _row_nr * _columns + (_columns - 1)
+        array.insert(_return_array, 0, array.get(_m, max(_start_remove_index, 2)))
+        array.remove(_m, max(_start_remove_index, 2))
+    array.set(_m, 1, _columns - 1)
+    _return_array
+//}
+//}
+
+/// CALCULATION FUNCTIONS ///
+//{
+f_matrix_replace(_m, _add_m) =>
+//{
+    [    _rows,     _columns] = f_matrix_get_size(_m)
+    [_add_rows, _add_columns] = f_matrix_get_size(_add_m)
+    if _rows == _add_rows and _columns == _add_columns
+        for i = 0  to _rows - 1
+            for j = 0  to _columns - 1
+                _add_value = f_matrix_get(_add_m, i, j)
+                f_matrix_set(_m, i, j, _add_value)
+    _m
+//}
+
+// function to add a certain value to every element of a 2D matrix //
+f_matrix_add_value(_m, _add_value) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    _return_array = f_matrix_init(_rows, _columns, 0)
+    for i = 0  to _rows - 1
+        for j = 0  to _columns - 1
+            _value = f_matrix_get(_m, i, j)
+            f_matrix_set(_return_array, i, j, _value + _add_value)
+    _return_array
+//}
+
+f_matrix_addition(_m, _add_m) =>
+//{
+    [    _rows,     _columns] = f_matrix_get_size(_m)
+    [_add_rows, _add_columns] = f_matrix_get_size(_add_m)
+    _return_array = f_matrix_init(_rows, _columns, 0)
+    if _rows == _add_rows and _columns == _add_columns
+        for i = 0  to _rows - 1
+            for j = 0  to _columns - 1
+                _value      = f_matrix_get(    _m, i, j)
+                _add_value = f_matrix_get(_add_m, i, j)
+                f_matrix_set(_return_array, i, j, _value + _add_value)
+    _return_array
+//}
+
+// function to add a certain value to every element of a 2D matrix //
+f_matrix_subtract_value(_m, _subtract_value) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    _return_array = f_matrix_init(_rows, _columns, 0)
+    for i = 0  to _rows - 1
+        for j = 0  to _columns - 1
+            _value = f_matrix_get(_m, i, j)
+            f_matrix_set(_return_array, i, j, _value - _subtract_value)
+    _return_array
+//}
+
+f_matrix_subtraction(_m, _subtract_m) =>
+//{
+    [         _rows,          _columns] = f_matrix_get_size(_m)
+    [_subtract_rows, _subtract_columns] = f_matrix_get_size(_subtract_m)
+    _return_array = f_matrix_init(_rows, _columns, 0)
+    if _rows == _subtract_rows and _columns == _subtract_columns
+        for i = 0  to _rows - 1
+            for j = 0  to _columns - 1
+                _value           = f_matrix_get(    _m, i, j)
+                _subtract_value = f_matrix_get(_subtract_m, i, j)
+                f_matrix_set(_return_array, i, j, _value - _subtract_value)
+    _return_array
+//}
+
+// function to scale/multiply a 2D matrix by a certain value //
+f_matrix_scalar_multipy(_m, _scalar) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    _return_array = f_matrix_init(_rows, _columns, 0)
+    for i = 0  to _rows - 1
+        for j = 0  to _columns - 1
+            _value = f_matrix_get(_m, i, j)
+            f_matrix_set(_return_array, i, j, _value * _scalar)
+    _return_array
+//}
+
+// function to transpose a 2D matrices //
+f_matrix_transpose(_m) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    _return_array = f_matrix_init(_columns, _rows, 0)
+    for i = 0  to _rows - 1
+        for j = 0  to _columns - 1
+            _value = f_matrix_get(_m, i, j)
+            f_matrix_set(_return_array, j, i, _value)
+    _return_array
+//}
+
+// function for ELEMENT WISE MULTIPLICATION of 2D matrices, returns matrix c //
+f_matrix_mult_elem(_a, _b) =>
+//{
+    [_rows_a, _columns_a] = f_matrix_get_size(_a)
+    [_rows_b, _columns_b] = f_matrix_get_size(_b)
+    _return_array = f_matrix_init(_rows_a, _columns_a, 0)
+    if _rows_a == _rows_b and _columns_a == _columns_b
+        for i = 0  to _rows_a - 1
+            for j = 0  to _columns_a - 1
+                _value_a = f_matrix_get( _a, i, j)
+                _value_b = f_matrix_get( _b, i, j)
+                f_matrix_set(_return_array, i, j, _value_a * + _value_b)
+    _return_array
+//}
+
+// function for DOT PROCUCT MULTIPLICATION of 2D matrices, returns matrix c //
+f_matrix_mult(_a, _b) =>
+//{
+    // get matrix metadata //
+    [_a_row, _a_col] = f_matrix_get_size(_a), _a_size = _a_row * _a_col
+    [_b_row, _b_col] = f_matrix_get_size(_b), _b_size = _b_row * _b_col
+    _c_row = _a_row, _c_col = _b_col        , _c_size = _a_row * _b_col
+    _c   = f_matrix_init(_a_row, _b_col, 0)
+    // error check //
+    if _a_col != _b_row
+        array.fill(_c, 0)
+    // multiplication //
+    else
+        _a_row_nr = 0, _a_col_nr = 0
+        _b_row_nr = 0, _b_col_nr = 0
+        _c_row_nr = 0, _c_col_nr = 0
+        for i = 0 to (_c_size -1)
+            i_val = 0.0
+            _c_row_nr := floor(i / _b_col)
+            // row_nr := row_nr + ((i % _b_x) == 0 ? 1 : 0)
+            _c_col_nr := i % _b_col
+            for j = 0 to (_a_col - 1)
+                _a_row_nr :=     _c_row_nr , _a_col_nr := j % _a_col
+                _b_row_nr := j % _a_col    , _b_col_nr := _c_col_nr
+                i_val := i_val + f_matrix_get(_a, _a_row_nr, _a_col_nr) * f_matrix_get(_b, _b_row_nr, _b_col_nr)
+            array.set(_c, 2 + i, i_val)
+    // return //
+    _c
+//}
+
+// Matrix Determinants //
+//{
+// function to calculate the determinant of 2D matrices //
+f_matrix_determinant_2x2(_m) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    var float _determinant = na
+    // error check //
+    if _rows == _columns and _rows == 2
+        // matrix form:
+        //      |a   b|
+        // det: |     |  =  a * d - c * b
+        //      |c   d|
+
+        _a = f_matrix_get(_m, 0, 0), _b = f_matrix_get(_m, 0, 1)
+        _c = f_matrix_get(_m, 1, 0), _d = f_matrix_get(_m, 1, 1)
+        _determinant := _a * _d - _c * _b
+    _determinant
+
+f_matrix_determinant_3x3(_m) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    var float _determinant = na
+    // error check //
+    if _rows == _columns and _rows == 3
+        // matrix form:
+        //      |a  b  c|
+        // det: |d  e  f|  =  a * e * i  +  b * f * g  +  c * d * h  -  g * e * c   - d * b * i  -  a * h * f
+        //      |g  h  i|
+        _determinant := 0.0
+        for i = 0 to _columns - 1
+            _cofactor_matrix = array.copy(_m)
+            f_matrix_remove_rows(   _cofactor_matrix, 0, 0)
+            f_matrix_remove_columns(_cofactor_matrix, i, i)
+            _determinant := _determinant + pow(-1, i + 1) * f_matrix_get(_m, 0, i) * f_matrix_determinant_2x2(_cofactor_matrix)
+    _determinant
+//}
+//}
+
+f_matrix_determinant_4x4(_m) =>
+//{
+    [_rows, _columns] = f_matrix_get_size(_m)
+    var float _determinant = na
+    // error check //
+    if _rows == _columns and _rows == 4
+        _determinant := 0.0
+        for i = 0 to _columns - 1
+            _cofactor_matrix = array.copy(_m)
+            f_matrix_remove_rows(   _cofactor_matrix, 0, 0)
+            f_matrix_remove_columns(_cofactor_matrix, i, i)
+            _determinant := _determinant + pow(-1, i + 1) * f_matrix_get(_m, 0, i) * f_matrix_determinant_3x3(_cofactor_matrix)
+    _determinant
+//}
+//}
+//}
+
+// function to print matrix
+f_matrix_print(_m) =>
+//{
+    _text = "(" + tostring(array.get(_m, 0)) + "x" + tostring(array.get(_m, 1)) + ")"
+    _text := _text + "\n" + "\n"+"["
+    for i = 2 to array.size(_m) - 1
+        _text := _text + (i == 2 ? "" : ((i - 2) % array.get(_m, 1)) == 0 ? "]" + "\n" + "[" : " ") + tostring(array.get(_m, i))
+    _text := _text + "]"
+//}
+//}
+/////////////////////////////////////////////////////////////////////////////////
+
+/// test section ///
+// set test matrices
+//{
+a = f_matrix_from_list(3, 4, array.from(
+                       11, 12, 13, 14,
+                       21, 22, 23, 24,
+                       31, 32, 33, 34))
+
+b = array.copy(a)
+
+// array to test add row functions
+insert_row = f_matrix_from_list( 1, 4, array.from(
+                                 10, 20, 30, 40))
+
+// array to test insert/append row functions
+insert_row_array = f_matrix_from_list(2, 4, array.from(
+                                      10, 20 ,30, 40,
+                                      50, 60, 70, 80))
+
+// array to test add column functions
+insert_column = f_matrix_from_list(3, 1, array.from(
+                                   10,
+                                   20,
+                                   30,
+                                   40))
+
+// array to test insert/append column functions
+insert_column_array = f_matrix_from_list(3, 2, array.from(
+                                         10, 20,
+                                         30, 40,
+                                         50, 60))
+
+
+// array to test multiplication function
+// multiplication_array = f_matrix_init(4, 2, 0)
+// entering column values
+multiplication_array = f_matrix_from_list(4, 2, array.from(
+                                          2, 3,
+                                          2, 3,
+                                          2, 3,
+                                          2, 3))
+
+// array to test determinant function
+determinant_array = f_matrix_from_list(4, 4, array.from(
+                                       4, 3, 2, 2,
+                                       0, 1,-3, 3,
+                                       0,-1, 3, 3,
+                                       0, 3, 1, 1))
+//}
+
+// parameters to check behavior of functions
+//{
+x = input(0, title="from")
+y = input(0, title="to (to chose only 1 row or column, set the same value for 'from' and 'to')")
+c_type = input("none", title = "result matrix", options = ["none", "add rows to top and shift list", "get row/record from list", "remove array of rows", "remove array of columns", "insert array of rows",
+                                                           "insert array of columns", "append array of rows", "append array of columns", "pop last row" , "pop last column", "matrix multiplication",
+                                                           "matrix transposition", "matrix determinant"])
+//}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/// test function calls ///                                                                                                   //
+///////////////////////////
+//                                                                                                                            //
+// almost all functions can be called with or without a return array //                                                       //
+// for example, both notations below can be used:                                                                             //
+//                                                                                                                            //
+//              c = f_matrix_append_array_of_rows(a, append_array) -> returns the appended matrix as array "c"                //
+//                                                                                                                            //
+//              f_matrix_append_array_of_rows(a, append_array)     -> just runs the function without creating a new array "c" //
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+manipulation_array =
+ c_type == "add rows to top and shift list" ? insert_row :
+ c_type == "remove array of rows"           ? insert_row_array :
+ c_type == "remove array of columns"        ? insert_column_array :
+ c_type == "insert array of rows"           ? insert_row_array :
+ c_type == "insert array of columns"        ? insert_column_array :
+ c_type == "append array of rows"           ? insert_row_array :
+ c_type == "append array of columns"        ? insert_column_array :
+ c_type == "matrix multiplication"          ? multiplication_array :
+  insert_row
+
+c =
+ c_type == "add rows to top and shift list" ? f_matrix_add_row(a, manipulation_array) :
+ c_type == "remove array of rows"           ? f_matrix_remove_rows(a, x, y) :
+ c_type == "remove array of columns"        ? f_matrix_remove_columns(a, x, y) :
+ c_type == "insert array of rows"           ? f_matrix_insert_array_of_rows(a, manipulation_array, x) :
+ c_type == "insert array of columns"        ? f_matrix_insert_array_of_columns(a, manipulation_array, x) :
+ c_type == "append array of rows"           ? f_matrix_append_array_of_rows(a, manipulation_array) :
+ c_type == "append array of columns"        ? f_matrix_append_array_of_columns(a, manipulation_array) :
+ c_type == "matrix multiplication"          ? f_matrix_mult(a, manipulation_array):
+ c_type == "matrix transposition"           ? f_matrix_transpose(a) :
+ c_type == "matrix determinant"             ? determinant_array :
+  array.copy(a)
+
+e =
+ c_type == "get row/record from list" ? f_matrix_get_record(a, x) :
+ c_type == "pop last row"             ? f_matrix_pop_row(a) :
+ c_type == "pop last column"          ? f_matrix_pop_column(a) :
+  array.copy(a)
+
+// plot matrices
+//{
+// copy of original matrix before "manipulation"
+if c_type != "matrix transposition" and c_type != "matrix determinant"
+    var label lbl_b = na, label.delete(lbl_b)
+    lbl_b := label.new(bar_index - 30, 0, text = "original = " + f_matrix_print(b), textalign = text.align_left)
+
+// "manipulation" matrix
+if c_type != "remove array of rows" and c_type != "remove array of columns" and c_type != "get row/record from list"
+ and c_type != "pop last row" and c_type != "pop last column" and c_type != "matrix transposition" and c_type != "matrix determinant"
+    var label lbl_manipulation_array = na, label.delete(lbl_manipulation_array)
+    lbl_manipulation_array := label.new(bar_index - 20, 0, text = "work array = " + f_matrix_print(manipulation_array), textalign = text.align_left)
+
+// original matrix
+if c_type != "matrix multiplication" and c_type != "matrix determinant"
+    var label lbl_a = na, label.delete(lbl_a)
+    lbl_a := label.new(bar_index - 10, 0, text = "modified original= " + f_matrix_print(a), textalign = text.align_left)
+
+// function title
+var label lbl_title = na, label.delete(lbl_title)
+from    = " (from = " + tostring(x)
+from_to = from + " -> to = " +  tostring(y) + " )"
+title_txt = c_type +
+ (c_type == "remove array of rows" or c_type == "remove array of columns" ? from_to :
+  c_type == "insert array of rows" or c_type == "insert array of columns" or  c_type == "get row/record from list" ? from + " )" :
+  c_type == "matrix determinant" ? " det = " + tostring(f_matrix_determinant_4x4(determinant_array)) : "")
+lbl_title := label.new(bar_index - (c_type == "matrix determinant" ? 0 : 10), 0, text = title_txt, style = label.style_label_up,textalign = text.align_left)
+
+// copy of resulting matrix
+if c_type != "get row/record from list" and c_type != "pop last row" and c_type != "pop last column"
+    var label lbl_c = na, label.delete(lbl_c)
+    lbl_c := label.new(bar_index - (c_type == "matrix multiplication" ? 10 : 0), 0, text = "output = " + f_matrix_print(c), textalign = text.align_left)
+
+// copy of resulting matrix
+if c_type == "get row/record from list" or c_type == "pop last row" or c_type == "pop last column" and c_type != "matrix determinant"
+    var label lbl_e = na, label.delete(lbl_e)
+    lbl_e := label.new(bar_index - 0, 0, text = "output = " + tostring(e), textalign = text.align_left)
+//}

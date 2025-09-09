@@ -1,0 +1,661 @@
+//@version=6
+strategy("TrendMaster Pro 2.3 with Alerts", max_lines_count = 500, overlay = true)
+
+// === TrendMaster Pro 2.3 Settings ===
+// Dropdown menu for MA type (with names, defaulting to SMA)
+maType = input.string("SMA", title="MA Type", options=["EMA", "SMA", "SMMA"], group="MA Settings",
+     tooltip="Select the type of Moving Average: EMA, SMA, or SMMA.")
+
+// Trend filter settings (disabled by default)
+enableTrendFilter = input.bool(false, title="Enable Higher Timeframe Trend", group="Higher Timeframe Trend",
+     tooltip="If enabled, only trades in the trend direction will be executed.")
+trendMaType = input.string("EMA", title="Trend MA Type", options=["EMA", "SMA", "SMMA"], group="Higher Timeframe Trend",
+     tooltip="Select the type of Moving Average for the higher timeframe trend.")
+trendMaLength = input.int(50, title="Trend MA Length", group="Higher Timeframe Trend",
+     tooltip="The length of the Moving Average for the higher timeframe trend.")
+
+// Cross settings (only EMA settings visible)
+shortMALength = input.int(9, title="Short-Term MA Length", group="MA Settings",
+     tooltip="The length of the short Moving Average used for signal generation.")
+longMALength = input.int(21, title="Long-Term MA Length", group="MA Settings",
+     tooltip="The length of the long Moving Average used for signal generation.")
+
+// === Fixed Values for Hidden Settings ===
+// ATR Settings (fixed)
+atrLength = 14
+useAtrMultiplier = true
+atrMultiplierSL = 2.0
+
+// Bollinger Bands Settings (fixed)
+useVolatilityFilter = true
+useTrendFilter = true
+bbLength = 20
+bbMultiplier = 2.0
+
+// RSI Settings (fixed)
+useRSI = true
+rsiLength = 14
+rsiLongThreshold = 55
+rsiShortThreshold = 45
+
+// MACD Settings (fixed)
+useMACD = true
+macdFastLength = 12
+macdSlowLength = 26
+macdSignalSmoothing = 9
+
+// Stochastic Settings (
+useStochastic = true
+stochLength = 14
+stochSmoothing = 3
+stochOverbought = 80
+stochOversold = 20
+
+// ADX Settings (fixed)
+useADX = true
+adxLength = 14
+adxThreshold = 25
+
+// Fixed Values for TP/SL
+riskRewardRatio = 2.0  // Fixed value for the risk-reward ratio
+slTicksOffset = 5      // Fixed value for the SL ticks offset
+
+// === Band Power Settings ===
+bandLength = input.int(20, title="Band Length", minval=1, group="Band Power", tooltip="The length of the bands. A higher length smooths the bands more but reacts slower to price changes.")
+bandType = input.int(2, title="Band Type", options=[1, 2, 3], group="Band Power",
+     tooltip="1 = Fast, more noise, good for volatile markets.\n2 = Medium, balanced, good for general use.\n3 = Slow, very smooth, good for calm markets.")
+
+// === Support & Resistance Settings ===
+showSupportResistance = input.bool(false, title="Show Support & Resistance", group="Support & Resistance")
+pivotTypeInput = input.string(title="Calculation Method", defval="Traditional", options=["Traditional", "Fibonacci", "Woodie", "Classic", "DM", "Camarilla"], group="Support & Resistance")
+pivotAnchorInput = input.string(title="Timeframe", defval="Auto", options=["Auto", "Daily", "Weekly", "Monthly", "Quarterly", "Yearly", "Biyearly", "Triyearly", "Quinquennially", "Decennially"], group="Support & Resistance")
+isDailyBasedInput = input.bool(title="Use Daily-Based Values", defval=true, group="Support & Resistance", tooltip="If disabled, the support/resistance levels use intraday data for calculations on intraday charts.")
+maxHistoricalPivotsInput = input.int(title="Number of Historical Levels", defval=1, minval=1, maxval=200, group="Support & Resistance")
+
+// Display Options
+showLabelsInput = input.bool(title="Show Labels", defval=true, group="Display Options")
+showPricesInput = input.bool(title="Show Prices", defval=true, group="Display Options")
+positionLabelsInput = input.string("Left", "Label Position", options=["Left", "Right"], group="Display Options")
+linewidthInput = input.int(title="Line Width", defval=1, minval=1, maxval=100, group="Display Options")
+
+// Colors
+var DEFAULT_COLOR = #FB8C00
+pColorInput = input.color(DEFAULT_COLOR, "Midline", inline="Midline", group="Colors")
+pShowInput = input.bool(true, "", inline="Midline", group="Colors")
+s1ColorInput = input.color(DEFAULT_COLOR, "S1", inline="S1/R1", group="Colors")
+s1ShowInput = input.bool(true, "", inline="S1/R1", group="Colors")
+r1ColorInput = input.color(DEFAULT_COLOR, "R1", inline="S1/R1", group="Colors")
+r1ShowInput = input.bool(true, "", inline="S1/R1", group="Colors")
+s2ColorInput = input.color(DEFAULT_COLOR, "S2", inline="S2/R2", group="Colors")
+s2ShowInput = input.bool(true, "", inline="S2/R2", group="Colors")
+r2ColorInput = input.color(DEFAULT_COLOR, "R2", inline="S2/R2", group="Colors")
+r2ShowInput = input.bool(true, "", inline="S2/R2", group="Colors")
+s3ColorInput = input.color(DEFAULT_COLOR, "S3", inline="S3/R3", group="Colors")
+s3ShowInput = input.bool(true, "", inline="S3/R3", group="Colors")
+r3ColorInput = input.color(DEFAULT_COLOR, "R3", inline="S3/R3", group="Colors")
+r3ShowInput = input.bool(true, "", inline="S3/R3", group="Colors")
+s4ColorInput = input.color(DEFAULT_COLOR, "S4", inline="S4/R4", group="Colors")
+s4ShowInput = input.bool(true, "", inline="S4/R4", group="Colors")
+r4ColorInput = input.color(DEFAULT_COLOR, "R4", inline="S4/R4", group="Colors")
+r4ShowInput = input.bool(true, "", inline="S4/R4", group="Colors")
+s5ColorInput = input.color(DEFAULT_COLOR, "S5", inline="S5/R5", group="Colors")
+s5ShowInput = input.bool(true, "", inline="S5/R5", group="Colors")
+r5ColorInput = input.color(DEFAULT_COLOR, "R5", inline="S5/R5", group="Colors")
+r5ShowInput = input.bool(true, "", inline="S5/R5", group="Colors")
+
+// === Indicator Calculations ===
+// Calculate ATR
+atr = ta.atr(atrLength)
+
+// Calculate Stop-Loss
+stopLossOffset = useAtrMultiplier ? atr * atrMultiplierSL : atr
+
+// Calculate SMMA
+smma(src, len) =>
+    smma = 0.0
+    smma := na(smma[1]) ? ta.sma(src, len) : (smma[1] * (len - 1) + src) / len
+    smma
+
+// Moving Averages for Signals
+shortMA = maType == "EMA" ? ta.ema(close, shortMALength) : maType == "SMA" ? ta.sma(close, shortMALength) : smma(close, shortMALength)
+longMA = maType == "EMA" ? ta.ema(close, longMALength) : maType == "SMA" ? ta.sma(close, longMALength) : smma(close, longMALength)
+buyCondition = ta.crossover(shortMA, longMA)  // Buy-Signal
+sellCondition = ta.crossunder(shortMA, longMA) // Sell-Signal
+
+// Debug
+// plot(shortMA, title = 'Short MA', linewidth = 2, color = color.purple)
+// plot(longMA, title = 'Long MA', linewidth = 2, color = color.orange)
+
+// (c) @alexgrover
+// https://www.tradingview.com/script/gD1gDOyI-Intersection-Value-Functions/
+_getSlopes(float source1, float source2) =>
+    m1  =  ta.change(source1)
+    m2  =  ta.change(source2)
+    [m1 , m2]
+
+_commonScalingFactor(float source1, float source2, float m1, float m2) =>
+    (source1 - source2) / (m1 - m2)
+
+_crossingValue(float source1, float source2) =>
+    float out = na
+    [m1, m2] = _getSlopes(source1, source2)
+    if ta.cross(source1, source2)
+        // Find intersection value
+        out := source1 - m1 * _commonScalingFactor(source1, source2, m1, m2)
+    out
+
+var float maCrossValue = na
+if ta.cross(shortMA, longMA)
+    maCrossValue := _crossingValue(shortMA, longMA)
+
+// Debug
+// plot(maCrossValue, color = color.yellow)
+
+//---
+
+// Calculate Trend-MA
+trendMA = trendMaType == "EMA" ? ta.ema(close, trendMaLength) : trendMaType == "SMA" ? ta.sma(close, trendMaLength) : smma(close, trendMaLength)
+
+// Trend Filter Conditions
+trendFilterLong = not enableTrendFilter or close > trendMA
+trendFilterShort = not enableTrendFilter or close < trendMA
+
+// Calculate Bollinger Bands (only if one of the filters is enabled)
+var float basis = na
+var float upperBand = na
+var float lowerBand = na
+if (useVolatilityFilter or useTrendFilter)
+    basis := ta.sma(close, bbLength)
+    dev = ta.stdev(close, bbLength)
+    upperBand := basis + bbMultiplier * dev
+    lowerBand := basis - bbMultiplier * dev
+
+// Volatility Filter: Only trade if the bands are wide enough (no ranging phase)
+atrValue = ta.atr(bbLength)  // ATR value for volatility calculation
+volatilityFilter = not useVolatilityFilter or (upperBand - lowerBand) > (atrValue * bbMultiplier)
+
+// Trend Filter: Only trade if the price closes above/below the middle band (if enabled)
+bbTrendFilterLong = not useTrendFilter or close > basis  // Confirmation for an uptrend
+bbTrendFilterShort = not useTrendFilter or close < basis // Confirmation for a downtrend
+
+// Calculate RSI
+rsi = ta.rsi(close, rsiLength)
+
+// RSI Filter for Signals
+rsiFilterLong = not useRSI or rsi > rsiLongThreshold  // Bullish momentum for Long
+rsiFilterShort = not useRSI or rsi < rsiShortThreshold  // Bearish momentum for Short
+
+// Calculate MACD
+[macdLine, signalLine, _] = ta.macd(close, macdFastLength, macdSlowLength, macdSignalSmoothing)
+
+// MACD Filter for Signals
+macdFilterLong = not useMACD or macdLine > signalLine  // MACD line above signal line for Long
+macdFilterShort = not useMACD or macdLine < signalLine  // MACD line below signal line for Short
+
+// Calculate Stochastic
+k = ta.sma(ta.stoch(close, high, low, stochLength), stochSmoothing)
+d = ta.sma(k, stochSmoothing)
+
+// Stochastic Filter for Signals
+stochFilterLong = not useStochastic or k > stochOversold and k > d  // Oversold and rising momentum for Long
+stochFilterShort = not useStochastic or k < stochOverbought and k < d  // Overbought and falling momentum for Short
+
+// Calculate ADX (with ta.dmi)
+[plusDI, minusDI, adx] = ta.dmi(adxLength, adxLength)
+
+// ADX Filter for Signals
+adxFilter = not useADX or adx > adxThreshold  // Only trade if the trend is strong
+
+// Buy and Sell Conditions with All Filters
+buyConditionFiltered = buyCondition and volatilityFilter and bbTrendFilterLong and rsiFilterLong and macdFilterLong and stochFilterLong and adxFilter and trendFilterLong
+sellConditionFiltered = sellCondition and volatilityFilter and bbTrendFilterShort and rsiFilterShort and macdFilterShort and stochFilterShort and adxFilter and trendFilterShort
+
+// === Band Power Calculations ===
+maHigh = if bandType == 1
+    ta.ema(high, bandLength)  // EMA for High (fast, more noise)
+else if bandType == 2
+    ta.sma(high, bandLength)  // SMA for High (medium, balanced)
+else
+    smma(high, bandLength)    // SMMA for High (slow, very smooth)
+
+maLow = if bandType == 1
+    ta.ema(low, bandLength)   // EMA for Low (fast, more noise)
+else if bandType == 2
+    ta.sma(low, bandLength)   // SMA for Low (medium, balanced)
+else
+    smma(low, bandLength)     // SMMA for Low (slow, very smooth)
+
+// === Plot Bands (thinnest version) ===
+plot(maHigh, color=color.green, title="High Band", linewidth=1)
+plot(maLow, color=color.red, title="Low Band", linewidth=1)
+
+//------------------------------------------------------------------------------------------------------------------------------
+
+isInSession(string sess, string res = timeframe.period) =>
+    out = not na(time(res, sess))
+    out
+
+//---
+
+asiaEnabled = input.bool(true, title = 'Asia  ', inline = 'Asia')
+sessionAsiaTime = input.session('1800-0000', title = '', inline = 'Asia')
+colorAsia   = input.color(color.new(color.yellow, 90), title = '', inline = 'Asia')
+
+londonEnabled = input.bool(true, title = 'London ', inline = 'London')
+sessionLondonTime = input.session('0000-0800', title = '', inline = 'London')
+colorLondon = input.color(color.new(color.blue, 90), title = '', inline = 'London')
+
+nyAmEnabled = input.bool(true, title = 'NY AM ', inline = 'NYAM')
+sessionNYAMTime = input.session('0800-1300', title = '', inline = 'NYAM')
+colorNYAM   = input.color(color.new(color.orange, 90), title = '', inline = 'NYAM')
+
+nyPmEnabled = input.bool(true, title = 'NY PM ', inline = 'NYPM')
+sessionNYPMTime = input.session('1300-1800', title = '', inline = 'NYPM')
+colorNYPM   = input.color(color.new(color.purple, 90), title = '', inline = 'NYPM')
+
+showMon = input.bool(true, title = 'Mon', inline = 'Session Weekdays')
+showTue = input.bool(true, title = 'Tue', inline = 'Session Weekdays')
+showWed = input.bool(true, title = 'Wed', inline = 'Session Weekdays')
+showThu = input.bool(true, title = 'Thur', inline = 'Session Weekdays')
+showFri = input.bool(true, title = 'Fri', inline = 'Session Weekdays')
+
+_addSessionWeekdays(sessionString) =>
+    out = sessionString
+    hasAnySelected = showMon or showTue or showWed or showThu or showFri
+    if hasAnySelected
+        out := sessionString + ':'
+        if showMon
+            out += '2'
+        if showTue
+            out += '3'
+        if showWed
+            out += '4'
+        if showThu
+            out += '5'
+        if showFri
+            out += '6'
+    out
+
+sessionAsia = _addSessionWeekdays(sessionAsiaTime)
+sessionLondon = _addSessionWeekdays(sessionLondonTime)
+sessionNYAM = _addSessionWeekdays(sessionNYAMTime)
+sessionNYPM = _addSessionWeekdays(sessionNYPMTime)
+
+inAsiaSession = asiaEnabled and isInSession(sessionAsia)
+inLondonSession = londonEnabled and isInSession(sessionLondon)
+inNYAMSession = nyAmEnabled and isInSession(sessionNYAM)
+inNYPMSession = nyPmEnabled and isInSession(sessionNYPM)
+
+// bgcolor(inAsiaSession ? colorAsia : na, title = 'Asia')
+// bgcolor(inLondonSession ? colorLondon : na, title = 'London')
+// bgcolor(inNYAMSession ? colorNYAM : na, title = 'NY AM')
+// bgcolor(inNYPMSession ? colorNYPM : na, title = 'NY PM')
+
+// In the screenshot, you can see 'max trades per session'. I would really like to be able to set a separate maximum number of trades
+// for each session individually, instead of having just one setting that applies to all sessions combined.
+maxTradesPerSessionAsia = input.int(5, minval = 0, title = 'Asia: Max Trades Per Session')
+maxTradesPerSessionLondon = input.int(5, minval = 0, title = 'London: Max Trades Per Session')
+maxTradesPerSessionNYAM = input.int(5, minval = 0, title = 'NY AM: Max Trades Per Session')
+maxTradesPerSessionNYPM = input.int(5, minval = 0, title = 'NY PM: Max Trades Per Session')
+
+marketCloseHour = input.int(18, minval = 0, maxval = 23, title = 'Market Close Hour/Minute', inline = 'MarketClose')
+marketCloseMinute = input.int(0, minval = 0, maxval = 59, title = '', inline = 'MarketClose')
+
+// - Auto Risk (Contract Calculation)
+useAutoRisk = input.bool(false, title = 'Auto Risk, Min/Max $:', inline = 'AutoRisk')
+autoRiskAmountMin = input.int(150, title = '', inline = 'AutoRisk')
+autoRiskAmountMax = input.int(250, title = '', inline = 'AutoRisk')
+fixedContactSize = input.float(5, title = 'Fixed Contact Size')
+
+// Stop trading the day for example after 2 SLs and stop trading after 2 TPs
+// - Stop Trading if # of profit/sl reached
+tpReachedLimit = input.int(3, minval = 0, title = 'TP Reached Limit')
+slReachedLimit = input.int(3, minval = 0, title = 'SL Reached Limit')
+
+// And 2 SL Options
+// Yes, option one is the Band and options 2 the longer MAs
+enum SLOption
+    Percent = '%'
+    MACross = 'MA Cross'
+    Band = 'Band'
+
+// Trailing SL per Ticks
+enum TSOption
+    Percent = '%'
+    Ticks = 'Ticks'
+
+// Profit reached in RRR
+// A fix SL, TP is the RRR
+var tpslGroup = 'TP | SL'
+rrRatio = input.float(title = 'Risk/Reward Ratio (1 : *)', step = 0.1, defval = 2, group = tpslGroup)
+useSL = input.bool(true, title = 'SL Option | %', inline = 'SL', group = tpslGroup)
+slOption = input.enum(SLOption.Percent, title = '', inline = 'SL', group = tpslGroup)
+slPercent = input.float(1, minval = 0.1, step = 0.1, title = '', inline = 'SL', group = tpslGroup)
+useTP = input.bool(true, title = 'TP', inline = 'TP', group = tpslGroup)
+
+//---
+
+_bracketPercentage(price, sign, value) => price * (1 + sign * value / 100)
+
+_tp(p, s, sl, rrr) =>
+    p + math.sign(s) * rrr * math.abs(p - sl)
+
+_sl(p, s) =>
+    sign = math.sign(s)
+    switch slOption
+        SLOption.MACross => maCrossValue
+        SLOption.Band => sign == 1 ? maLow : sign == -1 ? maHigh : na
+        => _bracketPercentage(p, -sign, slPercent)
+
+//---
+
+var float longQty = na
+var float longEntry = na
+var float longTP = na
+var float longSL = na
+var int longTPTriggered = 0
+var int longSLTriggered = 0
+
+var float shortQty = na
+var float shortEntry = na
+var float shortTP = na
+var float shortSL = na
+var int shortTPTriggered = 0
+var int shortSLTriggered = 0
+
+var float entryPrice = na
+isInTradingSession = false
+     or inAsiaSession
+     or inLondonSession
+     or inNYAMSession
+     or inNYPMSession
+
+var tradesPerSessionCounterAsia = 0
+var tradesPerSessionCounterLondon = 0
+var tradesPerSessionCounterNYAM = 0
+var tradesPerSessionCounterNYPM = 0
+
+if inAsiaSession and not inAsiaSession[1]
+    tradesPerSessionCounterAsia := strategy.closedtrades
+
+if inLondonSession and not inLondonSession[1]
+    tradesPerSessionCounterLondon := strategy.closedtrades
+
+if inNYAMSession and not inNYAMSession[1]
+    tradesPerSessionCounterNYAM := strategy.closedtrades
+
+if inNYPMSession and not inNYPMSession[1]
+    tradesPerSessionCounterNYPM := strategy.closedtrades
+
+canGoLong() => true
+     and isInTradingSession
+     and (
+         false
+         or (inAsiaSession and strategy.closedtrades < (tradesPerSessionCounterAsia + maxTradesPerSessionAsia))
+         or (inLondonSession and strategy.closedtrades < (tradesPerSessionCounterLondon + maxTradesPerSessionLondon))
+         or (inNYAMSession and strategy.closedtrades < (tradesPerSessionCounterNYAM + maxTradesPerSessionNYAM))
+         or (inNYPMSession and strategy.closedtrades < (tradesPerSessionCounterNYPM + maxTradesPerSessionNYPM))
+     )
+     and longSLTriggered < slReachedLimit
+     and longTPTriggered < tpReachedLimit
+
+canGoShort() => true
+     and isInTradingSession
+     and (
+         false
+         or (inAsiaSession and strategy.closedtrades < (tradesPerSessionCounterAsia + maxTradesPerSessionAsia))
+         or (inLondonSession and strategy.closedtrades < (tradesPerSessionCounterLondon + maxTradesPerSessionLondon))
+         or (inNYAMSession and strategy.closedtrades < (tradesPerSessionCounterNYAM + maxTradesPerSessionNYAM))
+         or (inNYPMSession and strategy.closedtrades < (tradesPerSessionCounterNYPM + maxTradesPerSessionNYPM))
+     )
+     and shortSLTriggered < slReachedLimit
+     and shortTPTriggered < tpReachedLimit
+
+longEntrySignal = buyConditionFiltered
+shortEntrySignal = sellConditionFiltered
+
+longExitSignal = shortEntrySignal
+shortExitSignal = longEntrySignal
+
+// bgcolor(longEntrySignal ? color.new(color.green, 85) : shortEntrySignal ? color.new(color.red, 85) : na, force_overlay = true)
+
+_calcEntryQty(sl) =>
+    // Contracts = integer part of (Maximum risk in $ ÷ (Stop loss in ticks × Tick value in $))
+    slInTicks = sl / syminfo.mintick
+    slInMoney = slInTicks * syminfo.pointvalue
+    contracts = math.round(autoRiskAmountMax / slInMoney, 0)
+    // Risk per X contracts = X × (SL ticks × tick value)
+    riskPerContracts = contracts * slInMoney
+    // AutoRisk Range (e.g. $150 – $250):
+    // The system checks whether the total risk falls within the defined range (e.g. between $150 and $250) – otherwise, the trade should not be executed.
+    out = autoRiskAmountMin <= riskPerContracts and riskPerContracts <= autoRiskAmountMax ? contracts : 0
+    out
+
+// - all trades should be closed before the market closes
+if hour == marketCloseHour and minute == marketCloseMinute
+    longSLTriggered := 0
+    longTPTriggered := 0
+    shortSLTriggered := 0
+    shortTPTriggered := 0
+    strategy.cancel_all()
+    strategy.close_all('End of Session', immediately = true)
+
+if (strategy.position_size == 0 or strategy.position_size < 0) and longEntrySignal and canGoLong()
+    if strategy.position_size < 0
+        strategy.close('Short Entry', comment = 'Close Position Short', immediately = true)
+
+    entryPrice := close
+    longSL := useSL ? _sl(entryPrice, 1) : na
+    longQty := useAutoRisk ? _calcEntryQty(longSL) : fixedContactSize
+    if longQty > 0
+        strategy.entry('Long Entry', strategy.long, qty = longQty, comment = 'Long')
+
+if strategy.position_size[1] <= 0 and strategy.position_size > 0
+    longEntry := entryPrice
+    longTP := useTP ? _tp(strategy.position_avg_price, strategy.position_size, longSL, rrRatio) : na
+    strategy.exit('Long Exit', from_entry = 'Long Entry', limit = (useTP ? longTP : na), stop = (useSL ? longSL : na), comment_profit = 'Long TP', comment_loss ='Long SL')
+
+if (strategy.position_size == 0 or strategy.position_size > 0) and shortEntrySignal and canGoShort()
+    if strategy.position_size > 0
+        strategy.close('Long Entry', comment = 'Close Position Long', immediately = true)
+
+    entryPrice := close
+    shortSL := useSL ? _sl(entryPrice, -1) : na
+    shortQty := useAutoRisk ? _calcEntryQty(shortSL) : fixedContactSize
+    if shortQty > 0
+        strategy.entry('Short Entry', strategy.short, qty = shortQty, comment = 'Short')
+
+if strategy.position_size[1] >= 0 and strategy.position_size < 0
+    shortEntry := entryPrice
+    shortTP := useTP ? _tp(strategy.position_avg_price, strategy.position_size, shortSL, rrRatio) : na
+    strategy.exit('Short Exit', from_entry = 'Short Entry', limit = (useTP ? shortTP : na), stop = (useSL ? shortSL : na), comment_profit = 'Short TP', comment_loss = 'Short SL')
+
+if strategy.position_size > 0 and longExitSignal
+    strategy.close('Long Entry', comment = 'Close Position Long', immediately = true)
+
+if strategy.position_size < 0 and shortExitSignal
+    strategy.close('Short Entry', comment = 'Close Position Short', immediately = true)
+
+if strategy.position_size[1] > 0 and strategy.position_size <= 0
+    longEntry := na
+    longQty := na
+    longTP := na
+    longSL := na
+
+    if low <= longSL
+        longSLTriggered += 1
+    else if high >= longTP
+        longTPTriggered += 1
+
+if strategy.position_size[1] < 0 and strategy.position_size >= 0
+    shortEntry := na
+    shortQty := na
+    shortTP := na
+    shortSL := na
+
+    if high >= shortSL
+        shortSLTriggered += 1
+    else if low <= shortTP
+        shortTPTriggered += 1
+
+slPlot1 = plot(strategy.position_size > 0 ? longSL : na, title = 'Long SL', color = color.red, linewidth = 1,style = plot.style_steplinebr,force_overlay = true)
+entryPlot1 = plot(strategy.position_size > 0 ? longEntry : na, title = 'Long Entry', color = color.blue, linewidth = 1,style = plot.style_steplinebr,force_overlay = true)
+tpPlot1 = plot(strategy.position_size > 0 ? longTP : na, title = 'Long TP', color = color.green, linewidth = 1,style = plot.style_steplinebr,force_overlay = true)
+
+slPlot2 = plot(strategy.position_size < 0 ? shortSL : na, title = 'Short SL', color = color.red, linewidth = 1,style = plot.style_steplinebr,force_overlay = true)
+entryPlot2 = plot(strategy.position_size < 0 ? shortEntry : na, title = 'Short Entry', color = color.blue, linewidth = 1,style = plot.style_steplinebr,force_overlay = true)
+tpPlot2 = plot(strategy.position_size < 0 ? shortTP : na, title = 'Short TP', color = color.green, linewidth = 1,style = plot.style_steplinebr,force_overlay = true)
+
+fill(slPlot1, entryPlot1, color = color.new(color.red, 85))
+fill(slPlot2, entryPlot2, color = color.new(color.red, 85))
+fill(entryPlot1, tpPlot1, color = color.new(color.green, 85))
+fill(entryPlot2, tpPlot2, color = color.new(color.green, 85))
+
+// === Alert Settings ===
+alertEnabled = input.bool(true, title="Enable Alerts", group="Alert Settings")
+alertMessageBuy = input.text_area("Buy Signal", title="Buy Alert Message", group="Alert Settings")
+alertMessageSell = input.text_area("Sell Signal", title="Sell Alert Message", group="Alert Settings")
+
+// === Notifications ===
+if (alertEnabled and buyConditionFiltered)
+    alert(alertMessageBuy, alert.freq_once_per_bar)
+
+if (alertEnabled and sellConditionFiltered)
+    alert(alertMessageSell, alert.freq_once_per_bar)
+
+//---------------------------------------------------------------------------------------------------------------
+
+// === Support & Resistance Implementation ===
+type graphicSettings
+    string levelName
+    color levelColor
+    bool showLevel
+
+var graphicSettingsArray = array.from(
+      graphicSettings.new("Midline", pColorInput, pShowInput and showSupportResistance),
+      graphicSettings.new("R1", r1ColorInput, r1ShowInput and showSupportResistance),
+      graphicSettings.new("S1", s1ColorInput, s1ShowInput and showSupportResistance),
+      graphicSettings.new("R2", r2ColorInput, r2ShowInput and showSupportResistance),
+      graphicSettings.new("S2", s2ColorInput, s2ShowInput and showSupportResistance),
+      graphicSettings.new("R3", r3ColorInput, r3ShowInput and showSupportResistance),
+      graphicSettings.new("S3", s3ColorInput, s3ShowInput and showSupportResistance),
+      graphicSettings.new("R4", r4ColorInput, r4ShowInput and showSupportResistance),
+      graphicSettings.new("S4", s4ColorInput, s4ShowInput and showSupportResistance),
+      graphicSettings.new("R5", r5ColorInput, r5ShowInput and showSupportResistance),
+      graphicSettings.new("S5", s5ColorInput, s5ShowInput and showSupportResistance))
+
+autoAnchor = switch
+    timeframe.isintraday => timeframe.multiplier <= 15 ? "1D" : "1W"
+    timeframe.isdaily    => "1M"
+    => "12M"
+
+pivotTimeframe = switch pivotAnchorInput
+    "Auto"      => autoAnchor
+    "Daily"     => "1D"
+    "Weekly"    => "1W"
+    "Monthly"   => "1M"
+    "Quarterly" => "3M"
+    => "12M"
+
+//@variable The number of years in the selected Pivot period
+pivotYearMultiplier = switch pivotAnchorInput
+    "Biyearly"       => 2
+    "Triyearly"      => 3
+    "Quinquennially" => 5
+    "Decennially"    => 10
+    => 1
+
+//@variable The number of values in the pivots of the selected type
+numOfPivotLevels = switch pivotTypeInput
+    "Traditional" => 11
+    "Camarilla"   => 11
+    "Woodie"      => 9
+    "Classic"     => 9
+    "Fibonacci"   => 7
+    "DM"          => 3
+
+type pivotGraphic
+    line pivotLine
+    label pivotLabel
+
+method delete(pivotGraphic graphic) =>
+    graphic.pivotLine.delete()
+    graphic.pivotLabel.delete()
+
+var drawnGraphics = matrix.new<pivotGraphic>()
+
+localPivotTimeframeChange = timeframe.change(pivotTimeframe) and year % pivotYearMultiplier == 0
+securityPivotTimeframeChange = timeframe.change(timeframe.period) and year % pivotYearMultiplier == 0
+
+pivotTimeframeChangeCounter(condition) =>
+    var count = 0
+    if condition and bar_index > 0
+        count += 1
+    count
+
+localPivots = ta.pivot_point_levels(pivotTypeInput, localPivotTimeframeChange)
+securityPivotPointsArray = ta.pivot_point_levels(pivotTypeInput, securityPivotTimeframeChange)
+
+securityTimeframe = timeframe.isintraday ? "1D" : timeframe.period
+[securityPivots, securityPivotCounter] = request.security(syminfo.tickerid, pivotTimeframe, [securityPivotPointsArray, pivotTimeframeChangeCounter(securityPivotTimeframeChange)], lookahead = barmerge.lookahead_on)
+pivotPointsArray = isDailyBasedInput ? securityPivots : localPivots
+
+//@function Sets the ending points of the currently active pivots to `endTime`.
+affixOldPivots(endTime) =>
+    if drawnGraphics.rows() > 0
+        lastGraphics = drawnGraphics.row(drawnGraphics.rows() - 1)
+
+        for graphic in lastGraphics
+            graphic.pivotLine.set_x2(endTime)
+            if positionLabelsInput == "Right"
+                graphic.pivotLabel.set_x(endTime)
+
+//@function Draws pivot lines and labels from `startTime` to the approximate end of the period.
+drawNewPivots(startTime) =>
+    newGraphics = array.new<pivotGraphic>()
+
+    for [index, coord] in pivotPointsArray
+        levelSettings = graphicSettingsArray.get(index)
+        if not na(coord) and levelSettings.showLevel
+            lineEndTime = startTime + timeframe.in_seconds(pivotTimeframe) * 1000 * pivotYearMultiplier
+            pivotLine = line.new(startTime, coord, lineEndTime, coord, xloc = xloc.bar_time, color=levelSettings.levelColor, width=linewidthInput)
+            pivotLabel = label.new(x = positionLabelsInput == "Left" ? startTime : lineEndTime,
+                               y = coord,
+                               text = (showLabelsInput ? levelSettings.levelName + " " : "") + (showPricesInput ? "(" + str.tostring(coord, format.mintick) + ")" : ""),
+                               style = positionLabelsInput == "Left" ? label.style_label_right : label.style_label_left,
+                               textcolor = levelSettings.levelColor,
+                               color = #00000000,
+                               xloc=xloc.bar_time)
+
+            newGraphics.push(pivotGraphic.new(pivotLine, pivotLabel))
+
+    drawnGraphics.add_row(array_id = newGraphics)
+
+    if drawnGraphics.rows() > maxHistoricalPivotsInput
+        oldGraphics = drawnGraphics.remove_row(0)
+
+        for graphic in oldGraphics
+            graphic.delete()
+
+localPivotDrawConditionStatic = not isDailyBasedInput and localPivotTimeframeChange
+securityPivotDrawConditionStatic = isDailyBasedInput and securityPivotCounter != securityPivotCounter[1]
+
+var isMultiYearly = array.from("Biyearly", "Triyearly", "Quinquennially", "Decennially").includes(pivotAnchorInput)
+localPivotDrawConditionDeveloping = not isDailyBasedInput and time_close == time_close(pivotTimeframe) and not isMultiYearly
+securityPivotDrawConditionDeveloping = false
+
+if (securityPivotDrawConditionStatic or localPivotDrawConditionStatic)
+    affixOldPivots(time)
+    drawNewPivots(time)
+
+// If possible, draw pivots from the beginning of the chart if none were found
+var FIRST_BAR_TIME = time
+if (barstate.islastconfirmedhistory and drawnGraphics.columns() == 0)
+
+    if not na(securityPivots) and securityPivotCounter > 0
+        if isDailyBasedInput
+            drawNewPivots(FIRST_BAR_TIME)
+        else
+            runtime.error("Not enough intraday data to calculate Support/Resistance Levels. Lower the Timeframe or turn on the 'Use Daily-based Values' option in the indicator settings.")
+    else
+        runtime.error("Not enough data to calculate Support/Resistance Levels. Lower the Timeframe in the indicator settings.")

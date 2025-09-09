@@ -1,0 +1,25 @@
+//@version=6
+strategy('Consecutive Bearish Candle Strategy', overlay=false, fill_orders_on_standard_ohlc = true, initial_capital = 1000000, default_qty_value = 100, default_qty_type = strategy.percent_of_equity, process_orders_on_close = true, margin_long = 5, margin_short = 5, calc_on_every_tick = true)
+
+in_start_time = input.time(timestamp('1 Jan 2014'), title = 'Start Time', group = 'Time Settings')
+in_end_time = input.time(timestamp('1 Jan 2099'), title = 'End Time', group = 'Time Settings')
+in_window = time >= in_start_time and time <= in_end_time
+
+lookback = input.int(defval = 3, title = 'Lookback', minval = 1)
+
+var int bullCount = 0
+var int bearCount = 0
+
+bullCount := close > close[1] ? bullCount + 1 : 0
+bearCount := close < close[1] ? bearCount + 1 : 0
+
+plot(bullCount, title="Bullish Count", color=color.green, style=plot.style_columns)
+plot(-bearCount, title="Bearish Count", color=color.red, style=plot.style_columns)
+
+longCondition = bearCount >= lookback and in_window
+exitCondition = close>high[1]
+
+if longCondition
+    strategy.entry("long", strategy.long)
+if exitCondition
+    strategy.close_all()

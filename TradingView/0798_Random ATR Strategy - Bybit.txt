@@ -1,0 +1,38 @@
+//@version=5
+strategy("Random ATR Strategy - Bybit", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0.075)
+
+// Leverage settings
+leverage = 5 // Adjust leverage as needed
+
+// ATR-based stop loss and take profit multipliers
+sl_atr_ratio = 3
+tp_sl_ratio = 1
+mysize = 1 * leverage // Adjust position size based on leverage
+
+// ATR calculation
+atr_length = 14
+atr_value = ta.atr(atr_length)
+
+// Generate random signal
+timeSeed = year * 10000 + month * 100 + dayofmonth // Seed for randomness
+randNumber = math.abs(ta.sma(ta.highest(close, 2), 1) - ta.sma(ta.lowest(close, 2), 1))
+randomSignal = (randNumber * timeSeed) % 2 // Generates 0 or 1
+
+// Define entry conditions
+longCondition = randomSignal == 1
+shortCondition = randomSignal == 0
+
+// Entry logic for Bybit
+if (longCondition and strategy.position_size == 0)
+    sl = close - (sl_atr_ratio * atr_value)
+    tp = close + (tp_sl_ratio * sl_atr_ratio * atr_value)
+    strategy.entry("Long", strategy.long, qty=mysize)
+    strategy.exit("Long Exit", from_entry="Long", stop=sl, limit=tp)
+
+if (shortCondition and strategy.position_size == 0)
+    sl = close + (sl_atr_ratio * atr_value)
+    tp = close - (tp_sl_ratio * sl_atr_ratio * atr_value)
+    strategy.entry("Short", strategy.short, qty=mysize)
+    strategy.exit("Short Exit", from_entry="Short", stop=sl, limit=tp)
+
+// Plot SL and TP levels with improved styling

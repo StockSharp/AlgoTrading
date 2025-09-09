@@ -1,0 +1,371 @@
+//@version=5
+strategy(title = 'Black-Scholes option price model', shorttitle = 'BSM', format = format.price, precision = 10, pyramiding = 25, calc_on_every_tick = false)
+
+// Input
+var string optionStyleInput = input.string(title = 'Style of option', defval = 'European vanilla', options = ['European vanilla', 'Binary', 'Asian geometric'], group = 'Option settings')
+var string optionTypeInput  = input.string(title = 'Type of option', defval = 'Call', options = ['Call', 'Put'], group = 'Option settings')
+var float strikeInput       = input.float(defval = 0.0, title = 'Strike price', minval = 0.0, group = 'Option settings', confirm = true)
+var int expirationInput     = input.time(defval = timestamp(dateString = '31 Dec 2024 23:55 +0300'), title = 'Expiration', group = 'Option settings', confirm = true)
+
+var string priceSourceInput          = input.string(defval = 'hlc3', title = 'Type of price source', options = ['open', 'high', 'low', 'close', 'hl2', 'hlc3', 'ohlc4', 'hlcc4'], group = 'Market statistics settings')
+const string riskFreeRateTooltip     = 'Examples of tickers for various markets\n\nBINANCE:BTCUSDT_PREMIUM - crypto market (Average annual ROE on payments at the funding rate for perpetual futures contracts)\nUS10Y - American stock market\nAU10Y - Australian stock market\nBR10Y - Brazilian stock market\nGB10Y - British stock market\nCA10Y - Canadian stock market\nCN10Y - Chinese stock market\nDK10Y - Danish stock market\nDE10Y - German stock market\nEU10Y - European stock market\nFR10Y - French stock market\nIN10Y - Indian stock market\nID10Y - Indonesian stock market\nIT10Y - Italian stock market\nJP10Y - Japanese stock market\nKR10Y - Korean stock market\nNO10Y - Norwegian stock market\nRU10Y - Russian stock market\nSG10Y - Singapore stock market\nZA10Y - South African stock market\nSE10Y - Swiss stock market\nTR10Y - Turkish stock market'
+var string riskFreeRateSymbolInput   = input.symbol(defval = 'BINANCE:BTCUSDT_PREMIUM', title = 'Risk-free return symbol', tooltip = riskFreeRateTooltip, group = 'Market statistics settings', confirm = true)
+var string volModeInput              = input.string(defval = 'Realized volatility', title = 'Volatility calculation mode?', options = ['Implied volatility', 'Realized volatility', 'Custom'], group = 'Market statistics settings')
+const string impliedVolTooltip       = 'Examples of tickers for various markets\n\nDERIBIT:DVOL - crypto market\nTVC:VIX - American stock market'
+var string impliedVolSymbolInput     = input.symbol(defval = 'DERIBIT:DVOL', title = 'Implied volatility symbol', tooltip = riskFreeRateTooltip, group = 'Market statistics settings', confirm = true)
+var float customImpliedVolValueInput = input.float(defval = 0.0, title = 'User implied volatility %', group = 'Market statistics settings') / 100
+var float intervalWidthInput         = input.float(defval = 1.0, title = 'Interval width', group = 'Market statistics settings')
+
+var string metricChoiceInput = input.string(defval = 'Option price', title = 'Choose metric', options = ['Underlying asset', 'Option price', 'Implied volatility', 'Delta', 'Gamma', 'Theta', 'Vega', 'Rho', 'Vanna', 'Charm', 'Vomma', 'Veta', 'Vera', 'Speed', 'Zomma', 'Color', 'Ultima', 'Probability of touch'], group = 'Display settings')
+var string scaleMeasureInput = input.string(defval = 'bps', title = 'Measure', options = ['bps', 'Percent'], group = 'Display settings')
+
+var string modelInput           = input.string(defval = 'None', title = 'Hedge model', options = ['Simple', 'Syntetic option', 'None'], group = 'Trading settings')
+var string postionSideInput     = input.string(defval = 'Long', title = 'Position side', options = ['Long', 'Short'], group = 'Trading settings')
+var float postionSizeInput      = input.float(defval = 1000, title = 'Position size', group = 'Trading settings')
+var int startTimeInput          = input.time(defval = timestamp(dateString = '01 Jan 2024 00:00 +0300'), title = 'Strategy start time', group = 'Trading settings')
+var int hedgeIntervalInput      = input.int(defval = 5, title = 'Delta hedge interval', group = 'Trading settings')
+
+// Function import
+// Funding rate - risk free rate for crypto market
+fundingRate(series float premiumIndex)=>
+    series float clamp = math.abs(premiumIndex - 0.01) > 0.05 ? premiumIndex : 0.0
+
+    var int length = switch timeframe.period
+        '1'   => 480
+        '5'   => 96
+        '15'  => 32
+        '30'  => 16
+        '60'  => 8
+        '120' => 4
+        '240' => 4
+        '480' => 4
+        => 4
+
+    series float fundingRate = math.sum(source = 0.01 + clamp, length = length) / length
+    fundingRate
+
+// Gaussian probability function with mean 0.0 and stdev 1.0 at given parameter
+phiP(series float argument) =>
+    series float phiP = math.exp(number = -argument * argument / 2.0) / math.sqrt(number = 6.28318530718)
+    phiP
+
+// Standard guassian cumulative distribution function
+cdf(series float argument) =>
+    const float mu            = 0.0
+    const float cdfSigma      = 1.0
+    series float phiDArgument = (argument - mu) / cdfSigma
+    series float total        = 0.0
+    series float term         = phiDArgument
+    for i = 3 to 300 by 2
+        if total != total + term
+            total += term
+            term  *= (phiDArgument * phiDArgument / float(i))
+            continue
+        else
+            break
+    series float cdf = if phiDArgument < -8.0
+        0.0
+    else if phiDArgument > 8.0
+        1.0
+    else
+        0.5 + total * math.exp(number = -phiDArgument * phiDArgument / 2.0) / math.sqrt(number = 6.28318530718)
+    cdf
+
+// Theoretical option price value
+callPrice(series float source, series float strike, series float riskFreeRate, series float vol, series float timePeriod) =>
+    series float a         = (math.log(number = source / strike) + (riskFreeRate + vol * vol / 2.0) * timePeriod) / (vol * math.sqrt(number = timePeriod))
+    series float b         = a - vol * math.sqrt(number = timePeriod)
+    series float callPrice = source * cdf(argument = a) - strike * math.exp(number = -riskFreeRate * timePeriod) * cdf(argument = b)
+    callPrice
+
+putPrice(series float source, series float strike, series float riskFreeRate, series float vol, series float timePeriod) =>
+    series float a        = (math.log(number = source / strike) + (riskFreeRate + vol * vol / 2.0) * timePeriod) / (vol * math.sqrt(number = timePeriod))
+    series float b        = a - vol * math.sqrt(number = timePeriod)
+    series float putPrice = strike * math.exp(number = -riskFreeRate * timePeriod) * (1 - cdf(argument = b)) - source * (1 - cdf(argument = a))
+    putPrice
+
+// Geometric average calculation
+gma(series float price, series int length) =>
+    series float product = price
+    for i = 1 to length - 1 by 1
+        product *= price[i]
+        product
+    product
+
+// Stadard deviation
+myStdev(series float source, series int length) =>
+    series float sourcePow    = math.pow(base = source, exponent = 2)
+    series float sourcePowAvg = math.sum(source = sourcePow, length = length) / length
+    series float sourceSum    = math.sum(source = source, length = length)
+    series float sourceDisp   = math.pow(base = sourceSum, exponent = 2) / math.pow(base = length, exponent = 2)
+    series float stdev        = math.sqrt(number = sourcePowAvg - sourceDisp)
+    stdev
+
+// Market data parsing
+// Symbol data
+simple float mintick  = syminfo.mintick
+simple string market  = syminfo.type
+
+series float priceSource = switch priceSourceInput
+    'open'  => open
+    'high'  => high
+    'low'   => low
+    'close' => close
+    'hl2'   => hl2
+    'hlc3'  => hlc3
+    'ohlc4' => ohlc4
+    'hlcc4' => hlcc4
+    => close
+
+// Risk free rate
+series float riskFreeRate = request.security(symbol = riskFreeRateSymbolInput, timeframe = timeframe.period, expression = priceSource)
+
+switch
+    str.contains(source = riskFreeRateSymbolInput, str = '_PREMIUM') => riskFreeRate := fundingRate(premiumIndex = riskFreeRate)
+    market == 'stock' => riskFreeRate /= 100
+
+// Implied volatility
+series float impliedVol     = volModeInput == 'Implied volatility' ? request.security(symbol = impliedVolSymbolInput, timeframe = timeframe.period, expression = priceSource) : na
+series float benchmarkPrice = volModeInput == 'Implied volatility' ? request.security(symbol = 'BINANCE:BTCUSDT.P', timeframe = timeframe.period, expression = priceSource) : na
+
+if volModeInput == 'Implied volatility' and market == 'crypto'
+    simple int sigmaLength      = math.max(math.round(number = (480 / timeframe.multiplier)), 10)
+    sigmaLength                 := sigmaLength < 10 ? 10 : sigmaLength
+    series float sigma          = ta.stdev(source = priceSource, length = sigmaLength) / priceSource
+    series float benchmarkSigma = ta.stdev(source = benchmarkPrice, length = sigmaLength) / benchmarkPrice
+    series float sigmaRatio     = sigma / benchmarkSigma
+    impliedVol                  *= sigmaRatio
+
+// Option price calculations
+series int length         = math.max(math.round(number = (expirationInput - time) / 86400000), 1)
+series float returnLog    = math.log(number = priceSource[1] / priceSource[2])
+series float returnLogAvg = math.sum(source = returnLog, length = length) / length
+series float returnStdev  = myStdev(source = returnLog, length = length)
+series float timeMa       = length * returnLogAvg
+series float timeStdev    = returnStdev * math.sqrt(number = length)
+series float upper        = priceSource * math.exp(number = timeMa + intervalWidthInput * timeStdev)
+series float lower        = priceSource * math.exp(number = timeMa - intervalWidthInput * timeStdev)
+
+series float vol = switch volModeInput
+    'Implied volatility'  => impliedVol / 100
+    'Realized volatility' => (upper - lower) / 2 / (priceSource * math.sqrt(number = length / 365))
+    'Custom' => customImpliedVolValueInput
+    => (upper - lower) / 2 / (priceSource * math.sqrt(number = length / 365))
+
+series float timePeriod     = length / 365
+series float timePeriodSqrt = math.sqrt(number = timePeriod)
+
+series float vanillaCallPrice = callPrice(source = priceSource, strike = strikeInput, riskFreeRate = riskFreeRate, vol = vol, timePeriod = timePeriod)
+series float vanillaPutPrice  = putPrice(source = priceSource, strike = strikeInput, riskFreeRate = riskFreeRate, vol = vol, timePeriod = timePeriod)
+
+vanillaCallPrice := vanillaCallPrice < mintick ? 0 : vanillaCallPrice
+vanillaPutPrice  := vanillaCallPrice < mintick ? 0 : vanillaPutPrice
+
+series float vanillaPrice = optionTypeInput == 'Put' ? vanillaPutPrice : vanillaCallPrice
+
+//Vanilla basic greeks
+series float d1  = (math.log(number = priceSource / strikeInput) + (riskFreeRate + vol * vol / 2.0) * timePeriod) / (vol * timePeriodSqrt)
+series float d2  = d1 - vol * timePeriodSqrt
+series float nd1 = cdf(argument = d1)
+series float nd2 = cdf(argument = d2)
+
+series float riskCostExp = math.exp(number = -riskFreeRate * timePeriod)
+series float pvk         = strikeInput * riskCostExp
+series float deltaCall   = riskCostExp * nd1
+series float deltaPut    = -(1 - riskCostExp * nd1)
+
+deltaCall := deltaCall > 1.0 ? 1.0 : deltaCall
+deltaCall := deltaCall < 0.0 ? 0.0 : deltaCall
+deltaPut  := deltaPut > 0.0 ? 0.0 : deltaPut
+deltaPut  := deltaPut < -1.0 ? -1.0 : deltaPut
+
+series float delta = optionTypeInput == 'Put' ? deltaPut : deltaCall
+
+// Option pricing
+series float optionPrice = 0
+switch optionStyleInput
+    'Binary' => optionPrice := math.abs(number = delta * 100)
+    'Asian geometric' =>
+        float gaB         = 0.5 * (riskFreeRate - 0.5 * math.pow(base = returnStdev / 1.73205080757, exponent = 2))
+        float gaCallPrice = math.abs(number = priceSource * math.exp(number = -(riskFreeRate * math.pow(base = vol, exponent = 2) / 6) * (timePeriod / 2)) * nd1 - pvk * nd2)
+        float gaPutPrice  = math.abs(number = gaCallPrice - (priceSource * math.exp(number = (gaB - riskFreeRate) * timePeriod) - pvk))
+        optionPrice       := optionTypeInput == 'Put'? gaPutPrice : gaCallPrice
+    => optionPrice := vanillaPrice
+
+series float metric = switch metricChoiceInput
+    'Option price'       => optionPrice
+    'Implied volatility' => vol * 100
+    => optionPrice
+
+// Vanilla greeks
+if metricChoiceInput != 'Option price' and metricChoiceInput != 'Implied volatility'
+    // Probability of touch
+    series float pot   = math.abs(number = 2 * delta * 100)
+    series float touch = pot > 99.9 ? 99.9 : pot
+
+    // 1-st order vanilla greeks greeks
+    series float vega  = strikeInput * math.exp(number = riskFreeRate * timePeriod) * phiP(argument = d2) * timePeriodSqrt
+    series float theta = (-(priceSource * nd1 * vol / (2 * timePeriodSqrt)) - riskFreeRate * pvk * nd2) / 365
+
+    series float rhoCall = strikeInput * timePeriod * math.exp(number = riskFreeRate * timePeriod) * nd2
+    series float rhoPut  = -strikeInput * timePeriod * math.exp(number = riskFreeRate * timePeriod) * (1 - nd2)
+    series float rho     = optionTypeInput == 'Put' ? rhoPut : rhoCall
+
+    // 2-nd order vanilla greeks greeks
+    series float gamma = pvk * (phiP(argument = d2) / (math.pow(base = priceSource, exponent = 2) * vol * timePeriodSqrt))
+    series float vanna = vega / priceSource * (1 - d1 / (vol * timePeriodSqrt))
+    series float vomma = vega * (d1 * d2 / vol)
+    series float charm = -(ta.change(source = theta) / ta.change(source = priceSource)) / 365
+    series float veta  = -1 * theta * (1 / vega) * (1 / vol) * ta.change(source = vega) / 36500
+    series float vera  = ta.change(source = rho) / ta.change(source = vol)
+
+    // 3-rd order vanilla greeks greeks
+    series float speed      = -(gamma / priceSource) * (d1 / (vol * timePeriodSqrt) + 1)
+    series float zomma      = gamma * ((d1 * d2 - 1) / vol)
+    series float colorGreek = gamma * theta * (1 / vega) * (1 / ta.change(source = vol)) / 365
+    series float ultima     = ta.change(source = vomma) / ta.change(source = vol)
+
+    switch optionStyleInput
+        'Binary' =>
+            // 1-st order binary greeks
+            delta := optionTypeInput == 'Put' ? -(gamma / 100) : gamma / 100
+            gamma := math.abs(number = speed) / 100
+            theta := -0.5 * gamma * math.pow(base = vol, exponent = 2) * math.pow(base = priceSource, exponent = 2) / 365
+            vega  := vomma
+
+            // 2-nd order binary greeks
+            charm := -(ta.change(source = theta) / ta.change(source = priceSource)) / 365
+            vanna := math.abs(number = ta.change(source = delta) / ta.change(source = vol))
+            rho   := 0
+            vomma := ta.change(source = vega) / ta.change(source = vol)
+            veta  := -1 * theta * (1 / vega) * (1 / vol) * ta.change(source = vega) / 36500
+
+            // 3-rd order binary greeks
+            speed      := ta.change(source = gamma) / ta.change(source = priceSource)
+            vera       := 0
+            zomma      := ta.change(source = vanna) / ta.change(source = priceSource)
+            colorGreek := gamma * theta * (1 / vega) * (1 / ta.change(source = vol)) / 365
+            ultima     := ta.change(source = vomma) / ta.change(source = vol)
+
+        'Asian geometric' =>
+            pot := 0
+
+            series float gaGma = math.pow(base = gma(price = priceSource, length = length), exponent = 1 / length)
+
+            // 1-st order Asian geomentric greeks
+            series float gaDeltaCall = math.abs(number = ta.change(source = optionPrice) / ta.change(source = priceSource))
+            delta                    := optionTypeInput == 'Put' ? -gaDeltaCall : gaDeltaCall
+            series float gaVega1     = math.abs(number = ta.change(source = optionPrice) / ta.change(source = vol))
+            series float gaVega2     = vega / 1.73205080757
+
+            vega  := gaGma == strikeInput ? gaVega2 : gaVega1
+            gamma := pvk * (phiP(argument = d2) / (math.pow(base = priceSource, exponent = 2) * vol * timePeriodSqrt))
+            theta := -0.5 * gamma * math.pow(base = vol, exponent = 2) * math.pow(base = priceSource, exponent = 2) / 365
+
+            // 2nd order Asian geomentric greeks
+            charm := -(ta.change(source = theta) / ta.change(source = priceSource)) / 365
+            vanna := math.abs(number = ta.change(source = delta) / ta.change(source = vol))
+            rho   := 0
+            vomma := ta.change(source = vega) / ta.change(source = vol)
+            veta  := -1 * theta * (1 / vega) * (1 / vol) * ta.change(source = vega) / 36500
+
+            // 3rd order Asian geomentric greeks
+            speed      := ta.change(source = gamma) / ta.change(source = priceSource)
+            vera       := 0
+            zomma      := ta.change(source = vanna) / ta.change(source = priceSource)
+            colorGreek := gamma * theta * (1 / vega) * (1 / ta.change(source = vol)) / 365
+            ultima     := ta.change(source = vomma) / ta.change(source = vol)
+
+    // Metric choice
+    metric := switch metricChoiceInput
+        'Underlying asset'     => priceSource
+        'Probability of touch' => touch
+        'Ultima'               => ultima
+        'Color'                => colorGreek
+        'Zomma'                => zomma
+        'Speed'                => speed
+        'Vera'                 => vera
+        'Veta'                 => veta
+        'Vomma'                => vomma
+        'Charm'                => charm
+        'Vanna'                => vanna
+        'Rho'                  => rho
+        'Vega'                 => vega
+        'Theta'                => theta
+        'Gamma'                => gamma
+        'Delta'                => delta
+        => optionPrice
+
+if scaleMeasureInput == 'Percent' and metricChoiceInput == 'Option price'
+    metric := metric / priceSource * 100
+
+// Plot
+simple color metricColor = na
+simple color backGroundColor = na
+
+switch optionTypeInput
+    'Put' =>
+        metricColor     := color.rgb(red = 178, green = 24, blue = 44, transp = 50)
+        backGroundColor := color.rgb(red = 178, green = 24, blue = 44, transp = 75)
+
+    'Call' =>
+        metricColor     := color.rgb(red = 60, green = 166, blue = 75, transp = 50)
+        backGroundColor := color.rgb(red = 60, green = 166, blue = 75, transp = 75)
+
+series float shapePrice = if metricChoiceInput == 'Underlying asset'
+    strikeInput
+else
+    0.0
+
+metricPlot = plot(series = metric, title = 'BSM', color = color.white, style = plot.style_linebr, display = display.all)
+plotshape(series = time == startTimeInput ? shapePrice : na, title = 'Hedge start point', style = shape.circle, location = location.absolute, color = metricColor, size = size.tiny)
+strikePlot = plot(series = shapePrice, title = 'Hedge price', color = metricColor, style = plot.style_linebr)
+plotshape(series = time == expirationInput ? shapePrice : na, title = 'Expiration point', style = shape.circle, location = location.absolute, color = metricColor, size = size.tiny)
+fill(plot1 = metricPlot, plot2 = strikePlot, color = backGroundColor, title = 'Background')
+
+// Execution
+series bool openCondition  = false
+series bool closeCondition = false
+
+if strikeInput != 0.0 and time > startTimeInput and time < expirationInput and minute % hedgeIntervalInput == 0
+    switch modelInput
+        'Simple' =>
+            series float currentDelta = strategy.position_size
+            series float targetDelta = postionSizeInput
+            series float positionChange = math.abs(number = targetDelta - currentDelta)
+
+            series bool directionLong = (optionTypeInput == 'Call' and postionSideInput == 'Long') or (optionTypeInput == 'Put' and postionSideInput == 'Short')
+            series bool directionShort = (optionTypeInput == 'Call' and postionSideInput == 'Short') or (optionTypeInput == 'Put' and postionSideInput == 'Long')
+
+            if ta.crossover(source1 = close, source2 = strikeInput)
+                if directionLong
+                    strategy.entry(id = 'Hedge', direction = strategy.long, qty = positionChange)
+                if directionShort
+                    strategy.close(id = 'Hedge')
+
+            else if ta.crossunder(source1 = close, source2 = strikeInput)
+                if directionShort
+                    strategy.entry(id = 'Hedge', direction = strategy.short, qty = positionChange)
+                if directionLong
+                    strategy.close(id = 'Hedge')
+
+        'Syntetic option' =>
+            series float currentDelta   = strategy.position_size
+            series float targetDelta    = delta * postionSizeInput
+            series float positionChange = targetDelta - currentDelta
+
+            if positionChange > 0 and math.abs(number = positionChange) <= postionSizeInput
+                if postionSideInput == 'Long'
+                    strategy.order(id = 'Hedge', direction = strategy.long, qty = positionChange)
+                else if postionSideInput == 'Short'
+                    strategy.order(id = 'Hedge', direction = strategy.short, qty = positionChange)
+
+            else if positionChange < 0 and math.abs(number = positionChange) <= postionSizeInput
+                positionChange *= -1
+                if postionSideInput == 'Long'
+                    strategy.order(id = 'Hedge', direction = strategy.short, qty = positionChange)
+                else if postionSideInput == 'Short'
+                    strategy.order(id = 'Hedge', direction = strategy.long, qty = positionChange)
+
+if time > expirationInput
+    strategy.close(id = 'Hedge')

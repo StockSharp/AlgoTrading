@@ -1,0 +1,316 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © The_Forex_Steward
+
+//@version=6
+strategy("Supply/Demand Zones + Engulfing Strategy", overlay=true, max_boxes_count=500)
+
+// ===== Demand/Supply Zones Indicator (Terminology Fixed) =====
+aggregationFactor = input.int(4, minval=1, title="Aggregation Factor (e.g., 4x current TF)")
+showSupplyZones = input.bool(true, title="Show Supply Zones")
+showDemandZones = input.bool(true, title="Show Demand Zones")
+deleteMitigatedZones = input.bool(false, title="Delete Mitigated Zones")
+
+// === NEW AGGREGATION LOGIC FROM FIRST INDICATOR ===
+
+// Timeframe in milliseconds
+tfMs = timeframe.multiplier * 60000
+aggTfMs = aggregationFactor * tfMs
+
+// Use UTC-5 timezone — note the reversed sign for Etc/GMT zones
+myTimezone = "Etc/GMT+5"
+
+// Get start of the current day at midnight in your timezone
+dayStartTime = time("D", myTimezone)
+
+// elapsed milliseconds since midnight UTC-5
+elapsedMs = time - dayStartTime
+
+// number of aggregation intervals passed since midnight
+aggIntervalsPassed = math.floor(elapsedMs / aggTfMs)
+
+// calculate current aggregation group start time aligned to midnight UTC-5
+currentGroupStartTime = dayStartTime + aggIntervalsPassed * aggTfMs
+
+// Variables for aggregation groups
+var int groupStartTime = na
+var int groupStartBarIndex = na
+var float aggOpen = na
+var float aggHigh = na
+var float aggLow = na
+var float aggClose = na
+
+// Detect new aggregation group
+isNewAggGroup = na(groupStartTime) or (currentGroupStartTime != groupStartTime)
+
+// === REST OF THE ORIGINAL VARIABLES AND STATE ===
+
+var float prevSupplyLow = na   // swapped names
+var float prevSupplyHigh = na
+var int   prevSupplyStartBar = na
+
+var float prevDemandLow = na
+var float prevDemandHigh = na
+var int   prevDemandStartBar = na
+
+var bool supplyZoneUsed = false    // swapped names
+var bool demandZoneUsed = false
+
+var box[] supplyZoneBoxes = array.new_box()   // swapped names
+var box[] demandZoneBoxes = array.new_box()
+
+// === FUNCTIONS ===
+
+f_delete_invalidated_boxes() =>
+    currentPrice = close
+    i = array.size(supplyZoneBoxes) - 1
+    while i >= 0
+        b = array.get(supplyZoneBoxes, i)
+        top = box.get_top(b)
+        bottom = box.get_bottom(b)
+        topVal = math.max(top, bottom)
+        bottomVal = math.min(top, bottom)
+        if currentPrice > topVal
+            box.delete(b)
+            array.remove(supplyZoneBoxes, i)
+        i -= 1
+
+    j = array.size(demandZoneBoxes) - 1
+    while j >= 0
+        b = array.get(demandZoneBoxes, j)
+        top = box.get_top(b)
+        bottom = box.get_bottom(b)
+        topVal = math.max(top, bottom)
+        bottomVal = math.min(top, bottom)
+        if currentPrice < bottomVal
+            box.delete(b)
+            array.remove(demandZoneBoxes, j)
+        j -= 1
+
+f_delete_mitigated_boxes() =>
+    aggHighLocal = aggHigh
+    aggLowLocal = aggLow
+
+    i = array.size(supplyZoneBoxes) - 1
+    while i >= 0
+        b = array.get(supplyZoneBoxes, i)
+        top = box.get_top(b)
+        bottom = box.get_bottom(b)
+        topVal = math.max(top, bottom)
+        bottomVal = math.min(top, bottom)
+        if (aggHighLocal >= bottomVal) and (aggLowLocal <= topVal)
+            if deleteMitigatedZones
+                box.delete(b)
+                array.remove(supplyZoneBoxes, i)
+            else
+                // Lighten the box color (90% opacity = 90 out of 255)
+                box.set_bgcolor(b, color.new(color.red, 85))
+                box.set_border_color(b, color.new(color.red, 85))
+        i -= 1
+
+    j = array.size(demandZoneBoxes) - 1
+    while j >= 0
+        b = array.get(demandZoneBoxes, j)
+        top = box.get_top(b)
+        bottom = box.get_bottom(b)
+        topVal = math.max(top, bottom)
+        bottomVal = math.min(top, bottom)
+        if (aggHighLocal >= bottomVal) and (aggLowLocal <= topVal)
+            if deleteMitigatedZones
+                box.delete(b)
+                array.remove(demandZoneBoxes, j)
+            else
+                // Lighten the box color (90% opacity = 90 out of 255)
+                box.set_bgcolor(b, color.new(color.green, 85))
+                box.set_border_color(b, color.new(color.green, 85))
+        j -= 1
+
+// === UPDATE SYNTHETIC CANDLE DATA AND DETECT ZONES ===
+
+if isNewAggGroup and not na(groupStartBarIndex)
+    isBullish = aggClose >= aggOpen
+
+    if isBullish
+        prevSupplyLow := aggLow    // swapped names
+        prevSupplyHigh := aggHigh
+        prevSupplyStartBar := groupStartBarIndex
+        supplyZoneUsed := false
+
+        if showDemandZones and not na(prevDemandHigh) and aggClose > prevDemandHigh and not demandZoneUsed
+            newGreenBox = box.new(left=prevDemandStartBar, right=bar_index + 500, top=prevDemandHigh, bottom=prevDemandLow, bgcolor=color.new(color.green, 50), border_color=color.green)
+            array.push(demandZoneBoxes, newGreenBox)
+            demandZoneUsed := true
+
+    else
+        prevDemandLow := aggLow     // swapped names
+        prevDemandHigh := aggHigh
+        prevDemandStartBar := groupStartBarIndex
+        demandZoneUsed := false
+
+        if showSupplyZones and not na(prevSupplyLow) and aggClose < prevSupplyLow and not supplyZoneUsed
+            newRedBox = box.new(left=prevSupplyStartBar, right=bar_index + 500, top=prevSupplyHigh, bottom=prevSupplyLow, bgcolor=color.new(color.red, 50), border_color=color.red)
+            array.push(supplyZoneBoxes, newRedBox)
+            supplyZoneUsed := true
+
+// Update aggregation group
+if isNewAggGroup
+    groupStartTime := currentGroupStartTime
+    groupStartBarIndex := bar_index
+    aggOpen := open
+    aggHigh := high
+    aggLow := low
+    aggClose := close
+else
+    aggHigh := math.max(aggHigh, high)
+    aggLow := math.min(aggLow, low)
+    aggClose := close
+
+f_delete_mitigated_boxes()
+f_delete_invalidated_boxes()
+
+f_inDemandZone(float price) =>  // was f_inSupplyZone
+    inZone = false
+    if array.size(demandZoneBoxes) > 0
+        for i = 0 to array.size(demandZoneBoxes) - 1
+            b = array.get(demandZoneBoxes, i)
+            top = math.max(box.get_top(b), box.get_bottom(b))
+            bottom = math.min(box.get_top(b), box.get_bottom(b))
+            if price <= top and price >= bottom
+                inZone := true
+    inZone
+
+f_inSupplyZone(float price) =>  // was f_inDemandZone
+    inZone = false
+    if array.size(supplyZoneBoxes) > 0
+        for i = 0 to array.size(supplyZoneBoxes) - 1
+            b = array.get(supplyZoneBoxes, i)
+            top = math.max(box.get_top(b), box.get_bottom(b))
+            bottom = math.min(box.get_top(b), box.get_bottom(b))
+            if price >= bottom and price <= top
+                inZone := true
+    inZone
+
+
+// === ALERTS ===
+// Entering Demand Zone alert (was supply)
+price_entering_demand = false
+if array.size(demandZoneBoxes) > 0
+    for idx = 0 to array.size(demandZoneBoxes) - 1
+        b = array.get(demandZoneBoxes, idx)
+        top = box.get_top(b)
+        bottom = box.get_bottom(b)
+        topVal = math.max(top, bottom)
+        bottomVal = math.min(top, bottom)
+        if close <= topVal and close >= bottomVal and close[1] > topVal
+            price_entering_demand := true
+
+// Entering Supply Zone alert (was demand)
+price_entering_supply = false
+if array.size(supplyZoneBoxes) > 0
+    for idx = 0 to array.size(supplyZoneBoxes) - 1
+        b = array.get(supplyZoneBoxes, idx)
+        top = box.get_top(b)
+        bottom = box.get_bottom(b)
+        topVal = math.max(top, bottom)
+        bottomVal = math.min(top, bottom)
+        if close >= bottomVal and close <= topVal and close[1] < bottomVal
+            price_entering_supply := true
+
+if price_entering_demand
+    alert("Alert: Entering Demand Zone", alert.freq_once_per_bar_close)
+
+if price_entering_supply
+    alert("Alert: Entering Supply Zone", alert.freq_once_per_bar_close)
+
+alertcondition(price_entering_demand, title="Entering Demand Zone", message="Price is entering a demand zone")
+alertcondition(price_entering_supply, title="Entering Supply Zone", message="Price is entering a supply zone")
+
+
+// ===== Engulfing Strategy (Original) =====
+// NOTE: strategy() call goes here inside the same script, it’s allowed in Pine v6+
+
+// User Inputs
+rMultiple        = input.float(2.0, title="R Multiple (Take Profit if not using Target Price)")
+useTargetPrice   = input.bool(false, title="Use Target Price Instead of R Multiple?")
+targetPrice      = input.float(0.0, title="Fixed Take Profit Price (Only used if enabled)")
+drawBoxes        = input.bool(true, title="Draw Entry/SL/TP Boxes")
+boxDuration      = input.int(3, title="Box Width (Bars)")
+
+tradeMode = input.string("Both", title="Trade Mode", options=["Both", "Long Only", "Short Only"])
+
+startDateTime = input.time(timestamp("2025-01-01 00:00 +0000"), title="Strategy Start Date & Time")
+endDateTime   = input.time(timestamp("2030-01-01 00:00 +0000"), title="Strategy End Date & Time")
+startHour     = input.int(0, title="Start Hour (UTC)", minval=0, maxval=23)
+endHour       = input.int(23, title="End Hour (UTC)", minval=0, maxval=23)
+
+inDateRange = (time >= startDateTime) and (time <= endDateTime)
+inHourRange = (hour >= startHour) and (hour <= endHour)
+allowTrading = inDateRange and inHourRange
+
+isBearish = close < open
+isBullish = close > open
+
+var float lastBearishHigh = na
+var float lastBearishLow = na
+var bool bearishBroken = true
+
+var float lastBullishHigh = na
+var float lastBullishLow = na
+var bool bullishBroken = true
+
+var float engulfedHigh = na
+var float engulfedLow = na
+
+
+
+if isBullish
+    lastBullishHigh := high
+    lastBullishLow := low
+    bullishBroken := false
+
+if isBearish
+    lastBearishHigh := high
+    lastBearishLow := low
+    bearishBroken := false
+
+bullishEngulf = not bearishBroken and close > lastBearishHigh
+bearishEngulf = not bullishBroken and close < lastBullishLow
+
+if bullishEngulf
+    bearishBroken := true
+    engulfedLow := lastBearishLow  // Capture engulfed candle's low
+
+if bearishEngulf
+    bullishBroken := true
+    engulfedHigh := lastBullishHigh  // Capture engulfed candle's high
+
+
+if allowTrading
+    longAllowed = (tradeMode == "Both" or tradeMode == "Long Only")
+    if bullishEngulf and longAllowed
+        if f_inDemandZone(open[1]) and not na(engulfedLow)
+            entryPrice = close
+            stopLoss = engulfedLow
+            risk = entryPrice - stopLoss
+            takeProfit = useTargetPrice ? targetPrice : entryPrice + risk * rMultiple
+
+            strategy.entry("Long", strategy.long)
+            strategy.exit("Long Exit", from_entry="Long", stop=stopLoss, limit=takeProfit)
+            if drawBoxes
+                line.new(bar_index, entryPrice, bar_index + 3, entryPrice, color=color.black, width=1)
+                box.new(left=bar_index, right=bar_index + 3, top=stopLoss, bottom=entryPrice, bgcolor=color.new(#ff0000, 80), border_color=color.new(#ff0000, 80))
+                box.new(left = bar_index, right = bar_index + 3, bottom = entryPrice, top = takeProfit, bgcolor = color.new(#089981, 80), border_color = color.new(#089981, 80))
+
+    shortAllowed = (tradeMode == "Both" or tradeMode == "Short Only")
+    if bearishEngulf and shortAllowed
+        if f_inSupplyZone(open[1]) and not na(engulfedHigh)
+            entryPrice = close
+            stopLoss = engulfedHigh
+            risk = stopLoss - entryPrice
+            takeProfit = useTargetPrice ? targetPrice : entryPrice - risk * rMultiple
+
+            strategy.entry("Short", strategy.short)
+            strategy.exit("Short Exit", from_entry="Short", stop=stopLoss, limit=takeProfit)
+            if drawBoxes
+                line.new(bar_index, entryPrice, bar_index + 3, entryPrice, color=color.black, width=1)
+                box.new(left=bar_index, right=bar_index + 3, top=stopLoss, bottom=entryPrice, bgcolor=color.new(#ff0000, 80), border_color=color.new(#ff0000, 80))
+                box.new(left = bar_index, right = bar_index + 3, top = entryPrice, bottom = takeProfit, bgcolor = color.new(#089981, 80), border_color = color.new(#089981, 80))

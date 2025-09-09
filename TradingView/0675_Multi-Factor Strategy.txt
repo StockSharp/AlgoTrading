@@ -1,0 +1,41 @@
+//@version=5
+strategy("Multi-Factor Hedge Fund Strategy", overlay=true)
+
+// Input parameters
+fastLength = input(12, "MACD Fast Length")
+slowLength = input(26, "MACD Slow Length")
+signalLength = input(9, "MACD Signal Length")
+rsiLength = input(14, "RSI Length")
+atrLength = input(14, "ATR Length")
+
+// Calculate indicators
+[macdLine, signalLine, histLine] = ta.macd(close, fastLength, slowLength, signalLength)
+rsi = ta.rsi(close, rsiLength)
+atr = ta.atr(atrLength)
+
+sma50 = ta.sma(close, 50)
+sma200 = ta.sma(close, 200)
+
+// Strategy logic
+longCondition = macdLine > signalLine and rsi < 70 and close > sma50 and sma50 > sma200
+shortCondition = macdLine < signalLine and rsi > 30 and close < sma50 and sma50 < sma200
+
+// Execute trades
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Set stop loss and take profit
+stopLoss = 2 * atr
+takeProfit = 3 * atr
+
+strategy.exit("Exit Long", "Long", stop = strategy.position_avg_price - stopLoss, limit = strategy.position_avg_price + takeProfit)
+strategy.exit("Exit Short", "Short", stop = strategy.position_avg_price + stopLoss, limit = strategy.position_avg_price - takeProfit)
+
+// Plot indicators
+plot(sma50, color=color.blue, title="50 SMA")
+plot(sma200, color=color.red, title="200 SMA")
+plot(ta.crossover(macdLine, signalLine) ? close : na, style=plot.style_circles, color=color.green, title="MACD Crossover")
+plot(ta.crossunder(macdLine, signalLine) ? close : na, style=plot.style_circles, color=color.red, title="MACD Crossunder")

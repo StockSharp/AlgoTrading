@@ -1,0 +1,698 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RicardoSantos
+
+//@version=6
+
+// @description Similarity measures are statistical methods used to quantify the distance between different data sets
+//  or strings. There are various types of similarity measures, including those that compare:
+// - data points (SSD, Euclidean, Manhattan, Minkowski, Chebyshev, Correlation, Cosine, Camberra, MAE, MSE, Lorentzian, Intersection, Penrose Shape, Meehl),
+// - strings (Edit(Levenshtein), Lee, Hamming, Jaro),
+// - probability distributions (Mahalanobis, Fidelity, Bhattacharyya, Hellinger),
+// - sets (Kumar Hassebrook, Jaccard, Sorensen, Chi Square).
+// ---
+//  These measures are used in various fields such as data analysis, machine learning, and pattern recognition. They
+//  help to compare and analyze similarities and differences between different data sets or strings, which
+//  can be useful for making predictions, classifications, and decisions.
+// ---
+// References:
+// https://en.wikipedia.org/wiki/Similarity_measure
+// https://cran.r-project.org/web/packages/SimilarityMeasures/index.html
+// https://numerics.mathdotnet.com/Distance
+// https://github.com/ngmarchant/comparator
+// https://github.com/drostlab/philentropy/blob/7bdefc99f6a7016ad3f90f963d784608edfe74fb/src/distances.h
+// https://github.com/scipy/scipy/blob/v1.11.2/scipy/spatial/distance.py
+// Encyclopedia of Distances, https://doi.org/10.1007/978-3-662-52844-0
+library('SimilarityMeasures')
+
+// <--    101 Character spaces.                                                                     -->|
+// 3456789 123456789 123456789 123456789 123456789|123456789 123456789 123456789 123456789 123456789|
+//        |    |        |        |    |        |        |    |        |        |            |        |    |        |
+
+//#region    00            Pre loading and module dependencies.
+//#region    00.00        Imports:
+
+//#endregion    00.00
+//#region    00.01        Constants:
+
+string __MODNAME__ = 'SimilarityMeasures'
+var array<string> __ALPHA__ = array.from(' ', 'a', 'b', 'c', 'd', 'e',
+                   'f', 'g', 'h', 'i', 'j',
+                   'k', 'l', 'm', 'n', 'o',
+                   'p', 'q', 'r', 's', 't',
+                   'u', 'v', 'w', 'x', 'y',
+                   'z')
+var map<string, int> __AINDEX = map.new<string, int>()
+if barstate.isfirst
+    for [_i, _l] in __ALPHA__
+        __AINDEX.put(_l, _i)
+
+//#endregion    00.01
+//#region    00.02        Helpers:
+//#region    00.02.01    () err_valid_size.
+
+// @function Template error function to compare two arrays size and if any is empty.
+errif_array_invalid_size (int x, int y, string src_function='') =>
+    switch
+        x  < 1 => runtime.error(__MODNAME__ + ' -> ' + src_function + '(): invalid array size.')
+        x != y => runtime.error(__MODNAME__ + ' -> ' + src_function + '(): invalid array size.')
+
+
+//#endregion    00.02.01
+//#region    00.02.02    () alpha_to_index.
+
+alpha_to_index (string s) =>
+    _tokens = str.split(s, '')
+    _indexed = array.new<int>(_tokens.size())
+    for [_i, _char] in _tokens
+        _indexed.set(_i, __AINDEX.get(_char))
+    _indexed
+
+//#endregion    00.02.02
+//#endregion    00.02
+//#endregion    00
+//#region    01            Distance between data points:
+//#region    01.01        () Sum of Squared difference (SSD).
+
+// @function Sum of squared difference for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Measure of distance that calculates the squared euclidean distance.
+export ssd (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'ssd')
+    float _dist = 0.0
+    for [_i, _pi] in p
+        _dist += math.pow(_pi - q.get(_i), 2.0)
+    _dist
+
+//#endregion    01.01
+//#region    01.02        () Euclidean.
+
+// @function Euclidean distance for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Measure of distance that calculates the straight-line (or Euclidean).
+export euclidean (array<float> p, array<float> q) =>
+    math.sqrt(ssd(p, q))
+
+//#endregion    01.02
+//#region    01.03        () Manhattan.
+
+// @function Manhattan distance for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Measure of absolute differences between both points.
+export manhattan (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'manhatan')
+    float _dist = 0.0
+    for [_i, _pi] in p
+        _dist += math.abs(_pi - q.get(_i))
+    _dist
+
+//#endregion    01.03
+//#region    01.04        () Minkowski.
+
+// @function Minkowsky Distance for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @param p_value `float`    P value, default=1.0(1: manhatan, 2: euclidean), does not support chebychev.
+// @returns Measure of similarity in the normed vector space.
+export minkowski (array<float> p, array<float> q, float p_value=1.0) =>
+    errif_array_invalid_size(p.size(), q.size(), 'minkowski')
+    //sum the vector diference:
+    float _dist = 0.0
+    for [_i, _pi] in p
+        _dist += math.pow(math.abs(_pi - q.get(_i)), p_value)
+    //root it:
+    math.pow(_dist, (1.0 / p_value))
+
+//#endregion    01.04
+//#region    01.05        () Chebyshev.
+
+// @function Chebyshev distance for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Measure of maximum absolute difference.
+export chebyshev (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'chebychev')
+    float _maxd = 0.0
+    for [_i, _pi] in p
+        float _di = math.abs(_pi - q.get(_i))
+        if _di >= _maxd
+            _maxd := _di
+    _maxd
+
+//#endregion    01.05
+//#region    01.06        () Correlation.
+
+// @function Correlation distance for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Measure of maximum absolute difference.
+export correlation (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'correlation')
+    float _pmean = p.avg()
+    float _qmean = q.avg()
+    float _p_square = 0.0
+    float _q_square = 0.0
+    float _top = 0.0
+    for [_i, _pi] in p
+        float _pm = math.abs(_pi - _pmean)
+        float _qm = math.abs(q.get(_i) - _qmean)
+        _p_square += _pm * _pm
+        _q_square += _qm * _qm
+        _top += _pm * _qm
+    // calculate pearsons correlation:
+    _top /  math.sqrt(_p_square * _q_square)
+
+//#endregion    01.06
+//#region    01.07        () Cosine.
+
+// @function Cosine distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Cosine distance between vectors `p` and `q`.
+//
+// ---
+// https://angiogenesis.dkfz.de/oncoexpress/software/cs_clust/cluster.htm
+export cosine (array<float> p, array<float> q) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _d1 = 0.0
+    float _p_square = 0.0
+    float _q_square = 0.0
+    for _i = 0 to _n - 1
+        float _pi = p.get(_i)
+        float _qi = q.get(_i)
+        _p_square += math.pow(_pi, 2.0)
+        _q_square += math.pow(_qi, 2.0)
+        _d1 += _pi * _qi
+    float _d2 = math.sqrt(_p_square) * math.sqrt(_q_square)
+    if _d2 == 0.0
+        0.0 // division by 0
+    else
+        _d1 / _d2
+
+//#endregion    01.07
+//#region    01.08        () Camberra.
+
+// @function Camberra distance for N dimensions.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Weighted measure of absolute differences between both points.
+export camberra (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'manhatan')
+    float _dist = 0.0
+    for [_i, _pi] in p
+        float _qi = q.get(_i)
+        _dist += math.abs(_pi - _qi) / (math.abs(_pi) + math.abs(_qi))
+    _dist
+
+//#endregion    01.08
+//#region    01.09        () Mean Absolute Error.
+
+// @function Mean absolute error is a normalized version of the sum of absolute difference (manhattan).
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns Mean absolute error of vectors `p` and `q`.
+export mae (array<float> p, array<float> q) =>
+    manhattan(p, q) / p.size()
+
+//#endregion    01.09
+//#region    01.10        () Mean Squared Error.
+
+// @function Mean squared error is a normalized version of the sum of squared difference.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns  Mean squared error of vectors `p` and `q`.
+export mse (array<float> p, array<float> q) =>
+    ssd(p, q) / p.size()
+
+//#endregion    01.10
+//#region    01.11        () Lorentzian.
+
+// @function Lorentzian distance between provided vectors.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns  Lorentzian distance of vectors `p` and `q`.
+//
+// ---
+// https://angiogenesis.dkfz.de/oncoexpress/software/cs_clust/cluster.htm
+export lorentzian (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'manhatan')
+    float _dist = 0.0
+    for [_i, _pi] in p
+        float _qi = q.get(_i)
+        _dist += math.log(1.0 + math.abs(_pi - _qi))
+    _dist
+
+//#endregion    01.11
+//#region    01.12        () Intersection.
+
+// @function Intersection distance between provided vectors.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns  Intersection distance of vectors `p` and `q`.
+//
+// ---
+// https://angiogenesis.dkfz.de/oncoexpress/software/cs_clust/cluster.htm
+export intersection (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'manhatan')
+    float _smin = 0.0
+    for [_i, _pi] in p
+        float _qi = q.get(_i)
+        _smin += math.min(_pi, _qi)
+    1.0 - _smin / math.min(p.sum(), q.sum())
+
+//#endregion    01.12
+//#region    01.13        () Penrose Shape.
+
+// @function Penrose Shape distance between provided vectors.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns  Penrose shape distance of vectors `p` and `q`.
+//
+// ---
+// https://angiogenesis.dkfz.de/oncoexpress/software/cs_clust/cluster.htm
+export penrose (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'manhatan')
+    float _dist = 0.0
+    float _p_mean = p.avg()
+    float _q_mean = q.avg()
+    for [_i, _pi] in p
+        float _qi = q.get(_i)
+        _dist += math.pow((_pi - _p_mean) - (_qi - _q_mean), 2.0)
+    math.sqrt(_dist)
+
+//#endregion    01.13
+//#region    01.14        () Meehl.
+
+// @function Meehl distance between provided vectors.
+// @param p    `array<float>`    Vector with first numeric distribution.
+// @param q    `array<float>`    Vector with second numeric distribution.
+// @returns  Meehl distance of vectors `p` and `q`.
+//
+// ---
+// https://angiogenesis.dkfz.de/oncoexpress/software/cs_clust/cluster.htm
+export meehl (array<float> p, array<float> q) =>
+    errif_array_invalid_size(p.size(), q.size(), 'manhatan')
+    float _dist = 0.0
+    for _i = 0 to p.size() - 2
+        _dist += math.pow((p.get(_i) - q.get(_i)) - (p.get(_i + 1) - q.get(_i + 1)), 2.0)
+    _dist
+
+//#endregion    01.14
+//#endregion    01
+//#region    02            Distance between Strings:
+//#region    02.01        () Edit.
+
+
+
+// @function Edit (aka Levenshtein) distance for indexed strings.
+// @param x     `array<int>`    Indexed array.
+// @param y        `array<int>`    Indexed array.
+// @returns Number of deletions, insertions, or substitutions required to transform source string into target string.
+//
+// ---
+// generated description:
+// The Edit distance is a measure of similarity used to compare two strings. It is defined as the minimum number of
+//  operations (insertions, deletions, or substitutions) required to transform one string into another. The operations
+//  are performed on the characters of the strings, and the cost of each operation depends on the specific algorithm
+//  used.
+// The Edit distance is widely used in various applications such as spell checking, text similarity, and machine
+//  translation. It can also be used for other purposes like finding the closest match between two strings or
+//  identifying the common prefixes or suffixes between them.
+//
+// ---
+//    https://github.com/disha2sinha/Data-Structures-and-Algorithms/blob/master/Dynamic%20Programming/EditDistance.cpp
+//  https://www.red-gate.com/simple-talk/blogs/string-comparisons-in-sql-edit-distance-and-the-levenshtein-algorithm/
+//  https://planetcalc.com/1721/
+export edit (array<int> x, array<int> y) =>
+    int _size_x = x.size()
+    int _size_y = y.size()
+    _table = matrix.new<int>(_size_x+1, _size_y+1, 0)
+    for _i = 0 to _size_x
+        for _j = 0 to _size_y
+            switch
+                _i == 0                     => _table.set(_i, _j, _j)
+                _j == 0                     => _table.set(_i, _j, _i)
+                x.get(_i-1) == y.get(_j-1)     => _table.set(_i, _j, _table.get(_i-1, _j-1))
+                =>                                _table.set(_i, _j, 1 + math.min(     _table.get(_i  , _j-1),
+                                                                                 _table.get(_i-1, _j  ),
+                                                                                 _table.get(_i-1, _j-1)))
+    _table.get(_size_x, _size_y)
+
+// TEST 20230822 RS
+// if barstate.islastconfirmedhistory
+//     log.warning('{0}', edit(alpha_to_index('hello'), alpha_to_index('relevant'))) // 6
+//     log.warning('{0}', edit(alpha_to_index('elephant'), alpha_to_index('relevant'))) // 3
+//     log.warning('{0}', edit(alpha_to_index('statistics'), alpha_to_index('mathematics'))) // 6
+//     log.warning('{0}', edit(alpha_to_index('numpy'), alpha_to_index('alexa'))) // 5
+
+//#endregion    02.01
+//#region    02.02        () Lee.
+
+//@function Distance between two indexed strings of equal length.
+// @param x     `array<int>`    Indexed array.
+// @param y        `array<int>`    Indexed array.
+// @param dsize    `int`            Dictionary size.
+// @returns Distance between two strings by accounting for dictionary size.
+//
+// ---
+// https://www.johndcook.com/blog/2020/03/29/lee-distance-codes-and-music/
+export lee (array<int> x, array<int> y, int dsize) =>
+    int _size = x.size()
+    errif_array_invalid_size(_size, y.size(), 'lee')
+    int _sum = 0
+    for _i = 0 to _size-1
+        _d = math.abs(x.get(_i) - y.get(_i))
+        _sum += math.min(_d, dsize - _d)
+    _sum
+
+// TEST 20230822 RS
+// if barstate.islastconfirmedhistory
+//     log.info('{0}', lee(alpha_to_index('hamming'), alpha_to_index('hanning'), __AINDEX.size())) // 2
+//     log.info('{0}', lee(alpha_to_index('hamming'), alpha_to_index('farming'), __AINDEX.size())) // 7
+
+//#endregion    02.02
+//#region    02.03        () Hamming.
+
+
+//@function Distance between two indexed strings of equal length.
+// @param x     `array<int>`    Indexed array.
+// @param y        `array<int>`    Indexed array.
+// @returns Length of different components on both sequences.
+//
+// ---
+// https://en.wikipedia.org/wiki/Hamming_distance
+export hamming (array<int> x, array<int> y) =>
+    errif_array_invalid_size(x.size(), y.size(), 'hamming')
+    int _sum = 0
+    for [_i, _xi] in x
+        if _xi != y.get(_i)
+            _sum += 1
+    _sum
+
+//#endregion    02.03
+//#region    02.04        () Jaro.
+
+
+//@function Distance between two indexed strings.
+// @param x     `array<int>`    Indexed array.
+// @param y        `array<int>`    Indexed array.
+// @returns Measure of two strings' similarity: the higher the value, the more similar the strings are.
+// The score is normalized such that `0` equates to no similarities and `1` is an exact match.
+//
+// ---
+// https://rosettacode.org/wiki/Jaro_similarity
+export jaro (array<int> x, array<int> y) =>
+    int _size_x = x.size()
+    int _size_y = y.size()
+    if _size_x == 0
+        _size_y == 0 ? 1.0 : 0.0
+    else
+        float _matches = 0.0
+        float _transpositions = 0.0
+        array<bool> _match_x = array.new<bool>(_size_x, false)
+        array<bool> _match_y = array.new<bool>(_size_y, false)
+        int _match_distance = (math.max(_size_x, _size_y) / 2) - 1
+        for _i = 0 to _size_x-1
+            int _start = math.max(0, _i - _match_distance)
+            int _end = math.min(_i + _match_distance, _size_y-1)
+            for _k = _start to _end
+                if (not _match_y.get(_k)) and x.get(_i) == y.get(_k)
+                    _match_x.set(_i, true)
+                    _match_y.set(_k, true)
+                    _matches += 1
+                    break
+        if _matches == 0
+            0.0
+        else
+            int _k = 0
+            for _i = 0 to _size_x-1
+                if _match_x.get(_i)
+                    while not _match_y.get(_k)
+                        _k += 1
+                    if x.get(_i) != y.get(_k)
+                        _transpositions += 0.5
+                    _k += 1
+            ((_matches / _size_x) + (_matches / _size_y) + ((_matches - _transpositions) / _matches)) / 3.0
+
+// TEST 20230822 RS
+// if barstate.islastconfirmedhistory
+//     log.info('{0,number,0.000000}', jaro(alpha_to_index('dwayne'), alpha_to_index('duane'))) // 0.822222
+//     log.info('{0,number,0.000000}', jaro(alpha_to_index('martha'), alpha_to_index('marhta'))) // 0.944444
+//     log.info('{0,number,0.000000}', jaro(alpha_to_index('dixon'), alpha_to_index('dicksonx'))) // 0.766667
+//     log.info('{0,number,0.000000}', jaro(alpha_to_index('jellyfish'), alpha_to_index('smellyfish'))) // 0.896296
+
+//#endregion    02.04
+//#endregion    02
+//#region    03            Distance between probability distributions:
+//#region    03.01        () Mahalanobis.
+
+// @function Mahalanobis distance between two vectors with population inverse covariance matrix.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @param VI    `matrix<float>`        Inverse of the covariance matrix.
+// @returns The mahalanobis distance between vectors `p` and `q`.
+//
+// ---
+// https://people.revoledu.com/kardi/tutorial/Similarity/MahalanobisDistance.html
+// https://stat.ethz.ch/R-manual/R-devel/library/stats/html/mahalanobis.html
+// https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.mahalanobis.html
+export mahalanobis (array<float> p, array<float> q, matrix<float> VI) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    _X = matrix.new<float>(_n, 0, na)
+    _X.add_col(0, p)
+    _X.add_col(0, q)
+    float _p_mean = p.avg()
+    float _q_mean = q.avg()
+    // reuse _X to hold deltas
+    for [_i, _pi] in p
+        _X.set(_i, 0, _pi - q.get(_i))
+    // product ((delta.T, VI), delta)
+    _M = matrix.mult(matrix.mult(_X.transpose(), VI), _X) // can be optimized?
+    for _i = 0 to _M.rows() - 1
+        for _j = 0 to _M.columns() - 1
+            _M.set(_i, _j, math.sqrt(_M.get(_i, _j)))
+    _M // output _M.get(0, 0) instead of matrix?
+    // math.sqrt(_M.get(0, 0))
+
+// TEST 20230829 RS: Matches scipy output.
+// if barstate.islastconfirmedhistory
+//     iv = matrix.new<float>(0, 3, 0.0)
+//     iv.add_row(0, array.from(1.0, 0.5, 0.5))
+//     iv.add_row(1, array.from(0.5, 1.0, 0.5))
+//     iv.add_row(2, array.from(0.5, 0.5, 1.0))
+//     // [[1, 0.5, 0.5], [0.5, 1, 0.5], [0.5, 0.5, 1]]
+//     log.info('{0}', mahalanobis(array.from(1.0, 0.0, 0.0), array.from(0.0, 1.0, 0.0), iv)) // 1.0
+//     log.info('{0}', mahalanobis(array.from(0.0, 2.0, 0.0), array.from(0.0, 1.0, 0.0), iv)) // 1.0
+//     log.info('{0}', mahalanobis(array.from(2.0, 0.0, 0.0), array.from(0.0, 1.0, 0.0), iv)) // 1.7320508075688772
+
+//#endregion    03.01
+//#region    03.02        () Fidelity (Bhattacharyya Coefficient).
+
+// @function Fidelity distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Bhattacharyya Coefficient between vectors `p` and `q`.
+//
+// ---
+// https://en.wikipedia.org/wiki/Fidelity_of_quantum_states
+export fidelity (array<float> p, array<float> q) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _d1 = 0.0
+    for _i = 0 to _n - 1
+        _d1 += math.sqrt(p.get(_i) * q.get(_i))
+    _d1
+
+//#endregion    03.02
+//#region    03.03        () Bhattacharyya.
+
+
+// @function Bhattacharyya distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Bhattacharyya distance between vectors `p` and `q`.
+//
+// ---
+// https://en.wikipedia.org/wiki/Bhattacharyya_distance
+export bhattacharyya (array<float> p, array<float> q) =>
+    -math.log(fidelity(p, q))
+
+//TEST -------- RS
+// if barstate.islastconfirmedhistory
+//     p0 = array.from(1.0, 2, 3, 4, 5)
+//     q0 = array.from(4.0, 5, 6, 7, 8)
+//     p1 = array.from(0.36, 0.48, 0.16)
+//     q1 = array.from(0.33, 0.33, 0.33)
+//     log.info('{0}', bhattacharyya(p0, q0)) //
+//     log.info('{0}', bhattacharyya(p1, q1)) //
+
+//#endregion    03.03
+//#region    03.04        () Hellinger.
+
+// @function Hellinger distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The hellinger distance between vectors `p` and `q`.
+//
+// ---
+// https://en.wikipedia.org/wiki/Hellinger_distance#Discrete_distributions
+// https://jamesmccaffrey.wordpress.com/2021/06/07/the-hellinger-distance-between-two-probability-distributions-using-python/
+export hellinger (array<float> p, array<float> q) =>
+    int _n = p.size()
+    float _1n = 1.0 / _n
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _sum = 0.0
+    for _i = 0 to _n - 1
+        _sum += math.pow(math.sqrt(p.get(_i)) - math.sqrt(q.get(_i)), 2.0)
+    // (1.0 / math.sqrt(2.0)) * math.sqrt(_sum)
+    math.sqrt(_sum) / math.sqrt(2.0)
+    // math.sqrt(1.0 - fidelity(p, q))
+    // 2.0 * math.sqrt(1.0 - fidelity(p, q)) // alternative does not match
+
+//TEST 20230829 RS
+// if barstate.islastconfirmedhistory
+//     p0 = array.from(1.0, 2, 3, 4, 5)
+//     q0 = array.from(4.0, 5, 6, 7, 8)
+//     p1 = array.from(0.36, 0.48, 0.16) //
+//     float _13 = 1.0 / 3.0
+//     q1 = array.from(_13, _13, _13) // 0.150498
+//     log.info('{0}', hellinger(p0, q0)) //
+//     log.info('{0,number,0.000000}', hellinger(p1, q1)) //
+
+//#endregion    03.04
+//#endregion    03
+//#region    04            Distance between sets:
+//#region    04.01        () Kumar Hassebrook.
+
+// @function Kumar Hassebrook distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Kumar Hassebrook distance between vectors `p` and `q`.
+//
+// ---
+// https://github.com/drostlab/philentropy/blob/7bdefc99f6a7016ad3f90f963d784608edfe74fb/src/distances.h#L962
+export kumar_hassebrook (array<float> p, array<float> q) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _d1 = 0.0
+    float _p_square = 0.0
+    float _q_square = 0.0
+    for _i = 0 to _n - 1
+        float _pi = p.get(_i)
+        float _qi = q.get(_i)
+        _p_square += math.pow(_pi, 2.0)
+        _q_square += math.pow(_qi, 2.0)
+        _d1 += _pi * _qi
+    float _d2 = _p_square + _q_square - _d1
+    if _d2 == 0.0 // division by 0
+        0.0
+    else
+        _d1 / _d2
+
+//#endregion    04.01
+//#region    04.02        () Jaccard.
+
+// @function Jaccard distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Jaccard distance between vectors `p` and `q`.
+//
+// ---
+// https://github.com/drostlab/philentropy/blob/7bdefc99f6a7016ad3f90f963d784608edfe74fb/src/distances.h#L1010
+export jaccard (array<float> p, array<float> q) =>
+    1.0 - kumar_hassebrook(p, q)
+
+//#endregion    04.02
+//#region    04.03        () Sorensen (Bray Curtis).
+
+// @function Sorensen distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Sorensen distance between vectors `p` and `q`.
+//
+// ---
+// https://people.revoledu.com/kardi/tutorial/Similarity/BrayCurtisDistance.html
+export sorensen (array<float> p, array<float> q) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _d1 = 0.0
+    float _d2 = 0.0
+    for _i = 0 to _n - 1
+        float _pi = p.get(_i)
+        float _qi = q.get(_i)
+        _d1 += math.abs(_pi - _qi)
+        _d2 += _pi + _qi
+    if _d2 == 0.0 // division by 0
+        float(na)
+    else
+        _d1 / _d2
+
+//#endregion    04.03
+//#region    04.03        () Chi Square.
+
+// @function Chi Square distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Chi Square distance between vectors `p` and `q`.
+//
+// ---
+// https://uw.pressbooks.pub/appliedmultivariatestatistics/chapter/distance-measures/
+// https://stats.stackexchange.com/questions/184101/comparing-two-histograms-using-chi-square-distance
+// https://www.itl.nist.gov/div898/handbook/eda/section3/eda35f.htm
+export chi_square (array<float> p, array<float> q, float eps=1.0e-6) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _d = 0.0
+    for _i = 0 to _n - 1
+        float _pi = p.get(_i)
+        float _qi = q.get(_i)
+        if _qi == 0.0 // division by 0
+            _d += math.pow(_pi - _qi, 2.0) / eps
+        else
+            _d += math.pow(_pi - _qi, 2.0) / _qi
+    _d
+
+//#endregion    04.03
+//#region    04.04        () Kulczynsky.
+
+// @function Kulczynsky distance between provided vectors.
+// @param p        `array<float>`        1D Vector.
+// @param q        `array<float>`        1D Vector.
+// @returns The Kulczynsky distance between vectors `p` and `q`.
+//
+// ---
+// https://github.com/drostlab/philentropy/blob/7bdefc99f6a7016ad3f90f963d784608edfe74fb/src/distances.h#L398
+export kulczynsky (array<float> p, array<float> q, float eps=1.0e-6) =>
+    int _n = p.size()
+    if _n != q.size()
+        runtime.error('Size of vectors `p` `q` do not match!')
+    float _d1 = 0.0
+    float _d2 = 0.0
+    for _i = 0 to _n - 1
+        float _pi = p.get(_i)
+        float _qi = q.get(_i)
+        float _diff = math.abs(_pi - _qi)
+        float _min_p = _pi <= _qi ? _pi : _qi
+        _d1 += _diff
+        if _min_p == 0.0
+            _d2 += eps
+        else
+            _d2 += _min_p
+    if _d2 == 0.0 // division by 0
+        float(na)
+    else
+        _d1 / _d2
+
+//#endregion    04.04
+//#endregion    04

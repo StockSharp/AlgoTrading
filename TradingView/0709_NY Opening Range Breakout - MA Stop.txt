@@ -1,0 +1,207 @@
+//@version=5
+strategy("NY Opening Range Breakout - MA Stop", overlay=true, max_bars_back=500)
+
+// Input parameters
+show_range = input.bool(true, title="Show Opening Range")
+cutoff_hour = input.int(12, title="Entry Cutoff Hour (NY time)", minval=10, maxval=16)
+cutoff_minute = input.int(0, title="Entry Cutoff Minute", minval=0, maxval=59)
+
+// Trade direction
+trade_direction = input.string("Long Only", title="Trade Direction", options=["Long Only", "Short Only", "Both"])
+
+// Take profit options
+tp_type = input.string("Fixed Risk Reward", title="Take Profit Type", options=["Fixed Risk Reward", "Moving Average", "Both"])
+tp_ratio = input.float(2.5, title="TP Ratio (for Fixed Risk Reward option)", minval=1.0, maxval=5.0)
+
+// Moving average inputs
+ma_type = input.string("SMA", title="MA Type", options=["SMA", "EMA", "WMA", "VWMA"])
+ma_length = input.int(100, title="MA Length", minval=5, maxval=200)
+ma_source = input.source(close, title="MA Source")
+
+// Variables to store range levels and exit prices
+var float range_high = na
+var float range_low = na
+var bool range_set = false
+var bool long_breakout_occurred = false
+var bool short_breakout_occurred = false
+var int range_day = na
+var float long_entry_stop_loss = na
+var float long_entry_take_profit = na
+var float short_entry_stop_loss = na
+var float short_entry_take_profit = na
+
+// Calculate moving average
+get_ma() =>
+    switch ma_type
+        "SMA" => ta.sma(ma_source, ma_length)
+        "EMA" => ta.ema(ma_source, ma_length)
+        "WMA" => ta.wma(ma_source, ma_length)
+        "VWMA" => ta.vwma(ma_source, ma_length)
+        => ta.ema(ma_source, ma_length)
+
+ma_value = get_ma()
+
+// Calculate take profit levels for plotting
+long_tp_level = strategy.position_size > 0 and not na(long_entry_take_profit) ? long_entry_take_profit : na
+short_tp_level = strategy.position_size < 0 and not na(short_entry_take_profit) ? short_entry_take_profit : na
+
+// ALL PLOTS MUST BE HERE AT GLOBAL SCOPE
+range_high_plot = plot(range_set ? range_high : na, color=color.red, linewidth=2, title="Range High")
+range_low_plot = plot(range_set ? range_low : na, color=color.green, linewidth=2, title="Range Low")
+fill(range_high_plot, range_low_plot, color=color.new(color.blue, 90), title="Opening Range")
+plot(ma_value, color=color.purple, linewidth=2, title="Moving Average")
+plot(long_tp_level, color=color.lime, linewidth=1, style=plot.style_line, title="Long Take Profit")
+plot(short_tp_level, color=color.red, linewidth=1, style=plot.style_line, title="Short Take Profit")
+plot(strategy.position_size > 0 and not na(long_entry_stop_loss) ? long_entry_stop_loss : na, color=color.red, linewidth=1, style=plot.style_line, title="Long Stop Loss")
+plot(strategy.position_size < 0 and not na(short_entry_stop_loss) ? short_entry_stop_loss : na, color=color.lime, linewidth=1, style=plot.style_line, title="Short Stop Loss")
+
+// Function to check if we're in NY opening range (9:30-9:45)
+in_ny_range() =>
+    t = time(timeframe.period, "0930-0945", "America/New_York")
+    not na(t)
+
+// Function to check if we're past cutoff time
+past_cutoff() =>
+    current_time = time(timeframe.period, "0000-2359", "America/New_York")
+    hour_now = hour(current_time, "America/New_York")
+    minute_now = minute(current_time, "America/New_York")
+
+    cutoff_minutes = cutoff_hour * 60 + cutoff_minute
+    current_minutes = hour_now * 60 + minute_now
+
+    current_minutes >= cutoff_minutes
+
+// Reset daily variables at start of new trading day
+new_day = ta.change(time("1D"))
+if new_day
+    range_high := na
+    range_low := na
+    range_set := false
+    long_breakout_occurred := false
+    short_breakout_occurred := false
+    range_day := na
+
+// Capture the opening range during 9:30-9:45 NY time
+if in_ny_range()
+    if na(range_high) or na(range_low) or range_day != dayofmonth
+        range_high := high
+        range_low := low
+        range_day := dayofmonth
+        range_set := false
+    else
+        range_high := math.max(range_high, high)
+        range_low := math.min(range_low, low)
+
+// Mark range as complete when we exit the opening range session
+if not in_ny_range() and not na(range_high) and not na(range_low) and not range_set and range_day == dayofmonth
+    range_set := true
+
+// Entry conditions for LONG
+prev_candle_long_breakout = range_set and close[1] > range_high and not long_breakout_occurred and not past_cutoff() and (trade_direction == "Long Only" or trade_direction == "Both")
+
+// Entry conditions for SHORT
+prev_candle_short_breakout = range_set and close[1] < range_low and not short_breakout_occurred and not past_cutoff() and (trade_direction == "Short Only" or trade_direction == "Both")
+
+// Mark breakouts occurred
+if prev_candle_long_breakout
+    long_breakout_occurred := true
+
+if prev_candle_short_breakout
+    short_breakout_occurred := true
+
+// MA filters
+long_ma_filter_ok = true
+short_ma_filter_ok = true
+
+if tp_type == "Moving Average" or tp_type == "Both"
+    long_ma_filter_ok := close > ma_value
+    short_ma_filter_ok := close < ma_value
+
+// Entry conditions
+long_entry_condition = range_set and ta.barssince(prev_candle_long_breakout) == 0 and not past_cutoff() and strategy.position_size == 0 and long_ma_filter_ok
+short_entry_condition = range_set and ta.barssince(prev_candle_short_breakout) == 0 and not past_cutoff() and strategy.position_size == 0 and short_ma_filter_ok
+
+// Execute LONG trades
+if long_entry_condition
+    entry_price = close
+    risk_per_share = entry_price - range_low
+    calculated_tp = entry_price + (risk_per_share * tp_ratio)
+
+    // Store the exit levels
+    long_entry_stop_loss := range_low
+    long_entry_take_profit := calculated_tp
+
+    strategy.entry("Long", strategy.long)
+
+    // Set exits based on TP type
+    if tp_type == "Fixed Risk Reward"
+        strategy.exit("Exit Long", "Long", stop=long_entry_stop_loss, limit=long_entry_take_profit)
+    else if tp_type == "Moving Average"
+        strategy.exit("Exit Long", "Long", stop=long_entry_stop_loss)
+    else if tp_type == "Both"
+        strategy.exit("Exit Long", "Long", stop=long_entry_stop_loss, limit=long_entry_take_profit)
+
+// Execute SHORT trades
+if short_entry_condition
+    entry_price = close
+    risk_per_share = range_high - entry_price
+    calculated_tp = entry_price - (risk_per_share * tp_ratio)
+
+    // Store the exit levels
+    short_entry_stop_loss := range_high
+    short_entry_take_profit := calculated_tp
+
+    strategy.entry("Short", strategy.short)
+
+    // Set exits based on TP type
+    if tp_type == "Fixed Risk Reward"
+        strategy.exit("Exit Short", "Short", stop=short_entry_stop_loss, limit=short_entry_take_profit)
+    else if tp_type == "Moving Average"
+        strategy.exit("Exit Short", "Short", stop=short_entry_stop_loss)
+    else if tp_type == "Both"
+        strategy.exit("Exit Short", "Short", stop=short_entry_stop_loss, limit=short_entry_take_profit)
+
+// Manual exit logic for Moving Average TP type (since MA is dynamic)
+if strategy.position_size > 0 and (tp_type == "Moving Average" or tp_type == "Both")
+    if close < ma_value
+        strategy.close("Long", comment="MA Exit")
+
+if strategy.position_size < 0 and (tp_type == "Moving Average" or tp_type == "Both")
+    if close > ma_value
+        strategy.close("Short", comment="MA Exit")
+
+// Visual indicators
+plotshape(prev_candle_long_breakout, style=shape.triangleup, location=location.belowbar,
+          color=color.lime, size=size.small, title="Long Breakout Signal")
+plotshape(prev_candle_short_breakout, style=shape.triangledown, location=location.abovebar,
+          color=color.red, size=size.small, title="Short Breakout Signal")
+plotshape(long_entry_condition, style=shape.circle, location=location.belowbar,
+          color=color.green, size=size.normal, title="Long Entry Signal")
+plotshape(short_entry_condition, style=shape.circle, location=location.abovebar,
+          color=color.maroon, size=size.normal, title="Short Entry Signal")
+
+// Information table
+if show_range and range_set
+    var table info_table = table.new(position.top_right, 2, 10, bgcolor=color.white, border_width=1)
+    table.cell(info_table, 0, 0, "Timeframe", text_color=color.black)
+    table.cell(info_table, 1, 0, timeframe.period, text_color=color.blue)
+    table.cell(info_table, 0, 1, "Trade Direction", text_color=color.black)
+    table.cell(info_table, 1, 1, trade_direction, text_color=color.blue)
+    table.cell(info_table, 0, 2, "Range High", text_color=color.black)
+    table.cell(info_table, 1, 2, str.tostring(range_high, "#.##"), text_color=color.red)
+    table.cell(info_table, 0, 3, "Range Low", text_color=color.black)
+    table.cell(info_table, 1, 3, str.tostring(range_low, "#.##"), text_color=color.green)
+    table.cell(info_table, 0, 4, "Range Size", text_color=color.black)
+    table.cell(info_table, 1, 4, str.tostring(range_high - range_low, "#.##"), text_color=color.blue)
+    table.cell(info_table, 0, 5, "TP Type", text_color=color.black)
+    table.cell(info_table, 1, 5, tp_type, text_color=color.purple)
+    table.cell(info_table, 0, 6, "MA Type", text_color=color.black)
+    table.cell(info_table, 1, 6, ma_type + "(" + str.tostring(ma_length) + ")", text_color=color.purple)
+    table.cell(info_table, 0, 7, "Current MA", text_color=color.black)
+    table.cell(info_table, 1, 7, str.tostring(ma_value, "#.##"), text_color=color.purple)
+    table.cell(info_table, 0, 8, "Long MA Filter", text_color=color.black)
+    table.cell(info_table, 1, 8, long_ma_filter_ok ? "PASS" : "FAIL", text_color=long_ma_filter_ok ? color.green : color.red)
+    table.cell(info_table, 0, 9, "Position", text_color=color.black)
+    position_text = strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "NONE"
+    position_color = strategy.position_size > 0 ? color.green : strategy.position_size < 0 ? color.red : color.gray
+    table.cell(info_table, 1, 9, position_text, text_color=position_color)

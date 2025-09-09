@@ -1,0 +1,48 @@
+//@version=6
+strategy("BTC Future Gamma-Weighted Momentum Model (BGMM)", shorttitle="BGMM", overlay=true,
+         default_qty_type=strategy.cash, default_qty_value=50000,
+         slippage=1, commission_value=0.01)
+
+// Inputs
+length = input.int(60, "Length for GWAP Calculation")
+gamma_factor = input.float(0.75, "Gamma Weight Factor", minval=0.5, maxval=1.5, step=0.01)
+
+// Helper Functions
+var float cumulative_weighted_price = na
+var float cumulative_weight = na
+
+price = (high + low + close) / 3  // Typical price as a baseline
+
+gamma_weights = array.new_float(length, 0.0)
+price_series = array.new_float(length, na)
+
+// Populate Arrays for Calculation
+if bar_index >= length
+    for i = 0 to length - 1
+        weighted_gamma = math.pow(gamma_factor, i)
+        array.set(gamma_weights, i, weighted_gamma)
+        array.set(price_series, i, close[i])
+
+// Compute GWAP
+weighted_sum = 0.0
+weight_total = 0.0
+for i = 0 to length - 1
+    w = array.get(gamma_weights, i)
+    p = array.get(price_series, i)
+    weighted_sum := weighted_sum + p * w
+    weight_total := weight_total + w
+
+GWAP = weight_total != 0 ? weighted_sum / weight_total : na
+
+plot(GWAP, color=color.red, title="Gamma Weighted Average Price")
+
+// Conditions for Trade Signals
+long_condition = close > GWAP and close[1] > close[2] and close[2] > close[3]
+short_condition = close < GWAP and close[1] < close[2] and close[2] < close[3]
+
+// Strategy Logic
+if long_condition
+    strategy.entry("Long", strategy.long)
+
+if short_condition
+    strategy.entry("Short", strategy.short)

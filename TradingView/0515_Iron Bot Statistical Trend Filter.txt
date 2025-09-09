@@ -1,0 +1,90 @@
+//@version=6
+strategy('IronBot Statistical Trend Filter', overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 10)
+
+// === BigBeluga Zスコアの計算 === //
+int zLength = input(40, title = 'Z Score Length')
+float zScore = (close - ta.sma(close, zLength)) / ta.stdev(close, zLength)
+
+// === インプットパラメータ === //
+int analysisWindow = input(44, title = 'Analysis Window') // トレンド分析の期間
+float highTrendLimit = input(23.6, title = 'Fibo High Limit') / 100
+float lowTrendLimit = input(78.6, title = 'Fibo Low Limit') / 100
+bool showHighTrend = input(false, title = 'Show High Trend') // ⬅️ デフォルト OFF
+bool showTrendLine = input(false, title = 'Show Trend Line') // ⬅️ デフォルト OFF
+bool showLowTrend = input(false, title = 'Show Low Trend') // ⬅️ デフォルト OFF
+bool useEMA = input(false, title = 'Use EMA Filter') // ⬅️ デフォルト OFF
+int emaLength = input(200, title = 'EMA Length')
+bool showZScore = input(false, title = 'Show Z Score') // ⬅️ デフォルト OFF
+bool showLongSignal = input(false, title = 'Show Long Signal') // ⬅️ デフォルト OFF
+bool showShortSignal = input(false, title = 'Show Short Signal') // ⬅️ デフォルト OFF
+
+// TP/SL 設定
+float leverage = input(15, title = 'Leverage')
+float slRatio = input(0.8, title = 'Stop Loss %') / 100
+float tp1Ratio = input(0.75, title = 'TP1 %') / 100
+float tp2Ratio = input(1.1, title = 'TP2 %') / 100
+float tp3Ratio = input(1.5, title = 'TP3 %') / 100
+float tp4Ratio = input(2.0, title = 'TP4 %') / 100
+
+// === トレンド判断 (Fibonacci Levels) === //
+float highestHigh = ta.highest(high, analysisWindow)
+float lowestLow = ta.lowest(low, analysisWindow)
+float priceRange = highestHigh - lowestLow
+float highTrendLevel = highestHigh - priceRange * highTrendLimit
+float trendLine = highestHigh - priceRange * 0.5
+float lowTrendLevel = highestHigh - priceRange * lowTrendLimit
+
+// === EMA フィルター === //
+float emaValue = ta.ema(close, emaLength)
+bool emaBullish = close >= emaValue
+bool emaBearish = close <= emaValue
+
+// === エントリー条件 (ロング) === //
+bool canLong = close >= trendLine and close >= highTrendLevel and (not useEMA or emaBullish) and zScore >= 0
+// === エントリー条件 (ショート) === //
+bool canShort = close <= trendLine and close <= lowTrendLevel and (not useEMA or emaBearish) and zScore <= 0
+
+// === SL & TP 設定 === //
+float longSL = close * (1 - slRatio)
+float shortSL = close * (1 + slRatio)
+
+float longTP1 = close * (1 + tp1Ratio)
+float shortTP1 = close * (1 - tp1Ratio)
+
+float longTP2 = close * (1 + tp2Ratio)
+float shortTP2 = close * (1 - tp2Ratio)
+
+float longTP3 = close * (1 + tp3Ratio)
+float shortTP3 = close * (1 - tp3Ratio)
+
+float longTP4 = close * (1 + tp4Ratio)
+float shortTP4 = close * (1 - tp4Ratio)
+
+// === エントリー (ロング) === //
+if canLong
+    strategy.entry('Long', strategy.long)
+    strategy.exit('TP1', from_entry = 'Long', limit = longTP1, stop = longSL)
+    strategy.exit('TP2', from_entry = 'Long', limit = longTP2)
+    strategy.exit('TP3', from_entry = 'Long', limit = longTP3)
+    strategy.exit('TP4', from_entry = 'Long', limit = longTP4)
+
+// === エントリー (ショート) === //
+if canShort
+    strategy.entry('Short', strategy.short)
+    strategy.exit('TP1', from_entry = 'Short', limit = shortTP1, stop = shortSL)
+    strategy.exit('TP2', from_entry = 'Short', limit = shortTP2)
+    strategy.exit('TP3', from_entry = 'Short', limit = shortTP3)
+    strategy.exit('TP4', from_entry = 'Short', limit = shortTP4)
+
+// === プロット (視覚化) === //
+plot(showHighTrend ? highTrendLevel : na, color = color.yellow, linewidth = 1, title = 'High Trend Level')
+plot(showTrendLine ? trendLine : na, color = color.blue, linewidth = 2, title = 'Trend Line')
+plot(showLowTrend ? lowTrendLevel : na, color = color.yellow, linewidth = 1, title = 'Low Trend Level')
+plot(useEMA ? emaValue : na, color = color.green, linewidth = 2, title = 'EMA')
+
+// Zスコアのプロット
+plot(showZScore ? zScore : na, title = 'Z Score', color = zScore >= 0 ? color.green : color.red, linewidth = 2)
+
+// エントリーシグナルのプロット
+plotshape(showLongSignal and canLong, title = 'Long Signal', location = location.belowbar, color = color.green, style = shape.labelup, size = size.small)
+plotshape(showShortSignal and canShort, title = 'Short Signal', location = location.abovebar, color = color.red, style = shape.labeldown, size = size.small)

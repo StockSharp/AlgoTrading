@@ -1,0 +1,103 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © rumpypumpydumpy
+
+//@version=4
+study("Function - Weighted Standard Deviation", overlay = true)
+
+f_weighted_sd_from_series(_src, _weight, _n) => //{
+//  @function: Calculates weighted mean, variance, standard deviation, MSE and RMSE from time series variables
+//  @parameters:
+//      _src: time series variable of sample values
+//      _weight: time series of corresponding weight values.
+//      _n : number of samples
+    _xw = _src * _weight
+    _sum_weight = sum(_weight, _n)
+    _mean = sum(_xw, _n) / _sum_weight
+    float _sqerror_sum = 0
+    int _nonzero_n = 0
+    for _i = 0 to _n - 1
+        _sqerror_sum := _sqerror_sum + pow(_mean - _src[_i], 2) * _weight[_i]
+        _nonzero_n := _weight[_i] != 0 ? _nonzero_n + 1 : _nonzero_n
+    _variance = _sqerror_sum / ((_nonzero_n - 1) * _sum_weight / _nonzero_n)
+    _dev = sqrt(_variance)
+    _mse = _sqerror_sum / _sum_weight
+    _rmse = sqrt(_mse)
+    [_mean, _variance, _dev, _mse, _rmse]
+//}
+// -----------------------------------------------------------------------------
+
+f_weighted_sd_from_arrays(_a_src, _a_weight, _n) => //{
+//  @function: Calculates weighted mean, variance, standard deviation, MSE and RMSE from arrays
+//  Expects index 0 of the arrays to be the most recent sample and weight values!
+//  @parameters:
+//      _a_src: array of sample values
+//      _a_weight: array of corresponding weight values.
+//      _n : number of samples
+    float _mean = na, float _variance = na, float _dev = na, float _mse = na
+    float _rmse = na, float _sqerror_sum = na, float _sum_weight = na
+    float[] _a_xw = array.new_float(_n)
+    int _nonzero_n = 0
+    if array.size(_a_src) >= _n
+        _sum_weight := 0
+        _sqerror_sum := 0
+        for _i = 0 to _n - 1
+            array.set(_a_xw, _i, array.get(_a_src, _i) * array.get(_a_weight, _i))
+            _sum_weight := _sum_weight + array.get(_a_weight, _i)
+            _nonzero_n := array.get(_a_weight, _i) != 0 ? _nonzero_n + 1 : _nonzero_n
+        _mean := array.sum(_a_xw) / _sum_weight
+        for _j = 0 to _n - 1
+            _sqerror_sum := _sqerror_sum + pow(_mean - array.get(_a_src, _j), 2) * array.get(_a_weight, _j)
+        _variance := _sqerror_sum / ((_nonzero_n - 1) * _sum_weight / _nonzero_n)
+        _dev := sqrt(_variance)
+        _mse := _sqerror_sum / _sum_weight
+        _rmse := sqrt(_mse)
+    [_mean, _variance, _dev, _mse, _rmse]
+//}
+
+
+// -----------------------------------------------------------------------------
+// Example usage :
+// -----------------------------------------------------------------------------
+
+len = input(20)
+
+// -----------------------------------------------------------------------------
+// From series :
+// -----------------------------------------------------------------------------
+[m, v, d, mse, rmse] = f_weighted_sd_from_series(close, volume, len)
+
+plot(m, color = color.blue)
+plot(m + d * 2, color = color.blue)
+plot(m - d * 2, color = color.blue)
+// -----------------------------------------------------------------------------
+
+
+// -----------------------------------------------------------------------------
+// From arrays :
+// -----------------------------------------------------------------------------
+var float[] a_src = array.new_float()
+var float[] a_weight = array.new_float()
+
+if barstate.isfirst
+    for i = 1 to len
+        array.unshift(a_weight, i)
+
+array.unshift(a_src, close)
+
+if array.size(a_src) > len
+    array.pop(a_src)
+
+[a_m, a_v, a_d, a_mse, a_rmse] = f_weighted_sd_from_arrays(a_src, a_weight, len)
+
+plot(a_m, color = color.orange)
+plot(a_m + a_d * 2, color = color.orange)
+plot(a_m - a_d * 2, color = color.orange)
+// -----------------------------------------------------------------------------
+
+
+series_text = "Mean : " + tostring(m) + "\nVariance : " + tostring(v) + "\nSD : " + tostring(d) + "\nMSE : " + tostring(mse) +  "\nRMSE : " + tostring(rmse)
+array_text = "Mean : " + tostring(a_m) + "\nVariance : " + tostring(a_v) + "\nSD : " + tostring(a_d) + "\nMSE : " + tostring(a_mse) +  "\nRMSE : " + tostring(a_rmse)
+debug_text = "Volume weighted from time series : \n" + series_text + "\n\nLinearly weighted from arrays : \n" + array_text
+
+debug = label.new(x = bar_index, y = close, text = debug_text, style = label.style_label_left)
+label.delete(debug[1])

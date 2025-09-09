@@ -1,0 +1,130 @@
+//@version=5
+strategy("Intraday Combo Strategy [Stoch RSI + MACD + Supertrend + BB + ADX]", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === GİRDİLER ===
+// --- Göstergeleri Aç/Kapat ---
+useStochRSI = input.bool(true, title="Stoch RSI Kullan")
+useMACD = input.bool(true, title="MACD Kullan")
+useSupertrend = input.bool(true, title="Supertrend Kullan")
+useBB = input.bool(true, title="Bollinger Bands Kullan")
+useADX = input.bool(true, title="ADX Filtre Kullan")
+
+// --- Stop-Loss ve Take-Profit ---
+useSLTP = input.bool(true, title="Stop-Loss & Take-Profit Aktif")
+slPerc = input.float(1.0, title="Stop-Loss %", minval=0.1)
+tpPerc = input.float(2.0, title="Take-Profit %", minval=0.1)
+
+// --- Cooldown Ayarı ---
+useCooldown = input.bool(true, title="Sinyal Sonrası Bekleme Süresi Aktif")
+cooldownBars = input.int(10, title="Bekleme Süresi (Bar Sayısı)")
+
+// --- Minimum Göstergelerle Sinyal Oluşumu ---
+minRequiredSignals = input.int(3, title="Minimum Gerekli Sinyal Sayısı", minval=1, maxval=5)
+
+// --- Stoch RSI ---
+stochRSIPeriod = input.int(14, title="Stoch RSI RSI Periyodu")
+stochKPeriod   = input.int(3, title="Stoch K")
+stochDPeriod   = input.int(3, title="Stoch D")
+stochOverbought = input.float(0.8, title="Stoch RSI Aşırı Alım Seviyesi", minval=0.0, maxval=1.0)
+stochOversold  = input.float(0.2, title="Stoch RSI Aşırı Satım Seviyesi", minval=0.0, maxval=1.0)
+
+// --- MACD ---
+macdFast = input.int(12, title="MACD Hızlı EMA")
+macdSlow = input.int(26, title="MACD Yavaş EMA")
+macdSignal = input.int(9, title="MACD Sinyal Periyodu")
+
+// --- Supertrend ---
+supertrendPeriod = input.int(10, title="Supertrend ATR Periyodu")
+supertrendMultiplier = input.float(3.0, title="Supertrend Çarpanı")
+
+// --- Bollinger Bands ---
+bbLength = input.int(20, title="BB Periyodu")
+bbMult   = input.float(2.0, title="BB Çarpanı")
+
+// --- ADX ---
+adxPeriod = input.int(14, title="ADX Periyodu")
+adxThreshold = input.float(20.0, title="Min. Trend Gücü (ADX)")
+
+// === STOKASTİK RSI ===
+rsiValue = ta.rsi(close, stochRSIPeriod)
+lowestRSI = ta.lowest(rsiValue, stochRSIPeriod)
+highestRSI = ta.highest(rsiValue, stochRSIPeriod)
+stochRSIRaw = (rsiValue - lowestRSI) / (highestRSI - lowestRSI)
+stochK = ta.sma(stochRSIRaw, stochKPeriod)
+stochD = ta.sma(stochK, stochDPeriod)
+stochBuy = stochK < stochOversold and stochK > stochD
+stochSell = stochK > stochOverbought and stochK < stochD
+
+// === MACD ===
+[macdLine, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+macdBuy = ta.crossover(macdLine, signalLine)
+macdSell = ta.crossunder(macdLine, signalLine)
+
+// === SUPERTREND ===
+[supertrend, direction] = ta.supertrend(supertrendMultiplier, supertrendPeriod)
+supertrendBuy = direction == 1
+supertrendSell = direction == -1
+
+// === BOLLINGER BANDS ===
+basis = ta.sma(close, bbLength)
+bbUpper = basis + bbMult * ta.stdev(close, bbLength)
+bbLower = basis - bbMult * ta.stdev(close, bbLength)
+bbBuy = close < bbLower
+bbSell = close > bbUpper
+
+// === ADX + Yön Kontrolü ===
+plusDM = ta.change(high) > ta.change(low) and ta.change(high) > 0 ? ta.change(high) : 0
+minusDM = ta.change(low) > ta.change(high) and ta.change(low) > 0 ? ta.change(low) : 0
+trur = ta.rma(ta.tr(true), adxPeriod)
+plusDI = 100 * ta.rma(plusDM, adxPeriod) / trur
+minusDI = 100 * ta.rma(minusDM, adxPeriod) / trur
+dx = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+adx = ta.rma(dx, adxPeriod)
+adxTrendUp = plusDI > minusDI
+trendOk = adx > adxThreshold and adxTrendUp
+
+// === COOL DOWN – Long ve Short Ayrı ===
+var int lastLongTradeBar = na
+var int lastShortTradeBar = na
+cooldownReadyLong = not useCooldown or na(lastLongTradeBar) or (bar_index - lastLongTradeBar >= cooldownBars)
+cooldownReadyShort = not useCooldown or na(lastShortTradeBar) or (bar_index - lastShortTradeBar >= cooldownBars)
+
+// === SİNYAL KOMBİNASYONU ===
+buyConditions = 0
+sellConditions = 0
+
+buyConditions := useStochRSI and stochBuy ? buyConditions + 1 : buyConditions
+buyConditions := useMACD and macdBuy ? buyConditions + 1 : buyConditions
+buyConditions := useSupertrend and supertrendBuy ? buyConditions + 1 : buyConditions
+buyConditions := useBB and bbBuy ? buyConditions + 1 : buyConditions
+buyConditions := useADX and trendOk ? buyConditions + 1 : buyConditions
+
+sellConditions := useStochRSI and stochSell ? sellConditions + 1 : sellConditions
+sellConditions := useMACD and macdSell ? sellConditions + 1 : sellConditions
+sellConditions := useSupertrend and supertrendSell ? sellConditions + 1 : sellConditions
+sellConditions := useBB and bbSell ? sellConditions + 1 : sellConditions
+sellConditions := useADX and trendOk ? sellConditions + 1 : sellConditions
+
+buySignal = cooldownReadyLong and (buyConditions >= minRequiredSignals)
+sellSignal = cooldownReadyShort and (sellConditions >= minRequiredSignals)
+
+// === STRATEJİ İŞLEMLERİ ===
+if buySignal
+    strategy.entry("AL", strategy.long)
+    if useSLTP
+        strategy.exit("TP/SL", from_entry="AL", stop=close * (1 - slPerc / 100), limit=close * (1 + tpPerc / 100))
+    lastLongTradeBar := bar_index
+
+if sellSignal
+    strategy.entry("SAT", strategy.short)
+    if useSLTP
+        strategy.exit("TP/SL", from_entry="SAT", stop=close * (1 + slPerc / 100), limit=close * (1 - tpPerc / 100))
+    lastShortTradeBar := bar_index
+
+// === GRAFİK GÖSTERİMLERİ ===
+plotshape(buySignal, title="AL Sinyali", location=location.belowbar, color=color.lime, style=shape.labelup, text="AL")
+plotshape(sellSignal, title="SAT Sinyali", location=location.abovebar, color=color.red, style=shape.labeldown, text="SAT")
+
+plot(bbUpper, "BB Üst", color=color.gray)
+plot(bbLower, "BB Alt", color=color.gray)
+plot(basis, "BB Orta", color=color.gray)

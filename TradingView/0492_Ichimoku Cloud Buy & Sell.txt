@@ -1,0 +1,62 @@
+//@version=5
+strategy("Ichimoku Cloud Buy & Sell w/ Custom EMA & Volume Filters", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === INPUTS ===
+conversionPeriods = input.int(9, title="Tenkan-sen Periods")
+basePeriods      = input.int(26, title="Kijun-sen Periods")
+displacement     = input.int(26, title="Cloud Displacement")
+laggingSpan      = input.int(52, title="Senkou Span B Periods")
+
+emaPeriod        = input.int(44, title="EMA Length for Exit", minval=1)
+avgVolLen        = input.int(10, title="Average Volume Length for Filter")
+useStopLoss      = input.bool(true, title="Use Stop Loss for Exits")
+stopLossPerc     = input.float(2.0, title="Stop Loss (%)", minval=0.1, step=0.1)
+requireAboveEMA  = input.bool(true, title="Only Buy Above EMA?")
+requireBelowEMA  = input.bool(true, title="Only Sell Below EMA?")
+
+// === ICHIMOKU CALCULATIONS ===
+tenkan = (ta.highest(high, conversionPeriods) + ta.lowest(low, conversionPeriods)) / 2
+kijun  = (ta.highest(high, basePeriods) + ta.lowest(low, basePeriods)) / 2
+senkouA = (tenkan + kijun) / 2
+senkouB = (ta.highest(high, laggingSpan) + ta.lowest(low, laggingSpan)) / 2
+senkouA_now = senkouA[displacement]
+senkouB_now = senkouB[displacement]
+
+// === EMA CALC ===
+emaVal = ta.ema(close, emaPeriod)
+
+// === VOLUME CONDITION ===
+avgVol = ta.sma(volume[1], avgVolLen) // Excludes current candle's volume
+volCondition = volume > avgVol
+
+// === BUY CONDITION ===
+buyCondition = (close > senkouA_now and close > senkouB_now and volCondition and (not requireAboveEMA or close > emaVal))
+
+if buyCondition
+    stopLevel = useStopLoss ? close * (1 - stopLossPerc / 100) : na
+    strategy.entry("Buy", strategy.long)
+    if useStopLoss
+        strategy.exit("Buy SL", from_entry="Buy", stop=stopLevel)
+
+// === SELL CONDITION ===
+sellCondition = (close < senkouA_now and close < senkouB_now and volCondition and (not requireBelowEMA or close < emaVal))
+
+if sellCondition
+    stopLevelSell = useStopLoss ? close * (1 + stopLossPerc / 100) : na
+    strategy.entry("Sell", strategy.short)
+    if useStopLoss
+        strategy.exit("Sell SL", from_entry="Sell", stop=stopLevelSell)
+
+// === EXIT CONDITIONS ===
+exitBuy = close < emaVal // Exit long if close < EMA
+if exitBuy
+    strategy.close("Buy")
+
+exitSell = close > emaVal // Exit short if close > EMA
+if exitSell
+    strategy.close("Sell")
+
+// === PLOTS ===
+plot(emaVal, color=color.yellow, linewidth=2, title="EMA")
+plot(senkouA, color=color.green, title="Senkou Span A", offset=displacement)
+plot(senkouB, color=color.red, title="Senkou Span B", offset=displacement)

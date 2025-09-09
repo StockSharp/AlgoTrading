@@ -1,0 +1,96 @@
+//@version=4
+strategy("Built-in Kelly ratio for position sizing", overlay=true, initial_capital=10000, default_qty_type=strategy.cash, default_qty_value=10000, currency="USD", commission_type=strategy.commission.percent, commission_value=0.1)
+
+c = close
+useKelly = input(true, "Kelly Ratio Position Sizing")
+krp = strategy.wintrades / strategy.closedtrades
+krw =  strategy.grossprofit / strategy.wintrades
+krl = strategy.grossloss / strategy.losstrades
+kr = ((krp - (1-krp) / (krw/krl)) * 100) / 100
+qty = 10000.0
+if useKelly
+    qty := 10000.0 / c
+    if kr > 0
+        qty := (strategy.equity * kr) / c
+
+i_startTime = input(defval = timestamp("01 Mar 1900 00:00 +0000"), title = "Start Time", type = input.time)
+i_endTime = input(defval = timestamp("01 Mar 2221 00:00 +0000"), title = "End Time", type = input.time)
+
+inDateRange = time >= i_startTime and time <= i_endTime
+
+length = input(20, minval=1)
+mult = input(1.0, "Multiplier")
+src = input(close, title="Source")
+exp = input(true, "Use Exponential MA")
+BandsStyle = input("Average True Range", options = ["Average True Range", "True Range", "Range"], title="Bands Style")
+atrlength = input(10, "ATR Length")
+esma(source, length)=>
+    s = sma(source, length)
+    e = ema(source, length)
+    exp ? e : s
+ma = esma(src, length)
+rangema = BandsStyle == "True Range" ? rma(tr(true), length) : BandsStyle == "Average True Range" ? atr(atrlength) : rma(high - low, length)
+upper = ma + rangema * mult
+lower = ma - rangema * mult
+crossUpper = crossover(src, upper)
+crossLower = crossunder(src, lower)
+bprice = 0.0
+bprice := crossUpper ? high+syminfo.mintick : nz(bprice[1])
+sprice = 0.0
+sprice := crossLower ? low -syminfo.mintick : nz(sprice[1])
+crossBcond = false
+crossBcond := crossUpper ? true
+     : na(crossBcond[1]) ? false : crossBcond[1]
+crossScond = false
+crossScond := crossLower ? true
+     : na(crossScond[1]) ? false : crossScond[1]
+cancelBcond = crossBcond and (src < ma or high >= bprice )
+cancelScond = crossScond and (src > ma or low <= sprice )
+if inDateRange
+    if useKelly
+        if (cancelBcond)
+            strategy.cancel("Long")
+        if (crossUpper)
+            strategy.entry("Long", strategy.long, qty, stop=bprice, comment="Long")
+        if (cancelScond)
+            strategy.cancel("Short")
+        if (crossLower)
+            strategy.entry("Short", strategy.short, qty, stop=sprice, comment="Short")
+    else
+        if (cancelBcond)
+            strategy.cancel("Long")
+        if (crossUpper)
+            strategy.entry("Long", strategy.long, stop=bprice, comment="Long")
+        if (cancelScond)
+            strategy.cancel("Short")
+        if (crossLower)
+            strategy.entry("Short", strategy.short, stop=sprice, comment="Short")
+
+usetp = input(false, "use Take Profit")
+usesl = input(false, "use Stop Loss")
+
+tp = input(10.0, "take profit") / 100
+sl = input(1.0, "stop loss") / 100
+avg = strategy.position_avg_price
+
+longprofit = avg*tp/syminfo.mintick
+longloss = avg*sl/syminfo.mintick
+shortprofit = avg*tp/syminfo.mintick
+shortloss = avg*sl/syminfo.mintick
+
+if usetp and not usesl
+    strategy.exit("Long Exit", "Long", profit=longprofit)
+    strategy.exit("Short Exit", "Short", profit=shortprofit)
+if usesl and not usetp
+    strategy.exit("Long Exit", "Long", loss=longloss)
+    strategy.exit("Short Exit", "Short", loss=shortloss)
+if usetp and usesl
+    strategy.exit("Long Exit", "Long", profit=longprofit, loss=longloss)
+    strategy.exit("Short Exit", "Short", profit=shortprofit, loss=shortloss)
+
+
+plotchar(krp * 100, "% profitable", "")
+plotchar(krw, "avg win", "")
+plotchar(krl, "avg loss", "")
+plotchar(strategy.equity, "Equity", "")
+plotchar(qty*c, "Quantity", "")

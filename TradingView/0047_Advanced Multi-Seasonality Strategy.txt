@@ -1,0 +1,123 @@
+//@version=5
+strategy("Advanced Multi-Seasonality Strategy", overlay=true, precision=2, calc_on_every_tick=true, initial_capital=30000, currency=currency.USD, slippage=1, commission_type=strategy.commission.cash_per_contract, commission_value=0.05)
+
+// Period 1 - GUI Inputs
+var section1 = "=== Period 1 Settings ==="
+section1Enabled = input.bool(true, title="Activate Period 1", inline="P1")
+entryMonth1 = input.int(12, title="Entry Month", minval=1, maxval=12, inline="P1", group=section1)
+entryDay1 = input.int(1, title="Entry Day", minval=1, maxval=31, inline="P1", group=section1)
+holdingDays1 = input.int(20, title="Holding Period (Trading Days)", minval=1, inline="P1", group=section1)
+tradeDirection1 = input.string("Long", title="Trade Direction", options=["Long", "Short"], inline="P1", group=section1)
+
+// Period 2 - GUI Inputs
+var section2 = "=== Period 2 Settings ==="
+section2Enabled = input.bool(false, title="Activate Period 2", inline="P2")
+entryMonth2 = input.int(1, title="Entry Month", minval=1, maxval=12, inline="P2", group=section2)
+entryDay2 = input.int(15, title="Entry Day", minval=1, maxval=31, inline="P2", group=section2)
+holdingDays2 = input.int(10, title="Holding Period (Trading Days)", minval=1, inline="P2", group=section2)
+tradeDirection2 = input.string("Long", title="Trade Direction", options=["Long", "Short"], inline="P2", group=section2)
+
+// Period 3 - GUI Inputs
+var section3 = "=== Period 3 Settings ==="
+section3Enabled = input.bool(false, title="Activate Period 3", inline="P3")
+entryMonth3 = input.int(6, title="Entry Month", minval=1, maxval=12, inline="P3", group=section3)
+entryDay3 = input.int(1, title="Entry Day", minval=1, maxval=31, inline="P3", group=section3)
+holdingDays3 = input.int(15, title="Holding Period (Trading Days)", minval=1, inline="P3", group=section3)
+tradeDirection3 = input.string("Long", title="Trade Direction", options=["Long", "Short"], inline="P3", group=section3)
+
+// Period 4 - GUI Inputs
+var section4 = "=== Period 4 Settings ==="
+section4Enabled = input.bool(false, title="Activate Period 4", inline="P4")
+entryMonth4 = input.int(9, title="Entry Month", minval=1, maxval=12, inline="P4", group=section4)
+entryDay4 = input.int(15, title="Entry Day", minval=1, maxval=31, inline="P4", group=section4)
+holdingDays4 = input.int(10, title="Holding Period (Trading Days)", minval=1, inline="P4", group=section4)
+tradeDirection4 = input.string("Long", title="Trade Direction", options=["Long", "Short"], inline="P4", group=section4)
+
+// Variables to track the current date and holding periods
+currentMonth = month(time)
+currentDay = dayofmonth(time)
+
+var int entryBar1 = na
+var bool inTrade1 = false
+var int entryBar2 = na
+var bool inTrade2 = false
+var int entryBar3 = na
+var bool inTrade3 = false
+var int entryBar4 = na
+var bool inTrade4 = false
+
+// Entry and Exit logic for each period
+
+// Period 1
+if (section1Enabled and currentMonth == entryMonth1 and currentDay == entryDay1 and not inTrade1)
+    if (tradeDirection1 == "Long")
+        strategy.entry("Long1", strategy.long)
+    else
+        strategy.entry("Short1", strategy.short)
+    entryBar1 := bar_index
+    inTrade1 := true
+
+if (inTrade1 and (bar_index - entryBar1) >= holdingDays1)
+    strategy.close("Long1")
+    strategy.close("Short1")
+    inTrade1 := false
+
+// Period 2
+if (section2Enabled and currentMonth == entryMonth2 and currentDay == entryDay2 and not inTrade2)
+    if (tradeDirection2 == "Long")
+        strategy.entry("Long2", strategy.long)
+    else
+        strategy.entry("Short2", strategy.short)
+    entryBar2 := bar_index
+    inTrade2 := true
+
+if (inTrade2 and (bar_index - entryBar2) >= holdingDays2)
+    strategy.close("Long2")
+    strategy.close("Short2")
+    inTrade2 := false
+
+// Period 3
+if (section3Enabled and currentMonth == entryMonth3 and currentDay == entryDay3 and not inTrade3)
+    if (tradeDirection3 == "Long")
+        strategy.entry("Long3", strategy.long)
+    else
+        strategy.entry("Short3", strategy.short)
+    entryBar3 := bar_index
+    inTrade3 := true
+
+if (inTrade3 and (bar_index - entryBar3) >= holdingDays3)
+    strategy.close("Long3")
+    strategy.close("Short3")
+    inTrade3 := false
+
+// Period 4
+if (section4Enabled and currentMonth == entryMonth4 and currentDay == entryDay4 and not inTrade4)
+    if (tradeDirection4 == "Long")
+        strategy.entry("Long4", strategy.long)
+    else
+        strategy.entry("Short4", strategy.short)
+    entryBar4 := bar_index
+    inTrade4 := true
+
+if (inTrade4 and (bar_index - entryBar4) >= holdingDays4)
+    strategy.close("Long4")
+    strategy.close("Short4")
+    inTrade4 := false
+
+// Plot signals for each period with different RGB colors
+
+// Period 1
+plotshape(series=(section1Enabled and currentMonth == entryMonth1 and currentDay == entryDay1), location=location.belowbar, color=color.rgb(0, 255, 0), style=shape.labelup, title="Period 1 - Buy Signal", text="BUY 1")
+plotshape(series=(inTrade1 and (bar_index - entryBar1) >= holdingDays1), location=location.abovebar, color=color.rgb(255, 0, 0), style=shape.labeldown, title="Period 1 - Sell Signal", text="SELL 1")
+
+// Period 2
+plotshape(series=(section2Enabled and currentMonth == entryMonth2 and currentDay == entryDay2), location=location.belowbar, color=color.rgb(0, 0, 255), style=shape.labelup, title="Period 2 - Buy Signal", text="BUY 2")
+plotshape(series=(inTrade2 and (bar_index - entryBar2) >= holdingDays2), location=location.abovebar, color=color.rgb(255, 165, 0), style=shape.labeldown, title="Period 2 - Sell Signal", text="SELL 2")
+
+// Period 3
+plotshape(series=(section3Enabled and currentMonth == entryMonth3 and currentDay == entryDay3), location=location.belowbar, color=color.rgb(128, 0, 128), style=shape.labelup, title="Period 3 - Buy Signal", text="BUY 3")
+plotshape(series=(inTrade3 and (bar_index - entryBar3) >= holdingDays3), location=location.abovebar, color=color.rgb(255, 255, 0), style=shape.labeldown, title="Period 3 - Sell Signal", text="SELL 3")
+
+// Period 4
+plotshape(series=(section4Enabled and currentMonth == entryMonth4 and currentDay == entryDay4), location=location.belowbar, color=color.rgb(255, 192, 203), style=shape.labelup, title="Period 4 - Buy Signal", text="BUY 4")
+plotshape(series=(inTrade4 and (bar_index - entryBar4) >= holdingDays4), location=location.abovebar, color=color.rgb(165, 42, 42), style=shape.labeldown, title="Period 4 - Sell Signal", text="SELL 4")

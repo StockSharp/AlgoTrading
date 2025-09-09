@@ -1,0 +1,189 @@
+//@version=6
+// © NerdInvestor47
+strategy("Long and Short Strategy with RSI, ROC, MA Selection, Exit Visualization, and Strength Indicator", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// -----------------------------
+// Parameter für die Indikatoren
+// -----------------------------
+rsiLength = input.int(5, title="RSI Länge", group="Trade Indikatoren")
+rsiOverbought = input.int(70, title="RSI Overbought Schwelle", group="Trade Indikatoren")
+rsiOversold = input.int(44, title="RSI Oversold Schwelle", group="Trade Indikatoren")
+rocLength = input.int(4, title="ROC Länge", group="Trade Indikatoren")
+maLength = input.int(24, title="MA Länge", group="Trade Indikatoren")
+maType = input.int(7, title="MA Typ: 1=SMA, 2=EMA, 3=WMA, 4=HullMA, 5=VWMA, 6=RMA, 7=TEMA", options=[1, 2, 3, 4, 5, 6, 7], group="Trade Indikatoren")
+atrLength = input.int(14, title="ATR Länge für Stop-Loss", group="Trade Indikatoren")
+atrMultiplier = input.float(2.0, title="ATR Multiplier für Stop-Loss", minval=0.1, step=0.1, group="Trade Indikatoren")
+
+// Strategieauswahl
+strategyType = input.string("Long & Short", "Strategie Typ", options=["Only Long", "Long & Short"], group="Strategie Einstellungen")
+bearishMaLength = input.int(200, title="MA Länge für Bärenmarkt (z. B. 200 Tage)", minval=1, group="Bärenmarkt Einstellungen")
+bearishTrendDuration = input.int(5, title="Min. Dauer Bärenmarkt (Kerzen)", minval=1, group="Bärenmarkt Einstellungen")
+
+// Visualisierung
+useBackgroundColor = input.bool(true, title="Hintergrundfarbe verwenden", group="Visualisierung")
+showStopLine = input.bool(true, title="Stoppkurs-Linie anzeigen", group="Visualisierung")
+
+// Kerzentyp
+candleType = input.string("HeikinAshi", "Kerzentyp", options=["Klassisch", "HeikinAshi"])
+
+// Manuelle Heikin Ashi Berechnung
+var float haOpen = na
+var float haClose = na
+var float haHigh = na
+var float haLow = na
+
+haClose := (open + high + low + close) / 4
+haOpen := na(haOpen[1]) ? (open + close) / 2 : (haOpen[1] + haClose[1]) / 2
+haHigh := math.max(high, haOpen, haClose)
+haLow := math.min(low, haOpen, haClose)
+
+candleClose = candleType == "HeikinAshi" ? haClose : close
+
+// Handelszeiten-Einstellungen
+tradeStartHour = input.int(8, title="Handelsstart (Stunde)", minval=0, maxval=23, group="Handelszeiten")
+tradeStartMinute = input.int(0, title="Handelsstart (Minute)", minval=0, maxval=59, group="Handelszeiten")
+tradeEndHour = input.int(22, title="Handelsende (Stunde)", minval=0, maxval=23, group="Handelszeiten")
+tradeEndMinute = input.int(0, title="Handelsende (Minute)", minval=0, maxval=59, group="Handelszeiten")
+inTradeTime = (hour >= tradeStartHour and minute >= tradeStartMinute) and (hour < tradeEndHour or (hour == tradeEndHour and minute <= tradeEndMinute))
+
+// Backtesting-Zeitraum
+fromDay = input.int(group="Backtesting-Zeitraum", defval=1, title="Von Tag", minval=1, maxval=31)
+fromMonth = input.int(group="Backtesting-Zeitraum", defval=1, title="Von Monat", minval=1, maxval=12)
+fromYear = input.int(group="Backtesting-Zeitraum", defval=2000, title="Von Jahr", minval=1970)
+toDay = input.int(group="Backtesting-Zeitraum", defval=31, title="Bis Tag", minval=1, maxval=31)
+toMonth = input.int(group="Backtesting-Zeitraum", defval=12, title="Bis Monat", minval=1, maxval=12)
+toYear = input.int(group="Backtesting-Zeitraum", defval=2100, title="Bis Jahr", minval=1970)
+startDate = timestamp(fromYear, fromMonth, fromDay, 00, 00)
+finishDate = timestamp(toYear, toMonth, toDay, 00, 00)
+time_cond = time >= startDate and time <= finishDate
+
+// Moving Average Auswahl
+calcTEMA(src, length) =>
+    ema1 = ta.ema(src, length)
+    ema2 = ta.ema(ema1, length)
+    ema3 = ta.ema(ema2, length)
+    3 * (ema1 - ema2) + ema3
+
+ma = switch maType
+    1 => ta.sma(candleClose, maLength)
+    2 => ta.ema(candleClose, maLength)
+    3 => ta.wma(candleClose, maLength)
+    4 => ta.hma(candleClose, maLength)
+    5 => ta.vwma(candleClose, maLength)
+    6 => ta.rma(candleClose, maLength)
+    7 => calcTEMA(candleClose, maLength)
+    => na
+
+// Bärenmarkt-Erkennung
+bearishMa = ta.sma(close, bearishMaLength)
+bearishTrend = close < bearishMa
+bearishTrendConfirmed = ta.barssince(not bearishTrend) >= bearishTrendDuration and bearishTrend
+
+// Berechnung der Indikatoren
+rsi = ta.rsi(candleClose, rsiLength)
+roc = ta.roc(candleClose, rocLength)
+atr = ta.atr(atrLength)
+
+// Volumen für Stärkeberechnung
+volumeChange = nz(ta.roc(volume, 5), 0.0)  // Änderung des Volumens über 5 Perioden, NaN durch 0 ersetzen
+volumeStrength = volumeChange > 0 ? 1.0 : 0.5  // Bonus, wenn Volumen steigt
+
+// Stärkeberechnung für Long- und Short-Trades (angepasst für bessere Skalierung)
+rsiStrengthLong = (rsi - rsiOversold) / (rsiOverbought - rsiOversold)  // RSI-Abstand normalisiert (0-1)
+rsiStrengthShort = 1.0 - rsiStrengthLong  // Umgekehrt für Short (0-1)
+rocStrengthLong = roc > 0 ? math.min(roc / 5.0, 1.0) : 0.0  // ROC positiv, skaliert (0-1), durch 5 statt 10 teilen
+rocStrengthShort = roc < 0 ? math.min(math.abs(roc) / 5.0, 1.0) : 0.0  // ROC negativ, skaliert (0-1), durch 5 statt 10 teilen
+maStrengthLong = candleClose > ma ? math.min((candleClose - ma) / ma * 10.0, 1.0) : 0.0  // Abstand über MA, skaliert (0-1), Faktor 10 hinzufügen
+maStrengthShort = candleClose < ma ? math.min((ma - candleClose) / ma * 10.0, 1.0) : 0.0  // Abstand unter MA, skaliert (0-1), Faktor 10 hinzufügen
+bearishStrength = bearishTrendConfirmed ? math.min(nz(ta.barssince(not bearishTrend), 0.0) / (bearishTrendDuration * 1.0), 1.0) : 0.0  // Dauer des Bärenmarkts, skaliert (0-1), Nenner angepasst
+
+// Stärke für Long und Short (0-10)
+longStrength = math.min((rsiStrengthLong + rocStrengthLong + maStrengthLong) / 3.0 * volumeStrength * 10.0, 10.0)
+shortStrength = math.min((rsiStrengthShort + rocStrengthShort + maStrengthShort + bearishStrength) / 4.0 * volumeStrength * 10.0, 10.0)
+
+// Tabelle für Indikatoren (erweitert um Stärke)
+tablePosition = input.string("bottom_right", "Tabelle Position", options=["top_left", "top_right", "middle_left", "middle_right", "bottom_left", "bottom_right"], group="Visualisierung")
+var table indicatorTable = table.new(tablePosition, 5, 4, border_width=1, frame_color=color.gray)
+
+// Tabellenwerte aktualisieren
+rsiCondition = (rsi < rsiOverbought) and (rsi > rsiOversold)
+rocCondition = roc > 0
+maCondition = candleClose > ma
+bearishCondition = bearishTrendConfirmed
+
+table.cell(indicatorTable, 0, 0, "RSI", bgcolor=rsiCondition ? color.green : color.red, text_color=color.white)
+table.cell(indicatorTable, 0, 1, str.tostring(rsi, "#"), text_color=color.white)
+table.cell(indicatorTable, 0, 2, str.tostring(rsiOversold, "#") + " - " + str.tostring(rsiOverbought, "#"), text_color=color.gray)
+table.cell(indicatorTable, 0, 3)
+
+table.cell(indicatorTable, 1, 0, "ROC", bgcolor=rocCondition ? color.green : color.red, text_color=color.white)
+table.cell(indicatorTable, 1, 1, str.tostring(roc, "#.##"), text_color=color.white)
+table.cell(indicatorTable, 1, 2, ">0", text_color=color.gray)
+
+table.cell(indicatorTable, 2, 0, "MA", bgcolor=maCondition ? color.green : color.red, text_color=color.white)
+table.cell(indicatorTable, 2, 1, str.tostring(ma, "#"), text_color=color.white)
+table.cell(indicatorTable, 2, 2, ">" + str.tostring(candleClose, "#"), text_color=color.gray)
+
+table.cell(indicatorTable, 3, 0, "Phase", bgcolor=bearishCondition ? color.red : color.green, text_color=color.white)
+table.cell(indicatorTable, 3, 1, bearishCondition ? "Bär" : "Bulle", text_color=color.white)
+table.cell(indicatorTable, 3, 2, "< " + str.tostring(bearishMaLength) + " SMA", text_color=color.gray)
+
+// Stärke in der Tabelle anzeigen (auf 1 Dezimalstelle begrenzt)
+table.cell(indicatorTable, 4, 0, "Strength", bgcolor=color.new(color.blue, 50), text_color=color.white)
+table.cell(indicatorTable, 4, 1, "Long: " + str.tostring(math.round(longStrength, 1)), text_color=color.white)
+table.cell(indicatorTable, 4, 2, "Short: " + str.tostring(math.round(shortStrength, 1)), text_color=color.white)
+
+// Signale für Long- und Short-Strategie
+longCondition = rsiCondition and rocCondition and maCondition
+shortCondition = bearishTrendConfirmed and (roc < 0) and (candleClose < ma)
+stopConditionLong = (rsi < rsiOversold) and (roc < 0) and (candleClose < ma)
+stopConditionShort = (rsi > rsiOverbought) and (roc > 0) and (candleClose > ma)
+
+// Stop Loss und Trailing Stop
+var float stopLossLong = na
+var float stopLossShort = na
+var float trailingStopLong = na
+var float trailingStopShort = na
+
+if (longCondition)
+    stopLossLong := close - (atr * atrMultiplier)
+    trailingStopLong := close - (atr * atrMultiplier)
+if (shortCondition)
+    stopLossShort := close + (atr * atrMultiplier)
+    trailingStopShort := close + (atr * atrMultiplier)
+
+if (strategy.position_size > 0)
+    trailingStopLong := math.max(not na(trailingStopLong) ? trailingStopLong[1] : close, close - (atr * atrMultiplier))
+if (strategy.position_size < 0)
+    trailingStopShort := math.min(not na(trailingStopShort) ? trailingStopShort[1] : close, close + (atr * atrMultiplier))
+
+// Entry- und Exit-Bedingungen
+if (longCondition and strategy.position_size == 0 and inTradeTime and time_cond)
+    strategy.entry("Long", strategy.long, comment="Long " + str.tostring(math.floor(longStrength)))
+if (strategy.position_size > 0)
+    strategy.exit("Exit Long", "Long", stop=stopLossLong, trail_offset=math.abs(trailingStopLong - low) / syminfo.mintick)
+if (stopConditionLong and strategy.position_size > 0 and inTradeTime and time_cond)
+    strategy.close("Long", comment="STOP")
+
+if (strategyType == "Long & Short" and shortCondition and strategy.position_size == 0 and inTradeTime and time_cond)
+    strategy.entry("Short", strategy.short, comment="Short " + str.tostring(math.floor(shortStrength)))
+if (strategy.position_size < 0)
+    strategy.exit("Exit Short", "Short", stop=stopLossShort, trail_offset=math.abs(trailingStopShort - high) / syminfo.mintick)
+if (stopConditionShort and strategy.position_size < 0 and inTradeTime and time_cond)
+    strategy.close("Short", comment="STOP")
+
+// Visualisierung des MA (zweifarbig)
+maDirection = ta.change(ma) > 0 ? color.green : color.red
+plot(ma, title="Ausgewählter MA", color=maDirection, linewidth=2)
+
+// Visualisierung des Stoppkurses (optional)
+stopLineLong = strategy.position_size > 0 ? trailingStopLong : na
+stopLineShort = strategy.position_size < 0 ? trailingStopShort : na
+plot(showStopLine ? stopLineLong : na, title="Stoppkurs Long", color=color.blue, linewidth=1, style=plot.style_linebr)
+plot(showStopLine ? stopLineShort : na, title="Stoppkurs Short", color=color.orange, linewidth=1, style=plot.style_linebr)
+
+// Kerzenfärbung basierend auf RSI
+barcolor(rsi < rsiOverbought ? color.green : rsi < rsiOversold ? color.red : na, title="RSI Markierung")
+
+// Hintergrundfarbe basierend auf der aktuellen Position
+bgcolor(useBackgroundColor ? (strategy.position_size > 0 ? color.new(color.green, 90) : strategy.position_size < 0 ? color.new(color.red, 90) : na) : na)

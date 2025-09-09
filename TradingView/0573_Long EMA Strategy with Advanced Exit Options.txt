@@ -1,0 +1,100 @@
+//@version=5
+strategy("Long EMA Strategy with Advanced Exit Options", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=5, initial_capital=10000, commission_type=strategy.commission.cash_per_order, commission_value=1)
+
+// === ENTRY STRATEGY ===
+// Input per la scelta del tipo di media mobile e le condizioni di ingresso
+maTypeInput = input.string("EMA", title="Select MA Type", options=["EMA", "SMA", "WMA", "HMA"])
+entryConditionType = input.string("Crossover", title="Entry Condition Type", options=["Crossover", "Above MA"])
+emaLongTermPeriod = input.int(200, title="Long Term MA Period", minval=1)
+emaShortTermPeriod = input.int(5, title="Short Term MA Period", minval=1)
+emaMidTermPeriod = input.int(10, title="Medium Term MA Period", minval=1)
+
+// Funzione per calcolare la media mobile in base alla scelta dell'utente
+calculateMA(type, source, length) =>
+    float result = na
+    if type == "SMA"
+        result := ta.sma(source, length)
+    else if type == "WMA"
+        result := ta.wma(source, length)
+    else if type == "HMA"
+        result := ta.hma(source, length)  // Esempio di come integrare l'Hull Moving Average
+    else
+        result := ta.ema(source, length)
+    result
+
+// Calcolo delle medie mobili con funzione personalizzata
+longTermMA = calculateMA(maTypeInput, close, emaLongTermPeriod)
+shortTermMA = calculateMA(maTypeInput, close, emaShortTermPeriod)
+midTermMA = calculateMA(maTypeInput, close, emaMidTermPeriod)
+
+// Condizione di entrata
+var bool enterLongCondition = false
+if entryConditionType == "Crossover"
+    enterLongCondition := ta.crossover(shortTermMA, midTermMA) and close > longTermMA
+else if entryConditionType == "Above MA"
+    enterLongCondition := shortTermMA > midTermMA and close > longTermMA
+
+if (enterLongCondition)
+    strategy.entry("Enter Long", strategy.long)
+
+// === EXIT STRATEGY ===
+enableMacdExit = input.bool(true, title="Enable MACD Exit Strategy")
+timeframeSelection = input.string("W", title="Select MACD Timeframe", options=["D", "W"])
+macdSource = input(close, title="MACD Source")
+macdFastLength = input.int(12, title="MACD Fast Length")
+macdSlowLength = input.int(26, title="MACD Slow Length")
+macdSignalSmoothing = input.int(9, title="MACD Signal Smoothing")
+useTrailingStop = input.bool(false, title="Enable Trailing Stop Exit Strategy")  // Disabilitato di default
+trailingStopPercent = input.float(15.0, title="Trailing Stop Percentage", minval=0.1, step=0.1) / 100.0
+useEMACloseExit = input.bool(false, title="Close position if price closes below Selected MA")
+emaCloseExitPeriod = input.int(50, title="MA Period for Exit Condition", minval=1)
+useEMAExit = input.bool(true, title="Close position if Short EMA crosses downwards Medium EMA")
+
+// === MACD Exit ===
+[macdLine, signalLine, _] = request.security(syminfo.tickerid, timeframeSelection, ta.macd(macdSource, macdFastLength, macdSlowLength, macdSignalSmoothing))
+macdCrossdown = ta.crossunder(macdLine, signalLine)
+if (enableMacdExit and macdCrossdown)
+    strategy.close("Enter Long", comment="MACD Crossdown Exit")
+
+// === EMA Close Exit ===
+selectedMA = calculateMA(maTypeInput, close, emaCloseExitPeriod)
+if (useEMACloseExit and close < selectedMA)
+    strategy.close("Enter Long", comment="Close Below Selected MA Exit")
+
+// === EMA Cross Exit ===
+if (useEMAExit and ta.crossunder(shortTermMA, midTermMA))
+    strategy.close("Enter Long", comment="EMA Cross Exit")
+
+// === TRAILING STOP LOGIC ===
+var float maxPriceSinceEntry = na
+var float previousStopLevel = na  // Memorizza il livello di stop precedente
+
+if (strategy.position_size > 0 and useTrailingStop)
+    maxPriceSinceEntry := math.max(na(maxPriceSinceEntry) ? high : maxPriceSinceEntry, high)
+    float trailStopLevel = maxPriceSinceEntry * (1 - trailingStopPercent)
+    if (na(previousStopLevel) or trailStopLevel > previousStopLevel)
+        previousStopLevel := trailStopLevel
+        strategy.exit("Trailing Stop", "Enter Long", stop=previousStopLevel)
+else
+    maxPriceSinceEntry := na
+    previousStopLevel := na  // Reset quando non ci sono posizioni aperte
+
+// Visualizzazione del livello di stop sul grafico
+plot(previousStopLevel, color=color.red, title="Trailing Stop Level", style=plot.style_linebr)
+
+// === OPTION FILTER ===
+// Parametri di input generali e ATR
+useVolatilityFilter = input.bool(false, title="Volatility Filter")
+atrPeriods = input.int(14, title="ATR Period", minval=1)
+atrMultiplier = input.float(1.5, title="ATR Multiplier", step=0.1)
+
+// Calcolo ATR e soglia di volatilità
+atr = ta.atr(atrPeriods)
+atrThreshold = ta.sma(atr, atrPeriods) * atrMultiplier
+enterLong = useVolatilityFilter ? (enterLongCondition and atr > atrThreshold) : enterLongCondition
+
+// Visualizzazioni
+plot(longTermMA, color=color.yellow, title="Long Term MA")
+plot(shortTermMA, color=color.blue, title="Short Term MA")
+plot(midTermMA, color=color.green, title="Medium Term MA")
+plot(useVolatilityFilter ? atrThreshold : na, color=color.purple, title="ATR Threshold")

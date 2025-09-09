@@ -1,0 +1,64 @@
+//@version=5
+strategy("CBC Strategy with Trend Confirmation & Separate Stop Loss", overlay=true, initial_capital=2500, default_qty_value=5)
+
+// Input Settings
+atrLength = input.int(14, title="ATR Length")
+profitTargetMultiplier = input.float(1.0, title="Profit Target Multiplier", step=0.1)
+strongFlipsOnly = input.bool(true, title="Enable Strong Flips Only")  // Filter for Strong Flips
+entryStartHour = input.int(title="Entry Start Hour (24-Hour Format)", defval=10, minval=0, maxval=23)
+entryEndHour = input.int(title="No Entries After (24-Hour Format)", defval=15, minval=0, maxval=23)
+bullsColor = input.color(#008000, title="Strong Bulls Color")
+bearsColor = input.color(#ff0000, title="Strong Bears Color")
+
+color CLEAR = color.rgb(0, 0, 0, 100)
+
+// EMA and VWAP Calculation
+fastEma = ta.ema(close, 10)
+slowEma = ta.ema(close, 20)
+vwapValue = ta.vwap(close)
+
+// CBC Logic
+cbc = false
+cbc := cbc[1]
+if cbc and close < low[1]
+    cbc := false
+if not cbc and close > high[1]
+    cbc := true
+
+// ATR Calculation for Profit Target
+atrValue = ta.atr(atrLength)
+
+// Time Filter
+inTimeRange = (hour >= entryStartHour and hour < entryEndHour)
+
+// Long Entry Conditions
+longCondition = inTimeRange and (strongFlipsOnly ? (cbc and not cbc[1] and low < low[1] and slowEma >= vwapValue) : (cbc and not cbc[1] and slowEma >= vwapValue))
+if (longCondition)
+    strategy.entry("Long", strategy.long, comment="Long Entry")
+    strategy.exit("TP_Long", "Long", limit=close + (atrValue * profitTargetMultiplier), comment="Long TP")
+
+// Custom Stop Loss for Long
+if strategy.position_size > 0 and close <= low[1]
+    strategy.close("Long", comment="Long Stop Loss Hit")
+
+// Short Entry Conditions
+shortCondition = inTimeRange and (strongFlipsOnly ? (not cbc and cbc[1] and high > high[1] and slowEma < vwapValue) : (not cbc and cbc[1] and slowEma < vwapValue))
+if (shortCondition)
+    strategy.entry("Short", strategy.short, comment="Short Entry")
+    strategy.exit("TP_Short", "Short", limit=close - (atrValue * profitTargetMultiplier), comment="Short TP")
+
+// Custom Stop Loss for Short
+if strategy.position_size < 0 and close >= high[1]
+    strategy.close("Short", comment="Short Stop Loss Hit")
+
+// Plot Labels for Visual Confirmation
+if longCondition
+    label.new(bar_index, low, "▵", color=CLEAR, style=label.style_label_up, textcolor=bullsColor, size=size.small)
+
+if shortCondition
+    label.new(bar_index, high, "▿", color=CLEAR, style=label.style_label_down, textcolor=bearsColor, size=size.small)
+
+// Plot EMAs and VWAP
+plot(fastEma, color=color.black, title="Fast EMA (10)", linewidth=1)
+plot(slowEma, color=color.red, title="Slow EMA (20)", linewidth=1)
+plot(vwapValue, color=color.orange, title="VWAP", linewidth=1, style=plot.style_line)

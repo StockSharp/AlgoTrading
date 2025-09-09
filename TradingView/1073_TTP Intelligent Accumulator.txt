@@ -1,0 +1,59 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheTradingParrot
+
+//@version=5
+strategy("TTP Intelligent Accumulator v0.3", overlay=true, commission_type = strategy.commission.percent, commission_value = 0.1, initial_capital = 10000, pyramiding = 100, default_qty_type=strategy.percent_of_equity, default_qty_value = 1, currency = currency.USDT)
+
+maxEntries = 0.0
+
+if not na(maxEntries[1])
+    maxEntries := maxEntries[1]
+
+rsi = ta.rsi(close, 7)
+rsima = ta.sma(rsi, 14)
+bbstd = ta.stdev(rsi, 14)
+
+intEntry = rsi < rsima - bbstd
+intExit = rsi > rsima + bbstd
+
+maxEntries := math.max(strategy.opentrades, maxEntries)
+plot(maxEntries, "maxEntries", display = display.data_window)
+
+addWhileInLossOnly = input.bool(true, "Add ONLY while in a loss", tooltip = "The strategy will only add funds to average down a losing positions. If your avg position price is in profit then no further funds will be added while this setting is enabled.")
+
+extLong = input.bool(false, "", inline = "long")
+entry = input.source(close,"entry", inline = "long") == 1
+
+extShort = input.bool(false, "", inline = "exit")
+exit = input.source(close,"exit", inline = "exit") == 1
+minProfit = input.float(0.0, "Required profit % to exit", tooltip = "if your floating PNL is below this percentage number, even if there's an exit signal no partial/full position will be closed.")
+exitPxcandle = input.float(100.0,"% exit per candle", tooltip = "How much % of your current long you'd like to exit on each candle that the exit signal is ON.")
+
+
+//Backtest Time Period
+useDateFilter = input.bool(false, title="Filter Date Range of Backtest", group="Backtest Time Period")
+backtestStartDate = input.time(timestamp("1 June 2022"), title="Start Date", group="Backtest Time Period", tooltip="This start date is in the time zone of the exchange " + "where the chart's instrument trades. It doesn't use the time " + "zone of the chart or of your computer.")
+backtestEndDate = input.time(timestamp("1 July 2030"), title="End Date", group="Backtest Time Period", tooltip="This end date is in the time zone of the exchange " + "where the chart's instrument trades. It doesn't use the time " + "zone of the chart or of your computer.")
+inTradeWindow = not useDateFilter or (time >= backtestStartDate and time < backtestEndDate)
+
+
+if not extLong
+    entry := intEntry
+longCondition = inTradeWindow and entry and
+             (strategy.opentrades == 0 or (not addWhileInLossOnly or close < strategy.position_avg_price))
+
+if (longCondition)
+    strategy.entry("long", strategy.long)
+
+if not extShort
+    exit := intExit
+
+
+shortCondition = exit and strategy.openprofit_percent > minProfit
+if (shortCondition and strategy.opentrades > 0)
+    if strategy.position_size * exitPxcandle / 100 < syminfo.mintick
+        strategy.close("long", qty_percent = 100)
+    else
+        strategy.close("long", qty_percent = exitPxcandle)
+
+plot(strategy.opentrades > 0 ? strategy.position_avg_price : na, "Avg", style = plot.style_linebr, color = color.white)

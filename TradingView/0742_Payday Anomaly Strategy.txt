@@ -1,0 +1,28 @@
+//@version=5
+strategy("Payday Anomaly Strategy", overlay=true, precision=2, calc_on_every_tick=true, initial_capital=50000, currency=currency.USD, slippage=1, commission_type=strategy.commission.cash_per_order, commission_value=0.05)
+
+// Checkbox inputs to select specific payday trading days
+trade1st = input.bool(true, title="Trade 1st of the Month")
+trade2nd = input.bool(true, title="Trade 2nd of the Month")
+trade16th = input.bool(true, title="Trade 16th of the Month")
+trade31st = input.bool(true, title="Trade 31st of the Month")
+
+// Define the target days for expected anomalies based on selected checkboxes
+target1st = (dayofmonth == 1 and trade1st)
+target2nd = (dayofmonth == 2 and trade2nd)
+target16th = (dayofmonth == 16 and trade16th)
+target31st = (dayofmonth == 31 and trade31st)
+
+// Combine target days based on the selected checkboxes
+targetDays = target1st or target2nd or target16th or target31st
+
+// Entry conditions: If today is one of the selected target days, enter a long position
+if (targetDays)
+    strategy.entry("Long Payday Entry", strategy.long)
+
+// Exit conditions: Close position at the end of each target day
+if (not targetDays and strategy.opentrades > 0)
+    strategy.close("Long Payday Entry")
+
+// Plotting indicators to show selected target days on the chart
+bgcolor(targetDays ? color.new(color.green, 80) : na, title="Payday Background")

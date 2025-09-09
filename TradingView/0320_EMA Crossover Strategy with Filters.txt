@@ -1,0 +1,42 @@
+//@version=5
+strategy("EMA Crossover Strategy with Filters", overlay=true,
+     initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// EMA lengths
+ema9_len   = 9
+ema50_len  = 50
+ema100_len = 100
+ema200_len = 200
+
+// EMA calculation
+ema9   = ta.ema(close, ema9_len)
+ema50  = ta.ema(close, ema50_len)
+ema100 = ta.ema(close, ema100_len)
+ema200 = ta.ema(close, ema200_len)
+
+// Plot EMAs
+plot(ema9, color=color.yellow, title="9 EMA")
+plot(ema50, color=color.orange, title="50 EMA")
+plot(ema100, color=color.green, title="100 EMA")
+plot(ema200, color=color.blue, title="200 EMA")
+
+// Entry conditions
+longCondition  = ta.crossover(ema100, ema200) and ema9 > ema50
+shortCondition = ta.crossunder(ema100, ema200) and ema9 < ema50
+
+// Exit conditions
+longExit  = ta.crossunder(ema100, ema50)
+shortExit = ta.crossover(ema100, ema50)
+
+// Execute trades
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+if (longExit)
+    strategy.close("Long")
+
+if (shortExit)
+    strategy.close("Short")

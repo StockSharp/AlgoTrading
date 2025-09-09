@@ -1,0 +1,76 @@
+//@version=4
+strategy("JUnit RS and RoC", shorttitle="RS & ROC", overlay=false)
+
+//Insert your stock ticker here
+ticker = syminfo.ticker
+
+//Define the period for your calculations
+len = input(14, minval=1, title="Length")
+window = len
+
+//Calculate the Close price of the chosen stock
+stock_close = security(ticker, timeframe.period, close)
+stock_ema = ema(stock_close, 25)
+
+//Get the Close price of the S&P 500 Index for the Relative Strength calculation
+index_close = security("NDX", timeframe.period, close)
+
+//Calculate the Relative Strength (RS)
+rs = (stock_close / index_close) * 100
+
+//Calculate the Moving RS Ratio and its Rate of Change
+rs_ratio = sma(rs, len)
+rm_ratio = roc(rs_ratio, len)
+
+//Normalization
+jdk_rs_ratio = 100 + ((rs_ratio - sma(rs_ratio, window)) / stdev(rs_ratio, window) + 1)
+jdk_rm_ratio = 100 + ((rm_ratio - sma(rm_ratio, window)) / stdev(rm_ratio, window) + 1)
+
+
+//Plot JUnit RS and JUnit RoC
+plot(jdk_rs_ratio, color=color.blue, title="JUnit RS")
+plot(jdk_rm_ratio, color=color.red, title="Junit RoC")
+
+hline(100, "Zero Line", color=color.gray)
+
+statecolor = color.purple
+
+if (statecolor[1] == color.green)
+    statecolor := color.green
+else if (statecolor[1] == color.red)
+    statecolor := color.red
+else if (statecolor[1] == color.yellow)
+    statecolor := color.yellow
+else if (statecolor[1] == color.blue)
+    statecolor := color.blue
+
+if (jdk_rs_ratio > 100 and jdk_rm_ratio > 100)
+    statecolor := color.green
+else if (jdk_rs_ratio > 100 and jdk_rm_ratio < 100)
+    statecolor := color.yellow
+else if (jdk_rs_ratio < 100 and jdk_rm_ratio < 100)
+    statecolor := color.red
+else if (jdk_rs_ratio < 100 and jdk_rm_ratio > 100)
+    statecolor := color.blue
+
+
+buy_signal =  statecolor[0] == color.green and year >= 2010
+sell_signal = statecolor[0] == color.red
+
+hold_signal = statecolor[0] == color.yellow
+watch_signal = statecolor[0] == color.blue
+
+
+//Add color to background when both JUnit RS and JUnit RoC cross above 100
+bgcolor((buy_signal) ? color.green : na)
+bgcolor((sell_signal) ? color.red : na)
+bgcolor((hold_signal) ? color.yellow : na)
+bgcolor((watch_signal) ? color.blue : na)
+
+
+// Execute trades
+if (buy_signal)
+    strategy.entry("BUY", strategy.long)
+
+if (sell_signal)
+    strategy.close("BUY")

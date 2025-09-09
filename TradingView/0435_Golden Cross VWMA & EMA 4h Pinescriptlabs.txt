@@ -1,0 +1,32 @@
+//@version=5
+strategy("Golden Cross VWMA & EMA 4h Pinescriptlabs",  overlay=true,  initial_capital=10000,  default_qty_type=strategy.cash, default_qty_value=100, commission_type=strategy.commission.percent,  commission_value=0.05)
+
+// Input para la EMA 200 del timeframe actual
+len = input.int(50, title="VWMA")
+
+// EMA 200 del timeframe actual
+vwma200 = ta.vwma(close, len)
+
+// HMA 444 del timeframe de 4 horas
+len_4h = input.int(200, title="EMA(4h)")
+hma_4h = request.security(syminfo.tickerid, "240", ta.sma(close, len_4h))
+
+// Señales de compra y venta
+buy_signal = ta.crossover(vwma200, hma_4h)
+sell_signal = ta.crossunder(vwma200, hma_4h)
+
+// Estrategia de entrada
+strategy.entry("buy_signal", strategy.long, when=buy_signal)
+strategy.entry("Sell", strategy.short, when=sell_signal)
+
+// Plot de las señales
+plotshape(series=buy_signal, title="Compra", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(series=sell_signal, title="Venta", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// Plot de EMA 200 y HMA 444
+plot(vwma200, color=#af09f7, linewidth=2, title="VWMA 200")
+plot(hma_4h, color=#e7f706, linewidth=2, title="EMA(4h)")
+
+// Relleno de color
+fill_color = vwma200 > hma_4h ? #09fa11 : #f90bed
+bgcolor(fill_color, transp=90)

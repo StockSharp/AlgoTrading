@@ -1,0 +1,202 @@
+//@version=6
+strategy('Warrior Trading Momentum Strategy', overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 25, pyramiding = 0)
+
+// ========================= INPUTS =========================
+// Gap Trading Settings
+gap_threshold = input.float(2.0, 'Minimum Gap % for Gap Trading', minval = 0.5, maxval = 10.0, step = 0.5, group = 'Gap Trading')
+gap_volume_multiplier = input.float(2.0, 'Gap Volume Multiplier', minval = 1.0, maxval = 5.0, step = 0.1, group = 'Gap Trading')
+
+// ABCD Pattern Settings
+enable_abcd = input.bool(true, 'Enable ABCD Pattern', group = 'ABCD Pattern')
+abcd_min_ab = input.float(0.5, 'Minimum A-B Move %', minval = 0.1, maxval = 2.0, step = 0.1, group = 'ABCD Pattern')
+abcd_max_cd_ratio = input.float(1.5, 'Maximum C-D to A-B Ratio', minval = 0.5, maxval = 3.0, step = 0.1, group = 'ABCD Pattern')
+
+// VWAP Settings
+enable_vwap = input.bool(true, 'Enable VWAP Strategy', group = 'VWAP')
+vwap_distance = input.float(0.5, 'VWAP Distance % for Entry', minval = 0.1, maxval = 2.0, step = 0.1, group = 'VWAP')
+
+// Red to Green Settings
+enable_red_to_green = input.bool(true, 'Enable Red to Green Moves', group = 'Red to Green')
+min_red_candles = input.int(3, 'Minimum Red Candles', minval = 2, maxval = 10, group = 'Red to Green')
+
+// Risk Management
+risk_reward_ratio = input.float(2.0, 'Risk:Reward Ratio', minval = 1.0, maxval = 5.0, step = 0.1, group = 'Risk Management')
+max_risk_percent = input.float(1.0, 'Maximum Risk % per Trade', minval = 0.1, maxval = 5.0, step = 0.1, group = 'Risk Management')
+trailing_stop_trigger = input.float(1.0, 'Trailing Stop Trigger %', minval = 0.5, maxval = 3.0, step = 0.1, group = 'Risk Management')
+
+// Time Filters
+trading_session = input.session('0930-1600', 'Trading Session', group = 'Time Filters')
+avoid_lunch_hour = input.bool(true, 'Avoid Lunch Hour (11:30-13:30)', group = 'Time Filters')
+
+// ========================= CALCULATIONS =========================
+// VWAP
+vwap = ta.vwap(hlc3)
+
+// Volume
+volume_ma = ta.sma(volume, 20)
+volume_spike = volume > volume_ma * gap_volume_multiplier
+
+// ATR for position sizing
+atr = ta.atr(14)
+
+// Time filters
+in_session = time(timeframe.period, trading_session)
+lunch_hour = hour >= 11 and hour <= 13 and minute >= 30 or hour == 13 and minute <= 30
+time_filter = bool(in_session) and (not avoid_lunch_hour or not lunch_hour)
+
+// ========================= GAP DETECTION =========================
+// Calculate gap (works best on daily timeframe data)
+prev_close = request.security(syminfo.tickerid, '1D', close[1])
+current_open = request.security(syminfo.tickerid, '1D', open)
+gap_percent = math.abs(current_open - prev_close) / prev_close * 100
+gap_up = current_open > prev_close and gap_percent >= gap_threshold
+gap_down = current_open < prev_close and gap_percent >= gap_threshold
+
+// ========================= ABCD PATTERN =========================
+// Simplified ABCD pattern detection
+var float point_a = na
+var float point_b = na
+var float point_c = na
+var float point_d = na
+var int abcd_stage = 0
+
+// Detect swing highs and lows for ABCD
+swing_high = ta.pivothigh(high, 5, 5)
+swing_low = ta.pivotlow(low, 5, 5)
+
+if enable_abcd
+    // Reset on new swing points
+    if not na(swing_low) and abcd_stage == 0
+        point_a := swing_low
+        abcd_stage := 1
+        abcd_stage
+    else if not na(swing_high) and abcd_stage == 1
+        point_b := swing_high
+        abcd_stage := 2
+        abcd_stage
+    else if not na(swing_low) and abcd_stage == 2 and swing_low > point_a
+        point_c := swing_low
+        abcd_stage := 3
+        abcd_stage
+    else if abcd_stage == 3 and close > point_c
+        point_d := close
+        abcd_stage := 4
+        abcd_stage
+
+// ABCD pattern validation
+ab_move = not na(point_b) and not na(point_a) ? (point_b - point_a) / point_a * 100 : 0
+cd_move = not na(point_d) and not na(point_c) ? (point_d - point_c) / point_c * 100 : 0
+abcd_valid = abcd_stage == 4 and ab_move >= abcd_min_ab and cd_move <= ab_move * abcd_max_cd_ratio
+
+// ========================= RED TO GREEN SETUP =========================
+// Count consecutive red candles
+var int red_count = 0
+if close < open
+    red_count := red_count + 1
+    red_count
+else
+    red_count := 0
+    red_count
+
+red_to_green = enable_red_to_green and red_count >= min_red_candles and close > open and volume_spike
+
+// ========================= VWAP SETUP =========================
+near_vwap = math.abs(close - vwap) / close * 100 <= vwap_distance
+vwap_bounce = enable_vwap and near_vwap and close > vwap and close > open and volume_spike
+
+// ========================= MOMENTUM INDICATORS =========================
+// RSI for momentum
+rsi = ta.rsi(close, 14)
+rsi_bullish = rsi > 50 and rsi < 80
+
+// Moving average filter
+ema20 = ta.ema(close, 20)
+above_ema = close > ema20
+
+// ========================= ENTRY CONDITIONS =========================
+// Priority scoring system (Warrior Trading style)
+gap_and_go = gap_up and volume_spike and close > open and rsi_bullish
+momentum_breakout = close > ta.highest(high, 5)[1] and volume_spike and rsi_bullish and above_ema
+
+// Warrior Trading Priority (A+ setups only)
+priority_setup = gap_and_go or abcd_valid and volume_spike or red_to_green and gap_percent > 1.0
+
+// Day trade management
+max_daily_trades = input.int(2, 'Max Trades Per Day', minval = 1, maxval = 3, group = 'Risk Management')
+var int daily_trades = 0
+var int last_trade_day = 0
+
+// Reset daily counter
+if dayofweek != last_trade_day
+    daily_trades := 0
+    last_trade_day := dayofweek
+    last_trade_day
+
+// Combined entry condition (selective approach)
+long_condition = time_filter and priority_setup and strategy.position_size == 0 and daily_trades < max_daily_trades
+
+// ========================= POSITION SIZING =========================
+// Calculate position size based on risk percentage
+risk_amount = strategy.equity * max_risk_percent / 100
+stop_distance = atr * 2 // 2 ATR stop loss
+position_size = risk_amount / stop_distance
+
+// ========================= ENTRY AND EXIT =========================
+if long_condition
+    strategy.entry('Long', strategy.long, qty = position_size)
+    daily_trades := daily_trades + 1 // Increment trade counter
+    // Set stop loss and take profit
+    stop_loss = close - stop_distance
+    take_profit = close + stop_distance * risk_reward_ratio
+    strategy.exit('Exit', 'Long', stop = stop_loss, limit = take_profit)
+
+// Trailing stop for profitable trades
+if strategy.position_size > 0
+    profit_percent = (close - strategy.position_avg_price) / strategy.position_avg_price * 100
+    if profit_percent >= trailing_stop_trigger
+        trailing_stop = close - atr * 1.5
+        strategy.exit('Trailing Stop', 'Long', stop = trailing_stop)
+
+// ========================= PLOTTING =========================
+// VWAP
+plot(vwap, color = color.yellow, linewidth = 2, title = 'VWAP')
+
+// EMA
+plot(ema20, color = color.blue, linewidth = 1, title = 'EMA 20')
+
+// Entry signals
+plotshape(gap_and_go, title = 'Gap and Go', location = location.belowbar, color = color.green, style = shape.triangleup, size = size.small)
+plotshape(momentum_breakout, title = 'Momentum Breakout', location = location.belowbar, color = color.lime, style = shape.triangleup, size = size.small)
+plotshape(red_to_green, title = 'Red to Green', location = location.belowbar, color = color.aqua, style = shape.triangleup, size = size.small)
+plotshape(vwap_bounce, title = 'VWAP Bounce', location = location.belowbar, color = color.orange, style = shape.triangleup, size = size.small)
+plotshape(abcd_valid, title = 'ABCD Pattern', location = location.belowbar, color = color.purple, style = shape.triangleup, size = size.small)
+
+// Gap visualization
+bgcolor(gap_up ? color.new(color.green, 90) : gap_down ? color.new(color.red, 90) : na, title = 'Gap Background')
+
+// Volume spike
+plotchar(volume_spike, title = 'Volume Spike', location = location.top, color = color.yellow, char = 'V', size = size.tiny)
+
+// ========================= INFORMATION TABLE =========================
+if barstate.islast
+    var table info_table = table.new(position.top_right, 2, 10, bgcolor = color.white, border_width = 1)
+    table.cell(info_table, 0, 0, 'Warrior Trading Stats', text_color = color.black, bgcolor = color.gray, text_size = size.small)
+    table.cell(info_table, 1, 0, 'Values', text_color = color.black, bgcolor = color.gray, text_size = size.small)
+    table.cell(info_table, 0, 1, 'Gap %', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 1, str.tostring(math.round(gap_percent, 2)) + '%', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 2, 'Volume vs Avg', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 2, str.tostring(math.round(volume / volume_ma, 2)) + 'x', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 3, 'RSI', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 3, str.tostring(math.round(rsi, 1)), text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 4, 'Distance to VWAP', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 4, str.tostring(math.round(math.abs(close - vwap) / close * 100, 2)) + '%', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 5, 'Red Candles', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 5, str.tostring(red_count), text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 6, 'Above EMA20', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 6, above_ema ? 'Yes' : 'No', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 7, 'In Session', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 7, time_filter ? 'Yes' : 'No', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 8, 'Risk/Reward', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 8, '1:' + str.tostring(risk_reward_ratio), text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 0, 9, 'Max Risk %', text_color = color.black, text_size = size.tiny)
+    table.cell(info_table, 1, 9, str.tostring(max_risk_percent) + '%', text_color = color.black, text_size = size.tiny)

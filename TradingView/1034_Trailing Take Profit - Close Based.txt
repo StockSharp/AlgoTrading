@@ -1,0 +1,206 @@
+//@version=6
+//#region PREAMBLE
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+//  Copyright © 2024-present Iason Nikolas | jason5480
+//  The "Trailing Take Profit - Close Based" script may be freely distributed under the MIT license.
+//
+//  Permission is hereby granted, free of charge,
+//  to any person obtaining a copy of this software and associated documentation files (the "Software"),
+//  to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge,
+//  publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software
+//  is furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in ALL COPIES or substantial portions of
+//  the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+//  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+//  OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+//  OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+//
+//  Description
+//  --------------------------------------------------------------------------------------------------------------------
+//  This strategy will go long if fast MA crosses over slow MA.
+//  The strategy will exit from long position when the price increases by a fixed percentage.
+//  If the trailing take profit is checked then the strategy instead of setting a limit order in a predefined price
+//  (based on the percentage) it will follow the price with small steps (percentagewise) on bar close
+//  If the price drops by this percentage then the exit order will be executed
+//
+//  --------------------------------------------------------------------------------------------------------------------
+//  Disclaimer:
+//    1. I am not licensed financial advisors or broker-dealer. I do not tell you when or what to buy or sell.
+//       I developed this software which enables you execute manual or automated trades using TradingView.
+//       The software allows you to set the criteria you want for entering and exiting trades.
+//    2. Do not trade with money you cannot afford to lose.
+//    3. I do not guarantee consistent profits or that anyone can make money with no effort.
+//       And I am not selling the holy grail.
+//    4. Every system can have winning and losing streaks.
+//    5. Money management plays a large role in the results of your trading. For example: lot size, account size,
+//       broker leverage, and broker margin call rules all affect on results. Also, your Take Profit and Stop Loss
+//       settings for individual pair trades and for overall account equity have a major impact on results.
+//       If you are new to trading and do not understand these items, then I recommend you seek educational materials
+//       to further your knowledge.
+//
+//  YOU NEED TO FIND AND USE THE TRADING SYSTEM THAT WORKS BEST FOR YOU AND YOUR TRADING TOLERANCE.
+//  I HAVE PROVIDED NOTHING MORE THAN A TOOL WITH OPTIONS FOR YOU TO TRADE WITH THIS PROGRAM ON TRADINGVIEW.
+//
+//  I accept suggestions to improve the script.
+//  If you encounter any problems I will be happy to share with me.
+//  --------------------------------------------------------------------------------------------------------------------
+//#endregion ===========================================================================================================
+//#region SETUP
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+strategy(title = 'Trailing Take Profit - Close Based',
+         shorttitle = 'TTP-CB',
+         overlay = true,
+         default_qty_type = strategy.percent_of_equity,
+         default_qty_value = 10,
+         initial_capital = 1000,
+         slippage = 1,
+         commission_value = 0.1)
+
+//#endregion ===========================================================================================================
+//#region FILTERS
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+import jason5480/chrono_utils/7 as chr
+
+// INPUT ===============================================================================================================
+var dateTimeWindow = chr.DateTimeWindow.new().init(
+  fromDateTime = input.bool(defval = false, title = 'From     ', inline = 'From Date', group = 'Filters', display = display.data_window) ? input.time(defval = timestamp('01 Jan 2023 00:00'), title = ' ', inline = 'From Date', group = 'Filters', display = display.data_window) : na,
+  toDateTime = input.bool(defval = false, title = 'To       ', inline = 'To Date', group = 'Filters', display = display.data_window) ? input.time(defval = timestamp('01 Jan 2024 00:00'), title = '  ', inline = 'To Date', group = 'Filters', display = display.data_window) : na,
+  refTimezone = chr.exTimezone(input.enum(defval = chr.Timezone.Exchange, title = 'Timezones Ref->Chart', inline = 'Timezone', group = 'Filters', display = display.data_window)),
+  chTimezone = chr.exTimezone(input.enum(defval = chr.Timezone.Exchange, title = '->', tooltip = 'The Timezone Ref is the reference timezone that is used for the "From" and "To" datetime window settings. The Timezone Chart is the timezone to convert into. WARNING! The chart timezone setting should always match with the actual chart timezone on the bottom right corner of your chart.', inline = 'Timezone', group = 'Filters', display = display.data_window)))
+
+// LOGIC ===============================================================================================================
+bool dateFilterApproval = dateTimeWindow.is_bar_included()
+
+// PLOT ================================================================================================================
+bgcolor(color = dateFilterApproval ? na : color.new(#FF0000, 95), offset = 1, title = 'Filter')
+
+//#endregion ===========================================================================================================
+//#region STRATEGY
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+// INPUT ===============================================================================================================
+fastMALen = input.int(defval = 21, title = 'Fast/Slow SMA Length', minval = 1, inline = 'MA Length', group = 'Strategy')
+slowMALen = input.int(defval = 49, title = '', minval = 1, tooltip = 'How many candles back to calculte the fast/slow SMA.', inline = 'MA Length', group = 'Strategy')
+
+// LOGIC ===============================================================================================================
+float fastMA = ta.sma(close, fastMALen)
+float slowMA = ta.sma(close, slowMALen)
+
+bool openLongPosition = ta.crossover(fastMA, slowMA) and dateFilterApproval
+bool closeLongPosition = ta.crossunder(fastMA, slowMA)
+
+// PLOT ================================================================================================================
+plot(series = fastMA, title = 'Fast SMA', color = color.yellow, linewidth = 1, style = plot.style_line)
+plot(series = slowMA, title = 'Slow SMA', color = color.orange, linewidth = 1, style = plot.style_line)
+
+//#endregion ===========================================================================================================
+//#region ENTRY
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+// LOGIC ===============================================================================================================
+// The open signal when not already into a position
+bool validOpenLongPosition = openLongPosition and strategy.opentrades.size(strategy.opentrades - 1) <= 0
+bool validCloseLongPosition = closeLongPosition and strategy.opentrades.size(strategy.opentrades - 1) > 0
+bool inLongTrade = strategy.opentrades.size(strategy.opentrades - 1) > 0
+bool longIsActive = validOpenLongPosition or inLongTrade
+
+// PLOT ================================================================================================================
+color TEXT_COLOR = color.new(color.white, 0)
+if validOpenLongPosition
+    label.new(x = bar_index, y = na, text = 'Open', yloc = yloc.belowbar, color = #2962FF, style = label.style_label_up, textcolor = TEXT_COLOR)
+if validCloseLongPosition
+    label.new(x = bar_index, y = na, text = 'Close', yloc = yloc.abovebar, color = #FF1744, style = label.style_label_down, textcolor = TEXT_COLOR)
+
+//#endregion ===========================================================================================================
+//#region TAKE PROFIT
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+// INPUT ===============================================================================================================
+longTakeProfitPerc = input.float(defval = 7.0, title = 'Take Profit %', minval = 0.05, step = 0.05, tooltip = 'The percentage of the price increase to set the take profit price target.', group = 'Take Profit') / 100
+
+takeProfitTrailingEnabled = input.bool(defval = true, title = 'Enable Trailing', tooltip = 'Enable or disable the trailing for take profit. WARNING! This feature will repaint. Make sure you use it with "Bar Magnifier" and "Deep Backtesting" for realistic backtest results.', group = 'Take Profit')
+trailingTakeProfitDistancePerc = input.float(defval = 1.0, title = '  Trailing Distance %', minval = 0.01, maxval = 100, step = 0.01, tooltip = 'The distance as a percentage of the take profit price to keep from the high price after the target is reached when trailing.', group = 'Take Profit') / 100
+trailingBarrier = input.source(defval = high, title = '  Trail Barrier', tooltip = 'The price reference that will be used for the entry trailing logic.', group = 'Take Profit')
+
+// LOGIC ===============================================================================================================
+var float longTakeProfitPrice = na
+longTakeProfitPrice := if validOpenLongPosition
+    close * (1 + longTakeProfitPerc)
+else if inLongTrade
+    nz(longTakeProfitPrice[1], close * (1 + longTakeProfitPerc))
+else
+    na
+
+// Calculate the highest high since the long entry
+var float highestHighSinceLongEntry = na
+highestHighSinceLongEntry := validOpenLongPosition ? close : inLongTrade ? math.max(high, nz(highestHighSinceLongEntry[1], high)) : na
+
+// Check if the take profit target is reached
+var bool longTakeProfitPriceReached = false
+if takeProfitTrailingEnabled
+    bool longTakeProfitCrossed = ta.crossover(highestHighSinceLongEntry, longTakeProfitPrice)
+    if longIsActive
+        longTakeProfitPriceReached := longTakeProfitCrossed or longTakeProfitPriceReached
+
+// The close signal when already into a long position
+int barsSinceOpenLong = nz(ta.barssince(validOpenLongPosition), 999999)
+int barsSinceTakeProfitReached = nz(ta.barssince(longTakeProfitPriceReached), 999999)
+int barsSinceExitLong = nz(ta.barssince(strategy.opentrades.size(strategy.opentrades - 1) <= 0 and strategy.opentrades.size(strategy.opentrades - 1)[1] > 0), 999999)
+bool longTakeProfitIsActive = barsSinceOpenLong > barsSinceTakeProfitReached // open -> take profit reached
+bool exitLongIsPending = barsSinceExitLong > barsSinceTakeProfitReached // exit -> take profit reached
+
+var float longTrailingTakeProfitPrice = na
+bool isFirstValidCloseLongPosition = longTakeProfitPriceReached and na(longTrailingTakeProfitPrice[1])
+bool tryExitLongPosition = longTakeProfitIsActive and exitLongIsPending and inLongTrade
+longTrailingTakeProfitPrice := if isFirstValidCloseLongPosition
+    longTakeProfitPrice * (1 - trailingTakeProfitDistancePerc)
+else if tryExitLongPosition
+    math.max(high * (1 - trailingTakeProfitDistancePerc), nz(longTrailingTakeProfitPrice[1]))
+else
+    na
+
+// PLOT ================================================================================================================
+plot(series = longTakeProfitPriceReached ? na : longTakeProfitPrice, title = 'Long Take Profit', color = color.teal, linewidth = 1, style = plot.style_linebr, offset = 1)
+plot(series = longTrailingTakeProfitPrice, title = 'Long Tr Exit Price', color = color.green, linewidth = 1, style = plot.style_linebr, offset = 1)
+
+//#endregion ===========================================================================================================
+//#region POSITION ORDERS
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+// LOGIC ===============================================================================================================
+// Close on trend reversal
+if closeLongPosition
+    strategy.close(id = 'Long Entry', comment = 'Close Long', alert_message = 'Long: Closed at market price')
+
+// Getting into LONG position
+if validOpenLongPosition
+    strategy.entry(id = 'Long Entry', direction = strategy.long, alert_message = 'Long(' + syminfo.ticker + '): Started')
+
+// Submit exit orders for trailing take profit price
+if longIsActive
+    if takeProfitTrailingEnabled
+        if longTakeProfitPriceReached or validOpenLongPosition
+            strategy.exit(id = 'Long Take Profit', from_entry = 'Long Entry', stop = longTrailingTakeProfitPrice, alert_loss = 'Long(' + syminfo.ticker + '): Trailing Take Profit executed')
+    else
+        strategy.exit(id = 'Long Take Profit', from_entry = 'Long Entry', limit = longTakeProfitPrice, alert_profit = 'Long(' + syminfo.ticker + '): Take Profit executed')
+
+// PLOT ================================================================================================================
+plot(series = strategy.opentrades.entry_price(strategy.opentrades - 1), title = 'Position', color = color.gray, linewidth = 1, style = plot.style_linebr)
+
+//#endregion ===========================================================================================================
+//#region CLEAN UP
+// ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+
+// LOGIC ===============================================================================================================
+// Reset state variables when position has been completed
+if ta.change(strategy.closedtrades) == 1
+    highestHighSinceLongEntry := na
+    longTakeProfitPriceReached := false
+    longTrailingTakeProfitPrice := na
+
+//#endregion ===========================================================================================================

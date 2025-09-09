@@ -1,0 +1,90 @@
+//@version=6
+strategy("ARSI – (VWAP & ATR) 3QKRAK", overlay = false)
+
+// ── INPUTS ───────────────────────────────────────────────
+rLen      = input.int  (14,  "RSI length", minval = 2)
+kBase     = input.float(1.0, "Base k 0.5-2", step = 0.1)
+
+riskPct   = input.float(2.0, "Risk % of equity", step = 0.1)
+slPct     = input.float(2.5,"Stop-loss %",      step = 0.1)
+rr        = input.float(2.0,"Risk-Reward (TP = SL*RR)")
+
+// Osobne źródła dla każdej linii
+srcOB     = input.string("ATR", "Źródło OB (czerwona)", options=["ATR", "VWAP"])
+srcOS     = input.string("ATR", "Źródło OS (niebieska)", options=["ATR", "VWAP"])
+atrLenOB  = input.int  (14,  "ATR length OB (czerwona)", minval = 2)
+atrLenOS  = input.int  (14,  "ATR length OS (niebieska)", minval = 2)
+
+obMult    = input.float(10.0, "Dynamika czerwonej linii (OB)", step=0.5)
+osMult    = input.float(10.0, "Dynamika niebieskiej linii (OS)", step=0.5)
+
+// VWAP - liczony automatycznie przez TradingView (tylko na interwałach intraday!)
+vwap = ta.vwap
+
+// ATR-y
+atrOB = ta.atr(atrLenOB)
+atrOS = ta.atr(atrLenOS)
+
+// Odchylenie od VWAP
+devOB = math.abs(close - vwap)
+devOS = math.abs(close - vwap)
+
+// Zmienność wybierana dynamicznie
+volOB = srcOB == "ATR"  ? (atrOB / close * 100)  : (devOB / close * 100)
+volOS = srcOS == "ATR"  ? (atrOS / close * 100)  : (devOS / close * 100)
+
+kOB = kBase * math.max(volOB / 5, 0.5)
+kOS = kBase * math.max(volOS / 5, 0.5)
+
+rsi = ta.rsi(close, rLen)
+ob  = 50 + kOB * obMult
+os  = 50 - kOS * osMult
+
+// ── SYGNAŁY ─────────────────────────────────────────────
+longIn    = ta.crossover(rsi, os)
+shortIn   = ta.crossunder(rsi, ob)
+exitLong  = ta.crossunder(rsi, 50) or ta.crossover(rsi, ob)
+exitShort = ta.crossover(rsi, 50)  or ta.crossunder(rsi, os)
+
+// ── FUNKCJA: wielkość pozycji (kontrakty) ───────────────
+calcQty(_price) =>
+    riskValue = strategy.equity * riskPct / 100
+    rawStopDist  = _price * slPct / 100
+    safeStopDist = math.max(rawStopDist, syminfo.mintick)
+    riskValue / safeStopDist
+
+// ── WEJŚCIA ─────────────────────────────────────────────
+if longIn and strategy.position_size == 0
+    qtyLong = calcQty(close)
+    strategy.entry("Long",  strategy.long,  qty = qtyLong)
+
+if shortIn and strategy.position_size == 0
+    qtyShort = calcQty(close)
+    strategy.entry("Short", strategy.short, qty = qtyShort)
+
+// ── WYJŚCIA SYGNAŁOWE ──────────────────────────────────
+if exitLong
+    strategy.close("Long")
+
+if exitShort
+    strategy.close("Short")
+
+// ── SL / TP dla otwartej pozycji ───────────────────────
+if strategy.position_size > 0
+    ep      = strategy.position_avg_price
+    stopLv  = ep * (1 - slPct / 100)
+    takeLv  = ep * (1 + slPct * rr / 100)
+    strategy.exit("LX", from_entry = "Long",  stop = stopLv, limit = takeLv)
+
+if strategy.position_size < 0
+    ep      = strategy.position_avg_price
+    stopLv  = ep * (1 + slPct / 100)
+    takeLv  = ep * (1 - slPct * rr / 100)
+    strategy.exit("SX", from_entry = "Short", stop = stopLv, limit = takeLv)
+
+// ── PLOTTY (wizualizacja ARSI) ─────────────────────────
+plot(rsi, "ARSI", color = color.new(#4caf50, 0))
+plot(ob,  "OB",   color = color.new(#f44336, 60))    // Czerwona linia
+plot(os,  "OS",   color = color.new(#2196f3, 60))    // Niebieska linia
+hline(50, "Mid",  color = color.gray)
+plot(vwap, "VWAP", color=color.new(#ff9800, 50), linewidth=1)

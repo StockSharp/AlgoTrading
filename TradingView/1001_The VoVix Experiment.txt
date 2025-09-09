@@ -1,0 +1,228 @@
+//@version=5
+strategy("The VoVix Experiment", default_qty_type=strategy.fixed, initial_capital=10000, overlay=true, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=12.5, slippage=3)
+
+// === VOLATILITY CLUSTERING ===
+input_vol_cluster = input(true, '🌀 Enable Volatility Clustering', tooltip="Enable volatility clustering filter. Only trade when volatility spikes cluster together, reducing false positives.", group="Volatility Clustering")
+vc_window = input.int(11, '🌀 Cluster Window (bars)', minval=1, maxval=100, group="Volatility Clustering", tooltip="How many bars to look back for volatility clustering. Lower = more sensitive, higher = only major clusters trigger.")
+vc_spike_mult = input.float(1.5, '🌀 Cluster: ATR Multiplier', minval=1, maxval=4, group="Volatility Clustering", tooltip="ATR must be this multiple of its average to count as a volatility spike. Higher = only extreme events, lower = more signals.")
+vc_spike_count = input.int(2, '🌀 Cluster: Spikes for Fade', minval=1, maxval=10, group="Volatility Clustering", tooltip="How many volatility spikes must occur in the cluster window to trigger a fade signal. Higher = rarer, stronger signals.")
+
+// === CRITICAL POINT ===
+input_crit_point = input(true, '🎯 Enable Critical Point Detector', tooltip="Enable critical point filter. Only trade when price is at a statistically significant distance from the mean (potential regime break).", group="Critical Point")
+cp_window = input.int(14, '🎯 Critical Pt: Cluster Center Window', minval=10, maxval=500, group="Critical Point", tooltip="Bars used for rolling mean and standard deviation for critical point detection. Longer = smoother, shorter = more reactive.")
+cp_distance_mult = input.float(2.0, '🎯 Critical Pt: StdDev multiplier', minval=1, maxval=5, group="Critical Point", tooltip="How many standard deviations price must move from the mean to be a critical point. Higher = only extreme moves, lower = more frequent signals.")
+cp_volatility_mult = input.float(1.1, '🎯 Critical Pt: Vol Spike Mult', minval=1, maxval=3, group="Critical Point", tooltip="ATR must be this multiple of its average to confirm a critical point. Higher = stronger confirmation, lower = more trades.")
+
+// === VOVIX REGIME ENGINE ===
+input_vovix = input(true, '⚡ Enable VoVix Regime Execution', tooltip="Enable the VoVix anomaly detector. Only trade when a volatility-of-volatility spike is detected.", group="VoVix")
+vovix_fast_len = input.int(13, "⚡ VoVix Fast ATR Length", minval=1, tooltip="Short ATR for fast volatility detection. Lower = more sensitive.", group="VoVix")
+vovix_slow_len = input.int(26, "⚡ VoVix Slow ATR Length", minval=2, tooltip="Long ATR for baseline regime. Higher = more stable.", group="VoVix")
+vovix_z_window = input.int(81, "⚡ VoVix Z-Score Window", minval=10, tooltip="Lookback for Z-score normalization. Higher = smoother, lower = more reactive.", group="VoVix")
+vovix_entry_z = input.float(1.0, "⚡ VoVix Entry Z-Score", minval=0.5, tooltip="Minimum Z-score for a VoVix spike to trigger a trade.", group="VoVix")
+vovix_exit_z = input.float(1.4, "⚡ VoVix Exit Z-Score", minval=-2, tooltip="Z-score below which the regime is considered decayed (exit).", group="VoVix")
+vovix_local_max = input.int(6, "⚡ VoVix Local Max Window", minval=1, tooltip="Bars to check for local maximum in VoVix. Higher = stricter.", group="VoVix")
+vovix_super_z = input.float(2.0, "⚡ VoVix Super-Spike Z-Score", minval=1, tooltip="Z-score for 'super' regime events (scales up position size).", group="VoVix")
+
+// === TIME SESSION ===
+session_start = input.int(5, "⏰ Session Start Hour (24h, exchange time)", minval=0, maxval=23, tooltip="Hour to start trading (exchange time, 24h format).", group="Session")
+session_end = input.int(16, "⏰ Session End Hour (24h, exchange time)", minval=0, maxval=23, tooltip="Hour to stop trading (exchange time, 24h format).", group="Session")
+allow_weekend = input(false, "📅 Allow Weekend Trading?", tooltip="Enable to allow trades on weekends.", group="Session")
+session_timezone = input.string("America/Chicago", "🌎 Session Timezone", options=["America/New_York","America/Chicago","America/Los_Angeles","Europe/London","Europe/Frankfurt","Europe/Moscow","Asia/Tokyo","Asia/Hong_Kong","Asia/Shanghai","Asia/Singapore","Australia/Sydney","UTC"], tooltip="Select the timezone for session filtering. Choose the exchange location that matches your market (e.g., America/Chicago for CME, Europe/London for LSE, Asia/Tokyo for TSE, etc.).", group="Session")
+
+// === SIZING ===
+min_contracts = input.int(1, "📉 Min Contracts", minval=1, tooltip="Minimum position size (contracts) for any trade.", group="Adaptive Sizing")
+max_contracts = input.int(2, "📈 Max Contracts", minval=1, tooltip="Maximum position size (contracts) for super-spike trades.", group="Adaptive Sizing")
+
+// === VISUALS ===
+show_labels = input(true, "🏷️ Show Trade Labels", tooltip="Show/hide entry/exit labels on chart.", group="Visuals")
+glowOpacity = input.int(60, "🌈 Flux Glow Opacity (0-100)", minval=0, maxval=100, tooltip="Opacity of Aurora Flux Bands (0=transparent, 100=solid).", group="Visuals")
+flux_ema_len = input.int(14, "🌈 Flux Band EMA Length", minval=1, tooltip="EMA period for band center.", group="Visuals")
+flux_atr_mult = input.float(1.8, "🌈 Flux Band ATR Multiplier", minval=0.1, tooltip="Width of bands (higher = wider).", group="Visuals")
+
+// === LOGIC ===
+
+// --- VoVix Calculation --- //
+fastATR = ta.atr(vovix_fast_len)
+slowATR = ta.atr(vovix_slow_len)
+voVix = fastATR / slowATR
+voVix_avg = ta.sma(voVix, vovix_z_window)
+voVix_std = ta.stdev(voVix, vovix_z_window)
+voVix_z = voVix_std > 0 ? (voVix - voVix_avg) / voVix_std : 0
+
+// VoVix regime logic
+is_vovix_spike = voVix_z > vovix_entry_z and voVix == ta.highest(voVix, vovix_local_max)
+is_vovix_super = voVix_z > vovix_super_z
+is_vovix_exit  = voVix_z < vovix_exit_z
+
+// --- Adaptive Sizing (VoVix strength) --- //
+adaptive_contracts = is_vovix_super ? max_contracts : min_contracts
+
+// --- Cluster/Critical Point Logic --- //
+atr = ta.atr(14)
+spike = atr > (vc_spike_mult * ta.sma(atr, vc_window))
+var float[] spike_vals = array.new_float(vc_window, 0)
+if bar_index > vc_window
+    array.unshift(spike_vals, spike[1] ? 1.0 : 0.0)
+    if array.size(spike_vals) > vc_window
+        array.pop(spike_vals)
+spike_count = array.sum(spike_vals)
+clustered_chop = spike_count >= vc_spike_count and input_vol_cluster
+
+cluster_mean = ta.sma(close, cp_window)
+cluster_stddev = ta.stdev(close, cp_window)
+dist_from_center = math.abs(close[1] - cluster_mean[1])
+is_far = dist_from_center > (cp_distance_mult * cluster_stddev[1])
+vol_break = atr[1] > (cp_volatility_mult * ta.sma(atr, cp_window)[1])
+critical_point = is_far and vol_break and input_crit_point
+
+// --- TIME BLOCK LOGIC --- //
+bar_hour = hour(time, session_timezone)
+bar_dow  = dayofweek(time, session_timezone)
+in_session = (session_start < session_end ? (bar_hour >= session_start and bar_hour < session_end) : (bar_hour >= session_start or bar_hour < session_end))
+not_weekend = allow_weekend or (bar_dow != dayofweek.saturday and bar_dow != dayofweek.sunday)
+trade_allowed = in_session and not_weekend
+
+// --- CONFLUENCE LOGIC: Only trade when VoVix AND (Cluster OR Critical) agree AND in session --- //
+confluence = input_vovix and is_vovix_spike and (critical_point or clustered_chop) and trade_allowed
+
+// --- TRADE HANDLER --- //
+long_signal     = false
+short_signal    = false
+trade_reason    = ""
+
+if confluence
+    long_signal := close > open
+    short_signal := close < open
+    trade_reason := "VoVix + " + (critical_point ? "Critical" : "Cluster")
+
+// --- EXECUTION --- //
+if long_signal
+    strategy.entry("VoVixLong", strategy.long, qty=adaptive_contracts, comment=trade_reason)
+if short_signal
+    strategy.entry("VoVixShort", strategy.short, qty=adaptive_contracts, comment=trade_reason)
+
+// VoVix regime exit
+if input_vovix and is_vovix_exit
+    strategy.close("VoVixLong", comment="VoVix Regime Exit")
+    strategy.close("VoVixShort", comment="VoVix Regime Exit")
+
+// --- REGIME DECAY ZONE AREA (Watermark) --- //
+var float decay_zone_start = na
+regime_decay_condition = is_vovix_exit
+decay_confirmed = not is_vovix_exit
+if regime_decay_condition and na(decay_zone_start)
+    decay_zone_start := bar_index
+if decay_confirmed
+    decay_zone_start := na
+show_decay_area = not na(decay_zone_start)
+
+// === AURORA FLUX BANDS (Volatility/Divergence Bands) ===
+basis = ta.ema(close, flux_ema_len)
+flux_atr = ta.atr(14)
+upperBand = basis + flux_atr * flux_atr_mult
+lowerBand = basis - flux_atr * flux_atr_mult
+
+color glowColor = na
+if long_signal and not short_signal
+    glowColor := color.new(color.green, glowOpacity)
+else if short_signal and not long_signal
+    glowColor := color.new(color.red, glowOpacity)
+else if strategy.position_size > 0
+    glowColor := color.new(color.lime, math.max(0, glowOpacity * 0.8 + 10))
+else if strategy.position_size < 0
+    glowColor := color.new(color.red, math.max(0, glowOpacity * 0.8 + 10))
+else
+    glowColor := color.new(color.gray, glowOpacity)
+
+upperPlot = plot(upperBand, 'Upper Flux', color=glowColor, linewidth=3, style=plot.style_line)
+lowerPlot = plot(lowerBand, 'Lower Flux', color=glowColor, linewidth=3, style=plot.style_line)
+
+plot(upperBand + flux_atr * 0.15, 'Upper Flux Glow 1', color=color.new(glowColor, math.max(0, glowOpacity * 0.7 + 15)), linewidth=4, style=plot.style_line)
+plot(upperBand - flux_atr * 0.15, 'Upper Flux Glow 2', color=color.new(glowColor, math.max(0, glowOpacity * 0.7 + 15)), linewidth=2, style=plot.style_line)
+plot(lowerBand + flux_atr * 0.15, 'Lower Flux Glow 1', color=color.new(glowColor, math.max(0, glowOpacity * 0.7 + 15)), linewidth=2, style=plot.style_line)
+plot(lowerBand - flux_atr * 0.15, 'Lower Flux Glow 2', color=color.new(glowColor, math.max(0, glowOpacity * 0.7 + 15)), linewidth=4, style=plot.style_line)
+
+fill(upperPlot, lowerPlot, color=color.new(glowColor, math.max(0, glowOpacity > 0 ? 85 : 0)), title='Volatility/Divergence Bands')
+
+// --- VISUALS --- //
+if show_labels and long_signal
+    label.new(bar_index, low, trade_reason, color=color.new(#4caf4f, 30), style=label.style_label_up, textcolor=color.white, size=size.normal)
+if show_labels and short_signal
+    label.new(bar_index, high, trade_reason, color=color.new(#ff5252, 30), style=label.style_label_down, textcolor=color.white, size=size.normal)
+
+bgcolor(
+  is_vovix_super ? color.new(color.purple, 90) :
+  is_vovix_spike ? color.new(color.blue, 95) :
+  critical_point ? color.new(color.yellow,90) :
+  clustered_chop ? color.new(color.orange,93) :
+  na)
+
+plotshape(long_signal,  style=shape.triangleup,  location=location.belowbar, color=color.lime, size=size.small, title="Long")
+plotshape(short_signal, style=shape.triangledown,location=location.abovebar, color=color.red,  size=size.small, title="Short")
+
+// --- REAL-TIME SHARPE / SORTINO CALCULATION ---
+var float[] returns = array.new_float()
+if strategy.closedtrades > nz(strategy.closedtrades[1])
+    profit = strategy.closedtrades > 0 ? (strategy.netprofit - nz(strategy.netprofit[1])) : na
+    if not na(profit)
+        array.unshift(returns, profit)
+    if array.size(returns) > 100
+        array.pop(returns)
+
+float sharpe = na
+float sortino = na
+if array.size(returns) > 1
+    avg = array.avg(returns)
+    stdev = array.stdev(returns)
+    float[] downside_list = array.new_float()
+    for i = 0 to array.size(returns) - 1
+        val = array.get(returns, i)
+        if val < 0
+            array.push(downside_list, val)
+    downside_stdev = array.size(downside_list) > 0 ? array.stdev(downside_list) : na
+    sharpe := stdev != 0 ? avg / stdev : na
+    sortino := downside_stdev != 0 ? avg / downside_stdev : na
+
+// --- DASHBOARD & WATERMARK --- //
+get_progress(pct) =>
+    nBars = 10
+    on = math.round(pct * 0.10)
+    off = nBars - on
+    str.repeat('█', on) + str.repeat('░', off)
+
+win_pct = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades : na
+win_pct_display = na(win_pct) ? 0 : win_pct * 100
+win_color = win_pct_display > 50 ? color.lime : color.red
+
+// --- Top-right DASHBOARD ---
+var table dashboard = na
+if na(dashboard)
+    dashboard := table.new(position.top_right, 2, 3, bgcolor=color.new(color.black, 95), border_color=color.purple)
+table.clear(dashboard, 0, 0)
+table.cell(dashboard, 0, 0, '   ⚡ The VoVix Experiment   ', bgcolor=color.purple, text_color=color.black, text_size=size.large)
+table.merge_cells(dashboard, 0, 0, 1, 0)
+table.cell(
+  dashboard, 0, 1,
+  'VoVix Z: ' + str.tostring(voVix_z, "#.##") +
+  ' | Size: ' + str.tostring(adaptive_contracts) +
+  '\nStatus: ' + (strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "NEUTRAL"),
+  text_color=(strategy.position_size > 0 ? color.lime : strategy.position_size < 0 ? color.red : color.silver),
+  text_size=size.normal)
+table.merge_cells(dashboard, 0, 1, 1, 1)
+table.cell(dashboard, 0, 2, 'Trades: ' + str.tostring(strategy.closedtrades) + ' | Net: ' + str.tostring(strategy.netprofit, '0.##') + '\nWin %: ' + (na(win_pct) ? 'N/A' : str.tostring(win_pct_display, '#.##') + '% ' + get_progress(win_pct_display)) + ' | # Wins: ' + str.tostring(strategy.wintrades) + '\nSharpe: ' + str.tostring(sharpe, "#.##") + ' | Sortino: ' + str.tostring(sortino, "#.##"), text_color=win_color, text_size=size.normal)
+table.merge_cells(dashboard, 0, 2, 1, 2)
+
+// --- Bottom-right WATERMARK/VoVix PROGRESSION BAR ---
+var table infoTable = na
+if na(infoTable)
+    infoTable := table.new(position.bottom_right, 1, 2, bgcolor=color.new(color.black, 90), border_color=color.new(color.purple, 80), border_width=1)
+table.clear(infoTable, 0, 0)
+table.cell(infoTable, 0, 0, '⚡ Dskyz (DAFE) Trading Systems', text_color=color.rgb(200, 200, 255), text_size=size.normal)
+super_val = na(voVix_avg) ? 1.0 : voVix_avg * vovix_super_z
+progress_pct = math.min(1.0, math.abs(voVix_z) / (super_val + 1e-5))
+int bar_length = 20
+int full_bars = math.round(progress_pct * bar_length)
+int empty_bars = bar_length - full_bars
+string vovix_bar_str = str.repeat('█', full_bars) + str.repeat('░', empty_bars)
+color vovix_color = progress_pct > 0.8 ? color.lime : progress_pct > 0.6 ? color.green : progress_pct > 0.3 ? color.yellow : progress_pct > 0.1 ? color.orange : color.red
+table.cell(infoTable, 0, 1, "VoVix [" + vovix_bar_str + "] " + str.tostring(progress_pct, "#.##"), text_color=vovix_color, text_size=size.normal)

@@ -1,0 +1,53 @@
+//@version=6
+strategy("Max Profit Min Loss Options Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Inputs
+fastLength = input.int(9, "Fast MA Length")
+slowLength = input.int(21, "Slow MA Length")
+useEMA = input.bool(true, "Use EMA (False = SMA)")
+rsiLength = input.int(14, "RSI Length")
+rsiOverbought = input.int(70, "RSI Overbought")
+rsiOversold = input.int(30, "RSI Oversold")
+macdFast = input.int(12, "MACD Fast")
+macdSlow = input.int(26, "MACD Slow")
+macdSignal = input.int(9, "MACD Signal")
+volSmaLength = input.int(20, "Volume SMA Length")
+stopLossPerc = input.float(1.0, "Stop Loss (%)", minval=0.1)
+trailProfitPerc = input.float(4.0, "Trailing Profit (%)", minval=0.1)
+
+// Indicators
+maFast = useEMA ? ta.ema(close, fastLength) : ta.sma(close, fastLength)
+maSlow = useEMA ? ta.ema(close, slowLength) : ta.sma(close, slowLength)
+rsi = ta.rsi(close, rsiLength)
+[macdLine, macdSignalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+macdUp = ta.crossover(macdLine, macdSignalLine)
+macdDown = ta.crossunder(macdLine, macdSignalLine)
+volSMA = ta.sma(volume, volSmaLength)
+volAboveAvg = volume > volSMA
+rsiRising = ta.rising(rsi, 3)
+rsiFalling = ta.falling(rsi, 3)
+bullishTrend = maFast > maSlow
+bearishTrend = maFast < maSlow
+
+// Entry conditions
+buyCall = bullishTrend and macdUp and rsi > rsiOversold and rsiRising and volAboveAvg
+buyPut = bearishTrend and macdDown and rsi < rsiOverbought and rsiFalling and volAboveAvg
+
+// Calculate stop/trail points
+stopLossPointsLong = close * stopLossPerc / 100
+stopLossPointsShort = close * stopLossPerc / 100
+trailPointsLong = close * trailProfitPerc / 100
+trailPointsShort = close * trailProfitPerc / 100
+
+// Execute trades
+if buyCall and strategy.position_size <= 0
+    strategy.entry("Buy CALL", strategy.long)
+    strategy.exit(id="Exit CALL", from_entry="Buy CALL", stop=close - stopLossPointsLong, trail_points=trailPointsLong, trail_offset=trailPointsLong)
+
+if buyPut and strategy.position_size >= 0
+    strategy.entry("Buy PUT", strategy.short)
+    strategy.exit(id="Exit PUT", from_entry="Buy PUT", stop=close + stopLossPointsShort, trail_points=trailPointsShort, trail_offset=trailPointsShort)
+
+// Plot MAs
+plot(maFast, "Fast MA", color=color.orange)
+plot(maSlow, "Slow MA", color=color.blue)

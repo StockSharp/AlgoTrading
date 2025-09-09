@@ -1,0 +1,46 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © OmegaTools
+
+//@version=5
+strategy("Inside Candle Strategy", overlay=true, margin_long=100, margin_short=100, initial_capital = 10000, default_qty_type = strategy.percent_of_equity, default_qty_value = 100)
+
+tf = input.timeframe("1D", "Timeframe", group = "Settings")
+tp = input.float(2.00, "RR Ratio", minval = 0.5, maxval = 5, group = "Settings")
+mainp = input.bool(true, "Show Moving Average", group = "Settings")
+lnt = input.int(100, "Average Length", group = "Settings")
+upcolor = input.color(#2962ff, "First color", group = "Visual")
+dncolor = input.color(#e91e63, "Second color", group = "Visual")
+width = input.int(2, "Line width", minval = 1, maxval = 5, group = "Visual")
+
+inside1 = high < high[1] and low > low[1]
+inside = request.security(syminfo.tickerid, tf, inside1)
+high1 = request.security(syminfo.tickerid, tf, high)
+low1 = request.security(syminfo.tickerid, tf, low)
+mid1 = request.security(syminfo.tickerid, tf, hl2)
+
+if inside and timeframe.change(tf)
+    line.new(time, high1, time + timeframe.in_seconds(tf) * 1000, high1, xloc=xloc.bar_time, color=upcolor, width=width)
+    line.new(time, low1, time + timeframe.in_seconds(tf) * 1000, low1, xloc=xloc.bar_time, color=dncolor, width=width)
+    line.new(time, mid1, time + timeframe.in_seconds(tf) * 1000, mid1, xloc=xloc.bar_time, color=color.new(color.gray, 10), width=1, style = line.style_dotted)
+
+ma = ta.sma(close, lnt)
+bbw = ta.stdev(close, lnt)
+ma2 = if ma > ma[1]
+    ma + bbw
+else
+    ma - bbw
+grad = color.from_gradient(bbw, ta.lowest(bbw, lnt*2), ta.highest(bbw, lnt*2), color.new(color.gray, 100), color.new(color.gray, 50))
+
+p1 = plot(mainp == true ? ma : na, "Moving Average", close > ma ? upcolor : dncolor)
+p2 = plot(mainp == true ? ma2 : na, "Moving Volatility", close > ma ? color.new(upcolor, 75) : color.new(dncolor, 75))
+fill(p1, p2, grad)
+
+longCondition = close > high1 and time < ta.valuewhen(inside and timeframe.change(tf), time + timeframe.in_seconds(tf) * 1000, 0)
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Close long", "Long", qty_percent = 100, stop = low1, limit = close+(close-low1)*tp)
+
+shortCondition = close < low1 and time < ta.valuewhen(inside and timeframe.change(tf), time + timeframe.in_seconds(tf) * 1000, 0)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Close short", "Short", qty_percent = 100, stop = high1, limit = close-(high1-close)*tp)

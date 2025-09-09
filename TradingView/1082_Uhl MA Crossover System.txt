@@ -1,0 +1,23 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © alexgrover
+
+//@version=4
+study("Uhl MA Crossover System","UHLMA",true)
+length = input(100),mult = input(1.),src = input(close)
+//----
+out = 0., cma = 0., cts = 0.
+Var = variance(src,length)*mult
+sma = sma(src,length)
+//----
+secma = pow(nz(sma - cma[1]),2)
+sects = pow(nz(src - cts[1]),2)
+ka = Var < secma ? 1 - Var/secma : 0
+kb = Var < sects ? 1 - Var/sects : 0
+//----
+cma := ka*sma+(1-ka)*nz(cma[1],src)
+cts := kb*src+(1-kb)*nz(cts[1],src)
+//----
+css = cts > cma ? #2157f3 : #ff1100
+a = plot(cts,"CTS",#2157f3,2,transp=0)
+b = plot(cma,"CMA",#ff1100,2,transp=0)
+fill(a,b,color=css,transp=80)

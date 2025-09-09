@@ -1,0 +1,33 @@
+// This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License https://creativecommons.org/licenses/by-sa/4.0/
+// © alexgrover
+// Don't trade me!
+
+//@version=4
+strategy("Grid Like Strategy",overlay=true,process_orders_on_close=true)
+point = input(2.)
+os    = input(1,"Order Size")
+mf    = input(2.,"Martingale Multiplier")
+anti  = input(false,"Anti Martingale")
+//----
+baseline = 0.
+baseline := nz(close > baseline[1] + point or close < baseline[1] - point ?
+  close : baseline[1],close)
+upper = baseline + point
+lower = baseline - point
+//----
+size = 0.
+loss = change(strategy.losstrades)
+win = change(strategy.wintrades)
+if anti
+    size := win ? size[1]*mf : loss ? os : nz(size[1],os)
+else
+    size := loss ? size[1]*mf : win ? os : nz(size[1],os)
+//----
+if baseline > baseline[1]
+    strategy.entry("Buy",strategy.long,qty=size)
+    strategy.exit("buy/tp/sl","Buy",stop=lower,limit=upper)
+if baseline < baseline[1]
+    strategy.entry("Sell",strategy.short,qty=size)
+    strategy.exit("sell/tp/sl","Sell",stop=upper,limit=lower)
+//----
+plot(baseline,"Plot",#2157f3,2)

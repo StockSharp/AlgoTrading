@@ -1,0 +1,35 @@
+//@version=5
+strategy("HMA 200 + EMA 20 Crossover Strategy", overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=10,
+     commission_type=strategy.commission.percent,
+     commission_value=0.1,
+     slippage=2)
+
+// === INPUTS ===
+hmaLength = input.int(200, title="HMA Length")
+emaLength = input.int(20, title="EMA Length")
+
+// === INDICATORS ===
+hma = ta.hma(close, hmaLength)
+ema = ta.ema(close, emaLength)
+
+// === PLOTS ===
+plot(hma, color=color.orange, title="HMA 200", linewidth=2)
+plot(ema, color=color.blue, title="EMA 20", linewidth=2)
+
+// === CONDITIONS ===
+// Buy: Price is above HMA and crosses above EMA
+buySignal = close > hma and ta.crossover(close, ema)
+
+// Sell: Price is below HMA and crosses below EMA
+sellSignal = close < hma and ta.crossunder(close, ema)
+
+// === STRATEGY EXECUTION ===
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+    strategy.close("Sell", comment="Reverse to Buy")
+
+if (sellSignal)
+    strategy.entry("Sell", strategy.short)
+    strategy.close("Buy", comment="Reverse to Sell")

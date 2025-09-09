@@ -1,0 +1,161 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © rumpypumpydumpy
+
+//@version=4
+study("Higher Order Pivots", overlay = true, max_labels_count = 500)
+pv1_type    = input("3 bar", options = ["3 bar", "5 bar"], title = "3 or 5 bar 1st order pivots?")
+display_pv1 = input(true,   title = "Display 1st order pivots?")
+pvh1_col    = input(color.gray, title = "1st order pivot high color")
+pvl1_col    = input(color.gray, title = "1st order pivot low color")
+
+display_pv2 = input(true,   title = "Display 2nd order pivots?")
+pvh2_col    = input(#770000FF, title = "2nd order pivot high color")
+pvl2_col    = input(#007700FF, title = "2nd order pivot low color")
+
+display_pv3 = input(true,   title = "Display 3rd order pivots?")
+pvh3_col    = input(color.red, title = "2nd order pivot high color")
+pvl3_col    = input(color.lime, title = "2nd order pivot low color")
+
+// 1st order pivots
+
+bool    pvh         = pv1_type == "3 bar" ? high[1] < high[2] and high[2] > high[3] : high[1] < high[2] and high[2] < high[3] and high[3] > high[4] and high[4] > high[5]
+bool    pvl         = pv1_type == "3 bar" ? low[1] > low[2] and low[2] < low[3] : low[1] > low[2] and low[2] > low[3] and low[3] < low[4] and low[4] < low[5]
+
+int     pv1_time    = pv1_type == "3 bar" ? time[2] : time[3]
+float   pv1_high    = pv1_type == "3 bar" ? high[2] : high[3]
+float   pv1_low     = pv1_type == "3 bar" ? low[2] : low[3]
+
+
+plotshape(display_pv1 ? pvh : na, location = location.abovebar, color = color.gray, style = shape.triangledown,   size = size.tiny, offset = pv1_type == "3 bar" ? -2 : -3, title = "1st Order Pivot High")
+plotshape(display_pv1 ? pvl : na, location = location.belowbar, color = color.gray, style = shape.triangleup,     size = size.tiny, offset = pv1_type == "3 bar" ? -2 : -3, title = "1st Order Pivot Low")
+
+
+// Arrays for x,y of 1st, 2nd and 3rd order high and low pivots
+var float[] pvh1_price  = array.new_float(10000, na)
+var int[]   pvh1_time   = array.new_int(10000, na)
+var float[] pvl1_price  = array.new_float(10000, na)
+var int[]   pvl1_time   = array.new_int(10000, na)
+
+var float[] pvh2_price  = array.new_float(1000, na)
+var int[]   pvh2_time   = array.new_int(1000, na)
+var float[] pvl2_price  = array.new_float(1000, na)
+var int[]   pvl2_time   = array.new_int(1000, na)
+
+var float[] pvh3_price  = array.new_float(1000, na)
+var int[]   pvh3_time   = array.new_int(1000, na)
+var float[] pvl3_price  = array.new_float(1000, na)
+var int[]   pvl3_time   = array.new_int(1000, na)
+
+// temp variables to store previous pivots used to determine higher order pivots
+var float   temp_pv_0 = na
+var float   temp_pv_1 = na
+var float   temp_pv_2 = na
+var int     temp_pv_time = na
+
+
+// boolean variables to store occurence of new 2nd and 3rd order pivots, used to trigger when to add new pivot labels
+bool    new_ph_2nd = false
+bool    new_ph_3rd = false
+bool    new_pl_2nd = false
+bool    new_pl_3rd = false
+
+if barstate.isconfirmed
+    // ------- Pivot Highs
+    // if we have a 1st order pivot high occur, add it to the arrays
+    if pvh
+        array.pop(pvh1_price)
+        array.pop(pvh1_time)
+        array.unshift(pvh1_price, pv1_high)
+        array.unshift(pvh1_time, pv1_time)
+
+        // if we have a minimum of three 1st order pivots we can check for 2nd order pivot occurence
+        if array.size(pvh1_price) > 2
+            // store the 1st order pivots and the time of the peak in temp vars
+            temp_pv_0 := array.get(pvh1_price, 0)                               // Most recent pivot
+            temp_pv_1 := array.get(pvh1_price, 1)                               // Second most recent pivot
+            temp_pv_2 := array.get(pvh1_price, 2)                               // Third most recent pivot
+            temp_pv_time := array.get(pvh1_time, 1)                             // Time of the Second most recent pivot which we need for the peak if it is a valid 2nd order pivot
+
+            // check if it's a 2nd order pivot and if so, remove oldest pivot and add new pivot to the 2nd order pivot arrays
+            if temp_pv_0 < temp_pv_1 and temp_pv_1 > temp_pv_2
+                array.pop(pvh2_price)
+                array.pop(pvh2_time)
+                array.unshift(pvh2_price, temp_pv_1)
+                array.unshift(pvh2_time, temp_pv_time)
+                new_ph_2nd := true
+
+        // if we have a minimum of three 2nd order pivots we can check for 3rd order pivot occurence
+        if array.size(pvh2_price) > 2
+            // store the 2nd order pivots and the time of the peak in temp vars
+            temp_pv_0 := array.get(pvh2_price, 0)
+            temp_pv_1 := array.get(pvh2_price, 1)
+            temp_pv_2 := array.get(pvh2_price, 2)
+            temp_pv_time := array.get(pvh2_time, 1)
+
+            // check if it's a 3rd order pivot and if so, remove oldest pivot and add new pivot to the 3rd order pivot arrays
+            if temp_pv_0 < temp_pv_1 and temp_pv_1 > temp_pv_2
+                array.pop(pvh3_price)
+                array.pop(pvh3_time)
+                array.unshift(pvh3_price, temp_pv_1)
+                array.unshift(pvh3_time, temp_pv_time)
+                new_ph_3rd := true
+
+    // ------- Pivot Lows
+    if pvl
+        array.pop(pvl1_price)
+        array.pop(pvl1_time)
+        array.unshift(pvl1_price, pv1_low)
+        array.unshift(pvl1_time, pv1_time)
+
+        if array.size(pvl1_price) > 2
+            temp_pv_0 := array.get(pvl1_price, 0)
+            temp_pv_1 := array.get(pvl1_price, 1)
+            temp_pv_2 := array.get(pvl1_price, 2)
+            temp_pv_time := array.get(pvl1_time, 1)
+
+            if temp_pv_0 > temp_pv_1 and temp_pv_1 < temp_pv_2
+                array.pop(pvl2_price)
+                array.pop(pvl2_time)
+                array.unshift(pvl2_price, temp_pv_1)
+                array.unshift(pvl2_time, temp_pv_time)
+                new_pl_2nd := true
+
+        if array.size(pvl2_price) > 2
+            temp_pv_0 := array.get(pvl2_price, 0)
+            temp_pv_1 := array.get(pvl2_price, 1)
+            temp_pv_2 := array.get(pvl2_price, 2)
+            temp_pv_time := array.get(pvl2_time, 1)
+
+            if temp_pv_0 > temp_pv_1 and temp_pv_1 < temp_pv_2
+                array.pop(pvl3_price)
+                array.pop(pvl3_time)
+                array.unshift(pvl3_price, temp_pv_1)
+                array.unshift(pvl3_time, temp_pv_time)
+                new_pl_3rd := true
+
+// predetermine max label limits for label arrays depending on which pivots we are displaying
+label_limit = (display_pv2 and not display_pv3) or (display_pv3 and not display_pv2) ? 250 : 125
+
+var label[] la_ph2 = array.new_label(display_pv2 ? label_limit : 0, na)
+var label[] la_pl2 = array.new_label(display_pv2 ? label_limit : 0, na)
+var label[] la_ph3 = array.new_label(display_pv3 ? label_limit : 0, na)
+var label[] la_pl3 = array.new_label(display_pv3 ? label_limit : 0, na)
+
+
+
+if barstate.isconfirmed
+    if display_pv2
+        if new_ph_2nd
+            array.pop(la_ph2)
+            array.unshift(la_ph2, label.new(x = array.get(pvh2_time, 0), y = array.get(pvh2_price, 0), xloc = xloc.bar_time, style = label.style_label_down,    color = pvh2_col, size = size.tiny))
+        if new_pl_2nd
+            array.pop(la_pl2)
+            array.unshift(la_pl2, label.new(x = array.get(pvl2_time, 0), y = array.get(pvl2_price, 0), xloc = xloc.bar_time, style = label.style_label_up,      color = pvl2_col, size = size.tiny))
+
+    if display_pv3
+        if new_ph_3rd
+            array.pop(la_ph3)
+            array.unshift(la_ph3, label.new(x = array.get(pvh3_time, 0), y = array.get(pvh3_price, 0), xloc = xloc.bar_time, style = label.style_label_down,    color = pvh3_col, size = size.small))
+        if new_pl_3rd
+            array.pop(la_pl3)
+            array.unshift(la_pl3, label.new(x = array.get(pvl3_time, 0), y = array.get(pvl3_price, 0), xloc = xloc.bar_time, style = label.style_label_up,      color = pvl3_col, size = size.small))

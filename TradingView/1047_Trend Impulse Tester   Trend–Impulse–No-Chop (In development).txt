@@ -1,0 +1,169 @@
+//@version=5
+strategy("Trend Impulse Tester | Trend–Impulse–No-Chop (final v2)",
+     overlay=true,
+     initial_capital=2500,
+     commission_type=strategy.commission.percent, commission_value=0.06,
+     pyramiding=0, calc_on_every_tick=true, calc_on_order_fills=true, max_bars_back=500)
+
+//=========================
+// НАСТРОЙКИ
+//=========================
+fastLen     = input.int(50,  "EMA Fast", minval=2)
+slowLen     = input.int(200, "EMA Slow", minval=5)
+
+adxLen      = input.int(14,  "ADX Length", minval=2)
+adxSmooth   = input.int(14,  "ADX Smoothing", minval=1)
+adxMin      = input.float(18, "ADX min for trend", step=0.1)
+
+useChop     = input.bool(true, "Отключать входы в боковике (Choppiness Index)")
+chopLen     = input.int(14,  "Chop Length", minval=5)
+chopTh      = input.float(61.8, "Порог Chop (выше = боковик)", step=0.1)
+
+useRSI      = input.bool(true, "Триггер импульса: RSI кросс")
+rsiLen      = input.int(14, "RSI Length", minval=2)
+rsiUp       = input.int(55, "RSI bullish threshold", minval=40, maxval=70)
+
+useMACD     = input.bool(true, "Фильтр импульса: MACD histogram направление")
+macdFast    = input.int(12, "MACD Fast", minval=2)
+macdSlow    = input.int(26, "MACD Slow", minval=3)
+macdSig     = input.int(9,  "MACD Signal", minval=2)
+
+usePriceEMA = input.bool(true, "Фильтр импульса: Close по сторону EMA fast")
+
+exitOnRSIDown  = input.bool(true, "Ранний выход: RSI обратно через порог")
+rsiExit        = input.int(50, "RSI exit threshold", minval=40, maxval=60)
+exitOnMACDDown = input.bool(true, "Ранний выход: MACD hist разворот")
+exitOnEMAflip  = input.bool(false,"Ранний выход: Close пересекает EMA fast")
+
+atrLen     = input.int(14, "ATR Length", minval=2)
+atrMultSL  = input.float(2.0, "Stop = ATR x", step=0.1)
+atrMultTP  = input.float(3.0, "Take = ATR x (0 = выкл.)", step=0.1)
+useTrail   = input.bool(true, "Использовать ATR трейлинг-стоп")
+trailMult  = input.float(2.0, "ATR trail x", step=0.1)
+
+tradeSide  = input.string("Both", "Торговать сторону", options = ["Both", "Long", "Short"])
+longsOn    = tradeSide != "Short"
+shortsOn   = tradeSide != "Long"
+
+useSess    = input.bool(false,"Фильтр по сессии (HH:MM-HH:MM)")
+sess       = input.session("0800-2200", "Сессия")
+
+useVol     = input.bool(false, "Фильтр объёма (V > SMA*коэф.)")
+volLen     = input.int(50, "SMA объёма", minval=1)
+volK       = input.float(1.2, "Коэф. к SMA объёма", step=0.05)
+
+//=========================
+// ИНДИКАТОРЫ
+//=========================
+emaFast = ta.ema(close, fastLen)
+emaSlow = ta.ema(close, slowLen)
+
+// Тренд по EMA + ADX/DI (в v5 dmi требует 2 аргумента)
+[diPlus, diMinus, adx] = ta.dmi(adxLen, adxSmooth)
+trendUp   = emaFast > emaSlow and emaFast > emaFast[1] and adx > adxMin and diPlus > diMinus
+trendDown = emaFast < emaSlow and emaFast < emaFast[1] and adx > adxMin and diMinus > diPlus
+
+// --- Choppiness Index (0—100) без ta.sum ---
+// True Range
+prevClose = nz(close[1], close)
+tr        = math.max(math.max(high - low, math.abs(high - prevClose)), math.abs(low - prevClose))
+
+// Скользящая сумма TR за окно chopLen
+cumTR = ta.cum(tr)
+sumTR = cumTR - nz(cumTR[chopLen], 0)
+
+// Диапазон за окно
+rangeHL = ta.highest(high, chopLen) - ta.lowest(low, chopLen)
+denom   = math.max(rangeHL, syminfo.mintick)
+
+// Сам CHOP
+chop   = 100 * math.log10(sumTR / denom) / math.log10(chopLen)
+inChop = useChop and chop >= chopTh
+
+// RSI + MACD
+rsi = ta.rsi(close, rsiLen)
+[macd, signal, hist] = ta.macd(close, macdFast, macdSlow, macdSig)
+
+// Объём и сессия
+volOk  = not useVol or (volume > ta.sma(volume, volLen) * volK)
+sessOk = not useSess or not na(time(timeframe.period, sess))
+
+//=========================
+// ТРИГГЕРЫ ВХОДА (начало импульса)
+//=========================
+impulseLong  = (not useRSI or ta.crossover(rsi, rsiUp)) and (not useMACD or (hist > 0 and hist > hist[1])) and (not usePriceEMA or close > emaFast)
+impulseShort = (not useRSI or ta.crossunder(rsi, 100 - rsiUp)) and (not useMACD or (hist < 0 and hist < hist[1])) and (not usePriceEMA or close < emaFast)
+
+canLong  = longsOn  and trendUp   and not inChop and sessOk and volOk
+canShort = shortsOn and trendDown and not inChop and sessOk and volOk
+
+//=========================
+// РИСК / СТОПЫ / ТЕЙКИ
+//=========================
+atr     = ta.atr(atrLen)
+longSL  = close - atrMultSL * atr
+longTP  = atrMultTP > 0 ? close + atrMultTP * atr : na
+shortSL = close + atrMultSL * atr
+shortTP = atrMultTP > 0 ? close - atrMultTP * atr : na
+
+//=========================
+// ОРДЕРА
+//=========================
+isLong  = strategy.position_size > 0
+isShort = strategy.position_size < 0
+
+// Входы
+if canLong and impulseLong and not isLong
+    strategy.entry("LONG", strategy.long)
+
+if canShort and impulseShort and not isShort
+    strategy.entry("SHORT", strategy.short)
+
+// Выходы: фикс или трейл
+if not useTrail
+    if strategy.position_size > 0
+        strategy.exit("L-Exit", "LONG", stop=longSL, limit=longTP)
+    if strategy.position_size < 0
+        strategy.exit("S-Exit", "SHORT", stop=shortSL, limit=shortTP)
+else
+    // Ручной ATR-трейлинг
+    var float lTrail = na
+    var float sTrail = na
+    if strategy.position_size > 0
+        lTrail := na(lTrail[1]) ? close - trailMult * atr : math.max(lTrail[1], close - trailMult * atr)
+        strategy.exit("L-Trail", "LONG", stop=lTrail, limit=longTP)
+    else
+        lTrail := na
+    if strategy.position_size < 0
+        sTrail := na(sTrail[1]) ? close + trailMult * atr : math.min(sTrail[1], close + trailMult * atr)
+        strategy.exit("S-Trail", "SHORT", stop=sTrail, limit=shortTP)
+    else
+        sTrail := na
+
+//=========================
+// РАННИЕ ВЫХОДЫ (до отката) — без переносов
+//=========================
+condL1   = exitOnRSIDown  and ta.crossunder(rsi, rsiExit)
+condL2   = exitOnMACDDown and hist < hist[1]
+condL3   = exitOnEMAflip  and close < emaFast
+exitLong = condL1 or condL2 or condL3 or inChop
+if strategy.position_size > 0 and exitLong
+    strategy.close("LONG", comment="Long Early Exit")
+
+condS1    = exitOnRSIDown  and ta.crossover(rsi, 100 - rsiExit)
+condS2    = exitOnMACDDown and hist > hist[1]
+condS3    = exitOnEMAflip  and close > emaFast
+exitShort = condS1 or condS2 or condS3 or inChop
+if strategy.position_size < 0 and exitShort
+    strategy.close("SHORT", comment="Short Early Exit")
+
+//=========================
+// ВИЗУАЛИЗАЦИЯ
+//=========================
+plot(emaFast, "EMA Fast", color=color.new(color.teal, 0), linewidth=2)
+plot(emaSlow, "EMA Slow", color=color.new(color.orange, 0), linewidth=2)
+// Включай при отладке CHOP: в индикаторах снимай hide
+plot(chop, "CHOP", display=display.none)
+plotshape(canLong and impulseLong,  title="Long Impulse",  style=shape.triangleup,   location=location.belowbar, color=color.new(color.teal, 0),   size=size.tiny, text="▲")
+plotshape(canShort and impulseShort, title="Short Impulse", style=shape.triangledown, location=location.abovebar, color=color.new(color.orange, 0), size=size.tiny, text="▼")
+bgcolor(inChop ? color.new(color.gray, 88) : na, title="Chop background")

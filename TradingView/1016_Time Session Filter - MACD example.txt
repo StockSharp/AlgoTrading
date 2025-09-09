@@ -1,0 +1,225 @@
+/// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Harrocop
+
+////////////////////////////////////////////////////////////////////////////////////////
+// This is and exmaple how to incorperate a sessionfilter into your strategy
+// It gives traders the possibility to quickly adjust time filters to enter between specific time periodes.
+// The Strategy comes with the following.
+// - Basic Risk Position Sizingtool. For more info see: https://www.tradingview.com/script/HAp1ed0F-Risk-Management-and-Positionsize-MACD-example/
+// - MACD Signalline based on Higher Time Frame Settings. For more info see: https://www.tradingview.com/script/rQbmGtAx-MACD-HTF-Dynamic-Smoothing/
+// - Filter based on Moving Average Type on higher time frame settings. For more info see: https://www.tradingview.com/script/WSfUYnNA-HTF-Trend-Filter-Dynamic-Smoothing/
+// - Dynamic smoothing calculations makes a sleek line, taking the ratio of minutes of the higher time frame to the current time frame.
+// - Exit strategy is simplified using MACD crossover / crossunder.
+// - no fixed stoploss.
+// - option to exit trade when session ends.
+// - The below strategy is for educational purposes about how to use a session filter into your strategy.
+////////////////////////////////////////////////////////////////////////////////////////
+
+//@version=5
+strategy(title = "Time Session Filter - MACD example", shorttitle = "Time Session Filter", overlay=true,
+         pyramiding=0, initial_capital = 10000,
+         calc_on_order_fills=false,
+         slippage = 0,
+         commission_type=strategy.commission.percent, commission_value=0.03)
+
+/////////////////////////////////////////////////////////////////////////////////////
+//////////////////           Time Session Filter       //////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////
+TIMESESSION = "Time Session Filter"
+Use_Session = input.bool(defval = true, title = 'Session ', inline = 'Session', group = TIMESESSION, tooltip = "turns on sessino filter")
+Time_Session = input.session(defval = '1100-1500', title = '', inline = 'Session', group = TIMESESSION, tooltip = "time according to your tradingview timezone") + ':'
+   + (input.bool(defval = true, title = 'Mon', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.monday) : '')
+   + (input.bool(defval = true, title = 'Tue', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.tuesday) : '')
+   + (input.bool(defval = true, title = 'Wed', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.wednesday) : '')
+   + (input.bool(defval = true, title = 'Thu', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.thursday) : '')
+   + (input.bool(defval = true, title = 'Fri', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.friday) : '')
+   + (input.bool(defval = true, title = 'Sat', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.saturday) : '')
+   + (input.bool(defval = true, title = 'Sun', inline = 'Days', group = TIMESESSION) ? str.tostring(dayofweek.sunday) : '')
+closeSessionEnd = input.bool  (defval = false, title = 'Close at Session End', group = TIMESESSION, tooltip = 'When session ends it closes position')
+Session_Filter = Use_Session ? not (na(time(timeframe.period, Time_Session)) or na(time_close(timeframe.period, Time_Session))) : true
+
+// Color the background when the session is active
+bgcolor(Session_Filter ? color.new(color.green, 90) : color.new(color.red, 90), title="Session Background")
+
+//////////////////////////////////////////////////////
+//////////         Risk Management        ////////////
+//////////////////////////////////////////////////////
+RISKM = "Risk Management"
+InitialBalance = input.float(defval = 10000, title = "Initial Balance", minval = 1, maxval = 1000000, step = 1000, tooltip = "starting capital", group = RISKM)
+LeverageEquity = input.bool(defval = true, title = "qty based on equity %", tooltip = "true turns on MarginFactor based on equity, false gives fixed qty for positionsize", group = RISKM)
+MarginFactor = input.float(-0.5, minval = - 0.9, maxval = 100, step = 0.1, tooltip = "Margin Factor, meaning that 0.5 will add 50% extra capital to determine ordersize quantity, 0.0 means 100% of equity is used to decide quantity of instrument", inline = "qty", group = RISKM)
+QtyNr = input.float(defval = 3.5, title = "Quantity Contracts", minval = 0, maxval = 1000000, step = 0.01,  tooltip = "Margin Factor, meaning that 0.5 will add 50% extra capital to determine ordersize quantity, 0.0 means 100% of equity is used to decide quantity of instrument", inline = "qty", group = RISKM)
+EquityCurrent = InitialBalance + strategy.netprofit[1]
+QtyEquity = EquityCurrent * (1 + MarginFactor) / close[1]
+QtyTrade = LeverageEquity ? QtyEquity : QtyNr
+
+//////////////////////////////////////////////////////
+//////////         Input MACD HTF         ////////////
+//////////////////////////////////////////////////////
+MACD_settings = "Higher Time Frame MACD Settings"
+MA_Type  = input.string(defval="EMA" , options=["EMA","DEMA","TEMA","SMA","WMA", "HMA"], title="MA type", inline = "1", group = MACD_settings)
+TimeFrame_MACD = input.timeframe(title='Higher Time Frame', defval='30', inline = "1", group = MACD_settings)
+fastlength = input.int(11, title="Fast MA Length", minval=1, inline = "2", group = MACD_settings)
+slowlength = input.int(26, title="Slow MA Length", minval=1, inline = "2", group = MACD_settings)
+signallength = input.int(9, title="Length Signal MA", minval=1, inline = "3", group = MACD_settings)
+Plot_Signal = input.bool(true, title = "Plot Signal?", inline = "3", group = MACD_settings)
+
+ma(type, src, length) =>
+    float result = 0
+    if type == 'TMA' // Triangular Moving Average
+        result := ta.sma(ta.sma(src, math.ceil(length / 2)), math.floor(length / 2) + 1)
+        result
+    if type == 'LSMA' // Least Squares Moving Average
+        result := ta.linreg(src, length, 0)
+        result
+    if type == 'SMA'  // Simple Moving Average
+        result := ta.sma(src, length)
+        result
+    if type == 'EMA'  // Exponential Moving Average
+        result := ta.ema(src, length)
+        result
+    if type == 'DEMA'  // Double Exponential Moving Average
+        e = ta.ema(src, length)
+        result := 2 * e - ta.ema(e, length)
+        result
+    if type == 'TEMA'  // Triple Exponentiale
+        e = ta.ema(src, length)
+        result := 3 * (e - ta.ema(e, length)) + ta.ema(ta.ema(e, length), length)
+        result
+    if type == 'WMA'  // Weighted Moving Average
+        result := ta.wma(src, length)
+        result
+    if type == 'HMA'  // Hull Moving Average
+        result := ta.wma(2 * ta.wma(src, length / 2) - ta.wma(src, length), math.round(math.sqrt(length)))
+        result
+    result
+
+// MACD function for calculation higher timeframe
+macd_function() =>
+    fast_ma = ma(MA_Type, close, fastlength)
+    slow_ma = ma(MA_Type, close, slowlength)
+    macd = fast_ma - slow_ma
+    macd
+
+signal_function() =>
+    fast_ma = ma(MA_Type, close, fastlength)
+    slow_ma = ma(MA_Type, close, slowlength)
+    macd = fast_ma - slow_ma
+    signal = ma(MA_Type, macd, signallength)
+    signal
+
+hist_function() =>
+    fast_ma = ma(MA_Type, close, fastlength)
+    slow_ma = ma(MA_Type, close, slowlength)
+    macd = fast_ma - slow_ma
+    signal = ma(MA_Type, macd, signallength)
+    hist = macd - signal
+    hist
+
+MACD_Value_HTF = request.security(syminfo.ticker, TimeFrame_MACD, macd_function())
+SIGNAL_Value_HTF = request.security(syminfo.ticker, TimeFrame_MACD, signal_function())
+HIST_Value_HTF = MACD_Value_HTF - SIGNAL_Value_HTF
+
+// Get minutes for current and higher timeframes
+// Function to convert a timeframe string to its equivalent in minutes
+timeframeToMinutes(tf) =>
+    multiplier = 1
+    if (str.endswith(tf, "D"))
+        multiplier := 1440
+    else if (str.endswith(tf, "W"))
+        multiplier := 10080
+    else if (str.endswith(tf, "M"))
+        multiplier := 43200
+    else if (str.endswith(tf, "H"))
+        multiplier := int(str.tonumber(str.replace(tf, "H", "")))
+    else
+        multiplier := int(str.tonumber(str.replace(tf, "m", "")))
+    multiplier
+
+// Get minutes for current and higher timeframes
+currentTFMinutes = timeframeToMinutes(timeframe.period)
+higherTFMinutes = timeframeToMinutes(TimeFrame_MACD)
+
+// Calculate the smoothing factor
+dynamicSmoothing = math.round(higherTFMinutes / currentTFMinutes)
+MACD_Value_HTF_Smooth = ta.sma(MACD_Value_HTF, dynamicSmoothing)
+SIGNAL_Value_HTF_Smooth = ta.sma(SIGNAL_Value_HTF, dynamicSmoothing)
+HIST_Value_HTF_Smooth = ta.sma(HIST_Value_HTF, dynamicSmoothing)
+
+// Determin Long and Short Conditions
+LongCondition = ta.crossover(MACD_Value_HTF_Smooth, SIGNAL_Value_HTF_Smooth) and MACD_Value_HTF_Smooth < 0
+ShortCondition = ta.crossunder(MACD_Value_HTF_Smooth, SIGNAL_Value_HTF_Smooth) and MACD_Value_HTF_Smooth > 0
+
+//////////////////////////////////////////////////////
+//////////          Filter Trend          ////////////
+//////////////////////////////////////////////////////
+TREND = "Higher Time Frame Trend"
+TimeFrame_Trend = input.timeframe(title='Higher Time Frame', defval='1D', inline = "Trend1", group = TREND)
+length = input.int(55, title="Length MA", minval=1, tooltip = "Number of bars used to measure trend on higher timeframe chart", inline = "Trend1", group = TREND)
+MA_Type_trend  = input.string(defval="EMA" , options=["EMA","DEMA","TEMA","SMA","WMA", "HMA", "McGinley"], title="MA type for HTF trend", inline = "Trend2", group = TREND)
+
+ma_trend(type, src, length) =>
+    float result = 0
+    if type == 'TMA' // Triangular Moving Average
+        result := ta.sma(ta.sma(src, math.ceil(length / 2)), math.floor(length / 2) + 1)
+        result
+    if type == 'LSMA' // Least Squares Moving Average
+        result := ta.linreg(src, length, 0)
+        result
+    if type == 'SMA'  // Simple Moving Average
+        result := ta.sma(src, length)
+        result
+    if type == 'EMA'  // Exponential Moving Average
+        result := ta.ema(src, length)
+        result
+    if type == 'DEMA'  // Double Exponential Moving Average
+        e = ta.ema(src, length)
+        result := 2 * e - ta.ema(e, length)
+        result
+    if type == 'TEMA'  // Triple Exponentiale
+        e = ta.ema(src, length)
+        result := 3 * (e - ta.ema(e, length)) + ta.ema(ta.ema(e, length), length)
+        result
+    if type == 'WMA'  // Weighted Moving Average
+        result := ta.wma(src, length)
+        result
+    if type == 'HMA'  // Hull Moving Average
+        result := ta.wma(2 * ta.wma(src, length / 2) - ta.wma(src, length), math.round(math.sqrt(length)))
+        result
+    if type == 'McGinley' // McGinley Dynamic Moving Average
+        mg = 0.0
+        mg := na(mg[1]) ? ta.ema(src, length) : mg[1] + (src - mg[1]) / (length * math.pow(src / mg[1], 4))
+        result := mg
+        result
+    result
+
+// Moving Average
+MAtrend = ma_trend(MA_Type_trend, close, length)
+MA_Value_HTF = request.security(syminfo.ticker, TimeFrame_Trend, MAtrend)
+
+// Get minutes for current and higher timeframes
+higherTFMinutes_trend = timeframeToMinutes(TimeFrame_Trend)
+
+// Calculate the smoothing factor
+dynamicSmoothing_trend = math.round(higherTFMinutes_trend / currentTFMinutes)
+MA_Value_Smooth = ta.sma(MA_Value_HTF, dynamicSmoothing_trend)
+
+// Trend HTF
+UP = MA_Value_Smooth > MA_Value_Smooth[1] // Use "UP" Function to use as filter in combination with other indicators
+DOWN = MA_Value_Smooth < MA_Value_Smooth[1] // Use "Down" Function to use as filter in combination with other indicators
+
+/////////////////////////////////////////////////
+///////////       Strategy       ////////////////
+/////////////////////////////////////////////////
+
+if LongCondition and UP == true and Session_Filter
+    strategy.entry("Long", strategy.long, qty = QtyTrade)
+
+strategy.close_all(when = strategy.position_size > 0 and ta.crossunder(MACD_Value_HTF_Smooth, SIGNAL_Value_HTF_Smooth))
+
+if ShortCondition and DOWN == true and Session_Filter
+    strategy.entry("Short", strategy.short, qty = QtyTrade)
+
+strategy.close_all(when = strategy.position_size < 0 and ta.crossover(MACD_Value_HTF_Smooth, SIGNAL_Value_HTF_Smooth))
+
+strategy.close_all(when = closeSessionEnd and not Session_Filter)

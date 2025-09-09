@@ -1,0 +1,223 @@
+//@version=4
+strategy("inwCoin Martingale Strategy ( for Bitcoin )", shorttitle="INWCOIN_MARTINGALE_BTC", overlay=true, pyramiding=100, initial_capital = 20000, commission_type = strategy.commission.percent, commission_value = 0.0,slippage=0)
+
+
+
+//////////////////////////////////////////////
+//      inwCoin   Martingale Strategy ( for Bitcoin )
+//      v.1.0
+//////////////////////////////////////////////
+// v.1.0        : 23/4/2020    : initial version
+
+
+// color code
+color_blue = #0000FF
+color_green = #00FF00
+color_red =  #FF0000
+color_yellow = #FFFF00
+
+
+// SETTING UP VARIABLES //
+
+//data array
+price = input(type=input.source, defval=close)
+
+//position size parameter
+fixed_position_size_bool = input(false,type=input.bool,title="Fixed position size ( Unchecked for percent of initial capital )")
+start_position_size = input(10.0, type=input.float, title= "Start Position Size ( Fixed or Percent )")
+
+//first entry logic
+first_position_logic = input(defval="MACD Line > 0", options=["MACD Line > 0","STO RSI cross up","ATR Channel"], title = "Start Position Logic")
+
+//take profit %
+take_profit_percent = input(5.0, type=input.float, title="Take Profit Percent")
+
+//martingale setup
+martingale_percent = input(10.0, type=input.float, title="Start Martingale if price drop with this Percent")
+martingale_mult = input(2.0, type=input.float, title= "Martingale Multiplier")
+
+//trade direction ( Long only because short side is unlimit risk, limit profit)
+trade_side = input(defval="Long Only", options=["Long Only"], title = "Trade direction")
+
+// === BACKTEST RANGE ===
+use_date_range = input(true)
+FromYear  = input(defval = 2018, title = "From Year", minval = 1950)
+FromMonth = input(defval = 1, title = "From Month", minval = 1)
+FromDay   = input(defval = 1, title = "From Day", minval = 1)
+ToYear    = input(defval = 9999, title = "To Year", minval = 1950)
+ToMonth   = input(defval = 1, title = "To Month", minval = 1)
+ToDay     = input(defval = 1, title = "To Day", minval = 1)
+in_date_range = use_date_range ? (time > timestamp(FromYear, FromMonth, FromDay, 00, 00)) and (time < timestamp(ToYear, ToMonth, ToDay, 23, 59)) : true
+
+takeProfit = price * take_profit_percent / 100  / syminfo.mintick
+
+
+///////////////////////////////
+// Strategy Logic
+///////////////////////////////
+
+// HARD CODE ENTRY LOGICs
+// FOR SIMPLICITY OF STRATEGY
+
+////////////////////////////////
+// STO RSI
+////////////////////////////////
+smoothK = 3
+smoothD = 3
+lengthRSI = 14
+lengthStoch = 14
+top_line = 80
+bottom_line = 20
+
+rsi1 = rsi(price, lengthRSI)
+k = sma(stoch(rsi1, rsi1, rsi1, lengthStoch), smoothK)
+d = sma(k, smoothD)
+
+stoBuy = k > bottom_line and crossover(d,bottom_line )
+
+////////////////////////////////
+//MACD
+////////////////////////////////
+prd1 = 12
+prd2 = 26
+
+AP = ema(price,2)
+Fast = ema(AP,prd1)
+Slow = ema(AP,prd2)
+ema18 = ema(price,18)
+
+Bullish = Fast>Slow
+Bearish = Fast<Slow
+
+Green = Bullish and AP>Fast
+Red = Bearish and AP<Fast
+Yellow = Bullish and AP<Fast
+Blue = Bearish and AP>Fast
+
+macdBuy = ( Green and Green[1]==0 )
+
+////////////////////////////////
+// ATR
+////////////////////////////////
+SC = price
+AP1 = 5
+AF1 = 0.5
+
+
+
+// Slow Trail //
+AP2 = 10
+AF2 = 2.3
+MUL_Trailing = 0.275
+
+SL1 = AF1*atr(AP1) // Stop Loss
+Trail1 = 0.0
+Trail1 := iff(SC>nz(Trail1[1],0) and SC[1]>nz(Trail1[1],0),max(nz(Trail1[1],0),SC-SL1),iff(SC<nz(Trail1[1],0) and SC[1]<nz(Trail1[1],0),min(nz(Trail1[1],0),SC+SL1),iff(SC>nz(Trail1[1],0),SC-SL1,SC+SL1)))
+
+// ATR2
+SL2 = AF2*atr(AP2) // Stop Loss
+SL3 = MUL_Trailing*AF2*atr(AP2) // Stop Loss Top
+Trail2 = 0.0
+Trail2 := iff(SC>nz(Trail2[1],0) and SC[1]>nz(Trail2[1],0),max(nz(Trail2[1],0),SC-SL2),iff(SC<nz(Trail2[1],0) and SC[1]<nz(Trail2[1],0),min(nz(Trail2[1],0),SC+SL2),iff(SC>nz(Trail2[1],0),SC-SL2,SC+SL2)))
+
+//ATR3
+//Extra trailing for placing stop loss when original trailing is on the top ( by inwCoin )
+Trail3 = 0.0
+Trail3 := iff(SC>nz(Trail2[1],0) and SC[1]>nz(Trail2[1],0),max(nz(Trail3[1],0),SC+SL3),iff(SC<nz(Trail2[1],0) and SC[1]<nz(Trail2[1],0),min(nz(Trail3[1],0),SC-SL3),iff(SC>nz(Trail2[1],0),SC+SL3,SC+SL3)))
+
+Hst = Trail1-Trail2
+Sig = ema(Hst,9)
+
+// Bar color for trade signal //
+atrBlue = Hst<0 and Hst>Sig
+atrGreen = Hst>0 and Hst>Sig
+atrGray = Hst>0 and Hst<Sig
+atrRed = Hst<0 and Hst<Sig
+
+// Signals //
+atrBull = barssince(atrGreen)<barssince(atrRed)
+atrBear = barssince(atrRed)<barssince(atrGreen)
+
+atrBuy = atrGreen and atrBear[1]
+
+
+
+
+//////////////////////////////////////////////
+//    Buy - Sell Signal toggle          //
+//////////////////////////////////////////////
+Buy = false
+Sell = false
+if (first_position_logic == "MACD Line > 0")
+    Buy := macdBuy
+if (first_position_logic == "STO RSI cross up")
+    Buy := stoBuy
+if (first_position_logic == "ATR Channel")
+    Buy := atrBuy
+
+
+// Take profit logic
+pricePercent = ( price - strategy.position_avg_price ) * 100 / strategy.position_avg_price
+if ( pricePercent > take_profit_percent )
+    Sell := true
+
+// double down logic
+BuyMore = pricePercent <= ( martingale_percent * -1 )
+
+//////////////////////////////////////////////
+//    Position Size calculation         //
+//////////////////////////////////////////////
+var countMartingale = 0.0    //martingale count
+
+var startUnitSize = 0.0
+var unit_size = 0.0
+var unit_size_martingale = 0.0
+
+//position size calculation
+if (fixed_position_size_bool)
+    unit_size := start_position_size
+else
+    unit_size := strategy.equity *  ( start_position_size  / 100 ) / price
+
+startUnitSize := unit_size
+unit_size_martingale := startUnitSize *  pow(martingale_mult,(countMartingale))
+
+//extra vars to check account equity/capital
+var liquidate_price = 0.0
+var current_leverage = 0.0
+var current_loss = 0.0
+var current_capital = 0.0
+
+current_capital := strategy.initial_capital + strategy.netprofit
+current_leverage :=  current_capital / strategy.equity
+liquidate_price := strategy.position_avg_price - (strategy.position_avg_price / ( current_leverage + 1 ))
+
+
+
+//////////////////////////////////////////////
+//    define strategy entry / exit          //
+//////////////////////////////////////////////
+if (Buy and in_date_range and ( trade_side == "Both" or trade_side == "Long Only" ) and countMartingale == 0.0 and strategy.equity >= 0 )
+    strategy.entry("Long", strategy.long, qty=unit_size,when=strategy.position_size <= 0 )
+    countMartingale := 1
+    Sell := false
+
+if (BuyMore and countMartingale > 0)
+    strategy.entry("Long", strategy.long, qty=unit_size_martingale,when=strategy.position_size > 0 and strategy.equity >= 0 )
+    countMartingale := countMartingale + 1
+    Sell := false
+
+
+if (Sell or strategy.equity <= 0    )
+    strategy.close("Long")
+    countMartingale := 0
+
+
+//plot data for debugging
+plot(strategy.equity,color=color.orange)
+plot(strategy.position_avg_price,color=color.white)
+//plot(liquidate_price,color=color.red)
+//plot(current_leverage)
+//plot(current_capital)
+// plot(strategy.position_size)
+//plot(countMartingale)

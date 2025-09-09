@@ -1,0 +1,43 @@
+//@version=6
+strategy("SuperTrade ST1 Strategy", overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=2,
+     initial_capital=10000,
+     currency=currency.USD,
+     commission_type=strategy.commission.percent,
+     commission_value=0.1,
+     slippage=1)
+
+// === INPUTS ===
+atrPeriod   = input.int(10, "ATR Period", minval=1)
+factor      = input.float(3.0, "Supertrend Factor", minval=0.01, step=0.01)
+emaPeriod   = input.int(200, "EMA Filter Period", minval=1)
+
+// === RISK:REWARD SETTINGS FOR LONG ===
+atrSL      = 1.0
+atrTP_Long = 4.0
+
+// === CALCULATIONS ===
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+atr = ta.atr(atrPeriod)
+ema = ta.ema(close, emaPeriod)
+
+// === ENTRY CONDITION (LONG ONLY) ===
+longCondition = direction[1] > direction and close > supertrend and close > ema
+
+// === LONG ENTRY ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+// === LONG EXIT ===
+longStop   = close - atrSL * atr
+longProfit = close + atrTP_Long * atr
+
+if (strategy.position_size > 0)
+    strategy.exit("Exit Long", from_entry="Long", stop=longStop, limit=longProfit)
+
+// === VISUALS ===
+plotshape(longCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plot(supertrend, title="Supertrend", color=direction < 0 ? color.red : color.green, style=plot.style_linebr)
+plot(ema, title="EMA Filter", color=color.orange)
+bgcolor(direction < 0 ? color.new(color.red, 90) : color.new(color.green, 90))

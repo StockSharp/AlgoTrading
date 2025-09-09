@@ -1,0 +1,55 @@
+//@version=5
+strategy("Ichimoku + RSI + MACD Strategy", overlay=true)
+
+// Ichimoku Cloud parameters
+tenkanPeriod = 9
+kijunPeriod = 26
+senkouSpanBPeriod = 52
+displacement = 26
+
+// RSI parameters
+rsiLength = 14
+rsiOverbought = 70
+rsiOversold = 30
+
+// MACD parameters
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+
+// Ichimoku calculations
+tenkanSen = (ta.highest(high, tenkanPeriod) + ta.lowest(low, tenkanPeriod)) / 2
+kijunSen = (ta.highest(high, kijunPeriod) + ta.lowest(low, kijunPeriod)) / 2
+senkouSpanA = (tenkanSen + kijunSen) / 2
+senkouSpanB = (ta.highest(high, senkouSpanBPeriod) + ta.lowest(low, senkouSpanBPeriod)) / 2
+chikouSpan = close[displacement]
+
+// Plotting Ichimoku Cloud
+plot(tenkanSen, color=color.red, title="Tenkan-sen")
+plot(kijunSen, color=color.blue, title="Kijun-sen")
+plot(senkouSpanA[displacement], color=color.green, title="Senkou Span A")
+plot(senkouSpanB[displacement], color=color.red, title="Senkou Span B")
+fill(plot(senkouSpanA[displacement]), plot(senkouSpanB[displacement]), color=color.new(color.green, 90), title="Cloud")
+
+// RSI calculation
+rsi = ta.rsi(close, rsiLength)
+
+// Long entry condition
+longCondition = (close > senkouSpanA) and (close > senkouSpanB) and (rsi > rsiOversold) and (ta.crossover(macdLine, signalLine))
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+// Short entry condition
+shortCondition = (close < senkouSpanA) and (close < senkouSpanB) and (rsi < rsiOverbought) and (ta.crossunder(macdLine, signalLine))
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Exit conditions
+if (ta.crossunder(macdLine, signalLine) and strategy.position_size > 0)
+    strategy.close("Long")
+
+if (ta.crossover(macdLine, signalLine) and strategy.position_size < 0)
+    strategy.close("Short")
+
+// Plot RSI
+hline(rsiOverbought, "Overbought", color=color.red)
+hline(rsiOversold, "Oversold", color=color.green)
+plot(rsi, color=color.blue, title="RSI")

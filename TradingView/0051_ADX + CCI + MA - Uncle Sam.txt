@@ -1,0 +1,146 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Kostinay
+
+
+//@version=5
+strategy('ADX + CCI + MA - Uncle Sam',
+     shorttitle = "ADX + CCI + MA - Uncle Sam",
+     overlay = true,
+     pyramiding =1,
+     default_qty_type = strategy.percent_of_equity,
+     default_qty_value = 100,
+     initial_capital = 1000,
+     commission_type=strategy.commission.percent,
+     commission_value=0.00,
+     process_orders_on_close=true,
+     use_bar_magnifier=false)
+
+
+// Enable Long Strategy
+enable_long_strategy = input.bool(true, title='Enable Long Strategy', inline='1')
+long_stoploss_value = input.float(defval=1, title='Long SL %', minval=0.1, inline='2')
+long_stoploss_percentage = close * (long_stoploss_value / 100) / syminfo.mintick
+long_takeprofit_value = input.float(defval=2, title='Long TP %', minval=0.1,inline='2')
+long_takeprofit_percentage = close * (long_takeprofit_value / 100) / syminfo.mintick
+
+
+// Enable Short Strategy
+enable_short_strategy = input.bool(true, title='Enable Short Strategy', inline='3')
+short_stoploss_value = input.float(defval=1, title='Short SL %', minval=0.1, inline='4')
+short_stoploss_percentage = close * (short_stoploss_value / 100) / syminfo.mintick
+short_takeprofit_value = input.float(defval=2, title='Short TP %', minval=0.1, inline='4')
+short_takeprofit_percentage = close * (short_takeprofit_value / 100) / syminfo.mintick
+
+
+// Plot Stoploss & Take Profit Levels
+long_stoploss_price = strategy.position_avg_price * (1 - long_stoploss_value / 100)
+long_takeprofit_price = strategy.position_avg_price * (1 + long_takeprofit_value / 100)
+
+short_stoploss_price = strategy.position_avg_price * (1 - short_stoploss_value / 100)
+short_takeprofit_price = strategy.position_avg_price * (1 + short_takeprofit_value / 100)
+
+///////////////////////////////////////////////////
+// Inputs
+cci_period = input(15, title="CCI Period", group = "CCI")
+use_cci = true //input(true, title="Use CCI for Entry")
+use_adx = true //input(true, title="Use ADX for Entry")
+adx_length = input(10, title="ADX Length", group = "ADX Settings")
+adx_threshold = input(20, title="ADX Threshold", group = "ADX Settings")
+maSourceInput = input.source(close, "Source", group="MA Trend")
+maTypeInput = input.string("SMA", title="MA Type", options=["SMA", "HMA" , "EMA", "SMMA (RMA)", "WMA", "VWMA"], group="MA Trend", display = display.all)
+maLengthInput = input.int(200, title="MA Length", group="MA Trend", display = display.all)
+
+
+// Calculate Indicators
+
+cci = ta.cci(close, cci_period)
+
+// Average Directional Index (ADX) - Manual Calculation
+dirmov = high - low
+plusDM = high - high[1] > low[1] - low ? math.max(high - high[1], 0) : 0
+minusDM = low[1] - low > high - high[1] ? math.max(low[1] - low, 0) : 0
+tr = math.max(dirmov, math.max(math.abs(high - close[1]), math.abs(low - close[1])))
+plusDI = 100 * ta.ema(plusDM, adx_length) / ta.ema(tr, adx_length)
+minusDI = 100 * ta.ema(minusDM, adx_length) / ta.ema(tr, adx_length)
+DX = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+ADX = ta.ema(DX, adx_length)
+//////////////////////////////
+
+/// SPECIAL TREND FILTER | STRATEGY 2
+enable_strategy_2 = true //input.bool(defval = true, title = 'Enable MA Trend', group='MA Trend')
+
+ma(source, length, type) =>
+    switch type
+        "SMA" => ta.sma(source, length)
+        "HMA" => ta.hma(source, length)
+        "EMA" => ta.ema(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+        "WMA" => ta.wma(source, length)
+        "VWMA" => ta.vwma(source, length)
+
+
+
+MAT = ma(maSourceInput, maLengthInput, maTypeInput)
+plot(MAT, "MA", color=color.yellow)
+
+long_MA = enable_strategy_2 ? (close > MAT) : true
+short_MA = enable_strategy_2 ? (close < MAT) : true
+
+xlong_MA = enable_strategy_2 ? (close < MAT) : true
+xshort_MA = enable_strategy_2 ? (close > MAT) : true
+
+
+// Entry Conditions
+cci_conditionlong = use_cci ? (cci > 100) : true // CCI condition or always true if not used
+cci_conditionshort = use_cci ? (cci < -100) : true // CCI condition or always true if not used
+
+adx_condition = use_adx ? (ADX > adx_threshold) : true // ADX condition or always true if not used
+long_condition = enable_long_strategy and cci_conditionlong and adx_condition== true
+short_condition = enable_short_strategy and cci_conditionshort and adx_condition== true
+
+/////////////////////////////////////////////////////////////
+
+// --- Risk Management Option ---
+use_ma_risk_management = input.bool(false, title="Use MA Risk Management")
+
+// --- Entry and Exit Conditions ---
+long_entry_signal = ta.crossover(plusDI, minusDI)
+short_entry_signal = ta.crossover(minusDI, plusDI)
+
+if long_entry_signal and long_condition and long_MA and strategy.position_size<=1 == true
+    strategy.entry('Long', strategy.long, alert_message="Long Entry")
+    strategy.exit('Long Exit', 'Long', loss=long_stoploss_percentage, profit=long_takeprofit_percentage, alert_loss = "Long SL", alert_profit = "Long TP", comment_loss="Long SL", comment_profit="Long TP")
+
+if short_entry_signal and short_condition and short_MA and strategy.position_size>=-1 == true
+    strategy.entry('Short', strategy.short, alert_message="Short Entry")
+    strategy.exit('Short Exit', 'Short', loss=short_stoploss_percentage, profit=short_takeprofit_percentage, alert_loss="Short SL", alert_profit="Short TP", comment_loss="Short SL", comment_profit="Short TP")
+
+
+// --- New Risk Management Input ---
+maRiskExitCandles = input.int(2, title="MA Risk Exit Candles", minval=1, tooltip="Number of candles closing against the trend to trigger an exit")
+
+
+// --- MA-Based Risk Management ---
+if use_ma_risk_management
+    // Calculate number of consecutive closes against the trend
+    long_against_trend_count = 0
+    short_against_trend_count = 0
+
+    for i = 0 to maRiskExitCandles - 1
+        if close[i] < MAT
+            long_against_trend_count += 1
+
+        if close[i] > MAT
+            short_against_trend_count += 1
+
+    // Close long positions based on count
+    if strategy.position_size > 0 and long_against_trend_count >= maRiskExitCandles
+        strategy.close('Long', comment="MA Risk Exit")
+
+    // Close short positions based on count
+    if strategy.position_size < 0 and short_against_trend_count >= maRiskExitCandles
+        strategy.close('Short', comment="MA Risk Exit")
+
+// --- Plot Stop Loss Levels (Optional) ---
+plot(strategy.position_size > 0 ? long_stoploss_price : na, color = color.red, style = plot.style_linebr, title="Long SL")
+plot(strategy.position_size < 0 ? short_stoploss_price : na, color = color.red, style = plot.style_linebr, title="Short SL")

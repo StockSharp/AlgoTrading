@@ -1,0 +1,57 @@
+//@version=6
+strategy("✅ BACKTEST: UT Bot + RSI", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+rsiLen      = input.int(14, "RSI Length")
+rsiOver     = input.int(60, "RSI Overbought Level")
+rsiUnder    = input.int(40, "RSI Oversold Level")
+atrLen      = input.int(10, "ATR Length")
+factor      = input.float(1.0, "UT Bot Factor", step=0.1)
+tpPercent   = input.float(3.0, "Take Profit %")
+slPercent   = input.float(1.5, "Stop Loss %")
+
+rsi = ta.rsi(close, rsiLen)
+atr = ta.atr(atrLen)
+ema200 = ta.ema(close, 200)
+upperBand = close + factor * atr
+lowerBand = close - factor * atr
+
+var float trail = na
+var int dir = 0
+
+if na(trail)
+    trail := lowerBand
+    dir := 0
+
+if close > trail
+    trail := math.max(trail, lowerBand)
+    dir := 1
+else if close < trail
+    trail := math.min(trail, upperBand)
+    dir := -1
+else
+    trail := trail[1]
+    dir := dir[1]
+
+trendUp = dir == 1 and dir[1] == -1
+trendDown = dir == -1 and dir[1] == 1
+
+buy  = trendUp and rsi < rsiUnder
+sell = trendDown and rsi > rsiOver
+
+if (buy)
+    strategy.entry("Buy", strategy.long)
+    strategy.close("Sell")
+
+if (sell)
+    strategy.entry("Sell", strategy.short)
+    strategy.close("Buy")
+
+strategy.exit("TP/SL", from_entry="Buy",  profit=tpPercent, loss=slPercent)
+strategy.exit("TP/SL", from_entry="Sell", profit=tpPercent, loss=slPercent)
+
+// plotting
+plot (ema200, "EMA 200, color=color.orange")
+
+// === ALERT SIGNALS ===
+alertcondition(buy, title="Buy Signal", message="BUY")
+alertcondition(sell, title="Sell Signal", message="SELL")

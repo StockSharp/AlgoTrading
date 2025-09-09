@@ -1,0 +1,81 @@
+//@version=6
+strategy("NY Opening Range Breakout + Retest", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs ===
+userRangeLength = input.int(2000, "Range Line Length (bars)", minval=100)
+rangeLineLength = math.min(userRangeLength, 500)  // Pine limit
+tz = "America/New_York"
+minRangePoints = input.float(60, "Minimum NY Range (points)", minval=1)
+stopPoints = input.float(20.0, "Stop Loss (points)", step=0.1)
+takePoints = input.float(60.0, "Take Profit (points)", step=0.1)
+maxTradesPerSession = input.int(3, "Max Trades per NY Session", minval=1)
+
+// === NY Session Time Window ===
+nyStartHour = 9
+nyEndHour   = 9
+nyStartMin  = 30
+nyEndMin    = 45
+
+nyHour   = hour(time, tz)
+nyMinute = minute(time, tz)
+
+// === NY Session Variables ===
+var float nyHigh = na
+var float nyLow = na
+var line nyHighLine = na
+var line nyLowLine = na
+var bool nyRangeDone = false
+var int nyTradeCount = 0
+
+// === Daily Reset ===
+newDay = dayofmonth != dayofmonth[1]
+if newDay
+    nyHigh := na
+    nyLow := na
+    nyRangeDone := false
+    nyTradeCount := 0
+    line.delete(nyHighLine)
+    line.delete(nyLowLine)
+
+// === Build NY Range ===
+nyInRange = nyHour == nyStartHour and nyMinute >= nyStartMin and nyMinute < nyEndMin
+nyRangeEnd = nyHour == nyEndHour and nyMinute == nyEndMin
+
+if nyInRange
+    nyHigh := na(nyHigh) ? high : math.max(nyHigh, high)
+    nyLow := na(nyLow) ? low : math.min(nyLow, low)
+
+if nyRangeEnd and not nyRangeDone and not na(nyHigh) and not na(nyLow)
+    nyRangeDone := true
+    nyHighLine := line.new(bar_index, nyHigh, bar_index + rangeLineLength, nyHigh, xloc.bar_index, extend=extend.none, color=color.green, style=line.style_dashed)
+    nyLowLine := line.new(bar_index, nyLow, bar_index + rangeLineLength, nyLow, xloc.bar_index, extend=extend.none, color=color.red, style=line.style_dashed)
+
+// === Breakout + Retest Logic ===
+nyRangeSize = nyHigh - nyLow
+validRange = nyRangeDone and nyRangeSize >= minRangePoints
+
+longBreakout = validRange and high > nyHigh
+longRetest   = longBreakout and low <= nyHigh and close > nyHigh
+
+shortBreakout = validRange and low < nyLow
+shortRetest   = shortBreakout and high >= nyLow and close < nyLow
+
+// === Entry Conditions ===
+longCondition = longRetest and nyTradeCount < maxTradesPerSession
+shortCondition = shortRetest and nyTradeCount < maxTradesPerSession
+
+// === Fixed SL/TP ===
+longSL = close - stopPoints
+longTP = close + takePoints
+shortSL = close + stopPoints
+shortTP = close - takePoints
+
+if longCondition
+    strategy.entry("NY Long", strategy.long)
+    strategy.exit("NY Long Exit", from_entry="NY Long", stop=longSL, limit=longTP)
+    nyTradeCount += 1
+
+if shortCondition
+    strategy.entry("NY Short", strategy.short)
+    strategy.exit("NY Short Exit", from_entry="NY Short", stop=shortSL, limit=shortTP)
+    nyTradeCount += 1

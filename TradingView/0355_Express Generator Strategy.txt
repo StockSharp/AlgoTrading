@@ -1,0 +1,103 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © bengles
+
+//@version=6
+strategy("Express Generator Strategy", overlay=true, currency="USD", default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Backtest Period Configuration
+testStartYear = input(2020, title="Backtest Start Year")
+testStartMonth = input(1, title="Backtest Start Month")
+testStartDay = input(1, title="Backtest Start Day")
+testStart = timestamp(testStartYear, testStartMonth, testStartDay, 0, 0)
+
+testStopYear = input(2025, title="Backtest Stop Year")
+testStopMonth = input(12, title="Backtest Stop Month")
+testStopDay = input(31, title="Backtest Stop Day")
+testStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
+
+testPeriod = time >= testStart and time <= testStop
+
+// Indicator Inputs
+fastMA = input(9, title="Fast MA Length")
+slowMA = input(21, title="Slow MA Length")
+rsiLength = input(14, title="RSI Length")
+overbought = input(70, title="Overbought Level")
+oversold = input(30, title="Oversold Level")
+macdFast = input(12, title="MACD Fast")
+macdSlow = input(26, title="MACD Slow")
+macdSignal = input(9, title="MACD Signal")
+atrLength = input(14, title="ATR Length")
+
+// Risk Management Inputs
+riskPercent    = input.float(1.0, title="Risk % per Trade", minval=0.5, maxval=3.0)
+stopLossPips   = input.int(100, title="Stop Loss (Pips)", minval=50, maxval=200)
+useTrailingStop = input(true, title="Use Trailing Stop")
+trailingPips   = input.int(50, title="Trailing Stop (Pips)", minval=20)
+
+// Calculate Indicators
+fastMAPlot = ta.sma(close, fastMA)
+slowMAPlot = ta.sma(close, slowMA)
+rsiValue   = ta.rsi(close, rsiLength)
+[macdLine, macdSignalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+atr = ta.atr(atrLength)
+
+// Precompute Crossover/Crossunder Conditions
+longMA_Cross  = ta.crossover(fastMAPlot, slowMAPlot)
+longMACD_Cross = ta.crossover(macdLine, macdSignalLine)
+shortMA_Cross = ta.crossunder(fastMAPlot, slowMAPlot)
+shortMACD_Cross = ta.crossunder(macdLine, macdSignalLine)
+
+// Entry Conditions
+longCondition  = longMA_Cross  and rsiValue < overbought and longMACD_Cross
+shortCondition = shortMA_Cross and rsiValue > oversold  and shortMACD_Cross
+
+// Position Sizing Calculation using Partial Total Equity Risk
+entryPrice = close
+
+// Define stop-loss prices (using pips converted to price units)
+stopLossPriceLong  = entryPrice - (stopLossPips * syminfo.mintick)
+stopLossPriceShort = entryPrice + (stopLossPips * syminfo.mintick)
+
+// Determine risk per unit for each side
+tradeRiskLong  = entryPrice - stopLossPriceLong   // For longs
+tradeRiskShort = stopLossPriceShort - entryPrice   // For shorts
+
+// Volatility-Adjustment: Normalize ATR (dividing by a scaling factor)
+volatilityFactor = atr / (syminfo.mintick * 100)
+
+// Calculate the dollar risk amount (partial equity risk)
+riskAmount = strategy.equity * (riskPercent / 100)
+
+// Compute position sizes (before rounding):
+// For longs: riskAmount divided by the per-unit risk and adjusted for volatility
+// For shorts: riskAmount divided by the per-unit risk and adjusted likewise
+positionSizeLong = riskAmount / tradeRiskLong / volatilityFactor
+positionSizeShort = riskAmount / tradeRiskShort / volatilityFactor
+
+// Final position size with rounding to 8 decimals (ensuring a minimum value)
+positionSizeLong  := math.round(positionSizeLong)
+positionSizeShort := math.round(positionSizeShort)
+
+// Strategy Execution
+if testPeriod and longCondition
+    strategy.entry("Long", strategy.long, qty=positionSizeLong)
+
+if testPeriod and shortCondition
+    strategy.entry("Short", strategy.short, qty=positionSizeShort)
+
+// Exit Logic with Trailing Stop
+if strategy.position_size > 0 and testPeriod
+    strategy.exit("Exit Long", from_entry="Long", stop=close - (trailingPips * syminfo.mintick),
+                  trail_points=trailingPips * syminfo.mintick, trail_offset=0)
+
+if strategy.position_size < 0 and testPeriod
+    strategy.exit("Exit Short", from_entry="Short", stop=close + (trailingPips * syminfo.mintick),
+                  trail_points=trailingPips * syminfo.mintick, trail_offset=0)
+
+// Close all positions outside Backtest Period
+if not testPeriod and strategy.opentrades > 0
+    strategy.close_all(comment="Test Period Ended")
+
+// Plotting MAs
+plot(fastMAPlot, color=color.blue, title="Fast MA")
+plot(slowMAPlot, color=color.red, title="Slow MA")

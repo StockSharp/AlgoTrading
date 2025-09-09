@@ -1,0 +1,36 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © InnovestX
+
+//@version=5
+strategy("[INVX] Post-Earnings Announcement Drift", initial_capital=500000, default_qty_type=strategy.cash, default_qty_value=50000, commission_type = strategy.commission.percent, commission_value = 0.15, overlay = true, process_orders_on_close=true)
+
+holding_period = input(8, "Holding periods (Bar)")
+surprise_threshold = input(3, "Surprise threshold (%)")
+
+estimates = request.earnings(syminfo.tickerid, earnings.estimate, gaps=barmerge.gaps_on)
+actuals = request.earnings(syminfo.tickerid, earnings.actual, gaps=barmerge.gaps_on)
+var float surprise = na
+
+enum order_enum
+    buy = "buy"
+    sell = "sell"
+    none = "none"
+
+order_side = order_enum.none
+if not na(actuals)  // announcement date
+    surprise := 100.0*float(actuals-estimates)/math.abs(estimates)
+
+    order_quantity = math.floor(strategy.default_entry_qty(close)/100)*100 // Make it round lot as multiple of 100 shares
+
+    if surprise > surprise_threshold
+        order_side := order_enum.buy
+        strategy.entry("Earnings surprise order", strategy.long, qty=order_quantity)
+    else if surprise < -surprise_threshold
+        order_side := order_enum.sell
+        strategy.entry("Earnings surprise order", strategy.short, qty=order_quantity)
+
+bgcolor( (strategy.opentrades > 0) or (order_side != order_enum.none) ? (surprise >= 0 ? color.rgb(0,255,0,85) : color.rgb(255,0,0,85)) : na )
+
+// Close position after holding_period (bars)
+if (strategy.opentrades > 0) and (bar_index - strategy.opentrades.entry_bar_index(0) + 1 >= holding_period)
+    strategy.close_all()

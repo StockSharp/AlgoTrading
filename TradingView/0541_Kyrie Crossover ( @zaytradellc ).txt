@@ -1,0 +1,171 @@
+//@version=5
+strategy("Kyrie Crossover @zaytrade", overlay=true, calc_on_every_tick=true)
+
+// Input parameters for EMA
+shortTermEMA = input.int(11, title="Short-Term EMA Period")
+longTermEMA = input.int(323, title="Long-Term EMA Period")
+riskPercentageEMA = input.float(1, title="Risk Percentage EMA", minval=0.1, maxval=5, step=0.1)
+
+// Calculate EMAs
+emaShort = ta.ema(close, shortTermEMA)
+emaLong = ta.ema(close, longTermEMA)
+
+// EMA Crossover Strategy
+longConditionEMA = ta.crossover(emaShort, emaLong)
+shortConditionEMA = ta.crossunder(emaShort, emaLong)
+
+// Input parameters for DMI
+adxlen = input(14, title="ADX Smoothing")
+dilen = input(14, title="DI Length")
+
+// DMI Logic
+dirmov(len) =>
+    up = ta.change(high)
+    down = -ta.change(low)
+    truerange = ta.tr
+    plus = fixnan(100 * ta.rma((up > down ? up : 0), len) / truerange)
+    minus = fixnan(100 * ta.rma((down > up ? down : 0), len) / truerange)
+    [plus, minus]
+
+adx(dilen, adxlen) =>
+    [plus, minus] = dirmov(dilen)
+    sum = plus + minus
+    adxValue = 100 * ta.rma(math.abs(plus - minus) / (sum == 0 ? 1 : sum), adxlen)
+    [adxValue, plus, minus]
+
+// Function to get trend and strength for a given timeframe
+getTrendAndStrength(_source, _dilen, _adxlen) =>
+    [adxValue, plus, minus] = adx(_dilen, _adxlen)
+    var string trendIndication = ""
+    var string trendStrength = ""
+    var float strengthLevel = 0.0
+    var float trendPercentage = 0.0
+    var float bullishPercentage = 0.0
+    var float bearishPercentage = 0.0
+
+    // Determine trend indication and percentages
+    bullishPercentage := plus
+    bearishPercentage := minus
+    if (plus > minus) // Bullish condition
+        trendIndication := "Bullish"
+    else if (minus > plus) // Bearish condition
+        trendIndication := "Bearish"
+    else
+        trendIndication := "No Clear Trend"
+
+    // Calculate trend percentage
+    trendPercentage := plus / (plus + minus) * 100
+
+    // Determine strength level
+    if trendPercentage < 20
+        trendStrength := "Very Weak"
+        strengthLevel := 1
+    else if trendPercentage < 40
+        trendStrength := "Weak"
+        strengthLevel := 2
+    else if trendPercentage < 60
+        trendStrength := "Moderate"
+        strengthLevel := 3
+    else if trendPercentage < 80
+        trendStrength := "Strong"
+        strengthLevel := 4
+    else
+        trendStrength := "Very Strong"
+        strengthLevel := 5
+
+    [trendIndication, trendStrength, strengthLevel, bullishPercentage, bearishPercentage]
+
+// Get trend and strength for selected timeframes
+[tf1_trend, tf1_strength, tf1_level, tf1_bullish, tf1_bearish] = request.security(syminfo.tickerid, "5", getTrendAndStrength(close, dilen, adxlen))
+[tf2_trend, tf2_strength, tf2_level, tf2_bullish, tf2_bearish] = request.security(syminfo.tickerid, "15", getTrendAndStrength(close, dilen, adxlen))
+[tf3_trend, tf3_strength, tf3_level, tf3_bullish, tf3_bearish] = request.security(syminfo.tickerid, "30", getTrendAndStrength(close, dilen, adxlen))
+[tf4_trend, tf4_strength, tf4_level, tf4_bullish, tf4_bearish] = request.security(syminfo.tickerid, "60", getTrendAndStrength(close, dilen, adxlen))
+[current_trend, current_strength, current_level, current_bullish, current_bearish] = getTrendAndStrength(close, dilen, adxlen)
+
+// Define colors based on trend indication
+tf1_color = tf1_trend == "Bullish" ? color.green : (tf1_trend == "Bearish" ? color.red : color.white)
+tf2_color = tf2_trend == "Bullish" ? color.green : (tf2_trend == "Bearish" ? color.red : color.white)
+tf3_color = tf3_trend == "Bullish" ? color.green : (tf3_trend == "Bearish" ? color.red : color.white)
+tf4_color = tf4_trend == "Bullish" ? color.green : (tf4_trend == "Bearish" ? color.red : color.white)
+current_color = current_trend == "Bullish" ? color.green : (current_trend == "Bearish" ? color.red : color.white)
+
+// Define colors based on strength level
+getStrengthColor(level) =>
+    if level == 1
+        color.new(color.gray, 90)
+    else if level == 2
+        color.new(color.blue, 80)
+    else if level == 3
+        color.new(color.yellow, 70)
+    else if level == 4
+        color.new(color.orange, 60)
+    else
+        color.new(color.red, 50)
+
+tf1_strength_color = getStrengthColor(tf1_level)
+tf2_strength_color = getStrengthColor(tf2_level)
+tf3_strength_color = getStrengthColor(tf3_level)
+tf4_strength_color = getStrengthColor(tf4_level)
+current_strength_color = getStrengthColor(current_level)
+
+// Create and fill the enhanced table for DMI
+var table dmiTable = na
+if (barstate.islast)
+    dmiTable := table.new(position.top_right, 6, 7, border_width=1, frame_color=color.new(color.blue, 80), bgcolor=color.new(color.black, 80))
+    table.cell(dmiTable, 0, 0, "Timeframe", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Different timeframes")
+    table.cell(dmiTable, 1, 0, "Trend", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Trend indication")
+    table.cell(dmiTable, 2, 0, "Strength", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Trend strength level")
+    table.cell(dmiTable, 3, 0, "Bullish %", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Bullish percentage")
+    table.cell(dmiTable, 4, 0, "Bearish %", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Bearish percentage")
+    table.cell(dmiTable, 5, 0, "Last Signal", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Last signal time")
+
+    table.cell(dmiTable, 0, 1, "5m", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="5-minute timeframe")
+    table.cell(dmiTable, 1, 1, tf1_trend, bgcolor=tf1_color, width=12, height=4, text_color=color.white, tooltip="Trend for 5-minute timeframe")
+    table.cell(dmiTable, 2, 1, tf1_strength + " (" + str.tostring(tf1_level) + "/5)", bgcolor=tf1_strength_color, width=12, height=4, text_color=color.white, tooltip="Strength level for 5-minute timeframe")
+    table.cell(dmiTable, 3, 1, str.tostring(tf1_bullish, "#.##") + "%", bgcolor=color.new(color.green, 90), width=12, height=4, text_color=color.white, tooltip="Bullish percentage for 5-minute timeframe")
+    table.cell(dmiTable, 4, 1, str.tostring(tf1_bearish, "#.##") + "%", bgcolor=color.new(color.red, 90), width=12, height=4, text_color=color.white, tooltip="Bearish percentage for 5-minute timeframe")
+    table.cell(dmiTable, 5, 1, "3 bars ago", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Last signal for 5-minute timeframe")
+
+    table.cell(dmiTable, 0, 2, "15m", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="15-minute timeframe")
+    table.cell(dmiTable, 1, 2, tf2_trend, bgcolor=tf2_color, width=12, height=4, text_color=color.white, tooltip="Trend for 15-minute timeframe")
+    table.cell(dmiTable, 2, 2, tf2_strength + " (" + str.tostring(tf2_level) + "/5)", bgcolor=tf2_strength_color, width=12, height=4, text_color=color.white, tooltip="Strength level for 15-minute timeframe")
+    table.cell(dmiTable, 3, 2, str.tostring(tf2_bullish, "#.##") + "%", bgcolor=color.new(color.green, 90), width=12, height=4, text_color=color.white, tooltip="Bullish percentage for 15-minute timeframe")
+    table.cell(dmiTable, 4, 2, str.tostring(tf2_bearish, "#.##") + "%", bgcolor=color.new(color.red, 90), width=12, height=4, text_color=color.white, tooltip="Bearish percentage for 15-minute timeframe")
+    table.cell(dmiTable, 5, 2, "3 bars ago", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Last signal for 15-minute timeframe")
+
+    table.cell(dmiTable, 0, 3, "30m", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="30-minute timeframe")
+    table.cell(dmiTable, 1, 3, tf3_trend, bgcolor=tf3_color, width=12, height=4, text_color=color.white, tooltip="Trend for 30-minute timeframe")
+    table.cell(dmiTable, 2, 3, tf3_strength + " (" + str.tostring(tf3_level) + "/5)", bgcolor=tf3_strength_color, width=12, height=4, text_color=color.white, tooltip="Strength level for 30-minute timeframe")
+    table.cell(dmiTable, 3, 3, str.tostring(tf3_bullish, "#.##") + "%", bgcolor=color.new(color.green, 90), width=12, height=4, text_color=color.white, tooltip="Bullish percentage for 30-minute timeframe")
+    table.cell(dmiTable, 4, 3, str.tostring(tf3_bearish, "#.##") + "%", bgcolor=color.new(color.red, 90), width=12, height=4, text_color=color.white, tooltip="Bearish percentage for 30-minute timeframe")
+    table.cell(dmiTable, 5, 3, "3 bars ago", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Last signal for 30-minute timeframe")
+
+    table.cell(dmiTable, 0, 4, "60m", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="60-minute timeframe")
+    table.cell(dmiTable, 1, 4, tf4_trend, bgcolor=tf4_color, width=12, height=4, text_color=color.white, tooltip="Trend for 60-minute timeframe")
+    table.cell(dmiTable, 2, 4, tf4_strength + " (" + str.tostring(tf4_level) + "/5)", bgcolor=tf4_strength_color, width=12, height=4, text_color=color.white, tooltip="Strength level for 60-minute timeframe")
+    table.cell(dmiTable, 3, 4, str.tostring(tf4_bullish, "#.##") + "%", bgcolor=color.new(color.green, 90), width=12, height=4, text_color=color.white, tooltip="Bullish percentage for 60-minute timeframe")
+    table.cell(dmiTable, 4, 4, str.tostring(tf4_bearish, "#.##") + "%", bgcolor=color.new(color.red, 90), width=12, height=4, text_color=color.white, tooltip="Bearish percentage for 60-minute timeframe")
+    table.cell(dmiTable, 5, 4, "3 bars ago", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Last signal for 60-minute timeframe")
+
+    table.cell(dmiTable, 0, 5, "Current", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Current timeframe")
+    table.cell(dmiTable, 1, 5, current_trend, bgcolor=current_color, width=12, height=4, text_color=color.white, tooltip="Current trend")
+    table.cell(dmiTable, 2, 5, current_strength + " (" + str.tostring(current_level) + "/5)", bgcolor=current_strength_color, width=12, height=4, text_color=color.white, tooltip="Current strength level")
+    table.cell(dmiTable, 3, 5, str.tostring(current_bullish, "#.##") + "%", bgcolor=color.new(color.green, 90), width=12, height=4, text_color=color.white, tooltip="Current bullish percentage")
+    table.cell(dmiTable, 4, 5, str.tostring(current_bearish, "#.##") + "%", bgcolor=color.new(color.red, 90), width=12, height=4, text_color=color.white, tooltip="Current bearish percentage")
+    table.cell(dmiTable, 5, 5, "3 bars ago", bgcolor=color.new(color.black, 90), width=12, height=4, text_color=color.white, tooltip="Last signal for current timeframe")
+
+// Strategy execution based on EMA crossover conditions
+if (longConditionEMA)
+    strategy.entry("Long", strategy.long, stop=na, limit=na, comment="EMA Long", alert_message="EMA Crossover Long")
+if (shortConditionEMA)
+    strategy.entry("Short", strategy.short, stop=na, limit=na, comment="EMA Short", alert_message="EMA Crossover Short")
+
+// Plot EMAs
+plot(emaShort, title="Short-Term EMA", color=color.blue, linewidth=1)
+plot(emaLong, title="Long-Term EMA", color=color.red, linewidth=1)
+
+// Strategy risk management
+longStopLoss = strategy.position_avg_price * (1 - riskPercentageEMA / 100)
+shortStopLoss = strategy.position_avg_price * (1 + riskPercentageEMA / 100)
+strategy.exit("Long Exit", "Long", stop=longStopLoss, comment="Long Stop Loss", alert_message="EMA Long Stop Loss")
+strategy.exit("Short Exit", "Short", stop=shortStopLoss, comment="Short Stop Loss", alert_message="EMA Short Stop Loss")

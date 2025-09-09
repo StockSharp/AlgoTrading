@@ -1,0 +1,132 @@
+//@version=4
+study("Hurst Exponent [QuantNomad]", shorttitle = "Hurst Exp [QN]", overlay = false, precision=6, max_bars_back = 5000)
+
+////////////
+// INPUTS //
+
+lookback    = input(1024, title = "Hurst Exp Lookback")
+
+// Sample sizes
+hurt_len1   = input(0,   title = "Sample Size 1")
+hurt_len2   = input(0,   title = "Sample Size 2")
+hurt_len3   = input(0,   title = "Sample Size 3")
+hurt_len4   = input(32,  title = "Sample Size 4")
+hurt_len5   = input(64,  title = "Sample Size 5")
+hurt_len6   = input(128, title = "Sample Size 6")
+hurt_len7   = input(256, title = "Sample Size 7")
+hurt_len8   = input(512, title = "Sample Size 8")
+
+// Smoothing
+show_smooth = input(true, title = "Show Smoothed Hurst Exp?")
+smooth_len  = input(10,   title = "Smoothing Length")
+
+// Calculate from date
+calc_from = input(title="Calulate fron Date", type=input.time, defval=timestamp("01 Jan 2000 00:00 +0000"))
+
+//////////////////
+// CALCULATIONS //
+
+pnl = close / close[1] - 1
+
+get_avg_rs(group_len) =>
+
+    res_ran_ar = array.new_float(0)
+    groups     =  floor(lookback / group_len)
+
+    for group = 0 to groups - 1
+
+        group_shift = group * group_len
+
+        pnl_sum = 0.0
+        dev_sum = 0.0
+
+        for i = 0 to group_len - 1
+            pnl_sum := pnl_sum + pnl[group_shift + i]
+
+        arr_mean = pnl_sum / group_len
+
+        for i = 0 to group_len - 1
+            dev_sum := dev_sum + (pnl[group_shift + i] - arr_mean) * (pnl[group_shift + i] - arr_mean)
+
+        sd = sqrt(dev_sum / (group_len - 1))
+
+        cum     = 0.0
+        cum_min =  999999999.0
+        cum_max = -999999999.0
+
+        for i = 0 to group_len - 1
+            cum := cum + pnl[group_shift + i] - arr_mean
+            cum_min := min(cum_min, cum)
+            cum_max := max(cum_max, cum)
+
+        for i = 0 to group_len - 1
+            array.push(res_ran_ar, (cum_max - cum_min) / sd)
+
+    avg_rs = array.avg(res_ran_ar)
+
+    avg_rs
+
+log_rs   = array.new_float(0)
+log_n    = array.new_float(0)
+hurstexp = float(na)
+
+if (time >= calc_from)
+
+    if (hurt_len1 > 0)
+        avg_rs1 = get_avg_rs(hurt_len1)
+        array.push(log_rs, log(avg_rs1))
+        array.push(log_n, log(hurt_len1))
+
+    if (hurt_len2 > 0)
+        avg_rs2 = get_avg_rs(hurt_len2)
+        array.push(log_rs, log(avg_rs2))
+        array.push(log_n, log(hurt_len2))
+
+    if (hurt_len3 > 0)
+        avg_rs3 = get_avg_rs(hurt_len3)
+        array.push(log_rs, log(avg_rs3))
+        array.push(log_n, log(hurt_len3))
+
+    if (hurt_len4 > 0)
+        avg_rs4 = get_avg_rs(hurt_len4)
+        array.push(log_rs, log(avg_rs4))
+        array.push(log_n, log(hurt_len4))
+
+    if (hurt_len5 > 0)
+        avg_rs5 = get_avg_rs(hurt_len5)
+        array.push(log_rs, log(avg_rs5))
+        array.push(log_n, log(hurt_len5))
+
+    if (hurt_len6 > 0)
+        avg_rs6 = get_avg_rs(hurt_len6)
+        array.push(log_rs, log(avg_rs6))
+        array.push(log_n, log(hurt_len6))
+
+    if (hurt_len7 > 0)
+        avg_rs7 = get_avg_rs(hurt_len7)
+        array.push(log_rs, log(avg_rs7))
+        array.push(log_n, log(hurt_len7))
+
+    if (hurt_len8 > 0)
+        avg_rs8 = get_avg_rs(hurt_len8)
+        array.push(log_rs, log(avg_rs8))
+        array.push(log_n, log(hurt_len8))
+
+    sum_top = 0.0
+    sum_bot = 0.0
+
+    for i = 0 to array.size(log_rs) - 1
+        sum_top := sum_top + (array.get(log_rs, i) - array.avg(log_rs)) * (array.get(log_n, i) - array.avg(log_n))
+        sum_bot := sum_bot + (array.get(log_n, i)  - array.avg(log_n))  * (array.get(log_n, i) - array.avg(log_n))
+
+    hurstexp := sum_top / sum_bot
+
+// Calculate Smootheed Hurst Exponent
+hurstexp_smooth = ema(hurstexp, smooth_len)
+
+//////////
+// PLOT //
+
+plot(hurstexp,                           color = #247352,    linewidth = 2, title = "HurstExp")
+plot(show_smooth ? hurstexp_smooth : na, color = #ab3043,    linewidth = 2, title = "HurstSmooth")
+plot(0.5,                                color = color.gray, linewidth = 1, title = "")

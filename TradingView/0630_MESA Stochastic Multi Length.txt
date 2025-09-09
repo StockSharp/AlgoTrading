@@ -1,0 +1,196 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © veryfid
+// Uses MESA Stochastic code published by @blackcat1402 as open source under the terms of the Mozilla Public License 2.0
+
+//@version=4
+
+study(title="MESA Stochastic Multi Length", shorttitle="MESAStochML", overlay=false)
+
+//Inputs
+Length = input(50, title = "Length", group = "MESA Stochastic 1", inline = "1")
+Price = input(hl2, title = "Price", group = "MESA Stochastic 1", inline = "1")
+Length2 = input(21, title = "Length", group = "MESA Stochastic 2", inline = "1")
+Price2 = input(hl2, title = "Price", group = "MESA Stochastic 2", inline = "1")
+Length3 = input(14, title = "Length", group = "MESA Stochastic 3", inline = "1")
+Price3 = input(hl2, title = "Price", group = "MESA Stochastic 3", inline = "1")
+Length4 = input(9, title = "Length", group = "MESA Stochastic 4", inline = "1")
+Price4 = input(hl2, title = "Price", group = "MESA Stochastic 4", inline = "1")
+
+mesa() =>
+    a1 = 0.00
+    b1 = 0.00
+    c1 = 0.00
+    c2 = 0.00
+    c3 = 0.00
+    alpha1 = 0.00
+    HP = 0.00
+    Filt = 0.00
+    HighestC = 0.00
+    LowestC = 0.00
+    Stoc = 0.00
+    MESAStochastic = 0.00
+    Trigger = 0.00
+    pi = 2 * asin(1)
+
+
+    alpha1:=(cos(0.707 * 2*pi / 48) + sin(0.707 * 2*pi / 48) - 1) / cos(0.707 * 2*pi / 48)
+    HP:=(1 - alpha1 / 2) * (1 - alpha1 / 2) * (Price - 2 * nz(Price[1]) + nz(Price[2])) + 2 * (1 - alpha1) * nz(HP[1]) - (1 - alpha1) * (1 - alpha1) * nz(HP[2])
+
+    a1:=exp(-1.414 * 3.14159 / 10)
+    b1:=2 * a1 * cos(1.414 * pi / 10)
+    c2:=b1
+    c3:=-a1 * a1
+    c1:=1 - c2 - c3
+    Filt:=c1 * (HP + nz(HP[1])) / 2 + c2 * nz(Filt[1]) + c3 * nz(Filt[2])
+
+    HighestC:=Filt
+    LowestC:=Filt
+
+    for count = 0 to Length - 1
+        if nz(Filt[count]) >HighestC
+            HighestC:=nz(Filt[count])
+        if nz(Filt[count]) < LowestC
+            LowestC:=nz(Filt[count])
+
+    Stoc:=(Filt - LowestC) / (HighestC - LowestC)
+    MESAStochastic:=c1 * (Stoc + nz(Stoc[1])) / 2 + c2 * nz(MESAStochastic[1]) + c3 * nz(MESAStochastic[2])
+
+mesa2() =>
+    a1 = 0.00
+    b1 = 0.00
+    c1 = 0.00
+    c2 = 0.00
+    c3 = 0.00
+    alpha1 = 0.00
+    HP = 0.00
+    Filt = 0.00
+    HighestC = 0.00
+    LowestC = 0.00
+    Stoc = 0.00
+    MESAStochastic = 0.00
+    Trigger = 0.00
+    pi = 2 * asin(1)
+
+
+    alpha1:=(cos(0.707 * 2*pi / 48) + sin(0.707 * 2*pi / 48) - 1) / cos(0.707 * 2*pi / 48)
+    HP:=(1 - alpha1 / 2) * (1 - alpha1 / 2) * (Price2 - 2 * nz(Price2[1]) + nz(Price2[2])) + 2 * (1 - alpha1) * nz(HP[1]) - (1 - alpha1) * (1 - alpha1) * nz(HP[2])
+
+    a1:=exp(-1.414 * 3.14159 / 10)
+    b1:=2 * a1 * cos(1.414 * pi / 10)
+    c2:=b1
+    c3:=-a1 * a1
+    c1:=1 - c2 - c3
+    Filt:=c1 * (HP + nz(HP[1])) / 2 + c2 * nz(Filt[1]) + c3 * nz(Filt[2])
+
+    HighestC:=Filt
+    LowestC:=Filt
+
+    for count = 0 to Length2 - 1
+        if nz(Filt[count]) >HighestC
+            HighestC:=nz(Filt[count])
+        if nz(Filt[count]) < LowestC
+            LowestC:=nz(Filt[count])
+
+    Stoc:=(Filt - LowestC) / (HighestC - LowestC)
+    MESAStochastic:=c1 * (Stoc + nz(Stoc[1])) / 2 + c2 * nz(MESAStochastic[1]) + c3 * nz(MESAStochastic[2])
+
+mesa3() =>
+    a1 = 0.00
+    b1 = 0.00
+    c1 = 0.00
+    c2 = 0.00
+    c3 = 0.00
+    alpha1 = 0.00
+    HP = 0.00
+    Filt = 0.00
+    HighestC = 0.00
+    LowestC = 0.00
+    Stoc = 0.00
+    MESAStochastic = 0.00
+    Trigger = 0.00
+    pi = 2 * asin(1)
+
+
+    alpha1:=(cos(0.707 * 2*pi / 48) + sin(0.707 * 2*pi / 48) - 1) / cos(0.707 * 2*pi / 48)
+    HP:=(1 - alpha1 / 2) * (1 - alpha1 / 2) * (Price3 - 2 * nz(Price3[1]) + nz(Price3[2])) + 2 * (1 - alpha1) * nz(HP[1]) - (1 - alpha1) * (1 - alpha1) * nz(HP[2])
+
+    a1:=exp(-1.414 * 3.14159 / 10)
+    b1:=2 * a1 * cos(1.414 * pi / 10)
+    c2:=b1
+    c3:=-a1 * a1
+    c1:=1 - c2 - c3
+    Filt:=c1 * (HP + nz(HP[1])) / 2 + c2 * nz(Filt[1]) + c3 * nz(Filt[2])
+
+    HighestC:=Filt
+    LowestC:=Filt
+
+    for count = 0 to Length3 - 1
+        if nz(Filt[count]) >HighestC
+            HighestC:=nz(Filt[count])
+        if nz(Filt[count]) < LowestC
+            LowestC:=nz(Filt[count])
+
+    Stoc:=(Filt - LowestC) / (HighestC - LowestC)
+    MESAStochastic:=c1 * (Stoc + nz(Stoc[1])) / 2 + c2 * nz(MESAStochastic[1]) + c3 * nz(MESAStochastic[2])
+
+mesa4() =>
+    a1 = 0.00
+    b1 = 0.00
+    c1 = 0.00
+    c2 = 0.00
+    c3 = 0.00
+    alpha1 = 0.00
+    HP = 0.00
+    Filt = 0.00
+    HighestC = 0.00
+    LowestC = 0.00
+    Stoc = 0.00
+    MESAStochastic = 0.00
+    Trigger = 0.00
+    pi = 2 * asin(1)
+
+
+    alpha1:=(cos(0.707 * 2*pi / 48) + sin(0.707 * 2*pi / 48) - 1) / cos(0.707 * 2*pi / 48)
+    HP:=(1 - alpha1 / 2) * (1 - alpha1 / 2) * (Price4 - 2 * nz(Price4[1]) + nz(Price4[2])) + 2 * (1 - alpha1) * nz(HP[1]) - (1 - alpha1) * (1 - alpha1) * nz(HP[2])
+
+    a1:=exp(-1.414 * 3.14159 / 10)
+    b1:=2 * a1 * cos(1.414 * pi / 10)
+    c2:=b1
+    c3:=-a1 * a1
+    c1:=1 - c2 - c3
+    Filt:=c1 * (HP + nz(HP[1])) / 2 + c2 * nz(Filt[1]) + c3 * nz(Filt[2])
+
+    HighestC:=Filt
+    LowestC:=Filt
+
+    for count = 0 to Length4 - 1
+        if nz(Filt[count]) >HighestC
+            HighestC:=nz(Filt[count])
+        if nz(Filt[count]) < LowestC
+            LowestC:=nz(Filt[count])
+
+    Stoc:=(Filt - LowestC) / (HighestC - LowestC)
+    MESAStochastic:=c1 * (Stoc + nz(Stoc[1])) / 2 + c2 * nz(MESAStochastic[1]) + c3 * nz(MESAStochastic[2])
+
+poscol = input(color.blue, title = "Positive Color", group = "Colors")
+negcol = input(color.red, title = "Negative Color", group = "Colors")
+ncol = input(color.red, title = "Neutral Color", group = "Colors")
+
+col1 = change(mesa()) > 0 ? poscol : change(mesa()) < 0 ? negcol : ncol
+col2 = change(mesa2()) > 0 ? poscol : change(mesa2()) < 0 ? negcol : ncol
+col3 = change(mesa3()) > 0 ? poscol : change(mesa3()) < 0 ? negcol : ncol
+col4 = change(mesa4()) > 0 ? poscol : change(mesa4()) < 0 ? negcol : ncol
+
+trig = input(2, title = "Trigger Length", group = "Trigger")
+trigger = sma(mesa(),trig)
+plot1 = plot(mesa(), "MESAStochastic 1", color=col1, linewidth=1)
+plot2 = plot(trigger, "Trigger", color=#2962ff, linewidth =1)
+trigger2 = sma(mesa2(),trig)
+plot3 = plot(mesa2(), "MESAStochastic 2", color=col2, linewidth=1)
+plot4 = plot(trigger2, "Trigger", color=#2962ff, linewidth =1)
+trigger3 = sma(mesa3(),trig)
+plot5 = plot(mesa3(), "MESAStochastic 3", color=col3, linewidth=1)
+plot6 = plot(trigger3, "Trigger", color=#2962ff, linewidth =1)
+trigger4 = sma(mesa4(),trig)
+plot7 = plot(mesa4(), "MESAStochastic 4", color=col4, linewidth=1)
+plot8 = plot(trigger4, "Trigger", color=#2962ff, linewidth =1)

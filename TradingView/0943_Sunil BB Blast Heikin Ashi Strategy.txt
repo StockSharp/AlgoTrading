@@ -1,0 +1,116 @@
+//@version=6
+strategy("Sunil BB Blast Heikin Ashi Strategy", overlay=true)
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+// User Input
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+TradingWindow = input.session(defval = '0920-1500', title = 'Trading Window', confirm = false)
+inTradingWindow = not na(time(timeframe.period, TradingWindow))
+
+// Trade Direction
+Trade_Direction = input.string('Long/Short', title = 'Strategy Direction', options = ['Long Only', 'Short Only', 'Long/Short'], group = 'Strategy Direction \n =========================================================')
+strategy.risk.allow_entry_in(Trade_Direction == 'Long/Short' ? strategy.direction.all : Trade_Direction == 'Short Only' ? strategy.direction.short : strategy.direction.long)
+
+
+// User Inputs
+bbLength = input.int(19, title = 'Bollinger Band Length', minval = 1, group = 'User Inputs \n =========================================================')
+bbMultiplier = input.float(2.0, title = 'Bollinger Band Multiplier', minval = 0.1)
+tpMultiplier = input.float(2.0, title = 'Take Profit Multiplier', minval = 1.0)
+RRR = input.float(1.0, title = 'Risk-to-Reward Ratio (RRR)', minval = 0.5, step = 0.5, group = 'Risk Management \n =========================================================')
+
+// For automated trades using TV Alert, Broker Webhook and Jason
+Long_Entry_Jason = input.string(title = 'JASON for Enter Long', defval = '', confirm = false, group = 'Trade Automation \n =========================================================')
+Long_Exit_Jason = input.string(title = 'JASON for Exit Long', defval = '', confirm = false)
+Short_Entry_Jason = input.string(title = 'JASON for Enter Short', defval = '', confirm = false)
+Short_Exit_Jason = input.string(title = 'JASON for Exit Short', defval = '', confirm = false)
+
+
+// Calculate Bollinger Bands
+basis = ta.sma(close, bbLength)
+bbUpper = basis + bbMultiplier * ta.stdev(close, bbLength)
+bbLower = basis - bbMultiplier * ta.stdev(close, bbLength)
+
+// Calculate Heikin-Ashi (HA) Candles
+haClose = (open + high + low + close) / 4
+haOpen = 0.0
+haOpen := na(haOpen[1]) ? (open + close) / 2 : (haOpen[1] + haClose[1]) / 2
+haHigh = math.max(high, math.max(haOpen, haClose))
+haLow = math.min(low, math.min(haOpen, haClose))
+
+// Long Entry Logic
+conceptCandleHighCrossBBLong = high > bbUpper
+concept_high = ta.valuewhen(conceptCandleHighCrossBBLong, high, 0)
+conceptCandleGreenOpenLowLong = close > open and open <= low  // Relaxed condition: open at or near low
+conceptCandleConditionLong = conceptCandleHighCrossBBLong and conceptCandleGreenOpenLowLong
+
+longEntryCondition = haClose[1] > haOpen[1] and close[1] > open[1] and close > bbUpper
+
+// Short Entry Logic
+conceptCandleLowCrossBBShort = low < bbLower
+concept_low = ta.valuewhen(conceptCandleLowCrossBBShort, low, 0)
+conceptCandleRedOpenHighShort = close < open and open >= high  // Relaxed condition: open at or near high
+conceptCandleConditionShort = conceptCandleLowCrossBBShort and conceptCandleRedOpenHighShort
+
+shortEntryCondition = haClose[1] < haOpen[1] and close[1] < open[1] and close < bbLower
+
+// Stop Loss and Take Profit for Long and Short
+slLong = 0.0
+tpLong = 0.0
+slShort = 0.0
+tpShort = 0.0
+
+// Calculate TP and SL with RRR
+if longEntryCondition
+    slLong := bbLower
+    tpLong := close + (close - slLong) * RRR // Apply RRR for TP calculation
+
+if shortEntryCondition
+    slShort := bbUpper
+    tpShort := close - (slShort - close) * RRR // Apply RRR for TP calculation
+
+// Track Active Position for Long and Short
+var bool inLongPosition = false
+var bool inShortPosition = false
+
+if longEntryCondition
+    inLongPosition := true
+if shortEntryCondition
+    inShortPosition := true
+
+if inLongPosition and (close <= slLong or close >= tpLong)
+    inLongPosition := false
+
+if inShortPosition and (close >= slShort or close <= tpShort)
+    inShortPosition := false
+
+if not inTradingWindow
+    strategy.close_all(comment="Outside Trading Window")
+
+// Plotting for Debugging
+plot(haClose, color=color.blue, title="HA Close")
+plot(bbUpper, color=color.orange, title="BB Upper")
+plot(bbLower, color=color.orange, title="BB Lower")
+plot(basis, color=color.gray, title="BB Basis")
+
+// Display HA candles on the chart
+hacolor = haClose > haOpen ? color.green : color.red
+plotcandle(haOpen, haHigh, haLow, haClose, color=hacolor, title="Heikin-Ashi Candles")
+
+// Long Entry and Exit Logic
+if longEntryCondition
+    strategy.entry("Long Entry", strategy.long, alert_message = Long_Entry_Jason)
+
+strategy.exit("Exit Long", from_entry="Long Entry", limit=tpLong, stop=slLong, alert_message = Long_Exit_Jason)
+
+// Short Entry and Exit Logic
+if shortEntryCondition
+    strategy.entry("Short Entry", strategy.short, alert_message = Short_Entry_Jason)
+
+strategy.exit("Exit Short", from_entry="Short Entry", limit=tpShort, stop=slShort, alert_message = Short_Exit_Jason)
+
+// Plot entry conditions for Long and Short with respective labels
+plotshape(longEntryCondition, style=shape.labelup, color=color.green, location=location.belowbar, title="Long Entry", text="")
+plotshape(shortEntryCondition,  style=shape.labeldown, color=color.red, location=location.abovebar, title="Short Entry", text="")
+
+if not inTradingWindow
+    strategy.close_all(comment = "Market Closed")

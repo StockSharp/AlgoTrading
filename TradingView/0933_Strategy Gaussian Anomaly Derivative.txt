@@ -1,0 +1,59 @@
+//@version=5
+strategy("Strategy Gaussian Anomaly Derivative", overlay=false)
+import TradingView/ta/5
+
+//SETUP BOX
+//Signal Setup
+ma = input(true,"SMA instead of EMA on Close - H-L Comparative Signal", group="==========Indicator Signal Setup==========")
+maInput = input(3, "MA Period", group="==========Indicator Signal Setup==========")
+rthC= input(1.0, "Threathold Coefficient Ratio", tooltip = ("Used as trading and color trigger"), group="==========Indicator Signal Setup==========")
+dmaInput  = input(2, "Derivative MA Period", group="==========Indicator Signal Setup==========")
+dthC= input(1.0, "Threathold Coefficient Derivative", tooltip = ("Used as trading and color trigger"), group="==========Indicator Signal Setup==========")
+
+//Strategy Setup
+tradtrigger = input(true, "Trade trigger on Derivative signal", tooltip = ("Plotted as histogram"), group="==========Trading Strategy Setup==========")
+sh = input(true,"Short", group="==========Trading Strategy Setup==========")
+lg = input(true,"Long", group="==========Trading Strategy Setup==========")
+br = input(600,"Bar Index Start", group="==========Trading Strategy Setup==========")
+
+//CALCULATION
+//  1. Closetrend is the Basis Signal
+closetrend = ma==true ? ta.sma(length = maInput, source = 1-(high+low)/(2*close)):ta.ema(length = maInput, source = 1-(high+low)/(2*close))
+    //Threathold for indicator
+th =ta.sma(closetrend>0?closetrend:0, last_bar_index/3)*rthC
+plot(closetrend/ta.allTimeHigh(closetrend)*100, color = closetrend>0 ? closetrend>th? color.rgb(6, 18, 237) : color.rgb(19, 14, 98)  : closetrend <-th? color.rgb(151, 4, 237) : color.rgb(61, 7, 86) , style=plot.style_area, linewidth = 1)
+
+//  2. Basis Signal Derivative
+dv = ta.ema(closetrend-closetrend[1],dmaInput)
+    //Threathold for signal derivative
+th2=ta.sma(dv>0?dv:0, last_bar_index/3)*dthC
+plot(dv/ta.allTimeHigh(dv)*100, color = dv>0 ? dv>th2? color.rgb(15, 213, 18) : color.rgb(9, 105, 11)  : dv <-th2? color.rgb(210, 12, 12) : color.rgb(107, 12, 12) , style=plot.style_histogram, linewidth = 4)
+
+//STRATEGY
+//Strategy Order Selection
+if tradtrigger==true
+    if  bar_index> last_bar_index - br
+        if dv > th2
+            if lg==true
+                strategy.entry("buy", strategy.long)
+            if sh==true
+                strategy.close("sell")
+        if dv < -th2
+            if lg==true
+                strategy.close("buy")
+            if sh==true
+                strategy.entry("sell", strategy.short)
+
+if tradtrigger==false
+    if  bar_index> last_bar_index - br
+        if closetrend > th
+            if lg==true
+                strategy.entry("buy", strategy.long)
+            if sh==true
+                strategy.close("sell")
+        if closetrend < -th
+            if lg==true
+                strategy.close("buy")
+            if sh==true
+                strategy.entry("sell", strategy.short)
+/////////////////////////////////////END/////////////////////////////////////

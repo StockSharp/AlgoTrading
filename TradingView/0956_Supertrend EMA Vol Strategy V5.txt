@@ -1,0 +1,79 @@
+//@version=5
+strategy("Supertrend EMA Strategy V5", overlay=true, format=format.price, precision=2)
+
+// Inputs
+atr_period = input.int(10, title="ATR Period")
+src = input.source(hl2, title="Source")
+atr_multiplier = input.float(3.0, title="ATR Multiplier", step=0.1)
+change_atr = input.bool(true, title="Change ATR Calculation Method?")
+show_signals = input.bool(true, title="Show Buy/Sell Signals?")
+highlighting = input.bool(true, title="Highlighter On/Off?")
+ema_length = input.int(21, title="EMA Length")
+start_time = input.time(timestamp("2024-01-02"), title="Strategy Start Date")
+allow_long = input.bool(true, title="Allow Long Trades")
+allow_short = input.bool(false, title="Allow Short Trades")
+sl_multiplier = input.float(2.0, title="Stop Loss Multiplier (ATR, 0=off)", step=0.5)
+use_vol_filter = input.bool(true, title="Use Volume Filter?")
+vol_ema_length = input.int(20, title="Volume EMA Length", minval=1)
+
+// Calculations
+atr2 = ta.sma(ta.tr, atr_period)
+atr = change_atr ? ta.atr(atr_period) : atr2
+up = src - (atr_multiplier * atr)
+up1 = nz(up[1], up)
+up := close[1] > up1 ? math.max(up, up1) : up
+dn = src + (atr_multiplier * atr)
+dn1 = nz(dn[1], dn)
+dn := close[1] < dn1 ? math.min(dn, dn1) : dn
+trend = 1
+trend := nz(trend[1], trend)
+trend := trend == -1 and close > dn1 ? 1 : trend == 1 and close < up1 ? -1 : trend
+ema = ta.ema(close, ema_length)
+vol_ema = ta.ema(volume, vol_ema_length)
+
+// Plots - Restored full Supertrend visuals
+up_plot = plot(trend == 1 ? up : na, title="Up Trend", style=plot.style_linebr, linewidth=2, color=color.new(color.green, 0))
+dn_plot = plot(trend == -1 ? dn : na, title="Down Trend", style=plot.style_linebr, linewidth=2, color=color.new(color.red, 0))
+buy_signal = trend == 1 and trend[1] == -1
+sell_signal = trend == -1 and trend[1] == 1
+plotshape(buy_signal ? up : na, title="UpTrend Begins", location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.green, 0))
+plotshape(buy_signal and show_signals ? up : na, title="Buy", text="Buy", location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(color.green, 0), textcolor=color.new(color.white, 0))
+plotshape(sell_signal ? dn : na, title="DownTrend Begins", location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(color.red, 0))
+plotshape(sell_signal and show_signals ? dn : na, title="Sell", text="Sell", location=location.absolute, style=shape.labeldown, size=size.tiny, color=color.new(color.red, 0), textcolor=color.new(color.white, 0))
+m_plot = plot(ohlc4, title="", style=plot.style_circles, linewidth=0)
+long_fill_color = highlighting ? (trend == 1 ? color.new(color.green, 90) : color.new(color.white, 100)) : color.new(color.white, 100)
+short_fill_color = highlighting ? (trend == -1 ? color.new(color.red, 90) : color.new(color.white, 100)) : color.new(color.white, 100)
+fill(m_plot, up_plot, title="UpTrend Highlighter", color=long_fill_color)
+fill(m_plot, dn_plot, title="DownTrend Highlighter", color=short_fill_color)
+plot(ema, title="EMA", color=color.new(color.blue, 0), linewidth=2)
+
+// Strategy Logic
+var float entry_price = na
+vol_condition = not use_vol_filter or volume > vol_ema
+
+if buy_signal and close > ema and allow_long and time >= start_time and vol_condition
+    strategy.entry("Long", strategy.long)
+    entry_price := close
+
+if sell_signal and strategy.position_size > 0
+    strategy.close("Long")
+    entry_price := na
+
+if sell_signal and close < ema and allow_short and time >= start_time and vol_condition
+    strategy.entry("Short", strategy.short)
+    entry_price := close
+
+if buy_signal and strategy.position_size < 0
+    strategy.close("Short")
+    entry_price := na
+
+// SL
+if strategy.position_size != 0 and not na(entry_price) and sl_multiplier > 0
+    sl_price = strategy.position_size > 0 ? entry_price - (sl_multiplier * atr) : entry_price + (sl_multiplier * atr)
+    strategy.exit("SL Exit", stop=sl_price)
+
+// Alerts
+alertcondition(buy_signal, title="SuperTrend Buy", message="SuperTrend Buy!")
+alertcondition(sell_signal, title="SuperTrend Sell", message="SuperTrend Sell!")
+change_cond = trend != trend[1]
+alertcondition(change_cond, title="SuperTrend Direction Change", message="SuperTrend has changed direction!")

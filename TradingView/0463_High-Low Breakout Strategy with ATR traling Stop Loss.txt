@@ -1,0 +1,87 @@
+//@version=5
+strategy("High Low Breakout (SK Wealth Guru) ©", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=1, commission_type=strategy.commission.percent, commission_value=0.05, slippage=1)
+
+// User-defined settings for timeframe and number of days
+custom_timeframe = input.timeframe("30", title="Select Timeframe for Indicator")
+num_days = input.int(1, title="Number of Days to Show High-Low", minval=1)
+
+// ATR Settings
+atr_period = input.int(14, title="ATR Period")
+stop_multiplier = input.float(3.5, title="ATR Multiplier")
+
+// Trade direction selection
+trade_direction = input.string("Both", title="Trade Direction", options=["Long", "Short", "Both"])
+
+// Webhook Settings
+enable_webhook = input.bool(true, title="Enable Webhook Alerts")
+webhook_url = input.string("", title="Webhook URL")
+
+// Define time for tracking the first 30-minute high and low
+session_start_hour = input.int(9, title="Session Start Hour")
+session_start_minute = input.int(15, title="Session Start Minute")
+session_end_hour = input.int(15, title="Session End Hour")
+session_end_minute = input.int(30, title="Session End Minute")
+session_start_time = timestamp(year, month, dayofmonth, session_start_hour, session_start_minute)
+session_end_time = timestamp(year, month, dayofmonth, session_end_hour, session_end_minute)
+is_first_30_min = (time >= session_start_time and time < session_start_time + 30 * 60 * 1000)
+is_new_day = ta.change(time("D"))
+
+// Variables to store the high and low of the first 30 minutes
+var float first_30_min_high = na
+var float first_30_min_low = na
+var line[] high_lines = array.new_line(0)
+var line[] low_lines = array.new_line(0)
+
+// ATR Calculation
+volume_threshold = input.float(100000, title="Volume Threshold")
+trend_confirmation = input.bool(true, title="Enable Trend Confirmation")
+atr_value = ta.atr(atr_period)
+
+// Risk Management Parameters
+risk_per_trade = input.float(2, title="Risk Per Trade (%)", minval=1, maxval=10)
+account_balance = strategy.equity
+position_size = (account_balance * risk_per_trade / 100) / (atr_value * stop_multiplier)
+
+// Reset high, low, and lines at the beginning of each trading day
+if (bool(is_new_day) and barstate.isconfirmed)
+    first_30_min_high := na
+    first_30_min_low := na
+
+    while array.size(high_lines) >= num_days
+        line.delete(array.shift(high_lines))
+    while array.size(low_lines) >= num_days
+        line.delete(array.shift(low_lines))
+
+// Capture the first 30-minute high and low only once per day
+if (is_first_30_min and barstate.isconfirmed)
+    first_30_min_high := na(first_30_min_high) ? high : math.max(first_30_min_high, high)
+    first_30_min_low := na(first_30_min_low) ? low : math.min(first_30_min_low, low)
+
+// Draw horizontal lines for the high and low once per day
+if (not na(first_30_min_high) and not na(first_30_min_low) and is_new_day[1] and barstate.isconfirmed)
+    line high_line = line.new(x1=bar_index[1], y1=first_30_min_high, x2=bar_index + num_days * 390, y2=first_30_min_high, color=color.green, width=2)
+    line low_line = line.new(x1=bar_index[1], y1=first_30_min_low, x2=bar_index + num_days * 390, y2=first_30_min_low, color=color.red, width=2)
+    array.push(high_lines, high_line)
+    array.push(low_lines, low_line)
+
+// Short trade logic
+var float entry_price = na
+short_condition = (trade_direction == "Short" or trade_direction == "Both") and ta.crossunder(close, first_30_min_low) and barstate.isconfirmed
+if (short_condition)
+    entry_price := close
+    strategy.entry("Sell", strategy.short, qty=position_size)
+    strategy.exit("Exit Sell", from_entry="Sell", stop=entry_price + atr_value * stop_multiplier, limit=entry_price - atr_value * stop_multiplier)
+
+// Long trade logic
+long_condition = (trade_direction == "Long" or trade_direction == "Both") and ta.crossover(close, first_30_min_high) and barstate.isconfirmed
+if (long_condition)
+    entry_price := close
+    strategy.entry("Buy", strategy.long, qty=position_size)
+    strategy.exit("Exit Buy", from_entry="Buy", stop=entry_price - atr_value * stop_multiplier, limit=entry_price + atr_value * stop_multiplier)
+
+// Exit all positions at 3:15 PM intraday
+if (hour == 15 and minute == 15 and barstate.isconfirmed)
+    strategy.close_all()
+    alert("Closing all positions at 3:15 PM", alert.freq_once_per_bar_close)
+    if (enable_webhook and webhook_url != "")
+        alert("Webhook: Closing all positions at 3:15 PM", alert.freq_once_per_bar_close)

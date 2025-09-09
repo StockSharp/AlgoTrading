@@ -1,0 +1,55 @@
+//@version=5
+strategy("New Bollinger Bands Strategy with Alerts V2.5(By Rolwin))", overlay=true)
+
+// Input settings
+length = input(20, title="Bollinger Bands Length")
+src = close
+
+// Bollinger Bands (Standard Deviation Levels)
+bb1_mult = 2.0
+bb2_mult = 3.0
+basis = ta.sma(src, length)
+dev1 = bb1_mult * ta.stdev(src, length)
+dev2 = bb2_mult * ta.stdev(src, length)
+
+// Band Levels
+upper1 = basis + dev1
+lower1 = basis - dev1
+upper2 = basis + dev2
+lower2 = basis - dev2
+
+// **Trading Conditions**
+longCondition = ta.crossover(src, lower2)  // Price crosses above lower 3SD band
+shortCondition = ta.crossunder(src, upper2)  // Price crosses below upper 3SD band
+
+// **Exit Conditions**
+exitLong = ta.crossover(src, upper1)  // Exit long at upper 2SD band
+exitShort = ta.crossunder(src, lower1)  // Exit short at lower 2SD band
+
+// **Execute trades**
+strategy.entry("Long", strategy.long, when=longCondition)
+strategy.entry("Short", strategy.short, when=shortCondition)
+
+strategy.close("Long", when=exitLong)
+strategy.close("Short", when=exitShort)
+
+// **Plot Bollinger Bands**
+plot(upper1, color=color.blue, title="Upper Band (2 SD)")
+plot(lower1, color=color.blue, title="Lower Band (2 SD)")
+plot(upper2, color=color.red, title="Upper Band (3 SD)")
+plot(lower2, color=color.red, title="Lower Band (3 SD)")
+plot(basis, color=color.gray, title="Middle Band (SMA)")
+
+// **Plot Buy & Sell Signals**
+plotshape(longCondition, location=location.belowbar, color=color.green, style=shape.labelup, size=size.small, title="BUY Signal")
+plotshape(shortCondition, location=location.abovebar, color=color.red, style=shape.labeldown, size=size.small, title="SELL Signal")
+
+// **Candle Coloring for 3SD Touch**
+touches3SD = (src >= upper2) or (src <= lower2)
+barcolor(touches3SD ? color.white : na)  // Change to white if touching 3SD band
+
+// **🔔 Alerts for Trading Signals**
+alertcondition(longCondition, title="BUY Signal", message="🚀 BUY: Price crossed above Lower 3SD Band!")
+alertcondition(shortCondition, title="SELL Signal", message="🔻 SELL: Price crossed below Upper 3SD Band!")
+alertcondition(exitLong, title="Exit Long", message="⚠️ EXIT LONG: Price reached Upper 2SD Band!")
+alertcondition(exitShort, title="Exit Short", message="⚠️ EXIT SHORT: Price reached Lower 2SD Band!")

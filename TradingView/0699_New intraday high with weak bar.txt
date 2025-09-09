@@ -1,0 +1,10 @@
+//@version=6
+strategy("New intraday high", overlay = true, fill_orders_on_standard_ohlc = true, process_orders_on_close = true)
+import TradingView/ta/9
+
+if (strategy.position_size == 0 and high == ta.highest(10) and (close-low)/(high-low) < 0.15)
+    strategy.entry("L", strategy.long)
+if strategy.position_size > 0 and close > high[1]
+    strategy.close("L")
+
+bgcolor(strategy.position_size > 0? color.new(color.green, 85):na, force_overlay = true)

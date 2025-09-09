@@ -1,0 +1,93 @@
+// ------------------------------------------------------------------------------------
+//
+//    OBV Traffic Ligts
+//    Original idea by Peter Whipp
+//    Modification by Anton "lejmer" Berlin
+//
+// ------------------------------------------------------------------------------------
+//
+// The idea with On-balance volume (OBV) is to see price movement based on volume
+// instead of the distance between the open and close of a candle. This can be used to
+// find the relationship between volume and price action much easier than normal volume
+// bars.
+//
+// This version spices the OBV up a bit by basing it off of the current and previous
+// close of the Heikin Ashi of the current bar, as well as adding "traffic light"
+// moving averages to the mix to get a better grasp of trends and when volume has
+// shifted direction as well as by how much.
+//
+// Thanks to Peter Whipp for the original idea of using the OBV with traffic light
+// moving averages, as well as the default settings for them.
+//
+// ------------------------------------------------------------------------------------
+//
+// Licensed under CC BY-NC.
+// https://creativecommons.org/licenses/by-nc/4.0/
+//
+// Copyright © Anton "lejmer" Berlin, 2020.
+//
+// ------------------------------------------------------------------------------------
+
+//@version=4
+
+// ------------------------------------------------------------------------------------
+//    Setup
+// ------------------------------------------------------------------------------------
+
+study("OBV Traffic Lights")
+
+// ------------------------------------------------------------------------------------
+//    Input
+// ------------------------------------------------------------------------------------
+
+ma1_len = input(title = "Fast EMA", defval = 5, minval = 2, type = input.integer)
+ma2_len = input(title = "Medium EMA", defval = 9, minval = 3, type = input.integer)
+ma3_len = input(title = "Slow EMA", defval = 14, minval = 4, type = input.integer)
+dbl_len = input(title = "Donchian baseline length", defval = 26, minval = 2, type = input.integer)
+
+src_smooth = input(title = "Smoothing", defval = 1, minval = 1, type = input.integer)
+use_bg_color = input(title = "Show overall direction using background color?", defval = false, type = input.bool)
+show_dbl = input(title = "Show donchian baseline?", defval = true, type = input.bool)
+
+// ------------------------------------------------------------------------------------
+//    Calculations
+// ------------------------------------------------------------------------------------
+
+ha_symbol = heikinashi(syminfo.ticker)
+
+open_val = security(ha_symbol, timeframe.period, ema(close[1], src_smooth))
+close_val = security(ha_symbol, timeframe.period, ema(close, src_smooth))
+
+float obv_val = na
+
+vol = close_val > open_val ? volume : close_val == open_val ? 0 : -volume
+obv_val := nz(obv_val[1]) + vol
+
+donchian(len) => avg(lowest(obv_val, len), highest(obv_val, len))
+
+ma1 = ema(obv_val, ma1_len)
+ma2 = ema(obv_val, ma2_len)
+ma3 = ema(obv_val, ma3_len)
+
+dbl = donchian(dbl_len)
+
+// ------------------------------------------------------------------------------------
+//    Colors
+// ------------------------------------------------------------------------------------
+
+color bg_color = na
+bg_color := obv_val > ma3 and ma1 > ma3 ? color.blue : obv_val < ma3 and ma1 < ma3 ? color.red : bg_color[1]
+
+// ------------------------------------------------------------------------------------
+//    Plotting
+// ------------------------------------------------------------------------------------
+
+o = plot(obv_val, linewidth = 2, color = obv_val > ma3 ? color.green : obv_val < ma3 ? color.red : color.gray)
+plot(ma1, linewidth = 2, color = color.green)
+plot(ma2, linewidth = 2, color = color.yellow)
+s = plot(ma3, linewidth = 2, color = color.red)
+plot(dbl, style = plot.style_circles, linewidth = 2, color = show_dbl ? color.purple : na)
+
+fill(o, s, color = obv_val > ma3 ? color.blue : obv_val < ma3 ? color.red : color.gray, transp = 40)
+
+bgcolor(color = use_bg_color ? bg_color : na, transp = 90)

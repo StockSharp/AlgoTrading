@@ -1,0 +1,88 @@
+//@version=6
+strategy(title="Multi-Indicator Trend-Following Strategy v6",
+     shorttitle="MITF v6",
+     overlay=true,
+     initial_capital=100000,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=50,
+     commission_type=strategy.commission.percent,
+     commission_value=0,
+     margin_long=100,
+     margin_short=100,
+     pyramiding=1)
+
+// --- Strategy Inputs ---
+// Moving Averages
+fastMALengthInput = input.int(10, title="Fast MA Length", minval=1)
+slowMALengthInput = input.int(30, title="Slow MA Length", minval=1)
+
+// RSI
+rsiLengthInput = input.int(14, title="RSI Length", minval=1)
+rsiOversoldInput = input.int(30, title="RSI Oversold Level", minval=0, maxval=100)
+rsiOverboughtInput = input.int(70, title="RSI Overbought Level", minval=0, maxval=100)
+
+// MACD
+fastMACDLengthInput = input.int(12, title="MACD Fast Length", minval=1)
+slowMACDLengthInput = input.int(26, title="MACD Slow Length", minval=1)
+signalMACDLengthInput = input.int(9, title="MACD Signal Length", minval=1)
+
+// Volume Filter
+volumeMALengthInput = input.int(20, title="Volume MA Length", minval=1)
+volumeMultiplierInput = input.float(1.5, title="Volume Confirmation Multiplier", minval=0.1)
+
+// ATR for Stop Loss / Take Profit
+atrPeriodInput = input.int(14, title="ATR Period", minval=1)
+stopLossATRMultiInput = input.float(2.0, title="Stop Loss ATR Multiplier", minval=0.1)
+takeProfitATRMultiInput = input.float(3.0, title="Take Profit ATR Multiplier", minval=0.1)
+
+// --- Indicator Calculations ---
+fastMA = ta.ema(close, fastMALengthInput)
+slowMA = ta.ema(close, slowMALengthInput)
+rsiValue = ta.rsi(close, rsiLengthInput)
+[macdLine, signalLine, _] = ta.macd(close, fastMACDLengthInput, slowMACDLengthInput, signalMACDLengthInput)
+volumeMA = ta.sma(volume, volumeMALengthInput)
+atrValue = ta.atr(atrPeriodInput)
+
+// --- Entry Conditions ---
+longCondition = ta.crossover(fastMA, slowMA) and rsiValue > 50 and volume > (volumeMA * volumeMultiplierInput)
+shortCondition = ta.crossunder(fastMA, slowMA) and rsiValue < 50 and volume > (volumeMA * volumeMultiplierInput)
+
+// --- Order Execution ---
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+longStopPrice = strategy.position_avg_price - (atrValue * stopLossATRMultiInput)
+longTakeProfitPrice = strategy.position_avg_price + (atrValue * takeProfitATRMultiInput)
+shortStopPrice = strategy.position_avg_price + (atrValue * stopLossATRMultiInput)
+shortTakeProfitPrice = strategy.position_avg_price - (atrValue * takeProfitATRMultiInput)
+
+if strategy.position_size > 0
+    strategy.exit(id="Exit Long", from_entry="Long", stop=longStopPrice, limit=longTakeProfitPrice)
+
+if strategy.position_size < 0
+    strategy.exit(id="Exit Short", from_entry="Short", stop=shortStopPrice, limit=shortTakeProfitPrice)
+
+// --- Plots ---
+plot(fastMA, title="Fast MA", color=color.blue, linewidth=2)
+plot(slowMA, title="Slow MA", color=color.orange, linewidth=2)
+
+plotshape(longCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(shortCondition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// Entry Labels
+if longCondition
+    label.new(x=bar_index, y=low, text="BUY\n@" + str.tostring(close, format.mintick),
+              xloc=xloc.bar_index, yloc=yloc.belowbar, style=label.style_label_up,
+              color=color.new(color.green, 20), textcolor=color.white, size=size.small)
+
+if shortCondition
+    label.new(x=bar_index, y=high, text="SELL\n@" + str.tostring(close, format.mintick),
+              xloc=xloc.bar_index, yloc=yloc.abovebar, style=label.style_label_down,
+              color=color.new(color.red, 20), textcolor=color.white, size=size.small)
+
+// --- Alerts ---
+alertcondition(longCondition, title="Buy Alert", message="BUY signal on {{ticker}} at {{close}}")
+alertcondition(shortCondition, title="Sell Alert", message="SELL signal on {{ticker}} at {{close}}")

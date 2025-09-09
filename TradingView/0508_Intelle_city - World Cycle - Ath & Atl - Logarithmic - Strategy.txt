@@ -1,0 +1,53 @@
+//© GooD @ABIX_GOOD
+
+//@version=4
+strategy("INTELLECT_city - World Cycle - ATH & ATL - Timeframe 1D and 1W - Logarithmic - Strategy.", shorttitle="INTELLECT_city - World Cycle - ATH & ATL - Timeframe 1D and 1W - Logarithmic - Strategy.", overlay=true)
+
+// Common Inputs
+resolution = input('D', type=input.string, title="Time interval")
+is_show_ma = input(true, type=input.bool, title="Show Moving Averages ?")
+is_alert = input(true, type=input.bool, title="Send an alert on Pi Cycle Top?")
+show_signals = input(true, type=input.bool, title="Show Signals?")
+
+// ATH Inputs
+len_ma_long_ath = input(350, minval=1, title="ATH Long Moving Average")
+len_ma_short_ath = input(111, minval=1, title="ATH Short Moving Average")
+
+// ATL Inputs
+len_ma_long_atl = input(471, minval=1, title="ATL Long Moving Average")
+len_ma_short_atl = input(150, minval=1, title="ATL Short Moving Average")
+
+// Calculations
+ma_long_ath = security(syminfo.tickerid, resolution, sma(close, len_ma_long_ath) * 2)
+ma_short_ath = security(syminfo.tickerid, resolution, sma(close, len_ma_short_ath))
+ma_long_atl = security(syminfo.tickerid, resolution, sma(close, len_ma_long_atl) * 0.745)
+ma_short_atl = security(syminfo.tickerid, resolution, ema(close, len_ma_short_atl))
+src = security(syminfo.tickerid, resolution, close)
+
+// ATH Logic
+PiCycleTop_ATH = crossunder(ma_long_ath, ma_short_ath)
+plot(is_show_ma ? ma_long_ath : na, color=color.blue, title="ATH Long MA")
+plot(is_show_ma ? ma_short_ath : na, color=color.blue, title="ATH Short MA")
+plotshape(show_signals and PiCycleTop_ATH, style=shape.diamond, size=size.normal, text="ATH LINE CROSSING IN A CYCLE \n Selling Accuracy \n SELL", color=color.blue, textcolor=color.blue, location=location.abovebar)
+alertcondition(condition=PiCycleTop_ATH, title="INTELLECT_city - ATH", message="SELL")
+bgcolor(PiCycleTop_ATH ? color.blue : na, transp=60)
+
+// Strategy for ATH
+if (PiCycleTop_ATH)
+    strategy.entry("Sell", strategy.short)
+    if (is_alert)
+        alert("INTELLECT_city World Cycle ATH - SELL", alert.freq_once_per_bar)
+
+// ATL Logic
+PiCycleTop_ATL = crossover(ma_long_atl, ma_short_atl)
+plot(is_show_ma ? ma_long_atl : na, color=color.green, title="ATL Long MA")
+plot(is_show_ma ? ma_short_atl : na, color=color.green, title="ATL Short MA")
+plotshape(show_signals and PiCycleTop_ATL, style=shape.diamond, size=size.normal, text="ATL CROSSING LINES IN A CYCLE \n Purchase Accuracy \n BUY", color=color.green, textcolor=color.green, location=location.belowbar)
+alertcondition(condition=PiCycleTop_ATL, title="INTELLECT_city - ATL", message="BUY")
+bgcolor(PiCycleTop_ATL ? color.green : na, transp=60)
+
+// Strategy for ATL
+if (PiCycleTop_ATL)
+    strategy.entry("Buy", strategy.long)
+    if (is_alert)
+        alert("INTELLECT_city World Cycle ATL - BUY", alert.freq_once_per_bar)

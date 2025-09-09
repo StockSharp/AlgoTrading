@@ -1,0 +1,154 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RezzoRedPriest
+// This strategy based on © DonovanWall indicator but upgraded from v4 to v6 PineScript and strategi functions added.
+
+//@version=6
+strategy("Gaussian Channel Strategy", overlay=true,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// дата-старта
+startDate  = input.time(timestamp("1970-01-01T00:00:00"), "Start trading date (exchange time)")
+afterStart = time >= startDate
+
+//──────────────── Gaussian helpers ───────────────
+f_filt9x(_a, _s, _i)=>
+    _x  = 1 - _a
+    _m2 = _i==9?36:_i==8?28:_i==7?21:_i==6?15:_i==5?10:_i==4?6:_i==3?3:_i==2?1:0
+    _m3 = _i==9?84:_i==8?56:_i==7?35:_i==6?20:_i==5?10:_i==4?4:_i==3?1:0
+    _m4 = _i==9?126:_i==8?70:_i==7?35:_i==6?15:_i==5?5:_i==4?1:0
+    _m5 = _i==9?126:_i==8?56:_i==7?21:_i==6?6:_i==5?1:0
+    _m6 = _i==9?84:_i==8?28:_i==7?7:_i==6?1:0
+    _m7 = _i==9?36:_i==8?8:_i==7?1:0
+    _m8 = _i==9?9:_i==8?1:0
+    _m9 = _i==9?1:0
+    var float _f = na
+    _f :=
+          math.pow(_a,_i)*nz(_s) +
+      _i   * _x          * nz(_f[1]) -
+      (_i>=2? _m2*math.pow(_x,2)*nz(_f[2]) : 0) +
+      (_i>=3? _m3*math.pow(_x,3)*nz(_f[3]) : 0) -
+      (_i>=4? _m4*math.pow(_x,4)*nz(_f[4]) : 0) +
+      (_i>=5? _m5*math.pow(_x,5)*nz(_f[5]) : 0) -
+      (_i>=6? _m6*math.pow(_x,6)*nz(_f[6]) : 0) +
+      (_i>=7? _m7*math.pow(_x,7)*nz(_f[7]) : 0) -
+      (_i>=8? _m8*math.pow(_x,8)*nz(_f[8]) : 0) +
+      (_i==9? _m9*math.pow(_x,9)*nz(_f[9]) : 0)
+    _f
+
+f_pole(_a,_s,_i)=>
+    _f1=f_filt9x(_a,_s,1)
+    _f2=_i>=2?f_filt9x(_a,_s,2):0.0
+    _f3=_i>=3?f_filt9x(_a,_s,3):0.0
+    _f4=_i>=4?f_filt9x(_a,_s,4):0.0
+    _f5=_i>=5?f_filt9x(_a,_s,5):0.0
+    _f6=_i>=6?f_filt9x(_a,_s,6):0.0
+    _f7=_i>=7?f_filt9x(_a,_s,7):0.0
+    _f8=_i>=8?f_filt9x(_a,_s,8):0.0
+    _f9=_i==9?f_filt9x(_a,_s,9):0.0
+    _fn = switch _i
+        1=>_f1
+        2=>_f2
+        3=>_f3
+        4=>_f4
+        5=>_f5
+        6=>_f6
+        7=>_f7
+        8=>_f8
+        9=>_f9
+    [_fn,_f1]
+
+//──────────────── Inputs ───────────────────────
+src      = input.source(hlc3, "Source")
+N        = input.int(4, "Poles", minval=1, maxval=9)
+per      = input.int(144, "Sampling Period", minval=2)
+mult     = input.float(1.414, "Filtered True Range Multiplier", minval=0)
+modeLag  = input.bool(false, "Reduced Lag Mode")
+modeFast = input.bool(false, "Fast Response Mode")
+
+sigLineLong  = input.string("Filter (middle)", "Long → signal line",  options=["Filter (middle)","Upper band","Lower band"])
+sigLineShort = input.string("Filter (middle)", "Short → signal line", options=["Filter (middle)","Upper band","Lower band"])
+
+dirLong   = input.string("Cross Up",  "Long when price",  options=["Cross Up","Cross Down"])
+dirShort  = input.string("Cross Down","Short when price", options=["Cross Up","Cross Down"])
+
+tradeLong  = input.bool(true,  "Enable LONG-side trades")
+tradeShort = input.bool(true,  "Enable SHORT-side trades")
+reverseOnOpp = input.bool(true, "On opposite signal: reverse (else just exit)")
+
+lookback = input.int(3, "Lookback bars for late entry", minval=0)
+
+
+
+//──────────────── Gaussian math ───────────────
+beta  = (1 - math.cos(4*math.asin(1)/per)) / (math.pow(1.414,2/N)-1)
+alpha = -beta + math.sqrt(beta*beta + 2*beta)
+lag   = (per-1)/(2*N)
+
+srcData = modeLag ? src + (src-src[lag]) : src
+trData  = modeLag ? ta.tr(true)+(ta.tr(true)-ta.tr(true)[lag]) : ta.tr(true)
+
+[filtN ,filt1 ]   = f_pole(alpha,srcData,N)
+[filtNtr,filt1tr] = f_pole(alpha,trData ,N)
+filt   = modeFast ? (filtN+filt1)/2    : filtN
+filtTr = modeFast ? (filtNtr+filt1tr)/2: filtNtr
+
+hBand = filt + filtTr*mult
+lBand = filt - filtTr*mult
+
+getLine(_c)=>
+    if _c=="Upper band"
+        hBand
+    else if _c=="Lower band"
+        lBand
+    else
+        filt
+
+sigLine_L = getLine(sigLineLong)
+sigLine_S = getLine(sigLineShort)
+
+//──────────────── Signals (с учётом lookback) ───────────────
+longUp   = ta.crossover(src, sigLine_L)
+longDown = ta.crossunder(src, sigLine_L)
+shortUp  = ta.crossover(src, sigLine_S)
+shortDown= ta.crossunder(src, sigLine_S)
+
+longCond = dirLong=="Cross Up"
+              ? ( longUp or (src>sigLine_L  and ta.barssince(longUp)  <= lookback) )
+              : ( longDown or (src<sigLine_L and ta.barssince(longDown)<= lookback) )
+
+shortCond= dirShort=="Cross Up"
+              ? ( shortUp or (src>sigLine_S and ta.barssince(shortUp) <= lookback) )
+              : ( shortDown or (src<sigLine_S and ta.barssince(shortDown)<= lookback) )
+
+//──────────────── Trade engine ───────────
+if afterStart
+    if longCond
+        if strategy.position_size < 0
+            strategy.close("Short")
+        if tradeLong and (strategy.position_size == 0 or (reverseOnOpp and strategy.position_size <= 0))
+            strategy.entry("Long", strategy.long)
+
+    if shortCond
+        if strategy.position_size > 0
+            strategy.close("Long")
+        if tradeShort and (strategy.position_size == 0 or (reverseOnOpp and strategy.position_size >= 0))
+            strategy.entry("Short", strategy.short)
+
+//──────────────── Visuals ────────────────
+upCol     = color.rgb(0, 195, 255)
+upDarkCol = #092ae4
+dnCol     = color.rgb(214, 10, 255)
+dnDarkCol = color.rgb(135, 0, 153)
+fCol   = filt>filt[1]?upCol : filt<filt[1]?dnCol : color.gray
+barCol = (src>src[1] and src>filt and src<hBand)? upCol :
+         (src>src[1] and src>=hBand)            ? color.new(upCol,20) :
+         (src<=src[1]and src>filt)              ? upDarkCol :
+         (src<src[1] and src<filt and src>lBand)? dnCol :
+         (src<src[1] and src<=lBand)            ? color.new(dnCol,20) :
+         (src>=src[1]and src<filt)              ? dnDarkCol : color.gray
+
+plot(filt, "Filter", color=fCol, linewidth=3)
+hP = plot(hBand, "Filtered TR High", color=fCol)
+lP = plot(lBand, "Filtered TR Low",  color=fCol)
+fill(hP,lP,color=color.new(fCol,80))
+barcolor(barCol)

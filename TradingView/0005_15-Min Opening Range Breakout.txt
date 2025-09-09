@@ -1,0 +1,42 @@
+//@version=5
+strategy("15-Min Opening Range Breakout", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+sessionStart = input.time(timestamp("2025-01-01 08:00 +0000"), "Session Start (GMT)")
+rangeMinutes = input.int(15, "Opening Range Duration (min)")
+riskMultiplier = input.float(2.0, "Reward to Risk Ratio", minval=0.5)
+buffer = input.float(0.0001, "Entry Buffer (in pips)", step=0.0001)
+
+inSession = (time >= sessionStart) and (time < sessionStart + rangeMinutes * 60 * 1000)
+
+// Capture Opening Range High and Low
+var float orHigh = na
+var float orLow = na
+if inSession
+    orHigh := na( orHigh ) ? high : math.max(high, orHigh)
+    orLow := na( orLow ) ? low : math.min(low, orLow)
+else if not na(orHigh)
+    // Once session ends
+    longEntry = orHigh + buffer
+    shortEntry = orLow - buffer
+    stopLong = orLow - buffer
+    stopShort = orHigh + buffer
+    longTP = longEntry + (longEntry - stopLong) * riskMultiplier
+    shortTP = shortEntry - (stopShort - shortEntry) * riskMultiplier
+
+    // Execute breakout entries
+    if close > longEntry
+        strategy.entry("Buy ORB", strategy.long, stop=longEntry)
+        strategy.exit("TP Buy", from_entry="Buy ORB", limit=longTP, stop=stopLong)
+    if close < shortEntry
+        strategy.entry("Sell ORB", strategy.short, stop=shortEntry)
+        strategy.exit("TP Sell", from_entry="Sell ORB", limit=shortTP, stop=stopShort)
+
+    // Reset OR values after execution
+    orHigh := na
+    orLow := na
+
+// Plotting
+plotshape(not na(orHigh) ? orHigh : na, title="OR High", location=location.absolute, color=color.green, style=shape.triangledown)
+plotshape(not na(orLow) ? orLow : na, title="OR Low", location=location.absolute, color=color.red, style=shape.triangleup)
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © JefferyTanYongSheng

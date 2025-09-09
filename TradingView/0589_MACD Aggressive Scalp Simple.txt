@@ -1,0 +1,30 @@
+//@version=6
+strategy("MACD Aggressive Scalp Simple", shorttitle="MACD Aggressive", overlay=false,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=50, initial_capital=100000,
+         currency=currency.USD, slippage=0, commission_type=strategy.commission.percent, commission_value=0)
+
+// Create MACD indicator
+[macdLine, signalLine, macdHist] = ta.macd(close, 12, 26, 9)
+
+// Plot MACD indicator
+plot(macdLine, color=color.blue, title="MACD Line")
+plot(signalLine, color=color.orange, title="Signal Line")
+plot(macdHist, style=plot.style_columns, color=macdHist >= 0 ? color.green : color.red, title="MACD Histogram")
+
+// Short close/long entry condition
+if ta.crossover(macdHist, 0) and close >= ta.ema(close, 50)
+    strategy.close("short position")
+    strategy.entry("long position", strategy.long)
+
+// Long close/short entry condition
+if ta.crossunder(macdHist, 0) and close <= ta.ema(close, 50)
+    strategy.entry("short position", strategy.short)
+    strategy.close("long position")
+
+// Conditional long close based on momentum
+if macdHist[1] > macdHist[0] and strategy.position_size > 0 and strategy.position_size > 0
+    strategy.close("long position")
+
+// Conditional short close based on momentum
+if macdHist[1] < macdHist[0] and strategy.position_size < 0
+    strategy.close("short position")

@@ -1,0 +1,48 @@
+//@version=6
+strategy("DCA Strategy", overlay=true, calc_on_every_tick=false, initial_capital=10000, default_qty_type=strategy.percent_of_equity, pyramiding=1, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.1, slippage=0, fill_orders_on_standard_ohlc=true, margin_long=0, margin_short=0)
+
+// Vars
+var float investedCapital = 0
+var int lastBuyBarIndex = 0
+
+// Date condition inputs
+startDate = input.time(title="Start Date", defval=timestamp("1 Jan 2018 00:00 +0000"), group="Dates")
+endDate = input.time(title="End Date", defval=timestamp("31 Dec 2069 00:00 +0000"), group="Dates")
+timeCondition = time >= startDate and time <= endDate
+
+// Strategy settings
+toInvestQuote = input.int(title="Capital to invest per trade", defval=100, minval=0, group="Strategy", tooltip = "This refers to the 'right side' of the trading pair you are using aka. the 'quote asset'. For BTC/USD, it refers to USD. For BTC/GBP it refers to GBP.")
+toInvestBase = toInvestQuote/close
+
+closeAllOnLastCandle = input.bool(title="Close All on last candle", defval=true, group="Strategy", tooltip="Forces the strategy to close all long positions on the last candle so you can see its performance in the Strategy Tester. Turn it OFF when automating, otherwise it would sell at each candle open.")
+
+basedOnDayOfWeek = input.bool(title="Use Day of Week Mode", defval=true, group="Frequency")
+buyOnDayOfWeek = input.int(title="Day of Week", defval=1, minval=1, maxval=7, tooltip="Buy on every: 1 = Monday ... 7 = Sunday.", group="Frequency")
+basedOnXDays = input.int(title="Every X Candles", defval=7, minval=1, tooltip="Buy every X candles.", group="Frequency")
+
+longCondition = false
+
+if basedOnDayOfWeek
+    longCondition := dayofweek(time) == buyOnDayOfWeek and timeCondition // 1=Monday
+else
+    longCondition := ((lastBuyBarIndex == 0) or (lastBuyBarIndex + basedOnXDays == bar_index)) and timeCondition
+
+if (longCondition)
+    strategy.order(id="long"+str.tostring(bar_index), direction=strategy.long, qty=toInvestBase)
+    lastBuyBarIndex := bar_index
+    investedCapital := investedCapital + toInvestQuote
+
+if (time >= endDate) or (closeAllOnLastCandle and bar_index >= last_bar_index - 1)
+    strategy.close_all()
+
+var infoLabel = label.new(x=bar_index + 2, y=close, style=label.style_label_left, size=size.large, color=#ffeecc, textcolor=color.black, text=str.tostring(investedCapital))
+infoLabel.set_text(str.tostring(investedCapital))
+label.set_x(infoLabel, bar_index + 2)
+label.set_y(infoLabel, close)
+if strategy.initial_capital != investedCapital
+    label.set_color(infoLabel, color.red) // If Initial Capital does not match how much the strategy actually invested
+else
+    label.set_color(infoLabel, color.green) // Initial Capital is set correctly
+
+// Display equity line
+plot(title="Equity Line", series=strategy.equity, trackprice=true, display=display.data_window, color=color.red)

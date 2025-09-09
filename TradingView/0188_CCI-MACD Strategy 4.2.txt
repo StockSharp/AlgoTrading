@@ -1,0 +1,582 @@
+//@version=6
+strategy(title="CCI-MACD Strategy 4.2", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100, pyramiding=0)
+
+// === INPUT PARAMETRI ===
+// CCI Settings
+cciPeriod = input.int(14, title="Periodo CCI", minval=1)
+showCCISignals = input.bool(true, title="Mostra Segnali CCI")
+
+// MACD Filter Settings
+useMACDFilter = input.bool(true, title="Usa Filtro MACD per segnali CCI")
+macdFastLength = input.int(14, title="MACD Fast Length", minval=1)
+macdSlowLength = input.int(26, title="MACD Slow Length", minval=1)
+macdSignalLength = input.int(9, title="MACD Signal Length", minval=1)
+
+// EMA Settings per determinare i colori dei segnali
+ema125Period = input.int(125, title="Periodo EMA 125")
+ema750Period = input.int(750, title="Periodo EMA 750")
+atrMultiplier = input.float(18.0, title="Moltiplicatore ATR per le bande")
+
+// Risk Management
+riskRewardRatio = input.float(3.0, title="Risk/Reward Ratio", minval=0.1, maxval=10.0, step=0.1)
+
+// === IMPOSTAZIONI ORDINI LIMITE ===
+useLimitOrders = input.bool(true, title="Usa Ordini Limite invece di Market", group="Ordini Limite")
+limitOrderPercent = input.float(50.0, title="% della candela per ordine limite", minval=0, maxval=100.0, step=1.0, group="Ordini Limite")
+limitOrderBars = input.int(5, title="Validità ordine limite (barre)", minval=1, maxval=100, group="Ordini Limite")
+
+// === STOP LOSS ===
+stopLossOffset = input.float(0.0, title="Offset Stop Loss (pips +10000/-10000 )", minval=-10000.0, maxval=10000.0, step=1.0, group="Stop Loss")
+
+// === STOP A PAREGGIO ===
+enableBreakeven = input.bool(true, title="Abilita Stop a Pareggio", group="Stop a Pareggio")
+breakevenRR = input.float(1.0, title="R:R per attivare Stop a Pareggio", minval=0.5, maxval=5.0, step=0.1, group="Stop a Pareggio")
+breakevenOffset = input.float(0.0, title="Offset Stop a Pareggio (punti)", minval=0.0, step=0.1, group="Stop a Pareggio")
+
+// === FILTRO ORARIO ===
+enableTimeFilter = input.bool(false, title="Abilita Filtro Orario", group="Filtro Orario")
+startHour = input.int(7, title="Ora di inizio (0-23)", minval=0, maxval=23, group="Filtro Orario")
+startMinute = input.int(30, title="Minuto di inizio (0-59)", minval=0, maxval=59, group="Filtro Orario")
+endHour = input.int(8, title="Ora di fine (0-23)", minval=0, maxval=23, group="Filtro Orario")
+endMinute = input.int(45, title="Minuto di fine (0-59)", minval=0, maxval=59, group="Filtro Orario")
+
+// Funzione per verificare se siamo nell'orario consentito
+isInTimeRange() =>
+    if not enableTimeFilter
+        true
+    else
+        startTimeInMinutes = startHour * 60 + startMinute
+        endTimeInMinutes = endHour * 60 + endMinute
+        currentTimeInMinutes = hour * 60 + minute
+
+        if startTimeInMinutes <= endTimeInMinutes
+            currentTimeInMinutes >= startTimeInMinutes and currentTimeInMinutes <= endTimeInMinutes
+        else
+            // Caso in cui l'orario attraversa la mezzanotte
+            currentTimeInMinutes >= startTimeInMinutes or currentTimeInMinutes <= endTimeInMinutes
+
+// === CALCOLI INDICATORI ===
+// EMA
+ema125 = ta.ema(close, ema125Period)
+ema750 = ta.ema(close, ema750Period)
+
+// Bande ATR
+smootherATR = ta.ema(ta.tr, ema750Period)
+upperBand = ema750 + atrMultiplier * smootherATR
+lowerBand = ema750 - atrMultiplier * smootherATR
+
+// CCI Calculation
+cci = ta.cci(close, cciPeriod)
+cciCrossAbove = ta.crossover(cci, 0)
+cciCrossBelow = ta.crossunder(cci, 0)
+
+// MACD Calculation
+[macdLine, signalLine, histLine] = ta.macd(close, macdFastLength, macdSlowLength, macdSignalLength)
+macdBullish = macdLine > 0  // MACD sopra la linea dello zero
+macdBearish = macdLine < 0  // MACD sotto la linea dello zero
+
+// Filtered CCI Signals
+cciSignalUp = cciCrossAbove and (not useMACDFilter or macdBullish)
+cciSignalDown = cciCrossBelow and (not useMACDFilter or macdBearish)
+
+// === LOGICA PER DETERMINARE I COLORI DEI SEGNALI ===
+getCCISignalColor() =>
+    if close > ema125 and close > ema750 and close < upperBand and cciSignalUp
+        "aqua"  // Azzurro per segnali long validi
+    else if close < ema125 and close < ema750 and close > lowerBand and cciSignalDown
+        "red"   // Rosso per segnali short validi
+
+// Determina il colore del segnale attuale
+currentSignalColor = getCCISignalColor()
+
+// Condizioni per entrare in posizione (CON FILTRO ORARIO)
+longCondition = cciSignalUp and currentSignalColor == "aqua" and isInTimeRange()
+shortCondition = cciSignalDown and currentSignalColor == "red" and isInTimeRange()
+
+// === GESTIONE POSIZIONI ===
+// Variabili per tracking delle posizioni
+var float entryPrice = na
+var float stopLoss = na
+var float takeProfit = na
+var float signalCandleLow = na
+var float signalCandleHigh = na
+var bool breakevenTriggered = false
+var float breakevenLevel = na
+var float currentStopLoss = na
+
+// Variabili per ordini limite
+var float longLimitPrice = na
+var float shortLimitPrice = na
+var int limitOrderBar = na
+var bool longLimitPending = false
+var bool shortLimitPending = false
+
+// *** VARIABILI SEPARATE PER BREAKEVEN ORDINI LIMITE ***
+var bool limitOrderExecuted = false
+var int executionBar = na
+var bool limitBreakevenTriggered = false
+var float limitBreakevenLevel = na
+var float limitCurrentStopLoss = na
+
+// Variabili per tracking delle linee
+var line stopLossLine = na
+var line takeProfitLine = na
+var line breakevenLine = na
+var line limitLine = na
+
+// Funzione per convertire pips in punti
+pipsToPoints(pips) =>
+    pips * syminfo.mintick * 10
+
+// Funzione per calcolare il prezzo limite
+calculateLimitPrice(signalHigh, signalLow, isLong) =>
+    candleRange = signalHigh - signalLow
+    if isLong
+        signalLow + (candleRange * (limitOrderPercent / 100.0))
+    else
+        signalHigh - (candleRange * (limitOrderPercent / 100.0))
+
+// Long Signal Detection
+if longCondition and strategy.position_size == 0 and not longLimitPending
+    signalCandleLow := low
+
+    if useLimitOrders
+        longLimitPrice := calculateLimitPrice(high, low, true)
+        limitOrderBar := bar_index
+        longLimitPending := true
+        limitOrderExecuted := false
+        limitBreakevenTriggered := false
+
+        // Calcola stop loss e take profit basati sul prezzo limite
+        stopLoss := signalCandleLow - pipsToPoints(stopLossOffset)
+        riskAmount = longLimitPrice - stopLoss
+        takeProfit := longLimitPrice + (riskAmount * riskRewardRatio)
+        limitBreakevenLevel := longLimitPrice + breakevenOffset
+        limitCurrentStopLoss := stopLoss
+
+        // PIAZZA L'ORDINE LIMITE
+        strategy.entry("Long", strategy.long, limit=longLimitPrice)
+
+        // Disegna le linee di prezzo limite, stop loss e take profit
+        limitLine := line.new(bar_index, longLimitPrice, bar_index + limitOrderBars, longLimitPrice, color=color.blue, style=line.style_solid, width=1)
+        stopLossLine := line.new(bar_index, stopLoss, bar_index + 50, stopLoss, color=color.red, style=line.style_dotted, width=1)
+        takeProfitLine := line.new(bar_index, takeProfit, bar_index + 50, takeProfit, color=color.green, style=line.style_dotted, width=1)
+
+        // Disegna la linea di breakeven se abilitata
+        if enableBreakeven
+            breakevenLine := line.new(bar_index, limitBreakevenLevel, bar_index + 50, limitBreakevenLevel, color=color.yellow, style=line.style_dotted, width=1)
+
+        // Label con informazioni del trade
+        offsetText = stopLossOffset != 0 ? " (" + (stopLossOffset > 0 ? "+" : "") + str.tostring(stopLossOffset) + " pips)" : ""
+        breakevenText = enableBreakeven ? "\nBE: " + str.tostring(limitBreakevenLevel, "#.####") + " @" + str.tostring(breakevenRR) + ":1" : ""
+        expirationText = "\nScade in: " + str.tostring(limitOrderBars) + " barre"
+        label.new(bar_index, high, "LONG LIMIT (" + str.tostring(limitOrderPercent) + "%)\nLimit: " + str.tostring(longLimitPrice, "#.####") +
+                  "\nSL: " + str.tostring(stopLoss, "#.####") + offsetText +
+                  "\nTP: " + str.tostring(takeProfit, "#.####") + breakevenText + expirationText,
+                  color=color.blue, textcolor=color.white, size=size.small)
+    else
+        entryPrice := close
+        stopLoss := signalCandleLow - pipsToPoints(stopLossOffset)
+        riskAmount = entryPrice - stopLoss
+        takeProfit := entryPrice + (riskAmount * riskRewardRatio)
+        breakevenTriggered := false
+        breakevenLevel := entryPrice + breakevenOffset
+        currentStopLoss := stopLoss
+
+        // Disegna le linee per ordini a mercato
+        stopLossLine := line.new(bar_index, stopLoss, bar_index + 50, stopLoss, color=color.red, style=line.style_dotted, width=1)
+        takeProfitLine := line.new(bar_index, takeProfit, bar_index + 50, takeProfit, color=color.green, style=line.style_dotted, width=1)
+
+        if enableBreakeven
+            breakevenLine := line.new(bar_index, breakevenLevel, bar_index + 50, breakevenLevel, color=color.yellow, style=line.style_dotted, width=1)
+
+        strategy.entry("Long", strategy.long)
+
+// Short Signal Detection
+if shortCondition and strategy.position_size == 0 and not shortLimitPending
+    signalCandleHigh := high
+
+    if useLimitOrders
+        shortLimitPrice := calculateLimitPrice(high, low, false)
+        limitOrderBar := bar_index
+        shortLimitPending := true
+        limitOrderExecuted := false
+        limitBreakevenTriggered := false
+
+        // Calcola stop loss e take profit basati sul prezzo limite
+        stopLoss := signalCandleHigh + pipsToPoints(stopLossOffset)
+        riskAmount = stopLoss - shortLimitPrice
+        takeProfit := shortLimitPrice - (riskAmount * riskRewardRatio)
+        limitBreakevenLevel := shortLimitPrice - breakevenOffset
+        limitCurrentStopLoss := stopLoss
+
+        // PIAZZA L'ORDINE LIMITE
+        strategy.entry("Short", strategy.short, limit=shortLimitPrice)
+
+        // Disegna le linee di prezzo limite, stop loss e take profit
+        limitLine := line.new(bar_index, shortLimitPrice, bar_index + limitOrderBars, shortLimitPrice, color=color.rgb(241, 111, 4, 75), style=line.style_solid, width=1)
+        stopLossLine := line.new(bar_index, stopLoss, bar_index + 50, stopLoss, color=color.red, style=line.style_dotted, width=1)
+        takeProfitLine := line.new(bar_index, takeProfit, bar_index + 50, takeProfit, color=color.green, style=line.style_dotted, width=1)
+
+        // Disegna la linea di breakeven se abilitata
+        if enableBreakeven
+            breakevenLine := line.new(bar_index, limitBreakevenLevel, bar_index + 50, limitBreakevenLevel, color=color.yellow, style=line.style_dotted, width=1)
+
+        // Label con informazioni del trade
+        offsetText = stopLossOffset != 0 ? " (" + (stopLossOffset > 0 ? "+" : "") + str.tostring(stopLossOffset) + " pips)" : ""
+        breakevenText = enableBreakeven ? "\nBE: " + str.tostring(limitBreakevenLevel, "#.####") + " @" + str.tostring(breakevenRR) + ":1" : ""
+        expirationText = "\nScade in: " + str.tostring(limitOrderBars) + " barre"
+        label.new(bar_index, low, "SHORT LIMIT (" + str.tostring(limitOrderPercent) + "%)\nLimit: " + str.tostring(shortLimitPrice, "#.####") +
+                  "\nSL: " + str.tostring(stopLoss, "#.####") + offsetText +
+                  "\nTP: " + str.tostring(takeProfit, "#.####") + breakevenText + expirationText,
+                  color=color.red, textcolor=color.white, size=size.small, style=label.style_label_up)
+    else
+        entryPrice := close
+        stopLoss := signalCandleHigh + pipsToPoints(stopLossOffset)
+        riskAmount = stopLoss - entryPrice
+        takeProfit := entryPrice - (riskAmount * riskRewardRatio)
+        breakevenTriggered := false
+        breakevenLevel := entryPrice - breakevenOffset
+        currentStopLoss := stopLoss
+
+        // Disegna le linee per ordini a mercato
+        stopLossLine := line.new(bar_index, stopLoss, bar_index + 50, stopLoss, color=color.red, style=line.style_dotted, width=1)
+        takeProfitLine := line.new(bar_index, takeProfit, bar_index + 50, takeProfit, color=color.green, style=line.style_dotted, width=1)
+
+        if enableBreakeven
+            breakevenLine := line.new(bar_index, breakevenLevel, bar_index + 50, breakevenLevel, color=color.yellow, style=line.style_dotted, width=1)
+
+        strategy.entry("Short", strategy.short)
+
+// === GESTIONE ORDINI LIMITE CORRETTA ===
+if longLimitPending
+    // Calcola quante barre sono passate dalla creazione dell'ordine
+    barsElapsed = bar_index - limitOrderBar
+
+    // CONTROLLA SE L'ORDINE È STATO ESEGUITO
+    if strategy.position_size > 0 and strategy.position_size[1] == 0 and not limitOrderExecuted
+        limitOrderExecuted := true
+        executionBar := bar_index
+        entryPrice := longLimitPrice
+        longLimitPending := false
+
+        // Label di conferma entry
+        label.new(bar_index, longLimitPrice, "LONG EXECUTED\nBarra " + str.tostring(barsElapsed + 1) + "/" + str.tostring(limitOrderBars),
+                  color=color.green, textcolor=color.white, size=size.tiny)
+
+    // CONTROLLA SE È SCADUTO
+    else if barsElapsed > limitOrderBars
+        longLimitPending := false
+
+        // Cancella eventuali ordini pendenti di Pine Script
+        strategy.cancel("Long")
+
+        // Termina tutte le linee quando l'ordine scade
+        if not na(limitLine)
+            line.set_x2(limitLine, bar_index)
+            line.set_color(limitLine, color.gray)
+        if not na(stopLossLine)
+            line.set_x2(stopLossLine, bar_index)
+        if not na(takeProfitLine)
+            line.set_x2(takeProfitLine, bar_index)
+        if not na(breakevenLine)
+            line.set_x2(breakevenLine, bar_index)
+
+        // Reset delle variabili delle linee
+        limitLine := na
+        stopLossLine := na
+        takeProfitLine := na
+        breakevenLine := na
+
+        label.new(bar_index, longLimitPrice, "LIMIT EXPIRED\n(" + str.tostring(limitOrderBars) + " barre)",
+                  color=color.gray, textcolor=color.white, size=size.tiny)
+
+if shortLimitPending
+    // Calcola quante barre sono passate dalla creazione dell'ordine
+    barsElapsed = bar_index - limitOrderBar
+
+    // CONTROLLA SE L'ORDINE È STATO ESEGUITO
+    if strategy.position_size < 0 and strategy.position_size[1] == 0 and not limitOrderExecuted
+        limitOrderExecuted := true
+        executionBar := bar_index
+        entryPrice := shortLimitPrice
+        shortLimitPending := false
+
+        // Label di conferma entry
+        label.new(bar_index, shortLimitPrice, "SHORT EXECUTED\nBarra " + str.tostring(barsElapsed + 1) + "/" + str.tostring(limitOrderBars),
+                  color=color.green, textcolor=color.white, size=size.tiny)
+
+    // CONTROLLA SE È SCADUTO
+    else if barsElapsed > limitOrderBars
+        shortLimitPending := false
+
+        // Cancella eventuali ordini pendenti di Pine Script
+        strategy.cancel("Short")
+
+        // Termina tutte le linee quando l'ordine scade
+        if not na(limitLine)
+            line.set_x2(limitLine, bar_index)
+            line.set_color(limitLine, color.gray)
+        if not na(stopLossLine)
+            line.set_x2(stopLossLine, bar_index)
+        if not na(takeProfitLine)
+            line.set_x2(takeProfitLine, bar_index)
+        if not na(breakevenLine)
+            line.set_x2(breakevenLine, bar_index)
+
+        // Reset delle variabili delle linee
+        limitLine := na
+        stopLossLine := na
+        takeProfitLine := na
+        breakevenLine := na
+
+        label.new(bar_index, shortLimitPrice, "LIMIT EXPIRED\n(" + str.tostring(limitOrderBars) + " barre)",
+                  color=color.gray, textcolor=color.white, size=size.tiny)
+
+// === GESTIONE BREAKEVEN PER ORDINI A MERCATO ===
+if enableBreakeven and strategy.position_size != 0 and not breakevenTriggered and not limitOrderExecuted
+    if strategy.position_size > 0  // Long position
+        riskAmount = entryPrice - stopLoss
+        breakevenTriggerPrice = entryPrice + (riskAmount * breakevenRR)
+        if high >= breakevenTriggerPrice
+            breakevenTriggered := true
+            currentStopLoss := breakevenLevel
+
+            // Aggiorna la linea dello stop loss
+            if not na(stopLossLine)
+                line.set_xy1(stopLossLine, bar_index, breakevenLevel)
+                line.set_xy2(stopLossLine, bar_index + 20, breakevenLevel)
+                line.set_color(stopLossLine, color.orange)
+                line.set_style(stopLossLine, line.style_solid)
+
+            line.new(bar_index, breakevenLevel, bar_index + 20, breakevenLevel, color=color.orange, style=line.style_solid, width=2)
+            label.new(bar_index, breakevenLevel, "BREAKEVEN ATTIVATO", color=color.orange, textcolor=color.white, size=size.tiny)
+        else
+            currentStopLoss := stopLoss
+
+    if strategy.position_size < 0  // Short position
+        riskAmount = stopLoss - entryPrice
+        breakevenTriggerPrice = entryPrice - (riskAmount * breakevenRR)
+        if low <= breakevenTriggerPrice
+            breakevenTriggered := true
+            currentStopLoss := breakevenLevel
+
+            // Aggiorna la linea dello stop loss
+            if not na(stopLossLine)
+                line.set_xy1(stopLossLine, bar_index, breakevenLevel)
+                line.set_xy2(stopLossLine, bar_index + 20, breakevenLevel)
+                line.set_color(stopLossLine, color.orange)
+                line.set_style(stopLossLine, line.style_solid)
+
+            line.new(bar_index, breakevenLevel, bar_index + 20, breakevenLevel, color=color.orange, style=line.style_solid, width=2)
+            label.new(bar_index, breakevenLevel, "BREAKEVEN ATTIVATO", color=color.orange, textcolor=color.white, size=size.tiny)
+        else
+            currentStopLoss := stopLoss
+
+// === GESTIONE BREAKEVEN SEPARATA PER ORDINI LIMITE ===
+if enableBreakeven and limitOrderExecuted and strategy.position_size != 0 and not limitBreakevenTriggered
+    if strategy.position_size > 0  // Long position da ordine limite
+        riskAmount = entryPrice - stopLoss
+        breakevenTriggerPrice = entryPrice + (riskAmount * breakevenRR)
+        if high >= breakevenTriggerPrice
+            limitBreakevenTriggered := true
+            limitCurrentStopLoss := limitBreakevenLevel
+
+            // Aggiorna la linea dello stop loss
+            if not na(stopLossLine)
+                line.set_xy1(stopLossLine, bar_index, limitBreakevenLevel)
+                line.set_xy2(stopLossLine, bar_index + 20, limitBreakevenLevel)
+                line.set_color(stopLossLine, color.orange)
+                line.set_style(stopLossLine, line.style_solid)
+
+            line.new(bar_index, limitBreakevenLevel, bar_index + 20, limitBreakevenLevel, color=color.orange, style=line.style_solid, width=2)
+            label.new(bar_index, limitBreakevenLevel, "LIMIT BREAKEVEN ATTIVATO", color=color.orange, textcolor=color.white, size=size.tiny)
+
+    if strategy.position_size < 0  // Short position da ordine limite
+        riskAmount = stopLoss - entryPrice
+        breakevenTriggerPrice = entryPrice - (riskAmount * breakevenRR)
+        if low <= breakevenTriggerPrice
+            limitBreakevenTriggered := true
+            limitCurrentStopLoss := limitBreakevenLevel
+
+            // Aggiorna la linea dello stop loss
+            if not na(stopLossLine)
+                line.set_xy1(stopLossLine, bar_index, limitBreakevenLevel)
+                line.set_xy2(stopLossLine, bar_index + 20, limitBreakevenLevel)
+                line.set_color(stopLossLine, color.orange)
+                line.set_style(stopLossLine, line.style_solid)
+
+            line.new(bar_index, limitBreakevenLevel, bar_index + 20, limitBreakevenLevel, color=color.orange, style=line.style_solid, width=2)
+            label.new(bar_index, limitBreakevenLevel, "LIMIT BREAKEVEN ATTIVATO", color=color.orange, textcolor=color.white, size=size.tiny)
+
+// Determina quale stop loss usare
+finalStopLoss = limitOrderExecuted ? limitCurrentStopLoss : currentStopLoss
+
+// Imposta finalStopLoss se non è ancora stato inizializzato
+if strategy.position_size != 0 and na(finalStopLoss)
+    finalStopLoss := stopLoss
+
+// === EXIT CONDITIONS ===
+if strategy.position_size > 0  // Long position
+    strategy.exit("Long Exit", "Long", stop=finalStopLoss, limit=takeProfit)
+
+if strategy.position_size < 0  // Short position
+    strategy.exit("Short Exit", "Short", stop=finalStopLoss, limit=takeProfit)
+
+// Gestione delle linee quando la posizione si chiude
+if strategy.position_size == 0 and strategy.position_size[1] != 0
+    // Reset di tutte le variabili quando la posizione si chiude
+    limitOrderExecuted := false
+    executionBar := na
+    limitBreakevenTriggered := false
+    breakevenTriggered := false
+
+    // Termina le linee
+    if not na(stopLossLine)
+        line.set_x2(stopLossLine, bar_index)
+    if not na(takeProfitLine)
+        line.set_x2(takeProfitLine, bar_index)
+    if not na(breakevenLine)
+        line.set_x2(breakevenLine, bar_index)
+
+    // Reset delle variabili delle linee
+    stopLossLine := na
+    takeProfitLine := na
+    breakevenLine := na
+    limitLine := na
+
+// === PLOT DEGLI INDICATORI ===
+// Plot EMA
+plot(ema125, title="EMA 125", color=color.orange, linewidth=1)
+plot(ema750, title="EMA 750", color=color.white, linewidth=2)
+
+// Plot Bande
+plot(upperBand, title="Upper Band", color=color.gray, linewidth=1)
+plot(lowerBand, title="Lower Band", color=color.gray, linewidth=1)
+
+// Plot dei segnali CCI con colori dinamici
+plotshape(showCCISignals and cciSignalUp, title="CCI Long Signal",
+          location=location.belowbar,
+          color=currentSignalColor == "aqua" ? color.aqua : color.yellow,
+          style=shape.circle, size=size.tiny)
+
+plotshape(showCCISignals and cciSignalDown, title="CCI Short Signal",
+          location=location.abovebar,
+          color=currentSignalColor == "red" ? color.red : color.yellow,
+          style=shape.circle, size=size.tiny)
+
+// Evidenzia le candele dei segnali validi
+bgcolor(longCondition ? color.new(color.blue, 90) : na)
+bgcolor(shortCondition ? color.new(color.red, 90) : na)
+
+// Evidenzia quando c'è un ordine limite pendente
+bgcolor(longLimitPending ? color.new(color.blue, 95) : na)
+bgcolor(shortLimitPending ? color.new(color.red, 95) : na)
+
+// === ALERT ===
+if longCondition and useLimitOrders
+    alert("CCI-MACD LONG LIMIT ORDER - Limit: " + str.tostring(longLimitPrice) + " SL: " + str.tostring(stopLoss) + " TP: " + str.tostring(takeProfit), alert.freq_once_per_bar_close)
+
+if shortCondition and useLimitOrders
+    alert("CCI-MACD SHORT LIMIT ORDER - Limit: " + str.tostring(shortLimitPrice) + " SL: " + str.tostring(stopLoss) + " TP: " + str.tostring(takeProfit), alert.freq_once_per_bar_close)
+
+if longCondition and not useLimitOrders
+    alert("CCI-MACD LONG SIGNAL - Entry: " + str.tostring(close) + " SL: " + str.tostring(stopLoss) + " TP: " + str.tostring(takeProfit), alert.freq_once_per_bar_close)
+
+if shortCondition and not useLimitOrders
+    alert("CCI-MACD SHORT SIGNAL - Entry: " + str.tostring(close) + " SL: " + str.tostring(stopLoss) + " TP: " + str.tostring(takeProfit), alert.freq_once_per_bar_close)
+
+// === TABELLA INFORMATIVA ===
+var table infoTable = table.new(position.top_right, 2, 14, bgcolor=color.white, border_width=1)
+
+if barstate.islast
+    table.cell(infoTable, 0, 0, "Strategia", text_color=color.black, bgcolor=color.yellow)
+    table.cell(infoTable, 1, 0, "CCI-MACD", text_color=color.black)
+
+    table.cell(infoTable, 0, 1, "Ordini Limite", text_color=color.black)
+    orderTypeText = useLimitOrders ? "ON (" + str.tostring(limitOrderPercent) + "%)" : "OFF (Market)"
+    orderTypeColor = useLimitOrders ? color.purple : color.gray
+    table.cell(infoTable, 1, 1, orderTypeText, text_color=color.white, bgcolor=orderTypeColor)
+
+    table.cell(infoTable, 0, 2, "SL Offset", text_color=color.black)
+    slOffsetText = str.tostring(stopLossOffset) + " pips"
+    slOffsetColor = stopLossOffset == 0 ? color.gray : stopLossOffset > 0 ? color.red : color.green
+    table.cell(infoTable, 1, 2, slOffsetText, text_color=color.white, bgcolor=slOffsetColor)
+
+    table.cell(infoTable, 0, 3, "Limite Pendente", text_color=color.black)
+    pendingText = longLimitPending ? "LONG" : shortLimitPending ? "SHORT" : "NESSUNO"
+    pendingColor = longLimitPending ? color.blue : shortLimitPending ? color.red : color.gray
+    table.cell(infoTable, 1, 3, pendingText, text_color=color.white, bgcolor=pendingColor)
+
+    table.cell(infoTable, 0, 4, "Filtro Orario", text_color=color.black)
+    timeFilterText = enableTimeFilter ? "ON (" + str.tostring(startHour) + ":" + str.tostring(startMinute, "00") + "-" + str.tostring(endHour) + ":" + str.tostring(endMinute, "00") + ")" : "OFF"
+    timeFilterColor = enableTimeFilter ? color.green : color.gray
+    table.cell(infoTable, 1, 4, timeFilterText, text_color=color.white, bgcolor=timeFilterColor)
+
+    table.cell(infoTable, 0, 5, "Stop a Pareggio", text_color=color.black)
+    breakevenText = enableBreakeven ? "ON @" + str.tostring(breakevenRR) + ":1" : "OFF"
+    breakevenColor = enableBreakeven ? color.orange : color.gray
+    table.cell(infoTable, 1, 5, breakevenText, text_color=color.white, bgcolor=breakevenColor)
+
+    table.cell(infoTable, 0, 6, "BE Status", text_color=color.black)
+    beStatusText = ""
+    beStatusColor = color.gray
+    if strategy.position_size != 0
+        if limitOrderExecuted
+            beStatusText := limitBreakevenTriggered ? "ATTIVATO (L)" : "IN ATTESA (L)"
+            beStatusColor := limitBreakevenTriggered ? color.green : color.yellow
+        else
+            beStatusText := breakevenTriggered ? "ATTIVATO (M)" : "IN ATTESA (M)"
+            beStatusColor := breakevenTriggered ? color.green : color.yellow
+    else
+        beStatusText := "-"
+    table.cell(infoTable, 1, 6, beStatusText, text_color=color.white, bgcolor=beStatusColor)
+
+    table.cell(infoTable, 0, 7, "Posizione", text_color=color.black)
+    positionText = strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "FLAT"
+    positionColor = strategy.position_size > 0 ? color.green : strategy.position_size < 0 ? color.red : color.gray
+    table.cell(infoTable, 1, 7, positionText, text_color=color.white, bgcolor=positionColor)
+
+    table.cell(infoTable, 0, 8, "Entry", text_color=color.black)
+    table.cell(infoTable, 1, 8, strategy.position_size != 0 ? str.tostring(entryPrice, "#.####") : "-", text_color=color.black)
+
+    table.cell(infoTable, 0, 9, "Stop Loss", text_color=color.black)
+    stopLossText = strategy.position_size != 0 ? str.tostring(finalStopLoss, "#.####") : "-"
+    stopLossColor = (limitOrderExecuted and limitBreakevenTriggered) or (not limitOrderExecuted and breakevenTriggered) ? color.orange : color.white
+    table.cell(infoTable, 1, 9, stopLossText, text_color=color.black, bgcolor=stopLossColor)
+
+    table.cell(infoTable, 0, 10, "Take Profit", text_color=color.black)
+    table.cell(infoTable, 1, 10, strategy.position_size != 0 ? str.tostring(takeProfit, "#.####") : "-", text_color=color.black)
+
+    table.cell(infoTable, 0, 11, "R:R Ratio", text_color=color.black)
+    table.cell(infoTable, 1, 11, "1:" + str.tostring(riskRewardRatio), text_color=color.black)
+
+    table.cell(infoTable, 0, 12, "Barre Rimanenti", text_color=color.black)
+    if longLimitPending or shortLimitPending
+        barsElapsed = bar_index - limitOrderBar
+        barsRemaining = limitOrderBars - barsElapsed
+        barsRemainingText = barsRemaining > 0 ? str.tostring(barsRemaining) : "SCADUTO"
+        barsRemainingColor = barsRemaining > 2 ? color.green : barsRemaining > 0 ? color.orange : color.red
+        table.cell(infoTable, 1, 12, barsRemainingText, text_color=color.white, bgcolor=barsRemainingColor)
+    else
+        table.cell(infoTable, 1, 12, "-", text_color=color.black)
+
+    table.cell(infoTable, 0, 13, "Tipo Ordine", text_color=color.black)
+    orderExecutionText = ""
+    orderExecutionColor = color.gray
+    if strategy.position_size != 0
+        if limitOrderExecuted
+            orderExecutionText := "LIMITE"
+            orderExecutionColor := color.purple
+        else
+            orderExecutionText := "MERCATO"
+            orderExecutionColor := color.blue
+    else
+        orderExecutionText := "-"
+    table.cell(infoTable, 1, 13, orderExecutionText, text_color=color.white, bgcolor=orderExecutionColor)
+
+// === DEBUG INFO (opzionale) ===
+// Uncomment per debug
+// plotchar(limitOrderExecuted, "Limit Executed", "L", location.top)
+// plotchar(limitBreakevenTriggered, "Limit BE Triggered", "B", location.top)
+// plotchar(breakevenTriggered, "Market BE Triggered", "M", location.top)

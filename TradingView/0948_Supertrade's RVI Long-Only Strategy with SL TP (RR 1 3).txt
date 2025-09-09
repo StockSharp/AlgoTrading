@@ -1,0 +1,28 @@
+//@version=6
+strategy("Supertrade's RVI Long-Only Strategy with SL/TP (RR 1:3)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === RVI Calculation ===
+length = input.int(10, minval=1)
+len = 14
+src = close
+stddev = ta.stdev(src, length)
+upper = ta.ema(ta.change(src) <= 0 ? 0 : stddev, len)
+lower = ta.ema(ta.change(src) > 0 ? 0 : stddev, len)
+rvi = upper / (upper + lower) * 100
+
+plot(rvi, title="RVI", color=color.purple)
+
+// === Strategy Logic (Long Only) ===
+longCond = ta.crossover(rvi, 20)
+
+// === SL/TP Logic ===
+risk = input.float(1.0, title="Stop Loss (%)", minval=0.1, step=0.1)  // % from entry
+rewardRatio = 3.0  // R:R = 1:3
+
+longSL = close * (1 - risk / 100)
+longTP = close * (1 + (risk * rewardRatio) / 100)
+
+// === Long Entry and Exit ===
+if (longCond)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long Exit", from_entry="Long", stop=longSL, limit=longTP)

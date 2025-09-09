@@ -1,0 +1,46 @@
+//@version=6
+strategy(
+     "Simple APF Strategy Backtesting [The Quant Science]",
+     overlay = true,
+     default_qty_type = strategy.percent_of_equity,
+     default_qty_value = 100,
+     pyramiding = 1,
+     currency = currency.EUR,
+     initial_capital = 1000000,
+     slippage = 5,
+     commission_type = strategy.commission.percent,
+     commission_value = 0.07,
+     process_orders_on_close = true,
+     close_entries_rule = "ANY"
+     )
+
+tooltip3 = "Set the length of the data used in the autocorrelation price forecasting model."
+_length = input.int(defval = 20, title = "Length", step = 1, minval = 1, maxval = 200, tooltip = tooltip3, group = "AUTOCORRELATION PRICE FORECASTING CONFIGURATION")
+signal_threshold = 0.50
+thresold_content = "Minimum value to be considered for opening trades based on future price forecast."
+thresold_gain = input.float(defval = 10.00, title = "Threshold Gain", minval = 0.10, group = "STRATEGY CONFIGURATION", step = 0.50, inline = "strategy-configuration", tooltip = thresold_content)
+size = input.float(defval = 2.00, title = "Order size (%)", minval = 0.10, step = 0.10, maxval = 100, group = "RISK MANAGEMENT")
+prices = close
+autocorr_values = ta.correlation(prices, prices[_length], 200)
+cycle_detected = autocorr_values > signal_threshold
+returns = (prices - prices[1]) / prices[1] * 100
+linreg_values = ta.linreg(returns, _length, 0)
+
+var float store_cycle_value = 0
+if (cycle_detected)
+    store_cycle_value := linreg_values
+
+future_price_estimate = close * (1 + store_cycle_value / 100)
+hipotetical_gain = future_price_estimate - close
+order_size = strategy.initial_capital * size / 100
+qty_orders = order_size/close
+
+var float takeprofit = 0
+var float exitp = 0
+var float entry_price = 0
+
+if ((hipotetical_gain > thresold_gain) and (strategy.opentrades==0))
+    exitp := close + hipotetical_gain
+    entry_price := close
+    strategy.entry(id="LONG", direction = strategy.long, qty = qty_orders, limit = entry_price)
+strategy.exit(id = "CLOSE-LONG", from_entry = "LONG", limit = exitp)

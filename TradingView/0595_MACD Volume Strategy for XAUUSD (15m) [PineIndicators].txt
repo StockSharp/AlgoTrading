@@ -1,0 +1,86 @@
+//@version=5
+strategy('MACD Volume Strategy for XAUUSD (15m) [PineIndicators]', overlay=true, commission_value = 0.01, default_qty_type = strategy.percent_of_equity, default_qty_value = 100, slippage = 2, max_boxes_count = 500, max_labels_count = 500, max_lines_count = 500)
+
+leverage = input.float(1, "Leverage 1:", tooltip = "Leverage your equity (Equity * Leverage / Close)", step=0.01)
+
+src = close
+
+shortlen = input.int(5, minval=1, title = "Short Length")
+longlen = input.int(8, minval=1, title = "Long Length")
+short = ta.ema(volume, shortlen)
+long = ta.ema(volume, longlen)
+osc = 100 * (short - long) / long
+
+
+//MACD
+fast_length = 16
+slow_length =26
+
+signal_length = 9
+sma_source ="EMA"
+sma_signal = "EMA"
+
+// Calculating
+fast_ma = sma_source == "SMA" ? ta.sma(src, fast_length) : ta.ema(src, fast_length)
+slow_ma = sma_source == "SMA" ? ta.sma(src, slow_length) : ta.ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = sma_signal == "SMA" ? ta.sma(macd, signal_length) : ta.ema(macd, signal_length)
+hist = macd - signal
+
+//Long Short signals
+longSignal = ta.crossover(macd, 0) and osc > 0 and volume > volume[1] / 2
+
+shortSignal = ta.crossunder(macd, 0) and osc > 0 and volume < volume[1] / 2
+
+
+qty = strategy.equity * leverage / close
+
+//Entry Exit
+if longSignal
+    strategy.entry("L", strategy.long, qty=qty)
+
+if shortSignal
+    strategy.entry("S", strategy.short, qty=qty)
+
+t = 10100
+
+strategy.exit("L", profit=t*1.1, loss=t)
+strategy.exit("S", profit=t*1.1, loss=t)
+
+//Plots
+green   = color.new(#0097a7, 0)
+red     = color.new(#ff195f, 0)
+green90 = color.new(#0097a7, 85)
+red90   = color.new(#ff195f, 85)
+
+if strategy.position_size > strategy.position_size[1]
+    label.new(bar_index, low * 0.999, text="▲", textcolor=green, size=size.normal, textalign=text.align_center, color=green90, style=label.style_text_outline)
+    label.new(bar_index, low * 0.999, text="Buy", textcolor=green, size=size.tiny, textalign=text.align_center, color=green90, style=label.style_label_up)
+
+if strategy.position_size < strategy.position_size[1]
+    label.new(bar_index, high * 1.001, text="▼", textcolor=red, size=size.normal, textalign=text.align_center, color=red90, style=label.style_text_outline)
+    label.new(bar_index, high * 1.001, text="Close", textcolor=red, size=size.tiny, textalign=text.align_center, color=red90, style=label.style_label_down)
+
+// --- Speichere Trade-Daten ---
+var float tradeEntryPrice = na
+var int   tradeEntryBar   = na
+
+// Beim Einstieg (von keiner Position zu Long): Entry-Daten erfassen
+if strategy.position_size > 0 and strategy.position_size[1] == 0
+    tradeEntryPrice := close
+    tradeEntryBar   := bar_index
+
+// Beim Trade-Schluss: Box mit Fill und horizontale Linien zeichnen
+if strategy.position_size == 0 and strategy.position_size[1] > 0
+    exitPrice = close
+    exitBar   = bar_index
+    // Farbe: Gewinn → grün, Verlust → rot
+    tradeColor = (exitPrice - tradeEntryPrice > 0) ? green : red
+    // Bestimme obere und untere Preisgrenze (unabhängig von Trade-Richtung)
+    topPrice    = math.max(tradeEntryPrice, exitPrice)
+    bottomPrice = math.min(tradeEntryPrice, exitPrice)
+    // Zeichne eine Box ohne sichtbare Ränder (nur Füllung)
+    box.new(tradeEntryBar, topPrice, exitBar, bottomPrice, border_width=0, bgcolor=color.new(tradeColor, 85))
+    // Zeichne horizontale Linien (nur oben und unten)
+    line.new(tradeEntryBar, topPrice, exitBar, topPrice, color=tradeColor, width=1)
+    line.new(tradeEntryBar, bottomPrice, exitBar, bottomPrice, color=tradeColor, width=1)

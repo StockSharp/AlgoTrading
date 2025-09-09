@@ -1,0 +1,46 @@
+//@version=5
+strategy("Buy When There's Blood in the Streets Strategy", overlay=false, shorttitle="BloodInTheStreets")
+
+
+//This strategy identifies opportunities to buy during extreme market drawdowns based on standard deviation thresholds.
+//It calculates the maximum drawdown over a user-defined lookback period, identifies extreme deviations from the mean,
+//and triggers long entries when specific conditions are met. The position is exited after a defined number of bars.
+
+
+// User Inputs
+lookbackPeriod = input.int(50, title="Lookback Period", minval=1, tooltip="Period to calculate the highest high for drawdown")
+stdDevLength = input.int(50, title="Standard Deviation Length", minval=1, tooltip="Length of the period to calculate standard deviation")
+stdDevThreshold = input.float(-1.0, title="Standard Deviation Threshold", tooltip="Trigger level for long entry based on deviations")
+exitBars = input.int(35, title="Exit After (Bars)", minval=1, tooltip="Number of bars after which to exit the trade")
+
+// Drawdown Calculation
+peakHigh = ta.highest(high, lookbackPeriod)
+drawdown = ((close - peakHigh) / peakHigh) * 100
+
+// Standard Deviation Calculation
+drawdownStdDev = ta.stdev(drawdown, stdDevLength)
+meanDrawdown = ta.sma(drawdown, stdDevLength)
+
+// Define Standard Deviation Levels
+stdDev1 = meanDrawdown - drawdownStdDev
+stdDev2 = meanDrawdown - 2 * drawdownStdDev
+stdDev3 = meanDrawdown - 3 * drawdownStdDev
+
+// Plot Drawdown and Levels
+plot(drawdown, color=color.red, linewidth=2, title="Drawdown (%)")
+plot(meanDrawdown, color=color.blue, linewidth=2, title="Mean Drawdown")
+plot(stdDev1, color=color.green, linewidth=1, title="1st Std Dev")
+plot(stdDev2, color=color.orange, linewidth=1, title="2nd Std Dev")
+plot(stdDev3, color=color.purple, linewidth=1, title="3rd Std Dev")
+
+// Entry Condition
+var float entryBar = na
+goLong = drawdown <= meanDrawdown + stdDevThreshold * drawdownStdDev
+
+if (goLong and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    entryBar := bar_index
+
+// Exit Condition
+if (strategy.position_size > 0 and not na(entryBar) and bar_index - entryBar >= exitBars)
+    strategy.close("Long")

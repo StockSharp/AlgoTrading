@@ -1,0 +1,205 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fikira
+//@version=4
+study("Dominance tagcloud", max_bars_back=500, max_lines_count=500)
+
+//i_num  = input(0, title="switch", minval=0, maxval=10)
+
+i_move = input(true, title="Moving boxes?")
+i_side = input(true, title="Label at the side")
+
+var min = 100
+var max = 500
+
+// x2/y2 ————— x1/y2
+//   |           |
+//   |           |
+// x2/y1 ————— x1/y1
+
+
+f_overlap(x1_a, y1_a, x2_a, y2_a, x1_b, y1_b, x2_b, y2_b) =>
+    (
+     (x2_a >= x2_b and x2_a <= x1_b) or (x2_a <= x2_b and x1_a >= x2_b)
+     or
+     (x2_b >= x2_a and x2_b <= x1_a) or (x2_b <= x2_a and x1_b >= x2_a)
+     )
+     and
+     (
+     (y1_a >= y1_b and y1_a <= y2_b) or (y1_a <= y1_b and y2_a >= y1_b)
+     or
+     (y1_b >= y1_a and y1_b <= y2_a) or (y1_b <= y1_a and y2_b >= y1_a)
+     )
+      ? true : false
+
+var a_ticker    = array.new_string()
+var a_dominance = array.new_float()
+
+f_unshift(_name, _dom) =>
+    array.unshift(a_ticker, _name)
+    array.unshift(a_dominance, _dom)
+
+secBTCc   = security("CRYPTOCAP:BTC.D"    , "", close), f_unshift("BTC", secBTCc)
+secETHc   = security("CRYPTOCAP:ETH.D"    , "", close), f_unshift("ETH", secETHc)
+secBNBc   = security("CRYPTOCAP:BNB.D"    , "", close), f_unshift("BNB", secBNBc)
+secDOTc   = security("CRYPTOCAP:DOT.D"    , "", close), f_unshift("DOT", secDOTc)
+secADAc   = security("CRYPTOCAP:ADA.D"    , "", close), f_unshift("ADA", secADAc)
+secXRPc   = security("CRYPTOCAP:XRP.D"    , "", close), f_unshift("XRP", secXRPc)
+secLTCc   = security("CRYPTOCAP:LTC.D"    , "", close), f_unshift("LTC", secLTCc)
+//secLINKc  = security("CRYPTOCAP:LINK"     , "", close), f_unshift("LINK", secLINKc)
+secBCHc   = security("CRYPTOCAP:BCH.D"    , "", close), f_unshift("BCH", secBCHc)
+secXLMc   = security("CRYPTOCAP:XLM.D"    , "", close), f_unshift("XLM", secXLMc)
+secEOSc   = security("CRYPTOCAP:EOS.D"    , "", close), f_unshift("EOS", secEOSc)
+secXMRc   = security("CRYPTOCAP:XMR.D"    , "", close), f_unshift("XMR", secXMRc)
+secTRXc   = security("CRYPTOCAP:TRX.D"    , "", close), f_unshift("TRX", secTRXc)
+secBSVc   = security("CRYPTOCAP:BSV.D"    , "", close), f_unshift("BSV", secBSVc)
+secMIOTAc = security("CRYPTOCAP:MIOTA.D"  , "", close), f_unshift("MIOTA", secMIOTAc)
+secOTHc   = security("CRYPTOCAP:OTHERS.D" , "", close), f_unshift("OTHERS", secOTHc)
+secUSDTc  = security("CRYPTOCAP:USDT.D"   , "", close), f_unshift("USDT", secUSDTc)
+
+// LINK is put at the "side line" because he misbehaves (don't know why...), plot(secLINKc)
+
+f_makeRect(i) =>
+    //randX = int(random(min, max, 0)[i_num])
+    //randY = int(random(min, max, 0)[i_num])
+
+    randX = int(random(min, max, 0))
+    randY = int(random(min, max, 0))
+
+    x1 = timenow - ((time_close - time_close[1]) * randX)                       // random x1
+
+    x2_= randX + 5 * array.get(a_dominance, i)
+    x2 = timenow - ((time_close - time_close[1]) * round(x2_))                  // x1 + mult of the ticker's Dominance
+
+    y1 = randY                                                                  // random y1
+
+    y2 = y1  + 5 * array.get(a_dominance, i)                                    // y1 + mult of the ticker's Dominance
+
+    x1Lab = round(avg(x1, x2))
+    y1Lab = avg(y1, y2)
+
+    txt = array.get(a_ticker, i) + " " + tostring(round(array.get(a_dominance, i), 2))
+
+    size = i_side ? size.small :
+     array.get(a_dominance, i) > 40 ? size.huge : array.get(a_dominance, i) > 20 ? size.large : array.get(a_dominance, i) > 5 ? size.small : size.tiny
+
+    [x1, y1, x2, y2, x1Lab, y1Lab, txt, size]
+
+f_drawRect(x1, y1, x2, y2, x1Lab, y1Lab, txt, size, col, yLabSide) =>
+
+    lab = i_side ?
+     label.new(x = timenow, y = yLabSide, xloc = xloc.bar_time, text = txt, style = label.style_none, textcolor = col, size = size) :
+     label.new(x = x1Lab  , y = y1Lab   , xloc = xloc.bar_time, text = txt, style = label.style_none, textcolor = col, size = size)
+    label.delete(lab[1])
+
+    lineT = line.new(x1, y2, x2, y2, xloc = xloc.bar_time, color=col), line.delete(lineT[1])
+    lineR = line.new(x1, y1, x1, y2, xloc = xloc.bar_time, color=col), line.delete(lineR[1])
+    lineB = line.new(x1, y1, x2, y1, xloc = xloc.bar_time, color=col), line.delete(lineB[1])
+    lineL = line.new(x2, y1, x2, y2, xloc = xloc.bar_time, color=col), line.delete(lineL[1])
+
+cnt = 1
+
+var a_x1_ = array.new_int()
+var a_y1_ = array.new_float()
+var a_x2_ = array.new_int()
+var a_y2_ = array.new_float()
+
+for x = 0 to 999999
+    // while counter > 0
+    // and time is recent (otherwise older values will appear)
+    if cnt > 0 and
+     (
+     i_move ? time > timenow - ((time_close - time_close[1]) * 2) :
+     time < timenow - ((time_close - time_close[1]) * 1) and time > timenow - ((time_close - time_close[1]) * 3)
+     )
+        // clear set
+        array.clear(a_x1_), array.clear(a_y1_), array.clear(a_x2_), array.clear(a_y2_)
+
+        // make rectangles
+        [xa1 , ya1 , xb1 , yb1 , xLab1 , yLab1 , txt1 , size1 ] = f_makeRect(array.size(a_ticker) -1 )
+        [xa2 , ya2 , xb2 , yb2 , xLab2 , yLab2 , txt2 , size2 ] = f_makeRect(array.size(a_ticker) -2 )
+        [xa3 , ya3 , xb3 , yb3 , xLab3 , yLab3 , txt3 , size3 ] = f_makeRect(array.size(a_ticker) -3 )
+        [xa4 , ya4 , xb4 , yb4 , xLab4 , yLab4 , txt4 , size4 ] = f_makeRect(array.size(a_ticker) -4 )
+        [xa5 , ya5 , xb5 , yb5 , xLab5 , yLab5 , txt5 , size5 ] = f_makeRect(array.size(a_ticker) -5 )
+        [xa6 , ya6 , xb6 , yb6 , xLab6 , yLab6 , txt6 , size6 ] = f_makeRect(array.size(a_ticker) -6 )
+        [xa7 , ya7 , xb7 , yb7 , xLab7 , yLab7 , txt7 , size7 ] = f_makeRect(array.size(a_ticker) -7 )
+        [xa8 , ya8 , xb8 , yb8 , xLab8 , yLab8 , txt8 , size8 ] = f_makeRect(array.size(a_ticker) -8 )
+        [xa9 , ya9 , xb9 , yb9 , xLab9 , yLab9 , txt9 , size9 ] = f_makeRect(array.size(a_ticker) -9 )
+        [xa10, ya10, xb10, yb10, xLab10, yLab10, txt10, size10] = f_makeRect(array.size(a_ticker) -10)
+        [xa11, ya11, xb11, yb11, xLab11, yLab11, txt11, size11] = f_makeRect(array.size(a_ticker) -11)
+        [xa12, ya12, xb12, yb12, xLab12, yLab12, txt12, size12] = f_makeRect(array.size(a_ticker) -12)
+        [xa13, ya13, xb13, yb13, xLab13, yLab13, txt13, size13] = f_makeRect(array.size(a_ticker) -13)
+        [xa14, ya14, xb14, yb14, xLab14, yLab14, txt14, size14] = f_makeRect(array.size(a_ticker) -14)
+        [xa15, ya15, xb15, yb15, xLab15, yLab15, txt15, size15] = f_makeRect(array.size(a_ticker) -15)
+        [xa16, ya16, xb16, yb16, xLab16, yLab16, txt16, size16] = f_makeRect(array.size(a_ticker) -16)
+
+        // put x-y values of each rectangle in array's
+        array.unshift(a_x1_, xa1 ), array.unshift(a_y1_, ya1 ), array.unshift(a_x2_, xb1 ),array.unshift(a_y2_, yb1 )
+        array.unshift(a_x1_, xa2 ), array.unshift(a_y1_, ya2 ), array.unshift(a_x2_, xb2 ),array.unshift(a_y2_, yb2 )
+        array.unshift(a_x1_, xa3 ), array.unshift(a_y1_, ya3 ), array.unshift(a_x2_, xb3 ),array.unshift(a_y2_, yb3 )
+        array.unshift(a_x1_, xa4 ), array.unshift(a_y1_, ya4 ), array.unshift(a_x2_, xb4 ),array.unshift(a_y2_, yb4 )
+        array.unshift(a_x1_, xa5 ), array.unshift(a_y1_, ya5 ), array.unshift(a_x2_, xb5 ),array.unshift(a_y2_, yb5 )
+        array.unshift(a_x1_, xa6 ), array.unshift(a_y1_, ya6 ), array.unshift(a_x2_, xb6 ),array.unshift(a_y2_, yb6 )
+        array.unshift(a_x1_, xa7 ), array.unshift(a_y1_, ya7 ), array.unshift(a_x2_, xb7 ),array.unshift(a_y2_, yb7 )
+        array.unshift(a_x1_, xa8 ), array.unshift(a_y1_, ya8 ), array.unshift(a_x2_, xb8 ),array.unshift(a_y2_, yb8 )
+        array.unshift(a_x1_, xa9 ), array.unshift(a_y1_, ya9 ), array.unshift(a_x2_, xb9 ),array.unshift(a_y2_, yb9 )
+        array.unshift(a_x1_, xa10), array.unshift(a_y1_, ya10), array.unshift(a_x2_, xb10),array.unshift(a_y2_, yb10)
+        array.unshift(a_x1_, xa11), array.unshift(a_y1_, ya11), array.unshift(a_x2_, xb11),array.unshift(a_y2_, yb11)
+        array.unshift(a_x1_, xa12), array.unshift(a_y1_, ya12), array.unshift(a_x2_, xb12),array.unshift(a_y2_, yb12)
+        array.unshift(a_x1_, xa13), array.unshift(a_y1_, ya13), array.unshift(a_x2_, xb13),array.unshift(a_y2_, yb13)
+        array.unshift(a_x1_, xa14), array.unshift(a_y1_, ya14), array.unshift(a_x2_, xb14),array.unshift(a_y2_, yb14)
+        array.unshift(a_x1_, xa15), array.unshift(a_y1_, ya15), array.unshift(a_x2_, xb15),array.unshift(a_y2_, yb15)
+        array.unshift(a_x1_, xa16), array.unshift(a_y1_, ya16), array.unshift(a_x2_, xb16),array.unshift(a_y2_, yb16)
+
+        // reset counter to 0 (otherwise the loop will continue until the end)
+        cnt := 0
+
+        // check if counter = 0 (when no overlap of any rectangle)
+        for i = 0 to array.size(a_x1_) - 1
+            x1A = array.get(a_x1_, i), y1A = array.get(a_y1_, i), x2A = array.get(a_x2_, i), y2A = array.get(a_y2_, i)
+            for j = 0 to array.size(a_x1_) - 1
+                x1B = array.get(a_x1_, j), y1B = array.get(a_y1_, j), x2B = array.get(a_x2_, j), y2B = array.get(a_y2_, j)
+                if j == i
+                    continue
+                if j != i and f_overlap(x1A, y1A, x2A, y2A, x1B, y1B, x2B, y2B)
+                    cnt += 1
+
+        // if counter is not 0 -> continue the 'while loop'
+        if cnt != 0
+
+            continue
+
+        // else -> draw rectangles and break the loop
+        else
+
+            f_drawRect(xa1 , ya1 , xb1 , yb1 , xLab1 , yLab1 , txt1 , size1 , color.red    , 800)   // BTC
+            f_drawRect(xa2 , ya2 , xb2 , yb2 , xLab2 , yLab2 , txt2 , size2 , color.orange , 750)   // ETH
+            f_drawRect(xa3 , ya3 , xb3 , yb3 , xLab3 , yLab3 , txt3 , size3 , color.blue   , 700)   // BNB
+            f_drawRect(xa4 , ya4 , xb4 , yb4 , xLab4 , yLab4 , txt4 , size4 , color.green  , 650)   // DOT
+            f_drawRect(xa5 , ya5 , xb5 , yb5 , xLab5 , yLab5 , txt5 , size5 , color.white  , 600)   // ADA
+            f_drawRect(xa6 , ya6 , xb6 , yb6 , xLab6 , yLab6 , txt6 , size6 , color.yellow , 550)   // XRP
+            f_drawRect(xa7 , ya7 , xb7 , yb7 , xLab7 , yLab7 , txt7 , size7 , color.fuchsia, 500)   // LTC
+            f_drawRect(xa8 , ya8 , xb8 , yb8 , xLab8 , yLab8 , txt8 , size8 , color.olive  , 450)   // BCH
+            f_drawRect(xa9 , ya9 , xb9 , yb9 , xLab9 , yLab9 , txt9 , size9 , color.purple , 400)   // XLM
+            f_drawRect(xa10, ya10, xb10, yb10, xLab10, yLab10, txt10, size10, color.navy   , 350)   // EOS
+            f_drawRect(xa11, ya11, xb11, yb11, xLab11, yLab11, txt11, size11, color.aqua   , 300)   // XMR
+            f_drawRect(xa12, ya12, xb12, yb12, xLab12, yLab12, txt12, size12, color.maroon , 250)   // TRX
+            f_drawRect(xa13, ya13, xb13, yb13, xLab13, yLab13, txt13, size13, color.gray   , 200)   // BSV
+            f_drawRect(xa14, ya14, xb14, yb14, xLab14, yLab14, txt14, size14, color.red    , 150)   // MIOTA
+            f_drawRect(xa15, ya15, xb15, yb15, xLab15, yLab15, txt15, size15, color.orange , 100)   // OTHERS
+            f_drawRect(xa16, ya16, xb16, yb16, xLab16, yLab16, txt16, size16, color.blue   , 50 )   // USDT
+
+            break
+    else
+
+        break
+
+// blue border
+borderTop   = line.new(bar_index[round(min * 0.3)], max * 1.8, bar_index[round(max * 1.8)], max * 1.8), line.delete(borderTop[1])
+borderRight = line.new(bar_index[round(max * 1.8)], min * 0.3, bar_index[round(max * 1.8)], max * 1.8), line.delete(borderRight[1])
+borderBot   = line.new(bar_index[round(min * 0.3)], min * 0.3, bar_index[round(max * 1.8)], min * 0.3), line.delete(borderBot[1])
+borderLeft  = line.new(bar_index[round(min * 0.3)], min * 0.3, bar_index[round(min * 0.3)], max * 1.8), line.delete(borderLeft[1])
+
+// clear before moving to next candle
+array.clear(a_x1_), array.clear(a_y1_), array.clear(a_x2_), array.clear(a_y2_)
+array.clear(a_ticker)
+array.clear(a_dominance)

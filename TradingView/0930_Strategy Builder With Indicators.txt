@@ -1,0 +1,529 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Milvetti
+
+//@version=6
+strategy("Strategy Builder With Indicators",overlay = true,initial_capital = 1000,default_qty_type = strategy.percent_of_equity,default_qty_value = 75,process_orders_on_close = true,margin_long = 0,margin_short = 0)
+
+
+
+//Filters
+enum fs //Filters
+    h =">"
+    l ="<"
+    he =">="
+    le ="<="
+enum ts //Triggers
+    cu ="Cross Above"
+    cd ="Cross Down"
+    // ch ="Change"
+
+type Filters
+    int no
+    bool active
+    float src
+    fs filter
+    float ref
+
+
+type Triggers
+    int no
+    bool active
+    float src
+    ts trigger
+    float ref
+
+var Filters f1 = Filters.new(0)
+var Filters f2 = Filters.new(1)
+var Filters f3 = Filters.new(2)
+var Filters f4 = Filters.new(3)
+
+var Triggers t1 = Triggers.new(0)
+var Triggers t2 = Triggers.new(1)
+var Triggers t3 = Triggers.new(2)
+var Triggers t4 = Triggers.new(3)
+
+
+enum posTypes
+    l= "Long"
+    s= "Short"
+//Strategy Settings
+gSt = "Strategy Settings"
+posType = input.enum(posTypes.l,"Position Type",group = gSt)
+
+
+//Indicator Filters *2
+gF = "Filters"
+f1I = "f1"
+f1.active := input(false," ",inline = f1I,group = gF)
+f1.src := input.source(close," ",inline = f1I,group = gF)
+f1.filter := input.enum(fs.h," ",inline = f1I,group = gF)
+f1.ref := input.source(close," ",inline = f1I,group = gF)
+
+f2I = "f2"
+f2.active := input(false," ",inline = f2I,group = gF)
+f2.src := input.source(close," ",inline = f2I,group = gF)
+f2.filter := input.enum(fs.h," ",inline = f2I,group = gF)
+f2.ref := input.source(close," ",inline = f2I,group = gF)
+
+
+f3I = "f3"
+f3.active := input(false," ",inline = f3I,group = gF)
+f3.src := input.source(close," ",inline = f3I,group = gF)
+f3.filter := input.enum(fs.h," ",inline = f3I,group = gF)
+f3.ref := input.float(0," ",inline = f3I,group = gF)
+
+
+f4I = "f4"
+f4.active := input(false," ",inline = f4I,group = gF)
+f4.src := input.source(close," ",inline = f4I,group = gF)
+f4.filter := input.enum(fs.h," ",inline = f4I,group = gF)
+f4.ref := input.float(0," ",inline = f4I,group = gF)
+
+
+//Triggers
+gT = "Triggers"
+s1I = "s1"
+
+t1I = "t1"
+t1.active := input(false," ",inline = t1I,group = gT)
+t1.src := input.source(close," ",inline = t1I,group = gT)
+t1.trigger := input.enum(ts.cd," ",inline = t1I,group = gT)
+t1.ref := input.source(close," ",inline = t1I,group = gT)
+
+t2I = "t2"
+t2.active := input(false," ",inline = t2I,group = gT)
+t2.src := input.source(close," ",inline = t2I,group = gT)
+t2.trigger := input.enum(ts.cd," ",inline = t2I,group = gT)
+t2.ref := input.source(close," ",inline = t2I,group = gT)
+
+
+t3I = "t3"
+t3.active := input(false," ",inline = t3I,group = gT)
+t3.src := input.source(close," ",inline = t3I,group = gT)
+t3.trigger := input.enum(ts.cd," ",inline = t3I,group = gT)
+t3.ref := input.float(0," ",inline = t3I,group = gT)
+
+
+t4I = "t4"
+t4.active := input(false," ",inline = t4I,group = gT)
+t4.src := input.source(close," ",inline = t4I,group = gT)
+t4.trigger := input.enum(ts.cd," ",inline = t4I,group = gT)
+t4.ref := input.float(0," ",inline = t4I,group = gT)
+
+//Exit
+gExit = "Exit Settings"
+
+enum tpTypes
+    ratio = "Ratio"
+    tick = "Tick"
+    percent = "Percent"
+
+
+enum slTypes
+    tick = "Tick"
+    percent = "Percent"
+    atr = "ATR"
+enum tslTypes
+    start = "From Start"
+    tp1 = "After Tp1"
+    tp2 = "After Tp2"
+
+enum posStatus
+    pending = "Pending"
+    active = "Active"
+    completed = "Completed"
+    cancelled = "Cancelled"
+
+type Tp
+    int no
+    bool active
+    string code
+    tpTypes tpType
+    float offset
+    float size
+    float qPercent //%of total Position
+    bool breakeven //Be after Tp Triggered
+    float price //Calculated Price
+    bool filled
+    int filledIndex
+
+
+type Pos
+    string code
+    int dir
+    posTypes posType  // "long or short"
+    float entry
+    float sl
+    Tp[] tpArray
+    float posSize
+    int index = bar_index
+    bool tslActive = false
+    posStatus status
+    string exitCode
+
+var posArray = array.new<Pos>()
+
+gSl = "SL Settings"
+onSl = input(true," ",inline = "SL",group = gSl)
+slType = input.enum(slTypes.atr,"SL Type",inline = "SL",group = gSl)
+slTip = "If sl Type is 'ATR', the value is multiplier"
+slOffset = input.float(1.5,"",inline = "SL",group = gSl,tooltip = slTip)
+atrLen = input(20,"ATR Period",inline = "Atr",group = gSl)
+
+onTsl = input(false,"Trailing SL",inline = "tsl",group = gSl)
+atr = ta.atr(atrLen)
+
+
+
+var Tp tp1 = Tp.new(1)
+var Tp tp2 = Tp.new(2)
+
+
+gTp1 = "TP1"
+
+tp1.active := input(false,"Activate",group = gTp1)
+tp1.tpType := input.enum(tpTypes.ratio,"Type",group = gTp1)
+tp1.offset := input.int(1,"Offset",minval=0,group = gTp1)
+tp1.qPercent := input.float(30,"Size(%)",minval=0,maxval=100,group = gTp1,tooltip = "If the TP level is passed, the stop level is updated as the entry level.")
+tp1.breakeven := input(false,"Breakeven",group = gTp1)
+
+
+gTp2 = "TP2"
+
+tp2.active := input(true,"Activate",group = gTp2)
+tp2.tpType := input.enum(tpTypes.ratio,"Type",group = gTp2)
+tp2.offset := input.int(2,"Offset",minval=0,group = gTp2)
+tp2.qPercent := input.float(100,"Size(%)",minval=0,maxval=100,group = gTp2)
+tp2.breakeven := input(false,"Breakeven",group = gTp2,tooltip = "If the TP level is passed, the stop level is updated as the entry level.")
+
+
+
+
+createEntryAlertMessage(Pos pos)=>
+    tx = "New Position" + "\n"
+    tx+= "Symbol: " + syminfo.ticker + " | " + str.upper(pos.code) +"\n"
+    tx+= "Entry Price: " + str.tostring(pos.entry,format.mintick) + "\n"
+    tx+= "SL Price: " + str.tostring(pos.sl,format.mintick) + "\n"
+    for tp in pos.tpArray
+        if na(tp.price) or tp.active==false
+            continue
+        tx+= "TP" + str.tostring(tp.no) +  "Price: " + str.tostring(tp.price,format.mintick) + "\n"
+    tx
+
+createExitAlertMessage(Pos pos,profit=true)=>
+
+    tx = "Exit From " + str.upper(pos.code) + "\n"
+    tx+= "Symbol: " + syminfo.ticker + "\n"
+    tx+= "Position Result: " + (profit ? "Win" : "Loss")  + "\n"
+    tx
+
+
+
+checkFilter(src,op,ref=0.0)=>
+    result = switch op
+        fs.h => src>ref
+        fs.l => src<ref
+        fs.he => src>=ref
+        fs.le => src<=ref
+    result
+checkTrigger(src,op,ref=0.0)=>
+    result = switch op
+        ts.cu => src>ref and src[1]<ref[1]
+        ts.cd => src<ref and src[1]>ref[1]
+        => false
+    result
+
+
+//Filters
+getFilterResult()=>
+    arr = array.from(f1,f2,f3,f4)
+    result = true
+    for f in arr
+        if f.active
+            if checkFilter(f.src,f.filter,f.ref)==false
+                result:=false
+                break
+        else
+            continue
+    result
+
+getTriggerResult()=>
+    arr = array.from(t1,t2,t3,t4)
+    result = true
+    anyActive = false
+    for t in arr
+        if t.active
+            anyActive:=true
+            if checkTrigger(t.src,t.trigger,t.ref)==false
+                result:=false
+                break
+        else
+            continue
+    if anyActive==false
+        runtime.error("Please activate at least one trigger")
+    result
+
+getSl(Pos pos,float ref=na,tsl=false)=>
+    float sl = na
+    float price = na(ref) ? pos.entry : ref
+
+    sl:= switch slType
+        slTypes.tick    => price-slOffset*syminfo.mintick*pos.dir
+        slTypes.percent => price*(1-slOffset/100*pos.dir)
+        slTypes.atr     => price-(atr*slOffset)*pos.dir
+    log.info(pos.code+" " +"Sl Calculated: " + " " + str.tostring(sl))
+    sl
+calcTp(Pos pos,float ref =na)=>
+    price = na(ref) ? pos.entry : ref
+    for tp in pos.tpArray
+        result = switch tp.tpType
+            tpTypes.ratio   => price + math.abs(price-pos.sl)*pos.dir*tp.offset
+            tpTypes.tick    => price + tp.offset*syminfo.mintick*pos.dir
+            tpTypes.percent => price *(1-tp.offset/100*pos.dir)
+            => na
+        log.info(pos.code+" " +"Exit "+ str.tostring(tp.no)  +"Calculated: " + " " + str.tostring(result))
+        tp.price:=result
+roundContract(pos_size)=>
+    result = pos_size
+    t = math.round(math.log10(syminfo.mincontract))
+    pS = math.round(pos_size,t)
+    c = math.max(syminfo.mincontract,pS)
+    for i=0 to 1000
+        if result<=c
+            result:=c
+            break
+        else
+            c+=syminfo.mincontract
+    result
+
+createExitOrders(Pos pos)=>
+    sendExit = false
+    totalAmount =0.0
+    if pos.tpArray.size()>0
+        for tp in pos.tpArray
+            tp.size := pos.posSize*tp.qPercent/100
+
+            if tp.active
+                totalAmount+=tp.size
+            else
+                continue
+
+            if na(tp.price)
+                sendExit:=true
+                continue
+            tp.code:= "Exit "+ str.tostring(tp.no) +" "+ pos.code
+            log.info(pos.code+" " +"Exit "+ str.tostring(tp.no)  +"Exit Order Sent, TP: " + str.tostring(tp.price)+" SL: " + str.tostring(pos.sl)+" Qty: " + str.tostring(tp.size))
+            strategy.exit(tp.code,pos.code,qty = tp.size,stop = pos.sl,limit=tp.price,comment = "Exit")
+    if totalAmount<pos.posSize or sendExit
+        pos.exitCode:="Exit "+pos.code
+        strategy.exit(pos.exitCode,pos.code,qty_percent = 100,stop = pos.sl,comment = "Exit")
+
+
+
+getLetter(int no)=>
+    result = switch no
+        1  => "A"
+        2  => "B"
+        3  => "C"
+        4  => "D"
+        5  => "E"
+        6  => "F"
+        7  => "G"
+        8  => "H"
+        9  => "I"
+        10 => "J"
+        11 => "K"
+        12 => "L"
+        13 => "M"
+        14 => "N"
+        15 => "O"
+        16 => "P"
+        17 => "Q"
+        18 => "R"
+        19 => "S"
+        20 => "T"
+        21 => "U"
+        22 => "V"
+        23 => "W"
+        24 => "X"
+    result
+getId(int t,string tZone=syminfo.timezone)=>
+    posId = str.tostring(year(t,tZone) % 100) + getLetter(month(t,tZone)) + str.tostring(dayofmonth(t,tZone)) + getLetter(hour(t,tZone)) + str.tostring(minute(t,tZone)) + str.tostring(second(t,tZone))
+    posId
+
+
+createPos()=>
+    Pos pos = Pos.new()
+    id = getId(time)
+    pos.dir := posType==posTypes.l ? 1 : -1
+    pos.posType := posType
+    code = str.tostring(pos.posType)
+    pos.code := code +"#" + str.tostring(id)
+
+    pos.entry := close
+    pos.sl :=  getSl(pos)
+    pos.tpArray := array.from(tp1.copy(),tp2.copy())
+    calcTp(pos)
+    pos.posSize := strategy.default_entry_qty(pos.entry)
+    pos.status := posStatus.active
+
+    posArray.push(pos)
+    orderDir = pos.posType==posTypes.l ? strategy.long : strategy.short
+    strategy.entry(pos.code,orderDir,pos.posSize)
+    createExitOrders(pos)
+    pos
+
+
+updateSl(Pos pos)=>
+
+    for tp in pos.tpArray
+        if na(tp.price) or tp.active==false
+            continue
+        strategy.exit(tp.code,pos.code,stop = pos.sl,limit = tp.price,qty = tp.size,comment = "Exit")
+        log.info(pos.code+" " +"Exit "+ str.tostring(tp.no)  +" Exit Order Updated, TP: " + str.tostring(tp.price)+" SL: " + str.tostring(pos.sl)+" Qty: " + str.tostring(tp.size))
+
+    if na(pos.exitCode)==false
+        strategy.exit(pos.exitCode,pos.code,qty_percent = 100,stop = pos.sl,comment = "Exit")
+        log.info(pos.code+" " + str.tostring(pos.exitCode)  +" Exit Order Updated SL: "+ str.tostring(pos.sl))
+
+controlTp(Pos pos)=>
+    filledCount = 0
+
+    for tp in pos.tpArray
+
+        if tp.filled or tp.active==false
+            filledCount+=1
+
+        if pos.index==bar_index or tp.filled
+            continue
+
+        //Check Status
+        //Price
+        if ((high>=tp.price and pos.posType==posTypes.l) or (low<=tp.price and pos.posType==posTypes.s)) and tp.filled==false
+            tp.filled:=true
+            log.info(pos.code+" " +"Exit #"+ str.tostring(tp.no))
+
+
+        //Update SL
+        if tp.filled
+            if tp.breakeven and ( (pos.posType==posTypes.l and close>pos.entry) or (pos.posType==posTypes.s and close<pos.entry) )
+                pos.sl:= pos.entry
+                log.info(pos.code+" " +"Breakeven #"+ str.tostring(tp.no))
+                updateSl(pos)
+
+        if tp.filled and tp.active
+            filledCount+=1
+    if filledCount==pos.tpArray.size()
+        pos.status:=posStatus.completed
+        log.warning(pos.code+" " +"Position completed")
+
+
+controlSt(posArray,cancelTp=false)=>
+    if posArray.size()>0
+        for i=posArray.size()-1 to 0
+            Pos pos = posArray.get(i)
+            if pos.status==posStatus.completed or pos.index==bar_index
+                continue
+
+            //Active
+            if pos.status==posStatus.active
+
+                //Check Positions
+                //SL
+                if (low<=pos.sl and na(pos.sl)==false and pos.posType==posTypes.l) or (high>=pos.sl and na(pos.sl)==false and pos.posType==posTypes.s)
+                    pos.status:=posStatus.completed
+                    posArray.remove(i)
+                    log.warning(pos.code+" " +"STOPLOSS")
+                    continue
+                //TP
+                controlTp(pos)
+
+                if pos.status==posStatus.completed
+                    posArray.remove(i)
+                    continue
+
+                if onTsl
+                    sl = getSl(pos,close)
+                    if sl!=pos.sl
+                        if pos.posType==posTypes.l
+                            sl:= math.max(sl,pos.sl)
+                        else if pos.posType==posTypes.s
+                            sl:= math.min(sl,pos.sl)
+                        if pos.sl!=sl
+                            pos.sl:=sl
+                            log.info(pos.code+" " +"TSL Updated, Price: "+ str.tostring(pos.sl))
+                            updateSl(pos)
+
+// controlSt(posArray)
+if getFilterResult() and posArray.size()==0
+    if getTriggerResult()
+        createPos()
+controlSt(posArray)
+
+longTracker = array.new_float(10,na)
+shortTracker = array.new_float(10,na)
+
+
+tslPlot(pos,trackerArr,arrNo,price)=>
+    plotPrice = price
+    if pos.dir>0
+        plotPrice:= math.max(pos.sl,price)
+    else
+        plotPrice:= math.min(pos.sl,price)
+
+    trackerArr.insert(arrNo,plotPrice)
+
+
+getTracker(arr,trackerArr,dir)=>
+    for pos in arr
+        if pos.dir!=dir
+            continue
+        if pos.status==posStatus.active
+            trackerArr.insert(0,pos.sl)
+            tslPlot(pos,trackerArr,1,pos.entry)
+            for i=0 to pos.tpArray.size()-1
+                tp = pos.tpArray.get(i)
+
+                price = tp.filled ? na : tp.price
+
+                if pos.dir>0
+                    if tp.price>pos.sl
+                        trackerArr.insert(2+i,price)
+
+                else
+                    if tp.price<pos.sl
+                        trackerArr.insert(2+i,price)
+
+            float topPlot = na
+            if pos.dir>0
+                topPlot:= math.max(nz(trackerArr.get(2),hl2),nz(trackerArr.get(3),hl2))
+            else
+                topPlot:= math.min(nz(trackerArr.get(2),hl2),nz(trackerArr.get(3),hl2))
+
+            trackerArr.insert(9,topPlot)
+            break
+
+
+gTracker = "Tracker Settings"
+pClr = input.color(color.green," ",inline = "trck",group = gTracker)
+mClr = input.color(color.red," ",inline = "trck",group = gTracker)
+nClr = input.color(color.gray," ",inline = "trck",group = gTracker)
+
+getTracker(posArray,longTracker,1)
+pLongSl = plot(longTracker.get(0),"Long SL",color = mClr,style = plot.style_linebr,force_overlay=true,editable = false,offset = 1)
+pLongEntry = plot(longTracker.get(1),"Long Entry",color = nClr,style = plot.style_linebr,force_overlay=true,editable = false,offset = 1)
+// pLongTp1 = plot(longTracker.get(2),"Long TP1",color = pClr,style = plot.style_linebr,force_overlay=true,editable = false,offset = 1)
+pLongTp2 = plot(longTracker.get(3),"Long TP2",color = pClr,style = plot.style_linebr,force_overlay=true,editable = false,offset = 1)
+pLongTpTop = plot(longTracker.get(9),"TP",color = pClr,style = plot.style_linebr,force_overlay=true,editable = false,offset = 1)
+fill(pLongSl,pLongEntry,color = color.new(mClr,85))
+fill(pLongEntry,pLongTpTop,color = color.new(pClr,85))
+
+
+getTracker(posArray,shortTracker,-1)
+pShortSl = plot(shortTracker.get(0),"Short SL",color = mClr,style = plot.style_linebr,force_overlay=true,editable = false)
+pShortEntry = plot(shortTracker.get(1),"Short Entry",color = nClr,style = plot.style_linebr,force_overlay=true,editable = false)
+pShortTp1 = plot(shortTracker.get(2),"Short TP1",color = pClr,style = plot.style_linebr,force_overlay=true,editable = false)
+pShortTp2 = plot(shortTracker.get(3),"Short TP2",color = pClr,style = plot.style_linebr,force_overlay=true,editable = false)
+pShortTpTop = plot(shortTracker.get(9),"TP",color = pClr,style = plot.style_linebr,force_overlay=true,editable = false)
+fill(pShortSl,pShortEntry,color = color.new(mClr,85))
+fill(pShortEntry,pShortTpTop,color = color.new(pClr,85))

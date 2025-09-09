@@ -1,0 +1,366 @@
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)
+// https://creativecommons.org/licenses/by-nc-sa/4.0/
+// @FibonacciFlux
+fiboLine1 = '██████╗  ██╗ ██████╗  ██████╗ ███╗  ██╗  █████╗   ██████╗  ██████╗   ██╗'
+fiboLine2 = '██╔════╝ ██║ ██╔══██╗██╔══██╗████╗  ██║ ██╔══██╗ ██╔════╝ ██╔════╝   ██║'
+fiboLine3 = '██████╗  ██║ ██████╔╝██║  ██║██╔██╗ ██║ ███████║ ██║      ██║        ██║'
+fiboLine4 = '██╔════╝ ██║ ██╔══██╗██║  ██║██║╚██╗██║ ██╔══██║ ██║   █╗ ██║   █╗   ██║'
+fiboLine5 = '██║      ██║ ██████╔╝██████╔╝██║ ╚████║ ██║  ██║ ███████║ ███████║   ██║'
+
+fluxLine1 = '██████╗  ██║     ██╗   ██╗ ██╗  ██╗'
+fluxLine2 = '██╔════╝ ██║     ██║   ██║ ╚██╗██╔╝'
+fluxLine3 = '██████╗  ██║     ██║   ██║  ╚███╔╝ '
+fluxLine4 = '██╔════╝ ██║     ██║   ██║  ██╔██╗ '
+fluxLine5 = '██║      ███████╗╚██████╔╝ ██╔╝ ██╗'
+
+//@version=6
+strategy('Adaptive Fibonacci Pullback System -FibonacciFlux', shorttitle = 'AFPS', overlay = true, initial_capital = 10000, default_qty_type = strategy.percent_of_equity, default_qty_value = 7.5, commission_type = strategy.commission.percent, commission_value = 0.03, pyramiding = 1, slippage = 2) // Added pyramiding and slippage based on later request context
+
+// --- SECTION 1: FIBONACCI SUPERTREND CONFIGURATION ---
+
+// Common ATR period for all Supertrend calculations
+st_atr_period = input.int(8, 'Supertrend ATR Length', minval = 1, group = 'Supertrend Settings', tooltip = 'ATR period for Supertrend calculations')
+
+// Fibonacci-based Supertrend factor inputs
+st_factor1 = input.float(0.618, 'Factor 1 (0.618)', minval = 0.01, step = 0.01, group = 'Supertrend Settings', tooltip = 'Weak Fibonacci factor')
+st_factor2 = input.float(1.618, 'Factor 2 (1.618)', minval = 0.01, step = 0.01, group = 'Supertrend Settings', tooltip = 'Medium/Golden Ratio factor')
+st_factor3 = input.float(2.618, 'Factor 3 (2.618)', minval = 0.01, step = 0.01, group = 'Supertrend Settings', tooltip = 'Strong/Extended Fibonacci factor')
+
+// Calculate the three Supertrend lines
+[supertrend1, direction1] = ta.supertrend(st_factor1, st_atr_period)
+[supertrend2, direction2] = ta.supertrend(st_factor2, st_atr_period)
+[supertrend3, direction3] = ta.supertrend(st_factor3, st_atr_period)
+
+// Handle initial Supertrend values
+supertrend1 := barstate.isfirst ? na : supertrend1
+supertrend2 := barstate.isfirst ? na : supertrend2
+supertrend3 := barstate.isfirst ? na : supertrend3
+
+// Calculate average and smoothed Supertrend
+st_smooth_length = input.int(21, 'Supertrend Smoothing Length', group = 'Supertrend Settings', tooltip = 'EMA length for smoothing the average Supertrend')
+average_supertrend = (supertrend1 + supertrend2 + supertrend3) / 3
+smoothed_supertrend = ta.ema(average_supertrend, st_smooth_length)
+
+// --- SECTION 2: ADAPTIVE MOVING AVERAGE (AMA) CHANNEL ---
+
+// AMA Channel Length
+ama_length = input.int(55, 'AMA Channel Length', group = 'AMA Channel Settings')
+
+// AMA Calculation Variables
+ama1 = 0.0
+ama2 = 0.0
+hh = math.max(math.sign(ta.change(ta.highest(ama_length))), 0)
+ll = math.max(math.sign(ta.change(ta.lowest(ama_length)) * -1), 0)
+tc = math.pow(ta.sma(hh > 0 or ll > 0 ? 1.0 : 0.0, ama_length), 2) // More robust check for hh or ll being > 0
+
+// Calculate Upper and Lower AMA Bands
+ama1 := nz(ama1[1] + tc * (high - ama1[1]), high)
+ama2 := nz(ama2[1] + tc * (low - ama2[1]), low)
+
+// Define AMA Bands and Midline
+ama_high_band = ama1
+ama_low_band = ama2
+ama_midline = (ama_high_band + ama_low_band) / 2
+
+// Calculate Fibonacci Levels based on AMA Channel Width
+ama_dist = (ama_high_band - ama_low_band) / 2
+ama_h6 = ama_midline + ama_dist * 13.618
+ama_h5 = ama_midline + ama_dist * 8.618
+ama_h4 = ama_midline + ama_dist * 5.618
+ama_h3 = ama_midline + ama_dist * 3.618
+ama_h2 = ama_midline + ama_dist * 2.618
+ama_h1 = ama_midline + ama_dist * 1.618
+ama_l1 = ama_midline - ama_dist * 1.618
+ama_l2 = ama_midline - ama_dist * 2.618
+ama_l3 = ama_midline - ama_dist * 3.618
+ama_l4 = ama_midline - ama_dist * 5.618
+ama_l5 = ama_midline - ama_dist * 8.618
+ama_l6 = ama_midline - ama_dist * 13.618
+
+// --- SECTION 3: MULTI-TIMEFRAME (MTF) FILTER CONFIGURATION & CALCULATION ---
+
+filter_group = 'MTF Filters'
+use_mtf_filters = input.bool(true, title = '--- Use MTF Filters? ---', group = filter_group, tooltip = 'Enable/Disable all MTF Filters globally.')
+
+// --- MTF RSI Filter ---
+rsi_filter_enable = input.bool(true, title = 'Enable RSI Filter', group = filter_group, tooltip = 'Filter signals based on RSI from a lower timeframe.')
+rsi_timeframe = input.timeframe('60', title = 'RSI Timeframe', group = filter_group)
+rsi_length = input.int(7, title = 'RSI Length', minval = 1, group = filter_group)
+rsi_buy_threshold = input.int(70, title = 'RSI Buy Threshold (>)', minval = 0, maxval = 100, group = filter_group, tooltip = 'RSI must be above this value for a Long signal.')
+rsi_sell_threshold = input.int(30, title = 'RSI Sell Threshold (<)', minval = 0, maxval = 100, group = filter_group, tooltip = 'RSI must be below this value for a Short signal.')
+
+// --- MTF MACD Filter ---
+macd_filter_enable = input.bool(false, title = 'Enable MACD Filter', group = filter_group, tooltip = 'Filter signals based on MACD crossover from a lower timeframe.')
+macd_timeframe = input.timeframe('1', title = 'MACD Timeframe', group = filter_group)
+macd_fast_length = input.int(12, title = 'MACD Fast Length', minval = 1, group = filter_group)
+macd_slow_length = input.int(26, title = 'MACD Slow Length', minval = 1, group = filter_group)
+macd_signal_length = input.int(9, title = 'MACD Signal Length', minval = 1, group = filter_group)
+
+// --- MTF Volume Filter ---
+volume_filter_enable = input.bool(false, title = 'Enable Volume Filter', group = filter_group, tooltip = 'Filter signals based on Volume increase from a lower timeframe.')
+volume_timeframe = input.timeframe('1', title = 'Volume Timeframe', group = filter_group)
+volume_lookback = input.int(20, title = 'Volume MA Lookback', minval = 1, group = filter_group, tooltip = 'Lookback period for the Volume Moving Average.')
+volume_multiplier = input.float(1.3, title = 'Volume Multiplier (> Avg)', minval = 0.1, step = 0.1, group = filter_group, tooltip = 'Current volume must be > (Volume MA * Multiplier) for signal.')
+
+// --- MTF Calculations ---
+// RSI
+ltf_rsi_value = request.security(syminfo.tickerid, rsi_timeframe, ta.rsi(close, rsi_length))
+rsi_filter_long_ok = not use_mtf_filters or not rsi_filter_enable or ltf_rsi_value > rsi_buy_threshold
+rsi_filter_short_ok = not use_mtf_filters or not rsi_filter_enable or ltf_rsi_value < rsi_sell_threshold
+
+// MACD
+[ltf_macd_line, ltf_macd_signal, _] = request.security(syminfo.tickerid, macd_timeframe, ta.macd(close, macd_fast_length, macd_slow_length, macd_signal_length))
+macd_filter_long_ok = not use_mtf_filters or not macd_filter_enable or ltf_macd_line > ltf_macd_signal
+macd_filter_short_ok = not use_mtf_filters or not macd_filter_enable or ltf_macd_line < ltf_macd_signal
+
+// Volume
+ltf_volume = request.security(syminfo.tickerid, volume_timeframe, volume)
+ltf_volume_ma = request.security(syminfo.tickerid, volume_timeframe, ta.sma(volume, volume_lookback))
+volume_filter_ok = not use_mtf_filters or not volume_filter_enable or ltf_volume > ltf_volume_ma * volume_multiplier // Same condition for Long and Short
+
+// --- SECTION 4: STRATEGY SETTINGS ---
+
+// Enable/disable long and short positions globally
+enable_long_positions = input.bool(true, title = 'Enable Long Positions', group = 'Strategy Settings')
+enable_short_positions = input.bool(true, title = 'Enable Short Positions', group = 'Strategy Settings')
+
+// Note: Original SMA crossover logic removed as it wasn't used in the provided entry conditions.
+// If needed, it can be re-added here or within ENTRY CONDITIONS.
+
+// --- SECTION 5: ENTRY & EXIT CONDITIONS ---
+
+// Define BASE entry conditions (without filters)
+base_long_entry = low < average_supertrend and close > smoothed_supertrend and close[1] > ama_midline
+base_short_entry = high > average_supertrend and close < smoothed_supertrend and close[1] < ama_midline
+
+// Define FINAL entry conditions including optional MTF filters
+long_entry_condition = enable_long_positions and base_long_entry and rsi_filter_long_ok and macd_filter_long_ok and volume_filter_ok and close > ama_midline
+short_entry_condition = enable_short_positions and base_short_entry and rsi_filter_short_ok and macd_filter_short_ok and volume_filter_ok and close < ama_midline
+
+// Define exit conditions (based on Smoothed Supertrend cross)
+long_exit_condition = ta.crossunder(close[1], smoothed_supertrend)
+short_exit_condition = ta.crossover(close[1], smoothed_supertrend)
+
+// --- SECTION 6: RISK MANAGEMENT SETTINGS (STOP LOSS & TAKE PROFIT INPUTS) ---
+
+risk_group = 'Risk Management'
+sl_group = 'Stop Loss Settings'
+tp_group = 'Take Profit Settings'
+
+// Common ATR Length for SL/TP
+atr_length_sl_tp = input.int(13, 'ATR Length for SL/TP', minval = 1, group = risk_group)
+
+// --- Stop Loss Settings ---
+stop_loss_method = input.string('ATR', 'Stop Loss Method', options = ['PERC', 'ATR'], group = sl_group)
+long_stop_loss_percent = input.float(0.75, 'Long SL %', minval = 0.05, maxval = 100, step = 0.05, group = sl_group) / 100
+short_stop_loss_percent = input.float(0.75, 'Short SL %', minval = 0.05, maxval = 100, step = 0.05, group = sl_group) / 100
+long_stop_loss_atr_multiplier = input.float(8.0, 'Long SL ATR Multiplier', minval = 0.1, step = 0.1, group = sl_group)
+short_stop_loss_atr_multiplier = input.float(8.0, 'Short SL ATR Multiplier', minval = 0.1, step = 0.1, group = sl_group)
+stop_loss_trailing_mode = input.string('ON', 'Trailing Stop Loss Mode', options = ['TP', 'ON', 'OFF'], tooltip = 'ON: Always trail, TP: Trail after Take Profit hit, OFF: Fixed stop', group = sl_group)
+break_even_enabled = input.bool(true, 'Move SL to Break Even After TP', group = sl_group)
+
+// --- Take Profit Settings ---
+take_profit_quantity_percent = input.float(100, 'Take Profit Quantity %', minval = 0.0, maxval = 100, step = 1.0, group = tp_group)
+take_profit_method = input.string('PERC', 'Take Profit Method', options = ['PERC', 'ATR', 'RR'], group = tp_group)
+long_take_profit_percent = input.float(5.0, 'Long TP %', minval = 0.05, step = 0.05, group = tp_group) / 100
+short_take_profit_percent = input.float(5.0, 'Short TP %', minval = 0.05, step = 0.05, group = tp_group) / 100
+long_take_profit_atr_multiplier = input.float(1.5, 'Long TP ATR Multiplier', minval = 0.1, step = 0.1, group = tp_group)
+short_take_profit_atr_multiplier = input.float(2.0, 'Short TP ATR Multiplier', minval = 0.1, step = 0.1, group = tp_group)
+long_risk_reward_ratio = input.float(0.6, 'Long Risk/Reward Ratio', minval = 0.1, step = 0.1, group = tp_group)
+short_risk_reward_ratio = input.float(1.0, 'Short Risk/Reward Ratio', minval = 0.1, step = 0.1, group = tp_group)
+trailing_take_profit_enabled = input.bool(true, 'Enable Trailing Take Profit', group = tp_group)
+deviation_method = input.string('PERC', 'Trailing Deviation Method', options = ['PERC', 'ATR'], group = tp_group)
+deviation_percent = input.float(0.01, 'Trailing Deviation %', minval = 0.01, maxval = 100, step = 0.05, group = tp_group) / 100
+deviation_atr_multiplier = input.float(1.0, 'Trailing Deviation ATR Multiplier', minval = 0.01, step = 0.05, group = tp_group)
+
+// --- SECTION 7: STOP LOSS & TAKE PROFIT CALCULATION ---
+
+// Store ATR at position entry for SL/TP calculations
+entry_atr = ta.valuewhen(long_entry_condition or short_entry_condition, ta.atr(atr_length_sl_tp), 0)
+
+// --- Stop Loss Calculation ---
+var float long_stop_loss_price = na
+var bool long_trailing_tp_executed = false // Moved near where it's used
+
+// Function to calculate long SL price
+get_long_stop_loss_price(base_price) =>
+    switch stop_loss_method
+        'PERC' => base_price * (1 - long_stop_loss_percent)
+        'ATR' => base_price - long_stop_loss_atr_multiplier * entry_atr
+        => na // Should not happen with defined options
+
+// Determine if trailing SL should be active for long position
+long_tp_trailing_enabled = stop_loss_trailing_mode == 'ON' or stop_loss_trailing_mode == 'TP' and long_trailing_tp_executed
+
+// Calculate and maintain SL price for long positions
+long_stop_loss_price := if strategy.position_size > 0
+    float initial_sl = get_long_stop_loss_price(strategy.opentrades.entry_price(0)) // Calculate SL based on entry price
+    float trail_sl = long_tp_trailing_enabled ? get_long_stop_loss_price(high) : na
+    float current_sl = nz(long_stop_loss_price[1], initial_sl)
+
+    new_sl = initial_sl
+    if not na(trail_sl)
+        new_sl := math.max(current_sl, trail_sl) // Trail upwards
+        new_sl
+    if break_even_enabled and long_trailing_tp_executed
+        new_sl := math.max(new_sl, strategy.opentrades.entry_price(0)) // Move to breakeven
+        new_sl
+
+    math.max(initial_sl, new_sl) // Ensure SL never moves below initial SL
+else
+    na
+
+var float short_stop_loss_price = na
+var bool short_trailing_tp_executed = false // Moved near where it's used
+
+// Function to calculate short SL price
+get_short_stop_loss_price(base_price) =>
+    switch stop_loss_method
+        'PERC' => base_price * (1 + short_stop_loss_percent)
+        'ATR' => base_price + short_stop_loss_atr_multiplier * entry_atr
+        => na
+
+// Determine if trailing SL should be active for short position
+short_tp_trailing_enabled = stop_loss_trailing_mode == 'ON' or stop_loss_trailing_mode == 'TP' and short_trailing_tp_executed
+
+// Calculate and maintain SL price for short positions
+short_stop_loss_price := if strategy.position_size < 0
+    float initial_sl = get_short_stop_loss_price(strategy.opentrades.entry_price(0))
+    float trail_sl = short_tp_trailing_enabled ? get_short_stop_loss_price(low) : na
+    float current_sl = nz(short_stop_loss_price[1], initial_sl)
+
+    new_sl = initial_sl
+    if not na(trail_sl)
+        new_sl := math.min(current_sl, trail_sl) // Trail downwards
+        new_sl
+    if break_even_enabled and short_trailing_tp_executed
+        new_sl := math.min(new_sl, strategy.opentrades.entry_price(0)) // Move to breakeven
+        new_sl
+
+    math.min(initial_sl, new_sl) // Ensure SL never moves above initial SL
+else
+    na
+
+
+// --- Take Profit Calculation ---
+var float long_take_profit_price = na
+
+// Function to calculate long TP price
+get_long_take_profit_price(entryPrice) => // Pass entry price
+    switch take_profit_method
+        'PERC' => entryPrice * (1 + long_take_profit_percent)
+        'ATR' => entryPrice + long_take_profit_atr_multiplier * entry_atr
+        'RR' => entryPrice + long_risk_reward_ratio * math.abs(entryPrice - get_long_stop_loss_price(entryPrice))
+        => na
+
+// Calculate and maintain TP price for long positions
+long_take_profit_price := if strategy.position_size > 0 and not long_trailing_tp_executed
+    get_long_take_profit_price(strategy.opentrades.entry_price(0)) // Calculate TP based on entry price
+else
+    na
+
+// Update trailing TP execution flag for long positions
+long_trailing_tp_executed := if strategy.position_size > 0
+    long_trailing_tp_executed[1] or not na(long_take_profit_price) and high >= long_take_profit_price
+else
+    false // Reset flag when position closes
+
+
+// Calculate trailing step size in ticks for long positions (used in strategy.exit)
+long_trailing_tp_step_ticks = switch deviation_method
+    'PERC' => na(long_take_profit_price) ? na : long_take_profit_price * deviation_percent / syminfo.mintick // Check for na TP
+    'ATR' => deviation_atr_multiplier * entry_atr / syminfo.mintick
+    => na
+
+
+var float short_take_profit_price = na
+
+// Function to calculate short TP price
+get_short_take_profit_price(entryPrice) => // Pass entry price
+    switch take_profit_method
+        'PERC' => entryPrice * (1 - short_take_profit_percent)
+        'ATR' => entryPrice - short_take_profit_atr_multiplier * entry_atr
+        'RR' => entryPrice - short_risk_reward_ratio * math.abs(get_short_stop_loss_price(entryPrice) - entryPrice)
+        => na
+
+// Calculate and maintain TP price for short positions
+short_take_profit_price := if strategy.position_size < 0 and not short_trailing_tp_executed
+    get_short_take_profit_price(strategy.opentrades.entry_price(0)) // Calculate TP based on entry price
+else
+    na
+
+// Update trailing TP execution flag for short positions
+short_trailing_tp_executed := if strategy.position_size < 0
+    short_trailing_tp_executed[1] or not na(short_take_profit_price) and low <= short_take_profit_price
+else
+    false // Reset flag when position closes
+
+// Calculate trailing step size in ticks for short positions (used in strategy.exit)
+short_trailing_tp_step_ticks = switch deviation_method
+    'PERC' => na(short_take_profit_price) ? na : short_take_profit_price * deviation_percent / syminfo.mintick // Check for na TP
+    'ATR' => deviation_atr_multiplier * entry_atr / syminfo.mintick
+    => na
+
+
+// --- SECTION 8: PLOTTING ---
+
+// Plot Supertrend Lines
+plot_average_supertrend = plot(average_supertrend, color = average_supertrend > average_supertrend[1] ? color.new(color.green, 25) : color.new(color.red, 25), title = 'Average Supertrend', linewidth = 1)
+plot_smoothed_supertrend = plot(smoothed_supertrend, linewidth = 2, color = smoothed_supertrend > smoothed_supertrend[1] ? color.new(color.green, 0) : color.new(color.red, 0), title = 'Smoothed Supertrend') // Changed colors for distinction
+fill(plot_average_supertrend, plot_smoothed_supertrend, color = average_supertrend > smoothed_supertrend ? color.new(color.green, 75) : color.new(color.red, 75), title = 'Supertrend Fill')
+
+// Plot AMA Channel and Levels
+plot(ama_midline, title = 'AMA Midline', linewidth = 3, color = ama_midline > ama_midline[1] ? color.new(color.lime, 25) : color.new(color.red, 25)) // Trend color for midline
+ph6 = plot(ama_h6, title = 'AMA H6', color = color.new(color.green, 75))
+ph5 = plot(ama_h5, title = 'AMA H5', color = color.new(color.green, 75))
+ph4 = plot(ama_h4, title = 'AMA H4', color = color.new(color.green, 75))
+ph3 = plot(ama_h3, title = 'AMA H3', color = color.new(color.green, 75))
+ph2 = plot(ama_h2, title = 'AMA H2', color = color.new(color.green, 75))
+ph1 = plot(ama_h1, title = 'AMA H1', color = color.new(color.green, 75))
+pl1 = plot(ama_l6, title = 'AMA L6', color = color.new(color.red, 75))
+pl2 = plot(ama_l5, title = 'AMA L5', color = color.new(color.red, 75))
+pl3 = plot(ama_l4, title = 'AMA L4', color = color.new(color.red, 75))
+pl4 = plot(ama_l3, title = 'AMA L3', color = color.new(color.red, 75))
+pl5 = plot(ama_l2, title = 'AMA L2', color = color.new(color.red, 75))
+pl6 = plot(ama_l1, title = 'AMA L1', color = color.new(color.red, 75))
+
+// Fill AMA Levels
+fill(ph6, ph5, color = color.new(color.lime, 80))
+fill(pl6, pl5, color = color.new(color.red, 80))
+fill(ph5, ph4, color = color.new(color.lime, 85))
+fill(pl5, pl4, color = color.new(color.red, 85))
+fill(ph4, ph3, color = color.new(color.lime, 90))
+fill(pl4, pl3, color = color.new(color.red, 90))
+fill(ph3, ph2, color = color.new(color.lime, 95))
+fill(pl3, pl2, color = color.new(color.red, 95))
+fill(ph2, ph1, color = color.new(color.lime, 98))
+fill(pl2, pl1, color = color.new(color.red, 98))
+
+// Plot Buy/Sell Signals Arrows
+plotshape(long_entry_condition, title = 'BUY Signal', location = location.belowbar, style = shape.labelup, size = size.tiny, color = color.new(color.green, 0), text = 'BUY', textcolor = color.new(color.white, 0))
+plotshape(short_entry_condition, title = 'SELL Signal', location = location.abovebar, style = shape.labeldown, size = size.tiny, color = color.new(color.red, 0), text = 'SELL', textcolor = color.new(color.white, 0))
+
+// --- SECTION 9: STRATEGY EXECUTION ---
+
+// Enter Long Position
+if long_entry_condition and strategy.opentrades == 0 // Enter only if no position is open (or adjust pyramiding logic here if needed)
+    strategy.entry('L', strategy.long, comment = 'Long Entry')
+
+// Enter Short Position
+if short_entry_condition and strategy.opentrades == 0 // Enter only if no position is open (or adjust pyramiding logic here if needed)
+    strategy.entry('S', strategy.short, comment = 'Short Entry')
+
+// Exit Long Position (Based on Smoothed Supertrend Cross - Consider if this is the desired primary exit)
+if long_exit_condition and strategy.position_size > 0
+    strategy.close('L', comment = 'Exit Long (Supertrend Cross)') // Use close to exit based on condition
+
+// Exit Short Position (Based on Smoothed Supertrend Cross - Consider if this is the desired primary exit)
+if short_exit_condition and strategy.position_size < 0
+    strategy.close('S', comment = 'Exit Short (Supertrend Cross)') // Use close to exit based on condition
+
+// Manage SL/TP using strategy.exit (This handles exits based on price hitting SL/TP levels)
+if strategy.position_size > 0
+    strategy.exit('L Exit', from_entry = 'L', stop = long_stop_loss_price, limit = long_take_profit_price, qty_percent = take_profit_quantity_percent, trail_price = trailing_take_profit_enabled ? long_take_profit_price : na, trail_offset = trailing_take_profit_enabled ? long_trailing_tp_step_ticks : na)
+
+if strategy.position_size < 0
+    strategy.exit('S Exit', from_entry = 'S', stop = short_stop_loss_price, limit = short_take_profit_price, qty_percent = take_profit_quantity_percent, trail_price = trailing_take_profit_enabled ? short_take_profit_price : na, trail_offset = trailing_take_profit_enabled ? short_trailing_tp_step_ticks : na)

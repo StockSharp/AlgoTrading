@@ -1,0 +1,194 @@
+//@version=5
+strategy(title="London BreakOut Classic", overlay=true)
+import TradingView/ta/5
+
+// Make input options that configure backtest date range
+startDate = input.int(title="Start Date",
+     defval=1, minval=1, maxval=31)
+startMonth = input.int(title="Start Month",
+     defval=1, minval=1, maxval=12)
+startYear = input.int(title="Start Year",
+     defval=2022, minval=1800, maxval=2100)
+
+endDate = input.int(title="End Date",
+     defval=1, minval=1, maxval=31)
+endMonth = input.int(title="End Month",
+     defval=7, minval=1, maxval=12)
+endYear = input.int(title="End Year",
+     defval=2024, minval=1800, maxval=2100)
+
+FilterTradeTime = input.bool(defval=true,title='Filter Entrytime')
+
+rangemalen = input(20, title='Avg Length Range')
+rangemult = input(2, title='Avg Multiplier Range')
+
+
+//------------------------------Coding the BOX---------------------------------------------------------//
+
+// InSession() returns 'true' when the current bar happens inside
+// the specified session, corrected for the given time zone (optional).
+// Returns 'false' when the bar doesn't happen in that time period,
+// or when the chart's time frame is 1 day or higher.
+
+
+//*************Asia Session
+InSession(sessionTime, sessionTimeZone=syminfo.timezone) =>
+    not na(time(timeframe.period, sessionTime, sessionTimeZone))
+
+// STEP 1:
+
+// Define custom session trading times with inputs for *************Asia Session
+sessionTime = input.session("0000-0655", title="Session time Tokyo")
+sessionZone = input.string("UTC", title="Session time zone")
+
+// Other inputs for the boxes' visual appearance *************Asia Session
+boxBorderSize   = input.int(2, title="Box border size", minval=0)
+upBoxColor     = input.color(color.new(color.green, 85), title="Up box")
+upBorderColor  = input.color(color.green, title="Up border")
+downBoxColor   = input.color(color.new(color.red, 85), title="Down box")
+downBorderColor = input.color(color.red, title="Down border")
+
+// Create variables *************Asia Session
+var sessionHighPrice = 0.0
+var sessionLowPrice  = 0.0
+var sessionOpenPrice = 0.0
+var box sessionBox = na
+
+// STEP 2:
+// See if the session is currently active and just started *************Asia Session
+inSession = InSession(sessionTime, sessionZone) and timeframe.isintraday
+sessionStart = inSession and not inSession[1]
+SessionEnd = inSession[1] and not inSession
+
+// STEP 3:
+// When a new session starts, set the session high and low to the data
+// of the bar in the session. *************Asia Session
+if sessionStart
+    sessionHighPrice := high
+    sessionLowPrice  := low
+    sessionOpenPrice := open
+// Else, during the session, track the highest high and lowest low
+else if inSession
+    sessionHighPrice := math.max(sessionHighPrice, high)
+    sessionLowPrice  := math.min(sessionLowPrice, low)
+
+// STEP 4:
+// When a session begins, make a new box for that session *************Asia Session
+if sessionStart
+    sessionBox := box.new(left=bar_index, top=na, right=na, bottom=na,
+         border_width=boxBorderSize)
+
+// STEP 5:
+// During the session, update that session's existing box *************Asia Session
+if inSession
+    box.set_top(sessionBox, sessionHighPrice)
+    box.set_bottom(sessionBox, sessionLowPrice)
+
+    box.set_right(sessionBox, bar_index + 1)
+
+    // See if bar closed higher than session open. When it did, make
+    // box green (and use red otherwise).
+    if close > sessionOpenPrice
+        box.set_bgcolor(sessionBox, upBoxColor)
+        box.set_border_color(sessionBox, upBorderColor)
+    else
+        box.set_bgcolor(sessionBox, downBoxColor)
+        box.set_border_color(sessionBox, downBorderColor)
+
+
+//------------------------------End of Coding the BOX---------------------------------------------------------//
+
+// Look if the close time of the current bar
+// falls inside the date range
+inDateRange = (time >= timestamp(syminfo.timezone, startYear,
+         startMonth, startDate, 0, 0)) and
+     (time < timestamp(syminfo.timezone, endYear, endMonth, endDate, 0, 0))
+
+// Save Previous Max & Min Asia Session
+Minpreday = ta.valuewhen(SessionEnd,sessionLowPrice,0)
+Maxpreday = ta.valuewhen(SessionEnd,sessionHighPrice,0)
+
+// Identify last bar in box
+Lastbarinbox = ta.valuewhen(SessionEnd,close,0)
+
+
+//Entry Long London BreakOut
+Conditionlong = if (high >= Maxpreday)
+    1
+else
+    0
+
+//Entry Short London BreakOut
+Conditionshort = if (low <= Minpreday)
+    1
+else
+    0
+
+
+
+//-------------------------Define TP & SL------------------------//
+
+
+// Define Stoploss = Midrange Box
+Stoploss = ((Maxpreday-Minpreday)/2) + Minpreday
+plot(Stoploss,title = "Entryline", color = color.rgb(231, 10, 10), style = plot.style_line)
+
+// Define dynamic TP based on CRV
+CRV_Faktor = input.float(title="CRV",minval=0, maxval=10, defval=1.0, step = 0.1)
+
+// Get price of last entry in position
+lastEntryPrice = strategy.opentrades.entry_price(strategy.opentrades - 1)
+
+float Tp_Long = 0.0
+Tp_Long := ((lastEntryPrice - Stoploss)*CRV_Faktor)+lastEntryPrice
+//Tp_Long := math.round((box.get_top(sessionBox[1])-box.get_bottom(sessionBox[1]))*10000)
+
+
+float Tp_Short = 0.0
+Tp_Short := lastEntryPrice-((Stoploss - lastEntryPrice)*CRV_Faktor)
+
+
+//-------------------------End of TP & SL------------------------//
+
+//Limit one Order per session
+
+var entry_long_before = false
+entry_long_before := sessionStart ? false : entry_long_before
+
+var entry_short_before = false
+entry_short_before := sessionStart ? false : entry_short_before
+
+//Trading Session from X until Y
+tradinghours = time(timeframe.period, "0700-1600", "UTC")
+time_condition = FilterTradeTime ? not na(tradinghours) : true
+bgcolor(not na(tradinghours) ? color.rgb(73, 196, 78, 90) : na)
+
+
+if (inDateRange and time_condition and Conditionshort == 1 and not entry_short_before and not entry_long_before)
+    strategy.entry("Enter short", strategy.short, comment="entry short")
+    entry_short_before := true // Counter setzen oder mit qty arbeiten
+strategy.exit("Exit short", from_entry="Enter short", comment_profit = "TP Short", comment_loss = "SL Short", limit = Tp_Short, stop = Stoploss)
+if (hour == 00)
+    strategy.close(id = "Enter short", comment = "Exit Time")
+if not time_condition
+    strategy.cancel("Enter short")
+
+
+if (inDateRange and time_condition and Conditionlong == 1 and not entry_long_before and not entry_short_before)
+    strategy.entry("Enter long", strategy.long, comment="entry long")
+    entry_long_before := true // counter plus 1
+strategy.exit("Exit long", from_entry="Enter long", comment_profit = "TP Long", comment_loss = "SL Long", limit = Tp_Long, stop = Stoploss)
+if (hour == 00)
+    strategy.close(id = "Enter long", comment = "Exit Time")
+if not time_condition
+    strategy.cancel("Enter long")
+
+
+
+
+// Problem ist, dass er immer der reihe nach geht. Entry long oder short darf nur auf true gesetzt werden, wenn die order auch tatsächlich ausgelöst wurde und nicht nur platziert wurde
+
+//STEP 4:
+// Exit open market position when date range ends.
+if (not inDateRange)
+    strategy.close_all()

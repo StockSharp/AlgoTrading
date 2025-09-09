@@ -1,0 +1,60 @@
+//@version=5
+strategy("Nifty Options Trendy Markets with TSL", overlay=true)
+// Input Parameters
+lengthBB = input(20, title="Bollinger Bands Length")
+multBB = input(2.0, title="Bollinger Bands Multiplier")
+adxLength = input(14, title="ADX Length")
+adxThreshold = input(25, title="ADX Entry Threshold")
+adxExitThreshold = input(20, title="ADX Exit Threshold")
+superTrendLength = input(10, title="Supertrend Length")
+superTrendMultiplier = input(3.0, title="Supertrend Multiplier")
+macdFast = input(12, title="MACD Fast Length")
+macdSlow = input(26, title="MACD Slow Length")
+macdSignal = input(9, title="MACD Signal Length")
+atrLength = input(14, title="ATR Length")
+atrMultiplier = input(1.5, title="Trailing Stop ATR Multiplier")
+volumeSpikeMultiplier = input(1.5, title="Volume Spike Multiplier")
+
+// Calculations
+[macdLine, signalLine,_ ] = ta.macd(close, macdFast, macdSlow, macdSignal)
+macdCrossover = ta.crossover(macdLine, signalLine)
+macdCrossunder = ta.crossunder(macdLine, signalLine)
+[middleBB,upperBB,lowerBB] = ta.bb(close, lengthBB, multBB)
+[supertrend, direction]  = ta.supertrend(superTrendMultiplier,superTrendLength)
+len = input.int(17, minval=1, title="DI Length")
+lensig = input.int(14, title="ADX Smoothing", minval=1, maxval=50)
+[diplus, diminus, adx] = ta.dmi(len, lensig)
+atr = ta.atr(atrLength)
+trailingStopLong = close - atr * atrMultiplier // For long trades
+trailingStopShort = close + atr * atrMultiplier // For short trades
+volumeSpike = volume > ta.sma(volume, 20) * volumeSpikeMultiplier
+
+// Entry Conditions
+longEntry = ta.crossover(close, upperBB) and adx > adxThreshold and volumeSpike and close > supertrend
+shortEntry = ta.crossunder(close, lowerBB) and adx > adxThreshold and volumeSpike and close < supertrend
+
+// Exit Conditions
+longExit = ta.crossunder(macdLine, signalLine) or close < trailingStopLong or adx < adxExitThreshold
+shortExit = ta.crossover(macdLine, signalLine) or close > trailingStopShort or adx < adxExitThreshold
+
+// Strategy Entries and Exits
+if (longEntry)
+    strategy.entry("Long", strategy.long)
+if (shortEntry)
+    strategy.entry("Short", strategy.short)
+if (longExit)
+    strategy.close("Long")
+if (shortExit)
+    strategy.close("Short")
+
+// Plotting
+plot(supertrend, color=color.blue, style=plot.style_line, linewidth=2, title="Supertrend Line")
+plot(trailingStopLong, title="Trailing Stop for Long", color=color.green, style=plot.style_line)
+plot(trailingStopShort, title="Trailing Stop for Short", color=color.red, style=plot.style_line)
+bgcolor(longEntry ? color.new(color.green, 90) : shortEntry ? color.new(color.red, 90) : na, title="Background for Entry")
+
+// Alerts
+alertcondition(longEntry, title="Long Entry", message="Buy Call: Long entry conditions met")
+alertcondition(shortEntry, title="Short Entry", message="Buy Put: Short entry conditions met")
+alertcondition(longExit, title="Long Exit", message="Exit Call: Long exit conditions met")
+alertcondition(shortExit, title="Short Exit", message="Exit Put: Short exit conditions met")

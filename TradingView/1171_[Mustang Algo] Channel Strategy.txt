@@ -1,0 +1,230 @@
+//@version=6
+strategy("[Mustang Algo] Channel Strategy",
+         shorttitle="[Mustang Algo] Channel Strategy",
+         overlay=false,
+         default_qty_type=strategy.percent_of_equity,
+         default_qty_value=10,
+         initial_capital=10000,
+         pyramiding=1,
+         commission_type=strategy.commission.percent,
+         commission_value=0.1,
+         slippage=2)
+
+// DETAILED STRATEGY DESCRIPTION:
+// This strategy uses a unique market sentiment oscillator based on the ratio between BTC supply and stablecoin
+// market capitalization (DAI+USDT+USDC) to identify market sentiment and timing for ALL financial assets.
+// The BTC/Stablecoin ratio acts as a global risk sentiment indicator for the entire financial ecosystem.
+//
+// ORIGINAL LOGIC:
+// 1. Calculate macro ratio: BTC Supply / (Stablecoin Market Cap / BTC Price)
+// 2. Apply RSI to this ratio to create a universal sentiment oscillator
+// 3. Smooth with WMA to reduce noise
+// 4. Generate signals for ANY asset based on crossovers in specific zones
+//
+// UNIVERSAL APPLICATION:
+// - Works on Stocks, Forex, Commodities, Indices, Crypto, Bonds
+// - BTC/Stablecoin ratio serves as global liquidity sentiment indicator
+// - Timing signals apply to the entire financial markets ecosystem
+// - Filters false signals through upper/lower bounds
+//
+// REALISTIC PARAMETERS:
+// - Commission: 0.1% (adjustable for different asset classes)
+// - Slippage: 2 ticks
+// - Position size: 10% of capital
+// - SL/TP: 1:3 ratio approximately
+
+//==== USER PARAMETERS ====//
+startTest = input.time(timestamp("2020-01-01T00:00:00"), "Test Start Date", tooltip="Starting date for backtesting")
+endTest   = input.time(timestamp("2030-01-01T00:00:00"), "Test End Date")
+inDateRange = (time >= startTest and time <= endTest)
+
+tf = input.timeframe("D", "Timeframe", tooltip="Timeframe for multi-temporal analysis")
+period = input.int(14, "RSI Period", minval=5, maxval=50, step=2, tooltip="Period for RSI calculation on BTC/Stablecoin macro ratio")
+smoothing = input.int(20, "WMA Smoothing", minval=5, maxval=100, step=5, tooltip="Smoothing period for sentiment oscillator")
+crossover_median = input.int(25, "Moving Median", minval=5, maxval=100, step=1, tooltip="Period for crossover reference line")
+upper_bound = input.float(55, "Upper Bound", minval=50, maxval=80, step=1, tooltip="Overbought threshold for SHORT signals")
+lower_bound = input.float(48, "Lower Bound", minval=20, maxval=50, step=1, tooltip="Oversold threshold for LONG signals")
+
+// Direction selector
+trade_direction = input.string("Long & Short", title="Trading Direction", options=["Long Only", "Short Only", "Long & Short"])
+
+//==== REALISTIC SL/TP PARAMETERS ====//
+// SL/TP Mode Selection
+sl_tp_mode = input.string("Percentage", "SL/TP Mode", options=["Percentage", "Ticks", "Pips"], tooltip="Choose how to calculate Stop Loss and Take Profit")
+
+// Position Management Settings
+group_positions = "Position Management Settings"
+slPerc = input.float(4.0, "Stop Loss (%)", minval=1, maxval=20, step=0.1, group=group_positions, tooltip="Stop loss percentage for all positions")
+slTicks = input.int(50, "Stop Loss (Ticks)", minval=1, maxval=1000, step=1, group=group_positions, tooltip="Stop loss in ticks for all positions")
+slPips = input.float(50.0, "Stop Loss (Pips)", minval=1, maxval=1000, step=0.1, group=group_positions, tooltip="Stop loss in pips for all positions")
+
+tpPerc = input.float(12.0, "Take Profit (%)", minval=5, maxval=50, step=0.1, group=group_positions, tooltip="Take profit percentage for all positions")
+tpTicks = input.int(150, "Take Profit (Ticks)", minval=1, maxval=5000, step=1, group=group_positions, tooltip="Take profit in ticks for all positions")
+tpPips = input.float(150.0, "Take Profit (Pips)", minval=1, maxval=5000, step=0.1, group=group_positions, tooltip="Take profit in pips for all positions")
+
+useSL = input(true, "Enable Stop Loss", group=group_positions)
+useTP = input(true, "Enable Take Profit", group=group_positions)
+
+//==== GLOBAL SENTIMENT OSCILLATOR ====//
+// Global liquidity constants
+btc_supply = 19700000
+
+// CRITICAL FIX: Removing lookahead bias
+btc_price = nz(request.security("INDEX:BTCUSD", "", close, barmerge.gaps_off, barmerge.lookahead_off))
+dai_marketcap = nz(request.security("CRYPTOCAP:DAI", "", close, barmerge.gaps_off, barmerge.lookahead_off))
+usdt_marketcap = nz(request.security("CRYPTOCAP:USDT", "", close, barmerge.gaps_off, barmerge.lookahead_off))
+usdc_marketcap = nz(request.security("CRYPTOCAP:USDC", "", close, barmerge.gaps_off, barmerge.lookahead_off))
+
+// Global sentiment calculation (applicable to all financial assets)
+stablecoin_marketcap = (dai_marketcap + usdt_marketcap + usdc_marketcap) / btc_price
+global_sentiment_ratio = btc_supply / stablecoin_marketcap
+
+// RSI application and smoothing for universal timing
+sentiment_rsi_buffer = ta.rsi(global_sentiment_ratio, period)
+sentiment_oscillator_buffer = ta.wma(sentiment_rsi_buffer, smoothing)
+sentiment_median_buffer = ta.wma(sentiment_oscillator_buffer, crossover_median)
+
+// Multi-timeframe sentiment WITHOUT lookahead bias
+[sentiment_oscillator, sentiment_median, time_close_mtf] =
+     request.security(syminfo.tickerid, tf,
+                     [sentiment_oscillator_buffer, sentiment_median_buffer, time_close],
+                     barmerge.gaps_off, barmerge.lookahead_off)
+
+//==== TRADING CONDITIONS ====//
+upper_bound_plot = upper_bound
+lower_bound_plot = lower_bound
+
+// LONG signals: Buy when global sentiment is oversold (works on any asset)
+long_entry_signal = inDateRange and
+                   ta.crossover(sentiment_oscillator, sentiment_median) and
+                   sentiment_oscillator < lower_bound_plot
+
+long_exit_signal = inDateRange and
+                  ta.crossunder(sentiment_oscillator, sentiment_median) and
+                  sentiment_oscillator > upper_bound_plot
+
+// SHORT signals: Sell when global sentiment is overbought (works on any asset)
+short_entry_signal = inDateRange and
+                     ta.crossunder(sentiment_oscillator, sentiment_median) and
+                     sentiment_oscillator > upper_bound_plot
+
+short_exit_signal = inDateRange and
+                   ta.crossover(sentiment_oscillator, sentiment_median) and
+                   sentiment_oscillator < lower_bound_plot
+
+// Direction filtering
+long_enabled  = trade_direction == "Long Only" or trade_direction == "Long & Short"
+short_enabled = trade_direction == "Short Only" or trade_direction == "Long & Short"
+
+long_entry  = long_enabled  and long_entry_signal
+long_exit   = long_enabled  and long_exit_signal
+short_entry = short_enabled and short_entry_signal
+short_exit  = short_enabled and short_exit_signal
+
+//==== POSITION MANAGEMENT ====//
+var float long_entry_price = na
+var float short_entry_price = na
+
+// Function to calculate SL/TP based on selected mode
+get_sl_tp_levels(entry_price, is_long, sl_perc, sl_ticks, sl_pips, tp_perc, tp_ticks, tp_pips) =>
+    var float stop_level = na
+    var float take_level = na
+
+    if sl_tp_mode == "Percentage"
+        stop_level := is_long ? entry_price * (1 - sl_perc/100) : entry_price * (1 + sl_perc/100)
+        take_level := is_long ? entry_price * (1 + tp_perc/100) : entry_price * (1 - tp_perc/100)
+    else if sl_tp_mode == "Ticks"
+        tick_value = syminfo.mintick
+        stop_level := is_long ? entry_price - (sl_ticks * tick_value) : entry_price + (sl_ticks * tick_value)
+        take_level := is_long ? entry_price + (tp_ticks * tick_value) : entry_price - (tp_ticks * tick_value)
+    else if sl_tp_mode == "Pips"
+        pip_value = syminfo.mintick * 10 // Standard pip calculation
+        stop_level := is_long ? entry_price - (sl_pips * pip_value) : entry_price + (sl_pips * pip_value)
+        take_level := is_long ? entry_price + (tp_pips * pip_value) : entry_price - (tp_pips * pip_value)
+
+    [stop_level, take_level]
+
+// Entries
+if (long_entry and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    long_entry_price := close
+
+if (short_entry and strategy.position_size == 0)
+    strategy.entry("Short", strategy.short)
+    short_entry_price := close
+
+// LONG management
+if (strategy.position_size > 0)
+    if na(long_entry_price)
+        long_entry_price := strategy.position_avg_price
+
+    [trade_stopL, trade_takeL] = get_sl_tp_levels(long_entry_price, true, slPerc, slTicks, slPips, tpPerc, tpTicks, tpPips)
+
+    if useSL or useTP
+        strategy.exit("Exit Long", from_entry="Long",
+                     stop = useSL ? trade_stopL : na,
+                     limit = useTP ? trade_takeL : na)
+
+    if not useSL and not useTP and long_exit
+        strategy.close("Long")
+        long_entry_price := na
+else
+    long_entry_price := na
+
+// SHORT management
+if (strategy.position_size < 0)
+    if na(short_entry_price)
+        short_entry_price := strategy.position_avg_price
+
+    [trade_stopS, trade_takeS] = get_sl_tp_levels(short_entry_price, false, slPerc, slTicks, slPips, tpPerc, tpTicks, tpPips)
+
+    if useSL or useTP
+        strategy.exit("Exit Short", from_entry="Short",
+                     stop = useSL ? trade_stopS : na,
+                     limit = useTP ? trade_takeS : na)
+
+    if not useSL and not useTP and short_exit
+        strategy.close("Short")
+        short_entry_price := na
+else
+    short_entry_price := na
+
+//==== DISPLAY ====//
+// Overbought/oversold zones
+hline(upper_bound_plot, "Overbought", color=color.rgb(220, 38, 127, 50), linewidth=2)
+hline(lower_bound_plot, "Oversold", color=color.rgb(33, 150, 243, 50), linewidth=2)
+fill(hline(upper_bound_plot), hline(lower_bound_plot), color=color.rgb(255, 255, 255, 90))
+
+// Debug plots to verify oscillator values
+plotchar(na, "=== DEBUG INFO ===", "", location=location.top, color=color.white)
+plot(sentiment_oscillator, "Sentiment Oscillator Value", color=color.yellow, display=display.data_window)
+plot(sentiment_median, "Sentiment Median Value", color=color.gray, display=display.data_window)
+plot(upper_bound_plot, "Upper Bound", color=color.red, display=display.data_window)
+plot(lower_bound_plot, "Lower Bound", color=color.green, display=display.data_window)
+
+// Main sentiment oscillator
+plot(sentiment_oscillator, "Global Sentiment Oscillator", color.rgb(255, 193, 7), linewidth=3)
+plot(sentiment_median, "Moving Median", color=color.rgb(158, 158, 158), linewidth=2)
+
+// Background color according to sentiment
+trend_up = sentiment_oscillator > sentiment_median
+bgcolor(trend_up ? color.new(color.green, 96) : color.new(color.red, 96))
+
+// Entry/exit signals
+plotchar(long_entry, "Buy Signal", '▲', color=color.lime, location=location.belowbar, size=size.normal)
+plotchar(short_entry, "Sell Signal", '▼', color=color.red, location=location.abovebar, size=size.normal)
+
+// Information table
+var table info_table = table.new(position.top_right, 2, 10, bgcolor=color.white, border_width=1)
+if barstate.islast
+    table.cell(info_table, 0, 0, "MUSTANG ALGO", text_color=color.black, text_size=size.small)
+    table.cell(info_table, 1, 0, "Global Sentiment", text_color=color.gray, text_size=size.tiny)
+    table.cell(info_table, 0, 1, "Sentiment:", text_color=color.black, text_size=size.tiny)
+    table.cell(info_table, 1, 1, str.tostring(math.round(sentiment_oscillator, 1)), text_color=color.blue, text_size=size.tiny)
+    table.cell(info_table, 0, 2, "Median:", text_color=color.black, text_size=size.tiny)
+    table.cell(info_table, 1, 2, str.tostring(math.round(sentiment_median, 1)), text_color=color.gray, text_size=size.tiny)
+    table.cell(info_table, 0, 3, "Trend:", text_color=color.black, text_size=size.tiny)
+    table.cell(info_table, 1, 3, trend_up ? "BULLISH" : "BEARISH",
+               text_color=trend_up ? color.green : color.red, text_size=size.tiny)
+    table.cell(info_table, 0, 4, "SL/TP Mode:", text_color=color.black, text_size=size.tiny)
+    table.cell(info_table, 1, 4, sl_tp_mode, text_color=color.purple, text_size=size.tiny)

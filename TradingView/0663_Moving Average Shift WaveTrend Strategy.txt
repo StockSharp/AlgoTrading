@@ -1,0 +1,124 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PakunFX
+
+//@version=6
+strategy("Moving Average Shift WaveTrend Strategy", overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 100)
+
+// ─────────────────────────────────────
+// INPUTS
+// ─────────────────────────────────────
+type_ma = input.string("SMA", "Type", options = ["SMA", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group = "MA")
+length = input.int(40, "Length", inline = "ma", group = "MA")
+source = input.source(hl2, "", inline = "ma", group = "MA")
+osc_len = input.int(15, "Osc Length", group = "Oscillator")
+osc_threshold = input.float(0.5, "Osc Threshold", step = 0.1, group = "Oscillator")
+tp_perc = input.float(1.5, "Take Profit %", group = "Risk")
+sl_perc = input.float(1.0, "Stop Loss %", group = "Risk")
+trail_range = input.float(1.0, "Trail Stop %", group = "Risk")
+long_ma_len = input.int(200, "Trend MA Length", group = "Trend Filter")
+
+// ─────────────────────────────────────
+// VOLATILITY FILTER (ATR)
+// ─────────────────────────────────────
+atr_len = input.int(14, "ATR Length", group = "Volatility Filter")
+atr = ta.atr(atr_len)
+atr_threshold = ta.percentile_linear_interpolation(atr, 1000, 50)
+vol_ok = atr > atr_threshold
+
+// ─────────────────────────────────────
+// TIME FILTER
+// ─────────────────────────────────────
+startHour = input.int(9, "Start Hour (exchange time)", minval = 0, maxval = 23, group = "Time Filter")
+endHour = input.int(17, "End Hour (exchange time)", minval = 0, maxval = 23, group = "Time Filter")
+hour_ok = (hour >= startHour and hour < endHour)
+
+// ─────────────────────────────────────
+// MA & OSC
+// ─────────────────────────────────────
+ma(src, len, type) =>
+    switch type
+        "SMA" => ta.sma(src, len)
+        "EMA" => ta.ema(src, len)
+        "SMMA (RMA)" => ta.rma(src, len)
+        "WMA" => ta.wma(src, len)
+        "VWMA" => ta.vwma(src, len)
+
+MA = ma(source, length, type_ma)
+diff = source - MA
+perc_r = ta.percentile_linear_interpolation(diff, 1000, 99)
+osc = ta.hma(ta.change(diff / perc_r, osc_len), 10)
+
+// ─────────────────────────────────────
+// SIGNALS
+// ─────────────────────────────────────
+ma_is_green = source >= MA
+ma_is_red = source < MA
+osc_is_green = osc > 0 and osc > osc[1]
+osc_is_red = osc < 0 and osc < osc[1]
+
+long_ma = ta.ema(source, long_ma_len)
+long_trend = long_ma > long_ma[1]
+short_trend = long_ma < long_ma[1]
+
+// ─────────────────────────────────────
+// WAVE FILTER
+// ─────────────────────────────────────
+var bool in_wave = false
+wave_reset = ta.cross(osc, 0)
+if wave_reset
+    in_wave := false
+
+// ─────────────────────────────────────
+// ENTRY CONDITIONS
+// ─────────────────────────────────────
+long_cond = ma_is_green and osc_is_green and long_trend and not in_wave and vol_ok and hour_ok
+short_cond = ma_is_red and osc_is_red and short_trend and not in_wave and vol_ok and hour_ok
+
+// TP/SL calculation
+long_tp = strategy.position_avg_price * (1 + tp_perc / 100)
+long_sl = strategy.position_avg_price * (1 - sl_perc / 100)
+short_tp = strategy.position_avg_price * (1 - tp_perc / 100)
+short_sl = strategy.position_avg_price * (1 + sl_perc / 100)
+
+// ─────────────────────────────────────
+// STRATEGY ENTRY
+// ─────────────────────────────────────
+if (long_cond)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", from_entry="Long", limit=long_tp, stop=long_sl)
+    strategy.close("Short")
+    in_wave := true
+
+if (short_cond)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit Short", from_entry="Short", limit=short_tp, stop=short_sl)
+    strategy.close("Long")
+    in_wave := true
+
+// ─────────────────────────────────────
+// ADVANCED EXIT LOGIC
+// ─────────────────────────────────────
+exit_long_cond = strategy.position_size > 0 and (osc < 0 and osc < osc[1]) and (source < MA)
+exit_short_cond = strategy.position_size < 0 and (osc > 0 and osc > osc[1]) and (source > MA)
+
+if exit_long_cond
+    strategy.close("Long", comment="Osc+MA Exit Long")
+
+if exit_short_cond
+    strategy.close("Short", comment="Osc+MA Exit Short")
+
+var float highest_since_entry = na
+var float lowest_since_entry = na
+
+highest_since_entry := strategy.position_size > 0 ? math.max(highest_since_entry, high) : na
+lowest_since_entry := strategy.position_size < 0 ? math.min(lowest_since_entry, low) : na
+
+trail_stop_long = highest_since_entry * (1 - trail_range / 100)
+trail_stop_short = lowest_since_entry * (1 + trail_range / 100)
+
+if strategy.position_size > 0 and close < trail_stop_long
+    strategy.close("Long", comment="Trail Stop Long")
+
+if strategy.position_size < 0 and close > trail_stop_short
+    strategy.close("Short", comment="Trail Stop Short")
+plot(long_ma, title="200 EMA", color=color.rgb(248, 246, 244), linewidth=2)

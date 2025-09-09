@@ -1,0 +1,56 @@
+//@version=5
+strategy("Neon Momentum Waves Strategy", overlay=false, initial_capital=100000, currency=currency.USD)
+
+// User inputs for momentum parameters
+fast_length    = input(12, "Fast Length")
+slow_length    = input(26, "Slow Length")
+signal_length  = input(20, "Signal Length")
+
+// User inputs for trade entries/exits
+entry_level    = input(0, "Entry Level (Zero Line)")
+long_exit_level  = input(11, "Long Exit Level")
+short_exit_level = input(-9, "Short Exit Level")
+
+// Calculate MACD-like momentum waves
+macd   = ta.ema(close, fast_length) - ta.ema(close, slow_length)
+signal = ta.ema(macd, signal_length)
+hist   = macd - signal
+
+// Define colors for neon effect
+aqua   = color.new(color.aqua, 0)      // Aqua for positive momentum
+purple = color.new(color.purple, 0)    // Purple for negative momentum
+dynamic_color = hist >= 0 ? aqua : purple
+
+// Plot momentum waves with neon effect
+plot(hist, title="Neon Momentum Waves", color=dynamic_color, linewidth=3)
+plot(hist, title="Glow 1", color=color.new(dynamic_color, 80), linewidth=10)
+plot(hist, title="Glow 2", color=color.new(dynamic_color, 80), linewidth=7)
+plot(hist, title="Glow 3", color=color.new(dynamic_color, 90), linewidth=4)
+plot(hist, title="Glow 4", color=color.new(dynamic_color, 90), linewidth=1)
+
+// Plot the entry level (zero line) and exit levels for reference
+hline(entry_level, "Entry Level", color=color.gray)
+hline(long_exit_level, "Long Exit Level", color=color.green)
+hline(short_exit_level, "Short Exit Level", color=color.red)
+
+// Strategy logic
+
+// Long Entry: when hist crosses above the entry level (default 0)
+longCondition = ta.crossover(hist, entry_level)
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+// Short Entry: when hist crosses below the entry level (default 0)
+shortCondition = ta.crossunder(hist, entry_level)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Long Exit: exit long position when hist crosses above the long exit level (default 10)
+longExit = strategy.position_size > 0 and ta.crossover(hist, long_exit_level)
+if (longExit)
+    strategy.close("Long", comment="Long Exit")
+
+// Short Exit: exit short position when hist crosses below the short exit level (default -10)
+shortExit = strategy.position_size < 0 and ta.crossunder(hist, short_exit_level)
+if (shortExit)
+    strategy.close("Short", comment="Short Exit")

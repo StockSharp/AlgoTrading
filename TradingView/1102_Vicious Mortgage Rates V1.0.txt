@@ -1,0 +1,637 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheViciousVB
+
+//@version=4
+study(title="Vicious Mortgage Rates V1.0", shorttitle = "Mortgage Rates v1", overlay=false, scale= scale.right)
+
+src = input(close, title="Source" )
+useCurrentRes = input(true, title="Use Current Chart Resolution?")
+resCustom = input(title="Use Different Timeframe? Uncheck Box Above", type=input.resolution, defval="D")
+res = useCurrentRes ? timeframe.period : resCustom
+
+
+//res = input(title="Resolution", type=input.resolution, defval="D")
+sh_51ARM = input(false,title="5 /1 ARM")
+sh_71ARM = input(false,title="7 /1 ARM")
+sh_15YF = input(true,title="15 Yr Fixed")
+sh_30YF = input(true,title="30 Yr Fixed")
+sh_FMC = input(true,title="FreddieMac?")
+sh_WF = input(true,title="Wells Fargo?")
+//sh_US10Y = input(false,title="US Treasury 10 Year Yield")
+sh_CON = input(true,title="Conforming?")
+//sh_LCON = input(true,title="Large Conform?")
+sh_JUM = input(false,title="Jumbo?")
+sh_GOV = input(false,title="FHA?")
+
+
+//// 5-1 Adjustable Rate
+
+WFCRRCON51APR = quandl("WFC/RR_CON_51ARM_APR", barmerge.gaps_off, 0)
+//WFCRRCON51IR = security("QUANDL:WFC/RR_CON_51ARM_IR", res, close)
+
+WFCPRCON51APR = quandl("WFC/PR_CON_51ARM_APR", barmerge.gaps_off, 0)
+//WFCPRCON51IR = security("QUANDL:WFC/PR_CON_51ARM_IR", res, close)
+
+WFGRRFHA51APR = quandl("WFC/RR_GOV_51ARMFHA_APR", barmerge.gaps_off, 0)
+//WFGRRFHA51IR = security("QUANDL:WFC/RR_GOV_51ARMFHA_IR", res, close)
+
+WFGPRFHA51APR = quandl("WFC/PR_GOV_51ARMFHA_APR", barmerge.gaps_off, 0)
+//WFGPRFHA51IR = security("QUANDL:WFC/PR_GOV_51ARMFHA_IR", res, close)
+
+WFCRRCON51APRPLOT1 = plot(sh_WF and sh_51ARM and sh_CON ? WFCRRCON51APR : na , title="Mortgage-Refi-Cnfrm-5/1ARM-APR", color=color.new(color.red, 20))
+//WFCRRCON51IRPLOT2 = plot(sh_51ARM and sh_CON ? WFCRRCON51IR : na, title="Mortgage-Refi-Cnfrm-5/1ARM-IR", color=color.new(color.red, 40))
+
+//fill(WFCRRCON51APRPLOT1, WFCRRCON51IRPLOT2,color=color.new(color.red,95))
+
+WFCPRCON51APRPLOT1 =  plot(sh_WF and sh_51ARM and sh_CON ? WFCPRCON51APR : na, title="Mortgage-Purchase-Cnfrm-5/1ARM-APR", color=color.new(color.red, 10), linewidth = 2)
+//WFCPRCON51IRPLOT2 = plot(sh_51ARM and sh_CON ? WFCPRCON51IR : na, title="Mortgage-Purchase-Cnfrm-5/1ARM-IR", color=color.new(color.red, 30))
+
+fill(WFCPRCON51APRPLOT1, WFCRRCON51APRPLOT1,color=color.new(color.red,90))
+
+
+WFGRRFHA51APRPLOT1 = plot(sh_WF and sh_51ARM and sh_GOV ? WFGRRFHA51APR : na , title="Mortgage-Refi-FHA-5/1ARM-APR", color=color.new(color.red, 25))
+//WFGRRFHA51IRPLOT2 = plot(sh_51ARM and sh_GOV ? WFGRRFHA51IR : na, title="Mortgage-Refi-FHA-5/1ARM-IR", color=color.new(color.red, 40))
+
+//fill(WFGRRFHA51APRPLOT1, WFGRRFHA51IRPLOT2,color=color.new(color.red,95))
+
+WFGPRFHA51APRPLOT1 =  plot(sh_WF and sh_51ARM and sh_GOV ? WFGPRFHA51APR : na, title="Mortgage-Purchase-FHA-5/1ARM-APR", color=color.new(color.red, 15), linewidth = 2)
+//WFGPRFHA51IRPLOT2 = plot(sh_51ARM and sh_GOV ? WFGPRFHA51IR : na, title="Mortgage-Purchase-FHA-5/1ARM-IR", color=color.new(color.red, 30))
+
+fill(WFGPRFHA51APRPLOT1, WFGRRFHA51APRPLOT1,color=color.new(color.red,95))
+
+
+//FREDDIEMAC 5 year
+//
+FMACARM5YR = quandl("FMAC/ARM5YR", barmerge.gaps_off, 0)
+FMACARM5YRPLOT1 =  plot(sh_FMC and sh_51ARM ? FMACARM5YR : na, title="FreeddieMac-Mortgage-5/1ARM", color=color.new(color.red, 5), linewidth = 3)
+
+
+
+//// 7-1 Adjustable Rate
+
+WFCRRCON71APR = quandl("WFC/RR_CON_71ARM_APR", barmerge.gaps_off, 0)
+//WFCRRCON71IR = security("QUANDL:WFC/RR_CON_71ARM_IR", res, close)
+
+WFCPRCON71APR = quandl("WFC/PR_CON_71ARM_APR", barmerge.gaps_off, 0)
+//WFCPRCON71IR = security("QUANDL:WFC/PR_CON_51ARM_IR", res, close)
+
+//WFCRRLCON71APR = security("QUANDL:WFC/RR_LARGECON_71ARM_APR", res, close)
+//WFCRRLCON71IR = security("QUANDL:WFC/RR_LARGECON_71ARM_IR", res, close)
+
+//WFCPRLCON71APR = security("QUANDL:WFC/PR_LARGECON_71ARM_APR", res, close)
+//WFCPRLCON71IR = security("QUANDL:WFC/PR_LARGECON_51ARM_IR", res, close)
+
+WFGRRFHA71APR = quandl("WFC/RR_GOV_71ARMFHA_APR", barmerge.gaps_off, 0)
+//WFGRRFHA71IR = security("QUANDL:WFC/RR_GOV_71ARMFHA_IR", res, close)
+
+WFGPRFHA71APR = quandl("WFC/PR_GOV_71ARMFHA_APR", barmerge.gaps_off, 0)
+//WFGPRFHA71IR = security("QUANDL:WFC/PR_GOV_71ARMFHA_IR", res, close)
+
+
+///// Jumbo
+
+WFRRJUM71APR = quandl("WFC/RR_JUMBO_71ARM_APR", barmerge.gaps_off, 0)
+//WFRRJUM71IR = security("QUANDL:WFC/RR_JUMBO_71ARM_IR", res, close)
+
+WFPRJUM71APR = quandl("WFC/PR_JUMBO_51ARM_APR", barmerge.gaps_off, 0)
+//WFPRJUM71IR = security("QUANDL:WFC/PR_JUMBO_51ARM_IR", res, close)
+
+////////////
+
+WFCRRCON71APRPLOT1 = plot(sh_71ARM and sh_CON ? WFCRRCON71APR : na, title="Mortgage-Refi-Cnfrm-7/1ARM-APR", color=color.new(color.orange, 20))
+//WFCRRCON71IRPLOT2 = plot(sh_71ARM and sh_CON ? WFCRRCON71IR : na, title="Mortgage-Refi-Cnfrm-7/1ARM-IR", color=color.new(color.orange, 40))
+
+//fill(WFCRRCON71APRPLOT1, WFCRRCON71IRPLOT2,color=color.new(color.orange,95))
+
+WFCPRCON71APRPLOT1 = plot(sh_71ARM and sh_CON ? WFCPRCON71APR : na , title="Mortgage-Purchase-Cnfrm-7/1ARM-APR", color=color.new(color.orange, 10), linewidth = 2)
+//WFCPRCON71IRPLOT2 = plot(sh_71ARM and sh_CON ? WFCPRCON71IR : na , title="Mortgage-Purchase-Cnfrm-7/1ARM-IR", color=color.new(color.orange, 30))
+
+fill(WFCPRCON71APRPLOT1, WFCRRCON71APRPLOT1,color=color.new(color.orange,90))
+
+//WFCRRLCON71APRPLOT1 = plot(sh_71ARM and sh_LCON ? WFCRRLCON71APR : na, title="Mortgage-Refi-Lrg-Cnfrm-7/1ARM-APR", color=color.new(color.orange, 20))
+//WFCRRLCON71IRPLOT2 = plot(sh_71ARM and sh_LCON ? WFCRRLCON71IR : na, title="Mortgage-Refi-Lrg-Cnfrm-7/1ARM-IR", color=color.new(color.orange, 40))
+
+//fill(WFCRRLCON71APRPLOT1, WFCRRLCON71IRPLOT2,color=color.new(color.orange,95))
+
+//WFCPRLCON71APRPLOT1 = plot(sh_71ARM and sh_LCON ? WFCPRLCON71APR : na , title="Mortgage-Purchase-Lrg-Cnfrm-7/1ARM-APR", color=color.new(color.orange, 10), linewidth = 2)
+//WFCPRLCON71IRPLOT2 = plot(sh_71ARM and sh_LCON ? WFCPRLCON71IR : na , title="Mortgage-Purchase-Lrg-Cnfrm-7/1ARM-IR", color=color.new(color.orange, 30))
+
+//fill(WFCPRLCON71APRPLOT1, WFCRRLCON71APRPLOT1,color=color.new(color.orange,95))
+
+WFGRRFHA71APRPLOT1 = plot(sh_71ARM and sh_GOV ? WFGRRFHA71APR : na , title="Mortgage-Refi-FHA-7/1ARM-APR", color=color.new(color.orange, 25))
+//WFGRRFHA71IRPLOT2 = plot(sh_71ARM and sh_GOV ? WFGRRFHA71IR : na, title="Mortgage-Refi-FHA-7/1ARM-IR", color=color.new(color.orange, 40))
+
+//fill(WFGRRFHA71APRPLOT1, WFGRRFHA71IRPLOT2,color=color.new(color.orange,95))
+
+WFGPRFHA71APRPLOT1 =  plot(sh_71ARM and sh_GOV ? WFGPRFHA71APR : na, title="Mortgage-Purchase-FHA-7/1ARM-APR", color=color.new(color.orange, 15), linewidth = 2)
+//WFGPRFHA71IRPLOT2 = plot(sh_71ARM and sh_GOV ? WFGPRFHA71IR : na, title="Mortgage-Purchase-FHA-7/1ARM-IR", color=color.new(color.orange, 30))
+
+fill(WFGPRFHA71APRPLOT1, WFGRRFHA71APRPLOT1,color=color.new(color.orange,95))
+
+
+// Jumbo
+WFRRJUM71APRPLOT1 = plot(sh_71ARM and sh_JUM ? WFRRJUM71APR : na , title="Mortgage-Refi-JUMBO-7/1ARM-APR", color=color.new(color.orange, 25))
+//WFRRJUM71IRPLOT2 = plot(sh_71ARM and sh_JUM ? WFRRJUM71IR : na, title="Mortgage-Refi-JUMBO-7/1ARM-IR", color=color.new(color.orange, 40))
+
+//fill(WFRRJUM71APRPLOT1, WFRRJUM71IRPLOT2,color=color.new(color.orange,95))
+
+WFPRJUM71APRPLOT1 =  plot(sh_71ARM and sh_JUM ? WFPRJUM71APR : na, title="Mortgage-Purchase-JUMBO-7/1ARM-APR", color=color.new(color.orange, 15), linewidth = 2)
+//WFPRJUM71IRPLOT2 = plot(sh_71ARM and sh_JUM ? WFPRJUM71IR : na, title="Mortgage-Purchase-JUMBO-7/1ARM-IR", color=color.new(color.orange, 30))
+
+fill(WFPRJUM71APRPLOT1, WFRRJUM71APRPLOT1,color=color.new(color.orange,95))
+
+
+
+//////////////////////////////////////
+//// 15 Year Fixed Rate
+
+WFCRRCON15YAPR = quandl("WFC/RR_CON_15YFIXED_APR", barmerge.gaps_off, 0)
+//WFCRRCON15YIR = security("QUANDL:WFC/RR_CON_15YFIXED_IR", res, close)
+
+WFCPRCON15YAPR = quandl("WFC/PR_CON_15YFIXED_APR", barmerge.gaps_off, 0)
+//WFCPRCON15YIR = security("QUANDL:WFC/PR_CON_15YFIXED_IR", res, close)
+
+WFCRRCON15YAPRPLOT1 = plot(sh_15YF and sh_CON ? WFCRRCON15YAPR : na, title="Mortgage-Refi-Cnfrm-15Y-APR", color=color.new(color.yellow, 25))
+//WFCRRCON15YIRPLOT2 = plot(sh_15YF and sh_CON ? WFCRRCON15YIR : na, title="Mortgage-Refi-Cnfrm-15Y-IR", color=color.new(color.yellow, 40))
+
+//fill(WFCRRCON15YAPRPLOT1, WFCRRCON15YIRPLOT2,color=color.new(color.yellow,95))
+
+WFCPRCON15YAPRPLOT1 = plot(sh_15YF and sh_CON ? WFCPRCON15YAPR : na , title="Mortgage-Purchase-Cnfrm-15Y-APR", color=color.new(color.yellow, 15), linewidth = 2)
+//WFCPRCON15YIRPLOT2 = plot(sh_15YF and sh_CON ? WFCPRCON15YIR : na , title="Mortgage-Purchase-Cnfrm-15Y-IR", color=color.new(color.yellow, 30))
+
+fill(WFCPRCON15YAPRPLOT1, WFCRRCON15YAPRPLOT1,color=color.new(color.yellow,90))
+
+//FREDDIEMAC 15 year
+//
+FMACFIX15YR = quandl("FMAC/15US", barmerge.gaps_off, 0)
+FMACFIX15YRPLOT1 =  plot(sh_FMC and sh_15YF ? FMACFIX15YR : na, title="FreeddieMac-Mortgage-15-Year", color=color.new(color.yellow, 10), linewidth = 3)
+
+
+
+/////////////////////////////////////////////////
+//// 30 Year Fixed Rate
+
+WFCRRCON30YAPR = quandl("WFC/RR_CON_30YFIXED_APR", barmerge.gaps_off, 0)
+//WFCRRCON30YIR = security("QUANDL:WFC/RR_CON_30YFIXED_IR", res, close)
+
+WFCPRCON30YAPR = quandl("WFC/PR_CON_30YFIXED_APR", barmerge.gaps_off, 0)
+//WFCPRCON30YIR = security("QUANDL:WFC/PR_CON_30YFIXED_IR", res, close)
+
+WFCRRCON30YAPRPLOT1 = plot(sh_30YF and sh_CON ? WFCRRCON30YAPR : na, title="Mortgage-Refi-Cnfrm-30Y-APR", color=color.new(color.lime, 20))
+//WFCRRCON30YIRPLOT2 = plot(sh_30YF and sh_CON ? WFCRRCON30YIR : na, title="Mortgage-Refi-Cnfrm-30Y-IR", color=color.new(color.lime, 40))
+
+//fill(WFCRRCON30YAPRPLOT1, WFCRRCON30YIRPLOT2,color=color.new(color.lime,95))
+
+WFCPRCON30YAPRPLOT1 = plot(sh_30YF and sh_CON ? WFCPRCON30YAPR : na , title="Mortgage-Purchase-Cnfrm-30Y-APR", color=color.new(color.lime, 10), linewidth = 2)
+//WFCPRCON30YIRPLOT2 = plot(sh_30YF and sh_CON ? WFCPRCON30YIR : na , title="Mortgage-Purchase-Cnfrm-30Y-IR", color=color.new(color.lime, 30))
+
+fill(WFCPRCON30YAPRPLOT1, WFCRRCON30YAPRPLOT1,color=color.new(color.lime,90))
+
+////
+
+WFCRRGOV30YAPR = quandl("WFC/RR_GOV_30YFIXEDFHA_APR", barmerge.gaps_off, 0)
+WFCPRGOV30YAPR = quandl("WFC/PR_GOV_30YFIXEDFHA_APR", barmerge.gaps_off, 0)
+
+WFCRRGOV30YAPRPLOT1 = plot(sh_WF and sh_30YF and sh_GOV ? WFCRRCON30YAPR : na, title="Mortgage-Refi-FHA-30Y-APR", color=color.new(color.lime, 25))
+WFCPRGOV30YAPRPLOT1 = plot(sh_WF and sh_30YF and sh_GOV ? WFCPRCON30YAPR : na, title="Mortgage-Purchase-FHA-30Y-APR", color=color.new(color.lime, 15), linewidth = 2)
+
+fill(WFCRRGOV30YAPRPLOT1, WFCPRGOV30YAPRPLOT1,color=color.new(color.lime,95))
+
+//WFCRRLRGCON30YAPR = security("QUANDL:WFC/RR_LARGERCON_30YFIXED_APR", res, close)
+//WFCPRLRGCON30YAPR = security("QUANDL:WFC/PR_LARGERCON_30YFIXED_IR", res, close)
+
+//WFCRRLRGCON30YAPRPLOT1 = plot(sh_WF and sh_30YF and sh_LCON ? WFCRRLRGCON30YAPR : na, title="Mortgage-Refi-Large-Con-30Y-APR", color=color.new(color.lime, 20))
+//WFCPRLRGCON30YAPRPLOT1 = plot(sh_WF and sh_30YF and sh_LCON ? WFCPRLRGCON30YAPR : na, title="Mortgage-Purchase-Large-Con-30Y-APR", color=color.new(color.lime, 20))
+
+//fill(WFCRRLRGCON30YAPRPLOT1, WFCPRLRGCON30YAPRPLOT1,color=color.new(color.lime,95))
+
+// Jumbo
+
+WFCRRJUM30YAPR = quandl("WFC/RR_JUMBO_30YFIXED_APR", barmerge.gaps_off, 0)
+WFCPRJUM30YAPR = quandl("WFC/PR_JUMBO_30YFIXED_APR", barmerge.gaps_off, 0)
+
+WFCRRJUM30YAPRPLOT1 = plot(sh_30YF and sh_JUM ? WFCRRJUM30YAPR : na, title="Mortgage-Refi-Jumbom-30Y-APR", color=color.new(color.lime, 20))
+WFCPRJUM30YAPRPLOT1 = plot(sh_30YF and sh_JUM ? WFCPRJUM30YAPR : na, title="Mortgage-Purchase-Cnfrm-30Y-APR", color=color.new(color.lime, 40))
+
+fill(WFCRRCON30YAPRPLOT1, WFCPRJUM30YAPRPLOT1,color=color.new(color.lime,95))
+
+
+
+
+//// 30 Year Fixed Rate
+
+FRED30YAPR = quandl("FMAC/30US", barmerge.gaps_off, 0)
+
+
+FRED30YAPRPLOT1 = plot(sh_30YF and sh_FMC ? FRED30YAPR : na, title="FreddieMac-Mortgage-30Y-APR", color=color.new(color.blue, 5), linewidth = 3)
+
+
+
+
+
+
+
+spacing1 = input(false, title="══════════ ══════════ ══════════ ")
+//Moving Averages
+sumalin = input(true, title="══════════ Show Multi Moving Average?══════════ ")
+
+//useCurrentRes = input(true, title="Use Current Chart Resolution?")
+//resCustom = input(title="Use Different Timeframe? Uncheck Box Above", type=input.resolution, defval="D")
+MA_REF1 = input(7, minval=1, maxval=7, title="1=5/1, 2=7/1, 3=15yr, 4=30yr, 5=FMAC-5/1, 6=FMC 15yr, 7=FMC 30yr")
+len = input(13, title="Moving Average Length - LookBack Period")
+atype = input(4, minval=1, maxval=7, title="1=SMA, 2=EMA, 3=WMA, 4=HullMA, 5=VWMA, 6=RMA, 7=TEMA")
+cc = input(true, title="Change Color Based On Direction?")
+smoothe = input(2, minval=1, maxval=10, title="Color Smoothing - 1 = No Smoothing")
+doma2 = input(true, title="Optional 2nd Moving Average")
+MA_REF2 = input(4, minval=1, maxval=7, title="1=5/1, 2=7/1, 3=15yr, 4=30yr, 5=FMAC-5/1, 6=FMC 15yr, 7=FMC 30yr")
+len2 = input(28, title="Moving Average Length - Optional 2nd MA")
+atype2 = input(4, minval=1, maxval=7, title="1=SMA, 2=EMA, 3=WMA, 4=HullMA, 5=VWMA, 6=RMA, 7=TEMA")
+cc2 = input(true, title="Change Color Based On Direction 2nd MA?")
+warn = input(false, title="***You Can Turn On The Show Dots Parameter Below Without Plotting 2nd MA to See Crosses***")
+warn2 = input(false, title="***If Using Cross Feature W/O Plotting 2ndMA - Make Sure 2ndMA Parameters are Set Correctly***")
+sd = input(false, title="Show Dots on Cross of Both MA's")
+//Added Code
+doma3 = input(false, title="Optional 3rd Moving Average")
+MA_REF3 = input(4, minval=1, maxval=7, title="1=5/1, 2=7/1, 3=15yr, 4=30yr, 5=FMAC-5/1, 6=FMC 15yr, 7=FMC 30yr")
+len3 = input(58, title="Moving Average Length - Optional 3rd MA")
+atype3 = input(1, minval=1, maxval=7, title="1=SMA, 2=EMA, 3=WMA, 4=HullMA, 5=VWMA, 6=RMA, 7=TEMA")
+cc3 = input(true, title="Change Color Based On Direction 3rd MA?")
+//
+doma4 = input(false, title="Optional 4th Moving Average")
+MA_REF4 = input(4, minval=1, maxval=7, title="1=5/1, 2=7/1, 3=15yr, 4=30yr, 5=FMAC-5/1, 6=FMC 15yr, 7=FMC 30yr")
+len4 = input(125, title="Moving Average Length - Optional 4th MA")
+atype4 = input(4, minval=1, maxval=7, title="1=SMA, 2=EMA, 3=WMA, 4=HullMA, 5=VWMA, 6=RMA, 7=TEMA")
+cc4 = input(true, title="Change Color Based On Direction 4th MA?")
+//////
+
+
+//res = useCurrentRes ? timeframe.period : resCustom
+//hull ma definition
+hullma = wma(2 * wma(src, len / 2) - wma(src, len), round(sqrt(len)))
+//
+n2ma = 2 * wma(src, round(len / 2))
+nma = wma(src, len)
+diff = n2ma - nma
+sqn = round(sqrt(len))
+n2ma1 = 2 * wma(src[1], round(len / 2))
+nma1 = wma(src[1], len)
+diff1 = n2ma1 - nma1
+sqn1 = round(sqrt(len))
+n1 = wma(diff, sqn)
+n2 = wma(diff1, sqn)
+
+
+//TEMA definition
+ema1 = ema(src, len)
+ema2 = ema(ema1, len)
+ema3 = ema(ema2, len)
+tema = 3 * (ema1 - ema2) + ema3
+
+sma_1 = sma(src, len)
+ema_1 = ema(src, len)
+wma_1 = wma(src, len)
+vwma_1 = vwma(src, len)
+rma_1 = rma(src, len)
+avg = atype == 1 ? sma_1 : atype == 2 ? ema_1 : atype == 3 ? wma_1 :
+   atype == 4 ? hullma : atype == 5 ? vwma_1 : atype == 6 ? rma_1 : tema
+//2nd Ma - hull ma definition
+hullma2 = wma(2 * wma(src, len2 / 2) - wma(src, len2), round(sqrt(len2)))
+//2nd MA TEMA definition
+sema1a = ema(src, len2)
+sema2a = ema(sema1a, len2)
+sema3a = ema(sema2a, len2)
+stemaa = 3 * (sema1a - sema2a) + sema3a
+
+sma_2 = sma(src, len2)
+ema_2 = ema(src, len2)
+wma_2 = wma(src, len2)
+vwma_2 = vwma(src, len2)
+rma_2 = rma(src, len2)
+avg2 = atype2 == 1 ? sma_2 : atype2 == 2 ? ema_2 : atype2 == 3 ? wma_2 :
+   atype2 == 4 ? hullma2 : atype2 == 5 ? vwma_2 : atype2 == 6 ? rma_2 : tema
+//Added Code for 3rd and 4th//
+//3rd Ma - hull ma definition
+hullma3 = wma(2 * wma(src, len3 / 2) - wma(src, len3), round(sqrt(len3)))
+//3rd MA TEMA definition
+sema1b = ema(src, len3)
+sema2b = ema(sema1b, len3)
+sema3b = ema(sema2b, len3)
+stemab = 3 * (sema1b - sema2b) + sema3b
+
+sma_3 = sma(src, len3)
+ema_3 = ema(src, len3)
+wma_3 = wma(src, len3)
+vwma_3 = vwma(src, len3)
+rma_3 = rma(src, len3)
+avg3 = atype3 == 1 ? sma_3 : atype3 == 2 ? ema_3 : atype3 == 3 ? wma_3 :
+   atype3 == 4 ? hullma3 : atype3 == 5 ? vwma_3 : atype3 == 6 ? rma_3 : tema
+//
+//4th Ma - hull ma definition
+hullma4 = wma(2 * wma(src, len4 / 2) - wma(src, len4), round(sqrt(len4)))
+//4th MA TEMA definition
+sema1c = ema(src, len4)
+sema2c = ema(sema1c, len4)
+sema3c = ema(sema2c, len4)
+stemac = 3 * (sema1c - sema2c) + sema3c
+
+sma_4 = sma(src, len4)
+ema_4 = ema(src, len4)
+wma_4 = wma(src, len4)
+vwma_4 = vwma(src, len4)
+rma_4 = rma(src, len4)
+avg4 = atype4 == 1 ? sma_4 : atype4 == 2 ? ema_4 : atype4 == 3 ? wma_4 :
+   atype4 == 4 ? hullma4 : atype4 == 5 ? vwma_4 : atype4 == 6 ? rma_4 : tema
+
+out = avg
+out_two = avg2
+//
+out_three = avg3
+out_four = avg4
+//
+
+///////////////////////////////////
+
+MA_1 = MA_REF1 == 1 ? "WFC/PR_CON_51ARM_APR" : MA_REF1 == 2 ? "WFC/PR_CON_71ARM_APR" : MA_REF1 == 3 ? "WFC/PR_CON_15YFIXED_APR" :
+   MA_REF1 == 4 ? "WFC/PR_CON_30YFIXED_APR" : MA_REF1 == 5 ? "FMAC/ARM5YR" : MA_REF1 == 6 ? "FMAC/15US" : "FMAC/30US"
+
+MA_2 = MA_REF2 == 1 ? "WFC/PR_CON_51ARM_APR" : MA_REF2 == 2 ? "WFC/PR_CON_71ARM_APR" : MA_REF2 == 3 ? "WFC/PR_CON_15YFIXED_APR" :
+   MA_REF2 == 4 ? "WFC/PR_CON_30YFIXED_APR" : MA_REF2 == 5 ? "FMAC/ARM5YR" : MA_REF2 == 6 ? "FMAC/15US" : "FMAC/30US"
+
+
+out1 = quandl(MA_1, barmerge.gaps_off, 0)
+out2 = quandl(MA_2, barmerge.gaps_off, 0)
+//
+
+//FRED30YAPR = security("QUANDL:FMAC/FIX30US", res, close)
+
+MA_3 = MA_REF3 == 1 ? "WFC/PR_CON_51ARM_APR" : MA_REF3 == 2 ? "WFC/PR_CON_71ARM_APR" : MA_REF3 == 3 ? "WFC/PR_CON_15YFIXED_APR" :
+   MA_REF3 == 4 ? "WFC/PR_CON_30YFIXED_APR" : MA_REF3 == 5 ? "FMAC/ARM5YR" : MA_REF3 == 6 ? "FMAC/15US" : "FMAC/30US"
+
+MA_4 = MA_REF4 == 1 ? "WFC/PR_CON_51ARM_APR" : MA_REF4 == 2 ? "WFC/PR_CON_71ARM_APR" : MA_REF4 == 3 ? "WFC/PR_CON_15YFIXED_APR" :
+   MA_REF4 == 4 ? "WFC/PR_CON_30YFIXED_APR" : MA_REF4 == 5 ? "FMAC/ARM5YR" : MA_REF4 == 6 ? "FMAC/15US" : "FMAC/30US"
+
+out3 = quandl(MA_3, barmerge.gaps_off, 0)
+out4 = quandl(MA_4, barmerge.gaps_off, 0)
+// //
+
+ma_up = out1 >= out1[smoothe]
+ma_down = out1 < out1[smoothe]
+
+ma_up2 = out2 >= out2[smoothe]
+ma_down2 = out2 < out2[smoothe]
+// //
+ma_up3 = out3 >= out3[smoothe]
+ma_down3 = out3 < out3[smoothe]
+
+
+ma_up4 = out4 >= out4[smoothe]
+ma_down4 = out4 < out4[smoothe]
+
+
+col = n1 > n2 ?
+   cc ? ma_up ? color.lime : ma_down ? color.red : color.aqua : color.aqua :
+   color.aqua
+col2 = n1 > n2 ?
+   cc2 ? ma_up2 ? color.lime : ma_down2 ? color.red : color.aqua : color.aqua :
+   color.aqua
+// //
+
+col3 = n1 > n2 ?
+   cc3 ? ma_up3 ? color.lime : ma_down3 ? color.red : color.aqua : color.aqua :
+   color.aqua
+col4 = n1 > n2 ?
+   cc4 ? ma_up4 ? color.lime : ma_down4 ? color.red : color.aqua : color.aqua :
+   color.aqua
+// //
+//
+
+circleYPosition = out2
+
+plot(sumalin and out1 ? out1 : na, title="Multi-Timeframe Moving Avg", style=plot.style_line, linewidth=2, color=col)
+plot(sumalin and doma2 and out2 ? out2 : na, title="2nd Multi-TimeFrame Moving Average", style=plot.style_line, linewidth=2, color=col2)
+// //
+plot(sumalin and doma3 and out3 ? out3 : na, title="3rd Multi-TimeFrame Moving Average", style=plot.style_circles, linewidth=2, color=col3)
+plot(sumalin and doma4 and out4 ? out4 : na, title="4th Multi-TimeFrame Moving Average", style=plot.style_circles, linewidth=4, color=col4)
+// //
+
+
+
+
+////
+//@version=3
+// === INVERTED YIELD CURVE WITH VIX FEAR INDEX - STUDY BY MONOTONES 2018 ===
+//US 2 year and US 10 year comparison inverted yield curve with VIX
+//Two fear indexes combined, the VIX Fear Index and the run for safe US treasuries. I use this on a weekly chart with 2 moving averages, the 40 week (ma200 daily) and the 520 week (10 year median). The last seven recessions were preceded by an inverted yield curve. This is preset to the 2 year and 10 year US bond, weekly, and the normal VIX ticker but you can set it to whatever you like.
+//study(title="MonoTones_InvertingYieldCurve_with_FearIndex", overlay=false)
+
+// === GENERAL INPUTS ===
+shortBond           = input(defval = 'TVC:US02Y', title = "Short Bond")
+longBond               = input(defval = 'TVC:US10Y', title = "Long Bond")
+verylongBond               = input(defval = 'TVC:US30Y', title = "Very Long Bond")
+VIXSource              = input(defval = 'VIX', title = "VIX Ticker")
+timeSpan               = input(defval = 'D', title = "Time Span")
+sourceHandle           = input(defval = close, title = "Source Handle")
+VIXExtremeLevel        = input(defval = 34, title = "VIX Extreme Level")
+VIXDangerLevel        = input(defval = 23, title = "VIX Danger Level")
+VIXSafeLevel        = input(defval = 14, title = "VIX Safe Level")
+//SETUP
+shortBondSecurity    = security(shortBond, timeSpan, sourceHandle)
+longBondSecurity     = security(longBond, timeSpan, sourceHandle)
+verylongBondSecurity     = security(verylongBond, timeSpan, sourceHandle)
+VIXSecurity         = security(VIXSource, timeSpan, high)
+
+//BONDS
+//P1 = plot(shortBondSecurity,color=color.new(color.black, 40),linewidth = 2, title="shortBondSecurity")
+//P2 = plot(longBondSecurity,color=color.new(#5d5a76, 60),linewidth = 1, title="longBondSecurity")
+//P3 = plot(verylongBondSecurity,color=color.new(#5d5a76, 80),linewidth = 1, title="verylongBondSecurity")
+
+
+//Set the yield levels
+extremeDanger = (shortBondSecurity >= longBondSecurity and shortBondSecurity >= verylongBondSecurity)
+danger = shortBondSecurity >= longBondSecurity or longBondSecurity >= verylongBondSecurity
+tootight = longBondSecurity <= (shortBondSecurity * 1.06)
+verySafe = longBondSecurity >= (shortBondSecurity * 1.6)
+veryverySafe = verylongBondSecurity >= longBondSecurity and longBondSecurity >= (shortBondSecurity * 1.6)
+safe = longBondSecurity >= (shortBondSecurity * 1.6)
+
+mainFillColor = extremeDanger ? color.new(color.red, 0) : danger ? color.new(color.orange, 0) : safe ? verySafe ? veryverySafe ? color.new(color.green, 50) : color.new(color.green, 80) : color.new(color.green, 90): tootight ? color.new(color.yellow, 25) : color.new(#5d5a76, 95)
+//fill(P1,P2, color=mainFillColor)
+//fill(P1,P3, color=mainFillColor)
+
+
+//VIX Code
+percentVIX = (VIXSecurity - 9.14) / 32
+if percentVIX >= 1
+    percentVIX := 1
+VIXExtreme = VIXSecurity > VIXExtremeLevel
+VIXDanger = VIXSecurity > VIXDangerLevel
+VIXSafe = VIXSecurity < VIXSafeLevel
+VIXFillColor = (VIXExtreme ? color.new(color.red, 0) : VIXDanger ? color.new(#ffb26a, 0) : VIXSafe ? color.new(color.green, 0) : color.new(color.gray, 92))
+
+//H2 = plot(percentVIX, color=VIXFillColor, style = plot.style_histogram, linewidth = 4, title="VIX Histogram")
+
+
+//Combine the 2 for background color
+maxFear = VIXDanger and extremeDanger
+scareFactor = VIXDanger and tootight
+scareColor = maxFear ? color.new(color.red, 0) : scareFactor ? color.new(color.red, 80) : color.new(color.gray, 100)
+bgcolor(scareColor)
+
+
+// vline(BarIndex, Color, LineStyle, LineWidth) => // Verticle Line Function, ≈50-54 lines maximum allowable per indicator
+//     // return = line.new(BarIndex,   0.0, BarIndex,     100.0, xloc.bar_index, extend.both, Color, LineStyle, LineWidth) // Suitable for study(overlay=false) and RSI, Stochastic, etc...
+//     // return = line.new(BarIndex,  -1.0, BarIndex,       1.0, xloc.bar_index, extend.both, Color, LineStyle, LineWidth) // Suitable for study(overlay=false) and +/-1.0 oscillators
+//     return = line.new(BarIndex, low - tr, BarIndex, high + tr, xloc.bar_index, extend.both, Color, LineStyle, LineWidth) // Suitable for study(overlay=true)
+
+// if(bar_index%10==0.0) // Generically plots a line every 10 bars
+//     vline(bar_index, #FF8000ff, line.style_solid, 1) // Variable assignment not required
+
+//////
+// sma_check = close > sma(close, 14)
+// vol_check = volume > (volume[1] * 2)
+// close_check = close > open
+
+// sma_plot_col = sma_check ? green : red
+// vol_plot_col = vol_check ? green : red
+// close_plot_col = close_check ? green : red
+
+// longCondition = sma_check and vol_check and close_check
+// if(longCondition)
+//     strategy.entry("Long", strategy.long)
+
+// shortCondition = not sma_check and not vol_check and not close_check
+// if(shortCondition)
+//     strategy.entry("Short", strategy.short)
+
+
+
+
+//
+// Works best as an intraday indicator
+// Background black & line green = Long VIX
+// Background black & red line = No trade
+// Background orange & line green = Consider selling
+// Background orange & line red = Short VIX
+//
+//study(title="VIX INDICATOR", shorttitle="VIX INDICATOR")
+
+sym1 = input(title="VIX1", defval="VIXMO")
+sym2 = input(title="VIX3", defval="VIX3M")
+sym3 = input(title="VVIX", defval="VVIX")
+sym4 = input(title="VXST", defval="VXST")
+//sym5 = input(title="Symbol4", type=symbol, defval="VRP")
+
+MOD1 = security(sym1, res, close)
+MOD2 = security(sym2, res, close)
+MOD3 = security(sym3, res, close)
+MOD4 = security(sym4, res, close)
+//MOD5 = -1 * security(sym5, period, close)
+
+C0 = MOD1 * MOD2 * MOD3 * MOD4
+
+//MODL1 = security(sym1, period, low)
+//MODL2 = security(sym2, period, low)
+//MODL3 = security(sym3, period, low)
+//MODL4 = security(sym4, period, low)
+
+//L0 = MODL1 * MODL2 * MODL3 * MODL4
+
+//MODH1 = security(sym1, period, high)
+//MODH2 = security(sym2, period, high)
+//MODH3 = security(sym3, period, high)
+//MODH4 = security(sym4, period, high)
+
+//H0 = MODH1 * MODH2 * MODH3 * MODH4
+
+//MODM1 = security(sym1, period, hl2)
+//MODM2 = security(sym2, period, hl2)
+//MODM3 = security(sym3, period, hl2)
+//MODM4 = security(sym4, period, hl2)
+
+//M0 = MODM1 * MODM2 * MODM3 * MODM4
+
+CLOSE0 = input(title="EMA Close", defval=21)
+KC0 = ema(C0, CLOSE0)
+//plot(KC0, color=orange, style = line, linewidth = 2, title = "LongEMA close")
+
+CLOSE1 = input(title="shortEMA Close", defval=8)
+KC1 = ema(C0, CLOSE1)
+//plot(KC1, color=blue, style = line, linewidth = 2, title = "shortEMA close")
+
+//MEAN0 = input(title="longEMA Mean", type=integer, defval=21)
+//KM0 = ema(M0, MEAN0)
+//plot(KM0, color=orange, style = line, linewidth = 2, title = "EMA mean")
+
+//MEAN1 = input(title="shortEMA Mean", type=integer, defval=6)
+//KM1 = ema(M0, MEAN1)
+//plot(KM1, color=blue, style = line, linewidth = 2, title = "EMA mean")
+
+caution=input(true, title="Enable Background Color?")
+TrendColor = (C0 < KC1 ? color.orange : na ) // KC1 < C0 ? color.green :
+//bgcolor(caution?TrendColor:na,transp=50)
+
+//plot(C0, color=teal, transp=0,linewidth=3, title = "Close")
+//plot(H0, color=green, transp=0,linewidth=3, title = "High")
+//plot(L0, color=red, transp=0,linewidth=3, title = "Low")
+//plot(M0, color=teal, transp=0,linewidth=3, title = "Mean")
+
+//plot(title="close", (MOD1 * MOD2 * MOD3 * MOD4), color=yellow, transp=0,linewidth=3)
+//plot(title="High", (MODH1 * MODH2 * MODH3 * MODH4), color=green, transp=0,linewidth=3)
+//plot(title="Low", (MODL1 * MODL2 * MODL3 * MODL4), color=red, transp=0,linewidth=3)
+//plot(title="Mean", (MODM1 * MODM2 * MODM3 * MODM4), color=teal, transp=0,linewidth=3)
+
+spanColor = KC1>=KC0 ? color.lime : color.red
+//barcolor(C0 <= KC0 ? black : red)
+
+//p1 = plot(KC1, title="EMA Short", style=line, linewidth=3, color=spanColor)
+//p2 = plot(KC0, title="EMA Long", style=line, linewidth=3, color=spanColor)
+
+
+
+//fill(p1, p2, color=silver, transp=40, title="Fill")
+
+// security(C0, period, close)
+
+//conversionPeriods = input(9, minval=1, title="Convert Period"),
+//basePeriods = input(26, minval=1, title="Base Period")
+//laggingSpan2Periods = input(52, minval=1, title="Lag 2 Periods"),
+//displacement = input(26, minval=1, title="Displacement")
+
+
+//ConversionLine = (9-period high + 9-period low)/2))
+//(Base Line): (26-period high + 26-period low)/2))
+//Leading Span A): (Conversion Line + Base Line)/2))
+//(Leading Span B): (52-period high + 52-period low)/2))
+//(Lagging Span): Close plotted 26 days in the past
+
+//donchian = sma(C0, displacement)
+//conversionLine = avg(lowest(L0, conversionPeriods), highest(H0, conversionPeriods))
+//baseLine = avg(lowest(L0, basePeriods), highest(H0, basePeriods))
+//leadLine1 = avg(conversionLine, baseLine)
+//leadLine2 =  avg(lowest(L0, laggingSpan2Periods), highest(H0, laggingSpan2Periods))
+
+//donchian(len) => avg(lowest(len, L0), highest(len, H0))
+//conversionLine = donchian(conversionPeriods, C0)
+//baseLine = donchian(basePeriods, C0)
+//leadLine1 = avg(conversionLine, baseLine)
+//leadLine2 = donchian(laggingSpan2Periods,)
+
+
+//plot(conversionLine, color=#0496ff, title="Convert", transp=0,linewidth=2)
+//plot(baseLine, color=#991515, title="Base", transp=0,linewidth=2)
+//plot(close, offset = -displacement, color=#459915, title="Lag", transp=0,linewidth=2)
+
+
+//p01 = plot(leadLine1, offset = displacement, color=green, title="Lead1",linewidth=2)
+//p02 = plot(leadLine2, offset = displacement, color=red, title="Lead2",linewidth=2)
+//fill(p01, p02, color = leadLine1 > leadLine2 ? green : red, transp=70)
+
+
+
+
+plotshape(1, title='mainFillColor', color=mainFillColor, style=shape.triangledown, location=location.bottom)
+plotshape(2, title='TrendColor', color=TrendColor, style=shape.circle, location=location.bottom)
+plotshape(3, title='VIXFillColor',color=VIXFillColor, style=shape.arrowdown, location=location.bottom)
+
+plotshape(4, title='VIXFillColor',color=spanColor, style=shape.labeldown, location=location.bottom)
+//hline(x_int = x ? high : low, linestyle=solid)

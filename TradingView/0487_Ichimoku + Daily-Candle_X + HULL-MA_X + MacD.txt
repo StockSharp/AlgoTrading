@@ -1,0 +1,73 @@
+//@version=6
+strategy("Ichimoku + Daily-Candle_X + HULL-MA_X + MacD (v6)", shorttitle="٩(̾●̮̮̃̾•̃̾)۶", overlay=true,
+     initial_capital=10000, default_qty_type=strategy.percent_of_equity,
+     default_qty_value=100, commission_type=strategy.commission.percent,
+     commission_value=0.25, slippage=1, max_bars_back=2999)
+
+// === INPUTS ===
+hmaPeriod       = input.int(14, minval=1, title="Hull MA Period")
+resolution      = input.timeframe("D", title="Daily Candle Resolution")
+priceSource     = input.source(open, title="Price Source")
+
+// Ichimoku inputs
+conversionPeriod = input.int(9, minval=1, title="Conversion Line Period")
+basePeriod       = input.int(26, minval=1, title="Base Line Period")
+spanPeriod       = input.int(52, minval=1, title="Lagging Span Period")
+displacement     = input.int(26, minval=1, title="Displacement")
+
+// MACD inputs
+macdFastLen   = input.int(12, title="MACD Fast Length")
+macdSlowLen   = input.int(26, title="MACD Slow Length")
+macdSignalLen = input.int(9, title="MACD Signal Length")
+
+// === HULL MOVING AVERAGE ===
+hmaNow  = ta.hma(priceSource, hmaPeriod)
+hmaPrev = ta.hma(priceSource[1], hmaPeriod)
+
+hmaBull = hmaNow > hmaPrev
+hmaBear = hmaNow < hmaPrev
+
+// === DAILY CANDLE COMPARISON ===
+dailyNow  = request.security(syminfo.tickerid, resolution, priceSource)
+dailyPrev = request.security(syminfo.tickerid, resolution, priceSource[1])
+
+dailyBull = dailyNow > dailyPrev
+dailyBear = dailyNow < dailyPrev
+
+// === ICHIMOKU ===
+donchian(len) =>
+    (ta.lowest(len) + ta.highest(len)) / 2
+
+conversionLine = donchian(conversionPeriod)
+baseLine       = donchian(basePeriod)
+leadLine1      = (conversionLine + baseLine) / 2
+leadLine2      = donchian(spanPeriod)
+
+// === CUSTOM MACD USING HULL ===
+macdLine   = ta.hma(priceSource, macdFastLen) - ta.hma(priceSource, macdSlowLen)
+macdSignal = ta.hma(macdLine, macdSignalLen)
+
+macdBull = macdLine > macdSignal
+macdBear = macdLine < macdSignal
+
+// === ENTRY CONDITIONS ===
+longCondition  = hmaBull and dailyBull and priceSource > hmaPrev and leadLine1 > leadLine2 and macdBull
+shortCondition = hmaBear and dailyBear and priceSource < hmaPrev and leadLine1 < leadLine2 and macdBear
+
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+// === OPTIONAL PLOTS ===
+// Uncomment these if you want to see the indicators visually
+
+// plot(hmaNow, color=color.green, title="HMA Now")
+// plot(hmaPrev, color=color.red, title="HMA Prev")
+// plot(conversionLine, color=color.blue, title="Conversion Line")
+// plot(baseLine, color=color.red, title="Base Line")
+// plot(priceSource, offset=-displacement, color=color.gray, title="Lagging Span")
+// lead1 = plot(leadLine1, offset=displacement, color=color.green, title="Lead Line 1")
+// lead2 = plot(leadLine2, offset=displacement, color=color.red, title="Lead Line 2")
+// fill(lead1, lead2, color=leadLine1 > leadLine2 ? color.new(color.green, 80) : color.new(color.red, 80))

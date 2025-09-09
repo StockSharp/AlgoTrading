@@ -1,0 +1,161 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sabricat
+
+//@version=5
+
+// @description: Implements functions to display square images using <table> objects
+library("imlib", overlay=true)
+
+// Custom type to describe image data
+export type ImgData
+    int w
+    int h
+    string s
+    string pal
+    array<string> data
+
+// @function: Decompresses string with data image
+// @param data: String with image data
+// @returns: Array of <string> with decompressed data
+export _decompress(string data) =>
+    var arr = array.new<string>(0, na)
+    res = ''
+    num = ''
+    for i = 0 to str.length(data) - 1
+        char = str.substring(data, i, i + 1)
+        char_is_num = not na(str.tonumber(char))
+        if char_is_num
+            num := num + char
+        if not char_is_num
+            if num != ''
+                num_int = str.tonumber(num)
+                for j = 0 to num_int - 2
+                    if str.length(res) == 4096
+                        array.push(arr, res)
+                        res := ''
+                    res := res + char
+                num := ''
+            if num == ''
+                if str.length(res) == 4096
+                    array.push(arr, res)
+                    res := ''
+                res := res + char
+    if res != ''
+        array.push(arr, res)
+    arr
+
+// @function: Splits the string with image data into components and builds an <ImgData> object
+// @param data: String with image data
+// @returns: An <ImgData> object
+export load(string data) =>
+    data_ = str.split(data, '⫝')
+    size = array.get(data_, 0)
+    w_ = str.substring(size, 0, 1)
+    h_ = str.substring(size, 1, 2)
+    p2 = array.get(data_, 1)
+    s = str.substring(p2, 0, 256)
+    pal = str.substring(p2, 256)
+    da = _decompress(array.get(data_, 2))
+    w = str.pos(s, w_)
+    h = str.pos(s, h_)
+    ImgData.new(w, h, s, pal, da)
+
+// @function: Displays an image in a table
+// @param imgdata: <ImgData> object that contains data about the image
+// @param table_id: <table> to use for displaying the image
+// @param image_size: Size of the image; the greatest of <width> and <height> has this size
+// @param screen_ratio: Width to height ratio (you can set a ratio like "width/height" or a value like "2.0", "3")
+// @returns: nothing
+export show(ImgData imgdata, table table_id, float image_size=20.0, string screen_ratio="16/8.5") =>
+    cur_col = 0
+    cur_row = 0
+    var palette_ = array.new<color>(0, na)
+
+    var int r = -1
+    var int g = -1
+    var int b = -1
+    var int t = -1
+
+    for i = 0 to str.length(imgdata.pal)
+        char = str.substring(imgdata.pal, i, i + 1)
+        done = false
+        if r == -1
+            r := str.pos(imgdata.s, char)
+            done := true
+        if g == -1 and not done
+            g := str.pos(imgdata.s, char)
+            done := true
+        if b == -1 and not done
+            b := str.pos(imgdata.s, char)
+            done := true
+        if t == -1 and not done
+            t := str.pos(imgdata.s, char)
+            array.push(palette_, color.new(color.rgb(r, g, b), 100 - t))
+            r := -1
+            g := -1
+            b := -1
+            t := -1
+
+    float ratio = na
+    screen_ratio_split = str.split(screen_ratio, "/")
+    if screen_ratio_split.size() == 2
+        ratio := str.tonumber(screen_ratio_split.get(0)) / str.tonumber(screen_ratio_split.get(1))
+    else
+        ratio := str.tonumber(screen_ratio_split.get(0))
+
+    pixel_size = image_size / math.max(imgdata.h, imgdata.w)
+
+    for i = 0 to array.size(imgdata.data) - 1
+        data_ = array.get(imgdata.data, i)
+        for j = 0 to str.length(data_) - 1
+            char = str.substring(data_, j, j + 1)
+            pos = str.pos(imgdata.s, char)
+            if cur_col == imgdata.w
+                cur_row := cur_row + 1
+                cur_col := 0
+            table.cell(table_id, cur_col, cur_row, bgcolor=array.get(palette_, pos), width=pixel_size, text='', height=pixel_size * ratio, text_size=size.tiny)
+            cur_col := cur_col + 1
+
+// @function: Use it as an example of how this library works and how to use it in your own scripts
+// @returns: nothing
+export example() =>
+    var ImgData imgdata = na
+    var table t = na
+
+    imgdata_raw = "ℌℌ⫝❢čтIЙñð^īКyкПù{;ДЁȢЛūōpȹÞирчBPç∋⊣èⱬЬƼzюƩE℃gƶ$*≈Ke∱äjžжW∅.Тįk,ãц&ȜƽZлśУъńµ⊆ℌ♠︎Lõż⟡⟢Б⊢Ωбê⊤!+xéßℑnQæАFƷó(ɀɁíƺ∼ОHþЗХV<ш-fНЪvЯ)ё☻сOûbē⟣UпüƱJǮɂaAš=одЧöâШîйƸ:}āаЫЩэеCęòƪ@ƛNïвыrł>áзƻǷdВИу[Mƾ]ǯhн⊐фЮXȣ#ƔćTЖФƹ℉Г∆⊏ℳź|ôꭓ℞cщМСåìЦяÿ_RsгьœmúoGРмDėàȸЕiS%Эluqхwt⊇Yø¿⸘‽¡§†‡¦⁉❢❢❢❢⁉⁉⁉тXXℳЛþɀæшёfV⟡ǮǮǮⱬǯǯƾ{<ОɁƻё-H‡AǮJВaJaéаааи∆∆∆ùǮOЪ@шíƷ‡⟣ûē#)ЪЗe⊐M]gûсс^]ï})a)∼¦)-<d∆⊐dƶłЫA¦Ɂxõ¦é⊢♠¦fɀê‡Хƺ(йƻrry℞нИūMваåшОƺsfHɀż⊐ИNꭓℳ>š¦dï:¦Ω♠ъ¦néxd+⊤⟢ц&bbЙdáłƶФ⊐łƻ℉фd¦щƾй¦µkj⁉ТjK⁉⟡ъ.¦+êΩ∆ББżæjj︎yЩооȢU☻)KЧɂƱШЩй=âℳMrбhƻ@ÿǷáƛ¦îƱш¦≈℃E⁉łAþ¦ćęOå_ƾШMРнöǷЕФòэР#йΩG><КÿÿåЛЩ:йЗUсOГГГИȹ=Оõ⁉∆а<¦dƸv⁉℞ïЯ⁉м⊐š†ȸTШ⁉ÿИдℳСƛп=úh=(ℳыüɀ⊐ЫbíòšЪΩб∼бПGååȢЕРЕùǷááżöAп¦ǷCîLźƔ]ℌh]d¦ƪǮХ⊏üшéóïоН&ь]д∱R]âō℉>оКoìåeйоJёa⟣⟣cƛааиȣуNИа:о⁉∱Eи⁉šЪ!⁉DhšЦúЮЧǮ|áîxàƹ@p_ящzMr@UƸUс℃|ǯCõƹэb$ƹ⊐ávВęЧòƷб,⁉òЧ⟣⁉ЖǷе,Иï:ȣИыХ⁉ƼPр⁉z∋è⁉∆∆ЫКƹhCFXИCБгВё⁉d>аÞb>bðР⊏В‡Еåh⁉фǷòс∆йℑ⁉ȣВę⁉XMзЯóóéBMп+⁉úВO⁉dвò>Чпб⁉DRщ¦-Ɂnê|ℳƹ¦ßБц⁉ЭЕD¦àGs¦Г]з|ƽžç⁉яćе⁉⊏Жн¦яìщ¦‽Yх⁉#у@=ууаy[зözсf⟡⁉эöUrэîH⁉оƱ)ēhИf⁉ьcн⁉Щâ⊤⁉б︎Уžǯǯуℑ__С︎<Ɂk⁉ååꭓa⟡л,юЦЦщ@úXò⁉żлãЦjjj;ÿяСФЖэ⟣⁉♠ƽãƛ⊤ż︎лR_Ц<пп☻PGoьꭓМT⊐ǷРььɂc[эCХµТ⁉ꭓƪсmRXł=мРmµAQµ⁉U⊢ц⁉ФдQ⁉ФЧF⁉iгåз%GGþмoRюDDGоSȸDС⁉||ñJ∼А⁉∼︎µ⁉ыёΩ⁉щЖ#âȸȸGxNOæ⁉йɀ,⁉ėėoИƽюю⁉РРРzFц&⁉ęò}⁉РꭓT⁉ėмmшmús⁉ꭓ|∆ûoℳнRꭓꭓℳ⊆o℞Tsė℞фXR℉ȣЪúℳфx⫝673❢č47❢čт24❢IЙñ45❢ðт24❢^2īКyк42❢2П24❢ù4{;Д40❢čЁȢ24❢Лū5{ōД38❢ðЁ25❢pȹ{2Þи{ирчȢ36❢ðB25❢Pçȹр2иÞ2и{∋⊣34❢čЁč25❢ЁèⱬЬ{3Ƽ2иÞ{zюƩ31❢2ð11❢ȢBEB11❢ð℃gƶЬр3Ƽ$*≈ƼиKe∱29❢Пð9❢äjžКжȢ12❢W∅.ⱬЬТрƼ*2į*Þ2k,2ãц&Ȝƽ22❢BZ8❢Eлś3īžč12❢У℃2g3ЬТр*į*ъń2µ⊆ⱬ2ℌ♠︎L2õż⟡⟢Б15❢⊢Z5❢Ωбžê2{ÞрТ⊤14❢!g+ЬµТр2Ти$Ƽ2р≈2ръТ3ⱬℌ♠ℌ2⊆xéß2ℑnQ9❢æZ3❢jАFī{ÞиÞūȹçƷ14❢póЬȹ(ТрÞ2рÞƼ$*ɀ*Ƽи{Т2ūīū2kµ⊆Ɂъⱬ2ℌíцƺ∼ℑО3❢čH2❢Дō2{Þ2иƼрk2ЬþȢ14❢P℃+ȹ(ȹū6Þ3≈иÞрū2ī2Þê(ū2рирµ4♠ℌ2ƶã∼ЗWХVIÞи3ƼиÞūµ2ЬçB15❢ð<.Ьȹ2Тр4Þ2р5ɁрūТūīТīūȹūÞƼ{ⱬℌⱬkȹµȹⱬЬТȹkрƼ$*$≈ƼÞТⱬ3Ьш17❢póƶЬ2µТрÞТ2µТɁÞ≈-ÞрūТ2µȹfТȹ(и{ÞīⱬȹêȹТīТū2ТрƼ$2į2*Þµⱬ2ЬƶⱬН17❢p℃2ƶЪȹµȹЬⱬµū-2≈ÞрɁūТµvµ⊆ƶµȹЬр3īЬⱬЬТ3ū{Т{≈$*Я)įÞµȹЬƶ2gЛč17❢ёХ☻сEжūТЬµɁÞ2≈2ÞūТūkµ2⊆Oƶ⊆Тȹ2Ь2ūЬ2ƶ♠⊆kТūТ2рÞ2$ƼрūТȹ2Ьgóû22❢bАТ2kɁ$≈3Þū2kµkń⊆ƶℌⱬ⊆k2ū2Ьūȹƶē⟣ℌ⊆µkТр2ТɁÞ2≈рТȹЬ2gU24❢ЙūkТр≈ÞɁūТµkµk2п⊆2ℌń2ТЬ{рgȹ(gē♠ℌ3⊆kūрɁ2Т2ÞūµЬü2+Ʊ23❢Jчр2ū-рɁūТk2µ⊆ń3пƶℌǮÞТƶЬÞê.(gēƶ⊆ɂ2⊆µkūÞрµⱬЬ2ȹЬⱬ+að23❢⊣{2Þ2рū4Тµ3ⱬ2⊆п⊆♠A-µ2ƶkТ.ê+š⊆ⱬℌ3⊆2µ3ūЬgⱬ3Ь.E24❢={2Þ2рɁТkТɁµ2ЬⱬЬⱬ2⊆♠µъⱬ2ƶЬТ.ȹоšⱬƶ♠⊆ńⱬµТµūрТⱬƶg2Ь⊤25❢⊣{3рū2ТūɁ3ūрдÞɁµⱬ2ƶµ3ƶⱬЬ2+Чögƶ♠ⱬńⱬƶµТµ2рЬgâèЪû25❢⊣{2р2ū2ТɁрūТÞЯ$и≈Ш≈kƶⱬ2ƶîƶЬйƸ2:šē2ƶ⊆2ƶТр2Тūȹ}Bāаё25❢Й2рūриÞиƼТƶg2ÞТЫр{≈ɀТ2ƶⱬƶⱬgš3:š2ƶⱬ⊆ƶЬТ2µ2ТЩB29❢Дрūр2Ƽ2*ūƶgйрТvэЫ≈рɀ$ȹйƶЬgš4:ƸЬⱬ⊆ⱬЬȹµȹЬТūе30❢ДрÞƼрÞиƼÞȹgйТACvɁ-р≈ɀū2ęƶйЧ3:ЧйȹЬȹТр2Þрȹkр⊣30❢jр≈рɁрīи≈ūȹйƶр2vò2AЫɀū2š2й4:šgЬȹÞ≈$3ɀрūÞƪ30❢Д{рТµūТū2≈рȹēȹЫ2vµvЫ*kšö2ēЧ3:ƸgЬр2≈īÞд$3Þƪ29❢Ω@2ūµэ3ТÞ≈ÞрТgȹɁ2Aр≈иµēöēš3:Ч2ƸЬрɁ≈р2ЫÞµÞ≈ю29❢ƛƸȹТȹ2ТэТр$Ƽ2рūƶgȹТȹkⱬńⱬ⟣ö4:Ч2šȹɁANЫAɁ{ƶȹƼƪ29❢ïƸ.īūТ4ūÞ≈рɁūТЬ2⟣ē2ƶńƶö2Ч3:Чšй2ɁòA2эиȹйЬÞв29❢ыƸg(р≈Ƽ2≈иÞи≈Þ2ū(Ьgйērgš6:Чšⱬ4ɁЫиТйƶТł>28❢ПáƸоЬТÞ≈2$иÞи$и{êЬ.göЧö2Ч6:ЧögkзⱬµkⱬgЬȹрƻ29❢H3ƸйЬȹūрÞр2ū2ÞūЬ.gЧ4:2Ч2:5Чš2ⱬēйg+Т3рǷ29❢dö2Ƹоg+Ь(Тūī3Тê+Ƹ7:2Ч:šо2šЧöšēöƸ2g(3{В28❢ZИЧ2Ƹой3+.Ь2ȹ2Ь.оЧ7:Чšоgо2šƸо2Ч2:Чö+2ТȹE28❢ƛöš2Ƹ2о2+2.ЬȹЬ.gƸЧ6:ЧƸš.ūê.2о+ȹо3ЧöƸ.2ТgуHč26❢[Ч4Ƹой2+3.Ьȹ.Ƹ5:2ЧšȹkÞƼÞ{ūÞūъfй2Ƹоg(ūkń⊆ⱬ︎MWPП21❢ΩИЧ3Ƹо2й2+2.2+.+ƸЧ4:ö⟣šйū2ƾъ3ƾ≈ъūТЬ2gȹūТk6ń]ãǯp19❢h2ö2Ƹ2о2й7+о3Чö2Чš2⟣šgÞ$н⊐ƾ$ÞµɁрµЬ.(k2ǮфЮńƶ3ⱬℌ2ēXȣ#16❢ƔЧš3Ƹо2й5+gйgо2ö2ЧƸоgй2ƸЬÞ2ƾ$ÞЬⱬТɁⱬg+.ȹk3Ǯńⱬēšöš2ö2:ć[æT12❢ΩИЧö2Ƹ2ой7+йg+2о4Ƹ4йgЖƾФТ2Ь3µƶgЬk3ƹk2ǮńƶšЧ6:ЧƸ℉p11❢ГЧö3Ƹ2ой4+.4+й5о2+.2Ь.êрê.2ЬµТµⱬgЬ∆2ƹ⊏2ƹǮńⱬēЧ7:öоâЛ⊤9❢ƔЧö3Ƹ2ой+3.+.Ь+й2о3+2.Ь3ȹê{Т6ȹЬƶgЬµk2ƹ2Ǯ2ƹńēö6:šйg2ⱬȹ8❢ZℳЧš3Ƹ2о4+Ь2(2.+о2+.(3êū{Þ$ź{3(3ȹЬ+gȹɁk2µ2ƹǮk⊆ēö6:Ч2šйgз8❢|öЧš3Ƹой3+Ь2(.(2.Ь2+.êī3Þ2Фô$Ƽūê(2ȹЬ.2gȹkъ⊏ƹ2kƹkⱬēö8:Чšgń8❢h2Чö2Ƹ3ой+.ꭓ2Ь(2Ьê(.2+Ьêū3{2ūрÞīê(ȹЬ.+gй.3Ɂ⊏ъ3k⊆ēö8:Чоⱬз8❢Ɣ2Чö4Ƹо2+3.(.Ь2ê3(2.Ь3(êТê2Тê2ȹ2Ь+4gȹъ2Ɂ⊏ъkńⱬgšЧ6:ö2š℞š7❢Zć:Чö3Ƹой4+(.Ь2ê(3Т(2.2Ьȹ3(4ȹ2Ь.+gйg2ЬµъɁ2ƹkńƶēö10:Чš7❢h4Ч2Ƹ2ой+й+3.3(ê4Т(Ь3.2ȹЬ.4Ь.2+g2й.ȹµkъƹkµƶйšöЧ9:Чš7❢c4ЧöƸ2о2й+2.+Ь3(ê2ТīТê(3.Ь2.4Ь.2+2g2йgȹū2kƹkзgšö2Ч10:Ч6❢ðℳ2:2Чö2Ƹ2ой3+.2Ьꭓ(ê5Тê2(ȹ6Ь.2+2g3йgȹ3k∆kƶšö4Ч10:6❢Zć:4Чщ3Ƹой2+.2Ьꭓ2(2ê(3Тê3(ȹ3Ь.4+g2й2gȹ3kµⱬйö5Ч10:6❢#7Ч4Ƹ2о3+.Ь5(4ê2(2ȹ2Ь2.4+g2йg+Ьȹ2µⱬgšö3Ч12:6❢H7Чö4Ƹой3+.Ь11(3Ь.3+g4йgЬ3ȹⱬйƸ3ö3Ч10:Ч6❢Zö6Ч2ö3Ƹ2ой4+2Ь9(2Ь.4+2gйgйg+2ЬⱬйƸšöЧö3Ч2:2Ч6:Ч6❢ΩáЧö4Чö5Ƹ2ой3+.2Ь6(Ь2ȹЬ.4+3g3й+ЬƶйƸš4ö5Ч6:3Ч7❢d2Ƹ4Чö3Ƹо4й4+3.Ь(7Ь.4+2g5йgйƸš5ö4Ч7:3Ч7❢Hо2Ƹ3öЧö2Ƹо2й7+3.5Ь2.Ь.5+g6й2Ƹš2öЧö10Ч3:Чš7❢PáƸš3öš3Ƹ2о2й6+6.Ь5.4+g4й3о2Ƹš5ö11Ч3š8❢М11Ƹо2й6+10.4+3g3й4о2Ƹ5ö3Ч:6ЧöšйС8❢åо7Ƹо2й3ой5+10.5+3g3й3о2Ƹš4ö9Ч3šìЦ8❢H3о5Ƹйgй3о7+7.8+g+g3й2о3Ƹš4ö6Чöšоуя2ÿ"
+
+    if barstate.isfirst
+        imgdata := load(imgdata_raw)
+        t := table.new(position.bottom_right, imgdata.w, imgdata.h)
+
+    if barstate.islast or barstate.isrealtime or barstate.islastconfirmedhistory
+        show(imgdata, t)
+
+// @function: Displays logo using image data string
+// @param imgdata: <ImgData> object that contains data about the image
+// @param position: position of the image (table) on the chart (you can set a string value like "VerticalPosition HorizontalPosition", for example "Top Right")
+// @param image_size: Size of the image; the greatest of <width> and <height> has this size
+// @param screen_ratio: Width to height ratio (you can set a ratio like "width/height" or a value like "2.0", "3")
+// @returns: nothing
+export logo(string imgdata, string position, float image_size=20.0, string screen_ratio="16/9") =>
+    var ImgData imgdata_obj = na
+    var table t = na
+
+    if barstate.isfirst
+        imgdata_obj := load(imgdata)
+        tpos = switch position
+            "Top Left" => position.top_left
+            "Top Center" => position.top_center
+            "Top Right" => position.top_right
+            "Middle Left" => position.middle_left
+            "Middle Center" => position.middle_center
+            "Middle Right" => position.middle_right
+            "Bottom Left" => position.bottom_left
+            "Bottom Center" => position.bottom_center
+            "Bottom Right" => position.bottom_right
+        t := table.new(tpos, imgdata_obj.w, imgdata_obj.h)
+
+    if barstate.islast or barstate.isrealtime or barstate.islastconfirmedhistory
+        show(imgdata_obj, t, image_size, screen_ratio)
+
+example()

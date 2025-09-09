@@ -1,0 +1,241 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RicardoSantos
+
+//@version=4
+study(title='TA Information Panel', overlay=true)
+
+//  Helper Functions: {
+f_color_hsl(_hue, _saturation, _lightness, _transparency)=>//{
+//  @function: returns HSL color.
+//  @reference: https://stackoverflow.com/questions/36721830/convert-hsl-to-rgb-and-hex
+    float _l1 = _lightness / 100.
+    float _a = _saturation * min(_l1, 1. - _l1) / 100.
+    float _rk = (0 + _hue / 30) % 12
+    float _r =  255 * (_l1 - _a * max(min(_rk -3, 9 - _rk, 1), -1))
+    float _gk = (8 + _hue / 30) % 12
+    float _g =  255 * (_l1 - _a * max(min(_gk -3, 9 - _gk, 1), -1))
+    float _bk = (4 + _hue / 30) % 12
+    float _b =  255 * (_l1 - _a * max(min(_bk -3, 9 - _bk, 1), -1))
+    color.rgb(_r, _g, _b, _transparency)
+//}
+
+f_digits(_value)=>//{
+//  @function: counts the number of digits from the lowest precision point.
+//  @parameters:
+//      «float» _value: number to process.
+    float _v = _value
+    int _c = 0
+    for _i = 0 to 999
+        if _v <= 0.0
+            break
+        else
+            _v /= 10.
+            _c += 1
+            continue
+    10 - _c
+//}
+f_string_float_precision(_digits)=>//{
+//  @function: sets the string precision format for using in tostring() function.
+//  @parameters:
+//      «int» _digits: number of digits to clamp string format. (ex: 5 = '#.#####').
+//  @returns: string format precision.
+    _str = '#.'
+    if _digits > 0
+        for _i = 0 to _digits
+            _str += '0'
+    _str
+//}
+str_precision = f_string_float_precision(f_digits(syminfo.mintick))
+
+f_percent_of_max_range(_value)=>//{
+    var float _max = 0.0, _max := max(nz(_max), abs(_value))
+    (_value / _max)
+//}
+//------------------------------------------------------------------------------|
+//------------------------------------------------------------------------------|
+//------------------------------------------------------------------------------|
+//}
+
+string type = input(defval='ema', options=['sma', 'ema'], title='Moving Average Type:', tooltip='Type of moving average to use.', group='Moving Average Options:')
+int length01 = input(defval=010, title='MA Length 1:', group='Moving Average Options:', inline='MA1')
+int length02 = input(defval=025, title='2:', group='Moving Average Options:', inline='MA2')
+int length03 = input(defval=050, title='3:', group='Moving Average Options:', inline='MA2')
+int length04 = input(defval=075, title='4:', group='Moving Average Options:', inline='MA3')
+int length05 = input(defval=100, title='5:', group='Moving Average Options:', inline='MA3', tooltip='Moving averages length paramters')
+
+string timeframe0 = input(defval='240', title='TF 1:', group='MTF Options', inline='MTF1')
+string timeframe1 = input(defval='D', title='2:', group='MTF Options', inline='MTF1')
+string timeframe2 = input(defval='W', title='TF 3:', group='MTF Options', inline='MTF2')
+string timeframe3 = input(defval='M', title='4:', group='MTF Options', inline='MTF2', tooltip='Timeframe parameters.')
+
+int i_color_title_hue = input(group='Color Profile', title='Title:', defval=50, minval=0, maxval=360, tooltip='Title color hue 0:red, 120:green, 240:blue, 360:red')
+int i_color_bull_hue = input(group='Color Profile', title='Bull:', defval=100, minval=0, maxval=360, tooltip='Bull color hue 0:red, 120:green, 240:blue, 360:red')
+int i_color_bear_hue = input(group='Color Profile', title='Bear:', defval=0, minval=0, maxval=360, tooltip='Bear color hue 0:red, 120:green, 240:blue, 360:red')
+int i_color_saturation = input(group='Color Profile', title='Saturation:', defval=30, minval=10, maxval=90, tooltip='Saturation of the colors.')
+int i_color_lightness = input(group='Color Profile', title='Lightness:', defval=70, minval=10, maxval=90, tooltip='Lightness of the colors.')
+int i_color_transparency = input(group='Color Profile', title='Transparency', defval=0, minval=0, maxval=100, tooltip='Table transparency.')
+
+color c_text_color = f_color_hsl(0, 0, 100 - i_color_lightness, i_color_transparency)
+color c_heading = f_color_hsl(i_color_title_hue, i_color_saturation, i_color_lightness, i_color_transparency)//#cabfac
+color c_gray_light = f_color_hsl(i_color_title_hue, 0, i_color_lightness+10, i_color_transparency)
+color c_gray_dark = f_color_hsl(i_color_title_hue, 0, i_color_lightness-10, i_color_transparency)
+color c_bull_light = f_color_hsl(i_color_bull_hue, i_color_saturation-10, i_color_lightness+10, i_color_transparency)
+color c_bull_dark = f_color_hsl(i_color_bull_hue, i_color_saturation-10, i_color_lightness-10, i_color_transparency)
+color c_bear_light = f_color_hsl(i_color_bear_hue, i_color_saturation-10, i_color_lightness+10, i_color_transparency)
+color c_bear_dark = f_color_hsl(i_color_bear_hue, i_color_saturation-10, i_color_lightness-10, i_color_transparency)
+
+//  Statistics Functions: {
+f_ma_stats(_src, _length, _type)=>//{
+//  @function: returns basic statistics of a moving average.
+    float _ma = _type == 'sma' ? sma(_src, _length) : (
+         _type == 'ema' ? ema(_src, _length) : _src )
+    float _price_to_ma = _src - _ma, float _price_to_ma_percent = f_percent_of_max_range(_price_to_ma)
+    float _slope = change(_ma), float _slope_per = f_percent_of_max_range(_slope)
+    float _std = stdev(_src, _length), float _std_per = f_percent_of_max_range(_std)
+    [_ma, _price_to_ma, _price_to_ma_percent, _slope, _slope_per, _std, _std_per]
+//}
+f_osc_stats(_src, _length)=>//{
+//  @function: returns basic statistics of a moving average.
+    _rsi = rsi(_src, _length)
+    _cci = cci(_src, _length)
+    _mfi = mfi(_src, _length)
+    _wpr = wpr(_length)
+    [_rsi, _cci, _mfi, _wpr]
+//}
+f_mtfrange_stats(_tf0, _tf1, _tf2, _tf3, _length)=>//{
+//  @function: returns basic statistics of a multi timeframe
+    float _wpr = 1. + (wpr(_length) * 0.01)
+    _s0 = security(syminfo.tickerid, _tf0, _wpr, barmerge.gaps_off, barmerge.lookahead_off)
+    _s1 = security(syminfo.tickerid, _tf1, _wpr, barmerge.gaps_off, barmerge.lookahead_off)
+    _s2 = security(syminfo.tickerid, _tf2, _wpr, barmerge.gaps_off, barmerge.lookahead_off)
+    _s3 = security(syminfo.tickerid, _tf3, _wpr, barmerge.gaps_off, barmerge.lookahead_off)
+    [_s0, _s1, _s2, _s3]
+//}
+//------------------------------------------------------------------------------|
+//------------------------------------------------------------------------------|
+//------------------------------------------------------------------------------|
+//}
+//  Table Update Functions: {
+f_update_row_title(_id, _row, _title)=>//{
+    table.cell(table_id=_id, column=2, row=_row, text=_title, width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=c_heading)
+    table.cell(table_id=_id, column=0, row=_row, text='', width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=c_heading)
+    table.cell(table_id=_id, column=1, row=_row, text='', width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=c_heading)
+    table.cell(table_id=_id, column=3, row=_row, text='', width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=c_heading)
+    table.cell(table_id=_id, column=4, row=_row, text='', width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=c_heading)
+//}
+f_update_row_head(_id, _row, _c00, _c01, _c02, _c03, _c04)=>//{
+//  @function: updates a 5 column row's values with string inputs.
+//  @parameters:
+//      «table» _id: table id reference.
+//      «int» _row: row number.
+//      «string» _c00 ... _c04: text to fill cells.
+    color _col01 = _row % 2 == 0 ? c_gray_light : c_gray_dark//#b2b5be : #9598a1
+    table.cell(table_id=_id, column=0, row=_row, text=_c00, width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column=1, row=_row, text=_c01, width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column=2, row=_row, text=_c02, width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column=3, row=_row, text=_c03, width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column=4, row=_row, text=_c04, width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+//}
+f_update_row_ma(_id, _row, _precision, _c00, _c01, _c02a, _c02b, _c03a, _c03b, _c04a, _c04b)=>//{
+//  @function: updates a 5 column row's values with numerical values.
+//  @parameters:
+//      «table» _id: table id reference.
+//      «int» _row: row number.
+//      «string» _precision: string format percision. ex: '#.###'
+//      «string» _c00 ... _c04: text to fill cells.
+    color _col01 = _row % 2 == 0 ? c_gray_light : c_gray_dark//#b2b5be : #9598a1
+    color _col02 = _row % 2 == 0 ? (_c02a > 0 ? c_bull_light : c_bear_light) : (_c02a > 0 ? c_bull_dark : c_bear_dark)
+    color _col03 = _row % 2 == 0 ? (_c03a > 0 ? c_bull_light : c_bear_light) : (_c02a > 0 ? c_bull_dark : c_bear_dark)
+    table.cell(table_id=_id, column= 0, row=_row, text=tostring(_c00, '#'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column= 1, row=_row, text=tostring(_c01, _precision), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column= 2, row=_row, text=tostring(_c02a, _precision) + ' ( ' + tostring(_c02b, '#.00% )'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col02)
+    table.cell(table_id=_id, column= 3, row=_row, text=tostring(_c03a, _precision) + ' ( ' + tostring(_c03b, '#.00% )'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col03)
+    table.cell(table_id=_id, column= 4, row=_row, text=tostring(_c04a, _precision) + ' ( ' + tostring(_c04b, '#.00% )'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+//}
+f_update_row_osc(_id, _row, _precision, _c00, _c01, _c02, _c03, _c04)=>//{
+//  @function: updates a 5 column row's values with numerical values.
+//  @parameters:
+//      «table» _id: table id reference.
+//      «int» _row: row number.
+//      «string» _precision: string format percision. ex: '#.###'
+//      «string» _c00 ... _c04: text to fill cells.
+    color _col = _row % 2 == 0 ? c_gray_light : c_gray_dark//#b2b5be : #9598a1
+    color _col01 = _row % 2 == 0 ? (_c01 > 50 ? c_bull_light : c_bear_light) : (_c01 > 50 ? c_bull_dark : c_bear_dark)
+    color _col02 = _row % 2 == 0 ? (_c02 > 0 ? c_bull_light : c_bear_light) : (_c02 > 0 ? c_bull_dark : c_bear_dark)
+    color _col03 = _row % 2 == 0 ? (_c03 > 50 ? c_bull_light : c_bear_light) : (_c03 > 50 ? c_bull_dark : c_bear_dark)
+    color _col04 = _row % 2 == 0 ? (_c04 > -50 ? c_bull_light : c_bear_light) : (_c04 > -50 ? c_bull_dark : c_bear_dark)
+    table.cell(table_id=_id, column= 0, row=_row, text=tostring(_c00, '#'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col)
+    table.cell(table_id=_id, column= 1, row=_row, text=tostring(_c01, _precision), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column= 2, row=_row, text=tostring(_c02, _precision), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col02)
+    table.cell(table_id=_id, column= 3, row=_row, text=tostring(_c03, _precision), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col03)
+    table.cell(table_id=_id, column= 4, row=_row, text=tostring(_c04, _precision), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col04)
+//}
+f_update_row_mtfrange(_id, _row, _precision, _c00, _c01, _c02, _c03, _c04)=>//{
+//  @function: updates a 5 column row's values with numerical values.
+//  @parameters:
+//      «table» _id: table id reference.
+//      «int» _row: row number.
+//      «string» _precision: string format percision. ex: '#.###'
+//      «string» _c00 ... _c04: text to fill cells.
+    color _col = _row % 2 == 0 ? c_gray_light : c_gray_dark//#b2b5be : #9598a1
+    color _col01 = _row % 2 == 0 ? (_c01 > .50 ? c_bull_light : c_bear_light) : (_c01 > .50 ? c_bull_dark : c_bear_dark)
+    color _col02 = _row % 2 == 0 ? (_c02 > .50 ? c_bull_light : c_bear_light) : (_c02 > .50 ? c_bull_dark : c_bear_dark)
+    color _col03 = _row % 2 == 0 ? (_c03 > .50 ? c_bull_light : c_bear_light) : (_c03 > .50 ? c_bull_dark : c_bear_dark)
+    color _col04 = _row % 2 == 0 ? (_c04 > .50 ? c_bull_light : c_bear_light) : (_c04 > .50 ? c_bull_dark : c_bear_dark)
+    table.cell(table_id=_id, column= 0, row=_row, text=tostring(_c00, '#'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col)
+    table.cell(table_id=_id, column= 1, row=_row, text=tostring(_c01, '#.00%'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col01)
+    table.cell(table_id=_id, column= 2, row=_row, text=tostring(_c02, '#.00%'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col02)
+    table.cell(table_id=_id, column= 3, row=_row, text=tostring(_c03, '#.00%'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col03)
+    table.cell(table_id=_id, column= 4, row=_row, text=tostring(_c04, '#.00%'), width=0, height=0, text_color=c_text_color, text_size=size.small, bgcolor=_col04)
+//}
+//------------------------------------------------------------------------------|
+//------------------------------------------------------------------------------|
+//------------------------------------------------------------------------------|
+//}
+
+
+[ma_01, ma_01_price_to_ma, ma_01_price_to_ma_per, ma_01_slope, ma_01_slope_per, ma_01_std, ma_01_std_per] = f_ma_stats(close, length01, type)
+[ma_02, ma_02_price_to_ma, ma_02_price_to_ma_per, ma_02_slope, ma_02_slope_per, ma_02_std, ma_02_std_per] = f_ma_stats(close, length02, type)
+[ma_03, ma_03_price_to_ma, ma_03_price_to_ma_per, ma_03_slope, ma_03_slope_per, ma_03_std, ma_03_std_per] = f_ma_stats(close, length03, type)
+[ma_04, ma_04_price_to_ma, ma_04_price_to_ma_per, ma_04_slope, ma_04_slope_per, ma_04_std, ma_04_std_per] = f_ma_stats(close, length04, type)
+[ma_05, ma_05_price_to_ma, ma_05_price_to_ma_per, ma_05_slope, ma_05_slope_per, ma_05_std, ma_05_std_per] = f_ma_stats(close, length05, type)
+
+[rsi_01, cci_01, mfi_01, wpr_01] = f_osc_stats(close, length01)
+[rsi_02, cci_02, mfi_02, wpr_02] = f_osc_stats(close, length02)
+[rsi_03, cci_03, mfi_03, wpr_03] = f_osc_stats(close, length03)
+[rsi_04, cci_04, mfi_04, wpr_04] = f_osc_stats(close, length04)
+[rsi_05, cci_05, mfi_05, wpr_05] = f_osc_stats(close, length05)
+
+[tf0_01, tf1_01, tf2_01, tf3_01] = f_mtfrange_stats(timeframe0, timeframe1, timeframe2, timeframe3, length01)
+[tf0_02, tf1_02, tf2_02, tf3_02] = f_mtfrange_stats(timeframe0, timeframe1, timeframe2, timeframe3, length02)
+[tf0_03, tf1_03, tf2_03, tf3_03] = f_mtfrange_stats(timeframe0, timeframe1, timeframe2, timeframe3, length03)
+[tf0_04, tf1_04, tf2_04, tf3_04] = f_mtfrange_stats(timeframe0, timeframe1, timeframe2, timeframe3, length04)
+[tf0_05, tf1_05, tf2_05, tf3_05] = f_mtfrange_stats(timeframe0, timeframe1, timeframe2, timeframe3, length05)
+
+var T = table.new(
+     position=position.top_right, columns=5, rows=21, bgcolor=color.silver,
+     frame_color=color.gray, frame_width=2, border_color=color.gray, border_width=0)
+if barstate.islast
+    f_update_row_title(T, 0, 'MOVING AVERAGE')
+    f_update_row_head(T, 1, 'LENGTH', 'MA', 'ERROR (%max)', 'SLOPE (%max)', 'STD (%max)')
+    f_update_row_ma(T, 2, str_precision, length01, ma_01, ma_01_price_to_ma, ma_01_price_to_ma_per, ma_01_slope, ma_01_slope_per, ma_01_std, ma_01_std_per)
+    f_update_row_ma(T, 3, str_precision, length02, ma_02, ma_02_price_to_ma, ma_02_price_to_ma_per, ma_02_slope, ma_02_slope_per, ma_02_std, ma_02_std_per)
+    f_update_row_ma(T, 4, str_precision, length03, ma_03, ma_03_price_to_ma, ma_03_price_to_ma_per, ma_03_slope, ma_03_slope_per, ma_03_std, ma_03_std_per)
+    f_update_row_ma(T, 5, str_precision, length04, ma_04, ma_04_price_to_ma, ma_04_price_to_ma_per, ma_04_slope, ma_04_slope_per, ma_04_std, ma_04_std_per)
+    f_update_row_ma(T, 6, str_precision, length05, ma_05, ma_05_price_to_ma, ma_05_price_to_ma_per, ma_05_slope, ma_05_slope_per, ma_05_std, ma_05_std_per)
+
+    f_update_row_title(T, 7, 'OSCILLATOR')
+    f_update_row_head( T, 8, 'LENGTH', 'RSI', 'CCI', 'MFI', 'W%')
+    f_update_row_osc( T,  9, str_precision, length01, rsi_01, cci_01, mfi_01, wpr_01)
+    f_update_row_osc( T, 10, str_precision, length02, rsi_02, cci_02, mfi_02, wpr_02)
+    f_update_row_osc( T, 11, str_precision, length03, rsi_03, cci_03, mfi_03, wpr_03)
+    f_update_row_osc( T, 12, str_precision, length04, rsi_04, cci_04, mfi_04, wpr_04)
+    f_update_row_osc( T, 13, str_precision, length05, rsi_05, cci_05, mfi_05, wpr_05)
+
+    f_update_row_title(T, 14, 'MTF RANGE')
+    f_update_row_head( T, 15, 'LENGTH', timeframe0, timeframe1, timeframe2, timeframe3)
+    f_update_row_mtfrange( T, 16, str_precision, length01, tf0_01, tf1_01, tf2_01, tf3_01)
+    f_update_row_mtfrange( T, 17, str_precision, length02, tf0_02, tf1_02, tf2_02, tf3_02)
+    f_update_row_mtfrange( T, 18, str_precision, length03, tf0_03, tf1_03, tf2_03, tf3_03)
+    f_update_row_mtfrange( T, 19, str_precision, length04, tf0_04, tf1_04, tf2_04, tf3_04)
+    f_update_row_mtfrange( T, 20, str_precision, length05, tf0_05, tf1_05, tf2_05, tf3_05)

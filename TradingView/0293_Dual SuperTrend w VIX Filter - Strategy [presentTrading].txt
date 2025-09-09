@@ -1,0 +1,332 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+//@version=5
+strategy("Dual SuperTrend w VIX Filter - Strategy [presentTrading]", overlay=true, precision=3, commission_value=0.1, commission_type=strategy.commission.percent, slippage=1, currency=currency.USD, default_qty_type=strategy.percent_of_equity, default_qty_value=10, initial_capital=10000)
+
+// ============================================================================
+// User Inputs
+// ============================================================================
+group_trend = "SuperTrend Settings"
+stLength1 = input.int(13, title="SuperTrend 1 Length", group=group_trend)
+stMult1 = input.float(3.5, title="SuperTrend 1 Multiplier", step=0.1, group=group_trend)
+stLength2 = input.int(8, title="SuperTrend 2 Length", group=group_trend)
+stMult2 = input.float(5.0, title="SuperTrend 2 Multiplier", step=0.1, group=group_trend)
+
+// VIX Standard Deviation Filter Settings
+group_vix = "VIX Standard Deviation Filter"
+useVIX = input.bool(true, title="Use VIX Filter", group=group_vix)
+vixSymbol = input.string("VIX", title="VIX Symbol", group=group_vix)
+vixLookbackPeriod = input.int(252, title="VIX Lookback Period", group=group_vix, tooltip="Period for calculating VIX mean and standard deviation")
+stdDevMultiplier = input.float(1.0, title="Standard Deviation Multiplier", step=0.1, group=group_vix, tooltip="VIX threshold in standard deviations above mean")
+vixTrendPeriod = input.int(10, title="VIX Trend Period", group=group_vix, tooltip="Period for calculating VIX trend")
+
+// Trading Rules
+group_rules = "Trading Rules"
+longVixRule = input.string("Above Mean", title="Long Entry VIX Rule", options=["Below Mean + SD", "Below Mean", "Falling VIX", "Above Mean", "Rising VIX", "Any"], group=group_rules, tooltip="Note: Strategy will only take long positions when VIX is above its mean, regardless of selection")
+shortVixRule = input.string("Rising VIX", title="Short Entry VIX Rule", options=["Above Mean + SD", "Above Mean", "Rising VIX", "Any"], group=group_rules)
+
+group_trade = "Trading Direction"
+tradeDirection = input.string("Both", title="Trading Direction", options=["Long", "Short", "Both"], group=group_trade)
+
+// ============================================================================
+// Exit Settings
+// ============================================================================
+group_exits = "Standard Exit Settings"
+useStandardExits = input.bool(false, title="Use Standard Exit Settings", group=group_exits)
+useTrailingStop = input.bool(false, title="Use Trailing Stop", group=group_exits)
+trailPercent = input.float(5.0, title="Trailing Stop %", step=0.1, group=group_exits)
+takeProfitPercent = input.float(10.0, title="Take Profit %", step=0.1, group=group_exits)
+stopLossPercent = input.float(5.0, title="Stop Loss %", step=0.1, group=group_exits)
+
+// 4-Step Take Profit Settings
+group_4step = "4-Step Take Profit Settings"
+use4StepTP = input.bool(true, title="Use 4-Step Take Profit", group=group_4step, tooltip="When enabled, this will override the standard take profit settings")
+
+// Take Profit Levels
+tp1Percent = input.float(3.0, title="Take Profit 1 (%)", step=0.1, group=group_4step)
+tp2Percent = input.float(6.0, title="Take Profit 2 (%)", step=0.1, group=group_4step)
+tp3Percent = input.float(10.0, title="Take Profit 3 (%)", step=0.1, group=group_4step)
+tp4Percent = input.float(15.0, title="Take Profit 4 (%)", step=0.1, group=group_4step)
+
+// Position Size to Exit at Each Level
+size1Percent = input.float(12.0, title="Size to Exit at TP1 (%)", step=1.0, group=group_4step)
+size2Percent = input.float(12.0, title="Size to Exit at TP2 (%)", step=1.0, group=group_4step)
+size3Percent = input.float(12.0, title="Size to Exit at TP3 (%)", step=1.0, group=group_4step)
+size4Percent = input.float(12.0, title="Size to Exit at TP4 (%)", step=1.0, group=group_4step)
+
+// Alternative: ATR-based Take Profit
+group_atr_tp = "ATR-based Take Profit Settings"
+useAtrTP = input.bool(false, title="Use ATR-based Take Profit", group=group_atr_tp, tooltip="When enabled, this will use ATR multiples instead of fixed percentages")
+atrLength = input.int(14, title="ATR Length", group=group_atr_tp)
+atrMult1 = input.float(2.5, title="ATR Multiplier for TP1", step=0.1, group=group_atr_tp)
+atrMult2 = input.float(5, title="ATR Multiplier for TP2", step=0.1, group=group_atr_tp)
+atrMult3 = input.float(8.0, title="ATR Multiplier for TP3", step=0.1, group=group_atr_tp)
+atrMult4 = input.float(13.0, title="ATR Multiplier for TP4", step=0.1, group=group_atr_tp)
+
+// ============================================================================
+// Calculate SuperTrend Indicators
+// ============================================================================
+// SuperTrend function
+supertrend(length, mult) =>
+    atr = ta.atr(length)
+    up = hl2 - (mult * atr)
+    dn = hl2 + (mult * atr)
+
+    var float trend = 0
+    var float uptrend = na
+    var float downtrend = na
+
+    uptrend := close[1] > uptrend[1] ? math.max(up, uptrend[1]) : up
+    downtrend := close[1] < downtrend[1] ? math.min(dn, downtrend[1]) : dn
+
+    trend := close > downtrend[1] ? 1 : close < uptrend[1] ? -1 : trend[1]
+
+    trendline = trend == 1 ? uptrend : downtrend
+
+    [trend, trendline]
+
+[st1Trend, st1Value] = supertrend(stLength1, stMult1)
+[st2Trend, st2Value] = supertrend(stLength2, stMult2)
+
+// ============================================================================
+// VIX Standard Deviation Filter
+// ============================================================================
+// Get VIX data
+vixClose = request.security(vixSymbol, "D", close, lookahead=barmerge.lookahead_off)
+
+// Calculate VIX mean and standard deviation
+vixMean = ta.sma(vixClose, vixLookbackPeriod)
+vixStdDev = ta.stdev(vixClose, vixLookbackPeriod)
+
+// Calculate standard deviation bands
+vixUpperBand1 = vixMean + vixStdDev * 2
+vixUpperBand2 = vixMean + vixStdDev * 3
+vixLowerBand1 = vixMean - vixStdDev * 2
+vixLowerBand2 = vixMean - vixStdDev * 3
+
+// Calculate VIX Z-Score (standardized value)
+vixZScore = (vixClose - vixMean) / vixStdDev
+
+// VIX Trend (for "Falling VIX" and "Rising VIX" rules)
+vixTrend = ta.ema(vixClose, vixTrendPeriod)
+vixTrendRising = vixClose > vixTrend
+vixTrendFalling = vixClose < vixTrend
+
+// Determine VIX regime
+vixRegime = vixClose < vixLowerBand1 ? "Very Low Volatility" :
+           vixClose < vixMean ? "Low Volatility" :
+           vixClose < vixUpperBand1 ? "Normal Volatility" :
+           vixClose < vixUpperBand2 ? "High Volatility" :
+           "Extreme Volatility"
+
+// MODIFIED: Long VIX filter now REQUIRES vixClose > vixMean regardless of the selected rule
+// This determines when long entries are allowed based on VIX conditions
+vixLongFilter = switch longVixRule
+    "Below Mean + SD" => vixClose < vixLowerBand1    // VIX is below mean minus standard deviation (low volatility)
+    "Below Mean" => vixClose < vixMean               // VIX is below its average (lower volatility)
+    "Falling VIX" => vixTrendFalling                 // VIX is trending down (decreasing volatility)
+    "Above Mean" => vixClose > vixMean               // VIX is above its average (higher volatility)
+    "Rising VIX" => vixTrendRising                   // VIX is trending up (increasing volatility)
+    "Any" => true                                    // No VIX filter applied, always true
+    => vixClose > vixMean                            // Default is "Above Mean" if no valid option selected
+
+// Short VIX filter based on the selected rule in shortVixRule dropdown
+// This determines when short entries are allowed based on VIX conditions
+vixShortFilter = switch shortVixRule
+    "Above Mean + SD" => vixClose > vixUpperBand1    // VIX is above mean plus standard deviation (high volatility)
+    "Above Mean" => vixClose > vixMean               // VIX is above its average (higher volatility)
+    "Rising VIX" => vixTrendRising                   // VIX is trending up (increasing volatility)
+    "Any" => true                                    // No VIX filter applied, always true
+    => vixClose > vixUpperBand1                      // Default is "Above Mean + SD" if no valid option selected
+
+// ============================================================================
+// Entry/Exit Conditions
+// ============================================================================
+// Long conditions - both SuperTrends must be bullish and VIX must be above its mean
+longCondition = st1Trend == 1 and st2Trend == 1 and (not useVIX or vixLongFilter)
+exitLongCondition = st1Trend == -1 or st2Trend == -1
+
+// Short conditions - both SuperTrends must be bearish
+shortCondition = st1Trend == -1 and st2Trend == -1 and (not useVIX or vixShortFilter)
+exitShortCondition = st1Trend == 1 or st2Trend == 1
+
+// ============================================================================
+// Strategy Execution
+// ============================================================================
+if barstate.isconfirmed
+    // Long entry
+    if (tradeDirection == "Long" or tradeDirection == "Both") and longCondition and strategy.position_size <= 0
+        strategy.entry("Long", strategy.long)
+
+    // Short entry
+    if (tradeDirection == "Short" or tradeDirection == "Both") and shortCondition and strategy.position_size >= 0
+        strategy.entry("Short", strategy.short)
+
+    // Long exit
+    if (tradeDirection == "Long" or tradeDirection == "Both") and exitLongCondition and strategy.position_size > 0
+        strategy.close("Long")
+
+    // Short exit
+    if (tradeDirection == "Short" or tradeDirection == "Both") and exitShortCondition and strategy.position_size < 0
+        strategy.close("Short")
+
+// ============================================================================
+// Take Profit and Stop Loss
+// ============================================================================
+
+// Calculate ATR for ATR-based targets
+atrValue = ta.atr(atrLength)
+
+// Initialize take profit price variables
+var float tp1Price = na
+var float tp2Price = na
+var float tp3Price = na
+var float tp4Price = na
+
+if useStandardExits and not use4StepTP
+    // Standard take profit and stop loss
+    if strategy.position_size > 0
+        // For long positions
+        longTakeProfitPrice = strategy.position_avg_price * (1 + takeProfitPercent / 100)
+        longStopLossPrice = strategy.position_avg_price * (1 - stopLossPercent / 100)
+
+        if useTrailingStop
+            strategy.exit("Long TP/SL/TS", "Long", limit=longTakeProfitPrice, stop=longStopLossPrice, trail_price=strategy.position_avg_price * (1 + trailPercent / 100), trail_offset=strategy.position_avg_price * (trailPercent / 100))
+        else
+            strategy.exit("Long TP/SL", "Long", limit=longTakeProfitPrice, stop=longStopLossPrice)
+
+    if strategy.position_size < 0
+        // For short positions
+        shortTakeProfitPrice = strategy.position_avg_price * (1 - takeProfitPercent / 100)
+        shortStopLossPrice = strategy.position_avg_price * (1 + stopLossPercent / 100)
+
+        if useTrailingStop
+            strategy.exit("Short TP/SL/TS", "Short", limit=shortTakeProfitPrice, stop=shortStopLossPrice, trail_price=strategy.position_avg_price * (1 - trailPercent / 100), trail_offset=strategy.position_avg_price * (trailPercent / 100))
+        else
+            strategy.exit("Short TP/SL", "Short", limit=shortTakeProfitPrice, stop=shortStopLossPrice)
+
+if use4StepTP
+    // 4-Step Take Profit
+    if strategy.position_size > 0
+        // For Long positions
+        if useAtrTP
+            // ATR-based take profit levels
+            tp1Price := strategy.position_avg_price + atrValue * atrMult1
+            tp2Price := strategy.position_avg_price + atrValue * atrMult2
+            tp3Price := strategy.position_avg_price + atrValue * atrMult3
+            tp4Price := strategy.position_avg_price + atrValue * atrMult4
+        else
+            // Percentage-based take profit levels
+            tp1Price := strategy.position_avg_price * (1 + tp1Percent / 100)
+            tp2Price := strategy.position_avg_price * (1 + tp2Percent / 100)
+            tp3Price := strategy.position_avg_price * (1 + tp3Percent / 100)
+            tp4Price := strategy.position_avg_price * (1 + tp4Percent / 100)
+
+        // Stop loss for all steps
+        longStopLossPrice = strategy.position_avg_price * (1 - stopLossPercent / 100)
+
+        // Execute the take profits
+        strategy.exit("Long TP1", "Long", qty_percent=size1Percent, limit=tp1Price, stop=longStopLossPrice)
+        strategy.exit("Long TP2", "Long", qty_percent=size2Percent, limit=tp2Price, stop=longStopLossPrice)
+        strategy.exit("Long TP3", "Long", qty_percent=size3Percent, limit=tp3Price, stop=longStopLossPrice)
+        strategy.exit("Long TP4", "Long", qty_percent=size4Percent, limit=tp4Price, stop=longStopLossPrice)
+
+    if strategy.position_size < 0
+        // For Short positions
+        if useAtrTP
+            // ATR-based take profit levels
+            tp1Price := strategy.position_avg_price - atrValue * atrMult1
+            tp2Price := strategy.position_avg_price - atrValue * atrMult2
+            tp3Price := strategy.position_avg_price - atrValue * atrMult3
+            tp4Price := strategy.position_avg_price - atrValue * atrMult4
+        else
+            // Percentage-based take profit levels
+            tp1Price := strategy.position_avg_price * (1 - tp1Percent / 100)
+            tp2Price := strategy.position_avg_price * (1 - tp2Percent / 100)
+            tp3Price := strategy.position_avg_price * (1 - tp3Percent / 100)
+            tp4Price := strategy.position_avg_price * (1 - tp4Percent / 100)
+
+        // Stop loss for all steps
+        shortStopLossPrice = strategy.position_avg_price * (1 + stopLossPercent / 100)
+
+        // Execute the take profits
+        strategy.exit("Short TP1", "Short", qty_percent=size1Percent, limit=tp1Price, stop=shortStopLossPrice)
+        strategy.exit("Short TP2", "Short", qty_percent=size2Percent, limit=tp2Price, stop=shortStopLossPrice)
+        strategy.exit("Short TP3", "Short", qty_percent=size3Percent, limit=tp3Price, stop=shortStopLossPrice)
+        strategy.exit("Short TP4", "Short", qty_percent=size4Percent, limit=tp4Price, stop=shortStopLossPrice)
+
+// ============================================================================
+// Visualization
+// ============================================================================
+// Plot SuperTrend lines
+stColor1 = st1Trend == 1 ? color.green : color.red
+stColor2 = st2Trend == 1 ? color.lime : color.orange
+
+plot(st1Value, title="SuperTrend 1", color=stColor1, linewidth=2)
+plot(st2Value, title="SuperTrend 2", color=stColor2, linewidth=2)
+
+// Plot take profit levels for 4-step TP (only plot when in a position and 4-step TP is enabled)
+if use4StepTP and strategy.position_size != 0
+    var label tp1Label = na
+    var label tp2Label = na
+    var label tp3Label = na
+    var label tp4Label = na
+
+    if barstate.islast
+        // Remove old labels
+        label.delete(tp1Label)
+        label.delete(tp2Label)
+        label.delete(tp3Label)
+        label.delete(tp4Label)
+
+        if strategy.position_size > 0
+            // For long positions
+            tp1Label := label.new(bar_index, tp1Price, "TP1: " + str.tostring(size1Percent) + "%", color=color.green, style=label.style_label_right, textcolor=color.white)
+            tp2Label := label.new(bar_index, tp2Price, "TP2: " + str.tostring(size2Percent) + "%", color=color.green, style=label.style_label_right, textcolor=color.white)
+            tp3Label := label.new(bar_index, tp3Price, "TP3: " + str.tostring(size3Percent) + "%", color=color.green, style=label.style_label_right, textcolor=color.white)
+            tp4Label := label.new(bar_index, tp4Price, "TP4: " + str.tostring(size4Percent) + "%", color=color.green, style=label.style_label_right, textcolor=color.white)
+
+        if strategy.position_size < 0
+            // For short positions
+            tp1Label := label.new(bar_index, tp1Price, "TP1: " + str.tostring(size1Percent) + "%", color=color.red, style=label.style_label_right, textcolor=color.white)
+            tp2Label := label.new(bar_index, tp2Price, "TP2: " + str.tostring(size2Percent) + "%", color=color.red, style=label.style_label_right, textcolor=color.white)
+            tp3Label := label.new(bar_index, tp3Price, "TP3: " + str.tostring(size3Percent) + "%", color=color.red, style=label.style_label_right, textcolor=color.white)
+            tp4Label := label.new(bar_index, tp4Price, "TP4: " + str.tostring(size4Percent) + "%", color=color.red, style=label.style_label_right, textcolor=color.white)
+
+// ============================================================================
+// Information Display
+// ============================================================================
+// Color for VIX regime display
+vixColor = vixClose < vixLowerBand1 ? color.green :
+           vixClose < vixMean ? color.lime :
+           vixClose < vixUpperBand1 ? color.yellow :
+           vixClose < vixUpperBand2 ? color.orange :
+           color.red
+
+var table infoTable = table.new(position.top_right, 2, 12, color.black, color.white, 2, color.gray, 1)
+table.cell(infoTable, 0, 0, "SuperTrend 1", text_color=color.white)
+table.cell(infoTable, 1, 0, st1Trend == 1 ? "Bullish" : "Bearish", text_color=st1Trend == 1 ? color.green : color.red)
+table.cell(infoTable, 0, 1, "SuperTrend 2", text_color=color.white)
+table.cell(infoTable, 1, 1, st2Trend == 1 ? "Bullish" : "Bearish", text_color=st2Trend == 1 ? color.green : color.red)
+table.cell(infoTable, 0, 2, "VIX Current", text_color=color.white)
+table.cell(infoTable, 1, 2, str.tostring(vixClose, "#.##"), text_color=vixColor)
+table.cell(infoTable, 0, 3, "VIX Mean", text_color=color.white)
+table.cell(infoTable, 1, 3, str.tostring(vixMean, "#.##"), text_color=color.white)
+table.cell(infoTable, 0, 4, "VIX StdDev", text_color=color.white)
+table.cell(infoTable, 1, 4, str.tostring(vixStdDev, "#.##"), text_color=color.white)
+table.cell(infoTable, 0, 5, "VIX Z-Score", text_color=color.white)
+table.cell(infoTable, 1, 5, str.tostring(vixZScore, "#.##"), text_color=vixColor)
+table.cell(infoTable, 0, 6, "VIX Regime", text_color=color.white)
+table.cell(infoTable, 1, 6, vixRegime, text_color=vixColor)
+table.cell(infoTable, 0, 7, "VIX Long Filter", text_color=color.white)
+table.cell(infoTable, 1, 7, vixLongFilter ? "Passed" : "Failed", text_color=vixLongFilter ? color.green : color.red)
+table.cell(infoTable, 0, 8, "VIX Short Filter", text_color=color.white)
+table.cell(infoTable, 1, 8, vixShortFilter ? "Passed" : "Failed", text_color=vixShortFilter ? color.green : color.red)
+table.cell(infoTable, 0, 9, "Position", text_color=color.white)
+table.cell(infoTable, 1, 9, strategy.position_size > 0 ? "Long" : strategy.position_size < 0 ? "Short" : "None",
+     text_color=strategy.position_size > 0 ? color.green : strategy.position_size < 0 ? color.red : color.white)
+table.cell(infoTable, 0, 10, "Take Profit Mode", text_color=color.white)
+table.cell(infoTable, 1, 10, use4StepTP ? "4-Step" : "Standard", text_color=color.white)
+table.cell(infoTable, 0, 11, "TP Calculation", text_color=color.white)
+table.cell(infoTable, 1, 11, use4StepTP and useAtrTP ? "ATR-based" : "Percentage", text_color=color.white)

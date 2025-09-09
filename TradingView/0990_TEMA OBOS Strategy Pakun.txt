@@ -1,0 +1,76 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+
+//@version=6
+strategy("TEMA OBOS Strategy Pakun", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Input Settings ===
+length = input.int(25, title="TEMA Length", minval=1)
+showEma = input.bool(true, title="Show EMA?", inline="display")
+Colorcandels = input.bool(false, title="Barcolor?", inline="display")  // Default is off
+Temaout = input.bool(false, title="Show TEMA Output?", inline="display")
+
+// === User-configurable TP / SL Settings ===
+tpMultiplier = input.float(5, title="Take Profit (TP) Multiplier")  // Multiplier for ATR to set TP
+slMultiplier = input.float(2, title="Stop Loss (SL) Multiplier")     // Multiplier for ATR to set SL
+
+// === OBOS Indicator Settings ===
+obosLength = input.int(85, title="OBOS Length")
+
+// === TEMA Calculation ===
+ema1 = ta.ema(close, length)
+ema2 = ta.ema(ema1, length)
+ema3 = ta.ema(ema2, length)
+ema4 = ta.ema(ema2, length * 2)
+temaOut = 3 * (ema1 - ema2) + ema3
+
+Distance = ema4 - ema3
+colorEMA = Distance < Distance[1] and Distance <= 0 ? color.rgb(0, 183, 255) :
+           Distance > Distance[1] and Distance >= 0 ? color.rgb(255, 122, 12) :
+           Distance < Distance[1] ? color.rgb(189, 202, 111) :
+           Distance > Distance[1] ? color.rgb(125, 213, 224) :
+           color.rgb(138, 138, 138)
+
+// === OBOS Calculation ===
+ys1 = (high + low + close * 2) / 4
+rk3 = ta.ema(ys1, obosLength)
+rk4 = ta.stdev(ys1, obosLength)
+rk5 = (ys1 - rk3) * 100 / rk4
+rk6 = ta.ema(rk5, obosLength)
+up = ta.ema(rk6, obosLength)
+down = ta.ema(up, obosLength)
+
+Oo = up < down ? up : down
+Hh = Oo
+Ll = up < down ? down : up
+Cc = Ll
+barcolor2 = Oo[1] < Oo and Cc < Cc[1] ? color.blue : up > down ? color.green : color.red
+
+// === Entry Conditions ===
+// Long Entry (Buy)
+longCondition = ta.crossover(ema3, ema4) and up > down
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+// Short Entry (Sell)
+shortCondition = ta.crossunder(ema3, ema4) and up < down
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+// === TP & SL Settings ===
+atr = ta.atr(14)
+
+// Apply user-defined TP / SL
+takeProfit = atr * tpMultiplier
+stopLoss = atr * slMultiplier
+
+strategy.exit("TP/SL Long", from_entry="Long", limit=close + takeProfit, stop=close - stopLoss)
+strategy.exit("TP/SL Short", from_entry="Short", limit=close - takeProfit, stop=close + stopLoss)
+
+// === Chart Plotting ===
+plot(Temaout ? temaOut : na, "TEMA", color=colorEMA, linewidth=3)
+plot(showEma ? ema3 : na, "EMA3", color=colorEMA, linewidth=2)
+plot(showEma ? ema4 : na, "EMA4", color=colorEMA, linewidth=2)
+
+// Default hidden plot for candle color (if enabled)
+plot(Colorcandels ? Oo : na, title="PlotCandle Placeholder", display=display.none)

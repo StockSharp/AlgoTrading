@@ -1,0 +1,36 @@
+//@version=6
+strategy("Volatility Arbitrage Spread Oscillator Model (VASOM)", overlay=true,
+     initial_capital=20000, slippage=1, commission_type=strategy.commission.percent,
+     commission_value=0.01, default_qty_type=strategy.fixed, default_qty_value=5)
+
+// Inputs
+vixFrontTicker = input.symbol("CBOE:VX1!", "VIX Front Month")
+vixSecondTicker = input.symbol("CBOE:VX2!", "VIX Second Month")
+
+longThreshold = input.int(46, "RSI Threshold for Long Entry", minval=1, maxval=100)
+exitThreshold = input.int(76, "RSI Threshold for Exit", minval=1, maxval=100)
+rsiPeriod = input.int(2, "RSI Period", minval=1)
+
+// Fetch data for front and second month VIX futures
+vixFront = request.security(vixFrontTicker, timeframe.period, close)
+vixSecond = request.security(vixSecondTicker, timeframe.period, close)
+
+// Spread calculation
+spread = vixFront - vixSecond
+
+// RSI Calculation on Spread
+spreadRSI = ta.rsi(spread, rsiPeriod)
+
+// Plot the spread and its RSI for visualization
+plot(spreadRSI, title="Spread RSI", color=color.white)
+
+// Trading logic
+if (spreadRSI < longThreshold)
+    strategy.entry("Long", strategy.long)
+
+if (spreadRSI > exitThreshold)
+    strategy.close("Long")
+
+// Debugging plots
+hline(longThreshold, "Long Threshold", color=color.green)
+hline(exitThreshold, "Exit Threshold", color=color.red)

@@ -1,0 +1,57 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © EdgeTools
+
+//@version=5
+strategy("Connors VIX Reversal III invented by Dave Landry", overlay=true)
+
+// Inputs
+vixSymbol = input("VIX", "VIX Symbol")
+lengthMA = input(10, title="Length of Moving Average")
+percentThreshold = input(10, title="Percentage Threshold")
+buyColor = input(color.rgb(0, 255, 0,90), title="Buy Signal Color")
+sellColor = input(color.rgb(255, 0, 0,90), title="Sell Signal Color")
+exitColor = input(color.rgb(0, 0, 255,90), title="Exit Signal Color")
+
+// Fetch VIX data
+vixClose = request.security(vixSymbol, "D", close)
+vixHigh = request.security(vixSymbol, "D", high)
+vixLow = request.security(vixSymbol, "D", low)
+
+// Calculate 10-day Moving Average of VIX
+vixMA = ta.sma(vixClose, lengthMA)
+
+// Calculate yesterday's 10-day Moving Average
+vixMA_yesterday = ta.sma(vixClose[1], lengthMA)
+
+// Buy Rules
+buyCondition1 = vixLow > vixMA
+buyCondition2 = vixClose > vixMA * (1 + percentThreshold / 100)
+buySignal = buyCondition1 and buyCondition2
+
+// Sell Rules
+sellCondition1 = vixHigh < vixMA
+sellCondition2 = vixClose < vixMA * (1 - percentThreshold / 100)
+sellSignal = sellCondition1 and sellCondition2
+
+// Exit Rules
+buyExit = vixLow < vixMA_yesterday
+sellExit = vixHigh > vixMA_yesterday
+
+// Plot Buy/Sell Signals
+bgcolor(buySignal ? buyColor : na)
+bgcolor(sellSignal ? sellColor : na)
+
+// Exit Signals
+bgcolor(buyExit ? exitColor : na)
+bgcolor(sellExit ? exitColor : na)
+
+// Strategy
+if (buySignal)
+    strategy.entry("Buy", strategy.long)
+if (sellSignal)
+    strategy.entry("Sell", strategy.short)
+
+if (buyExit)
+    strategy.close("Buy")
+if (sellExit)
+    strategy.close("Sell")

@@ -1,0 +1,53 @@
+//@version=6
+strategy("McClellan A-D Volume Integration Model", overlay=false, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=0.05, slippage=1)
+
+// --- Inputs ---
+ema_short_length = input.int(19, title="Short EMA Length", minval=1)
+ema_long_length = input.int(38, title="Long EMA Length", minval=1)
+osc_threshold_long = input.float(-96, title="Long Entry Threshold", step=1)
+exit_periods = input.int(13, title="Exit After X Periods", minval=1)
+
+// --- Data Sources ---
+ad_advance = request.security("INDEX:ADVN", timeframe.period, close, lookahead=barmerge.lookahead_off)
+ad_decline = request.security("INDEX:DECN", timeframe.period, close, lookahead=barmerge.lookahead_off)
+vol_advance = request.security("INDEX:ADVN", timeframe.period, na, lookahead=barmerge.lookahead_off) // Fallback for unavailable volume data
+vol_decline = request.security("INDEX:DECN", timeframe.period, na, lookahead=barmerge.lookahead_off)
+
+// --- McClellan Oscillator with AD Volume Calculation ---
+ad_line = ad_advance - ad_decline
+ad_volume_line = na(vol_advance) or na(vol_decline) ? 1 : vol_advance - vol_decline  // Fallback if volume data is missing
+
+// Weighted AD Line
+weighted_ad_line = ad_line * ad_volume_line
+
+// Calculate Moving Averages
+ema_short = ta.ema(weighted_ad_line, ema_short_length)
+ema_long = ta.ema(weighted_ad_line, ema_long_length)
+mcclellan_oscillator = ema_short - ema_long
+
+// --- Entry Conditions: Reversal Logic ---
+osc_below_threshold = mcclellan_oscillator < osc_threshold_long
+osc_above_threshold = mcclellan_oscillator > osc_threshold_long
+
+long_entry_condition = not na(mcclellan_oscillator[1]) and osc_below_threshold[1] and osc_above_threshold
+
+var float entry_bar = na  // Track the entry bar index
+
+// Long Entry
+if (long_entry_condition and strategy.position_size == 0)
+    strategy.entry("Long", strategy.long)
+    entry_bar := bar_index
+
+// Exit Conditions
+exit_condition = not na(entry_bar) and (bar_index - entry_bar >= exit_periods)
+if (exit_condition)
+    strategy.close("Long", comment="Exit Long after X periods")
+    entry_bar := na
+
+// --- Plotting ---
+plot(mcclellan_oscillator, title="McClellan Oscillator with AD Volume", color=color.blue, linewidth=2)
+hline(osc_threshold_long, title="Long Threshold", color=color.green, linestyle=hline.style_dotted)
+
+// Highlight Background for Entry and Exit Signals
+bgcolor(long_entry_condition ? color.new(color.green, 80) : na, title="Long Signal Highlight")
+bgcolor(exit_condition ? color.new(color.red, 80) : na, title="Exit Signal Highlight")

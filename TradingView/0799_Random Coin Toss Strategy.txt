@@ -1,0 +1,66 @@
+//@version=6
+strategy("Random Coin Toss Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs ===
+atrLength    = input.int(14, "ATR Length", minval=1)
+slMultiplier = input.float(1.0, "SL Multiplier (e.g., 1 = 1x ATR)", minval=0.1)
+tpMultiplier = input.float(2.0, "TP Multiplier (e.g., 2 = 2x ATR)", minval=0.1)
+entryFreq    = input.int(10, "Entry Frequency (bars)", minval=1)
+showZones    = input.bool(true, "Show TP/SL Zones")
+boxSize      = input.int(5, "TP SL Box size based on number of Bars")
+// === ATR Calculation ===
+atr = ta.atr(atrLength)
+padding = atr * 0.01  // Small vertical gap
+
+// === Coin Toss Logic ===
+randSource = math.sin(close + bar_index) * 1000
+randNorm   = randSource - math.floor(randSource)
+isBuy      = randNorm > 0.5
+newToss    = bar_index % entryFreq == 0
+canEnter   = strategy.position_size == 0
+
+// === Trade Variables ===
+var string tradeDir     = na
+var float entryPrice    = na
+var float stopLoss      = na
+var float takeProfit    = na
+
+// === Box references (draw once only) ===
+var box slBox = na
+var box tpBox = na
+
+// === Entry Logic ===
+if newToss and canEnter and not na(atr)
+    entryPrice := close
+    stopLoss   := isBuy ? entryPrice - atr * slMultiplier : entryPrice + atr * slMultiplier
+    takeProfit := isBuy ? entryPrice + atr * tpMultiplier : entryPrice - atr * tpMultiplier
+    tradeDir   := isBuy ? "long" : "short"
+
+    // Delete old boxes
+    if not na(slBox)
+        box.delete(slBox)
+    if not na(tpBox)
+        box.delete(tpBox)
+
+    // Enter trade
+    if isBuy
+        strategy.entry("Long", strategy.long)
+    else
+        strategy.entry("Short", strategy.short)
+
+    // Draw TP/SL Zones (one time)
+    if showZones
+        slBox := box.new(bar_index, isBuy ? entryPrice - padding : stopLoss, bar_index + boxSize, isBuy ? stopLoss : entryPrice + padding, border_color=color.red, bgcolor=color.new(color.red, 85))
+        tpBox := box.new(bar_index, isBuy ? takeProfit : entryPrice - padding, bar_index + boxSize, isBuy ? entryPrice + padding : takeProfit, border_color=color.green, bgcolor=color.new(color.green, 85))
+
+// === Exit Logic
+if strategy.position_size > 0 and tradeDir == "long"
+    strategy.exit("TP/SL Long", from_entry="Long", stop=stopLoss, limit=takeProfit)
+
+if strategy.position_size < 0 and tradeDir == "short"
+    strategy.exit("TP/SL Short", from_entry="Short", stop=stopLoss, limit=takeProfit)
+
+// === ATR Display Table ===
+var table atrTable = table.new(position.top_right, 1, 1, frame_color=color.gray, frame_width=1)
+if bar_index % 5 == 0
+    table.cell(atrTable, 0, 0, "ATR: " + str.tostring(atr, "#.##"), text_color=color.white, bgcolor=color.blue)

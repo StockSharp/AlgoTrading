@@ -1,0 +1,103 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © shivammandrai
+
+//@version=5
+
+strategy("Break of any session IU ", shorttitle="Sesion Breakout IU",overlay=true)
+
+
+///// CREATING CUSTOME SESSION
+custome_session = input.session("0915-1000", title='Enter your Session')
+custome_session_plot = time("", custome_session)
+
+Profit_Factor = input.float(2.0, "RTR ? ")
+
+// CREATING IN AND OUT TIME
+TimeIn = input.session(defval= "0915-1430")
+TimeOut = input.session(defval= "1445-1500")
+
+EntryTime = time(timeframe.period, TimeIn)
+ExitTime = time(timeframe.period, TimeOut)
+
+///// CHECKING SESSIONS
+into_the_session = time(timeframe.period, custome_session)
+next_session(R, S) =>
+    Time = time(R, S)
+    na(Time[1]) and not na(Time) or Time[1] < Time
+
+New_session = next_session("1440", custome_session)
+
+///// CHECKING NEW SESSIONS
+next_candle(R,S) =>
+    Time = time(R,S)
+    not na(Time) and (na(Time[1]) or Time > Time[1])
+new = (next_candle("1440", custome_session) ? 1 : 0)
+
+
+//// STORING HIGH AND LOW
+var float Low = close
+var float High = close
+
+Low := New_session? low : into_the_session ? math.min(low, Low[1]) : na
+High := New_session  ? high : into_the_session ? math.max(high, High[1]) : na
+
+
+
+
+//// GETTING FINAL HIGH AND LOW
+extend_low = ta.valuewhen((Low == low),low,0)
+
+extend_high = ta.valuewhen((High == high),high,0)
+
+///// CREATING CONDITIONS FOR GETTING END SESSION
+start_of_session_value = ta.valuewhen((new==1),high,0)
+end_session_condition = start_of_session_value !=start_of_session_value[1]?0: into_the_session?1:0
+
+// LONG AND SHORT CONDITIONS
+var bool tradeExecuted = false
+
+long = extend_high > open and( (extend_high ) < close)  and not tradeExecuted
+short = extend_low < open and ((extend_low ) > close) and not tradeExecuted
+
+if strategy.position_size == 0 and EntryTime and long //and ADX
+    strategy.entry("long", strategy.long, comment = "Long Trade")
+    alert("Long Entry has tigger", alert.freq_once_per_bar_close)
+    tradeExecuted := true
+
+if  strategy.position_size == 0 and EntryTime and short// and ADX
+    strategy.entry("short", strategy.short, comment = "Short Trade")
+    alert("Short Entry has tigger", alert.freq_once_per_bar_close)
+    tradeExecuted := true
+
+
+
+// LONG AND SHORT STOP LOSS
+longSL = low[bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + 1]
+shortSL = high[bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + 1]
+
+longTP = ((close[bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + 1] - longSL) * Profit_Factor ) + close[bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + 1]
+
+shortTP = close[bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + 1] - ((shortSL - close[bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + 1] ) * Profit_Factor)
+
+
+
+
+
+// EXITING TRADES
+strategy.exit("long", from_entry = "long", stop = longSL, limit = longTP, comment = "Long Exit")
+strategy.exit("short", "short", comment = "Short Exit", stop = shortSL, limit = shortTP)
+
+// INTRADAY EXIT
+if ExitTime
+    strategy.close_all(immediately = true, comment = "Closing bell")
+    tradeExecuted := false
+
+
+///// PLOTTING FINAL VALUES
+plot(strategy.position_size > 0 ? longSL: na, color = color.red, style = plot.style_linebr)
+plot( strategy.position_size < 0 ?shortSL: na, color = color.red,  style = plot.style_linebr)
+plot(strategy.position_size > 0 ? longTP: na, color = color.lime, style = plot.style_linebr)
+plot( strategy.position_size < 0 ?shortTP: na, color = color.lime,  style = plot.style_linebr)
+
+plot(not na(EntryTime) ? extend_high : na, color = color.purple, style = plot.style_linebr)
+plot( not na(EntryTime) ? extend_low : na, color = color.silver, style = plot.style_linebr)

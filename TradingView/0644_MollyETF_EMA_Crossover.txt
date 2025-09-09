@@ -1,0 +1,48 @@
+//@version=5
+strategy("MollyETF_EMA_Crossover", overlay = true, initial_capital = 100000, default_qty_value=100, default_qty_type=strategy.percent_of_equity)
+
+fastInput = input( 10, "Fast EMA")
+slowInput = input( 21, "Slow EMA")
+
+// Calculate two moving averages with different lengths.
+float fastMA = ta.ema(close, fastInput)
+float slowMA = ta.ema(close, slowInput)
+
+
+// STEP 1. Create inputs that configure the backtest's date range
+useDateFilter = input.bool(true, title="Filter Date Range of Backtest",
+     group="Backtest Time Period")
+backtestStartDate = input.time(timestamp("1 Jan 2018"),
+     title="Start Date", group="Backtest Time Period",
+     tooltip="This start date is in the time zone of the exchange " +
+     "where the chart's instrument trades. It doesn't use the time " +
+     "zone of the chart or of your computer.")
+backtestEndDate = input.time(timestamp("7 Sep 2023"),
+     title="End Date", group="Backtest Time Period",
+     tooltip="This end date is in the time zone of the exchange " +
+     "where the chart's instrument trades. It doesn't use the time " +
+     "zone of the chart or of your computer.")
+
+// STEP 2. See if current bar falls inside the date range
+inTradeWindow = not useDateFilter or (time >= backtestStartDate and
+     time < backtestEndDate)
+
+// STEP 3. Include the date filter with the entry order conditions
+
+// Enter a long position when `fastMA` crosses over `slowMA`.
+if inTradeWindow and ta.crossover(fastMA, slowMA)
+    strategy.entry("buy", strategy.long)
+
+// Enter a short position when `fastMA` crosses under `slowMA`.
+if inTradeWindow and ta.crossunder(fastMA, slowMA)
+    strategy.close_all(comment="sell")
+
+// STEP 4. With the backtest date range over, exit all open
+// trades and cancel all unfilled pending orders
+if not inTradeWindow and inTradeWindow[1]
+    strategy.cancel_all()
+    strategy.close_all(comment="Date Range Exit")
+
+// Plot the moving averages.
+plot(fastMA, "Fast MA", color.aqua)
+plot(slowMA, "Slow MA", color.orange)

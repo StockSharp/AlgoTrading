@@ -1,0 +1,16 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © morzns
+//@version=6
+strategy("Long Explosive V1", overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 5, initial_capital = 1000, commission_value = 0.01, calc_on_every_tick = true)
+//Inputs
+longLimit = input.float(1.00, title = "Price increase (%):", minval = 0.1, step = 0.1) * close * 0.01
+shortLimit = input.float(1.00, title = "Price decrease (%):", minval = 0.1, step = 0.1) * close * 0.01
+//Conditions
+buyCondition = ta.change(close, 1) > longLimit
+sellCondition = ta.change(close, 1) < -shortLimit
+//Script
+if sellCondition
+    strategy.close_all()
+if buyCondition
+    strategy.close_all()
+    strategy.entry("Long", strategy.long)

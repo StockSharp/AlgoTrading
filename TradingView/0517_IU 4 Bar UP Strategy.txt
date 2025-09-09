@@ -1,0 +1,33 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Shivam_Mandrai
+
+//@version=6
+strategy("IU 4 Bar UP Strategy", overlay=true, initial_capital = 100000, slippage = 1, commission_value = 0.02)
+import TradingView/ta/8
+
+// _______________________________________ User Input ___________________________________________ \\
+supertrend_length = input.int(14, "SuperTrend ATR Period = ")
+supertrend_factor = input.float(1.00, "SuperTrend ATR Factor = ")
+
+// ______________________________________ Indicators _____________________________________________ \\
+[supertrend, direction] = ta.supertrend(supertrend_factor, supertrend_length)
+
+// ______________________________________ Long Entry and Exit ____________________________________ \\
+
+// -------- Long Condtions --------- \\
+bullish_bar   = close > open
+four_bull_bar = bullish_bar and bullish_bar[1] and bullish_bar[2] and bullish_bar[3]
+long_cond     = four_bull_bar  and close > supertrend and strategy.position_size == 0 and barstate.isconfirmed
+
+// -------- Long Entry ------------- \\
+if long_cond
+    strategy.entry("long", strategy.long, comment = "Long Entry", alert_message = "Long Entry tiggered")
+// -------- Long Exit -------------- \\
+if strategy.position_size > 0 and close < supertrend
+    strategy.close("long", "Long Close", alert_message = "Close the long Trade")
+
+// _______________________________________ Plotting SuperTrend __________________________________ \\
+plot(supertrend, "supertrend", direction < 0 ? color.green : color.red, 2)
+
+// _______________________________________ bgcolor while we are in a trade _________________________\\
+bgcolor(strategy.position_size > 0 ? color.new(color.green, 90): na)

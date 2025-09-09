@@ -1,0 +1,1749 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Gentleman-Goat
+// Version 1.0.1
+
+//    ▄██████▄     ▄████████ ███▄▄▄▄       ███      ▄█          ▄████████    ▄▄▄▄███▄▄▄▄      ▄████████ ███▄▄▄▄           ▄██████▄   ▄██████▄     ▄████████     ███
+//   ███    ███   ███    ███ ███▀▀▀██▄ ▀█████████▄ ███         ███    ███  ▄██▀▀▀███▀▀▀██▄   ███    ███ ███▀▀▀██▄        ███    ███ ███    ███   ███    ███ ▀█████████▄
+//   ███    █▀    ███    █▀  ███   ███    ▀███▀▀██ ███         ███    █▀   ███   ███   ███   ███    ███ ███   ███        ███    █▀  ███    ███   ███    ███    ▀███▀▀██
+//  ▄███         ▄███▄▄▄     ███   ███     ███   ▀ ███        ▄███▄▄▄      ███   ███   ███   ███    ███ ███   ███       ▄███        ███    ███   ███    ███     ███   ▀
+// ▀▀███ ████▄  ▀▀███▀▀▀     ███   ███     ███     ███       ▀▀███▀▀▀      ███   ███   ███ ▀███████████ ███   ███      ▀▀███ ████▄  ███    ███ ▀███████████     ███
+//   ███    ███   ███    █▄  ███   ███     ███     ███         ███    █▄   ███   ███   ███   ███    ███ ███   ███        ███    ███ ███    ███   ███    ███     ███
+//   ███    ███   ███    ███ ███   ███     ███     ███▌    ▄   ███    ███  ███   ███   ███   ███    ███ ███   ███        ███    ███ ███    ███   ███    ███     ███
+//   ████████▀    ██████████  ▀█   █▀     ▄████▀   █████▄▄██   ██████████   ▀█   ███   █▀    ███    █▀   ▀█   █▀         ████████▀   ▀██████▀    ███    █▀     ▄████▀
+//
+
+//@version=5
+
+// @description Easily create advanced entries, exits, filters and qualifiers to simulate strategies.  Supports DCA (Dollar Cost Averaging) Lines, Stop Losses, Take Profits (with trailing or without) & ATR.
+library("TradingToolsLibrary",overlay=true)
+
+//TYPES
+
+export type filter
+    bool disabled                               = true
+
+    string filter_for_entries_or_exits          = na //This is the entries or exits the filter applies to.  Comma separated to add more.
+    string filter_for_groups                    = na //Which groups should this filter apply to? Comma separated to add more.
+
+    bool condition                              = true //This is the custom condition to determine the filter use.  If this is set to true it will not allow the entry or exit associated with the filter to occur.
+    bool dynamic_condition                      = false //INTERNAL USE ONLY -> This is the optional dynamic condition value itself for if the filter should be activated or not
+
+    bool use_dynamic_condition                  = false //Should the dynamic condition be used?
+    bool use_override_default_condition         = false //Should the dynamic condition (if being used) override the hardcoded default condition that might be present?
+    string dynamic_condition_operator           = "=" //What operator is being used for testing the dynamic_condition_value to see if it's true or not? Supports '=','>','<','≤','≥' and more...
+    float dynamic_condition_source              = na //This is the actual value from the dynamic source.  This should be set when the entry is created and updated every bar.
+    float dynamic_compare_source                = na //This is the actual value from the dynamic source.  This is the variable used for comparing against the condition source, for cross over and cross under.
+    float dynamic_condition_source_prior        = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    float dynamic_compare_source_prior          = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    bool use_dynamic_compare_source             = false //This controls if the dynamic compare source will be used for comparison purposes
+    string dynamic_condition_activate_value     = "0" //This is what the condition value should be that will ultimatly create the 'true' or 'false' condition for allowing the entry to pass.
+
+    //INTERNAL USE ONLY ALL BELOW -> This type does NOT use these variables, but it needed to be here to make a dynamic function work with entries,exits, filters and qualifiers
+    string expire_condition_activate_value  = "0"
+    float expire_condition_source           = na
+    float expire_condition_source_prior     = na
+    float expire_compare_source             = na
+    float expire_compare_source_prior       = na
+    bool use_expire_compare_source          = false
+    string expire_condition_operator        = "="
+//**
+export type qualifier
+    bool disabled                               = true
+
+    string qualify_for_entries_or_exits         = na //This is the entries or exits the filter applies to.  Comma separated to add more.
+    string qualify_for_groups                   = na //Which groups should this filter apply to? Comma separated to add more.
+
+    bool disqualify                             = false //Should this disqualify entries instead of qualify them?
+
+    bool condition                              = true //This is the custom condition to determine the qualifier use.  If this is set to true it will not allow the entry or exit associated with the qualifier to occur.
+    bool dynamic_condition                      = false //INTERNAL USE ONLY -> This is the optional dynamic condition value itself for if the filter should be activated or not
+
+    bool use_dynamic_condition                  = false //Should the dynamic condition be used?
+    bool use_override_default_condition         = false //Should the dynamic condition (if being used) override the hardcoded default condition that might be present?
+    string dynamic_condition_operator           = "=" //What operator is being used for testing the dynamic_condition_value to see if it's true or not? Supports '=','>','<','≤','≥' and more...
+    float dynamic_condition_source              = na //This is the actual value from the dynamic source.  This should be set when the entry is created and updated every bar.
+    float dynamic_compare_source                = na //This is the actual value from the dynamic source.  This is the variable used for comparing against the condition source, for cross over and cross under.
+    float dynamic_condition_source_prior        = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    float dynamic_compare_source_prior          = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    bool use_dynamic_compare_source             = false //This controls if the dynamic compare source will be used for comparison purposes
+    string dynamic_condition_activate_value     = "0" //This is what the condition value should be that will ultimatly create the 'true' or 'false' condition for allowing the entry to pass.
+
+    int expire_after_x_bars                     = 10 //This is how many bars until the qualifier expires from allowing the specified entries or exit to trigger.
+    bool use_expire_after_x_bars                = false //Should this be allowed to use expire after x bars?
+
+    bool use_expire_condition                   = false //Should the expire condition be used?
+    bool use_override_expire_condition          = false //Should the expire condition (if being used) override the hardcoded default expire condition that might be present?
+    string expire_condition_operator            = "=" //What operator is being used for testing the expire_condition_value to see if it's true or not? Supports '=','>','<','≤','≥' and more...
+    float expire_condition_source               = na //This is the actual value from the expire source.  This should be set when the entry is created and updated every bar.
+    float expire_compare_source                 = na //This is the actual value from the expire source.  This is the variable used for comparing against the condition source, for cross over and cross under.
+    float expire_condition_source_prior         = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    float expire_compare_source_prior           = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    bool use_expire_compare_source              = false //This controls if the expire compare source will be used for comparison purposes
+    string expire_condition_activate_value      = "0" //This is what the condition value should be that will ultimatly create the 'true' or 'false' condition for allowing the qualifier to pass.
+
+    bool active                                 = false //While the qualifier is active, entries or exits are allowed to happen that are tied to it.
+
+    int expire_after_bars_bar_index             = 0 //This keeps track of what bar index it currently is.
+    int expire_after_bars_bar_index_prior       = 0 //This is related to above, but needed so we can calculate when there was a change.  Since when the timeframe changes this will be different from the non prior version.
+    int expire_bar_count                        = 0 //INTERNAL USE ONLY -> This keeps track of how many bars have actually passed for the timeframe selected
+    bool expire_bar_changed                     = false //INTERNAL USE ONLY -> Returns true if there was a calculated change that turn.
+//**
+export type entry_position
+    bool disabled                       = true //Use this to manually disable this entry from being possible to activate.
+
+    bool activate                       = false //INTERNAL USE ONLY -> Should this entry be activated
+    bool active                         = false //INTERNAL USE ONLY -> Is the entry currently active
+    bool override_occured               = false //INTERNAL USE ONLY -> Keeps track if this entry caused an override
+
+    bool[] passDebug                    = na //INTERNAL USE ONLY -> This is used to test the pass engine to see what passed and didn't for debug purposes.
+
+    float initial_activation_price      = 0.0 //INTERNAL USE ONLY -> This tracks what the price was when this entry activated.  Used by exits when the adjust to average position is turned off.
+
+    bool dca_done                       = false //INTERNAL USE ONLY -> This is used if the entry is 'considered done' for DCA use.  This can happen if an exit flags the entry this way. For example a close exit can flag an entry as no_more_dca_allowed after exiting 50%.  This will prevent future DCA from triggering (if the entry enabled that option) and only other exits can close the position.
+
+    bool condition                              = false //This is condition that will activate this entry, REQUIRED to be user supplied or the entry will never happen UNLESS you are using dynamic_condition
+    bool dynamic_condition                      = false //INTERNAL USE ONLY -> This is the optional dynamic condition value that will be determined based on the other settings.
+    bool use_dynamic_condition                  = false //Should the dynamic condition be used?
+    bool use_override_default_condition         = false //Should the dynamic condition (if being used) override the hardcoded default condition that might be present?
+    string dynamic_condition_operator           = "=" //What operator is being used for testing the dynamic_condition_value to see if it's true or not? Supports '=','>','<','≤','≥'
+    float dynamic_condition_source              = na //This is the actual value from the dynamic source.  This should be set when the entry is created and updated every bar.
+    float dynamic_compare_source                = na //This is the actual value that we want to compare against the dynamic source.  It could be dynamic itself or simply be the close.  Used for cross over and cross under.
+    float dynamic_condition_source_prior        = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    float dynamic_compare_source_prior          = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    bool use_dynamic_compare_source             = false //This controls if the dynamic compare source will be used for comparison purposes
+    string dynamic_condition_activate_value     = "0" //This is what the condition value should be that will ultimatly create the 'true' or 'false' condition for allowing the entry to pass.
+
+    bool use_cash                   = false
+    bool use_percent_equity         = true
+    float percent_equity_amount     = 100.0 //Note, this can be overwritten if use_dynamic percent equity is active
+    float cash_amount               = 1000.0
+    float position_size             = 0 //INTERNAL USE ONLY -> Running total of what the position_size for the entry is.  Useful for calculating if active should be false or not during closures.  This does NOT take into account pyramiding, just what the position_size would be at time of activation.
+    float total_position_size       = 0 //INTERNAL USE ONLY -> This is a running total of the position size for the entry, which can increase with pyramiding.
+    float prior_total_position_size = 0 //INTERNAL USE ONLY -> Keeps track of the prior total position size in case we need to reset it later in the bar.
+    float equity_remaining          = 0.0 //INTERNAL USE ONLY -> This calculates a running total of the equity you have remaining to work with for DCA purposes.  Useful for MARKET ORDER DCA to calculate position sizes correctly.
+    float prior_equity_remaining    = 0.0 //INTERNAL USE ONLY -> There are circumstances like flip position that may have occured when a DCA activated. In this situation we need to undo any changes to the entry before they make it to becoming an actual order.
+    float initial_equity            = 0.0 //INTERNAL USE ONLY -> This is how much equity it started with before DCA on the initial qualified entry into the market.
+    //float activation_price          = 0.0 //INTERNAL USE ONLY -> This calculates what the price was upon activation.  Used by exits when NOT using average position for calculating stops & profits.
+
+    bool use_martingale                 = false
+    float martingale_win_ratio          = 1.0
+    float martingale_lose_ratio         = 2.0
+    int martingale_win_limit            = 5
+    int martingale_lose_limit           = 5
+    string martingale_limit_reset_mode  = "Original"
+
+    bool use_dynamic_percent_equity                 = false //This allows the percent equity to used on every entry to be dynamic based on other conditions & calculations (I.E, think RSI, MacD etc...)
+    float dynamic_percent_equity_amount             = 100.0 //This variable should be set by the user if the above is set to TRUE.  It will prioritize use of this over kelly or percent equity amounts.
+    float initial_dynamic_percent_equity_amount     = 100.0 //INTERNAL USE ONLY -> This is used to keep track of the initial dynamic percent equity in case you are not using Dynamic DCA equity.
+    float dynamic_percent_equity_source                    = close //Set this to what the source should be for determining dynamic percent equity
+    float dynamic_percent_equity_min                       = 0.25 //This is the minimum percentage it should use for dynamic percent equity
+    float dynamic_percent_equity_max                       = 1.00 //This is the maximum percentage it should use for dynamic percent equity
+    float dynamic_percent_equity_source_sell_range         = 80 //This is the range from the source that would trigger minimum equity usage
+    float dynamic_percent_equity_source_buy_range          = 30 //This is the range from the source that would trigger maximum equity usage
+    string dynamic_equity_interpolation_method             = "Linear" //This controls what method is used to determine the interpolation.  There is only 2 choices.  'Linear' and 'Linear From Mid'.
+
+    int total_bars                  = 0 //INTERNAL USE ONLY -> This is a running total of all bars since the simulation began
+    int bar_index_at_activate       = 0 //INTERNAL USE ONLY -> What was the bar_index when it activated.  This is used to find the most recent entry which in turn is used for cooldown logic.
+    int bars_since_active           = 0 //INTERNAL USE ONLY -> This is how many bars have gone by since it's been active.
+    int time_at_activate            = 0 //INTERNAL USE ONLY -> Returns the unix time stamp at activation.  Useful for drawing lines and time based math.
+    int time_since_active           = 0 //INTERNAL USE ONLY -> Unix time difference in terms of how much time has gone by since it was activated.
+    int bar_index_at_activated      = 0 //INTERNAL USE ONLY -> bar_index it activated on, needed for drawing the DCA lines.
+    int bar_index_at_pyramid_change = na //INTERNAL USE ONLY -> This is the bar_index that will be set when a new pyramid occurs so that DCA lines will draw correctly.
+    //int start_after_bars        = 100 //This is the minimum number of bars that should pass before this order is allowed to occur.
+
+    string name     //The name of this entry position.  Can be whatever you want and will be used in strategy comments accordingly.
+    string id       //The ID to refer to this for Exit conditions
+    string group    //The group ID to refer to this for exit conditions
+
+    int pyramiding_limit                                = 1     //This is the limit for how many simultaneous entries can occur in the same direction at the same time if equity allows.  DCA does NOT count toward this limit (which is a good thing, but please be aware of this)!
+    int self_pyramiding_limit                           = 1     //This is the limit for how many simultaneous entries of this particular entry can occur in the same direction at the same time if equity allows.  As with other entries, DCA does NOT count toward the limit.
+    array<entry_position> self_pyramiding_positions     = na    //INTERNAL USE ONLY -> This keeps track of a copy of it's own entry but with new DCA_Positions that it may have.  Everytime a new self position occurs, it will be pushed here, and closed accordingly.  If this is NA it will be automatically filled by default to always have at least one entry.
+    bool new_pyramid_cancels_dca                        = true  // This controls if a new pyramid should cancel previous DCA (Including self pyramid entries DCA)
+    int num_active_long_positions                       = 0     //INTERNAL USE ONLY -> Keeps track of how many active long positions there are currently across all entries
+    int num_active_short_positions                      = 0     //INTERNAL USE ONLY -> Keeps track of how many active short positions there are currently across all entries
+    int num_active_positions                            = 0     //INTERNAL USE ONLY -> Tracks how many known active positions each entry thinks there is.
+
+    float position_remaining                            = 0.0   //INTERNAL USE ONLY -> Keeps track of how much the position has remains to be used.
+    float prior_position_remaining                      = 0.0   //INTERANL USE ONLY -> Keeps track of how much the prior position was before it was adjusted.
+
+    string direction            //This should be either "LONG" or "SHORT"
+    bool allow_flip_position    = true //This is if this posiiton is allowed to FLIP from long to short and short to long etc... If set to false, it must wait for the market to be FLAT before allowing an entry.
+    bool flip_occurred          = false //This keeps track if a flip occurred.  If this is the case, then it will NOT close, since the flip in the opposite direction will take care of this.
+    bool ignore_flip            = true //This will ignore entries that have the allow flip option to override them.
+
+    bool use_dca                        = false //Controls if DCA should be used or not for this entry.
+    bool dca_use_limit                  = false //This order should be LIMIT based.  By defualt it assumes market order entry.
+    int dca_num_positions               = 5 //This keeps track of how many DCA positions are needed.
+    array<float> dca_positions          = na //INTERAL USE ONLY -> This should be an array holding the number of DCA_Positions you want to calculate for.  If this array is empty it assumes NO DCA for the order.  Calculated from percentages string
+    float dca_deviation_percentage      = 1.0 //This is how much each position should deviate from each other.  Note that with dca_scale of 1.0 this will always be this number exactly everytime.
+    float dca_scale                     = 1.0 //This controls how the DCA will split from each other by this scale factor.
+    string dca_percentages              = "" //This controls how much percentage of equity will be used at each DCA level.
+    bool dca_close_cancels              = true //This will assume DCA orders cancel once a close occurs (even if it's 50%)
+    int dca_active_positions            = 0 //INTERNAL USE ONLY -> Keeps track of how many active DCA positions there are for the entry.  This applies ONLY to market mode DCA.
+    bool use_atr_deviation              = false //Calculates if the DCA deviations should be calculated using ATR instead
+    int dca_atr_length                  = 14 //The length of the ATR to use for DCA ATR Deviations
+    float dca_atr_mult                  = 1.0 //The multiplier factor to use for DCA ATR Deviations
+    bool dca_atr_updates_dca_positions  = false //This controls if the DCA positions should be constantly updated via the ATR
+    float close_price_at_order          = 0.0 //INTERNAL USE ONLY -> This is used to calculate what the 'close' was at the initial order.  This helps for updating ATR DCA in realtime
+    bool dca_use_deviation_atr_min      = false //This will set a minimum deviatio percentage for use with the ATR for DCA
+    float[] dca_position_quantities     = na //INTERNAL USE ONLY -> This keeps track of the quantities that would be purchased at each DCA Level.  Useful only for LIMIT ORDERS NOT MARKET ORDERS!
+    bool use_dca_dynamic_percent_equity = false //Should this use dynamic percent equity for the DCA instead of the defined percent levels? This only works for MARKET MODE!
+    bool[] dca_in_use                   = na //INTERNAL USE ONLY -> This keeps track of which dca is currently in use.  This works ideally for LIMIT ORDERS, (But for market orders it will store to this once it HAS been used)
+    bool[] dca_activated                = na //INTERNAL USE ONLY -> This will track which DCA line has been activated.  Used by the create function to actually create the limit or market order.
+    float[] dca_money_used              = na //INTERNAL USE ONLY -> Used for debug purposes to track how much 'money' was used for that particular DCA from the budget available.
+    line[] dca_lines                    = na //INTERNAL USE ONLY -> This defines the line objects that hold the DCA representations.
+    color dca_color                     = color.white //The color of the DCA Lines.  Useful to tell the difference between multiple DCA that may be active at the same time.
+    bool show_dca_lines                 = true //Should we draw DCA Lines?
+
+    float atr_value                     = na //This sets the ATR value used for ATR related features like DCA Entry positions
+    float atr_value_at_activation        = na //INTERNAL USE ONLY -> This is the value of the ATR at activation ONLY.  Only gets reset when a new order is placed for the entry.
+
+    bool use_cooldown_bars          = false //Should this use the bar cooldown feature?
+    int cooldown_bars               = 0 //This is how many bars must go by before it's allowd to trade again.
+    bool cooldown_bar_changed       = false //INTERAL USE ONLY -> Keeps track of if the entries cooldown timeframe bar has changed.
+    int cooldown_bar_index          = na //Keeps track of the bar_index in relation to the cooldown_bars_timeframe.  MUST be set correctly in order to work.
+    int cooldown_bar_index_prior    = na //Helps calculate the cooldown_bar_changed correctly based on cooldown_bars_timeframe.  MUST be set correctly if you want to use this feature.
+    int cooldown_bar_change_count   = 0 //INTERNAL USE ONLY -> This keeps track of how many cooldown bars have occured for cooldown bar checking.
+
+    //INTERNAL USE ONLY ALL BELOW -> This type does NOT use these variables, but it needed to be here to make a dynamic function work with entries,exits, filters and qualifiers
+    string expire_condition_activate_value  = "0"
+    float expire_condition_source           = na
+    float expire_condition_source_prior     = na
+    float expire_compare_source             = na
+    float expire_compare_source_prior       = na
+    bool use_expire_compare_source          = false
+    string expire_condition_operator        = "="
+//**
+export type exit_position
+    bool disabled               = true //Use this to manually disable this exit from being possible to activate.
+
+    string id                   //The ID to refer to this for exit condition
+    string group                //The group to refer to this exit condition
+
+    string exit_for_entries     = na //This is the entries this is an EXIT for. If "" or na is given this will assume ALL entries.
+    string exit_for_groups      = na //This is the entry groups this is an EXIT for.  If "" or na is given this will assume ALL groups.
+
+    int total_bars              = 0//INTERNAL USE ONLY -> Tracks how mayn bars the exit has been running for.
+
+    string name                 = na //Overide the default name for the comments on exit
+
+    bool condition                              = true //This is the custom condition to determine the exit.  If this is set to true it will (try to if other rules are good) immediately close the position according to the rules of the exit defined in this object.
+    bool dynamic_condition                      = false //INTERNAL USE ONLY -> This is the optional dynamic condition value that will be determined the exit based on the other settings.
+    bool use_dynamic_condition                  = false //Should the dynamic condition be used?
+    bool use_override_default_condition         = false //Should the dynamic condition (if being used) override the hardcoded default condition that might be present?
+    string dynamic_condition_operator           = "=" //What operator is being used for testing the dynamic_condition_value to see if it's true or not? Supports '=','>','<','≤','≥'
+    float dynamic_condition_source              = na //This is the actual value from the dynamic source.  This should be set when the entry is created and updated every bar.
+    float dynamic_compare_source                = na //This is the actual value from the dynamic source.  This is the variable used for comparing against the condition source, for cross over and cross under.
+    float dynamic_condition_source_prior        = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    float dynamic_compare_source_prior          = na //INTERNAL USE ONLY -> Used for testing cross overs and unders
+    bool use_dynamic_compare_source             = false //This controls if the dynamic compare source will be used for comparison purposes
+    string dynamic_condition_activate_value     = "0" //This is what the condition value should be that will ultimatly create the 'true' or 'false' condition for allowing the entry to pass.
+
+    bool activate               = false //INTERAL USE ONLY -> This signifies that it will be activated during the creation phase.
+    bool active                 = false //INTERNAL USE ONLY -> Is this truly active for the rest of the bar it's on.
+    bool reset_equity           = false //INTERNAL USE ONLY -> This is a flag that if set will reset the equity because an exit occured.  The price of the exit is not known until the OPEN of the next bar which can be different from the CLOSE, so we use this variable to tell the equity_remaining the proper amount of funds it has to work with.
+
+    bool use_limit              = true //Assumes market if false (Note: close orders would set this to false)
+
+    bool use_alerts             = true //Should this create alerts for creating/completing
+
+    bool reset_entry_cooldowns                  = true //Should this reset entry cooldowns when it closes completely?
+    bool prevent_new_entries_on_partial_close   = true //This will consider a partial close an 'end to any new DCA or Pyramiding Entries'.  This is useful if the exit settings do not close 100% of the equity.
+
+    // bool is_stop_loss               = false
+    // bool is_take_profit             = false
+    // bool is_trailing_stop_loss      = false
+    // bool is_trailing_take_profit    = false
+    // bool is_atr_stop_loss           = false
+    // bool is_atr_take_profit         = false
+    // bool is_close                   = false
+
+    //bool show_wait_time         = true //Should this show visually on your charts to verify/understand the delay functionality.
+    //bool show_stop_zone         = true //Should this show visually the STOP ZONE for TRAILING STOP LOSS & TRAILING TAKE PROFIT (once activated) on your charts to show where its located.
+    bool show_activation_zone   = true //Shold this show the ACTIVATION_ZONE for TRAILING TAKE PROFIT visually on the chart.
+
+    bool use_average_position   = true //This will use the strategy average price for determining stop loss and take profit locations & atr deviations.
+
+    float source_value = close      //TODO: -> Add support for this, This should be some kind of source value, like CLOSE, HIGH, LOW, OPEN etc...
+
+    // float activation_percent_value  //This should be the value the TRAILING TAKE PROFIT activates at.
+    // float percent_value             //The percentage value the STOP LOSS or TAKE PROFIT should be.
+    int trigger_x_times             = 1 //How many times should the close be allowed to trigger? If the close does not close 100% then it can hypothetically trigger over and over again.  This will limit how many times it's allowed to do that.
+    int amount_of_times_triggered   = 0 //INTERNAL USE -> Keeps track of how many times it has been triggered for reasons listed above on trigger_x_times.
+    float quantity_percent          = 100 //The amount to exit with (should be a value between 0 and 100).  Useful for positions where you want to close only half the position under certain circumstances.
+    float trade_qty                 = 0.0 //INTERNAL USE -> This is how much is calcualted to be the trade_qty at any given time for the exit.
+
+    float exit_amount                       = 0.0 //INTERNAL USE -> This is how much it will be exiting for equity tracking purposes.
+
+    entry_position[] entries_exiting_for    = na
+
+    float atr_value                         = na     //Keep track of the ATR Value for this exit if applicable.
+    bool update_atr                            = false //Should the ATR update with every bar?
+
+    bool use_activate_after_bars                = false //This controls if the exit should be delayed before its created.
+    bool show_activate_after_bars               = false //This controls whether a label will show to signify the countdown before the close activates.  Used mostly to just verify it's working.
+    int activate_after_bars                     = na    //This is how many bars should go by before the exit starts to activate (this includes creating the limit orders)
+    bool activate_after_bars_bar_changed        = false //INTERAL USE ONLY -> Keeps track of if the exits timeframe bar has changed.
+    int activate_after_bars_bar_index           = na    //Keeps track of the bar_index in relation to the exits timeframe.  MUST be set correctly in order to work.
+    int activate_after_bars_bar_index_prior     = na    //Helps calculate the exit bars correctly based on exit bars timeframe.  MUST be set correctly if you want to use this feature.
+    int activate_after_bars_bar_change_count    = 0     //INTERNAL USE ONLY -> This keeps track of how many exit activate_after_bars_bar_changed have occured for exit bar checking.
+
+    bool all_conditions_pass                    = false //INTERNAL USE ONLY -> This keeps track of the exit conditions have all passed with the EXCEPTION, of the primary exit_value meeting it's condition.  This is so stop loss and take profit types exits will still be visible in plots.
+
+    bool use_close_if_profit_only               = false
+    float profit_value                          = 0.0 //What profit should it be in to allow to close? Only applied if close_if_profit_only is true.
+
+    string exit_type                            = "Close"   //This can be Close, Stop Loss or Take Profit
+    string exit_modifier                        = "None"    //This can be None, Trailing or ATR
+    bool update_atr_with_new_pyramid            = false        //This will update the ATR to use for calculations based on the most_recent_entry instead of the original entry that started the pyramid chain.
+
+    float percentage                            = 5.0 //If trailing stop loss or take profit is set this will be the trailing percentage, otherwise this defaults to regular percentage like for a typical stop loss or take profit.
+    float activation_percentage                 = 5.0 //If trailing take profit is used this is the level that the stop loss would activate at.  Thus ensuring at least 'that' much profit before trailing.
+    float atr_multiplier                        = 2.0 //If ATR take profit or stop loss is set this is the multiplier used for those positions.
+
+    bool use_cancel_if_percent                  = false //Should this cancel if a certain percentage for the exit would have been calculated?
+    float cancel_if_percent                     = 1.0   //The percent it should cancel the entry if the stop loss or take profit would be this value.
+
+    float activation_value                      = na    //INTERNAL USE ONLY -> This keeps track of the activation level for trailing take profits.
+    bool activation_value_crossed               = false //INTERNAL USE ONLY -> This keeps track of if the activation_value_crossed. This would allow a trailing take profit for example to start working.
+    float exit_value                            = na    //INTERNAL USE ONLY -> This stores what the Stop Loss Value or Take Profit Value or ATR Stop Loss/Take Profit Value will be.
+    float hypo_long_exit_value                  = na    //INTERNAL USE ONLY -> This calcualtes a hypothetical exit value long that is never meant to be displayed but used for deciding if an entry should be canceled or not.
+    float hypo_short_exit_value                 = na    //INTERNAL USE ONLY -> Calcualtes short version of the above for same reason.  We have to calcualte both since we don't know what type the exit is.
+    float close_exit_value                      = na    //INTERNAL USE ONLY -> This is used by trailing stop loss to keep track of the close exit position. This is needed to account for the average position size effecting the true exit_value.
+
+    float debug                                 = 0.0 //INTERNAL USE ONLY -> For checking debug values
+    //INTERNAL USE ONLY ALL BELOW -> This type does NOT use these variables, but it needed to be here to make a dynamic function work with entries,exits, filters and qualifiers
+    string expire_condition_activate_value  = "0"
+    float expire_condition_source           = na
+    float expire_condition_source_prior     = na
+    float expire_compare_source             = na
+    float expire_compare_source_prior       = na
+    bool use_expire_compare_source          = false
+    string expire_condition_operator        = "="
+//**
+export type equity_management
+    float equity                        = 0     //This keeps track of how much equity is remaining for taking pyramiding positions (and how much to use for orders in general).  Think of this like the 'big picture' equity management variable.  Works better than the default strategy.equity since we need to know equity available to use as the orders are happening.
+    float prior_equity                  = 0     //INTERNAL USE ONLY -> Keeps track of what the equity was the prior bar in case we need to backtrack due to flip position & DCA
+    float position_used                 = 0     //INTERNAL USE ONLY -> This is how much of the position is currently being used.  This is used to prevent exiting orders from duplicating more then it should (or exiting with position that was not there)
+    float prior_position_used           = 0     //INTERNAL USE ONLY -> Keep track of the prior position used in case we need to backtrack due to situations like DCA on a flip position.
+    bool prevent_future_entries         = false //INTERNAL USE ONLY -> This is used when an exit has a partial close and the prevent OFC option is checked.  It will prevent any future entries from triggering including DCA.
+    float minimum_order_size            = 5     //Set this to stop orders that are too small from occuring and messing up the backtests & visuals.
+    int decimal_rounding_precision      = 0     // *IMPORTANT* This is critical to set correctly! Set this to adjust the decimal rounding precision for different tickers accordingly.
+    string direction                    = na    //INTERNAL USE ONLY -> This keeps track of if the current position is SHORT or LONG direction.  Useful for allowing entries to activate for pyramiding or not.
+    bool show_order_info_in_comments    = true
+    bool show_order_info_in_labels      = false
+    bool allow_longs                    = true //Master setting to turn off all long entries
+    bool allow_shorts                   = true //Master setting to turn off all shorts entries
+    bool override_occured               = false //Will be true if an override occured.
+    bool flip_occured                   = false //Keep track if a flip has occured during this bar which will trigger an override on the next bar.
+    int num_concurrent_wins             = 0 //This is for martingale tracking
+    int num_concurrent_losses           = 0 //This is also for martingale tracking
+    entry_position first_entry          = na //This will be the first recorded entry after a close, only gets set once, and reset on a close.  Useful for getting information about the initial entry that started the possible pyramid chain.
+    int num_win_trades                  = 0 //How many trades so far are winners
+    int num_losing_trades               = 0 //How many trades so far are losers.
+//**
+
+//FUNCTIONS
+
+// @function This creates a deep copy instead of a shallow copy of an entry_position.  This does NOT deep copy the self_pyramiding_positions array reference, since only the master entry_position needs this to track the rest of its copies for efficiency reasons.  This is to prevent a feedback loop.
+// @param entry_position position, IS REQUIRED.
+// @returns entry_position
+export method deepCopy(entry_position this) =>
+
+    array<line> dca_lines                       = array.new_line()
+    array<bool> dca_in_use                      = array.new_bool()
+    array<bool> dca_activated                   = array.new_bool()
+    array<float> dca_position_quantities        = array.new_float()
+    array<float> dca_money_used                 = array.new_float()
+    array<float> dca_positions                  = array.new_float()
+
+    if(na(this.dca_lines)==false)
+        for[index,value] in this.dca_lines
+            temp_dca_line = array.get(this.dca_lines,index)
+            dca_lines.push(line.copy(temp_dca_line))
+
+    if(na(this.dca_in_use)==false)
+        for[index,value] in this.dca_in_use
+            temp_dca_in_use = array.get(this.dca_in_use,index)
+            dca_in_use.push(temp_dca_in_use)
+
+    if(na(this.dca_activated)==false)
+        for[index,value] in this.dca_activated
+            temp_dca_activated = array.get(this.dca_activated,index)
+            dca_activated.push(temp_dca_activated)
+
+    if(na(this.dca_position_quantities)==false)
+        for[index,value] in this.dca_position_quantities
+            temp_dca_position_quantities = array.get(this.dca_position_quantities,index)
+            dca_position_quantities.push(temp_dca_position_quantities)
+
+    if(na(this.dca_money_used)==false)
+        for[index,value] in this.dca_money_used
+            temp_dca_money_used = array.get(this.dca_money_used,index)
+            dca_money_used.push(temp_dca_money_used)
+
+    if(na(this.dca_positions)==false)
+        for[index,value] in this.dca_positions
+            temp_dca_positions = array.get(this.dca_positions,index)
+            dca_positions.push(temp_dca_positions)
+
+
+    //float[] dca_position_quantities           = na
+    //bool[] dca_in_use                         = na
+    //bool[] dca_activated                      = na
+    //line[] dca_lines                          = na
+
+    entry_position.new(
+     disabled                                   =this.disabled,
+     activate                                   =this.activate,
+     active                                     =this.active,
+     initial_activation_price                   =this.initial_activation_price,
+     dca_done                                   =this.dca_done,
+     condition                                  =this.condition,
+     dynamic_condition                          =this.dynamic_condition,
+     use_dynamic_condition                      =this.use_dynamic_condition,
+     use_override_default_condition             =this.use_override_default_condition,
+     dynamic_condition_operator                 =this.dynamic_condition_operator,
+     dynamic_condition_source                   =this.dynamic_condition_source,
+     dynamic_condition_activate_value           =this.dynamic_condition_activate_value,
+     use_cash                                   =this.use_cash,
+     use_percent_equity                         =this.use_percent_equity,
+     percent_equity_amount                      =this.percent_equity_amount,
+     cash_amount                                =this.cash_amount,
+     position_size                              =this.position_size,
+     total_position_size                        =this.total_position_size,
+     prior_total_position_size                  =this.prior_total_position_size,
+     equity_remaining                           =this.equity_remaining,
+     prior_equity_remaining                     =this.prior_equity_remaining,
+     initial_equity                             =this.initial_equity,
+     //activation_price                           =this.activation_price,
+     use_dynamic_percent_equity                 =this.use_dynamic_percent_equity,
+     dynamic_percent_equity_amount              =this.dynamic_percent_equity_amount,
+     initial_dynamic_percent_equity_amount      =this.initial_dynamic_percent_equity_amount,
+     dynamic_percent_equity_source              =this.dynamic_percent_equity_source,
+     dynamic_percent_equity_min                 =this.dynamic_percent_equity_min,
+     dynamic_percent_equity_max                 =this.dynamic_percent_equity_max,
+     dynamic_percent_equity_source_sell_range   =this.dynamic_percent_equity_source_sell_range,
+     dynamic_percent_equity_source_buy_range    =this.dynamic_percent_equity_source_buy_range,
+     total_bars                                 =this.total_bars,
+     bar_index_at_activate                      =this.bar_index_at_activate,
+     bars_since_active                          =this.bars_since_active,
+     bar_index_at_activated                     =this.bar_index_at_activated,
+     name                                       =this.name,
+     id                                         =this.id,
+     group                                      =this.group,
+     pyramiding_limit                           =this.pyramiding_limit,
+     self_pyramiding_limit                      =this.self_pyramiding_limit,
+     //self_pyramiding_positions IS NOT DEEP COPIED!
+     new_pyramid_cancels_dca                    =this.new_pyramid_cancels_dca,
+     num_active_long_positions                  =this.num_active_long_positions,
+     num_active_short_positions                 =this.num_active_short_positions,
+     num_active_positions                       =this.num_active_positions,
+     position_remaining                         =this.position_remaining,
+     prior_position_remaining                   =this.prior_position_remaining,
+     direction                                  =this.direction,
+     allow_flip_position                        =this.allow_flip_position,
+     flip_occurred                              =this.flip_occurred,
+     ignore_flip                                =this.ignore_flip,
+     use_dca                                    =this.use_dca,
+     dca_use_limit                              =this.dca_use_limit,
+     dca_num_positions                          =this.dca_num_positions,
+     dca_positions                              =dca_positions, //dca_positions we need to deep copy still to prevent NA errors when dca is off
+     dca_deviation_percentage                   =this.dca_deviation_percentage,
+     dca_scale                                  =this.dca_scale,
+     dca_percentages                            =this.dca_percentages,
+     dca_close_cancels                          =this.dca_close_cancels,
+     dca_active_positions                       =this.dca_active_positions,
+     use_atr_deviation                          =this.use_atr_deviation,
+     dca_atr_length                             =this.dca_atr_length,
+     dca_atr_mult                               =this.dca_atr_mult,
+     dca_atr_updates_dca_positions              =this.dca_atr_updates_dca_positions,
+     close_price_at_order                       =this.close_price_at_order,
+     dca_use_deviation_atr_min                  =this.dca_use_deviation_atr_min,
+     dca_position_quantities                    =dca_position_quantities, //dca_position_quantities deep copy required here since the array is an object.
+     use_dca_dynamic_percent_equity             =this.use_dca_dynamic_percent_equity,
+     dca_in_use                                 =dca_in_use, //dca_in_use deep copy required here since the array is an object
+     dca_activated                              =dca_activated, //deep copy required
+     dca_money_used                             =dca_money_used, //deep copy required
+     dca_lines                                  =dca_lines, //dca_lines deep copy required here since object
+     dca_color                                  =color.new(this.dca_color,color.t(this.dca_color)),
+     atr_value                                  =this.atr_value,
+     use_cooldown_bars                          =this.use_cooldown_bars,
+     cooldown_bars                              =this.cooldown_bars,
+     cooldown_bar_changed                       =this.cooldown_bar_changed,
+     cooldown_bar_index                         =this.cooldown_bar_index,
+     cooldown_bar_index_prior                   =this.cooldown_bar_index_prior,
+     cooldown_bar_change_count                  =this.cooldown_bar_change_count,
+     atr_value_at_activation                    =this.atr_value_at_activation
+     )
+//**
+
+// @function Convert a floating point number to a precise floating point number with digit precision to avoid floating point errors in quantity calculations.
+// @param float number, int precision value
+// @returns float
+export method precision_fix(float this,int precision)=>
+    formatString = "#."
+    for i = 1 to precision
+        formatString := formatString + "#"
+    str.tonumber(str.tostring(this,formatString))
+//**
+
+// @function Creates an interpolation for a sell range and buy range but with an emphasis on reaching the _low the closer to the middle of the _sell and _buy range you go.
+// @param _x is the value you want to use to control interpolation bewteen the _high and _low value.  This will return the lowest percentage at the mid between high and low and highest percentage at the _high and _low.
+// @returns an interpolated float between the _high and _low supplied.
+export xSellBuyMidInterpolation(float _x, float _high, float _low, float _sellRange, float _buyRange) =>
+    _midRange = (_sellRange + _buyRange) / 2
+    _x >= _sellRange ? _high : _x <= _buyRange  ? _high : _low + (math.abs(_x - _midRange) * (_high - _low)) / (_midRange - _buyRange)
+//**
+
+// @function Creates an interpolation a sell range and buy range
+// @param _x is the value you want to use to control interpolation bewteen the _high and _low value.
+// @returns an interpolated float between the _high and _low supplied.
+export xSellBuyInterpolation(float _x, float _high, float _low, float _sellRange, float _buyRange) =>
+    x = _x
+    x := _x > _sellRange ? _sellRange : x
+    // if(_x > _sellRange)
+    //     x := _sellRange
+    x := _x < _buyRange ? _buyRange : x
+    // if(_x < _buyRange)
+    //     x := _buyRange
+
+    _sellRatio = _sellRange / 100
+    _buyRatio = _buyRange / 100
+    _range = _high - _low
+    _interpolatedValue = _low + (x - _sellRange) / (_buyRange - _sellRange) * _range
+    _interpolatedValue
+//**
+
+//This function is used internally and does not need to be exported.
+// @function Qualifies if the dynamic condition will pass or not
+// @param _fqeoe MUST be an filter,qualifier, entry_position or exit_position.
+// @returns true or false if the qualifying condition passed the checks required
+qualifyCondition(_fqeoe,bool expire=false)=>
+    qualifyingConditionPassed = false
+
+    dynamic_condition_activation_values = expire ? str.split(_fqeoe.expire_condition_activate_value,",") : str.split(_fqeoe.dynamic_condition_activate_value,",")
+
+    condition_source            = expire ? _fqeoe.expire_condition_source           : _fqeoe.dynamic_condition_source
+    condition_source_prior      = expire ? _fqeoe.expire_condition_source_prior     : _fqeoe.dynamic_condition_source_prior
+
+    compare_source              = expire ? _fqeoe.expire_compare_source             : _fqeoe.dynamic_compare_source
+    compare_source_prior        = expire ? _fqeoe.expire_compare_source_prior       : _fqeoe.dynamic_compare_source_prior
+
+    use_compare_source          = expire ? _fqeoe.use_expire_compare_source         : _fqeoe.use_dynamic_compare_source
+
+    condition_operator          = expire ? _fqeoe.expire_condition_operator         : _fqeoe.dynamic_condition_operator
+
+    if(use_compare_source==false)
+        for[index,value] in dynamic_condition_activation_values
+            bool passed_filter_condition = switch condition_operator
+                "="     => condition_source == str.tonumber(value)
+                ">"     => condition_source > str.tonumber(value)
+                "<"     => condition_source < str.tonumber(value)
+                "≤"     => condition_source <= str.tonumber(value)
+                "≥"     => condition_source >= str.tonumber(value)
+                '≠'     => condition_source != str.tonumber(value)
+                '≠ NA'  => na(condition_source)==false
+                '†>'    => ((condition_source > str.tonumber(value)) and (condition_source <= str.tonumber(value))[1])
+                '†<'    => ((condition_source < str.tonumber(value)) and (condition_source >= str.tonumber(value))[1])
+                // Default
+                => false
+            qualifyingConditionPassed := passed_filter_condition //meaning it did match so this should not be allowed to pass.
+            if(qualifyingConditionPassed)
+                break
+    else
+        bool passed_filter_condition = switch condition_operator
+            "="     => condition_source == compare_source
+            ">"     => condition_source > compare_source
+            "<"     => condition_source < compare_source
+            "≤"     => condition_source <= compare_source
+            "≥"     => condition_source >= compare_source
+            '≠'     => condition_source != compare_source
+            '≠ NA'  => na(condition_source)==false and na(compare_source)==false
+            '†>'    => ((condition_source > compare_source) and (condition_source_prior <= compare_source_prior))
+            '†<'    => ((condition_source < compare_source) and (condition_source_prior >= compare_source_prior))
+            // Default
+            => false
+        qualifyingConditionPassed := passed_filter_condition //meaning it did match so this should not be allowed to pass.
+    qualifyingConditionPassed
+//**
+
+//This function is used internally for a list of qualifiers to see if it should be true/false for activation of the entry or exit in question.  _eoe stands for 'entry or exit' since this all this function can take.
+// @function Will check if the qualifier should activate or deactivate the entry or exit.  It does a multitude of checks including making sure the ID's and Groups match.
+// @param _eoe MUST be an entry_position or exit_position.  _qualifiers should be the array of qualifiers that need to be checked against the _eoe
+// @returns true or false if the qualifier should allow the entry or exit to proceed with activation.  Should be used with array.set(... true) etc...
+validateQualifier(_eoe,_qualifiers)=>
+    pass = false
+    if(array.size(_qualifiers)>0)
+        for [q_index, q_qualifier] in _qualifiers
+            qualifier_pass = false
+            was_id_group_match = false
+
+            //Does the ID Match?
+            qualified_eoe = str.split(q_qualifier.qualify_for_entries_or_exits,",") //Get list of what ids for entries or exits this is filtering for
+            if(na(qualified_eoe)==false)
+                if(array.size(qualified_eoe)>0)
+                    if(array.includes(qualified_eoe,_eoe.id))
+                        was_id_group_match := true
+
+            //Does the GROUP Match?
+            qualified_eoe_groups = str.split(q_qualifier.qualify_for_groups,",") //Get list of what ids for entries or exits this is filtering for
+            if(na(qualified_eoe_groups)==false)
+                if(array.size(qualified_eoe_groups)>0)
+                    if(array.includes(qualified_eoe_groups,_eoe.group))
+                        was_id_group_match := true
+
+            if(was_id_group_match) //If it was a match check if met the qualification condition.
+                qualifier_pass := qualifyCondition(q_qualifier)==true ? true : qualifier_pass
+                qualifier_pass := (q_qualifier.condition and q_qualifier.use_override_default_condition==false) ? true : qualifier_pass
+                if(qualifier_pass)
+                    if(q_qualifier.disqualify==false)
+                        pass := true //Might as well for this bar set this to true here.
+                    else
+                        pass := false//Then might as well false it right away for now since this is a disqualify condition
+                        q_qualifier.active := true
+                        q_qualifier.expire_bar_count := 0
+                else //This is the situation where we need to check if it's still in a viable expire time
+                    //Determine if this is still active at this point
+                    //Does this use an expire bar length?
+                    if(q_qualifier.use_expire_after_x_bars)
+                        if(q_qualifier.expire_bar_count >= q_qualifier.expire_after_x_bars)
+                            q_qualifier.active := false
+                    //Does this use an expire condition?
+                    if(q_qualifier.use_expire_condition)
+                        if(qualifyCondition(q_qualifier,true)==true) //Using expire mode check to see if we need to kill the qualifier.
+                            q_qualifier.active := false
+                    if(q_qualifier.active)
+                        if(q_qualifier.disqualify==false)
+                            pass := true
+                        else
+                            pass := false
+                    else
+                        if(q_qualifier.disqualify==false)
+                            pass := false
+                        else
+                            pass := true
+                            q_qualifier.expire_bar_count := 0
+                            break //It only takes 1 to not be active to kill the need to check the rest.
+            else
+                pass := true //Just let it pass then since it can't be qualifying it anyways
+    else
+        pass := true //There was no qualifiers so it has to be TRUE
+    pass//Return the state of the pass variable.  This will be used in setting the array position true/false for the entry or exit
+//**
+
+//This function is used internally for a list of filters to see if it should be true/false for activation of the entry or exit in question.  _eoe stands for 'entry or exit' since this all this function can take.
+// @function Will check if the filter should activate or deactivate the entry or exit.  It does a multitude of checks including making sure the ID's and Groups match.
+// @param _eoe MUST be an entry_position or exit_position.  _filters should be the array of filters that need to be checked against the _eoe
+// @returns true or false if the qualifier should allow the entry or exit to proceed with activation.  Should be used with array.set(... true) etc...
+validateFilter(_eoe,_filters)=>
+    pass = true
+    if(array.size(_filters)>0)
+        for [f_index, f_filter] in _filters
+            was_id_group_match = false
+
+            if(f_filter.disabled==false)
+                //Does the ID Match?
+                filter_entries = str.split(f_filter.filter_for_entries_or_exits,",") //Get list of what ids for entries or exits this is filtering for
+                if(na(filter_entries)==false)
+                    if(array.size(filter_entries)>0)
+                        if(array.includes(filter_entries,_eoe.id))
+                            was_id_group_match := true
+
+                //Does the GROUP Match?
+                filter_entry_groups = str.split(f_filter.filter_for_groups,",") //Get list of what ids for entries or exits this is filtering for
+                if(na(filter_entry_groups)==false)
+                    if(array.size(filter_entry_groups)>0)
+                        if(array.includes(filter_entry_groups,_eoe.group))
+                            was_id_group_match := true
+
+            if(was_id_group_match)
+                if(qualifyCondition(f_filter)==true)
+                    pass := false //This will essentially not allow filter_pass to be true, therefore not allowing the entry.
+                    break //End the loop early so it can't be true again.  Something already failed.
+    pass
+//**
+
+// @function Determines activation for entries or exits. Does not place the actual orders.
+// @param entry_position and exit_position and filter and qualifier array to use alng with equity_management
+// @returns void
+export activate_entries_and_exits(array<entry_position> _entries, array<exit_position> _exits,array<filter> _filters,array<qualifier> _qualifiers, equity_management _equity) =>
+    //Note: This can handle pyramiding if there is available equity.  This will NOT work with the default pyramiding setting since DCA would interfere with this.
+    //Determine which entries are currently active and push them to an array of active entries and the others to an array of 'not active'
+    array<entry_position> active_entries    = array.new<entry_position>()
+    array<exit_position> active_exits       = array.new<exit_position>()
+    entry_position most_recent_entry        = na //This will be the most recent pyramid entry
+    exit_position most_recent_exit          = na
+    int num_long_active_entries             = 0 //How many long entries are there (INCLUDING pyramiding!)
+    int num_short_active_entries            = 0 //Same as ^ but short
+    //int total_active_entries                = 0 //This is the total number of active entries (NOT counting pyramiding!)
+    bool overide_activate                   = false //This allows overiding activate.  Useful for flipping position that has already been verified on a previous bar.
+    string[] cancel_ids_long                = array.new_string() //Keep track of the ids that are supposed to be cancel.
+    string[] cancel_groups_long             = array.new_string() //Keep track of the groups that are supposed to be canceled.
+    string[] cancel_ids_short               = array.new_string() //Keep track of the ids that are supposed to be cancel.
+    string[] cancel_groups_short            = array.new_string() //Keep track of the groups that are supposed to be canceled.
+
+    _equity.override_occured                := false //Default this to false each bar.
+    _equity.flip_occured                    := false
+    _equity.prior_position_used             := _equity.position_used //Store the past value before this gets manipulated in case we need the original to backtrack.
+    _equity.prior_equity                    := _equity.equity //Store the past equity value in case we need to backtrack to the original.
+
+    //Optimize the loops by removing anything that is disabled or empty ~ (NA) ~ so we don't bother looping through it on every bar.
+    if(bar_index==0)
+        entry_array_size = array.size(_entries)
+        for i = entry_array_size-1 to 0
+            entry = array.get(_entries,i)
+            if(na(entry))
+                array.remove(_entries,i)
+            else
+                if(entry.disabled)
+                    array.remove(_entries,i)
+
+        exit_array_size = array.size(_exits)
+        for i = exit_array_size-1 to 0
+            exit = array.get(_exits,i)
+            if(na(exit))
+                array.remove(_exits,i)
+            else
+                if(exit.disabled)
+                    array.remove(_exits,i)
+
+        //Causing nothing to happen
+        filter_array_size = array.size(_filters)
+        for i = filter_array_size-1 to 0
+            afilter = array.get(_filters,i)
+            if(na(afilter))
+                array.remove(_filters,i)
+            else
+                if(afilter.disabled)
+                    array.remove(_filters,i)
+
+        qualifier_array_size = array.size(_qualifiers)
+        for i = qualifier_array_size-1 to 0
+            aqualifier = array.get(_qualifiers,i)
+            if(na(aqualifier))
+                array.remove(_qualifiers,i)
+            else
+                if(aqualifier.disabled)
+                    array.remove(_qualifiers,i)
+
+
+    highest_total_bar_index = 0
+
+    //Determine which entries are already active and the most_recent_entry.
+    for [index, entry] in _entries
+        entry.total_bars                := entry.total_bars + 1 //Running total of bars of the current time frame that has been running.
+
+        //If there is no position then there should be no self pyramiding positions either, therefore set this to NA
+        entry.self_pyramiding_positions := strategy.position_size==0 ? na : entry.self_pyramiding_positions
+        // if(strategy.position_size==0)
+        //     //Reset all pyramiding arrays to na
+        //     entry.self_pyramiding_positions := na
+
+        if(na(entry.self_pyramiding_positions)) //Initialize the self_pyramiding_positions if it has not been done already.
+            entry.self_pyramiding_positions := array.new<entry_position>() //Set the self pyramiding_positions initially to this particular entry in this situation.
+
+        //Cooldown tracking
+        entry.cooldown_bar_changed      := entry.cooldown_bar_index != entry.cooldown_bar_index_prior //This signifies that the timeframe selected for cooldown has had a bar change. (for cooldown tracking)
+        entry.cooldown_bar_change_count := entry.cooldown_bar_changed ? entry.cooldown_bar_change_count + 1 : entry.cooldown_bar_change_count
+        // if(entry.cooldown_bar_changed)
+        //     entry.cooldown_bar_change_count := entry.cooldown_bar_change_count + 1
+
+        //Active bars & entry tracking
+        if(entry.active)
+            entry.bars_since_active := entry.bars_since_active + 1 //Total bars that have gone by while the entry is considered active
+            //Cycle through the self pyramiding positions in case one of these is the most recent recent entry.
+            if(array.size(entry.self_pyramiding_positions)>0)//If this entry has known curreny pyramided positions, then we want to find the latest one.
+                for [p_index, p_entry] in entry.self_pyramiding_positions //Go through the pyramid positions 1 by 1, find the latest one.
+                    if(p_entry.direction=="LONG")
+                        num_long_active_entries := num_long_active_entries + 1
+                    else
+                        num_short_active_entries := num_short_active_entries + 1
+                    if(p_entry.bar_index_at_activate > highest_total_bar_index) //The entry with the highest total bars so far is the most recent entry.
+                        highest_total_bar_index := p_entry.bar_index_at_activate
+                        most_recent_entry := p_entry
+            else
+                if(entry.bars_since_active > highest_total_bar_index) //The entry with the highest total bars so far is the most recent entry.
+                    highest_total_bar_index := entry.bar_index_at_activate
+                    most_recent_entry := entry
+                if(entry.direction=="LONG")
+                    num_long_active_entries := num_long_active_entries + 1
+                else
+                    num_short_active_entries := num_short_active_entries + 1
+            active_entries.push(entry) //Push the active entires into the array tracking them.  Can use it to get running total of all active entries by using array length.
+
+
+
+    //**
+
+    //Determine which exits are currently *already* active and push them to an array of active exits.  Also handles reseting equity based on exits that have fired previously
+    for [index, exit] in _exits
+        //Cooldown tracking
+        exit.activate_after_bars_bar_changed      := exit.activate_after_bars_bar_index != exit.activate_after_bars_bar_index_prior //This signifies that the timeframe selected for cooldown has had a bar change. (for cooldown tracking)
+        if(exit.activate_after_bars_bar_changed)
+            exit.activate_after_bars_bar_change_count := exit.activate_after_bars_bar_change_count + 1
+
+            if(exit.show_activate_after_bars and array.size(active_entries)>0)
+                label_text = str.tostring(exit.activate_after_bars_bar_change_count,'#')
+                temp_label = label.new(bar_index,close,label_text,color=color.black,textcolor = color.white,yloc=yloc.abovebar)
+
+        //Cancel If Percent Check
+        if(exit.use_cancel_if_percent)
+            cancel_exit_long = false
+            cancel_exit_short = false
+            if(exit.exit_type=="Stop Loss")
+                exit.hypo_long_exit_value := (close - (exit.atr_value * exit.atr_multiplier))
+                exit.hypo_short_exit_value := (close + (exit.atr_value * exit.atr_multiplier))
+                if(exit.hypo_long_exit_value <= (close - (exit.cancel_if_percent * close)))
+                    exit.debug := (close - (exit.cancel_if_percent * close))
+                    cancel_exit_long := true
+                if(exit.hypo_short_exit_value >= (close + (exit.cancel_if_percent * close)))
+                    cancel_exit_short := true
+            if(exit.exit_type=="Take Profit")
+                exit.hypo_long_exit_value := (close + (exit.atr_value * exit.atr_multiplier))
+                exit.hypo_short_exit_value := (close - (exit.atr_value * exit.atr_multiplier))
+                if(exit.hypo_long_exit_value >= (close + (exit.cancel_if_percent * close)))
+                    cancel_exit_long := true
+                if(exit.hypo_short_exit_value <= (close - (exit.cancel_if_percent * close)))
+                    cancel_exit_short := true
+            if(cancel_exit_long)
+                for [idx, id] in str.split(exit.exit_for_entries,",")
+                    cancel_ids_long.push(id)
+                for [idx, group] in str.split(exit.exit_for_groups,",")
+                    cancel_groups_long.push(group)
+            if(cancel_exit_short)
+                for [idx, id] in str.split(exit.exit_for_entries,",")
+                    cancel_ids_short.push(id)
+                for [idx, group] in str.split(exit.exit_for_groups,",")
+                    cancel_groups_short.push(group)
+
+        if(exit.reset_equity)
+            exit.reset_equity := false //This way it won't do this again on the next bar.
+
+            _equity.prevent_future_entries := (exit.prevent_new_entries_on_partial_close and strategy.position_size != 0) ? true : _equity.prevent_future_entries
+            // if(exit.prevent_new_entries_on_partial_close and strategy.position_size != 0) //If there is still position and we have a partial close this should prevent any future entries from occuring with this option enabled.
+            //     _equity.prevent_future_entries := true
+
+            if(strategy.position_size==0)
+                _equity.position_used := 0 //Reset this to zero since the equity has been completely reset at this point
+                _equity.equity := strategy.initial_capital+strategy.netprofit //Only once we are sure everything is cleared out do we reset the equity to work with.
+                _equity.prevent_future_entries := false //So we can take trades again normally
+                _equity.direction := na //so that any entry can open again.
+                _equity.first_entry := na //after every close where there is no position left the first_entry needs to be cleared.
+
+                if(strategy.wintrades > _equity.num_win_trades)
+                    _equity.num_concurrent_wins     := _equity.num_concurrent_wins + 1
+                    _equity.num_concurrent_losses   := 0
+                else
+                    _equity.num_concurrent_losses   := _equity.num_concurrent_losses + 1
+                    _equity.num_concurrent_wins     := 0
+
+                _equity.num_win_trades := strategy.wintrades
+                _equity.num_losing_trades := strategy.losstrades
+
+                for [index2, exit2] in _exits //Loop through every exit to ensure NA values are reset
+                    exit2.exit_amount := 0 //To reset this, but only if position size is 0 because this information about the exit amount so far is handy for calculation purposes.
+                    exit2.close_exit_value := na //This is needed to reset trailing stop loss tracker
+                    exit2.exit_value := na //this resets the known exit_value used for trialing stop loss tracker as well
+                    exit2.activation_value := na //this resets the value used in case trailing take profit is used.
+                    exit2.activation_value_crossed := false //reset this so we don't think it crossed anymore
+                    exit2.amount_of_times_triggered := 0 //reset to 0 so it can actually exit this amount of times again.
+
+            //If the option to reset entry coodowns is ON, then we should reset cooldowns for every entry if the position_size is truly 0.
+            for [a_index, entry] in _entries
+                if(strategy.position_size==0) //If the entry is truly closed out then officially make it active := false
+                    entry.active := false
+                    entry.bars_since_active := 0
+                    entry.total_position_size := 0
+                    entry.position_size := 0
+                    entry.bar_index_at_pyramid_change := na
+                    entry.dca_positions := na
+
+                    entry.cooldown_bar_change_count := exit.reset_entry_cooldowns ? 0 : entry.cooldown_bar_change_count
+                    // if(exit.reset_entry_cooldowns)
+                    //     entry.cooldown_bar_change_count := 0 //Reset this again in this case also if option enabled.
+    //**
+
+    //Qualifiers Prerequisites
+    for [index, q_qualifier] in _qualifiers
+        q_qualifier.expire_bar_changed      := q_qualifier.expire_after_bars_bar_index != q_qualifier.expire_after_bars_bar_index_prior //This signifies that the timeframe selected for cooldown has had a bar change. (for cooldown tracking)
+        q_qualifier.expire_bar_count := q_qualifier.expire_bar_changed ? q_qualifier.expire_bar_count + 1 : q_qualifier.expire_bar_count
+        // if(q_qualifier.expire_bar_changed)
+        //     q_qualifier.expire_bar_count := q_qualifier.expire_bar_count + 1
+    //**
+
+    //Activate entries
+    for [index, entry] in _entries //TODO -> This should be the non-active entries array to see if we want to make it active this time around.
+
+        entry.override_occured              := false //default to false for each entry
+
+        entry.num_active_long_positions     := num_long_active_entries
+        entry.num_active_short_positions    := num_short_active_entries
+
+        entry.num_active_positions          := array.size(active_entries)
+
+        pass = array.new_bool(15,false) //This is how many pass requirements are needed for the entry to activate succesfully.
+        if(entry.condition)
+            array.set(pass,0,true)
+        else
+            if(entry.use_override_default_condition and entry.use_dynamic_condition) //In this situation we want to ignore what we have hardcoded and only use the dynamic source for entry control logic.
+                array.set(pass,0,true)
+
+        if(entry.use_cooldown_bars)
+            if(entry.cooldown_bar_change_count >= entry.cooldown_bars)
+                array.set(pass,1,true)
+            else
+                array.set(pass,1,false)
+        else
+            array.set(pass,1,true)
+
+        //Do we have any capital available to even do this entry?
+        if((strategy.initial_capital + strategy.netprofit) > 0)
+            array.set(pass,2,true)
+        else
+            array.set(pass,2,false)
+
+        //Does the internal tracker say we have enough money to do this trade?
+        //This is useful because if more than one entry would 'activate' at the same time (bar) this value will lower with whichever would have activated first not allowing the other to trigger if there would not be enough equity.
+        if(_equity.equity > 0)
+            array.set(pass,3,true)
+        else
+            if(strategy.position_size>0 and entry.direction=="LONG" or strategy.position_size<0 and entry.direction=="SHORT")
+                array.set(pass,3,false)
+            else
+                array.set(pass,3,true) //If there is no equity, BUT this was an entry for a different direction, this can still be true because FLIP Position will clear the position and give equity later.
+
+        //Check if we hit self pyramiding limit for this entry.
+
+        if(array.size(entry.self_pyramiding_positions) >= entry.self_pyramiding_limit)
+            array.set(pass,4,false)
+        else
+            array.set(pass,4,true)
+
+        //Check if we hit the regular pyramiding limit for all entries.  Direction check is IMPORTANT
+        if((num_long_active_entries >= entry.pyramiding_limit and entry.direction=="LONG") or (num_short_active_entries >= entry.pyramiding_limit and entry.direction=="SHORT"))
+            array.set(pass,5,false)
+        else
+            array.set(pass,5,true)
+
+        if(_equity.prevent_future_entries)
+            array.set(pass,6,false)
+        else
+            array.set(pass,6,true)
+
+        if(_equity.equity < _equity.minimum_order_size)
+            if(strategy.position_size>0 and entry.direction=="LONG" or strategy.position_size<0 and entry.direction=="SHORT")
+                array.set(pass,7,false)
+            else
+                array.set(pass,7,true) //Allow this because equity doesn't matter when flipping position at this time.
+        else
+            array.set(pass,7,true)
+
+        //Pyramid Direction Check.  For example, if it's going long already, it can't pyramid short and vice versa.
+        possible_flip_occured = false
+        if(entry.flip_occurred)
+            entry.flip_occurred := false //This is the bar after the flip activated then, lets turn this off.
+            _equity.position_used := 0 //Reset this to zero since the equity has been completely reset at this point
+            _equity.equity := strategy.initial_capital+strategy.netprofit //Only once we are sure everything is cleared out do we reset the equity to work with.
+            entry.bars_since_active := 0 //Reset so cooldowns come into affect.
+            entry.dca_positions := na //Clear out any DCA that may be present
+            most_recent_entry.active := false //Set the previous entries active to false since it's no longer 'active' and has been flipped (therefore all positions taken care of)
+            overide_activate := true //This will allow the order to go through even though it's a different entry and may not meet other conditions at this time.
+            _equity.override_occured := true //Default this to false each bar.
+            entry.override_occured := true
+        else
+            if(na(_equity.direction))
+                array.set(pass,8,true)
+            else
+                if(_equity.direction == entry.direction)
+                    array.set(pass,8,true)
+                else
+                    if(na(most_recent_entry)==false) //No else neccesary, because the default will be FALSE
+                        if(most_recent_entry.ignore_flip) //The prior entry does not allow flips so DO NOT ALLOW activation!
+                            array.set(pass,8,false)
+                        else
+                            if(entry.allow_flip_position)//Then, does this entry allow the flip?
+                                array.set(pass,8,true)
+                                possible_flip_occured := true //This signifies that it's possible given all the other conditions were true that a flip occured.  This will be used to do offset calculations for position to close out existing longs later.
+                            else
+                                array.set(pass,8,false)
+
+        //**
+
+        //Dynamic Condition Check
+        if(entry.use_dynamic_condition)
+            //Check if the source meets the dynamic condition
+
+            if(qualifyCondition(entry)==true)
+                array.set(pass,9,true)
+        else
+            array.set(pass,9,true)
+
+        //Check if any filters apply to this entry.
+        array.set(pass,10,validateFilter(entry,_filters))
+
+        //Check if any qualifiers apply to this entry.
+        array.set(pass,11,validateQualifier(entry,_qualifiers))
+
+        //Check if allow long or allow short is present.
+        if(_equity.allow_longs and entry.direction=="LONG" or _equity.allow_shorts and entry.direction=="SHORT")
+            array.set(pass,12,true)
+
+        //Check if the entries ID is in the cancel list
+        cancel_entry = false
+        cancel_entry := entry.direction=="LONG" and array.includes(cancel_ids_long,entry.id) ? true : (array.includes(cancel_ids_short,entry.id)) ? true : cancel_entry
+        // if(entry.direction=="LONG")
+        //     if(array.includes(cancel_ids_long,entry.id))
+        //         cancel_entry := true
+        // else
+        //     if(array.includes(cancel_ids_short,entry.id))
+        //         cancel_entry := true
+
+        cancel_entry := entry.direction=="LONG" and array.includes(cancel_groups_long,entry.group) ? true : (array.includes(cancel_groups_short,entry.group)) ? true : cancel_entry
+        // if(entry.direction=="LONG")
+        //     if(array.includes(cancel_groups_long,entry.group))
+        //         cancel_entry := true
+        // else
+        //     if(array.includes(cancel_groups_short,entry.group))
+        //         cancel_entry := true
+
+        if(cancel_entry==false)
+            array.set(pass,13,true)
+
+        //Debug Condition (That forces the engine to wait for a ceratin bar so we don't have to scroll to the left everytime to check problems).  Uncomment this if Debugging.
+        //if(bar_index >= 20942)
+            //array.set(pass,13,true)
+        array.set(pass,14,true)  //<-- Comment this when done debugging so the pass is TRUE
+
+        //Debug Pass Variables (uncomment to print label with debug information.  You can wrap an IF condition on bar_index to have it print for only certain bar ranges)
+        // if(bar_index >= 22100)
+        //     entry.passDebug := pass
+        //     string label_text = ""
+        //     for [pass_index, pass_value] in entry.passDebug
+        //         label_text := label_text + (pass_value ? "1\n" : "0\n")
+        //     temp_label = label.new(bar_index,close,label_text,color=entry.direction=="LONG" ? color.rgb(21, 70, 31) : color.rgb(70, 23, 31),textcolor = color.white,yloc=entry.direction=="SHORT" ? yloc.abovebar : yloc.belowbar)
+
+        //DCA Check.  Which DCA lines would activate if applicable? Take note of the minimum order size allowed when considering if it could activate or not.
+        if(_equity.equity >= _equity.minimum_order_size) //Only bother with further calculations if the equity is greater than or equal to the minimum order size
+
+            //Preserve the entry.total_position_size before we change it just in case of DCA Activations on a flip position.  NOTE: This is on entry NOT p_entry, since entry needs to track the entire combined position for exiting later.
+            entry.prior_total_position_size := entry.total_position_size
+
+            //Loop through this entries pyramids, see if the close meets the conditions to activate and if the DCA has not already been activated then activate it.
+            for[a_index,p_entry] in entry.self_pyramiding_positions //Go through the entries pyramid positions
+                if(entry.use_dca)
+                    if(_equity.flip_occured==false and _equity.override_occured==false) //A flip or override can not occur during activation of DCA
+
+                        //This MUST happen here, because inside the dca_loop these values could change.
+                        p_entry.prior_equity_remaining := p_entry.equity_remaining //Whatever this was prior, store this before we change it through the DCA loop.
+                        p_entry.prior_position_remaining := p_entry.position_remaining //Whatever this was prior, store this before we change it through the DCA loop.
+
+                        for i = 0 to entry.dca_num_positions - 1
+                            if(na(p_entry.dca_positions)==false) //If there actually is a DCA position array for the pyramid (meaning it has not canceled itself yet from a new pyramid possibly)
+                                if(array.size(p_entry.dca_positions) > 0) //Does the array actually have something in it?
+                                    if((entry.direction=="LONG" and close <= array.get(p_entry.dca_positions,i)) or (entry.direction=="SHORT" and close >= array.get(p_entry.dca_positions,i))) //Did the price cross a DCA Level?
+                                        if(array.size(p_entry.dca_in_use) > 0 ) //This can get destroyed upon new pyramids, therefore check to see if greater than 0
+                                            if(array.get(p_entry.dca_in_use,i)==false)
+                                                dca_percentage_levels_array = str.split(entry.dca_percentages,"\n") //Calculate the array of the DCA percentage levels desired.
+                                                float money_used = 0.0
+                                                if(entry.use_dca_dynamic_percent_equity==false)
+                                                    money_used := _equity.equity * (str.tonumber(array.get(dca_percentage_levels_array,i))*0.01)
+                                                else
+                                                    if(entry.dynamic_equity_interpolation_method=="Linear From Mid")
+                                                        p_entry.initial_dynamic_percent_equity_amount := xSellBuyMidInterpolation(entry.dynamic_percent_equity_source,entry.dynamic_percent_equity_max,entry.dynamic_percent_equity_min,entry.dynamic_percent_equity_source_sell_range,entry.dynamic_percent_equity_source_buy_range)*0.01
+                                                    if(entry.dynamic_equity_interpolation_method=="Linear")
+                                                        p_entry.initial_dynamic_percent_equity_amount := xSellBuyInterpolation(entry.dynamic_percent_equity_source,entry.dynamic_percent_equity_max,entry.dynamic_percent_equity_min,entry.dynamic_percent_equity_source_sell_range,entry.dynamic_percent_equity_source_buy_range)*0.01
+                                                    money_used := _equity.equity * (p_entry.initial_dynamic_percent_equity_amount)
+                                                if(money_used >= _equity.minimum_order_size)
+                                                    float purchase_qty = money_used / close
+                                                    purchase_qty := math.round(purchase_qty,_equity.decimal_rounding_precision)//round to be safe first to the precision
+
+                                                    p_entry.equity_remaining := _equity.equity - money_used //** Accounted for Reversal
+                                                    p_entry.position_remaining := p_entry.position_remaining + purchase_qty //** Accounted for Reversal
+
+                                                    _equity.equity := _equity.equity - money_used //** Accounted for Reversal
+
+                                                    entry.total_position_size := entry.total_position_size + purchase_qty //** Accounted for Reversal
+
+                                                    _equity.position_used := _equity.position_used + purchase_qty //Adjust the internal tracker for position used ** Accounted for Reversal
+
+                                                    array.set(p_entry.dca_position_quantities,i,purchase_qty) //Store what position is supposed to be purchased as this position.  In case of reversal, this does not matter to store prior value.
+                                                    array.set(p_entry.dca_in_use,i,true) //Set it to in_use then.  For reversal this simply gets set to false since NO DCA should be allowed to be in use.
+                                                    array.set(p_entry.dca_activated,i,true) //Set it to TRUE for activated.  For reversal this simply gets set to false since NO DCA should be allowed to be activated.
+                                                    array.set(p_entry.dca_money_used,i,money_used) //Set to the money used at this DCA level for reference later.  In case of reversal, this does not matter to store prior value.
+                                            else
+                                                array.set(p_entry.dca_activated,i,false) //Set it to FALSE otherwise since the DCA is already in use and therefore not activated.  Activation can only happen ONCE!
+                                else
+                                    array.set(p_entry.dca_in_use,i,false) //If there is no DCA position, then this should be reset to false.
+                                    array.set(p_entry.dca_activated,i,false) //If there is no DCA position, this should be reset to false.
+                                    array.set(p_entry.dca_position_quantities,i,0.0) //Reset it since there is no quantity anymore.
+                                    array.set(p_entry.dca_money_used,i,0.0) //Reset it since there is no money_used potential anymore.
+
+        //**
+
+        if(array.includes(pass,false) and overide_activate == false) //If the array contains even 1 false then...
+            entry.activate := false
+
+            if(entry.use_dca and entry.flip_occurred == false) //If using DCA update existing lines to reflect activity so far.  This does not create new lines, just updates it.
+                if(na(entry.dca_positions)==false)
+                    if(entry.dca_atr_updates_dca_positions)//If we are using the option that updates the DCA positions every bar, then we do that here.
+                        atr_dca_value = close + (1*entry.atr_value*entry.dca_atr_mult)*(entry.direction=="LONG" ? -1 : 1)
+                        deviation_change = math.abs(1 - (atr_dca_value/close))//This will calculate the percentage change this would be.
+
+                        if(entry.dca_use_deviation_atr_min)
+                            if(deviation_change < entry.dca_deviation_percentage) //This will force it to always be the minimum percentage.
+                                deviation_change := entry.dca_deviation_percentage
+
+                        for i = 0 to (array.size(most_recent_entry.dca_positions) == 0 ? na : most_recent_entry.dca_num_positions - 1)
+                            dca_value = close //just to set a default
+                            if(i==0)
+                                //dca_value := close + (1*entry.atr_value*entry.dca_atr_mult)*(entry.direction=="LONG" ? -1 : 1) //This calculates it for what it would be one position down.
+                                dca_value :=  close + ((deviation_change * close)*(entry.direction=="LONG" ? -1 : 1))
+                            if(i!=0)
+                                deviation_change := deviation_change * entry.dca_scale
+                                dca_value := array.get(most_recent_entry.dca_positions,i-1) + (((deviation_change)*array.get(most_recent_entry.dca_positions,i-1))*(entry.direction=="LONG" ? -1 : 1))
+                            array.set(most_recent_entry.dca_positions,i,dca_value)//change the most recent entry (which will be a pyramid)
+                if(na(entry.dca_lines)==false and na(entry.dca_positions)==false and entry.show_dca_lines==true)
+                    for i = 0 to entry.dca_num_positions - 1
+                        for[a_index,p_entry] in entry.self_pyramiding_positions //Go through the entries pyramid positions
+                            if(na(p_entry.bar_index_at_pyramid_change)==false)
+                                true //TODO - Why did I need this if check originally?????
+                            else
+                                if(na(array.get(p_entry.dca_positions,i))==false)
+                                    line.set_x2(array.get(p_entry.dca_lines,i),time)//This works because when the dca_position gets removed this can't draw anymore, so therefore it draws to the correct location.
+                                    line.set_y2(array.get(p_entry.dca_lines,i),array.get(p_entry.dca_positions,i))
+                                    true
+                            if(na(p_entry.dca_in_use)==false and na(p_entry.dca_activated)==false)
+                                if(na(p_entry.dca_positions)==false)
+                                    if(array.size(p_entry.dca_in_use) > 0)
+                                        if(array.get(p_entry.dca_in_use,i)==true)
+                                            line.set_style(array.get(p_entry.dca_lines,i),line.style_solid)
+
+
+            entry.flip_occurred := false //Ensure this is always reset
+        else
+            //Adjust the _equity that is available for activations
+            position_size   = 0.0 //What kind of position will the order have? 50% 100% or some fixed $Cash amount?
+            money_used      = 0.0 //Keep track of what kind of money will be used to create the order.
+
+            //Below is the multiplier used for martingale calculations.  To save on IF statements, I have it converted in ternary form, but kept the IF form for readability below.
+            multiplier = entry.use_martingale ? strategy.closedtrades.profit(strategy.closedtrades-1) > 0 ? entry.martingale_limit_reset_mode == "Original" ? _equity.num_concurrent_wins >= entry.martingale_win_limit ? 1.0 : math.pow(entry.martingale_win_ratio, _equity.num_concurrent_wins) : _equity.num_concurrent_wins >= entry.martingale_win_limit ? math.pow(entry.martingale_win_ratio, entry.martingale_win_limit-1) : math.pow(entry.martingale_win_ratio, _equity.num_concurrent_wins) : entry.martingale_limit_reset_mode == "Original" ? _equity.num_concurrent_losses >= entry.martingale_lose_limit ? 1.0 : math.pow(entry.martingale_lose_ratio, _equity.num_concurrent_losses) : _equity.num_concurrent_losses >= entry.martingale_lose_limit ? math.pow(entry.martingale_lose_ratio, entry.martingale_lose_limit-1) : math.pow(entry.martingale_lose_ratio, _equity.num_concurrent_losses) : 1.0
+            //BELOW IS TRANSLATION OF THE TERENARY CRAZYNESS ABOVE (HAD TO DO THIS TO SAVE ON LOCAL SCOPES)
+            // if(strategy.closedtrades.profit(strategy.closedtrades-1)>0)
+            //     if(entry.martingale_limit_reset_mode=="Original")
+            //         if(_equity.num_concurrent_wins >= entry.martingale_win_limit)
+            //             multiplier := 1.0 //Reset to normal for original mode.
+            //         else
+            //             multiplier := math.pow(entry.martingale_win_ratio,_equity.num_concurrent_wins)
+            //     else
+            //         if(_equity.num_concurrent_wins >= entry.martingale_win_limit)
+            //             multiplier := math.pow(entry.martingale_win_ratio,entry.martingale_win_limit-1)
+            //         else
+            //             multiplier := math.pow(entry.martingale_win_ratio,_equity.num_concurrent_wins)
+            // else //Broken even counts as loss
+            //     if(entry.martingale_limit_reset_mode=="Original")
+            //         if(_equity.num_concurrent_losses >= entry.martingale_lose_limit)
+            //             multiplier := 1.0 //Reset to normal for original mode.
+            //         else
+            //             multiplier := math.pow(entry.martingale_lose_ratio,_equity.num_concurrent_losses)
+            //     else
+            //         if(_equity.num_concurrent_losses >= entry.martingale_lose_limit)
+            //             multiplier := math.pow(entry.martingale_lose_ratio,entry.martingale_lose_limit-1)
+            //         else
+            //             multiplier := math.pow(entry.martingale_lose_ratio,_equity.num_concurrent_losses)
+
+            if(entry.use_percent_equity)
+                money_used := (_equity.equity * entry.percent_equity_amount) * multiplier
+
+                money_used := (money_used > _equity.equity) ? _equity.equity : money_used
+                money_used := (money_used < _equity.minimum_order_size) ? _equity.minimum_order_size : money_used
+                // if(money_used > _equity.equity) //If by chance this would try to use more money then you have, make it use the max amount
+                //     money_used := _equity.equity
+                // if(money_used < _equity.minimum_order_size)
+                //     money_used := _equity.minimum_order_size
+                position_size := money_used / close
+            if(entry.use_cash)
+                money_used := entry.cash_amount * multiplier
+
+                money_used := (money_used > _equity.equity) ? _equity.equity : money_used
+                money_used := (money_used < _equity.minimum_order_size) ? _equity.minimum_order_size : money_used
+                // if(money_used > _equity.equity) //If by chance this would try to use more money then you have, make it use the max amount
+                //     money_used := _equity.equity
+                // if(money_used < _equity.minimum_order_size)
+                //     money_used := _equity.minimum_order_size
+                position_size :=  money_used / close
+            if(entry.use_dynamic_percent_equity)//This will overide the other settings
+                //Sample Usage: xSellBuyInterpolation(g_rsi,100,25,70,30)
+                if(entry.dynamic_equity_interpolation_method=="Linear From Mid")
+                    entry.initial_dynamic_percent_equity_amount := xSellBuyMidInterpolation(entry.dynamic_percent_equity_source,entry.dynamic_percent_equity_max,entry.dynamic_percent_equity_min,entry.dynamic_percent_equity_source_sell_range,entry.dynamic_percent_equity_source_buy_range)*0.01
+                if(entry.dynamic_equity_interpolation_method=="Linear")
+                    entry.initial_dynamic_percent_equity_amount := xSellBuyInterpolation(entry.dynamic_percent_equity_source,entry.dynamic_percent_equity_max,entry.dynamic_percent_equity_min,entry.dynamic_percent_equity_source_sell_range,entry.dynamic_percent_equity_source_buy_range)*0.01
+                money_used := (_equity.equity * (entry.initial_dynamic_percent_equity_amount)) * multiplier
+
+                money_used := (money_used > _equity.equity) ? _equity.equity : money_used
+                money_used := (money_used < _equity.minimum_order_size) ? _equity.minimum_order_size : money_used
+                // if(money_used > _equity.equity) //If by chance this would try to use more money then you have, make it use the max amount
+                //     money_used := _equity.equity
+                // if(money_used < _equity.minimum_order_size)
+                //     money_used := _equity.minimum_order_size
+                position_size :=  money_used / close
+            //**
+
+            float total_position_to_adjust = 0
+            if(possible_flip_occured)
+                entry.flip_occurred     := true //Its official a flip occured if it got to this point
+                _equity.flip_occured    := true //This is needed to prevent exits from triggering on the same bar as a flip.
+                for[a_index, a_entry] in active_entries //Loop through all active entries
+                    for[p_index, p_entry] in a_entry.self_pyramiding_positions //Loop through all known pyramids for each of these entries.
+                        //Add the previous entries position_sizes to this to cancel them out accordingly for the flip.
+                        total_position_to_adjust := total_position_to_adjust + p_entry.position_size
+                //Make sure to change _equity direction as well at this point and clear DCA's
+
+
+            entry.position_size := math.round(position_size + total_position_to_adjust,_equity.decimal_rounding_precision) //Set the position_size rounded to 6 decimal points.  TODO -> Make this settable option for precision
+
+            entry.total_position_size := entry.total_position_size + entry.position_size //Set the total position_size
+            _equity.position_used := _equity.position_used + entry.position_size //Track the overall equity position_used for exit purposes.
+
+            entry.position_remaining := entry.position_size //Sets the initial tracker variable for how much position remains to be sold.
+
+            entry.initial_equity := money_used //Track what money was used to place this order, will display on order comment.
+            //TODO -> Maybe remove below? _equity.equity tracks this anyways?
+            entry.equity_remaining := _equity.equity - money_used //This will be used to keep track of what 'remains' for the entry.  This can happen if a close only partially closes the equity.
+
+            //Adjust the master equity in equity management accordingly.
+            _equity.equity := _equity.equity - money_used
+
+            //Safe to activate and make active now
+            entry.activate := true
+            entry.active := true
+            entry.atr_value_at_activation := entry.atr_value //Store the initial value of the ATR, useful for stop loss and take profits that only want the initial value for future moves.
+            entry.initial_activation_price := close //Set the initial activation price for use by exits with adjust to average position turned off.
+            entry.time_at_activate := time_close //Set the current unix time of when the bar closed (which is happening right now when this calculates)
+            entry.bar_index_at_activate := bar_index
+
+            _equity.direction := entry.direction
+
+            //Loop through all entries and set their cooldown_bar_change_counts to 0 again.
+            for [index2, entry2] in _entries
+                entry2.cooldown_bar_change_count := 0 //If the entry has activated then reset this.  This will ensure cooldown works correctly regardless of the entry that activated.
+
+            //Loop through all exits and change the activate bars to 0 again
+            for [index2, exit] in _exits
+                //TODO -> This should only be reset to 0 if the option to do this is selected.  By default it will only do this if there is no active entries yet.
+                if(array.size(active_entries)==0)
+                    exit.activate_after_bars_bar_change_count := 0
+
+
+            entry.bar_index_at_activated := bar_index //Needed for drawing the DCA correctly.
+
+            if(entry.use_dca and entry.flip_occurred != true) //Only create DCA on NON-FLIPS! (It will still do it for flips, but on the next bar right after this one instead.  This will account for knowing what $ is available)
+                entry.dca_lines                 := array.new_line() //Create a new line set at activation (this overwrites any line array before it)
+                entry.dca_activated             := array.new_bool(entry.dca_num_positions, false) //default to not activated on any DCA
+                entry.dca_in_use                := array.new_bool(entry.dca_num_positions, false) //default to not in use for any DCA
+                entry.dca_position_quantities   := array.new_float(entry.dca_num_positions, 0.0) //Copy over some blank dca position quantities to get it started.  Quantity is determined at time of activation for DCA.
+                entry.dca_money_used            := array.new_float(entry.dca_num_positions, 0.0) //Set the default money used to be assumed at 0.0
+
+                entry.dca_positions := array.new_float(entry.dca_num_positions)//Intialize it with empty slots equal to how many DCA we want.
+
+                if(entry.use_atr_deviation==false) //Create standard DCA Points
+                    deviation_change = entry.dca_deviation_percentage
+
+                    for i = 0 to (array.size(entry.dca_positions) == 0 ? na : entry.dca_num_positions - 1)
+                        dca_value = close //just to set a default
+                        if(i==0)
+                            dca_value := close + ((1*entry.dca_deviation_percentage)*close)*(entry.direction=="LONG" ? -1 : 1)
+                        if(i!=0) //and i!=1
+                            deviation_change := deviation_change * entry.dca_scale
+                            dca_value := array.get(entry.dca_positions,i-1) + (((deviation_change)*array.get(entry.dca_positions,i-1))*(entry.direction=="LONG" ? -1 : 1)) //Take the previous DCA value into consideration for calculation of the next DCA position
+                        array.set(entry.dca_positions,i,dca_value)
+                else //Using ATR Deviation for DCA
+                    atr_dca_value = close + (1*entry.atr_value*entry.dca_atr_mult)*(entry.direction=="LONG" ? -1 : 1)
+                    deviation_change = math.abs(1 - (atr_dca_value/close))//This will calculate the percentage change this would be.
+
+                    if(entry.dca_use_deviation_atr_min)
+                        if(deviation_change < entry.dca_deviation_percentage) //This will force it to always be the minimum percentage.
+                            deviation_change := entry.dca_deviation_percentage
+
+                    for i = 0 to (array.size(entry.dca_positions) == 0 ? na : entry.dca_num_positions - 1)
+                        dca_value = close //just to set a default
+                        if(i==0)
+                            //dca_value := close + (1*entry.atr_value*entry.dca_atr_mult)*(entry.direction=="LONG" ? -1 : 1) //This calculates it for what it would be one position down.
+                            dca_value :=  close + ((deviation_change * close)*(entry.direction=="LONG" ? -1 : 1))
+                        if(i!=0)
+                            deviation_change := deviation_change * entry.dca_scale
+                            dca_value := array.get(entry.dca_positions,i-1) + (((deviation_change)*array.get(entry.dca_positions,i-1))*(entry.direction=="LONG" ? -1 : 1))
+                        array.set(entry.dca_positions,i,dca_value)
+                //Loop through the now set DCA Positions
+                if(entry.show_dca_lines)
+                    for i = 0 to entry.dca_num_positions - 1
+                        dca_line = line.new(
+                         x1 = entry.time_at_activate,
+                         y1 = array.get(entry.dca_positions,i),
+                         x2 = entry.time_at_activate+(time-time[1]),//Extend out initially 1 bar ~ entry.bars_since_active,
+                         y2 = array.get(entry.dca_positions,i),
+                         xloc =  xloc.bar_time,
+                         extend = extend.none,
+                         color = entry.dca_color,
+                         width = 1,
+                         style= line.style_dotted
+                         )
+                        entry.dca_lines.push(dca_line)
+
+                if(entry.new_pyramid_cancels_dca and _equity.override_occured==false)//This check can be ignored on an override because it thinks there is more entries than there is temporarily during this time.  TODO: Do I need to fix this?
+                    if(entry.num_active_positions >= 1)
+                        if(na(most_recent_entry)==false)
+                            most_recent_entry.bar_index_at_pyramid_change := bar_index
+                            most_recent_entry.dca_positions := na //Clear these so it doesn't try to activate anything with these anymore for this pyramid
+
+            //Must happen at this point to ensure we don't get errors on the arrays for DCA use.
+            if(overide_activate==true) //This can happen as the result of a flip.
+                overide_activate := false //So the next entries in the loop don't think they had override on.
+                //Set active state to false for all other entries so it does not linger thinking it's still active.
+                for [ a_index,a_entry ] in _entries
+                    if(a_entry.id != entry.id)
+                        a_entry.active := false
+                for [ a_index, a_exit ] in _exits //Reset the exit cooldowns
+                    a_exit.activate_after_bars_bar_change_count := 0
+
+            if(entry.flip_occurred != true) //A flip does not count as truly activated until the next bar, therefore don't add this to the known pyramids yet.
+                entry_copy = entry.deepCopy()
+                if(na(_equity.first_entry))
+                    _equity.first_entry := entry_copy
+                entry.self_pyramiding_positions.push(entry_copy)//Always push to the self_pyramiding_positions array even if we are not using pyramiding.  In the case of no pyramiding we just always use 0th index of this array.
+
+                active_entries.push(entry)//Add this to the list of active entries since it will be active now.
+
+    //**
+
+    //Activate exits
+    for [index, exit] in _exits
+
+        pass = array.new_bool(14,false) //This is how many pass requirements are needed for the exit to activate succesfully.
+
+        //This will keep track of what entry positions are affected by the exit for adjusting their values accordingly.
+        entry_position[] entries_exiting_for = array.new<entry_position>()
+
+        if(exit.condition)
+            array.set(pass,0,true)
+        else
+            if(exit.use_override_default_condition and exit.use_dynamic_condition) //In this situation we want to ignore what we have hardcoded and only use the dynamic source for entry control logic.
+                array.set(pass,0,true)
+
+        //Check if any of the active entries belong to this exits id
+        //Split exit_for_entries by ,
+        exit_entries = str.split(exit.exit_for_entries,",")
+        was_valid_id = false
+
+        if(array.size(exit_entries)>0)
+            //Loop through all the active entries to see if an ID matches
+            for[a_index,entry] in active_entries
+                if(array.includes(exit_entries,entry.id))
+                    array.set(pass,1,true)
+                    was_valid_id := true
+        else //If nothing is there assume this part passes.
+            array.set(pass,1,true)
+            was_valid_id := true
+
+
+        //Check if any of the active entries belong to this exits group
+        //Split exit_for_groups by ,
+        exit_groups = str.split(exit.exit_for_groups,",")
+        was_valid_group = false
+
+        if(array.size(exit_groups)>0)
+            //Loop through all the active entries to see if an GROUP matches
+            for[a_index,entry] in active_entries
+                if(array.includes(exit_groups,entry.group)) //Push only the 'set' known active entires into the qualifying for the exit.
+                    array.set(pass,2,true)
+                    was_valid_group := true
+        else //If nothing is there assume this part passes.
+            array.set(pass,2,true)
+            was_valid_group := true
+
+
+        //Push only the 'set' known active entires into the qualifying for the exit.
+        for[a_index,entry] in active_entries //Push all the known active entries into qualifying for the exit.
+            if(array.includes(exit_groups,entry.group) or array.includes(exit_entries,entry.id))
+                entries_exiting_for.push(entry)
+
+        exit.entries_exiting_for := entries_exiting_for //Update the entries it's exiting for if available
+
+        //If the exit is already active this should not be able to activate again.
+        if(exit.active)
+            array.set(pass,3,false)
+        else
+            array.set(pass,3,true)
+
+        //Did an exit bar timeframe requirement since a valid entry it tied to trigger? (valid is determined by simply the entry being active and belonging to the supported group or id and the custom condition being true)
+        if( was_valid_group and was_valid_id)
+            if(exit.use_activate_after_bars)
+                if(exit.activate_after_bars_bar_change_count >= exit.activate_after_bars)
+                    array.set(pass,4,true)
+                else
+                    array.set(pass,4,false)
+            else
+                array.set(pass,4,true) //Allowed to be activated by other means instead.
+        else
+            exit.activate_after_bars_bar_change_count := 0 //Reset what was added from a previous loop detecting bar changes, since it will be invalid.
+            array.set(pass,4,false)
+
+        if(strategy.position_size==0) //If there is no position to exit then there is nothing to exit
+            array.set(pass,5,false)
+        else
+            array.set(pass,5,true)
+
+        //Decide what price will be used for comparing if we are hitting price targets for stop loss or take profit
+        price_target = strategy.position_avg_price
+        entry_position first_entry = na //Record of what the earliest entry is for exit calculation purposes.
+
+        //Find the initial_activation_price and set the price_target to this.
+        //This can be done by finding the earliest activation_time for the 1st pyramid of the entries the exit can work with.
+        int earliest_activation_time = 99999999999999
+
+        for[a_index,a_entry] in entries_exiting_for
+            if(na(a_entry.self_pyramiding_positions)==false)
+                if(array.size(a_entry.self_pyramiding_positions)>0)
+                    if(array.get(a_entry.self_pyramiding_positions,0).time_at_activate < earliest_activation_time)
+                        earliest_activation_time := array.get(a_entry.self_pyramiding_positions,0).time_at_activate //grab the first pyramid of the entry
+                        first_entry := array.get(a_entry.self_pyramiding_positions,0)
+
+        if(exit.use_average_position==false)
+            if(na(first_entry)==false)
+                price_target := first_entry.initial_activation_price //This will set it to the first known entry that was active, therefore setting the initial activation price correctly.
+
+        //Check if in profit if being used
+        if(exit.use_close_if_profit_only)
+            //Are we in profit by the profit_value?
+            //Calculate what the close has to be to be in the profit percentage for the average of all the positions at the time.
+            target = price_target + ((price_target * exit.profit_value) * (strategy.position_size > 0 ? 1 : -1))
+            if(strategy.position_size>0)
+                if(close>target)
+                    array.set(pass,6,true)
+                else
+                    array.set(pass,6,false)
+            if(strategy.position_size<0)
+                if(close<target)
+                    array.set(pass,6,true)
+                else
+                    array.set(pass,6,false)
+        else
+            array.set(pass,6,true)
+
+        //Dynamic Condition Check
+        if(exit.use_dynamic_condition)
+            //Check if the source meets the dynamic condition
+            if(qualifyCondition(exit)==true)
+                array.set(pass,7,true)
+        else
+            array.set(pass,7,true)
+
+        //Calculate if it's exited too many times
+        if(exit.amount_of_times_triggered < exit.trigger_x_times )
+            array.set(pass,8,true)
+
+        array.set(pass,9,validateFilter(exit,_filters))
+
+        //Check if _equity.override_occured happened, if so this exit can NOT be allowed to activate.
+        if(_equity.flip_occured  == false)
+            array.set(pass,10,true)
+
+        //Check if any qualifiers apply to this exit.
+        array.set(pass,11,validateQualifier(exit,_qualifiers))
+
+        //!!! *IMPORTANT* !!! Up to this point all the conditions are non primary conditions, if these are all true then set all_conditions_pass to true for plot drawing purposes.  IF ADDING NEW EXIT IDEAS, PUT ABOVE AND CHANGE ALL PASS #s
+        if(array.get(pass,0)==true
+         and array.get(pass,1)==true
+         and array.get(pass,2)==true
+         and array.get(pass,3)==true
+         and array.get(pass,4)==true
+         and array.get(pass,5)==true
+         and array.get(pass,6)==true
+         and array.get(pass,7)==true
+         and array.get(pass,8)==true
+         and array.get(pass,9)==true
+         and array.get(pass,10)==true
+         and array.get(pass,11)==true)
+            exit.all_conditions_pass := true
+        else
+            exit.all_conditions_pass := false
+
+        atr_value = exit.atr_value //By default set to the exits updated ATR value.  This is the equivlent of update_atr = true
+        if(exit.update_atr_with_new_pyramid and exit.update_atr==false)
+            if(na(most_recent_entry)==false)
+                atr_value := most_recent_entry.atr_value_at_activation
+        if(exit.update_atr_with_new_pyramid==false and exit.update_atr==false)
+            if(na(_equity.first_entry)==false)
+                atr_value := _equity.first_entry.atr_value_at_activation
+        //TODO add condition for update_atr ONLY
+
+        //NOTE: - IMPORTANT - If future array.set commands are needed place them BEFORE this because of the all_conditions_pass check!
+        if(exit.exit_type=="Stop Loss")
+            //Check modifiers
+            //Is this trailing?
+            if(exit.exit_modifier=="Trailing")
+                if(strategy.position_size > 0)
+                    if(na(exit.exit_value))
+                        exit.exit_value := 0
+                    if(na(exit.close_exit_value))
+                        exit.close_exit_value := 0
+
+                    close_exit_value = (close - (close*exit.percentage))
+                    if(close_exit_value > exit.close_exit_value)
+                        exit.close_exit_value := close_exit_value
+
+                    price_target_difference_value = exit.use_average_position ? (first_entry.initial_activation_price - strategy.position_avg_price ) : 0
+                    exit.exit_value := exit.close_exit_value - price_target_difference_value
+
+                    if(close <= exit.exit_value)
+                        array.set(pass,12,true)
+                if(strategy.position_size < 0)
+                    if(na(exit.exit_value))
+                        exit.exit_value := 99999999999999
+                    if(na(exit.close_exit_value))
+                        exit.close_exit_value := 99999999999999
+
+                    close_exit_value = (close + (close*exit.percentage))
+                    if(close_exit_value < exit.close_exit_value)
+                        exit.close_exit_value := close_exit_value
+
+                    price_target_difference_value = exit.use_average_position ? (first_entry.initial_activation_price - strategy.position_avg_price ) : 0
+                    exit.exit_value := exit.close_exit_value - price_target_difference_value
+
+                    if(close >= exit.exit_value)
+                        array.set(pass,12,true)
+            //Is this ATR?
+            if(exit.exit_modifier=="ATR")
+                hypo_long_exit_value = (price_target - (atr_value * exit.atr_multiplier))
+                hypo_short_exit_value = (price_target + (atr_value * exit.atr_multiplier))
+                if(strategy.position_size > 0)
+                    exit.exit_value := hypo_long_exit_value
+                    if(close < exit.exit_value)
+                        array.set(pass,12,true)
+                if(strategy.position_size < 0)
+                    exit.exit_value := hypo_short_exit_value
+                    if(close > exit.exit_value)
+                        array.set(pass,12,true)
+            //No Modifier?
+            if(exit.exit_modifier=="None")
+                if(strategy.position_size > 0)
+                    exit.exit_value := (price_target - (price_target*exit.percentage))
+                    if(close < exit.exit_value)
+                        array.set(pass,12,true)
+                if(strategy.position_size < 0)
+                    exit.exit_value := (price_target + (price_target*exit.percentage))
+                    if(close > exit.exit_value)
+                        array.set(pass,12,true)
+        else
+            array.set(pass,12,true)
+
+        if(exit.exit_type=="Take Profit")
+            //Check modifiers
+            //Is this trailing?
+            if(exit.exit_modifier=="Trailing")
+                //activation_value
+                if(strategy.position_size > 0)
+                    if(na(exit.exit_value))
+                        exit.exit_value := 0
+                    if(na(exit.close_exit_value))
+                        exit.close_exit_value := 0
+                    if(na(exit.activate))
+                        exit.activation_value := 0
+
+                    close_exit_value = (close - (close*exit.percentage))
+                    if(close_exit_value > exit.close_exit_value)
+                        exit.close_exit_value := close_exit_value
+
+                    exit.activation_value := (price_target + (price_target*exit.activation_percentage))
+
+                    if(close>=exit.activation_value)
+                        exit.activation_value_crossed := true
+
+                    price_target_difference_value = exit.use_average_position ? (first_entry.initial_activation_price - strategy.position_avg_price ) : 0
+                    exit.exit_value := exit.close_exit_value - price_target_difference_value
+
+                    if(close <= exit.exit_value and exit.activation_value_crossed)
+                        array.set(pass,13,true)
+
+                if(strategy.position_size < 0)
+                    if(na(exit.exit_value))
+                        exit.exit_value := 99999999999999
+                    if(na(exit.close_exit_value))
+                        exit.close_exit_value := 99999999999999
+                    if(na(exit.activate))
+                        exit.activation_value := 99999999999999
+
+                    close_exit_value = (close + (close*exit.percentage))
+                    if(close_exit_value < exit.close_exit_value)
+                        exit.close_exit_value := close_exit_value
+
+                    exit.activation_value := (price_target - (price_target*exit.activation_percentage))
+
+                    if(close<=exit.activation_value)
+                        exit.activation_value_crossed := true
+
+                    price_target_difference_value = exit.use_average_position ? (first_entry.initial_activation_price - strategy.position_avg_price ) : 0
+                    exit.exit_value := exit.close_exit_value - price_target_difference_value
+
+                    if(close >= exit.exit_value and exit.activation_value_crossed)
+                        array.set(pass,13,true)
+            //Is this ATR?
+            if(exit.exit_modifier=="ATR")
+                hypo_long_exit_value = (price_target + (atr_value * exit.atr_multiplier))
+                hypo_short_exit_value = (price_target - (atr_value * exit.atr_multiplier))
+                if(strategy.position_size > 0)
+                    exit.exit_value := hypo_long_exit_value
+                    if(close > exit.exit_value)
+                        array.set(pass,13,true)
+                if(strategy.position_size < 0)
+                    exit.exit_value := hypo_short_exit_value
+                    if(close < exit.exit_value)
+                        array.set(pass,13,true)
+            //No Modifier?
+            if(exit.exit_modifier=="None")
+                if(strategy.position_size > 0)
+                    exit.exit_value := (price_target + (price_target*exit.percentage))
+                    if(close > exit.exit_value)
+                        array.set(pass,13,true)
+                if(strategy.position_size < 0)
+                    exit.exit_value := (price_target - (price_target*exit.percentage))
+                    if(close < exit.exit_value)
+                        array.set(pass,13,true)
+        else
+            array.set(pass,13,true)
+
+        if(array.includes(pass,false)) //If the array contains even 1 false then...
+            exit.activate := false
+        else
+            //Adjust all equity values for orders exit was qualified for (group name, id)
+            exit.exit_amount := 0 //Just to be sure it's 0
+            exit.entries_exiting_for := array.new<entry_position>()
+            for[a_index,entry] in entries_exiting_for
+                exit.entries_exiting_for.push(entry) //This will let the exit know what entries it's tied to at the moment.
+
+                //Loop through the pyramids (even if none) for each entry and add their exit amounts and detract from their position remaining to be sold off.
+                for[ap_index,p_entry] in entry.self_pyramiding_positions
+                    position_size_to_exit = math.round(p_entry.position_remaining * exit.quantity_percent,_equity.decimal_rounding_precision) //Very important to round here!
+                    exit.exit_amount := math.round(exit.exit_amount + position_size_to_exit,_equity.decimal_rounding_precision) //Very important to round here!
+                    p_entry.position_remaining := p_entry.position_remaining - position_size_to_exit
+                    if(p_entry.dca_close_cancels and p_entry.use_dca)
+                        p_entry.dca_positions := array.new_float(p_entry.dca_num_positions,na)
+                        //p_entry.dca_active_positions = na //Clear the active state of the positions
+
+
+            //Final check to see if the exit_amount is greater than the equity position_used.  If not then we can't allow this since it's position is already in use (maybe by another exit that would trigger first)
+            if(exit.exit_amount > _equity.position_used)
+                exit.activate               := false
+                exit.active                 := false
+                exit.entries_exiting_for    := array.new<entry_position>()
+                exit.exit_amount            := 0
+            else
+                //Safe to activate now
+                exit.activate               := true
+                exit.active                 := true
+                _equity.position_used       := _equity.position_used - exit.exit_amount
+    //**
+
+//**
+
+// @function Creates actual entry and exit orders if activated
+// @param entry_position and exit_position array to use along with equity mangement
+// @returns void
+export create_entries_and_exits(array<entry_position> _entries, array<exit_position> _exits, equity_management _equity) =>
+    cancel_dca_orders = false
+
+    //Loop through entries to determine if DCA need to be canceled first.
+    for [index, entry] in _entries
+        if(entry.activate)
+            if(entry.flip_occurred)
+                cancel_dca_orders := true
+                break //Exit the loop early, all it takes is one entry to have a flip to need to exit this.
+
+    for [index, entry] in _entries //Loop through all entires and place orders.
+
+        if(entry.activate)
+            if(entry.flip_occurred)
+                //This will close all current positions, which is OK, because all the positions must be from the opposite direction at this point.
+
+                //Then for visual purposes, reset the lines to reflect this for each pyramid of every entry.
+                for [index2, entry2] in _entries //Loop through all the entries again
+                    if(entry2.use_dca) //Does this entry use dca?
+                        for [p_index, p_entry] in entry2.self_pyramiding_positions //Loop through the self pyramiding positions of this entry.
+                            //Undo any DCA that may have activated on this same bar for ALL entries.  This can be done by setting it back to it's previous known values.
+                            // for i = 0 to entry2.dca_num_positions - 1
+                            //     array.set(p_entry.dca_in_use,i,false) //If a flip position occured, all DCA should NOT be in USE!
+                            //     array.set(p_entry.dca_activated,i,false) //If a flip position occured, all DCA should be DE-ACTIVATED!
+
+                            p_entry.equity_remaining    := p_entry.prior_equity_remaining //Restore correct reference to equity remaining.
+                            p_entry.position_remaining  := p_entry.prior_position_remaining //Restore the prior known position remaining as well.
+                            entry2.total_position_size   := entry2.prior_total_position_size //Restore the known prior total position size for proper exiting.
+
+                            _equity.equity := _equity.prior_equity //Restore equity to known past value before any entry or DCA could have changed it.
+                            _equity.position_used := _equity.prior_position_used //Restore the position_used to what it was before any entry or DCA could have changed it.
+
+                            //array.set(p_entry.dca_position_quantities,i,purchase_qty) // DO NOT UN COMMENT <- This is here only for reference that this does NOT need to be changed to it's prior version.
+                            //array.set(p_entry.dca_money_used,i,money_used)            // DO NOT UN COMMENT <- This is here only for reference that this does NOT need to be changed to it's prior version.
+
+                            //Change the style if dca_activated was false.  This can happen if it was changed true during the loop, and we need to undo that now for this situation.
+                            // if(na(p_entry.dca_in_use)==false and na(p_entry.dca_activated)==false)
+                            //     if(na(p_entry.dca_positions)==false)
+                            //         if(array.size(p_entry.dca_in_use) > 0)
+                            //             for i = 0 to entry2.dca_num_positions - 1
+                            //                 if(array.get(p_entry.dca_in_use,i)==false)
+                            //                     line.set_style(array.get(p_entry.dca_lines,i),line.style_dotted) //Set it back to dotted since it's not active
+                cancel_dca_orders := true
+                strategy.close_all(comment=entry.name+ " | Flipping Position Next Bar ")//+(dca_cleared ? "YES" : "NO")) //This does have a 1 bar delay, to compensate for this try running under a lower timeframe and using request.security commands can help to adjust to the higher time frame data but with the resolution of the lower timeframe.  Then use deep back test for proper testing.
+            else
+                order_comment = entry.name + " ⟁"+str.tostring(array.size(entry.self_pyramiding_positions)) //by default this is the order comment
+                if(_equity.show_order_info_in_comments)
+                    order_comment := order_comment+" | (P="+(entry.use_dynamic_percent_equity ? str.tostring(entry.initial_dynamic_percent_equity_amount*100,format.percent) : str.tostring(entry.percent_equity_amount*100,format.percent))+")"+(entry.use_dynamic_percent_equity ? " | (DV=" + str.tostring(entry.dynamic_percent_equity_source,'#.##')+")": "")+" | (EU="+str.tostring(entry.initial_equity,'$#.##')+") | (ER="+str.tostring(_equity.equity,'$#.##')+" / "+str.tostring(strategy.initial_capital+strategy.netprofit,'$#.##')+")"
+                if(_equity.show_order_info_in_labels)
+                    label_text = "Percent Used: "+(entry.use_dynamic_percent_equity ? str.tostring(entry.initial_dynamic_percent_equity_amount*100,format.percent) : str.tostring(entry.percent_equity_amount*100,format.percent))+"\n"
+                    label_text := label_text + (entry.use_dynamic_percent_equity ? "Dynamic Value: " + str.tostring(entry.dynamic_percent_equity_source,'#.##')+"\n": "")
+                    label_text := label_text + "Equity Used: "+str.tostring(entry.initial_equity,'$#.##')+"\n"
+                    label_text := label_text + "Equity Remaining: "+str.tostring(_equity.equity,'$#.##')+"\n"
+                    label_text := label_text + "Starting Equity: "+str.tostring(strategy.initial_capital+strategy.netprofit,'$#.##')
+                    temp_label = label.new(bar_index,close,label_text,color=entry.direction=="LONG" ? color.rgb(21, 70, 31) : color.rgb(70, 23, 31),textcolor = color.white,yloc=yloc.abovebar)
+                strategy.order(entry.name,entry.direction=="LONG" ? strategy.long : strategy.short,qty=entry.position_size.precision_fix(_equity.decimal_rounding_precision), oca_name=entry.direction=="LONG" ? "LONGS" : "SHORTS", oca_type = strategy.oca.none, comment=order_comment)
+        if(entry.use_dca and cancel_dca_orders==false) //Handle creating DCA orders if any activate, assuming it's not canceled by a flip position
+            for [p_index, p_entry] in entry.self_pyramiding_positions
+                for [pa_index, dca_activated] in p_entry.dca_activated //Go through the pyramid entries activation array
+                    if(dca_activated==true) //Was one activated? For each one do the code below...
+                        // if(bar_index==20218)
+                        //     runtime.error("DCA was activated somehow here")
+                        dca_percentage_levels_array = str.split(entry.dca_percentages,"\n") //Calculate the array of the DCA percentage levels desired.
+                        dca_percentage_used = array.get(dca_percentage_levels_array,pa_index)
+                        dca_order_name = entry.name+str.tostring(pa_index+1)
+                        dca_equity_used = array.get(p_entry.dca_money_used,pa_index) //_equity.equity * str.tonumber(dca_percentage_used)*0.01 //TODO -> Read custom array to determine equity used.
+
+                        array.set(p_entry.dca_activated,pa_index,false)//Set this to false since we are placing the order now so it doesn't activate again!
+                        dca_order_qty = array.get(p_entry.dca_position_quantities,pa_index) //The DCA_Activated index matches DCA_position_quantities, therefore we can use the same index to grab coresponding values.
+                        order_comment = dca_order_name + " ⟁"+str.tostring(p_index+1) //by default this is the order comment.  The pyramid activation could occur from a previous line so we use p_index instead of self_pyramiding_position array size
+
+                        if(_equity.show_order_info_in_comments)
+                            order_comment := order_comment+" | (P="+(entry.use_dca_dynamic_percent_equity ? str.tostring(p_entry.initial_dynamic_percent_equity_amount*100,format.percent) : dca_percentage_used)+"%)"+(entry.use_dynamic_percent_equity ? " | (DV=" + str.tostring(entry.dynamic_percent_equity_source,'#.##')+")": "")+" | (EU="+str.tostring(dca_equity_used,'$#.##')+") | (ER="+str.tostring(_equity.equity,'$#.##')+" / "+str.tostring(strategy.initial_capital+strategy.netprofit,'$#.##')+")"
+                        if(_equity.show_order_info_in_labels)
+                            label_text = "Percent Used: "+(entry.use_dca_dynamic_percent_equity ? str.tostring(p_entry.initial_dynamic_percent_equity_amount*100,format.percent) : dca_percentage_used+"%")+"\n"
+                            label_text := label_text + (entry.use_dca_dynamic_percent_equity ? "Dynamic Value: " + str.tostring(entry.dynamic_percent_equity_source,'#.##')+"\n": "")
+                            label_text := label_text + "Equity Used: "+str.tostring(dca_equity_used,'$#.##')+"\n"
+                            label_text := label_text + "Equity Remaining: "+str.tostring(_equity.equity,'$#.##')+"\n"
+                            label_text := label_text + "Starting Equity: "+str.tostring(strategy.initial_capital+strategy.netprofit,'$#.##')
+                            temp_label = label.new(bar_index,close,label_text,color=entry.direction=="LONG" ? color.rgb(21, 70, 31) : color.rgb(70, 23, 31),textcolor = color.white,yloc=yloc.abovebar)
+                        strategy.order(dca_order_name,entry.direction=="LONG" ? strategy.long : strategy.short,qty=dca_order_qty.precision_fix(_equity.decimal_rounding_precision), oca_name=entry.direction=="LONG" ? "LONGS" : "SHORTS", oca_type = strategy.oca.none, comment=order_comment)
+    //**
+    for [index, exit] in _exits
+        if(exit.activate)
+            if(exit.use_limit==false) //Market Orders
+                strategy.order(exit.name,strategy.position_size>0 ? strategy.short : strategy.long,qty=exit.exit_amount.precision_fix(_equity.decimal_rounding_precision), oca_name="EXITS", oca_type = strategy.oca.none, comment=exit.name + " | (P="+str.tostring(exit.quantity_percent*100,format.percent)+")")
+                //Since this is a market order, we know we can reset_equity right away and change the activate_after_bars_bar_change_count accordingly
+                exit.activate_after_bars_bar_change_count := 0
+                exit.reset_equity := true //This will also fix activation states for entries if applicable.
+                exit.amount_of_times_triggered := exit.amount_of_times_triggered + 1
+                exit.active := false //Because the order is actually closing it can't be active anymore.
+
+ //**
+
+
+
+
+//**

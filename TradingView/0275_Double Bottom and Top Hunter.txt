@@ -1,0 +1,50 @@
+//@version=5
+strategy("Double Bottom and Top Hunter", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1000)
+
+// Parametreler
+length = input.int(100, title="Dönem Uzunluğu", defval=100)
+lookback = input.int(100, title="Geriye Dönük Kontrol Süresi", defval=100)
+
+// İkili Dip ve Tepe Bulma
+low1 = ta.lowest(low, length)
+high1 = ta.highest(high, length)
+
+low2 = ta.valuewhen(low == low1, low, 1)
+high2 = ta.valuewhen(high == high1, high, 1)
+
+doubleBottom = (low == low1 and ta.lowest(low, lookback) == low1 and low == low2)
+doubleTop = (high == high1 and ta.highest(high, lookback) == high1 and high == high2)
+
+// İşlem Açma Koşulları
+longCondition = doubleBottom
+shortCondition = doubleTop
+
+// İşlem Kapatma Koşulları
+closeLongCondition = ta.highest(high, length) > high1 and low < low1
+closeShortCondition = ta.lowest(low, length) < low1 and high > high1
+
+// İşlem Açma
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=100)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short, qty=100)
+
+// İşlem Kapatma
+if (closeLongCondition)
+    strategy.close("Long")
+
+if (closeShortCondition)
+    strategy.close("Short")
+
+// Grafik Üzerinde Göstergeler ve ZigZag Çizimi
+plotshape(series=longCondition, title="İkili Dip Bulundu", location=location.belowbar, color=color.green, style=shape.labelup, text="LONG")
+plotshape(series=shortCondition, title="İkili Tepe Bulundu", location=location.abovebar, color=color.red, style=shape.labeldown, text="SHORT")
+
+var line zigzagLine = na
+if (doubleBottom or doubleTop)
+    zigzagLine := line.new(x1=bar_index[1], y1=na, x2=bar_index, y2=doubleBottom ? low : high, color=doubleBottom ? color.green : color.red, width=2)
+
+// Zigzag çizgisini sürekli güncelleme
+line.set_xy1(zigzagLine, bar_index[1], na)
+line.set_xy2(zigzagLine, bar_index, doubleBottom ? low : high)

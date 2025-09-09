@@ -1,0 +1,95 @@
+//@version=5
+strategy("Color Code Overlay Strategy", overlay=true, shorttitle="Color Code Strategy")
+
+// Input to select trade type: "Both", "Long Only", or "Short Only"
+trade_type = input.string("Both", title="Trade Type", options=["Both", "Long Only", "Short Only"])
+
+// Input for start and end times (format: HH:MM)
+start_time = input.time(timestamp("2025-01-01 09:00 +0000"), title="Start Time")
+end_time = input.time(timestamp("2025-01-01 16:00 +0000"), title="End Time")
+
+// Input for stop loss in pips
+stop_loss_pips = input.int(20, title="Stop Loss (pips)", minval=1)
+// Input for take profit in pips
+take_profit_pips = input.int(40, title="Take Profit (pips)", minval=1)
+
+// Dynamically calculate the pip value based on the symbol's minimum tick size
+pip_value = syminfo.mintick
+
+// Calculate Color Code Candles using the exact formula
+color_code_close = (open + high + low + close) / 4
+
+// Initialize Color Code open for the first bar, then use previous open and close for the following bars
+var float color_code_open = na
+color_code_open := na(color_code_open[1]) ? (open + close) / 2 : (color_code_open[1] + color_code_close[1]) / 2
+
+// Correctly calculate Color Code High and Low
+color_code_high = math.max(high, math.max(color_code_open, color_code_close))
+color_code_low = math.min(low, math.min(color_code_open, color_code_close))
+
+// Fixed threshold percentage (no user input)
+threshold_percent = 1.0
+
+// Calculate the range of the custom Color Code candle (High - Low)
+color_code_range = color_code_high - color_code_low
+
+// Define the dynamic threshold based on the fixed threshold percentage and candle range
+dynamic_threshold = (threshold_percent / 100) * color_code_range
+
+// Detect color change conditions based on the dynamic threshold
+color_code_is_bullish = color_code_close > color_code_open
+color_code_was_bullish = color_code_close[1] > color_code_open[1]
+
+// Color change from green to red (bullish to bearish)
+color_change_green_to_red = color_code_was_bullish and not color_code_is_bullish and (math.abs(color_code_close - color_code_open) > dynamic_threshold)
+
+// Color change from red to green (bearish to bullish)
+color_change_red_to_green = not color_code_was_bullish and color_code_is_bullish and (math.abs(color_code_close - color_code_open) > dynamic_threshold)
+
+// Plot arrows to indicate color changes
+plotshape(series=color_change_green_to_red, location=location.abovebar, color=color.red, style=shape.triangledown, size=size.tiny, title="Color Change to Red")
+plotshape(series=color_change_red_to_green, location=location.belowbar, color=color.green, style=shape.triangleup, size=size.tiny, title="Color Change to Green")
+
+// Define the color for the body: green for bullish (Color Code Close > Color Code Open), red for bearish (Color Code Close < Color Code Open)
+color_code_color = color_code_close > color_code_open ? color.green : color.red
+
+// Apply the body color to the candles (barcolor affects both body and outline)
+barcolor(color_code_color, title="Color Code Body Color", offset=0)
+
+// Apply the wick and outline colors
+wick_color = color_code_close > color_code_open ? color.green : color.red
+outline_color = color_code_close > color_code_open ? color.green : color.red
+
+// Plot the candles with the specified colors
+plotcandle(open, high, low, close, color=color_code_color, wickcolor=wick_color, bordercolor=outline_color)
+
+// Ensure strategy only trades during the custom time frame
+is_in_time_frame = (time >= start_time) and (time <= end_time)
+
+// Entry and exit logic for the strategy, only execute if within the time frame
+if is_in_time_frame
+    if trade_type == "Both" or trade_type == "Long Only"
+        if color_change_red_to_green
+            strategy.entry("Long", strategy.long)
+            // Set the stop loss for long trades (x pips below entry)
+            long_stop_loss = close - stop_loss_pips * pip_value
+            long_take_profit = close + take_profit_pips * pip_value
+            strategy.exit("Long Exit", "Long", stop=long_stop_loss, limit=long_take_profit)
+        if color_change_green_to_red
+            strategy.close("Long")
+
+    if trade_type == "Both" or trade_type == "Short Only"
+        if color_change_green_to_red
+            strategy.entry("Short", strategy.short)
+            // Set the stop loss for short trades (x pips above entry)
+            short_stop_loss = close + stop_loss_pips * pip_value
+            short_take_profit = close - take_profit_pips * pip_value
+            strategy.exit("Short Exit", "Short", stop=short_stop_loss, limit=short_take_profit)
+        if color_change_red_to_green
+            strategy.close("Short")
+
+// Alert conditions
+alertcondition(color_code_close > color_code_open, title="Color Code Bullish", message="Color Code is Bullish!")
+alertcondition(color_code_close < color_code_open, title="Color Code Bearish", message="Color Code is Bearish!")
+alertcondition(color_change_green_to_red, title="Color Code Change to Red", message="Color Code changed to Red!")
+alertcondition(color_change_red_to_green, title="Color Code Change to Green", message="Color Code changed to Green!")

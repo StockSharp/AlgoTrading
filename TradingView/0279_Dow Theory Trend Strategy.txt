@@ -1,0 +1,108 @@
+//@version=5
+// strategy(title="Dow Theory Trend Strategy", shorttitle="Dow Trend Strat", overlay=true,
+//      initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=10,
+//      commission_type=strategy.commission.percent, commission_value=0.1) // Example strategy settings
+strategy(title="Dow Theory Trend Strategy", shorttitle="Dow Trend Strat", overlay=true) // Basic strategy settings
+
+// --- 設定 ---
+pivotLookback = input.int(10, title="Pivot Lookback Period", minval=1, tooltip="ピボットハイ/ローを検出するための左右のバーの数")
+showPivotPoints = input.bool(true, title="Show Pivot Points", tooltip="ピボットハイ/ローのポイントを表示します")
+showTrendChange = input.bool(true, title="Show Trend Change Signals", tooltip="トレンド転換のシグナル（エントリーポイント）を表示します")
+
+// --- ピボットハイ/ローの検出 ---
+// ta.pivothigh/low(source, leftbars, rightbars)
+// rightbars分だけ遅延して確定する点に注意
+pivotHighPrice = ta.pivothigh(high, pivotLookback, pivotLookback)
+pivotLowPrice = ta.pivotlow(low, pivotLookback, pivotLookback)
+
+// --- ピボットポイントの値を保持するための変数 ---
+var float lastPivotHigh = na
+var float prevPivotHigh = na
+var float lastPivotLow = na
+var float prevPivotLow = na
+
+var int lastPivotHighBar = na
+var int prevPivotHighBar = na
+var int lastPivotLowBar = na
+var int prevPivotLowBar = na
+
+// --- 新しいピボットが確定したかどうかの検出と値の更新 ---
+// 新しいピボットハイが確定
+if not na(pivotHighPrice)
+    if na(lastPivotHigh) or pivotHighPrice != lastPivotHigh // 初回または前回と違うピボット
+        prevPivotHigh := lastPivotHigh
+        prevPivotHighBar := lastPivotHighBar
+        lastPivotHigh := pivotHighPrice
+        lastPivotHighBar := bar_index - pivotLookback // ピボットが確定したバー
+
+// 新しいピボットローが確定
+if not na(pivotLowPrice)
+    if na(lastPivotLow) or pivotLowPrice != lastPivotLow // 初回または前回と違うピボット
+        prevPivotLow := lastPivotLow
+        prevPivotLowBar := lastPivotLowBar
+        lastPivotLow := pivotLowPrice
+        lastPivotLowBar := bar_index - pivotLookback // ピボットが確定したバー
+
+// --- ダウ理論に基づくトレンド判定 (改良版) ---
+var int trendDirection = 0 // 1: 上昇トレンド, -1: 下降トレンド, 0: レンジ/判定不能 (初期状態)
+
+// 有効なピボットが最低2つずつ存在するか確認
+bool hasEnoughPivots = not na(lastPivotHigh) and not na(prevPivotHigh) and not na(lastPivotLow) and not na(prevPivotLow)
+
+if hasEnoughPivots
+    // 上昇トレンドの条件: 高値切り上げ (HH) かつ 安値切り上げ (HL)
+    isHigherHigh = lastPivotHigh > prevPivotHigh
+    isHigherLow = lastPivotLow > prevPivotLow
+    isUptrendConfirmed = isHigherHigh and isHigherLow
+
+    // 下降トレンドの条件: 高値切り下げ (LH) かつ 安値切り下げ (LL)
+    isLowerHigh = lastPivotHigh < prevPivotHigh
+    isLowerLow = lastPivotLow < prevPivotLow
+    isDowntrendConfirmed = isLowerHigh and isLowerLow
+
+    // トレンド方向の決定ロジック (改良)
+    if isUptrendConfirmed
+        trendDirection := 1 // 明確な上昇トレンドを確認
+    else if isDowntrendConfirmed
+        trendDirection := -1 // 明確な下降トレンドを確認
+    else
+        // 明確な上昇・下降トレンドが確認できない場合、前のトレンドを維持する
+        // これにより、一時的なレンジや一方の条件のみ満たす状況でトレンド方向が頻繁に変わるのを防ぐ
+        trendDirection := trendDirection[1] // 前のバーのトレンド方向を引き継ぐ
+
+// --- トレンド転換の検出 ---
+// trendDirectionの値が変化したバーを検出 (0->1, 0->-1, 1->-1, -1->1)
+bool trendChanged = ta.change(trendDirection) != 0 and trendDirection != 0 // 0への変化は除外しない場合もあるが、ここでは明確な転換を重視
+bool changedToUp = trendChanged and trendDirection == 1
+bool changedToDown = trendChanged and trendDirection == -1
+
+// --- 描画処理 ---
+
+// 1. 背景色によるトレンド表示 (改良版のtrendDirectionを使用)
+bgcolor(trendDirection == 1 ? color.new(color.blue, 85) : trendDirection == -1 ? color.new(color.red, 85) : color.new(color.gray, 90), title="Trend Background") // レンジ/初期状態はグレーに
+
+// 2. ピボットポイントの描画 (オプション)
+plotshape(showPivotPoints and not na(pivotHighPrice), title="Pivot High", location=location.abovebar, color=color.new(color.maroon, 20), style=shape.triangledown, size=size.tiny, offset=-pivotLookback)
+plotshape(showPivotPoints and not na(pivotLowPrice), title="Pivot Low", location=location.belowbar, color=color.new(color.navy, 20), style=shape.triangleup, size=size.tiny, offset=-pivotLookback)
+
+// 3. トレンド転換シグナル（エントリーポイント）の描画 (オプション)
+plotshape(showTrendChange and changedToUp, title="Uptrend Start Signal", location=location.belowbar, color=color.new(color.green, 0), style=shape.labelup, text="▲ UP", textcolor=color.white, size=size.small)
+plotshape(showTrendChange and changedToDown, title="Downtrend Start Signal", location=location.abovebar, color=color.new(color.red, 0), style=shape.labeldown, text="▼ DOWN", textcolor=color.white, size=size.small)
+
+// --- ストラテジーロジック ---
+if (changedToUp)
+    // 上昇トレンドに転換したらロングエントリー (既存のショートがあればクローズ)
+    strategy.entry("L", strategy.long, comment="Go Long")
+
+if (changedToDown)
+    // 下降トレンドに転換したらショートエントリー (既存のロングがあればクローズ)
+    strategy.entry("S", strategy.short, comment="Go Short")
+
+// --- デバッグ用 (必要に応じてコメント解除) ---
+// plotchar(not na(pivotHighPrice), "PH", "H", location.abovebar, color.red, offset = -pivotLookback)
+// plotchar(not na(pivotLowPrice), "PL", "L", location.belowbar, color.blue, offset = -pivotLookback)
+// plot(lastPivotHigh, color=color.orange, title="Last PH")
+// plot(prevPivotHigh, color=color.purple, title="Prev PH")
+// plot(lastPivotLow, color=color.lime, title="Last PL")
+// plot(prevPivotLow, color=color.aqua, title="Prev PL")
+// plot(trendDirection, title="Trend Direction Value") // トレンド方向の値をプロットして確認

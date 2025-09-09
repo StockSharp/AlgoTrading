@@ -1,0 +1,86 @@
+//@version=6
+strategy("LANZ Strategy 1.0 [Backtest]", overlay=true, default_qty_type=strategy.cash, default_qty_value=100)
+
+// === TIMEFRAME RESTRICTION ===
+if timeframe.period != "60"
+    runtime.error("🚫 LANZ Strategy 1.0 is only available on the 1h timeframe.")
+
+// === INPUTS ===
+accountSizeUSD = input.int(100000, title="Account #1 - Capital ($)", minval=1, group="💸 Main Account Management")
+riskPercent = input.float(1.0, title="Account #1 - Risk (%)", minval=0.1, maxval=100, group="💸 Main Account Management")
+epOffsetFraction = input.float(0.0, title="Nivel EP (0 = extremo, >0 = % de la vela)", minval=-5.0, step=0.01, group="📏 Risk Settings")
+slPipsInput = input.int(18, title="Stop Loss (pips)", minval=1, group="📏 Risk Settings")
+tpPipsInput = input.int(54, title="Take Profit (pips)", minval=1, group="📏 Risk Settings")
+manualCloseHour = input.int(9, title="Hora de Cierre Manual (NY)", minval=0, maxval=23, group="🔚 Cierre Manual")
+// === ENABLE BUY/SELL ===
+enableBuy = input.bool(true, title="📈 Activar Entradas BUY", group="⚙️ Activación de Señales")
+enableSell = input.bool(true, title="📉 Activar Entradas SELL", group="⚙️ Activación de Señales")
+
+// === GLOBALS ===
+pipSize = syminfo.mintick * 10
+var float openAt0800 = na
+var float closeAt1800 = na
+var int priceDirection = na
+var int prevPriceDirection = na
+var int todayPriceDirection = na
+var int finalSignalDirection = na
+var float baseLevel = na
+var float baseSL = na
+var float baseTP = na
+var bool orderSent = false
+
+// === KEY TIMES ===
+is0800 = (hour(time, "America/New_York") == 8 and minute(time, "America/New_York") == 0)
+is1800 = (hour(time, "America/New_York") == 18 and minute(time, "America/New_York") == 0)
+nyHour = hour(time, "America/New_York")
+nyMinute = minute(time, "America/New_York")
+entryWindow = (nyHour >= 18 or nyHour < 8)
+cutoffPassed = not entryWindow
+isManualClose = (nyHour == manualCloseHour and nyMinute == 0)
+
+// === CAPTURE OPEN AND CLOSE ===
+if is0800
+    openAt0800 := open
+if is1800
+    closeAt1800 := close
+    priceDirection := closeAt1800 > openAt0800 ? 1 : closeAt1800 < openAt0800 ? -1 : 0
+    prevPriceDirection := todayPriceDirection
+    todayPriceDirection := priceDirection
+
+    coinciden = priceDirection == prevPriceDirection and not na(prevPriceDirection)
+    finalSignalDirection := coinciden ? priceDirection : -1 * priceDirection
+
+    fibRange = high - low
+    baseLevel := finalSignalDirection == -1 ? (epOffsetFraction == 0 ? low : low + (fibRange * -epOffsetFraction)) : (epOffsetFraction == 0 ? high : high - (fibRange * -epOffsetFraction))
+    baseSL := finalSignalDirection == -1 ? baseLevel - slPipsInput * pipSize : baseLevel + slPipsInput * pipSize
+    baseTP := finalSignalDirection == -1 ? baseLevel + tpPipsInput * pipSize : baseLevel - tpPipsInput * pipSize
+
+    orderSent := false
+
+// === LIMIT ORDER SENDING (AT 19:00 AND FOLLOWING IF NOT YET TOUCHED) ===
+canPlaceOrder = not orderSent and strategy.opentrades == 0 and entryWindow
+if canPlaceOrder
+    slPips = math.abs(baseLevel - baseSL) / pipSize
+    riskUSD = accountSizeUSD * (riskPercent / 100)
+    qty = slPips > 0 ? (riskUSD / (slPips * 10)) : na
+    if not na(qty)
+        isLong = finalSignalDirection == -1
+        if isLong and enableBuy
+            strategy.entry("BUY", strategy.long, qty=qty, limit=baseLevel)
+            strategy.exit("TP/SL BUY", from_entry="BUY", stop=baseSL, limit=baseTP)
+            orderSent := true
+        else if not isLong and enableSell
+            strategy.entry("SELL", strategy.short, qty=qty, limit=baseLevel)
+            strategy.exit("TP/SL SELL", from_entry="SELL", stop=baseSL, limit=baseTP)
+            orderSent := true
+
+// === CANCEL IF NO EP TOUCHED BEFORE 08:00 NY ===
+if cutoffPassed and strategy.opentrades == 0 and orderSent
+    strategy.cancel("BUY")
+    strategy.cancel("SELL")
+    orderSent := false
+
+// === MANUAL CLOSING AT HH:00 NY CONFIGURABLE ===
+if strategy.opentrades > 0 and isManualClose
+    strategy.close("BUY")
+    strategy.close("SELL")

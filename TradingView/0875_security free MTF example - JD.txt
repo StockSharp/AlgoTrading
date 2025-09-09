@@ -1,0 +1,52 @@
+//@version=4
+//
+/////////////////////////////////////////////////////
+/// © Copyright 2020 to present, Joris Duyck (JD) ///
+/////////////////////////////////////////////////////
+//{
+// This script is not intended for trading purposes but gives some examples how you can get values
+// from previous candles in other timeframes, without using security calls.
+
+// NOTE: the "open", "high" and "low" values are calculated "on the fly", as the bar progresses,
+// the "close" is determined at the end of the timeframe, so it's only know at the first bar of the next time period
+
+
+
+// JD.
+
+// #NotTradingAdvice #DYOR
+
+//  Disclaimer.
+// I AM NOT A FINANCIAL ADVISOR.
+// THESE IDEAS ARE NOT ADVICE AND ARE FOR EDUCATION PURPOSES ONLY.
+// ALWAYS DO YOUR OWN RESEARCH!
+//}
+
+study(title = "security free MTF example - JD", shorttitle = "security free MTF - JD", overlay = true)
+
+// Input variables
+//{
+tf = "D"
+//}
+
+timeframe_switch = change( time(tf) ) != 0
+
+switch_bar_current = fixnan( timeframe_switch ? bar_index             : na )
+switch_bar         = fixnan( timeframe_switch ? switch_bar_current[1] : na )
+offs               = switch_bar - switch_bar_current
+
+TF_open  = fixnan( timeframe_switch ? open     : na )
+TF_high  = 0.0
+TF_high := fixnan( timeframe_switch or high > TF_high[1] ? high : na )
+TF_low   = 0.0
+TF_low  := fixnan( timeframe_switch or low  < TF_low[1]  ? low  : na )
+TF_close = fixnan( timeframe_switch ? close[1] : na )
+
+// Plots //
+plot(TF_open,  style = plot.style_circles, color = close >= TF_open ? color.green : color.red)
+plot(TF_high,  style = plot.style_circles, color = color.new(color.teal, 50))
+plot(TF_low,   style = plot.style_circles, color = color.new(color.teal, 50))
+plot(TF_close, style = plot.style_circles, color = TF_close >= TF_open[-offs] ? color.green : color.red, offset = offs)
+
+// Resulting candle plot of previous bar
+plotcandle(timeframe_switch ? TF_open[1] : na, TF_high[1], TF_low[1], TF_close, color = TF_close >= TF_open[-offs] ? color.lime : color.fuchsia)

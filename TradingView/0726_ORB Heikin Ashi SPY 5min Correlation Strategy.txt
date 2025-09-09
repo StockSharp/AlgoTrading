@@ -1,0 +1,82 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © exlux99
+
+//@version=5
+strategy("Opening Range Breakout (ORB) Heikin Ashi SPY 5min Correlation Strategy", overlay=true)
+
+
+///////// relative volume
+import TradingView/ta/7
+
+anchorTimeframeInput = input.timeframe("W", "Anchor Timeframe", tooltip = "When Chart Timeframe >= `Anchor Timeframe`, the indicator will use last `Length` bars in its calculations.", group="RVOL parameters")
+lengthInput          = input.int(3, "Length", minval = 1, group="RVOL parameters")
+
+[currentVolume, pastVolume, _] = ta.relativeVolume(lengthInput, anchorTimeframeInput, true)
+
+// Input parameters
+sessionTime = input.session("0930-1000", "Session Time Opening", group="Time Session")
+sessionTradingTime = input.session("1000-1200", "Session Time Trading", group="Time Session")
+sessionEndTime = input.session("1550-1555", "Session Time Ending", group="Time Session")
+useHeikinAshi = input(false, "Use Heikin Ashi?", group="Correlation Parameters")
+asset_correlation = input.symbol("SPY", group="Correlation Parameters", title="Symbol used for Correlation")
+
+// Session flags
+inSession = not na(time(timeframe.period, sessionTime + ":1234567"))
+inTradingSession = not na(time(timeframe.period, sessionTradingTime + ":1234567"))
+endSession = not na(time(timeframe.period, sessionEndTime + ":1234567"))
+
+// high/low correlation candle calculations
+high_ = useHeikinAshi ?  request.security(ticker.heikinashi(asset_correlation), timeframe.period, high) : request.security(asset_correlation, timeframe.period, high)
+low_ = useHeikinAshi ?  request.security(ticker.heikinashi(asset_correlation), timeframe.period, low) : request.security(asset_correlation, timeframe.period, low)
+
+
+// Initialize variables to store the previous session's high and low
+var float prevSessionHigh = na
+var float prevSessionLow = na
+
+// Update previous session's high and low if a new session begins
+if (inSession and not inSession[1])
+    prevSessionHigh := high_
+    prevSessionLow := low_
+
+// Keep track of the current session's high and low
+currentSessionHigh = prevSessionHigh[1]
+currentSessionLow = prevSessionLow[1]
+
+// Update current session's high and low if necessary
+if (high_ > currentSessionHigh and inSession)
+    currentSessionHigh := high_
+
+if (low_ < currentSessionLow and inSession)
+    currentSessionLow := low_
+
+// Plotting
+plot( currentSessionHigh , color=color.green, title="ORB High", linewidth=2)
+plot( currentSessionLow  , color=color.red, title="ORB Low", linewidth=2)
+
+// Trading logic
+longCondition = close > currentSessionHigh and inTradingSession
+shortCondition = close < currentSessionLow and inTradingSession
+
+var bool longTrade = na
+var bool shortTrade = na
+
+
+rvol = currentVolume / pastVolume
+
+if (longCondition and not shortTrade and rvol > 1 )
+    longTrade := true
+if (shortCondition and not longTrade and rvol > 1)
+    shortTrade := true
+
+if (endSession)
+    longTrade := na
+    shortTrade := na
+
+plotshape(longTrade[1] or shortTrade[1] ? endSession : na,style=shape.labeldown, location=location.abovebar, color=color.new(color.purple, 0), size=size.tiny, title='EXIT', text='END SESSION', textcolor=color.new(color.white, 0))
+
+
+strategy.entry("long", strategy.long, when=longTrade)
+strategy.entry("short", strategy.short, when=shortTrade)
+
+strategy.close_all(when=endSession)

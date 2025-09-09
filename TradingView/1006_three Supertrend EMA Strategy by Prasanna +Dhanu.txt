@@ -1,0 +1,41 @@
+//@version=5
+strategy("Supertrend EMA Strategy", overlay=true)
+
+// Input Parameters
+ema_length = input(50, title="EMA Length")
+supertrend_atr_period = input(10, title="ATR Period")
+supertrend_multiplier1 = input.float(3.0, title="Supertrend Multiplier 1")
+supertrend_multiplier2 = input.float(2.0, title="Supertrend Multiplier 2")
+supertrend_multiplier3 = input.float(1.0, title="Supertrend Multiplier 3")
+
+// Calculations
+emaValue = ta.ema(close, ema_length)
+
+[supertrend1, SupertrendDirection1] = ta.supertrend(supertrend_multiplier1, supertrend_atr_period)
+[supertrend2, SupertrendDirection2] = ta.supertrend(supertrend_multiplier2, supertrend_atr_period)
+[supertrend3, SupertrendDirection3] = ta.supertrend(supertrend_multiplier3, supertrend_atr_period)
+
+// Plot Indicators
+plot(emaValue, title="EMA", color=color.blue, linewidth=2)
+plot(supertrend1, title="Supertrend 1 (10,3)", color=(SupertrendDirection1 == -1 ? color.green : color.red), linewidth=1, style=plot.style_line)
+plot(supertrend2, title="Supertrend 2 (10,2)", color=(SupertrendDirection2 == -1 ? color.green : color.red), linewidth=1, style=plot.style_line)
+plot(supertrend3, title="Supertrend 3 (10,1)", color=(SupertrendDirection3 == -1 ? color.green : color.red), linewidth=1, style=plot.style_line)
+
+// Entry Conditions
+long_condition = (SupertrendDirection1 == -1 and SupertrendDirection2 == -1 and SupertrendDirection3 == -1 and close > emaValue)
+short_condition = (SupertrendDirection1 == 1 and SupertrendDirection2 == 1 and SupertrendDirection3 == 1 and close < emaValue)
+
+// Exit Conditions
+long_exit = (SupertrendDirection3 == 1)
+short_exit = (SupertrendDirection3 == -1)
+
+// Execute Strategy
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+
+if (long_exit)
+    strategy.close("Long")
+if (short_exit)
+    strategy.close("Short")

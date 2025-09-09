@@ -1,0 +1,130 @@
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © alexgrover
+
+//@version=4
+study("Swing High/Low Anchored Spiral",overlay=true,max_bars_back=1000,max_lines_count=500)
+//Swing High/Low Settings
+length      = input(14,minval=2,maxval=499
+  ,group='Swing')
+
+ref         = input(0,'Occurence',minval=0
+  ,group='Swing')
+
+anchor_mode = input('Swing High','Anchor Point'
+  ,options  = ['Swing High','Swing Low']
+  ,group='Swing')
+
+//Spiral Settings
+turns       = input(2,'Spiral Turns',minval=1
+  ,group='Spiral')
+
+fliph       = input(false,'Flip Horizontally'
+  ,group='Spiral')
+
+flipv       = input(false,'Flip Vertically'
+  ,group='Spiral')
+
+
+//Style Settings
+solid        = input(false,'Use Solid Color'
+  ,inline='inlinesolid'
+  ,group='Style')
+
+solid_col    = input(#2157f3,''
+  ,inline='inlinesolid'
+  ,group='Style')
+
+gradient_min = input(#ff1100,'Gradient Colors'
+  ,inline='inlinegradient'
+  ,group='Style')
+
+gradient_max = input(#0cb51a,''
+  ,inline='inlinegradient'
+  ,group='Style')
+
+//------------------------------------------------------------------------------
+n  = bar_index
+var pi = math.pi
+var anchor = 0
+var color col = na
+var lines = array.new_line(0)
+yval = array.new_float(0)
+xval = array.new_int(0)
+prices = array.new_float(0)
+
+//Flipping Constants
+flip_h = fliph ? -1 : 1
+flip_v = flipv ? -1 : 1
+
+//Get Swing High/Low
+ph = pivothigh(length,length)
+pl = pivotlow(length,length)
+ph_val = valuewhen(ph,high[length],ref)
+pl_val = valuewhen(pl,low[length],ref)
+
+//Get anchor corrdinate
+if anchor_mode == 'Swing High'
+    anchor := valuewhen(ph,n-length,ref)
+else
+    anchor := valuewhen(pl,n-length,ref)
+len = n - anchor
+
+//Append lines
+if barstate.isfirst
+    for i = 0 to 499
+        array.push(lines,line.new(na,na,na,na))
+//------------------------------------------------------------------------------
+y1 = 0.
+y2 = 0.
+max = 0.
+min = 0.
+if barstate.islast
+    //Append spiral coordinates to arays
+    for i = 0 to len-1
+        t = i/(len-1)*turns*pi
+        x = t*cos(t)*flip_h/pi/turns*len + anchor
+        y = t*sin(t)*flip_v/pi
+
+        array.push(yval,y)
+        array.push(xval,int(x))
+
+    for i = 0 to array.max(xval)-array.min(xval)-1
+        array.push(prices,close[i])
+
+    //Rescale coordinates and set line corrdinates
+    for i = 1 to len-1
+        yval_max = array.max(yval)
+        yval_min = array.min(yval)
+        yval_range = yval_max - yval_min
+        range = array.max(prices) - array.min(prices)
+
+        x1 = array.get(xval,i-1)
+        x2 = array.get(xval,i)
+
+        if anchor_mode == 'Swing High'
+            y1 := ph_val + array.get(yval,i-1)/yval_range*range
+            y2 := ph_val + array.get(yval,i)/yval_range*range
+            min := ph_val + yval_min/yval_range*range
+            max := ph_val + yval_max/yval_range*range
+        else
+            y1 := pl_val + array.get(yval,i-1)/yval_range*range
+            y2 := pl_val + array.get(yval,i)/yval_range*range
+            min := pl_val + yval_min/yval_range*range
+            max := pl_val + yval_max/yval_range*range
+
+        //Line coloring
+        if solid
+            col := solid_col
+        else
+            col := color.from_gradient(y2
+              ,min,max,gradient_min,gradient_max)
+
+        l = array.get(lines,i-1)
+        line.set_xy1(l,x1,y1)
+        line.set_xy2(l,x2,y2)
+        line.set_color(l,col)
+
+//Plot Swing High/Low for reference
+plot(anchor_mode == 'Swing High' ? ph : pl,'Swings'
+  ,anchor_mode == 'Swing High' ? color.new(#ff1100,0) : color.new(#0cb51a,0),1
+  ,plot.style_circles,offset=-length)

@@ -1,0 +1,67 @@
+//@version=5
+strategy("ICT Bread and Butter Sell-Setup", overlay=true)
+
+// Get current date values
+t = time
+currentYear = year(t)
+currentMonth = month(t)
+currentDay = dayofmonth(t)
+
+// Time Settings
+sessionNYOpen  = timestamp(currentYear, currentMonth, currentDay, 08, 20) // CME Open
+sessionLondon  = timestamp(currentYear, currentMonth, currentDay, 02, 00) // London Open
+sessionAsia    = timestamp(currentYear, currentMonth, currentDay, 19, 00) // Asia Open
+sessionEnd     = timestamp(currentYear, currentMonth, currentDay, 16, 00) // Market Close
+
+// Session Ranges (Initialize to the first bar values)
+var float londonHigh = high
+var float londonLow = low
+var float nyHigh = high
+var float nyLow = low
+var float asiaHigh = high
+var float asiaLow = low
+
+// Update Highs & Lows for Each Session
+if (time >= sessionLondon and time < sessionNYOpen)
+    londonHigh := math.max(londonHigh, high)
+    londonLow := math.min(londonLow, low)
+
+if (time >= sessionNYOpen and time < sessionEnd)
+    nyHigh := math.max(nyHigh, high)
+    nyLow := math.min(nyLow, low)
+
+if (time >= sessionAsia and time < sessionLondon)
+    asiaHigh := math.max(asiaHigh, high)
+    asiaLow := math.min(asiaLow, low)
+
+// New York Judas Swing (Temporary Rally)
+judasSwing = high >= londonHigh and time >= sessionNYOpen and time < sessionEnd
+
+// Short Entry in NY Kill Zone
+shortEntry = judasSwing and close < open
+stopLoss = high + 10 * syminfo.mintick
+profitTarget = low - 20 * syminfo.mintick
+
+if shortEntry
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Take Profit", from_entry="Short", limit=profitTarget, stop=stopLoss)
+
+// London Close Buy Setup
+londonCloseBuy = time >= timestamp(currentYear, currentMonth, currentDay, 10, 30) and time <= timestamp(currentYear, currentMonth, currentDay, 13, 00) and close < londonLow
+if londonCloseBuy
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Take Profit Buy", from_entry="Buy", limit=close + 20 * syminfo.mintick, stop=low - 10 * syminfo.mintick)
+
+// Asia Open Sell Setup
+asiaSell = time >= sessionAsia and time < sessionLondon and close > asiaHigh
+if asiaSell
+    strategy.entry("Asia Short", strategy.short)
+    strategy.exit("Asia Profit", from_entry="Asia Short", limit=close - 15 * syminfo.mintick, stop=high + 10 * syminfo.mintick)
+
+// Plot High/Low of Sessions
+plot(londonHigh, color=color.blue, title="London High")
+plot(londonLow, color=color.blue, title="London Low")
+plot(nyHigh, color=color.red, title="NY High")
+plot(nyLow, color=color.red, title="NY Low")
+plot(asiaHigh, color=color.orange, title="Asia High")
+plot(asiaLow, color=color.orange, title="Asia Low")

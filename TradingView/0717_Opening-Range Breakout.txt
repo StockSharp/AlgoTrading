@@ -1,0 +1,92 @@
+//@version=6
+strategy("Opening-Range Breakout",
+     overlay=true,
+     initial_capital = 1000000,
+     default_qty_type=strategy.fixed,
+     default_qty_value=1,
+     process_orders_on_close=true,
+     commission_type=strategy.commission.cash_per_contract,
+     commission_value=2.88,
+     margin_long = 0,
+     margin_short = 0)
+
+// ————— Inputs & Timezone —————
+zone        = "America/New_York"
+orStart     = input.session("0930-1015", "Opening-Range Window", group="Opening Range")
+rtdStart    = input.session("0930-1545", "Regular Trading Day", group="Opening Range")
+
+minRangePct = input.float(0.35, "Min. OR Width (%)", step=0.05, tooltip="As % of close", group="Filters")
+
+rr          = input.float(1.1, "Reward/Risk Ratio", step = 0.1, group = "Risk")
+retrace     = input.int(50, "Max OR Retracement %", group = "Risk")/100
+
+oneTrade    = input.bool(false, "One Trade Per Day", group = "Additional Settings")
+reverse     = input.bool(true, "Reverse on Stop Loss", group = "Additional Settings")
+
+// ————— Detect New Day & Reset OR —————
+var float OR_high   = na
+var float OR_low    = na
+var bool tradeTaken = false
+var int tradeCount  = -1
+
+// ————— Build Opening Range —————
+inOR    = not na(time(timeframe.period, orStart, zone))
+inRTD   = not na(time(timeframe.period, rtdStart, zone))
+
+newDay = inRTD[1] and not inRTD
+if newDay
+    OR_high     := na
+    OR_low      := na
+    tradeTaken  := false
+
+if not inOR[1] and inOR
+    OR_high := high
+    OR_low  := low
+
+if inOR
+    OR_high := math.max(OR_high, high)
+    OR_low  := math.min(OR_low,  low)
+
+// ————— Compute Range & Filter —————
+OR_range       = OR_high - OR_low
+rangeFilter    = OR_range >= (minRangePct/100) * close
+
+// ————— Entry Conditions —————
+// Only after the OR window closes, and if rangeFilter is true
+enteredOR   = inOR[1] and not inOR  // true on first bar after 10:30
+longCond    = enteredOR and rangeFilter
+shortCond   = enteredOR and rangeFilter
+
+inTrade = strategy.position_size != 0
+
+// ————— Orders & Exits —————
+if longCond and (oneTrade ? not tradeTaken : true)
+    strategy.entry("Long", strategy.long, stop = OR_high)
+    tradeTaken := true
+    loss = (OR_high - OR_low)*retrace/syminfo.mintick
+    profit = loss * rr
+    strategy.exit("Long Exit", from_entry="Long", loss = loss, profit = profit)
+
+if shortCond and (oneTrade ? not tradeTaken : true)
+    strategy.entry("Short", strategy.short, stop = OR_low)
+    tradeTaken := true
+    loss = (OR_high - OR_low)*retrace/syminfo.mintick
+    profit = loss * rr
+    strategy.exit("Short Exit", from_entry="Short", loss = loss, profit = profit)
+
+if not inTrade[1] and inTrade
+    tradeCount += 1
+
+if reverse and inTrade[1] and not inTrade and strategy.closedtrades.profit(tradeCount) < 0 and inRTD
+    if strategy.closedtrades.size(tradeCount) > 0
+        strategy.entry("Short", strategy.short)
+    if strategy.closedtrades.size(tradeCount) < 0
+        strategy.entry("Long", strategy.long)
+
+
+// ————— End-of-Day Flatting —————
+if not inRTD
+    strategy.close_all("Session Exit")
+
+plot(OR_high, color = color.green, style = plot.style_steplinebr)
+plot(OR_low, color = color.red, style = plot.style_steplinebr)

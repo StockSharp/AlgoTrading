@@ -1,0 +1,389 @@
+//@version=6
+strategy("Liquid Pulse", overlay=true, margin_long=100, margin_short=100)
+
+//D=================================================================Z
+// INPUTS
+volumeSensitivity = input.string('High', '📊 Volume Sensitivity', options=['Low', 'Medium', 'High'], tooltip='Controls how sensitive the strategy is to volume spikes. Low = less sensitive (needs bigger volume), High = more sensitive (triggers on smaller volume spikes). Set to High for active markets, Low for calmer ones.')
+macdSpeed = input.string('Medium', '⚡ MACD Speed', options=['Fast', 'Medium', 'Slow'], tooltip='Sets the speed of the MACD indicator. Fast = more signals but noisier, Slow = fewer signals but smoother. Use Fast for scalping, Slow for swing trading.')
+dailyTradeLimit = input.int(20, '⏰ Daily Trade Limit', minval=1, maxval=30, tooltip='Limits the number of trades per day to manage risk. Set lower (like 5-10) for safer trading, higher (like 20-30) for more opportunities in active markets.')
+numContracts = input.int(4, '📏 Number of Contracts', minval=1, maxval=20, tooltip='Sets the position size (number of contracts). Increase for larger accounts or higher risk tolerance, decrease for smaller accounts or safer trading.')
+vixPauseLevel = input.float(39.0, '🌡️ VIX Pause Level', minval=10, maxval=80, tooltip='Pauses trading if VIX (market fear index) exceeds this level. VIX above 30-40 means high volatility—set higher (like 50) to trade in turbulent markets, lower (like 30) to avoid them.')
+minConditions = input.int(2, '🔢 Min Confluence Conditions', minval=1, maxval=5, tooltip='Sets the minimum number of conditions (like VWAP, volume, MACD) that must align for a trade. Increase (like 3-4) for stricter entries, decrease (like 1-2) for more trades.')
+minTradeScoreLongs = input.int(73, '📈 Min Trade Score (Longs)', minval=0, maxval=100, tooltip='Minimum score for long trades based on trend, momentum, volume, etc. Higher (like 80-90) means stricter entries with better setups, lower (like 60-70) allows more trades.')
+minTradeScoreShorts = input.int(75, '📉 Min Trade Score (Shorts)', minval=0, maxval=100, tooltip='Minimum score for short trades. Shorts are riskier, so this is often slightly higher than longs. Adjust like longs: higher for quality, lower for more trades.')
+sweepStrength = input.float(0.5, '🧹 Liquidity Sweep Strength', minval=0.1, maxval=1.0, step=0.1, tooltip='Controls how strong a liquidity sweep (price breaking recent highs/lows) needs to be for a signal. Higher (like 0.7-1.0) needs a stronger move, lower (like 0.3-0.5) catches smaller sweeps.')
+adxTrendThreshold = input.int(41, '📈 ADX Trend Threshold', minval=10, maxval=100, tooltip='ADX level to confirm a trending market. Above this (like 40-50) means a strong trend—good for trend-following. Lower (like 30-35) to catch weaker trends.')
+adxChopThreshold = input.int(20, '🌪️ ADX Chop Threshold', minval=5, maxval=50, tooltip='ADX level below which the market is considered choppy. Below this (like 15-20) avoids trades in choppy markets. Increase (like 25-30) to trade in less choppy conditions.')
+vwapTimeframe = input.string('60', '⏳ VWAP Timeframe', options=['15', '30', '60', '240', 'D'], tooltip='Timeframe for the higher-timeframe VWAP. Use 60 (1 hour) for day trading, 240 (4 hours) for swing trading, or D (daily) for longer-term trades.')
+takeProfitTicksLongs = input.float(25.0, '🎯 Take Profit Ticks (Longs)', minval=5, maxval=100, step=0.5, tooltip='Take-profit target for longs in ticks. Increase (like 30-50) for bigger targets in trending markets, decrease (like 10-20) for quicker exits in choppy markets.')
+takeProfitTicksShorts = input.float(20.0, '🎯 Take Profit Ticks (Shorts)', minval=5, maxval=100, step=0.5, tooltip='Take-profit target for shorts in ticks. Often slightly lower than longs due to shorting risks. Adjust like longs based on market conditions.')
+maxProfitTicks = input.float(60.0, '🏆 Max Profit Ticks', minval=10, maxval=200, step=1, tooltip='Maximum profit target in ticks for scaling out. Set higher (like 80-100) to capture big moves, lower (like 40-60) for more conservative exits.')
+minProfitTicksTrail = input.float(7.0, '🚀 Min Profit Ticks to Trail', minval=1, maxval=50, step=0.5, tooltip='Minimum profit in ticks before the trailing stop activates. Increase (like 10-15) to wait for bigger gains, decrease (like 5-7) to lock in profits sooner.')
+trailTicks = input.float(5.0, '📉 Trailing Stop Ticks', minval=1, maxval=50, step=0.5, tooltip='Trailing stop distance in ticks once activated. Higher (like 8-10) gives trades more room, lower (like 3-5) locks in profits faster.')
+trailOffsetTicks = input.float(2.0, '📏 Trailing Offset Ticks', minval=1, maxval=20, step=0.5, tooltip='Offset for the trailing stop in ticks. Smaller (like 1-2) makes the trail tighter, larger (like 5-10) gives more breathing room.')
+atrPeriod = input.int(9, '📏 ATR Period', minval=5, maxval=50, tooltip='Period for the ATR (volatility measure). Higher (like 14-20) for smoother volatility readings, lower (like 5-9) for more sensitivity to recent price action.')
+
+// hardcoded settings
+volLookback = volumeSensitivity == 'Low' ? 30 : volumeSensitivity == 'Medium' ? 20 : 11
+volThreshold = volumeSensitivity == 'Low' ? 1.5 : volumeSensitivity == 'Medium' ? 1.8 : 2
+swingLen = 5
+
+//D=================================================================Z
+// MARKET & RISK MANAGEMENT
+pointValue = syminfo.pointvalue
+tickSize = syminfo.mintick
+
+// dynamic hard stops using ATR
+atrValue = ta.atr(atrPeriod)
+stopAtrLong = atrValue * 1.5
+stopAtrShort = atrValue * 1.5
+adaptiveHardStopLongs = math.min(stopAtrLong / tickSize, 15.0)
+adaptiveHardStopShorts = math.min(stopAtrShort / tickSize, 15.0)
+
+// convert to points
+profitPointsLongs = takeProfitTicksLongs * tickSize
+profitPointsShorts = takeProfitTicksShorts * tickSize
+trailPoints = trailTicks * tickSize
+trailOffsetPoints = trailOffsetTicks * tickSize
+minProfitPointsTrail = minProfitTicksTrail * tickSize
+stopPointsLongs = adaptiveHardStopLongs * tickSize
+stopPointsShorts = adaptiveHardStopShorts * tickSize
+maxProfitPoints = maxProfitTicks * tickSize
+
+// volatility scaling factors (based on ATR)
+avgAtr = ta.sma(atrValue, 17)
+volMultiplierProfit = 1 + (atrValue / avgAtr - 1) * 0.5
+volMultiplierProfit := math.max(0.5, math.min(2, volMultiplierProfit))
+volMultiplierStop = 1 + (atrValue / avgAtr - 1) * 0.5
+volMultiplierStop := math.max(0.5, math.min(1.5, volMultiplierStop))
+
+// scaled exit levels in points
+scaledProfitLongs = profitPointsLongs * volMultiplierProfit
+scaledProfitShorts = profitPointsShorts * volMultiplierProfit
+scaledStopLongs = stopPointsLongs * volMultiplierStop
+scaledStopShorts = stopPointsShorts * volMultiplierStop
+
+vix = request.security('VIX', 'D', close)
+vixSafe = vix < vixPauseLevel
+
+var int tradeCount = 0
+var int barsSinceLastTrade = 0
+
+// reset trade count at start of new day
+currentDay = dayofmonth(time)
+prevDay = dayofmonth(time[1])
+isNewDay = currentDay != prevDay
+if isNewDay
+    tradeCount := 0
+
+// track bars since last position close
+if strategy.position_size != 0
+    barsSinceLastTrade := 0
+else
+    barsSinceLastTrade := barsSinceLastTrade + 1
+
+// reset trade count after inactivity
+if barsSinceLastTrade > 50 and tradeCount > 0 and strategy.position_size == 0
+    tradeCount := 0
+
+//D=================================================================Z
+// CORE LOGIC
+avgVol = ta.sma(volume, volLookback)
+highVolZone = volume >= volThreshold * avgVol
+
+// higher timeframe VWAP
+vwapHigher = request.security(syminfo.tickerid, vwapTimeframe, ta.vwap(close), barmerge.gaps_off, barmerge.lookahead_off)
+vwapBullish = close > vwapHigher
+vwapBearish = close < vwapHigher
+
+// MACD (calculated for strategy logic only, not plotted)
+macdFast = macdSpeed == 'Fast' ? 2 : macdSpeed == 'Medium' ? 5 : 12
+macdSlow = macdSpeed == 'Fast' ? 7 : macdSpeed == 'Medium' ? 13 : 26
+macdSignal = macdSpeed == 'Fast' ? 5 : macdSpeed == 'Medium' ? 9 : 9
+[macdLine, signalLine, hist] = ta.macd(close, macdFast, macdSlow, macdSignal)
+macdBullish = ta.crossover(macdLine, signalLine)
+macdBearish = ta.crossunder(macdLine, signalLine)
+
+// MACD momentum bar (for watermark table)
+macdLookback = 20
+macdHigh = ta.highest(macdLine, macdLookback)
+macdLow = ta.lowest(macdLine, macdLookback)
+macdRange = macdHigh - macdLow
+macdNormalized = macdRange != 0 ? (macdLine - macdLow) / macdRange * 100 : 50
+get_progress(pct, maxBars) =>
+    full = math.round(pct * maxBars / 100)
+    empty = maxBars - full
+    str.repeat('█', full) + str.repeat('░', empty)
+maxBars = 10
+barDisplay = macdLine >= 0 ? get_progress(macdNormalized, maxBars) : get_progress(100 - macdNormalized, maxBars)
+barLabel = macdLine >= 0 ? 'Momentum: ↑ ' + barDisplay : 'Momentum: ↓ ' + barDisplay
+barColor = macdLine >= 0 ? color.green : color.red
+
+// liquidity sweeps
+recentLow = ta.lowest(low, 5)
+recentHigh = ta.highest(high, 5)
+liquiditySweepBull = low < recentLow[1] and close > (low[1] + high[1]) / 2 + math.abs(high[1] - low[1]) * sweepStrength
+liquiditySweepBear = high > recentHigh[1] and close < (high[1] + low[1]) / 2 - math.abs(high[1] - low[1]) * sweepStrength
+
+// delta
+delta = close > open ? volume : -volume
+cumDelta = ta.cum(delta)
+deltaBullish = cumDelta > cumDelta[1]
+deltaBearish = cumDelta < cumDelta[1]
+
+// dynamic trend filter with market regime detection (ADX)
+[diplus, diminus, adxValue] = ta.dmi(14, 14)
+trendDirectionBullish = diplus > diminus
+trendDirectionBearish = diminus > diplus
+
+// ADX trend bias
+ema20 = ta.ema(close, 20)
+trendBiasLong = adxValue > adxTrendThreshold and close > ema20
+trendBiasShort = adxValue > adxTrendThreshold and close < ema20
+
+// volatility filter for shorts
+atrHighVol = atrValue > 2 * ta.sma(atrValue, 20)
+
+// SMMA and TEMA trend
+smaPeriod = 21
+var float smmaSlow = 0.0
+var int barCount = 0
+barCount := barCount + 1
+if barCount <= smaPeriod
+    smmaSlow := smmaSlow + close / smaPeriod
+else
+    smmaSlow := (smmaSlow[1] * (smaPeriod - 1) + close) / smaPeriod
+
+temaPeriod = 9
+ema1 = ta.ema(close, temaPeriod)
+ema2 = ta.ema(ema1, temaPeriod)
+ema3 = ta.ema(ema2, temaPeriod)
+temaFast = 3 * ema1 - 3 * ema2 + ema3
+trendUp = temaFast > smmaSlow
+
+// trade score system
+// trend strength (30 points)
+trendPointsLong = 0
+trendPointsShort = 0
+if adxValue > adxTrendThreshold
+    trendPointsLong := trendDirectionBullish ? 30 : 0
+    trendPointsShort := trendDirectionBearish ? 30 : 0
+else if adxValue > adxChopThreshold
+    trendPointsLong := trendDirectionBullish ? 15 : 0
+    trendPointsShort := trendDirectionBearish ? 15 : 0
+
+// momentum (10 points)
+momentumPointsLong = 0
+momentumPointsShort = 0
+if macdBullish and trendUp
+    momentumPointsLong := 10
+else if macdBullish or trendUp
+    momentumPointsLong := 5
+if macdBearish and not trendUp
+    momentumPointsShort := 10
+else if macdBearish or not trendUp
+    momentumPointsShort := 5
+
+// volatility regime (20 points)
+volatilityPointsLong = 0
+volatilityPointsShort = 0
+if adxValue > adxTrendThreshold
+    volatilityPointsLong := 20
+    volatilityPointsShort := 20
+else if adxValue < adxChopThreshold
+    volatilityPointsLong := 5
+    volatilityPointsShort := 5
+else
+    volatilityPointsLong := 10
+    volatilityPointsShort := 10
+
+// volume confirmation (20 points)
+volumePointsLong = 0
+volumePointsShort = 0
+if highVolZone
+    volumePointsLong := 20
+    volumePointsShort := 20
+else if volume > avgVol
+    volumePointsLong := 10
+    volumePointsShort := 10
+
+// pattern recognition (20 points)
+bullPinBar = low < ta.lowest(low[1], 5) and close > open and close - open > 2 * (open - low)
+bearPinBar = high > ta.highest(high[1], 5) and close < open and open - close > 2 * (high - open)
+patternPointsLong = 0
+patternPointsShort = 0
+if liquiditySweepBull or bullPinBar
+    patternPointsLong := liquiditySweepBull and bullPinBar ? 20 : 10
+if liquiditySweepBear or bearPinBar
+    patternPointsShort := liquiditySweepBear and bearPinBar ? 20 : 10
+
+// total trade score
+tradeScoreLong = trendPointsLong + momentumPointsLong + volatilityPointsLong + volumePointsLong + patternPointsLong
+tradeScoreShort = trendPointsShort + momentumPointsShort + volatilityPointsShort + volumePointsShort + patternPointsShort
+
+// confluence check
+bullConditionsMet = (vwapBullish ? 1 : 0) + (highVolZone ? 1 : 0) + (macdBullish ? 1 : 0) + (liquiditySweepBull ? 1 : 0) + (deltaBullish ? 1 : 0)
+bearConditionsMet = (vwapBearish ? 1 : 0) + (highVolZone ? 1 : 0) + (macdBearish ? 1 : 0) + (liquiditySweepBear ? 1 : 0) + (deltaBearish ? 1 : 0)
+
+// entry conditions
+longCondition = bullConditionsMet >= minConditions and vixSafe and tradeCount < dailyTradeLimit and trendUp and adxValue > adxChopThreshold and (adxValue > adxTrendThreshold ? trendDirectionBullish and trendBiasLong : true) and tradeScoreLong >= minTradeScoreLongs
+shortCondition = bearConditionsMet >= minConditions and vixSafe and tradeCount < dailyTradeLimit and not trendUp and adxValue > adxChopThreshold and (adxValue > adxTrendThreshold ? trendDirectionBearish and trendBiasShort : true) and tradeScoreShort >= minTradeScoreShorts and not atrHighVol
+
+//D=================================================================Z
+// ENTRY & EXIT LOGIC
+var float entryPrice = na
+var int entryBar = na
+var bool trailActive = false
+var int barsInTrade = 0
+var float hardStopPrice = na
+
+// position sizing
+positionSize = numContracts * 1.0
+
+if longCondition and strategy.position_size == 0
+    strategy.entry('Long', direction=strategy.long, qty=positionSize)
+    entryPrice := close
+    entryBar := bar_index
+    tradeCount := tradeCount + 1
+    trailActive := false
+    barsInTrade := 0
+    hardStopPrice := entryPrice - scaledStopLongs / pointValue
+
+if shortCondition and strategy.position_size == 0
+    strategy.entry('Short', direction=strategy.short, qty=positionSize)
+    entryPrice := close
+    entryBar := bar_index
+    tradeCount := tradeCount + 1
+    trailActive := false
+    barsInTrade := 0
+    hardStopPrice := entryPrice + scaledStopShorts / pointValue
+
+// track bars in trade
+if strategy.position_size != 0
+    barsInTrade := bar_index - entryBar
+
+// manual hard stop check
+if strategy.position_size > 0 and not na(entryPrice)
+    if close <= hardStopPrice
+        strategy.close('Long', comment='Hard Stop')
+    else
+        strategy.exit('Long TP', from_entry='Long', limit=entryPrice + scaledProfitLongs / pointValue, qty_percent=75)
+        strategy.exit('Max Profit Long', from_entry='Long', limit=entryPrice + maxProfitPoints / pointValue, qty_percent=100)
+        if not trailActive and close >= entryPrice + minProfitPointsTrail / pointValue
+            trailActive := true
+        if trailActive
+            strategy.exit('Long Trail', from_entry='Long', trail_points=trailPoints / pointValue, trail_offset=trailOffsetPoints / pointValue, qty_percent=25)
+        if barsInTrade > 100
+            strategy.close('Long', comment='Time Stop')
+
+if strategy.position_size < 0 and not na(entryPrice)
+    if close >= hardStopPrice
+        strategy.close('Short', comment='Hard Stop')
+    else
+        strategy.exit('Short TP', from_entry='Short', limit=entryPrice - scaledProfitShorts / pointValue, qty_percent=75)
+        strategy.exit('Max Profit Short', from_entry='Short', limit=entryPrice - maxProfitPoints / pointValue, qty_percent=100)
+        if not trailActive and close <= entryPrice - minProfitTicksTrail / pointValue
+            trailActive := true
+        if trailActive
+            strategy.exit('Short Trail', from_entry='Short', trail_points=trailPoints / pointValue, trail_offset=trailOffsetPoints / pointValue, qty_percent=25)
+        if barsInTrade > 100
+            strategy.close('Short', comment='Time Stop')
+
+//D=================================================================Z
+// VISUALS
+priceRange = ta.highest(high, 20) - ta.lowest(low, 20)
+dynamicMultiplier = 1.5 * (priceRange / (syminfo.pointvalue * 1000))
+vwapBandUpper = vwapHigher + atrValue * dynamicMultiplier
+vwapBandLower = vwapHigher - atrValue * dynamicMultiplier
+
+// VWAP with glow effect
+glowOffset = atrValue * 0.1
+plot(vwapHigher, 'VWAP', color=color.blue, linewidth=3)
+plot(vwapHigher + glowOffset, 'VWAP Glow Top', color=color.new(color.blue, 50), linewidth=2)
+plot(vwapHigher - glowOffset, 'VWAP Glow Bottom', color=color.new(color.blue, 50), linewidth=2)
+p1 = plot(vwapBandUpper, 'Upper Band', color=color.new(color.blue, 70), linewidth=1)
+p2 = plot(vwapBandLower, 'Lower Band', color=color.new(color.blue, 70), linewidth=1)
+
+plotshape(longCondition, 'Long Signal', style=shape.triangleup, color=color.green, size=size.small, location=location.belowbar)
+plotshape(shortCondition, 'Short Signal', style=shape.triangledown, color=color.red, size=size.small, location=location.abovebar)
+
+// combined watermark/info table with MACD momentum bar
+var table infoTable = na
+if na(infoTable)
+    infoTable := table.new(position.bottom_right, 2, 2, bgcolor=color.new(color.black, 90), border_color=color.new(color.purple, 80), border_width=1)
+table.clear(infoTable, 0, 0)
+table.cell(infoTable, 0, 0, '⚡ Dskyz (DAFE) Trading Systems', text_color=color.rgb(200, 200, 255), text_size=size.normal)
+table.merge_cells(infoTable, 0, 0, 1, 0)
+table.cell(infoTable, 0, 1, barLabel, text_color=barColor, text_size=size.normal)
+table.merge_cells(infoTable, 0, 1, 1, 1)
+
+// calculate win/loss ratio and profit factor for dashboard
+var float avgWin = 0.0
+var float avgLoss = 0.0
+var float winLossRatio = 0.0
+var float profitFactor = 0.0
+if strategy.wintrades > 0
+    avgWin := strategy.grossprofit / strategy.wintrades
+if strategy.losstrades > 0
+    avgLoss := math.abs(strategy.grossloss / strategy.losstrades)
+if avgLoss > 0
+    winLossRatio := avgWin / avgLoss
+if math.abs(strategy.grossloss) > 0
+    profitFactor := strategy.grossprofit / math.abs(strategy.grossloss)
+
+// streak for dashboard
+var int streak = 0
+if bar_index == 0
+    streak := 0
+bool won_last = strategy.closedtrades > nz(strategy.closedtrades[1]) and strategy.wintrades > nz(strategy.wintrades[1])
+bool lost_last = strategy.closedtrades > nz(strategy.closedtrades[1]) and strategy.wintrades < nz(strategy.wintrades[1])
+streak := won_last ? nz(streak[1]) + 1 : lost_last ? nz(streak[1]) - 1 : nz(streak[1])
+string streak_emoji = streak >= 3 ? '🔥' : streak <= -3 ? '❄️' : '●'
+
+// regime for dashboard
+regime = strategy.position_size > 0 ? 1 : strategy.position_size < 0 ? -1 : 0
+
+// win % for dashboard
+win_pct = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades : na
+win_pct_display = na(win_pct) ? 0 : win_pct * 100
+win_color = win_pct_display > 50 ? color.lime : color.red
+
+// progress bar for win %
+get_progress(pct) =>
+    full = math.round(pct * 0.10)
+    empty = 10 - full
+    str.repeat('█', full) + str.repeat('░', empty)
+
+// dashboard (merged with EXODUS style)
+var table dashboard = na
+if na(dashboard)
+    dashboard := table.new(position.top_right, 2, 3, bgcolor=color.new(color.black, 95), border_color=color.purple)
+table.clear(dashboard, 0, 0)
+
+// header
+table.cell(dashboard, 0, 0, '      ⚡Liquid Pulse      ', bgcolor=color.purple, text_color=color.black, text_size=size.large)
+table.merge_cells(dashboard, 0, 0, 1, 0)
+
+// signal and market stats
+table.cell(dashboard, 0, 1,
+     'Trade Score L/S: ' + str.tostring(tradeScoreLong) + '/' + str.tostring(tradeScoreShort) +
+     ' | VIX: ' + str.tostring(vix, '#.##') +
+     ' | ADX: ' + str.tostring(adxValue, '#.##') +
+     '\nStatus: ' + (regime == 1 ? 'LONG' : regime == -1 ? 'SHORT' : 'NEUTRAL') +
+     ' | Trades Today: ' + str.tostring(tradeCount) +
+     '\nMarket Bias: ' + (vwapBullish ? 'Bullish' : vwapBearish ? 'Bearish' : 'Neutral'),
+     text_color=regime == 1 ? color.lime : regime == -1 ? color.red : color.silver, text_size=size.normal)
+table.merge_cells(dashboard, 0, 1, 1, 1)
+
+// performance stats
+table.cell(dashboard, 0, 2,
+     'Total Trades: ' + str.tostring(strategy.closedtrades) +
+     ' | Net P/L: ' + str.tostring(strategy.netprofit, '0.##') +
+     '\nWin %: ' + (na(win_pct) ? 'N/A' : str.tostring(win_pct_display, '#.##') + '% ' + get_progress(win_pct_display)) +
+     ' | # of Wins: ' + streak_emoji + str.tostring(streak) +
+     '\nTP: ' + str.tostring(takeProfitTicksLongs) + ' ticks | SL: ' + str.tostring(adaptiveHardStopLongs, '#.##') + ' ticks',
+     text_color=win_color, text_size=size.normal)
+table.merge_cells(dashboard, 0, 2, 1, 2)
+
+//D=================================================================Z
+// END

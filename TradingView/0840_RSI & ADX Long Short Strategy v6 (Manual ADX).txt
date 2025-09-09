@@ -1,0 +1,63 @@
+//@version=6
+strategy("RSI & ADX Long/Short Strategy v6 (Manual ADX)", overlay=true,
+     margin_long=100, margin_short=100,
+     default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+//--------------------
+// Parameters
+//--------------------
+rsiLength     = 8
+adxLength     = 20
+adxThreshold  = 14.0
+
+//--------------------
+// RSI
+//--------------------
+rsiVal = ta.rsi(close, rsiLength)
+
+//--------------------
+// Manual ADX Calculation
+//--------------------
+upMove   = high - high[1]
+downMove = low[1] - low
+
+plusDM  = (upMove > downMove and upMove > 0)   ? upMove : 0
+minusDM = (downMove > upMove and downMove > 0) ? downMove : 0
+
+tr       = ta.rma(ta.tr(true), adxLength)
+plusDI   = 100 * ta.rma(plusDM, adxLength) / tr
+minusDI  = 100 * ta.rma(minusDM, adxLength) / tr
+dx       = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+adxVal   = ta.rma(dx, adxLength)  // <-- Final ADX value
+
+//--------------------
+// Entry/Exit Conditions
+//--------------------
+longEntry  = ta.crossover(rsiVal, 70) and adxVal > adxThreshold
+shortEntry = ta.crossunder(rsiVal, 30) and adxVal > adxThreshold
+
+longExit  = ta.crossunder(rsiVal, 30)
+shortExit = ta.crossover(rsiVal, 70)
+
+//--------------------
+// Orders
+//--------------------
+if longEntry
+    strategy.entry("Long", strategy.long)
+if longExit
+    strategy.close("Long")
+
+if shortEntry
+    strategy.entry("Short", strategy.short)
+if shortExit
+    strategy.close("Short")
+
+//--------------------
+// Plots
+//--------------------
+plot(rsiVal, title="RSI(8)", color=color.new(color.blue, 0))
+hline(70, 'RSI Overbought', color=color.red)
+hline(30, 'RSI Oversold', color=color.green)
+
+plot(adxVal, title="ADX(20)", color=color.new(color.orange, 0))
+hline(adxThreshold, 'ADX Threshold', color=color.gray, linestyle=hline.style_dotted)

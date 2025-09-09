@@ -1,0 +1,49 @@
+//@version=6
+strategy("Z-Strike Recovery", overlay=false, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=0.05, slippage=1)
+
+// --- Inputs ---
+volatility_index = input.string(title="Volatility Index", defval="TVC:VIX", options=["TVC:VIX", "CBOE:VXN", "CBOE:RVX", "CBOE:VXST", "CBOE:VXD"])
+z_length = input.int(title="Z-Score Lookback Length", defval=16, minval=1)
+z_threshold = input.float(title="Z-Score Threshold", defval=1.3, minval=0.1, step=0.1)
+exit_periods = input.int(title="Exit After X Periods", defval=10, minval=1)
+
+// --- Data and Calculations ---
+// Fetch Volatility Index data with `lookahead` set to `barmerge.lookahead_off` to prevent repainting
+vol_data = request.security(volatility_index, timeframe.period, close, lookahead=barmerge.lookahead_off)
+
+// Calculate the daily change in the Volatility Index
+vol_change = ta.valuewhen(not na(vol_data), vol_data - vol_data[1], 0)
+
+// Compute mean and standard deviation of the changes (use confirmed historical data only)
+vol_change_mean = ta.sma(vol_change, z_length)
+vol_change_stddev = ta.stdev(vol_change, z_length)
+
+// Calculate Z-Score
+z_score = (vol_change - vol_change_mean) / vol_change_stddev
+
+// --- Entry and Exit Conditions ---
+// Long entry condition: Z-Score exceeds the positive threshold
+long_entry_condition = z_score > z_threshold
+var float entry_bar = na  // Track the bar index of entry
+
+// Enter a long position if the entry condition is met and no position is open
+if (long_entry_condition and strategy.position_size == 0)
+    strategy.entry("Long SP500", strategy.long)
+    entry_bar := bar_index  // Save the entry bar index
+
+// Exit condition: Close the position after X periods
+exit_condition = not na(entry_bar) and (bar_index - entry_bar >= exit_periods)
+if (exit_condition)
+    strategy.close("Long SP500", comment="Exit after X periods")
+    entry_bar := na  // Reset the entry bar index after exiting
+
+// --- Visualizations ---
+// Plot the Z-Score
+plot(z_score, title="Z-Score", color=color.blue, linewidth=2, style= plot.style_areabr)
+
+// Plot horizontal lines for thresholds
+hline(z_threshold, title="Positive Z-Threshold", color=color.white, linestyle=hline.style_dotted)
+hline(-z_threshold, title="Negative Z-Threshold", color=color.white, linestyle=hline.style_dotted)
+
+// Highlight background for long entry condition
+bgcolor(long_entry_condition ? color.new(color.blue, 70) : na, title="Long Entry Highlight")

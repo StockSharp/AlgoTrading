@@ -1,0 +1,123 @@
+//@version=5
+// bas20230503 แก้ไขจาก จากที่ mod แจ้งเตือนมา 20250701new มีการอัพเดตใหม่  จาก การแจ้งเตือนของ mod โดยที่เพิ่มค่าคอมมิตชั่นเป็น 0.2%  และ ใช้เงินในพอร์ต 5% และขนาดของพอร์ต เหลืออ 1,000.- หรือ เทรดครั้งละ 50 เพิ่มค่า Slippage =5 (ความคลาดเคลื่อนของราคา)    แรงบันดาลใจ ATR  จาก เทพคอย ที่ใช้กับราคา แต่นี้ใช้กับ OBV แทน
+
+strategy(title="OBV ATR Strategy v1.4P (OBV Breakout Channel) bas20230503 ",
+         shorttitle="OBV Breakout v1.4P=",
+         overlay=false,
+         precision=0,
+         //เงิน
+         initial_capital=1000,
+         // เพิ่มค่าคอมมิชชั่น
+         commission_value=0.2,
+         commission_type=strategy.commission.percent,
+         // เพิ่มค่า Slippage (ความคลาดเคลื่อนของราคา) หุ้นตัวละบาท หรือต่ำบาท ใช้ 5 นี้ ปลิ้น ใช้กับ Bitcoin ถ้ามีช่วงแรกมาที่ราคาต่ำกว่า 1usd ก็ปลิ้น
+         slippage = 5,
+         // การบริหารเงินทุน
+         default_qty_type=strategy.percent_of_equity,
+         //เงินที่ลงจากพอร์ต %
+         default_qty_value=5,
+         pyramiding=0)
+
+// === Inputs1 ===
+//**ไม่เวิก
+// สร้างช่องสำหรับกรอกค่า Slippage โดยมีค่าเริ่มต้น = 5  **ลองแล้วใช้ไม่ได้**
+//slippage_input = input.int(defval=5, title="Slippage (in Ticks)", minval=0)
+//**ไม่เวิก
+
+//ระยะเลนส์ใคาการคำนวน ปกติ ใช้ 100 จะดี เริ่มต้นให้มีค่า 30
+len_high_low = input.int(30, minval=1, title="High/Low Lookback Length")
+// === Inputs2 === ลบออกดีไหม
+len1 = input.int(30, minval=1, title="SMA Length 1")
+len2 = input.int(14,  minval=2, title="SMA Length 2")
+
+
+// === Calculate OBV manually ===
+// OBV = cumulative sum of volume signed by price change
+obvVal = ta.cum(volume * math.sign(close - close[1]))
+
+// === Compute SMAs on OBV ===
+sma1 = ta.sma(obvVal, len1)
+sma2 = ta.sma(obvVal, len2)
+
+// === ลูกเล่นเปลี่ยนสี  ===
+isObvUp = obvVal > obvVal[1]
+isObvDown = obvVal < obvVal[1]
+obvColor = isObvUp ? color.new(color.green, 15) : isObvDown ? color.new(color.red, 15) : color.new(color.gray, 15)
+
+// === Plot OBV & SMAs ===
+plot(obvVal, title="OBV", color=obvColor, linewidth=2, style=plot.style_stepline)
+plot(sma1, title="SMA1", color=color.new(#33AEC4, 0), linewidth=2)
+plot(sma2, title="SMA2", color=color.new(color.orange, 0), style=plot.style_circles)
+
+// === หาจุดสูงสุดตำสุดของ OBV  ===
+obv_high = ta.highest(obvVal, len_high_low)
+obv_low = ta.lowest(obvVal, len_high_low)
+
+// เพิ่มโค้ด 2 บรรทัดนี้เพื่อวาดเส้นสีเทา บนล่าง ของ OBV
+plot(obv_high, title="OBV High", color=color.new(color.gray, 30), style=plot.style_stepline, linewidth=1)
+plot(obv_low, title="OBV Low", color=color.new(color.gray, 30), style=plot.style_stepline, linewidth=1)
+
+// === START: Dynamic TRACKING S/R Logic (ตรรกะใหม่แบบขยับตาม ของเดิม มันห่างไม่แนบ) ===
+
+// 1. สร้างตัวแปร "mode" เพื่อจำสภาวะปัจจุบัน
+// mode =  1 หมายถึง วัว (ตามเส้น High)
+// mode = -1 หมายถึง หมีตะปบปากจ้า (ตามเส้น Low)
+var int mode = 0
+
+// 2. ตรวจจับการเปลี่ยน
+if ta.crossover(obvVal, obv_high[1])
+    mode := 1 // เปลี่ยนเป็นโหมดกระทิง
+if ta.crossunder(obvVal, obv_low[1])
+    mode := -1 // เปลี่ยนเป็นโหมดหมี
+
+// 3. กำหนดค่าและสีที่จะพล็อตตาม "mode" ปัจจุบัน
+float plotValue = na
+color plotColor = na
+
+if mode == 1
+    // ถ้าอยู่ในโหมดกระทิง ให้เส้นอยู่ล่าง และเป็นสีเขียว
+    plotValue := obv_low
+    plotColor := color.new(color.green, 0)
+else if mode == -1
+    // ถ้าอยู่ในโหมดหมี เส้นอยู่บนดิ และเป็นสีแดง
+    plotValue := obv_high
+    plotColor := color.new(color.red, 0)
+
+// 4. วาดเส้น Trendline
+plot(plotValue, title="Dynamic Tracking S/R", color=plotColor, linewidth=2)
+
+// === START: Bull/Bear Signals based on mode change ===
+
+// ตรวจจับสัญญาณ Bull (เมื่อ mode เปลี่ยนเป็น 1 จากค่าอื่น)
+bool bullSignal = mode == 1 and mode[1] != 1
+
+// ตรวจจับสัญญาณ Bear (เมื่อ mode เปลี่ยนเป็น -1 จากค่าอื่น)
+bool bearSignal = mode == -1 and mode[1] != -1
+
+// พล็อตสัญลักษณ์ Bull โดยอยู่ใต้เส้น OBV เล็กน้อย
+plotshape(bullSignal ? obv_low: na, title="Bull Signal", style=shape.triangleup, location=location.absolute, color=color.new(color.lime, 0), size=size.small, text="Bull",textcolor = color.green)
+
+
+// พล็อตสัญลักษณ์ Bear โดยอยู่เหนือเส้น OBV เล็กน้อย
+plotshape(bearSignal ? obv_high : na, title="Bear Signal", style=shape.triangledown, location=location.absolute, color=color.new(color.red, 0), size=size.small, text="Bear",textcolor = color.red)
+
+// === END: Bull/Bear Signals ===
+
+
+// === START: Strategy Logic (ปรับปรุงใหม่) ===
+
+// เงื่อนไขในการเปิด Long Position (Buy)
+if bullSignal
+    // ปิดออร์เดอร์ Short ที่อาจจะเปิดอยู่ก่อนหน้า (ถ้ามี)
+    strategy.close("Short", comment="Close Short for new Long")
+    // แล้วจึงเปิดออร์เดอร์ Long ใหม่
+    strategy.entry("Long", strategy.long)
+
+// เงื่อนไขในการเปิด Short Position (Sell)
+if bearSignal
+    // ปิดออร์เดอร์ Long ที่อาจจะเปิดอยู่ก่อนหน้า (ถ้ามี) ตามที่ต้องการ
+    strategy.close("Long", comment="Close Long for new Short")
+    // แล้วจึงเปิดออร์เดอร์ Short ใหม่
+    strategy.entry("Short", strategy.short)
+
+// === END: Strategy Logic ===

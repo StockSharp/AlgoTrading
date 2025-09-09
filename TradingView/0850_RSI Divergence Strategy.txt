@@ -1,0 +1,139 @@
+//@version=6
+strategy(title="RSI Divergence Strategy", shorttitle="RSI Divergence Strategy", overlay=false, default_qty_type=strategy.percent_of_equity, default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.1, slippage=0, initial_capital=100000, currency=currency.USD, process_orders_on_close=false)
+
+// RSI Settings
+rsiLengthInput = input.int(14, minval=1, title="RSI Length", group="RSI Settings")
+rsiSourceInput = input.source(close, "Source", group="RSI Settings")
+calculateDivergence = input.bool(true, title="Calculate Divergence", group="RSI Settings", tooltip="Required for divergence signals")
+
+// Added RSI Level Inputs
+longEntryLevel = input.float(35.0, "Long Entry RSI", minval=0, maxval=100, step=0.1, group="RSI Levels")
+shortEntryLevel = input.float(76.0, "Short Entry RSI", minval=0, maxval=100, step=0.1, group="RSI Levels")
+longExitLevel = input.float(80.0, "Long Exit RSI", minval=0, maxval=100, step=0.1, group="RSI Levels")
+shortExitLevel = input.float(54.1, "Short Exit RSI", minval=0, maxval=100, step=0.1, group="RSI Levels")
+
+// RSI Calculation
+change = ta.change(rsiSourceInput)
+up = ta.rma(math.max(change, 0), rsiLengthInput)
+down = ta.rma(-math.min(change, 0), rsiLengthInput)
+rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+
+// Divergence Parameters
+lookbackRight = 5
+lookbackLeft = 5
+rangeUpper = 60
+rangeLower = 5
+
+_inRange(bool cond) =>
+    bars = ta.barssince(cond)
+    rangeLower <= bars and bars <= rangeUpper
+
+var bool plFound = false
+var bool phFound = false
+var bool bullCond = false
+var bool bearCond = false
+
+// Global variables to store _inRange results
+var bool inRangePlFound = false
+var bool inRangePhFound = false
+
+rsiLBR = rsi[lookbackRight]
+
+// Update _inRange results on every bar
+inRangePlFound := _inRange(plFound[1])
+inRangePhFound := _inRange(phFound[1])
+
+if calculateDivergence
+    // Regular Bullish Divergence
+    plFound := not na(ta.pivotlow(rsi, lookbackLeft, lookbackRight))
+    rsiHL = rsiLBR > ta.valuewhen(plFound, rsiLBR, 1) and inRangePlFound
+    lowLBR = low[lookbackRight]
+    priceLL = lowLBR < ta.valuewhen(plFound, lowLBR, 1)
+    bullCond := priceLL and rsiHL and plFound
+
+    // Regular Bearish Divergence
+    phFound := not na(ta.pivothigh(rsi, lookbackLeft, lookbackRight))
+    rsiLH = rsiLBR < ta.valuewhen(phFound, rsiLBR, 1) and inRangePhFound
+    highLBR = high[lookbackRight]
+    priceHH = highLBR > ta.valuewhen(phFound, highLBR, 1)
+    bearCond := priceHH and rsiLH and phFound
+
+// Strategy Entries with customizable RSI levels
+if bullCond and rsi < longEntryLevel
+    strategy.entry("Long", strategy.long)
+
+if bearCond and rsi > shortEntryLevel
+    strategy.entry("Short", strategy.short)
+
+// Strategy Exits with customizable RSI levels
+if rsi >= longExitLevel
+    strategy.close("Long")
+
+if rsi <= shortExitLevel
+    strategy.close("Short")
+
+// ———————— Visualizations ———————— //
+// Plot RSI line
+rsiColor = rsi > 70 ? color.new(#ff5252, 0) : rsi < 30 ? color.new(#4bf335, 0) : color.new(#b8b8b8, 0)
+plot(rsi, title="RSI", color=rsiColor, linewidth=2, style=plot.style_line)
+
+// Plot horizontal levels
+hline(longEntryLevel, "Long Entry", color=color.new(#4bf335, 0), linestyle=hline.style_solid)
+hline(shortEntryLevel, "Short Entry", color=color.new(#ed1404, 0), linestyle=hline.style_solid)
+hline(longExitLevel, "Long Exit", color=color.new(#4bf335, 0), linestyle=hline.style_dashed)
+hline(shortExitLevel, "Short Exit", color=color.new(#ed1404, 0), linestyle=hline.style_dashed)
+
+// Plot traditional levels
+ob = 70
+os = 30
+hline(ob, "Overbought", color=color.new(#ff5252, 70), linestyle=hline.style_dotted)
+hline(os, "Oversold", color=color.new(#4bf335, 70), linestyle=hline.style_dotted)
+
+// Background colors
+bgcolor(rsi >= ob ? color.new(#ff5252, 90) : na)
+bgcolor(rsi <= os ? color.new(#4bf335, 90) : na)
+bgcolor(rsi > os and rsi < ob ? color.new(#424242, 95) : na)
+
+// ———————— DIVERGENCE VISUALS ———————— //
+// Position labels below RSI for bullish, above for bearish
+bullLabelY = math.max(0, rsi[lookbackRight] - 15)  // Position below RSI line
+bearLabelY = math.min(100, rsi[lookbackRight] + 15) // Position above RSI line
+
+// CORRECTED: Pass y-coordinate as first argument for absolute positioning
+plotshape(bullCond ? bullLabelY : na, title="Bullish Divergence", text="BULL", style=shape.labelup,
+     location=location.absolute, color=color.new(#4bf335, 50), textcolor=color.white,
+     size=size.tiny, offset=-lookbackRight)
+
+plotshape(bearCond ? bearLabelY : na, title="Bearish Divergence", text="BEAR", style=shape.labeldown,
+     location=location.absolute, color=color.new(#ed1404, 50), textcolor=color.white,
+     size=size.tiny, offset=-lookbackRight)
+
+// Draw divergence lines
+var line lastBullLine = na
+var line lastBearLine = na
+
+if bullCond
+    // Get previous pivot low point
+    prevLowIndex = ta.valuewhen(plFound, bar_index, 1)
+    prevLowValue = ta.valuewhen(plFound, rsi[lookbackRight], 1)
+
+    // Draw line between previous pivot and current pivot
+    if not na(prevLowIndex)
+        lastBullLine := line.new(
+             x1=prevLowIndex, y1=prevLowValue,
+             x2=bar_index - lookbackRight, y2=rsi[lookbackRight],
+             color=color.new(#4bf335, 70), width=1, style=line.style_dotted)
+        line.delete(lastBullLine[1])
+
+if bearCond
+    // Get previous pivot high point
+    prevHighIndex = ta.valuewhen(phFound, bar_index, 1)
+    prevHighValue = ta.valuewhen(phFound, rsi[lookbackRight], 1)
+
+    // Draw line between previous pivot and current pivot
+    if not na(prevHighIndex)
+        lastBearLine := line.new(
+             x1=prevHighIndex, y1=prevHighValue,
+             x2=bar_index - lookbackRight, y2=rsi[lookbackRight],
+             color=color.new(#ed1404, 70), width=1, style=line.style_dotted)
+        line.delete(lastBearLine[1])

@@ -1,0 +1,127 @@
+//@version=5
+strategy("Flexible Moving Average Strategy", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Input to allow initial buy without MA data
+allow_initial_buy = input.bool(true, title="Allow Initial Buy Without MA Data")
+
+// Input to select the review frequency (Daily, Weekly, Monthly)
+check_frequency = input.string("Monthly", title="Review Frequency", options=["Daily", "Weekly", "Monthly"])
+
+// Input to select the Moving Average method (SMA, EMA, WMA, HMA, SMMA)
+ma_method = input.string("SMA", title="Moving Average Method", options=["SMA", "EMA", "WMA", "HMA", "SMMA"])
+
+// Input to select the length of the Moving Average
+ma_length = input.int(200, title="Moving Average Length", minval=1)
+
+// Input to select the timeframe for Moving Average calculation
+ma_timeframe = input.string("D", title="Moving Average Timeframe", options=["D", "W", "M"])
+
+// Input to specify the percentage of the portfolio to sell when conditions are met
+sell_percentage = input.float(100.0, title="Sell Percentage (%)", minval=0.0, maxval=100.0) / 100.0
+
+// Calculate all Moving Averages on the selected timeframe
+ma_source = close
+sma_value = request.security(syminfo.tickerid, ma_timeframe, ta.sma(ma_source, ma_length), lookahead=barmerge.lookahead_off)
+ema_value = request.security(syminfo.tickerid, ma_timeframe, ta.ema(ma_source, ma_length), lookahead=barmerge.lookahead_off)
+wma_value = request.security(syminfo.tickerid, ma_timeframe, ta.wma(ma_source, ma_length), lookahead=barmerge.lookahead_off)
+hma_value = request.security(syminfo.tickerid, ma_timeframe, ta.hma(ma_source, ma_length), lookahead=barmerge.lookahead_off)
+smma_value = request.security(syminfo.tickerid, ma_timeframe, ta.rma(ma_source, ma_length), lookahead=barmerge.lookahead_off) // Smoothed Moving Average (SMMA)
+
+// Select the appropriate Moving Average based on user input
+ma = ma_method == "SMA" ? sma_value :
+     ma_method == "EMA" ? ema_value :
+     ma_method == "WMA" ? wma_value :
+     ma_method == "HMA" ? hma_value :
+     smma_value  // Default to SMMA
+
+// Variable initialization
+var float previous_close = na
+var float previous_ma = na
+
+// Variables to keep track of prior values
+var float prior_close = na
+var float prior_ma = na
+
+// Variable to keep track of the current target position percentage
+var float current_target_position_percent = 100.0  // Start with 100%
+
+// Detect the end of the period based on the selected frequency
+var bool is_period_end = false
+
+if check_frequency == "Daily"
+    is_period_end := ta.change(time('D')) != 0
+else if check_frequency == "Weekly"
+    is_period_end := ta.change(time('W')) != 0
+else if check_frequency == "Monthly"
+    is_period_end := ta.change(time('M')) != 0
+
+// Store the prior values before updating
+if is_period_end
+    prior_close := previous_close
+    prior_ma := previous_ma
+
+    // Update the previous period's values
+    previous_close := close  // Closing price of the last day of the period
+    previous_ma := ma  // MA value at the end of the period
+
+// Strategy logic
+is_period_start = is_period_end
+
+// Check if this is the first bar of the backtest
+is_first_bar = barstate.isfirst
+
+// Initial buy logic based on the new input
+if is_first_bar and allow_initial_buy
+    // Open initial 100% long position
+    strategy.entry("Initial Long", strategy.long)
+else if is_period_start
+    // Sell condition: Previous close crossed below MA
+    sell_signal_ma = (prior_close >= prior_ma) and (previous_close < previous_ma)
+
+    // Buy condition: Previous close crossed above MA
+    buy_signal = (prior_close <= prior_ma) and (previous_close > previous_ma)
+
+    // Determine target position percentage
+    float target_position_percent = current_target_position_percent  // Default to current
+
+    if sell_signal_ma
+        // Reduce position according to sell_percentage
+        target_position_percent := (1.0 - sell_percentage) * 100.0
+
+        // Add a label to the sell candle showing the MA value
+        label.new(bar_index, high, text=str.tostring(previous_ma, "#.##"), style=label.style_label_down, color=color.red, textcolor=color.white, size=size.small)
+
+    else if buy_signal
+        // Increase position to 100%
+        target_position_percent := 100.0
+
+    // Only adjust position if target_position_percent has changed
+    if target_position_percent != current_target_position_percent
+        // Calculate the target position size in units
+        float target_position_size = (target_position_percent / 100.0) * (strategy.equity / close)
+
+        // Current position size in units
+        float current_position_size = strategy.position_size
+
+        // Calculate the difference
+        float difference_size = target_position_size - current_position_size
+
+        // Adjust position if difference is significant
+        if math.abs(difference_size) > 0.0001
+            if difference_size > 0
+                // Increase position
+                strategy.order("Increase Long", strategy.long, qty=difference_size)
+            else if difference_size < 0
+                // Reduce position
+                strategy.order("Reduce Long", strategy.short, qty=math.abs(difference_size))
+
+        // Update current_target_position_percent
+        current_target_position_percent := target_position_percent
+
+// Close all positions at the end of the backtest period
+if barstate.islastconfirmedhistory
+    strategy.close_all(comment="Backtest End")
+
+// Plot the previous period's close price for comparison
+plot(previous_close, color=color.red, title="Previous Period Close", style=plot.style_stepline)
+plot(ma, color=color.white, title="Moving Average", style=plot.style_line, linewidth=2)

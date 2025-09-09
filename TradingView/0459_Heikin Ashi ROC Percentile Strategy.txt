@@ -1,0 +1,50 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © jensenvilhelm
+
+//@version=5
+strategy("Heikin Ashi ROC Percentile Strategy", shorttitle="ROC ON" , overlay=false)
+
+// User Inputs
+zerohLine = input(0, title="Midline")  // Zero line, baseline for ROC (customer can modify this to adjust midline)
+rocLength = input(100, title="roc Length")  // Lookback period for SMA and ROC (customer can modify this to adjust lookback period)
+
+stopLossLevel = input(2, title="Stop Loss (%)")  // Level at which the strategy stops the loss (customer can modify this to adjust stop loss level)
+startDate = timestamp("2015 03 03")  // Start date for the strategy (customer can modify this to adjust start date)
+
+// Heikin Ashi values
+var float haClose = na  // Define Heikin Ashi close price
+var float haOpen = na  // Define Heikin Ashi open price
+haClose := ohlc4  // Calculate Heikin Ashi close price as average of OHLC4 (no customer modification needed here)
+haOpen := na(haOpen[1]) ? (open + close) / 2 : (haOpen[1] + haClose[1]) / 2  // Calculate Heikin Ashi open price (no customer modification needed here)
+
+// ROC Calculation
+roc = ta.roc(ta.sma(haClose, rocLength), rocLength)  // Calculate Rate of Change (ROC) (customer can modify rocLength in the inputs)
+rocHigh = ta.highest(roc, 50)  // Get the highest ROC of the last 50 periods (customer can modify this to adjust lookback period)
+rocLow = ta.lowest(roc, 50)  // Get the lowest ROC of the last 50 periods (customer can modify this to adjust lookback period)
+upperKillLine = ta.percentile_linear_interpolation(rocHigh, 10, 75)  // Calculate upper kill line (customer can modify parameters to adjust this line)
+lowerKillLine = ta.percentile_linear_interpolation(rocLow, 10, 25)  // Calculate lower kill line (customer can modify parameters to adjust this line)
+
+// Trade conditions
+enterLong = ta.crossover(roc, lowerKillLine)  // Define when to enter long positions (customer can modify conditions to adjust entry points)
+exitLong = ta.crossunder(roc, upperKillLine)  // Define when to exit long positions (customer can modify conditions to adjust exit points)
+enterShort = ta.crossunder(roc, upperKillLine)  // Define when to enter short positions (customer can modify conditions to adjust entry points)
+exitShort = ta.crossover(roc, lowerKillLine )  // Define when to exit short positions (customer can modify conditions to adjust exit points)
+
+// Strategy execution
+if(time >= startDate)  // Start strategy from specified start date
+    if (enterLong)
+        strategy.entry("Long", strategy.long)  // Execute long trades
+    if (exitLong)
+        strategy.close("Long")  // Close long trades
+    if (enterShort)
+        strategy.entry("Short", strategy.short)  // Execute short trades
+    if (exitShort)
+        strategy.close("Short")  // Close short trades
+
+// Plotting
+plot(zerohLine,title="Zeroline")  // Plot zero line
+plot(roc, "RSI", color=color.rgb(248, 248, 248))  // Plot ROC
+plot(rocHigh, "Roc High", color = color.rgb(175, 78, 76))  // Plot highest ROC
+plot(rocLow, "Roc Low", color = color.rgb(175, 78, 76))  // Plot lowest ROC
+plot(upperKillLine, "Upper Kill Line", color = color.aqua)  // Plot upper kill line
+plot(lowerKillLine, "Lower Kill Line", color = color.aqua)  // Plot lower kill line

@@ -1,0 +1,73 @@
+//@version=6
+strategy("BTC Trading Robot", overlay=true, pyramiding=1, initial_capital=100000)
+
+//============== Input Groups ==============//
+// Trading Profile
+group_trading = "BTC"
+systemType = input.int(1, title="Trading System (1:BTC)", group=group_trading)
+
+// Common Trading Inputs
+group_common = "Trading Inputs"
+RiskPercent   = input.float(4.0, title="Risk as % of trading capital", group=group_common)
+TradeComment  = input.string("BTC trading robot", title="Trade Comment", group=group_common)
+SHInput       = input.int(0, title="Start Hour (0 = no filter)", group=group_common)
+EHInput       = input.int(0, title="End Hour (0 = no filter)", group=group_common)
+
+// Gold Related Inputs
+group_BTC = "BTC Related Input"
+TPasPctBTC         = input.float(0.2, title="TP as % of Price", group=group_BTC)
+SLasPctBTC         = input.float(0.1, title="SL as % of Price", group=group_BTC)
+TSLasPctofTPBTC   = input.float(5.0, title="Trail SL as % of TP", group=group_BTC)
+TSLTgrasPctofTPBTC = input.float(7.0, title="Trail Tgra  SL as % of TP", group=group_BTC)
+
+// Other parameters
+BarsN = 5
+OrderDistPoints = 100.0
+
+//============== Calculate Trade Parameters ==============//
+var float Tppoints = 0.0
+var float Slpoints = 0.0
+var float TslTriggerPoints = 0.0
+var float TslPoints = 0.0
+
+price = close
+
+// Adjust parameters based on system type (using 1 for Gold)
+if systemType == 1
+    Tppoints := price * TPasPctBTC
+    Slpoints := price * SLasPctBTC
+    OrderDistPoints := Tppoints / 2.0
+    TslPoints := Tppoints * TSLTgrasPctofTPBTC / 100.0
+    TslTriggerPoints := Tppoints * TSLTgrasPctofTPBTC / 100.0
+
+//============== Time Filter ==============//
+currentHour = hour(time)
+inSession = true
+if SHInput != 0 and currentHour < SHInput
+    inSession := false
+if EHInput != 0 and currentHour >= EHInput
+    inSession := false
+
+//============== Find Local High and Low ==============//
+localHigh = ta.highest(high, BarsN * 2 + 1)
+localLow  = ta.lowest(low,  BarsN * 2 + 1)
+
+//============== Entry Orders ==============//
+if inSession and strategy.position_size == 0
+    // For a BuyStop order: only submit if current price is less than the desired entry level minus a buffer.
+    if price < localHigh - OrderDistPoints * syminfo.mintick
+        strategy.order("BuyStop", strategy.long, stop=localHigh, comment="BuyStop")
+    // For a SellStop order: only submit if current price is greater than the desired entry level plus a buffer.
+    if price > localLow + OrderDistPoints * syminfo.mintick
+        strategy.order("SellStop", strategy.short, stop=localLow, comment="SellStop")
+
+//============== Trailing Stop Logic ==============//
+if strategy.position_size > 0  // Long positions
+    longProfit = price - strategy.position_avg_price
+    if longProfit > TslTriggerPoints * syminfo.mintick
+        strategy.exit("Long Exit", from_entry="BuyStop", stop=price - TslPoints * syminfo.mintick, limit=strategy.position_avg_price + Tppoints * syminfo.mintick)
+
+if strategy.position_size < 0  // Short positions
+    shortProfit = strategy.position_avg_price - price
+    if shortProfit > TslTriggerPoints * syminfo.mintick
+        strategy.exit("Short Exit", from_entry="SellStop", stop=price + TslPoints * syminfo.mintick, limit=strategy.position_avg_price - Tppoints * syminfo.mintick)

@@ -1,0 +1,131 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TZack88
+
+//@version=5
+strategy(title='RR - FIXED SL Backtester', shorttitle='ZCrypto Backtester',overlay=true,pyramiding=1, initial_capital=10000,
+   commission_type=strategy.commission.percent, commission_value=0.075,default_qty_value = 33, default_qty_type = strategy.percent_of_equity)
+
+var float slVal                     = 0.0
+float longTP                        = na
+var float SL                        = na
+float BreakevenTP                   = na
+float BreakevenSL                   = na
+var float TPlong                    = na
+deal_start_condition                = false
+var float long_sl_level             = na
+color bgray                         = color.rgb(128, 223, 236, 81)
+color WHITE                         = color.rgb(210, 210, 210)
+color red                           = color.rgb(163, 46, 46, 29)
+color white                         = color.rgb(248, 248, 248, 14)
+color olive                         = color.olive
+color blue                          = color.rgb(23, 43, 77)
+color Green                        = color.rgb(10, 218, 103, 34)
+string core                         =  "➞ Main Core Settings 🔸"
+string Breakeeven                   =  "➞ Breakeven Settings 🔸"
+string SLZ2                         =  "➞ TP/SL ( Risk System ) 🔸"
+string RRS                          =  "➞ Risk to Reward 🔸"
+string FTPS                         =  "➞ Fixed TP & SL 🔸"
+string BES                          =  "➞ BreakEven Settings 🔸"
+float smma                          = ta.sma(low,14)
+string SLZ2TOOL                     = "Select Which risk system you wanna use ?! Risk to Reward or fixed system"
+string RRT                          = "Your Risk to Reward Ratio ? 2:1 then put 2"
+string _tooltip3                    = "Select external indicator plot"
+string SLSelect                     = "Select the Stoploss Method"
+float external_indicator            = input.source(defval=close, title='External indicator         ', group=core, tooltip=_tooltip3,inline = "00")
+float deal_start_value              = input.int(defval=100, title='External Value               ', group=core, tooltip="Plot Value",inline = "01")
+bool Risktype                        = input.string('Risk To Reward', title = '   🌀 Risk Type',group=SLZ2,inline = "000",options = ['Risk To Reward', 'Fixed TP & SL'],tooltip = SLZ2TOOL) == 'Risk To Reward'
+float RRTP                          = input.float(1.5, minval=0,step = 0.1,title="Risk To Reward Ratio",group=RRS,inline = "01",tooltip = RRT)
+string stoploss                     = input.string("ATR SL", title="   ⬇️ Stoploss Type ", options=["ATR SL", "Pivot low", "VWAP SL"], group=RRS,inline = "02",tooltip = SLSelect)
+float ATRSL                         = input.float(1.4,"         ATR Factor           ",step = 0.1,group = RRS,inline = "03",tooltip = "Only used with ATR SL")
+int LB                              = input.int(8, minval=0,title="         Pivot Lookback     ",group=RRS,inline = "04",tooltip = "looks for lower low ,Only used with Pivot Low")
+float VWAPSL                        = input.float(2.5,"         Vwap Multiplier    ",step = 0.1,group=RRS,inline = "05",tooltip = "Gets the SMMA value ,Only used with SMMA SL")
+float FixedTP                       = input.float(1.5, minval=0,step = 0.1,title="Fixed TP",group=FTPS,inline = "01") / 100
+float FixedSL                       = input.float(1.5, minval=0,step = 0.1,title="Fixed SL",group=FTPS,inline = "01") / 100
+
+bool breakon                        = input.bool(true,"BreakEven ?" ,group = BES, inline="06",tooltip = "Breakeven w")
+float breakRR                       = input.float(1.0, "      Risk To Reward Ratio",step = 0.1, group = BES, inline="07")
+float BEper                         = input.float(0.1, "      Percent Above Entry",step = 0.1, group = BES, inline="08",tooltip="MUST be higher than '0'. This input front loads the new breakeven stop loss so that it is actually in profit.")/100
+
+
+
+
+deal_start_condition := if external_indicator == deal_start_value
+    true
+
+//-----SL core calculation-----{
+x2 = low - ta.rma(ta.tr(true), 14) * ATRSL
+stopLong =  ta.lowest(low,LB)
+
+vwap = math.sum(ta.vwap(ta.tr(true)),14) * volume
+volumz = math.sum(volume,14)
+atr_vwap_volume = math.abs(vwap / volumz)
+longstoploss = low - atr_vwap_volume * VWAPSL
+//}
+
+// Lets get the SL and return it
+my_stop() =>
+    switch stoploss
+        "ATR SL" => x2
+        "Pivot low" => stopLong
+        "SMMA SL" => longstoploss
+sl = Risktype ? my_stop() : close  * (1 - FixedSL)
+
+
+// lets set the SL , TP Values
+
+if deal_start_condition and strategy.position_size == 0
+    slVal:= sl
+else
+    slVal:= slVal
+
+longDiffSL = math.abs(close - slVal)
+longTP := deal_start_condition and strategy.position_size == 0 ? Risktype ? close + (RRTP * longDiffSL) : close * (1 + FixedTP) : longTP[1]
+
+
+// -- Backtest Date ?! {
+
+limit_date_range = input.bool(title='Limit Date Range', defval=true, group='Backtest date range')
+start_time  = input.time(defval=timestamp('01 Aug 2022 00:00 +0000'), title='Start Time', group='Backtest date range')
+end_time    = input.time(defval=timestamp('31 Dec 2025 00:00 +0000'), title='End Time', group='Backtest date range')
+
+in_date_range = true
+if limit_date_range
+    in_date_range := time >= start_time and time <= end_time
+
+else
+    in_date_range := true
+
+//-- }
+
+longCondition = (deal_start_condition== true) and strategy.position_size == 0
+
+//Breakeven
+
+BreakevenTP := longCondition ? close + (breakRR * longDiffSL) : BreakevenTP[1]
+BREAKPLOT = strategy.position_size > 0 ? BreakevenTP : na
+BreakevenSL := strategy.position_size > 0 ? strategy.position_avg_price * (1 + BEper) :na
+long_tp_hit = close >= BreakevenTP or high>= BreakevenTP
+long_sl_level := longCondition  ? slVal : long_tp_hit ? BreakevenSL: long_sl_level[1]
+
+
+if (in_date_range and longCondition)
+    strategy.entry("LONG", strategy.long )
+
+strategy.exit("Long 3","LONG",
+     limit=longTP,
+     stop=(breakon ? long_sl_level : slVal),
+     comment_profit = "TP HIT",
+     comment_loss = breakon ? "BE Close" : "Loss"
+     )
+
+
+// PLOTS
+SLplot =  strategy.position_size > 0 ? slVal : na
+SSL = plot(SLplot, title='LONG STOP LOSS', linewidth=2, style=plot.style_linebr, color=red)
+longPlotTP =  strategy.position_size > 0 ? longTP : na
+TTP = plot(longPlotTP, title='LONG TAKE PROFIT', linewidth=2, style=plot.style_linebr, color=Green)
+avg = plot( strategy.position_avg_price, style = plot.style_linebr,color=WHITE )
+BREKEVENLINE = strategy.position_size > 0 ? long_sl_level : na
+plot(breakon ? BREKEVENLINE : na, 'AVG Price',color=color.white, style=plot.style_linebr,editable = false,linewidth = 2)
+fill(TTP, avg, color = color.new(Green,80))
+fill(avg, SSL, color =color.new(red,80))

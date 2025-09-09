@@ -1,0 +1,60 @@
+//@version=5
+strategy("Mean Reversion with Incremental Entry by HedgerLabs", overlay=true, calc_on_every_tick=true)
+
+// Input for adjustable settings
+maLength = input.int(30, title="MA Length", minval=1)
+initialPercent = input.float(5, title="Initial Percent for First Order", minval=0.01, step=0.01)
+percentStep = input.float(1, title="Percent Step for Additional Orders", minval=0.01, step=0.01)
+
+// Calculating Moving Average
+ma = ta.sma(close, maLength)
+
+// Plotting the Moving Average
+plot(ma, "Moving Average", color=color.blue)
+
+var float lastBuyPrice = na
+var float lastSellPrice = na
+
+// Function to calculate absolute price percentage difference
+pricePercentDiff(price1, price2) =>
+    diff = math.abs(price1 - price2) / price2 * 100
+    diff
+
+// Initial Entry Condition Check Function
+initialEntryCondition(price, ma, initialPercent) =>
+    pricePercentDiff(price, ma) >= initialPercent
+
+// Enhanced Entry Logic for Buy and Sell
+if (low < ma)
+    if (na(lastBuyPrice))
+        if (initialEntryCondition(low, ma, initialPercent))
+            strategy.entry("Buy", strategy.long)
+            lastBuyPrice := low
+    else
+        if (low < lastBuyPrice and pricePercentDiff(low, lastBuyPrice) >= percentStep)
+            strategy.entry("Buy", strategy.long)
+            lastBuyPrice := low
+
+if (high > ma)
+    if (na(lastSellPrice))
+        if (initialEntryCondition(high, ma, initialPercent))
+            strategy.entry("Sell", strategy.short)
+            lastSellPrice := high
+    else
+        if (high > lastSellPrice and pricePercentDiff(high, lastSellPrice) >= percentStep)
+            strategy.entry("Sell", strategy.short)
+            lastSellPrice := high
+
+// Exit Conditions - Close position if price touches the MA
+if (close >= ma and strategy.position_size > 0)
+    strategy.close("Buy")
+    lastBuyPrice := na
+
+if (close <= ma and strategy.position_size < 0)
+    strategy.close("Sell")
+    lastSellPrice := na
+
+// Reset last order price when position is closed
+if (strategy.position_size == 0)
+    lastBuyPrice := na
+    lastSellPrice := na

@@ -1,0 +1,335 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © DonovanWall
+
+//██████╗ ██╗    ██╗
+//██╔══██╗██║    ██║
+//██║  ██║██║ █╗ ██║
+//██║  ██║██║███╗██║
+//██████╔╝╚███╔███╔╝
+//╚═════╝  ╚══╝╚══╝
+
+//@version=4
+study("Resampling Reverse Engineering Bands [DW]", shorttitle="RREB [DW]", overlay=true)
+
+//This is an experimental study designed to reverse engineer price levels from centered oscillators at user defined sample rates.
+//This study aims to educate users on the process of oscillator reverse engineering, and to give users an alternative perspective on some of the most commonly used oscillators in the trading game.
+
+//Reverse engineering price levels from an oscillator is actually a rather simple, straightforward process.
+//Rather than plugging price values into a function to solve for oscillator values, we rearrange the function using some basic algebraic operations and plug in a specified oscillator value to solve for price values instead.
+//This process tells us what price value is needed in order for the oscillator to equal a certain value.
+//For example, if you wanted to know what price value would be considered “overbought” or “oversold” according to your oscillator, you can do that using this process.
+
+//In this study, the reverse engineering functions are used to calculate the price values of user defined high and low oscillator thresholds, and the price values for the oscillator center.
+//This allows you to visualize what prices will trigger thresholds as a sort of confidence interval, which is information that isn't inherently available when simply analyzing the oscillator directly.
+
+//This script is equipped with three reverse engineering functions to choose from for calculating the band values:
+// -> Reverse Relative Strength Index (RRSI)
+// -> Reverse Stochastic Oscillator (RStoch)
+// -> Reverse Commodity Channel Index (RCCI)
+//You can easily select the function you want to utilize from the "Band Calculation Type" dropdown tab.
+
+//These functions are specially designed to calculate at any sample rate (up to 1 bar per sample) utilizing the process of downsampling that I introduced in my Resampling Filter Pack.
+//The sample rate can be determined with any of these three methods:
+// -> BPS - Resamples based on the number of bars.
+// -> Interval - Resamples based on time in multiples of current charting timeframe.
+// -> PA - Resamples based on changes in price action by a specified size. The PA algorithm in this script is derived from my Range Filter algorithm.
+//    The range for PA method can be sized in points, pips, ticks, % of price, ATR, average change, and absolute quantity.
+
+//Utilizing downsampled rates allows you to visualize the reverse engineered values of an oscillator calculated at larger sample scales.
+//This can be rather beneficial for trend analysis since lower sample rates completely remove certain levels of noise.
+//By default, the sample rate is set to 1 BPS, which is the same as bar-to-bar calculation. Feel free to experiment with the sample rate parameters and configure them how you like.
+
+//Custom bar colors are included as well. The color scheme is based on disparity between sources and the reverse engineered center level.
+
+//In addition, background highlights are included to indicate when price is outside the bands, thus indicating "overbought" and "oversold" conditions according to the thresholds you set.
+
+//I also included four external output variables for easy integration of signals with other scripts:
+// -> Trend Signals (Current Resolution Prices) - Outputs 1 for bullish and -1 for bearish based on disparity between current resolution source and the central level output.
+// -> Trend Signals (Resampled Prices) - Outputs 1 for bullish and -1 for bearish based on disparity between resampled source and the central level output.
+// -> Outside Band Signal (Current Resolution Prices) - Outputs 1 for overbought and -1 for oversold based on current resolution source being outside the bands. Returns 0 otherwise.
+// -> Outside Band Signal (Resampled Prices) - Outputs 1 for overbought and -1 for oversold based on resampled source being outside the bands. Returns 0 otherwise.
+//To use these signals with another script, simply select the corresponding external output you want to use from your script's source input dropdown tab.
+
+//Reverse engineering oscillators is a simple, yet powerful approach to incorporate into your momentum or trend analysis setup.
+//By incorporating projected price levels from oscillators into our analysis setups, we are able to gain valuable insights, make (potentially) smarter trading decisions, and visualize the oscillators we know and love in a totally different way.
+
+//I hope you all find this script useful and enjoyable!
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Functions
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Conditional Sampling EMA Function
+Cond_EMA(x, cond, n)=>
+    var val     = array.new_float(0)
+    var ema_val = array.new_float(1)
+    if cond
+        array.push(val, x)
+        if array.size(val) > 1
+            array.remove(val, 0)
+        if na(array.get(ema_val, 0))
+            array.fill(ema_val, array.get(val, 0))
+        array.set(ema_val, 0, (array.get(val, 0) - array.get(ema_val, 0))*(2/(n + 1)) + array.get(ema_val, 0))
+    EMA = array.get(ema_val, 0)
+    EMA
+
+//Conditional Sampling RMA Function
+Cond_RMA(x, cond, n)=>
+    var val     = array.new_float(0)
+    var rma_val = array.new_float(1)
+    if cond
+        array.push(val, x)
+        if array.size(val) > 1
+            array.remove(val, 0)
+        if na(array.get(rma_val, 0))
+            array.fill(rma_val, array.get(val, 0))
+        array.set(rma_val, 0, (array.get(rma_val, 0)*(n - 1) + array.get(val, 0))/n)
+    RMA = array.get(rma_val, 0)
+    RMA
+
+//Bar Count Based New Sample Function
+New_sample(n, o)=>
+    var bar_sum  = 0.0
+    bar_sum     := bar_sum + 1
+    New_sample   = (bar_sum - o) % n == 0 ? 1 : 0
+    New_sample
+
+//Interval Renewal Function
+newbar(T)=>
+    t      = time(T)
+    newbar = (na(t[1]) and not na(t)) or (t[1] < t) ? 1 : 0
+    newbar
+
+//Interval Based New Sample Function
+New_sample_t(n, o)=>
+    sample_scale  = timeframe.isseconds ? "S" : timeframe.isintraday and not timeframe.isseconds ? "" :
+                     timeframe.isdaily ? "D" : timeframe.isweekly ? "W" : "M"
+    New_sample_t1 = newbar(tostring(n*timeframe.multiplier) + sample_scale)
+    New_sample_t  = New_sample_t1[o] ? 1 : 0
+    New_sample_t
+
+//Range Size Function
+rng_size(scale, qty, per_) =>
+    atr_ = qty*Cond_EMA(tr(true), time != time[1], per_)
+    ach1 = qty*Cond_EMA(abs(close - nz(close[1])), time != time[1], per_)
+    ach_ = nz(ach1, atr_)
+    rng_size = scale=="Pips" ? qty*0.0001 : scale=="Points" ? qty*syminfo.pointvalue :
+               scale=="% of Price" ? close*qty/100 : scale=="ATR" ? atr_ :
+               scale=="Average Change" ? ach_ : scale=="Ticks" ? qty*syminfo.mintick : qty
+    rng_size
+
+//Price Action Based New Sample Function
+New_sample_p(x, scale, qty, t, smooth, st, o)=>
+    r1            = rng_size(scale, qty, t)
+    r2            = Cond_EMA(r1, time != time[1], st)
+    r             = smooth ? r2 : r1
+    var pa_line   = 0.0
+    if abs(x - pa_line) >= r
+        pa_line := x
+    New_sample_p1 = pa_line != pa_line[1] ? 1 : 0
+    New_sample_p  = New_sample_p1[o] ? 1 : 0
+    New_sample_p
+
+//Conditional Sampling Reverse Engineering RSI Function
+Cond_RRSI(x, cond, n, v)=>
+    var gain      = 0.0
+    var loss      = 0.0
+    var av_gain   = 0.0
+    var av_loss   = 0.0
+    var RS        = 0.0
+    var RSI       = 0.0
+    var gain_proj = 0.0
+    var loss_proj = 0.0
+    var dist      = 0.0
+    var RRSI      = 0.0
+    var vals = array.new_float(0)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > 2
+            array.remove(vals, 0)
+        if array.size(vals)==2
+            gain      := array.get(vals, 1) > array.get(vals, 0) ? abs(array.get(vals, 1) - array.get(vals, 0)) : 0
+            loss      := array.get(vals, 1) < array.get(vals, 0) ? abs(array.get(vals, 1) - array.get(vals, 0)) : 0
+            av_gain   := Cond_RMA(gain, cond, n)
+            av_loss   := Cond_RMA(loss, cond, n)
+            RS        := av_gain/av_loss
+            RSI       := 100*(1 - (1/(1 + RS)))
+            gain_proj := RSI < v ? ((v*(n - 1)*av_loss)/(100 - v)) - (n - 1)*av_gain : 0
+            loss_proj := RSI > v ? (((100 - v)*(n - 1)*av_gain)/v) - (n - 1)*av_loss : 0
+            dist      := gain_proj - loss_proj
+            RRSI      := array.get(vals, 1) + dist
+    RRSI
+
+//Conditional Sampling Reverse Engineering Stochastic Function
+Cond_RStoch(x, cond, n, ns, v)=>
+    var hvals  = array.new_float(0)
+    var lvals  = array.new_float(0)
+    var xvals  = array.new_float(0)
+    var kvals  = array.new_float(0)
+    var svals  = array.new_float(2, 0.0)
+    var H      = 0.0
+    var L      = 0.0
+    var k      = 0.0
+    var RStoch = 0.0
+    if cond
+        array.set(svals, 1, array.get(svals, 0))
+        array.push(hvals, high)
+        array.push(lvals, low)
+        array.push(xvals, x)
+        if array.size(xvals) > 1
+            array.remove(xvals, 0)
+        if array.size(hvals) > n
+            array.remove(hvals, 0)
+            array.remove(lvals, 0)
+        H := array.max(hvals)
+        L := array.min(lvals)
+        k := 100*(x - L)/(H - L)
+        array.push(kvals, k)
+        if array.size(kvals) > ns + 1
+            array.remove(kvals, 0)
+        array.set(svals, 0, array.get(svals, 1) + array.get(kvals, array.size(kvals) - 1) - (array.size(kvals) <= ns ? 0 : array.get(kvals, 0)))
+        RStoch := ((v*ns - array.get(svals, 1) + (array.size(kvals) <= ns ? 0 : array.get(kvals, 0)))*(H - L)/100) + L
+    RStoch
+
+//Conditional Sampling Reverse Engineering CCI Function
+Cond_RCCI(x, cond, n, v)=>
+    var c     = 0.015
+    var m     = 0.0
+    var vals  = array.new_float(0)
+    var dvals = array.new_float(n)
+    var RCCI  = 0.0
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > n
+            array.remove(vals, 0)
+        if array.size(vals)==n
+            for i = 0 to (n - 1)
+                array.set(dvals, i, abs(array.get(vals, i) - array.avg(vals)))
+        RCCI := c*v*array.avg(dvals) + array.avg(vals)
+    RCCI
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Inputs
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Source Price
+src = input(defval=close, title="Input Source Price")
+
+//Band Type Selection
+band_type = input(defval="RRSI", options=["RRSI", "RStoch", "RCCI"], title="Band Calculation Type ═══════════════════")
+
+//Resampling Method
+s_method = input(defval="BPS", options=["BPS", "Interval", "PA"], title="Resampling Method")
+
+//Sample Size Inputs
+s_size       = input(defval=1, minval=1, title="Bars Per Sample (For BPS Method)")
+i_mult       = input(defval=1, minval=1, title="Sampling Interval Multiplier (For Interval Method)")
+rng_qty      = input(defval=0.0, minval=0, title="Range Sample Threshold (For PA Method)")
+rng_scale    = input(defval="Average Change", options=["Points", "Pips", "Ticks", "% of Price", "ATR", "Average Change", "Absolute"], title="Range Scale (For PA Method)")
+rng_per      = input(defval=14, minval=1, title="Range Period (For PA Method - Applies To Dynamic Range Types)")
+smooth_range = input(defval=true, title="Smooth Range (For PA Method - Smooths Dynamic Ranges)")
+smooth_per   = input(defval=27, minval=1, title="Smoothing Period (For PA Method)")
+
+//Sample Offset
+s_off = input(defval=0, minval=0, title="Sample Cycle Offset ═══════════════════")
+
+//RRSI Inputs
+rsi_per = input(defval=14, minval=2, title="RSI Period")
+rsi_ht  = input(defval=70.0, minval=50, maxval=100, title="RSI High Threshold Value")
+rsi_lt  = input(defval=30.0, minval=0, maxval=50, title="RSI Low Threshold Value ═══════════════════")
+
+//RStoch Inputs
+stoch_per  = input(defval=14, minval=2, title="Stochastic Period")
+stoch_sper = input(defval=1, minval=1, title="Stochastic Smoothing Period")
+stoch_ht   = input(defval=80.0, minval=50, maxval=100, title="Stochastic High Threshold Value")
+stoch_lt   = input(defval=20.0, minval=0, maxval=50, title="Stochastic Low Threshold Value ═══════════════════")
+
+//RCCI Inputs
+cci_per = input(defval=20, minval=2, title="CCI Period")
+cci_ht  = input(defval=100.0, minval=0, title="CCI High Threshold Value")
+cci_lt  = input(defval=-100.0, maxval=0, title="CCI Low Threshold Value ═══════════════════")
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Definitions
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//BPS Sample Trigger
+new_sample1 = New_sample(s_size, s_off)
+
+//Interval Sample Trigger
+new_sample2_1 = New_sample_t(s_size, s_off)
+new_sample2   = s_size==1 ? 1 : new_sample2_1
+
+//Range Filter Values
+new_sample3_1 = New_sample_p(src, rng_scale, rng_qty, rng_per, smooth_range, smooth_per, s_off)
+new_sample3   = rng_qty==0 ? 1 : new_sample3_1
+
+//Final Sample Trigger
+new_sample = s_method=="BPS" ? new_sample1 : s_method=="Interval" ? new_sample2 : new_sample3
+
+//Resampled Price Value
+var float ds_src = na
+ds_src          := new_sample ? src : ds_src
+
+//RRSI Band Values
+rrsi_h = Cond_RRSI(src, new_sample, rsi_per, rsi_ht)
+rrsi_l = Cond_RRSI(src, new_sample, rsi_per, rsi_lt)
+rrsi_m = Cond_RRSI(src, new_sample, rsi_per, 50)
+
+//RStoch Band Values
+rstoch_h = Cond_RStoch(src, new_sample, stoch_per, stoch_sper, stoch_ht)
+rstoch_l = Cond_RStoch(src, new_sample, stoch_per, stoch_sper, stoch_lt)
+rstoch_m = Cond_RStoch(src, new_sample, stoch_per, stoch_sper, 50)
+
+//RCCI Band Values
+rcci_h = Cond_RCCI(src, new_sample, cci_per, cci_ht)
+rcci_l = Cond_RCCI(src, new_sample, cci_per, cci_lt)
+rcci_m = Cond_RCCI(src, new_sample, cci_per, 0)
+
+//Band Selection
+hband = band_type=="RRSI" ? rrsi_h : band_type=="RStoch" ? rstoch_h : rcci_h
+lband = band_type=="RRSI" ? rrsi_l : band_type=="RStoch" ? rstoch_l : rcci_l
+mband = band_type=="RRSI" ? rrsi_m : band_type=="RStoch" ? rstoch_m : rcci_m
+
+//External Output Variables
+var trend_out1 = 0.0
+trend_out1    := src > mband ? 1 : src < mband ? -1 : trend_out1
+var trend_out2 = 0.0
+trend_out2    := ds_src > mband ? 1 : ds_src < mband ? -1 : trend_out2
+obos_out1      = src > hband ? 1 : src < lband ? -1 : 0
+obos_out2      = ds_src > hband ? 1 : ds_src < lband ? -1 : 0
+
+//Colors
+bar_color = (src > mband) and (src >= ds_src) ? ((src > src[1]) ? #00ff66 : #008b00) :
+             (src < mband) and (src <= ds_src) ? ((src < src[1]) ? #ff0066 : #8b0000) : #cccccc
+mcolor    = ds_src > mband ? #00ff66 : ds_src < mband ? #ff0066 : #cccccc
+bg_color  = src > hband ? #00ffcc : src < lband ? #ff00cc : #000000
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Outputs
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Resampled Source
+plot(ds_src, color=#ffffff, style=plot.style_circles, title="Resampled Source")
+
+//Band Plots
+mplot = plot(mband, color=mcolor, linewidth=2, transp=0, title="Central Threshold Band")
+hplot = plot(hband, color=#00ff66, linewidth=2, transp=0, title="High Threshold Band")
+lplot = plot(lband, color=#ff0066, linewidth=2, transp=0, title="Low Threshold Band")
+
+//Band Fills
+fill(hplot, mplot, color=#00ff66, title="High Band Fill")
+fill(lplot, mplot, color=#ff0066, title="Low Band Fill")
+
+//Bar Color
+barcolor(bar_color)
+
+//Background Colors
+bgcolor(#000000, transp=0)
+bgcolor(bg_color)
+
+//External Outputs
+plot(trend_out1, transp=100, editable=false, display=display.none, title="External Output - Trend Signal (Current Resolution Prices)")
+plot(trend_out2, transp=100, editable=false, display=display.none, title="External Output - Trend Signal (Resampled Prices)")
+plot(obos_out1, transp=100, editable=false, display=display.none, title="External Output - Outside Band Signal (Current Resolution Prices)")
+plot(obos_out2, transp=100, editable=false, display=display.none, title="External Output - Outside Band Signal (Resampled Prices)")

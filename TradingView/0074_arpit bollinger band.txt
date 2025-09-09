@@ -1,0 +1,51 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+
+
+//@version=5
+strategy("Bollinger Band Strategy with Early Signal (v5)", overlay=true)
+
+// Inputs
+length = 20
+mult = 1.5
+src = close
+riskRewardRatio = input(3.0, title="Risk-Reward Ratio")
+
+// Calculating Bollinger Bands
+basis = ta.ema(src, length)
+dev = mult * ta.stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+
+// Plotting Bollinger Bands
+plot(upper, "Upper Band", color=color.red)
+plot(lower, "Lower Band", color=color.green)
+
+// Tracking Two Candles Ago Crossing Bollinger Bands
+var float twoCandlesAgoUpperCrossLow = na
+var float twoCandlesAgoLowerCrossHigh = na
+
+if (close[2] > upper[2])
+    twoCandlesAgoUpperCrossLow := low[2]
+if (close[2] < lower[2])
+    twoCandlesAgoLowerCrossHigh := high[2]
+
+// Entry Conditions
+longCondition = (not na(twoCandlesAgoLowerCrossHigh)) and (high > twoCandlesAgoLowerCrossHigh)
+shortCondition = (not na(twoCandlesAgoUpperCrossLow)) and (low < twoCandlesAgoUpperCrossLow)
+
+// Plotting Entry Points
+plotshape(longCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(shortCondition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Strategy Execution
+if (longCondition)
+    stopLoss = low - (high - low) * 0.05
+    takeProfit = close + (close - stopLoss) * riskRewardRatio
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Exit Buy", "Buy", stop=stopLoss, limit=takeProfit)
+
+if (shortCondition)
+    stopLoss = high + (high - low) * 0.05
+    takeProfit = close - (stopLoss - close) * riskRewardRatio
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("Exit Sell", "Sell", stop=stopLoss, limit=takeProfit)

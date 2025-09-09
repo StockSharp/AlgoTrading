@@ -1,0 +1,195 @@
+//@version=5
+//@fenyesk
+strategy("Timeshifter Triple Timeframe Strategy w/ Sessions", overlay=true, margin_long=100, margin_short=100)
+
+// Inputs for timeframes
+higherTimeframe = input.timeframe("D", "Higher Timeframe")
+lowerTimeframe = input.timeframe("M15", "Lower Timeframe")
+
+// Set medium timeframe to the current chart timeframe
+mediumTimeframe = timeframe.period
+
+// Inputs for optimization using input.int
+higherTfMALength = input.int(50, "Higher TF MA Length", minval=10, maxval=200)
+mediumTfMALength = input.int(20, "Medium TF MA Length", minval=5, maxval=100)
+lowerTfMALength = input.int(10, "Lower TF MA Length", minval=2, maxval=50)
+
+// Dropdown for selecting indicators
+selectedIndicator = input.string("RMI", "Select Indicator", options=["RMI", "TWAP", "TEMA", "DEMA", "MA", "MFI", "VWMA", "PSAR"])
+
+// Checkbox for ADX confirmation
+useADX = input.bool(false, "Use ADX Confirmation")
+
+// Inputs for trade direction
+tradeDirection = input.string("Both", "Trade Direction", options=["Long", "Short", "Both"])
+
+// Inputs for ADX
+adxLength = input(14, "ADX Length")
+adxThreshold = input(25, "ADX Threshold")
+
+// Inputs for RMI
+rmiLength = input(14, "RMI Length")
+rmiOverbought = input(70, "RMI Overbought Level")
+rmiOversold = input(30, "RMI Oversold Level")
+
+// Inputs for MA
+maLength = input(20, "MA Length")
+
+// Inputs for MFI
+mfiLength = input(14, "MFI Length")
+mfiOverbought = input(80, "MFI Overbought Level")
+mfiOversold = input(20, "MFI Oversold Level")
+
+// Inputs for VWMA
+vwmaLength = input(20, "VWMA Length")
+
+// Inputs for PSAR
+psarStart = input(0.02, "PSAR Start")
+psarIncrement = input(0.02, "PSAR Increment")
+psarMaximum = input(0.2, "PSAR Maximum")
+
+// Checkboxes for selecting trading sessions
+useLondonSession = input.bool(true, "London Session")
+useNewYorkSession = input.bool(true, "New York Session")
+useTokyoSession = input.bool(true, "Tokyo Session")
+
+// Define session times
+isLondonSession = not na(time(timeframe.period, "0800-1700", "GMT+1"))
+isNewYorkSession = not na(time(timeframe.period, "0800-1700", "GMT-5"))
+isTokyoSession = not na(time(timeframe.period, "0900-1800", "GMT+9"))
+
+// Fetch data from different timeframes
+higherTFClose = request.security(syminfo.tickerid, higherTimeframe, close)
+mediumTFClose = request.security(syminfo.tickerid, mediumTimeframe, close)
+lowerTFClose = request.security(syminfo.tickerid, lowerTimeframe, close)
+
+// Calculate moving averages for each timeframe
+higherTFMA = ta.sma(higherTFClose, higherTfMALength)
+mediumTFMA = ta.sma(mediumTFClose, mediumTfMALength)
+lowerTFMA = ta.sma(lowerTFClose, lowerTfMALength)
+
+// Calculate RMI
+rmi(Length) =>
+    up = ta.rma(math.max(close - close[1], 0), Length)
+    down = ta.rma(math.max(close[1] - close, 0), Length)
+    rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+    mfi = ta.mfi(close, Length)
+    (rsi + mfi) / 2
+
+currentRMI = rmi(rmiLength)
+
+// TWAP Calculation
+twapLength = input(20, "TWAP Length")
+twap = ta.sma(hlc3, twapLength)
+
+// TEMA Calculation
+temaLength = input(20, "TEMA Length")
+ema1 = ta.ema(close, temaLength)
+ema2 = ta.ema(ema1, temaLength)
+tema = ta.ema(ema2, temaLength)
+
+// DEMA Calculation
+demaLength = input(20, "DEMA Length")
+ema1Dema = ta.ema(close, demaLength)
+dema = 2 * ema1Dema - ta.ema(ema1Dema, demaLength)
+
+// MA Calculation
+ma = ta.sma(close, maLength)
+
+// MFI Calculation
+currentMFI = ta.mfi(close, mfiLength)
+
+// VWMA Calculation
+vwma = ta.vwma(close, vwmaLength)
+
+// PSAR Calculation
+psar = ta.sar(psarStart, psarIncrement, psarMaximum)
+
+// ADX Calculation
+[diPlus, diMinus, adx] = ta.dmi(adxLength, adxLength)
+
+// Determine trend based on higher timeframe
+higherTimeframeUptrend = higherTFClose > higherTFMA
+higherTimeframeDowntrend = higherTFClose < higherTFMA
+
+// Entry conditions based on medium timeframe
+mediumTimeframeEntryLong = ta.crossover(mediumTFClose, mediumTFMA)
+mediumTimeframeEntryShort = ta.crossunder(mediumTFClose, mediumTFMA)
+
+// Exit conditions based on lower timeframe
+lowerTimeframeExitLong = ta.crossunder(lowerTFClose, lowerTFMA)
+lowerTimeframeExitShort = ta.crossover(lowerTFClose, lowerTFMA)
+
+// Check if current time is within selected sessions
+inSelectedSession = (useLondonSession and isLondonSession) or (useNewYorkSession and isNewYorkSession) or (useTokyoSession and isTokyoSession)
+
+// Strategy logic
+if inSelectedSession
+    if tradeDirection == "Long" or tradeDirection == "Both"
+        if higherTimeframeUptrend
+            if mediumTimeframeEntryLong
+                var bool entryCondition = false
+                if selectedIndicator == "RMI"
+                    entryCondition := currentRMI > rmiOverbought
+                if selectedIndicator == "TWAP"
+                    entryCondition := close > twap
+                if selectedIndicator == "TEMA"
+                    entryCondition := close > tema
+                if selectedIndicator == "DEMA"
+                    entryCondition := close > dema
+                if selectedIndicator == "MA"
+                    entryCondition := close > ma
+                if selectedIndicator == "MFI"
+                    entryCondition := currentMFI > mfiOverbought
+                if selectedIndicator == "VWMA"
+                    entryCondition := close > vwma
+                if selectedIndicator == "PSAR"
+                    entryCondition := close > psar
+
+                adxCondition = useADX ? adx > adxThreshold : true
+
+                if entryCondition and adxCondition
+                    strategy.entry("Long", strategy.long)
+
+        if lowerTimeframeExitLong
+            strategy.close("Long")
+
+    if tradeDirection == "Short" or tradeDirection == "Both"
+        if higherTimeframeDowntrend
+            if mediumTimeframeEntryShort
+                var bool entryCondition = false
+                if selectedIndicator == "RMI"
+                    entryCondition := currentRMI < rmiOversold
+                if selectedIndicator == "TWAP"
+                    entryCondition := close < twap
+                if selectedIndicator == "TEMA"
+                    entryCondition := close < tema
+                if selectedIndicator == "DEMA"
+                    entryCondition := close < dema
+                if selectedIndicator == "MA"
+                    entryCondition := close < ma
+                if selectedIndicator == "MFI"
+                    entryCondition := currentMFI < mfiOversold
+                if selectedIndicator == "VWMA"
+                    entryCondition := close < vwma
+                if selectedIndicator == "PSAR"
+                    entryCondition := close < psar
+
+                adxCondition = useADX ? adx > adxThreshold : true
+
+                if entryCondition and adxCondition
+                    strategy.entry("Short", strategy.short)
+
+        if lowerTimeframeExitShort
+            strategy.close("Short")
+
+// Create a floating bubble with current settings and basic trading statistics
+sessionsText = (useLondonSession ? "London, " : "") + (useNewYorkSession ? "New York, " : "") + (useTokyoSession ? "Tokyo" : "")
+
+// Create a floating bubble with current settings and basic trading statistics
+var bubbleText = "Current Settings:\nIndicator: " + selectedIndicator + "\nTrade Direction: " + tradeDirection + "\nUse ADX: " + str.tostring(useADX) + "\nSessions: " + sessionsText + "\n\nTrading Statistics:\nNet Profit: " + str.tostring(strategy.netprofit) + "\nGross Profit: " + str.tostring(strategy.grossprofit) + "\nGross Loss: " + str.tostring(strategy.grossloss)
+
+// Display the bubble on the chart
+var label statsBubble = na
+if barstate.islast
+    statsBubble := label.new(bar_index, high, text=bubbleText, style=label.style_label_left, color=color.new(color.blue, 90), textcolor=color.white)

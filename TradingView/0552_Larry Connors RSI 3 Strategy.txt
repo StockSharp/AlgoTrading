@@ -1,0 +1,39 @@
+//@version=5
+strategy("Larry Connors RSI 3 Strategy", overlay=false)
+
+// Define the moving averages and the RSI
+sma200 = ta.sma(close, 200)
+rsi2 = ta.rsi(close, 2)
+
+// Conditions for the strategy
+condition1 = close > sma200  // Close above the 200-day moving average
+
+// RSI drops three days in a row and the first day’s drop is from above 60
+rsi_drop_3_days = rsi2[2] > rsi2[1] and rsi2[1] > rsi2 and rsi2[2] > 60  // The 3-day RSI drop condition
+condition2 = rsi_drop_3_days
+
+// The 2-period RSI is below 10 today
+condition3 = rsi2 < 10
+
+// Combined buy condition
+buyCondition = condition1 and condition2 and condition3
+
+// Sell condition: The 2-period RSI is above 70
+sellCondition = rsi2 > 70
+
+// Execute the buy signal when all buy conditions are met
+if buyCondition
+    strategy.entry("Buy", strategy.long)
+
+// Execute the sell signal when the sell condition is met
+if sellCondition
+    strategy.close("Buy")
+
+// Plotting the RSI for visual confirmation
+plot(rsi2, title="2-Period RSI", color=color.blue)
+hline(70, "Overbought (70)", color=color.red)
+hline(10, "Oversold (10)", color=color.green)
+hline(60, "RSI Drop Trigger (60)", color=color.gray)
+
+// Set background color when a position is open
+bgcolor(strategy.opentrades > 0 ? color.new(color.green, 50) : na)

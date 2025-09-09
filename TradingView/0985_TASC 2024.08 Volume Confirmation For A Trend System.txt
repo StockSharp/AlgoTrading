@@ -1,0 +1,92 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PineCodersTASC
+
+//  TASC Issue: August 2024 - Vol. 42
+//     Article: Volume Confirmation For A Trend System.
+//              The Trend Thrust Indicator And
+//              Volume Price Confirmation Indicator.
+//  Article By: Buff Pelz Dormeier
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//@version=5
+string title = "TASC 2024.08 Volume Confirmation For A Trend System"
+string stitle = "VCTS"
+strategy(title, stitle, false)
+
+
+// Input
+lenADX  = input.int(14, "ADX Length", 1)
+smt     = input.int(14, "ADX Smoothing", 1, 50)
+fastTTI = input.int(13, "TTI Fast Average", 1)
+slowTTI = input.int(26, "TTI Slow Average", 1)
+smtTTI  = input.int(9,  "TTI Signal Length", 1)
+shortVP = input.int(5,  "VPCI Short-Term Average", 1)
+longVP  = input.int(25, "VPCI Long-Term Average", 1)
+
+
+// Functions
+// ADX
+adx(lenADX, smt) =>
+    upDM   =  ta.change(high)
+    dwDM   = -ta.change(low)
+    pDM    = na(upDM) ? na : upDM > dwDM and upDM > 0 ? upDM : 0
+    mDM    = na(dwDM) ? na : dwDM > upDM and dwDM > 0 ? dwDM : 0
+    ATR    = ta.atr(lenADX)
+    pDI    = fixnan(100 * ta.rma(pDM, lenADX) / ATR)
+    mDI    = fixnan(100 * ta.rma(mDM, lenADX) / ATR)
+    ADX    = 100*ta.rma(math.abs((pDI - mDI)  / (pDI + mDI)), smt)
+    ADX
+
+// TTI
+// See also: https://www.tradingview.com/script/B6a7HzVn/
+tti(price, fast, slow) =>
+    fastMA = ta.vwma(price, fast)
+    slowMA = ta.vwma(price, slow)
+    VWMACD = fastMA - slowMA
+    vMult  = math.pow((fastMA / slowMA), 2)
+    VEFA   = fastMA * vMult
+    VESA   = slowMA / vMult
+    TTI    = VEFA - VESA
+    signal = ta.sma(TTI, smtTTI)
+    [TTI, signal]
+
+// VPCI
+// See also: https://www.tradingview.com/script/lmTqKOsa-Indicator-Volume-Price-Confirmation-Indicator-VPCI/
+vpci(long, short) =>
+    VPC    = ta.vwma(close, long)  - ta.sma(close, long)
+    VPR    = ta.vwma(close, short) / ta.sma(close, short)
+    VM     = ta.sma(volume, short) / ta.sma(volume, long)
+    VPCI   = VPC * VPR * VM
+    VPCI
+
+
+// Calculations
+float ADX     = adx(lenADX, smt)
+[TTI, signal] = tti(close, fastTTI, slowTTI)
+float VPCI    = vpci(longVP, shortVP)
+
+
+// Plot
+col1  = #4daf4a50
+col2  = #e41a1c20
+col0  = #ffffff00
+adxL1 = plot(ADX,    "ADX", #984ea3)
+adxL0 = plot(30,     "ADX Threshold", #984ea350)
+ttiL1 = plot(TTI,    "TTI", #ff7f00)
+ttiL0 = plot(signal, "TTI Signal", #ff7f0050)
+vpcL1 = plot(VPCI*10,"VPCI", #377eb8)
+vpcL0 = plot(0,      "VPCI Zero", #377eb850)
+fill(adxL1, adxL0, ADX > 30 ? col1 : col0)
+fill(ttiL1, ttiL0, TTI > signal ? col1 : col0)
+fill(vpcL1, vpcL0, VPCI > 0 ? col1 : col2)
+
+
+// Strategy entry/exit rules
+if ADX > 30
+    if TTI > signal
+        if VPCI > 0
+            strategy.entry("entry", strategy.long)
+if VPCI < 0
+    strategy.close_all("exit")

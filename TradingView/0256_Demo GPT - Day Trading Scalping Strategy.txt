@@ -1,0 +1,71 @@
+//@version=5
+strategy("Demo GPT - Day Trading Scalping Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.1, slippage=3)
+
+// Start Date and End Date inputs
+startDate = input.time(timestamp("2018-01-01 00:00 +0000"), title="Start Date")
+endDate = input.time(timestamp("2069-12-31 00:00 +0000"), title="End Date")
+if (time < startDate or time > endDate)
+    strategy.close_all()
+
+// EMA and VWAP Settings
+ema20 = ta.ema(close, 20)
+vwapValue = ta.vwap(close)
+
+// Volume Threshold
+volumeSMA = ta.sma(volume, 20) // 20-period SMA of volume
+goodVolume = volume > volumeSMA // Good volume condition
+
+// Define candle colors and positions
+greenCandle1 = close[1] > open[1] // Previous candle (candle one) is green
+greenCandle2 = close > open // Current candle (candle two) is green
+redCandle1 = close[1] < open[1] // Previous candle (candle one) is red
+redCandle2 = close < open // Current candle (candle two) is red
+
+// Buy Condition: Second green candle opens above the first green candle
+buyCondition = greenCandle1 and greenCandle2 and (open > close[1]) and goodVolume
+
+// Sell Condition: Second red candle opens below the first red candle
+sellCondition = redCandle1 and redCandle2 and (open < close[1]) and goodVolume
+
+// Execute Long Position
+if (buyCondition)
+    strategy.entry("Long", strategy.long)
+
+// Execute Short Position
+if (sellCondition)
+    strategy.close("Long")
+
+// Camarilla Pivot Calculation
+highLevel = request.security(syminfo.tickerid, "D", ta.highest(high, 14))
+lowLevel = request.security(syminfo.tickerid, "D", ta.lowest(low, 14))
+camarillaRange = highLevel - lowLevel
+
+// Camarilla Levels
+s2 = lowLevel + camarillaRange * 1.5 / 2
+s3 = lowLevel + camarillaRange * 1.1 / 2
+r2 = highLevel - camarillaRange * 1.5 / 2
+r3 = highLevel - camarillaRange * 1.1 / 2
+
+// Plotting EMAs, VWAP, and Camarilla Levels
+plot(ema20, color=color.red, title="20 EMA")
+plot(vwapValue, color=color.black, title="VWAP")
+plot(s2, color=color.green, title="S2", linewidth=1)
+plot(s3, color=color.green, title="S3", linewidth=1)
+plot(r2, color=color.red, title="R2", linewidth=1)
+plot(r3, color=color.red, title="R3", linewidth=1)
+
+// Plot Buy Signal
+plotshape(series=buyCondition, location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+
+// Plot Sell Signal
+plotshape(series=sellCondition, location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Volume Plotting in a separate pane
+plot(volume, color=color.blue, title="Volume", style=plot.style_columns, transp=0)
+
+// Displaying Volume
+hline(0, "Zero Line", color=color.gray)
+
+// Adding Alerts (optional)
+alertcondition(buyCondition, title="Buy Alert", message="Buy Signal!")
+alertcondition(sellCondition, title="Sell Alert", message="Sell Signal!")

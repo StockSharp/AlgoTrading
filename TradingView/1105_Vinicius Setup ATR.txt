@@ -1,0 +1,39 @@
+//@version=5
+strategy("Vinicius Setup ATR", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// ===== PARÂMETROS =====
+atrLength = input.int(10, title="ATR Length")
+factor = input.float(6.0, title="Multiplier", step=0.1)
+riskValue = input.float(1.0, title="Risk Value")
+rsiPeriod = input.int(14, title="RSI Period")
+minBodySize = input.float(1.0, title="Mínimo Tamanho do Corpo %")
+
+// ===== INDICADORES =====
+[supertrend, direction] = ta.supertrend(factor, atrLength)
+rsi = ta.rsi(close, rsiPeriod)
+avgVolume = ta.sma(volume, 20)
+candleBody = math.abs(close - open)
+isStrongCandle = candleBody > (ta.atr(atrLength) * minBodySize)
+isHighVolume = volume > avgVolume * 1.2
+
+// ===== ZONAS DE SUPORTE / RESISTÊNCIA (simples) =====
+pivotHigh = ta.pivothigh(high, 5, 5)
+pivotLow = ta.pivotlow(low, 5, 5)
+plotshape(pivotHigh, title="Resistência", location=location.abovebar, color=color.red, style=shape.labeldown, text="RES")
+plotshape(pivotLow, title="Suporte", location=location.belowbar, color=color.green, style=shape.labelup, text="SUP")
+
+// ===== SINAL DE COMPRA =====
+buySignal = direction == 1 and isStrongCandle and isHighVolume and rsi < 70
+if buySignal
+    strategy.entry("Compra", strategy.long)
+    label.new(bar_index, low, "BUY", style=label.style_label_up, color=color.green, textcolor=color.white)
+
+// ===== SINAL DE VENDA =====
+sellSignal = direction == -1 and isStrongCandle and isHighVolume and rsi > 30
+if sellSignal
+    strategy.entry("Venda", strategy.short)
+    label.new(bar_index, high, "SELL", style=label.style_label_down, color=color.red, textcolor=color.white)
+
+// ===== SAÍDA =====
+strategy.close("Compra", when = sellSignal)
+strategy.close("Venda", when = buySignal)

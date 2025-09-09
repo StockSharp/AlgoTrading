@@ -1,0 +1,393 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © DonovanWall
+
+//██████╗ ██╗    ██╗
+//██╔══██╗██║    ██║
+//██║  ██║██║ █╗ ██║
+//██║  ██║██║███╗██║
+//██████╔╝╚███╔███╔╝
+//╚═════╝  ╚══╝╚══╝
+
+//@version=4
+study("Resampling Filter Pack [DW]", overlay=true)
+
+//This is an experimental study that calculates filter values at user defined sample rates.
+//This study is aimed to provide users with alternative functions for filtering price at custom sample rates.
+
+//First, source data is resampled using the desired rate and cycle offset. The highest possible rate is 1 bar per sample (BPS).
+//There are three resampling methods to choose from:
+// -> BPS - Resamples based on the number of bars.
+// -> Interval - Resamples based on time in multiples of current charting timeframe.
+// -> PA - Resamples based on changes in price action by a specified size. The PA algorithm in this script is derived from my Range Filter algorithm.
+//    The range for PA method can be sized in points, pips, ticks, % of price, ATR, average change, and absolute quantity.
+
+//Then, the data is passed through one of my custom built filter functions designed to calculate filter values upon trigger conditions rather than bars.
+//In this study, these functions are used to calculate resampled prices based on bar rates, but they can be used and modified for a number of purposes.
+//The available conditional sampling filters in this study are:
+// -> Simple Moving Average (SMA)
+// -> Exponential Moving Average (EMA)
+// -> Zero Lag Exponential Moving Average (ZLEMA)
+// -> Double Exponential Moving Average (DEMA)
+// -> Rolling Moving Average (RMA)
+// -> Weighted Moving Average (WMA)
+// -> Hull Moving Average (HMA)
+// -> Exponentially Weighted Hull Moving Average (EWHMA)
+// -> Two Pole Butterworth Low Pass Filter (BLP)
+// -> Two Pole Gaussian Low Pass Filter (GLP)
+// -> Super Smoother Filter (SSF)
+
+//Downsampling is a powerful filtering approach that can be applied in numerous ways. However, it does suffer from a trade off, like most studies do.
+//Reducing the sample rate will completely eliminate certain levels of noise, at the cost of some spectral distortion. The lower your sample rate is, the more distortion you'll see.
+//With that being said, for analyzing trends, downsampling may prove to be one of your best friends!
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Updates:
+
+//-> All of the filter functions have been completely overhauled for enhanced performance, reliability, and versatility.
+//   Rather than the previous sampling methods, these functions are using the array data structures Pine now provides.
+//   These updated functions make downsampling convolution filters incredibly feasible, thus fixing calculation errors in SMA and WMA from the previous version.
+
+//-> Thanks to array processing, the current sample and valuewhen functions are no longer needed, so they have been removed.
+
+//-> Added Volume Weighted Moving Average (VWMA) with tick volume substitution for NaN values, and Arnaud Legoux Moving Average (ALMA) to the list of available filter types to choose from.
+
+//-> Added a custom bar color scheme based on disparity and direction for easier, and more visually appealing, analysis.
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Functions
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Bar Count Based New Sample Function
+New_sample(n, o)=>
+    var bar_sum  = 0.0
+    bar_sum     := bar_sum + 1
+    New_sample   = (bar_sum - o) % n == 0 ? 1 : 0
+    New_sample
+
+//Interval Renewal Function
+newbar(T)=>
+    t      = time(T)
+    newbar = (na(t[1]) and not na(t)) or (t[1] < t) ? 1 : 0
+    newbar
+
+//Interval Based New Sample Function
+New_sample_t(n, o)=>
+    sample_scale  = timeframe.isseconds ? "S" : timeframe.isintraday and not timeframe.isseconds ? "" :
+                     timeframe.isdaily ? "D" : timeframe.isweekly ? "W" : "M"
+    New_sample_t1 = newbar(tostring(n*timeframe.multiplier) + sample_scale)
+    New_sample_t  = New_sample_t1[o] ? 1 : 0
+    New_sample_t
+
+//Conditional Sampling SMA Function
+Cond_SMA(x, cond, n)=>
+    var vals = array.new_float(0)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > n
+            array.remove(vals, 0)
+    SMA = array.avg(vals)
+    SMA
+
+//Conditional Sampling EMA Function
+Cond_EMA(x, cond, n)=>
+    var val     = array.new_float(0)
+    var ema_val = array.new_float(1)
+    if cond
+        array.push(val, x)
+        if array.size(val) > 1
+            array.remove(val, 0)
+        if na(array.get(ema_val, 0))
+            array.fill(ema_val, array.get(val, 0))
+        array.set(ema_val, 0, (array.get(val, 0) - array.get(ema_val, 0))*(2/(n + 1)) + array.get(ema_val, 0))
+    EMA = array.get(ema_val, 0)
+    EMA
+
+//Range Size Function
+rng_size(scale, qty, per_) =>
+    atr_ = qty*Cond_EMA(tr(true), time != time[1], per_)
+    ach1 = qty*Cond_EMA(abs(close - nz(close[1])), time != time[1], per_)
+    ach_ = nz(ach1, atr_)
+    rng_size = scale=="Pips" ? qty*0.0001 : scale=="Points" ? qty*syminfo.pointvalue :
+               scale=="% of Price" ? close*qty/100 : scale=="ATR" ? atr_ :
+               scale=="Average Change" ? ach_ : scale=="Ticks" ? qty*syminfo.mintick : qty
+    rng_size
+
+//Price Action Based New Sample Function
+New_sample_p(x, scale, qty, t, smooth, st, o)=>
+    r1            = rng_size(scale, qty, t)
+    r2            = Cond_EMA(r1, time != time[1], st)
+    r             = smooth ? r2 : r1
+    var pa_line   = 0.0
+    if abs(x - pa_line) >= r
+        pa_line := x
+    New_sample_p1 = pa_line != pa_line[1] ? 1 : 0
+    New_sample_p  = New_sample_p1[o] ? 1 : 0
+    New_sample_p
+
+//Conditional Sampling ZLEMA Function
+Cond_ZLEMA(x, cond, n)=>
+    var vals = array.new_float(0)
+    var data = array.new_float(1)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > round((n - 1)/2) + 1
+            array.remove(vals, 0)
+        array.set(data, 0, 2*array.get(vals, array.size(vals) - 1) - array.get(vals, 0))
+    ZLEMA = Cond_EMA(array.get(data, 0), cond, n)
+    ZLEMA
+
+//Conditional Sampling DEMA Function
+Cond_DEMA(x, cond, n)=>
+    2*Cond_EMA(x, cond, n) - Cond_EMA(Cond_EMA(x, cond, n), cond, n)
+
+//Conditional Sampling RMA Function
+Cond_RMA(x, cond, n)=>
+    var val     = array.new_float(0)
+    var rma_val = array.new_float(1)
+    if cond
+        array.push(val, x)
+        if array.size(val) > 1
+            array.remove(val, 0)
+        if na(array.get(rma_val, 0))
+            array.fill(rma_val, array.get(val, 0))
+        array.set(rma_val, 0, (array.get(rma_val, 0)*(n - 1) + array.get(val, 0))/n)
+    RMA = array.get(rma_val, 0)
+    RMA
+
+//Conditional Sampling WMA Function
+Cond_WMA(x, cond, n)=>
+    var vals    = array.new_float(0)
+    var weights = array.new_float(0)
+    var wvals   = array.new_float(n, 0.0)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) <= n
+            array.push(weights, array.size(vals))
+            array.set(wvals, array.size(vals) - 1, array.get(vals, array.size(vals) - 1)*array.size(vals))
+        if array.size(vals) > n
+            array.remove(vals, 0)
+            for i = 0 to (n - 1)
+                array.set(wvals, i, array.get(vals, i)*array.get(weights, i))
+    WMA = array.sum(wvals)/array.sum(weights)
+    WMA
+
+//Conditional Sampling VWMA Function With Tick Substitution For NaN Volumes
+Cond_VWMA(x, cond, n)=>
+    tick      = syminfo.mintick
+    rng       = close - open
+    tickrng   = tick
+    tickrng  := abs(rng) < tick ? nz(tickrng[1]) : rng
+    tickvol   = abs(tickrng)/tick
+    vol       = nz(volume, tickvol)
+    var vsum  = 0.0
+    vsum     := cond[1] ? vol : vsum + vol
+    var vals  = array.new_float(0)
+    var vols  = array.new_float(0)
+    if cond
+        array.push(vals, x*vsum)
+        array.push(vols, vsum)
+        if array.size(vals) > n
+            array.remove(vals, 0)
+            array.remove(vols, 0)
+    VWMA = array.sum(vals)/array.sum(vols)
+    VWMA
+
+//Conditional Sampling ALMA Function
+Cond_ALMA(x, cond, n)=>
+    m           = 0.85*(n - 1)
+    s           = n/6
+    var vals    = array.new_float(0)
+    var weights = array.new_float(0)
+    var wvals   = array.new_float(n, 0.0)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) <= n
+            array.push(weights, exp(-pow(array.size(vals) - 1 - m, 2)/(2*pow(s, 2))))
+            array.set(wvals, array.size(vals) - 1, array.get(vals, array.size(vals) - 1)*array.get(weights, array.size(vals) - 1))
+        if array.size(vals) > n
+            array.remove(vals, 0)
+            for i = 0 to (n - 1)
+                array.set(wvals, i, array.get(vals, i)*array.get(weights, i))
+    ALMA = array.sum(wvals)/array.sum(weights)
+    ALMA
+
+//Conditional Sampling HMA Function
+Cond_HMA(x, cond, n)=>
+    Cond_WMA(2*Cond_WMA(x, cond, round(n/2)) - Cond_WMA(x, cond, n), cond, round(sqrt(n)))
+
+//Conditional Sampling EWHMA Function
+Cond_EWHMA(x, cond, n)=>
+    Cond_EMA(2*Cond_EMA(x, cond, round(n/2)) - Cond_EMA(x, cond, n), cond, round(sqrt(n)))
+
+//Conditional Sampling 2 Pole Butterworth LP Function
+Cond_BLP(x, cond, n)=>
+    a            = exp(-sqrt(2)*atan(1)*4/n)
+    b            = 2*a*cos(sqrt(2)*atan(1)*4/n)
+    c            = pow(a, 2)
+    d            = ((1 - b + c)/4)
+    var vals     = array.new_float(0)
+    var blp_vals = array.new_float(3)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > 3
+            array.remove(vals, 0)
+        if array.size(vals)==3
+            if na(array.get(blp_vals, 1))
+                array.fill(blp_vals, array.get(vals, 2))
+            array.set(blp_vals, 2, array.get(blp_vals, 1))
+            array.set(blp_vals, 1, array.get(blp_vals, 0))
+            array.set(blp_vals, 0, b*array.get(blp_vals, 1) - c*array.get(blp_vals, 2) + d*(array.get(vals, 2) + 2*array.get(vals, 1) + array.get(vals, 0)))
+    BLP = array.get(blp_vals, 0)
+    BLP
+
+//Conditional Sampling 2 Pole Gaussian LP Function
+Cond_GLP(x, cond, n)=>
+    beta    = (1 - cos(2*atan(1)*4/n))/(sqrt(2) - 1)
+    alpha   = -beta + sqrt(pow(beta, 2) + 2*beta)
+    var vals     = array.new_float(0)
+    var glp_vals = array.new_float(3)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > 3
+            array.remove(vals, 0)
+        if array.size(vals)==3
+            if na(array.get(glp_vals, 1))
+                array.fill(glp_vals, array.get(vals, 2))
+            array.set(glp_vals, 2, array.get(glp_vals, 1))
+            array.set(glp_vals, 1, array.get(glp_vals, 0))
+            array.set(glp_vals, 0, pow(alpha, 2)*array.get(vals, 2) + 2*(1 - alpha)*array.get(glp_vals, 1) - pow(1 - alpha, 2)*array.get(glp_vals, 2))
+    GLP = array.get(glp_vals, 0)
+    GLP
+
+//Conditional Sampling Super Smoother Function
+Cond_SSF(x, cond, n)=>
+    omega   = 2*atan(1)*4/n
+    a       = exp(-sqrt(2)*atan(1)*4/n)
+    b       = 2*a*cos((sqrt(2)/2)*omega)
+    c2      = b
+    c3      = -pow(a, 2)
+    c1      = 1 - c2 - c3
+    var vals     = array.new_float(0)
+    var ssf_vals = array.new_float(3)
+    if cond
+        array.push(vals, x)
+        if array.size(vals) > 3
+            array.remove(vals, 0)
+        if array.size(vals)==3
+            if na(array.get(ssf_vals, 1))
+                array.fill(ssf_vals, array.get(vals, 2))
+            array.set(ssf_vals, 2, array.get(ssf_vals, 1))
+            array.set(ssf_vals, 1, array.get(ssf_vals, 0))
+            array.set(ssf_vals, 0, c1*array.get(vals, 2) + c2*array.get(ssf_vals, 1) + c3*array.get(ssf_vals, 2))
+    SSF = array.get(ssf_vals, 0)
+    SSF
+
+//Filter Selector Function
+filt(x, cond, n, type)=>
+    sma_   = Cond_SMA(x, cond, n)
+    ema_   = Cond_EMA(x, cond, n)
+    zlema_ = Cond_ZLEMA(x, cond, n)
+    dema_  = Cond_DEMA(x, cond, n)
+    rma_   = Cond_RMA(x, cond, n)
+    wma_   = Cond_WMA(x, cond, n)
+    vwma_  = Cond_VWMA(x, cond, n)
+    alma_  = Cond_ALMA(x, cond, n)
+    hma_   = Cond_HMA(x, cond, n)
+    ewhma_ = Cond_EWHMA(x, cond, n)
+    blp_   = Cond_BLP(x, cond, n)
+    glp_   = Cond_GLP(x, cond, n)
+    ssf_   = Cond_SSF(x, cond, n)
+    filt   = type=="SMA" ? sma_ : type=="EMA" ? ema_ : type=="ZLEMA" ? zlema_ :
+             type=="DEMA" ? dema_ : type=="RMA" ? rma_ : type=="WMA" ? wma_ :
+             type=="VWMA" ? vwma_ : type=="ALMA" ? alma_ : type=="HMA" ? hma_ :
+             type=="EWHMA" ? ewhma_ : type=="BLP" ? blp_ : type=="GLP" ? glp_ : ssf_
+    filt
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Inputs
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Source
+src = input(defval=close, title="Source")
+
+//Resampling Method
+s_method = input(defval="BPS", options=["BPS", "Interval", "PA"], title="Resampling Method")
+
+//Sample Rate - Controls how many bars pass before a resample when BPS method is used.
+s_size = input(defval=5, minval=1, title="Bars Per Sample (For BPS Method)")
+
+//Interval Multiplier - Controls how much time passes in multiples of current resolution before a resample when Interval method is used.
+i_mult = input(defval=1, minval=1, title="Sampling Interval Multiplier (For Interval Method)")
+
+//Range Size
+rng_qty   = input(defval=0.0, minval=0, title="Range Sample Threshold (For PA Method)")
+rng_scale = input(defval="Average Change", options=["Points", "Pips", "Ticks", "% of Price", "ATR", "Average Change", "Absolute"], title="Range Scale (For PA Method)")
+
+//Range Period
+rng_per = input(defval=14, minval=1, title="Range Period (For PA Method - Applies To Dynamic Range Types)")
+
+//Range Smoothing
+smooth_range = input(defval=true, title="Smooth Range (For PA Method - Smooths Dynamic Ranges)")
+smooth_per   = input(defval=27, minval=1, title="Smoothing Period (For PA Method)")
+
+//Sample Cycle Offset - Positive values only. Controls the delay of the sample trigger in bars.
+s_off  = input(defval=0, minval=0, title="Sample Cycle Offset")
+
+//Filter type selection
+ma_type = input(defval="EMA", options=["SMA", "EMA", "ZLEMA", "DEMA", "RMA", "WMA", "VWMA", "ALMA", "HMA", "EWHMA", "BLP", "GLP", "SSF"], title="Filter Type")
+
+//Filter Period
+ma_per = input(defval=9, minval=1, title="Filter Period")
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Definitions
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//BPS Sample Trigger
+new_sample1 = New_sample(s_size, s_off)
+
+//Interval Sample Trigger
+new_sample2_1 = New_sample_t(i_mult, s_off)
+new_sample2   = i_mult==1 ? 1 : new_sample2_1
+
+//Range Filter Values
+new_sample3_1 = New_sample_p(src, rng_scale, rng_qty, rng_per, smooth_range, smooth_per, s_off)
+new_sample3   = rng_qty==0 ? 1 : new_sample3_1
+
+//Final Sample Trigger
+new_sample = s_method=="BPS" ? new_sample1 : s_method=="Interval" ? new_sample2 : new_sample3
+
+//Resampled Price Value
+var float ds_src = na
+ds_src          := new_sample ? src : ds_src
+
+//Filter
+filter = filt(src, new_sample, ma_per, ma_type)
+
+//Filter Direction - Holds direction information between resamples
+var filter_dir = 0
+filter_dir    := filter > filter[1] ? 1 : filter < filter[1] ? -1 : filter_dir
+
+//Filter Color Assignment
+filter_color = filter_dir==1 ? #00ff66 : filter_dir==-1 ? #ff0066 : #cccccc
+bar_color    = (filter_dir==1) and (src >= filter) ? (src > src[1] ? #00ff66 : #008b00) :
+               (filter_dir==-1) and (src <= filter) ? (src < src[1] ? #ff0066 : #8b0000) : #cccccc
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+//Outputs
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+//Resampled Price Plot
+plot(ds_src, color=#ffffff, linewidth=1, style=plot.style_circles, title="Resampled Source")
+
+//Filter Plot
+plot(filter, color=filter_color, linewidth=3, title="Filter")
+
+//External Signal Output
+plot(filter_dir, transp=100, editable=false, display=display.none, title="External Output: Filter Trend Signal")
+
+//Bar Color
+barcolor(bar_color)
+
+//Black Background, because why not?
+bgcolor(#000000, transp=0)

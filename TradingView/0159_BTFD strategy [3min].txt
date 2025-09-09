@@ -1,0 +1,59 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © wielkieef
+
+//@version=5
+
+strategy(title='BTFD strategy [3min]', overlay=true, pyramiding=5, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, calc_on_order_fills=false, slippage=0, commission_type=strategy.commission.percent, commission_value=0.03)
+
+
+// Volume
+
+vol_sma_length = input.int(70, title='Volume lenght  ', minval=1)
+Volume_condt = volume > ta.sma(volume, vol_sma_length) * 2.5
+
+
+// Rsi
+
+rsi_lenght = input.int(20, title='RSI lenght', minval=0)
+rsi_up = ta.rma(math.max(ta.change(close), 0), rsi_lenght)
+rsi_down = ta.rma(-math.min(ta.change(close), 0), rsi_lenght)
+rsi_value = rsi_down == 0 ? 100 : rsi_up == 0 ? 0 : 100 - 100 / (1 + rsi_up / rsi_down)
+
+rsi_overs = rsi_value <= 30
+rsi_overb = rsi_value >= 70
+
+
+// logic
+
+tp_1 = input.float(0.4,"  TP 1", minval=0.1, step=0.1)
+tp_2 = input.float(0.6,"  TP 2", minval=0.2, step=0.1)
+tp_3 = input.float(0.8,"  TP 3", minval=0.3, step=0.1)
+tp_4 = input.float(1.0,"  TP 4", minval=0.4, step=0.1)
+tp_5 = input.float(1.2,"  TP 5", minval=0.5, step=0.1)
+
+q_1 = input.int(title='  % TP 1 Q ', defval=20,  minval=1, step=10)
+q_2 = input.int(title='  % TP 2 Q ', defval=40,  minval=1, step=10)
+q_3 = input.int(title='  % TP 3 Q ', defval=60,  minval=1, step=10)
+q_4 = input.int(title='  % TP 4 Q ', defval=80,  minval=1, step=10)
+q_5 = input.int(title='  % TP 5 Q ', defval=100, minval=1, step=10)
+
+sl = input.float(5.0, '% Stop Loss', step=0.1)
+
+long_cond = Volume_condt and rsi_overs
+
+// this code is from author RafaelZioni, modified by wielkieef
+per(procent) =>
+    strategy.position_size != 0 ? math.round(procent / 100 * strategy.position_avg_price / syminfo.mintick) : float(na)
+// --------------------------------------------------------------------------------------------------------------------
+
+if  long_cond
+    strategy.entry('BUY', strategy.long)
+
+strategy.exit('TP 1', qty_percent=q_1, profit=per(tp_1), loss=per(sl) )
+strategy.exit('TP 2', qty_percent=q_2, profit=per(tp_2), loss=per(sl) )
+strategy.exit('TP 3', qty_percent=q_3, profit=per(tp_3), loss=per(sl) )
+strategy.exit('TP 4', qty_percent=q_4, profit=per(tp_4), loss=per(sl) )
+strategy.exit('TP 5', qty_percent=q_5, profit=per(tp_5), loss=per(sl) )
+
+
+// by wielkieef

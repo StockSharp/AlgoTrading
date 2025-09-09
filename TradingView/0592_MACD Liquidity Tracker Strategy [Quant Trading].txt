@@ -1,0 +1,232 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © LiquidityTrckr
+//@version=6
+// Quant Trading Pro
+
+strategy(title = 'MACD Liquidity Tracker Strategy [Quant Trading]', overlay = false,
+         default_qty_type = strategy.percent_of_equity, default_qty_value = 100,
+         commission_type = strategy.commission.percent, commission_value = 0.1,
+         slippage = 3, initial_capital = 1000, margin_long = 0, margin_short = 0)
+
+// === INPUT PARAMETERS ===
+
+// Date Range
+startDate = input.time(timestamp("01 Jan 2018 00:00 +0000"), "Start Date", group="Date Range")
+endDate = input.time(timestamp("31 Dec 2069 23:59 +0000"), "End Date", group="Date Range")
+
+// Short Trades
+allowShortTrades = input.bool(false, "Allow Short Trades?", group="Short Trades")
+
+// MACD Settings (NO MAX LIMITS)
+fastMA = input.int(title = 'Fast MA', defval = 25, minval = 1, step = 1, group = "MACD Settings", tooltip = "Fast EMA period for MACD calculation")
+slowMA = input.int(title = 'Slow MA', defval = 60, minval = 1, step = 1, group = "MACD Settings", tooltip = "Slow EMA period for MACD calculation")
+signalMA = input.int(title = 'Signal MA', defval = 220, minval = 1, step = 1, group = "MACD Settings", tooltip = "Signal line EMA period - now actually used!")
+
+// System Choice Input
+systemChoice = input.string(title="System Type", defval="Normal", options=["Fast", "Normal", "Safe", "Crossover"], group="System Logic")
+
+// Trend-Based MA Inputs (NO MAX LIMITS)
+ma_type = input.string(title="MA Type", defval="EMA", options=["SMA", "EMA", "WMA", "HMA", "RMA", "LSMA", "DEMA", "TEMA", "VIDYA"], group="Trend MA Settings")
+ma_length = input.int(title="MA Length", defval=50, minval=1, step=1, group="Trend MA Settings")
+vidya_volatility_length = input.int(title="VIDYA Volatility Length", defval=9, minval=1, group="Trend MA Settings")
+
+// Risk Management (NO MAX LIMITS)
+useStopLoss = input.bool(title="Enable Stop Loss", defval=false, group="Risk Management")
+stopLossPercent = input.float(title="Stop Loss %", defval=3.0, minval=0.1, step=0.1, group="Risk Management")
+useTakeProfit = input.bool(title="Enable Take Profit", defval=false, group="Risk Management")
+takeProfitPercent = input.float(title="Take Profit %", defval=6.0, minval=0.1, step=0.1, group="Risk Management")
+
+// Signal Display Input
+signalDisplay = input.string(title="Show Signals", defval="Both", options=["Both", "Long Only", "Short Only", "None"], group="Signal Display")
+showText = input.bool(title="Show Signal Text", defval=true, group="Signal Display")
+
+// === 1️⃣ CALCULATIONS ===
+
+// Date Range Check
+inDateRange = time >= startDate and time <= endDate
+
+// MA Calculation
+var float smoothedMA = 0.0
+if ma_type == "SMA"
+    smoothedMA := ta.sma(close, ma_length)
+else if ma_type == "EMA"
+    smoothedMA := ta.ema(close, ma_length)
+else if ma_type == "WMA"
+    smoothedMA := ta.wma(close, ma_length)
+else if ma_type == "HMA"
+    smoothedMA := ta.hma(close, ma_length)
+else if ma_type == "RMA"
+    smoothedMA := ta.rma(close, ma_length)
+else if ma_type == "LSMA"
+    smoothedMA := ta.linreg(close, ma_length, 0)
+else if ma_type == "DEMA"
+    float ema1 = ta.ema(close, ma_length)
+    float ema2 = ta.ema(ema1, ma_length)
+    smoothedMA := 2 * ema1 - ema2
+else if ma_type == "TEMA"
+    float ema1 = ta.ema(close, ma_length)
+    float ema2 = ta.ema(ema1, ma_length)
+    float ema3 = ta.ema(ema2, ma_length)
+    smoothedMA := 3 * ema1 - 3 * ema2 + ema3
+else if ma_type == "VIDYA"
+    float volatility = ta.stdev(close, vidya_volatility_length)
+    float effectiveVolatility = volatility == 0 ? 0.01 : volatility
+    float alpha = 2.0 / (ma_length + 1)
+    float k = ta.stdev(close, vidya_volatility_length) / ta.stdev(ta.stdev(close, vidya_volatility_length), vidya_volatility_length)
+    k := k > 1.0 ? 1.0 : k < 0.0 ? 0.0 : k
+    float vidyaValue = 0.0
+    vidyaValue := alpha * k * close + (1 - alpha * k) * nz(vidyaValue[1], close)
+    smoothedMA := vidyaValue
+
+// MACD Calculation
+[currentMacd, currentSignal, currentHistogram] = ta.macd(close, fastMA, slowMA, signalMA)
+[previousMacd, previousSignal, previousHistogram] = ta.macd(close[1], fastMA, slowMA, signalMA)
+
+// Base Color Logic
+colorBrightBlue        = color.rgb(0, 169, 230)
+colorDarkBlueTransp    = color.rgb(2, 25, 225, 31)
+colorBrightMagenta     = color.rgb(255, 0, 238)
+colorDarkMagentaTransp = color.rgb(178, 0, 169, 17)
+
+// Plot Color Determination
+plotColor = if currentMacd > 0
+    if currentMacd > previousMacd
+        colorBrightBlue
+    else
+        colorDarkBlueTransp
+else if currentMacd <= 0
+    if currentMacd < previousMacd
+        colorBrightMagenta
+    else
+        colorDarkMagentaTransp
+
+// Define color states based on plotColor
+isBrightBlue        = plotColor == colorBrightBlue
+isDarkBlueTransp    = plotColor == colorDarkBlueTransp
+isBrightMagenta     = plotColor == colorBrightMagenta
+isDarkMagentaTransp = plotColor == colorDarkMagentaTransp
+
+// === 2️⃣ ENTRY & EXIT LOGIC ===
+
+// Calculate MACD signal line crossovers
+var bool macdCrossoverLong = currentMacd > currentSignal and previousMacd <= previousSignal and not na(currentSignal) and not na(previousSignal)
+var bool macdCrossoverShort = currentMacd < currentSignal and previousMacd >= previousSignal and not na(currentSignal) and not na(previousSignal)
+
+// Determine Long/Short Signals based on System Choice
+var bool longSignal = false
+var bool shortSignal = false
+
+if systemChoice == "Fast"
+    longSignal := isBrightBlue or isDarkMagentaTransp
+    shortSignal := isDarkBlueTransp or isBrightMagenta
+else if systemChoice == "Normal"
+    // Traditional MACD: Use signal line crossovers
+    longSignal := currentMacd > currentSignal and not na(currentSignal)
+    shortSignal := currentMacd < currentSignal and not na(currentSignal)
+else if systemChoice == "Safe"
+    longSignal := isBrightBlue
+    shortSignal := isDarkBlueTransp or isBrightMagenta or isDarkMagentaTransp
+else if systemChoice == "Crossover"
+    // Pure crossover signals - more precise timing
+    longSignal := macdCrossoverLong
+    shortSignal := macdCrossoverShort
+
+// Define Bar Color based on Active Signal
+candleColor = if longSignal
+    colorBrightBlue
+else if shortSignal
+    colorBrightMagenta
+else
+    na
+
+// Trend-Based Conditions
+isAboveMA = close > smoothedMA
+isBelowMA = close < smoothedMA
+
+// Define One-Time Trigger Conditions for Shapes/Alerts
+longEntryCondition = longSignal and not longSignal[1] and inDateRange
+shortEntryCondition = shortSignal and not shortSignal[1] and inDateRange
+
+// Entry Conditions (trading logic)
+longEntry = longEntryCondition
+shortEntry = shortEntryCondition and allowShortTrades
+
+// Exit Conditions
+longExit = shortSignal and not shortSignal[1] and inDateRange
+shortExit = longSignal and not longSignal[1] and inDateRange
+
+// === 3️⃣ TRADE EXECUTIONS ===
+
+// Long Entries
+if longEntry
+    strategy.entry("Long", strategy.long)
+
+// Short Entries
+if shortEntry
+    strategy.entry("Short", strategy.short)
+
+// Long Exits
+if longExit
+    strategy.close("Long")
+
+// Short Exits
+if shortExit
+    strategy.close("Short")
+
+// Stop Loss and Take Profit Exits
+if useStopLoss and useTakeProfit
+    strategy.exit("Long SL/TP", from_entry="Long", stop=close * (1 - stopLossPercent / 100), limit=close * (1 + takeProfitPercent / 100))
+    strategy.exit("Short SL/TP", from_entry="Short", stop=close * (1 + stopLossPercent / 100), limit=close * (1 - takeProfitPercent / 100))
+else if useStopLoss
+    strategy.exit("Long SL", from_entry="Long", stop=close * (1 - stopLossPercent / 100))
+    strategy.exit("Short SL", from_entry="Short", stop=close * (1 + stopLossPercent / 100))
+else if useTakeProfit
+    strategy.exit("Long TP", from_entry="Long", limit=close * (1 + takeProfitPercent / 100))
+    strategy.exit("Short TP", from_entry="Short", limit=close * (1 - takeProfitPercent / 100))
+
+// === 4️⃣ VISUALIZATIONS ===
+
+// Plot MA on the Main Chart
+plot(smoothedMA, title="Trend MA", color=color.gray, linewidth=1, force_overlay=true)
+
+// Plot Signal Shapes ONLY on Trigger Bar on the Main Chart
+showLongSignal = signalDisplay == "Both" or signalDisplay == "Long Only"
+showShortSignal = signalDisplay == "Both" or signalDisplay == "Short Only"
+
+// Plot shapes with text when showText is true
+plotshape(showText and showLongSignal and longEntryCondition, title='Long Entry Signal with Text', location=location.belowbar, color=candleColor, style=shape.triangleup, size=size.small, text="Long", textcolor=candleColor, force_overlay=true)
+plotshape(showText and showShortSignal and shortEntryCondition, title='Short Entry Signal with Text', location=location.abovebar, color=candleColor, style=shape.triangledown, size=size.small, text="Short", textcolor=candleColor, force_overlay=true)
+
+// Plot shapes without text when showText is false
+plotshape(not showText and showLongSignal and longEntryCondition, title='Long Entry Signal without Text', location=location.belowbar, color=candleColor, style=shape.triangleup, size=size.small, force_overlay=true)
+plotshape(not showText and showShortSignal and shortEntryCondition, title='Short Entry Signal without Text', location=location.abovebar, color=candleColor, style=shape.triangledown, size=size.small, force_overlay=true)
+
+// Plot Colored Candles on the Main Chart
+plotcandle(open, high, low, close, title='Colored Candles', color=candleColor, wickcolor=candleColor, bordercolor=candleColor, force_overlay=true)
+
+// Plot MACD Histogram and Signal Line in Separate Pane
+macdPlot = plot(currentMacd, title='MACD Line', style=plot.style_line, color=color.blue, linewidth=2)
+signalPlot = plot(currentSignal, title='Signal Line', style=plot.style_line, color=color.red, linewidth=1)
+histogramPlot = plot(currentHistogram, title='MACD Histogram', style=plot.style_histogram, color=plotColor, linewidth=3)
+hline(0, title='Zero line', color=color.gray, linestyle=hline.style_dashed)
+
+// Alerts
+alertcondition(longEntryCondition, title='Long Entry Signal Trigger', message='Long entry signal (triangle) detected.')
+alertcondition(shortEntryCondition, title='Short Entry Signal Trigger', message='Short entry signal (triangle) detected.')
+alertcondition(longExit, title='Long Exit Signal', message='Long exit signal detected.')
+alertcondition(shortExit, title='Short Exit Signal', message='Short exit signal detected.')
+
+// Existing Color-Based Alerts
+isNeutralSell_Orig = isDarkMagentaTransp
+isNeutralBuy_Orig = isDarkBlueTransp
+isNoLeverage_Orig = isNeutralSell_Orig or isNeutralBuy_Orig or isBrightMagenta
+isLeverage_Orig = isBrightBlue
+
+alertcondition(isNeutralBuy_Orig, title='Color: Dark Blue Transp', message='Dark Blue Transp color detected.')
+alertcondition(isNeutralSell_Orig, title='Color: Dark Magenta Transp', message='Dark Magenta Transp color detected.')
+alertcondition(isNoLeverage_Orig, title='Color: No Leverage Colors', message='Indicator shows Dark Blue T, Dark Magenta T, or Bright Magenta.')
+alertcondition(isLeverage_Orig, title='Color: Bright Blue', message='Bright Blue (Leverage) color detected.')
+
+// Trend-Based Alerts
+alertcondition(isAboveMA, title='Price Above MA', message='Price is above the selected MA.')
+alertcondition(isBelowMA, title='Price Below MA', message='Price is below the selected MA.')

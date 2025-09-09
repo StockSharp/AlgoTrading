@@ -1,0 +1,99 @@
+//@version=6
+strategy("NEO IMACD Strategy SL y TP", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1)
+// === INPUTS === //
+zlemaSrc     = close
+zlemaLen     = input.int(34, title="ZLEMA Length")
+shortLen     = input.int(12, title="MACD Short Length")
+longLen      = input.int(26, title="MACD Long Length")
+signalLen    = input.int(9, title="MACD Signal Smoothing")
+emaLen100    = input.int(100, title="EMA 100 Length")
+emaColor     = input.color(color.yellow, title="EMA 100 Color")
+emaWidth     = input.int(3, title="EMA 100 Line Width", minval=1, maxval=5)
+riskReward   = input.float(2.0, title="Risk-Reward Ratio (TP:SL)", minval=1.0)
+stopLossPerc = input.float(0.5, title="Stop Loss %", minval=0.1, step=0.1)
+
+// Mostrar líneas y precios
+showTPSLLines     = input.bool(true, title="Show TP/SL Lines?")
+showPriceLabels   = input.bool(true, title="Show TP/SL Price Labels?")
+
+// === EMA 100 === //
+ema100 = ta.ema(close, emaLen100)
+plot(ema100, title="EMA 100", color=emaColor, linewidth=emaWidth)
+
+// === ZLEMA & MACD === //
+ema1   = ta.ema(zlemaSrc, zlemaLen)
+ema2   = ta.ema(ema1, zlemaLen)
+zlema  = 2 * ema1 - ema2
+fastMA = ta.ema(zlema, shortLen)
+slowMA = ta.ema(zlema, longLen)
+macdLine = fastMA - slowMA
+signal   = ta.sma(macdLine, signalLen)
+hist     = macdLine - signal
+
+// === RSI para cierre adicional === //
+rsiValue = ta.rsi(close, 14)
+wasAbove70 = rsiValue[1] > 70 and rsiValue <= 70
+wasBelow30 = rsiValue[1] < 30 and rsiValue >= 30
+
+// === CONDICIONES === //
+histFalling    = hist < hist[1] and hist[1] > hist[2]
+macdCrossUp    = ta.crossover(macdLine, signal)
+macdCrossDown  = ta.crossunder(macdLine, signal)
+linesParallel  = math.abs(macdLine - signal) < 0.03 and math.abs(macdLine[1] - signal[1]) < 0.03
+
+// === ENTRADAS === //
+longCondition  = close > ema100 and macdCrossUp and not linesParallel
+shortCondition = close < ema100 and macdCrossDown and not linesParallel
+
+var float longEntryPrice  = na
+var float shortEntryPrice = na
+var line tpLine = na
+var line slLine = na
+
+// === LONG === //
+if (longCondition)
+    longEntryPrice := close
+    stopLoss = close * (1 - stopLossPerc / 100)
+    takeProfit = close + (close - stopLoss) * riskReward
+    strategy.entry("Long", strategy.long)
+    if (showTPSLLines)
+        tpLine := line.new(bar_index, takeProfit, bar_index, takeProfit,
+          color=color.green, style=line.style_solid, width=3)
+        slLine := line.new(bar_index, stopLoss, bar_index, stopLoss,
+          color=color.red, style=line.style_solid, width=3)
+        if (showPriceLabels)
+            label.new(bar_index, takeProfit, "TP: " + str.tostring(takeProfit, "#.##"),
+              style=label.style_label_right, textcolor=color.white, color=color.green)
+            label.new(bar_index, stopLoss, "SL: " + str.tostring(stopLoss, "#.##"),
+              style=label.style_label_right, textcolor=color.white, color=color.red)
+
+// === SHORT === //
+if (shortCondition)
+    shortEntryPrice := close
+    stopLoss = close * (1 + stopLossPerc / 100)
+    takeProfit = close - (stopLoss - close) * riskReward
+    strategy.entry("Short", strategy.short)
+    if (showTPSLLines)
+        tpLine := line.new(bar_index, takeProfit, bar_index, takeProfit,
+          color=color.green, style=line.style_solid, width=3)
+        slLine := line.new(bar_index, stopLoss, bar_index, stopLoss,
+          color=color.red, style=line.style_solid, width=3)
+        if (showPriceLabels)
+            label.new(bar_index, takeProfit, "TP: " + str.tostring(takeProfit, "#.##"),
+              style=label.style_label_right, textcolor=color.white, color=color.green)
+            label.new(bar_index, stopLoss, "SL: " + str.tostring(stopLoss, "#.##"),
+              style=label.style_label_right, textcolor=color.white, color=color.red)
+
+// === CIERRES === //
+exitLong  = macdCrossDown or histFalling or wasAbove70
+exitShort = macdCrossUp or histFalling or wasBelow30
+
+if (strategy.position_size > 0 and exitLong)
+    strategy.close("Long", comment="Exit Long")
+    line.delete(tpLine)
+    line.delete(slLine)
+
+if (strategy.position_size < 0 and exitShort)
+    strategy.close("Short", comment="Exit Short")
+    line.delete(tpLine)
+    line.delete(slLine)

@@ -1,0 +1,106 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © wbburgin
+
+//@version=5
+strategy("RSI Box Strategy (pseudo-Grid Bot)", overlay=true, initial_capital = 10000,
+ default_qty_type = strategy.percent_of_equity, default_qty_value = 1, pyramiding = 33, commission_value=0.10)
+
+src = input.source(close,"Source")
+rsiLength = input.int(14,"RSI Length")
+oblvl = input.int(70,"Overbought Level")
+oslvl = input.int(30,"Oversold Level")
+useShorts = input.bool(false,"Use Shorts",inline="B")
+showGrid = input.bool(false,"Show Grid",inline="B")
+
+rsi = ta.rsi(src,rsiLength)
+
+rsi_crossdn = ta.crossunder(rsi,oblvl)
+rsi_crossup = ta.crossover(rsi,oslvl)
+
+highest = ta.vwma(ta.highest(src,rsiLength),rsiLength)
+lowest = ta.vwma(ta.lowest(src,rsiLength), rsiLength)
+
+gridTop = ta.valuewhen(rsi_crossdn,highest,0)
+gridBottom = ta.valuewhen(rsi_crossup,lowest,0)
+gridMiddle = math.avg(gridTop,gridBottom)
+gridMidTop = math.avg(gridMiddle,gridTop)
+gridMidBottom = math.avg(gridMiddle,gridBottom)
+
+diff1 = math.abs(src - gridTop)
+diff2 = math.abs(src - gridBottom)
+diff3 = math.abs(src - gridMiddle)
+diff4 = math.abs(src - gridMidTop)
+diff5 = math.abs(src - gridMidBottom)
+
+minDiff = math.min(diff1, diff2, diff3, diff4, diff5)
+
+// Determine which line is the closest
+float closestLine = na
+if minDiff == diff1
+    closestLine := gridTop
+else if minDiff == diff2
+    closestLine := gridBottom
+else if minDiff == diff3
+    closestLine := gridMiddle
+else if minDiff == diff4
+    closestLine := gridMidTop
+else if minDiff == diff5
+    closestLine := gridMidBottom
+
+buyCrosses = ta.crossover(src,gridTop) or ta.crossover(src,gridBottom) or ta.crossover(src,gridMiddle) or ta.crossover(src,gridMidTop) or ta.crossover(src,gridMidBottom)
+sellCrosses= ta.crossunder(src,gridTop) or ta.crossunder(src,gridBottom) or ta.crossunder(src,gridMiddle) or ta.crossunder(src,gridMidTop) or ta.crossunder(src,gridMidBottom)
+
+condition_bull = buyCrosses
+condition_bear = sellCrosses
+
+var float bull_status_line = na
+var float bear_status_line = na
+var float bull_buy_line = na
+var float bear_sell_line = na
+
+if condition_bull
+    bull_status_line := closestLine
+if condition_bear
+    bear_status_line := closestLine
+
+if bull_status_line == gridBottom
+    bull_buy_line := gridMidBottom
+if bull_status_line == gridMidBottom
+    bull_buy_line := gridMiddle
+if bull_status_line == gridMiddle
+    bull_buy_line := gridMidTop
+if bull_status_line == gridMidTop
+    bull_buy_line := gridTop
+
+if bear_status_line == gridTop
+    bear_sell_line := gridMidTop
+if bear_status_line == gridMidTop
+    bear_sell_line := gridMiddle
+if bear_status_line == gridMiddle
+    bear_sell_line := gridMidBottom
+if bear_status_line == gridMidBottom
+    bear_sell_line := gridBottom
+
+l = ta.crossover(src,bull_buy_line)
+s = ta.crossunder(src,bear_sell_line)
+
+if l
+    strategy.entry("Long",strategy.long)
+if s
+    strategy.close("Long")
+    if useShorts
+        strategy.entry("Short",strategy.short)
+
+// Plotting
+in_buy = ta.barssince(l) < ta.barssince(s)
+u=plot(bull_buy_line,color=na,title="Buy Plot")
+d=plot(bear_sell_line,color=na,title="Sell Plot")
+
+plot(not showGrid?na:gridBottom,color=color.new(color.white,75),title="Grid Line -2")
+plot(not showGrid?na:gridMidBottom,color=color.new(color.white,75),title="Grid Line -1")
+plot(not showGrid?na:gridMiddle,color=color.new(color.white,75),title="Grid Line 0")
+plot(not showGrid?na:gridMidTop,color=color.new(color.white,75),title="Grid Line 1")
+plot(not showGrid?na:gridTop,color=color.new(color.white,75),title="Grid Line 2")
+
+
+fill(u,d,color=in_buy ? color.new(color.lime,75) : color.new(color.red,75))

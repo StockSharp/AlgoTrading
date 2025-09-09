@@ -1,0 +1,114 @@
+//@version=5
+strategy("Fibonacci-Only Strategy", overlay=true)
+
+// Input parameters
+timeframe = input.timeframe("15", "Select Timeframe", options=["1", "5", "15", "30", "60", "240", "D"])
+use_break_strategy = input(true, "Use Break Strategy")
+stop_loss_percent = input.float(1.0, "Stop Loss %", minval=0.1, maxval=2.0, step=0.1)
+use_atr_for_sl = input(true, "Use ATR for Stop Loss")
+atr_multiplier = input.float(2.0, "ATR Multiplier for SL", minval=0.5, maxval=5.0, step=0.1)
+use_trailing_stop = input(true, "Use Trailing Stop")
+trailing_stop_percent = input.float(1.5, "Trailing Stop %", minval=0.1, maxval=5.0, step=0.1)
+
+// Custom Fibonacci retracement levels
+fib_high = ta.highest(high, 100)
+fib_low = ta.lowest(low, 100)
+fib_diff = fib_high - fib_low
+fib_19 = fib_high - fib_diff * 0.19
+fib_8256 = fib_high - fib_diff * 0.8256
+fib_19_reverse = fib_low + fib_diff * 0.19
+
+// Plot Fibonacci levels
+plot(fib_19, color=color.green, style=plot.style_line, title="19% Fib (High to Low)")
+plot(fib_8256, color=color.purple, style=plot.style_line, title="82.56% Fib")
+plot(fib_19_reverse, color=color.orange, style=plot.style_line, title="19% Fib (Low to High)")
+
+// Fibonacci touch and break conditions
+fib_19_touch = low[1] > fib_19 and low <= fib_19
+fib_8256_touch = high[1] < fib_8256 and high >= fib_8256
+fib_19_break = close < fib_19 and open > fib_19
+fib_8256_break = close > fib_8256 and open < fib_8256
+fib_19_reverse_touch = high[1] < fib_19_reverse and high >= fib_19_reverse
+fib_19_reverse_break = close > fib_19_reverse and open < fib_19_reverse
+
+// Confirmation candle conditions
+bull_confirmation = close > open
+bear_confirmation = close < open
+
+// Long entry conditions
+long_condition_touch =
+     (fib_19_touch or fib_19_reverse_touch) and bull_confirmation
+
+long_condition_break =
+     use_break_strategy and
+     (fib_19_break or fib_19_reverse_break) and bull_confirmation
+
+// Short entry conditions
+short_condition_touch =
+     fib_8256_touch and bear_confirmation
+
+short_condition_break =
+     use_break_strategy and
+     fib_8256_break and bear_confirmation
+
+// ATR for dynamic stop loss
+atr = ta.atr(14)
+
+// Entry and exit logic
+if (long_condition_touch or long_condition_break)
+    strategy.entry("Long", strategy.long)
+
+if (short_condition_touch or short_condition_break)
+    strategy.entry("Short", strategy.short)
+
+// Calculate stop loss and take profit levels
+var float long_stop_loss = na
+var float short_stop_loss = na
+
+if (strategy.position_size > 0)
+    long_stop_loss := use_atr_for_sl ? strategy.position_avg_price - atr * atr_multiplier : strategy.position_avg_price * (1 - stop_loss_percent / 100)
+
+if (strategy.position_size < 0)
+    short_stop_loss := use_atr_for_sl ? strategy.position_avg_price + atr * atr_multiplier : strategy.position_avg_price * (1 + stop_loss_percent / 100)
+
+take_profit_levels = array.new_float(7)
+for i = 0 to 6
+    tp_percent = 1 + (i + 1) * 0.5 / 100  // 0.5% increments
+    array.set(take_profit_levels, i, strategy.position_avg_price * tp_percent)
+
+// Apply stop loss, trailing stop, and take profits
+if (strategy.position_size > 0)
+    if use_trailing_stop
+        trail_price = high - (high - strategy.position_avg_price) * trailing_stop_percent / 100
+        strategy.exit("Long TS", "Long", stop=math.max(trail_price, long_stop_loss))
+    else
+        strategy.exit("Long SL", "Long", stop=long_stop_loss)
+
+    for i = 0 to 6
+        long_tp_price = array.get(take_profit_levels, i)
+        strategy.exit("Long TP" + str.tostring(i+1), "Long", limit=long_tp_price, qty_percent=14.28)  // 100% / 7 ≈ 14.28%
+
+if (strategy.position_size < 0)
+    if use_trailing_stop
+        trail_price = low + (strategy.position_avg_price - low) * trailing_stop_percent / 100
+        strategy.exit("Short TS", "Short", stop=math.min(trail_price, short_stop_loss))
+    else
+        strategy.exit("Short SL", "Short", stop=short_stop_loss)
+
+    for i = 0 to 6
+        short_tp_price = array.get(take_profit_levels, i)
+        strategy.exit("Short TP" + str.tostring(i+1), "Short", limit=short_tp_price, qty_percent=14.28)  // 100% / 7 ≈ 14.28%
+
+// Plot buy and sell signals
+plotshape(long_condition_touch or long_condition_break, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small, title="Buy Signal")
+plotshape(short_condition_touch or short_condition_break, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small, title="Sell Signal")
+
+// Debugging output
+if (long_condition_touch or long_condition_break)
+    label.new(bar_index, low, "Long", color=color.green, textcolor=color.white, style=label.style_label_up, size=size.small)
+if (short_condition_touch or short_condition_break)
+    label.new(bar_index, high, "Short", color=color.red, textcolor=color.white, style=label.style_label_down, size=size.small)
+
+// Alert conditions
+alertcondition(long_condition_touch or long_condition_break, title="Long Entry", message="Long entry signal detected")
+alertcondition(short_condition_touch or short_condition_break, title="Short Entry", message="Short entry signal detected")

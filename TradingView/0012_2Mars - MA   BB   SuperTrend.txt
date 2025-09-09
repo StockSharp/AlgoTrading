@@ -1,0 +1,649 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=5
+// | ╔══╗╔╗──╔╗╔══╗╔═══╗╔══╗                ____/\_____________ |
+// | ╚═╗║║║──║║║╔╗║║╔═╗║║╔═╝  Strategy     /\  /  \/\  /\       |
+// | ╔═╝║║╚╗╔╝║║╚╝║║╚═╝║║╚═╗      /\    __/__\/______\/________ |
+// | ║╔═╝║╔╗╔╗║║╔╗║║╔╗╔╝╚═╗║     /  \  /\/                      |
+// | ║╚═╗║║╚╝║║║║║║║║║║─╔═╝║    /    \/                         |
+// | ╚══╝╚╝──╚╝╚╝╚╝╚╝╚╝─╚══╝   /                    ©facejungle |
+// |__________________________/_________________________________|
+strategy('2Mars - MA / BB / SuperTrend',
+     shorttitle          = '2Mars',
+     overlay             = true,
+     initial_capital     = 10000,
+     pyramiding          = 3,
+     currency            = currency.USD,
+     default_qty_type    = strategy.percent_of_equity,
+     default_qty_value   = 5,
+     commission_type     = strategy.commission.percent,
+     commission_value    = 0.1,
+     margin_long         = 100.0,
+     margin_short        = 100.0,
+     max_bars_back       = 5000,
+     calc_on_order_fills     = false,
+     calc_on_every_tick      = false,
+     process_orders_on_close = true,
+     use_bar_magnifier       = false
+     )
+import facejungle/utils/17 as utils
+float epsilon       = syminfo.mintick
+int character_count = int(math.log10(1/epsilon))
+float priceMedianHighLow = (high + low) / 2
+float priceMedianOpenClose = (open + close) / 2
+
+string GENERAL_GRP   = 'General'
+float priceSource    = input.source(close, 'Source', group=GENERAL_GRP, display = display.none)
+int barsConfirm      = input.int(2, 'Bars confirm', minval=1, step=1, display = display.none, group=GENERAL_GRP)
+string entryTrigger  = input.string('close', 'Entry trigger', ['close', 'high/low', 'high/low median', 'open/close median'], group=GENERAL_GRP, display = display.none)
+
+string ST_GRP                     = "SuperTrend"
+bool useSuperTrendSignal          = input.bool(false, title='SuperTrend as entry signal', tooltip = 'Not a required! Uses for additional entry to position. For entry will required confirm MA trend', display = display.none, group=ST_GRP)
+bool useSuperTrend                = input.bool(true, title='SuperTrend confirm', tooltip = 'Not a required! Uses for - Confirm entry to position. Stop-loss confirm. Stop-loss price.', display = display.none, group=ST_GRP)
+float superTrendFactor            = input.float(4, title="Factor", step=0.1, display = display.none, group=ST_GRP)
+int superTrendPeriod              = input.int(20, title="Length", display = display.none, group=ST_GRP)
+[supertrendOrig, supertrendDirection] = ta.supertrend(superTrendFactor, superTrendPeriod)
+float supertrend = ta.rma(supertrendOrig, 4)
+
+string MA_GRP       = "Moving average"
+bool useMaStrategy  = input.bool(true, title='Use MA Cross strategy', tooltip = 'Not a required! Uses for - Entry signal to position when signal and basis line cross (MA Cross strategy). When price cross the MA (add. orders #3).', display = display.none, group=MA_GRP)
+string maBasisType  = input.string('sma', 'Basis MA type', ['alma', 'ema', 'dema', 'tema', 'sma', 'smma', 'ssma', 'hma', 'rma', 'swma', 'vwma', 'wma', 'linreg', 'median', 'mom', 'high', 'low', 'medianHigh', 'medianLow', 'percentrank'], group=MA_GRP, display = display.none)
+string maSignalType = input.string('sma', 'Signal MA type', ['alma', 'ema', 'dema', 'tema', 'sma', 'smma', 'ssma', 'hma', 'rma', 'swma', 'vwma', 'wma', 'linreg', 'median', 'mom', 'high', 'low', 'medianHigh', 'medianLow', 'percentrank'], group=MA_GRP, display = display.none)
+float maRatio       = input.float(1.08, 'Ratio', minval=0.01, step=0.02, group=MA_GRP, display = display.none)
+int maMultiplier    = input.int(89, 'Multiplier', minval=1, step=1, group=MA_GRP, tooltip = 'Basis length = Ratio * Multiplier, Signal length = Multiplier', display = display.none)
+int maBasisLengh    = math.round(maRatio * maMultiplier)
+float maBasis       = utils.maCustomseries(priceSource, maBasisType, maBasisLengh)
+float maSignal      = utils.maCustomseries(priceSource, maSignalType, maMultiplier)
+
+string BB_GRP      = "Bollinger Bands"
+string bbType      = input.string('wma', 'Type', ['alma', 'ema', 'dema', 'tema', 'sma', 'smma', 'ssma', 'hma', 'rma', 'swma', 'vwma', 'wma', 'linreg', 'median', 'mom', 'high', 'low', 'medianHigh', 'medianLow', 'percentrank'], tooltip = 'Not a required! Uses for - Take profit. Additionals orders #1 and #2. If use ATR stop-loss, lower and upper line #3 used for stop-loss price update.', group=BB_GRP, display = display.none)
+int bbLength       = input.int(30, 'length', minval=1, step=1, group=BB_GRP, display = display.none)
+float bbMultiplier = input.float(3, minval=1, maxval=50, step=0.1, title="StdDev", group=BB_GRP, display = display.none)
+string useBBLong   = input.string('lower3', '↗️ Long orders :', ['lower', 'lower2', 'lower3', 'upper', 'upper2', 'upper3', 'off'], inline='Short orders', display = display.none)
+string useBBLong2  = input.string('lower2', ' + ', ['lower', 'lower2', 'lower3', 'upper', 'upper2', 'upper3', 'off'], inline='Short orders', display = display.none)
+string useBBLong3  = input.string('off', ' + ', ['basis', 'signal', 'off'], inline='Short orders', display = display.none)
+string useBBShort  = input.string('upper3', '↘️ Short orders:', ['upper', 'upper2', 'upper3', 'lower', 'lower2', 'lower3', 'off'], inline='Long orders', display = display.none)
+string useBBShort2 = input.string('upper2', ' + ', ['upper', 'upper2', 'upper3', 'lower', 'lower2', 'lower3', 'off'], inline='Long orders', display = display.none)
+string useBBShort3 = input.string('off', ' + ', ['basis', 'signal', 'off'], inline='Long orders', display = display.none)
+[bbMiddle, bbUpper, bbUpper2, bbUpper3, bbUpper4, bbLower, bbLower2, bbLower3, bbLower4] = utils.fj_stdev(priceSource, bbLength, bbMultiplier, bbType)
+
+string TP_GRP          = "Take-Profit"
+string takeProfitTrigger  = input.string('close', 'Take-profit trigger', ['close', 'high/low', 'high/low median', 'open/close median'], inline = "1", group=TP_GRP, display = display.none)
+string takeProfitQtyType  = input.string('Percentage', 'Qty type', ['Percentage', 'Fixed'], inline = "1", group=TP_GRP, display = display.none)
+bool useTakeProfit     = input.bool(false, title='Use TP orders', display = display.none, group=TP_GRP)
+bool useTakeProfit2    = input.bool(true, title='Use TP orders 2', display = display.none, group=TP_GRP)
+bool useTakeProfit3    = input.bool(true, title='Use TP orders 3', display = display.none, group=TP_GRP)
+int takeProfitLongQty  = input.int(5, '↗️ Long qty', minval=0, maxval=100, step=2, inline='takeQty', display = display.none, group=TP_GRP)
+int takeProfitShortQty = input.int(5, '↘️ Short qty', minval=0, maxval=100, step=2, inline='takeQty', display = display.none, group=TP_GRP)
+
+string LO_GRP                     = "Limit-Orders"
+bool useLimitOrder                = input.bool(false, title='Use limit orders', tooltip = 'Calculate for before each entry order. Long: low price - ATR * Multiplier, Short: high price + ATR * Multiplier', display = display.none, group=LO_GRP)
+int limitOrderPeriod              = input.int(12, 'Length', minval=1, step=1, tooltip = 'ATR', display = display.none, group=LO_GRP)
+float limitOrderMultiplier        = input.float(0.1, 'Multiplier', step=0.1, display = display.none, group=LO_GRP)
+series float limitOrderAtr        = ta.atr(limitOrderPeriod)
+var float limitOrderPrice         = na
+var string limitOrderDirection    = 'flat'
+float limitOrderPriceLong         = useLimitOrder ? math.round(low - (limitOrderAtr * limitOrderMultiplier), character_count) : na
+float limitOrderPriceShort        = useLimitOrder ? math.round(high + (limitOrderAtr * limitOrderMultiplier), character_count) : na
+
+string SL_GRP                   = "Stop-Loss"
+string stopLossTrigger          = input.string('open/close median', 'Stop-loss trigger', ['close', 'high/low', 'high/low median', 'open/close median'], group=SL_GRP, display = display.none)
+string stopLossType             = input.string('ATR', 'Stop-loss:', ['off', 'SuperTrend + ATR', 'ATR', 'StdDev'], tooltip = 'Update with each entry order and take profit #3. SuperTrend + ATR: update with each trend change not in our favor. If use "SuperTrend confirm", then the stop loss will require confirmation trend change.', group=SL_GRP, display = display.none)
+int SLAtrPeriod                 = input.int(12, title="Length", tooltip = 'ATR and StdDev', display = display.none, group=SL_GRP)
+float SLAtrMultiplierLong       = input.float(6, title="Long mult.", step=0.1, tooltip = 'ATR: low - ATR * Long mult. / SuperTrend: SuperTrend - ATR * Long mult. / StdDev: low - StdDev - ATR * Long mult.', display = display.none, group=SL_GRP)
+float SLAtrMultiplierShort      = input.float(4.3, title="Short mult.", step=0.1, tooltip = 'ATR: high + ATR * Short mult. / SuperTrend: SuperTrend + ATR * Short mult. / StdDev: high + StdDev + ATR * Short mult.', display = display.none, group=SL_GRP)
+series float stopLossAtr        = ta.atr(SLAtrPeriod)
+series float stopLossStdDev     = ta.stdev(priceSource, SLAtrPeriod)
+bool useFlexStopLoss            = input.bool(false, title='Use flex stop-loss for ATR and StdDev', tooltip = 'If the SuperTrend or MA trend changes not in our favor, then adjusting the stop loss.', display = display.none, group=SL_GRP)
+float SLFlexMult                = input.float(0, step=0.1, title="Multiplier __________________________________", tooltip = 'Long: stop-loss price + (ATR * Long mult.) * Multiplier. Short: stop-loss price - (ATR * Short mult.) * Multiplier.', display = display.none, group=SL_GRP)
+
+var series float stopLossPriceLong  = na
+var series float stopLossPriceShort = na
+float calcStopLossPriceLong =
+ stopLossType == 'SuperTrend + ATR' ? math.round(supertrend[1] - (stopLossAtr * SLAtrMultiplierLong), character_count) :
+ stopLossType == 'ATR'              ? math.round(low - (stopLossAtr * SLAtrMultiplierLong), character_count):
+ stopLossType == 'StdDev'           ? math.round(low - stopLossStdDev - (stopLossAtr * SLAtrMultiplierLong), character_count) :
+ na
+float calcStopLossPriceShort =
+ stopLossType == 'SuperTrend + ATR' ? math.round(supertrend[1] + (stopLossAtr * SLAtrMultiplierShort), character_count) :
+ stopLossType == 'ATR'              ? math.round(high + (stopLossAtr * SLAtrMultiplierShort), character_count) :
+ stopLossType == 'StdDev'           ? math.round(high + stopLossStdDev + (stopLossAtr * SLAtrMultiplierShort), character_count) :
+ na
+
+// >>>>>>>>>>>>>>>>>>>>>> Counters
+counterEvent(bool enent, bool enent2) =>
+    int scount = 0
+    scount := enent and enent2 ? nz(scount[1]) + 1 : 0
+barCrossoverCounter(float signalPrice, float basePrice) =>
+    bool bcond = signalPrice > basePrice
+    int bcount = 0
+    bcount := bcond ? nz(bcount[1]) + 1 : 0
+barCrossunderCounter(float signalPrice, float basePrice) =>
+    bool scond = signalPrice < basePrice
+    int scount = 0
+    scount := scond ? nz(scount[1]) + 1 : 0
+
+// _________________________________________________
+// v                                               v
+// v                CONDITIONS BLOCK               v
+// v_______________________________________________v
+float entryTriggerLong  = entryTrigger == 'high/low' ? high : entryTrigger == 'high/low median' ? priceMedianHighLow : entryTrigger == 'open/close median' ? priceMedianOpenClose : close
+bool condPositionLong   = strategy.position_size > 0
+bool condSuperTrendLong = supertrendDirection < 0
+bool condSuperTrendLongSignal = barsConfirm == barCrossunderCounter(supertrendDirection, 0)
+bool condMaLong         = barsConfirm == barCrossoverCounter(maSignal, maBasis)
+bool condBasisLong      = barsConfirm == barCrossoverCounter(entryTriggerLong, maBasis)
+bool condSignalLong     = barsConfirm == barCrossoverCounter(entryTriggerLong, maSignal)
+bool condBBLong1        = barsConfirm == barCrossoverCounter(entryTriggerLong, bbLower)
+bool condBBLong2        = barsConfirm == barCrossoverCounter(entryTriggerLong, bbLower2)
+bool condBBLong3        = barsConfirm == barCrossoverCounter(entryTriggerLong, bbLower3)
+bool condBBLong4        = barsConfirm == barCrossoverCounter(entryTriggerLong, bbUpper)
+bool condBBLong5        = barsConfirm == barCrossoverCounter(entryTriggerLong, bbUpper2)
+bool condBBLong6        = barsConfirm == barCrossoverCounter(entryTriggerLong, bbUpper3)
+
+float entryTriggerShort  = entryTrigger == 'high/low' ? low : entryTrigger == 'high/low median' ? priceMedianHighLow : entryTrigger == 'open/close median' ? priceMedianOpenClose : close
+bool condPositionShort   = strategy.position_size < 0
+bool condSuperTrendShort = supertrendDirection > 0
+bool condSuperTrendShortSignal = barsConfirm == barCrossoverCounter(supertrendDirection, 0)
+bool condMaShort         = barsConfirm == barCrossunderCounter(maSignal, maBasis)
+bool condBasisShort      = barsConfirm == barCrossunderCounter(entryTriggerShort, maBasis)
+bool condSignalShort     = barsConfirm == barCrossunderCounter(entryTriggerShort, maSignal)
+bool condBBShort1        = barsConfirm == barCrossunderCounter(entryTriggerShort, bbUpper)
+bool condBBShort2        = barsConfirm == barCrossunderCounter(entryTriggerShort, bbUpper2)
+bool condBBShort3        = barsConfirm == barCrossunderCounter(entryTriggerShort, bbUpper3)
+bool condBBShort4        = barsConfirm == barCrossunderCounter(entryTriggerShort, bbLower)
+bool condBBShort6        = barsConfirm == barCrossunderCounter(entryTriggerShort, bbLower3)
+bool condBBShort5        = barsConfirm == barCrossunderCounter(entryTriggerShort, bbLower2)
+
+// _________________________________________________
+// v                                               v
+// v            TRADING FUNCTIONS BLOCK            v
+// v_______________________________________________v
+stopLossShort(string orderComment=na) =>
+    strategy.cancel('Short') // cancel short orders
+    strategy.close ('Short', qty_percent = 100, comment = na(orderComment) == false ? orderComment : na)
+stopLossLong(string orderComment=na) =>
+    strategy.cancel('Long') // cancel long orders
+    strategy.close ('Long', qty_percent = 100, comment = na(orderComment) == false ? orderComment : na)
+
+// >>>>>>>>>>>>>>>>>>>>>> Function for entry to long position
+newEntryLong(string orderComment=na) =>
+    if condPositionShort
+        stopLossShort('Close short')
+    strategy.entry(
+     'Long',
+     strategy.long,
+     stop    = stopLossType != 'off' ? stopLossPriceLong : na,
+     limit   = useLimitOrder ? limitOrderPriceLong : na,
+     comment = na(orderComment) == false ? orderComment : na
+     )
+
+// >>>>>>>>>>>>>>>>>>>>>> Function for entry to short position
+newEntryShort(string orderComment=na) =>
+    if condPositionLong
+        stopLossLong('Close short')
+    strategy.entry(
+     'Short',
+     strategy.short,
+     stop    = stopLossType != 'off' ? stopLossPriceShort : na,
+     limit   = useLimitOrder ? limitOrderPriceShort : na,
+     comment = na(orderComment) == false ? orderComment : na
+     )
+
+// >>>>>>>>>>>>>>>>>>>>>>
+takeLong(string orderComment=na) =>
+    strategy.close('Long', qty_percent = takeProfitQtyType == "Percentage" ? takeProfitLongQty : na, qty = takeProfitQtyType != "Percentage" ? takeProfitLongQty : na, comment = na(orderComment) == false ? orderComment : na)
+// >>>>>>>>>>>>>>>>>>>>>>
+takeShort(string orderComment=na) =>
+    strategy.close('Short', qty_percent = takeProfitQtyType == "Percentage" ? takeProfitLongQty : na, qty = takeProfitQtyType != "Percentage" ? takeProfitLongQty : na, comment = na(orderComment) == false ? orderComment : na)
+
+// _________________________________________________
+// v                                               v
+// v             POSITION ENTRIES BLOCK            v
+// v_______________________________________________v
+if useSuperTrendSignal
+    if condSuperTrendLongSignal and maSignal > maBasis
+        limitOrderPrice     := limitOrderPriceLong
+        limitOrderDirection := 'Long'
+        stopLossPriceLong   := calcStopLossPriceLong
+        newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'supertrend'))
+    if condSuperTrendShortSignal and maSignal < maBasis
+        limitOrderPrice     := limitOrderPriceShort
+        limitOrderDirection := 'Short'
+        stopLossPriceShort  := calcStopLossPriceShort
+        newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'supertrend'))
+if useSuperTrend
+// >>>>>>>>>>>>>>>>>>>>>> LONG ORDERS WITH SuperTrend
+    //-> Additionals ordrders #1-2
+    if useBBLong == 'lower' or useBBLong2 == 'lower'
+        if condBBLong1 and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbLower' ))
+    if useBBLong == 'lower2' or useBBLong2 == 'lower2'
+        if condBBLong2 and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbLower2'))
+    if useBBLong == 'lower3' or useBBLong2 == 'lower3'
+        if condBBLong3 and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbLower3'))
+    if useBBLong == 'upper' or useBBLong2 == 'upper'
+        if condBBLong4 and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbUpper'))
+    if useBBLong == 'upper2' or useBBLong2 == 'upper2'
+        if condBBLong5 and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong( orderComment=utils.commentOrderCustomseries('enter_long', 'bbUpper2'))
+    if useBBLong == 'upper3' or useBBLong2 == 'upper3'
+        if condBBLong6 and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbUpper3'))
+    //-> Additionals ordrders #3
+    if useBBLong3 == 'basis'
+        if condBasisLong and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'maBasis'))
+    if useBBLong3 == 'signal'
+        if condSignalLong and condSuperTrendLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'maSignal'))
+    //-> cross ma strategy
+    if useMaStrategy and condSuperTrendLong and condMaLong
+        limitOrderPrice     := limitOrderPriceLong
+        limitOrderDirection := 'Long'
+        stopLossPriceLong   := calcStopLossPriceLong
+        newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'maCross'))
+
+// >>>>>>>>>>>>>>>>>>>>>> SHORT ORDERS WITH SuperTrend
+    //-> Additionals ordrders #1-2
+    if useBBShort == 'upper' or useBBShort2 == 'upper'
+        if condBBShort1 and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'bbUpper'))
+    if useBBShort == 'upper2' or useBBShort2 == 'upper2'
+        if condBBShort2 and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'bbUpper2'))
+    if useBBShort == 'upper3' or useBBShort2 == 'upper3'
+        if condBBShort3 and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'bbUpper3'))
+    if useBBShort == 'lower' or useBBShort2 == 'lower'
+        if condBBShort4 and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'bbLower'))
+    if useBBShort == 'lower2' or useBBShort2 == 'lower2'
+        if condBBShort5 and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'bbLower2'))
+    if useBBShort == 'lower3' or useBBShort2 == 'lower3'
+        if condBBShort6 and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'bbLower3'))
+    //-> Additionals ordrders #3
+    if useBBShort3 == 'basis'
+        if condBasisShort and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'maBasis'))
+    if useBBShort3 == 'signal'
+        if condSignalShort and condSuperTrendShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'maSignal'))
+    //-> cross ma strategy
+    if useMaStrategy and condSuperTrendShort and condMaShort
+        limitOrderPrice     := limitOrderPriceShort
+        limitOrderDirection := 'Short'
+        stopLossPriceShort  := calcStopLossPriceShort
+        newEntryShort(orderComment=utils.commentOrderCustomseries('enter_short', 'maCross'))
+
+else
+// >>>>>>>>>>>>>>>>>>>>>> LONG ORDERS
+    //vvvvvvvvv Additionals ordrders #1-2 vvvvvvvvv
+    if useBBLong == 'lower' or useBBLong2 == 'lower'
+        if condBBLong1
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbLower'))
+    if useBBLong == 'lower2' or useBBLong2 == 'lower2'
+        if condBBLong2
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbLower2'))
+    if useBBLong == 'lower3' or useBBLong2 == 'lower3'
+        if condBBLong3
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbLower3'))
+    if useBBLong == 'upper' or useBBLong2 == 'upper'
+        if condBBLong4
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbUpper'))
+    if useBBLong == 'upper2' or useBBLong2 == 'upper2'
+        if condBBLong5
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbUpper2'))
+    if useBBLong == 'upper3' or useBBLong2 == 'upper3'
+        if condBBLong6
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'bbUpper3'))
+    //vvvvvvvvv Additionals ordrders #3 vvvvvvvvv
+    if useBBLong3 == 'basis'
+        if condBasisLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'maBasis'))
+    if useBBLong3 == 'signal'
+        if condSignalLong
+            limitOrderPrice     := limitOrderPriceLong
+            limitOrderDirection := 'Long'
+            stopLossPriceLong   := calcStopLossPriceLong
+            newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'maSignal'))
+    //vvvvvvvvv cross ma strategy vvvvvvvvv
+    if useMaStrategy and condMaLong
+        limitOrderPrice     := limitOrderPriceLong
+        limitOrderDirection := 'Long'
+        stopLossPriceLong   := calcStopLossPriceLong
+        newEntryLong(orderComment=utils.commentOrderCustomseries('enter_long', 'maCross'))
+
+// >>>>>>>>>>>>>>>>>>>>>> SHORT ORDERS
+    //vvvvvvvvv Additionals ordrders #1-2 vvvvvvvvv
+    if useBBShort == 'upper' or useBBShort2 == 'upper'
+        if condBBShort1
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'bbUpper'))
+    if useBBShort == 'upper2' or useBBShort2 == 'upper2'
+        if condBBShort2
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'bbUpper2'))
+    if useBBShort == 'upper3' or useBBShort2 == 'upper3'
+        if condBBShort3
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'bbUpper3'))
+    if useBBShort == 'lower' or useBBShort2 == 'lower'
+        if condBBShort4
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'bbLower'))
+    if useBBShort == 'lower2' or useBBShort2 == 'lower2'
+        if condBBShort5
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'bbLower2'))
+    if useBBShort == 'lower3' or useBBShort2 == 'lower3'
+        if condBBShort6
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'bbLower3'))
+    //vvvvvvvvv Additionals ordrders #3 vvvvvvvvv
+    if useBBShort3 == 'basis'
+        if condBasisShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'maBasis'))
+    if useBBShort3 == 'signal'
+        if condSignalShort
+            limitOrderPrice     := limitOrderPriceShort
+            limitOrderDirection := 'Short'
+            stopLossPriceShort  := calcStopLossPriceShort
+            newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'maSignal'))
+    //vvvvvvvvv Cross MA strategy vvvvvvvvv
+    if useMaStrategy and condMaShort
+        limitOrderPrice     := limitOrderPriceShort
+        limitOrderDirection := 'Short'
+        stopLossPriceShort  := calcStopLossPriceShort
+        newEntryShort(orderComment=utils.commentOrderCustomseries('Short', 'maCross'))
+
+// _________________________________________________
+// v                                               v
+// v               TAKE PROFIT BLOCK               v
+// v_______________________________________________v
+// >>>>>>>>>>>>>>>>>>>>>> Conditions
+float takeTriggerLong     = takeProfitTrigger == 'high/low' ? high : takeProfitTrigger == 'high/low median' ? priceMedianHighLow : takeProfitTrigger == 'open/close median' ? priceMedianOpenClose : close
+bool condTakePriceLong = strategy.position_avg_price < close
+bool condTakeLong1 = ta.crossover(takeTriggerLong, bbUpper[1])  and condPositionLong
+bool condTakeLong2 = ta.crossover(takeTriggerLong, bbUpper2[1]) and condPositionLong
+bool condTakeLong3 = ta.crossover(takeTriggerLong, bbUpper3[1]) and condPositionLong
+
+float takeTriggerhort     = takeProfitTrigger == 'high/low' ? low : takeProfitTrigger == 'high/low median' ? priceMedianHighLow : takeProfitTrigger == 'open/close median' ? priceMedianOpenClose : close
+bool condTakePriceShort = strategy.position_avg_price > close
+bool condTakeShort1 = ta.crossunder(takeTriggerhort, bbLower[1])  and condPositionShort
+bool condTakeShort2 = ta.crossunder(takeTriggerhort, bbLower2[1]) and condPositionShort
+bool condTakeShort3 = ta.crossunder(takeTriggerhort, bbLower3[1]) and condPositionShort
+// >>>>>>>>>>>>>>>>>>>>>> Use take profit
+if useTakeProfit
+    if condTakeLong1 and condTakePriceLong
+        takeLong(utils.commentOrderCustomseries('take_long', 'bbUpper'))
+    if condTakeShort1 and condTakePriceShort
+        takeShort(utils.commentOrderCustomseries('take_short', 'bbLower'))
+// >>>>>>>>>>>>>>>>>>>>>> Use take profit 2
+if useTakeProfit2
+    if condTakeLong2 and condTakePriceLong
+        takeLong(utils.commentOrderCustomseries('take_long', 'bbUpper2'))
+    if condTakeShort2 and condTakePriceShort
+        takeShort(utils.commentOrderCustomseries('take_short', 'bbLower2'))
+// >>>>>>>>>>>>>>>>>>>>>> Use take profit 3
+if useTakeProfit3
+    if condTakeLong3 and condTakePriceLong
+        stopLossPriceLong := calcStopLossPriceLong
+        takeLong(utils.commentOrderCustomseries('take_long', 'bbUpper3'))
+    if condTakeShort3 and condTakePriceShort
+        stopLossPriceShort := calcStopLossPriceShort
+        takeShort(utils.commentOrderCustomseries('take_short', 'bbLower3'))
+
+// _________________________________________________
+// v                                               v
+// v                STOP LOSS BLOCK                v
+// v_______________________________________________v
+// >>>>>>>>>>>>>>>>>>>>>> Conditions
+bool condStopSuperTrendLong      = barCrossoverCounter(supertrendDirection, 0) == 1 and condPositionLong
+bool condStopSuperTrendShort     = barCrossunderCounter(supertrendDirection, 0) == 1 and condPositionShort
+bool condStopFlexSuperTrendLong  = counterEvent(condPositionLong, condSuperTrendShort) == 1
+bool condStopFlexMaLong          = counterEvent(condPositionLong, condMaShort) == 1
+bool condStopFlexSuperTrendShort = counterEvent(condPositionShort, condSuperTrendLong) == 1
+bool condStopFlexMaShort         = counterEvent(condPositionShort, condMaLong) == 1
+// >>>>>>>>>>>>>>>>>>>>>> Setting stop loss price for SuperTrend option
+if stopLossType == 'SuperTrend + ATR'
+    if condStopSuperTrendLong
+        stopLossPriceLong := supertrend[1] - (stopLossAtr * SLAtrMultiplierLong)
+if stopLossType == 'SuperTrend + ATR'
+    if condStopSuperTrendShort
+        stopLossPriceShort := supertrend[1] + (stopLossAtr * SLAtrMultiplierShort)
+
+// >>>>>>>>>>>>>>>>>>>>>> Setting flex stop loss price for ATR and StdDev options
+if useFlexStopLoss
+    if stopLossType == 'ATR' or stopLossType == 'StdDev'
+        if condStopFlexSuperTrendLong
+            stopLossPriceLong := stopLossPriceLong + (stopLossAtr * SLAtrMultiplierLong) * SLFlexMult
+        if condStopFlexMaLong
+            stopLossPriceLong := stopLossPriceLong + (stopLossAtr * SLAtrMultiplierLong) * SLFlexMult
+        if condStopFlexSuperTrendShort
+            stopLossPriceShort := stopLossPriceShort - (stopLossAtr * SLAtrMultiplierLong) * SLFlexMult
+        if condStopFlexMaShort
+            stopLossPriceShort := stopLossPriceShort - (stopLossAtr * SLAtrMultiplierLong) * SLFlexMult
+
+// >>>>>>>>>>>>>>>>>>>>>> Trading logic
+float stopTriggerLong = stopLossTrigger == 'high/low' ? low : stopLossTrigger == 'high/low median' ? priceMedianHighLow : stopLossTrigger == 'open/close median' ? priceMedianOpenClose : close
+bool condStopLong  = stopTriggerLong < stopLossPriceLong and condPositionLong
+float stopTriggerShort = stopLossTrigger == 'high/low' ? high : stopLossTrigger == 'high/low median' ? priceMedianHighLow : stopLossTrigger == 'open/close median' ? priceMedianOpenClose : close
+bool condStopShort = stopTriggerShort > stopLossPriceShort and condPositionShort
+if stopLossType != 'off'
+    if useSuperTrend
+        if condStopLong and condSuperTrendShort
+            stopLossLong(utils.commentOrderCustomseries('stop_long', 'stop'))
+            if limitOrderDirection == 'Long'
+                limitOrderPrice     := na
+                limitOrderDirection := 'flat'
+        if condStopShort and condSuperTrendLong
+            if limitOrderDirection == 'Short'
+                limitOrderPrice     := na
+                limitOrderDirection := 'flat'
+            stopLossShort(utils.commentOrderCustomseries('stop_short', 'stop'))
+    else
+        if condStopLong
+            if limitOrderDirection == 'Long'
+                limitOrderPrice     := na
+                limitOrderDirection := 'flat'
+            stopLossLong(utils.commentOrderCustomseries('stop_long', 'stop'))
+        if condStopShort
+            if limitOrderDirection == 'Short'
+                limitOrderPrice     := na
+                limitOrderDirection := 'flat'
+            stopLossShort(utils.commentOrderCustomseries('stop_short', 'stop'))
+
+// _________________________________________________
+// v                                               v
+// v               LIMIT ORDER BLOCK               v
+// v_______________________________________________v
+// >>>>>>>>>>>>>>>>>>>>>> Conditions
+bool condLimitPrirceExist = na(limitOrderPrice) == false
+// >>>>>>>>>>>>>>>>>>>>>> limit orders triggered
+if useLimitOrder and condLimitPrirceExist
+    for i = 1 to strategy.opentrades
+        if math.abs(limitOrderPrice - strategy.opentrades.entry_price(strategy.opentrades - i)) < epsilon
+            limitOrderPrice     := na
+            limitOrderDirection := 'flat'
+
+// _________________________________________________
+// v                                               v
+// v                   PLOT BLOCK                  v
+// v_______________________________________________v
+colorGreen   = #00ff08cc
+colorGreen2  = #00ff0863
+colorGreen3  = #089981
+colorRed     = #ff0000d4
+colorRed2    = #ff000071
+colorPurple  = #8400ff23
+colorPurple2 = #45008657
+colorPurple3 = #8400ff09
+colorOrange  = #f57b00c7
+colorBlack   = color.rgb(70, 70, 70, 50)
+// >>>>>>>>>>>>>>>>>>>>>> SuperTrend
+pPriceMedian = plot(useSuperTrend ? priceMedianOpenClose : na, "[Price Median]", color=color.black, linewidth=1, style=plot.style_line, display=display.none)
+pSuperTrend = plot(useSuperTrend ? supertrend : na, "[SuperTrend]", color=condSuperTrendLong ? colorGreen2 : colorRed2, linewidth=2, style=plot.style_line, display=useSuperTrend ? display.pane : display.none)
+fill(pPriceMedian, pSuperTrend, title = "[SuperTrend] Background", color = condSuperTrendLong ? color.rgb(0, 255, 8, 90) : color.rgb(255, 0, 0, 90), display = display.all)
+// >>>>>>>>>>>>>>>>>>>>>> Moving Averages
+basis = plot(maBasis, "[MA] Basis", color = maSignal > maBasis ? colorGreen2 : colorRed2, linewidth=1, style=plot.style_line, display=display.pane)
+signal = plot(maSignal, "[MA] Signal", color = maSignal > maBasis ? colorGreen2 : colorRed2, linewidth=1, style=plot.style_line, display=display.pane)
+plot(ta.crossover(maSignal, maBasis) ? maBasis : na, "[MA] Long signal", color=colorGreen, style = plot.style_circles, linewidth = 4, display=display.pane)
+plot(ta.crossunder(maSignal, maBasis) ? maBasis : na, "[MA] Short signal", color=colorRed, style = plot.style_circles, linewidth = 4, display=display.pane)
+fill(basis, signal, title = "[MA] Background", color = maSignal > maBasis ? colorGreen2 : colorRed2, display = display.all)
+// >>>>>>>>>>>>>>>>>>>>>> Stop loss
+bool plotCondStopLossLong = useSuperTrend ? condPositionLong and condSuperTrendShort : condPositionLong
+bool plotCondStopLossShort = useSuperTrend ? condPositionShort and condSuperTrendLong : condPositionShort
+plot(condPositionLong? stopLossPriceLong : na, "Stop-loss price: Long", color=plotCondStopLossLong ? colorRed : colorOrange, style = plot.style_linebr, linewidth = 2, display=display.none)
+plot(condPositionShort? stopLossPriceShort : na, "Stop-loss price: Short", color=plotCondStopLossShort ? colorRed : colorOrange, style = plot.style_linebr, linewidth = 2, display=display.none)
+// >>>>>>>>>>>>>>>>>>>>>> Bollinger bands
+u1 = plot(bbUpper, "[BB] Upper", color=colorPurple, display = display.pane)
+l1 = plot(bbLower, "[BB] Lower", color=colorPurple, display = display.pane)
+u2 = plot(bbUpper2, "[BB] Upper 2", color=colorPurple, display = display.pane)
+l2 = plot(bbLower2, "[BB] Lower 2", color=colorPurple, display = display.pane)
+u3 = plot(bbUpper3, "[BB] Upper 2", color=colorPurple, display = display.pane)
+l3 = plot(bbLower3, "[BB] Lower 2", color=colorPurple, display = display.pane)
+fill(u1, l1, title = "[BB] Background 1-1", color=colorPurple3, display = display.all)
+fill(u2, l2, title = "[BB] Background 2-2", color=colorPurple3, display = display.all)
+fill(u3, l3, title = "[BB] Background 3-3", color=colorPurple3, display = display.all)
+
+// _________________________________________________
+// v                                               v
+// v             CURRENT POSITION BLOCK            v
+// v_______________________________________________v
+var string currentPosition = 'flat'
+currentPosition           := strategy.position_size > 0 ? 'Long ↗' : 'Short ↘'
+if strategy.position_size == 0
+    currentPosition := 'flat'
+
+bool condPositionExist = currentPosition == 'Long ↗' or currentPosition == 'Short ↘'
+float lastEntryPrice = strategy.opentrades.entry_price(strategy.opentrades - 1)
+
+// >>>>>>>>>>>>>>>>>>>>>> Position table
+var table positionTable     = table.new(position = position.top_right, columns = 2, rows = 5)
+table.cell(table_id         = positionTable, column = 1, row = 0, text = "Position", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right, tooltip = strategy.opentrades == 1 ? strategy.opentrades.entry_comment(strategy.opentrades - 1) : na)
+table.clear(positionTable, 0, 1, 1, 4)
+table.cell(table_id         = positionTable, column = 0, row = 1, text = "Direction:", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left)
+table.cell(table_id         = positionTable, column = 1, row = 1, text = currentPosition, bgcolor=strategy.opentrades == 0 ? colorBlack : condPositionShort ? colorRed2 : colorGreen3, text_color=color.rgb(255, 255, 255), text_halign = text.align_right)
+if condPositionExist
+    table.cell(table_id     = positionTable, column = 0, row = 2, text = "Amount:", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left)
+    table.cell(table_id     = positionTable, column = 1, row = 2, text =str.tostring(strategy.position_size), bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right)
+    if strategy.opentrades > 1
+        table.cell(table_id = positionTable, column = 0, row = 3, text = "Avg. price:", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left)
+        table.cell(table_id = positionTable, column = 1, row = 3, text =str.tostring(strategy.position_avg_price, '#.###'), bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right)
+    if strategy.opentrades == 1
+        table.cell(table_id = positionTable, column = 0, row = 3, text = "Entry price:", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left, tooltip = strategy.opentrades == 1 ? strategy.opentrades.entry_comment(strategy.opentrades - 1) : na)
+        table.cell(table_id = positionTable, column = 1, row = 3, text =str.tostring(strategy.opentrades.entry_price(strategy.opentrades - 1), '#.###'), bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right)
+    if stopLossType != 'off'
+        table.cell(table_id = positionTable, column = 0, row = 4, text = "Stop Loss:", bgcolor=colorBlack, text_color=color.white)
+        table.cell(table_id = positionTable, column = 1, row = 4, text =str.tostring(strategy.position_size > 0 ? stopLossPriceLong : stopLossPriceShort, '#.###'), bgcolor=colorBlack, text_color=color.white)
+
+// >>>>>>>>>>>>>>>>>>>>>> Entries table
+var table entriesTable = table.new(position = position.middle_right, columns = 2, rows = 6)
+if strategy.opentrades > 1 and strategy.opentrades < 5
+    table.cell(table_id = entriesTable, column = 1, row = 0, text = "Entries", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right)
+    table.clear(entriesTable, 0, 1, 1, 5)
+    for i = 1 to strategy.opentrades by 1
+        table.cell(table_id = entriesTable, column = 0, row = 0 + i, text = '#' + str.tostring(i), bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left)
+        table.cell(table_id = entriesTable, column = 1, row = 0 + i, text =str.tostring(strategy.opentrades.entry_price(strategy.opentrades - i)) + ' 💬', bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right, tooltip = strategy.opentrades.entry_comment(strategy.opentrades - i))
+else if strategy.opentrades <= 1
+    table.clear(entriesTable, 0, 0, 1, 5)
+
+// >>>>>>>>>>>>>>>>>>>>>> Limit Order table
+if useLimitOrder
+    var table limitOrderTable = table.new(position = position.bottom_right, columns = 2, rows = 3)
+    table.clear(limitOrderTable, 0, 0, 1, 2)
+    if na(limitOrderPrice) == false
+        table.cell(table_id = limitOrderTable, column = 1, row = 0, text = "Limit order", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right)
+        table.cell(table_id = limitOrderTable, column = 0, row = 1, text = "Direction:", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left)
+        table.cell(table_id = limitOrderTable, column = 1, row = 1, text =str.tostring(limitOrderDirection), bgcolor=limitOrderDirection == 'Short' ? colorRed2 : colorGreen3, text_color=color.white, text_halign = text.align_right)
+        table.cell(table_id = limitOrderTable, column = 0, row = 2, text = "Price:", bgcolor=colorBlack, text_color=color.white, text_halign = text.align_left)
+        table.cell(table_id = limitOrderTable, column = 1, row = 2, text =str.tostring(limitOrderPrice), bgcolor=colorBlack, text_color=color.white, text_halign = text.align_right)

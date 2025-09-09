@@ -1,0 +1,70 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+//@version=5
+strategy("SuperTrend Enhanced Pivot Reversal - Strategy [PresentTrading]", overlay=true, precision=3, default_qty_type=strategy.cash,
+ commission_value= 0.1, commission_type=strategy.commission.percent, slippage= 1,
+  currency=currency.USD, default_qty_type = strategy.percent_of_equity, default_qty_value = 10, initial_capital= 10000)
+
+// Pivot Reversal parameters
+leftBars = input(6)
+rightBars = input(3)
+swh = ta.pivothigh(leftBars, rightBars)
+swl = ta.pivotlow(leftBars, rightBars)
+
+// SuperTrend parameters
+atrPeriod = input(5, "ATR Length")
+factor = input.float(2.618, "Factor", step = 0.01)
+
+[superTrend, direction] = ta.supertrend(factor, atrPeriod)
+
+// Plot the SuperTrend
+plot(superTrend, title="SuperTrend", color=color.blue)
+
+
+// Trade Direction parameter
+tradeDirection = input.string(title="Trade Direction", defval="Both", options=["Long", "Short", "Both"])
+
+// Stop Loss Level (in %)
+stopLossLevel = input(20, title="Stop Loss Level (%)")
+
+// Convert the stop loss level to a price difference
+stopLossPrice = stopLossLevel / 100
+
+
+// Long entry
+swh_cond = not na(swh)
+hprice = 0.0
+hprice := swh_cond ? swh : hprice[1]
+le = false
+le := swh_cond ? true : (le[1] and high > hprice ? false : le[1])
+if (le and direction < 0 and (tradeDirection == "Long" or tradeDirection == "Both"))
+    strategy.entry("PivRevLE", strategy.long, comment="PivRevLE", stop=hprice + syminfo.mintick)
+    strategy.exit("Exit Long", "PivRevLE", stop = hprice * (1 - stopLossPrice))
+
+// Short entry
+swl_cond = not na(swl)
+lprice = 0.0
+lprice := swl_cond ? swl : lprice[1]
+se = false
+se := swl_cond ? true : (se[1] and low < lprice ? false : se[1])
+if (se and direction > 0 and (tradeDirection == "Short" or tradeDirection == "Both"))
+    strategy.entry("PivRevSE", strategy.short, comment="PivRevSE", stop=lprice - syminfo.mintick)
+    strategy.exit("Exit Short", "PivRevSE", stop = lprice * (1 + stopLossPrice))
+
+
+// Closing positions when the tradeDirection is one-sided or when SuperTrend direction changes
+if ((tradeDirection == "Long" and se and direction < 0) or (tradeDirection == "Long" and direction < 0))
+    strategy.close("PivRevLE")
+if ((tradeDirection == "Short" and le and direction > 0) or (tradeDirection == "Short" and direction > 0))
+    strategy.close("PivRevSE")
+
+// Plot pivot highs and lows
+plotshape(swh_cond, title="Pivot Highs", location=location.belowbar, color=color.green, style=shape.triangleup)
+plotshape(swl_cond, title="Pivot Lows", location=location.abovebar, color=color.red, style=shape.triangledown)
+
+// Closing positions when the tradeDirection is one-sided
+if (tradeDirection == "Long" and se and direction < 0)
+    strategy.close("PivRevLE")
+if (tradeDirection == "Short" and le and direction > 0)
+    strategy.close("PivRevSE")

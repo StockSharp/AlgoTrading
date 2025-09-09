@@ -1,0 +1,40 @@
+//@version=5
+strategy("Supertrend with 1% Target and 1% Stoploss", overlay=true)
+
+// Input parameters
+atr_length = input.int(14, title="ATR Length")
+factor = input.float(3.0, title="Factor")
+target_pct = input.float(1.0, title="Target Percentage", minval=0.1) / 100
+stoploss_pct = input.float(1.0, title="Stop Loss Percentage", minval=0.1) / 100
+
+// Supertrend calculation
+[supertrend, direction] = ta.supertrend(factor, atr_length)
+
+// Plot the Supertrend line
+plot(supertrend, color=color.blue, linewidth=2, title="Supertrend")
+
+// Long and Short conditions
+long_condition = ta.crossover(close, supertrend)
+short_condition = ta.crossunder(close, supertrend)
+
+// Calculate stop loss and take profit levels
+long_stop_loss = close * (1 - stoploss_pct)
+long_take_profit = close * (1 + target_pct)
+
+short_stop_loss = close * (1 + stoploss_pct)
+short_take_profit = close * (1 - target_pct)
+
+// Long position entry
+if long_condition
+    strategy.entry("Long", strategy.long, stop=long_stop_loss, limit=long_take_profit)
+
+// Short position entry
+if short_condition
+    strategy.entry("Short", strategy.short, stop=short_stop_loss, limit=short_take_profit)
+
+// Plot stoploss and take profit levels for visual reference
+plot(long_condition ? long_take_profit : na, color=color.green, style=plot.style_line, linewidth=1, title="Long Take Profit")
+plot(long_condition ? long_stop_loss : na, color=color.red, style=plot.style_line, linewidth=1, title="Long Stop Loss")
+
+plot(short_condition ? short_take_profit : na, color=color.green, style=plot.style_line, linewidth=1, title="Short Take Profit")
+plot(short_condition ? short_stop_loss : na, color=color.red, style=plot.style_line, linewidth=1, title="Short Stop Loss")

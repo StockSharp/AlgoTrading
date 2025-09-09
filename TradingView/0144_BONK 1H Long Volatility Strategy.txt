@@ -1,0 +1,77 @@
+//@version=5
+strategy("BONK 1H Enhanced Volatility Strategy", overlay=true, margin_long=100, margin_short=0, calc_on_order_fills=true)
+
+// --- Inputs ---
+profit_target_pct = input.float(5.0, "Profit Target % (3-7%)", minval=3.0, maxval=7.0, step=0.1)
+stop_loss_pct = input.float(3.0, "Stop Loss %", minval=1.0, maxval=5.0, step=0.1)
+atr_length = input.int(10, "ATR Length", minval=1)
+atr_multiplier = input.float(1.5, "ATR Multiplier", minval=1.0, step=0.1)
+rsi_length = input.int(14, "RSI Length", minval=1)
+rsi_overbought = input.int(65, "RSI Overbought", minval=50, maxval=100)
+rsi_oversold = input.int(35, "RSI Oversold", minval=0, maxval=50)
+macd_fast = input.int(12, "MACD Fast Length", minval=1)
+macd_slow = input.int(26, "MACD Slow Length", minval=1)
+macd_signal = input.int(9, "MACD Signal Length", minval=1)
+volume_sma_length = input.int(20, "Volume SMA Length", minval=1)
+volume_threshold = input.float(1.5, "Volume Spike Threshold", minval=1.0, step=0.1)
+ma_fast_length = input.int(5, "Fast MA Length", minval=1)
+ma_slow_length = input.int(13, "Slow MA Length", minval=1)
+lookback_days = input.int(30, "Lookback Days (Last Month)", minval=1)
+
+// --- Time Filter: Last 30 Days ---
+time_filter = timestamp(year(timenow), month(timenow), dayofmonth(timenow) - lookback_days, 0, 0)
+is_recent = time >= time_filter
+
+// --- Indicators ---
+// Moving Averages
+ma_fast = ta.sma(close, ma_fast_length)
+ma_slow = ta.sma(close, ma_slow_length)
+
+// ATR for Volatility
+atr = ta.atr(atr_length)
+atr_threshold = atr * atr_multiplier
+
+// RSI for Momentum
+rsi = ta.rsi(close, rsi_length)
+
+// MACD for Trend Confirmation
+[macd_line, signal_line, _] = ta.macd(close, macd_fast, macd_slow, macd_signal)
+macd_bullish = macd_line > signal_line and macd_line > 0
+
+// Volume Filter
+volume_sma = ta.sma(volume, volume_sma_length)
+volume_spike = volume > volume_sma * volume_threshold
+
+// --- Conditions ---
+// Trend: Fast MA above Slow MA
+bullish_trend = ma_fast > ma_slow
+
+// Volatility: Price range exceeds ATR threshold
+price_range = high - low
+volatile_condition = price_range > atr_threshold
+
+// Entry: Combine trend, volatility, RSI, MACD, and volume
+entry_condition = is_recent and bullish_trend and volatile_condition and rsi < rsi_overbought and rsi > rsi_oversold and macd_bullish and volume_spike and close > ma_fast
+
+// Exit: Dynamic profit target and stop-loss based on ATR
+profit_target = close * (1 + profit_target_pct / 100)
+stop_loss = close * (1 - stop_loss_pct / 100)
+atr_stop = close - (atr * 1.5) // Alternative ATR-based stop
+
+// --- Strategy Logic ---
+// Enter Long
+if (entry_condition)
+    strategy.entry("Long", strategy.long)
+
+// Exit Conditions
+strategy.exit("Exit Long", "Long", limit=profit_target, stop=math.max(stop_loss, atr_stop))
+
+// --- Trailing Stop ---
+trail_points = atr * 100 // Convert ATR to points
+strategy.exit("Trail Exit", "Long", trail_points=trail_points, trail_offset=trail_points)
+
+// --- Plotting ---
+plot(ma_fast, color=color.blue, title="Fast MA")
+plot(ma_slow, color=color.red, title="Slow MA")
+plotshape(entry_condition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(rsi < rsi_oversold, title="Oversold Warning", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.tiny)

@@ -1,0 +1,70 @@
+//@version=6
+strategy("Price Statistical Strategy-Z Score V 1.01", overlay=true)
+
+// === Enable / Disable Z-Score Strategy Block ===
+enableZScore = input.bool(true, title="Enable Smoothed Z-Score Strategy", tooltip="When enabled, this block calculates a smoothed Z-Score of the closing price and generates entry/exit signals based on crossover behavior between short-term and long-term smoothed Z-Scores.\n\nRecommended for quick and classic detection of price deviation from mean.\nSensitive to outliers. Best suited for relatively normal-distributed market conditions.")
+
+// === Z-Score Parameters ===
+zBaseLength = input.int(3, minval=1, title="Z-Score Base Period")
+shortSmooth = input.int(3, title="Short-Term Smoothing")
+longSmooth = input.int(5, title="Long-Term Smoothing")
+
+// === Z-Score Calculation Function ===
+f_zscore(src, length) =>
+    mean = ta.sma(src, length)
+    std_dev = ta.stdev(src, length)
+    z = (src - mean) / std_dev
+    z
+
+// === Z-Score Logic ===
+zRaw = f_zscore(close, zBaseLength)
+zShort = ta.sma(zRaw, shortSmooth)
+zLong = ta.sma(zRaw, longSmooth)
+
+
+// === Minimum gap between identical signals ===
+gapBars = input.int(5, minval=1, title="Bars gap between identical signals", tooltip="Minimum number of bars required between two identical signals (entry or exit). Helps reduce signal noise.")
+
+
+// === Candle-based momentum filters ===
+bullish_3bars = close > close[1] and close[1] > close[2] and close[2] > close[3] and close[3] > close[4]
+bearish_3bars = close < close[1] and close[1] < close[2] and close[2] < close[3] and close[3] < close[4]
+
+// === Entry and Exit Logic with minimum signal gap and candle momentum filter ===
+var int lastEntryBar = na
+var int lastExitBar  = na
+
+if enableZScore
+    longCondition = (zShort > zLong)
+    exitCondition = (zShort < zLong)
+
+    if longCondition and (na(lastEntryBar) or bar_index - lastEntryBar > gapBars) and not bullish_3bars
+        strategy.entry("Z Score", strategy.long)
+        lastEntryBar := bar_index
+
+    if exitCondition and (na(lastExitBar) or bar_index - lastExitBar > gapBars) and not bearish_3bars
+        strategy.close("Z Score", comment="Z Score")
+        lastExitBar := bar_index
+
+// === Real-time PnL Table for Last Open Position ===
+var table positionTable = table.new(position.bottom_right, 2, 2, border_width=1)
+
+// Header Labels
+table.cell(positionTable, 0, 0, "Entry Price", text_color=color.white, bgcolor=color.gray)
+table.cell(positionTable, 1, 0, "Unrealized PnL (%)", text_color=color.white, bgcolor=color.gray)
+
+// Values (only when position is open)
+isLong        = strategy.position_size > 0
+entryPrice    = strategy.position_avg_price
+unrealizedPnL = isLong ? (close - entryPrice) / entryPrice * 100 : na
+
+// Define dynamic text color for PnL
+pnlColor = unrealizedPnL > 0 ? color.green : unrealizedPnL < 0 ? color.red : color.gray
+
+// Update Table Content
+if isLong
+    table.cell(positionTable, 0, 1, str.tostring(entryPrice, "#.####"), text_color=color.gray, bgcolor=color.new(color.gray, 90))
+    table.cell(positionTable, 1, 1, str.tostring(unrealizedPnL, "#.##") + " %", text_color=pnlColor, bgcolor=color.new(pnlColor, 90))
+else
+    table.cell(positionTable, 0, 1, "—", text_color=color.gray, bgcolor=color.new(color.gray, 90))
+    table.cell(positionTable, 1, 1, "—", text_color=color.gray, bgcolor=color.new(color.gray, 90))

@@ -1,0 +1,167 @@
+//@version=6
+strategy("Big Mover Catcher BTC 4h", overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=10,
+     initial_capital=1000,
+     commission_type=strategy.commission.percent,
+     commission_value=0.16,
+     slippage=2,
+     pyramiding=1)
+
+
+// ==============================================================================
+// TRADE TOGGLES
+// ==============================================================================
+enableLongs     = input.bool(true,  "Enable Long Trades", group="TRADE FILTERS")
+enableShorts    = input.bool(false, "Enable Short Trades", group="TRADE FILTERS")
+slPercent       = input.float(2.0, "Stop Loss %", minval=0.1, group="TRADE FILTERS")
+
+
+// ==============================================================================
+// BOLLINGER BAND SETTINGS
+// ==============================================================================
+bbLength        = input.int(40, "Bollinger Band Length", group="BOLLINGER BANDS")
+bbBasis         = ta.sma(close, bbLength)
+bbDev           = ta.stdev(close, bbLength)
+upperBB         = bbBasis + bbDev * 2
+lowerBB         = bbBasis - bbDev * 2
+
+
+// ==============================================================================
+// RSI FILTER
+// ==============================================================================
+useRSIFilter    = input.bool(false, "Enable RSI Filter", group="RELATIVE STRENGTH INDEX")
+useRsiThreshold = input.bool(true, "Use RSI Thresholds", group="RELATIVE STRENGTH INDEX")
+rsiLength       = input.int(14, "RSI Length", group="RELATIVE STRENGTH INDEX")
+rsiLongMin      = input.float(50, "RSI Min for Long", group="RELATIVE STRENGTH INDEX")
+rsiShortMax     = input.float(50, "RSI Max for Short", group="RELATIVE STRENGTH INDEX")
+rsiSmoothType   = input.string("EMA", "RSI Smoothing Type", options=["EMA", "SMA"], group="RELATIVE STRENGTH INDEX")
+rsiSmoothLen    = input.int(100, "RSI Smoothing Length", group="RELATIVE STRENGTH INDEX")
+
+rsi = ta.rsi(close, rsiLength)
+rsiSmoothed = rsiSmoothType == "EMA" ? ta.ema(rsi, rsiSmoothLen) : ta.sma(rsi, rsiSmoothLen)
+rsiOkLong  = not useRsiThreshold or rsi > rsiLongMin
+rsiOkShort = not useRsiThreshold or rsi < rsiShortMax
+rsiFilterLong  = not useRSIFilter or (rsiOkLong and rsi > rsiSmoothed)
+rsiFilterShort = not useRSIFilter or (rsiOkShort and rsi > rsiSmoothed)
+
+
+// ==============================================================================
+// ADX FILTER
+// ==============================================================================
+useADXFilter     = input.bool(false, "Enable ADX Filter", group="AVERAGE DIRECTIONAL INDEX")
+useAdxThreshold  = input.bool(true, "Use ADX Threshold", group="AVERAGE DIRECTIONAL INDEX")
+adxLength        = input.int(28, "ADX Length", group="AVERAGE DIRECTIONAL INDEX")
+adxSmoothing     = input.int(9, "ADX Smoothing", group="AVERAGE DIRECTIONAL INDEX")
+adxThreshold     = input.float(20.5, "ADX Threshold", group="AVERAGE DIRECTIONAL INDEX")
+adxSmoothType    = input.string("EMA", "ADX Smoothing Type", options=["EMA", "SMA"], group="AVERAGE DIRECTIONAL INDEX")
+adxSmoothLen     = input.int(100, "ADX Smoothing Length", group="AVERAGE DIRECTIONAL INDEX")
+
+dmi(len, smooth) =>
+    up       = ta.change(high)
+    down     = -ta.change(low)
+    plusDM   = na(up) ? na : (up > down and up > 0 ? up : 0)
+    minusDM  = na(down) ? na : (down > up and down > 0 ? down : 0)
+    trur     = ta.rma(ta.tr, len)
+    plusDI   = 100 * ta.rma(plusDM, len) / trur
+    minusDI  = 100 * ta.rma(minusDM, len) / trur
+    dx       = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+    ta.rma(dx, smooth)
+
+adx = dmi(adxLength, adxSmoothing)
+adxSmoothed = adxSmoothType == "EMA" ? ta.ema(adx, adxSmoothLen) : ta.sma(adx, adxSmoothLen)
+adxOk = not useAdxThreshold or adx > adxThreshold
+adxFilterPass = not useADXFilter or (adxOk and adx > adxSmoothed)
+
+
+// ==============================================================================
+// ATR FILTER
+// ==============================================================================
+useATRFilter     = input.bool(true, "Enable ATR Filter", group="AVERAGE TRUE RANGE")
+useAtrMinValue   = input.bool(true, "Use ATR Min Value", group="AVERAGE TRUE RANGE")
+atrLength        = input.int(14, "ATR Length", group="AVERAGE TRUE RANGE")
+atrMinValue      = input.float(13.5, "Minimum ATR", group="AVERAGE TRUE RANGE")
+atrSmoothType    = input.string("EMA", "ATR Smoothing Type", options=["EMA", "SMA"], group="AVERAGE TRUE RANGE")
+atrSmoothLen     = input.int(100, "ATR Smoothing Length", group="AVERAGE TRUE RANGE")
+
+atr = ta.atr(atrLength)
+atrSmoothed = atrSmoothType == "EMA" ? ta.ema(atr, atrSmoothLen) : ta.sma(atr, atrSmoothLen)
+atrOk = not useAtrMinValue or atr > atrMinValue
+atrFilterPass = not useATRFilter or (atrOk and atr > atrSmoothed)
+
+
+// ==============================================================================
+// EMA FILTER
+// ==============================================================================
+useEMAFilter    = input.bool(false, "Enable EMA Filter", group="EXPONENTIAL MOVING AVERAGE")
+emaFilterLen    = input.int(350, "EMA Filter Length", group="EXPONENTIAL MOVING AVERAGE")
+
+emaFilter = ta.ema(close, emaFilterLen)
+emaLongOK  = close > emaFilter
+emaShortOK = close < emaFilter
+emaFilterPassLong  = not useEMAFilter or emaLongOK
+emaFilterPassShort = not useEMAFilter or emaShortOK
+
+
+// ==============================================================================
+// MACD FILTER
+// ==============================================================================
+useMACDFilter   = input.bool(false, "Enable MACD Filter", group="MOVING AVERAGE CONVERGENCE DIVERGENCE")
+macdFast        = input.int(12, "MACD Fast Length", group="MOVING AVERAGE CONVERGENCE DIVERGENCE")
+macdSlow        = input.int(26, "MACD Slow Length", group="MOVING AVERAGE CONVERGENCE DIVERGENCE")
+macdSignal      = input.int(9, "MACD Signal Length", group="MOVING AVERAGE CONVERGENCE DIVERGENCE")
+
+[_, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+macdFilterLong  = not useMACDFilter or signalLine > 0
+macdFilterShort = not useMACDFilter or signalLine < 0
+
+
+// ==============================================================================
+// ENTRY CONDITIONS
+// ==============================================================================
+longCondition = enableLongs and close > upperBB and macdFilterLong and adxFilterPass and rsiFilterLong and emaFilterPassLong and atrFilterPass
+shortCondition = enableShorts and close < lowerBB and macdFilterShort and adxFilterPass and rsiFilterShort and emaFilterPassShort and atrFilterPass
+
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+
+// ==============================================================================
+// STOP LOSS & EXIT CONDITIONS
+// ==============================================================================
+longSL  = strategy.position_avg_price * (1 - slPercent / 100)
+shortSL = strategy.position_avg_price * (1 + slPercent / 100)
+
+strategy.exit("Long SL",  from_entry="Long",  stop=longSL)
+strategy.exit("Short SL", from_entry="Short", stop=shortSL)
+
+if strategy.position_size > 0 and close < bbBasis
+    strategy.close("Long", comment="TP at BB Midline")
+
+if strategy.position_size < 0 and close > bbBasis
+    strategy.close("Short", comment="TP at BB Midline")
+
+
+// ==============================================================================
+// FORCE TAKE PROFIT ON BIG CANDLE MOVE
+// ==============================================================================
+enableForceTP    = input.bool(false, "Enable Force Take Profit on Big Candle", group="FORCE TAKE PROFIT")
+forceTPPercent   = input.float(5.0, "Candle % Move Threshold", minval=0.1, group="FORCE TAKE PROFIT")
+
+candleChangePct = math.abs(close - open) / open * 100
+forceTP = enableForceTP and candleChangePct > forceTPPercent
+
+if forceTP and strategy.position_size > 0
+    strategy.close("Long", comment="Force TP (Big Candle)")
+
+if forceTP and strategy.position_size < 0
+    strategy.close("Short", comment="Force TP (Big Candle)")
+
+
+// ==============================================================================
+// OPTIONAL PLOT
+// ==============================================================================
+plot(useEMAFilter ? emaFilter : na, title="EMA 350", color=color.orange, linewidth=2)

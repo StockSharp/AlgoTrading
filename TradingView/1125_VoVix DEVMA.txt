@@ -1,0 +1,691 @@
+//@version=5
+strategy("VoVix DEVMA", shorttitle="🌌 VoVix", overlay=false, initial_capital=100000, default_qty_type=strategy.fixed, default_qty_value=1, commission_type=strategy.commission.cash_per_contract, commission_value=0.62, slippage=2, calc_on_every_tick=false, process_orders_on_close=false, max_bars_back=1000)
+
+//==============================================================================
+// 📚 COMPREHENSIVE USER GUIDE & MATHEMATICAL THEORY
+//==============================================================================
+//
+// 🌌 VOVIX DEVMA - THE ADAPTIVE VOLATILITY RHYTHM STRATEGY
+//
+// Welcome to VoVix DEVMA, a sophisticated trading system that analyzes the market's
+// "volatility rhythm" rather than just price. It's designed to identify shifts
+// in market character between periods of high-energy expansion and low-energy contraction.
+//
+// ⚡ CORE PHILOSOPHY:
+//
+// Traditional indicators follow price. VoVix DEVMA follows the *character* of price.
+// It measures the standard deviation of volatility itself, creating a unique
+// insight into the market's underlying energy state.
+//
+// 1. THE DEVMA ENGINE (Deviation Moving Average):
+//    - The system calculates the standard deviation of the market's ATR.
+//    - It then applies two moving averages to this deviation: a Fast and a Slow.
+//    - The relationship between these two DEVMA lines defines the market regime.
+//
+// 2. MARKET REGIME ANALYSIS:
+//    - EXPANSION REGIME (Fast DEVMA > Slow DEVMA): Indicates that volatility is
+//      accelerating. The market is "waking up," often leading to strong momentum
+//      or breakout moves. The system looks for LONG opportunities on an expansion crossover.
+//
+//    - CONTRACTION REGIME (Fast DEVMA < Slow DEVMA): Indicates that volatility is
+//      decelerating. The market is "calming down," often leading to consolidation
+//      or trend exhaustion. The system looks for SHORT opportunities on a contraction crossover.
+//
+// 3. ADAPTIVE EXECUTION CORE:
+//    - PERFORMANCE-BASED SIZING: The strategy is a true adaptive system. It monitors
+//      its own recent win rate and consecutive trade streaks to automatically scale
+//      its position size up during winning periods and down during losing periods.
+//      This allows it to press advantages in favorable markets and defend capital
+//      in unfavorable ones.
+//
+//    - ATR-BASED EXITS: All trade exits (Stop Loss, Take Profit, Trailing Stop) are
+//      calculated using the Average True Range (ATR), allowing them to dynamically
+//      adjust to the current volatility of the traded asset.
+//
+// 💡 TRADING STRATEGY:
+//
+// 1. SIGNAL GENERATION: The strategy waits for a clear crossover of the Fast and Slow
+//    DEVMA lines.
+//    - LONG SIGNAL: A bullish crossover (Fast crosses above Slow) signals the start
+//      of a new EXPANSION regime.
+//    - SHORT SIGNAL: A bearish crossover (Fast crosses below Slow) signals the start
+//      of a new CONTRACTION regime.
+//
+// 2. POSITION SIZING: Before entering, the Adaptive Core calculates the appropriate
+//    trade size based on recent performance (win rate over the last 20 trades) and
+//    any active winning/losing streaks.
+//
+// 3. TRADE MANAGEMENT: Once in a trade, positions are managed with a predefined
+//    ATR-based Stop Loss, Take Profit, and an optional ATR-based Trailing Stop to
+//    secure profits on strong trends. A time-based exit ensures no position is held
+//    indefinitely.
+//
+// ⚠️ PERFORMANCE NOTES:
+// • This strategy excels on assets with clear volatility cycles like futures.
+//   It may underperform on assets that trend slowly or have erratic,
+//   non-cyclical volatility (e.g., some bonds or agricultural futures).
+// • The Adaptive Sizing feature requires at least 10-20 trades to calibrate
+//   effectively. Initial trades will use the defined 'Base' size.
+// • The visual architecture is integral to understanding the strategy's real-time
+//   analysis and is designed for maximum clarity and aesthetic appeal.
+
+//------------------------------------------------------------------------------
+// 🌀 VoVix DEVMA Configuration
+//------------------------------------------------------------------------------
+group_devma = "🌀 VoVix DEVMA Configuration"
+devLen = input.int(59, "🧬 Deviation Lookback", minval=15, maxval=60, group=group_devma,
+  tooltip="🎯 WHAT IT IS: The lookback period for calculating the standard deviation of the Average True Range (ATR).\n\n⚡ HOW IT WORKS: This is the foundational calculation of the entire system. It determines the 'character' or 'normal range' of volatility itself. The DEVMA lines then analyze this character to detect changes.\n\n📈 HIGHER (50-60): Looks at a wider history, creating a very stable, smooth volatility character reading. This is slower to react to new volatility paradigms.\n📉 LOWER (15-30): Focuses on recent history, making the character reading more dynamic and sensitive to recent changes.\n\n💡 PRO TIP: 59 is an unconventional but highly effective setting that avoids common cycle lengths (like 50 or 60), reducing the chance of harmonic distortion. It provides a stable yet relevant character analysis.")
+fastVoVixLen = input.int(20, "⚡ Fast VoVix Length", minval=10, maxval=50, group=group_devma,
+  tooltip="🎯 WHAT IT IS: The lookback period for the fast-reacting moving average of volatility's deviation.\n\n⚡ HOW IT WORKS: This is the 'signal line' of the engine. It measures the short-term rhythm of market energy. A crossover of this line with the Slow DEVMA line generates a trade signal.\n\n📈 HIGHER (30-50): Creates a smoother, less responsive signal line. This results in fewer, but potentially more significant, signals.\n📉 LOWER (10-15): More sensitive to immediate shifts in volatility. This results in more signals, but they can be more prone to noise.\n\n💡 PRO TIP: A setting of 20 provides a robust default that captures most meaningful shifts without being overly sensitive on medium-term timeframes.")
+slowVoVixLen = input.int(60, "🐌 Slow VoVix Length", minval=30, maxval=100, group=group_devma,
+  tooltip="🎯 WHAT IT IS: The lookback period for the slow-reacting moving average of volatility's deviation.\n\n⚡ HOW IT WORKS: This is the 'regime line' of the engine. It establishes the baseline of the market's current volatility character. The crossover between the Fast and Slow lines generates the trade signal.\n\n📈 HIGHER (80-100): Defines a very long-term, stable regime baseline. It's excellent for filtering out minor fluctuations and focusing on major shifts.\n📉 LOWER (30-50): Defines a more reactive, shorter-term regime. It will adapt more quickly to broad changes in market character.\n\n💡 PRO TIP: A 3:1 ratio between Slow and Fast (e.g., 60/20) is a classic and effective combination for crossover systems, providing a great balance between responsiveness and stability.")
+//------------------------------------------------------------------------------
+// 🧠 Adaptive Intelligence
+//------------------------------------------------------------------------------
+group_adaptive = "🧠 Adaptive Intelligence"
+ENABLE_ADAPTIVE = input.bool(true, "🧠 Enable Adaptive Features", group=group_adaptive,
+  tooltip="🎯 WHAT IT IS: The master switch for the strategy's learning capabilities.\n\n⚡ HOW IT WORKS: When enabled, the strategy begins tracking its own performance (win rate, trade duration). This data is then used to intelligently adjust other parameters, like the time-based exit. Note: In this version, it does NOT control position sizing.\n\n💡 PRO TIP: Keep this enabled to allow the strategy to fine-tune its time-based exits based on recent performance. Disabling it makes the strategy fully static.")
+ADAPTIVE_TIME_EXIT = input.bool(true, "⏰ Adaptive Time-Based Exit", group=group_adaptive,
+  tooltip="🎯 WHAT IT IS: Allows the 'Maximum Bars in Trade' setting to adjust itself based on performance.\n\n⚡ HOW IT WORKS: If the strategy is winning frequently, it might slightly extend the time limit to let winners run. If it's losing, it might tighten the time limit. Requires 'Enable Adaptive Features' to be on.\n\n💡 PRO TIP: This is a useful feature for dynamically adjusting to changing market speeds without manual intervention.")
+//------------------------------------------------------------------------------
+// ⚡ Intelligent Execution
+//------------------------------------------------------------------------------
+group_execution = "⚡ Intelligent Execution"
+tradeQty = input.int(1, "📊 Trade Quantity", minval=1, maxval=100, group=group_execution,
+  tooltip="🎯 WHAT IT IS: The fixed number of contracts or shares to use for every trade.\n\n⚡ HOW IT WORKS: This strategy version uses a fixed position size. Every trade, regardless of the signal or market conditions, will be for this amount.\n\n💡 PRO TIP: For risk management, always start with the smallest possible trade size (e.g., 1) when testing a strategy on a new asset or timeframe.")
+USE_SMART_STOPS = input.bool(true, "🛡️ Smart Stop Loss", group=group_execution,
+  tooltip="🎯 WHAT IT IS: Toggles the use of an ATR-based initial stop loss.\n\n⚡ HOW IT WORKS: When enabled, the strategy places a dynamic stop loss that adjusts its distance from the entry price based on the market's recent volatility (ATR). If disabled, no initial stop loss will be placed.\n\n💡 PRO TIP: It is highly recommended to always keep this enabled as a primary risk management tool. Disabling it significantly increases the risk profile of the strategy.")
+ATR_SL_MULTIPLIER = input.float(2.0, "🎯 Stop Loss ATR Multiplier", minval=0.5, maxval=5.0, step=0.1, group=group_execution,
+  tooltip="🎯 WHAT IT IS: The multiplier for the ATR value that determines the stop loss distance.\n\n⚡ HOW IT WORKS: The stop loss is placed at: `Entry Price - (ATR * Multiplier)` for longs, and `Entry Price + (ATR * Multiplier)` for shorts.\n\n📈 HIGHER (3.0-5.0): Places the stop loss further away, giving the trade more room to breathe. Decreases the chance of being stopped out by noise, but increases the loss amount if the stop is hit.\n📉 LOWER (0.5-1.5): Places a tighter stop loss. Reduces the potential loss on any single trade, but increases the risk of being stopped out prematurely.\n\n💡 PRO TIP: 2.0 is a widely used industry standard that often provides a good balance between managing risk and allowing a trade to develop.")
+ATR_TP_MULTIPLIER = input.float(3.0, "💰 Take Profit ATR Multiplier", minval=1.0, maxval=10.0, step=0.1, group=group_execution,
+  tooltip="🎯 WHAT IT IS: The multiplier for the ATR value that determines the take profit distance.\n\n⚡ HOW IT WORKS: This sets a fixed profit target based on current volatility. The value represents a risk/reward ratio relative to a 1.0 ATR move.\n\n📈 HIGHER (5.0-10.0): Aims for larger, 'home-run' wins. This will naturally lead to a lower win rate, but each winning trade will be more impactful.\n📉 LOWER (1.5-2.5): Aims for smaller, more achievable wins. This will lead to a higher win rate, but lower average profit per trade.\n\n💡 PRO TIP: A value of 3.0 sets a 1.5:1 risk/reward ratio when using a 2.0 SL multiplier, which is a solid and professional baseline.")
+USE_TRAILING_STOP = input.bool(true, "🏃 Use Trailing Stop", group=group_execution,
+  tooltip="🎯 WHAT IT IS: Toggles the use of an ATR-based trailing stop to lock in profits on winning trades.\n\n⚡ HOW IT WORKS: Once price moves in your favor by the 'Trail Points' amount, a moving stop is activated 'Trail Offset' behind the price. This is a powerful tool for capturing the majority of a strong trend.\n\n💡 PRO TIP: Trailing stops are essential for this strategy's performance, as they allow it to capitalize on the full extent of volatility expansion moves. It is highly recommended to keep this enabled.")
+TRAIL_POINTS_MULT = input.float(0.5, "🎯 Trail Points ATR Multiplier", minval=0.5, maxval=5.0, step=0.1, group=group_execution,
+  tooltip="🎯 WHAT IT IS: The distance, in ATR multiples, that price must move in your favor before the trailing stop is activated.\n\n⚡ HOW IT WORKS: If this is set to 1.0, the trailing stop will only become active after the trade is in unrealized profit of at least 1 ATR.\n\n📈 HIGHER: Delays the activation of the trailing stop, giving the trade more room to move initially.\n📉 LOWER: Activates the trailing stop very quickly, moving to protect the position and reduce risk sooner.\n\n💡 PRO TIP: A small value like 0.5 ensures the trailing mechanism engages quickly to begin managing the trade and protecting capital as soon as possible.")
+TRAIL_OFFSET_MULT = input.float(0.5, "📏 Trail Offset ATR Multiplier", minval=0.1, maxval=2.0, step=0.1, group=group_execution,
+  tooltip="🎯 WHAT IT IS: The distance, in ATR multiples, that the active trailing stop will follow behind the price.\n\n⚡ HOW IT WORKS: This determines how 'tight' or 'loose' the trail is. A smaller value keeps the stop closer to the price, locking in profits more aggressively.\n\n📈 HIGHER (1.5-2.0): A looser trail. Less likely to be stopped out on minor pullbacks, but gives back more profit when the trend finally reverses.\n📉 LOWER (0.1-0.5): A tighter trail. Protects profits more aggressively, but is more likely to be stopped out on small, normal pullbacks within a trend.\n\n💡 PRO TIP: A value between 0.5 and 1.0 is often effective for capturing the core of a momentum move without giving too much back.")
+max_bars_in_trade = input.int(18, "⏰ Maximum Bars in Trade", group=group_execution, minval=1, maxval=100,
+  tooltip="🎯 WHAT IT IS: A safety net that automatically closes any open trade after this many bars have passed since entry.\n\n⚡ HOW IT WORKS: This is a time-based stop. Its purpose is to ensure the strategy does not get stuck in a stagnant, unprofitable trade that is going nowhere.\n\n📈 HIGHER: Allows trades more time to develop. Suitable for longer-term strategies or higher chart timeframes.\n📉 LOWER: Forces a faster turnover of trades. Suitable for short-term, scalping, or day trading strategies.\n\n💡 PRO TIP: The ideal value depends heavily on your chart's timeframe. For a 45-minute chart, 18 bars represents over half a trading day, which is a reasonable limit for a momentum-based system.")
+//------------------------------------------------------------------------------
+// ⏰ Session Management
+//------------------------------------------------------------------------------
+group_session = "⏰ Session"
+session_start = input.int(8, "Session Start Hour", minval=0, maxval=23, group=group_session, tooltip="The hour (in the exchange's 24-hour format) when the strategy is allowed to start looking for trades.")
+session_end = input.int(16, "Session End Hour", minval=0, maxval=23, group=group_session, tooltip="The hour (in the exchange's 24-hour format) when the strategy stops looking for new trades. It will not close existing trades outside this time, only refrain from opening new ones.")
+allow_weekend = input.bool(false, "Allow Weekend Trading", group=group_session, tooltip="If checked, allows the strategy to open new trades on Saturdays and Sundays. This is primarily for 24/7 markets like cryptocurrencies.")
+force_trading_session_active = input.bool(true, "Force Trading Session Active", group=group_session, tooltip="If checked, the strategy will ignore the session start/end times and will trade 24/7. This is useful for backtesting on assets without clear sessions or to see the strategy's full, unfiltered performance.")
+//------------------------------------------------------------------------------
+// 🎨 Visual Effects
+//------------------------------------------------------------------------------
+group_visuals = "🎨 Visual Effects"
+show_regime_background = input.bool(true, "Show Regime Background", group=group_visuals, tooltip="Toggles the colored background that indicates the current market regime (Green for Expansion, Aqua for Contraction).")
+show_morphism_flow = input.bool(true, "🌊 Circle Flow Lines", group=group_visuals, tooltip="Toggles the main flowing lines and particles that visualize the energy and direction of the DEVMA lines.")
+show_homotopy_paths = input.bool(true, "📐 Homotopy Paths", group=group_visuals, tooltip="Toggles the layered transparent boxes that represent the structural space between the Fast and Slow DEVMA lines.")
+show_consciousness_field = input.bool(true, "🧠 Consciousness Field", group=group_visuals, tooltip="Toggles the gridded, purple field that visualizes the signal's strength and historical presence.")
+show_functorial_levels = input.bool(true, "📏 Functorial Levels", group=group_visuals, tooltip="Toggles the horizontal lines extending to the right, marking the current values of the Fast and Slow DEVMA lines.")
+showOrderFlowClouds = input.bool(true, "🌊 Flow Boxes", group=group_visuals, tooltip="Toggles the smaller, compact boxes that visualize recent order flow intensity.")
+cloudIntensity = input.float(0.7, "📦 Box Intensity", minval=0.1, maxval=2.0, step=0.1, group=group_visuals, tooltip="Controls the vertical size of the 'Flow Boxes'. Higher values create larger, more prominent boxes.")
+//------------------------------------------------------------------------------
+// 🎨 Dashboard
+//------------------------------------------------------------------------------
+group_dashboard = "🎨 Dashboard"
+show_dashboard = input.bool(true, "Show Dashboard", group=group_dashboard, tooltip="Toggles the main information panel on or off.")
+dashboard_position = input.string("Top Right", "Dashboard Position", options=["Top Right", "Middle Right", "Bottom Right"], group=group_dashboard, tooltip="Sets the on-chart position for the information dashboard.")
+dashboard_size = input.string("Normal", "Dashboard Size", options=["Tiny", "Small", "Normal"], group=group_dashboard, tooltip="Adjusts the size and amount of information displayed on the dashboard.")
+//==============================================================================
+// COLORS
+//==============================================================================
+color_bullish = #00ff88
+color_bearish = #ff6b6b
+color_neutral = #8be9fd
+color_warning = #ffb86c
+color_info = #bd93f9
+color_success = #50fa7b
+text_bright = #f8f8f2
+
+//==============================================================================
+// ADAPTIVE VARIABLES - SIMPLIFIED VERSION
+//==============================================================================
+var array<float> trade_performance = array.new_float(30)
+var array<float> trade_outcomes = array.new_float(50)
+var array<int> trade_durations = array.new_int(20)
+var int total_trades = 0
+var float win_rate = 0.5
+var int avg_winning_duration = 20
+var float adaptive_time_exit_mult = 1.0
+
+// --- REMOVED --- Adaptive multipliers are no longer used in execution logic
+var float adaptive_stop_mult = 1.0
+var float adaptive_profit_mult = 1.0
+
+// Calculate ATR at top level for consistency
+atr_value = ta.atr(14)
+
+//==============================================================================
+// SESSION LOGIC
+//==============================================================================
+bar_hour = hour(time)
+bar_dow = dayofweek(time)
+in_session_hours = (session_start < session_end ? (bar_hour >= session_start and bar_hour < session_end) : (bar_hour >= session_start or bar_hour < session_end))
+not_weekend_day = allow_weekend or (bar_dow != dayofweek.saturday and bar_dow != dayofweek.sunday)
+is_trade_session_active = in_session_hours and not_weekend_day
+actual_trade_allowed = force_trading_session_active or is_trade_session_active
+
+//==============================================================================
+// CORE DEVMA CALCULATIONS
+//==============================================================================
+f_vovix_source() =>
+    (ta.atr(fastVoVixLen) - ta.atr(slowVoVixLen)) / (ta.stdev(ta.atr(fastVoVixLen), devLen) + 1e-6)
+
+src = f_vovix_source()
+dev = ta.stdev(src, devLen)
+fastDEVMA = ta.sma(dev, fastVoVixLen)
+slowDEVMA = ta.sma(dev, slowVoVixLen)
+
+//==============================================================================
+// ENHANCED CROSS LOGIC
+//==============================================================================
+devma_diff = fastDEVMA - slowDEVMA
+bullCross = ta.crossover(fastDEVMA, slowDEVMA) and devma_diff > 0
+bearCross = ta.crossunder(fastDEVMA, slowDEVMA) and math.abs(devma_diff) > 0
+
+// Regime detection
+expansion_regime = fastDEVMA > slowDEVMA
+
+// Signal strength calculation
+signal_strength = math.abs(devma_diff) / dev * 100
+signal_quality = signal_strength > 5.0 ? "ELITE" : signal_strength > 3.0 ? "STRONG" : signal_strength > 1.0 ? "GOOD" : "WEAK"
+
+//==============================================================================
+// 🚀 SIMPLIFIED EXECUTION LOGIC
+//==============================================================================
+// Check if we can enter new trades
+can_enter_new_trade = strategy.position_size == 0 and actual_trade_allowed
+
+// Apply adaptive time exit
+adaptive_max_bars = max_bars_in_trade
+if ENABLE_ADAPTIVE and ADAPTIVE_TIME_EXIT
+    // Let winners run longer with high win rate
+    if win_rate > 0.85
+        adaptive_max_bars := math.round(max_bars_in_trade * adaptive_time_exit_mult * 1.5)
+    else if win_rate > 0.75
+        adaptive_max_bars := math.round(max_bars_in_trade * adaptive_time_exit_mult * 1.25)
+    else
+        adaptive_max_bars := math.round(max_bars_in_trade * adaptive_time_exit_mult)
+
+//==============================================================================
+// ADAPTIVE MEMORY SYSTEM (FOR PERFORMANCE TRACKING)
+//==============================================================================
+if strategy.closedtrades > strategy.closedtrades[1] and barstate.isconfirmed
+    last_trade_pnl = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    last_trade_return = last_trade_pnl / strategy.initial_capital
+    last_trade_bars = strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1) - strategy.closedtrades.entry_bar_index(strategy.closedtrades - 1)
+
+    // Track performance
+    array.unshift(trade_performance, last_trade_return)
+    if array.size(trade_performance) > 30
+        array.pop(trade_performance)
+
+    array.unshift(trade_outcomes, last_trade_return)
+    if array.size(trade_outcomes) > 50
+        array.pop(trade_outcomes)
+
+    // Track trade duration for winners
+    if last_trade_pnl > 0
+        array.unshift(trade_durations, last_trade_bars)
+        if array.size(trade_durations) > 20
+            array.pop(trade_durations)
+
+    total_trades += 1
+
+    // Update win rate
+    if array.size(trade_performance) >= 10
+        wins = 0
+        for i = 0 to array.size(trade_performance) - 1
+            if array.get(trade_performance, i) > 0
+                wins += 1
+        win_rate := wins / array.size(trade_performance)
+
+// ADAPTIVE PARAMETER ADJUSTMENT (for Time-Exit only)
+if ENABLE_ADAPTIVE and array.size(trade_performance) >= 5 and total_trades % 3 == 0
+    // Calculate average winning trade duration
+    if array.size(trade_durations) > 5
+        duration_sum = 0
+        for i = 0 to math.min(array.size(trade_durations) - 1, 9)
+            duration_sum += array.get(trade_durations, i)
+        avg_winning_duration := math.round(duration_sum / math.min(array.size(trade_durations), 10))
+
+    // Time-based exit adaptation
+    if ADAPTIVE_TIME_EXIT and avg_winning_duration > 0
+        adaptive_time_exit_mult := math.max(0.5, math.min(2.0, avg_winning_duration / max_bars_in_trade))
+
+//==============================================================================
+// TRADE ENTRY LOGIC (ATR-BASED, NO RISK MULTIPLIERS)
+//==============================================================================
+var string trade_attempt_status_msg = "Idle"
+
+// LONG ENTRIES
+if bullCross and can_enter_new_trade and barstate.isconfirmed
+    trade_attempt_status_msg := "EXPANSION → LONG"
+
+    // --- MODIFIED --- Pure ATR-based calculations without adaptive multipliers
+    stop_distance = atr_value * ATR_SL_MULTIPLIER
+    profit_distance = atr_value * ATR_TP_MULTIPLIER
+
+    stop_loss = USE_SMART_STOPS ? close - stop_distance : na
+    take_profit = close + profit_distance
+
+    // --- MODIFIED --- Using fixed tradeQty input
+    strategy.entry("ExpansionLong", strategy.long, qty=tradeQty, comment="Expansion→LONG")
+
+    if USE_TRAILING_STOP
+        // --- MODIFIED --- Pure ATR-based trailing stop
+        trail_points = atr_value * TRAIL_POINTS_MULT
+        trail_offset = atr_value * TRAIL_OFFSET_MULT
+        strategy.exit("ExitExpLong", "ExpansionLong", stop=stop_loss, limit=take_profit, trail_points=trail_points, trail_offset=trail_offset)
+    else
+        strategy.exit("ExitExpLong", "ExpansionLong", stop=stop_loss, limit=take_profit)
+
+// SHORT ENTRIES
+if bearCross and can_enter_new_trade and barstate.isconfirmed
+    trade_attempt_status_msg := "CONTRACTION → SHORT"
+
+    // --- MODIFIED --- Pure ATR-based calculations without adaptive multipliers
+    stop_distance = atr_value * ATR_SL_MULTIPLIER
+    profit_distance = atr_value * ATR_TP_MULTIPLIER
+
+    stop_loss = USE_SMART_STOPS ? close + stop_distance : na
+    take_profit = close - profit_distance
+
+    // --- MODIFIED --- Using fixed tradeQty input
+    strategy.entry("ContractionShort", strategy.short, qty=tradeQty, comment="Contraction→SHORT")
+
+    if USE_TRAILING_STOP
+        // --- MODIFIED --- Pure ATR-based trailing stop
+        trail_points = atr_value * TRAIL_POINTS_MULT
+        trail_offset = atr_value * TRAIL_OFFSET_MULT
+        strategy.exit("ExitConShort", "ContractionShort", stop=stop_loss, limit=take_profit, trail_points=trail_points, trail_offset=trail_offset)
+    else
+        strategy.exit("ExitConShort", "ContractionShort", stop=stop_loss, limit=take_profit)
+
+// Time-based exit with adaptive duration
+if strategy.position_size != 0
+    bars_in_trade = bar_index - strategy.opentrades.entry_bar_index(strategy.opentrades - 1)
+    if bars_in_trade >= adaptive_max_bars and barstate.isconfirmed
+        strategy.close_all(comment="Time Exit " + str.tostring(bars_in_trade) + "b")
+        trade_attempt_status_msg := "Time Exit: " + str.tostring(bars_in_trade) + "bars"
+
+//==============================================================================
+// 📊 SIMPLIFIED DASHBOARD
+//==============================================================================
+if show_dashboard and barstate.isconfirmed
+    dash_pos = dashboard_position == "Top Right" ? position.top_right :
+               dashboard_position == "Middle Right" ? position.middle_right :
+               position.bottom_right
+
+    cols = 4
+    rows = dashboard_size == "Normal" ? 20 : dashboard_size == "Small" ? 16 : 12
+
+    var table dashboard = na
+    var int last_bar_drawn = 0
+
+    should_redraw = na(dashboard) or (bar_index - last_bar_drawn > 10) or barstate.isconfirmed
+
+    if should_redraw
+        if not na(dashboard)
+            table.delete(dashboard)
+
+        dashboard := table.new(dash_pos, cols, rows,
+                             border_width=1,
+                             border_color=color.new(color.gray, 50),
+                             bgcolor=color.new(#1e222d, 20))
+
+        last_bar_drawn := bar_index
+
+    table.clear(dashboard, 0, 0, cols-1, rows-1)
+
+    // Color scheme
+    dc_white = color.white
+    dc_gray = #B2B5BE
+    dc_green = #26A69A
+    dc_red = #EF5350
+    dc_gold = #FFD700
+    dc_purple = #9C27B0
+    dc_aqua = #00BCD4
+    dc_orange = #FF8C00
+    bg_header = color.new(color.black, 30)
+    bg_section = color.new(color.gray, 85)
+
+    text_size = dashboard_size == "Tiny" ? size.tiny : dashboard_size == "Small" ? size.small : size.tiny
+
+    current_row = 0
+
+    // Header
+    table.merge_cells(dashboard, 0, current_row, cols - 1, current_row)
+    table.cell(dashboard, 0, current_row, "🌌 VOVIX DEVMA | " + syminfo.ticker,
+              text_halign=text.align_center, text_color=dc_white, bgcolor=bg_header, text_size=text_size)
+    current_row += 1
+
+    // VOVIX ANALYSIS
+    table.merge_cells(dashboard, 0, current_row, cols - 1, current_row)
+    table.cell(dashboard, 0, current_row, "═══ 🎯 VOVIX ANALYSIS ═══",
+              text_halign=text.align_center, text_color=dc_gold, bgcolor=bg_section, text_size=text_size)
+    current_row += 1
+
+    // Fast/Slow DEVMA
+    table.cell(dashboard, 0, current_row, "Fast", text_color=dc_gray, text_size=text_size)
+    fast_color = fastDEVMA > fastDEVMA[1] ? dc_green : dc_red
+    table.cell(dashboard, 1, current_row, str.tostring(fastDEVMA, "#.##"),
+              text_halign=text.align_right, text_color=fast_color, text_size=text_size)
+    table.cell(dashboard, 2, current_row, "Slow", text_color=dc_gray, text_size=text_size)
+    slow_color = slowDEVMA > slowDEVMA[1] ? dc_green : dc_red
+    table.cell(dashboard, 3, current_row, str.tostring(slowDEVMA, "#.##"),
+              text_halign=text.align_right, text_color=slow_color, text_size=text_size)
+    current_row += 1
+
+    // Regime
+    table.cell(dashboard, 0, current_row, "Regime", text_color=dc_gray, text_size=text_size)
+    regime_status = expansion_regime ? "🚀 EXPANSION" : "⚛️ CONTRACTION"
+    regime_color = expansion_regime ? dc_green : dc_purple
+    table.merge_cells(dashboard, 1, current_row, cols - 1, current_row)
+    table.cell(dashboard, 1, current_row, regime_status,
+              text_halign=text.align_right, text_color=regime_color, text_size=text_size)
+    current_row += 1
+
+    // Signal Quality
+    table.cell(dashboard, 0, current_row, "Quality", text_color=dc_gray, text_size=text_size)
+    qual_color = signal_quality == "ELITE" ? dc_gold : signal_quality == "STRONG" ? dc_green :
+                 signal_quality == "GOOD" ? dc_aqua : dc_gray
+    table.merge_cells(dashboard, 1, current_row, cols - 1, current_row)
+    table.cell(dashboard, 1, current_row, signal_quality,
+              text_halign=text.align_right, text_color=qual_color, text_size=text_size)
+    current_row += 1
+
+    // Performance
+    actual_win_rate = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades : 0.0
+    table.cell(dashboard, 0, current_row, "Win Rate", text_color=dc_gray, text_size=text_size)
+    wr_color = actual_win_rate >= 0.6 ? dc_green : actual_win_rate >= 0.4 ? dc_gold : dc_red
+    table.cell(dashboard, 1, current_row, str.tostring(actual_win_rate * 100, "#.#") + "%", text_halign=text.align_right, text_color=wr_color, text_size=text_size)
+    table.cell(dashboard, 2, current_row, "Trades", text_color=dc_gray, text_size=text_size)
+    table.cell(dashboard, 3, current_row, str.tostring(strategy.closedtrades),
+              text_halign=text.align_right, text_color=dc_white, text_size=text_size)
+    current_row += 1
+
+    // Position Size
+    table.cell(dashboard, 0, current_row, "Trade Qty", text_color=dc_gray, text_size=text_size)
+    table.merge_cells(dashboard, 1, current_row, 3, current_row)
+    table.cell(dashboard, 1, current_row, str.tostring(tradeQty), text_color=dc_orange, text_size=text_size, text_halign=text.align_right)
+    current_row += 1
+
+    // Session
+    table.cell(dashboard, 0, current_row, "Session", text_color=dc_gray, text_size=text_size)
+    session_text_val = actual_trade_allowed ? "OPEN" : "CLOSED"
+    session_color_val = actual_trade_allowed ? dc_green : dc_red
+    table.merge_cells(dashboard, 1, current_row, 3, current_row)
+    table.cell(dashboard, 1, current_row, session_text_val, text_color=session_color_val, text_size=text_size, text_halign=text.align_right)
+    current_row += 1
+
+    // Position
+    table.cell(dashboard, 0, current_row, "Position", text_color=dc_gray, text_size=text_size)
+    pos_text = strategy.position_size > 0 ? "🟢 LONG" : strategy.position_size < 0 ? "🔴 SHORT" : "⚪ FLAT"
+    pos_color = strategy.position_size > 0 ? dc_green : strategy.position_size < 0 ? dc_red : dc_gray
+    table.cell(dashboard, 1, current_row, pos_text,
+              text_halign=text.align_right, text_color=pos_color, text_size=text_size)
+    table.cell(dashboard, 2, current_row, "PnL", text_color=dc_gray, text_size=text_size)
+    pnl_color = strategy.openprofit > 0 ? dc_green : strategy.openprofit < 0 ? dc_red : dc_gray
+    table.cell(dashboard, 3, current_row, str.tostring(strategy.openprofit, "#"),
+              text_halign=text.align_right, text_color=pnl_color, text_size=text_size)
+    current_row += 1
+
+    // Adaptive Status (Now only shows static multipliers for reference)
+    if ENABLE_ADAPTIVE and dashboard_size != "Tiny"
+        table.merge_cells(dashboard, 0, current_row, cols - 1, current_row)
+        table.cell(dashboard, 0, current_row, "═══ 🧠 ADAPTIVE STATUS ═══",
+                  text_halign=text.align_center, text_color=dc_purple, bgcolor=bg_section, text_size=text_size)
+        current_row += 1
+
+        // Stop and profit multipliers
+        table.cell(dashboard, 0, current_row, "Stop Mult", text_color=dc_gray, text_size=text_size)
+        stop_color = adaptive_stop_mult > 1.0 ? dc_red : adaptive_stop_mult < 1.0 ? dc_green : dc_white
+        table.cell(dashboard, 1, current_row, str.tostring(adaptive_stop_mult, "#.##"),
+                  text_halign=text.align_right, text_color=stop_color, text_size=text_size)
+        table.cell(dashboard, 2, current_row, "Profit Mult", text_color=dc_gray, text_size=text_size)
+        profit_color = adaptive_profit_mult > 1.0 ? dc_green : adaptive_profit_mult < 1.0 ? dc_red : dc_white
+        table.cell(dashboard, 3, current_row, str.tostring(adaptive_profit_mult, "#.##"),
+                  text_halign=text.align_right, text_color=profit_color, text_size=text_size)
+        current_row += 1
+
+//==============================================================================
+// VARIABLES FOR VISUALS
+//==============================================================================
+// Advanced signal calculations
+signal_initial = ta.crossover(fastDEVMA, slowDEVMA)
+signal_terminal = ta.crossunder(fastDEVMA, slowDEVMA)
+signal_product = expansion_regime and signal_strength > 3.0
+signal_coproduct = not expansion_regime and signal_strength > 2.0
+
+// Signal strengths
+initial_strength = signal_initial ? math.min(1.0, signal_strength / 10.0) : 0.0
+terminal_strength = signal_terminal ? math.min(1.0, signal_strength / 10.0) : 0.0
+
+// Flow calculations
+v2_orderFlowScore = (fastDEVMA - slowDEVMA) / (dev + 1e-6)
+composite_morphism_strength = math.min(1.0, math.abs(v2_orderFlowScore))
+consciousness_level = math.min(1.0, signal_strength / 15.0)
+max_homotopy_score = math.min(1.0, math.abs(devma_diff) / dev)
+
+// Moving averages for functorial levels
+sma_5 = ta.sma(close, 5)
+sma_13 = ta.sma(close, 13)
+sma_21 = ta.sma(close, 21)
+sma_34 = ta.sma(close, 34)
+sma_55 = ta.sma(close, 55)
+functorial_integrity = win_rate
+
+//==============================================================================
+// YOUR COMPLETE VISUAL SYSTEM - UNCHANGED
+//==============================================================================
+// Use default values for missing inputs
+signal_transparency_input = 30
+visual_transparency = 2  // Very low for bold visuals like in your image
+type_recursion_depth = 8
+deformation_complexity = 13
+cloud_lookback = 20
+universe_depth = 5
+signal_alpha = 100 - signal_transparency_input
+
+// PRODUCT/COPRODUCT SIGNALS
+product_plot = signal_product ? (fastDEVMA + slowDEVMA) / 2 : na
+coproduct_plot = signal_coproduct ? (fastDEVMA + slowDEVMA) / 2 : na
+
+plotshape(product_plot, "Product Signal", shape.circle, location.absolute, color=color.new(color_neutral, signal_alpha), size=size.tiny)
+plotshape(product_plot, "Product BG", shape.circle, location.absolute, color=color.new(color_neutral, signal_alpha + 10), size=size.small, offset=0)
+
+plotshape(coproduct_plot, "Coproduct Signal", shape.circle, location.absolute, color=color.new(color_warning, signal_alpha), size=size.tiny)
+plotshape(coproduct_plot, "Coproduct BG", shape.circle, location.absolute, color=color.new(color_warning, signal_alpha + 10), size=size.small, offset=0)
+
+// 🌊 MORPHISM FLOW (THE BADASS FLOWING LINES WITH CIRCLES)
+if show_morphism_flow
+    flow_strength = math.max(0.3, composite_morphism_strength)
+    flow_color = fastDEVMA > slowDEVMA ? color_bullish : color_bearish
+
+    base_transparency = 100 - visual_transparency
+    beam_width = math.round(flow_strength * 8) + 2
+
+    // Flow beam lines
+    for i = 1 to math.min(type_recursion_depth + 2, 8)
+        if bar_index > i
+            alpha = base_transparency + 30 + i * 8
+            beam_thickness = math.max(1, beam_width - i)
+
+            y1 = fastDEVMA[i]
+            y2 = fastDEVMA
+
+            line.new(bar_index - i, y1, bar_index, y2, color=color.new(flow_color, math.min(70, alpha)), width=beam_thickness, style=line.style_solid)
+
+    // Energy field box around flow
+    if flow_strength > 0.1
+        energy_range = dev * flow_strength * 1.5
+        energy_transparency = math.max(10, base_transparency - 15)
+
+        box.new(bar_index - type_recursion_depth, fastDEVMA + energy_range, bar_index, fastDEVMA - energy_range, bgcolor=color.new(flow_color, energy_transparency), border_color=color.new(flow_color, math.max(5, energy_transparency - 5)), border_width=1)
+
+    // THE BEAUTIFUL CIRCLE PARTICLES (THE BADASS PART YOU LOVED)
+    for i = 1 to type_recursion_depth
+        if bar_index > i and i % 2 == 0
+            particle_size = flow_strength > 0.7 ? size.small : size.tiny
+            y_pos = (fastDEVMA + fastDEVMA[i]) / 2
+            label.new(bar_index - i, y_pos, "●", color=color.new(flow_color, math.min(50, base_transparency)), textcolor=color.new(flow_color, math.min(40, base_transparency - 5)), style=label.style_none, size=particle_size)
+
+// 📐 HOMOTOPY PATHS (LAYERED TRANSPARENT BOXES)
+if show_homotopy_paths
+    path_range = dev * math.max(0.3, max_homotopy_score) * 1.2
+    base_transparency = 100 - visual_transparency
+
+    for i = 0 to 2
+        box_transparency = base_transparency + i * 2.5
+        box_height = path_range * (1 - i * 0.2)
+        center_line = (fastDEVMA + slowDEVMA) / 2
+
+        box.new(bar_index - deformation_complexity, center_line + box_height, bar_index, center_line - box_height,
+               bgcolor=color.new(color_info, box_transparency),
+               border_color=color.new(color_info, box_transparency - 5),
+               border_width=1)
+
+// 🧠 CONSCIOUSNESS FIELD (THE BEAUTIFUL GRID FROM YOUR IMAGE)
+if show_consciousness_field
+    consciousness_range = dev * math.max(0.3, consciousness_level) * 1.2
+    consciousness_color = color.purple
+
+    bars_back = cloud_lookback
+    base_transparency = 100 - visual_transparency
+
+    if bars_back > 0
+        grid_size = math.max(5, math.floor(bars_back / 8))
+        center_line = (fastDEVMA + slowDEVMA) / 2
+
+        for i = 0 to 7
+            start_bar = bar_index - bars_back + (i * grid_size)
+            end_bar = bar_index - bars_back + ((i + 1) * grid_size)
+
+            if start_bar >= 0 and end_bar <= bar_index
+                grid_transparency = base_transparency + (i * 2)
+
+                box.new(start_bar, center_line + consciousness_range, end_bar, center_line - consciousness_range,
+                       bgcolor=color.new(consciousness_color, math.min(95, grid_transparency)),
+                       border_color=color.new(consciousness_color, math.min(90, grid_transparency - 5)),
+                       border_width=1)
+
+// 📏 FUNCTORIAL LEVELS - FIXED TYPE ISSUES
+var line[] functorial_lines = array.new<line>()
+var label[] functorial_labels = array.new<label>()
+
+if show_functorial_levels and barstate.isconfirmed
+    if array.size(functorial_lines) > 0
+        for i = array.size(functorial_lines) - 1 to 0
+            line.delete(array.get(functorial_lines, i))
+        array.clear(functorial_lines)
+
+    if array.size(functorial_labels) > 0
+        for i = array.size(functorial_labels) - 1 to 0
+            label.delete(array.get(functorial_labels, i))
+        array.clear(functorial_labels)
+
+    // Use simple float values instead of array
+    fast_val = fastDEVMA
+    slow_val = slowDEVMA
+    dev_val = dev
+
+    levels_to_show = math.min(universe_depth, 3)
+    transparency = 100 - signal_transparency_input
+
+    displayed_lines = 0
+    var float last_value = na
+
+    // Fast DEVMA line
+    if displayed_lines < 3
+        level_color = functorial_integrity > 0.8 ? color_success : functorial_integrity > 0.5 ? color_warning : color_bearish
+
+        glow_line = line.new(bar_index - 2, fast_val, bar_index + 35, fast_val, color=color.new(level_color, transparency + 15), width=2, style=line.style_solid)
+        array.push(functorial_lines, glow_line)
+
+        main_line = line.new(bar_index - 2, fast_val, bar_index + 35, fast_val, color=color.new(level_color, transparency), width=1, style=line.style_solid)
+        array.push(functorial_lines, main_line)
+
+        level_label_obj = label.new(bar_index + 35, fast_val, "DEVMA: Fast",
+                                   color=color.new(level_color, 20),
+                                   textcolor=text_bright,
+                                   style=label.style_label_left,
+                                   size=size.small)
+        array.push(functorial_labels, level_label_obj)
+
+        last_value := fast_val
+        displayed_lines += 1
+
+    // Slow DEVMA line
+    if displayed_lines < 3 and (na(last_value) or math.abs(slow_val - last_value) > dev * 0.01)
+        level_color = functorial_integrity > 0.8 ? color_success : functorial_integrity > 0.5 ? color_warning : color_bearish
+
+        glow_line = line.new(bar_index - 2, slow_val, bar_index + 35, slow_val, color=color.new(level_color, transparency + 15), width=2, style=line.style_solid)
+        array.push(functorial_lines, glow_line)
+
+        main_line = line.new(bar_index - 2, slow_val, bar_index + 35, slow_val, color=color.new(level_color, transparency), width=1, style=line.style_solid)
+        array.push(functorial_lines, main_line)
+
+        level_label_obj = label.new(bar_index + 35, slow_val, "DEVMA: Slow",
+                                   color=color.new(level_color, 20),
+                                   textcolor=text_bright,
+                                   style=label.style_label_left,
+                                   size=size.small)
+        array.push(functorial_labels, level_label_obj)
+
+        displayed_lines += 1
+
+// 🌊 COMPACT FLOW BOXES (LESS DENSE, MORE SPACED)
+if showOrderFlowClouds and math.abs(v2_orderFlowScore) > 0.2 and barstate.isconfirmed
+    box_color = expansion_regime ? color.green : color.red
+
+    // Only 2 boxes, more spaced out, more transparent like in your drawing
+    for i = 0 to 1
+        box_alpha = 85 + i * 5
+        box_range = dev * cloudIntensity * (0.3 - i * 0.1)
+
+        x1 = bar_index - 20 + i * 10  // Much more spacing
+        x2 = bar_index - 10 + i * 10
+        y_center = (fastDEVMA + slowDEVMA) / 2
+        y1 = y_center + box_range
+        y2 = y_center - box_range
+
+        if x1 >= 0 and x2 >= 0
+            box.new(x1, y1, x2, y2,
+                   bgcolor=color.new(box_color, box_alpha),
+                   border_color=color.new(box_color, box_alpha - 5))
+//==============================================================================
+// YOUR BEAUTIFUL ORIGINAL LINES ✨
+//==============================================================================
+// Fast DEVMA - Green when rising, maroon when falling
+plot(fastDEVMA, "FastDEVMA", color=fastDEVMA > fastDEVMA[1] ? color.green : color.maroon, linewidth=2)
+
+// Slow DEVMA - Aqua when rising, orange when falling
+plot(slowDEVMA, "SlowDEVMA", color=slowDEVMA > slowDEVMA[1] ? color.aqua : color.orange, linewidth=2)
+
+// VoVix StdDev - Dim purple LINE (not area!)
+plot(dev, "StdDev", color=color.new(color.purple, 60), linewidth=1)
+
+//==============================================================================
+// WORKING SIGNAL LABELS WITH PROPER VARIABLE DECLARATIONS
+//==============================================================================
+// Simple color-coded arrows - clean and fast
+plotchar(bullCross, "Long Signal", "▲", location.bottom, color=color.green, size=size.tiny)
+plotchar(bearCross, "Short Signal", "▼", location.top, color=color.red, size=size.tiny)
+// Background
+bgcolor(show_regime_background ? (expansion_regime ? color.new(color.green, 97) : color.new(color.aqua, 97)) : na)
+
+//==============================================================================
+// ALERTS
+//==============================================================================
+if bullCross
+    alert("🚀 VoVix EXPANSION: " + signal_quality, alert.freq_once_per_bar)
+if bearCross
+    alert("❄️ VoVix CONTRACTION: " + signal_quality, alert.freq_once_per_bar)

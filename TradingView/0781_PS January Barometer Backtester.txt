@@ -1,0 +1,63 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PrivacySmurf
+
+//@version=5
+strategy("PS January Barometer Backtester", shorttitle = "PS JBB v1.0", overlay=true)
+
+// User options for additional criteria
+useSantaClausRally = input.bool(false, "Use Santa Claus Rally")
+useFirstFiveDays = input.bool(false, "Use First Five Days Indicator")
+
+// Function to detect if a new year has started
+isNewYear() =>
+    year != year[1]
+
+// Check if the current timeframe is monthly
+if timeframe.ismonthly
+    // Initialization of variables at the start of each year
+    var float januaryHigh = na
+    var float entryPrice = na
+    var float exitPrice = na
+    var bool tradeInitiated = false
+    var float firstFiveDaysReturn = na
+    var float santaClausRallyReturn = na
+
+    // Logic for additional criteria
+    if isNewYear()
+        januaryHigh := high
+        tradeInitiated := false
+        // Reset additional indicators
+        firstFiveDaysReturn := na
+        santaClausRallyReturn := na
+
+    // First Five Days Indicator Logic
+    if useFirstFiveDays and month == 1 and dayofmonth <= 5
+        // Calculate return for first five days
+        firstFiveDaysReturn := (close - open) / open
+
+    // Santa Claus Rally Logic
+    if useSantaClausRally and month == 12 and dayofmonth >= 25 or (month == 1 and dayofmonth <= 2)
+        // Calculate return for Santa Claus Rally period
+        santaClausRallyReturn := (close - open) / open
+
+    // Trade Entry Logic Modification
+    if not tradeInitiated and month >= 2 and month <= 6 and close > januaryHigh and (useFirstFiveDays ? firstFiveDaysReturn > 0 : true) and (useSantaClausRally ? santaClausRallyReturn > 0 : true)
+        entryPrice := close
+        tradeInitiated := true
+
+    // Logic for trade exit at the end of the year
+    if month == 12
+        exitPrice := close
+        tradeInitiated := false
+        // Calculating trade metrics
+        tradeReturn = (exitPrice - entryPrice) / entryPrice
+        strategy.close_all(when=tradeInitiated)
+
+    // Running the strategy
+    strategy.entry("Long", strategy.long, when=tradeInitiated)
+    strategy.close("Long", when=month == 12)
+
+else
+    if barstate.islast
+        // Display a warning if not on a monthly timeframe
+        label.new(bar_index, high, "This strategy only works on a monthly timeframe", style = label.style_label_down, color=color.red)

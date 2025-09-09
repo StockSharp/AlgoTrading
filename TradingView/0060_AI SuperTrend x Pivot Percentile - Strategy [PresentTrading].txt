@@ -1,0 +1,388 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+//@version=5
+strategy("AI SuperTrend x Pivot Percentile - Strategy [PresentTrading]",shorttitle = "AI ST x Pivot Percentile - Strategy [PresentTrading]", overlay=true, precision=3,
+ commission_value= 0.1, commission_type=strategy.commission.percent, slippage= 1,
+  currency=currency.USD, default_qty_type = strategy.percent_of_equity, default_qty_value = 10, initial_capital= 10000)
+
+// Trading Direction
+tradeDirection = input.string("Both", "Select Trading Direction", options=["Long", "Short", "Both"], group="Trade Setup")
+
+// AI Settings
+k  = input.int(6, title="Neighbors", minval=1, maxval=100, group="AI Settings", inline="AI1", tooltip="Number of nearest neighbors in KNN algorithm.")
+n_ = input.int(48, title="Data Points", minval=1, maxval=100, group="AI Settings", inline="AI1", tooltip="Number of data points to consider for KNN.")
+k2 = input.int(6, title="2nd Neighbors", minval=1, maxval=100, group="AI Settings", inline="AI2", tooltip="Number of nearest neighbors for the second KNN algorithm.")
+n2_ = input.int(48, title="2nd Data Points", minval=1, maxval=100, group="AI Settings", inline="AI2", tooltip="Number of data points for the second KNN algorithm.")
+n  = math.max(k, n_)
+n2 = math.max(k2, n2_)
+
+// SuperTrend Settings
+higherTf1 = input.timeframe('360', "Higher Time Frame for 1st ST", group="Super Trend Settings")
+higherTf2 = input.timeframe('720', "Higher Time Frame for 2nd ST", group="Super Trend Settings")
+len = input.int(10, "Length", minval=1, group="Super Trend Settings")
+factor = input.float(3.5, "Factor", step=0.1, group="Super Trend Settings")
+maSrc = input.string("WMA", "MA Source", options=["SMA", "EMA", "WMA", "RMA", "VWMA"], group="Super Trend Settings")
+len2 = input.int(5, "2nd Length", minval=1, group="Super Trend Settings")
+factor2 = input.float(3.0, "2nd Factor", step=0.1, group="Super Trend Settings")
+
+// AI Trend Prediction Settings
+KNN_PriceLen = input.int(10, "Price Trend", minval=2, maxval=500, step=10, group="AI Trend Prediction", inline="AITrend1")
+KNN_STLen = input.int(80, "Prediction Trend", minval=2, maxval=500, step=10, group="AI Trend Prediction", inline="AITrend1")
+KNN_PriceLen2 = input.int(10, "2nd Price Trend", minval=2, maxval=500, step=10, group="AI Trend Prediction", inline="AITrend2")
+KNN_STLen2 = input.int(80, "2nd Prediction Trend", minval=2, maxval=500, step=10, group="AI Trend Prediction", inline="AITrend2")
+
+// Pivot Percentile Settings
+length = input.int(14, "Length for Pivot Percentile", minval=1, maxval=20, group="Pivot Percentile Settings")
+
+// ADX and DMI Settings
+adxLength = input.int(14, "ADX Length", minval=1, group="ADX and DMI Settings")
+adxTf = input.timeframe('D', "Time Frame for ADX and DMI Filter", group="ADX and DMI Settings")
+useAdxFilter = input.bool(true, "Use ADX and DMI Filter?", group="ADX and DMI Settings")
+
+// Other Settings
+aisignals = input.bool(true, "Enable AI Trend Signals", group="Other Settings")
+Bullish_col = input.color(color.lime, "Bullish Color", group="Other Settings")
+Bearish_col = input.color(color.red, "Bearish Color", group="Other Settings")
+upCol = input.color(color.lime, "Bullish Color for SuperTrend", group="Other Settings")
+dnCol = input.color(color.red, "Bearish Color for SuperTrend", group="Other Settings")
+neCol = input.color(color.blue, "Neutral Color for SuperTrend", group="Other Settings")
+
+
+HTF_Close = request.security(syminfo.tickerid, adxTf, close)
+HTF_High = request.security(syminfo.tickerid, adxTf, high)
+HTF_Low = request.security(syminfo.tickerid, adxTf, low)
+
+deltaHigh = HTF_High - HTF_High[1]
+deltaLow = HTF_Low[1] - HTF_Low
+
+plusDM = deltaHigh > deltaLow and deltaHigh > 0? deltaHigh: 0
+minusDM = deltaLow > deltaHigh and deltaLow > 0? deltaLow: 0
+
+ATR = ta.wma(math.abs(HTF_High - HTF_Low) + math.abs(HTF_High - HTF_Close[1]) + math.abs(HTF_Low - HTF_Close[1]), adxLength)
+
+plusDI = 100 * ta.wma(plusDM, adxLength) / ATR
+minusDI = 100 * ta.wma(minusDM, adxLength) / ATR
+
+DX = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+ADX = ta.wma(DX, adxLength)
+
+// ~~ Calculate the SuperTrend based on the user's choice
+// ~~ First Supertrend
+TfClose1 = request.security(syminfo.tickerid, higherTf1, close)
+vwma1 = switch maSrc
+    "SMA"  => ta.sma(TfClose1*volume, len) / ta.sma(volume, len)
+    "EMA"  => ta.ema(TfClose1*volume, len) / ta.ema(volume, len)
+    "WMA"  => ta.wma(TfClose1*volume, len) / ta.wma(volume, len)
+    "RMA"  => ta.rma(TfClose1*volume, len) / ta.rma(volume, len)
+    "VWMA" => ta.vwma(TfClose1*volume, len) / ta.vwma(volume, len)
+
+atr = request.security(syminfo.tickerid, higherTf1, ta.atr(len))
+upperBand = vwma1 + factor * atr
+lowerBand = vwma1 - factor * atr
+prevLowerBand = nz(lowerBand[1])
+prevUpperBand = nz(upperBand[1])
+
+// ~~ Second Supertrend
+TfClose2 = request.security(syminfo.tickerid, higherTf2, close)
+vwma2 = switch maSrc
+    "SMA"  => ta.sma(TfClose2*volume, len2) / ta.sma(volume, len2)
+    "EMA"  => ta.ema(TfClose2*volume, len2) / ta.ema(volume, len2)
+    "WMA"  => ta.wma(TfClose2*volume, len2) / ta.wma(volume, len2)
+    "RMA"  => ta.rma(TfClose2*volume, len2) / ta.rma(volume, len2)
+    "VWMA" => ta.vwma(TfClose2*volume, len2) / ta.vwma(volume, len2)
+
+atr2 = request.security(syminfo.tickerid, higherTf2, ta.atr(len2))
+upperBand2 = vwma2 + factor2 * atr2
+lowerBand2 = vwma2 - factor2 * atr2
+prevLowerBand2 = nz(lowerBand2[1])
+prevUpperBand2 = nz(upperBand2[1])
+
+lowerBand := lowerBand > prevLowerBand or close[1] < prevLowerBand ? lowerBand : prevLowerBand
+upperBand := upperBand < prevUpperBand or close[1] > prevUpperBand ? upperBand : prevUpperBand
+int direction = na
+float superTrend = na
+
+lowerBand2 := lowerBand2 > prevLowerBand2 or close[1] < prevLowerBand2 ? lowerBand2 : prevLowerBand2
+upperBand2 := upperBand2 < prevUpperBand2 or close[1] > prevUpperBand2 ? upperBand2 : prevUpperBand2
+int direction2 = na
+float superTrend2 = na
+
+prevSuperTrend = superTrend[1]
+if na(atr[1])
+    direction := 1
+else if prevSuperTrend == prevUpperBand
+    direction := close > upperBand ? -1 : 1
+else
+    direction := close < lowerBand ? 1 : -1
+superTrend := direction == -1 ? lowerBand : upperBand
+
+prevSuperTrend2 = superTrend2[1]
+if na(atr2[1])
+    direction2 := 1
+else if prevSuperTrend2 == prevUpperBand2
+    direction2 := close > upperBand2 ? -1 : 1
+else
+    direction2 := close < lowerBand2 ? 1 : -1
+superTrend2 := direction2 == -1 ? lowerBand2 : upperBand2
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Collect data points and their corresponding labels
+price  = ta.wma(close,KNN_PriceLen)
+sT     = ta.wma(superTrend,KNN_STLen)
+data   = array.new_float(n)
+labels = array.new_int(n)
+for i = 0 to n - 1
+    data.set(i, superTrend[i])
+    label_i = price[i] > sT[i] ? 1 : 0
+    labels.set(i, label_i)
+
+// Collect data points for second SuperTrend and their corresponding labels
+price2  = ta.wma(close,KNN_PriceLen2)
+sT2     = ta.wma(superTrend2,KNN_STLen2)
+data2   = array.new_float(n)
+labels2 = array.new_int(n)
+for i = 0 to n - 1
+    data2.set(i, superTrend2[i])
+    label_i2 = price2[i] > sT2[i] ? 1 : 0  // Assuming same price for second SuperTrend
+    labels2.set(i, label_i2)
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Define a function to compute distance between two data points
+distance(x1, x2) =>
+    math.abs(x1 - x2)
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Define the weighted k-nearest neighbors (KNN) function
+knn_weighted(data, labels, k, x) =>
+    n1 = data.size()
+    distances = array.new_float(n1)
+    indices   = array.new_int(n1)
+    // Compute distances from the current point to all other points
+    for i = 0 to n1 - 1
+        x_i = data.get(i)
+        dist = distance(x, x_i)
+        distances.set(i, dist)
+        indices.set(i, i)
+    // Sort distances and corresponding indices in ascending order
+    // Bubble sort method
+    for i = 0 to n1 - 2
+        for j = 0 to n1 - i - 2
+            if distances.get(j) > distances.get(j + 1)
+                tempDist = distances.get(j)
+                distances.set(j, distances.get(j + 1))
+                distances.set(j + 1, tempDist)
+                tempIndex = indices.get(j)
+                indices.set(j, indices.get(j + 1))
+                indices.set(j + 1, tempIndex)
+    // Compute weighted sum of labels of the k nearest neighbors
+    weighted_sum = 0.
+    total_weight = 0.
+    for i = 0 to k - 1
+        index = indices.get(i)
+        label_i = labels.get(index)
+        weight_i = 1 / (distances.get(i) + 1e-6)
+        weighted_sum += weight_i * label_i
+        total_weight += weight_i
+    weighted_sum / total_weight
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Classify the current data point
+current_superTrend = superTrend
+label_             = knn_weighted(data, labels, k, current_superTrend)
+label_upTrend = label_ == 1 ? 1:0
+label_downTrend = label_ == 0 ? -1:0
+
+// Classify the current data point for second SuperTrend
+current_superTrend2 = superTrend2
+label2_ = knn_weighted(data2, labels2, k, current_superTrend2)
+label2_upTrend = label2_ == 1 ? 1:0
+label2_downTrend = label2_ == 0 ? -1:0
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Plot
+col = label_ == 1?upCol:label_ == 0?dnCol:neCol
+plot(current_superTrend, color=col, title="Volume Super Trend AI")
+
+upTrend   = plot(superTrend==lowerBand?current_superTrend:na, title="Up Volume Super Trend AI", color=col, style=plot.style_linebr)
+Middle    = plot((open + close) / 2, display=display.none, editable=false)
+downTrend = plot(superTrend==upperBand?current_superTrend:na, title="Down Volume Super Trend AI", color=col, style=plot.style_linebr)
+fill_col  = color.new(col,95)
+fill(Middle, upTrend, fill_col, fillgaps=false,title="Up Volume Super Trend AI")
+fill(Middle, downTrend, fill_col, fillgaps=false, title="Down Volume Super Trend AI")
+
+// Plot Second SuperTrend
+col2 = label2_ == 1 ? upCol : label2_ == 0 ? dnCol : neCol
+plot(current_superTrend2, color=col2, title="Volume Super Trend AI 2")
+
+upTrend2   = plot(superTrend2==lowerBand2 ? current_superTrend2 : na, title="Up Volume Super Trend AI 2", color=col2, style=plot.style_linebr)
+downTrend2 = plot(superTrend2==upperBand2 ? current_superTrend2 : na, title="Down Volume Super Trend AI 2", color=col2, style=plot.style_linebr)
+fill_col2  = color.new(col2, 95)
+fill(Middle, upTrend2, fill_col2, fillgaps=false, title="Up Volume Super Trend AI 2")
+fill(Middle, downTrend2, fill_col2, fillgaps=false, title="Down Volume Super Trend AI 2")
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~}
+
+// ~~ Ai Super Trend Signals
+Start_TrendUp = col==upCol and (col[1]!=upCol or col[1]==neCol) and aisignals
+Start_TrendDn = col==dnCol and (col[1]!=dnCol or col[1]==neCol) and aisignals
+// Second AI Super Trend Signals
+Start_TrendUp2 = col2==upCol and (col2[1]!=upCol or col2[1]==neCol) and aisignals
+Start_TrendDn2 = col2==dnCol and (col2[1]!=dnCol or col2[1]==neCol) and aisignals
+
+TrendUp       = direction == -1 and direction[1] == 1  and label_ == 1 and aisignals
+TrendDn       = direction == 1  and direction[1] ==-1  and label_ == 0 and aisignals
+TrendUp2       = direction2 == -1 and direction2[1] == 1  and label2_ == 1 and aisignals
+TrendDn2       = direction2 == 1  and direction2[1] ==-1  and label2_ == 0 and aisignals
+
+plotshape(Start_TrendUp?superTrend:na, location=location.absolute, style= shape.circle, size=size.tiny, color=Bullish_col, title="AI Bullish Trend Start")
+plotshape(Start_TrendDn?superTrend:na, location=location.absolute, style= shape.circle,size=size.tiny, color=Bearish_col, title="AI Bearish Trend Start")
+plotshape(TrendUp?superTrend:na, location=location.absolute, style= shape.triangleup, size=size.small, color=Bullish_col, title="AI Bullish Trend Signal")
+plotshape(TrendDn?superTrend:na, location=location.absolute, style= shape.triangledown,size=size.small, color=Bearish_col, title="AI Bearish Trend Signal")
+plotshape(Start_TrendUp2 ? superTrend2 : na, location=location.absolute, style= shape.circle, size=size.tiny, color=Bullish_col, title="AI Bullish Trend Start 2")
+plotshape(Start_TrendDn2 ? superTrend2 : na, location=location.absolute, style= shape.circle, size=size.tiny, color=Bearish_col, title="AI Bearish Trend Start 2")
+plotshape(TrendUp2?superTrend2:na, location=location.absolute, style= shape.triangleup, size=size.small, color=Bullish_col, title="AI Bullish Trend Signal")
+plotshape(TrendDn2?superTrend2:na, location=location.absolute, style= shape.triangledown,size=size.small, color=Bearish_col, title="AI Bearish Trend Signal")
+//--------------------------------------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------------------------------
+
+
+// Function to calculate percentiles for a given set of lengths
+// This function takes a source (like 'high' or 'low'), an array of lengths (like [10, 20, 30]), and a percentile value (like 75)
+calculatePercentiles(src, lengths, percentile) =>
+    result = array.new_float(0)
+    for length in lengths
+        value = ta.percentile_nearest_rank(src, length, percentile)
+        array.push(result, value)
+    result
+
+// Function to calculate trend strength counts based on the calculated percentiles
+// This function evaluates the trend strengths (bullish and bearish) and weak counts
+calculateTrendCounts(highPercentiles, lowPercentiles, highest_high, lowest_low) =>
+    countBull = 0
+    countBear = 0
+    weakBullCount = 0
+    weakBearCount = 0
+
+    for i = 0 to array.size(highPercentiles) - 1
+        trendBullHigh = array.get(highPercentiles, i) > highest_high
+        trendBullLow = array.get(lowPercentiles, i) > highest_high
+        trendBearHigh = array.get(highPercentiles, i) < lowest_low
+        trendBearLow = array.get(lowPercentiles, i) < lowest_low
+        weakBull = array.get(lowPercentiles, i) < highest_high and array.get(lowPercentiles, i) > lowest_low
+        weakBear = array.get(highPercentiles, i) > lowest_low and array.get(highPercentiles, i) < highest_high
+
+        countBull := countBull + (trendBullHigh ? 1 : 0) + (trendBullLow ? 1 : 0)
+        countBear := countBear + (trendBearHigh ? 1 : 0) + (trendBearLow ? 1 : 0)
+        weakBullCount := weakBullCount + (weakBull ? 1 : 0)
+        weakBearCount := weakBearCount + (weakBear ? 1 : 0)
+
+    [countBull, countBear, weakBullCount, weakBearCount]
+
+// Manually creating an array of lengths
+lengths = array.new_int(7)
+array.set(lengths, 0, length)
+array.set(lengths, 1, length * 2)
+array.set(lengths, 2, length * 3)
+array.set(lengths, 3, length * 4)
+array.set(lengths, 4, length * 5)
+array.set(lengths, 3, length * 6)
+array.set(lengths, 4, length * 7)
+
+// Calculating high and low percentiles using the user-defined lengths
+percentilesHigh = calculatePercentiles(high, lengths, 75)
+percentilesLow = calculatePercentiles(low, lengths, 25)
+
+// Calculating the highest high and the lowest low based on the 144 length
+highest_high = ta.percentile_nearest_rank(high, 144, 75)
+lowest_low = ta.percentile_nearest_rank(low, 144, 25)
+
+// Determining trend strengths and counts
+[countBull, countBear, weakBullCount, weakBearCount] = calculateTrendCounts(percentilesHigh, percentilesLow, highest_high, lowest_low)
+
+// Calculating the bull and bear strength based on the counts
+bullStrength = countBull + 0.5*weakBullCount - 0.5*weakBearCount - countBear
+bearStrength = countBear + 0.5*weakBearCount - 0.5*weakBullCount - countBull
+
+// Determining the current trend value based on bull and bear strengths
+currentTrendValue = bullStrength - bearStrength
+
+// --------------------------------------------------------
+longAdxCondition = useAdxFilter ? (ADX > 20 and plusDI > minusDI) : true
+shortAdxCondition = useAdxFilter ? (ADX > 20 and minusDI > plusDI) : true
+AIST_longCondition = direction < 0 and label_ == 1 and direction2 < 0 and label2_ == 1 and longAdxCondition
+AIST_shortCondition = direction > 0 and label_ == 0 and direction2 > 0 and label2_ == 0 and shortAdxCondition
+
+
+// Double AI Trend Continuation Signals
+longExitCondition1 = direction == -1 and label_ == 1
+longExitCondition2 = direction2 == -1 and label2_ == 1
+shortExitCondition1 = direction == 1 and label_ == 0
+shortExitCondition2 = direction2 == 1 and label2_ == 0
+
+AIST_longExitCondition = not (TrendUp or TrendUp2)
+AIST_shortExitCondition = not (TrendDn or TrendDn2)
+
+// Entry conditions
+PPR_longCondition = currentTrendValue >0
+PPR_shortCondition = currentTrendValue <0
+
+// combined
+longCondition   =   AIST_longCondition and PPR_longCondition
+shortCondition  =   AIST_shortCondition and PPR_shortCondition
+longExitCondition   =   AIST_longExitCondition or PPR_shortCondition
+shortExitCondition  =   AIST_shortExitCondition or PPR_longCondition
+
+// Dynamic Trailing Stop Loss
+longTrailingStop = superTrend - atr * factor
+shortTrailingStop = superTrend + atr * factor
+
+// Adjust Enter and Exit Conditions based on Trading Direction
+if (tradeDirection == "Long" or tradeDirection == "Both")
+    strategy.entry("Long", strategy.long, when= longCondition)
+    strategy.exit("Exit Long", "Long", stop=longTrailingStop, when= longExitCondition)
+if (tradeDirection == "Short" or tradeDirection == "Both")
+    strategy.entry("Short", strategy.short, when= shortCondition)
+    strategy.exit("Exit Short", "Short", stop=shortTrailingStop, when= shortExitCondition)
+
+// Create Alert Conditions
+alertcondition(longCondition, title="Long Entry Alert", message="Long Entry Signal Generated")
+alertcondition(shortCondition, title="Short Entry Alert", message="Short Entry Signal Generated")
+alertcondition(longExitCondition, title="Long Exit Alert", message="Long Exit Signal Generated")
+alertcondition(shortExitCondition, title="Short Exit Alert", message="Short Exit Signal Generated")
+
+
+//--------------------------------------------------------------------------------------------------------------
+// Visualization
+plotshape(Start_TrendUp?superTrend:na, location=location.absolute, style= shape.circle, size=size.tiny, color=Bullish_col, title="AI Bullish Trend Start")
+plotshape(Start_TrendDn?superTrend:na, location=location.absolute, style= shape.circle,size=size.tiny, color=Bearish_col, title="AI Bearish Trend Start")
+plotshape(TrendUp?superTrend:na, location=location.absolute, style= shape.triangleup, size=size.small, color=Bullish_col, title="AI Bullish Trend Signal")
+plotshape(TrendDn?superTrend:na, location=location.absolute, style= shape.triangledown,size=size.small, color=Bearish_col, title="AI Bearish Trend Signal")
+plotshape(Start_TrendUp2 ? superTrend2 : na, location=location.absolute, style= shape.circle, size=size.tiny, color=Bullish_col, title="AI Bullish Trend Start 2")
+plotshape(Start_TrendDn2 ? superTrend2 : na, location=location.absolute, style= shape.circle, size=size.tiny, color=Bearish_col, title="AI Bearish Trend Start 2")
+plotshape(TrendUp2?superTrend2:na, location=location.absolute, style= shape.triangleup, size=size.small, color=Bullish_col, title="AI Bullish Trend Signal")
+plotshape(TrendDn2?superTrend2:na, location=location.absolute, style= shape.triangledown,size=size.small, color=Bearish_col, title="AI Bearish Trend Signal")
+
+
+// Conditional variables for plotting
+var plotLong = false
+var plotShort = false
+
+// Determine when to plot
+plotLong := PPR_longCondition
+plotShort := PPR_shortCondition
+
+// Visualization for Pivot Percentile Entry Points
+var color pivotPointColor = color.new(color.rgb(33, 150, 243), 95)  // 90% transparency
+
+
+// Plotting long entry points
+plotshape(series=plotLong and high, title="Long Pivot Entry Point", location=location.belowbar, color=pivotPointColor, style=shape.circle, size=size.tiny)
+
+// Plotting short entry points
+plotshape(series=plotShort and low, title="Short Pivot Entry Point", location=location.abovebar, color=pivotPointColor, style=shape.circle, size=size.tiny)

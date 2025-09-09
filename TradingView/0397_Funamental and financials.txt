@@ -1,0 +1,147 @@
+//@version=4
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sjakk 2020-june-08
+//
+//
+// Credits to:
+// - Alex Orekhov (everget) for the Symbol Info Helper script. without textboxes this would still be an unpublished mess
+// - MichelT for the Earnings, Splits, Dividends script. Allows me to get the timestamp of the earningsreports and put textboxes below each. (Earnings Lollipop on the chart)
+//
+// Main function is to instantly see the quarterly change in earnings, cash holdings and debt to estimate the health, marketcap and value of a company .
+// For use on daily chart. Data is quarterly / full year. The plots will likely be a mess on other TimeFrames.
+// It has 3 modes in the settings:
+// Standard Settings is the "Per Share" setting, which displays financials data on a per share basis.
+// Percentage of market valuation can be used to compare fundamentals to current share price.
+// Actual show the full numbers for verification with quarterly reporting and debuggging (actual is divided by 1.000.000 to keep numbers readable)
+//
+// Updates:
+// - Plot boxes on every Quarterly report (for a maximum of 32 text boxes i think?)
+// - Spread boxes vertically relative to scale to improve readability
+//
+// Known problems and annoyances
+// - Takes a long time to load. probably the amount of separate financial calls is the culprit. AFAIK not something i can to anything about in the script.
+// - Published this puppy with a typo in the title. Funamentals. fun and mental i guess. Hope a moderator can *fix* my embarrasment, as I seem unable to edit it. Republish?
+
+
+study("Fundamentals and financials", shorttitle="FaF", precision=6, overlay=false)
+ZEROLINE = 0
+
+
+// ----------  Inputs
+output = input(defval="Per Share", title='Output type', options=["Per Share", "% of mcap", "Actual"])
+period = input(defval="FQ", title='Period', options=["FQ", "FY"])
+
+
+// ----------  Variable initializations
+// What financial data is available in Pine?
+// https://www.tradingview.com/pine-script-reference/v4/?solution=43000564727#fun_financial
+
+debt = financial(syminfo.tickerid, "TOTAL_DEBT", period)
+tot_liab = financial(syminfo.tickerid, "TOTAL_LIABILITIES", period)
+enterpriseV = financial(syminfo.tickerid, "ENTERPRISE_VALUE", period)
+goodwill = financial(syminfo.tickerid, "GOODWILL", period)
+equity = financial(syminfo.tickerid, "TOTAL_EQUITY", period)
+taxliab = financial(syminfo.tickerid, "DEFERRED_TAX_LIABILITIES", period)
+taxass = financial(syminfo.tickerid, "DEFERRED_TAX_ASSESTS", period)
+rev = financial(syminfo.tickerid, "TOTAL_REVENUE", period)
+divid = financial(syminfo.tickerid, "TOTAL_CASH_DIVIDENDS_PAID", "FY")
+shares = financial(syminfo.tickerid, "TOTAL_SHARES_OUTSTANDING", period)
+cash = financial(syminfo.tickerid, "CASH_N_EQUIVALENTS", period)
+asset = financial(syminfo.tickerid, "TOTAL_CURRENT_ASSETS", period)
+liab = financial(syminfo.tickerid, "TOTAL_CURRENT_LIABILITIES", period)
+earn = financial(syminfo.tickerid, "NET_INCOME", period)
+fcf = financial(syminfo.tickerid, "FREE_CASH_FLOW", period)
+op_income = financial(syminfo.tickerid, "OPER_INCOME", period)
+grossearn = financial(syminfo.tickerid, "GROSS_PROFIT", period)
+short_inv = financial(syminfo.tickerid, "CASH_N_SHORT_TERM_INVEST", period) - cash
+acc_pay = financial(syminfo.tickerid, "ACCOUNTS_PAYABLE", period)
+acc_rec = financial(syminfo.tickerid, "ACCOUNTS_RECEIVABLES_NET", period)
+
+// Grabbing the timestamp for the quarterly reports. Textboxes/labels get plotted at these dates
+// Credits to MichelT http://www.tradingview.com/script/XUX5VVN0-Earnings-Splits-Dividends/
+// the 'time' series is the time when the company reported the earnings (unix timestamp)
+esdSymbolTemplate ="ESD_FACTSET:" + syminfo.prefix + ";" + syminfo.ticker
+earningsPublishUnixTimestamp = security(esdSymbolTemplate + ";EARNINGS", "D", time, lookahead=true)
+
+
+
+// ----------  Calculations
+divisor = output == "Per Share" ? shares : output=="% of mcap" ? (shares/100)*close : output=="Actual" ? 1000000 : 1
+cashdiv = cash/divisor
+tliabdiv = tot_liab/divisor*-1
+revdiv = rev/divisor
+nwc=asset-acc_pay
+nwcdiv = nwc/divisor  //current assets net of accounts payable. => Net Working Capital-ish...
+netliquid = cash + acc_rec + short_inv - liab
+EVdiv = enterpriseV/divisor
+tax = taxass - taxliab
+
+// ---------- Colors
+c_cash = color.green
+c_debt = color.red
+c_earn = color.blue
+c_liq = color.purple
+c_ent = color.orange
+
+// ----------  Plots
+plot(cashdiv, title="Cash", color=c_cash)
+plot(tliabdiv, title="Debt", color=c_debt)
+plot(revdiv, title="Revenue", color=c_earn)
+plot(nwcdiv, title="Liquidity", color=c_liq)
+plot(EVdiv, title="Enterprise Value", color=c_ent)
+hline(ZEROLINE)
+
+
+    // ---------  Text helper box -- Text definitions
+if (time == earningsPublishUnixTimestamp)
+
+    cashText =
+      "Cash: " + tostring(cash/divisor, "#.00") +
+      "\nFCF: " + tostring(fcf/divisor, "#.00") +
+      "\nFY Dividend: " + tostring(divid/divisor, "#.00")
+
+    debtText =
+      "Total Liab: " + tostring(tot_liab/divisor, "#.00") +
+      "\nCrnt Liab: " + tostring(liab/divisor, "#.00") +
+      "\nFormal debt: " + tostring(debt/divisor, "#.00")  // total formalized debt (loans and bonds)
+
+    revenueText =
+      "Revenue: " + tostring(rev/divisor, "#.00") +
+      "\nGross: " + tostring(grossearn/divisor, "#.00") +
+      "\nOPInc: " + tostring(op_income/divisor, "#.00") +
+      "\nNet Earn: " + tostring(earn/divisor, "#.00")
+
+    liquidText =
+      "Crnt. Asset: " + tostring(asset/divisor, "#.00") +
+      "\nW.Capital: " + tostring(nwc/divisor, "#.00") +
+      "\nNet asset: " + tostring((asset-liab)/divisor, "#.00") +
+      "\nNet Liquid.: " + tostring(netliquid/divisor, "#.00")    // cash+securities + accounts rec - current liablilites  (Acid test / quick ratio is the division. Here I use subtraction as I want to experiment with a per share value)
+
+    equityText =
+      "Enterprise V.: " + tostring(enterpriseV/divisor, "#.00") +
+      "\nEquity: " + tostring(equity/divisor, "#.00") +
+      "\nGoodwill: " + tostring(goodwill/divisor, "#.00") +
+      "\nDeferred Tax.: " + tostring(tax/divisor, "#.00")
+
+
+    // ---------  Text helper box -- plotting
+    label cashBox = label.new(x=bar_index, y=na, text="", textalign=text.align_left, textcolor=color.white, color=c_cash, style=label.style_label_left, size=size.small)
+    label.set_text(cashBox, cashText)
+    label debtBox = label.new(x=bar_index, y=na, text="", textalign=text.align_left, textcolor=color.white, color=c_debt, style=label.style_label_left, size=size.small)
+    label.set_text(debtBox, debtText)
+    label revnBox = label.new(x=bar_index, y=na, text="", textalign=text.align_left, textcolor=color.white, color=c_earn, style=label.style_label_left, size=size.small)
+    label.set_text(revnBox, revenueText)
+    label liquidBox = label.new(x=bar_index, y=na, text="", textalign=text.align_left, textcolor=color.white, color=c_liq, style=label.style_label_left, size=size.small)
+    label.set_text(liquidBox, liquidText)
+    label equityBox = label.new(x=bar_index, y=na, text="", textalign=text.align_left, textcolor=color.white, color=c_ent, style=label.style_label_left, size=size.small)
+    label.set_text(equityBox, equityText)
+
+    // ---------  Text helper box -- Positioning
+    positionspread = (max(cashdiv, tliabdiv, revdiv, nwcdiv, EVdiv) - min(cashdiv, tliabdiv, revdiv, nwcdiv, EVdiv))/4
+
+        // ---------  Text helper box -- Vertical position
+    label.set_xy(cashBox, bar_index, tliabdiv+positionspread*3)
+    label.set_xy(debtBox, bar_index, tliabdiv)
+    label.set_xy(revnBox, bar_index, tliabdiv+positionspread*2)
+    label.set_xy(liquidBox, bar_index, tliabdiv+positionspread)
+    label.set_xy(equityBox, bar_index, tliabdiv+positionspread*4)

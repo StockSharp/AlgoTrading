@@ -1,0 +1,47 @@
+//  TASC Issue: January 2024 - Vol. 42, Issue 1
+//     Article: Gap Momentum Indicator
+//              Taking A Page From The On-Balance Volume
+//  Article By: Perry J. Kaufman
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+
+//@version=5
+string title  = 'TASC 2024.01 Gap Momentum System'
+string stitle = 'GMS'
+strategy(title, stitle, false)
+
+
+int period       = input.int( 40,   'Period:')
+int signalPeriod = input.int( 20,   'Signal Period:')
+bool longOnly    = input.bool(true, 'Long Only:')
+
+
+float gap   = open - close[1]
+float gapUp = 0.0
+float gapDn = 0.0
+switch
+    gap > 0 => gapUp += gap
+    gap < 0 => gapDn -= gap
+
+
+float gapsUp   = math.sum(gapUp, period)
+float gapsDn   = math.sum(gapDn, period)
+float gapRatio = gapsDn == 0?1.0:100.0*gapsUp/gapsDn
+float signal   = ta.sma(gapRatio, signalPeriod)
+
+
+if strategy.opentrades <= 0 and signal > signal[1]
+    // buy at next open:
+    strategy.entry('long', strategy.long)
+else if strategy.opentrades > 0 and signal < signal[1]
+    if longOnly
+        // close all at next open:
+        strategy.close_all()
+    else
+        // sell at next open:
+        strategy.entry('short', strategy.short)
+
+
+plot(gapRatio, 'Gap Momentum', color.red,    2)
+plot(signal,   'Signal',       color.silver, 1)

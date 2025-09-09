@@ -1,0 +1,709 @@
+//======================================================================================================================================================================
+// Strategy Header
+//======================================================================================================================================================================
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// ©CN_FX-999
+
+// ©Christian Nataliano 2022-2023
+// Coded By Christian Nataliano
+// First Coded In 14/06/2023
+// Last Edited In 21/07/2023
+
+//@version=5
+strategy(title = "Default Strategy Template", shorttitle = "DefTemp", overlay = true,
+         initial_capital = 100000, currency = currency.USD,
+         max_labels_count = 500, max_lines_count = 500, max_boxes_count = 500,
+         use_bar_magnifier = true
+         )
+
+//Import Libraries
+import CN_FX-999/CNTLibrary/3 as Cnt
+
+//======================================================================================================================================================================
+// User Inputs
+//======================================================================================================================================================================
+
+var GDate = "=== Strategy Testing Date ==="
+Start_Date              = input.time(defval = timestamp("01 Jan 2020 13:30 +0000"), title = "Backtesting Start Date", group = GDate, tooltip = "Start Date Of The Strategy Tester")
+End_Date                = input.time(defval = timestamp("01 Jan 2024 13:30 +0000"), title = "Backtesting End Date", group = GDate, tooltip = "End Date Of The Strategy Tester")
+TradeDetails            = input.bool(defval = false, title = "Display Each Trade Details", group = GDate, tooltip = "Show Detailed Report On Each Trade Closing Instead Of Only Shapes, Note Max Labels Are 500")
+
+var GIndicator = "=== 1st Indicator Settings ==="
+//Your Own Indicator Settings Here
+
+var GFilter = "=== Filter Settings ==="
+//Your Own Filter Settings Here
+
+var GRisk = "=== Risk Management Settings ==="
+FixedLongSize           = input.int(defval = 0, title = "Fixed Long Size", group = GRisk, tooltip = "Trade The Strategy Using A Fixed Sizing")
+FixedShortSize          = input.int(defval = 0, title = "Fixed Short Size", group = GRisk, tooltip = "Trade The Strategy Using A Fixed Sizing")
+LongRPT                 = input.float(defval = 1, title = "Long Risk Per Trade", group = GRisk, tooltip = "Trade The Strategy Using A Risk Percentage Of Account Balance Sizing")
+ShortRPT                = input.float(defval = 1, title = "Short Risk Per Trade", group = GRisk, tooltip = "Trade The Strategy Using A Risk Percentage Of Account Balance Sizing")
+InLots                  = input.bool(defval = true, title = "Position Size In Lots", group = GRisk, tooltip = "Convert The Positions Taken Into Lots Instead Of Units")
+
+var GTPSL = "=== TP / SL Settings ==="
+ATR_Period              = input.int(defval = 20, title = "ATR Period", group = GTPSL, tooltip = "ATR Period For Stop Loss")
+SL_Multiplyer           = input.float(defval = 1, title = "Stop Loss Multiplyer", minval = 0.1, group = GTPSL, tooltip = "ATR Multiplyer For Determining StopLoss Level")
+RRR                     = input.float(defval = 1, title = "Risk Reward Ratio", group = GTPSL, tooltip = "Risk Reward Ratio Setting", options = [0.4, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2])
+TPSL_Mode               = input.string(defval = "Instant TP SL", title = "Take Profit & Stop Loss Mode", options = ["Instant TP SL", "Normal TP SL"], group = GTPSL,tooltip = "Take Profit & Stop Loss Order Setting Mode")
+
+var GBT = "=== Backtest Settings ==="
+StartingBalance         = input.int(defval = 100000, title = "Starting Balance", minval = 100, maxval = 1000000, group = GBT, tooltip = "Account Starting Balance For Backtesting")
+ShowBacktestPanel       = input.bool(defval = true, title = "Show Backtest Panel", group = GBT, tooltip = "Show The Backtesting Panels & The Strategy Statistics")
+CalculateFee            = input.bool(defval = true, title = "Calculate Randomized Fees", group = GBT, tooltip = "A Randomized Fee Calculated Based On A Percentage Of The Closed Trade PNL")
+MaxFee                  = input.float(defval = 0.025, title = "Maximum Fee Randomized Rate In %", group = GBT, tooltip = "Upper Limit Of The Randomized Fee (In %)")
+LongOnly                = input.bool(defval = false, title = "Trade Long Only", group = GBT, inline = "GBT", tooltip = "Only Trade The Long Direction")
+ShortOnly               = input.bool(defval = false, title = "Trade Short Only", group = GBT, inline = "GBT", tooltip = "Only Trade The Short Direction")
+
+var string GPT = "=== Monthly Performance Table Settings ==="
+mptable_on              = input.bool(title="Turn On |", defval=true, display=display.none, group=GPT, inline="MPT_Toggles")
+mptable_debug           = input.bool(title="Debug Mode |", defval=false, display=display.none, group=GPT, inline="MPT_Toggles")
+mptable_precision       = input.int(title="Decimal Precision", defval=2, minval=1, display=display.none, group=GPT, inline="MPT_Toggles", tooltip="Decimal precision of each cell")
+mptable_titleColor      = input.color(title="Title Cell Color", defval=#cccccc, display=display.none, group=GPT, inline="MPT_Colors")
+mptable_titleTextColor  = input.color(title="Title Text Color", defval=#363a45, display=display.none, group=GPT, inline="MPT_Colors")
+mptable_textColor       = input.color(title="Cell Text Color", defval=color.white, display=display.none, group=GPT, inline="MPT_Colors")
+mptable_ProfitColor     = input.color(title="Year Profit Color", defval=color.new(color.green, 50), display=display.none, group=GPT, inline="MPT_Colors")
+mptable_LossColor       = input.color(title="Year Loss Color", defval=color.new(color.red, 50), display=display.none, group=GPT, inline="MPT_Colors")
+mptable_BreakEvenColor  = input.color(title="Year B/E Color", defval=color.new(color.yellow, 75), display=display.none, group=GPT, inline="MPT_Colors")
+mptable_pageNumber      = input.int(title="Page Number", defval=1, minval=1, step=1, maxval=10, display=display.none, group=GPT, tooltip="Which page of results to display") - 1 // -1 is for corection for arrays. Aaray index start with 0
+mptable_pageSize        = input.int(title="Page Size (Rows)", defval=20, minval=1, display=display.none, group=GPT, tooltip="How many rows to display") - 1  // 9 is used to show 10 rows of data due to array start from 0
+mptable_tableTextSize   = input.string(title="Text Size", defval="Normal", options=["Auto",  "Huge",  "Large", "Normal", "Small", "Tiny"], display=display.none, group=GPT)
+
+var string GPC = "=== PineConnector Automation Settings ==="
+ConnectedBroker         = input.string(defval = "FX", title = "Connected Broker", options = ["FX", "PEPPERSTONE", "OANDA", "EIGHTCAP", "BLACKBULL"], group = GPC, tooltip = "Selected Broker For PineConnectior Automation To Prevent Data Dislocation")
+AccountID               = input.string(defval = "1234567890123", title = "PineConnector ID", group = GPC, tooltip = "PineConnector ID, Ex: 1234567890123")
+SymbolPrefix            = input.string(defval = "", title = "Traded Symbol Prefix (If Any)", group = GPC, tooltip = "Use If Your Broker Has A Prefix Before Their Symbol, Ex: 1-EURUSD")
+SymbolSuffix            = input.string(defval = "", title = "Traded Symbol Suffix (If Any)", group = GPC, tooltip = "Use If Your Broker Has A Suffix After Its Symbol, Ex : EURUSD-1")
+OrderSpread             = input.int(defval = 50, minval = 0, maxval = 100, title = "Maximum Spread Allowed In Pips",group = GPC, tooltip = "Trade Maximum Spread")
+OrderComment            = input.string(defval = "PC Trade", title = "Order Comment", group = GPC, tooltip = "Trade Comment In The MT4 / MT5 Terminal")
+UseLimit                = input.bool(defval = false, title = "Use Limit Order", group = GPC, inline = "GPC1")
+UseStop                 = input.bool(defval = false, title = "Use Stop Order", group = GPC, inline = "GPC1", tooltip = "Use Limit / Stop Order To Enter Instead Of Market Order ONLY CHOSE ONE")
+
+//======================================================================================================================================================================
+// Indicator Calculation
+//======================================================================================================================================================================
+Date_Filter = time >= Start_Date and time <= End_Date
+ATR = ta.atr(ATR_Period)
+
+//Your Indicator Calculations Here
+
+//======================================================================================================================================================================
+// Filters Calculation
+//======================================================================================================================================================================
+
+//Your Filters Calculations Here
+
+
+//======================================================================================================================================================================
+// Entry & Exit Conditions
+//======================================================================================================================================================================
+
+//Buy & Sell Signal Trigger
+Buy_Signal = Date_Filter and strategy.position_size == 0 and not na(ATR) and not(ShortOnly) and false
+Sell_Signal = Date_Filter and strategy.position_size == 0 and not na(ATR) and not(LongOnly) and false
+
+//Buy & Sell Exit Signal (If Any)
+//LongExitReason = LongExitReason
+//ShortExitReason = ShortExitReasom
+
+//======================================================================================================================================================================
+// Risk Management Calculation
+//======================================================================================================================================================================
+
+//Set Persistant Variables
+var float TradeEntry = na
+var int TradeEntryIndex = na
+var float TradeTP = na
+var float TradeSL = na
+var float TradeLots = na
+var float BuyPending = na
+var float SellPending = na
+
+//Calculate TP SL Levels
+BuySL = Cnt.CalculateStopLossLevel(1, close[0], ATR * SL_Multiplyer)
+SellSL = Cnt.CalculateStopLossLevel(-1, close[0], ATR * SL_Multiplyer)
+
+BuySLDistance = Cnt.CalculateStopLossDistance(1, close[0], BuySL)
+SellSLDistance = Cnt.CalculateStopLossDistance(-1, close[0], SellSL)
+
+BuyTP = Cnt.CalculateTakeProfitLevel(1,close[0],BuySLDistance,RRR)
+SellTP = Cnt.CalculateTakeProfitLevel(-1,close[0],SellSLDistance,RRR)
+
+//Calculate Lot Size
+[ConvertCurrency,CurrencyConversion] = Cnt.CalculateConversionCurrency(currency.USD,syminfo.currency,syminfo.basecurrency)
+CurrencyRate = Cnt.CalculateConversionRate(ConvertCurrency,request.security(CurrencyConversion,"D",close,ignore_invalid_symbol = true))
+BuyUnits = FixedLongSize
+SellUnits = FixedShortSize
+BuyLots = syminfo.type == "forex" ? Cnt.LotSize(false,strategy.equity,LongRPT,BuySLDistance,CurrencyRate) : Cnt.LotSize(true,strategy.equity,LongRPT,BuySLDistance,0)
+SellLots = syminfo.type == "forex" ? Cnt.LotSize(false,strategy.equity,ShortRPT,SellSLDistance,CurrencyRate) : Cnt.LotSize(true,strategy.equity,ShortRPT,BuySLDistance,0)
+
+//======================================================================================================================================================================
+// Strategy Executions
+//======================================================================================================================================================================
+
+//Buy Signal Condition
+if Buy_Signal and barstate.isconfirmed and strategy.position_size == 0 and Cnt.BrokerCheck(ConnectedBroker)
+    //Update Persistant Variables
+    TradeEntry := close[0]
+    TradeTP := BuyTP
+    TradeSL := BuySL
+    TradeLots := LongRPT == 0 ? BuyUnits : BuyLots
+    TradeEntryIndex := bar_index
+
+    //Strategy Entry
+    Cnt.OpenLong("Long", InLots ? Cnt.ToLotsInUnits(TradeLots):TradeLots, na, na, "", "")
+    alert(Cnt.OpenPC(AccountID,1,UseLimit,UseStop,BuyPending,SymbolPrefix,syminfo.ticker,SymbolSuffix,LongRPT,TradeSL,TradeTP,OrderComment,OrderSpread), alert.freq_once_per_bar_close)
+
+    //Instant TP SL Placement
+    if TPSL_Mode == "Instant TP SL"
+        Cnt.TP_SLExit("Long", TradeTP, TradeSL, 100, "", "")
+
+//Sell Signal Condition
+if Sell_Signal and barstate.isconfirmed and strategy.position_size == 0 and Cnt.BrokerCheck(ConnectedBroker)
+    //Update Persistant Variables
+    TradeEntry := close[0]
+    TradeTP := SellTP
+    TradeSL := SellSL
+    TradeLots := ShortRPT == 0 ? SellUnits : SellLots
+    TradeEntryIndex := bar_index
+
+    //Strategy Entry
+    Cnt.OpenShort("Short", InLots ? Cnt.ToLotsInUnits(TradeLots):TradeLots, na, na, "", "")
+    alert(Cnt.OpenPC(AccountID,-1,UseLimit,UseStop,SellPending,SymbolPrefix,syminfo.ticker,SymbolSuffix,ShortRPT,TradeSL,TradeTP,OrderComment,OrderSpread), alert.freq_once_per_bar_close)
+
+    //Instant TP SL Placement
+    if TPSL_Mode == "Instant TP SL"
+        Cnt.TP_SLExit("Short", TradeTP, TradeSL, 100, "", "")
+
+//Setting TP & SL Levels On Opened Order
+if TPSL_Mode == "Normal TP SL"
+    //Place TP & SL On Next Bar
+    if strategy.position_size > 0
+        Cnt.TP_SLExit("Long", TradeTP, TradeSL, 100, "", "")
+    if strategy.position_size < 0
+        Cnt.TP_SLExit("Short", TradeTP, TradeSL, 100, "", "")
+
+//Close On Conditional Parameters
+//if LongExitReason
+//    Cnt.CloseLong("Long", 100, "Long Exit With SL Distance Of : ", str.tostring(BuySLDistance,'#.##'), false)
+//    alert(Cnt.ClosePC(AccountID,1,SymbolPrefix,syminfo.ticker,SymbolSuffix,OrderComment), alert.freq_once_per_bar_close)
+//if ShortExitReason
+//    Cnt.CloseLong("Short", 100, "Short Exit With SL Distance Of : ", str.tostring(SellSLDistance,'#.##'), false)
+//    alert(Cnt.ClosePC(AccountID,-1,SymbolPrefix,syminfo.ticker,SymbolSuffix,OrderComment), alert.freq_once_per_bar_close)
+
+//Cancle Pending Orders
+//if TradeEntryIndex != bar_index and strategy.position_size[1] == 0 and strategy.position_size[0] == 0
+//    strategy.cancel_all()
+//    if Buy_Signal[2]
+//        alert(Cnt.CancelPC(AccountID,1,SymbolPrefix,syminfo.ticker,SymbolSuffix,OrderComment), alert.freq_once_per_bar_close)
+//    else if Sell_Signal[2]
+//        alert(Cnt.CancelPC(AccountID,-1,SymbolPrefix,syminfo.ticker,SymbolSuffix,OrderComment), alert.freq_once_per_bar_close)
+
+//======================================================================================================================================================================
+// Plot Data
+//======================================================================================================================================================================
+
+//Plot Indicator Values
+//Plot Your Indicator Values Here
+
+//Plot Filter Values
+//Plot Your Filter Indicator Here
+
+//Plot Signals
+plotshape(not TradeDetails ? Buy_Signal:na, title = "Buy Entry Signal", style = shape.triangleup, location = location.belowbar, color = color.green,
+         size = size.small, display = display.all - display.status_line)
+plotshape(not TradeDetails ? Sell_Signal:na, title = "Sell Entry Signal", style = shape.triangledown, location = location.abovebar, color = color.red,
+         size = size.small, display = display.all - display.status_line)
+plotshape(not TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] > 0 and strategy.wintrades[0] > strategy.wintrades[1] ? 1:na,
+         title = "Buy Hit TP", style = shape.triangledown, location = location.abovebar, color = color.blue, size = size.small, display = display.all - display.status_line)
+plotshape(not TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] < 0 and strategy.wintrades[0] > strategy.wintrades[1] ? 1:na,
+         title = "Sell Hit TP", style = shape.triangleup, location = location.belowbar, color = color.blue, size = size.small, display = display.all - display.status_line)
+plotshape(not TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] > 0 and strategy.losstrades[0] > strategy.losstrades[1] ? 1:na,
+         title = "Buy Hit SL", style = shape.triangleup, location = location.belowbar, color = color.orange, size = size.small, display = display.all - display.status_line)
+plotshape(not TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] < 0 and strategy.losstrades[0] > strategy.losstrades[1] ? 1:na,
+         title = "Sell Hit SL", style = shape.triangledown, location = location.abovebar, color = color.orange, size = size.small, display = display.all - display.status_line)
+
+//Plot Trade Info
+plot(strategy.position_size != 0 ? TradeTP:na, title = "Trade Take Profit", color = color.green, style = plot.style_linebr)
+plot(strategy.position_size != 0 ? TradeSL:na, title = "Trade Stop Loss", color = color.red, style = plot.style_linebr)
+plot(strategy.position_size != 0 ? TradeLots:na, title = "Trade Lots", color = color.blue, display = display.status_line)
+
+//Show QT Trades In Chart
+QTTrades = Cnt.IsQuestionableTrades(TradeTP, TradeSL)
+var QTTradesCount = 0
+if QTTrades
+    QTTradesCount += 1
+bgcolor(QTTrades ? color.yellow:na, title = "Questionable Trades")
+
+//======================================================================================================================================================================
+// Backtest Data Plotting
+//======================================================================================================================================================================
+
+///Backtest Persistant Data
+var float Balance = na
+var float MaxBalance = na
+var float DD = na
+var float MaxDD = na
+var float MeanDD = 0
+var float PNL = na
+var float Fee = na
+var float CumFee = 0
+var float AvgRRR = 0
+EntryTime = Cnt.UNIXToDate(strategy.closedtrades.entry_time(strategy.closedtrades - 1))
+ExitTime = Cnt.UNIXToDate(strategy.closedtrades.exit_time(strategy.closedtrades - 1))
+
+//Backtest Info Data
+[LongWinRate, ShortWinRate, TotalWinRate, WinTrade, LossTrade, TotalLong, TotalShort] = Cnt.CalculateWR(strategy.closedtrades, "Long", "Short")
+PrevEntry = strategy.closedtrades.entry_price(strategy.closedtrades - 1)
+PrevExit = strategy.closedtrades.exit_price(strategy.closedtrades - 1)
+PrevLots = strategy.closedtrades.size(strategy.closedtrades - 1)
+ConvertedPNL = Cnt.Truncate(Cnt.CalculatePNL(PrevEntry, PrevExit, PrevLots,CurrencyRate))
+CheckMaxDD = ta.max(DD)
+CheckMeanDD = 0
+CumProfit = Cnt.Truncate(Balance - StartingBalance,2)
+CAGR =  Cnt.Truncate(Cnt.CAGR(Start_Date,StartingBalance,End_Date,Balance) ,2)
+
+//Update On OrderClose
+if strategy.closedtrades[0] != strategy.closedtrades[1]
+    PNL := ConvertedPNL
+    Balance := Cnt.UpdateBalance(na(Balance) ? StartingBalance:Balance,PNL)
+    if(Balance > MaxBalance) or na(MaxBalance)
+        MaxBalance := Balance
+    DD := Cnt.UpdateDD(MaxBalance, Balance)
+    MaxDD := CheckMaxDD
+    MeanDD := MeanDD[0] + DD
+    Fee := CalculateFee ? Cnt.CalculateSlpComm(PNL,MaxFee):0
+    CumFee := CumFee[1] + Fee
+    AvgRRR := Cnt.CalculateAvgRRR(WinTrade, LossTrade)
+
+//Draw Backtest Table
+var table BacktestTable = table.new(position.top_right, 6, 2, border_width = 2)
+var BgColor = color.black
+var TextColor = color.white
+DollarReturn = Balance - StartingBalance
+if(ShowBacktestPanel)
+    if(barstate.isconfirmed)
+        Cnt.DisplayBTResultsV2(BacktestTable,BgColor,TextColor,TotalWinRate,QTTradesCount,LongWinRate, ShortWinRate, StartingBalance, CumProfit, CumFee, AvgRRR, MaxDD, CAGR, Cnt.Truncate(MeanDD / strategy.closedtrades,2))
+
+//Check Draw Conditions
+BuyHitTP = TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] > 0 and strategy.wintrades[0] > strategy.wintrades[1]
+BuyHitSL = TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] > 0 and strategy.losstrades[0] > strategy.losstrades[1]
+SellHitTP = TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] < 0 and strategy.wintrades[0] > strategy.wintrades[1]
+SellHitSL = TradeDetails and strategy.position_size[0] == 0 and strategy.position_size[1] < 0 and strategy.losstrades[0] > strategy.losstrades[1]
+
+//Draw Trade Details
+if BuyHitSL or SellHitTP
+    //Set SL & TP Distance
+    BuySLDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateStopLossDistance(1,TradeEntry,TradeSL)),2)
+    BuyTPDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateTakeProfitDistance(1,TradeEntry,TradeTP)),2)
+    SellSLDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateStopLossDistance(-1,TradeEntry,TradeSL)),2)
+    SellTPDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateTakeProfitDistance(-1,TradeEntry,TradeTP)),2)
+
+    //Label Drawing
+    label.new(bar_index,low, color = BuyHitSL ? color.orange:color.blue, textcolor = color.black, size = size.small, text = BuyHitSL ? "Buy SL":"Sell TP", style = label.style_label_up,
+             tooltip =
+             "Trade No : " + str.tostring(strategy.closedtrades) +
+             "\nEntryTime : "  + str.tostring(EntryTime) +
+             "\nExitTime : "  + str.tostring(ExitTime) +
+             "\nWinRate : "  + str.tostring(TotalWinRate) + "%" +
+             "\nTotalLong : "  + str.tostring(TotalLong) +
+             "\nTotalShort : "  + str.tostring(TotalShort) +
+              "\n" +
+             "\nSLDist : "  + str.tostring(BuyHitSL ? BuySLDist:SellTPDist) +
+             "\nTPDist : "  + str.tostring(BuyHitSL ? BuyTPDist:SellSLDist) +
+             "\nLot : "  + str.tostring(InLots ? Cnt.Truncate(TradeLots / 100000,2) : TradeLots) +
+              "\n" +
+             "\nStartBalnce: "  + str.tostring(Balance[1]) +
+             "\nEndBalnce: "  + str.tostring(Balance) +
+             "\nPNL : " + str.tostring(PNL) +
+             "\nCumProfit: "  + str.tostring(Balance - strategy.initial_capital) +
+             "\n" +
+             "\nFee: "  + str.tostring(Fee) +
+             "\nCumFee: "  + str.tostring(CumFee) +
+             "\n" +
+             "\nMaxBalnce: "  + str.tostring(MaxBalance) +
+             "\nDD: "  + str.tostring(DD) +
+             "\nMaxDD: "  + str.tostring(MaxDD) +
+             "\nMeanDD: "  + str.tostring(Cnt.Truncate(MeanDD / strategy.closedtrades,2)) +
+             "\nCAGR: "  + str.tostring(CAGR) +
+             "\nCAGR / MeanDD: "  + str.tostring(Cnt.Truncate(CAGR/MeanDD,2)) +
+             "\n" +
+             "\nTotalWR: "  + str.tostring(TotalWinRate) +
+             "\nAvgRRR: "  + str.tostring(AvgRRR) +
+             "\nLongWR: "  + str.tostring(LongWinRate) +
+             "\nShortWR: "  + str.tostring(ShortWinRate) +
+             "\n"
+             )
+
+else if BuyHitTP or SellHitSL
+    //Set SL & TP Distance
+    BuySLDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateStopLossDistance(1,TradeEntry,TradeSL)),2)
+    BuyTPDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateTakeProfitDistance(1,TradeEntry,TradeTP)),2)
+    SellSLDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateStopLossDistance(-1,TradeEntry,TradeSL)),2)
+    SellTPDist = Cnt.Truncate(Cnt.ToWhole(Cnt.CalculateTakeProfitDistance(-1,TradeEntry,TradeTP)),2)
+
+    //Label Drawing
+    label.new(bar_index,high, color = BuyHitTP ? color.blue:color.orange, textcolor = color.black, size = size.small, text = BuyHitTP ? "Buy TP":"Sell SL", style = label.style_label_down,
+             tooltip =
+             "Trade No : " + str.tostring(strategy.closedtrades) +
+             "\nEntryTime : "  + str.tostring(EntryTime) +
+             "\nExitTime : "  + str.tostring(ExitTime) +
+             "\nWinRate : "  + str.tostring(TotalWinRate) + "%" +
+             "\nTotalLong : "  + str.tostring(TotalLong) +
+             "\nTotalShort : "  + str.tostring(TotalShort) +
+              "\n" +
+             "\nSLDist : "  + str.tostring(BuyHitTP ? BuySLDist:SellTPDist) +
+             "\nTPDist : "  + str.tostring(BuyHitTP ? BuyTPDist:SellSLDist) +
+             "\nLot : "  + str.tostring(InLots ? Cnt.Truncate(TradeLots / 100000,2) : TradeLots) +
+              "\n" +
+             "\nStartBalnce: "  + str.tostring(Balance[1]) +
+             "\nEndBalnce: "  + str.tostring(Balance) +
+             "\nPNL : " + str.tostring(PNL) +
+             "\nCumProfit: "  + str.tostring(Balance - strategy.initial_capital) +
+             "\n" +
+             "\nFee: "  + str.tostring(Fee) +
+             "\nCumFee: "  + str.tostring(CumFee) +
+             "\n" +
+             "\nMaxBalnce: "  + str.tostring(MaxBalance) +
+             "\nDD: "  + str.tostring(DD) +
+             "\nMaxDD: "  + str.tostring(MaxDD) +
+             "\nMeanDD: "  + str.tostring(Cnt.Truncate(MeanDD / strategy.closedtrades,2)) +
+             "\nCAGR: "  + str.tostring(CAGR) +
+             "\nCAGR / MeanDD: "  + str.tostring(Cnt.Truncate(CAGR/MeanDD,2)) +
+             "\n" +
+             "\nTotalWR: "  + str.tostring(TotalWinRate) +
+             "\nAvgRRR: "  + str.tostring(AvgRRR) +
+             "\nLongWR: "  + str.tostring(LongWinRate) +
+             "\nShortWR: "  + str.tostring(ShortWinRate) +
+             "\n"
+             )
+
+//======================================================================================================================================================================
+// Table Data Plotting - All Credist To © ZenAndTheArtOfTrading For This Section
+//======================================================================================================================================================================
+
+// Custom function for getting table text sized based on user input
+table_text_size(_size) =>
+    switch _size
+        "Auto"   => size.auto
+        "Huge"   => size.huge
+        "Large"  => size.large
+        "Normal" => size.normal
+        "Small"  => size.small
+        => size.tiny
+tableTextSize = table_text_size(mptable_tableTextSize)
+
+// Custom function for getting decimal precision based on given number
+// (eg. if number is > 0 but < 0.05 or < 0 and > -0.05, set precision to 3 to avoid rounding to 0 which is misleading)
+GetRoundingPrecision(float num) =>
+    if (num > 0 and num < 0.05) or (num < 0 and num > -0.05)
+        3
+    else
+        mptable_precision
+
+// Define an open trade's cost (used to calculate commission cost)
+type TradeCost
+    int entryTime
+    float entryPrice
+    float cost
+
+// Define a monthly/yearly return type
+type StrategyReturn
+    float profit
+    float drawdown
+    float peak
+    int timestamp
+
+// Store accumulated P&L values
+var float accumulatedMonthlyPL = 0
+var float accumulatedYearlyPL = 0
+var float bestAccumulatedMonthlyPL = 0
+var float bestAccumulatedYearlyPL = 0
+
+// Store drawdown values
+var float equityPeak = strategy.initial_capital
+var float yearlyEquityHigh = 0
+var float currentYearlyDrawdown = 0
+var float yearlyMaxDrawdown = 0
+var float worstDrawdown = 0
+var float monthlyEquityHigh = 0
+var float currentMonthlyDrawdown = 0
+var float monthlyMaxDrawdown = 0
+var int currentDrawdownBars = 0
+var int maxDrawdownBars = 0
+
+// Store stat arrays
+var totalDrawdownBars = array.new<int>(0)
+var totalDrawdowns = array.new<float>(0)
+
+// Store long & short trade count
+var int totalBreakEvenTrades = 0
+var int totalLongTrades = 0
+var int totalLongTradeWins = 0
+var int totalShortTrades = 0
+var int totalShortTradeWins = 0
+
+// Store open trade commission costs in array
+var costOfOpenTrades = array.new<TradeCost>(0)
+
+// Detect opened trade and save cost of trade (I tried many methods to get my numbers to match the Cumulative Profit list in the Strategy Tester, no idea why, but none of them worked without doing this)
+if strategy.opentrades != strategy.opentrades[1] and strategy.closedtrades == strategy.closedtrades[1]
+    costOfTrade = strategy.grossloss - strategy.grossloss[1]
+    costOfOpenTrades.push(TradeCost.new(strategy.opentrades.entry_time(strategy.opentrades - 1), strategy.opentrades.entry_price(strategy.opentrades - 1), costOfTrade))
+
+// Detect a closed trade
+// TV Documentation: Trade List's Cumulative Profit % Formula = TradeProfit / (InitialCapital + Cumulative Profit of the previous trades) * 100%
+if strategy.closedtrades != strategy.closedtrades[1]
+
+    // Retrieve trade cost for the closed trade
+    float tradeCost = 0
+    int removeIdx = -1
+    if costOfOpenTrades.size() > 0
+        for i = 0 to costOfOpenTrades.size() - 1
+            TradeCost tc = costOfOpenTrades.get(i)
+            if tc.entryTime == strategy.closedtrades.entry_time(strategy.closedtrades - 1) and tc.entryPrice == strategy.closedtrades.entry_price(strategy.closedtrades - 1)
+                tradeCost := tc.cost
+                removeIdx := i
+                break
+
+    // Remove cost
+    if removeIdx != -1
+        costOfOpenTrades.remove(removeIdx)
+
+    // Calculate equity before trade closed (strategy.equity will not do, because it changes bar-by-bar based on open P&L not realized P&L)
+    float preEquity = strategy.initial_capital + strategy.netprofit[1]
+
+    // Calculate P&L + cost of this trade
+    float profitLoss = 0
+    if strategy.losstrades > strategy.losstrades[1]
+        profitLoss := (strategy.grossloss - (strategy.grossloss[1] - tradeCost)) * -1
+    else
+        profitLoss := strategy.grossprofit - strategy.grossprofit[1]
+
+    // Check if this was a long or short trade and if it won or lost
+    if strategy.position_size[1] > 0
+        totalLongTrades := totalLongTrades + 1
+        if profitLoss > 0
+            totalLongTradeWins := totalLongTradeWins + 1
+    else if strategy.position_size[1] < 0
+        totalShortTrades := totalShortTrades + 1
+        if profitLoss > 0
+            totalShortTradeWins := totalShortTradeWins + 1
+
+    // Check if the trade broke even
+    if profitLoss == 0
+        totalBreakEvenTrades := totalBreakEvenTrades + 1
+
+    // Calculate cumulative profit % for this trade
+    float cumulativeProfitPercent = (profitLoss / preEquity) * 100
+
+    // Store highest peak value of equity (we can now use strategy.equity since equity has updated to realized P&L on this bar)
+    if strategy.equity > equityPeak
+        equityPeak := strategy.equity
+
+    // Calculate total system drawdown %
+    float equityDD = ((strategy.equity - equityPeak) / equityPeak) * 100
+    if equityDD < worstDrawdown
+        worstDrawdown := equityDD
+
+    // Store accumulated monthly + yearly P&L
+    accumulatedMonthlyPL := cumulativeProfitPercent + accumulatedMonthlyPL[1]
+    accumulatedYearlyPL := accumulatedYearlyPL + cumulativeProfitPercent
+
+    // Save max favourable excursion for this month (ie. peak return as %)
+    if accumulatedMonthlyPL > bestAccumulatedMonthlyPL
+        bestAccumulatedMonthlyPL := accumulatedMonthlyPL
+
+    // Save max favourable excursion for this year (ie. peak return as %)
+    if accumulatedYearlyPL > bestAccumulatedYearlyPL
+        bestAccumulatedYearlyPL := accumulatedYearlyPL
+
+    // Track max equity high over current year for max yearly drawdown calculation
+    if accumulatedYearlyPL > yearlyEquityHigh
+        yearlyEquityHigh := accumulatedYearlyPL
+
+    // Check if our yearly realized equity high minus current realized equity exceeds our stored max drawdown for the year, update if necessary, and save worst drawdown
+    if accumulatedYearlyPL - yearlyEquityHigh < 0
+        currentYearlyDrawdown := accumulatedYearlyPL - yearlyEquityHigh
+        if currentYearlyDrawdown < yearlyMaxDrawdown
+            yearlyMaxDrawdown := currentYearlyDrawdown
+        currentDrawdownBars := currentDrawdownBars + 1
+
+    // Track max equity high over current month for max monthly drawdown calculation
+    if accumulatedMonthlyPL > monthlyEquityHigh
+        monthlyEquityHigh := accumulatedMonthlyPL
+
+    // Check if our monthly realized equity high minus current realized equity exceeds our stored max drawdown for the month, update if necessary, and save worst drawdown
+    if accumulatedMonthlyPL - monthlyEquityHigh < 0
+        currentMonthlyDrawdown := accumulatedMonthlyPL - monthlyEquityHigh
+        if currentMonthlyDrawdown < monthlyMaxDrawdown
+            monthlyMaxDrawdown := currentMonthlyDrawdown
+
+    // Debug label
+    if mptable_debug
+        string debugTip = "Equity = $" + str.tostring(strategy.equity, "#.##") +
+         "\nP&L=" + str.tostring(cumulativeProfitPercent) + "%" +
+         "\nAccumMonthlyP&L=" + str.tostring(math.round(accumulatedMonthlyPL, GetRoundingPrecision(accumulatedMonthlyPL))) + "%" +
+         "\nAccumYearlyP&L=" + str.tostring(math.round(accumulatedYearlyPL, GetRoundingPrecision(accumulatedYearlyPL))) + "%" +
+         "\nMonthlyMaxDD=" + str.tostring(math.round(monthlyMaxDrawdown, GetRoundingPrecision(monthlyMaxDrawdown))) + "%" +
+         "\nYearlyMaxDD=" + str.tostring(math.round(yearlyMaxDrawdown, GetRoundingPrecision(yearlyMaxDrawdown))) + "%" +
+         "\nTotalMaxDD=" + str.tostring(math.round(worstDrawdown, GetRoundingPrecision(worstDrawdown))) + "%" +
+         "\nCurrentDDBars=" + str.tostring(currentDrawdownBars) +
+         "\nMaxDDBars=" + str.tostring(maxDrawdownBars) +
+         "\nTotalBreakEven=" + str.tostring(totalBreakEvenTrades) +
+         "\nTotalLongs=" + str.tostring(totalLongTrades) +
+         "\nTotalLongWins=" + str.tostring(totalLongTradeWins) +
+         "\nTotalShorts=" + str.tostring(totalShortTrades) +
+         "\nTotalShortWins=" + str.tostring(totalShortTradeWins)
+        label.new(bar_index, high + (high * 0.01), "P&L " + str.tostring(math.round(cumulativeProfitPercent, GetRoundingPrecision(cumulativeProfitPercent))) + "%", tooltip=debugTip, textcolor=color.white)
+
+// Calculate drawdown since last equity high (NOT max drawdown, just the current max DD since we were out of DD)
+float t_equityDD = ((strategy.equity - equityPeak) / equityPeak) * 100
+var float currentMaxDrawdownSinceLast = 0
+
+// Update Max Drawdown bar count and current DD if equity is under water, check isconfirmed to prevent double-counting bars with recalc_on_order_fills on
+if strategy.equity < equityPeak and barstate.isconfirmed
+    currentDrawdownBars := currentDrawdownBars + 1
+    if currentDrawdownBars > maxDrawdownBars
+        maxDrawdownBars := currentDrawdownBars
+    if t_equityDD < currentMaxDrawdownSinceLast
+        currentMaxDrawdownSinceLast := t_equityDD
+else
+    if currentDrawdownBars > 0
+        totalDrawdownBars.push(currentDrawdownBars)
+        totalDrawdowns.push(currentMaxDrawdownSinceLast)
+    currentDrawdownBars := 0
+    currentMaxDrawdownSinceLast := 0
+
+// Prepare arrays to store Yearly and Monthly P&Ls
+var monthlyReturns = array.new<StrategyReturn>(0)
+var yearlyReturns = array.new<StrategyReturn>(0)
+
+var bool firstEntryTime = false
+// Retrieve entry time of initial entry in open position
+if not firstEntryTime and strategy.opentrades.entry_time(0)
+    firstEntryTime := true
+
+// Detect new month and year
+new_month = month(time) != month(time[1])
+new_year = year(time) != year(time[1])
+
+// Detect a new month and store its return profile
+if not barstate.isfirst and new_month and firstEntryTime or barstate.islastconfirmedhistory
+    StrategyReturn mr = StrategyReturn.new(accumulatedMonthlyPL, monthlyMaxDrawdown, bestAccumulatedMonthlyPL, time[1]) // time)
+    monthlyReturns.push(mr)
+    accumulatedMonthlyPL := 0
+    monthlyMaxDrawdown := 0
+    monthlyEquityHigh := 0
+    currentMonthlyDrawdown := 0
+    bestAccumulatedMonthlyPL := 0
+
+    // Detect a new year and reset tracking variables
+if not barstate.isfirst and new_year and firstEntryTime or barstate.islastconfirmedhistory
+    StrategyReturn yr = StrategyReturn.new(accumulatedYearlyPL, yearlyMaxDrawdown, bestAccumulatedYearlyPL, time[1])
+    yearlyReturns.push(yr)
+    accumulatedYearlyPL := 0
+    yearlyMaxDrawdown := 0
+    yearlyEquityHigh := 0
+    currentYearlyDrawdown := 0
+    bestAccumulatedYearlyPL := 0
+
+// DEBUG code
+bgcolor(mptable_debug and new_month ? color.lime : na, title="New Month", display=display.none)
+bgcolor(mptable_debug and new_year ? color.red : na, title="New Year", display=display.none)
+// END DEBUG CODE
+
+// Define Monthly P&L Table
+var table performance_table = table(na)
+
+//Adjust mptable_pageSize if the years are less than the mptable_pageSize
+if yearlyReturns.size() < mptable_pageSize
+    mptable_pageSize := yearlyReturns.size()
+
+// Caluclate the start and end of page to display
+startIndex = math.max(math.min(yearlyReturns.size() - 1, yearlyReturns.size() - 1 - (mptable_pageSize + 1) * mptable_pageNumber), mptable_pageSize - 1)
+endIndex = math.max(startIndex - mptable_pageSize, 0)
+mptable_pageSize := endIndex <= mptable_pageSize ? endIndex : mptable_pageSize
+
+// If this is the last bar on our chart, display the performance table
+var int EXTRA_STAT_ROWS = 5 // This ensures table includes enough rows for CAGR etc
+if mptable_on and monthlyReturns.size() > 0 and barstate.islastconfirmedhistory
+
+    // Create table (100 rows = 100 years of data, should be plenty for all markets!)
+    performance_table := table.new(position.bottom_right, columns=17, rows=yearlyReturns.size() + EXTRA_STAT_ROWS, border_width=1)
+
+    // Set column headers
+    performance_table.cell(0, 0, "Year", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(1, 0, "Jan", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(2, 0, "Feb", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(3, 0, "Mar", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(4, 0, "Apr", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(5, 0, "May", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(6, 0, "Jun", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(7, 0, "Jul", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(8, 0, "Aug", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(9, 0, "Sep", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(10, 0, "Oct", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(11, 0, "Nov", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(12, 0, "Dec", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(13, 0, "TOTAL", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+    performance_table.cell(14, 0, "MaxDD", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+
+    // Set yearly values
+    for year_index = startIndex to yearlyReturns.size() == 0 ? na : endIndex
+
+        // Get yearly return for this loop, set year number in first column, determine color of cell
+        StrategyReturn yearlyReturn = yearlyReturns.get(year_index)
+
+        // Set year title and determine color
+        performance_table.cell(0, year_index + 1, str.tostring(year(yearlyReturn.timestamp)), bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_size=tableTextSize)
+        color y_color = yearlyReturn.profit > 0 ? mptable_ProfitColor : yearlyReturn.profit == 0 ? mptable_BreakEvenColor : mptable_LossColor
+
+        // Populate yearly cell values
+        string yearlyTip = "MaxDD: " + str.tostring(math.round(yearlyReturn.drawdown, GetRoundingPrecision(yearlyReturn.drawdown))) + "%" +
+             "\nMFE: " + str.tostring(math.round(yearlyReturn.peak, GetRoundingPrecision(yearlyReturn.peak))) + "%"
+        performance_table.cell(13, year_index + 1, (yearlyReturn.profit > 0 ? "+" : "") + str.tostring(math.round(yearlyReturn.profit, GetRoundingPrecision(yearlyReturn.profit))) + "%", bgcolor=y_color, text_color=color.white, text_size=tableTextSize, tooltip=yearlyTip)
+        performance_table.cell(14, year_index + 1, str.tostring(math.round(yearlyReturn.drawdown, GetRoundingPrecision(yearlyReturn.drawdown))) + "%", bgcolor=mptable_BreakEvenColor, text_color=color.white, text_size=tableTextSize)
+
+        // Set monthly values
+        for month_index = 0 to monthlyReturns.size() - 1
+
+            // Get monthly return for this loop, get current year for this loop, then calculate the corresponding table column and row
+            StrategyReturn monthlyReturn = monthlyReturns.get(month_index)
+            int yearOfMonth = year(monthlyReturn.timestamp)
+            int monthCol = month(monthlyReturn.timestamp)
+
+            // populate monthly profit only if the years of the yearly return match with the monthly return.
+            if yearOfMonth == year(yearlyReturn.timestamp)
+                 // Determine color for monthly P&L
+                color m_color = monthlyReturn.profit > 0 ? color.new(mptable_ProfitColor, color.t(mptable_ProfitColor) + 20) : monthlyReturn.profit == 0 ? color.new(mptable_BreakEvenColor, color.t(mptable_BreakEvenColor) + 20) : color.new(mptable_LossColor, color.t(mptable_LossColor) + 20)
+
+                // Set monthly P&L cell
+                string monthlyTip = "MaxDD: " + str.tostring(math.round(monthlyReturn.drawdown, GetRoundingPrecision(monthlyReturn.drawdown))) + "%" +
+                     "\nMFE: " + str.tostring(math.round(monthlyReturn.peak, GetRoundingPrecision(monthlyReturn.peak))) + "%"
+                performance_table.cell(monthCol, year_index + 1, str.tostring(math.round(monthlyReturn.profit, GetRoundingPrecision(monthlyReturn.profit))), bgcolor=m_color, text_color=color.white, text_size=tableTextSize, tooltip=monthlyTip)
+
+    float percentReturn = (strategy.netprofit / strategy.initial_capital) * 100
+    float cagr = (math.pow((strategy.netprofit + strategy.initial_capital) / strategy.initial_capital, 1 / yearlyReturns.size()) - 1) * 100
+    float mar = cagr / math.abs(worstDrawdown)
+    lastMonthRowIndex = startIndex < 5 ? 5 : startIndex
+
+    // Populate table data
+    float totalWinRate = (strategy.wintrades / strategy.closedtrades) * 100
+    float longWinRate = nz((totalLongTradeWins / totalLongTrades) * 100)
+    float shortWinRate = nz((totalShortTradeWins / totalShortTrades) * 100)
+    string returnTip = "Based on a total of " + str.tostring(strategy.closedtrades) + " trades" +
+         "\nWin Rate = " + str.tostring(math.round(totalWinRate, GetRoundingPrecision(totalWinRate))) + "%" +
+         "\nLong Trades = " + str.tostring(totalLongTrades) + " (Win " + str.tostring(math.round(longWinRate, GetRoundingPrecision(longWinRate))) + "%)" +
+         "\nShort Trades = " + str.tostring(totalShortTrades) + " (Win " + str.tostring(math.round(shortWinRate, GetRoundingPrecision(shortWinRate))) + "%)"
+    //performance_table.cell(15, lastMonthRowIndex, "Return: " + (percentReturn > 0 ? "+" : "") + str.tostring(math.round(percentReturn, GetRoundingPrecision(percentReturn))) + "%", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_font_family=font.family_monospace, text_size=tableTextSize, tooltip=returnTip)
+    //performance_table.cell(15, lastMonthRowIndex - 1, "MAR: " + str.tostring(mar, "#.##"), bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_font_family=font.family_monospace, text_size=tableTextSize, tooltip="Measure of return adjusted for risk: CAGR divided by Max Drawdown. Indicates how comfortable the system might be to trade. Higher than 0.5 is ideal, 1.0 and above is very good, and anything 3.0 or above should be considered suspicious.")
+    //performance_table.cell(15, lastMonthRowIndex - 2, "DD Bars: " + str.tostring(maxDrawdownBars), bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_font_family=font.family_monospace, text_size=tableTextSize, tooltip="Average Drawdown Bars: " + str.tostring(totalDrawdownBars.avg(), "#.#") + "\n\nThis is how many bars it took to recover the longest drawdown (note: this is different to the MAX drawdown, and represents time drawdown)")
+    //performance_table.cell(15, lastMonthRowIndex - 3, "MaxDD: " + str.tostring(math.round(worstDrawdown, GetRoundingPrecision(worstDrawdown))) + "%", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_font_family=font.family_monospace, text_size=tableTextSize, tooltip="Average Drawdown: " + str.tostring(totalDrawdowns.avg(), "#.##") + "%\n\nThis number is different to the Strategy Tester because this number is based on closed trade equity while the Tester's MaxDD is based on open equity.")
+    //performance_table.cell(15, lastMonthRowIndex - 4, "CAGR: " + (cagr > 0 ? "+" : "") + str.tostring(math.round(cagr, GetRoundingPrecision(cagr))) + "%", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_font_family=font.family_monospace, text_size=tableTextSize, tooltip="Compounded annual growth rate")
+    //performance_table.cell(15, lastMonthRowIndex - 5, "REALIZED P&L", bgcolor=mptable_titleColor, text_color=mptable_titleTextColor, text_font_family=font.family_monospace, text_size=tableTextSize, tooltip="These numbers are based on Realized equity (closed trades)")
+
+//======================================================================================================================================================================
+// End Of Code
+//======================================================================================================================================================================

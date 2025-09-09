@@ -1,0 +1,42 @@
+//@version=5
+strategy("AutoFib Breakout Strategy for Uptrend Assets", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Trend Filter ===
+ema200 = ta.ema(close, 200)
+plot(ema200, "EMA 200", color=color.orange)
+
+// === ATR for Risk Management ===
+atr = ta.atr(14)
+
+// === Fib Extension Level to Use ===
+fibLevel = 1.618
+fibColor = color.green
+
+// === Fibonacci Anchor Logic (simple swing high/low detection) ===
+pivotHigh = ta.pivothigh(high, 10, 10)
+pivotLow = ta.pivotlow(low, 10, 10)
+
+var float fibBase = na
+var float fibTop = na
+var line fibLine = na
+
+if not na(pivotHigh)
+    fibTop := pivotHigh
+if not na(pivotLow)
+    fibBase := pivotLow
+
+fibDiff = fibTop - fibBase
+fibTarget = fibTop + fibDiff * (fibLevel - 1)
+
+if not na(fibTarget)
+    line.delete(fibLine)
+    fibLine := line.new(x1=bar_index - 1, y1=fibTarget, x2=bar_index, y2=fibTarget, color=fibColor, width=1, extend=extend.right)
+    label.new(bar_index, fibTarget, text="1.618 Target", style=label.style_label_up, textcolor=color.white, size=size.small, color=color.new(fibColor, 85))
+
+// === Entry & Exit Conditions ===
+longCondition = close > fibTarget and close > ema200
+if (longCondition)
+    strategy.entry("Long Breakout", strategy.long, comment="Breakout Entry")
+
+// Exits: TP and SL based on ATR
+strategy.exit("Exit", from_entry="Long Breakout", stop=close - atr, limit=close + atr * 3)

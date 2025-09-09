@@ -1,0 +1,49 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+//@version=5
+strategy("PresentTrend RMI Synergy - Strategy [presentTrading]", shorttitle="PresentTrend RMI Synergy - Strategy [presentTrading]", overlay=false, precision=3,
+ commission_value= 0.1, commission_type=strategy.commission.percent, slippage= 1,
+  currency=currency.USD, default_qty_type = strategy.percent_of_equity, default_qty_value = 10, initial_capital= 10000)
+
+// Inputs
+tradeDirection = input.string("Both", title="Trade Direction", options=["Long", "Short", "Both"])
+lengthRMI = input.int(21, title="RMI Length")
+lengthSuperTrend = input.int(5, title="presentTrend Length")
+multiplierSuperTrend = input.float(4.0, title="presentTrend Multiplier")
+
+// RMI Calculation
+up = ta.rma(math.max(ta.change(close), 0), lengthRMI)
+down = ta.rma(-math.min(ta.change(close), 0), lengthRMI)
+rmi = 100 - (100 / (1 + up / down))
+
+// PresentTrend Dynamic Threshold Calculation (Simplified Example)
+presentTrend = ta.sma(close, lengthRMI) * multiplierSuperTrend // Simplified for demonstration
+
+// SuperTrend for Dynamic Trailing Stop
+atr = ta.atr(lengthSuperTrend)
+upperBand = ta.sma(close, lengthSuperTrend) + multiplierSuperTrend * atr
+lowerBand = ta.sma(close, lengthSuperTrend) - multiplierSuperTrend * atr
+trendDirection = close > ta.sma(close, lengthSuperTrend) ? 1 : -1
+// Entry Logic
+longEntry = rmi > 60 and trendDirection == 1
+shortEntry = rmi < 40 and trendDirection == -1
+
+// Exit Logic with Dynamic Trailing Stop
+longExitPrice = trendDirection == 1 ? lowerBand : na
+shortExitPrice = trendDirection == -1 ? upperBand : na
+
+// Strategy Execution
+if (tradeDirection == "Long" or tradeDirection == "Both") and longEntry
+    strategy.entry("Long Entry", strategy.long)
+    strategy.exit("Exit Long", stop=longExitPrice)
+
+if (tradeDirection == "Short" or tradeDirection == "Both") and shortEntry
+    strategy.entry("Short Entry", strategy.short)
+    strategy.exit("Exit Short", stop=shortExitPrice)
+
+// Visualization
+plot(rmi, title="RMI", color=color.orange)
+hline(50, "Baseline", color=color.white)
+hline(30, "Baseline", color=color.blue)
+hline(70, "Baseline", color=color.blue)

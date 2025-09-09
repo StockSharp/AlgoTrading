@@ -1,0 +1,125 @@
+// REUSING THIS CODE: You are welcome to reuse this code without permission, including in closed-source publications. Credits are always appreciated.
+
+//@version=4
+//@author=LucF, for PineCoders
+// PineCoders, Tools and ideas for all Pine coders: pinecoders.com
+
+// `security()` revisited [PineCoders]
+//  v2, 2021.06.10 18:18 — LucF
+
+// This script provides:
+//  - The `f_security()` function to make reliable, repainting/non-repainting `security()` calls.
+//  - A technique to achieve the same functionality for functions returning tuples, when they must be used with `security()`.
+//  - The `f_tfReminderAndErrorCheck()` function to validate the chart's TF and display a reminder of the HTF.
+
+// This code was written using:
+//  • PineCoders Coding Conventions for Pine: http://www.pinecoders.com/coding_conventions/
+
+
+
+study("`security()` revisited [PineCoders]", "", true)
+
+var string ON  = "On"
+var string OFF = "Off"
+
+bool   i_repaint   = input(OFF,   "Repaint",                 options = [ON, OFF]) == ON
+float  i_source    = input(close, "Source")
+string i_timeframe = input("1",   "Timeframe",               type = input.resolution)
+bool   i_reminder  = input(ON,    "Show timeframe reminder", options = [ON, OFF]) == ON
+
+var string ticker = syminfo.tickerid
+plotchar(na, "══════════ PLOTS",  "", location.top)
+
+// ————— YELLOW (Reference): Repaint-only, simple `security()` call.
+//          - Historical plots do not represent realtime behavior accurately.
+//          - In realtime, values other than `open` will update continuously and can vary significantly from EOD values.
+c0 = security(ticker, i_timeframe, i_source)
+plot(c0, "c0: 🔨 Repainting `security()` call", color.yellow, 20)
+
+// ————— SILVER (BEST): Uses only one `security()` call but allows repainting control.
+//          - Cannot be used when the source is a tuple-returning function (use the following method then).
+//          The first three parameters are the same as those of `security()`.
+//          The last one: `_rep`, must be a boolean (true/false) value. It indicates if you want repainting (true) or not (false).
+//▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼▼
+f_security(_sym, _res, _src, _rep) => security(_sym, _res, _src[not _rep and barstate.isrealtime ? 1 : 0])[_rep or barstate.isrealtime ? 0 : 1]
+//▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+c1 = f_security(ticker, i_timeframe, i_source, i_repaint)
+plot(c1, "c1: 👍 `f_security()`", color.silver, 14)
+
+// ————— SILVER (BEST for tuples): Technique providing the functional equivalent of `f_security()` for use with functions returning a tuple.
+f_oc(_offset) =>
+    // int _offset: the first half of the offset calcs required to achieve repainting/non-repainting.
+    //              The second half will be handled post `security()` call, by indexing the received tuple values in a variable reassignment.
+    _o = open
+    _c = close
+    [_o[_offset], _c[_offset]]
+[o_, c_] = security(ticker, i_timeframe, f_oc(not i_repaint and barstate.isrealtime ? 1 : 0))
+o = o_[i_repaint or barstate.isrealtime ? 0 : 1]
+c = c_[i_repaint or barstate.isrealtime ? 0 : 1]
+c2 = c
+plot(c2, "c2: 👍 Tuple form", color.fuchsia, 8)
+
+// ————— WHITE (OK): Classic two-call version with repainting control.
+f_secureSecurity(_symbol, _res, _src) => security(_symbol, _res, _src[1], lookahead = barmerge.lookahead_on)
+c3 = i_repaint ? security(ticker, i_timeframe, i_source) : f_secureSecurity(ticker, i_timeframe, i_source)
+plot(c3, "c3: 🆗 Two-call form", color.white, 4)
+
+// ————— BLACK (BAD): DO NOT USE THESE. They are two inadequate compromises showing misleading behavioral disparities between historical and realtime bars.
+c4 = security(ticker, i_timeframe, i_source[not i_repaint and barstate.isrealtime ? 1 : 0])
+plot(c4, "c4: 👎 Dysfunctional ersatz", color.black, 2)
+c5 = security(ticker, i_timeframe, i_source)[not i_repaint and barstate.isrealtime ? 1 : 0]
+plot(c5, "c5: 👎 Dysfunctional ersatz", na, 1)
+
+
+
+// ————— Mark timeframe changes.
+bgcolor(change(time(i_timeframe)) ? color.gray : na)
+// ————— Value of offsets used in our `f_security()`.
+plotchar(na, "══════════ OFFSETS",  "", location.top)
+plotchar(not i_repaint and barstate.isrealtime ? 1 : 0, "not i_repaint and barstate.isrealtime ? 1 : 0", "", location.top, size = size.tiny)
+plotchar(i_repaint or barstate.isrealtime ? 0 : 1,      "i_repaint or barstate.isrealtime ? 0 : 1",      "", location.top, size = size.tiny)
+// ————— Colored bar at the top of the chart.
+// plotchar(na, "══════════ BAR STATES",  "", location.top)
+// plotchar(barstate.ishistory,  "ishistory",  "█", location.top, color.silver, size = size.normal)
+// plotchar(barstate.isrealtime, "isrealtime", "█", location.top, color.green,  size = size.normal)
+// plotchar(barstate.isrealtime and barstate.isconfirmed, "isrealtime and isconfirmed", "█", location.top, color.red, size = size.normal)
+
+
+
+// ————— Show warning or HTF reminder, if needed.
+f_tfReminderAndErrorCheck(_userSelectionOfTf, _tfReminder) =>
+    // string _userSelectionOfTf: HTF selected by user.
+    // bool   _tfReminder       : `true` when a reminder of the HTF must be displayed.
+
+    // Get chart's TF.
+    var float _chartTfInMinutes = timeframe.multiplier * (
+      timeframe.isseconds ? 1. / 60             :
+      timeframe.isminutes ? 1.                  :
+      timeframe.isdaily   ? 60. * 24            :
+      timeframe.isweekly  ? 60. * 24 * 7        :
+      timeframe.ismonthly ? 60. * 24 * 30.4375  : na)
+
+    // Get HTF.
+    float _htfInMinutes = security(syminfo.tickerid, _userSelectionOfTf, _chartTfInMinutes)
+
+    // Label.
+    string _txt = ""
+    var color _color = na
+    if _chartTfInMinutes > _htfInMinutes
+        // Chart TF is higher than user-selected TF.
+        _txt := "The chart's timeframe\nshould not be greater than " + _userSelectionOfTf
+        _color := color.red
+    else if _tfReminder
+        // Display reminder of HTF.
+        _txt := _userSelectionOfTf
+        _color := color.silver
+    float _y = lowest(50)[1]
+    var label _lbl = label.new(bar_index, _y, _txt, xloc.bar_index, yloc.price, #00000000, label.style_label_left, _color, size.large, text.align_left)
+    if barstate.islast and _txt != ""
+        // Update label.
+        label.set_xy(_lbl, bar_index, _y)
+        label.set_text(_lbl, _txt)
+        label.set_textcolor(_lbl, _color)
+    [_chartTfInMinutes, _htfInMinutes]
+
+f_tfReminderAndErrorCheck(i_timeframe, i_reminder)

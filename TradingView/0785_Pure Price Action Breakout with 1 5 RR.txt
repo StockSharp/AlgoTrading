@@ -1,0 +1,55 @@
+//@version=6
+strategy("BTC Momentum Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=5)
+
+// Timeframe Check
+isFiveMin = timeframe.period == "5"
+isFifteenMin = timeframe.period == "15"
+timeframeFilter = isFiveMin or isFifteenMin
+
+// Moving Averages
+fastMA = ta.ema(close, 9)
+slowMA = ta.ema(close, 21)
+
+// RSI Calculation
+rsi = ta.rsi(close, 14)
+
+// ATR for Stop-Loss Calculation
+atr = ta.atr(14)
+stopLossFactor = 1.5
+riskRewardRatio = 5
+
+// Volume Confirmation
+volCondition = volume > ta.sma(volume, 20)
+
+// Entry Conditions
+longCondition = ta.crossover(fastMA, slowMA) and rsi > 50 and volCondition
+shortCondition = ta.crossunder(fastMA, slowMA) and rsi < 50 and volCondition
+
+// Stop-Loss & Take-Profit
+longStopLoss = close - (atr * stopLossFactor)
+longTakeProfit = close + ((close - longStopLoss) * riskRewardRatio)
+shortStopLoss = close + (atr * stopLossFactor)
+shortTakeProfit = close - ((shortStopLoss - close) * riskRewardRatio)
+
+// Entry Execution
+if longCondition and timeframeFilter
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long Exit", from_entry="Long", stop=longStopLoss, limit=longTakeProfit)
+
+if shortCondition and timeframeFilter
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Short Exit", from_entry="Short", stop=shortStopLoss, limit=shortTakeProfit)
+
+// Trade Limit Per Day
+tradeCount = ta.barssince(strategy.opentrades == 0)
+maxTradesPerDay = 5
+if tradeCount > maxTradesPerDay
+    strategy.close_all()
+
+// Plot Signals
+plotshape(series=longCondition, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy Signal")
+plotshape(series=shortCondition, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal")
+
+// Alerts
+alertcondition(longCondition, title="Buy Alert", message="BTC Long Entry Signal")
+alertcondition(shortCondition, title="Sell Alert", message="BTC Short Entry Signal")

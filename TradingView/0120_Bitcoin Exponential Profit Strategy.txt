@@ -1,0 +1,44 @@
+//@version=5
+strategy("Bitcoin Exponential Profit Strategy", overlay=true)
+
+// User settings
+fastLength = input.int(9, title="Fast EMA Length", minval=1)
+slowLength = input.int(21, title="Slow EMA Length", minval=1)
+riskPercent = input.float(1, title="Risk % Per Trade", step=0.1) / 100
+rewardMultiplier = input.float(2, title="Reward Multiplier (R:R)", step=0.1)
+trailOffsetPercent = input.float(0.5, title="Trailing Stop Offset %", step=0.1) / 100
+
+// Calculate EMAs
+fastEMA = ta.ema(close, fastLength)
+slowEMA = ta.ema(close, slowLength)
+
+// Plot EMAs
+plot(fastEMA, color=color.blue, title="Fast EMA")
+plot(slowEMA, color=color.red, title="Slow EMA")
+
+// Account balance and dynamic position sizing
+capital = strategy.equity
+riskAmount = capital * riskPercent
+
+// Define Stop Loss and Take Profit Levels
+stopLossLevel = close * (1 - riskPercent)
+takeProfitLevel = close * (1 + rewardMultiplier * riskPercent)
+
+// Trailing stop offset
+trailOffset = close * trailOffsetPercent
+
+// Entry Condition: Bullish Crossover
+if ta.crossover(fastEMA, slowEMA)
+    positionSize = riskAmount / math.max(close - stopLossLevel, 0.01)  // Prevent division by zero
+    strategy.entry("Long", strategy.long, qty=positionSize)
+    strategy.exit("TakeProfit", from_entry="Long", stop=stopLossLevel, limit=takeProfitLevel, trail_offset=trailOffset)
+
+// Exit Condition: Bearish Crossunder
+if ta.crossunder(fastEMA, slowEMA)
+    strategy.close("Long")
+
+// Labels for Signals
+if ta.crossover(fastEMA, slowEMA)
+    label.new(bar_index, low, "BUY", color=color.green, textcolor=color.white, style=label.style_label_up)
+if ta.crossunder(fastEMA, slowEMA)
+    label.new(bar_index, high, "SELL", color=color.red, textcolor=color.white, style=label.style_label_down)

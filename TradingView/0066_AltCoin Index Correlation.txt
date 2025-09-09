@@ -1,0 +1,354 @@
+// ===================================================================
+// AltCoin Index Correlation
+// Strategy by © Eddie_Bitcoin (check my profile for juicy hints)
+//
+// Philosophy:
+// A trend-following strategy designed for altcoins, using EMA crossovers
+// to detect alignment or divergence with a chosen reference index
+// (e.g., BTC dominance, altcoin market cap, NASDAQ, S&P500).
+// Supports inverse correlation logic, dynamic position scaling, and
+// risk-based exits. Flexible and adaptable across crypto and traditional markets.
+// This strategy identifies correlation patterns between an altcoin and
+// a selected index (such as BTC dominance or total crypto market cap)
+// using dual EMA crossovers. It assumes that trends aligned across both
+// the altcoin and the index can strengthen entry signals (or weaken them
+// if inversely correlated). It allows for adaptive scale-out logic,
+// profit/loss-based exits, and optional inversion of correlation logic.
+// ===================================================================
+
+//@version=6
+strategy("AltCoin Index Correlation [Eddie_Bitcoin]", overlay=true, initial_capital = 1000, commission_type=strategy.commission.percent, commission_value=0.055, margin_long = 0.001, margin_short = 0.001, precision = 4)
+
+// =====================
+// DATE FILTER
+// =====================
+// Allows filtering backtest results to a specific date range
+useDateFilter = input.bool(false, title="Filter Date Range of Backtest", group = " ───────────────[ BACKTEST DATE FILTER ]")
+backtestStartDate = input.time(timestamp("01 May 2025 00:00:00 GMT+0"),  title="Start Date", inline="TOP", group = " ───────────────[ BACKTEST DATE FILTER ]")
+backtestEndDate   = input.time(timestamp("31 Dec 2049 00:00:00 GMT+0"),  title="End Date",inline="TOP", group = " ───────────────[ BACKTEST DATE FILTER ]")
+inTradeWindow = not useDateFilter or (time >= backtestStartDate and time < backtestEndDate)
+
+// =====================
+// FUNCTIONS
+// =====================
+// Dynamically estimates minimum tradable quantity (tick size) based on price
+EstimatedTickSize = close > 10000 ? 0.001 : close > 100 ? 0.01 : close > 10 ? 0.1 : close > 0.1 ? 1 : close >  0.01 ? 10 : 100
+minQuantity   = EstimatedTickSize
+
+// Calculates the remainder of a division (used for rounding quantities)
+DivisionReminder(a, b) =>
+    wholeDivision = math.floor(a / b)
+    Reminder = a - wholeDivision * b
+    Reminder
+
+// Calculates a valid quantity for scale-out, respecting tick size
+calcolaQty_Scaleout(ScaleOut_Perc) =>
+    ScaleOut_qty =  math.abs(strategy.position_size) * ScaleOut_Perc / 100.
+    ScaleOut_qty := ScaleOut_qty < minQuantity ? minQuantity : ScaleOut_qty
+    Reminder = DivisionReminder(ScaleOut_qty, minQuantity)
+    ScaleOut_qty := ScaleOut_qty - Reminder // ensures quantity is a valid multiple
+    if ScaleOut_qty < 0.
+        ScaleOut_qty := minQuantity
+    ScaleOut_qty
+
+// =====================
+// INPUTS
+// =====================
+// EMAs for current symbol and reference index
+lenFast                         = input.int(47, "Fast EMA", group = " ───────────────[ SETTINGS ]")
+lenSlow                         = input.int(50, "Slow EMA", group = " ───────────────[ SETTINGS ]")
+idxlenFast                      = input.int(47, "Index Fast EMA", group = " ───────────────[ SETTINGS ]")
+idxlenSlow                      = input.int(50, "Index Slow EMA", group = " ───────────────[ SETTINGS ]")
+
+// Reference index settings (e.g. BTC dominance)
+SkipIndexReference              = input.bool(false, "Don't Use Index Reference", group = " ───────────────[ INDEX REFERENCE ]")
+InverseSignal                   = input.bool(false," Inverse Index Signal? (Inverse Correlation)", group = " ───────────────[ INDEX REFERENCE ]")
+indexReference                  = input.string("CRYPTOCAP:OTHERS.D","Reference Index",options = ["CRYPTOCAP:OTHERS.D","CRYPTOCAP:OTHERS","CRYPTOCAP:BTC.D","CRYPTOCAP:BTC","CRYPTOCAP:TOTAL","CRYPTOCAP:TOTAL2","CRYPTOCAP:TOTAL3","OANDA:NAS100USD","OANDA:SPX500USD"], group = " ───────────────[ INDEX REFERENCE ]")
+
+// Leverage and position sizing
+useIncrementalQty               = input.bool(true, "Use 100% Equity? false=initial_capital", group = " ───────────────[ RISK MANAGEMENT ]")
+Leverage                        = input.float(1.8, "Leverage (use 1.0) if you don't want it", step=0.2, group = " ───────────────[ RISK MANAGEMENT ]")
+
+// Take Profit and Stop Loss thresholds
+TakeProfit                    = input.float(99999.,step=0.5, group = " ───────────────[ TAKE PROFIT / STOP LOSS ]")
+StopLoss                      = input.float(-5, step=0.5, group = " ───────────────[ TAKE PROFIT / STOP LOSS ]")
+scaleOutOnChangeColor           = input.bool(true, "Scale Position on Weak Trend?", group = " ───────────────[ TAKE PROFIT / STOP LOSS ]")
+ScaleOut_Perc_onChangeColor     = input.float(65., "Scaled Percentage", group = " ───────────────[ TAKE PROFIT / STOP LOSS ]")
+
+// =====================
+// USER CONFIG: TABLE POSITION
+// =====================
+ShowTradePnL                     = input.bool(true, "Show LastTrades PnL Label?", group=" ───────────────[ STATS DISPLAY ]")
+tablePositionInput               = input.string("Bottom Right", title="Stats Table Position", options=["Top Left", "Top Right", "Bottom Left", "Bottom Right"], group=" ───────────────[ STATS DISPLAY ]")
+
+// =====================
+// CALCULATIONS
+// =====================
+// EMA calculation for current symbol and reference index
+this_ema1 = ta.ema(close, lenFast)
+this_ema2 = ta.ema(close, lenSlow)
+
+oth_price = request.security(indexReference, timeframe.period, close, lookahead = barmerge.lookahead_off)
+oth_ema1 = ta.ema(oth_price, idxlenFast)
+oth_ema2 = ta.ema(oth_price, idxlenSlow)
+
+var float Equity_AtStartTrade = na
+var float TruePnL = na
+TruePnL := na(Equity_AtStartTrade) ? na : ((strategy.equity / Equity_AtStartTrade) - 1.0) * 100.0
+// =====================
+// ENTRY CONDITIONS
+// =====================
+// Entry logic based on dual EMA crossover alignment
+positionSize = useIncrementalQty ? strategy.equity * Leverage / close : strategy.initial_capital / close
+
+goLong  = oth_ema1 > oth_ema2 and this_ema1 > this_ema2
+goShort = oth_ema1 < oth_ema2 and this_ema1 < this_ema2
+
+// If user wants to inverse correlation logic (negative correlation strategy)
+if InverseSignal
+    goLong  := oth_ema1 > oth_ema2 and this_ema1 < this_ema2
+    goShort := oth_ema1 < oth_ema2 and this_ema1 > this_ema2
+
+// Optionally ignore index reference
+if SkipIndexReference
+    goLong  := this_ema1 > this_ema2
+    goShort := this_ema1 < this_ema2
+
+// Assign colors based on correlation state
+color_This = this_ema1 >= this_ema2 and oth_ema1 >= oth_ema2 ? color.lime : this_ema1 >= this_ema2 and oth_ema1 < oth_ema2 ?  color.teal : this_ema1 < this_ema2 and oth_ema1 > oth_ema2 ? color.maroon :  color.red
+
+// =====================
+// EXIT CONDITIONS
+// =====================
+// Tracks real-time PnL to enforce dynamic exits
+var PnL = 0.
+LastTriggeredPrice = strategy.opentrades.entry_price(strategy.opentrades - 1)
+if strategy.position_size > 0.0 and LastTriggeredPrice != 0.0
+    PnL := ((close - LastTriggeredPrice) / LastTriggeredPrice) * 100.0
+else if strategy.position_size < 0.0 and LastTriggeredPrice != 0.0
+    PnL := ((LastTriggeredPrice - close) / LastTriggeredPrice) * 100.0
+
+// Dynamic scale-out logic, custom stop and take profit
+var TruePnLToDisplay = PnL
+var DontGo = ""
+
+// Prevent trading outside of user-specified time window
+if not inTradeWindow and math.abs(strategy.position_size) != 0.0
+    strategy.close_all("NotTradeTime")
+
+// Exit based on profit or loss thresholds
+if (PnL > TakeProfit) and math.abs(strategy.position_size) != 0.0
+    strategy.close_all("TAKEPROFIT")
+if (PnL < StopLoss) and math.abs(strategy.position_size) != 0.0
+    if strategy.position_size > 0. and not goShort
+        DontGo := "LONG"
+        strategy.close("Long","STOPLOSS Long")
+    if strategy.position_size < 0. and not goLong
+        DontGo := "SHORT"
+        strategy.close("Short","STOPLOSS Short")
+
+// Reset 'DontGo' when trend conditions improve
+if DontGo == "LONG" and (color_This[1] == color.lime or color_This[1] == color.teal) and color_This != color.maroon
+    DontGo := ""
+if DontGo == "SHORT" and (color_This[1] == color.red or color_This[1] == color.maroon) and color_This != color.teal
+    DontGo := ""
+
+// Flag to prevent duplicate scale-outs per position
+var Scaled = false
+
+// Scale-out when trend weakens but still in profit
+if scaleOutOnChangeColor and strategy.position_size > 0. and (color_This[1] == color.lime and color_This != color.lime) and PnL > 0.1 and not Scaled and not goShort
+    ScaleOut_qty = calcolaQty_Scaleout(ScaleOut_Perc_onChangeColor)
+    strategy.close('Long', comment = "ScaleOut Long", qty = ScaleOut_qty)
+    Scaled := true
+
+if scaleOutOnChangeColor and strategy.position_size < 0. and (color_This[1] == color.red and color_This != color.red) and PnL > 0.1 and not Scaled and not goLong
+    ScaleOut_qty = calcolaQty_Scaleout(ScaleOut_Perc_onChangeColor)
+    strategy.close('Short', comment = "ScaleOut Short", qty = ScaleOut_qty)
+    Scaled := true
+
+// =======================
+// ENTRY / REVERSE
+// =======================
+// Entry condition that includes capital check and 'DontGo' flag logic
+if inTradeWindow and strategy.equity > strategy.initial_capital / 30.
+    if strategy.position_size <= 0. and goLong and DontGo != "LONG"
+        Equity_AtStartTrade := strategy.equity
+        strategy.entry("Long", strategy.long, qty=positionSize)
+        Scaled := false
+        DontGo := ""
+    if strategy.position_size >= 0. and goShort and DontGo != "SHORT"
+        Equity_AtStartTrade := strategy.equity
+        strategy.entry("Short", strategy.short, qty=positionSize)
+        Scaled := false
+        DontGo := ""
+
+//
+//-----<VISUALS>-----------------------------------------------------------------------------------------------<>
+
+// =====================
+// DEBUG PLOTS
+// =====================
+// Plot useful debug values like equity and EMAs for the current and index symbol
+plotchar(strategy.equity,"Equity","",location.top,color=color.white)
+plotchar(this_ema1,"this_ema1","",location.top,color=color.yellow)
+plotchar(this_ema2,"this_ema2","",location.top,color=color.yellow)
+plotchar(oth_ema1,"oth_ema1","",location.top,color=color.purple)
+plotchar(oth_ema2,"oth_ema2","",location.top,color=color.purple)
+colorPnL = PnL > 0.0? color.green : color.red
+plotchar(PnL,"PnL","",location.top,color=colorPnL)
+plotchar(TruePnL,"TruePnL","",location.top,color=color.aqua)
+
+// =====================
+// PLOTS FOR LAST TRADE PNL
+// =====================
+// Visual label showing % PnL of last trade directly on the chart
+//
+
+rangeR = high - low
+avgRangeR = ta.sma(rangeR, 20)
+if strategy.closedtrades > 0
+    lastTradeIndex = strategy.closedtrades - 1
+    lastTradeProfit = strategy.closedtrades.profit_percent(lastTradeIndex)
+    lastTradeEntryBar = strategy.closedtrades.exit_bar_index(lastTradeIndex)
+    lastTradeDirection = strategy.closedtrades.size(lastTradeIndex)
+
+    // Se l'ultimo trade è stato chiuso in questa barra
+    if lastTradeEntryBar == bar_index
+        tradeColor = TruePnLToDisplay > 0 ? color.green : color.red
+        uscitaFinale = strategy.position_size == 0. or lastTradeDirection > 0.0 and strategy.position_size < 0. or lastTradeDirection < 0.0 and strategy.position_size > 0.
+        _size = size.normal
+        SO_PnL = TruePnLToDisplay * (ScaleOut_Perc_onChangeColor / 100.)
+        Perc_PL = str.tostring(math.round(SO_PnL, 1)) + '%' + "\n(" + str.tostring(math.round(PnL[1],1)) + '%' + ")"
+        text_color = color.black
+        if uscitaFinale
+            _size   := size.large
+            Perc_PL := str.tostring(math.round(TruePnLToDisplay, 1)) + '%' + "\n(" + str.tostring(math.round(lastTradeProfit,1)) + '%' + ")"
+            text_color := color.white
+        TradePL_Y_pos = high+(avgRangeR*5)
+        ProOPer = label.new(x = bar_index, y = TradePL_Y_pos, text = Perc_PL, color = tradeColor, textcolor = text_color, style = label.style_label_down, size = _size)
+    else
+        TruePnLToDisplay := TruePnL
+        //
+
+
+// =====================
+// BACKGROUND COLORING
+// =====================
+// Fills background between entry price and close for visual cue on position
+lowestClose = ta.lowest(close, 10)
+_css = strategy.position_size == 0.0 ? color.gray : strategy.position_size > 0.0 ? color.yellow : strategy.position_size < 0.0 ? color.purple :  na
+plotBottom = LastTriggeredPrice
+if strategy.position_size == 0.0
+    _css := color.white
+    plotBottom := lowestClose
+_plot0 = plot(plotBottom, color=na)
+_plot1 = plot(close, color=na)
+fill(_plot0,_plot1,color.new(_css,70))
+
+// Highlight EMA trend line
+plot(this_ema2,"This SlowEMA",color=color_This, linewidth = 2)
+
+//
+// ============================================================================== FINAL STATS ========
+
+// === Final Stats (includes the current trade) ===
+totalTrades     = strategy.closedtrades + (strategy.opentrades > 0 ? 1 : 0)
+winningTrades   = strategy.wintrades + (strategy.opentrades > 0 and strategy.openprofit > 0 ? 1 : 0)
+losingTrades    = totalTrades - winningTrades
+openProfit      = strategy.openprofit
+netProfit       = strategy.netprofit + openProfit
+netProfitPerc   = netProfit / strategy.initial_capital * 100
+winRate         = totalTrades > 0 ? winningTrades / totalTrades * 100 : na
+max_drawdown_percent = strategy.max_drawdown_percent
+
+// Calculate current trade % PnL
+thisTradePnl    = strategy.opentrades > 0 ? strategy.openprofit : 0
+thisTradePerc   = strategy.opentrades > 0 and strategy.opentrades.entry_price(0) > 0 ?  thisTradePnl / (strategy.opentrades.entry_price(0) * math.abs(strategy.opentrades.size(0))) * 100 : 0
+
+// Calculate APR (Annualized Percentage Return)
+firstTradeTime  = strategy.closedtrades > 0 ? strategy.closedtrades.entry_time(0) : na
+lastTradeTime   = timenow
+daysRunning     = (lastTradeTime - firstTradeTime) / (1000 * 60 * 60 * 24)
+daysRounded     = math.round(daysRunning)
+apr             = daysRunning > 0 ? (math.pow((strategy.equity / strategy.initial_capital), (365 / daysRunning)) - 1) * 100 : na
+Result           = str.tostring(math.round(strategy.equity / strategy.initial_capital,1)) + "x"
+color_Result     = netProfit > 0 ? color.green : netProfit < 0 ? color.red : color.gray
+icon_Result      = thisTradePnl > 0 ? "💚" : thisTradePnl < 0 ? "😡" :"📊"
+
+// === Color coding based on DD / APR / PnL ===
+ddColor = max_drawdown_percent <= 20  ? color.rgb(0, 255, 132)   :
+          max_drawdown_percent <= 35  ? color.green  :
+          max_drawdown_percent <= 50  ? color.white  :
+          max_drawdown_percent <= 70  ? color.yellow :
+          max_drawdown_percent <= 85  ? color.orange :
+          max_drawdown_percent <= 99  ? color.red    : color.maroon
+
+aprColor = apr > 500     ? color.rgb(0, 255, 132)   :
+           apr > 100     ? color.green  :
+           apr >= 0      ? color.white  :
+           apr >= -20    ? color.yellow :
+           apr >= -50    ? color.orange :
+           apr >= -90    ? color.red    : color.maroon
+
+thisTradeColor = thisTradePnl > 0 ? color.green : thisTradePnl < 0 ? color.red : color.gray
+totalPnlColor  = netProfit > 0 ? color.green : netProfit < 0 ? color.red : color.gray
+totalPnlPercColor = netProfitPerc > 0 ? color.green : netProfitPerc < 0 ? color.red : color.gray
+
+apr_STR = str.tostring(apr, "#.##") + "%"
+if apr > 100000
+    apr_STR := "💰💰💰💰💰"
+
+// =====================
+// FINAL PERFORMANCE TABLE
+// =====================
+// Dynamically updates in the corner of the chart with summary stats
+color LabelColor = color.gray
+color LabelTextColor = color.white
+if strategy.position_size > 0.0
+    LabelColor := color.rgb(255, 235, 59, 01)
+    LabelTextColor := color.black
+if strategy.position_size < 0.0
+    LabelColor := color.rgb(155, 39, 176, 30)
+    LabelTextColor := color.white
+if strategy.position_size == 0.0
+    LabelColor := color.rgb(24, 24, 24, 30)
+    LabelTextColor := color.white
+
+tablePosition = switch tablePositionInput
+    "Top Left"     => position.top_left
+    "Top Right"    => position.top_right
+    "Bottom Left"  => position.bottom_left
+    => position.bottom_right  // Default fallback
+
+var table statTable = table.new(tablePosition, 2, 11, border_width=1)
+if bar_index == ta.highest(bar_index, 10)
+    table.cell(statTable, 0, 0, icon_Result + " STATS ", text_color = LabelTextColor, bgcolor=LabelColor, text_size=size.large)
+    table.cell(statTable, 1, 0, Result, text_color=color.white, bgcolor=color_Result, text_size=size.large)
+
+    table.cell(statTable, 0, 1, "Trades", text_color=color.white)
+    table.cell(statTable, 1, 1, str.tostring(totalTrades), text_color=color.white)
+
+    table.cell(statTable, 0, 2, "Win Rate", text_color=color.white)
+    table.cell(statTable, 1, 2, str.tostring(winRate, "#.##") + "%", text_color=color.white)
+
+    table.cell(statTable, 0, 3, "Max Drawdown", text_color=color.white)
+    table.cell(statTable, 1, 3, str.tostring(max_drawdown_percent, "#.##")+"%", text_color=ddColor)
+
+    table.cell(statTable, 0, 4, "Running Days", text_color=color.white)
+    table.cell(statTable, 1, 4, str.tostring(daysRounded), text_color=color.white)
+
+    table.cell(statTable, 0, 5, "This Trade P&L", text_color=color.white)
+    table.cell(statTable, 1, 5, str.tostring(thisTradePnl, "$#.##"), text_color=thisTradeColor)
+
+    table.cell(statTable, 0, 6, "This Trade P&L", text_color=color.white)
+    table.cell(statTable, 1, 6, str.tostring(thisTradePerc, "#.##")+"%", text_color=color.white)
+
+    table.cell(statTable, 0, 7, "TOTAL P&L", text_color=color.white)
+    table.cell(statTable, 1, 7, str.tostring(netProfit, "$#.##"), text_color=totalPnlColor)
+
+    table.cell(statTable, 0, 8, "TOTAL P&L", text_color=color.white)
+    table.cell(statTable, 1, 8, str.tostring(netProfitPerc, "#.##")+"%", text_color=color.white)
+
+    table.cell(statTable, 0, 9, "APR", text_color=color.white)
+    table.cell(statTable, 1, 9, apr_STR, text_color=aprColor)

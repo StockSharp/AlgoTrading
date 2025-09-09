@@ -1,0 +1,59 @@
+//@version=5
+strategy(title='[tradinghook] - Renko Trend Reversal Strategy', shorttitle='[tradinghook] - Renko TRS', overlay=true ,initial_capital = 100, commission_value = 0.05, default_qty_value = 5)
+
+// INPUTS
+renkoATRLength = input.int(10, minval=1, title='ATR Length')
+stopLossPct = input.float(3, title='Stop Loss Percentage', step=0.1)
+takeProfitPct = input.float(20, title='Take Profit Percentage', step=0.1)
+startDate = input.time(timestamp("01 July 2023 00:00"), title="Start Date")
+endDate = input.time(timestamp("31 Dec 2025 23:59"), title="End Date")
+enableShorts = input.bool(true, title="Enable Shorts")
+enableSignals = input.bool(true, title="Enable Buy/Sell Signals")
+
+var float stopLossPrice = na
+var float takeProfitPrice = na
+
+atr = ta.atr(renkoATRLength)
+
+// thanks to https://www.tradingview.com/script/2vKhpfVH-Renko-XZ/ for manually calculating renkoClose and renkoOpen in order to remove repaint
+getRenkoClose() =>
+    p1 = 0.0
+    p1 := close > nz(p1[1]) + atr ? nz(p1[1]) + atr : close < nz(p1[1]) - atr ? nz(p1[1]) - atr : nz(p1[1])
+    p1
+
+calculateRenkoOpen() =>
+    p3 = 0.0
+    p3 := open > nz(p3[1]) + atr ? nz(p3[1]) + atr : open < nz(p3[1]) - atr ? nz(p3[1]) - atr : nz(p3[1])
+    p3
+
+getRenkoOpen() =>
+    open_v = 0.0
+    Br_2 = calculateRenkoOpen()
+    open_v := calculateRenkoOpen() != calculateRenkoOpen()[1] ? Br_2[1] : nz(open_v[1])
+    open_v
+
+// Calculate Renko open and close values
+renkoOpen = getRenkoOpen()
+renkoClose = getRenkoClose()
+
+// PLOTS
+plotOpen = plot(renkoOpen, title="Renko Open", color=color.new(color.green, 100), style=plot.style_linebr)
+plotClose = plot(renkoClose, title="Renko Close", color=color.new(color.red, 100), style=plot.style_linebr)
+fill(plotOpen, plotClose, title="Area Fill", color=renkoClose < renkoOpen ? color.new(color.red, 70) : color.new(color.green, 70))
+
+// SIGNALS
+if (enableSignals)
+    isWithinTimeRange = time >= startDate and time <= endDate
+    buySignal = ta.crossunder(renkoOpen, renkoClose) and isWithinTimeRange
+    sellSignal = ta.crossover(renkoOpen, renkoClose) and isWithinTimeRange and enableShorts
+
+    if (buySignal)
+        stopLossPrice := renkoOpen * (1 - stopLossPct / 100)
+        takeProfitPrice := renkoOpen * (1 + takeProfitPct / 100)
+        strategy.entry("Long", strategy.long)
+        strategy.exit("ExitLong", "Long", stop = stopLossPrice, limit = takeProfitPrice, comment="SL: " + str.tostring(stopLossPrice) + ", TP: " + str.tostring(takeProfitPrice))
+    if (sellSignal)
+        stopLossPrice := renkoOpen * (1 + stopLossPct / 100)
+        takeProfitPrice := renkoOpen * (1 - takeProfitPct / 100)
+        strategy.entry("Short", strategy.short)
+        strategy.exit("ExitShort", "Short", stop = stopLossPrice, limit = takeProfitPrice, comment="SL: " + str.tostring(stopLossPrice) + ", TP: " + str.tostring(takeProfitPrice))

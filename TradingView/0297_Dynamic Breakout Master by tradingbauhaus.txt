@@ -1,0 +1,250 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © tradingbauhaus
+//@version=6
+strategy("Dynamic Breakout Master Enhanced", overlay=true, max_bars_back=501, commission_type=strategy.commission.percent, commission_value=0.1)
+
+// --- Inputs ---
+int myperiod = input.int(12, "Pivot Period", minval=4, maxval=30, group="Settings")
+string mysource = input.string("High/Low", "Data Source", options=["High/Low", "Close/Open"], group="Settings")
+int mychannelwidth = input.int(4, "Max Channel Width %", minval=1, maxval=8, group="Settings")
+int mystrength = input.int(1, "Min Strength", minval=1, group="Settings")
+int mymaxzones = input.int(6, "Max S/R Zones", minval=1, maxval=10, group="Settings") - 1
+int mylookback = input.int(290, "Lookback Period", minval=100, maxval=400, group="Settings")
+color myrescolor = input.color(color.new(color.red, 75), "Resistance Tone", group="Colors")
+color mysupcolor = input.color(color.new(color.blue, 75), "Support Tone", group="Colors")
+color myincolor = input.color(color.new(color.gray, 75), "In-Channel Tone", group="Colors")
+bool myshowpivots = input.bool(false, "Show Pivots", group="Extras")
+bool myshowbreaks = input.bool(false, "Show Breaks", group="Extras")
+
+// Moving Average Inputs
+bool myma1_on = input.bool(true, "MA1 On", group="Trend Filter")
+int myma1_len = input.int(50, "MA1 Length", minval=1, group="Trend Filter")
+string myma1_type = input.string("EMA", "MA1 Type", options=["SMA", "EMA"], group="Trend Filter")
+bool myma2_on = input.bool(true, "MA2 On", group="Trend Filter")
+int myma2_len = input.int(200, "MA2 Length", minval=1, group="Trend Filter")
+string myma2_type = input.string("EMA", "MA2 Type", options=["SMA", "EMA"], group="Trend Filter")
+
+// New Inputs for Enhancements
+int rsi_len = input.int(14, "RSI Length", minval=1, group="Filters")
+int rsi_overbought = input.int(70, "RSI Overbought", minval=50, maxval=100, group="Filters")
+int rsi_oversold = input.int(30, "RSI Oversold", minval=0, maxval=50, group="Filters")
+int atr_len = input.int(14, "ATR Length", minval=1, group="Filters")
+float atr_multiplier = input.float(1.2, "ATR Multiplier", minval=0.5, step=0.1, group="Filters")
+float risk_per_trade = input.float(1.0, "Risk Per Trade %", minval=0.1, maxval=5.0, group="Risk Management")
+float reward_ratio = input.float(2.0, "Reward Ratio", minval=1.0, step=0.1, group="Risk Management")
+float account_size = input.float(10000, "Account Size", minval=1000, group="Risk Management")
+int trading_start_hour = input.int(9, "Trading Start Hour", minval=0, maxval=23, group="Time Filter")
+int trading_end_hour = input.int(17, "Trading End Hour", minval=0, maxval=23, group="Time Filter")
+
+// --- Calculations ---
+
+// Moving Averages
+float myma1 = myma1_on ? myma1_type == "SMA" ? ta.sma(close, myma1_len) : ta.ema(close, myma1_len) : na
+float myma2 = myma2_on ? myma2_type == "SMA" ? ta.sma(close, myma2_len) : ta.ema(close, myma2_len) : na
+plot(myma1, color=not na(myma1) ? color.blue : na, title="MA1")
+plot(myma2, color=not na(myma2) ? color.red : na, title="MA2")
+
+// Trend Filter
+bool is_bullish_trend = myma1 > myma2
+bool is_bearish_trend = myma1 < myma2
+
+// RSI for Momentum Confirmation
+float rsi = ta.rsi(close, rsi_len)
+bool rsi_bullish = rsi > rsi_oversold and rsi < rsi_overbought
+bool rsi_bearish = rsi < rsi_overbought and rsi > rsi_oversold
+bool rsi_exit_long = rsi > 80
+bool rsi_exit_short = rsi < 20
+
+// Volatility Filter with ATR
+float atr = ta.atr(atr_len)
+float min_volatility = atr * atr_multiplier
+
+// Volume Filter
+float vol_avg = ta.sma(volume, 20)
+bool vol_condition = volume > vol_avg * 1.5
+
+// Time Filter
+bool in_trading_hours = hour >= trading_start_hour and hour <= trading_end_hour
+
+// Data Sources
+float myhigh = mysource == "High/Low" ? high : math.max(close, open)
+float mylow = mysource == "High/Low" ? low : math.min(close, open)
+float mypeak = ta.pivothigh(myhigh, myperiod, myperiod)
+float myvalley = ta.pivotlow(mylow, myperiod, myperiod)
+
+// Plot Pivots
+plotshape(not na(mypeak) and myshowpivots, text="P", style=shape.labeldown, color=na, textcolor=color.new(color.red, 0), location=location.abovebar, offset=-myperiod)
+plotshape(not na(myvalley) and myshowpivots, text="V", style=shape.labelup, color=na, textcolor=color.new(color.blue, 0), location=location.belowbar, offset=-myperiod)
+
+// Max Channel Width
+float mytop = ta.highest(300)
+float mybottom = ta.lowest(300)
+float mymaxwidth = (mytop - mybottom) * mychannelwidth / 100
+
+// Store Pivots
+var float[] myvalues = array.new_float(0)
+var float[] mypositions = array.new_float(0)
+if not na(mypeak) or not na(myvalley)
+    array.unshift(myvalues, not na(mypeak) ? mypeak : myvalley)
+    array.unshift(mypositions, bar_index)
+    for i = array.size(myvalues) - 1 to 0 by 1
+        if bar_index - array.get(mypositions, i) > mylookback
+            array.pop(myvalues)
+            array.pop(mypositions)
+            continue
+        break
+
+// Channel Function
+my_channel(int ind) =>
+    float base = array.get(myvalues, ind)
+    float ceiling = base
+    float floor = base
+    int strength = 0
+    for y = 0 to array.size(myvalues) - 1
+        float level = array.get(myvalues, y)
+        float gap = level <= ceiling ? ceiling - level : level - floor
+        if gap <= mymaxwidth
+            if level <= ceiling
+                floor := math.min(floor, level)
+            else
+                ceiling := math.max(ceiling, level)
+            strength += 20
+    [ceiling, floor, strength]
+
+// S/R Zones and Swap Function
+var float[] sr_zones = array.new_float(20, 0)
+myswap(int x, int y) =>
+    float temp1 = array.get(sr_zones, y * 2)
+    array.set(sr_zones, y * 2, array.get(sr_zones, x * 2))
+    array.set(sr_zones, x * 2, temp1)
+    float temp2 = array.get(sr_zones, y * 2 + 1)
+    array.set(sr_zones, y * 2 + 1, array.get(sr_zones, x * 2 + 1))
+    array.set(sr_zones, x * 2 + 1, temp2)
+
+// Main Logic
+if not na(mypeak) or not na(myvalley)
+    float[] levels = array.new_float(0)
+    float[] power = array.new_float(10, 0)
+    for x = 0 to array.size(myvalues) - 1
+        [c, f, s] = my_channel(x)
+        array.push(levels, s)
+        array.push(levels, c)
+        array.push(levels, f)
+    for x = 0 to array.size(myvalues) - 1
+        float highlvl = array.get(levels, x * 3 + 1)
+        float lowlvl = array.get(levels, x * 3 + 2)
+        int boost = 0
+        for y = 0 to mylookback
+            if high[y] <= highlvl and high[y] >= lowlvl or low[y] <= highlvl and low[y] >= lowlvl
+                boost += 1
+        array.set(levels, x * 3, array.get(levels, x * 3) + boost)
+    array.fill(sr_zones, 0)
+    int counter = 0
+    for x = 0 to array.size(myvalues) - 1
+        float maxpower = -1.0
+        int maxspot = -1
+        for y = 0 to array.size(myvalues) - 1
+            if array.get(levels, y * 3) > maxpower and array.get(levels, y * 3) >= mystrength * 20
+                maxpower := array.get(levels, y * 3)
+                maxspot := y
+        if maxspot >= 0
+            float top = array.get(levels, maxspot * 3 + 1)
+            float bottom = array.get(levels, maxspot * 3 + 2)
+            array.set(sr_zones, counter * 2, top)
+            array.set(sr_zones, counter * 2 + 1, bottom)
+            array.set(power, counter, array.get(levels, maxspot * 3))
+            for y = 0 to array.size(myvalues) - 1
+                if array.get(levels, y * 3 + 1) <= top and array.get(levels, y * 3 + 1) >= bottom or array.get(levels, y * 3 + 2) <= top and array.get(levels, y * 3 + 2) >= bottom
+                    array.set(levels, y * 3, -1)
+            counter += 1
+            if counter >= 10
+                break
+    for x = 0 to 8
+        for y = x + 1 to 9
+            if array.get(power, y) > array.get(power, x)
+                float temp = array.get(power, y)
+                array.set(power, y, array.get(power, x))
+                array.set(power, x, temp)
+                myswap(x, y)
+
+// Level and Color Functions
+mylevel(int ind) =>
+    float result = na
+    if ind < array.size(sr_zones) and array.get(sr_zones, ind) != 0
+        result := array.get(sr_zones, ind)
+    result
+
+mycolor(int ind) =>
+    color shade = na
+    if ind < array.size(sr_zones) and array.get(sr_zones, ind) != 0
+        shade := array.get(sr_zones, ind) > close and array.get(sr_zones, ind + 1) > close ? myrescolor : array.get(sr_zones, ind) < close and array.get(sr_zones, ind + 1) < close ? mysupcolor : myincolor
+    shade
+
+// Draw Channels
+var box[] channels = array.new_box(10)
+for x = 0 to math.min(9, mymaxzones)
+    box.delete(array.get(channels, x))
+    color col = mycolor(x * 2)
+    if not na(col)
+        array.set(channels, x, box.new(left=bar_index, top=mylevel(x * 2), right=bar_index + 1, bottom=mylevel(x * 2 + 1), border_color=col, border_width=1, extend=extend.both, bgcolor=col))
+
+// Detect Breaks
+bool resistancebroken = false
+bool supportbroken = false
+bool outofzone = true
+var float last_breakout_level = na
+for i = 0 to math.min(9, mymaxzones)
+    if close <= array.get(sr_zones, i * 2) and close >= array.get(sr_zones, i * 2 + 1)
+        outofzone := false
+if outofzone
+    for i = 0 to math.min(9, mymaxzones)
+        if close[1] <= array.get(sr_zones, i * 2) and close > array.get(sr_zones, i * 2)
+            resistancebroken := true
+            last_breakout_level := array.get(sr_zones, i * 2)
+        if close[1] >= array.get(sr_zones, i * 2 + 1) and close < array.get(sr_zones, i * 2 + 1)
+            supportbroken := true
+            last_breakout_level := array.get(sr_zones, i * 2 + 1)
+
+// Pullback Logic
+bool pullback_long = not na(last_breakout_level) and close < last_breakout_level and close[1] >= last_breakout_level and is_bullish_trend
+bool pullback_short = not na(last_breakout_level) and close > last_breakout_level and close[1] <= last_breakout_level and is_bearish_trend
+
+// Enhanced Entry Conditions
+bool long_condition = (resistancebroken or pullback_long) and is_bullish_trend and rsi_bullish and atr > min_volatility and in_trading_hours and vol_condition
+bool short_condition = (supportbroken or pullback_short) and is_bearish_trend and rsi_bearish and atr > min_volatility and in_trading_hours and vol_condition
+
+// MA Exit Conditions
+bool ma_exit_long = ta.crossover(myma2, myma1)
+bool ma_exit_short = ta.crossover(myma1, myma2)
+
+// Risk Management
+float stop_loss_distance = atr * 1.5
+float take_profit_distance = stop_loss_distance * reward_ratio
+float risk_amount = account_size * (risk_per_trade / 100)
+float position_size = risk_amount / stop_loss_distance
+
+// Strategy Entries and Exits
+if long_condition
+    strategy.entry("ResBreak", strategy.long, qty=position_size)
+    strategy.exit("LongExit", "ResBreak", stop=close - stop_loss_distance, limit=close + take_profit_distance, trail_points=stop_loss_distance * 0.5)
+
+if short_condition
+    strategy.entry("SupBreak", strategy.short, qty=position_size)
+    strategy.exit("ShortExit", "SupBreak", stop=close + stop_loss_distance, limit=close - take_profit_distance, trail_points=stop_loss_distance * 0.5)
+
+// Close Positions with Conditional Blocks
+if rsi_exit_long or ma_exit_long
+    strategy.close("ResBreak", comment="Exit RSI/MA Long")
+
+if rsi_exit_short or ma_exit_short
+    strategy.close("SupBreak", comment="Exit RSI/MA Short")
+
+// Alerts
+alertcondition(long_condition, title="Long Entry", message="Long entry triggered!")
+alertcondition(short_condition, title="Short Entry", message="Short entry triggered!")
+alertcondition(resistancebroken, title="ResBreak", message="Resistance shattered!")
+alertcondition(supportbroken, title="SupBreak", message="Support cracked!")
+
+// Plot Breaks
+plotshape(myshowbreaks and resistancebroken, style=shape.triangleup, location=location.belowbar, color=color.new(color.blue, 0), size=size.tiny)
+plotshape(myshowbreaks and supportbroken, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.tiny)

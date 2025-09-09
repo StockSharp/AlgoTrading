@@ -1,0 +1,156 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © SegaRKO
+
+//@version=4
+study("Binomial Option Pricing Model", precision=5)
+//Spot Price
+S = close
+
+//Your Option Inputs
+strike=input(50,minval=0.0000,title="Your Strike Price")
+r=input(0.00117, minval=0.000000, title="Risk Free Rate")
+q=input(0.0,minval=0.0000000, title="Dividend Yield (Dividend yield is only for stock. For FX Option enter the foreign risk free rate. For an options on futures this value should be 0.)")
+asset=input(title="Underlying Asset Class", defval="Stock", options=["Stock", "FX", "Futures"])
+style= input(title="Style of Option", defval="American Vanilla", options=["American Vanilla", "European Vanilla"])
+type= input(title="Type of Option", defval="Long Call", options=["Long Call", "Long Put"])
+
+//Time Calculations
+Minutes = input(0, title="Minutes until expiry")
+Hours = input(0, title="Hours until expiry")
+Days = input(23, minval=0, title="Days until expiry")
+Expiry = (Hours + Minutes / 60) / 24 + Days
+TimeFrame = input(1440, minval=0, title="Timeframe in minutes")
+len = 252  //Number of Days in a year.
+Time = 60 * 24 * Expiry / TimeFrame
+Interval_Width=1
+T=Time/len
+
+//Sigma Calculation
+sigma=sqrt(variance(S,len))
+
+//Binomial Tree Parameters
+stepnum=2 //Number of steps within tree.
+deltaT=T/stepnum //Amount of time between each node.
+
+up=exp(sigma*sqrt(deltaT))
+down=1/up
+
+a_stock=exp((r-q)*deltaT)
+a_futures=1
+
+a= if asset=="Futures"
+    a_futures
+else if asset=="FX"
+    a_stock
+else
+    a_stock
+
+pup=(a-down)/(up-down) //Probability of Up Move based on sigma
+pdown=1-pup //Probability of Down Move based on sigma
+
+//Binomial Tree for European Vanilla Options
+//Node 1 Spot Prices
+Su1=S*up
+Sd1=S*down
+
+//Node 2 Spot Prices
+Su2a=Su1*up
+Su2b=Su1*down
+
+Sd2a=Sd1*up
+Sd2b=Sd1*down
+
+
+//Binomial Tree Backwards Induction
+//Node 2 Option Prices
+//Because this tree only has two steps, Node 2 is the terminal node.
+//For terminal nodes their option values is the price of the underlying - strike.
+Su2a_Price=Su2a-strike
+Su2b_Price=Su2b-strike
+
+Sd2a_Price=Sd2a-strike
+Sd2b_Price=Sd2b-strike
+
+//Call Option Logic for Node 2
+Cu2a= if Su2a_Price<0
+    0
+else
+    Su2a_Price
+Cu2b= if Su2b_Price<0
+    0
+else
+    Su2b_Price
+Cd2a= if Sd2a_Price<0
+    0
+else
+    Sd2a_Price
+Cd2b= if Sd2b_Price<0
+    0
+else
+    Sd2b_Price
+
+//Put Option Logic for Node 2
+Pu2a= if Su2a_Price>0
+    0
+else
+    abs(Su2a_Price)
+Pu2b= if Su2b_Price>0
+    0
+else
+    abs(Su2b_Price)
+Pd2a= if Sd2a_Price>0
+    0
+else
+    abs(Sd2a_Price)
+Pd2b= if Sd2b_Price>0
+    0
+else
+    abs(Sd2b_Price)
+
+//Node 2 Logic
+Nu2a= if type=="Long Put"
+    Pu2a
+else
+    Cu2a
+Nu2b= if type=="Long Put"
+    Pu2b
+else
+    Cu2b
+Nd2a= if type=="Long Put"
+    Pd2a
+else
+    Cd2a
+Nd2b= if type=="Long Put"
+    Pd2b
+else
+    Cd2b
+
+//Node 1 European Option Prices
+Nu1=(pup*Nu2a+(pdown*Nu2b))*exp(-r*deltaT)
+Nd1=(pup*Nu2b+(pdown*Nd2b))*exp(-r*deltaT)
+
+//American Pricing for Node 1
+D= if type=="Long Put"
+    -1
+else
+    1
+
+Intrinsic_u1=(Su1-strike)*D
+Intrinsic_d1=(Sd1-strike)*D
+ANu1=max(Intrinsic_u1,Nu1)
+ANd1=max(Intrinsic_d1,Nd1)
+
+//European Pricing for Node 0
+European=(pup*Nu1+(pdown*Nd1))*exp(-r*deltaT)
+
+//American Pricing for Node 0
+Intrinsic_0=(S-strike)*D
+EDV=(pup*ANu1+(pdown*ANd1))*exp(-r*deltaT)
+American=max(Intrinsic_0, EDV)
+
+OptionPrice=if style=="European Vanilla"
+    European
+else
+    American
+
+plot(OptionPrice)

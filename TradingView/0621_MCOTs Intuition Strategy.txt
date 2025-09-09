@@ -1,0 +1,34 @@
+//@version=5
+strategy("MCOTs Intuition Strategy", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1, initial_capital=50000, calc_on_every_tick=true)
+
+// Input for RSI period
+rsiPeriod = input(14, title="RSI Period")
+// Input for standard deviation multiplier
+stdDevMultiplier = input(1.0, title="Standard Deviation Multiplier")
+// Input for exhaustion detection
+exhaustionMultiplier = input(1, title="Exhaustion Multiplier")
+// Input for profit target and stop loss in ticks
+profitTargetTicks = input(40, title="Profit Target (ticks)")
+stopLossTicks = input(160, title="Stop Loss (ticks)")
+
+// Calculate RSI
+rsiValue = ta.rsi(close, rsiPeriod)
+// Calculate standard deviation of RSI changes
+rsiStdDev = ta.stdev(ta.change(rsiValue), rsiPeriod)
+// Calculate momentum
+momentum = ta.change(rsiValue)
+
+// Conditions for entering a long position
+longCondition = momentum > rsiStdDev * stdDevMultiplier and momentum < momentum[1] * exhaustionMultiplier
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("CLOSE Long", limit=close + profitTargetTicks * syminfo.mintick,stop=close - stopLossTicks * syminfo.mintick)
+
+// Conditions for entering a short position
+shortCondition = momentum < -rsiStdDev * stdDevMultiplier and momentum > momentum[1] * exhaustionMultiplier
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("CLOSE Short", limit=close - profitTargetTicks * syminfo.mintick,stop=close + stopLossTicks * syminfo.mintick)
+
+// Plotting RSI value for reference
+plot(rsiValue, title="RSI", color=color.blue)

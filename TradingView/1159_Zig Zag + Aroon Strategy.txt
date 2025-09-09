@@ -1,0 +1,56 @@
+//@version=5
+strategy("Zig Zag + Aroon Strategy", overlay=true)
+
+// Zig Zag parameters
+zigzagDepth = input(5, title="Zig Zag Depth")
+
+// Aroon parameters
+aroonLength = input(14, title="Aroon Length")
+
+// Zig Zag logic
+var float lastZigZag = na
+var float lastZigZagHigh = na
+var float lastZigZagLow = na
+var int direction = 0  // 1 for up, -1 for down
+
+// Calculate Zig Zag
+if (not na(high) and high >= ta.highest(high, zigzagDepth) and direction != 1)
+    lastZigZag := high
+    lastZigZagHigh := high
+    direction := 1
+if (not na(low) and low <= ta.lowest(low, zigzagDepth) and direction != -1)
+    lastZigZag := low
+    lastZigZagLow := low
+    direction := -1
+
+// Aroon calculation
+highestHigh = ta.highest(high, aroonLength)
+lowestLow = ta.lowest(low, aroonLength)
+aroonUp = (aroonLength - (bar_index - ta.highestbars(high, aroonLength))) / aroonLength * 100
+aroonDown = (aroonLength - (bar_index - ta.lowestbars(low, aroonLength))) / aroonLength * 100
+
+// Long entry condition
+longCondition = (ta.crossover(aroonUp, aroonDown)) and (lastZigZag == lastZigZagHigh)
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+// Short entry condition
+shortCondition = (ta.crossover(aroonDown, aroonUp)) and (lastZigZag == lastZigZagLow)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Exit conditions
+if (ta.crossover(aroonDown, aroonUp) and strategy.position_size > 0)
+    strategy.close("Long")
+
+if (ta.crossover(aroonUp, aroonDown) and strategy.position_size < 0)
+    strategy.close("Short")
+
+// Plot Zig Zag
+plot(lastZigZag, color=color.blue, title="Zig Zag", linewidth=2, style=plot.style_stepline)
+
+// Plot Aroon
+hline(70, "Aroon Up Overbought", color=color.red)
+hline(30, "Aroon Down Oversold", color=color.green)
+plot(aroonUp, color=color.green, title="Aroon Up")
+plot(aroonDown, color=color.red, title="Aroon Down")

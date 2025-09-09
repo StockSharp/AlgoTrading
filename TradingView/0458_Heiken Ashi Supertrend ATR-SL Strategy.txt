@@ -1,0 +1,205 @@
+//@version=5
+strategy("Heiken Ashi Supertrend ATR-SL Strategy", initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=10, overlay=true, process_orders_on_close=false)
+
+// Custom Alert Message Settings
+longEntryMessage = input.string("BUY", "Long Entry Alert Message", group="Alert Messages")
+shortEntryMessage = input.string("SELL", "Short Entry Alert Message", group="Alert Messages")
+exitAllMessage = input.string("EXIT", "Exit All Positions Alert Message", group="Alert Messages")
+
+// Supertrend Settings
+useSupertrend = input.bool(true, "Use Supertrend for Entries", group="Supertrend Settings")
+atrPeriod = input.int(10, "ATR Period", minval=1, group="Supertrend Settings")
+factor = input.float(3.0, "Supertrend Factor", minval=0.5, step=0.1, group="Supertrend Settings")
+
+// Break Even Stop Settings
+useBreakEven = input.bool(false, "Use Break Even Stop", group="Break Even Settings")
+breakEvenATRMultiplier = input.float(1.0, "Move to BE after price moves (x ATR)", minval=0.1, step=0.1, group="Break Even Settings")
+
+// Hard Stop Loss Settings
+useHardStop = input.bool(false, "Use Hard Stop Loss", group="Stop Loss Settings")
+stopLossATRMultiplier = input.float(2.0, "Stop Loss (x ATR)", minval=0.1, step=0.1, group="Stop Loss Settings")
+
+// Date range inputs for backtesting
+startDate = input.time(defval=timestamp("2023-10-23"), title="Start Date", group="Backtesting Period")
+endDate = input.time(defval=timestamp("2025-04-01"), title="End Date", group="Backtesting Period")
+
+// Get HA data for signals
+ha_security = ticker.heikinashi(syminfo.tickerid)
+[o,h,l,c] = request.security(ha_security, timeframe.period, [open, high, low, close])
+
+// Get real price data
+real_open = open
+real_high = high
+real_low = low
+real_close = close
+
+// Calculate Supertrend using built-in function with real price data
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+supertrend := barstate.isfirst ? na : supertrend
+
+// Determine if we're in an uptrend or downtrend based on Supertrend
+isUptrend = direction < 0   // In TradingView, negative direction means uptrend
+isDowntrend = direction > 0 // In TradingView, positive direction means downtrend
+
+// Calculate ATR for stop loss and break-even
+atrValue = ta.atr(atrPeriod)
+
+// Check for wicks on the current candle
+threshold = syminfo.mintick * 0.1
+noBottomWick = math.abs(math.min(o, c) - l) <= threshold
+noTopWick = math.abs(h - math.max(o, c)) <= threshold
+
+// Identify candle color and signal conditions
+isGreenCandle = c > o
+isRedCandle = c < o
+
+// Signal conditions for both entry and exit
+longCondition = (isGreenCandle and noBottomWick and barstate.isconfirmed) and (not useSupertrend or isUptrend)
+shortCondition = (isRedCandle and noTopWick and barstate.isconfirmed) and (not useSupertrend or isDowntrend)
+exitLongCondition = isRedCandle and noTopWick and barstate.isconfirmed
+exitShortCondition = isGreenCandle and noBottomWick and barstate.isconfirmed
+
+// Position tracking
+var int position = 0  // 0 = no position, 1 = long, -1 = short
+var float entryPrice = na
+var bool breakEvenActive = false
+var float initialSL = na
+var float beSL = na
+var float prevPositionSize = 0.0
+
+// Alert variables
+var bool longAlert = false
+var bool shortAlert = false
+var bool exitLongAlert = false
+var bool exitShortAlert = false
+
+// Reset alerts each bar
+longAlert := false
+shortAlert := false
+exitLongAlert := false
+exitShortAlert := false
+
+// Position tracking logic
+if time >= startDate and time <= endDate
+    position := strategy.position_size > 0 ? 1 : strategy.position_size < 0 ? -1 : 0
+
+    // Handle gap protection
+    if useHardStop and position != 0 and not na(initialSL)
+        if position > 0 and real_open < initialSL
+            strategy.close("Long", comment="Gap Stop Hit", alert_message="Gap Stop Hit")
+            alert(exitAllMessage, alert.freq_all)
+        else if position < 0 and real_open > initialSL
+            strategy.close("Short", comment="Gap Stop Hit", alert_message="Gap Stop Hit")
+            alert(exitAllMessage, alert.freq_all)
+
+    // Handle break-even tracking
+    if useBreakEven and position != 0 and not breakEvenActive and not na(entryPrice)
+        if position > 0 and high >= entryPrice + (atrValue * breakEvenATRMultiplier)
+            breakEvenActive := true
+            beSL := entryPrice
+            strategy.cancel("StopLong")
+            strategy.exit("StopLong", "Long", stop=beSL, comment="Break Even Stop Hit", alert_message="Break Even Stop Hit")
+        else if position < 0 and low <= entryPrice - (atrValue * breakEvenATRMultiplier)
+            breakEvenActive := true
+            beSL := entryPrice
+            strategy.cancel("StopShort")
+            strategy.exit("StopShort", "Short", stop=beSL, comment="Break Even Stop Hit", alert_message="Break Even Stop Hit")
+
+    // Real-time stop loss detection
+    float currentPosSize = strategy.position_size
+    if (prevPositionSize > 0 and currentPosSize <= 0 and not exitLongAlert) or
+       (prevPositionSize < 0 and currentPosSize >= 0 and not exitShortAlert)
+        alert(exitAllMessage, alert.freq_all)
+        if position != 0 and currentPosSize == 0
+            position := 0
+            initialSL := na
+            beSL := na
+            breakEvenActive := false
+    prevPositionSize := currentPosSize
+
+    // Handle entries and exits
+    if longCondition and (position <= 0)
+        if position < 0
+            strategy.close("Short", comment="Close Short", alert_message="Close Short")
+            exitShortAlert := true
+            alert(exitAllMessage, alert.freq_once_per_bar_close)
+            position := 0
+        strategy.entry("Long", strategy.long, comment="Open Long @ " + str.tostring(real_close, "#.00000"), alert_message="Open Long @ " + str.tostring(real_close, "#.00000"))
+        position := 1
+        entryPrice := real_close
+        breakEvenActive := false
+        if useHardStop
+            initialSL := real_close - (atrValue * stopLossATRMultiplier)
+            strategy.exit("StopLong", "Long", stop=initialSL, comment="Stop Loss Hit", alert_message="Stop Loss Hit")
+        longAlert := true
+        alert(longEntryMessage, alert.freq_once_per_bar_close)
+
+    if shortCondition and (position >= 0)
+        if position > 0
+            strategy.close("Long", comment="Close Long", alert_message="Close Long")
+            exitLongAlert := true
+            alert(exitAllMessage, alert.freq_once_per_bar_close)
+            position := 0
+        strategy.entry("Short", strategy.short, comment="Open Short @ " + str.tostring(real_close, "#.00000"), alert_message="Open Short @ " + str.tostring(real_close, "#.00000"))
+        position := -1
+        entryPrice := real_close
+        breakEvenActive := false
+        if useHardStop
+            initialSL := real_close + (atrValue * stopLossATRMultiplier)
+            strategy.exit("StopShort", "Short", stop=initialSL, comment="Stop Loss Hit", alert_message="Stop Loss Hit")
+        shortAlert := true
+        alert(shortEntryMessage, alert.freq_once_per_bar_close)
+
+    if position > 0 and exitLongCondition
+        strategy.close("Long", comment="Close Long", alert_message="Close Long")
+        exitLongAlert := true
+        alert(exitAllMessage, alert.freq_once_per_bar_close)
+        position := 0
+        initialSL := na
+        beSL := na
+
+    if position < 0 and exitShortCondition
+        strategy.close("Short", comment="Close Short", alert_message="Close Short")
+        exitShortAlert := true
+        alert(exitAllMessage, alert.freq_once_per_bar_close)
+        position := 0
+        initialSL := na
+        beSL := na
+
+// Define colors for long/bullish and short/bearish elements
+bullishColor = color.green   // Green for long/bullish
+bearishColor = color.purple  // Purple for short/bearish
+
+// Visual signals for chart
+plotshape(longAlert, title="Long Entry", location=location.abovebar, color=bullishColor, style=shape.triangleup, size=size.small)
+plotshape(shortAlert, title="Short Entry", location=location.belowbar, color=bearishColor, style=shape.triangledown, size=size.small)
+plotshape(exitLongAlert, title="Long Exit Signal", location=location.abovebar, color=bullishColor, style=shape.xcross, size=size.small)
+plotshape(exitShortAlert, title="Short Exit Signal", location=location.belowbar, color=bearishColor, style=shape.xcross, size=size.small)
+plotshape(useBreakEven and not breakEvenActive[1] and breakEvenActive, title="Break Even SL Activated", location=location.belowbar, color=color.white, style=shape.cross, size=size.normal)
+
+// Plot stop levels
+plot(position != 0 ? initialSL : na, "Initial Stop Loss", color=color.red, style=plot.style_linebr, linewidth=2)
+plot(breakEvenActive ? beSL : na, "Break Even Stop Loss", color=color.white, style=plot.style_linebr, linewidth=2)
+
+// Supertrend visualization
+bodyMiddlePlot = plot((real_open + real_close) / 2, "Body Middle", display=display.none)
+upTrend = plot(isUptrend ? supertrend : na, "Up Trend", color=bullishColor, style=plot.style_linebr, linewidth=1)
+downTrend = plot(isDowntrend ? supertrend : na, "Down Trend", color=bearishColor, style=plot.style_linebr, linewidth=1)
+fill(upTrend, bodyMiddlePlot, color=color.new(bullishColor, 85), title="Uptrend Background")
+fill(downTrend, bodyMiddlePlot, color=color.new(bearishColor, 85), title="Downtrend Background")
+
+// Position background
+bgcolor(position == 1 ? color.new(bullishColor, 85) : position == -1 ? color.new(bearishColor, 85) : na, title="Position Background")
+
+// Position label
+var label positionLabel = na
+label.delete(positionLabel)
+if barstate.islast
+    positionText = position == 1 ? "LONG" : position == -1 ? "SHORT" : "FLAT"
+    beStatus = breakEvenActive ? " (BE)" : ""
+    entryInfo = not na(entryPrice) ? "\nEntry: " + str.tostring(entryPrice, "#.00000") : ""
+    slInfo = useHardStop and not na(initialSL) ? "\nSL: " + str.tostring(initialSL, "#.00000") + " (" + str.tostring(stopLossATRMultiplier, "#.0") + "x ATR)" : ""
+    beInfo = breakEvenActive ? "\nBE: " + str.tostring(beSL, "#.00000") : ""
+    supertrendInfo = "\nSupertrend: " + (isUptrend ? "UPTREND" : "DOWNTREND")
+    positionColor = position == 1 ? bullishColor : position == -1 ? bearishColor : color.gray
+    positionLabel := label.new(bar_index, high, positionText + beStatus + entryInfo + slInfo + beInfo + supertrendInfo, color=positionColor, style=label.style_label_down, textcolor=color.white)

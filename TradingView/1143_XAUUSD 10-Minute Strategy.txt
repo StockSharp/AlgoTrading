@@ -1,0 +1,124 @@
+//@version=5
+strategy("XAUUSD STRATEGY 10MIN", overlay=true)
+
+// Spread Adjustment (38-point spread)
+spread = 38 * syminfo.mintick
+
+// MACD Calculation
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+macdBuy = ta.crossover(macdLine, signalLine)
+macdSell = ta.crossunder(macdLine, signalLine)
+
+// RSI Calculation
+rsi = ta.rsi(close, 14)
+rsiOverbought = rsi > 65
+rsiOversold = rsi < 35
+
+// Bollinger Bands Calculation
+basis = ta.sma(close, 20)
+dev = 2 * ta.stdev(close, 20)
+upperBand = basis + dev
+lowerBand = basis - dev
+
+// ATR Calculation for Volatility-Based Stop Loss and Take Profit
+atr = ta.atr(14)
+stopLoss = 3 * atr
+takeProfit = 5 * atr
+
+// Variables to track entry price and line
+var line entryLine = na
+var int tradeNumber = 0
+var string tradeType = ""
+var string tradeSignalComment = ""
+
+// Buy Condition
+buyCondition = (macdBuy or rsiOversold or close < lowerBand)
+
+// Sell Condition
+sellCondition = (macdSell or rsiOverbought or close > upperBand)
+
+// Strategy Entry and Alerts
+if (buyCondition and strategy.opentrades == 0)  // Open a new buy trade
+    // Remove the previous entry line if it exists
+    if not na(entryLine)
+        line.delete(entryLine)
+
+    // Adjust the entry price by adding the spread (ask price)
+    buyPrice = close + spread
+
+    // Enter a new buy trade at the ask price, and close it with the bid price
+    strategy.entry("Buy", strategy.long, stop=buyPrice - stopLoss, limit=buyPrice + takeProfit, comment="Enter buy $" + str.tostring(buyPrice))
+    tradeNumber := tradeNumber + 1  // Increment trade number
+    tradeType := "Entry Long"
+    tradeSignalComment := "Enter buy trade"
+
+    // Plot new dotted entry line for the current trade
+    entryLine := line.new(bar_index, buyPrice, bar_index + 50, buyPrice, width=1, color=color.green, style=line.style_dotted)
+
+    // Send alert for the buy entry
+    alert("Trade No: " + str.tostring(tradeNumber) + "\n" +
+          "Signal: " + tradeType + " - " + tradeSignalComment + "\n" +
+          "Date/Time: " + str.format("{0,date,dd-MM-yyyy HH:mm}", time) + "\n" +
+          "Price: " + str.tostring(buyPrice), alert.freq_once_per_bar_close)
+
+if (sellCondition and strategy.opentrades == 0)  // Open a new sell trade
+    // Remove the previous entry line if it exists
+    if not na(entryLine)
+        line.delete(entryLine)
+
+    // Adjust the entry price by subtracting the spread (bid price)
+    sellPrice = close - spread
+
+    // Enter a new sell trade at the bid price, and close it with the ask price
+    strategy.entry("Sell", strategy.short, stop=sellPrice + stopLoss, limit=sellPrice - takeProfit, comment="Enter sell $" + str.tostring(sellPrice))
+    tradeNumber := tradeNumber + 1  // Increment trade number
+    tradeType := "Entry Short"
+    tradeSignalComment := "Enter sell trade"
+
+    // Plot new dotted entry line for the current trade
+    entryLine := line.new(bar_index, sellPrice, bar_index + 50, sellPrice, width=1, color=color.red, style=line.style_dotted)
+
+    // Send alert for the sell entry
+    alert("Trade No: " + str.tostring(tradeNumber) + "\n" +
+          "Signal: " + tradeType + " - " + tradeSignalComment + "\n" +
+          "Date/Time: " + str.format("{0,date,dd-MM-yyyy HH:mm}", time) + "\n" +
+          "Price: " + str.tostring(sellPrice), alert.freq_once_per_bar_close)
+
+// Exit conditions and alerts
+if (strategy.position_size > 0 and sellCondition)  // Close buy when sell conditions met
+    // Adjust the exit price by subtracting the spread (bid price)
+    exitPrice = close - spread
+    strategy.close("Buy", comment="Exit buy $" + str.tostring(exitPrice))
+
+    // Remove the entry line when the trade is closed
+    if not na(entryLine)
+        line.delete(entryLine)
+
+    // Send alert for the buy exit
+    tradeType := "Exit Long"
+    tradeSignalComment := "Exit buy trade"
+    alert("Trade No: " + str.tostring(tradeNumber) + "\n" +
+          "Signal: " + tradeType + " - "  + tradeSignalComment + "\n" +
+          "Date/Time: " + str.format("{0,date,dd-MM-yyyy HH:mm}", time) + "\n" +
+          "Price: " + str.tostring(exitPrice), alert.freq_once_per_bar_close)
+
+if (strategy.position_size < 0 and buyCondition)  // Close sell when buy conditions met
+    // Adjust the exit price by adding the spread (ask price)
+    exitPrice = close + spread
+    strategy.close("Sell", comment="Exit sell $" + str.tostring(exitPrice))
+
+    // Remove the entry line when the trade is closed
+    if not na(entryLine)
+        line.delete(entryLine)
+
+    // Send alert for the sell exit
+    tradeType := "Exit Short"
+    tradeSignalComment := "Exit sell trade"
+    alert("Trade No: " + str.tostring(tradeNumber) + "\n" +
+          "Signal: " + tradeType + " - " + tradeSignalComment + "\n" +
+          "Date/Time: " + str.format("{0,date,dd-MM-yyyy HH:mm}", time) + "\n" +
+          "Price: " + str.tostring(exitPrice), alert.freq_once_per_bar_close)
+
+// Plot Indicators
+plot(upperBand, title="Upper Bollinger Band", color=color.blue)
+plot(lowerBand, title="Lower Bollinger Band", color=color.blue)

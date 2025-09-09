@@ -1,0 +1,66 @@
+// === Donchian Break Strategy for Gold ===
+//@version=6
+strategy("Gold Breakout Strategy - RR 4", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+donchianLength = input.int(96, "Donchian Channel Length")
+maVolumeLength = input.int(30, "Volume MA Length")
+lwtiLength = input.int(25, "LWTI Length")
+lwtiSmooth = input.int(5, "LWTI Smoothing")
+startHour = input.int(20, "Start Hour")
+endHour = input.int(8, "End Hour")
+
+// === TIME FILTER (Corrected) ===
+startTimestamp = timestamp("GMT-5", year, month, dayofmonth, startHour, 0)
+endTimestamp = timestamp("GMT-5", year, month, dayofmonth + (startHour > endHour ? 1 : 0), endHour, 0)
+inSession = time >= startTimestamp and time < endTimestamp
+
+var int currentDay = na
+var bool tradeTakenToday = false
+
+
+
+// === DONCHIAN CHANNEL ===
+donchianUpper = ta.highest(high, donchianLength)
+donchianLower = ta.lowest(low, donchianLength)
+donchianUpperPrev = ta.highest(high[1], donchianLength)
+donchianLowerPrev = ta.lowest(low[1], donchianLength)
+
+// === VOLUME INDICATOR ===
+volumeMA = ta.sma(volume, maVolumeLength)
+volumeCondition = volume > volumeMA
+
+// === LWTI ===
+lwti = ta.wma(close - close[1], lwtiLength)
+smoothedLWTI = ta.sma(lwti, lwtiSmooth)
+lwtiConditionLong = lwti > smoothedLWTI
+lwtiConditionShort = lwti < smoothedLWTI
+
+// === SIGNAL CONDITIONS ===
+breaksUpper = close > donchianUpperPrev and donchianUpper > donchianUpperPrev
+breaksLower = close < donchianLowerPrev and donchianLower < donchianLowerPrev
+
+longCondition = not tradeTakenToday and inSession and breaksUpper and volumeCondition and lwtiConditionLong
+shortCondition = not tradeTakenToday and inSession and breaksLower and volumeCondition and lwtiConditionShort
+
+// === TRADE EXECUTION ===
+if longCondition
+    stopLoss = low
+    takeProfit = close + (close - stopLoss) * 4
+    strategy.entry("Long", strategy.long)
+    strategy.exit("TP/SL", from_entry="Long", stop=stopLoss, limit=takeProfit)
+    tradeTakenToday := true
+
+if shortCondition
+    stopLoss = high
+    takeProfit = close - (stopLoss - close) * 4
+    strategy.entry("Short", strategy.short)
+    strategy.exit("TP/SL", from_entry="Short", stop=stopLoss, limit=takeProfit)
+    tradeTakenToday := true
+
+// === VISUALS ===
+plotshape(longCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(shortCondition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+plot(donchianUpper, "Donchian Upper", color=color.orange)
+plot(donchianLower, "Donchian Lower", color=color.blue)

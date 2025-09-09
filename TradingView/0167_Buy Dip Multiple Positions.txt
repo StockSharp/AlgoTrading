@@ -1,0 +1,85 @@
+//@version=5
+strategy("Buy Dip Multiple Positions", overlay=true, default_qty_type=strategy.cash, initial_capital=100000)
+
+// 📥 Inputs
+max_positions          = input.int(20, minval=1, title="Max Simultaneous Trades")
+trail_rate_percent     = input.float(1.0, minval=0.0, title="Trailing Stop Increase per Bar (%)")
+initial_stop_percent   = input.float(85.0, minval=10.0, title="Initial Stop (% of Reversal Low)")
+target_price_percent   = input.float(60.0, minval=10.0, title="Target Price (% Above Reversal Low)")
+price_surge_percent    = input.float(89.0, minval=10.0, title="Price Surge Threshold (% of Past Close)")
+surge_lookback_bars    = input.int(14, minval=1, title="Surge Lookback Bars")
+show_green_dot         = input.bool(true, title="Show Active Trade Dot")
+
+// 📊 Reversal Conditions
+avg_prev_vol      = (volume[1] + volume[2]) / 2
+is_volume_confirm = volume > avg_prev_vol * 1.2
+is_price_reversal = close < low[1] * 0.998
+surge_threshold   = close[surge_lookback_bars] * (price_surge_percent / 100.0)
+is_price_surge    = close < surge_threshold
+is_reversal       = is_price_reversal and is_volume_confirm and is_price_surge
+
+// 💰 Risk Management
+entry_price   = low
+initial_stop  = low * (initial_stop_percent / 100.0)
+target_price  = low * (1 + target_price_percent / 100.0)
+risk          = entry_price - initial_stop
+capital       = strategy.equity
+max_loss      = capital * 0.02
+position_size = risk > 0 ? max_loss / risk : 0.0
+
+// 🟢 Entry Logic
+var bool lastTradeInProfit = true
+if strategy.opentrades > 0
+    lastTradeInProfit := strategy.opentrades.profit(strategy.opentrades - 1) > 0
+
+can_open_trade = strategy.opentrades < max_positions and (strategy.opentrades == 0 or lastTradeInProfit)
+if is_reversal and can_open_trade and risk > 0
+    strategy.entry("Buy Dip", strategy.long, qty=position_size, limit=entry_price)
+
+// ⏳ Trailing Stop Logic
+var int trail_bars   = 0
+var float trail_stop = na
+trail_ready          = is_reversal[2]
+exitReady            = is_reversal[1]
+trail_rate           = trail_rate_percent / 100.0
+
+if trail_ready
+    trail_bars := trail_bars + 1
+    trail_stop := initial_stop * (1 + trail_rate * trail_bars)
+else
+    trail_bars := 0
+    trail_stop := na
+
+// 🧨 Exit Logic
+if exitReady and not trail_ready
+    strategy.exit("Exit Trade", from_entry="Buy Dip", stop=initial_stop, limit=target_price)
+else if trail_ready and not na(trail_stop)
+    strategy.exit("Exit Trade", from_entry="Buy Dip", stop=trail_stop, limit=target_price)
+
+// 🔺 Red Dot — Max Trades
+plotshape(strategy.opentrades >= max_positions, title="Max Trades Reached", style=shape.circle, location=location.abovebar, color=color.red, size=size.small)
+
+// 🟢 Green Dot — Active Trade (toggle-enabled)
+plotshape(show_green_dot and strategy.opentrades > 0, title="Active Trade", style=shape.circle, location=location.belowbar, color=color.green, size=size.small)
+
+// 📊 Trade Metrics
+var float winningTrades        = 0
+var float losingTrades         = 0
+var int   lastClosedTradeIndex = na
+
+if strategy.closedtrades > 0
+    i = strategy.closedtrades - 1
+    if na(lastClosedTradeIndex) or i != lastClosedTradeIndex
+        last_pnl = strategy.closedtrades.profit(i)
+        if last_pnl > 0
+            winningTrades += 1
+        else
+            losingTrades += 1
+        lastClosedTradeIndex := i
+
+totalTrades = winningTrades + losingTrades
+win_rate    = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : na
+
+plot(win_rate,      title="Win Rate (%)",    color=color.green, linewidth=2)
+plot(winningTrades, title="Winning Trades",  color=color.blue,  linewidth=2)
+plot(losingTrades,  title="Losing Trades",   color=color.red,   linewidth=2)

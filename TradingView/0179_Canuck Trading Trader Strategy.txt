@@ -1,0 +1,110 @@
+// @version=6
+strategy("Canuck Trading Trader Strategy", overlay=true, margin_long=100, margin_short=100, calc_on_every_tick=true, calc_on_order_fills=true, process_orders_on_close=false, use_bar_magnifier=true)
+
+// User inputs
+lookback = input.int(2, "Lookback Candles", minval=1, maxval=10)
+min_trend_pct = input.float(0.5, "Min Trend Strength (%)", minval=0.0, maxval=5.0, step=0.1)
+stop_loss_pct = input.float(3.0, "Stop Loss (%)", minval=0.0, maxval=10.0, step=0.1)
+take_profit_pct = input.float(5.0, "Take Profit (%)", minval=0.0, maxval=10.0, step=0.1)
+trade_type = input.string("Long and Short", "Trade Type", options=["Long Only", "Short Only", "Long and Short"])
+
+// Position state variables
+var float entry_price = na
+var int candles_held = 0
+var string position_type = "none"
+var int trend_direction = 0
+var bool traded_this_bar = false
+var int cooldown = 0
+
+// ATR-based dynamic trend strength
+atr = ta.atr(14)
+dynamic_trend_pct = atr / close * 100 * 0.5
+
+// Trend detection function
+trend_detected() =>
+    uptrend = true
+    downtrend = true
+    trend_strength = math.abs((close - close[lookback]) / close[lookback] * 100)
+    for i = 0 to lookback - 1
+        if i == 0
+            if close <= close[1]
+                uptrend := false
+            if close >= close[1]
+                downtrend := false
+        else
+            if close[i] <= close[i + 1]
+                uptrend := false
+            if close[i] >= close[i + 1]
+                downtrend := false
+    if uptrend and trend_strength >= math.max(min_trend_pct, dynamic_trend_pct)
+        1
+    else if downtrend and trend_strength >= math.max(min_trend_pct, dynamic_trend_pct)
+        -1
+    else
+        0
+
+// Detect trend
+current_trend = trend_detected()
+
+// Signal variables
+var bool buy_signal = false
+var bool sell_signal = false
+var bool exit_long = false
+var bool exit_short = false
+
+// Reset traded_this_bar and manage cooldown
+if barstate.isconfirmed
+    traded_this_bar := false
+    if cooldown > 0
+        cooldown := cooldown - 1
+
+// Position logic
+if current_trend != 0 and position_type == "none" and not traded_this_bar and cooldown == 0
+    if current_trend == 1 and (trade_type == "Long Only" or trade_type == "Long and Short")
+        buy_signal := true
+        sell_signal := false
+        position_type := "long"
+        entry_price := close
+        candles_held := 1
+        trend_direction := 1
+        strategy.entry("Long", strategy.long)
+        strategy.exit("Long Exit", "Long", stop=entry_price * (1 - stop_loss_pct / 100), limit=entry_price * (1 + take_profit_pct / 100))
+        traded_this_bar := true
+    else if current_trend == -1 and (trade_type == "Short Only" or trade_type == "Long and Short")
+        sell_signal := true
+        buy_signal := false
+        position_type := "short"
+        entry_price := close
+        candles_held := 1
+        trend_direction := -1
+        strategy.entry("Short", strategy.short)
+        strategy.exit("Short Exit", "Short", stop=entry_price * (1 + stop_loss_pct / 100), limit=entry_price * (1 - take_profit_pct / 100))
+        traded_this_bar := true
+else if position_type == "long"
+    if close > close[1]
+        candles_held := candles_held + 1
+    else if close < close[1]
+        exit_long := true
+        position_type := "none"
+        candles_held := 0
+        entry_price := na
+        trend_direction := 0
+        strategy.close("Long")
+        traded_this_bar := true
+        cooldown := 1
+    else
+        candles_held := candles_held + 1
+else if position_type == "short"
+    if close < close[1]
+        candles_held := candles_held + 1
+    else if close > close[1]
+        exit_short := true
+        position_type := "none"
+        candles_held := 0
+        entry_price := na
+        trend_direction := 0
+        strategy.close("Short")
+        traded_this_bar := true
+        cooldown := 1
+    else
+        candles_held := candles_held + 1

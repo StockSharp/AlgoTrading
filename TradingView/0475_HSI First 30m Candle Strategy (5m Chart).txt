@@ -1,0 +1,75 @@
+//@version=6
+strategy("HSI First 30m Candle Strategy (5m Chart)", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1, calc_on_every_tick=true)
+
+// === CONFIGURATION ===
+risk_reward = 1.0
+trade_size = 1
+
+// === SESSION TIME ===
+time_in_session = (time >= timestamp("Asia/Hong_Kong", year, month, dayofmonth, 9, 15) and time <= timestamp("Asia/Hong_Kong", year, month, dayofmonth, 12, 0)) or (time >= timestamp("Asia/Hong_Kong", year, month, dayofmonth, 13, 0) and time <= timestamp("Asia/Hong_Kong", year, month, dayofmonth, 16, 0))
+
+// === FIRST 30-MIN CANDLE AGGREGATION ===
+// The first 30m period: 09:15:00 to 09:44:59
+start_30m = timestamp("Asia/Hong_Kong", year, month, dayofmonth, 9, 15)
+end_30m   = timestamp("Asia/Hong_Kong", year, month, dayofmonth, 9, 45)
+
+// Identify the first bar of a new day for reset
+curr_ymd = year * 10000 + month * 100 + dayofmonth
+var int first_30m_ymd = na
+var float first_30m_high = na
+var float first_30m_low  = na
+var bool range_locked = false
+
+// Reset all at the start of a new day
+if na(first_30m_ymd) or first_30m_ymd != curr_ymd
+    first_30m_ymd := curr_ymd
+    first_30m_high := na
+    first_30m_low := na
+    range_locked := false
+
+// If within first 30m window, keep updating highs/lows
+if time >= start_30m and time < end_30m
+    first_30m_high := na(first_30m_high) ? high : math.max(first_30m_high, high)
+    first_30m_low  := na(first_30m_low)  ? low  : math.min(first_30m_low, low)
+
+// Lock the range after the 09:45 bar starts
+if not range_locked and time >= end_30m and not na(first_30m_high) and not na(first_30m_low)
+    range_locked := true
+
+carry_high = range_locked ? first_30m_high : na
+carry_low  = range_locked ? first_30m_low  : na
+
+// === SINGLE TRADE PER DAY LOGIC ===
+var int last_trade_ymd = na
+var bool traded_today = false
+
+if na(last_trade_ymd) or last_trade_ymd != curr_ymd
+    traded_today := false  // New day, reset flag
+
+can_trade = time_in_session and not na(carry_high) and not traded_today
+
+// === TRADE ENTRY/EXIT CONDITIONS ===
+long_condition  = can_trade and strategy.position_size == 0 and high >= carry_high
+short_condition = can_trade and strategy.position_size == 0 and low <= carry_low
+
+stop_long  = carry_low
+take_long  = carry_high + (carry_high - carry_low) * risk_reward
+
+stop_short = carry_high
+take_short = carry_low - (carry_high - carry_low) * risk_reward
+
+if long_condition
+    strategy.entry("Long", strategy.long, qty=trade_size, stop=carry_high)
+    strategy.exit("TP/SL Long", "Long", stop=stop_long, limit=take_long)
+    last_trade_ymd := curr_ymd
+    traded_today := true
+
+if short_condition
+    strategy.entry("Short", strategy.short, qty=trade_size, stop=carry_low)
+    strategy.exit("TP/SL Short", "Short", stop=stop_short, limit=take_short)
+    last_trade_ymd := curr_ymd
+    traded_today := true
+
+// === PLOTS ===
+plot(carry_high, title="First 30m High", color=color.green, linewidth=2)
+plot(carry_low,  title="First 30m Low",  color=color.red, linewidth=2)

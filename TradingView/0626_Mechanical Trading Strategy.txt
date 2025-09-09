@@ -1,0 +1,24 @@
+//@version=5
+strategy("Mechanical Trading Strategy", overlay=true)
+
+
+profitTarget = input(0.4, "Profit Target (%)") / 100
+stopLoss = input(0.2, "Stop Loss (%)") / 100
+tradeHour = input(16, "Enter Hour you want to trade every day")
+isShort = input(false, "check this box if you want to test short/selling trade")
+
+
+entryPrice = close
+
+
+if (hour(time) == tradeHour)
+    if(isShort)
+        takeProfitLevel = entryPrice - (entryPrice * profitTarget)
+        stopLossLevel =  entryPrice + (entryPrice * stopLoss)
+        strategy.entry("Sell", strategy.short)
+        strategy.exit("Take Profit", "Sell", limit=takeProfitLevel,stop = stopLossLevel)
+    else
+        takeProfitLevel = entryPrice + (entryPrice * profitTarget)
+        stopLossLevel =  entryPrice - (entryPrice * stopLoss)
+        strategy.entry("Buy", strategy.long)
+        strategy.exit("Take Profit", "Buy", limit=takeProfitLevel,stop = stopLossLevel)

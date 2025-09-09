@@ -1,0 +1,42 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © DraftVenture
+
+//@version=5
+strategy("TRAX DPO", overlay=true)
+
+// TRAX Calculation
+traxlength = input.int(12, title = "TRAX Length", minval=1)
+trax = 10000 * ta.change(ta.vwma(ta.vwma(ta.vwma(math.log(close), traxlength), traxlength), traxlength))
+
+// DPO Calculation
+period_ = input.int(19, title="DPO Length", minval=1)
+barsback = period_/2 + 1
+ma = ta.sma(close, period_)
+dpo = close[barsback] - ma
+
+// MA Confirmation Calculation
+len = input.int(3, minval=1, title="SMA Confirmation Length")
+src = input(close, title="SMA Source")
+offset = input.int(title="Offset", defval=0, minval=-500, maxval=500)
+out = ta.sma(src, len)
+plot(out, color=color.white, title="MA", offset=offset)
+
+// DPO-TRAX Oscillator
+dpotrax = dpo - trax
+plot(dpotrax, color=color.blue, title="DPO-TRAX Oscillator", offset=offset)
+
+// Crossover Conditions
+longCondition = ta.crossover(dpo, trax) and trax < 0 and close > out
+shortCondition = ta.crossunder(dpo, trax) and trax > 0 and close < out
+
+// Strategy Logic
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Highlight periods of zero-line crossover
+bgcolor(longCondition ? color.new(color.green, 80) : na)
+bgcolor(shortCondition ? color.new(color.red, 80) : na)
+
+// Strategy by KP

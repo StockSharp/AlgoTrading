@@ -1,0 +1,94 @@
+//@version=5
+strategy(title='AO Divergence Strategy', shorttitle='AO Div Strat', overlay=false)
+
+// === INPUT PERSONALIZZABILI ===
+ao_fast = input.int(5, "AO Fast EMA/SMA Length")
+ao_slow = input.int(34, "AO Slow EMA/SMA Length")
+use_ema = input.bool(false, "Usa EMA invece di SMA per AO")
+lookbackRight = input.int(5, "Pivot Lookback Right")
+lookbackLeft = input.int(5, "Pivot Lookback Left")
+rangeUpper = input.int(60, "Max of Lookback Range")
+rangeLower = input.int(5, "Min of Lookback Range")
+plotBull = input.bool(true, "Plot Bullish")
+plotHiddenBull = input.bool(false, "Plot Hidden Bullish")
+plotBear = input.bool(true, "Plot Bearish")
+plotHiddenBear = input.bool(false, "Plot Hidden Bearish")
+
+bearColor = color.red
+bullColor = color.green
+hiddenBullColor = color.green
+hiddenBearColor = color.red
+textColor = color.white
+noneColor = color.new(color.white, 100)
+
+// Calcolo dell'AO
+ema_fast = ta.ema(hl2, ao_fast)
+ema_slow = ta.ema(hl2, ao_slow)
+sma_fast = ta.sma(hl2, ao_fast)
+sma_slow = ta.sma(hl2, ao_slow)
+ao = use_ema ? ema_fast - ema_slow : sma_fast - sma_slow
+diff = ao - ao[1]
+
+// Plot AO
+plot(ao, color = diff <= 0 ? #F44336 : #009688, style = plot.style_columns)
+
+// Cambio colore per gli alert
+changeToGreen = ta.crossover(diff, 0)
+changeToRed = ta.crossunder(diff, 0)
+alertcondition(changeToGreen, title = 'AO color changed to green', message = 'Awesome Oscillator\'s color has changed to green')
+alertcondition(changeToRed, title = 'AO color changed to red', message = 'Awesome Oscillator\'s color has changed to red')
+
+// Funzione di range
+_inRange(bool cond) =>
+    bars = ta.barssince(cond)
+    rangeLower <= bars and bars <= rangeUpper
+
+// === DIVERGENZE ===
+// PIVOT
+plFound = not na(ta.pivotlow(ao, lookbackLeft, lookbackRight))
+phFound = not na(ta.pivothigh(ao, lookbackLeft, lookbackRight))
+
+aoLBR = ao[lookbackRight]
+lowLBR = low[lookbackRight]
+highLBR = high[lookbackRight]
+
+// --- REGULAR BULLISH ---
+oscHL = aoLBR > ta.valuewhen(plFound, aoLBR, 1) and _inRange(plFound[1])
+priceLL = lowLBR < ta.valuewhen(plFound, lowLBR, 1)
+bullCond = plotBull and priceLL and oscHL and plFound
+
+// --- HIDDEN BULLISH ---
+oscLL = aoLBR < ta.valuewhen(plFound, aoLBR, 1) and _inRange(plFound[1])
+priceHL = lowLBR > ta.valuewhen(plFound, lowLBR, 1)
+hiddenBullCond = plotHiddenBull and priceHL and oscLL and plFound
+
+// --- REGULAR BEARISH ---
+oscLH = aoLBR < ta.valuewhen(phFound, aoLBR, 1) and _inRange(phFound[1])
+priceHH = highLBR > ta.valuewhen(phFound, highLBR, 1)
+bearCond = plotBear and priceHH and oscLH and phFound
+
+// --- HIDDEN BEARISH ---
+oscHH = aoLBR > ta.valuewhen(phFound, aoLBR, 1) and _inRange(phFound[1])
+priceLH = highLBR < ta.valuewhen(phFound, highLBR, 1)
+hiddenBearCond = plotHiddenBear and priceLH and oscHH and phFound
+
+// === PLOT ===
+plot(plFound ? aoLBR : na, offset = -lookbackRight, title = 'Regular Bullish', linewidth = 2, color = bullCond ? bullColor : noneColor)
+plotshape(bullCond ? aoLBR : na, offset = -lookbackRight, title = 'Regular Bullish Label', text = ' Bull ', style = shape.labelup, location = location.absolute, color = bullColor, textcolor = textColor)
+
+plot(plFound ? aoLBR : na, offset = -lookbackRight, title = 'Hidden Bullish', linewidth = 2, color = hiddenBullCond ? hiddenBullColor : noneColor)
+plotshape(hiddenBullCond ? aoLBR : na, offset = -lookbackRight, title = 'Hidden Bullish Label', text = ' H Bull ', style = shape.labelup, location = location.absolute, color = bullColor, textcolor = textColor)
+
+plot(phFound ? aoLBR : na, offset = -lookbackRight, title = 'Regular Bearish', linewidth = 2, color = bearCond ? bearColor : noneColor)
+plotshape(bearCond ? aoLBR : na, offset = -lookbackRight, title = 'Regular Bearish Label', text = ' Bear ', style = shape.labeldown, location = location.absolute, color = bearColor, textcolor = textColor)
+
+plot(phFound ? aoLBR : na, offset = -lookbackRight, title = 'Hidden Bearish', linewidth = 2, color = hiddenBearCond ? hiddenBearColor : noneColor)
+plotshape(hiddenBearCond ? aoLBR : na, offset = -lookbackRight, title = 'Hidden Bearish Label', text = ' H Bear ', style = shape.labeldown, location = location.absolute, color = bearColor, textcolor = textColor)
+
+
+// === STRATEGY LOGIC ===
+if (bullCond)
+    strategy.entry("Long", strategy.long)
+
+if (bearCond)
+    strategy.entry("Short", strategy.short)

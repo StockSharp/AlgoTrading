@@ -1,0 +1,134 @@
+//@version=6
+strategy("XRP 15‑m Adaptive v3.1‑fix  –  goal‑cards + clean labels",
+         overlay = true,
+         default_qty_type = strategy.percent_of_equity,
+         default_qty_value = 20,
+         pyramiding = 0,
+         calc_on_every_tick = true)
+
+// ─────────────────── INPUT PARAMETERS ───────────────────
+risk_mult  = 1.1      // stop = 1.1 × ATR(14)
+tp_small   = 2.5      // SMALL path = 2.5 × ATR
+tp_med     = 3.5      // MED   path = 3.5 × ATR
+tp_large   = 5.0      // LARGE path = 5.0 × ATR
+vol_mult   = 5.0      // 5 × SMA‑20 defines a “true” spike
+trail_pct  = 0.6
+trail_arm  = 1.0      // trail activates after +1 × ATR open gain
+max_bars   = 48       // 48 × 15 m ≈ 12 h hard time‑stop
+
+// ─────────────────── HIGHER‑TF TREND ────────────────────
+ema13_4h = request.security(syminfo.tickerid, "240", ta.ema(close, 13))
+ema34_4h = request.security(syminfo.tickerid, "240", ta.ema(close, 34))
+trend_up  = ema13_4h > ema34_4h
+
+// ─────────────────── 15‑MIN INDICATORS ──────────────────
+atr   = ta.atr(14)
+ema13 = ta.ema(close, 13)
+ema34 = ta.ema(close, 34)
+rsi14 = ta.rsi(close, 14)
+roc5  = ta.roc(close, 5)
+vol20 = ta.sma(volume, 20)
+
+lower_wick = math.min(open, close) - low
+body       = math.abs(close - open)
+
+// ─────────────────── ENTRY SET‑UPS ───────────────────────
+// 1) SMALL pull‑back
+small_ok = close <= ema13 * 0.995 and rsi14 < 45 and close > open and trend_up
+
+// 2) MED volume flush (red spike then green confirm within 2 bars)
+var int med_window = 0
+if volume >= vol20 * vol_mult and close < open and rsi14 < 55 and trend_up
+    med_window := 2                                        // “armed” for next 2 bars
+else
+    med_window := math.max(med_window - 1, 0)
+med_ok = (med_window > 0) and close > open
+
+// 3) LARGE momentum burst
+large_ok = rsi14 < 25 and roc5 > 4 and close > ema34 and trend_up
+
+// choose ONE path (priority: L > M > S)
+string path = na
+if large_ok
+    path := "LARGE"
+else if med_ok
+    path := "MED"
+else if small_ok
+    path := "SMALL"
+
+// ─────────────────── TRADE STATE VARS ────────────────────
+var int   entry_bar   = na
+var float entry_price = na
+var float high_water  = na
+var bool  trail_live  = false
+
+// ─────────────────── ENTRY LOGIC ─────────────────────────
+if strategy.position_size == 0 and not na(path)
+    strategy.entry("Long", strategy.long, comment = path)
+
+    entry_bar   := bar_index
+    entry_price := close
+    high_water  := close
+    trail_live  := false
+
+    // --- pick TP multiple (no multi‑line ternary) ---
+    float tp_mult = 0.0
+    if path == "SMALL"
+        tp_mult := tp_small
+    else if path == "MED"
+        tp_mult := tp_med
+    else
+        tp_mult := tp_large
+
+    strategy.exit("Base TP/SL", "Long",
+                  stop  = close - atr * risk_mult,
+                  limit = close + atr * tp_mult)
+
+    // --- ENTRY GOAL‑CARD LABEL ---
+    float goalPct  = (atr * tp_mult) / entry_price * 100
+    float daysHold = max_bars * (timeframe.isminutes ? timeframe.multiplier : 1) / 1440.0
+    string tag     = path == "SMALL" ? "S" : path == "MED" ? "M" : "L"
+    label.new(bar_index, low,
+              text      = tag + " (" +
+                          str.tostring(goalPct , "#.##") + "%  " +
+                          str.tostring(daysHold, "#.##") + "d)",
+              yloc      = yloc.belowbar,
+              style     = label.style_label_up,
+              color     = path == "LARGE" ? color.orange :
+                          path == "MED"   ? color.green  : color.aqua,
+              textcolor = color.black,
+              size      = size.small)
+
+// ─────────────────── IN‑TRADE MANAGEMENT ────────────────
+if strategy.position_size > 0
+    high_water := math.max(high_water, high)
+
+    // arm trailing after +1 ATR open gain
+    if (not trail_live) and ((high_water - entry_price) >= atr * trail_arm)
+        trail_live := true
+    if trail_live
+        strategy.exit("Trail", "Long", stop = high_water - atr * trail_pct)
+
+    // time‑stop
+    if bar_index - entry_bar >= max_bars
+        strategy.close("Long", comment = "Time stop")
+
+// ─────────────────── EXIT LABEL ─────────────────────────
+just_closed = strategy.position_size[1] != 0 and strategy.position_size == 0
+if just_closed
+    float pnl_pct = (close - entry_price) / entry_price * 100
+    float hrs     = (bar_index - entry_bar) * 0.25           // 15‑m bars → hours
+    label.new(bar_index, high,
+              text      = str.tostring(pnl_pct, "#.##") + "%\n" +
+                          str.tostring(hrs, "#.#") + " h",
+              yloc      = yloc.abovebar,
+              style     = label.style_label_down,
+              color     = pnl_pct >= 0 ? color.lime : color.red,
+              textcolor = color.white,
+              size      = size.tiny)
+
+// ─────────────────── VISUAL AIDS ────────────────────────
+plot(ema13, color = color.teal , linewidth = 2, title = "EMA‑13")
+plot(ema34, color = color.orange, linewidth = 1, title = "EMA‑34")
+
+//  Stats baseline: XRP Insights v2 (data cut‑off 2025‑07‑31) :contentReference[oaicite:1]{index=1}

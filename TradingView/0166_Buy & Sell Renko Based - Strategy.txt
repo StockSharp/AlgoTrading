@@ -1,0 +1,27 @@
+//@version=5
+strategy(title='[SMT] Buy & Sell Renko Based - Strategy', shorttitle='[SMT] B&S Renko', overlay=true)
+
+//INPUTS
+renkoATRLength = input.int(10, minval=1, title='ATR Length')
+
+//CALCULATION
+param = ticker.renko(syminfo.tickerid, 'ATR', renkoATRLength)
+
+renkoClose = request.security(param, timeframe.period, close)
+renkoOpen = request.security(param, timeframe.period, open)
+
+buySignal = ta.crossunder(renkoOpen, renkoClose)
+sellSignal = ta.crossover(renkoOpen, renkoClose)
+
+col = renkoClose < renkoOpen ? #F23645 : #089981
+
+//PLOTS
+plot(renkoOpen, title="Renko Open", style=plot.style_line, linewidth=2, color=col)
+plotshape(buySignal, "Buy", shape.labelup, location.belowbar, #089981, 0, "Buy", color.white)
+plotshape(sellSignal, "Sell", shape.labeldown, location.abovebar, #F23645, 0, "Sell", color.white)
+
+// STRATEGY
+if (buySignal)
+    strategy.entry("Long", strategy.long)
+if (sellSignal)
+    strategy.entry("Short", strategy.short)

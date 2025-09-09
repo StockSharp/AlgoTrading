@@ -1,0 +1,125 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RicardoSantos
+
+//@version=4
+study(title='Tick Delta')
+//| Helper Functions:
+f_array_abs(_array)=>//{<<
+//| @description: Returns a copy array of absolute values.
+    _return = array.copy(_array)
+    int _size = array.size(_array)
+    if _size > 0
+        for _i = 0 to _size - 1
+            array.unshift(_return, abs(array.pop(_return)))
+    _return
+//}
+//| Inputs:
+string i_group_config = 'Configuration:'
+string o_mode_01 = 'Δ volume'
+string o_mode_02 = 'Δ price'
+string o_mode_03 = 'Δ price * Δ volume'
+string  i_mode      = input(group=i_group_config, title='Mode:', defval=o_mode_01, options=[o_mode_01, o_mode_02, o_mode_03], tooltip='display type of delta(Δ, change in value) to show in histogram.')
+int     i_nlines    = input(group=i_group_config, title='Nº of lines: ', defval=10, tooltip='Number of lines to display in histogram.')
+
+string  i_group_style = 'Histogram Style:'
+color   i_hist_col_pos      = input(title='Histogram Bars: ', defval=color.lime, type=input.color, group=i_group_style, inline='Histogram Bars')
+color   i_hist_col_neg      = input(title=' ', defval=color.red, type=input.color, tooltip='Histogram bar colors.', group=i_group_style, inline='Histogram Bars')
+int     i_hist_bar_width    = input(title='Width: ', defval=5, minval=1, tooltip='Histogram bar width.', group=i_group_style, inline='Histogram Bars')
+color   i_hist_col_mean     = input(title='Histogram Mean Lines:', defval=color.blue, type=input.color, group=i_group_style, inline='Histogram Mean Lines')
+color   i_hist_col_stdev    = input(title=' ', defval=color.teal, type=input.color, group=i_group_style, inline='Histogram Mean Lines')
+int     i_hist_mlines_width = input(title='Width: ', defval=1, minval=1, tooltip='Histogram mean lines width.', group=i_group_style, inline='Histogram Mean Lines')
+
+
+var line hist_pos_mean = line.new(bar_index, 0.0, bar_index, 0.0,  color=i_hist_col_mean, width=i_hist_mlines_width)
+var line hist_neg_mean = line.new(bar_index, 0.0, bar_index, 0.0, color=i_hist_col_mean, width=i_hist_mlines_width)
+var line hist_pos_up = line.new(bar_index, 0.0, bar_index, 0.0, color=i_hist_col_stdev, width=i_hist_mlines_width)
+var line hist_pos_lo = line.new(bar_index, 0.0, bar_index, 0.0, color=i_hist_col_stdev, width=i_hist_mlines_width)
+var line hist_neg_up = line.new(bar_index, 0.0, bar_index, 0.0, color=i_hist_col_stdev, width=i_hist_mlines_width)
+var line hist_neg_lo = line.new(bar_index, 0.0, bar_index, 0.0, color=i_hist_col_stdev, width=i_hist_mlines_width)
+f_update_line_coord(_id, _pos)=>
+    line.set_xy1(id=_id, x=bar_index, y=_pos)
+    line.set_xy2(id=_id, x=bar_index[i_nlines], y=_pos)
+f_update_mean_lines(_mean, _stdev)=>
+    f_update_line_coord(hist_pos_mean, _mean)
+    f_update_line_coord(hist_pos_up, _mean+_stdev)
+    f_update_line_coord(hist_pos_lo, _mean-_stdev)
+    if i_mode == o_mode_02 or i_mode == o_mode_03
+        f_update_line_coord(hist_neg_mean, -_mean)
+        f_update_line_coord(hist_neg_up, -_mean+_stdev)
+        f_update_line_coord(hist_neg_lo, -_mean-_stdev)
+
+var line[] lines = array.new_line(i_nlines)
+varip float[] ref_vol_means = array.new_float(0)
+varip float[] ref_vol_stdevs = array.new_float(0)
+varip float[] ref_price_means = array.new_float(0)
+varip float[] ref_price_stdevs = array.new_float(0)
+varip float[] volume_deltas = array.new_float(0)
+varip float[] price_deltas = array.new_float(0)
+varip float current_tick_volume_delta = volume
+varip float previous_tick_volume = volume
+varip float current_tick_price_delta = close
+varip float previous_tick_price = close
+
+f_update_histogram()=>
+//| plot histogram bars:
+    if array.size(volume_deltas) > i_nlines-1
+        for _i = 0 to i_nlines-1
+            float _price = array.get(price_deltas, _i)
+            float _volume = array.get(volume_deltas, _i)
+            float _vpd = 0.0
+            if i_mode == o_mode_02
+                _vpd := _price
+            else if i_mode == o_mode_03
+                _vpd := _price * _volume
+            else
+                _vpd := _volume
+            color _col = _vpd > 0 ? i_hist_col_pos : (_vpd < 0 ? i_hist_col_neg : color.gray)
+            line.delete(array.pop(lines))
+            array.unshift(lines, line.new(bar_index-_i, 0.0, bar_index-_i, _vpd, color=_col, width=i_hist_bar_width))
+
+if barstate.isnew
+    if bar_index > 0
+        _abs_price_deltas = f_array_abs(price_deltas)
+        array.unshift(ref_vol_means, array.avg(volume_deltas))
+        array.unshift(ref_vol_stdevs, array.stdev(volume_deltas))
+        array.unshift(ref_price_means, array.avg(_abs_price_deltas))
+        array.unshift(ref_price_stdevs, array.stdev(_abs_price_deltas))
+    array.clear(volume_deltas)
+    array.clear(price_deltas)
+    //f_update_histogram()
+    current_tick_volume_delta := 0.0
+    previous_tick_volume := volume
+    current_tick_price_delta := 0.0
+    previous_tick_price := close
+else
+    current_tick_volume_delta := volume - previous_tick_volume
+    current_tick_price_delta := close - previous_tick_price
+    array.unshift(volume_deltas, current_tick_volume_delta)
+    array.unshift(price_deltas, current_tick_price_delta)
+    f_update_histogram()
+    //| update previous tick state with current:
+    previous_tick_volume := volume
+    previous_tick_price := close
+
+float ref_vol_mean = array.avg(ref_vol_means)
+float ref_vol_std = array.avg(ref_vol_stdevs)
+float ref_price_mean = array.avg(ref_price_means)
+float ref_price_std = array.avg(ref_price_stdevs)
+if i_mode == o_mode_02
+    f_update_mean_lines(ref_price_mean, ref_price_std)
+else if i_mode == o_mode_03
+    f_update_mean_lines(ref_price_mean*ref_vol_mean, ref_price_std*ref_vol_std)
+else
+    f_update_mean_lines(ref_vol_mean, ref_vol_std)
+
+string t = '' +
+  'Total volume: ' + tostring(volume) + '\n' +
+  'Last Δ : price ' + tostring(current_tick_price_delta) + ' , volume ' + tostring(current_tick_volume_delta) + '\n' +
+  'Nominal Avg price : ' + tostring(array.avg(price_deltas)) + ' ~ ' + tostring(array.stdev(price_deltas)) + '\n' +
+  'Nominal Avg volume : ' + tostring(array.avg(volume_deltas)) + ' ~ ' + tostring(array.stdev(volume_deltas)) + '\n' +
+  'Reference Avg price: ' + tostring(ref_price_mean) + ' ~ ' + tostring(ref_price_std) + '\n' +
+  'Reference Avg volume: ' + tostring(ref_vol_mean) + ' ~ ' + tostring(ref_vol_std)
+
+var label info = label.new(x=bar_index, y=0.0, text='', xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_left, color=color.silver, textcolor=color.black, size=size.normal, textalign=text.align_left)
+label.set_xy(id=info, x=bar_index, y=0.0)
+label.set_text(id=info, text=t)

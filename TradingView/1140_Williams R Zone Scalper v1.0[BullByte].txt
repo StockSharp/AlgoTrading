@@ -1,0 +1,236 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © BullByte
+
+//@version=6
+strategy("Williams R Zone Scalper v1.0[BullByte]", overlay=true,
+   initial_capital=1000, currency=currency.USD,
+   default_qty_type=strategy.percent_of_equity, default_qty_value=30,
+   commission_type=strategy.commission.percent, commission_value=0.01,
+   process_orders_on_close=true)
+
+////////////////////////////////////////////////////////////////////////////////
+// INPUTS
+////////////////////////////////////////////////////////////////////////////////
+// MA & Oscillator
+wrLen         = input.int(14,    "Williams %R Length", group="MA & Oscillator", tooltip="Length for Williams %R calculation")
+maLen         = input.int(20,    "MA Length",           group="MA & Oscillator", tooltip="Length for moving average calculation")
+maType        = input.string("EMA","MA Type", options=["SMA","EMA","WMA","HMA"], group="MA & Oscillator", tooltip="Type of moving average to use")
+useMA         = input.bool(false, "Enable MA Filter",   group="MA & Oscillator", tooltip="Enable filtering signals by moving average direction")
+showMAOnChart = input.bool(false,"Show MA on Chart",   group="MA & Oscillator", tooltip="Display the moving average line on the price chart")
+
+// Filters
+declareFilters = "Filters"
+useChop       = input.bool(false, "Enable Choppiness",      group=declareFilters, tooltip="Enable Choppiness Index filter to remove sideways markets")
+ciLen         = input.int(12,    "Choppiness Length",      group=declareFilters, tooltip="Length for Choppiness Index calculation")
+chopThr       = input.float(38.2,"Choppiness Threshold",   group=declareFilters, tooltip="Threshold below which market is considered trending")
+useADX        = input.bool(false, "Enable ADX Filter",      group=declareFilters, tooltip="Enable ADX filter to ensure sufficient trend strength")
+adxLen        = input.int(14,    "ADX Length",             group=declareFilters, tooltip="Length for ADX calculation")
+adxThr        = input.float(25.0,"ADX Threshold",          group=declareFilters, tooltip="Threshold above which trend is considered strong")
+diLen         = input.int(14,    "DI Length",              group=declareFilters, tooltip="Length for Directional Indicators (+DI and -DI)")
+useVol        = input.bool(false, "Enable Volume Filter",   group=declareFilters, tooltip="Enable volume filter to ensure above average volume")
+volMaLen      = input.int(50,    "Volume MA Length",       group=declareFilters, tooltip="Length for volume moving average")
+useBBW        = input.bool(false, "Enable BB Width Filter", group=declareFilters, tooltip="Enable Bollinger Band Width filter for volatility")
+bbLen         = input.int(20,    "BB Length",              group=declareFilters, tooltip="Length for Bollinger Bands calculation")
+bbMult        = input.float(2.0, "BB Multiplier",           group=declareFilters, tooltip="Multiplier for Bollinger Bands standard deviation")
+bbwMaLen      = input.int(50,    "BBW MA Length",          group=declareFilters, tooltip="Length for Bollinger Band Width moving average")
+useST         = input.bool(true, "Enable Supertrend Filter", group=declareFilters, tooltip="Enable Supertrend filter for trend direction")
+stAtrLen      = input.int(10,    "ST ATR Length",          group=declareFilters, tooltip="ATR length for Supertrend calculation")
+stFactor      = input.float(3.0, "ST Factor",               group=declareFilters, tooltip="ATR multiplier for Supertrend calculation")
+
+// SL/TP
+useSL         = input.bool(false,  "Enable SL/TP",           group="SL/TP")
+atrLen        = input.int(14,     "SL/TP ATR Length",       group="SL/TP")
+slMult        = input.float(1.5,  "SL ATR Multiplier",       group="SL/TP")
+tpMult        = input.float(2.0,  "TP ATR Multiplier",       group="SL/TP")
+
+// Dashboard Settings
+showDash      = input.bool(true,  "Show Dashboard",         group="Dashboard")
+dashPosition  = input.string("Top-Right","Position", options=["Top-Left","Top-Right","Bottom-Left","Bottom-Right"], group="Dashboard")
+dashSize      = input.string("Normal", "Size", options=["Tiny","Small","Normal"], group="Dashboard")
+
+////////////////////////////////////////////////////////////////////////////////
+// INDICATOR CALCULATIONS
+////////////////////////////////////////////////////////////////////////////////
+ma = switch maType
+    "SMA" => ta.sma(close, maLen)
+    "EMA" => ta.ema(close, maLen)
+    "WMA" => ta.wma(close, maLen)
+    "HMA" => ta.hma(close, maLen)
+wr  = ta.wpr(wrLen)
+
+// Plot MA on chart if enabled
+plot(showMAOnChart ? ma : na,
+     title="Moving Average",
+     color=color.yellow,
+     linewidth=2)
+
+// Pre-calculate ATR for SL/TP
+atrv = ta.atr(atrLen)
+
+// Filters
+maOK_long  = close > ma and close[1] > ma[1]
+maOK_short = close < ma and close[1] < ma[1]
+maOK       = not useMA or maOK_long or maOK_short
+ci         = 100 * math.log10(math.sum(ta.atr(1), ciLen) / (ta.highest(ciLen) - ta.lowest(ciLen))) / math.log10(ciLen)
+chopOK     = not useChop or ci < chopThr
+up         = ta.change(high)
+down       = -ta.change(low)
+pDM        = ta.rma(up > down and up > 0 ? up : 0, diLen)
+mDM        = ta.rma(down > up and down > 0 ? down : 0, diLen)
+trur       = ta.rma(ta.tr, diLen)
+plusDI     = 100 * pDM / trur
+minusDI    = 100 * mDM / trur
+adxVal     = 100 * ta.rma(math.abs(plusDI - minusDI) / ((plusDI + minusDI)==0 ? 1 : plusDI + minusDI), adxLen)
+adxOK      = not useADX or adxVal > adxThr
+volMA      = ta.sma(volume, volMaLen)
+volOK      = not useVol or volume > volMA
+upper      = ta.sma(close, bbLen) + ta.stdev(close, bbLen) * bbMult
+lower      = ta.sma(close, bbLen) - ta.stdev(close, bbLen) * bbMult
+bbw        = (upper - lower) / ta.sma(close, bbLen)
+bbwMA      = ta.sma(bbw, bbwMaLen)
+bbwOK      = not useBBW or bbw > bbwMA
+[stUp, stDn] = ta.supertrend(stFactor, stAtrLen)
+stOK_long  = close > stDn
+stOK_short = close < stUp
+stOK       = not useST or stOK_long or stOK_short
+filter_long  = maOK and chopOK and adxOK and volOK and bbwOK and (not useST or stOK_long)
+filter_short = maOK and chopOK and adxOK and volOK and bbwOK and (not useST or stOK_short)
+
+////////////////////////////////////////////////////////////////////////////////
+// TRADE EXECUTION & TRACKING
+////////////////////////////////////////////////////////////////////////////////
+
+// Track position state
+var int lastPosition = 0
+var float lastEntryPrice = na
+var float slLevel = na
+var float tpLevel = na
+var string lastExitType = ""
+
+// Entry conditions
+longCondition  = ta.crossover(wr, -80) and filter_long
+shortCondition = ta.crossunder(wr, -20) and filter_short
+
+if longCondition
+    strategy.entry("Long", strategy.long)
+    lastEntryPrice := close
+    if useSL
+        slLevel := lastEntryPrice - atrv * slMult
+        tpLevel := lastEntryPrice + atrv * tpMult
+        strategy.exit("Exit Long", "Long", stop=slLevel, limit=tpLevel, comment=useSL ? "TP/SL Hit" : "Long Exit")
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+    lastEntryPrice := close
+    if useSL
+        slLevel := lastEntryPrice + atrv * slMult
+        tpLevel := lastEntryPrice - atrv * tpMult
+        strategy.exit("Exit Short", "Short", stop=slLevel, limit=tpLevel, comment=useSL ? "TP/SL Hit" : "Short Exit")
+
+
+
+// Plot SL/TP lines when enabled
+plot(useSL and strategy.position_size > 0 ? slLevel : na, "Long SL", color=color.red, style=plot.style_linebr, linewidth=2)
+plot(useSL and strategy.position_size > 0 ? tpLevel : na, "Long TP", color=color.green, style=plot.style_linebr, linewidth=2)
+plot(useSL and strategy.position_size < 0 ? slLevel : na, "Short SL", color=color.red, style=plot.style_linebr, linewidth=2)
+plot(useSL and strategy.position_size < 0 ? tpLevel : na, "Short TP", color=color.green, style=plot.style_linebr, linewidth=2)
+
+////////////////////////////////////////////////////////////////////////////////
+// DASHBOARD - OPTIMIZED VERSION
+////////////////////////////////////////////////////////////////////////////////
+var string dashboardName = "Ws R Zone Scalper"
+var string version = "v1.0"
+
+// Color scheme
+color bgColor = color.rgb(30, 30, 45)
+color headerColor = color.rgb(56, 90, 94)
+color textColor = color.rgb(255, 255, 255)
+color highlightColor = color.rgb(72, 219, 251) // Lime green color
+color profitColor = color.rgb(0, 255, 127)
+color lossColor = color.rgb(255, 69, 0)
+
+// Size configurations
+tableWidth =
+     dashSize == "Tiny" ? 10 :
+     dashSize == "Small" ? 12 :
+     17
+
+rowHeight =
+     dashSize == "Tiny" ? 4 :
+     dashSize == "Small" ? 7 :
+     10
+
+headerHeight =
+     dashSize == "Tiny" ? 4 :
+     dashSize == "Small" ? 7 :
+     13
+
+textSizeLarge =
+     dashSize == "Tiny" ? size.tiny :
+     dashSize == "Small" ? size.small :
+     size.normal
+
+textSizeSmall =
+     dashSize == "Tiny" ? size.tiny :
+     dashSize == "Small" ? size.tiny :
+     size.small
+
+// Position configuration
+tablePosition =
+     dashPosition == "Top-Right" ? position.top_right :
+     dashPosition == "Top-Left" ? position.top_left :
+     dashPosition == "Bottom-Left" ? position.bottom_left :
+     position.bottom_right
+
+// Create dashboard table with optimized rows and colored border
+var table dashboard = table.new(tablePosition, 1, 9, bgcolor=bgColor,
+                              border_width=2, border_color=highlightColor,
+                              frame_width=3, frame_color=highlightColor)
+
+if showDash
+    // Row 0: Header
+    headerText = dashboardName + (dashSize != "Tiny" ? " Dashboard " + version : "")
+    table.cell(dashboard, 0, 0, text=headerText,
+              width=tableWidth, height=headerHeight,
+              text_color=textColor, bgcolor=headerColor, text_size=textSizeLarge)
+
+    // Row 1: Position & Equity
+    positionText = strategy.position_size > 0 ? "LONG 🟢" : strategy.position_size < 0 ? "SHORT 🔴" : "FLAT ⚪"
+    equityText = dashSize == "Tiny" ? str.tostring(strategy.equity, "##.#") + "$" : "Equity: $" + str.tostring(strategy.equity, "##.##")
+    table.cell(dashboard, 0, 1, text=positionText + " | " + equityText,
+              width=tableWidth, height=rowHeight,
+              text_color=strategy.position_size > 0 ? profitColor : strategy.position_size < 0 ? lossColor : textColor,
+              bgcolor=bgColor, text_size=textSizeSmall)
+
+    // Row 2: PnL
+    pnlText = dashSize == "Tiny" ?
+         "PnL:" + str.tostring(strategy.netprofit, "##.#") + "$" :
+         "PnL: " + (strategy.netprofit > 0 ? "+" : "") + str.tostring(strategy.netprofit, "##.##") + "$ (" + str.tostring(strategy.netprofit/strategy.initial_capital*100, "##.#") + "%)"
+    table.cell(dashboard, 0, 2, text=pnlText,
+              width=tableWidth, height=rowHeight,
+              text_color=strategy.netprofit >= 0 ? profitColor : lossColor,
+              bgcolor=bgColor, text_size=textSizeSmall)
+
+    // Row 3: Filters Row 1
+    filter1Text = dashSize == "Tiny" ?
+         "M:" + (useMA ? "🟢" : "⚪") + " C:" + (useChop ? "🟢" : "⚪") + " A:" + (useADX ? "🟢" : "⚪") :
+         "MA:" + (useMA ? "🟢" : "⚪") + " | Chop:" + (useChop ? "🟢" : "⚪") + " | ADX:" + (useADX ? "🟢" : "⚪")
+    table.cell(dashboard, 0, 3, text=filter1Text,
+              width=tableWidth, height=rowHeight,
+              text_color=textColor, bgcolor=bgColor, text_size=textSizeSmall)
+
+    // Row 4: Filters Row 2
+    filter2Text = dashSize == "Tiny" ?
+         "V:" + (useVol ? "🟢" : "⚪") + " B:" + (useBBW ? "🟢" : "⚪") + " S:" + (useST ? "🟢" : "⚪") :
+         "Vol:" + (useVol ? "🟢" : "⚪") + " | BBW:" + (useBBW ? "🟢" : "⚪") + " | ST:" + (useST ? "🟢" : "⚪")
+    table.cell(dashboard, 0, 4, text=filter2Text,
+              width=tableWidth, height=rowHeight,
+              text_color=textColor, bgcolor=bgColor, text_size=textSizeSmall)
+
+    // Row 5: Indicators
+    indicatorsText = dashSize == "Tiny" ?
+         "%R:" + str.tostring(wr, "#.#") + " MA:" + str.tostring(ma, "#.#") :
+         "%R: " + str.tostring(wr, "#.##") + " | MA: " + str.tostring(ma, "#.##") + " | Vol: " + str.tostring(volume/1000, "#.#") + "K"
+    table.cell(dashboard, 0, 5, text=indicatorsText,
+              width=tableWidth, height=rowHeight,
+              text_color=textColor, bgcolor=bgColor, text_size=textSizeSmall)

@@ -1,0 +1,66 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © joll3d
+
+//@version=5
+strategy("Multi-EMA Crossover Strategy", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity, pyramiding=4, default_qty_value=25)
+
+// Calculate EMAs
+ema1 = ta.ema(close, 1)
+ema5 = ta.ema(close, 5)
+ema3 = ta.ema(close, 3)
+ema10 = ta.ema(close, 10)
+ema20 = ta.ema(close, 20)
+ema40 = ta.ema(close, 40)
+
+// Define crossover conditions
+longCondition1 = ta.crossover(ema1, ema5)
+longCondition2 = ta.crossover(ema3, ema10)
+longCondition3 = ta.crossover(ema5, ema20)
+longCondition4 = ta.crossover(ema10, ema40)
+
+shortCondition1 = ema1 < ema5
+shortCondition2 = ema3 < ema10
+shortCondition3 = ema5 < ema20
+shortCondition4 = ema10 < ema40
+
+// Execute long entries
+if (longCondition1)
+    strategy.entry("Long 1-5", strategy.long)
+if (longCondition2)
+    strategy.entry("Long 3-10", strategy.long)
+if (longCondition3)
+    strategy.entry("Long 5-20", strategy.long)
+if (longCondition4)
+    strategy.entry("Long 10-40", strategy.long)
+
+if (shortCondition1)
+    strategy.close("Long 1-5")
+if (shortCondition2)
+    strategy.close("Long 3-10")
+if (shortCondition3)
+    strategy.close("Long 5-20")
+if (shortCondition4)
+    strategy.close("Long 10-40")
+
+// Calculate trend strength
+bullishStrength = 0
+bullishStrength := (ema1 > ema5 ? 1 : 0) +
+                 (ema3 > ema10 ? 1 : 0) +
+                 (ema5 > ema20 ? 1 : 0) +
+                 (ema10 > ema40 ? 1 : 0)
+
+//set bar colors
+bullishColor = color.blue
+semiBullishColor = color.rgb(175, 213, 243)
+semiBearishColor = color.rgb(245, 178, 178)
+bearishColor = color.red
+
+barColor = bearishColor
+if bullishStrength == 2
+    barColor := semiBearishColor
+if bullishStrength == 3
+    barColor := semiBullishColor
+if bullishStrength == 4
+    barColor := bullishColor
+
+barcolor(barColor)

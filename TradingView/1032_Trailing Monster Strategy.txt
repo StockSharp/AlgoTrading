@@ -1,0 +1,45 @@
+//@version=5
+strategy("Trailing Monster Strategy", overlay=true, pyramiding=1, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=50, calc_on_order_fills=false, slippage=0, commission_type=strategy.commission.percent, commission_value=0.03)
+
+length12 = input.int(40, title='PKAMA Length')
+factor = input.float(2.0, title='PKAMA Factor')
+sp = input.bool(true, title='Self Powered PKAMA')
+barsBetweenEntries = input.int(3, title="Bars Between Entries")
+trailingStopPct = input.float(12.0, title="Trailing Stop %", minval=0.1)
+delayBars = input.int(3, title="Delay Trailing by N Bars", minval=1)
+rsiLength = input.int(14, title="RSI Length")
+rsiOverbought = input.int(70, title="RSI Overbought Level")
+rsiOversold = input.int(30, title="RSI Oversold Level")
+smaLength = input.int(200, title="SMA Length")
+
+er = math.abs(ta.change(close, length12)) / math.sum(math.abs(ta.change(close)), length12)
+pow = sp ? 1 / er : factor
+per = math.pow(er, pow)
+a = 0.0
+a := per * close + (1 - per) * nz(a[1], close)
+bullish = a > a[1]
+bearish = a < a[1]
+rsi = ta.rsi(close, rsiLength)
+sma = ta.sma(close, smaLength)
+
+var int lastTradeBar = na
+canEnter = na(lastTradeBar) or (bar_index - lastTradeBar >= barsBetweenEntries)
+inPosition = strategy.opentrades > 0
+barsInPosition = inPosition ? bar_index - strategy.opentrades.entry_bar_index(0) : 0
+trailReady = barsInPosition >= delayBars
+trail_offset = strategy.position_avg_price * trailingStopPct / 100
+longSignal = rsi > rsiOverbought and close > sma and bullish and canEnter
+shortSignal = rsi < rsiOversold and close < sma and bearish and canEnter
+
+if longSignal
+    strategy.entry("Long", strategy.long)
+    lastTradeBar := bar_index
+if shortSignal
+    strategy.entry("Short", strategy.short)
+    lastTradeBar := bar_index
+
+if inPosition and trailReady
+    if strategy.position_size > 0
+        strategy.exit("Trailing TP", from_entry="Long", trail_points=trail_offset, trail_offset=trail_offset)
+    if strategy.position_size < 0
+        strategy.exit("Trailing TP", from_entry="Short", trail_points=trail_offset, trail_offset=trail_offset)

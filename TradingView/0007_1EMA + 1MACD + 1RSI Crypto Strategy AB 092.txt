@@ -1,0 +1,44 @@
+//@version=5
+strategy("EMA + MACD + RSI Crypto Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+/// === INPUTS === ///
+emaFastLen = input.int(50, title="Fast EMA")
+emaSlowLen = input.int(200, title="Slow EMA")
+rsiLen     = input.int(14, title="RSI Length")
+rsiBuyLvl  = input.int(45, title="Min RSI for Buy")
+rsiSellLvl = input.int(55, title="Max RSI for Sell")
+
+/// === INDICATORS === ///
+emaFast = ta.ema(close, emaFastLen)
+emaSlow = ta.ema(close, emaSlowLen)
+
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+rsi = ta.rsi(close, rsiLen)
+
+/// === CONDITIONS === ///
+isBullish = emaFast > emaSlow
+isBearish = emaFast < emaSlow
+
+macdBullish = ta.crossover(macdLine, signalLine)
+macdBearish = ta.crossunder(macdLine, signalLine)
+
+rsiBullish = rsi > rsiBuyLvl and rsi < 70
+rsiBearish = rsi < rsiSellLvl and rsi > 30
+
+buySignal  = isBullish and macdBullish and rsiBullish
+sellSignal = isBearish and macdBearish and rsiBearish
+
+/// === STRATEGY EXECUTION === ///
+if (buySignal)
+    strategy.entry("BUY", strategy.long)
+
+if (sellSignal)
+    strategy.entry("SELL", strategy.short)
+
+/// === PLOT SIGNALS === ///
+plotshape(buySignal, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(sellSignal, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+/// === ALERTS === ///
+alertcondition(buySignal, title="Buy Alert", message="Buy Signal Triggered")
+alertcondition(sellSignal, title="Sell Alert", message="Sell Signal Triggered")

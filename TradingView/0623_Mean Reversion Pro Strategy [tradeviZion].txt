@@ -1,0 +1,497 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TradeVizion
+// © 2024. All rights reserved.
+
+// Description:
+// Mean Reversion Pro Strategy is a technical trading system designed primarily for the NASDAQ-100 index.
+// It utilizes a dual moving average system combined with price range analysis to identify potential
+// mean reversion setups. While the strategy supports both long and short positions, it is strongly
+// recommended to use Long Only mode for indices due to their natural upward bias.
+
+// Created: 2025-01-13
+// Last Updated: 2025-01-18
+
+// Strategy Rules:
+// Long Entry (Strongly Recommended):
+// - Price below Fast SMA
+// - Price below 20% of the current bar's range
+// - Price above Slow SMA
+// - No existing position
+// Long Exit:
+// - Price crosses above Fast SMA
+
+// Short Entry (Optional):
+// - Price above Fast SMA
+// - Price above 80% of the current bar's range
+// - Price below Slow SMA
+// - No existing position
+// Short Exit:
+// - Price crosses below Fast SMA
+
+// Risk Management:
+// - Position sizing based on account equity (10%)
+// - No stop-loss (mean reversion approach)
+// - No take-profit (trend following exits)
+// - Single position at a time
+// - Strongly recommended to start with Long Only mode
+
+// Recommended Settings:
+// - Timeframe: Daily (1D) only
+// - Markets: US100 (NASDAQ-100), Forex, Major Indices
+// - Initial Capital: $20,000
+// - Trading Direction: Long Only (recommended for indices)
+// - Fast SMA: 5 (default)
+// - Slow SMA: 100 (default)
+
+// Disclaimer:
+// This script is for educational and informational purposes only. It is not financial advice.
+// Always conduct your own research and risk assessment before trading. Past performance
+// does not indicate future results. Trading carries significant risks and may not be
+// suitable for everyone. You can lose money trading.
+
+//@version=6
+strategy("Mean Reversion Pro Strategy [tradeviZion]",
+     shorttitle="tradeviZion - MR Pro",
+     overlay=true,
+     initial_capital=20000,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=10,
+     commission_value=0.01,
+     slippage=2)
+
+// --------------------------------------------------------------------------------------------------------------------
+// VISUAL SETTINGS
+// --------------------------------------------------------------------------------------------------------------------
+var g_visuals = '🎨 Visual Settings'
+themeMode = input.string('Light', 'Color Theme', options = ['Dark', 'Light', 'Custom'],
+     tooltip = 'Select color theme for better visibility in different chart modes', group = g_visuals, display = display.none)
+
+// Dark theme colors - Updated to match FibExtender Pro
+var color darkLongColor = #2962FF  // Strong blue
+var color darkShortColor = #FF6D00  // Orange
+var color darkTableText = #ffffff
+var color darkTableBg = #1e222d    // Darker background
+var color darkTableHeader = #2a2e39 // Slightly lighter than background
+
+// Light theme colors - Updated to match style
+var color lightLongColor = #0064fe  // DARK_BLUE from FibExtender
+var color lightShortColor = #10cab8 // TURQUOISE from FibExtender
+var color lightTableText = #000000
+var color lightTableBg = #f0f3fa    // Light background
+var color lightTableHeader = #e1e5ef // Slightly darker than background
+
+// Custom colors group
+var g_custom = '🎨 Custom Colors'
+showCustomColors = themeMode == 'Custom'
+
+// Custom colors with updated names and comprehensive tooltips
+customLongColor = input.color(darkLongColor, 'Fast SMA & Long Signal',
+     tooltip='Color Settings for Strategy Elements:\n' +
+         '• Fast SMA & Long Signal: Color for the faster moving average and long position indicators\n' +
+         '• Slow SMA & Exit: Color for the slower moving average and exit signals',
+     inline = 'custom1', group = g_custom, display = display.none)
+customShortColor = input.color(darkShortColor, 'Slow SMA & Exit',
+     inline = 'custom1', group = g_custom, display = display.none)
+
+customTableText = input.color(darkTableText, 'Table Text',
+     tooltip='Table Color Settings:\n' +
+         '• Table Text: Color for all text elements in the table\n' +
+         '• Table Background: Main background color for the table cells',
+     inline = 'custom2', group = g_custom, display = display.none)
+customTableBg = input.color(darkTableBg, 'Table Background',
+     inline = 'custom2', group = g_custom, display = display.none)
+
+customTableHeader = input.color(darkTableHeader, 'Header Background',
+     tooltip='Color for table header and footer sections',
+     group = g_custom, display = display.none)
+
+// Function to get theme colors
+getThemeColors() =>
+    color longColor = switch themeMode
+        'Dark' => darkLongColor
+        'Light' => lightLongColor
+        => customLongColor
+
+    color shortColor = switch themeMode
+        'Dark' => darkShortColor
+        'Light' => lightShortColor
+        => customShortColor
+
+    color tableText = switch themeMode
+        'Dark' => darkTableText
+        'Light' => lightTableText
+        => customTableText
+
+    color tableBg = switch themeMode
+        'Dark' => darkTableBg
+        'Light' => lightTableBg
+        => customTableBg
+
+    color tableHeader = switch themeMode
+        'Dark' => darkTableHeader
+        'Light' => lightTableHeader
+        => customTableHeader
+
+    [longColor, shortColor, tableText, tableBg, tableHeader]
+
+[themeColorLong, themeColorShort, themeTextColor, themeBgColor, themeHeaderColor] = getThemeColors()
+
+// Table Settings
+var g_table = '📊 Table Settings'
+showTable = input.bool(true, 'Show Status Table', group = g_table, display = display.none)
+showEmpoweringMessage = input.bool(true, 'Show Empowering Message', group = g_table,
+     tooltip = 'Display motivational messages in the table', display = display.none)
+empoweringMessageColor = input.color(color.purple, 'Empowering Message Color', group = g_table)
+tablePosition = input.string('Middle Right', 'Table Position',
+     options = ['Top Right', 'Top Left', 'Bottom Right', 'Bottom Left', 'Middle Right', 'Middle Left'],
+     tooltip = 'Select the position of the status table', group = g_table, display = display.none)
+tableTextSize = input.string('Small', 'Table Text Size',
+     options = ['Tiny', 'Small', 'Normal', 'Large'],
+     tooltip = 'Select the text size for the table', group = g_table, display = display.none)
+
+// Strategy Inputs
+var g_strategy = '📈 Strategy Parameters'
+strategyDirection = input.string("Long Only", "Strategy Direction", options=["Long Only", "Short Only", "Both"],
+     tooltip="Select which trading direction to use:\nLong Only: Only long positions\nShort Only: Only short positions\nBoth: Both long and short positions",
+     group=g_strategy, display = display.none)
+fastLength = input.int(title="Fast SMA Length", defval=5, options=[5, 8, 10, 13, 15, 20, 21, 34, 50], group=g_strategy, display = display.none) // To add a new Fast SMA period: Add the number to the options list, e.g., [5, 8, 10, 13, 15, 20, 21, 34, 50, 55, 89]
+slowLength = input.int(title="Slow SMA Length", defval=100, options=[100, 144, 200, 233, 377], group=g_strategy, display = display.none) // To add a new Slow SMA period: Modify the options list the same way:  [100, 144, 200, 250, 300]
+
+// Calculate indicators
+fastSMA = ta.sma(close, fastLength)
+slowSMA = ta.sma(close, slowLength)
+priceRange = high - low
+longRangeThreshold = low + (0.2 * priceRange)  // 20% above low for longs
+shortRangeThreshold = high - (0.2 * priceRange)  // 20% below high for shorts
+
+// Calculate ATR for gradient effects
+atr = ta.atr(14)
+
+// Calculate gradient colors based on price distance
+fastSMAColorWithGradient = color.from_gradient(math.abs(close - fastSMA), 0.0, atr, color.new(themeColorLong, 70), themeColorLong)
+slowSMAColorWithGradient = color.from_gradient(math.abs(close - slowSMA), 0.0, atr, color.new(themeColorShort, 70), themeColorShort)
+
+// Plot main SMA lines with enhanced 3D style
+plot(fastSMA, color=fastSMAColorWithGradient, title="Fast SMA", linewidth=3, style=plot.style_line)
+plot(slowSMA, color=slowSMAColorWithGradient, title="Slow SMA", linewidth=3, style=plot.style_line)
+
+// Plot zones around SMAs for 3D effect
+fastSMA_upper = plot(fastSMA + atr * 0.5, color=color.new(themeColorLong, 90), title="Fast SMA Upper", style=plot.style_line, linewidth=1)
+fastSMA_lower = plot(fastSMA - atr * 0.5, color=color.new(themeColorLong, 90), title="Fast SMA Lower", style=plot.style_line, linewidth=1)
+fill(fastSMA_upper, fastSMA_lower, color=color.new(themeColorLong, 95), title="Fast SMA Zone")
+
+slowSMA_upper = plot(slowSMA + atr * 0.5, color=color.new(themeColorShort, 90), title="Slow SMA Upper", style=plot.style_line, linewidth=1)
+slowSMA_lower = plot(slowSMA - atr * 0.5, color=color.new(themeColorShort, 90), title="Slow SMA Lower", style=plot.style_line, linewidth=1)
+fill(slowSMA_upper, slowSMA_lower, color=color.new(themeColorShort, 95), title="Slow SMA Zone")
+
+// Plot range thresholds with enhanced style
+longThresholdColor = color.from_gradient(math.abs(close - longRangeThreshold), 0.0, atr, color.new(themeColorLong, 70), themeColorLong)
+shortThresholdColor = color.from_gradient(math.abs(close - shortRangeThreshold), 0.0, atr, color.new(themeColorShort, 70), themeColorShort)
+plot(longRangeThreshold, color=longThresholdColor, title="Long Range Threshold", style=plot.style_circles, linewidth=2)
+plot(shortRangeThreshold, color=shortThresholdColor, title="Short Range Threshold", style=plot.style_circles, linewidth=2)
+
+// Strategy conditions
+longCondition = close < fastSMA and
+                 close < longRangeThreshold and  // Using long threshold
+                 close > slowSMA and
+                 strategy.position_size == 0 and
+                 (strategyDirection == "Long Only" or strategyDirection == "Both")
+
+shortCondition = close > fastSMA and
+                 close > shortRangeThreshold and  // Using short threshold
+                 close < slowSMA and
+                 strategy.position_size == 0 and
+                 (strategyDirection == "Short Only" or strategyDirection == "Both")
+
+exitLongCondition = close > fastSMA and strategy.position_size > 0
+exitShortCondition = close < fastSMA and strategy.position_size < 0
+
+// Execute strategy
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+else if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+if (exitLongCondition)
+    strategy.close("Long", comment="Exit Long")
+else if (exitShortCondition)
+    strategy.close("Short", comment="Exit Short")
+
+// // Add background color for signal zones
+// bgcolor(longCondition ? color.new(themeColorLong, 90) : exitLongCondition ? color.new(themeColorShort, 90) : na)
+
+// Motivational Messages
+var array<string> infoMessages = array.new_string()
+
+if barstate.isfirst
+    array.push(infoMessages, 'Trade with Precision and Patience')
+    array.push(infoMessages, 'Mean Reversion: Study Price Action')
+    array.push(infoMessages, 'Follow Your Trading Plan')
+    array.push(infoMessages, 'Consistency in Execution')
+    array.push(infoMessages, 'Follow Your Strategy Rules')
+    array.push(infoMessages, 'Study Mean Reversion Patterns')
+    array.push(infoMessages, 'Patience in Trading')
+    array.push(infoMessages, 'Trade Your Plan')
+    array.push(infoMessages, 'Observe Market Conditions')
+    array.push(infoMessages, 'Trading Requires Discipline')
+    array.push(infoMessages, 'Learn from Each Trade')
+    array.push(infoMessages, 'Stay Focused on Process')
+    array.push(infoMessages, 'Risk Management First')
+    array.push(infoMessages, 'Plan Your Trades')
+    array.push(infoMessages, 'Protect Your Capital')
+    array.push(infoMessages, 'Study Market Reversals')
+    array.push(infoMessages, 'Focus on Quality Setups')
+    array.push(infoMessages, 'Follow Your Process')
+    array.push(infoMessages, 'Execute Your Plan')
+    array.push(infoMessages, 'Think Systematically')
+    array.push(infoMessages, 'Manage Your Risk')
+    array.push(infoMessages, 'Study Price Patterns')
+    array.push(infoMessages, 'Trade with Discipline')
+    array.push(infoMessages, 'Focus on Risk Management')
+    array.push(infoMessages, 'Process Over Outcome')
+
+// Function to convert string position to table position
+getTablePosition(pos) =>
+    switch pos
+        'Top Right' => position.top_right
+        'Top Left' => position.top_left
+        'Bottom Right' => position.bottom_right
+        'Bottom Left' => position.bottom_left
+        'Middle Right' => position.middle_right
+        'Middle Left' => position.middle_left
+        => position.top_right
+
+// Function to convert string size to text size
+getTextSize(size) =>
+    switch size
+        'Tiny' => size.tiny
+        'Small' => size.small
+        'Normal' => size.normal
+        'Large' => size.large
+        => size.small
+
+// Enhanced status table with performance metrics
+if showTable
+    var table statusTable = table.new(getTablePosition(tablePosition), 4, 11, border_width=1, bgcolor=themeBgColor, border_color=themeHeaderColor)
+    textSize = getTextSize(tableTextSize)
+
+    // Get one size larger for header
+    headerSize = switch tableTextSize
+        'Tiny' => size.small
+        'Small' => size.normal
+        'Normal' => size.large
+        'Large' => size.huge
+        => size.normal
+
+    // Title row with enhanced styling
+    table.merge_cells(statusTable, 0, 0, 3, 0)
+    table.cell(statusTable, 0, 0, '🎯 Mean Reversion Pro',
+         text_color=themeTextColor,
+         bgcolor=color.new(themeHeaderColor, 0),
+         text_halign=text.align_center,
+         text_size=headerSize)
+
+    // Strategy Parameters Section
+    table.merge_cells(statusTable, 0, 1, 3, 1)
+    table.cell(statusTable, 0, 1, '📊 Strategy Parameters',
+         text_color=themeTextColor,
+         bgcolor=color.new(themeHeaderColor, 50),
+         text_size=textSize)
+
+    // Parameters with updated colors
+    table.cell(statusTable, 0, 2, 'Fast SMA', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 1, 2, str.tostring(fastLength), text_color=themeColorLong, bgcolor=color.new(themeBgColor, 10), text_size=textSize)
+    table.cell(statusTable, 2, 2, 'Slow SMA', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 3, 2, str.tostring(slowLength), text_color=themeColorShort, bgcolor=color.new(themeBgColor, 10), text_size=textSize)
+
+    // Add Strategy Direction to Parameters section
+    table.cell(statusTable, 0, 2, 'Direction', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    directionColor = strategyDirection == "Long Only" ? themeColorLong :
+                     strategyDirection == "Short Only" ? themeColorShort :
+                     color.new(themeTextColor, 0)
+    table.cell(statusTable, 1, 2, strategyDirection, text_color=directionColor, bgcolor=color.new(themeBgColor, 10), text_size=textSize)
+    table.cell(statusTable, 2, 2, 'Fast/Slow', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 3, 2, str.tostring(fastLength) + '/' + str.tostring(slowLength),
+         text_color=themeTextColor, bgcolor=color.new(themeBgColor, 10), text_size=textSize)
+
+    // Current Status Section
+    table.merge_cells(statusTable, 0, 3, 3, 3)
+    table.cell(statusTable, 0, 3, '📈 Current Status',
+         text_color=themeTextColor,
+         bgcolor=color.new(themeHeaderColor, 50),
+         text_size=textSize)
+
+    // Position and Price Status
+    table.cell(statusTable, 0, 4, 'Position', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    positionText = strategy.position_size == 0 ? "Flat" :
+                   strategy.position_size > 0 ? "Long" : "Short"
+    positionColor = strategy.position_size == 0 ? color.gray :
+                     strategy.position_size > 0 ? themeColorLong : themeColorShort
+    table.cell(statusTable, 1, 4, positionText,
+         text_color=positionColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+    table.cell(statusTable, 2, 4, 'Price', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 3, 4, str.tostring(close, '#.##'),
+         text_color=close > open ? themeColorLong : themeColorShort,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+
+    // Performance Metrics Section
+    table.merge_cells(statusTable, 0, 5, 3, 5)
+    table.cell(statusTable, 0, 5, '💫 Performance Metrics',
+         text_color=themeTextColor,
+         bgcolor=color.new(themeHeaderColor, 50),
+         text_size=textSize)
+
+    // Calculate performance metrics
+    netProfit = strategy.netprofit
+    percentProfit = (strategy.netprofit / strategy.initial_capital) * 100
+    totalTrades = strategy.closedtrades
+    winRate = totalTrades > 0 ? (strategy.wintrades / totalTrades) * 100 : 0.0
+    maxDrawdown = strategy.max_drawdown
+    drawdownPercent = strategy.max_drawdown_percent
+    profitFactor = strategy.grossprofit / math.abs(strategy.grossloss)
+    avgTrade = totalTrades > 0 ? (strategy.netprofit / totalTrades) : 0.0
+
+    // Define performance colors - Updated for better visibility
+    // Net Profit colors (red for negative, blue for positive)
+    profitColor = percentProfit >= 0 ? color.green : color.red  // Strong blue for profit, red for loss
+
+    // Win Rate colors (gradient from red to blue)
+    winRateColor = winRate >= 50 ? color.lime :  // Strong Lime for good win rate
+                   winRate >= 45 ? color.orange :  // Orange decent win rate
+                   color.red                    // Red for poor win rate
+
+    // Profit Factor colors
+    profitFactorColor = profitFactor >= 1.5 ? color.lime :  // Strong Lime for excellent
+                       profitFactor >= 1.0 ? color.orange :   // Orange for profitable
+                       color.red                           // Red for unprofitable
+
+    // Max Drawdown colors (always red with varying intensity)
+    drawdownColor = drawdownPercent <= 3 ? color.green :    // Green for small drawdown
+                   drawdownPercent <= 10 ? color.orange :     // Orange for medium
+                   color.red                               // Strong red for large drawdown
+
+    // Average Trade colors (same as net profit)
+    avgTradeColor = avgTrade >= 0 ? color.lime : color.red
+
+    // Row 1: Net Profit (USD and %)
+    table.cell(statusTable, 0, 6, 'Net P/L', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 1, 6, '$' + str.tostring(netProfit, '#.##'),
+         text_color=profitColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+    table.cell(statusTable, 2, 6, 'Net P/L %', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 3, 6, str.tostring(percentProfit, '#.##') + '%',
+         text_color=profitColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+
+    // Row 2: Total Trades and Win/Loss Count
+    table.cell(statusTable, 0, 7, 'Total Trades', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 1, 7, str.tostring(totalTrades, '#'),
+         text_color=totalTrades > 50 ? color.lime : totalTrades > 20 ? color.orange : color.gray,  // Color based on trading activity
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+    table.cell(statusTable, 2, 7, 'Win/Loss', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+
+    // Calculate win/loss ratio for coloring
+    winLossRatio = strategy.losstrades > 0 ? strategy.wintrades / strategy.losstrades : strategy.wintrades
+    winLossColor = winLossRatio >= 3 ? color.lime :    // Excellent ratio (3:1 or better)
+                   winLossRatio >= 2 ? #00bcd4 :       // Very good ratio (2:1 or better)
+                   winLossRatio >= 1 ? color.orange :   // Good ratio (1:1 or better)
+                   color.red                            // Poor ratio (less than 1:1)
+
+    table.cell(statusTable, 3, 7, str.tostring(strategy.wintrades, '#') + '/' + str.tostring(strategy.losstrades, '#'),
+         text_color=winLossColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+
+    // Row 3: Win Rate and Profit Factor
+    table.cell(statusTable, 0, 8, 'Win Rate', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 1, 8, str.tostring(winRate, '#.##') + '%',
+         text_color=winRateColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+    table.cell(statusTable, 2, 8, 'Profit Factor', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 3, 8, str.tostring(profitFactor, '#.##'),
+         text_color=profitFactorColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+
+    // Row 4: Max Drawdown and Average Trade
+    table.cell(statusTable, 0, 9, 'Max DD', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 1, 9, str.tostring(drawdownPercent, '#.##') + '%',
+         text_color=drawdownColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+    table.cell(statusTable, 2, 9, 'Avg Trade', text_color=themeTextColor, bgcolor=color.new(themeBgColor, 0), text_size=textSize)
+    table.cell(statusTable, 3, 9, '$' + str.tostring(avgTrade, '#.##'),
+         text_color=avgTradeColor,
+         bgcolor=color.new(themeBgColor, 10),
+         text_size=textSize)
+
+    // Empowering message
+    if showEmpoweringMessage
+        table.merge_cells(statusTable, 0, 10, 3, 10)
+        n = 5
+        sloganIndex = int(math.floor(bar_index / n) % array.size(infoMessages))
+        message = array.get(infoMessages, sloganIndex)
+        table.cell(statusTable, 0, 10, message,
+             bgcolor=color.new(themeHeaderColor, 70),
+             text_color=empoweringMessageColor,
+             text_size=textSize,
+             text_halign=text.align_center)
+
+// --------------------------------------------------------------------------------------------------------------------
+// ALERT SETTINGS
+// --------------------------------------------------------------------------------------------------------------------
+var g_alerts = '⚠️ Alert Settings'
+alertsEnabled = input.bool(true, 'Enable Alerts', group = g_alerts,
+     tooltip = 'Enable/disable alert notifications')
+
+// Create alert message
+createAlertMessage(type, direction) =>
+    message = '🎯 Mean Reversion Pro [tradeviZion]\n\n'
+    message += '📊 ' + type + ' Signal (' + direction + ')\n'
+    message += '💵 Price: ' + str.tostring(close, '#.##') + '\n'
+    message += '📈 Fast SMA: ' + str.tostring(fastSMA, '#.##') + '\n'
+    message += '📉 Slow SMA: ' + str.tostring(slowSMA, '#.##') + '\n\n'
+    message += '⚡ @tradeviZion'
+    message
+
+// --------------------------------------------------------------------------------------------------------------------
+// ALERT CONDITIONS
+// --------------------------------------------------------------------------------------------------------------------
+if alertsEnabled
+    // Entry alerts
+    if longCondition and (strategyDirection == "Long Only" or strategyDirection == "Both")
+        alert(createAlertMessage('LONG ENTRY', 'Buy'), alert.freq_once_per_bar)
+    if shortCondition and (strategyDirection == "Short Only" or strategyDirection == "Both")
+        alert(createAlertMessage('SHORT ENTRY', 'Sell'), alert.freq_once_per_bar)
+
+    // Exit alerts
+    if exitLongCondition and strategy.position_size > 0
+        alert(createAlertMessage('LONG EXIT', 'Take Profit'), alert.freq_once_per_bar)
+    if exitShortCondition and strategy.position_size < 0
+        alert(createAlertMessage('SHORT EXIT', 'Take Profit'), alert.freq_once_per_bar)
+
+// --------------------------------------------------------------------------------------------------------------------
+// ALERT CONDITIONS (for external alerts)
+// --------------------------------------------------------------------------------------------------------------------
+alertcondition(longCondition,
+     title = 'Mean Reversion Pro - Long Entry',
+     message = '🎯 Mean Reversion Pro [tradeviZion]\n\n📊 LONG ENTRY Signal (Buy)\n💵 Price: {{close}}\n\n⚡ @tradeviZion')
+
+alertcondition(shortCondition,
+     title = 'Mean Reversion Pro - Short Entry',
+     message = '🎯 Mean Reversion Pro [tradeviZion]\n\n📊 SHORT ENTRY Signal (Sell)\n💵 Price: {{close}}\n\n⚡ @tradeviZion')
+
+alertcondition(exitLongCondition and strategy.position_size > 0,
+     title = 'Mean Reversion Pro - Long Exit',
+     message = '🎯 Mean Reversion Pro [tradeviZion]\n\n📊 LONG EXIT Signal (Take Profit)\n💵 Price: {{close}}\n\n⚡ @tradeviZion')
+
+alertcondition(exitShortCondition and strategy.position_size < 0,
+     title = 'Mean Reversion Pro - Short Exit',
+     message = '🎯 Mean Reversion Pro [tradeviZion]\n\n📊 SHORT EXIT Signal (Take Profit)\n💵 Price: {{close}}\n\n⚡ @tradeviZion')

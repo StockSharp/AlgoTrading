@@ -1,0 +1,38 @@
+//@version=5
+strategy("BTCUSD Momentum After Abnormal Days", overlay=false, initial_capital=50000, slippage=1, commission_type=strategy.commission.cash_per_contract, commission_value=0.001)
+
+// === Inputs ===
+n_length = input.int(5, title="Lookback Period", minval=1)  // Period for mean and standard deviation
+k_factor = input.float(1.6, title="Abnormal Return Threshold (k)", step=0.1)  // Multiplier for standard deviation
+capital_allocation = input.float(1000, title="Capital per Trade", step=100)  // Capital allocation per trade
+
+// === Calculations ===
+// Daily return: (Close - Open) / Open
+day_return = (close - open) / open * 100
+
+// Mean and standard deviation of daily returns
+mean_return = ta.sma(day_return, n_length)
+std_dev_return = ta.stdev(day_return, n_length)
+
+// Abnormal return thresholds
+upper_threshold = mean_return + k_factor * std_dev_return
+lower_threshold = mean_return - k_factor * std_dev_return
+
+// Identification of abnormal days
+is_abnormal_positive = day_return > upper_threshold
+is_abnormal_negative = day_return < lower_threshold
+
+// Momentum strategy: Trade in the direction of the abnormal day
+if (is_abnormal_positive)
+    strategy.entry("Long", strategy.long, qty=capital_allocation / close, comment="Abnormal Positive Day")
+if (is_abnormal_negative)
+    strategy.entry("Short", strategy.short, qty=capital_allocation / close, comment="Abnormal Negative Day")
+
+// Close positions at the end of the day
+if (hour == 23 and minute == 59)
+    strategy.close_all(comment="End of Day Closure")
+
+// === Visualization ===
+plot(mean_return, color=color.blue, title="Mean Return")
+plot(upper_threshold, color=color.green, title="Upper Threshold", linewidth=1)
+plot(lower_threshold, color=color.red, title="Lower Threshold", linewidth=1)

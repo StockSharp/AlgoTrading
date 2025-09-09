@@ -1,0 +1,54 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © MichelT
+
+// example of requesting Earnings, Splits, Dividends data in pine
+//@version=4
+study("Earnings, Splits, Dividends", precision=5)
+
+esdSymbolTemplate ="ESD_FACTSET:" + syminfo.prefix + ";" + syminfo.ticker
+
+// =============================== earnings ==================================
+
+// the 'time' series is the time when the company reported the earnings (unix timestamp)
+earningsPublishUnixTimestamp = security(esdSymbolTemplate + ";EARNINGS", "D", time, lookahead=true)
+
+// the 'high' series is end of the fiscal period the report belongs to (or 'Date' in the earning lollipop). Unix timestamp
+earningsPeriodUnixTimestamp = security(esdSymbolTemplate + ";EARNINGS", "D", high, lookahead=true)
+
+// the 'open' series is estimated value of the earnings
+earningsEstimated = security(esdSymbolTemplate + ";EARNINGS", "D", open, lookahead=true)
+
+// the 'close' series is confirmed value of the earnings
+earningsComfirmed = security(esdSymbolTemplate + ";EARNINGS", "D", close, lookahead=true)
+
+// the 'low' series is reported value of the earnings
+earningsReported = security(esdSymbolTemplate + ";EARNINGS", "D", low, lookahead=true)
+
+plot(earningsReported, title="Reported", color=color.black)
+plot(earningsComfirmed, title="Confirmed", color=color.red)
+plot(earningsEstimated, title="Estimated", color=color.green)
+// ================================= splits ====================================
+
+
+// the 'time' is the time when the split happened (unix timestamp)
+splitsUnixTimestamp = security(esdSymbolTemplate + ";SPLITS", "D", time, lookahead=true)
+
+// the 'close' series is the numerator of the split
+splitsNumerator = security(esdSymbolTemplate + ";SPLITS", "D", close, lookahead=true)
+
+// the 'open' series is the denominator of the split
+splitsDenominator = security(esdSymbolTemplate + ";SPLITS", "D", open, lookahead=true)
+
+if time == splitsUnixTimestamp
+    label.new(bar_index, high, tostring(splitsNumerator) + "/" + tostring(splitsDenominator), color=color.green)
+
+// ================================ dividends ==================================
+
+// the 'time' series is Ex-Dividend Date (unix timestamp)
+dividendsUnixTimeStamp = security(esdSymbolTemplate + ";DIVIDENDS", "D", time, lookahead=true)
+
+// the 'close' is the amount of the dividend
+dividendsValue = security(esdSymbolTemplate + ";DIVIDENDS", "D", close, lookahead=true)
+
+if time == dividendsUnixTimeStamp
+    label.new(bar_index, high, tostring(dividendsValue, '#.###'), color=color.blue)

@@ -1,0 +1,103 @@
+//@version=6
+strategy("LANZ Strategy 4.0 [Backtest]", overlay=true, default_qty_type=strategy.cash, default_qty_value=100)
+
+// === INPUTS ===
+swingLength       = input.int(180, "Swing Length", minval=10)
+slBufferPoints    = input.float(50.0, "SL Buffer (Points)", minval=0.1)
+rr                = input.float(1.0, "TP Risk-Reward (RR)", minval=0.1)
+riskPercent       = input.float(1.0, "Risk per Trade (%)", minval=0.1, maxval=100)
+pipValueUSD       = input.float(10.0, "Pip Value in USD (1 lot)", minval=0.01)  // Para XAUUSD = $10/punto
+
+// === PIVOT DETECTION ===
+pivotHigh = ta.pivothigh(high, swingLength, swingLength)
+pivotLow  = ta.pivotlow(low, swingLength, swingLength)
+
+// === STATE TRACKING ===
+var float lastTop = na
+var float lastBottom = na
+var float prevHigh = na
+var float prevLow = na
+var int trendDir = na
+var bool topCrossed = false
+var bool bottomCrossed = false
+var bool topWasStrong = false
+var bool bottomWasStrong = false
+
+// === TREND EVALUATION ===
+if not na(pivotHigh)
+    prevHigh := lastTop
+    lastTop := pivotHigh
+    trendDir := (not na(prevHigh) and pivotHigh < prevHigh) ? -1 : trendDir
+    topWasStrong := trendDir == -1
+    topCrossed := false
+
+if not na(pivotLow)
+    prevLow := lastBottom
+    lastBottom := pivotLow
+    trendDir := (not na(prevLow) and pivotLow > prevLow) ? 1 : trendDir
+    bottomWasStrong := trendDir == 1
+    bottomCrossed := false
+
+// === ENTRY SIGNALS ===
+buySignal  = not topCrossed and close > lastTop
+sellSignal = not bottomCrossed and close < lastBottom
+
+// === ENTRY FREEZE VARIABLES ===
+var float entryPriceBuy = na
+var float entryPriceSell = na
+var bool signalTriggeredBuy = false
+var bool signalTriggeredSell = false
+
+// === RESET ON POSITION CLOSE ===
+if strategy.opentrades == 0
+    signalTriggeredBuy := false
+    signalTriggeredSell := false
+    entryPriceBuy := na
+    entryPriceSell := na
+
+// === CAPTURE ENTRY PRICE ===
+if buySignal and not signalTriggeredBuy and strategy.opentrades == 0
+    entryPriceBuy := close
+    signalTriggeredBuy := true
+
+if sellSignal and not signalTriggeredSell and strategy.opentrades == 0
+    entryPriceSell := close
+    signalTriggeredSell := true
+
+// === SL/TP / RIESGO DINÁMICO ===
+pip = syminfo.mintick * 10
+buffer = slBufferPoints * pip
+
+var float sl = na
+var float tp = na
+var float qty = na
+
+// === OBJETOS VISUALES ===
+var line epLine = na
+var line slLine = na
+var line tpLine = na
+var label epLabel = na
+var label slLabel = na
+var label tpLabel = na
+
+// === BUY ENTRY ===
+if signalTriggeredBuy and strategy.opentrades == 0
+    sl := low - buffer
+    tp := entryPriceBuy + (entryPriceBuy - sl) * rr
+    slPips = math.abs(entryPriceBuy - sl) / pip
+    riskUSD = strategy.equity * (riskPercent / 100)
+    qty := slPips > 0 ? (riskUSD / (slPips * pipValueUSD)) : na
+    strategy.entry("BUY", strategy.long, qty=qty)
+    strategy.exit("TP/SL BUY", from_entry="BUY", stop=sl, limit=tp)
+    topCrossed := true
+
+// === SELL ENTRY ===
+if signalTriggeredSell and strategy.opentrades == 0
+    sl := high + buffer
+    tp := entryPriceSell - (sl - entryPriceSell) * rr
+    slPips = math.abs(entryPriceSell - sl) / pip
+    riskUSD = strategy.equity * (riskPercent / 100)
+    qty := slPips > 0 ? (riskUSD / (slPips * pipValueUSD)) : na
+    strategy.entry("SELL", strategy.short, qty=qty)
+    strategy.exit("TP/SL SELL", from_entry="SELL", stop=sl, limit=tp)
+    bottomCrossed := true

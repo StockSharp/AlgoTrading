@@ -1,0 +1,47 @@
+//@version=5
+strategy("XAUUSD Trend Strategy", overlay=true)
+
+// --- Paramètres de l'utilisateur ---
+ema_short = input.int(50, title="EMA Court Terme", minval=1, step=1)
+ema_long = input.int(200, title="EMA Long Terme", minval=1, step=1)
+rsi_length = input.int(14, title="RSI Période", minval=1, step=1)
+rsi_overbought = input.float(70, title="RSI Surachat", minval=0, maxval=100, step=0.1)
+rsi_oversold = input.float(30, title="RSI Survente", minval=0, maxval=100, step=0.1)
+bollinger_length = input.int(20, title="Bollinger Période", minval=1, step=1)
+bollinger_mult = input.float(2.0, title="Bollinger Multiplicateur", minval=0.1, step=0.1)
+
+tp_risk_ratio = input.float(2.0, title="Ratio Take Profit / Stop Loss", minval=0.1, step=0.1)
+risk_percent = input.float(1.0, title="Risque par Trade (%)", minval=0.1, maxval=100, step=0.1)
+
+// --- Calcul des indicateurs ---
+ema_fast = ta.ema(close, ema_short)
+ema_slow = ta.ema(close, ema_long)
+rsi = ta.rsi(close, rsi_length)
+[basis, upper, lower] = ta.bb(close, bollinger_length, bollinger_mult)
+
+// --- Conditions d'achat ---
+long_condition = ta.crossover(ema_fast, ema_slow) and rsi < rsi_oversold and close > upper
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+
+// --- Conditions de vente ---
+short_condition = ta.crossunder(ema_fast, ema_slow) and rsi > rsi_overbought and close < lower
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+
+// --- Gestion des risques ---
+capital = strategy.equity
+risk = capital * (risk_percent / 100)
+stop_loss = risk / (strategy.position_size != 0 ? strategy.position_avg_price : close)
+take_profit = stop_loss * tp_risk_ratio
+
+// Ajout des stop loss et take profit
+strategy.exit("Take Profit/Stop Loss", from_entry="Long", limit=close + take_profit, stop=close - stop_loss)
+strategy.exit("Take Profit/Stop Loss", from_entry="Short", limit=close - take_profit, stop=close + stop_loss)
+
+// --- Visualisation ---
+plot(ema_fast, color=color.blue, title="EMA Court Terme")
+plot(ema_slow, color=color.red, title="EMA Long Terme")
+plot(basis, color=color.gray, title="Bollinger Basis")
+plot(upper, color=color.green, title="Bollinger Upper")
+plot(lower, color=color.red, title="Bollinger Lower")

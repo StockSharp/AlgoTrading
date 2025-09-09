@@ -1,0 +1,123 @@
+//@version=6
+strategy("Starter Edge Strategy", overlay=true, default_qty_type=strategy.fixed, default_qty_value=0.1, initial_capital=1000)
+
+// === INPUTS === //
+zlemaSrc     = close
+zlemaLen     = input.int(34, title="ZLEMA Length")
+shortLen     = input.int(12, title="MACD Short Length")
+longLen      = input.int(26, title="MACD Long Length")
+signalLen    = input.int(9, title="MACD Signal Smoothing")
+emaLen100    = input.int(100, title="EMA 100 Length")
+emaColor     = input.color(color.yellow, title="EMA 100 Color")
+emaWidth     = input.int(3, title="EMA 100 Line Width", minval=1, maxval=5)
+tpPerc       = input.float(2.0, title="Take Profit % (entry based)", minval=0.1)
+slPerc       = input.float(1.0, title="Stop Loss % (entry based)", minval=0.1)
+showVisuals  = input.bool(true, title="Mostrar caja TP/SL y etiquetas")
+
+// === EMA 100 === //
+ema100 = ta.ema(close, emaLen100)
+plot(ema100, title="EMA 100", color=emaColor, linewidth=emaWidth)
+
+// === ZLEMA & MACD === //
+ema1     = ta.ema(zlemaSrc, zlemaLen)
+ema2     = ta.ema(ema1, zlemaLen)
+zlema    = 2 * ema1 - ema2
+fastMA   = ta.ema(zlema, shortLen)
+slowMA   = ta.ema(zlema, longLen)
+macdLine = fastMA - slowMA
+signal   = ta.sma(macdLine, signalLen)
+hist     = macdLine - signal
+
+// === RSI para filtros === //
+rsiValue   = ta.rsi(close, 14)
+wasAbove70 = rsiValue[1] > 70 and rsiValue <= 70
+wasBelow30 = rsiValue[1] < 30 and rsiValue >= 30
+
+// === Condiciones === //
+histFalling    = hist < hist[1] and hist[1] > hist[2]
+macdCrossUp    = ta.crossover(macdLine, signal)
+macdCrossDown  = ta.crossunder(macdLine, signal)
+linesParallel  = math.abs(macdLine - signal) < 0.03 and math.abs(macdLine[1] - signal[1]) < 0.03
+
+// === Variables visuales === //
+var line tpLine = na
+var line slLine = na
+var box tradeBox = na
+
+// === LONG === //
+if (close > ema100 and macdCrossUp and not linesParallel and rsiValue > 50)
+    entryPrice = close
+    stopLoss = entryPrice * (1 - slPerc / 100)
+    takeProfit = entryPrice * (1 + tpPerc / 100)
+
+    strategy.entry("Long", strategy.long)
+
+    if (showVisuals)
+        tradeBox := box.new(left=bar_index, right=bar_index + 3,top=takeProfit, bottom=stopLoss, bgcolor=color.new(color.green, 85),border_color=color.green)
+
+
+
+
+
+
+        tpLine := line.new(bar_index, takeProfit, bar_index + 5, takeProfit, color=color.green, width=2)
+
+        slLine := line.new(bar_index, stopLoss, bar_index + 5, stopLoss,color=color.red, width=2)
+
+
+        label.new(x=bar_index, y=takeProfit,text="TP (2): " + str.tostring(takeProfit, "#.##"),style=label.style_label_up, textcolor=color.white, color=color.green)
+
+
+        label.new(x=bar_index, y=stopLoss,  text="SL (1): " + str.tostring(stopLoss, "#.##"),style=label.style_label_down, textcolor=color.white, color=color.red)
+
+
+        label.new(x=bar_index, y=entryPrice,text="Riesgo/Beneficio 2:1", style=label.style_label_left, textcolor=color.white, color=color.blue)
+
+
+
+// === SHORT === //
+if (close < ema100 and macdCrossDown and not linesParallel and rsiValue < 50)
+    entryPrice = close
+    stopLoss = entryPrice * (1 + slPerc / 100)
+    takeProfit = entryPrice * (1 - tpPerc / 100)
+
+    strategy.entry("Short", strategy.short)
+
+    if (showVisuals)
+        tradeBox := box.new(left=bar_index, right=bar_index + 3,top=stopLoss, bottom=takeProfit,bgcolor=color.new(color.red, 85),border_color=color.red)
+
+
+
+
+
+
+        tpLine := line.new(bar_index, takeProfit, bar_index + 5, takeProfit, color=color.green, width=2)
+
+        slLine := line.new(bar_index, stopLoss, bar_index + 5, stopLoss,color=color.red, width=2)
+
+
+        label.new(x=bar_index, y=takeProfit,text="TP (2): " + str.tostring(takeProfit, "#.##"),style=label.style_label_down, textcolor=color.white, color=color.green)
+
+
+        label.new(x=bar_index, y=stopLoss, text="SL (1): " + str.tostring(stopLoss, "#.##"),style=label.style_label_up, textcolor=color.white, color=color.red)
+
+
+        label.new(x=bar_index, y=entryPrice,text="Riesgo/Beneficio 2:1", style=label.style_label_left,textcolor=color.white, color=color.blue)
+
+
+
+// === CIERRES === //
+exitLong  = macdCrossDown or histFalling or wasAbove70
+exitShort = macdCrossUp or histFalling or wasBelow30
+
+if (strategy.position_size > 0 and exitLong)
+    strategy.close("Long", comment="Exit Long")
+    line.delete(tpLine)
+    line.delete(slLine)
+    box.delete(tradeBox)
+
+if (strategy.position_size < 0 and exitShort)
+    strategy.close("Short", comment="Exit Short")
+    line.delete(tpLine)
+    line.delete(slLine)
+    box.delete(tradeBox)

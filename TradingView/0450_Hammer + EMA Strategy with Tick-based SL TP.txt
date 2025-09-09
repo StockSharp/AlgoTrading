@@ -1,0 +1,59 @@
+//@version=5
+strategy("Hammer + EMA Strategy with Tick-based SL/TP", overlay=true)
+
+// === EMA Parameters === //
+emaLength = input.int(50, title="EMA Period")
+ema50 = ta.ema(close, emaLength)
+
+// === Tick-Based Risk Management === //
+tickSize = syminfo.mintick
+stopLossTicks = input.int(1, title="Stop Loss (ticks)") * tickSize
+takeProfitTicks = input.int(10, title="Take Profit (ticks)") * tickSize
+
+// === Bullish Hammer Detection Function === //
+isHammer(bar) =>
+    body = math.abs(close[bar] - open[bar])
+    upperWick = high[bar] - math.max(close[bar], open[bar])
+    lowerWick = math.min(close[bar], open[bar]) - low[bar]
+    isHammerPattern = lowerWick > (body * 2) and upperWick < (body * 0.5)
+    downtrend = close[bar + 1] < close[bar + 2] and close[bar] < close[bar + 1]
+    isHammerPattern and downtrend
+
+// === Bearish Inverted Hammer Detection Function === //
+isInvertedHammer(bar) =>
+    body = math.abs(close[bar] - open[bar])
+    upperWick = high[bar] - math.max(close[bar], open[bar])
+    lowerWick = math.min(close[bar], open[bar]) - low[bar]
+    isInverted = upperWick > (body * 2) and lowerWick < (body * 0.5)
+    uptrend = close[bar + 1] > close[bar + 2] and close[bar] > close[bar + 1]
+    isInverted and uptrend
+
+// === Pattern Detection === //
+hammerDetected = isHammer(0)
+invertedHammerDetected = isInvertedHammer(0)
+
+// === Entry Conditions === //
+longCondition = hammerDetected and close > ema50
+shortCondition = invertedHammerDetected and close < ema50
+
+// === SL and TP Calculation === //
+longStopLoss = close - stopLossTicks
+longTakeProfit = close + takeProfitTicks
+shortStopLoss = close + stopLossTicks
+shortTakeProfit = close - takeProfitTicks
+
+// === Execute Trades === //
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("TP/SL", from_entry="Long", limit=longTakeProfit, stop=longStopLoss)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("TP/SL", from_entry="Short", limit=shortTakeProfit, stop=shortStopLoss)
+
+// === Plot Signals === //
+plotshape(hammerDetected, title="Hammer", location=location.belowbar, style=shape.labelup, color=color.green, text="🔨")
+plotshape(invertedHammerDetected, title="Inverted Hammer", location=location.abovebar, style=shape.labeldown, color=color.red, text="🔨")
+
+// === Plot EMA === //
+plot(ema50, title="EMA 50", color=color.blue)

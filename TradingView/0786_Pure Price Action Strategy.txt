@@ -1,0 +1,39 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © BapN
+
+//@version=6
+strategy("Pure Price Action Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=2, commission_type=strategy.commission.percent, commission_value=0.1)
+
+// Input for LuxAlgo BOS/MSS Labels
+enable_bos = input(true, title="Enable Break of Structure (BOS)")
+enable_mss = input(true, title="Enable Market Structure Shift (MSS)")
+
+// Detect LuxAlgo BOS and MSS (Assuming the labels are available as plots)
+bos_signal = ta.crossover(ta.highest(high, 5), ta.lowest(low, 5)) // Example condition for BOS
+mss_signal = ta.crossunder(ta.lowest(low, 5), ta.highest(high, 5)) // Example condition for MSS
+
+// Buy Conditions
+buy_condition = enable_bos and bos_signal
+if buy_condition
+    strategy.entry("Long", strategy.long)
+
+// Sell Conditions
+sell_condition = enable_mss and mss_signal
+if sell_condition
+    strategy.entry("Short", strategy.short)
+
+// Stop-Loss & Take-Profit
+sl_percent = input(1, "Stop-Loss %") / 100
+tp_percent = input(2, "Take-Profit %") / 100
+
+long_sl = strategy.position_avg_price * (1 - sl_percent)
+long_tp = strategy.position_avg_price * (1 + tp_percent)
+short_sl = strategy.position_avg_price * (1 + sl_percent)
+short_tp = strategy.position_avg_price * (1 - tp_percent)
+
+strategy.exit("Long Exit", from_entry="Long", stop=long_sl, limit=long_tp)
+strategy.exit("Short Exit", from_entry="Short", stop=short_sl, limit=short_tp)
+
+// Plot Buy/Sell Signals
+plotshape(series=buy_condition, location=location.belowbar, color=color.green, style=shape.labelup, title="BUY Signal")
+plotshape(series=sell_condition, location=location.abovebar, color=color.red, style=shape.labeldown, title="SELL Signal")

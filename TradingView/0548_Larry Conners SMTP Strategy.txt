@@ -1,0 +1,51 @@
+//@version=5
+strategy("Larry Conners SMTP Strategy", overlay=true, margin_long=100, margin_short=100)
+
+// --- Inputs ---
+// Corrected the input type declaration by removing 'type='
+tickSize = input.float(0.01, title="Tick Size (e.g., 1/8 for stocks)")
+
+// --- Calculate conditions ---
+// 1. Today the market must make a 10-period low
+low10 = ta.lowest(low, 10)
+is10PeriodLow = low == low10
+
+// 2. Today's range must be the largest of the past 10 bars
+rangeToday = high - low
+maxRange10 = ta.highest(high - low, 10)
+isLargestRange = rangeToday == maxRange10
+
+// 3. Today's close must be in the top 25 percent of today's range
+rangePercent = (close - low) / rangeToday
+isCloseInTop25 = rangePercent >= 0.75
+
+// Combine all buy conditions
+buyCondition = is10PeriodLow and isLargestRange and isCloseInTop25
+
+// --- Buy Entry (on the next day) ---
+var float buyPrice = na
+var bool orderPending = false
+var float stopLoss = na  // Initialize stopLoss at the top level to avoid 'Undeclared identifier' errors
+
+if (buyCondition and strategy.position_size == 0)
+    buyPrice := high + tickSize
+    stopLoss := low
+    orderPending := true
+
+// Condition to place buy order the next day or the day after
+if orderPending and ta.barssince(buyCondition) <= 2
+    strategy.entry("Buy", strategy.long, stop=buyPrice)
+    orderPending := false
+
+// --- Stop-Loss and Trailing Stop ---
+if (strategy.position_size > 0)
+    stopLoss := math.max(stopLoss, low) // Move stop to higher lows (manual trailing)
+    strategy.exit("Exit", from_entry="Buy", stop=stopLoss)
+
+// --- Plotting ---
+// Highlight buy conditions
+bgcolor(buyCondition ? color.new(color.green, 50) : na)
+//plotshape(series=buyCondition, location=location.belowbar, color=color.green, style=shape.labelup, text="Buy Setup")
+
+// Plot Stop-Loss level for visualization
+//plot(strategy.position_size > 0 ? stopLoss : na, color=color.red, linewidth=2, title="Stop-Loss Level")

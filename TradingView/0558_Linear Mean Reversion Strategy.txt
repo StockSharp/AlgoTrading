@@ -1,0 +1,47 @@
+//@version=5
+strategy("Linear Mean Reversion Strategy with 20pt Stop", overlay=true)
+
+// === INPUTS ===
+halflife = input.int(14, title="Half-Life (Lookback Window)")
+scale = input.float(1.0, title="Position Scaling Factor")
+entry_threshold = input.float(2.0, title="Z-score Entry Threshold")
+exit_threshold = input.float(0.2, title="Z-score Exit Threshold")
+stop_loss_points = input.float(50.0, title="Fixed Stop Loss (points)")
+
+// === CORE CALCULATIONS ===
+price = close
+mean = ta.sma(price, halflife)
+std = ta.stdev(price, halflife)
+zscore = std != 0 ? (price - mean) / std : 0
+
+// === ENTRY CONDITIONS ===
+long_entry  = zscore < -entry_threshold
+short_entry = zscore >  entry_threshold
+
+// === EXIT CONDITIONS ===
+exit_long  = zscore > -exit_threshold
+exit_short = zscore <  exit_threshold
+
+// === MARKET ENTRIES ===
+if (long_entry)
+    strategy.entry("Long", strategy.long)
+
+if (short_entry)
+    strategy.entry("Short", strategy.short)
+
+// === MARKET EXITS ===
+if (strategy.position_size > 0 and exit_long)
+    strategy.close("Long")
+
+if (strategy.position_size < 0 and exit_short)
+    strategy.close("Short")
+
+// === STOP LOSS (20 points) ===
+strategy.exit("SL Long",  from_entry="Long",  loss=stop_loss_points)
+strategy.exit("SL Short", from_entry="Short", loss=stop_loss_points)
+
+// === PLOTS ===
+//plot(zscore, title="Z-score", color=color.orange)
+//hline( entry_threshold,  "Upper Entry", color=color.red)
+//////hline(-entry_threshold,  "Lower Entry", color=color.green)
+//hline(0,                 "Mean",        color=color.gray)

@@ -1,0 +1,110 @@
+//@version=5
+strategy("Commitment of Trader %R Strategy", overlay=false, precision=2, initial_capital=50000, currency=currency.USD, slippage=1, commission_type=strategy.commission.cash_per_order, commission_value=0.1)
+
+// Import der COT-Bibliothek
+import TradingView/LibraryCOT/2 as cot
+
+// Tooltips.
+var string TT_MODE =
+  "Determines which information from the chart's symbol will be used to fetch COT data:\n" +
+  "• 'Root' uses the root of a futures symbol ('ES' for 'ESH2020').\n" +
+  "• 'Base currency' uses the base currency in a forex pair ('EUR' for 'EURUSD').\n" +
+  "• 'Currency' uses the quote currency, i.e., the currency the symbol is traded in ('JPY' for 'TSE:9984' or 'USDJPY').\n" +
+  "• 'Auto' tries all modes, in turn.\n" +
+  "If no COT data can be found, a runtime error is generated."
+var string TT_OVERRIDE =
+  "Instead of letting the script generate the CFTC COT code from the chart and the above selections when this field is empty, you can specify an unrelated CFTC COT code here, e.g., 001602 for wheat futures."
+
+// Inputs für die Auswahl der COT-Daten und Williams %R Parameter
+selectionModeInput  = input.string("Auto",    "COT selection mode", options = ["Auto", "Root", "Base currency", "Currency"], tooltip = TT_MODE)
+includeOptionsInput = input.string("Futures", "Futures/Options",    options = ["Futures", "Options", "Futures + Options"])
+selectedTypeInput   = input.string("Long",    "Display",            options = ["Long", "Short", "Long + Short", "Long - Short", "Long %"])
+groupSelection      = input.string("Small Traders", "Trader Group", options=["Small Traders", "Commercial Hedgers", "Large Traders"])
+userCFTCCodeInput   = input.string("",        "CFTC Code",          tooltip = TT_OVERRIDE)
+lookbackPeriod      = input.int(252, "Williams %R Period", minval = 1)
+upperThreshold      = input.float(-10, "Upper Threshold", step = 0.1)
+lowerThreshold      = input.float(-90, "Lower Threshold", step = 0.1)
+
+// SMA Filter Inputs
+smaEnabled = input.bool(true, "Enable SMA Filter")
+smaLength = input.int(200, "SMA Length", minval = 1)
+
+// Chart-basierter oder nutzerdefinierter CFTC-Code
+var string cftcCode = userCFTCCodeInput != "" ? userCFTCCodeInput : cot.convertRootToCOTCode(selectionModeInput)
+
+// Funktion für die COT-Datenanfrage
+dataRequest(cftcCode, metricName, isLong) =>
+    futuresOnlyTicker = cot.COTTickerid("Legacy", cftcCode, false, metricName, isLong ? "Long" : "Short", "All")
+    futuresWithOptionsTicker = cot.COTTickerid("Legacy", cftcCode, true, metricName, isLong ? "Long" : "Short", "All")
+    futuresOnly = request.security(futuresOnlyTicker, "1D", close, ignore_invalid_symbol = true)
+    futuresWithOptions = request.security(futuresWithOptionsTicker, "1D", close, ignore_invalid_symbol = true)
+
+    if barstate.islastconfirmedhistory and (na(futuresOnly) or na(futuresWithOptions))
+        runtime.error(str.format("Could not find relevant COT data based on the current symbol and the COT selection mode `{0}`.", selectionModeInput))
+
+    switch includeOptionsInput
+        "Futures" => futuresOnly
+        "Options" => futuresWithOptions - futuresOnly
+        "Futures + Options" => futuresWithOptions
+        => na
+
+// Funktion zur Berechnung der Metrik
+metric(cftcCode, metricCode) =>
+    cotLong = dataRequest(cftcCode, metricCode, true)
+    cotShort = dataRequest(cftcCode, metricCode, false)
+    switch selectedTypeInput
+        "Long" => cotLong
+        "Short" => cotShort
+        "Long + Short" => cotLong + cotShort
+        "Long - Short" => cotLong - cotShort
+        "Long %" => cotLong / (cotLong + cotShort) * 100
+        => na
+
+// COT-Metriken für verschiedene Tradergruppen
+largeTraders = metric(cftcCode, "Noncommercial Positions")
+smallTraders = metric(cftcCode, "Nonreportable Positions")
+commercialHedgers = metric(cftcCode, "Commercial Positions")
+
+// Auswahl der Nutzergruppe
+selectedGroup = groupSelection == "Small Traders" ? smallTraders : groupSelection == "Commercial Hedgers" ? commercialHedgers : largeTraders
+
+// Berechnung des Williams %R
+williamsR(src, period) =>
+    highestHigh = ta.highest(src, period)
+    lowestLow = ta.lowest(src, period)
+    -100 * (highestHigh - src) / (highestHigh - lowestLow)
+
+williamsR_value = williamsR(selectedGroup, lookbackPeriod)
+
+// Berechnung des SMA
+sma_value = ta.sma(close, smaLength)
+
+// Logik für Long- und Short-Positionen basierend auf dem Williams %R und den Schwellenwerten
+if (williamsR_value > upperThreshold)
+    if not smaEnabled or (smaEnabled and close > sma_value)  // Long-Position nur, wenn SMA aktiviert ist und Preis über SMA
+        strategy.entry("Long", strategy.long)
+
+if (williamsR_value < lowerThreshold)
+    if not smaEnabled or (smaEnabled and close < sma_value)  // Short-Position nur, wenn SMA aktiviert ist und Preis unter SMA
+        strategy.entry("Short", strategy.short)
+
+// Schließen von Positionen nach einem neuen Schwellenwert
+if (strategy.position_size > 0 and williamsR_value < upperThreshold)
+    strategy.close("Long")
+
+if (strategy.position_size < 0 and williamsR_value > lowerThreshold)
+    strategy.close("Short")
+
+// Hintergrundfarbe basierend auf den Schwellenwerten
+bgcolor(williamsR_value > upperThreshold ? color.rgb(80,255,10,0) : na, offset = 0)
+bgcolor(williamsR_value < lowerThreshold ? color.rgb(255,80,10,0) : na, offset = 0)
+
+// Plot des Williams %R
+plot(williamsR_value,color= color.rgb(200,0,200,0), title="Williams %R", style=plot.style_stepline_diamond)
+
+// Plot Schwellenwerte
+hline(upperThreshold, "Upper Threshold", color=color.rgb(80,255,10,0), linestyle=hline.style_dotted)
+hline(lowerThreshold, "Lower Threshold", color=color.rgb(255,80,10,0), linestyle=hline.style_dotted)
+
+// Plot des SMA
+//plot(sma_value, color=smaEnabled ? color.orange : na, title="SMA", linewidth=2)

@@ -1,0 +1,123 @@
+//@version=6
+strategy(title='GRIM309 CallPut Strategy', shorttitle='CallsPuts Strategy', overlay=true, initial_capital=500, commission_value=0.1)
+
+// Input parameters for EMAs
+len5 = input.int(5, minval=1, title='5 EMA Length')
+len10 = input.int(10, minval=1, title='10 EMA Length')
+len15 = input.int(15, minval=1, title='15 EMA Length')
+len20 = input.int(20, minval=1, title='20 EMA Length')
+len50 = input.int(50, minval=1, title='50 EMA Length')
+len200 = input.int(200, minval=1, title='200 EMA Length')
+
+// EMA calculations
+ema5 = ta.ema(close, len5)
+ema10 = ta.ema(close, len10)
+ema15 = ta.ema(close, len15)
+ema20 = ta.ema(close, len20)
+ema50 = ta.ema(close, len50)
+ema200 = ta.ema(close, len200)
+
+// Plot EMAs with specified colors
+plot(ema5, title='EMA 5', color=color.lime)
+plot(ema10, title='EMA 10', color=color.rgb(64, 131, 170))
+plot(ema20, title='EMA 20', color=color.purple)
+plot(ema50, title='EMA 50', color=color.red)
+plot(ema200, title='EMA 200', color=color.white)
+
+// Determine trend conditions
+uptrend = ema10 > ema20 and close > ema50
+downtrend = ema10 < ema20 and close < ema50
+
+// Plot trend indicators at the bottom of the chart
+plotshape(series=uptrend, location=location.bottom, color=color.orange, style=shape.triangleup, text='+', title='Uptrend Indicator')
+plotshape(series=downtrend, location=location.bottom, color=color.orange, style=shape.triangledown, text='-', title='Downtrend Indicator')
+
+// Position state variable
+var int positionState = 0  // 0 = no position, 1 = long, -1 = short
+
+// Cooldown period settings (dont open right after a close)
+cooldownBars = input.int(2, minval=1, title='Cooldown Period (bars)')
+var int barsSinceClose = na
+
+// Additional check for EMA5 trend confirmation (optional check to see that it is already in momentum short term)
+emaCheckCall = ema5 > ema5[1] and ema5 > ema10
+emaCheckPut = ema5 < ema5[1] and ema5 < ema10
+
+// Open and close conditions for calls
+openCalls = uptrend and emaCheckCall and positionState == 0 and (na(barsSinceClose) or barsSinceClose >= cooldownBars)
+closeCalls = positionState == 1 and (close <= ema15)
+
+// Open and close conditions for puts
+openPuts = downtrend and emaCheckPut and positionState == 0 and (na(barsSinceClose) or barsSinceClose >= cooldownBars)
+closePuts = positionState == -1 and (close >= ema15)
+
+// --- WARNING SYSTEM ---
+
+// Calculate recent percentage differences between ema5 and ema10
+diffNow = (ema5 - ema10) / ema10 * 100
+diff1 = (ema5[1] - ema10[1]) / ema10[1] * 100
+diff2 = (ema5[2] - ema10[2]) / ema10[2] * 100
+diff3 = (ema5[3] - ema10[3]) / ema10[3] * 100
+diff4 = (ema5[4] - ema10[4]) / ema10[4] * 100
+diff5 = (ema5[5] - ema10[5]) / ema10[5] * 100
+
+if diffNow < 0
+    diffNow:=diffNow*-1
+if diff1 < 0
+    diff1:=diff1*-1
+if diff2 < 0
+    diff2:=diff2*-1
+if diff3 < 0
+    diff3:=diff3*-1
+if diff4 < 0
+    diff4:=diff4*-1
+if diff5 < 0
+    diff5:=diff5*-1
+
+// Compute average of last 5 changes
+avgChange = (math.abs(diff1 - diff2) + math.abs(diff2 - diff3) + math.abs(diff3 - diff4) + math.abs(diff4 - diff5)) / 4
+
+// Check if latest change is more than double the average
+isWarning = positionState != 0 and math.abs(diffNow - diff1) > 2.5 * avgChange and diffNow < diff1
+
+// Draw warning symbol
+plotshape(series=isWarning, location=location.belowbar, color=color.red, style=shape.cross, text='⚠', textcolor=color.white, title='Warning Signal')
+
+if isWarning //optional, close position if a warning emits
+    if positionState == 1  // Only close calls if the last position was a long
+        closeCalls := true
+    if positionState == -1 // Only close puts if the last position was a short
+        closePuts := true
+
+// Update position state and cooldown counter based on signals
+if (openCalls)
+    strategy.entry('Long', strategy.long)
+    positionState := 1
+    barsSinceClose := na  // Reset cooldown counter when opening a position
+
+if (closeCalls)
+    strategy.close('Long')
+    positionState := 0
+    barsSinceClose := 0  // Start cooldown counter when closing a position
+
+if (openPuts)
+    strategy.entry('Short', strategy.short)
+    positionState := -1
+    barsSinceClose := na  // Reset cooldown counter when opening a position
+
+if (closePuts)
+    strategy.close('Short')
+    positionState := 0
+    barsSinceClose := 0  // Start cooldown counter when closing a position
+
+// Increment cooldown counter if it's active
+if (not na(barsSinceClose))
+    barsSinceClose += 1
+
+// Plot open and close signals for Calls
+plotshape(series=openCalls, location=location.belowbar, color=color.green, style=shape.arrowup, text='Open', textcolor=color.white, title='Open call position')
+plotshape(series=closeCalls, location=location.abovebar, color=color.green, style=shape.arrowdown, text='Close', textcolor=color.white, title='Close call position')
+
+// Plot open and close signals for Puts
+plotshape(series=openPuts, location=location.abovebar, color=color.red, style=shape.arrowdown, text='Open', textcolor=color.white, title='Open put position')
+plotshape(series=closePuts, location=location.belowbar, color=color.red, style=shape.arrowup, text='Close', textcolor=color.white, title='Close put position')

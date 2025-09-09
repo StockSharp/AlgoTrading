@@ -1,0 +1,50 @@
+//@version=6
+strategy("LUX CLARA - EMA + VWAP (No ATR Filter) - v6", overlay=true,
+     default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === PARAMETERS === //
+emaFastLen = input.int(8,  "Fast EMA Length")
+emaSlowLen = input.int(50, "Slow EMA Length")
+
+// === CALCULATIONS === //
+emaFast  = ta.ema(close, emaFastLen)
+emaSlow  = ta.ema(close, emaSlowLen)
+
+// Correct usage of ta.vwap():
+// By default, it uses the chart's volume, so no second parameter is needed.
+vwapLine = ta.vwap(close)
+
+// === TREND LOGIC (50 EMA vs. VWAP) === //
+isBullishTrend = emaSlow > vwapLine
+isBearishTrend = emaSlow < vwapLine
+
+// === SESSION FILTER: 7:30 AM - 11:30 AM (Exchange Time) === //
+// "time(timeframe.period, '0730-1130')" returns `na` when outside that window.
+isInSession = not na(time(timeframe.period, "0730-1430"))
+
+// === ENTRY CONDITIONS === //
+// Go long when 8 EMA crosses above 50 EMA during a Bullish Trend + in session
+longEntry  = ta.crossover(emaFast, emaSlow)  and isBullishTrend  and isInSession
+// Go short when 8 EMA crosses below 50 EMA during a Bearish Trend + in session
+shortEntry = ta.crossunder(emaFast, emaSlow) and isBearishTrend and isInSession
+
+// === STRATEGY EXECUTION === //
+if longEntry
+    strategy.entry("Long", strategy.long)
+
+if shortEntry
+    strategy.entry("Short", strategy.short)
+
+// === EXIT LOGIC === //
+longExit  = ta.crossunder(emaFast, emaSlow)
+if longExit
+    strategy.close("Long")
+
+shortExit = ta.crossover(emaFast, emaSlow)
+if shortExit
+    strategy.close("Short")
+
+// === PLOTS === //
+plot(emaFast,  color=color.orange,  title="8 EMA")
+plot(emaSlow,  color=color.blue,    title="50 EMA")
+plot(vwapLine, color=color.fuchsia, title="VWAP")

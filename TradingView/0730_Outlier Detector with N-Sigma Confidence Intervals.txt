@@ -1,0 +1,21 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © tvjvzl
+
+//@version=4
+
+study("Outlier Detector with N-Sigma Confidence Intervals")
+source = input(close)
+dif = source - source[1]
+periods = input(30, title = "Sample size - Back periods for std. deviation estimate") + 1
+
+//Unbiased standard deviation estimator
+std = sqrt((sum(pow(dif, 2), periods) - pow(dif[0], 2))/(periods - 2))
+
+//Z-score
+z = dif/std
+
+//Plot
+c = sign(z) == 1 ? #22ab94:#ec407a
+plot(abs(z), color=color.new(c, 0), title = "Series", linewidth=1, style = plot.style_columns)
+hline(input(2, "First limit"), color=color.new(#959595, 0), title = "First limit")
+hline(input(3, "Second limit"), color=color.new(#959595, 0), title = "Second limit")

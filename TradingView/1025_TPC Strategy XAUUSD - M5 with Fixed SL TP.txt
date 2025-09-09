@@ -1,0 +1,51 @@
+//@version=5
+strategy("TPC Strategy XAUUSD - M5 with Fixed SL/TP", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1)
+
+// === INPUTS ===
+ema200 = ta.ema(close, 200)
+ema21 = ta.ema(close, 21)
+rsi = ta.rsi(close, 14)
+[macdLine, signalLine, _] = ta.macd(close, 12, 26, 9)
+
+// === CONDITIONS ===
+longCondition = close > ema200 and close > ema21 and rsi > 50 and macdLine > signalLine and ta.crossover(macdLine, signalLine)
+shortCondition = close < ema200 and close < ema21 and rsi < 50 and macdLine < signalLine and ta.crossunder(macdLine, signalLine)
+
+// === TRADE PARAMETERS ===
+sl_pips = 15.0
+tp_pips = 22.5
+sl = sl_pips * syminfo.mintick * 10
+tp = tp_pips * syminfo.mintick * 10
+
+// === TRADE ENTRIES ===
+var float long_entry_price = na
+var float short_entry_price = na
+
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    long_entry_price := close
+    label.new(bar_index, low, "BUY", style=label.style_label_up, color=color.green, textcolor=color.white, size=size.small)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    short_entry_price := close
+    label.new(bar_index, high, "SELL", style=label.style_label_down, color=color.red, textcolor=color.white, size=size.small)
+
+// === STRATEGY EXITS ===
+strategy.exit("Long TP/SL", from_entry="Long", stop=close - sl, limit=close + tp)
+strategy.exit("Short TP/SL", from_entry="Short", stop=close + sl, limit=close - tp)
+
+// === PLOTS ===
+plot(ema200, color=color.red, title="200 EMA")
+plot(ema21, color=color.blue, title="21 EMA")
+
+// === PLOT SL & TP LINES ===
+plot(long_entry_price ? long_entry_price - sl : na, title="Long SL", color=color.red, style=plot.style_linebr, linewidth=1)
+plot(long_entry_price ? long_entry_price + tp : na, title="Long TP", color=color.green, style=plot.style_linebr, linewidth=1)
+
+plot(short_entry_price ? short_entry_price + sl : na, title="Short SL", color=color.red, style=plot.style_linebr, linewidth=1)
+plot(short_entry_price ? short_entry_price - tp : na, title="Short TP", color=color.green, style=plot.style_linebr, linewidth=1)
+
+// === ALERT CONDITIONS ===
+alertcondition(longCondition, title="Buy Signal", message="📈 XAUUSD Buy Setup (M5) detected!")
+alertcondition(shortCondition, title="Sell Signal", message="📉 XAUUSD Sell Setup (M5) detected!")

@@ -1,0 +1,56 @@
+//@version=5
+strategy("Bollinger Band Touch with SMI and MACD Angle", overlay=true)
+
+// Input parameters for Bollinger Bands
+lengthBB = input(20, title="BB Length")
+srcBB = input(close, title="Source")
+mult = input(2.0, title="BB Multiplier")
+
+// Input parameters for SMI
+lengthSMI = input(14, title="SMI Length")
+smiLength = input(3, title="SMI Signal Length")
+
+// Input parameters for MACD
+fastLength = input(12, title="MACD Fast Length")
+slowLength = input(26, title="MACD Slow Length")
+signalLength = input(9, title="MACD Signal Length")
+
+// Calculate Bollinger Bands
+basis = ta.sma(srcBB, lengthBB)
+dev = mult * ta.stdev(srcBB, lengthBB)
+upperBB = basis + dev
+lowerBB = basis - dev
+
+// Calculate SMI
+smi = ta.sma(ta.stoch(close, high, low, lengthSMI), smiLength)
+smiAngle = math.atan((smi - smi[1]) / 1) * (180 / math.pi) // Calculate angle in degrees
+
+// Calculate MACD on 4-hour timeframe
+[macdLine, signalLine, _] = ta.macd(request.security(syminfo.tickerid, "240", close), fastLength, slowLength, signalLength)
+macdAngle = math.atan((macdLine - macdLine[1]) / 1) * (180 / math.pi) // Calculate angle in degrees
+
+// Entry condition: Price touches the lower Bollinger Band and SMI angle is <= 60 degrees and MACD angle is <= 50 degrees
+priceTouchesLowerBB = srcBB <= lowerBB
+smiIsAngledUp = smiAngle <= 60 and smiAngle > 0 // Ensure SMI is angled up
+macdIsAngledUp = macdAngle <= 50 and macdAngle > 0 // Ensure MACD is angled up
+
+// Exit condition: Price touches the upper Bollinger Band
+priceTouchesUpperBB = srcBB >= upperBB
+
+// Execute entry trade when conditions are met
+if (priceTouchesLowerBB and smiIsAngledUp and macdIsAngledUp)
+    strategy.entry("Long", strategy.long)
+
+// Execute exit trade when price touches upper BB
+if (priceTouchesUpperBB)
+    strategy.close("Long")
+
+// Plotting Bollinger Bands for visualization
+plot(upperBB, color=color.red, title="Upper BB")
+plot(lowerBB, color=color.green, title="Lower BB")
+plot(basis, color=color.blue, title="Basis")
+
+// Optional: Plotting SMI and MACD for reference (can be uncommented if needed)
+// hline(0, "Zero Line", color=color.gray)
+// plot(smi, color=color.purple, title="SMI")
+// plot(macdLine - signalLine, color=color.orange, title="MACD Histogram")

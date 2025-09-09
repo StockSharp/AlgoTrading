@@ -1,0 +1,61 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PakunFX
+
+//@version=6
+strategy('MACD Volume Strategy (BBO + MACD State, Reversal Type)', overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 10)
+
+src = close
+
+// === Volume Oscillator ===
+shortlen = input.int(6, minval = 1, title = 'Volume Short Length')
+longlen = input.int(12, minval = 1, title = 'Volume Long Length')
+shortVol = ta.ema(volume, shortlen)
+longVol = ta.ema(volume, longlen)
+osc = 100 * (shortVol - longVol) / longVol
+
+// === MACD Calculation ===
+fast_length = input(11, title = 'MACD Fast Length')
+slow_length = input(21, title = 'MACD Slow Length')
+signal_length = input.int(10, title = 'Signal Smoothing')
+sma_source = input.string('SMA', title = 'Oscillator MA Type', options = ['SMA', 'EMA'])
+sma_signal = input.string('SMA', title = 'Signal Line MA Type', options = ['SMA', 'EMA'])
+
+fast_ma = sma_source == 'SMA' ? ta.sma(src, fast_length) : ta.ema(src, fast_length)
+slow_ma = sma_source == 'SMA' ? ta.sma(src, slow_length) : ta.ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = sma_signal == 'SMA' ? ta.sma(macd, signal_length) : ta.ema(macd, signal_length)
+
+// === MACD State Check ===
+macdAboveSignal = macd > signal
+macdBelowSignal = macd < signal
+
+// === BBO Arrow Signals ===
+bboBuyArrow = ta.crossover(macd, 0) and osc > 0
+bboSellArrow = ta.crossunder(macd, 0) and osc > 0
+
+// === Entry Signals ===
+longSignal = bboBuyArrow and macdAboveSignal
+shortSignal = bboSellArrow and macdBelowSignal
+
+// === SL/TP Calculation ===
+riskReward = 1.5
+lastLow = ta.lowest(low, 10)
+lastHigh = ta.highest(high, 10)
+
+// === Long Entry (Reversal Type) ===
+if longSignal
+    strategy.close('Short') // Close short position first
+    float entryPrice = close
+    float sl = lastLow
+    float tp = entryPrice + (entryPrice - sl) * riskReward
+    strategy.entry('Long', strategy.long)
+    strategy.exit('Long TP/SL', from_entry = 'Long', stop = sl, limit = tp)
+
+// === Short Entry (Reversal Type) ===
+if shortSignal
+    strategy.close('Long') // Close long position first
+    float entryPrice = close
+    float sl = lastHigh
+    float tp = entryPrice - (sl - entryPrice) * riskReward
+    strategy.entry('Short', strategy.short)
+    strategy.exit('Short TP/SL', from_entry = 'Short', stop = sl, limit = tp)

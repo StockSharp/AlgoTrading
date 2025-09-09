@@ -1,0 +1,56 @@
+//@version=5
+strategy("Streak-Based Trading Strategy", overlay=true)
+
+// User Inputs
+trade_direction = input.string(title="Trade Direction", defval="Long", options=["Long", "Short"]) // Option to choose Long or Short
+streak_threshold = input.int(title="Streak Threshold", defval=8, minval=1) // Input for number of streaks before trade
+hold_duration = input.int(title="Hold Duration (in periods)", defval=7, minval=1) // Input for holding the position
+doji_threshold = input.float(0.01, title="Doji Threshold (%)", minval=0.001) / 100 // Doji sensitivity
+
+// Calculate win or loss streak
+is_doji = math.abs(close - open) / (high - low) < doji_threshold
+win = close > close[1] and not is_doji
+loss = close < close[1] and not is_doji
+
+// Initialize variables for streak counting
+var int win_streak = 0
+var int loss_streak = 0
+var bool in_position = false
+var int hold_counter = 0
+
+// Track streaks (only when not in a position)
+if not in_position
+    if win
+        win_streak += 1
+        loss_streak := 0
+    else if loss
+        loss_streak += 1
+        win_streak := 0
+    else
+        win_streak := 0
+        loss_streak := 0
+
+// Logic for closing the position after the holding duration
+if in_position
+    hold_counter -= 1
+    if hold_counter <= 0
+        strategy.close_all() // Close all positions
+        in_position := false // Reset position flag
+        win_streak := 0 // Reset streaks after position is closed
+        loss_streak := 0
+
+// Trade condition (only when no position is open and streak is reached)
+if not in_position
+    if trade_direction == "Long" and loss_streak >= streak_threshold
+        strategy.entry("Long", strategy.long) // Open a long position
+        in_position := true
+        hold_counter := hold_duration // Set holding period
+
+    if trade_direction == "Short" and win_streak >= streak_threshold
+        strategy.entry("Short", strategy.short) // Open a short position
+        in_position := true
+        hold_counter := hold_duration // Set holding period
+
+// Plotting streaks for visualization
+plot(win_streak, color=color.green, title="Winning Streak", style=plot.style_histogram, linewidth=2)
+plot(loss_streak, color=color.red, title="Losing Streak", style=plot.style_histogram, linewidth=2)

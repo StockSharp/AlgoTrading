@@ -1,0 +1,89 @@
+//@version=5
+strategy("Profit-Optimized XAU/USD Strategy with Correct ADX and Bollinger Bands Fill", overlay=true, margin_long=100, margin_short=100)
+
+// Input Parameters
+shortEmaLength = input.int(20, title="Short EMA Length", minval=1)
+longEmaLength = input.int(50, title="Long EMA Length", minval=1)
+rsiLength = input.int(14, title="RSI Length")
+rsiOverbought = input.int(70, title="RSI Overbought Level", minval=50)
+rsiOversold = input.int(30, title="RSI Oversold Level", minval=0)
+bbLength = input.int(20, title="Bollinger Bands Length")
+bbMultiplier = input.float(2.0, title="Bollinger Bands Multiplier")
+adxLength = input.int(14, title="ADX Length")
+adxSmoothing = input.int(14, title="ADX Smoothing Length")
+adxThreshold = input.int(25, title="ADX Threshold for Trend Strength", minval=10)
+atrLength = input.int(14, title="ATR Length")
+riskPerTrade = input.float(1.0, title="Risk Per Trade (%)")
+
+// EMA Calculations
+shortEma = ta.ema(close, shortEmaLength)
+longEma = ta.ema(close, longEmaLength)
+
+// RSI Calculation
+rsi = ta.rsi(close, rsiLength)
+
+// Bollinger Bands Calculation
+basis = ta.sma(close, bbLength)
+dev = bbMultiplier * ta.stdev(close, bbLength)
+upperBand = basis + dev
+lowerBand = basis - dev
+
+// ADX Calculation: Extracting components from ta.dmi
+[diPlus, diMinus, adx] = ta.dmi(adxLength, adxSmoothing)
+
+// ATR Calculation (Average True Range)
+atr = ta.atr(atrLength)
+
+// Plotting EMA
+plot(shortEma, color=color.blue, title="20 EMA")
+plot(longEma, color=color.red, title="50 EMA")
+
+// Plotting Bollinger Bands as plot() objects
+upperBandPlot = plot(upperBand, "Upper Band", color=color.green)
+lowerBandPlot = plot(lowerBand, "Lower Band", color=color.green)
+
+// Use fill() to fill between upperBandPlot and lowerBandPlot
+fill(upperBandPlot, lowerBandPlot, color=color.new(color.green, 90), title="Bollinger Bands Fill")
+
+// Plotting RSI
+rsiColor = rsi > rsiOverbought ? color.red : rsi < rsiOversold ? color.green : color.white
+hline(rsiOverbought, "Overbought Level", color=color.red)
+hline(rsiOversold, "Oversold Level", color=color.green)
+plot(rsi, color=rsiColor, linewidth=2, title="RSI")
+
+// Dynamic Position Sizing based on ATR and Risk
+capital = strategy.equity
+positionSize = (capital * (riskPerTrade / 100)) / (atr * syminfo.mintick)
+
+// Long Entry Condition: EMA Crossover, RSI oversold, Price below lower BB, ADX confirms trend strength
+longCondition = ta.crossover(shortEma, longEma) and rsi < rsiOversold and close < lowerBand and adx > adxThreshold
+
+// Short Entry Condition: EMA Crossunder, RSI overbought, Price above upper BB, ADX confirms trend strength
+shortCondition = ta.crossunder(shortEma, longEma) and rsi > rsiOverbought and close > upperBand and adx > adxThreshold
+
+// Trailing Stop-Loss for Long and Short Positions
+trailStopPerc = input.float(1.5, title="Trailing Stop (%)")
+trailOffset = trailStopPerc / 100
+
+// Execute Long Trade
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=positionSize)
+    strategy.exit("Trail Stop", "Long", trail_offset=trailOffset, limit=close * (1 + 0.02)) // Partial take-profit 2% higher
+
+// Execute Short Trade
+if (shortCondition)
+    strategy.entry("Short", strategy.short, qty=positionSize)
+    strategy.exit("Trail Stop", "Short", trail_offset=trailOffset, limit=close * (1 - 0.02)) // Partial take-profit 2% lower
+
+// Exit if opposite signals appear (optional early exits)
+if (rsi > rsiOverbought and strategy.position_size > 0)
+    strategy.close("Long", comment="RSI Exit")
+if (rsi < rsiOversold and strategy.position_size < 0)
+    strategy.close("Short", comment="RSI Exit")
+
+// Alerts for Entries and Exits
+if (longCondition)
+    alert("Buy Signal: EMA Crossover, RSI Oversold, Price Below Lower BB, ADX strong", alert.freq_once_per_bar)
+
+if (shortCondition)
+    alert("Sell Signal: EMA Crossunder, RSI Overbought, Price Above Upper BB, ADX strong", alert.freq_once_per_bar)

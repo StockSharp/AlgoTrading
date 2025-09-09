@@ -1,0 +1,80 @@
+//@version=5
+strategy("Bullish Divergence Short-term Long Trade Finder", overlay=false)
+
+max_range = 50
+min_range = 5
+///pivot_left = 25
+pivot_right = 5
+
+//Inputs
+src = input(close, title="Source")
+rsiBearCondMin = input.int(50, title="RSI Bearish Condition Minimum")
+rsiBearCondSellMin = input.int(60, title="RSI Bearish Condition Sell Min")
+rsiBullCondMin = input.int(40, title="RSI Bull Condition Minimum")
+pivot_left = input.int(25, title="Look Back this many candles")
+SellWhenRSI = input.int(75, title="RSI Sell Value")
+StopLossPercent = input.int(5, title="Stop loss Percentage")
+rsiPeriod = input.int(14, title="RSI Length")
+rsiOversold = input.int(30, title="RSI Oversold Level")
+rsiOverbought = input.int(70, title="RSI Overbought Level")
+
+//RSI Function/ value
+rsi_value = ta.rsi(src, rsiPeriod)
+rsi_hour = request.security(syminfo.tickerid,'60',rsi_value)
+rsi_4hour = request.security(syminfo.tickerid,'240',rsi_value)
+rsi_Day = request.security(syminfo.tickerid,'D',rsi_value)
+plot(rsi_value, title="RSI", linewidth = 2, color = color.black, display =display.all)
+hline(50, linestyle = hline.style_dotted)
+rsi_ob = hline(70, linestyle=hline.style_dotted)
+rsi_os = hline(30, linestyle=hline.style_dotted)
+fill(rsi_ob, rsi_os, color.white)
+SL_percent = (100-StopLossPercent)/100
+
+pivot_low_true = na(ta.pivotlow(rsi_value, pivot_left, pivot_right)) ? false : true
+
+//create a function that returns truee/false
+confirm_range(x) =>
+    bars = ta.barssince(x == true) //counts the number of bars since thee last time condition was true
+    min_range <= bars and bars <= max_range // makees sure bars is less than max_range(50) and greater than min_range(5)
+
+
+// RSI higher check / low check
+RSI_HL_check = rsi_value<rsiBullCondMin and rsi_value > ta.valuewhen(pivot_low_true and rsi_value<rsiBullCondMin, rsi_value,1) and confirm_range(pivot_low_true[1])
+
+// price check for lower low
+price_ll_check = low < ta.valuewhen(pivot_low_true, low, 1)
+
+bullCond = price_ll_check and RSI_HL_check and pivot_low_true
+
+//pivot_high_true = na(ta.pivothigh(rsi_value, pivot_left, pivot_right))  ? false : true
+pivot_high_true = na(ta.pivothigh(rsi_value, pivot_left, pivot_right))   ? false : true
+
+// RSI Lower check / high check ensuring that the RSI dips below 30 to start divergence
+RSI_LH_check = rsi_value < ta.valuewhen(pivot_high_true and rsi_value>rsiBearCondMin, rsi_value,1) and confirm_range(pivot_high_true[1]) //and rsi_value[pivot_right] >= 65
+
+// price check for lower low
+price_hh_check = high > ta.valuewhen(pivot_high_true, high, 1)
+
+bearCond = price_hh_check and RSI_LH_check and pivot_high_true and rsi_value[3] > rsiBearCondSellMin
+
+plot(pivot_low_true ? rsi_value : na, offset=-5, linewidth=3, color=(bullCond ? color.green : color.new(color.white, 100)))
+
+plotshape(bullCond ? rsi_value : na , text = "BUY", style =  shape.labelup, location = location.absolute, color = color.green, offset =0, textcolor = color.white )
+
+plot(pivot_low_true ? rsi_value : na, offset=-5, linewidth=3, color=(bearCond ? color.red : color.new(color.white, 100)))
+
+plotshape(bearCond ? rsi_value : na , text = "Sell", style =  shape.labelup, location = location.absolute, color = color.red, offset =0, textcolor = color.white )
+//[bbUpperBand, bbMiddleBand, bbLowerBand] = ta.bb(src, bbPeriod, bbDev)
+
+//Entry Condition
+longCondition = false
+
+//bullEntry = bullCond and RSI_HL_check and confirm_range(pivot_low_true[1])
+if bullCond and close < ta.valuewhen(pivot_low_true, low, 1) and rsi_hour <40 ///and rsi_4hour<40 //and rsi_Day<50
+    strategy.entry("Long", strategy.long)
+
+//Exit Condition
+if (strategy.position_size > 0 and close < strategy.position_avg_price*SL_percent)
+    strategy.close("Long")
+if (strategy.position_size > 0 and (rsi_value > SellWhenRSI or bearCond))
+    strategy.close("Long")

@@ -1,0 +1,62 @@
+//@version=6
+strategy("Intra Bullish Strategy - Profit Ping v4.0", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === INPUTS ===
+shortLen = input.int(7, title="EMA Short")
+longLen  = input.int(14, title="EMA Long")
+rsiLen   = input.int(14, title="RSI Length")
+macdFast = input.int(12, title="MACD Fast")
+macdSlow = input.int(26, title="MACD Slow")
+macdSig  = input.int(9, title="MACD Signal")
+
+// === CALCULATIONS ===
+emaShort = ta.ema(close, shortLen)
+emaLong  = ta.ema(close, longLen)
+rsi = ta.rsi(close, rsiLen)
+[macdLine, signalLine, histLine] = ta.macd(close, macdFast, macdSlow, macdSig)
+
+// === CROSS CONDITIONS ===
+crossUp = ta.crossover(emaShort, emaLong)
+crossDown = ta.crossunder(emaShort, emaLong)
+
+// === WHITE DOT LOGIC ===
+whiteDotUp = crossUp
+whiteDotDown = crossDown
+
+// === CANDLE PATTERNS ===
+bullishCandle = close > open
+bearishCandle = close < open
+
+// === BUY / SELL LOGIC ===
+buySignal = whiteDotUp and histLine > 0 and rsi > 50 and bullishCandle
+sellSignal = whiteDotDown and histLine < 0 and rsi < 50 and bearishCandle
+if buySignal
+    strategy.entry("BUY", strategy.long)
+
+if sellSignal
+    strategy.close("BUY")
+
+// === PLOTTING MAs ===
+plot(emaShort, title="EMA Short", color=color.yellow, linewidth=2)
+plot(emaLong, title="EMA Long", color=color.blue, linewidth=2)
+
+// === WHITE DOTS ON EMA LINE ===
+plot(whiteDotUp ? emaShort : na, title="White Dot Up", style=plot.style_circles, color=color.white, linewidth=2)
+plot(whiteDotDown ? emaShort : na, title="White Dot Down", style=plot.style_circles, color=color.white, linewidth=2)
+
+// === SIGNALS ===
+plotshape(buySignal, title="BUY", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(sellSignal, title="SELL", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// === FORMAT VALUES FOR ALERT ===
+_ticker  = syminfo.ticker
+_price   = str.tostring(close, format.mintick)
+_rsi     = str.tostring(rsi, "#.##")
+_volume  = str.tostring(volume, "#")
+
+// === ALERTS ===
+if buySignal
+    alert("{\"Ticker\":\"" + _ticker + "\",\"Price\":\"" + _price + "\",\"RSI\":\"" + _rsi + "\",\"Volume\":\"" + _volume + "\",\"Type\":\"BUY\"}", alert.freq_once_per_bar)
+
+if sellSignal
+    alert("{\"Ticker\":\"" + _ticker + "\",\"Price\":\"" + _price + "\",\"RSI\":\"" + _rsi + "\",\"Volume\":\"" + _volume + "\",\"Type\":\"SELL\"}", alert.freq_once_per_bar)

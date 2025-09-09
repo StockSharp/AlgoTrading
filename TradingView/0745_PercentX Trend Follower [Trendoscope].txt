@@ -1,0 +1,122 @@
+// This work is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © Trendoscope Pty Ltd
+//                                       ░▒
+//                                  ▒▒▒   ▒▒
+//                              ▒▒▒▒▒     ▒▒
+//                      ▒▒▒▒▒▒▒░     ▒     ▒▒
+//                  ▒▒▒▒▒▒           ▒     ▒▒
+//             ▓▒▒▒       ▒        ▒▒▒▒▒▒▒▒▒▒▒
+//   ▒▒▒▒▒▒▒▒▒▒▒ ▒        ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+//   ▒  ▒       ░▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░
+//   ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒▒
+//   ▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ ▒▒
+//    ▒▒▒▒▒         ▒▒▒▒▒▒▒
+//                 ▒▒▒▒▒▒▒▒▒
+//                ▒▒▒▒▒ ▒▒▒▒▒
+//               ░▒▒▒▒   ▒▒▒▒▓      ████████╗██████╗ ███████╗███╗   ██╗██████╗  ██████╗ ███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+//              ▓▒▒▒▒     ▒▒▒▒      ╚══██╔══╝██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔═══██╗██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+//              ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒        ██║   ██████╔╝█████╗  ██╔██╗ ██║██║  ██║██║   ██║███████╗██║     ██║   ██║██████╔╝█████╗
+//             ▒▒▒▒▒       ▒▒▒▒▒       ██║   ██╔══██╗██╔══╝  ██║╚██╗██║██║  ██║██║   ██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝
+//            ▒▒▒▒▒         ▒▒▒▒▒      ██║   ██║  ██║███████╗██║ ╚████║██████╔╝╚██████╔╝███████║╚██████╗╚██████╔╝██║     ███████╗
+//             ▒▒             ▒
+//@version=5
+strategy('PercentX Trend Follower [Trendoscope]', shorttitle='pX-TF [Trendoscope]',
+     overlay=false, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=10,
+     commission_type=strategy.commission.percent, pyramiding=4, commission_value=0.01, explicit_plot_zorder=true,
+     margin_long=100.0, margin_short=100.0, max_bars_back=5000)
+
+import HeWhoMustNotBeNamed/ta/1 as eta
+bandType = input.string('Keltner Channel', '', ['Keltner Channel', 'Bollinger Bands'], tooltip = 'Select the band type', group='Band', inline= 'ma', display = display.none)
+maType = input.string(title='', defval='hma', options=['ema', 'sma', 'hma', 'rma', 'vwma', 'wma'], group='Band', inline='ma', display = display.none)
+maLength = input.int(40, '', minval=5, step=10, group='Band', inline='ma', display = display.none)
+useTrueRange = input.bool(true, 'Use True Range (KC)', tooltip = 'Use true range - applicable only for Keltner Channel', group='Band', display = display.none)
+
+rangeMethod = input.string('highlow', title='', group='Range Calculation',
+             options=['highlow', 'sma', 'ema', 'rma', 'hma', 'wma', 'vwma', 'swma'], inline='l', display = display.none)
+loopbackPeriod = input.int(80, step=10, title='', group='Range Calculation', inline="l", display = display.none)
+loopbackPeriodLast = input.int(20, step=10, title='', group='Range Calculation', inline='l', display = display.none, tooltip = 'Range Calculation method, length and range length')
+stickyBorders = input.bool(true, title='Sticky Borders', group='Range Calculation', inline="b", display = display.none)
+
+outerRangeMethod = input.string('highlow', title='', group='Outer Range Calculation',
+             options=['highlow', 'sma', 'ema', 'rma', 'hma', 'wma', 'vwma', 'swma'], inline='l', display = display.none)
+outerLoopback = input.int(80, step=10, title='', group='Outer Range Calculation', inline="l", display = display.none,
+                             tooltip='Method and length for calculating outer range. Outer range is extreme of oversold and overbought ranges')
+
+doubleSided = input.bool(true, 'Double Sided', group='Trade', display = display.none)
+useInitialStop = input.bool(true, 'Enable Stop', group = 'Trade', inline='s', display = display.none)
+atrLength = input.int(14, '', 1, step = 10, group = 'Trade', inline='s', display = display.none)
+trendMultiplier = input.int(1, '', 1, 10, 1, group = 'Trade', inline='s', display = display.none)
+reverseMultiplier = input.int(3, '', 1, 10, 1, group = 'Trade', inline='s', tooltip = 'Enable Stop and Configure ATR length, Trend and reverse Multiplier for the stop', display = display.none)
+
+tradeDirection = input.string(strategy.direction.all, 'Direction', [strategy.direction.long, strategy.direction.short, strategy.direction.all], display = display.none)
+strategy.risk.allow_entry_in(tradeDirection)
+
+[bbMiddle, bbUpper, bbLower] = eta.bb(close, maType, maLength, 0.01, false)
+[kcMiddle, kcUpper, kcLower] = eta.kc(close, maType, maLength, 0.01, useTrueRange, false)
+
+middle = bandType == 'Bollinger Bands'? bbMiddle : kcMiddle
+upper = bandType == 'Bollinger Bands'? bbUpper : kcUpper
+lower = bandType == 'Bollinger Bands'? bbLower : kcLower
+
+distance = close - middle
+oscillator = distance/(middle-lower)
+
+offset = 0
+
+[overbought, oversold] = eta.oscillatorRange(oscillator, rangeMethod, loopbackPeriod, loopbackPeriodLast, stickyBorders)
+oversold := oversold + offset
+overbought := overbought - offset
+
+var upOverflow = false
+var downOverflow = false
+
+highOverboughtMa = eta.ma(overbought, outerRangeMethod, outerLoopback)
+highestOverbought = ta.highest(overbought, outerLoopback)
+
+lowOversoldMa = eta.ma(oversold, outerRangeMethod, outerLoopback)
+lowestOversold = ta.lowest(oversold, outerLoopback)
+
+upperRange = outerRangeMethod == 'highlow'? highestOverbought: highOverboughtMa
+lowerRange = outerRangeMethod == 'highlow'? lowestOversold : lowOversoldMa
+
+longSignal = ta.crossover(oscillator, upperRange)
+shortSignal = ta.crossunder(oscillator, lowerRange)
+
+upOverflow := longSignal or (upOverflow and oscillator > overbought)
+downOverflow := shortSignal or (downOverflow and oscillator < oversold)
+
+transparency = 60
+
+STATE = plot(oscillator, title='PercentX Oscillator', color=color.new(color.blue, upOverflow or downOverflow? 0 : transparency), style=plot.style_linebr)
+
+lowerBandFill = plot(downOverflow? oversold : na, "Lower Overflow", color= color.orange, style=plot.style_linebr)
+fill(STATE, lowerBandFill, color=color.orange)
+lowerBand = plot(oversold, "Lower", color= color.new(color.orange, downOverflow? 0 : transparency), style=plot.style_linebr)
+llowerBand = plot(lowerRange, "Extreme Lower", color= color.new(color.red, downOverflow? 0 : transparency), style=plot.style_linebr)
+
+upperBandFill = plot(upOverflow? overbought : na, "Upper Overflow", color= color.lime, style=plot.style_linebr)
+fill(STATE, upperBandFill, color=color.lime)
+upperBand = plot(overbought, "Upper", color= color.new(color.lime, upOverflow? 0 : transparency), style=plot.style_linebr)
+uupperBand = plot(upperRange, "Extreme Upper", color= color.new(color.green, upOverflow? 0 : transparency), style=plot.style_linebr)
+
+atr = ta.atr(atrLength)
+
+longtrade(multiplier, stopMultiplier)=>
+    strategy.entry('Long', strategy.long, oca_name='oca', oca_type=strategy.oca.none, stop = high + atr*multiplier, comment='Long - New Position')
+    if(useInitialStop)
+        strategy.exit('ExitLong', 'Long', stop = low - atr*stopMultiplier)
+
+shorttrade(multiplier, stopMultiplier)=>
+    strategy.entry('Short', strategy.short, oca_name='oca', oca_type=strategy.oca.none, stop = low - atr*multiplier, comment='Short - New Position')
+    if(useInitialStop)
+        strategy.exit('ExitShort', 'Short', stop = high + atr*stopMultiplier)
+
+if(longSignal)
+    longtrade(trendMultiplier, reverseMultiplier)
+    if(doubleSided)
+        shorttrade(reverseMultiplier, trendMultiplier)
+
+if(shortSignal)
+    shorttrade(trendMultiplier, reverseMultiplier)
+    if(doubleSided)
+        longtrade(reverseMultiplier, trendMultiplier)

@@ -1,0 +1,284 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © HeWhoMustNotBeNamed
+//                                       ░▒
+//                                  ▒▒▒   ▒▒
+//                              ▒▒▒▒▒     ▒▒
+//                      ▒▒▒▒▒▒▒░     ▒     ▒▒
+//                  ▒▒▒▒▒▒           ▒     ▒▒
+//             ▓▒▒▒       ▒        ▒▒▒▒▒▒▒▒▒▒▒
+//   ▒▒▒▒▒▒▒▒▒▒▒ ▒        ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+//   ▒  ▒       ░▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░
+//   ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒▒
+//   ▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ ▒▒
+//    ▒▒▒▒▒         ▒▒▒▒▒▒▒
+//                 ▒▒▒▒▒▒▒▒▒
+//                ▒▒▒▒▒ ▒▒▒▒▒
+//               ░▒▒▒▒   ▒▒▒▒▓      ████████╗██████╗ ███████╗███╗   ██╗██████╗  ██████╗ ███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+//              ▓▒▒▒▒     ▒▒▒▒      ╚══██╔══╝██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔═══██╗██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+//              ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒        ██║   ██████╔╝█████╗  ██╔██╗ ██║██║  ██║██║   ██║███████╗██║     ██║   ██║██████╔╝█████╗
+//             ▒▒▒▒▒       ▒▒▒▒▒       ██║   ██╔══██╗██╔══╝  ██║╚██╗██║██║  ██║██║   ██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝
+//            ▒▒▒▒▒         ▒▒▒▒▒      ██║   ██║  ██║███████╗██║ ╚████║██████╔╝╚██████╔╝███████║╚██████╗╚██████╔╝██║     ███████╗
+//             ▒▒             ▒
+//@version=5
+// @description Library to plot scatterplot or heatmaps for your own set of data samples
+library("DataChart", overlay=true)
+// @type Sample data for chart
+// @field xValue x value of the sample data
+// @field yValue y value of the sample data
+export type Sample
+    float xValue
+    float yValue
+
+// @type Properties of plotting chart
+// @field title Title of the chart
+// @field suffix Suffix for values. It can be used to reference 10X or 4% etc. Used only if format is not format.percent
+// @field matrixSize size of the matrix used for plotting
+// @field chartType Can be either scatterplot or heatmap. Default is scatterplot
+// @field outliersStart Indicates the percentile of data to filter out from the starting point to get rid of outliers
+// @field outliersEnd Indicates the percentile of data to filter out from the ending point to get rid of outliers.
+// @filed backgroundColor chart background color. Default is color.black
+// @field plotColor color of plots on the chart. Default is color.yellow. Only used for scatterplot type
+// @field heatmapColor color of heatmaps on the chart. Default is color.red. Only used for heatmap type
+// @field borderColor border color of the chart table. Default is color.yellow.
+// @field plotSize size of scatter plots. Default is size.large
+// @field format data representation format in tooltips. Use mintick.percent if measuring any data in terms of percent. Else, use format.mintick
+// @field showCounters display counters which shows totals on each quadrants. These are single cell tables at the corners displaying number of occurences on each quadrant.
+// @field showTitle display title at the top center. Uses the title string set in the properties
+// @field counterBackground background color of counter table cells. Default is color.teal
+// @field counterTextColor text color of counter table cells. Default is color.white
+// @field counterTextSize size of counter table cells. Default is size.large
+// @field titleBackground background color of chart title. Default is color.maroon
+// @field titleTextColor text color of the chart title. Default is color.white
+// @field titleTextSize text size of the title cell. Default is size.large
+// @field addOutliersToBorder If set, instead of removing the outliers, it will be added to the border cells.
+// @field useCommonScale Use common scale for both x and y. If not selected, different scales are calculated based on range of x and y values from samples. Default is set to false.
+// @field plotchar scatter plot character. Default is set to ascii bullet.
+export type ChartProperties
+    string title ="Scatterplot"
+    string suffix = ""
+    int matrixSize = 60
+    string chartType = 'scatterplot'
+    int outliersStart = 5
+    int outliersEnd = 5
+    color backgroundColor = color.black
+    color plotColor = color.yellow
+    color heatmapColor = color.red
+    color borderColor = color.yellow
+    string plotSize = size.large
+    string format = format.mintick
+    bool showCounters = true
+    bool showTitle = false
+    color counterBackground = color.teal
+    color counterTextColor = color.white
+    string counterTextSize = size.large
+    color titleBackground = color.maroon
+    color titleTextColor = color.white
+    string titleTextSize = size.large
+    bool addOutliersToBorder = false
+    bool useCommonScale = false
+    string plotchar = '•'
+
+// @type Chart drawing objects collection
+// @field properties ChartProperties object which determines the type and characteristics of chart being plotted
+// @field titleTable table containing title of the chart.
+// @field mainTable table containing plots or heatmaps.
+// @field quadrantTables Array of tables containing counters of all 4 quandrants
+export type ChartDrawing
+    ChartProperties properties
+    table titleTable
+    table mainTable
+    array<table> quadrantTables
+
+// @type Chart type which contains all the information of chart being plotted
+// @field properties ChartProperties object which determines the type and characteristics of chart being plotted
+// @field samples Array of Sample objects collected over period of time for plotting on chart.
+// @field displacements Array containing displacement values. Both x and y values
+// @field displacementX Array containing only X displacement values.
+// @field displacementY Array containing only Y displacement values.
+// @field drawing ChartDrawing object which contains all the drawing elements
+export type Chart
+    ChartProperties properties
+    array<Sample> samples
+    array<float> displacements
+    array<float> displacementX
+    array<float> displacementY
+    ChartDrawing drawing
+
+// @type Configs used for adding specific type of samples called PriceSamples
+// @field duration impact duration for which price displacement samples are calculated.
+// @field useAtrReference Default is true. If set to true, price is measured in terms of Atr. Else is measured in terms of percentage of price.
+// @field atrLength atrLength to be used for measuring the price based on ATR. Used only if useAtrReference is set to true.
+export type PriceSampleConfig
+    int duration = 10
+    bool useAtrReference = true
+    int atrLength = 24
+
+// @type Special type of sample called price sample. Can be used instead of basic Sample type
+// @field trigger consider sample only if trigger is set to true. Default is true.
+// @field source Price source. Default is close
+// @field highSource High price source. Default is high
+// @field lowSource Low price source. Default is low
+// @field tr True range value. Default is ta.tr
+export type PriceSampleData
+    bool trigger = true
+    float source = close
+    float highSource = high
+    float lowSource = low
+    float tr = ta.tr
+
+method setTitle(ChartDrawing this)=>
+    if(this.properties.showTitle)
+        this.titleTable.delete()
+        this.titleTable := table.new(position.top_center, 1, 1, this.properties.titleBackground, this.properties.titleBackground, 1, this.properties.titleBackground, 1)
+        this.titleTable.cell(0, 0, this.properties.title, text_color = this.properties.titleTextColor, text_size = this.properties.titleTextSize)
+
+method draw(ChartDrawing this, matrix<int> counts, array<Sample> samples, float minXRange, float minYRange, float maxXRange, float maxYRange)=>
+    this.setTitle()
+    table.clear(this.mainTable, 0, 0, this.properties.matrixSize, this.properties.matrixSize)
+    maxCount = matrix.max(counts)
+    totalCount = array.size(samples)
+    sums = array.new<int>(4,0)
+    for [i, columns] in counts
+        for [j, count] in columns
+            countPercent = int(count*100/maxCount)
+            transparency = countPercent==0? 100 : 90-countPercent*0.9
+            sumIndex = 2*(i < ((this.properties.matrixSize+1)/2) ? 0 : 1) + (j < ((this.properties.matrixSize+1)/2)? 0: 1)
+            array.set(sums, sumIndex, array.get(sums, sumIndex)+count)
+
+            xDisplacement = minXRange + (maxXRange- minXRange)*i/this.properties.matrixSize
+            xDisplacementNext = minXRange + (maxXRange- minXRange)*(i+1)/this.properties.matrixSize
+            xRange = 'X Displaecment : ' + (i == 0? '' : (str.tostring(xDisplacement, this.properties.format) + (this.properties.format == format.percent? '' : this.properties.suffix)))
+                                                 + ' to '
+                                         + (i==this.properties.matrixSize? '' :
+                                             (str.tostring(xDisplacementNext, this.properties.format) + (this.properties.format == format.percent? '' : this.properties.suffix)))
+
+            yDisplacement = maxYRange - (maxYRange- minYRange)*j/this.properties.matrixSize
+            yDisplacementNext = maxYRange - (maxYRange- minYRange)*(j+1)/this.properties.matrixSize
+            yRange = 'Y Displaecment : ' + (j == this.properties.matrixSize? '' : (str.tostring(yDisplacement, this.properties.format) + (this.properties.format == format.percent? '' : this.properties.suffix)))
+                                                 + ' to '
+                                         + (j== 0? '' :
+                                             (str.tostring(yDisplacementNext, this.properties.format) + (this.properties.format == format.percent? '' : this.properties.suffix)))
+
+            tooltip = 'Count '+str.tostring(count)+'/'+str.tostring(totalCount)+'\n'+xRange+'\n'+yRange+'\n('+str.tostring(i)+','+str.tostring(j)+')'
+            displaySymbol = this.properties.chartType == 'scatterplot'? this.properties.plotchar : ''
+            bgColor = this.properties.chartType == 'heatmap'? color.new(this.properties.heatmapColor, transparency) : na
+            this.mainTable.cell(i, j, displaySymbol, width=1, height = 1, text_color=color.new(this.properties.plotColor, transparency), bgcolor = bgColor,
+                                     text_size = this.properties.plotSize, tooltip = tooltip)
+
+    if(this.properties.showCounters)
+        positions = array.from(position.top_left, position.bottom_left, position.top_right, position.bottom_right)
+        for [i, sum] in sums
+            if(na(this.quadrantTables.get(i)))
+                this.quadrantTables.set(i, table.new(array.get(positions, i), 1,1, this.properties.counterBackground, this.properties.counterBackground, 1, this.properties.counterBackground, 1))
+            this.quadrantTables.get(i).cell(0, 0, str.tostring(sum), text_color = this.properties.counterTextColor, text_size = this.properties.counterTextSize)
+
+method init(ChartDrawing this)=>
+    if(na(this.mainTable))
+        this.mainTable := table.new(position.middle_center, this.properties.matrixSize+1, this.properties.matrixSize+1, this.properties.backgroundColor,
+                             this.properties.borderColor, 1, this.properties.backgroundColor, 0)
+    if(na(this.quadrantTables))
+        this.quadrantTables := array.new<table>(4)
+
+// @function Initialize Chart object.
+// @param this Chart object to be initialized
+// @returns current chart object
+export method init(Chart this)=>
+    if(na(this.samples))
+        this.samples := array.new<Sample>()
+        this.displacements := array.new<float>()
+        this.displacementX := array.new<float>()
+        this.displacementY := array.new<float>()
+    if(na(this.properties))
+        this.properties := ChartProperties.new()
+    if(na(this.drawing))
+        this.drawing := ChartDrawing.new(this.properties)
+        this.drawing.init()
+    this
+
+// @function Add sample data to chart using Sample object
+// @param this Chart object
+// @param sample Sample object containing sample x and y values to be plotted
+// @param trigger Samples are added to chart only if trigger is set to true. Default value is true
+// @returns current chart object
+export method addSample(Chart this, Sample sample, bool trigger = true)=>
+    if(trigger)
+        this.init()
+        if not na(sample.xValue) and not na(sample.yValue)
+            this.samples.push(sample)
+            this.displacements.push(sample.xValue)
+            this.displacements.push(sample.yValue)
+            this.displacementX.push(sample.xValue)
+            this.displacementY.push(sample.yValue)
+    this
+
+// @function Add sample data to chart using x and y values
+// @param this Chart object
+// @param x x value of sample data
+// @param y y value of sample data
+// @param trigger Samples are added to chart only if trigger is set to true. Default value is true
+// @returns current chart object
+export method addSample(Chart this, float x, float y, bool trigger = true)=>
+    if(trigger)
+        this.init()
+        Sample sample = Sample.new(x, y)
+        this.addSample(sample, trigger)
+    this
+
+// @function Add price sample data - special type of sample designed to measure price displacements of events
+// @param this Chart object
+// @param priceSampleData PriceSampleData object containing event driven displacement data of x and y
+// @param config PriceSampleConfig object containing configurations for deriving x and y from priceSampleData
+// @returns current chart object
+export method addPriceSample(Chart this, PriceSampleData priceSampleData, PriceSampleConfig config = na)=>
+    this.init()
+    var _config = na(config)? PriceSampleConfig.new() : config
+
+    highest = ta.highest(priceSampleData.highSource, _config.duration)
+    lowest = ta.lowest(priceSampleData.lowSource, _config.duration)
+
+    atr = ta.sma(priceSampleData.tr, _config.atrLength)
+    if(priceSampleData.trigger[_config.duration+1])
+        price = priceSampleData.source[_config.duration]
+        positiveDisplacement = math.abs(highest-price)
+        negativeDisplacement = math.abs(price-lowest)
+        xValue = _config.useAtrReference? positiveDisplacement/atr[_config.duration] : positiveDisplacement*100/price
+        yValue = _config.useAtrReference? negativeDisplacement/atr[_config.duration] : negativeDisplacement*100/price
+        this.addSample(xValue, yValue)
+    this
+
+// @function draw contents of the chart object
+// @param this Chart object
+// @returns current chart object
+export method draw(Chart this) =>
+    if(barstate.islast)
+        minXRange = this.properties.useCommonScale ? array.percentile_linear_interpolation(this.displacements, this.properties.outliersStart):
+                                 array.percentile_linear_interpolation(this.displacementX, this.properties.outliersStart)
+        maxXRange = this.properties.useCommonScale ? array.percentile_linear_interpolation(this.displacements, 100-this.properties.outliersEnd):
+                                 array.percentile_linear_interpolation(this.displacementX, 100-this.properties.outliersEnd)
+
+        minYRange = this.properties.useCommonScale ? minXRange :
+                                 array.percentile_linear_interpolation(this.displacementY, this.properties.outliersStart)
+        maxYRange = this.properties.useCommonScale ? maxXRange :
+                                 array.percentile_linear_interpolation(this.displacementY, 100-this.properties.outliersEnd)
+
+        xRange = maxXRange - minXRange
+        yRange = maxYRange - minYRange
+        counts = matrix.new<int>(this.properties.matrixSize+1, this.properties.matrixSize+1, 0)
+        for sample in this.samples
+            if(this.properties.addOutliersToBorder or (sample.xValue <= maxXRange and sample.xValue >= minXRange and sample.yValue >= minYRange and sample.yValue <= maxYRange))
+                adjustedX = math.min(math.max(sample.xValue, minXRange), maxXRange)
+                adjustedY = math.min(math.max(sample.yValue, minYRange), maxYRange)
+                xIndex = int((adjustedX-minXRange)*this.properties.matrixSize/xRange)
+                yIndex = this.properties.matrixSize - int((adjustedY-minYRange)*this.properties.matrixSize/yRange)
+                counts.set(xIndex, yIndex, counts.get(xIndex, yIndex)+1)
+
+
+        this.drawing.draw(counts, this.samples, minXRange, minYRange, maxXRange, maxYRange)
+    this
+
+
+// ***************************************************************** Indicator sample ****************************************************************//
+// var Chart heatmap = Chart.new()
+// heatmap.init()
+// heatmap.addSample(ta.change(close, 10), ta.rsi(close, 10))
+// heatmap.draw()

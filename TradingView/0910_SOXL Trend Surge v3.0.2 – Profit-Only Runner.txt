@@ -1,0 +1,62 @@
+//@version=6
+strategy("SOXL Trend Surge v3.0.2 – Profit-Only Runner", overlay=true,
+  default_qty_type=strategy.percent_of_equity,
+  default_qty_value=100,  // 100% equity used per trade
+  initial_capital=500,    // realistic starting capital
+  commission_type=strategy.commission.percent,
+  commission_value=0.1,
+  slippage=1)
+
+emaLength = input(200, "EMA Length")
+atrLength = input(14, "ATR Length")
+atrMultTarget = input(2.0, "ATR Target for Partial Exit")
+cooldownBars = input(15, "Cooldown Bars Between Trades")
+supertrendFactor = input.float(3.0, "Supertrend Factor")
+supertrendATRPeriod = input(10, "Supertrend ATR Period")
+minBarsHeld = input(2, "Minimum Bars to Hold Before Exit")
+volFilterLen = input(20, "Volume MA Length")
+emaBuffer = input(0.005, "EMA No-Trade Buffer %")
+
+// Indicators
+ema = ta.ema(close, emaLength)
+atr = ta.atr(atrLength)
+[supertrend, direction] = ta.supertrend(supertrendFactor, supertrendATRPeriod)
+volOK = volume > ta.sma(volume, volFilterLen)
+atrRising = atr > ta.sma(atr, 20)
+hourOK = hour >= 14 and hour <= 19
+outsideBuffer = math.abs(close - ema) / ema > emaBuffer
+
+// Trade control
+var float entryPrice = na
+var int entryBar = na
+var bool tookPartial = false
+var int lastExitBar = na
+canTrade = na(lastExitBar) or bar_index - lastExitBar > cooldownBars
+
+// Entry condition
+longCondition = close > ema and direction == 1 and hourOK and volOK and outsideBuffer and atrRising and canTrade
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    entryPrice := close
+    entryBar := bar_index
+    tookPartial := false
+
+// Trade management
+barsHeld = bar_index - entryBar
+partialTarget = entryPrice + atr * atrMultTarget
+
+takePartial = not tookPartial and strategy.position_size > 0 and close >= partialTarget and barsHeld >= minBarsHeld
+if (takePartial)
+    strategy.close("Long", qty_percent=50)
+    tookPartial := true
+
+// Trailing stop on final 50% position
+trailOffset = atr * 1.5
+if (tookPartial)
+    strategy.exit("TrailingExit", from_entry="Long", trail_points=trailOffset, trail_offset=trailOffset)
+
+// No hard stop or RSI exit
+// Visuals
+plotshape(longCondition, location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(takePartial, location=location.abovebar, color=color.orange, style=shape.square, size=size.tiny)
+plot(ema, title="200 EMA", color=color.orange)

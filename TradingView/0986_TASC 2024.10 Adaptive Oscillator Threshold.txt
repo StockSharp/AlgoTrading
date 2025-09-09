@@ -1,0 +1,61 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PineCodersTASC
+
+//  TASC Issue: October 2024
+//     Article: Overbought/Oversold
+//              Oscillators: Useless Or Just Misused
+//  Article By: Francesco P. Bufi
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+//@version=5
+title  ='TASC 2024.10 Adaptive Oscillator Threshold'
+stitle = 'AdapThrs'
+strategy(title, stitle, false, default_qty_type = strategy.percent_of_equity,
+         default_qty_value = 10, slippage = 5)
+
+// --- Inputs ---
+string sys    = input.string("BAT", "System", options=["Traditional", "BAT"])
+int rsiLen    = input.int(2, "RSI Length", 1)
+int buyLevel  = input.int(14, "Buy Level", 0)
+int adapLen   = input.int(8, "Adaptive Length", 2)
+float adapK   = input.float(6, "Adaptive Coefficient")
+int exitBars  = input.int(28, "Fixed-Bar Exit", 1, group = "Strategy Settings")
+float DSL     = input.float(1600, "Dollar Stop-Loss", 0, group = "Strategy Settings")
+
+// --- Functions ---
+//  Bufi's Adaptive Threshold
+BAT(float price, int length) =>
+    float sd = ta.stdev(price, length)
+    float lr = ta.linreg(price, length, 0)
+    float slope = (lr - price[length]) / (length + 1)
+    math.min(0.5, math.max(-0.5, slope / sd))
+
+// --- Calculations ---
+float osc = ta.rsi(close, rsiLen)
+
+// Strategy entry rules
+// - Traditional system
+if sys == "Traditional" and osc < buyLevel
+    strategy.entry("long", strategy.long)
+// - BAT system
+float thrs = buyLevel * adapK * BAT(close, adapLen)
+if sys == "BAT" and osc < thrs
+    strategy.entry("long", strategy.long)
+
+// Strategy exit rules
+// - Fixed-bar exit
+int nBar = bar_index - strategy.opentrades.entry_bar_index(0)
+if exitBars > 0 and nBar >= exitBars
+    strategy.close("long", "exit")
+// - Dollar stop-loss
+if DSL > 0 and strategy.opentrades.profit(0) <= - DSL
+    strategy.close("long", "Stop-loss", immediately = true)
+
+// Visuals
+rsiColor  = #1b9e77
+thrsColor = #d95f02
+rsiLine   = plot(osc, "RSI", rsiColor, 1)
+thrsLine  = plot(sys == "BAT" ? thrs : buyLevel, "Threshold", thrsColor, 1)
+zeroLine  = plot(0.0, "Zero", display = display.none)
+fill(zeroLine, thrsLine, sys == "BAT" ? thrs : buyLevel, 0.0, color.new(thrsColor, 60), na)

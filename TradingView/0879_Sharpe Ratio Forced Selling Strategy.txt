@@ -1,0 +1,74 @@
+//@version=6
+strategy('Sharpe Ratio Forced Selling Strategy', overlay = false, initial_capital = 10000, pyramiding = 1, commission_type = strategy.commission.cash_per_contract, commission_value = 0.05, slippage = 1)
+
+// === Inputs ===
+length = input.int(8, title='Rolling Period (Sharpe)', minval=2)
+entry_sharpe_threshold = input.float(-5, title='Entry Sharpe Threshold (Sharpe < value triggers Buy)', step=0.1)
+exit_sharpe_threshold = input.float(13, title='Exit Sharpe Threshold (Sharpe > value triggers Sell)', step=0.1)
+max_holding_days = input.int(80, title='Maximum Holding Period (Bars)', minval=1)
+use_log_returns = input.bool(true, title='Use Logarithmic Returns? (Recommended)')
+
+// === Data Source ===
+t_bill_rate_annual_raw = request.security('FRED:DGS3MO', timeframe.period, close)
+t_bill_rate_annual = t_bill_rate_annual_raw / 100
+
+// === Settings ===
+var float periods_per_year = na
+if timeframe.isdaily
+    periods_per_year := 252
+else if timeframe.isweekly
+    periods_per_year := 52
+else if timeframe.ismonthly
+    periods_per_year := 12
+else
+    periods_per_year := 252
+
+risk_free_rate_per_period = math.pow(1 + t_bill_rate_annual, 1 / periods_per_year) - 1
+
+// === Returns ===
+ret = use_log_returns ? math.log(close / close[1]) : (close / close[1]) - 1
+excess_return = ret - risk_free_rate_per_period
+
+// === Sharpe Ratio Calculation ===
+avg_excess_return = ta.sma(excess_return, length) * periods_per_year
+std_dev_excess_return = ta.stdev(excess_return, length) * math.sqrt(periods_per_year)
+sharpe_ratio = avg_excess_return / std_dev_excess_return
+
+// === State Variables
+var bool ready_to_buy = true
+var int bar_since_entry = na
+
+entry_condition = sharpe_ratio < entry_sharpe_threshold and ready_to_buy
+exit_condition = sharpe_ratio > exit_sharpe_threshold
+
+// === Trading Logic
+
+// Reset holding period counter when flat
+if strategy.position_size == 0
+    bar_since_entry := na
+
+// Buy Logic
+if (entry_condition) and (strategy.position_size == 0)
+    strategy.entry('Long', strategy.long)
+    bar_since_entry := 0
+    ready_to_buy := false  // Disable new buys until reset
+
+// Holding period tracking
+if not na(bar_since_entry)
+    bar_since_entry += 1
+
+// Sell Logic
+if strategy.position_size > 0
+    if (exit_condition) or (bar_since_entry >= max_holding_days)
+        strategy.close('Long')
+
+// Reset ready_to_buy only when Sharpe improved
+if exit_condition
+    ready_to_buy := true
+
+// === Plotting
+sharpe_color = sharpe_ratio >= entry_sharpe_threshold ? color.lime : color.red
+plot(sharpe_ratio, title='Sharpe Ratio', color=sharpe_color, linewidth=2)
+hline(0, color=color.gray, linestyle=hline.style_dashed)
+hline(entry_sharpe_threshold, color=color.green, linestyle=hline.style_dotted)
+hline(exit_sharpe_threshold, color=color.red, linestyle=hline.style_dotted)

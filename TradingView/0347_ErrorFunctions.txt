@@ -1,0 +1,345 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © liquid-trader
+
+//@version=6
+
+// @description A collection of functions used to approximate the area beneath a Gaussian curve.
+library("ErrorFunctions")
+
+
+// ----------------------------------------------- LIBRARY CONSTANTS ------------------------------------------------ {
+
+// @variable 64-bit float overflow: ∞.
+const float infinity = 2 *  1.0e308
+
+// }
+
+
+// ---------------------------------------------------- HASTINGS ---------------------------------------------------- {
+
+// This section is an adaptation of the Hastings ERF approximation, noted by Abramowitz and Stegun as equation 7.1.26.
+// It's fast, efficient, and precise to about 6-7 digits (1.5e-7). Ideal for computationally sensitive use cases
+// where precision beyond a few decimals is unnecessary.
+// https://personal.math.ubc.ca/~cbm/aands/page_299.htm
+
+// @function Helper for `erf` and `erfc`, called when `precise` is [false](#const_false).
+hastings_erf(float x) =>
+    t = 1 / (1 + 0.3275911 * math.abs(x))
+    y = 1 - ((((1.061405429 * t + -1.453152027) * t + 1.421413741) * t + -0.284496736) * t + 0.254829592) * t * math.exp(-x * x)
+    x < 0 ? -y : y
+
+// }
+
+
+// ----------------------------------------------------- GILES ------------------------------------------------------ {
+
+// This section is an adaptation of a single precision Inverse ERF, made available by Oxford, authored by Mike Giles.
+// It's fast, efficient, and precise to about 6-7 digits (7e−7). Ideal for computationally sensitive use cases
+// where precision beyond a few decimals is unnecessary.
+// https://people.maths.ox.ac.uk/gilesm/files/gems_erfinv.pdf
+
+// @function Helper for `erfinv` and `erfcinv`, called when `precise` is [false](#const_false).
+giles_erf_inv(float x) =>
+    t = -math.log((1 - x) * (1 + x)) // -log(1 - x^2)
+    if t < 5
+        t -= 2.5
+        (((((((( 2.81022636e-08 * t + 3.43273939e-07) * t + -3.5233877e-06) * t + -4.39150654e-06) * t + 0.00021858087) * t + -0.00125372503) * t + -0.00417768164) * t + 0.246640727) * t + 1.50140941) * x
+    else
+        t := math.sqrt(t) - 3
+        ((((((((-0.000200214257 * t + 0.000100950558) * t +  0.00134934322) * t + -0.003673428440) * t + 0.00573950773) * t + -0.00762246130) * t +  0.00943887047) * t + 1.001674060) * t + 2.83297682) * x
+
+// }
+
+
+// ------------------------------------------------------ LIBC ------------------------------------------------------ {
+
+// This section is an adaptation of `s_erf.c` in the standard C math library (libc), authored by Sun Microsystems.
+// Their Freely Distributable Math Library (FDLIBM) is permissable to use, modify, and distribute. It is also the
+// same ERF & ERFC that SciPy uses. More specifically, SciPy uses `Faddeeva.cc` in which `FADDEEVA_RE(erf)` and
+// `FADDEEVA_RE(erfc)` default to the libc ERF, which is `s_erf.c`. The internal precision of floats in
+// Pine Script is 1e-16 (16 decimal places). The libc ERF precision is 2e-16 (15-16 decimal places).
+// https://www.netlib.org/fdlibm/s_erf.c
+
+// @function Helper for `sun_erf` and `sun_erfc`.
+sun_erf_polynomial(int i, float t) =>
+    float p = na, float q = na
+    switch i
+        0 => p := (((    -2.37630166566501626084e-05 * t + -5.77027029648944159157e-03) * t + -2.84817495755985104766e-02) * t + -3.25042107247001499370e-01) * t +  1.28379167095512558561e-01,
+             q := ((((   -3.96022827877536812320e-06 * t +  1.32494738004321644526e-04) * t +  5.08130628187576562776e-03) * t +  6.50222499887672944485e-02) * t +  3.97917223959155352819e-01) * t +  1
+        1 => p := (((((  -2.16637559486879084300e-03 * t +  3.54783043256182359371e-02) * t + -1.10894694282396677476e-01) * t +  3.18346619901161753674e-01) * t + -3.72207876035701323847e-01) * t +  4.14856118683748331666e-01) * t + -2.36211856075265944077e-03,
+             q := (((((   1.19844998467991074170e-02 * t +  1.36370839120290507362e-02) * t +  1.26171219808761642112e-01) * t +  7.18286544141962662868e-02) * t +  5.40397917702171048937e-01) * t +  1.06420880400844228286e-01) * t +  1
+        2 => p := (((((( -9.81432934416914548592e+00 * t + -8.12874355063065934246e+01) * t + -1.84605092906711035994e+02) * t + -1.62396669462573470355e+02) * t + -6.23753324503260060396e+01) * t + -1.05586262253232909814e+01) * t + -6.93858572707181764372e-01) * t + -9.86494403484714822705e-03,
+             q := (((((((-6.04244152148580987438e-02 * t +  6.57024977031928170135e+00) * t +  1.08635005541779435134e+02) * t +  4.29008140027567833386e+02) * t +  6.45387271733267880336e+02) * t +  4.34565877475229228821e+02) * t +  1.37657754143519042600e+02) * t +  1.96512716674392571292e+01) * t + 1
+        3 => p := (((((  -4.83519191608651397019e+02 * t + -1.02509513161107724954e+03) * t + -6.37566443368389627722e+02) * t + -1.60636384855821916062e+02) * t + -1.77579549177547519889e+01) * t + -7.99283237680523006574e-01) * t + -9.86494292470009928597e-03,
+             q := (((((( -2.24409524465858183362e+01 * t +  4.74528541206955367215e+02) * t +  2.55305040643316442583e+03) * t +  3.19985821950859553908e+03) * t +  1.53672958608443695994e+03) * t +  3.25792512996573918826e+02) * t +  3.03380607434824582924e+01) * t + 1
+    p / q
+
+
+// @function Helper for `sun_erf` and `sun_erfc`.
+sun_erf_xp(float z, float p) =>
+    const int c = int(math.pow(10, 8))
+    f = math.floor(z * c) / c
+    math.exp(-f * f - 0.5625) * math.exp((f - z) * (f + z) + p)
+
+
+// @function Helper for `erf`, called when `precise` is [true](#const_true).
+sun_erf(float x) =>
+    X = math.abs(x)
+    if X < 0.84375
+        if X < 3.725290298e-9 // aka. math.pow(2, -28)
+            1.28379167095512586316e-01 * x + x
+        else
+            sun_erf_polynomial(0, x * x) * x + x
+    else if X < 1.25
+        const float c = 8.45062911510467529297e-01
+        p = sun_erf_polynomial(1, X - 1)
+        x < 0 ? -c - p : c + p
+    else // X < 6
+        p = sun_erf_polynomial(X < 1 / 0.35 ? 2 : 3, 1 / (x * x))
+        r = sun_erf_xp(x, p)
+        x < 0 ? -r / x - 1 : 1 - r / x
+
+
+// @function Helper for `erfc`, called when `precise` is [true](#const_true).
+sun_erfc(float x) =>
+    X = math.abs(x)
+    if X < 0.84375
+        p = sun_erf_polynomial(0, x * x) * x
+        X < 0.25 ? 1 - (x + p) : 0.5 - (p + (x - 0.5))
+    else if X < 1.25
+        const float c = 8.45062911510467529297e-01
+        p = sun_erf_polynomial(1, X - 1)
+        x < 0 ? 1 + c + p : 1 - c - p
+    else // X < 6
+        p = sun_erf_polynomial(X < 1 / 0.35 ? 2 : 3, 1 / (x * x))
+        r = sun_erf_xp(x, p)
+        x > 0 ? r / x : 2 + r / x
+
+// }
+
+
+// ----------------------------------------------------- BOOST ------------------------------------------------------ {
+
+// This section is an adaptation of `erf_inv.hpp` in the Boost Math C++ library, originally authored by John Maddock
+// with permissability to use, modify, and distriubte. The SciPy `erfinv` function  wraps the `erf_inv` routine
+// from the Boost library. The internal precision of floats in Pine Script is 1e-16 (16 decimal places).
+// The Boost Inverse ERF has a range of precision, the least of which is 7e-17 (16 decimal places).
+// https://github.com/boostorg/math/blob/boost-1.88.0/include/boost/math/special_functions/detail/erf_inv.hpp
+
+// @function Helper for `boost_erf_inv_imp`.
+boost_erf_inv_polynomial(int i, float t, float y) =>
+    float p = na, float q = na
+    switch i
+        0 => p := ((((((   -0.005387729650712429329650  * t +   0.008226878746769157431550 ) * t +  0.021987868111116889916500 ) * t +  -0.036563797141176266400600) * t +  -0.012692614766297402903400) * t +   0.033480662540974461503300) * t + -0.00836874819741736770379 ) * t + -0.000508781949658280665617,
+             q := ((((((((  0.000886216390456424707504  * t +  -0.002333937593741900167760 ) * t +  0.079528368734157168001800 ) * t +  -0.052739638234009971395400) * t +  -0.712289023415428475530000) * t +   0.662328840472002992063000) * t +  1.56221558398423026363000 ) * t + -1.565745582341758468090000) * t + -0.970005043303290640362) * t + 1
+        1 => p := (((((((  -3.671922547077293485460000  * t +  21.129465544834052625800000 ) * t + 17.445385985570866523000000 ) * t + -44.638232444178696081800000) * t + -18.851064805871425189500000) * t +  17.644729840837401548600000) * t +  8.37050328343119927838000 ) * t +  0.105264680699391713268000) * t + -0.202433508355938759655,
+             q := (((((((   1.721147657612002827240000  * t + -22.643693341313972173600000 ) * t + 10.826866735546015900800000 ) * t +  48.560921310873993546800000) * t + -20.143263468048518880100000) * t + -28.660818049980002997400000) * t +  3.97134379533438690950000 ) * t +  6.242641248542475377120000) * t +  1
+        2 => p := (((((((((-0.681149956853776992068e-9  * t +   0.285225331782217055858e-7 ) * t + -0.679465575181126350155e-6 ) * t +   0.002145589953888052771690) * t +   0.029015791000532906043200) * t +   0.142869534408157156766000) * t +  0.33778553891203589892400 ) * t +  0.387079738972604337464000) * t +  0.117030156341995252019) * t + -0.163794047193317060787) * t + -0.131102781679951906451,
+             q := ((((((    0.011059242293464891210000  * t +   0.152264338295331783612000 ) * t +  0.848854343457902036425000 ) * t +   2.593019216236202713740000) * t +   4.778465929458437783820000) * t +   5.381683457070068554250000) * t +  3.46625407242567245975000 ) * t +  1
+        3 => p := (((((((   0.266339227425782031962e-11 * t +  -0.230404776911882601748e-9 ) * t +  0.460469890584317994083e-5 ) * t +   0.000157544617424960554631) * t +   0.001871234928195592233450) * t +   0.009508047013259196036190) * t +  0.01855733065142310723240 ) * t + -0.002224265292134479272810) * t + -0.0350353787183177984712,
+             q := (((((     0.764675292302794483503e-4  * t +   0.002638616766570159929590 ) * t +  0.034158914367094772793400 ) * t +   0.220091105764131249824000) * t +   0.762059164553623404043000) * t +   1.365334981755406309700000) * t +  1
+        4 => p := (((((((   0.99055709973310326855e-16  * t +  -0.281128735628831791805e-13) * t +  0.462596163522878599135e-8 ) * t +   0.449696789927706453732e-6) * t +   0.149624783758342370182e-4) * t +   0.000209386317487588078668) * t +  0.00105628862152492910091 ) * t + -0.001129514387455802788630) * t + -0.0167431005076633737133,
+             q := (((((     0.282243172016108031869e-6  * t +   0.275335474764726041141e-4 ) * t +  0.000964011807005165528527 ) * t +   0.016074608709367650469500) * t +   0.138151865749083321638000) * t +   0.591429344886417493481000) * t +  1
+        5 => p := ((((((   -0.116765012397184275695e-17 * t +   0.145596286718675035587e-11) * t +  0.411632831190944208473e-9 ) * t +   0.396341011304801168516e-7) * t +   0.162397777342510920873e-5) * t +   0.254723037413027451751e-4) * t + -0.779190719229053954292e-5) * t + -0.0024978212791898131227,
+             q := (((((     0.509761276599778486139e-9  * t +   0.144437756628144157666e-6 ) * t +  0.145007359818232637924e-4 ) * t +   0.000690538265622684595676) * t +   0.016941083812097590647800) * t +   0.207123112214422517181000) * t +  1
+        6 => p := ((((((   -0.348890393399948882918e-21 * t +   0.135880130108924861008e-14) * t +  0.947846627503022684216e-12) * t +   0.225561444863500149219e-9) * t +   0.229345859265920864296e-7) * t +   0.899465114892291446442e-6) * t + -0.28398759004727721098e-6 ) * t + -0.000539042911019078575891,
+             q := (((((     0.231558608310259605225e-11 * t +   0.161809290887904476097e-8 ) * t +  0.399968812193862100054e-6 ) * t +   0.468292921940894236786e-4) * t +   0.002820929847262646819810) * t +   0.084574623400189943691400) * t +  1
+    p / q + y
+
+
+// @function Helper for `boost_erf_inv` and `boost_erfc_inv`.
+boost_erf_inv_imp(float p, float q) =>
+    if p <= 0.5
+        boost_erf_inv_polynomial(0, p, 0.0891314744949340820313) * (p * (p + 10)) // max err: 2.001849e-18
+    else if 0.25 <= q
+        math.sqrt(-2 * math.log(q)) / boost_erf_inv_polynomial(1, q - 0.25, 2.249481201171875) // max err: 7.403372e-17
+    else // q < 0.25
+        x = math.sqrt(-math.log(q))
+        switch true
+            x < 3  => x * boost_erf_inv_polynomial(2, x - 1.125, 0.80722045898437500000) // max err: 1.089051e-20
+            x < 6  => x * boost_erf_inv_polynomial(3, x - 3.000, 0.93995571136474609375) // max err: 8.389174e-21
+            x < 18 => x * boost_erf_inv_polynomial(4, x - 6.000, 0.98362827301025390625) // max err: 1.481312e-19
+            x < 44 => x * boost_erf_inv_polynomial(5, x - 18.00, 0.99714565277099609375) // max err: 5.697761e-20
+            =>        x * boost_erf_inv_polynomial(6, x - 44.00, 0.99941349029541015625) // max err: 1.279746e-20
+
+
+// @function Helper for `erfinv`.
+boost_erf_inv(float x) =>
+    p = math.abs(x)
+    q = 1 - p
+    r = boost_erf_inv_imp(p, q)
+    x < 0 ? -r : r
+
+
+// @function Helper for `erfcinv`.
+boost_erfc_inv(float x) =>
+    q = x > 1 ? 2 - x : x
+    p = 1 - q
+    r = boost_erf_inv_imp(p, q)
+    x < 1 ? r : -r
+
+// }
+
+
+// ------------------------------------------------- ERROR FUNCTION ------------------------------------------------- {
+
+// @function **Error Function**\
+// Estimates the theoretical error of a measurement.
+// @param x (float) Upper limit of the integration [0, ±∞].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between -1 and 1.
+export erf(float x, bool precise = true) =>
+    sign = math.sign(x)
+    if na(sign)
+        na
+    else
+        if x == 0 or na(x)
+            sign // -1, 0, 1
+        else if math.abs(x) > 5.829395261518418 // was 6, but this better identifies the 64-bit precision limit
+            sign * 0.9999999999999999
+        else
+            precise
+             ? sun_erf(x)
+             : hastings_erf(x)
+
+
+// @function **Complementary Error Function**\
+// Estimates the difference between a theoretical error and infinity.
+// @param x (float) Lower limit of the integration [0, ±∞].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and 2.
+export erfc(float x, bool precise = true) =>
+    sign = math.sign(x)
+    if na(sign)
+        na
+    else
+        if x == 0 or na(x)
+            math.sign(-x) + 1 // 0, 1, 2
+        else if math.abs(x) > 5.838230645058284 // was 28, but this better identifies the 64-bit precision limit
+            x > 0
+             ? 0.0000000000000001 // 1.0e-16
+             : 1.999999999999999
+        else
+            precise
+             ? sun_erfc(x)
+             : 1 - hastings_erf(x)
+
+
+// @function **Inverse Error Function**\
+// Reverses the `erf` by estimating the original measurement from the theoretical error.
+// @param x (float) Theoretical error [-1, 1].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and ± infinity.
+export erfinv(float x, bool precise = true) =>
+    if na(x) or x < -1. or x > 1
+        na
+    else
+        if x == 0
+            0
+        else if math.abs(x) > 0.9999999999 // better identifies the 64-bit precision limit than |x| == 1
+            math.sign(x) * infinity
+        else
+            precise
+             ? boost_erf_inv(x)
+             : giles_erf_inv(x)
+
+
+// @function **Inverse Complementary Error Function**\
+// Reverses the `erfc` by estimating the original measurement from the difference between the theoretical error and infinity.
+// @param x (float) Complement of the theoretical error [0, 2].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and ± infinity.
+export erfcinv(float x, bool precise = true) =>
+    if na(x) or x < 0 or x > 2
+        na
+    else
+        x1 = 1 - x
+        if x1 == 0
+            0
+        else if math.abs(x1) > 0.9999999999 // better identifies the 64-bit precision limit than |x| == 1
+            math.sign(x1) * infinity
+        else
+            precise
+             ? boost_erfc_inv(x)
+             : giles_erf_inv(x1)
+
+// }
+
+
+// --------------------------------------------- DISTRIBUTION FUNCTIONS --------------------------------------------- {
+
+// @function **Probability Density Function**\
+// Estimates the probability *density*. For clarity, **density is not a probability**.\
+// It's simply the Y coordinate of a Gaussian curve at coordinate X.
+// @param x (float) X coordinate for which a density will be estimated [0, ±∞].
+// @param m (float) Mean
+// @param s (float) Sigma
+// @returns (float) Between 0 and ∞.
+export pdf(float x, float m, float s) =>
+    d = x - m, (1 / (s *  math.sqrt(2 * math.pi))) * math.exp(-(d * d / (2 * s * s)))
+
+
+// @function **Cumulative Distribution Function**\
+// Estimates the area under a Gaussian curve between negative infinity and the Z Score.
+// @param z (float) Z Score [0, ±∞].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and 1.
+export cdf(float z, bool precise = true) =>
+    (1 + erf(z / math.sqrt(2), precise)) / 2
+
+
+// @function **Inverse Cumulative Distribution Function**\
+// Reverses the `cdf`by estimating the Z Score from an area.
+// @param a (float) Area between 0 and 1.
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between -∞ and +∞
+export cdfinv(float a, bool precise = true) =>
+    erfinv(2 * a - 1, precise) * math.sqrt(2)
+
+
+// @function **Cumulative Distribution Function** from **A** to **B**\
+// Estimates the area under a Gaussian curve between two Z Scores (A and B).
+// @param z1 (float) First Z Score [0, ±∞].
+// @param z2 (float) Second Z Score [0, ±∞].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and 1.
+export cdfab(float z1, float z2, bool precise = true) =>
+    cdf(math.max(z1, z2), precise) - cdf(math.min(z1, z2), precise)
+
+
+// @function **Two-Tailed Test**\
+// Estimates the area under a Gaussian curve between symmetrical ± Z scores and ± infinity.
+// @param z (float) One of the symmetrical Z Scores [0, ±∞].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and 1.
+export ttt(float z, bool precise = true) =>
+    erfc(math.abs(z) / math.sqrt(2), precise)
+
+
+// @function **Inverse Two-Tailed Test**\
+// Reverses the `ttt` by estimating the absolute Z Score from an area.
+// @param a (float) Area between 0 and 1.
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and ∞.
+export tttinv(float a, bool precise = true) =>
+    math.abs(erfcinv(a, precise) * math.sqrt(2)) // can return "-0", thus "math.abs()"
+
+
+// @function **One-Tailed Test**\
+// Estimates the area under a Gaussian curve between an absolute Z Score and infinity.
+// @param z (float) Z Score [0, ±∞].
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and 1.
+export ott(float z, bool precise = true) =>
+    ttt(z, precise) / 2
+
+
+// @function **Inverse One-Tailed Test**\
+// Reverses the `ott` by estimating the Z Score from a an area.
+// @param a (float) Area between 0 and 1.
+// @param precise (bool) Double precision ([true](#const_true)) or single precision ([false](#const_false)).
+// @returns (float) Between 0 and ∞.
+export ottinv(float a, bool precise = true) =>
+    math.abs(tttinv(a * 2, precise)) // can return "-0", thus "math.abs()"
+
+// }

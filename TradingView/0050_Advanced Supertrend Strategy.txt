@@ -1,0 +1,182 @@
+//@version=5
+strategy("Advanced Supertrend Strategy", shorttitle="AdvST", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.1)
+
+// === INPUT PARAMETERS ===
+// Supertrend Settings
+atr_length = input.int(6, title="ATR Length", minval=1, tooltip="Length for ATR calculation in Supertrend", group="Supertrend Settings")
+multiplier = input.float(3.0, title="Supertrend Multiplier", minval=0.1, step=0.1, tooltip="Multiplier for ATR in Supertrend calculation", group="Supertrend Settings")
+
+// RSI Filter
+use_rsi_filter = input.bool(false, title="Enable RSI Filter", tooltip="Use RSI to filter signals", group="RSI Filter")
+rsi_length = input.int(14, title="RSI Length", minval=1, tooltip="Length for RSI calculation", group="RSI Filter")
+rsi_overbought = input.int(70, title="RSI Overbought", minval=50, maxval=100, tooltip="RSI overbought level", group="RSI Filter")
+rsi_oversold = input.int(30, title="RSI Oversold", minval=0, maxval=50, tooltip="RSI oversold level", group="RSI Filter")
+
+// Moving Average Filter
+use_ma_filter = input.bool(true, title="Enable MA Filter", tooltip="Use Moving Average trend filter", group="MA Filter")
+ma_length = input.int(50, title="MA Length", minval=1, tooltip="Length for Moving Average", group="MA Filter")
+ma_type = input.string("WMA", title="MA Type", options=["SMA", "EMA", "WMA"], tooltip="Type of Moving Average", group="MA Filter")
+
+// Risk Management
+use_stop_loss = input.bool(true, title="Enable Stop Loss", tooltip="Use stop loss based on ATR", group="Risk Management")
+sl_multiplier = input.float(3.0, title="Stop Loss ATR Multiplier", minval=0.1, step=0.1, tooltip="Stop loss distance in ATR multiples", group="Risk Management")
+use_take_profit = input.bool(true, title="Enable Take Profit", tooltip="Use take profit based on ATR", group="Risk Management")
+tp_multiplier = input.float(9.0, title="Take Profit ATR Multiplier", minval=0.1, step=0.1, tooltip="Take profit distance in ATR multiples", group="Risk Management")
+
+// Advanced Features
+use_trend_strength = input.bool(false, title="Enable Trend Strength Filter", tooltip="Filter weak trends", group="Advanced Features")
+min_trend_bars = input.int(2, title="Minimum Trend Bars", minval=1, tooltip="Minimum bars in trend direction", group="Advanced Features")
+use_breakout_confirmation = input.bool(true, title="Enable Breakout Confirmation", tooltip="Wait for price to break supertrend level", group="Advanced Features")
+
+// Date Range for Backtesting
+start_date = input.time(timestamp("2020-01-01 00:00"), title="Start Date", group="Backtesting")
+end_date = input.time(timestamp("2099-12-31 23:59"), title="End Date", group="Backtesting")
+in_date_range = time >= start_date and time <= end_date
+
+// === TECHNICAL INDICATORS ===
+// Supertrend Calculation
+atr = ta.atr(atr_length)
+hl2_val = hl2
+up = hl2_val - (multiplier * atr)
+down = hl2_val + (multiplier * atr)
+
+var float trend_up = na
+var float trend_down = na
+var int trend = 1
+
+trend_up := close[1] > trend_up[1] ? math.max(up, trend_up[1]) : up
+trend_down := close[1] < trend_down[1] ? math.min(down, trend_down[1]) : down
+
+trend := close <= trend_down[1] ? -1 : close >= trend_up[1] ? 1 : nz(trend[1], 1)
+
+supertrend = trend == 1 ? trend_up : trend_down
+supertrend_color = trend == 1 ? color.green : color.red
+
+// RSI Calculation
+rsi = ta.rsi(close, rsi_length)
+
+// Moving Average Calculation
+ma = ma_type == "SMA" ? ta.sma(close, ma_length) : ma_type == "EMA" ? ta.ema(close, ma_length) : ta.wma(close, ma_length)
+
+// Trend Strength Analysis
+var int trend_strength = 0
+if trend != trend[1]
+    trend_strength := 1
+else
+    trend_strength := trend_strength[1] + 1
+
+// === SIGNAL GENERATION ===
+// Basic Supertrend Signals
+supertrend_bullish = trend == 1 and trend[1] == -1  // Supertrend changes from bearish to bullish
+supertrend_bearish = trend == -1 and trend[1] == 1  // Supertrend changes from bullish to bearish
+
+// Advanced Signal Filters
+rsi_buy_condition = not use_rsi_filter or (rsi > rsi_oversold and rsi < rsi_overbought)
+rsi_sell_condition = not use_rsi_filter or (rsi < rsi_overbought and rsi > rsi_oversold)
+
+ma_buy_condition = not use_ma_filter or close > ma
+ma_sell_condition = not use_ma_filter or close < ma
+
+trend_strength_condition = not use_trend_strength or trend_strength >= min_trend_bars
+
+breakout_buy_condition = not use_breakout_confirmation or close > supertrend[1]
+breakout_sell_condition = not use_breakout_confirmation or close < supertrend[1]
+
+// Final Signal Logic
+buy_signal = supertrend_bullish and rsi_buy_condition and ma_buy_condition and trend_strength_condition and breakout_buy_condition and in_date_range
+sell_signal = supertrend_bearish and rsi_sell_condition and ma_sell_condition and trend_strength_condition and breakout_sell_condition and in_date_range
+
+// === STRATEGY EXECUTION ===
+// Entry Logic
+if buy_signal and strategy.position_size <= 0
+    entry_price = close
+    stop_loss_price = use_stop_loss ? entry_price - (atr * sl_multiplier) : na
+    take_profit_price = use_take_profit ? entry_price + (atr * tp_multiplier) : na
+
+    strategy.entry("Long", strategy.long, alert_message="Advanced Supertrend BUY Signal")
+
+    if use_stop_loss
+        strategy.exit("Long SL/TP", "Long", stop=stop_loss_price, limit=take_profit_price)
+
+if sell_signal and strategy.position_size >= 0
+    entry_price = close
+    stop_loss_price = use_stop_loss ? entry_price + (atr * sl_multiplier) : na
+    take_profit_price = use_take_profit ? entry_price - (atr * tp_multiplier) : na
+
+    strategy.entry("Short", strategy.short, alert_message="Advanced Supertrend SELL Signal")
+
+    if use_stop_loss
+        strategy.exit("Short SL/TP", "Short", stop=stop_loss_price, limit=take_profit_price)
+
+// === PLOTTING ===
+// Main Indicators
+plot(supertrend, title="Supertrend", color=supertrend_color, linewidth=3)
+plot(use_ma_filter ? ma : na, title="Moving Average", color=color.yellow, linewidth=2)
+
+// Signal Markers
+plotshape(buy_signal, title="Buy Signal", location=location.belowbar, style=shape.labelup, size=size.normal, color=color.lime, textcolor=color.white, text="BUY")
+plotshape(sell_signal, title="Sell Signal", location=location.abovebar, style=shape.labeldown, size=size.normal, color=color.red, textcolor=color.white, text="SELL")
+
+// Debug: Show basic supertrend signals (even if filters block them)
+plotshape(supertrend_bullish, title="ST Bullish", location=location.belowbar, style=shape.triangleup, size=size.tiny, color=color.green, text="")
+plotshape(supertrend_bearish, title="ST Bearish", location=location.abovebar, style=shape.triangledown, size=size.tiny, color=color.red, text="")
+
+// Entry/Exit Levels
+plotshape(buy_signal and use_stop_loss, title="Buy Stop Loss", location=location.belowbar, style=shape.circle, size=size.tiny, color=color.red, offset=-1)
+plotshape(sell_signal and use_stop_loss, title="Sell Stop Loss", location=location.abovebar, style=shape.circle, size=size.tiny, color=color.red, offset=-1)
+
+// RSI Subplot (if enabled)
+rsi_plot = plot(use_rsi_filter ? rsi : na, title="RSI", color=color.purple, linewidth=1, display=display.pane)
+plot(use_rsi_filter ? rsi_overbought : na, title="RSI Overbought", color=color.red, linewidth=1, style=plot.style_line, display=display.pane)
+plot(use_rsi_filter ? rsi_oversold : na, title="RSI Oversold", color=color.green, linewidth=1, style=plot.style_line, display=display.pane)
+plot(use_rsi_filter ? 50 : na, title="RSI Midline", color=color.gray, linewidth=1, style=plot.style_line, display=display.pane)
+
+// Background coloring for trend
+bgcolor(trend == 1 ? color.new(color.green, 95) : color.new(color.red, 95), title="Trend Background")
+
+// === STATUS TABLE ===
+if barstate.islast
+    var table status_table = table.new(position.top_right, 2, 8, bgcolor=color.white, border_width=1)
+    table.cell(status_table, 0, 0, "Parameter", text_color=color.black, bgcolor=color.gray)
+    table.cell(status_table, 1, 0, "Value", text_color=color.black, bgcolor=color.gray)
+    table.cell(status_table, 0, 1, "Supertrend", text_color=color.black)
+    table.cell(status_table, 1, 1, str.tostring(math.round(supertrend, 2)), text_color=trend == 1 ? color.green : color.red)
+    table.cell(status_table, 0, 2, "Trend", text_color=color.black)
+    table.cell(status_table, 1, 2, trend == 1 ? "Bullish" : "Bearish", text_color=trend == 1 ? color.green : color.red)
+    table.cell(status_table, 0, 3, "Trend Strength", text_color=color.black)
+    table.cell(status_table, 1, 3, str.tostring(trend_strength), text_color=trend_strength >= min_trend_bars ? color.green : color.orange)
+
+    if use_rsi_filter
+        table.cell(status_table, 0, 4, "RSI", text_color=color.black)
+        table.cell(status_table, 1, 4, str.tostring(math.round(rsi, 1)),
+                  text_color=rsi > rsi_overbought ? color.red : rsi < rsi_oversold ? color.green : color.gray)
+        table.cell(status_table, 0, 5, "MA Status", text_color=color.black)
+        table.cell(status_table, 1, 5, close > ma ? "Above" : "Below", text_color=close > ma ? color.green : color.red)
+        table.cell(status_table, 0, 6, "Position", text_color=color.black)
+        table.cell(status_table, 1, 6, strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "FLAT",
+                  text_color=strategy.position_size > 0 ? color.green : strategy.position_size < 0 ? color.red : color.gray)
+        table.cell(status_table, 0, 7, "Signal", text_color=color.black)
+        table.cell(status_table, 1, 7, buy_signal ? "BUY" : sell_signal ? "SELL" : "NONE",
+                  text_color=buy_signal ? color.green : sell_signal ? color.red : color.gray)
+    else
+        table.cell(status_table, 0, 4, "Position", text_color=color.black)
+        table.cell(status_table, 1, 4, strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "FLAT",
+                  text_color=strategy.position_size > 0 ? color.green : strategy.position_size < 0 ? color.red : color.gray)
+        table.cell(status_table, 0, 5, "Signal", text_color=color.black)
+        table.cell(status_table, 1, 5, buy_signal ? "BUY" : sell_signal ? "SELL" : "NONE",
+                  text_color=buy_signal ? color.green : sell_signal ? color.red : color.gray)
+
+// === ALERT CONDITIONS ===
+alertcondition(buy_signal, title="Buy Alert", message="Advanced Supertrend Strategy: BUY signal generated")
+alertcondition(sell_signal, title="Sell Alert", message="Advanced Supertrend Strategy: SELL signal generated")
+alertcondition(buy_signal or sell_signal, title="Any Signal", message="Advanced Supertrend Strategy: New signal generated")
+alertcondition(trend == 1 and trend[1] == -1, title="Trend Change to Bullish", message="Supertrend changed to BULLISH")
+alertcondition(trend == -1 and trend[1] == 1, title="Trend Change to Bearish", message="Supertrend changed to BEARISH")
+
+// === PERFORMANCE NOTES ===
+// Strategy automatically provides comprehensive metrics:
+// - Win rate, Profit factor, Sharpe ratio
+// - Maximum drawdown, Average trade duration
+// - Risk-reward ratio analysis
+// - Monthly/yearly performance breakdown
+// - All calculations include commission (0.1%)

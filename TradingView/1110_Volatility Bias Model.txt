@@ -1,0 +1,52 @@
+//@version=5
+strategy("Volatility Bias Model",
+     overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=10,               // %10 pozisyon
+     initial_capital=10000,             // Başlangıç kasası $10,000
+     pyramiding=0,                      // Pyramiding kapalı
+     commission_type=strategy.commission.percent,
+     commission_value=0.05,             // %0.05 komisyon
+     slippage=1)                        // 1 slippage
+
+// === INPUTS ===
+biasWindow     = input.int(10, title="Bias Lookback Bars")
+biasThreshold  = input.float(0.6, title="Directional Bias Threshold (0-1)")  // örn: %60
+rangeMin       = input.float(0.05, title="Minimum Range %")  // en az %1.5 volatilite
+riskReward     = input.float(2.0, title="Risk-Reward Ratio")
+maxBars        = input.int(20, title="Max Holding Bars")
+atrLen         = input.int(14, title="ATR Length")
+
+// === CALCULATIONS ===
+upCloses = 0
+for i = 1 to biasWindow
+    upCloses += close[i] > open[i] ? 1 : 0
+
+biasRatio = upCloses / biasWindow
+
+// === RANGE CHECK ===
+highRange = ta.highest(high, biasWindow)
+lowRange  = ta.lowest(low, biasWindow)
+rangePerc = (highRange - lowRange) / lowRange
+
+hasBiasLong  = biasRatio >= biasThreshold and rangePerc > rangeMin
+hasBiasShort = biasRatio <= (1 - biasThreshold) and rangePerc > rangeMin
+
+atr = ta.atr(atrLen)
+
+// === ENTRY ===
+if (hasBiasLong)
+    strategy.entry("Bias Long", strategy.long)
+
+if (hasBiasShort)
+    strategy.entry("Bias Short", strategy.short)
+
+// === EXIT ===
+longSL  = strategy.position_avg_price - atr
+longTP  = strategy.position_avg_price + atr * riskReward
+
+shortSL = strategy.position_avg_price + atr
+shortTP = strategy.position_avg_price - atr * riskReward
+
+strategy.exit("Long Exit", from_entry="Bias Long", stop=longSL, limit=longTP, when=bar_index - strategy.opentrades.entry_bar_index(0) >= maxBars)
+strategy.exit("Short Exit", from_entry="Bias Short", stop=shortSL, limit=shortTP, when=bar_index - strategy.opentrades.entry_bar_index(0) >= maxBars)

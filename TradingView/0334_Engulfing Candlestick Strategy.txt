@@ -1,0 +1,45 @@
+//@version=6
+strategy("Engulfing Candlestick Strategy", overlay=true)
+
+// Input parameters
+bull_color = input.color(color.new(color.green, 0), title="Bullish Engulfing Highlight")
+bear_color = input.color(color.new(color.red, 0), title="Bearish Engulfing Highlight")
+hold_periods = input.int(17, title="Hold Periods", minval=1)  // How many bars to hold the position
+
+// Input for selecting the pattern (Bullish or Bearish Engulfing)
+pattern_type = input.string("Bullish Engulfing", title="Engulfing Pattern", options=["Bullish Engulfing", "Bearish Engulfing"])
+
+// Input for selecting the trade type (Long or Short)
+trade_type = input.string("Long", title="Trade Type", options=["Long", "Short"])
+
+// Conditions for Bullish Engulfing
+bullish_engulfing = close > open and open < close[1] and close > open[1] and open[1] > close[1]
+
+// Conditions for Bearish Engulfing
+bearish_engulfing = close < open and open > close[1] and close < open[1] and open[1] < close[1]
+
+// Declare the entry condition variable
+var bool entry_condition = false  // Set initial value to 'false'
+
+// Entry logic based on selected pattern and trade type
+if pattern_type == "Bullish Engulfing"
+    entry_condition := bullish_engulfing
+else
+    entry_condition := bearish_engulfing
+
+// Execute the entry based on the selected trade type
+if entry_condition
+    if trade_type == "Long"
+        strategy.entry("Long", strategy.long)
+    else
+        strategy.entry("Short", strategy.short)
+
+// Close position after specified number of bars
+if strategy.position_size != 0 and bar_index - strategy.opentrades.entry_bar_index(0) >= hold_periods
+    strategy.close("Long")
+    strategy.close("Short")
+
+// Highlight Bullish Engulfing Candles (Background Color)
+bgcolor(bullish_engulfing and pattern_type == "Bullish Engulfing" ? color.new(bull_color, 80) : na, title="Bullish Engulfing Background")
+// Highlight Bearish Engulfing Candles (Background Color)
+bgcolor(bearish_engulfing and pattern_type == "Bearish Engulfing" ? color.new(bear_color, 80) : na, title="Bearish Engulfing Background")

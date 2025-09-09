@@ -1,0 +1,98 @@
+//@version=6
+strategy("Bitcoin Liquidity Breakout with ICT Strategies", overlay=true)
+
+// User Inputs for timeframe and risk management
+liquidityThreshold = input.float(1.3, title="Liquidity Threshold Multiplier")  // Increased threshold for stricter trades
+priceChangeThreshold = input.float(1.5, title="Price Change Threshold (%)")    // Higher threshold for fewer, stronger signals
+stopLoss = input.float(0.5, title="Stop Loss (%)")  // Minimized stop loss  // Adjusted for 1:5 ratio
+takeProfit = input.float(7.0, title="Take Profit (%)")  // Increased take profit  // 1:5 ratio of SL/TP
+useStopLoss = input.bool(true, title="Use Stop Loss")
+useTakeProfit = input.bool(true, title="Use Take Profit")
+
+// Timeframe set to 1 hour
+var timeframe = input.timeframe('1', title='Timeframe', options=['1', '5', '15', '30'])
+
+// BTC Dominance as input (checking data availability)
+btcDominance = request.security("CRYPTOCAP:BTC.D", timeframe, close, lookahead=barmerge.lookahead_off)
+
+// Check if BTC dominance data is available
+btcDominanceAvailable = not na(btcDominance)
+
+// Calculate moving averages for volatility and liquidity detection
+volatilityPeriod = input.int(14, title="Volatility Period (ATR)")
+liquidityPeriod = input.int(20, title="Liquidity Period (SMA)")
+
+// Calculate Average True Range (ATR) for volatility
+atr = ta.atr(volatilityPeriod)
+
+// Calculate Simple Moving Average (SMA) of Volume for liquidity measurement
+volumeSMA = ta.sma(volume, liquidityPeriod)
+
+// Calculate price percentage change
+priceChange = 100 * (high - low) / low
+
+// Define conditions for high liquidity and large price changes
+highLiquidity = volume > volumeSMA * liquidityThreshold
+highPriceChange = priceChange > priceChangeThreshold
+
+// Ensure high volatility
+highVolatility = atr > ta.sma(atr, 10)  // ATR must be above its own moving average
+
+// ICT OTE: 61.8% to 79% Fibonacci retracement
+oteLevel = low + (high - low) * 0.618
+
+// RSI (Relative Strength Index) to avoid overbought or oversold trades
+rsi = ta.rsi(close, 14)
+
+// Guaranteed Buy Condition: ICT strategies + High liquidity + large price changes + RSI under 65 + BTC dominance below 55% + high volatility
+fastMA = ta.sma(close, 9)  // Fast moving average
+slowMA = ta.sma(close, 21)  // Slow moving average
+
+// Guaranteed Buy Condition with ICT filters
+buyCondition = highLiquidity and rsi < 65 and fastMA > slowMA and highVolatility
+
+// Guaranteed Sell Condition: Price reversal + stop loss/take profit
+sellCondition = ta.crossunder(fastMA, slowMA) or rsi > 70 or (btcDominanceAvailable and btcDominance > 60)
+
+// Calculate position size based on $1000 balance and risk of 1%
+riskPerTrade = 0.01 * 1000  // 1% of $1000 balance
+positionSize = riskPerTrade / (close * (stopLoss / 100))  // Adjust position size based on stop loss distance
+
+// Execute Buy Trade (Guaranteed)
+// Track stop-loss hits and stop trading if daily max is reached
+var int stopLossHits = 0
+if (buyCondition and stopLossHits < 4)
+    strategy.entry("Guaranteed Buy", strategy.long, qty=positionSize)
+
+// Execute Sell Trade (Guaranteed)
+if (sellCondition)
+    strategy.close("Guaranteed Buy")
+
+// Increment stop-loss count if trade was stopped by a stop loss
+if (strategy.closedtrades.profit(strategy.closedtrades - 1) < 0)
+    stopLossHits := stopLossHits + 1
+
+// Plot Buy and Sell Signals for guaranteed trades
+plotshape(series=buyCondition, title="Guaranteed Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=sellCondition, title="Guaranteed Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+// Plot the ATR for volatility visibility
+plot(atr, color=color.blue, title="Volatility (ATR)")
+
+// Plot liquidity (SMA of volume)
+plot(volumeSMA, color=color.orange, title="Liquidity (SMA Volume)")
+
+// Plot BTC dominance (only if available)
+plot(btcDominance, color=color.red, linewidth=2, title="BTC Dominance")
+
+// Global BTC dominance threshold line
+hline(55, "BTC Dominance Threshold", color=color.green)
+
+// Plot RSI
+hline(70, "Overbought", color=color.red)
+hline(30, "Oversold", color=color.green)
+plot(rsi, color=color.purple, title="RSI (14)")
+
+// Highlight guaranteed open positions
+bgcolor(strategy.position_size > 0 ? color.new(color.green, 90) : na, title="Guaranteed Buy Position")
+bgcolor(strategy.position_size < 0 ? color.new(color.red, 90) : na, title="Guaranteed Sell Position")

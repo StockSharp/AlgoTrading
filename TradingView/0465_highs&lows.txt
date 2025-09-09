@@ -1,0 +1,59 @@
+//@version=6
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Broskie01
+strategy("highs&lows", shorttitle="highs&lows", format=format.price, precision=16)
+
+//
+//
+//this is one of my first strats let me know what you think
+//this strat works with assets that have decent volatility/movemnt like some future's assets
+//
+//
+
+_quantity = input(defval = 1, title = "quantity")
+_range = input(defval = 100, title = "candle range")
+_time_frame = input.timeframe(defval = "240", title = "time frame")
+
+//highs and lows data
+_highest_high = ta.highest(high,_range)
+_lowest_low = ta.lowest(low,_range)
+_current_move = math.avg(high,low)
+
+allTimeHigh = request.security(syminfo.tickerid, _time_frame, _highest_high)
+allTImeLow = request.security(syminfo.tickerid, _time_frame, _lowest_low)
+current_movement = request.security(syminfo.tickerid, _time_frame, _current_move)
+
+_average_move = math.avg(_highest_high,_lowest_low)
+average = request.security(syminfo.tickerid, _time_frame, _average_move)
+
+//drawing
+line_high = plot(allTimeHigh, "high", color = color.red, linewidth = 2)
+line_low = plot(allTImeLow, "low",color = color.green, linewidth = 2)
+line_middle = plot(average, "average",color = color.orange, linewidth = 2)
+line_curr = plot(current_movement, "current",color = color.white, linewidth = 1)
+
+color_high = _current_move > _average_move? color.rgb(255,0,0,75): color.rgb(0,255,0,75)
+fill(line_curr, line_middle, color = color_high, fillgaps = false)
+
+//strat
+
+mapper(x, in_min, in_max, out_min, out_max) =>
+    (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
+
+normalizeDistance(point1, point2, max_value, min_value) =>
+    float dist = point2 - point1
+
+float current_move_val = mapper(current_movement, allTImeLow, allTimeHigh,0,100)
+
+//strat
+if (_current_move < _average_move and current_move_val < 15  )
+    stringValue_assetQty = str.tostring(_quantity)
+    alert("buy : " + stringValue_assetQty, alert.freq_once_per_bar)
+
+    strategy.entry("LONG", direction = strategy.long, qty = _quantity)
+
+
+if(_current_move >= _average_move and current_move_val>=85)
+    stringValue_assetQty = str.tostring(_quantity)
+    alert("sell : " + stringValue_assetQty, alert.freq_once_per_bar)
+    strategy.close("LONG", qty = _quantity)

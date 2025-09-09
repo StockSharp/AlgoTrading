@@ -1,0 +1,36 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © alexgrover
+
+//@version=4
+study("Dekidaka-Ashi","DA",true)
+s = input(1,"Body Size"),smooth = input(1,"Volume Smoothing Amount"),show = input(false,"Show Signals")
+//----
+o = open, h = high, l = low, c = close
+max = max(c,o)
+min = min(c,o)
+//----
+v = ema(volume,smooth)*smooth
+k = v/(v+v[1])*s
+upper = max + k*(max - min)
+lower = min - k*(max - min)
+//----
+StrongBull = show and h > upper and l > lower and c > o
+StrongBear = show and h < upper and l < lower and c < o
+WeakBull = show and h > upper and l > lower and c < o
+WeakBear = show and h < upper and l < lower and c > o
+Uncertainity = show and h > upper and l < lower
+//----
+plotcandle(lower,h,l,upper,color=na,wickcolor=na)
+plot(upper,"Dekidaka-High",color=na,editable=na)
+plot(lower,"Dekidaka-Low",color=na,editable=na)
+
+plotshape(StrongBull,"Dekidaka Strong Bullish",shape.labelup,location.belowbar,
+  #2196f3,0,text="⇈",textcolor=color.white,size=size.tiny)
+plotshape(StrongBear,"Dekidaka Strong Bearish",shape.labeldown,location.abovebar,
+  #ff1100,0,text="⇊",textcolor=color.white,size=size.tiny)
+plotshape(WeakBull,"Dekidaka Weak Bullish",shape.labelup,location.belowbar,
+  #2196f3,0,text="↑",textcolor=color.white,size=size.tiny)
+plotshape(WeakBear,"Dekidaka Weak Bearish",shape.labeldown,location.abovebar,
+  #ff1100,0,text="↓",textcolor=color.white,size=size.tiny)
+plotshape(Uncertainity,"Dekidaka Uncertain",shape.labeldown,location.abovebar,
+  #0cb51a,0,text="↕",textcolor=color.white,size=size.tiny)

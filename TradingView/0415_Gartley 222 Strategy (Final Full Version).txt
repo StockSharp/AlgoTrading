@@ -1,0 +1,88 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TheWealthyInvestorbyDSAB
+
+//@version=6
+strategy("Gartley 222 Strategy (Final Full Version)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+pivot_len     = input.int(5, "Pivot Length")
+fib_tolerance = input.float(0.05, "Fibonacci Tolerance")
+tp_ratio      = input.float(1.27, "Take Profit Fib Extension")
+sl_percent    = input.float(2.0, "Stop Loss (%)")
+
+// === PIVOT DETECTION ===
+ph = ta.pivothigh(high, pivot_len, pivot_len)
+pl = ta.pivotlow(low, pivot_len, pivot_len)
+
+plotshape(ph, location=location.abovebar, color=color.red, style=shape.triangledown, size=size.tiny, title="Pivot High")
+plotshape(pl, location=location.belowbar, color=color.green, style=shape.triangleup, size=size.tiny, title="Pivot Low")
+
+// === PATTERN STRUCTURE VARIABLES ===
+var float X = na
+var float A = na
+var float B = na
+var float C = na
+var int pattern_confirmed_bar = na
+var line lineXA = na
+var line lineAB = na
+var line lineBC = na
+var line lineCD = na
+
+// === FIBONACCI VALIDATION FLAGS ===
+bool valid_AB = false
+bool valid_CD = false
+
+// === STRUCTURE DETECTION ===
+if not na(pl)
+    X := pl
+if not na(ph) and not na(X)
+    A := ph
+if not na(pl) and not na(A) and low < A
+    B := pl
+if not na(ph) and not na(B) and high < A and high > B
+    C := ph
+
+// === FIBONACCI VALIDATION ===
+if not na(X) and not na(A) and not na(B)
+    ab_ratio = math.abs(B - A) / math.abs(A - X)
+    valid_AB := ab_ratio > (0.618 - fib_tolerance) and ab_ratio < (0.786 + fib_tolerance)
+
+if not na(C) and not na(B) and not na(A)
+    cd_ratio = math.abs(C - B) / math.abs(A - B)
+    valid_CD := cd_ratio > (0.786 - fib_tolerance) and cd_ratio < (0.886 + fib_tolerance)
+
+// === PATTERN CONFIRMATION ===
+pattern_ready = valid_AB and valid_CD and close > C
+if pattern_ready
+    pattern_confirmed_bar := bar_index
+
+// === BACKTEST-SAFE DELAYED ENTRY ===
+delayed_entry = not na(pattern_confirmed_bar) and bar_index == pattern_confirmed_bar + pivot_len
+plotshape(delayed_entry, title="Gartley Entry", location=location.belowbar, color=color.lime, style=shape.labelup, size=size.small)
+
+// === STRATEGY ENTRY ===
+if delayed_entry
+    strategy.entry("Gartley Buy", strategy.long)
+
+// === EXIT LOGIC ===
+entry_price = na(strategy.opentrades.entry_price(0)) ? close : strategy.opentrades.entry_price(0)
+tp_price = entry_price * tp_ratio
+sl_price = entry_price * (1 - sl_percent / 100)
+
+if strategy.opentrades > 0
+    strategy.exit("TP/SL", from_entry="Gartley Buy", limit=tp_price, stop=sl_price)
+
+// === DRAW X-A-B-C-D LINES ===
+if delayed_entry
+    line.delete(lineXA)
+    line.delete(lineAB)
+    line.delete(lineBC)
+    line.delete(lineCD)
+
+    lineXA := line.new(x1=bar_index - 4 * pivot_len, y1=X, x2=bar_index - 3 * pivot_len, y2=A, color=color.yellow, width=1)
+    lineAB := line.new(x1=bar_index - 3 * pivot_len, y1=A, x2=bar_index - 2 * pivot_len, y2=B, color=color.orange, width=1)
+    lineBC := line.new(x1=bar_index - 2 * pivot_len, y1=B, x2=bar_index - pivot_len, y2=C, color=color.green, width=1)
+    lineCD := line.new(x1=bar_index - pivot_len, y1=C, x2=bar_index, y2=close, color=color.blue, width=1)
+
+// === ALERT ===
+alertcondition(delayed_entry, title="Gartley Buy Alert", message="Gartley 222 Buy Pattern Confirmed")

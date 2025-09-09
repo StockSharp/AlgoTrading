@@ -1,0 +1,53 @@
+//@version=5
+strategy("Profitable Pullback Strategy v2.0 by JustUncleL - Rebuilt", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === Inputs ===
+maSrc         = input.source(close, "MA Source")
+fastLen       = input.int(8, "Fast EMA Length")
+signalLen     = input.int(21, "Signal EMA Length")
+mediumLen     = input.int(50, "Medium EMA Length")
+slLen         = input.int(200, "Slow EMA Length")
+slEnabled     = input.bool(true, "Enable Slow EMA Filter")
+takeProfitPct = input.float(2.0, "Take Profit (%)", step=0.1)
+stopLossPct   = input.float(1.0, "Stop Loss (%)", step=0.1)
+showRibbon    = input.bool(true, "Show EMA Ribbon")
+
+// === EMA Calculations ===
+emaFast   = ta.ema(maSrc, fastLen)
+emaSignal = ta.ema(maSrc, signalLen)
+emaMedium = ta.ema(maSrc, mediumLen)
+emaSlow   = ta.ema(maSrc, slLen)
+
+// === Trend Definitions ===
+uptrend   = emaFast > emaSignal and emaSignal > emaMedium and (not slEnabled or emaMedium > emaSlow)
+downtrend = emaFast < emaSignal and emaSignal < emaMedium and (not slEnabled or emaMedium < emaSlow)
+
+// === Pullback Conditions ===
+// Buy Pullback: In uptrend and price pulls below signal EMA and closes back above it
+pullbackBuy = uptrend and close[1] < emaSignal and close > emaSignal
+// Sell Pullback: In downtrend and price pulls above signal EMA and closes back below it
+pullbackSell = downtrend and close[1] > emaSignal and close < emaSignal
+
+// === Entries ===
+longTP = close * (1 + takeProfitPct / 100)
+longSL = close * (1 - stopLossPct / 100)
+shortTP = close * (1 - takeProfitPct / 100)
+shortSL = close * (1 + stopLossPct / 100)
+
+if (pullbackBuy)
+    strategy.entry("Buy", strategy.long, comment="Buy Signal")
+    strategy.exit("TP/SL Long", from_entry="Buy", limit=longTP, stop=longSL)
+
+if (pullbackSell)
+    strategy.entry("Sell", strategy.short, comment="Sell Signal")
+    strategy.exit("TP/SL Short", from_entry="Sell", limit=shortTP, stop=shortSL)
+
+// === Plots ===
+plot(showRibbon ? emaFast : na, color=color.lime, title="Fast EMA")
+plot(showRibbon ? emaSignal : na, color=color.orange, title="Signal EMA")
+plot(showRibbon ? emaMedium : na, color=color.blue, title="Medium EMA")
+plot(showRibbon and slEnabled ? emaSlow : na, color=color.gray, title="Slow EMA")
+
+// === Alerts ===
+alertcondition(pullbackBuy, title="Buy Signal", message="Pullback Buy Signal")
+alertcondition(pullbackSell, title="Sell Signal", message="Pullback Sell Signal")

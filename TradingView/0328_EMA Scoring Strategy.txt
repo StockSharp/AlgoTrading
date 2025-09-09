@@ -1,0 +1,38 @@
+//@version=5
+strategy("EMA Scoring Strategy", overlay=true)
+
+// Input parameters for EMAs
+ema21 = ta.ema(close, 21)
+ema50 = ta.ema(close, 50)
+ema100 = ta.ema(close, 100)
+
+// Scoring System
+score = 0
+score := score + (close > ema21 ? 1 : -1)
+score := score + (close > ema50 ? 1 : -1)
+score := score + (close > ema100 ? 1 : -1)
+score := score + (ema21 > ema50 ? 1 : -1)
+score := score + (ema50 > ema100 ? 1 : -1)
+score := score + (ema21 > ema100 ? 1 : -1)
+
+// Background Color for Score 4 and Above
+bgColor = score >= 4 ? color.green : na
+bgcolor(bgColor, transp=80)
+
+// Plot EMAs
+plot(ema21, title="EMA 21", color=color.blue, linewidth=2)
+plot(ema50, title="EMA 50", color=color.green, linewidth=2)
+plot(ema100, title="EMA 100", color=color.red, linewidth=2)
+
+// Plot Score as Histogram (Only for Score 4 and Above)
+scoreToPlot = score >= 4 ? score : na
+plot(scoreToPlot, title="EMA Score", color=color.lime, style=plot.style_histogram, linewidth=3)
+
+// Buy Condition: Score Crosses Above 4
+buySignal = ta.crossover(score, 4)
+
+// Plot Buy Signal
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy Signal")
+
+// Alert for Buy Signal
+alertcondition(buySignal, title="Buy Alert", message="EMA Score is 4 or more! Bullish trend confirmed.")

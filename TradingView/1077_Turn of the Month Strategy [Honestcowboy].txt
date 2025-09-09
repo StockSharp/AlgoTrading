@@ -1,0 +1,84 @@
+//@version=5
+//@author Honestcowboy
+//
+strategy("Turn of the Month", max_lines_count = 500, max_boxes_count = 500, overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 4, initial_capital = 20000, commission_value = 0.03)
+
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+// ---------> User Inputs <----------- >>
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+
+daysBeforeEndOfMonth  = input.int(2)
+daysAfterStartOfMonth = input.int(3)
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+// ---------> IMMUTABLE CONSTANTS <----------- >>
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+
+var january   = 31
+var february  = 29
+var march     = 31
+var april     = 30
+var may       = 31
+var june      = 30
+var july      = 31
+var august    = 31
+var september = 30
+var october   = 31
+var november  = 30
+var december  = 31
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+// ---------> Functions <----------- >>
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+
+getEntryDay(daysBeforeEnd) =>
+    entryBar = 0
+    if month == 1
+        entryBar := january-daysBeforeEnd
+    if month == 2
+        entryBar := february-daysBeforeEnd
+    if month == 3
+        entryBar := march-daysBeforeEnd
+    if month == 4
+        entryBar := april-daysBeforeEnd
+    if month == 5
+        entryBar := may-daysBeforeEnd
+    if month == 6
+        entryBar := june-daysBeforeEnd
+    if month == 7
+        entryBar := july-daysBeforeEnd
+    if month == 8
+        entryBar := august-daysBeforeEnd
+    if month == 9
+        entryBar := september-daysBeforeEnd
+    if month == 10
+        entryBar := october-daysBeforeEnd
+    if month == 11
+        entryBar := november-daysBeforeEnd
+    if month == 12
+        entryBar := december-daysBeforeEnd
+    [entryBar]
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+// ---------> VARIABLE CALCULATIONS <----------- >>
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+
+[entryBar] = getEntryDay(daysBeforeEndOfMonth)
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+// ---------> GRAPHICAL DISPLAY <----------- >>
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+
+barcolor(dayofmonth == entryBar ? color.fuchsia : na)
+
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+// ---------> AUTOMATION AND BACKTESTING <----------- >>
+// $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$ >>
+
+longCondition = (dayofmonth >= entryBar) or ((dayofweek == 4) and dayofmonth == (entryBar-1)) or ((dayofweek == 4) and dayofmonth == (entryBar-2)) or ((dayofweek == 4) and dayofmonth == (entryBar-3))
+closeCondition = ((dayofmonth >= daysAfterStartOfMonth) or (dayofweek == 4 and dayofmonth == daysAfterStartOfMonth-1) or (dayofweek == 4 and dayofmonth == daysAfterStartOfMonth-2) or (dayofweek == 4 and dayofmonth == daysAfterStartOfMonth-3)) and (dayofmonth < entryBar-10)
+if longCondition and strategy.position_size==0
+    strategy.entry("LONG", strategy.long)
+if closeCondition
+    strategy.close("LONG")

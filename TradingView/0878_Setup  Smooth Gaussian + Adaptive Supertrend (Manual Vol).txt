@@ -1,0 +1,35 @@
+//@version=5
+strategy("Setup: Smooth Gaussian + Adaptive Supertrend (Manual Vol)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+length = input.int(75, title="Smooth Gaussian Trend Length")
+volatility_input = input.int(2, title="Volatility (2 or 3 to allow entries)")
+volatility_filter_enabled = input.bool(true, title="Enable Volatility Filter")
+show_trend = input.bool(true, title="Show Simulated Gaussian Trend Line")
+
+// === SIMULATED SMOOTH GAUSSIAN TREND ===
+sma1 = ta.sma(close, length)
+sma2 = ta.sma(sma1, length)
+trend_line = sma2
+
+// Mostrar línea en el gráfico
+plot(show_trend ? trend_line : na, title="Simulated Gaussian Trend", color=color.orange, linewidth=2)
+
+// === CONDICIONES DE ENTRADA ===
+price_above_trend = close > trend_line
+valid_volatility = volatility_input == 2 or volatility_input == 3
+entry_condition = price_above_trend and (not volatility_filter_enabled or valid_volatility)
+
+// === CONDICIÓN DE SALIDA ===
+exit_condition = close < trend_line
+
+// === ESTRATEGIA ===
+if entry_condition and strategy.opentrades == 0
+    strategy.entry("LONG", strategy.long)
+
+if exit_condition
+    strategy.close("LONG")
+
+// === MARCAS VISUALES CORREGIDAS ===
+plotshape(entry_condition and strategy.opentrades == 0 ? low : na, title="Entry Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(exit_condition and strategy.opentrades > 0 ? high : na, title="Exit Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)

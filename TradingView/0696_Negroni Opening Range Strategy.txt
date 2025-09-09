@@ -1,0 +1,465 @@
+//@version=5
+strategy('Negroni Opening Range Strategy', shorttitle='Negroni OR Strat', pyramiding=1, overlay=true, initial_capital = 100000, slippage = 2, default_qty_type=strategy.fixed, default_qty_value=10)
+
+thumbsUp = "👍"
+yawningEmoji = "😴"
+excitedEmoji = "🤩"
+thinkingEmoji = "🤔"
+sarcasticEmoji = "🙄"
+
+/////////////////////////// Maximum number of trades per day ////////////////////////////////////////////
+
+maxTradesPerDay = input.int(3, title="Max Trades Per Day", minval=1, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp)
+direction = input.string("Long/Short", title="Long only, Short only, Long/Short", options=["Long only", "Short only", "Long/Short"], group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp, tooltip='CAREFUL: "Long/Short" can open trades that can effectively close-out existing ones, for better and worse!')
+var int tradesToday = 0
+currentYear = year(time)
+currentMonth = month(time)
+currentDay = dayofmonth(time)
+currentDate = currentYear * 10000 + currentMonth * 100 + currentDay
+var int lastDate = na
+
+if (na(lastDate) or currentDate != lastDate)
+    tradesToday := 0
+    lastDate := currentDate
+
+/////////////////////////// Time window condition, to make backtesting reflect YOUR trading hours. //////////////////////////////////
+
+timezone = input.string("Europe/Berlin", title="Timezone", group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp, options=["America/New_York", "Europe/London", "Europe/Berlin", "Asia/Tokyo"])
+
+// Session Inputs
+sessionStartHour = input.int(9, title="Start hour to OPEN Trades", minval=0, maxval=23, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp, tooltip='Strategy will only open trades after this time.')
+sessionStartMinute = input.int(30, title="Start minute to OPEN Trades", minval=0, maxval=59, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp)
+sessionEndHour = input.int(14, title="End hour to OPEN Trades", minval=0, maxval=23, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp, tooltip='Strategy will only open trades before this time.')
+sessionEndMinute = input.int(00, title="End minute to OPEN Trades", minval=0, maxval=59, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp)
+sessionStart = timestamp(timezone, year(time), month(time), dayofmonth(time), sessionStartHour, sessionStartMinute)
+sessionEnd = timestamp(timezone, year(time), month(time), dayofmonth(time), sessionEndHour, sessionEndMinute)
+
+// Check if the current time is within the session
+isTradeTime = (time >= sessionStart and time <= sessionEnd)
+
+// Define time to close open-trades
+session_end_hour = input.int(16, "Hour to CLOSE any open trades", minval=0, maxval=23, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp, tooltip='This will prevent leaving trades overnight (or before US data!!).')
+session_end_min = input.int(00, "Minute to CLOSE any open trades", minval=0, maxval=59, group="Your Trading Session (make backtesting reflect YOUR trading hours) " + thumbsUp, tooltip='This will prevent leaving trades overnight (or before US data!!).')
+closeSession = timestamp(timezone, year(time), month(time), dayofmonth(time), session_end_hour, session_end_min)
+is_end_of_session = (time >= closeSession)
+
+
+///////////////////////////////////////////// Exchange and Opening Range Parameters /////////////////////////////////////////////////////////
+
+input_rth = input.session('0900-1630', title=' Exchange Session Time', group="Exchange/Stock Trading Session " + yawningEmoji,tooltip='This helps plot previous SESSION Hi/Lo')
+rth_session = time('1440', str.format('{0}:23456', input_rth), timezone)
+
+tp_option = input.string(title='Take Profit Strategy', defval='6) Full TP: PMKT Multiplier', options=['1) Full TP: ATR Multiplier', '2) Take Partials: ATR Multiplier', '3) Full TP: Trailing Stop', '4) Full TP: MA crossover/under', '5) Scalp: Points', '6) Full TP: PMKT Multiplier'], group="Stop Loss/Take Profit Strategy " + excitedEmoji, tooltip='1) Full close at the ATR parameters below. 2)  Takes partial profits based on parameters below, i.e close 40% at TP1, close another 50% at TP2, then the remainder at Full TP as set in option one. 3) Applies a Trailing Stop. 4) Takes Profit when price crosses Trend MA as defined below. 5) Scalps set number of points as defined below. 6) PMKT multiplier places a SL at opposite pre-market Hi/Low (50% would be mid; 100% opposite Hi/Low)')
+
+// Pre-market settings to confirm what to trade off
+or_option = input(title='Use "Pre-market" as breakout range', defval=true, group="Pre-market range " + thinkingEmoji, tooltip='Choose which opening range you want the strategy to apply to. Note: both ranges will show on the chart, if you just want one to show then you can untick in "Style").')
+
+or2_starthour = input.int(08, title='Pre-market start hour: range to trade off', minval=0, maxval=23, group="Pre-market range " + thinkingEmoji, tooltip='For Asia timezone, some stocks/indices do not get data at 08:00 Tokyo time, so you will have to experiment... e.g 10:00 - 11:00.')
+or2_startminute = input.int(00, title='Pre-market start min: range to trade off', minval=0, maxval=59, group="Pre-market range " + thinkingEmoji, tooltip='For Asia timezone, some stocks/indices do not get data at 08:00 Tokyo time, so you will have to experiment... e.g 10:00 - 11:00.')
+or2_endhour = input.int(09, title='Pre-market end hour: range to trade off', minval=0, maxval=23, group="Pre-market range " + thinkingEmoji, tooltip='For Asia timezone, some stocks/indices do not get data at 08:00 Tokyo time, so you will have to experiment... e.g 10:00 - 11:00.')
+or2_endminute = input.int(00, title='Pre-market end min: range to trade off', minval=0, maxval=59, group="Pre-market range " + thinkingEmoji, tooltip='For Asia timezone, some stocks/indices do not get data at 08:00 Tokyo time, so you will have to experiment... e.g 10:00 - 11:00.')
+or2TrendStart = timestamp(timezone, year(time), month(time), dayofmonth(time), or2_starthour, or2_startminute)
+or2TrendEnd = timestamp(timezone, year(time), month(time), dayofmonth(time), or2_endhour, or2_endminute)
+isor2TrendTime = (time == or2TrendEnd)
+isor2Time = (time >= or2TrendStart and time < or2TrendEnd)
+
+
+//Opening Range settings to check if inside or breakout
+or1_starthour = input.int(09, title='Opening Range start hour: identify OR (inside/breakout)', minval=0, maxval=23, group="Opening Range check " + thinkingEmoji, tooltip='This gives a label/visual check if OR1 is inside/breakout.')
+or1_startminute = input.int(05, title='Opening Range start min: identify OR (inside/breakout)', minval=0, maxval=59, group="Opening Range check " + thinkingEmoji, tooltip='This gives a label/visual check if OR1 is inside/breakout.')
+or1_endhour = input.int(09, title='Opening Range end hour: identify OR (inside/breakout)', minval=0, maxval=23, group="Opening Range check " + thinkingEmoji, tooltip='This gives a label/visual check if OR1 is inside/breakout.')
+or1_endminute = input.int(30, title='Opening Range end min: identify OR (inside/breakout)', minval=0, maxval=59, group="Opening Range check " + thinkingEmoji, tooltip='This gives a label/visual check if OR1 is inside/breakout.')
+or1TrendStart = timestamp(timezone, year(time), month(time), dayofmonth(time), or1_starthour, or1_startminute)
+or1TrendEnd = timestamp(timezone, year(time), month(time), dayofmonth(time), or1_endhour, or1_endminute)
+isor1TrendTime = (time == or1TrendEnd)
+isor1Time = (time >= or1TrendStart and time < or1TrendEnd)
+
+
+
+//////////////////////////////// OPENING RANGE calculations //////////////////////////////
+var float lastSessionHigh1 = na
+var float lastSessionLow1 = na
+var float sessionHigh1 = na
+var float sessionLow1 = na
+var float lastSessionHigh2 = na
+var float lastSessionLow2 = na
+var float sessionHigh2 = na
+var float sessionLow2 = na
+timeframe1 = "1"
+testor_high1 = request.security(syminfo.tickerid, timeframe1, high, lookahead=barmerge.lookahead_on)
+testor_low1 = request.security(syminfo.tickerid, timeframe1, low, lookahead=barmerge.lookahead_on)
+
+if isor1Time
+    if not isor1Time[1]
+        sessionLow1 := low
+        sessionHigh1 := high
+    else
+        sessionLow1 := math.min(low, sessionLow1)
+        sessionHigh1 := math.max(high, sessionHigh1)
+
+if isor1Time
+    lastSessionHigh1 := sessionHigh1
+    lastSessionLow1 := sessionLow1
+
+sessionMid1 = lastSessionLow1 + (lastSessionHigh1 - lastSessionLow1) / 2
+
+if isor2Time
+    if not isor2Time[1]
+        sessionLow2 := low
+        sessionHigh2 := high
+    else
+        sessionLow2 := math.min(low, sessionLow2)
+        sessionHigh2 := math.max(high, sessionHigh2)
+
+if isor2Time
+    lastSessionHigh2 := sessionHigh2
+    lastSessionLow2 := sessionLow2
+
+sessionMid2 = lastSessionLow2 + (lastSessionHigh2 - lastSessionLow2) / 2
+
+// Opening range trend (inside/breakout)
+if (sessionHigh1 > sessionHigh2 or sessionLow1 < sessionLow2) and isor1TrendTime
+    label.new(bar_index, sessionLow1, "OR Breakout", textcolor = color.rgb(255, 255, 255,50), color=color.rgb(138, 241, 142, 70), style=label.style_label_up, text="OR Breakout")
+
+if (sessionHigh1 <= sessionHigh2 and sessionLow1 >= sessionLow2) and isor1TrendTime
+    label.new(bar_index, sessionLow1, "OR Inside", textcolor = color.rgb(255, 255, 255,50), color=color.rgb(236, 10, 10, 70), style=label.style_label_up, text="OR Inside")
+
+
+// Exchange and stock session High/Low calculations
+var float rth_high = na
+var float rth_low = na
+var float prior_rth_high = na
+var float prior_rth_low = na
+
+if rth_session
+    if not rth_session[1]
+        rth_low := low
+        rth_high := high
+        rth_high
+    else
+        rth_low := math.min(low, rth_low)
+        rth_high := math.max(high, rth_high)
+        rth_high
+else
+    prior_rth_low := rth_low
+    prior_rth_high := rth_high
+    prior_rth_high
+
+
+////////////////////////////////////// Trading SL and TP Parameters //////////////////////////////////////////////
+
+// 1 Full ATR settings
+atrTimeframe = input.timeframe(title="ATR Timeframe", defval="D", options=["D", "W", "M", "240", "60", "30", "15", "5", "1"], group="1) Full ATR TP/SL settings", tooltip="Select the timeframe for the ATR calculations. You can select D even if you are on 1 min chart. WARNING: Standard ATR is is usually length 14, if you use 1 or 5 min ATR just be mindful to increase ATR length to above 50 (and adjust multipliers to maybe 3 and 13!)... the SL/TP levels will move SIGNIFICANTLY from when you placed the trade (sometimes for the better, though)!! Example: Try 1 min ATR timeframe with 14 length, and SL multiplier 3 and 5, you will see...")
+atrLength = input.int(50, title="ATR Length", group="1) Full ATR TP/SL settings")
+atrSLMultiplier = input.float(25, title="Stop-Loss ATR Multiplier %", group="1) Full ATR TP/SL settings")
+atrTPMultiplier = input.float(30, title="Full Take Profit ATR Multiplier %", group="1) Full ATR TP/SL settings")
+atrValue = atrTimeframe == "Chart" ? ta.atr(atrLength) : request.security(syminfo.tickerid, atrTimeframe, ta.atr(atrLength))
+longv3stoploss_level = strategy.position_avg_price - ((atrValue/100)*atrSLMultiplier)
+longv3takeprofit_level = strategy.position_avg_price + ((atrValue/100)*atrTPMultiplier)
+shortv3stoploss_level = strategy.position_avg_price + ((atrValue/100)*atrSLMultiplier)
+shortv3takeprofit_level = strategy.position_avg_price - ((atrValue/100)*atrTPMultiplier)
+
+// 2 Partial ATR settings
+percent_option1 = input.float(40, title="TP1: Close this % of ORIGINAL trade", group="2) Partial TP/SL settings")
+atrTP1Multiplier = input.float(20, title="TP1: ATR Multiplier %", group="2) Partial TP/SL settings")
+percent_option2 = input.float(20, title="TP2: Close this % of ORIGINAL trade", group="2) Partial TP/SL settings")
+atrTP2Multiplier = input.float(30, title="TP2: ATR Multiplier %", group="2) Partial TP/SL settings")
+longv2takeprofit1_level = strategy.position_avg_price + ((atrValue/100)*atrTP1Multiplier)
+shortv2takeprofit1_level = strategy.position_avg_price - ((atrValue/100)*atrTP1Multiplier)
+longv2takeprofit2_level = strategy.position_avg_price + ((atrValue/100)*atrTP1Multiplier)
+shortv2takeprofit2_level = strategy.position_avg_price - ((atrValue/100)*atrTP1Multiplier)
+
+// 3 Trail settings
+trailStop = input.float(250, title="Trailing Stop points", group="3) Trailing TP/SL settings")
+longTrailSL_level = strategy.position_avg_price - trailStop
+shortTrailSL_level = strategy.position_avg_price + trailStop
+
+// 4 MA settings
+fastMAtype = input.string(title='Fast MA Type', defval='EMA', options=['EMA', 'SMA', 'VWMA', 'HMA'], group="4) MA TP/SL settings")
+maFastSource = input(defval=hlc3, title='Fast MA Source', group="4) MA TP/SL settings")
+maFastLength = input.int(defval=10, title='Fast MA Period', minval=1, group="4) MA TP/SL settings")
+fastMA = fastMAtype == 'EMA' ? ta.ema(maFastSource, maFastLength) : fastMAtype == 'SMA' ? ta.sma(maFastSource, maFastLength) : fastMAtype == 'VWMA' ? ta.vwma(maFastSource, maFastLength) : ta.hma(maFastSource, maFastLength)
+trendMAtype = input.string(title='Trend MA Type', defval='EMA', options=['EMA', 'SMA', 'VWMA', 'HMA'], group="4) MA TP/SL settings")
+maTrendSource = input(defval=hlc3, title='Trend MA Source', group="4) MA TP/SL settings")
+maTrendLength = input.int(defval=100, title='Trend MA Period', minval=1, group="4) MA TP/SL settings")
+trendMA = trendMAtype == 'EMA' ? ta.ema(maTrendSource, maTrendLength) : trendMAtype == 'SMA' ? ta.sma(maTrendSource, maTrendLength) : trendMAtype == 'VWMA' ? ta.vwma(maTrendSource, maTrendLength) : ta.hma(maTrendSource, maTrendLength)
+
+// 5 Scalp settings
+scalpStop = input.float(15, title="Scalp SL points", group="5) Scalp TP/SL settings")
+scalpTP = input.float(70, title="Scalp TP points", group="5) Scalp TP/SL settings")
+longScalpSL_level = strategy.position_avg_price - scalpStop
+longScalpTP_level = strategy.position_avg_price + scalpTP
+shortScalpSL_level = strategy.position_avg_price + scalpStop
+shortScalpTP_level = strategy.position_avg_price - scalpTP
+
+// 6 PMKT Multiplier settings
+orSLmultiplier = input.float(75, title="PMKT multiplier %", group="6) PMKT multiplier TP/SL settings")
+//orlongSL = lastSessionHigh1 - ((lastSessionHigh1 - lastSessionLow1)/100)*orSLmultiplier
+//orshortSL = lastSessionLow1 + ((lastSessionHigh1 - lastSessionLow1)/100)*orSLmultiplier
+orlongSL = lastSessionHigh2 - ((lastSessionHigh2 - lastSessionLow2)/100)*orSLmultiplier
+orshortSL = lastSessionLow2 + ((lastSessionHigh2 - lastSessionLow2)/100)*orSLmultiplier
+
+
+// Labels
+displayStyle = input.string(defval='Standard', title='Display Style', group="Label settings " + yawningEmoji, options=['Standard', 'Right Anchored'], inline='Display')
+mergebool = input.bool(defval=true, title='Merge Levels?', group="Label settings " + yawningEmoji, inline='Display', tooltip="Will display a + when OR1 & 2 have merged")
+distanceright = input.int(defval=10, title='Distance', group="Label settings " + yawningEmoji, minval=5, maxval=500, inline='Dist')
+radistance = input.int(defval=200, title='Anchor Distance', group="Label settings " + yawningEmoji, minval=5, maxval=500, inline='Dist')
+labelsize = input.string(defval='Small', title='Text Size', group="Label settings " + yawningEmoji, options=['Small', 'Medium', 'Large'])
+linesize = input.string(defval='Small', title='Line Width', group="Label settings " + yawningEmoji, options=['Small', 'Medium', 'Large'], inline='Line')
+linestyle = input.string(defval='Solid', title='Line Style', group="Label settings " + yawningEmoji, options=['Solid', 'Dashed', 'Dotted'], inline='Line')
+show_labels = input(true, "Show Labels", group="Label settings " + yawningEmoji)
+off_mult = input(10, "Label offset", group="Label settings " + yawningEmoji)
+ll_offset = timenow + math.round(ta.change(time)*off_mult)
+
+var DEFAULT_LABEL_SIZE = size.small
+var DEFAULT_LABEL_STYLE = label.style_none
+var DEFAULT_EXTEND_RIGHT = distanceright
+
+f_drawLabel(_x, _y, _color, _text, _textcolor, _style, _size) =>
+    var _label = label.new(x = _x, y = _y, color = _color, text = _text, textcolor = _textcolor, style = _style, size = _size, xloc = xloc.bar_time)
+    label.set_xy(_label, _x, _y)
+
+// Merge
+var pricearray = array.new_float(0)
+var labelarray = array.new_label(0)
+f_LevelMerge(pricearray, labelarray, currentprice, currentlabel, currentcolor) =>
+    if array.includes(pricearray, currentprice)
+        whichindex = array.indexof(pricearray, currentprice)
+        labelhold = array.get(labelarray, whichindex)
+        whichtext = label.get_text(labelhold)
+
+        label.set_text(labelhold, label.get_text(currentlabel) + ' + ' + whichtext)
+        label.set_text(currentlabel, '')
+        label.set_textcolor(labelhold, currentcolor)
+    else
+        array.push(pricearray, currentprice)
+        array.push(labelarray, currentlabel)
+
+get_limit_right(bars) =>
+    timenow + (time - time[1]) * bars
+
+us_limit_right = get_limit_right(10)
+or1TrendStart := get_limit_right(radistance)
+
+///////////////////////////////////// Plots lines & clouds and making things pretty :)  ////////////////////////////////////////////
+
+var lastSessionHigh1lab = line.new(x1=or1TrendStart, x2=us_limit_right, y1=lastSessionHigh1, y2=lastSessionHigh1, color=color.rgb(180, 242, 242, 100), width=1, xloc=xloc.bar_time, style=line.style_dotted)
+var lastSessionLow1lab = line.new(x1=or1TrendStart, x2=us_limit_right, y1=lastSessionLow1, y2=lastSessionLow1, color=color.rgb(180, 242, 242, 100), width=1, xloc=xloc.bar_time, style=line.style_dotted)
+var lastSessionHigh1label = label.new(x=us_limit_right, y=lastSessionHigh1, text = "OR Hi", style=DEFAULT_LABEL_STYLE, textcolor=color.rgb(180, 242, 242, 50), size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+var lastSessionLow1label = label.new(x=us_limit_right, y=lastSessionLow1, text = "OR Lo",style=DEFAULT_LABEL_STYLE, textcolor=color.rgb(180, 242, 242, 50), size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+var lastSessionHigh2lab = line.new(x1=or1TrendStart, x2=us_limit_right, y1=lastSessionHigh2, y2=lastSessionHigh2, color=color.rgb(180, 242, 242, 100), width=1, xloc=xloc.bar_time, style=line.style_dotted)
+var lastSessionLow2lab = line.new(x1=or1TrendStart, x2=us_limit_right, y1=lastSessionLow2, y2=lastSessionLow2, color=color.rgb(180, 242, 242, 100), width=1, xloc=xloc.bar_time, style=line.style_dotted)
+var lastSessionHigh2label = label.new(x=us_limit_right, y=lastSessionHigh2, text = "PMKT Hi", style=DEFAULT_LABEL_STYLE, textcolor=color.rgb(180, 242, 242, 50), size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+var lastSessionLow2label = label.new(x=us_limit_right, y=lastSessionLow2, text = "PMKT Lo",style=DEFAULT_LABEL_STYLE, textcolor=color.rgb(180, 242, 242, 50), size=DEFAULT_LABEL_SIZE, xloc=xloc.bar_time)
+
+// OR zones
+or_high_plot1 = plot(not isor1Time ? lastSessionHigh1 : na, title='OR High', color=fastMA > trendMA ? color.rgb(180, 242, 242, 70) : color.rgb(155, 17, 30, 70), linewidth=2, style=plot.style_linebr)
+or_low_plot1 = plot(not isor1Time ? lastSessionLow1 : na, title='OR Low', color=fastMA > trendMA ? color.rgb(180, 242, 242, 70) : color.rgb(155, 17, 30, 70), linewidth=2, style=plot.style_linebr)
+or_mid_plot1 = plot(not isor1Time ? sessionMid1 : na, title='OR Mid', color=fastMA > trendMA ? color.rgb(180, 242, 242, 100) : color.rgb(155, 17, 30, 100), linewidth=2, style=plot.style_linebr)
+fill(or_high_plot1, or_low_plot1, color=fastMA > trendMA ? color.rgb(180, 242, 242, 95) : color.rgb(155, 17, 30, 90), title='OR Fill', editable = true)
+
+or_high_plot2 = plot(not isor2Time ? lastSessionHigh2 : na, title='PMKT High', color=fastMA > trendMA ? color.rgb(180, 242, 242, 90) : color.rgb(155, 17, 30, 80), linewidth=1, style=plot.style_circles)
+or_low_plot2 = plot(not isor2Time ? lastSessionLow2 : na, title='PMKT Low', color=fastMA > trendMA ? color.rgb(180, 242, 242, 90) : color.rgb(155, 17, 30, 80), linewidth=1, style=plot.style_circles)
+plot(not isor2Time ? sessionMid2 : na, title='PMKT Mid', color=fastMA > trendMA ? color.rgb(180, 242, 242, 100) : color.rgb(155, 17, 30, 100), linewidth=1, style=plot.style_circles)
+fill(or_high_plot2, or_low_plot2, color=fastMA > trendMA ? color.rgb(180, 242, 242, 100) : color.rgb(155, 17, 30, 100), title='PMKT Fill', editable = true)
+
+f_drawLabel(ll_offset, show_labels ? lastSessionHigh1 : na, color.rgb(180, 242, 242, 100), "<----- OR Hi       ", color.rgb(180, 242, 242,50), label.style_label_center, size.small)
+f_drawLabel(ll_offset, show_labels ? lastSessionLow1 : na, color.rgb(180, 242, 242, 100), "<----- OR Lo       ", color.rgb(180, 242, 242, 50), label.style_label_center, size.small)
+
+f_drawLabel(ll_offset, show_labels ? lastSessionHigh2 : na, color.rgb(180, 242, 242, 100), "<----- PMKT Hi       ", color.rgb(180, 242, 242,80), label.style_label_center, size.small)
+f_drawLabel(ll_offset, show_labels ? lastSessionLow2 : na, color.rgb(180, 242, 242, 100), "<----- PMKT Lo       ", color.rgb(180, 242, 242, 80), label.style_label_center, size.small)
+
+//line.set_x1(lastSessionHigh1lab, or1TrendStart)
+//line.set_x2(lastSessionHigh1lab, us_limit_right)
+//line.set_y1(lastSessionHigh1lab, lastSessionHigh1)
+//line.set_y2(lastSessionHigh1lab, lastSessionHigh1)
+
+//line.set_x1(lastSessionLow1lab, or1TrendStart)
+//line.set_x2(lastSessionLow1lab, us_limit_right)
+//line.set_y1(lastSessionLow1lab, lastSessionLow1)
+//line.set_y2(lastSessionLow1lab, lastSessionLow1)
+
+//label.set_x(lastSessionHigh1label, us_limit_right)
+//label.set_y(lastSessionHigh1label, lastSessionHigh1)
+//label.set_text(lastSessionHigh1label, "30m OR Hi")
+
+//label.set_x(lastSessionLow1label, us_limit_right)
+//label.set_y(lastSessionLow1label, lastSessionLow1)
+//label.set_text(lastSessionLow1label, "30m OR Lo")
+
+//line.set_x1(lastSessionHigh2lab, or1TrendStart)
+//line.set_x2(lastSessionHigh2lab, us_limit_right)
+//line.set_y1(lastSessionHigh2lab, lastSessionHigh2)
+//line.set_y2(lastSessionHigh2lab, lastSessionHigh2)
+
+//line.set_x1(lastSessionLow2lab, or1TrendStart)
+//line.set_x2(lastSessionLow2lab, us_limit_right)
+//line.set_y1(lastSessionLow2lab, lastSessionLow2)
+//line.set_y2(lastSessionLow2lab, lastSessionLow2)
+
+//label.set_x(lastSessionHigh2label, us_limit_right)
+//label.set_y(lastSessionHigh2label, lastSessionHigh2)
+//label.set_text(lastSessionHigh2label, "1h OR Hi")
+
+//label.set_x(lastSessionLow2label, us_limit_right)
+//label.set_y(lastSessionLow2label, lastSessionLow2)
+//label.set_text(lastSessionLow2label, "1h OR Lo")
+
+//if mergebool == true
+    //f_LevelMerge(pricearray, labelarray, lastSessionHigh1, lastSessionHigh1label,  color.rgb(180, 242, 242, 80))
+    //f_LevelMerge(pricearray, labelarray, lastSessionLow1, lastSessionLow1label,  color.rgb(180, 242, 242, 80))
+    //f_LevelMerge(pricearray, labelarray, lastSessionHigh2, lastSessionHigh2label,  color.rgb(180, 242, 242, 80))
+    //f_LevelMerge(pricearray, labelarray, lastSessionLow2, lastSessionLow2label,  color.rgb(180, 242, 242, 80))
+
+// OR Trend label
+//plotshape(series=isor1TrendTime and or1Trend_green, location=location.bottom, textcolor = color.rgb(255, 255, 255,50), color=color.rgb(138, 241, 142, 70), style=shape.labelup, text="OR Breakout")
+//plotshape(series=isor1TrendTime and or1Trend_red, location=location.bottom, textcolor = color.rgb(255, 255, 255,50), color=color.rgb(236, 10, 10, 70), style=shape.labeldown, text="OR Inside")
+
+// Prev Session Hi/Lo
+plot(not rth_session ? rth_high : prior_rth_high, title='Prev session High', color=color.rgb(220, 240, 40, 60), linewidth=2, style=plot.style_linebr)
+f_drawLabel(ll_offset, show_labels ? prior_rth_high : na, color.rgb(115, 233, 158, 100), "  <----- Prev Session Hi   ", color.rgb(220, 240, 40, 60), label.style_label_center, size.small)
+plot(not rth_session ? rth_low : prior_rth_low, title='Prev session Low', color=color.rgb(220, 240, 40, 60), linewidth=2, style=plot.style_linebr)
+f_drawLabel(ll_offset, show_labels ? prior_rth_low : na, color.rgb(155, 17, 30, 100), "  <----- Prev Session Lo   ", color.rgb(220, 240, 40, 60), label.style_label_center, size.small)
+
+// MA Trend Cloud
+fastMAline = plot(fastMA, color=fastMA > trendMA ? color.rgb(180, 242, 242, 50) : color.rgb(155, 17, 30, 30), linewidth = 1, title='Fast MA')
+trendMAline = plot(trendMA, color=trendMA > fastMA ? color.rgb(155, 17, 30, 30) : color.rgb(180, 242, 242, 50), linewidth = 2, title='Trend MA', style=plot.style_stepline)
+fill(fastMAline, trendMAline, color=fastMA > trendMA ? color.rgb(180, 242, 242, 95) : color.rgb(155, 17, 30, 80), title='MA Trend Zone', editable = true)
+
+// Full ATR SL/TP
+plot(strategy.position_size > 0 ? longv3stoploss_level : na, title = 'Full ATR long SL', color=color.rgb(242, 212, 180, 60), style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size > 0 ? longv3takeprofit_level : na, title = 'Full ATR long TP', color=color.rgb(242, 212, 180, 60), style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size < 0 ? shortv3stoploss_level : na, title = 'Full ATR short SL', color=color.rgb(155, 17, 30, 40), style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size < 0 ? shortv3takeprofit_level : na, title = 'Full ATR short TP', color=color.rgb(155, 17, 30, 40) , style=plot.style_linebr, linewidth=2)
+
+// Scalp SL/TP
+plot(longScalpSL_level, title = 'Scalp long SL', color=color.rgb(242, 212, 180, 100), style=plot.style_linebr, linewidth=2)
+plot(longScalpTP_level, title = 'Scalp long TP', color=color.rgb(242, 212, 180, 100), style=plot.style_linebr, linewidth=2)
+plot(shortScalpSL_level, title = 'Scalp short SL', color=color.rgb(155, 17, 30, 100), style=plot.style_linebr, linewidth=2)
+plot(shortScalpTP_level, title = 'Scalp short TP', color=color.rgb(155, 17, 30, 100) , style=plot.style_linebr, linewidth=2)
+
+// Full PMKT multiplier SL
+plot(strategy.position_size > 0 ? orlongSL : na, title = 'PMKT mult long SL', color=color.rgb(242, 212, 180, 60), style=plot.style_linebr, linewidth=2)
+plot(strategy.position_size < 0 ? orshortSL : na, title = 'PMKT mult short SL', color=color.rgb(155, 17, 30, 40), style=plot.style_linebr, linewidth=2)
+
+
+///////////////////////////////////////////////// OPENING TRADES ///////////////////////////////////////////////////
+
+// OR Trigger Parameters//
+longTrigger1 = ta.crossover(close, lastSessionHigh1)
+shortTrigger1 = ta.crossunder(close, lastSessionLow1)
+longTrigger2 = ta.crossover(close, lastSessionHigh2)
+shortTrigger2 = ta.crossunder(close, lastSessionLow2)
+
+longCondition1 = not na(lastSessionHigh1) and longTrigger1
+shortCondition1 = not na(lastSessionLow1) and shortTrigger1
+longCondition2 = not na(lastSessionHigh2) and longTrigger2
+shortCondition2 = not na(lastSessionLow2) and shortTrigger2
+
+if (tradesToday < maxTradesPerDay)
+    if (or_option == true and isTradeTime)
+        if (longCondition2) and (direction == "Long only" or direction == "Long/Short")
+            strategy.order("Long", strategy.long)
+            tradesToday += 1
+        if (shortCondition2) and (direction == "Short only" or direction == "Long/Short")
+            strategy.order("Short", strategy.short)
+            tradesToday += 1
+    if (or_option == false and isTradeTime)
+        if (longCondition1) and (direction == "Long only" or direction == "Long/Short")
+            strategy.order("Long", strategy.long)
+            tradesToday += 1
+        if (shortCondition1) and (direction == "Short only" or direction == "Long/Short")
+            strategy.order("Short", strategy.short)
+            tradesToday += 1
+
+
+///////////////////////////////////////////// CLOSING TRADES /////////////////////////////////////////
+
+// Full ATR
+if tp_option == '1) Full TP: ATR Multiplier' and not is_end_of_session
+    strategy.exit("Long: Full TP/SL", "Long", stop=longv3stoploss_level, limit=longv3takeprofit_level)
+    strategy.exit("Short: Full TP/SL", "Short", stop=shortv3stoploss_level, limit=shortv3takeprofit_level)
+
+if tp_option == '1) Full TP: ATR Multiplier' and is_end_of_session
+    strategy.close("Long", comment="End of Day")
+    strategy.close("Short", comment="End of Day")
+
+
+// Partials ATR
+if (tp_option) == '2) Take Partials: ATR Multiplier' and not is_end_of_session
+    strategy.exit("Long: Partial TP1/SL", "Long", stop=longv3stoploss_level,  qty_percent = percent_option1, limit=longv2takeprofit1_level)
+    strategy.exit("Short: Partial TP1/SL", "Short", stop=shortv3stoploss_level, qty_percent = percent_option1, limit=shortv2takeprofit1_level)
+
+    strategy.exit("Long: Partial TP2/SL", "Long", stop=longv3stoploss_level, qty_percent = percent_option2, limit=longv2takeprofit2_level)
+    strategy.exit("Short: Partial TP2/SL", "Short", stop=shortv3stoploss_level, qty_percent = percent_option2, limit=shortv2takeprofit2_level)
+
+    strategy.exit("Long: Partial TP3/SL", "Long", stop=longv3stoploss_level, limit=longv3takeprofit_level)
+    strategy.exit("Short: Partial TP3/SL", "Short", stop=shortv3stoploss_level, limit=shortv3takeprofit_level)
+
+if tp_option == '2) Take Partials: ATR Multiplier' and is_end_of_session
+    strategy.close("Long", comment="End of Day")
+    strategy.close("Short", comment="End of Day")
+
+
+// Trailing Stop
+var float long_trail_stop_level = na
+var float short_trail_stop_level = na
+var float plot_long_trail_stop = na
+var float plot_short_trail_stop = na
+
+if (tp_option) == '3) Full TP: Trailing Stop' and not is_end_of_session
+    strategy.exit("Long: Trailing TP", "Long", trail_price=na, trail_points=trailStop, trail_offset=na)
+    strategy.exit("Long: Trailing SL", "Long", trail_price=trailStop, trail_points=na, trail_offset=trailStop)
+    if (strategy.position_size > 0)
+        long_trail_stop_level := na(long_trail_stop_level) ? strategy.position_avg_price - (trailStop) : math.max(long_trail_stop_level, strategy.position_avg_price - (trailStop))
+    else
+        long_trail_stop_level := na
+    plot_long_trail_stop := strategy.position_size > 0 ? long_trail_stop_level : na
+
+if (tp_option) == '3) Full TP: Trailing Stop' and not is_end_of_session
+    strategy.exit("Short: Trailing TP", "Short", trail_price=na, trail_points=trailStop, trail_offset=na)
+    strategy.exit("Short: Trail SL", "Short", stop=shortTrailSL_level)
+    if (strategy.position_size < 0)
+        short_trail_stop_level := na(short_trail_stop_level) ? strategy.position_avg_price + (trailStop) : math.min(short_trail_stop_level, strategy.position_avg_price + (trailStop))
+    else
+        short_trail_stop_level := na
+    plot_short_trail_stop := strategy.position_size < 0 ? short_trail_stop_level : na
+
+plot(not short_trail_stop_level ? plot_long_trail_stop : na, color=strategy.position_size > 0 ? color.yellow : color.new(color.blue, 100), title="Long Trailing Stop", linewidth=2, style=plot.style_line)
+plot(not long_trail_stop_level ? plot_short_trail_stop : na, color=strategy.position_size < 0 ? color.blue : color.new(color.blue, 100), title="Short Trailing Stop", linewidth=2, style=plot.style_line)
+
+
+if tp_option == '3) Full TP: Trailing Stop' and is_end_of_session
+    strategy.close("Long", comment="End of Day")
+    strategy.close("Short", comment="End of Day")
+
+
+// MA
+if (tp_option) == '4) Full TP: MA crossover/under' and not is_end_of_session
+    strategy.exit("Long: MA TP/SL", "Long", loss=longv3stoploss_level, stop=trendMA)
+    strategy.exit("Short: MA TP/SL", "Short", loss=shortv3stoploss_level, stop=trendMA)
+
+if tp_option == '4) Full TP: MA crossover/under' and is_end_of_session
+    strategy.close("Long", comment="End of Day")
+    strategy.close("Short", comment="End of Day")
+
+
+// Scalp
+if (tp_option) == '5) Scalp: Points' and not is_end_of_session
+    strategy.exit("Long: Scalp TP/SL", "Long", stop=longScalpSL_level, limit=longScalpTP_level)
+    strategy.exit("Short: Scalp TP/SL", "Short", stop=shortScalpSL_level, limit=shortScalpTP_level)
+
+if tp_option == '5) Scalp: Points' and is_end_of_session
+    strategy.close("Long", comment="End of Day")
+    strategy.close("Short", comment="End of Day")
+
+
+// Full PMKT multiplier
+if tp_option == '6) Full TP: PMKT Multiplier' and not is_end_of_session
+    strategy.exit("Long: Full PMKT Multiplier TP/SL", "Long", stop=orlongSL, limit=longv3takeprofit_level)
+    strategy.exit("Short: Full PMKT Multiplier TP/SL", "Short", stop=orshortSL, limit=shortv3takeprofit_level)
+
+if tp_option == '6) Full TP: PMKT Multiplier' and is_end_of_session
+    strategy.close("Long", comment="End of Day")
+    strategy.close("Short", comment="End of Day")

@@ -1,0 +1,64 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RicardoSantos
+
+//@version=6
+
+// @description Convolution is one of the most important mathematical operations used in signal processing. This simple mathematical operation pops up in many scientific and industrial applications, from its use in a billion-layer large CNN to simple image denoising.
+// ___
+// Reference:
+// https://www.algorithm-archive.org/contents/convolutions/1d/1d.html
+// https://numpy.org/doc/stable/reference/generated/numpy.convolve.html
+// https://lloydrochester.com/post/c/convolution/
+// https://www.geeksforgeeks.org/how-to-perform-faster-convolutions-using-fast-fourier-transformfft-in-python/
+library('MathSpecialFunctionsConvolve1D')
+
+// @function Convolve
+// @param    signal    List with signal data.
+// @param    filter    List with weights to apply to the signal data.
+// @returns Discrete, linear convolution of `signal` and `filter`.
+export f (float[] signal, float[] filter) =>
+    int _signal_size = signal.size()
+    int _filter_size = filter.size()
+    //
+    switch
+        _signal_size == 0 => runtime.error('`signal` must have atleast one element!'), signal
+        _filter_size == 0 => runtime.error('`filter` must have atleast one element!'), filter
+    //
+    int _output_size = _signal_size + _filter_size - 1 // unbounded convolution
+    float[] _output = array.new<float>(_output_size, 0.0)
+    for k = 0 to _output_size - 1
+        float _sum = 0.0
+        for n = 0 to _signal_size - 1
+            int _i = k - n
+            if _i >= 0 and _i < _filter_size
+                _sum += signal.get(n) * filter.get(_i)
+        _output.set(k, _sum)
+    _output
+
+
+var float[] sig = array.new<float>(20)
+var float[] fil = array.new<float>(20)
+if barstate.isfirst
+    for _i = 0 to 19
+        sig.set(_i, math.random())
+        fil.set(_i, math.cos(_i * math.pi))
+if barstate.islastconfirmedhistory
+    con = f(sig, fil)
+    pts = array.new<chart.point>(con.size())
+    for [_i, _e] in con
+        pts.set(_i, chart.point.from_index(bar_index - _i, _e))
+    polyline.new(pts, false, false)
+
+// 20240416 RS
+// ref. from https://numpy.org/doc/stable/reference/generated/numpy.convolve.html
+// var float[] sig = array.from(1.0, 2, 3)
+// var float[] fil = array.from(0.0, 1.0, 0.5)
+// if barstate.islastconfirmedhistory
+//     log.info("\n{0}", f(sig, fil))
+
+// 20240422 RS
+// ref. from https://lloydrochester.com/post/c/convolution/
+// var float[] sig = array.from(1.0, 1, 1, 1, 1)
+// var float[] fil = array.from(1.0, 1, 1, 1, 1)
+// if barstate.islastconfirmedhistory
+//     log.info("\n{0}", f(sig, fil))

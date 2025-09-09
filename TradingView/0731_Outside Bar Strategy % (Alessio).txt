@@ -1,0 +1,114 @@
+//@version=6
+strategy('Outside Bar Strategy', overlay = true, shorttitle = 'OUTSIDE STRATEGY')
+
+// Input parameters
+entryPercentage = input.float(50, title = 'Entry Level (% of Outside Bar)', minval = 1, maxval = 100) / 100
+useAlerts = input.bool(true, title = 'Enable Alerts')
+usePartialExit = input.bool(true, title = 'Enable Partial Exit')
+enableBreakeven = input.bool(true, title = 'Enable Breakeven After Partial Exit')
+longColor = input.color(color.new(color.green, 0), 'Long Signal Color')
+shortColor = input.color(color.new(color.red, 0), 'Short Signal Color')
+entryLineWidth = input.int(2, title = 'Entry Line Width', minval = 1, maxval = 5)
+entryLineColor = input.color(color.green, 'Entry Line Color')
+stopLossLineWidth = input.int(2, title = 'Stop Loss Line Width', minval = 1, maxval = 5)
+stopLossLineColor = input.color(color.red, 'Stop Loss Line Color')
+takeProfitLineWidth = input.int(2, title = 'Take Profit Line Width', minval = 1, maxval = 5)
+takeProfitLineColor = input.color(color.blue, 'Take Profit Line Color')
+tpPercentage = input.float(100, title = 'Take Profit (%) of Outside Bar Move', minval = 1, maxval = 200) / 100
+partialRR = input.float(1, title = 'Partial Exit at RR', minval = 0.1, maxval = 10)
+partialExitPercent = input.float(50, title = 'Partial Exit (%)', minval = 1, maxval = 100) / 100
+stopLossOffsetPips = input.int(10, title = 'Stop Loss Offset (Pips)', minval = 0)  // New input for SL offset
+
+// Variables for tracking state
+var float longEntryLevel = na
+var float shortEntryLevel = na
+var float longStopLoss = na
+var float shortStopLoss = na
+var float longTakeProfit = na
+var float shortTakeProfit = na
+var float longPartialTP = na
+var float shortPartialTP = na
+var bool longPartialHit = false
+var bool shortPartialHit = false
+
+// Function to convert pips to price value
+f_pipsToPrice(pips) =>
+    pips * syminfo.mintick
+
+// Outside bar identification
+isOutsideBar = high > high[1] and low < low[1]
+isBullish = isOutsideBar and close > open
+isBearish = isOutsideBar and close < open
+
+// Function to add labels with proper positioning
+f_addLabel(price, labelText, labelColor, textColor, offset) =>
+    label.new(x = bar_index, y = price + offset, text = labelText, style = label.style_label_down, color = labelColor, textcolor = textColor, size = size.small)
+
+// Reset partial hit flags on new signals
+if isBullish or isBearish
+    longPartialHit := false
+    shortPartialHit := false
+
+// Long setup
+if isBullish
+    barSize = high - low
+    longEntryLevel := low + barSize * entryPercentage
+    longStopLoss := low - f_pipsToPrice(stopLossOffsetPips)  // Apply offset to SL
+    longTakeProfit := high + barSize * tpPercentage
+    longPartialTP := longEntryLevel + (longEntryLevel - longStopLoss) * partialRR
+
+    strategy.entry('Long', strategy.long, stop = longEntryLevel)
+
+    if usePartialExit
+        strategy.exit('Partial Exit Long', 'Long', qty_percent = partialExitPercent * 100, limit = longPartialTP)
+    strategy.exit('Final Exit Long', 'Long', stop = longStopLoss, limit = longTakeProfit)
+
+    f_addLabel(longEntryLevel, 'E', entryLineColor, color.white, barSize * 0.02)
+    f_addLabel(longStopLoss, 'SL', stopLossLineColor, color.white, -barSize * 0.02)
+    f_addLabel(longTakeProfit, 'TP', takeProfitLineColor, color.white, barSize * 0.04)
+
+    if useAlerts
+        alert('Bullish Outside Bar Entry at ' + str.tostring(longEntryLevel), alert.freq_once_per_bar_close)
+
+// Short setup
+if isBearish
+    barSize = high - low
+    shortEntryLevel := high - barSize * entryPercentage
+    shortStopLoss := high + f_pipsToPrice(stopLossOffsetPips)  // Apply offset to SL
+    shortTakeProfit := low - barSize * tpPercentage
+    shortPartialTP := shortEntryLevel - (shortStopLoss - shortEntryLevel) * partialRR
+
+    strategy.entry('Short', strategy.short, stop = shortEntryLevel)
+
+    if usePartialExit
+        strategy.exit('Partial Exit Short', 'Short', qty_percent = partialExitPercent * 100, limit = shortPartialTP)
+    strategy.exit('Final Exit Short', 'Short', stop = shortStopLoss, limit = shortTakeProfit)
+
+    f_addLabel(shortEntryLevel, 'E', entryLineColor, color.white, -barSize * 0.02)
+    f_addLabel(shortStopLoss, 'SL', stopLossLineColor, color.white, barSize * 0.02)
+    f_addLabel(shortTakeProfit, 'TP', takeProfitLineColor, color.white, -barSize * 0.04)
+
+    if useAlerts
+        alert('Bearish Outside Bar Entry at ' + str.tostring(shortEntryLevel), alert.freq_once_per_bar_close)
+
+// Breakeven logic
+if strategy.position_size > 0 and close >= longPartialTP and not longPartialHit
+    longPartialHit := true
+    if enableBreakeven
+        strategy.exit('Breakeven Long', 'Long', stop = longEntryLevel)
+
+if strategy.position_size < 0 and close <= shortPartialTP and not shortPartialHit
+    shortPartialHit := true
+    if enableBreakeven
+        strategy.exit('Breakeven Short', 'Short', stop = shortEntryLevel)
+
+// Draw levels
+if isBullish
+    line.new(bar_index - 1, longEntryLevel, bar_index, longEntryLevel, color = entryLineColor, width = entryLineWidth)
+    line.new(bar_index - 1, longStopLoss, bar_index, longStopLoss, color = stopLossLineColor, width = stopLossLineWidth)
+    line.new(bar_index - 1, longTakeProfit, bar_index, longTakeProfit, color = takeProfitLineColor, width = takeProfitLineWidth)
+
+if isBearish
+    line.new(bar_index - 1, shortEntryLevel, bar_index, shortEntryLevel, color = entryLineColor, width = entryLineWidth)
+    line.new(bar_index - 1, shortStopLoss, bar_index, shortStopLoss, color = stopLossLineColor, width = stopLossLineWidth)
+    line.new(bar_index - 1, shortTakeProfit, bar_index, shortTakeProfit, color = takeProfitLineColor, width = takeProfitLineWidth)

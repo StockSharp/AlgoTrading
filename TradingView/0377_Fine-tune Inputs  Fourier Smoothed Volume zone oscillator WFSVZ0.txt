@@ -1,0 +1,92 @@
+//@version=5
+strategy("Fine-tune W&FSVZO Strategy [Algo Alert]", precision = 2, default_qty_type ="percent_of_equity" , default_qty_value = 100 )
+
+// Importing required libraries
+import TradingView/ta/5
+import Celje_2300/aprox/1
+
+// Input options for enabling new versions of DFT and whitenoise
+version2 = input.bool(title = 'Double Fourier', tooltip="Improved Fourier Transform" ,defval = true, group = "VZO")
+version3 = input.bool(title = 'Improved whitenoise', tooltip="Improved Noice Reduction using aproximated price aswell ad close price.", defval = true, group = "VZO")
+
+magic = input.bool(title = 'Magical Wavelet Aproximation',tooltip="Uses Wavelet as Main aprox. instead of Fourier", defval = false, group = "Edition")
+
+
+// FAST FOURIER TRANSFORM
+// Selecting either DTF32 or FFT based on user preference
+dft = magic ? version2 ? aprox.Wavelet(src = aprox.smooth(aprox.DTF32(),aprox.Wavelet(src = aprox.DTF32(),len = 6))) : aprox.Wavelet(src = aprox.smooth(aprox.FFT(),aprox.Wavelet(src = aprox.FFT(),len = 6))) : version2 ? aprox.DTF32() : aprox.FFT()
+
+// VZO (Volume Zone Oscillator) calculation with EMA smoothing
+lengthV = input(2, title='VZO Length', tooltip="I suggest 2 for FAST and 5 or 7 for SLOW. Using FAST setting require averaging more than 1 Timeframe together. ", group = "VZO")
+VZO_1 = aprox.vzo_ema(dft, lengthV)
+
+// NOISE REDUCTION
+min_ = input(1, "NoiseR min length", tooltip="Keep it at 1 if you didn't read the code!! it's the range of EMA aproximation of the VZO depending on last 3 close prices." , group = "Noise")
+max_ = input(8, "NoiseR max length",tooltip="I suggest 2 for FAST and 7 or 8 for SLOW. Using FAST setting require averaging more than 1 Timeframe together.", group = "Noise")
+malen = input(2, title="Smooth Length", tooltip="Insert 1 if you use VZO > VZO[1] and 2 if you use VZO > ta.ema(VZO,2)", group = "Noise")
+
+// Using whitenoise function for noise reduction in VZO
+VZO_ = version3 ? aprox.whitenoise(VZO_1, dft, 10, minEmaLength = min_, maxEmaLength = max_) :
+               aprox.whitenoise(VZO_1, 10, minEmaLength = min_, maxEmaLength = max_)
+
+// PLOTS
+nice_chart = input.bool(true, "Nice chart", tooltip="IF (FALSE): Shows the red falling line if VZO falling above 0", group = "Plots")
+
+// Conditions for plotting based on oscillator direction
+var greencon = false
+var redcon = false
+
+taema = ta.ema(VZO_, malen)
+
+greencon := malen < 2 ? VZO_ > VZO_[1] : (VZO_ > taema)
+redcon := malen < 2 ? VZO_ < VZO_[1] : (VZO_ < taema)
+
+leadosc = (VZO_)*0.8
+
+mar = input.int(0,"Vzvo difference",tooltip="bulish_VZO = true  WHEN  { Vzo = bulish AND VZO > this_input } ")
+
+plot(mar , display = display.pane)
+plot(-mar,  display = display.pane)
+close_all = input.bool(true,"Enable Close all", tooltip=" Position is always 1 or -1 if false, and 1, 0 or -1 if true. 0 Is falling above 0 or rising bellow 0")
+
+
+longCondition = greencon and VZO_ >mar
+shortCondition =  redcon and VZO_ < -mar
+// Strategy execution
+var pos = 0
+var long = 0
+
+if longCondition
+    pos := 1
+    long := 1
+    strategy.entry("long",strategy.long)
+
+if shortCondition
+    pos := -1
+    long := -1
+    strategy.entry("short",strategy.short)
+
+
+if not longCondition and not shortCondition and close_all
+    pos := 0
+    strategy.close_all()
+
+
+// Plotting the indicators and colored zones
+mid = plot(0, color=color.new(#ffffff, 71), display = display.pane)
+lii = plot(leadosc, color = greencon ? color.rgb(0, 255, 187, math.abs(leadosc)) : color.rgb(255, 17, 0, math.abs(leadosc)), display = display.none)
+v3 = plot(VZO_ >= 0 ? math.min(VZO_, taema)*1.1 : math.max(VZO_, taema)*1.1, display = display.none)
+v4 = plot(VZO_ >= 0 ? math.min(VZO_, taema)*1: math.max(VZO_, taema)*1, display = display.none)
+
+fill(v3, lii, taema > 0 ? taema : 0, taema > 0 ? 0 : taema, taema > 0 ? color.rgb(9, 232, 173, math.abs(leadosc)) : #0d030300, taema > 0 ? #0b030300 : color.rgb(208, 20, 7, math.abs(leadosc)), display = nice_chart ? display.all : display.none)
+fill(v4, lii, taema > 0 ? taema : 0, taema > 0 ? 0 : taema, taema > 0 ? color.rgb(9, 232, 173, math.abs(leadosc)) : #0d030300, taema > 0 ? #0b030300 : color.rgb(208, 20, 7, math.abs(leadosc)), display = not nice_chart ? display.all : display.none)
+plot(VZO_, color = greencon ? color.rgb(9, 232, 173, math.abs(leadosc)) : redcon ? color.rgb(255, 17, 0, math.abs(leadosc)) : color.aqua, display = not nice_chart ? display.pane : display.none)
+
+// Plotting additional information on the status line
+plot(close, title="ClosePrice", display=display.status_line)
+plot(open, title="OpenPrice", display=display.status_line)
+
+plot(pos, color = greencon ? color.rgb(9, 232, 173, 50) : redcon ? color.rgb(255, 17, 0, 50) : color.aqua, title="position", display=display.status_line)
+
+plotchar(longCondition and long[1]==-1 ? -125 : na, char = "▲", color = color.rgb(0, 255, 187,40), location = location.absolute, size = size.tiny,  display = display.pane)
+plotchar(shortCondition  and long[1]==1 ? 125 : na, char = "▼", color = color.rgb(255, 17, 0, 40), location = location.absolute, size = size.tiny,  display = display.pane)

@@ -1,0 +1,233 @@
+//PineIndicators
+
+//@version=5
+strategy(title="TSI Long/Short for BTC 2H", precision=2, initial_capital=10000, commission_value=0.05, slippage=2, default_qty_value=10, max_labels_count=500, default_qty_type=strategy.fixed, overlay=true)
+
+leverage   = input.float(1, "Leverage 1:", step=0.01)
+showTable  = input(true, "Show Performance Table", group="For more info go to this strategy at PineIndicators.com", tooltip="Hide/show performance table. Here you can see the results of the previous months and years. Bug: Sometimes it doesn't load due to TradingView. We work on that!")
+
+// ---------- TSI-Berechnung ----------
+long2   = 25
+short2  = 13
+signal  = 13
+price2  = close
+double_smooth(src, long2, short2) =>
+    fist_smooth = ta.ema(src, long2)
+    ta.ema(fist_smooth, short2)
+pc                      = ta.change(price2)
+double_smoothed_pc      = double_smooth(pc, long2, short2)
+double_smoothed_abs_pc  = double_smooth(math.abs(pc), long2, short2)
+tsi_value               = 100 * (double_smoothed_pc / double_smoothed_abs_pc)
+ind                     = tsi_value
+
+qty = strategy.equity / close * leverage
+
+// ---------- Trading-Logik ----------
+longcon  = ta.crossover(ind, ta.highest(ind, 100)[1])
+if longcon
+    strategy.entry("L", strategy.long, qty=qty)
+
+shortcon = ta.crossunder(ind, ta.lowest(ind, 100)[1])
+if shortcon
+    strategy.entry("S", strategy.short, qty=qty)
+
+// ---------- Farben und Labels ----------
+green   = color.new(#0097a7, 0)
+red     = color.new(#ff195f, 0)
+
+green90 = color.new(#0097a7, 85)
+red90   = color.new(#ff195f, 85)
+
+if strategy.position_size > strategy.position_size[1] and strategy.position_size != 0
+    label.new(bar_index, low * 0.99, text="▲", textcolor=green, size=size.normal, textalign=text.align_center, color=green90, style=label.style_text_outline)
+    label.new(bar_index, low * 0.99, text="Buy", textcolor=green, size=size.tiny, textalign=text.align_center, color=green90, style=label.style_label_up)
+
+if strategy.position_size < strategy.position_size[1] and strategy.position_size != 0
+    label.new(bar_index, high * 1.01, text="▼", textcolor=red, size=size.normal, textalign=text.align_center, color=red90, style=label.style_text_outline)
+    label.new(bar_index, high * 1.01, text="Sell", textcolor=red, size=size.tiny, textalign=text.align_center, color=red90, style=label.style_label_down)
+
+
+// ---------- Visualisierung der Trade-Performance ----------
+// Es gibt in diesem Script nie ein explizites Exit – es wird stets ein Trade (Long oder Short) geführt.
+// Beim Wechsel (Reversal) von Long zu Short oder Short zu Long betrachten wir den abgeschlossenen Trade.
+// Für Longs wird grün gefüllt, für Shorts rot, unabhängig vom tatsächlichen Ergebnis.
+
+// Variablen zum Speichern der aktuellen Trade-Daten
+var float tradeEntryPrice = na
+var int   tradeEntryBar   = na
+// TradeType: 1 = Long, -1 = Short
+var int   tradeType       = 0
+
+if strategy.position_size != 0
+    currentTradeType = strategy.position_size > 0 ? 1 : -1
+    // Falls wir von keiner Position (flat) in einen Trade wechseln: Trade-Daten speichern
+    if na(tradeEntryPrice)
+        tradeEntryPrice := close
+        tradeEntryBar   := bar_index
+        tradeType       := currentTradeType
+    // Wenn sich der Trade-Typ ändert (z. B. von Long zu Short oder umgekehrt) – also ein Reversal stattfindet:
+    else if tradeType != currentTradeType
+        exitPrice   = close
+        exitBar     = bar_index
+        topPrice    = math.max(tradeEntryPrice, exitPrice)
+        bottomPrice = math.min(tradeEntryPrice, exitPrice)
+        // Farbe gemäß des abgeschlossenen Trades (Long = grün, Short = rot)
+        tradeColor  = tradeType == 1 ? green : red
+        // Zeichne einen gefüllten Bereich (Box) ohne seitliche Ränder:
+        box.new(tradeEntryBar, topPrice, exitBar, bottomPrice, border_width=0, bgcolor=color.new(tradeColor, 85))
+        // Zeichne horizontale Linien am oberen und unteren Rand:
+        line.new(tradeEntryBar, topPrice, exitBar, topPrice, color=tradeColor, width=2)
+        line.new(tradeEntryBar, bottomPrice, exitBar, bottomPrice, color=tradeColor, width=2)
+        // Setze die Daten für den neuen Trade
+        tradeEntryPrice := close
+        tradeEntryBar   := bar_index
+        tradeType       := currentTradeType
+else
+    // Falls wir flat gehen, zurücksetzen (falls nötig)
+    tradeEntryPrice := na
+    tradeEntryBar   := na
+    tradeType       := 0
+
+
+// ---------- Weitere Berechnungen und Tabellenaufbau ----------
+font_color  = color.white
+prec        = 2
+
+// ====================
+// === BERECHNUNGEN ===
+// ====================
+
+// Strategiekapital pro Bar und pro vorigem Bar
+var float prev_equity = strategy.equity
+float eq              = strategy.equity
+float eq_prev         = nz(prev_equity, eq)
+var float bar_pnl     = 0.0
+
+// Berechnung des prozentualen Bar-Gewinns/-Verlusts
+bar_pnl := eq_prev == 0.0 ? 0.0 : eq / eq_prev - 1
+prev_equity := eq  // für nächste Bar sichern
+
+// Hilfsvariablen für Monats-/Jahreswechsel
+bool month_changed = month(time) != month(time[1])
+bool year_changed  = year(time)  != year(time[1])
+
+// "Laufende" kumulierte PnLs (d.h. PnLs für aktuellen Monat und aktuelles Jahr)
+var float cur_month_pnl = 0.0
+var float cur_year_pnl  = 0.0
+
+// Beim allerersten Bar initialisieren wir diese
+if barstate.isfirst
+    cur_month_pnl := bar_pnl
+    cur_year_pnl  := bar_pnl
+else
+    // PnL für aktuellen Monat fortschreiben
+    if month_changed
+        cur_month_pnl := bar_pnl
+    else
+        cur_month_pnl := (1 + cur_month_pnl) * (1 + bar_pnl) - 1
+
+    // PnL für aktuelles Jahr fortschreiben
+    if year_changed
+        cur_year_pnl := bar_pnl
+    else
+        cur_year_pnl := (1 + cur_year_pnl) * (1 + bar_pnl) - 1
+
+// =============================
+// === ARRAYS FÜR TABELLENDATEN
+// =============================
+
+// Monatliche Daten
+var month_pnl  = array.new_float()
+var month_time = array.new_int()
+
+// Jährliche Daten
+var year_pnl  = array.new_float()
+var year_time = array.new_int()
+
+// ---------------------
+// MONAT BEENDEN -> Wert pushen
+if month_changed and not barstate.isfirst
+    float lastMonthFinal = cur_month_pnl[1]
+    array.push(month_pnl,  lastMonthFinal)
+    array.push(month_time, time[1])
+
+// ---------------------
+// JAHR BEENDEN -> Wert pushen
+if year_changed and not barstate.isfirst
+    float lastYearFinal = cur_year_pnl[1]
+    array.push(year_pnl,  lastYearFinal)
+    array.push(year_time, time[1])
+
+// ========================
+// === TABELLE AUFBAUEN ===
+// ========================
+var table monthly_table = na
+
+if showTable
+    int final_years_count_raw = array.size(year_pnl)
+    int final_year_time_count = array.size(year_time)
+    int final_years_count = math.min(final_years_count_raw, final_year_time_count)
+
+    int final_months_count_raw = array.size(month_pnl)
+    int final_month_time_count = array.size(month_time)
+    int final_months_count     = math.min(final_months_count_raw, final_month_time_count)
+
+    int row_count = final_years_count + 1 + 1
+
+    monthly_table := table.new(position.bottom_right, 14, row_count, border_width = 1)
+    table.clear(monthly_table, 0, 0)
+
+    table.cell(monthly_table, 0, 0, "in %",       bgcolor = color.new(#252630, 0), text_color = font_color)
+    table.cell(monthly_table, 1, 0, "Jan",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 2, 0, "Feb",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 3, 0, "Mar",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 4, 0, "Apr",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 5, 0, "May",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 6, 0, "Jun",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 7, 0, "Jul",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 8, 0, "Aug",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 9, 0, "Sep",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 10,0, "Oct",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 11,0, "Nov",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 12,0, "Dec",        bgcolor = #252630,               text_color = font_color)
+    table.cell(monthly_table, 13,0, "Year",       bgcolor = #3c3d49,               text_color = font_color)
+
+    if final_years_count > 0
+        for i = 0 to final_years_count - 1
+            int savedTime = array.get(year_time, i)
+            int yearVal   = year(savedTime)
+            table.cell(monthly_table, 0, i+1, str.tostring(yearVal), bgcolor = #252630, text_color = font_color)
+            float yPnl = array.get(year_pnl, i)
+            color yColor = yPnl >= 0 ? color.new(#0097a7, 50) : color.new(#ff195f, 50)
+            table.cell(monthly_table, 13, i+1, str.tostring(math.round(yPnl * 100, prec)), bgcolor = yColor, text_color = font_color)
+
+    int row_current_year = final_years_count + 1
+
+    if final_months_count > 0
+        for m = 0 to final_months_count - 1
+            int   mTime  = array.get(month_time, m)
+            float mPnL   = array.get(month_pnl,  m)
+            int   mYear  = year(mTime)
+            int   mMonth = month(mTime)
+            int rowIdx = na
+            if final_years_count > 0
+                for y_i = 0 to final_years_count - 1
+                    int yTime = array.get(year_time, y_i)
+                    if year(yTime) == mYear
+                        rowIdx := y_i + 1
+                        break
+            if na(rowIdx) and (mYear == year(time))
+                rowIdx := row_current_year
+            if not na(rowIdx)
+                color mColor = mPnL >= 0 ? color.new(#0097a7, 70) : color.new(#ff195f, 70)
+                table.cell(monthly_table, mMonth, rowIdx, str.tostring(math.round(mPnL * 100, prec)), bgcolor = mColor, text_color = font_color)
+
+    table.cell(monthly_table, 0, row_current_year, str.tostring(year(time)), bgcolor = color.new(#3c3d49, 0), text_color = font_color)
+    int curMonth = month(time)
+    color moColor = cur_month_pnl >= 0 ? color.new(#0097a7, 70) : color.new(#ff195f, 70)
+    table.cell(monthly_table, curMonth, row_current_year, str.tostring(math.round(cur_month_pnl * 100, prec)), bgcolor = moColor, text_color = font_color)
+    color yrColor = cur_year_pnl >= 0 ? color.new(#0097a7, 50) : color.new(#ff195f, 50)
+    table.cell(monthly_table, 13, row_current_year, str.tostring(math.round(cur_year_pnl * 100, prec)), bgcolor = yrColor, text_color = font_color)
+
+if not showTable and not na(monthly_table)
+    table.clear(monthly_table, 0, 0)

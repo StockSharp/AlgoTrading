@@ -1,0 +1,89 @@
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © aibitcointrend
+
+//@version=6
+strategy('Overnight Effect High Volatility Crypto (AiBitcoinTrend)', overlay = true, process_orders_on_close = true, commission_type = strategy.commission.percent, commission_value = 0.002, pyramiding = 3, initial_capital = 10000, default_qty_value = 25, default_qty_type = strategy.percent_of_equity)
+
+// --- Input Parameters ---
+volatilityLength = input.int(30, minval = 1, title = 'Volatility Period (Days)', tooltip = 'The number of days used to calculate the historical volatility. A higher value smooths out short-term fluctuations.')
+medianLength = input.int(208, minval = 1, title = 'Median Period (Days)', tooltip = 'The number of days used to calculate the median volatility. This acts as the benchmark to determine high volatility days.')
+entryHour = input.int(21, minval = 0, maxval = 23, title = 'Entry Hour (UTC)', tooltip = 'The hour (in UTC) when the strategy enters a long position if the day is classified as high volatility.\n\n By default, the strategy enters at 21:00 UTC. Adjust this value based on your local time zone.\n\n Examples for Different Time Zones and Input Values:\n\n - New York (UTC-5): 21:00 UTC is 4:00 PM (16:00) local time. Set input value to 16.\n\n - London (UTC+0): 21:00 UTC is 9:00 PM (21:00) local time. Set input value to 21.\n\n - Stockholm (UTC+1): 21:00 UTC is 10:00 PM (22:00) local time. Set input value to 22.\n\n - Dubai (UTC+4): 21:00 UTC is 1:00 AM (01:00) the next day local time. Set input value to 1.\n\n - Tokyo (UTC+9): 21:00 UTC is 6:00 AM (06:00) the next day local time. Set input value to 6.\n\n - Sydney (UTC+11): 21:00 UTC is 8:00 AM (08:00) the next day local time. Set input value to 8.')
+exitHour = input.int(23, minval = 0, maxval = 23, title = 'Exit Hour (UTC)', tooltip = 'The hour (in UTC) when the strategy closes the long position.\n\n By default, the strategy exits at 23:00 UTC. Adjust this value based on your local time zone.\n\n Examples for Different Time Zones and Input Values:\n\n - New York (UTC-5): 23:00 UTC is 6:00 PM (18:00) local time. Set input value to 18.\n\n - London (UTC+0): 23:00 UTC is 11:00 PM (23:00) local time. Set input value to 23.\n\n - Stockholm (UTC+1): 23:00 UTC is 12:00 AM (00:00) midnight local time. Set input value to 0.\n\n - Dubai (UTC+4): 23:00 UTC is 3:00 AM (03:00) the next day local time. Set input value to 3.\n\n - Tokyo (UTC+9): 23:00 UTC is 8:00 AM (08:00) the next day local time. Set input value to 8.\n\n - Sydney (UTC+11): 23:00 UTC is 10:00 AM (10:00) the next day local time. Set input value to 10.')
+filter = input.bool(true, title="Volatility filter", group="Volatility Filter", tooltip="Backtest with or without the volatility filter and notice the big difference.")
+
+// --- Style Settings ---
+box_    = input.bool(true, title="High Volatility Box", group = 'Style')
+sig_    = input.bool(true, title="Signals", group = 'Style')
+pos_col = input.color(color.rgb(175, 255, 105, 0), title = 'Buy Signal Color', group = 'Style', inline = 'Style', tooltip = 'Color for the buy signal marker when a long position is entered.')
+neg_col = input.color(color.rgb(255, 71, 80, 0), title = 'Sell Signal Color', group = 'Style', inline = 'Style', tooltip = 'Color for the sell signal marker when a long position is exited.')
+
+// --- Calculate 30-Day Historical Volatility ---
+volatilityDays = volatilityLength * 24 // Convert days to hours
+returns = math.log(close / close[1])
+volatility = ta.stdev(returns, volatilityDays)
+
+// --- Calculate Median Volatility ---
+medianDays = medianLength * 24 // Convert days to hours
+medianVolatility = ta.median(volatility, medianDays)
+
+// --- High Volatility Condition ---
+highVolatility = volatility > medianVolatility
+
+// --- Entry and Exit Conditions ---
+currentHour = hour
+var bool inTrade = false
+
+// Entry at 21:00 if high volatility
+if filter == true
+    if currentHour == entryHour and highVolatility and not inTrade
+        strategy.entry('Long', strategy.long)
+        inTrade := true
+        inTrade
+    // Exit at 23:00
+    if currentHour == exitHour and inTrade
+        strategy.close('Long')
+        inTrade := false
+        inTrade
+
+if filter == false
+    if currentHour == entryHour and not inTrade
+        strategy.entry('Long', strategy.long)
+        inTrade := true
+        inTrade
+    // Exit at 23:00
+    if currentHour == exitHour and inTrade
+        strategy.close('Long')
+        inTrade := false
+        inTrade
+
+// --- Plot Buy and Sell Signals ---
+plotshape(currentHour == entryHour and highVolatility and sig_, title = 'Long Buy Area', location = location.belowbar, color = pos_col, style = shape.triangleup, size = size.tiny)
+plotshape(currentHour == exitHour and highVolatility and sig_, title = 'Sell Long Position Area', location = location.abovebar, color = neg_col, style = shape.xcross, size = size.tiny)
+
+// --- Draw Box on High Volatility Day ---
+var box dayBox = na
+var float dayHigh = na
+var float dayLow = na
+newDay = hour == 0 and minute == 0
+
+// Reset daily high/low at the start of the new day
+if not highVolatility[1] and highVolatility
+    dayHigh := high
+    dayLow := low
+
+    if highVolatility and box_
+        dayBox := box.new(left = bar_index, top = high, right = bar_index, bottom = low, xloc = xloc.bar_index, bgcolor = color.rgb(77, 199, 255, 90), border_color = color.rgb(77, 199, 255), border_width = 1, text = 'High Volatility', text_halign = text.align_center, text_color = chart.fg_color, text_size = size.tiny)
+        dayBox
+
+// Update the box during the high-volatility period to extend it and adjust for highest and lowest points
+if not na(dayBox) and highVolatility and box_
+    dayHigh := math.max(dayHigh, high)
+    dayLow := math.min(dayLow, low)
+
+    box.set_right(dayBox, bar_index + 1)
+    box.set_top(dayBox, dayHigh)
+    box.set_bottom(dayBox, dayLow)
+
+// Optional: Delete the box when high-volatility period ends
+//if highVolatility[1] and not highVolatility and not na(dayBox)
+//    box.delete(dayBox)

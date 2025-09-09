@@ -1,0 +1,126 @@
+//@version=5
+strategy("EMA20/50/200 + RSI Swing (Trend Filter)", overlay=true, initial_capital=100000, pyramiding=0,
+     commission_type=strategy.commission.percent, commission_value=0.05)
+
+// ==== Inputs ====
+lenFast   = input.int(20,  "EMA Fast",  minval=1)
+lenSlow   = input.int(50,  "EMA Slow",  minval=1)
+lenTrend  = input.int(200, "EMA Trend", minval=1)
+
+useLong   = input.bool(true,  "Enable Longs")
+useShort  = input.bool(false, "Enable Shorts")
+
+// RSI filter
+rsiLen      = input.int(14,  "RSI Length", minval=1)
+useRsi      = input.bool(true, "Use RSI Filter")
+rsiMaxLong  = input.float(70.0, "Max RSI for Long",  step=0.1)
+rsiMinShort = input.float(30.0, "Min RSI for Short", step=0.1)
+
+// Entry confirmation: require close above/below fast & slow EMA
+requireCloseConfirm = input.bool(true, "Require close above/below EMA20 & EMA50 for entry")
+
+// Risk Management
+riskType   = input.string("ATR", "Stop Basis", options=["ATR","Swing"])
+atrLen     = input.int(14, "ATR Length", minval=1)
+atrMult    = input.float(2.0, "ATR Multiplier", step=0.1)
+swingLen   = input.int(5,  "Swing Lookback (bars)", minval=1)
+
+useTP      = input.bool(true,  "Use Take-Profit (R multiple)")
+rr         = input.float(2.0,  "Reward/Risk (TP in R)", step=0.1, minval=0.1)
+
+posSizePct = input.float(10, "Position Size % of Equity", step=0.5, minval=0.1, maxval=100)
+
+exitOnOpposite = input.bool(true, "Exit on opposite EMA cross")
+
+// ==== Indicators ====
+emaFast  = ta.ema(close, lenFast)
+emaSlow  = ta.ema(close, lenSlow)
+emaTrend = ta.ema(close, lenTrend)
+rsi      = ta.rsi(close, rsiLen)
+
+// ==== Conditions ====
+trendUp   = close > emaTrend
+trendDown = close < emaTrend
+
+crossUp   = ta.crossover(emaFast, emaSlow)
+crossDown = ta.crossunder(emaFast, emaSlow)
+
+confirmLong  = not requireCloseConfirm or (close > emaFast and close > emaSlow)
+confirmShort = not requireCloseConfirm or (close < emaFast and close < emaSlow)
+
+rsiOKLong  = not useRsi or (rsi <= rsiMaxLong)
+rsiOKShort = not useRsi or (rsi >= rsiMinShort)
+
+longSignal  = useLong  and trendUp   and crossUp   and confirmLong  and rsiOKLong
+shortSignal = useShort and trendDown and crossDown and confirmShort and rsiOKShort
+
+// ==== Stops & Take Profit helpers ====
+getLongStop() =>
+    float stop = na
+    if riskType == "ATR"
+        stop := close - ta.atr(atrLen) * atrMult
+    else
+        stop := ta.lowest(low, swingLen)
+    stop
+
+getShortStop() =>
+    float stop = na
+    if riskType == "ATR"
+        stop := close + ta.atr(atrLen) * atrMult
+    else
+        stop := ta.highest(high, swingLen)
+    stop
+
+// ==== Position sizing ====
+capital     = strategy.equity
+qtyPercent  = posSizePct * 0.01
+
+// ==== Entries & Exits ====
+if (longSignal)
+    longStop = getLongStop()
+    riskPerShare = math.max(close - longStop, syminfo.mintick)
+    qty = math.floor((capital * qtyPercent) / riskPerShare)
+    strategy.entry("Long", strategy.long, qty)
+    tp = useTP ? close + riskPerShare * rr : na
+    strategy.exit("Long-Exit", "Long", stop=longStop, limit=tp)
+
+if (shortSignal)
+    shortStop = getShortStop()
+    riskPerShare = math.max(shortStop - close, syminfo.mintick)
+    qty = math.floor((capital * qtyPercent) / riskPerShare)
+    strategy.entry("Short", strategy.short, qty)
+    tp = useTP ? close - riskPerShare * rr : na
+    strategy.exit("Short-Exit", "Short", stop=shortStop, limit=tp)
+
+// Optional exit on opposite cross
+if exitOnOpposite
+    if strategy.position_size > 0 and crossDown
+        strategy.close("Long", comment="Opposite cross")
+    if strategy.position_size < 0 and crossUp
+        strategy.close("Short", comment="Opposite cross")
+
+// ==== Visuals ====
+plot(emaFast,  title="EMA Fast",  linewidth=2)
+plot(emaSlow,  title="EMA Slow",  linewidth=2)
+plot(emaTrend, title="EMA Trend", color=color.new(color.gray, 0), linewidth=2)
+
+// markers utan text-param
+plotshape(longSignal,  title="Long Signal",  style=shape.triangleup,   location=location.belowbar, color=color.new(color.lime, 0), size=size.tiny)
+plotshape(shortSignal, title="Short Signal", style=shape.triangledown, location=location.abovebar, color=color.new(color.red,  0), size=size.tiny)
+
+bgcolor(trendUp ? color.new(color.green, 92) : trendDown ? color.new(color.red, 92) : na)
+
+// ==== Alerts ====
+alertcondition(longSignal,  title="Long Signal",  message="EMA20 crossed above EMA50 with price > EMA200 and RSI filter OK")
+alertcondition(shortSignal, title="Short Signal", message="EMA20 crossed below EMA50 with price < EMA200 and RSI filter OK")
+
+// ==== Notes panel ====
+var label note = na
+if barstate.islast
+    label.delete(note)
+    msg = "EMA20/50/200 + RSI Swing\n" +
+          "Long: TrendUp & CrossUp & (ConfirmClose=" + str.tostring(requireCloseConfirm) + ") & (RSI<=" + str.tostring(rsiMaxLong) + ")\n" +
+          "Short: TrendDown & CrossDown & (ConfirmClose=" + str.tostring(requireCloseConfirm) + ") & (RSI>=" + str.tostring(rsiMinShort) + ")\n" +
+          "Stops: " + riskType + (riskType=="ATR" ? " (" + str.tostring(atrLen) + ", x" + str.tostring(atrMult) + ")" : " (swing len=" + str.tostring(swingLen) + ")") +
+          (useTP ? " | TP=" + str.tostring(rr) + "R" : " | TP: off")
+    note := label.new(bar_index, high, msg, style=label.style_label_upper_left, textcolor=color.white, color=color.new(color.black, 20))

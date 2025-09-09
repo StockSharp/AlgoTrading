@@ -1,0 +1,60 @@
+//@version=6
+strategy("EMA Crossover Strategy with Trailing Stop and Alerts", overlay=true)
+
+// Input for EMA lengths
+emaLength1 = input.int(9, title="Short EMA Length")
+emaLength2 = input.int(21, title="Long EMA Length")
+
+// Input for trailing stop percentage
+trailStopPercent = input.float(1.0, title="Trailing Stop Percentage", minval=0.1, step=0.1) / 100
+
+// Calculate EMAs
+ema1 = ta.ema(close, emaLength1)
+ema2 = ta.ema(close, emaLength2)
+
+// Plot EMAs
+plot(ema1, color=color.blue, title="Short EMA")
+plot(ema2, color=color.red, title="Long EMA")
+
+// Crossover and Crossunder conditions
+crossoverCondition = ta.crossover(ema1, ema2)
+crossunderCondition = ta.crossunder(ema1, ema2)
+
+// Buy and Sell conditions
+buyCondition = crossoverCondition
+sellCondition = crossunderCondition
+
+// Trailing stop logic
+var float highestPrice = na
+var float lowestPrice = na
+
+if (buyCondition)
+    highestPrice := close
+if (sellCondition)
+    lowestPrice := close
+
+if (strategy.position_size > 0)
+    highestPrice := math.max(highestPrice, close)
+    trailStopPrice = highestPrice * (1 - trailStopPercent)
+    if (close < trailStopPrice)
+        strategy.close("Buy")
+
+if (strategy.position_size < 0)
+    lowestPrice := math.min(lowestPrice, close)
+    trailStopPrice = lowestPrice * (1 + trailStopPercent)
+    if (close > trailStopPrice)
+        strategy.close("Sell")
+
+// Plot buy and sell signals
+plotshape(series=buyCondition, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy Signal")
+plotshape(series=sellCondition, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal")
+
+// Alerts
+alertcondition(buyCondition, title="Buy Alert", message="Buy Signal: EMA crossover")
+alertcondition(sellCondition, title="Sell Alert", message="Sell Signal: EMA crossunder")
+
+// Strategy execution
+if (buyCondition)
+    strategy.entry("Buy", strategy.long)
+if (sellCondition)
+    strategy.entry("Sell", strategy.short)

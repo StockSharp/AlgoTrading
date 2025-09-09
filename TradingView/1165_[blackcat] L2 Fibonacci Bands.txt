@@ -1,0 +1,61 @@
+// ____  __    ___   ________ ___________  ___________ __  ____ ___
+   // / __ )/ /   /   | / ____/ //_/ ____/   |/_  __<  / // / / __ |__ \
+  // / __  / /   / /| |/ /   / ,< / /   / /| | / /  / / // /_/ / / __/ /
+ // / /_/ / /___/ ___ / /___/ /| / /___/ ___ |/ /  / /__  __/ /_/ / __/
+// /_____/_____/_/  |_\____/_/ |_\____/_/  |_/_/  /_/  /_/  \____/____/
+
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © blackcat1402
+//@version=5
+strategy('[blackcat] L2 Fibonacci Bands', overlay=true)
+
+// Define the moving average type and length
+maType = input.string(title='MA Type', defval='WMA', options=['SMA', 'EMA', 'WMA', 'HMA'])
+maLength = input.int(title='MA Length', defval=233, minval=1)
+src = input(title='Data Source', defval=hl2)
+
+// Define the Fibonacci expansion levels
+fib1 = input.float(title='Fibonacci Level 1', defval=1.618, minval=0)
+fib2 = input.float(title='Fibonacci Level 2', defval=2.618, minval=0)
+fib3 = input.float(title='Fibonacci Level 3', defval=4.236, minval=0)
+
+// Calculate the moving average
+ma = maType == 'SMA' ? ta.sma(src, maLength) : maType == 'EMA' ? ta.ema(src, maLength) : maType == 'WMA' ? ta.wma(src, maLength) : maType == 'HMA' ? ta.hma(src, maLength) : na
+
+// Calculate the Keltner Channels
+kcMultiplier = input.int(title='Keltner Channel Multiplier', defval=2, minval=0)
+kcLength = input.int(title='Keltner Channel Length', defval=89, minval=1)
+kcTrueRange = ta.tr
+kcAverageTrueRange = ta.sma(kcTrueRange, kcLength)
+kcUpper = ma + kcMultiplier * kcAverageTrueRange
+kcLower = ma - kcMultiplier * kcAverageTrueRange
+
+// Calculate the Fibonacci Bands
+fbUpper1 = ma + fib1 * (kcUpper - ma)
+fbUpper2 = ma + fib2 * (kcUpper - ma)
+fbUpper3 = ma + fib3 * (kcUpper - ma)
+fbLower1 = ma - fib1 * (ma - kcLower)
+fbLower2 = ma - fib2 * (ma - kcLower)
+fbLower3 = ma - fib3 * (ma - kcLower)
+
+// Plot the Fibonacci Bands
+plot(ma, title='Midband', color=color.new(color.blue, 0), linewidth=2)
+plot(fbUpper1, title='Upper Band 1', color=color.new(color.green, 0), linewidth=1)
+plot(fbUpper2, title='Upper Band 2', color=color.new(color.green, 0), linewidth=1)
+plot(fbUpper3, title='Upper Band 3', color=color.new(color.green, 0), linewidth=1)
+plot(fbLower1, title='Lower Band 1', color=color.new(color.red, 0), linewidth=1)
+plot(fbLower2, title='Lower Band 2', color=color.new(color.red, 0), linewidth=1)
+plot(fbLower3, title='Lower Band 3', color=color.new(color.red, 0), linewidth=1)
+
+// Define the entry and exit conditions
+longCondition = ta.crossover(src, fbUpper3) and ta.rsi(src, 14) > 60
+shortCondition = ta.crossunder(src, fbLower3) and ta.rsi(src, 14) < 40
+exitCondition = ta.crossover(src, ma) or ta.crossunder(src, ma)
+
+// Execute the trades
+if longCondition
+    strategy.entry('Long', strategy.long)
+if shortCondition
+    strategy.entry('Short', strategy.short)
+if exitCondition
+    strategy.close_all()

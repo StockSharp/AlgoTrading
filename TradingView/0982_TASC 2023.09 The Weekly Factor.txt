@@ -1,0 +1,106 @@
+//  TASC Issue: September 2023 - Vol. 41, Issue 10
+//     Article: Finding Compression And Expansion
+//              The Weekly Factor Pattern
+//  Article By: Andrea Unger
+//    Language: TradingView's Pine Script™ v5
+// Provided By: PineCoders, for tradingview.com
+
+//@version=5
+string title = 'TASC 2023.09 The Weekly Factor'
+string stitle = 'TWF'
+strategy(title, stitle, true)
+
+if not (timeframe.isminutes and timeframe.period == '15')
+    runtime.error('This strategy is designed for a bar' +
+     'period of 15 minutes')
+
+//#region   Inputs:
+
+string rangeFilterTooltip = 'Limiting Ratio of session' +
+     'body versus session high and low range.'          +
+     'A lower range filter will reduce number of trades.'
+float rangeFilter = input.float(0.5, 'Range Filter:',
+     0.0, 1.0, 0.1, tooltip=rangeFilterTooltip)
+
+//#endregion
+//#region Week and Session properties:
+
+
+// @type Holds the Session/Week OHLC value.
+// A Session is defined as a single trading day.
+// A Week is defined as a period of 5 trading days.
+type OHLC
+    float o
+    float h
+    float l
+    float c
+
+method isNewSession (OHLC s) =>
+    s.c != s.c[1]
+
+method calcBody (OHLC s) =>
+    math.abs(s.o - s.c)
+
+method calcFactor (OHLC s, float rangeFilter=1.0) =>
+    s.calcBody() < rangeFilter*(s.h - s.l)
+
+getOHLCValues (int length = 5) =>
+    float _o = open[length-1]
+    float _h = ta.highest(length)
+    float _l = ta.lowest(length)
+    float _c = close
+    OHLC  _s = request.security(
+     symbol     = syminfo.tickerid              ,
+     timeframe  = 'D'                           ,
+     expression = OHLC.new(_o, _h, _l, _c)   )
+
+OHLC    W  = getOHLCValues(5)
+bool    WF = W.calcFactor(rangeFilter)
+
+LB__  = plot.style_linebr
+lineO = plot(W.o, 'Five-day Open' , color.aqua, 1, LB__)
+lineH = plot(W.h, 'Five-day High' , color.blue, 1, LB__)
+lineL = plot(W.l, 'Five-day Low'  , color.blue, 1, LB__)
+lineC = plot(W.c, 'Five-day Close', color.navy, 1, LB__)
+fill(lineO, lineC, color.new(color.aqua, 90))
+
+//#endregion
+//#region Strategy
+
+OHLC S            = getOHLCValues(1)
+bool isNewSession = S.isNewSession()
+
+plotshape(isNewSession and WF ? S.c : na, 'WF',
+ shape.diamond, location.absolute, color.aqua,
+ size=size.small)
+
+var int BarCounter = 0
+var int DayCounter = 0
+
+if isNewSession
+    // exit any previous trades
+    strategy.close_all()
+    BarCounter := 1
+else
+    BarCounter += 1
+
+if WF
+    if BarCounter > 1 and BarCounter < 91
+        if close > S.h
+            strategy.entry('long', strategy.long)
+        if close < S.l
+            strategy.entry('short', strategy.short)
+
+float MP = strategy.position_size
+bool isNewPosition = ta.change(MP) != 0.0 and MP != 0.0
+
+if isNewPosition
+    DayCounter := 0
+if isNewSession
+    DayCounter += 1
+
+//
+if DayCounter > 1 and strategy.openprofit > 0
+    strategy.close_all()
+
+//#endregion

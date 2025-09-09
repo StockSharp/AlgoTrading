@@ -1,0 +1,40 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © traderhub
+
+//@version=5
+strategy("ADX + Volume Strategy", overlay=true)
+
+// Strategy parameters
+adxLength = input(21, title="ADX Period")  // ADX period
+adxThreshold = input(26, title="ADX Threshold")  // ADX threshold to determine strong trend
+volumeMultiplier = input.float(1.8, title="Volume Multiplier", minval=0.1, maxval=10 , step = 0.1)  // Volume multiplier, adjustable float
+
+// Calculate ADX, DI+, DI-
+[diPlus, diMinus, adx] = ta.dmi(adxLength, adxLength)
+
+// Average volume for signal confirmation
+avgVolume = ta.sma(volume, 20)  // Simple Moving Average of volume over 20 bars
+
+// Conditions for entering a long position
+longCondition = adx > adxThreshold and diPlus > diMinus and volume > avgVolume * volumeMultiplier
+
+// Conditions for entering a short position
+shortCondition = adx > adxThreshold and diMinus > diPlus and volume > avgVolume * volumeMultiplier
+
+// Enter a long position
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+// Enter a short position
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Close positions on opposite signals
+if (strategy.position_size > 0 and shortCondition)
+    strategy.close("Long")
+if (strategy.position_size < 0 and longCondition)
+    strategy.close("Short")
+
+// Display ADX on the chart
+plot(adx, color=color.red, title="ADX")
+hline(adxThreshold, "ADX Threshold", color=color.green)

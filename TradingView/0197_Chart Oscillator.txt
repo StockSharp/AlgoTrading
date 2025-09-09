@@ -1,0 +1,118 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fikira
+
+//@version=4
+
+study(title="Chart Oscillator", shorttitle="CO ", overlay=true)
+
+choice       = input("stoch", title="",           options=["stoch", "rsi", "mfi"]                , inline="0")
+i_len        = input(14     , title="   RSI/MFI length", minval=1                                , inline="0")
+
+i_K          = input(14     , title="", minval=1, group="    K       D      Smooth"              , inline="1")
+i_D          = input(3      , title="", minval=1, group="    K       D      Smooth"              , inline="1")
+i_smoothK    = input(3      , title="", minval=1, group="    K       D      Smooth"              , inline="1")
+
+i_limLen     = input(20     , title="", minval=1, group="limits (length) - Overbought - Oversold", inline="2")
+i_Overbought = input(80     , title="", minval=1, group="limits (length) - Overbought - Oversold", inline="2")
+i_Oversold   = input(20     , title="", minval=1, group="limits (length) - Overbought - Oversold", inline="2")
+
+showMA       = input(false  , title="show SMA 20 & EMA 20")
+
+// K = sma(stoch(close, high, low, periodK), smoothK)
+// D = sma(K, smoothK)
+//  stoch =  100 * (close - lowest(low, length)) / (highest(high, length) - lowest(low, length))
+
+f_limit(_limit, _limLen) =>
+    limH  = highest(high, _limLen)
+    limL  = lowest(low  , _limLen)
+    limit = limL + (_limit / 100 * (limH - limL))
+
+f_stoch(_K, _D, _smoothK, _limLen) =>
+    limH  = highest(high, _limLen)
+    limL  = lowest(low  , _limLen)
+    stoch = limL + ((limH - limL) * (close - lowest(low, _K)) / (highest(high, _K) - lowest(low, _K)))
+    Ko= sma(stoch, _smoothK)
+    Do= sma(Ko, _D)
+    [Ko, Do]
+
+// RSI
+// up = rma(max(change(close), 0), len)
+// down = rma(-min(change(close), 0), len)
+// rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+
+f_rsi(_len, _limLen) =>
+    limH   = highest(high, _limLen)
+    limL   = lowest(low  , _limLen)
+    up     = rma( max(change(close), 0), _len)
+    dn     = rma(-min(change(close), 0), _len)
+    rsi    = dn == 0 ? limH : up == 0 ? 0 : limH - ((limH - limL) / (1 + up / dn))
+
+f_mfi(_len, _limLen) =>
+    src = hlc3
+    limH   = highest(high, _limLen)
+    limL   = lowest(low  , _limLen)
+    upper  = sum(volume * (change(src) <= 0 ? 0 : src), _len)
+    lower  = sum(volume * (change(src) >= 0 ? 0 : src), _len)
+    mfi    = limH - ((limH - limL) / (1 + upper / lower))
+
+[K, D]     = f_stoch(i_K, i_D, i_smoothK, i_limLen)
+Knorm      = sma(stoch(close, high, low, i_K), i_smoothK)
+
+rsi        = f_rsi(i_len, i_limLen)
+RSInorm    = rsi(close  , i_len   )
+
+mfi        = f_mfi(i_len, i_limLen)
+
+src     = hlc3
+upper   = sum(volume * (change(hlc3) <= 0 ? 0 : hlc3), i_len)
+lower   = sum(volume * (change(hlc3) >= 0 ? 0 : hlc3), i_len)
+MFInorm = 100.0 - (100.0 / (1.0 + upper / lower))
+
+
+_100       = f_limit(100         , i_limLen)
+Overbought = f_limit(i_Overbought, i_limLen)
+Oversold   = f_limit(i_Oversold  , i_limLen)
+_0         = f_limit(0           , i_limLen)
+
+middle     = avg(Overbought, Oversold      )
+
+
+p0  = plot(choice=="rsi"   ? rsi : na, color=color.new(color.yellow, 20), title="RSI"       , linewidth=2)
+p1  = plot(choice=="stoch" ? K   : na, color=color.new(#00fff9     , 20), title="K"         , linewidth=2)
+p2  = plot(choice=="stoch" ? D   : na, color=color.new(#ff0000     , 20), title="D"         , linewidth=2)
+p3  = plot(choice=="mfi"   ? mfi : na, color=color.new(color.orange, 20), title="MFI"       , linewidth=2)
+
+top = plot(_100         , linewidth=1, color=color.new(color.white , 80), title="100"       )
+_ob = plot(Overbought   , linewidth=2, color=color.new(color.red   , 50), title="Overbought")
+_md = plot(middle       , linewidth=1, color=color.new(color.white , 80), title="Middle"    )
+_os = plot(Oversold     , linewidth=2, color=color.new(color.green , 50), title="Oversold"  )
+bot = plot(_0           , linewidth=1, color=color.new(color.white , 80), title="0"         )
+
+fill( p1,  p2           , color=K > D ? color.new(color.lime, 70) : color.new(color.red , 70)     )
+fill(top, _ob           , color=(choice=="stoch" and K>=Overbought) or (choice=="rsi" and rsi>=Overbought) ? color.new(color.red , 85) : na)
+fill(bot, _os           , color=(choice=="stoch" and K<=Oversold  ) or (choice=="rsi" and rsi<=Oversold  ) ? color.new(color.lime, 85) : na)
+
+plotshape(choice=="stoch" and crossover (K, D) ? K : na, style=shape.circle, color=color.new(color.lime, 0), location=location.belowbar)
+plotshape(choice=="stoch" and crossunder(K, D) ? K : na, style=shape.circle, color=color.new(#ff0000   , 0), location=location.abovebar)
+
+var table = table.new(position = position.top_right, columns = 3, rows = 1, border_color = color.new(color.red, 10), border_width = 1)
+
+//res = input("", "", type=input.resolution)
+//Knorm_ = security(syminfo.ticker, res, Knorm)
+
+c_K   = Knorm   > 50 ? Knorm   > i_Overbought ? color.new(#ff0000   , 50) : color.new(color.blue  , 50) :
+ Knorm   < i_Oversold ? color.new(color.lime  , 50) : color.new(color.orange  , 50)
+
+c_rsi = RSInorm > 50 ? RSInorm > i_Overbought ? color.new(#ff0000   , 50) : color.new(color.blue  , 50) :
+ RSInorm < i_Oversold ? color.new(color.lime  , 50) : color.new(color.orange  , 50)
+
+c_mfi = MFInorm > 50 ? MFInorm > i_Overbought ? color.new(#ff0000   , 50) : color.new(color.blue  , 50) :
+ MFInorm < i_Oversold ? color.new(color.lime  , 50) : color.new(color.orange  , 50)
+
+if barstate.islast
+    table.cell(table_id = table, column = 0, row = 0, height=10, text = "Stoch " + tostring(round(Knorm  , 1)), text_color=c_K  , text_valign=text.align_bottom)
+    table.cell(table_id = table, column = 1, row = 0, height=10, text = "RSI "   + tostring(round(RSInorm, 1)), text_color=c_rsi, text_valign=text.align_bottom)
+    table.cell(table_id = table, column = 2, row = 0, height=10, text = "MFI "   + tostring(round(MFInorm, 1)), text_color=c_mfi, text_valign=text.align_bottom)
+
+plot(showMA ? sma(close, 20) : na, color=color.yellow)
+plot(showMA ? ema(close, 20) : na, color=color.yellow, style=plot.style_circles)

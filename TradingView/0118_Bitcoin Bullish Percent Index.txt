@@ -1,0 +1,445 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © LonesomeTheBlue
+
+//@version=4
+study("Bitcoin Bullish Percent Index", max_bars_back=4900)
+scaling = input(title = " Percentage Method", defval = "Auto", options = ["Auto", "User-Defined"])
+percentagebs = input(title ="Percentage % [User-defined]", defval = 0.1, minval = 0.00001, step = 0.1)
+overbought = input(70.0, title = "Overbought Level", minval = 1, maxval = 100)
+oversold = input(30.0, title = "Oversold Level", minval = 1, maxval = 100)
+reversal = input(3, title = "Reversal", minval = 1)
+
+percentage = scaling == "User-Defined" ? percentagebs :
+               timeframe.period == '1'   ? 0.03 :
+               timeframe.period == '3'   ? 0.09 :
+               timeframe.period == '5'   ? 0.11 :
+               timeframe.period == '15'  ? 0.14 :
+               timeframe.period == '30'  ? 0.18 :
+               timeframe.period == '45'  ? 0.21 :
+               timeframe.period == '60'  ? 0.26 :
+               timeframe.period == '120' ? 0.38 :
+               timeframe.period == '180' ? 0.46 :
+               timeframe.period == '240' ? 0.66 :
+               timeframe.period == 'D'   ? 1.08 :
+               1.08
+
+get_bo_signal(ticker, tick)=>
+    //percent scaling
+    tickerclose = security(ticker, timeframe.period, close, ignore_invalid_symbol = true)
+    int buyon = na
+    if not na(tickerclose)
+        pboxsize = tickerclose * percentage  / 100
+        a = 0
+        num = tick
+        s = pboxsize
+        if na(s)
+            s := tick
+        if num < 1
+            for i = 1 to 20
+                num := num * 10
+                if num > 1
+                    break
+                a := a + 1
+
+        for x = 1 to a
+            s := s * 10
+        s := round(s)
+        for x = 1 to a
+            s := s / 10
+        s := s < tick  ? tick : s
+        pboxsize := s
+        //==========================================================
+
+        float box = na
+        box := na(box[1]) ? pboxsize : box[1]
+
+        trend = 0
+        trend := barstate.isfirst ? 0 : nz(trend[1])
+        currentprice = 0.0
+        currentprice := tickerclose
+        float beginprice = na
+        beginprice := barstate.isfirst ? floor(tickerclose / box) * box : nz(beginprice[1])
+        icloseprice = 0.0
+
+        if trend == 0 and box * reversal <= abs(beginprice - currentprice)
+            if beginprice > currentprice
+                numcell = floor(abs(beginprice - currentprice) / box)
+                icloseprice := beginprice - numcell * box
+                trend := -1
+            if beginprice < currentprice
+                numcell = floor(abs(beginprice - currentprice) / box)
+                icloseprice := beginprice + numcell * box
+                trend := 1
+
+        if trend == -1
+            nok = true
+            if beginprice > currentprice and box <= abs(beginprice - currentprice)
+                numcell = floor(abs(beginprice - currentprice) / box)
+                icloseprice := beginprice - numcell * box
+                trend := -1
+                beginprice := icloseprice
+                nok := false
+            else
+                icloseprice := icloseprice == 0 ? nz(icloseprice[1]) : icloseprice
+
+            if beginprice < currentprice and box * reversal <= abs(beginprice - currentprice) and nok //new column
+                numcell = floor(abs(beginprice - currentprice) / box)
+                icloseprice := beginprice + numcell * box
+                trend := 1
+                beginprice := icloseprice
+            else
+                icloseprice := icloseprice == 0 ? nz(icloseprice[1]) : icloseprice
+        else
+            if trend == 1
+                nok = true
+                if beginprice < currentprice and box <= abs(beginprice - currentprice)
+                    numcell = floor(abs(beginprice - currentprice) / box)
+                    icloseprice := beginprice + numcell * box
+                    trend := 1
+                    beginprice := icloseprice
+                    nok := false
+                else
+                    icloseprice := icloseprice == 0 ? nz(icloseprice[1]) : icloseprice
+
+                if beginprice > currentprice and box * reversal <= abs(beginprice - currentprice) and nok //new column
+                    numcell = floor(abs(beginprice - currentprice) / box)
+                    icloseprice := beginprice - numcell * box
+                    trend := -1
+                    beginprice := icloseprice
+                else
+                    icloseprice := icloseprice == 0 ? nz(icloseprice[1]) : icloseprice
+
+
+        box := change(icloseprice) ? pboxsize :  box
+
+        // keep old columns
+        float chigh = na
+        float clow = na
+        chigh := change(trend) ? icloseprice[1] : na
+        clow := change(trend) ? icloseprice[1] : na
+
+        //doulbe top/bottom Breakouts
+        dtb = trend == 1 and icloseprice > icloseprice[1] and icloseprice > valuewhen(chigh, chigh, 1) and icloseprice[1] <= valuewhen(chigh, chigh, 1)
+        dbb = trend == -1 and icloseprice < icloseprice[1] and icloseprice < valuewhen(clow, clow, 1) and icloseprice[1] >= valuewhen(clow, clow, 1)
+
+        buyon := 0
+        buyon := dtb ? 1 :
+               dbb ? 0 :
+               nz(buyon[1])
+    buyon
+
+get_ticker(x)=>
+    _ret = x== 1 ? "BINANCE:BTCUSDT" :
+       x== 2 ? "BINANCE:XRPUSDT" :
+       x== 3 ? "BINANCE:BCHUSDT" :
+       x== 4 ? "BINANCE:LTCUSDT" :
+       x== 5 ? "BINANCE:BNBUSDT" :
+       x== 6 ? "BINANCE:EOSUSDT" :
+       x== 7 ? "BINANCE:XTZUSDT" :
+       x== 8 ? "BINANCE:ETHUSDT" :
+       x== 9 ? "BINANCE:XMRUSDT" :
+       x== 10 ? "BINANCE:XLMUSDT" :
+       x== 11 ? "BINANCE:ADAUSDT" :
+       x== 12 ? "BINANCE:TRXUSDT" :
+       x== 13 ? "BINANCE:DASHUSDT" :
+       x== 14 ? "BINANCE:ETCUSDT" :
+       x== 15 ? "BINANCE:OMGUSDT" :
+       x== 16 ? "BINANCE:NEOUSDT" :
+       x== 17 ? "BINANCE:ATOMUSDT" :
+       x== 18 ? "BINANCE:IOTAUSDT" :
+       x== 19 ? "BINANCE:ALGOUSDT" :
+       x== 20 ? "BINANCE:ONTUSDT" :
+       x== 21 ? "BINANCE:FTTUSDT" :
+       x== 22 ? "BINANCE:DOGEUSDT" :
+       x== 23 ? "BINANCE:BATUSDT" :
+       x== 24 ? "BINANCE:ZECUSDT" :
+       x== 25 ? "BINANCE:VETUSDT" :
+       x== 26 ? "BINANCE:SCUSDT" :
+       x== 27 ? "BINANCE:ZILUSDT" :
+       x== 28 ? "BINANCE:QTUMUSDT" :
+       x== 29 ? "BINANCE:THETAUSDT" :
+       x== 30 ? "BINANCE:LSKUSDT" :
+       x== 31 ? "BINANCE:HOTUSDT" :
+       x== 32 ? "BINANCE:REPUSDT" :
+       x== 33 ? "BINANCE:WAVESUSDT" :
+       x== 34 ? "BINANCE:BTSUSDT" :
+       x== 35 ? "BINANCE:HBARUSDT" :
+       x== 36 ? "BINANCE:ICXUSDT" :
+       x== 37 ? "BINANCE:RVNUSDT" :
+       "BINANCE:NANOUSDT"
+    _ret
+
+get_tick(x)=>
+    _ret = x== 1 ? 0.01 :
+       x== 2 ? 0.00001 :
+       x== 3 ? 0.01 :
+       x== 4 ? 0.01 :
+       x== 5 ? 0.00001 :
+       x== 6 ? 0.00001 :
+       x== 7 ? 0.00001 :
+       x== 8 ? 0.01 :
+       x== 9 ? 0.01 :
+       x== 10 ? 0.00001 :
+       x== 11 ? 0.00001 :
+       x== 12 ? 0.00001 :
+       x== 13 ? 0.01 :
+       x== 14 ? 0.00001 :
+       x== 15 ? 0.00001 :
+       x== 16 ? 0.001 :
+       x== 17 ? 0.001 :
+       x== 18 ? 0.00001 :
+       x== 19 ? 0.00001 :
+       x== 20 ? 0.00001 :
+       x== 21 ? 0.001 :
+       x== 22 ? 0.0000001 :
+       x== 23 ? 0.00001 :
+       x== 24 ? 0.01 :
+       x== 25 ? 0.000001 :
+       x== 26 ? 0.000001 :
+       x== 27 ? 0.00001 :
+       x== 28 ? 0.001 :
+       x== 29 ? 0.00001 :
+       x== 30 ? 0.00001 :
+       x== 31 ? 0.0000001 :
+       x== 32 ? 0.001 :
+       x== 33 ? 0.00001 :
+       x== 34 ? 0.00001 :
+       x== 35 ? 0.00001 :
+       x== 36 ? 0.00001 :
+       x== 37 ? 0.00001 :
+       0.0001
+
+bullbo = 0
+t1 = get_bo_signal(get_ticker(1), get_tick(1))
+bullbo := bullbo + (t1 ? 1 : 0)
+t2 = get_bo_signal(get_ticker(2), get_tick(2))
+bullbo := bullbo + (t2 ? 1 : 0)
+t3 = get_bo_signal(get_ticker(3), get_tick(3))
+bullbo := bullbo + (t3 ? 1 : 0)
+t4 = get_bo_signal(get_ticker(4), get_tick(4))
+bullbo := bullbo + (t4 ? 1 : 0)
+t5 = get_bo_signal(get_ticker(5), get_tick(5))
+bullbo := bullbo + (t5 ? 1 : 0)
+t6 = get_bo_signal(get_ticker(6), get_tick(6))
+bullbo := bullbo + (t6 ? 1 : 0)
+t7 = get_bo_signal(get_ticker(7), get_tick(7))
+bullbo := bullbo + (t7 ? 1 : 0)
+t8 = get_bo_signal(get_ticker(8), get_tick(8))
+bullbo := bullbo + (t8 ? 1 : 0)
+t9 = get_bo_signal(get_ticker(9), get_tick(9))
+bullbo := bullbo + (t9 ? 1 : 0)
+t10 = get_bo_signal(get_ticker(10), get_tick(10))
+bullbo := bullbo + (t10 ? 1 : 0)
+t11 = get_bo_signal(get_ticker(11), get_tick(11))
+bullbo := bullbo + (t11 ? 1 : 0)
+t12 = get_bo_signal(get_ticker(12), get_tick(12))
+bullbo := bullbo + (t12 ? 1 : 0)
+t13 = get_bo_signal(get_ticker(13), get_tick(13))
+bullbo := bullbo + (t13 ? 1 : 0)
+t14 = get_bo_signal(get_ticker(14), get_tick(14))
+bullbo := bullbo + (t14 ? 1 : 0)
+t15 = get_bo_signal(get_ticker(15), get_tick(15))
+bullbo := bullbo + (t15 ? 1 : 0)
+t16 = get_bo_signal(get_ticker(16), get_tick(16))
+bullbo := bullbo + (t16 ? 1 : 0)
+t17 = get_bo_signal(get_ticker(17), get_tick(17))
+bullbo := bullbo + (t17 ? 1 : 0)
+t18 = get_bo_signal(get_ticker(18), get_tick(18))
+bullbo := bullbo + (t18 ? 1 : 0)
+t19 = get_bo_signal(get_ticker(19), get_tick(19))
+bullbo := bullbo + (t19 ? 1 : 0)
+t20 = get_bo_signal(get_ticker(20), get_tick(20))
+bullbo := bullbo + (t20 ? 1 : 0)
+t21 = get_bo_signal(get_ticker(21), get_tick(21))
+bullbo := bullbo + (t21 ? 1 : 0)
+t22 = get_bo_signal(get_ticker(22), get_tick(22))
+bullbo := bullbo + (t22 ? 1 : 0)
+t23 = get_bo_signal(get_ticker(23), get_tick(23))
+bullbo := bullbo + (t23 ? 1 : 0)
+t24 = get_bo_signal(get_ticker(24), get_tick(24))
+bullbo := bullbo + (t24 ? 1 : 0)
+t25 = get_bo_signal(get_ticker(25), get_tick(25))
+bullbo := bullbo + (t25 ? 1 : 0)
+t26 = get_bo_signal(get_ticker(26), get_tick(26))
+bullbo := bullbo + (t26 ? 1 : 0)
+t27 = get_bo_signal(get_ticker(27), get_tick(27))
+bullbo := bullbo + (t27 ? 1 : 0)
+t28 = get_bo_signal(get_ticker(28), get_tick(28))
+bullbo := bullbo + (t28 ? 1 : 0)
+t29 = get_bo_signal(get_ticker(29), get_tick(29))
+bullbo := bullbo + (t29 ? 1 : 0)
+t30 = get_bo_signal(get_ticker(30), get_tick(30))
+bullbo := bullbo + (t30 ? 1 : 0)
+t31 = get_bo_signal(get_ticker(31), get_tick(31))
+bullbo := bullbo + (t31 ? 1 : 0)
+t32 = get_bo_signal(get_ticker(32), get_tick(32))
+bullbo := bullbo + (t32 ? 1 : 0)
+t33 = get_bo_signal(get_ticker(33), get_tick(33))
+bullbo := bullbo + (t33 ? 1 : 0)
+t34 = get_bo_signal(get_ticker(34), get_tick(34))
+bullbo := bullbo + (t34 ? 1 : 0)
+t35 = get_bo_signal(get_ticker(35), get_tick(35))
+bullbo := bullbo + (t35 ? 1 : 0)
+t36 = get_bo_signal(get_ticker(36), get_tick(36))
+bullbo := bullbo + (t36 ? 1 : 0)
+t37 = get_bo_signal(get_ticker(37), get_tick(37))
+bullbo := bullbo + (t37 ? 1 : 0)
+t38 = get_bo_signal(get_ticker(38), get_tick(38))
+bullbo := bullbo + (t38 ? 1 : 0)
+
+bullrate = 100 * bullbo / 38
+
+// Bullish percent index PnF
+get_bpi(bpi)=>
+    btrend = 0
+    btrend := barstate.isfirst ? 0 : nz(btrend[1])
+    bcurrentprice = bpi
+    int bbeginprice = 0
+    bbeginprice := barstate.isfirst ? int(floor(bpi / 2) * 2) : nz(bbeginprice[1])
+    bicloseprice = 0
+
+    if btrend == 0 and 6 <= abs(bbeginprice - bcurrentprice)
+        if bbeginprice > bcurrentprice
+            numcell = floor(abs(bbeginprice - bcurrentprice) / 2)
+            bicloseprice := bbeginprice - numcell * 2
+            btrend := -1
+        if bbeginprice < bcurrentprice
+            numcell = floor(abs(bbeginprice - bcurrentprice) / 2)
+            bicloseprice := bbeginprice + numcell * 2
+            btrend := 1
+
+    if btrend == -1
+        nok = true
+        if bbeginprice > bcurrentprice and 2 <= abs(bbeginprice - bcurrentprice)
+            numcell = floor(abs(bbeginprice - bcurrentprice) / 2)
+            bicloseprice := bbeginprice - numcell * 2
+            btrend := -1
+            bbeginprice := bicloseprice
+            nok := false
+        else
+            bicloseprice := bicloseprice == 0 ? nz(bicloseprice[1]) : bicloseprice
+
+        if bbeginprice < bcurrentprice and 6 <= abs(bbeginprice - bcurrentprice) and nok //new column
+            numcell = floor(abs(bbeginprice - bcurrentprice) / 2)
+            bicloseprice := bbeginprice + numcell * 2
+            btrend := 1
+            bbeginprice := bicloseprice
+    else
+        if btrend == 1
+            nok = true
+            if bbeginprice < bcurrentprice and 2 <= abs(bbeginprice - bcurrentprice)
+                numcell = floor(abs(bbeginprice - bcurrentprice) / 2)
+                bicloseprice := bbeginprice + numcell * 2
+                btrend := 1
+                bbeginprice := bicloseprice
+                nok := false
+            else
+                bicloseprice := bicloseprice == 0 ? nz(bicloseprice[1]) : bicloseprice
+
+            if bbeginprice > bcurrentprice and 6 <= abs(bbeginprice - bcurrentprice) and nok //new column
+                numcell = floor(abs(bbeginprice - bcurrentprice) / 2)
+                bicloseprice := bbeginprice - numcell * 2
+                btrend := -1
+                bbeginprice := bicloseprice
+            else
+                bicloseprice := bicloseprice == 0 ? nz(bicloseprice[1]) : bicloseprice
+
+    // keep old columns
+    float chigh = na
+    float clow = na
+    chigh := change(btrend) ? bicloseprice[1] : na
+    clow := change(btrend) ? bicloseprice[1] : na
+
+    //doulbe top/bottom Breakouts
+    dtb = btrend == 1 and bicloseprice > bicloseprice[1] and bicloseprice > valuewhen(chigh, chigh, 1) and bicloseprice[1] <= valuewhen(chigh, chigh, 1)
+    dbb = btrend == -1 and bicloseprice < bicloseprice[1] and bicloseprice < valuewhen(clow, clow, 1) and bicloseprice[1] >= valuewhen(clow, clow, 1)
+
+    [bicloseprice, btrend, dtb, dbb]
+
+[BPI, btrend, dtbo, dbbo] = get_bpi(bullrate)
+
+status = 0
+status := nz(status[1])
+tstatus = status
+
+//Bullish/Bearish Alert
+status := (change(btrend) > 0 and BPI[1] <= oversold)   ? 1 : status // Bullish Alert
+status := (change(btrend) < 0 and BPI[1] >= overbought) ? 2 : status // Bearish Alert
+
+// Bull/Bear Confirmed
+status := dtbo and (BPI[1] >= oversold) ? 3 : status  //Bull Confirmed // or status[1] == 1
+status := dbbo and (BPI[1] <= overbought) ? 4 : status  //Bear Confirmed  // or status[1] == 2
+
+//Bull/Bear Correction
+status := (status == 3 and change(btrend) < 0) ? 5 : status // bullcorrection
+status := (status == 4 and change(btrend) > 0) ? 6 : status   // bearcorrection
+
+// Bull/Bear Alert
+plotchar(status == 1 and change(btrend) > 0 ? BPI[1] : na, char ="↑", color = color.blue, textcolor = color.blue, location = location.absolute, size = size.small)
+plotchar(status == 2 and change(btrend) < 0 ? BPI[1] : na, char ="↓", color = color.red, textcolor = color.red, location = location.absolute, size = size.small)
+
+plotchar(status == 3 and change(status) ? BPI[1] : na, char ="↟", color = color.blue, textcolor = color.blue, location = location.absolute, size = size.small)
+plotchar(status == 4 and change(status) ? BPI[1] : na, char ="↡", color = color.red, textcolor = color.red, location = location.absolute, size = size.small)
+
+plotchar(status == 5 and change(status) ? BPI[1] : na, char ="⇣", color = color.red, textcolor = color.red, location = location.absolute, size = size.small)
+plotchar(status == 6 and change(status) ? BPI[1] : na, char ="⇡", color = color.blue, textcolor = color.blue, location = location.absolute, size = size.small)
+
+bpicol = color.gray
+bpicol := nz(bpicol[1], color.gray)
+if BPI > 50
+    if  btrend > 0
+        bpicol := #00FF00ff
+    if btrend < 0
+        bpicol := #00FF006f
+if BPI < 50
+    if btrend < 0
+        bpicol := #FF0000ff
+    if btrend > 0
+        bpicol := #FF00006f
+
+plot(BPI, color = bpicol, linewidth = 2)
+
+uline100 = hline(100, color = color.gray, linestyle = hline.style_dashed)
+uline1 = hline(overbought, color = color.gray, linestyle = hline.style_dashed)
+midl50 = hline(50, color = color.gray, linestyle = hline.style_dashed)
+dline1 = hline(oversold, color = color.gray, linestyle = hline.style_dashed)
+dline0 = hline(0, color = color.gray, linestyle = hline.style_dashed)
+
+fill(uline1, midl50, color = color.new(color.lime, 80))
+fill(dline1, midl50, color = color.new(color.red, 80))
+fill(uline1, uline100, color = color.new(color.lime, 82))
+fill(dline1, dline0, color = color.new(color.red, 82))
+
+//Labels
+chper = time - time[1]
+chper := change(chper) > 0 ? chper[1] : chper
+
+txt = "Area = " + (BPI > overbought ? "Overbought Area" :
+                   BPI <= overbought and BPI > 50.0 ? "Bullish Area" :
+                   BPI >= oversold and BPI < 50.0 ? "Bearish Area" :
+                   BPI < oversold ? "Oversold Area" :
+                   "-- Neutral --")
+
+txt := txt + "\nStatus = "  + " " + (status == 1 ? "Possible UpTrend" :
+                   status == 2 ? "Possible DownTrend" :
+                   status == 3 ? "Strong UpTrend" :
+                   status == 4 ? "Strong DownTrend" :
+                   status == 5 ? "Correction in UpTrend" :
+                   status == 6 ? "Correction in DownTrend" :
+                   "-- None --")
+
+labcol1 = BPI > overbought ? color.red :
+   BPI <= overbought and BPI > 50.0 ? color.lime :
+   BPI >= oversold and BPI < 50.0 ? color.red :
+   BPI < oversold ? color.lime :
+   color.gray
+
+labcol2 = BPI > overbought ? color.white :
+   BPI <= overbought and BPI > 50.0 ? color.black :
+   BPI >= oversold and BPI < 50.0 ? color.white :
+   BPI < oversold ? color.black :
+   color.olive
+
+var label mylab = na
+label.delete(mylab)
+mylab := label.new(x = time + chper * 20, y = 50, text = txt, color = labcol1, textcolor = labcol2, style = label.style_labeldown, xloc = xloc.bar_time, yloc=yloc.price)

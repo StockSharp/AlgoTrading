@@ -1,0 +1,185 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Mr_Rakun
+
+//@version=5
+strategy("Advanced Position Management [Mr_Rakun]", overlay=true, default_qty_type =strategy.cash, initial_capital=100000, default_qty_value = 50000)
+
+// Strategy
+fastLength = input(10, "Fast MA Length", group = "Strategy")
+slowLength = input(20, "Slow MA Length", group = "Strategy")
+
+// Calculate MAs
+fastMA = ta.ema(close, fastLength)
+slowMA = ta.ema(close, slowLength)
+
+// Plot MAs
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+
+// Define trading conditions
+longCondition = ta.crossover(fastMA, slowMA)
+shortCondition = ta.crossunder(fastMA, slowMA)
+
+
+// Multiple take profit and multi-function stop loss
+// --------- | ----------------------------
+// Add below your own strategy from here. |
+// --------- | ----------------------------
+
+// Position Management Inputs
+posManagement = input.bool(true, "========== Advanced Position Management ==========")
+posType = input.string("Both", "Strategy Type", options=["Both", "Long", "Short"], group = "Strategy Type")
+tp1Percent = input.float(2.0, "Take Profit 1 %                                               ", minval=0.1, maxval=99, step=0.1, group = "position management", inline = "tp1")
+tp1PositionPercent = input.int(30, "Qty %", minval=1, maxval=100, step=1, group = "position management", inline = "tp1")
+
+tp2Percent = input.float(4.0, "Take Profit 2 %                                               ", minval=0.1, maxval=99, step=0.1, group = "position management", inline = "tp2")
+tp2PositionPercent = input.int(30, "Qty %", minval=1, maxval=100, step=1, group = "position management", inline = "tp2")
+useTP2 = input.bool(true, "", group = "position management", inline = "tp2")
+
+tp3Percent = input.float(6.0, "Take Profit 3 %                                               ", minval=0.1, maxval=99, step=0.1, group = "position management", inline = "tp3")
+tp3PositionPercent = input.int(40, "Qty %", minval=1, maxval=100, step=1, group = "position management", inline = "tp3") + 2
+useTP3 = input.bool(true, "", group = "position management", inline = "tp3")
+
+initialStopLossPercent = input.float(2.0, "Initial Stop Loss %", minval=0.1, maxval=99, step=0.1, group = "Stop Loss")
+
+// Trailing Stop Inputs
+trailingStopType = input.string("Percent", "Trailing Stop Type                                               ", options=["Percent", "Previous TP"], group = "Stop Loss", inline = "stopuse")
+useTrailingStop = input.bool(false, "", group = "Stop Loss", inline = "stopuse")
+trailingStopPercent = input.float(3, "Trailing Stop % (if Percent type)", minval=0.1, maxval=10, step=0.1, group = "Stop Loss")
+trailingStopActivationPercent = input.float(3.0, "Trailing Stop Activation %", minval=0.1, maxval=10, step=0.1, group = "Stop Loss")
+
+// BackTest Range
+bool limit_date_range = input.bool(title='Test Range', defval=true, group="Backtest")
+int start_time = input.time(defval=timestamp('11 OCT 2022 00:00 +0000'), title='Backtest Start', group="Backtest")
+int end_time = input.time(defval=timestamp('31 Dec 2080 00:00 +0000'), title='Backtest End', group="Backtest")
+
+in_date_range = true
+if limit_date_range
+    in_date_range := time >= start_time and time <= end_time
+else
+    in_date_range := true
+
+// Position management variables
+var float entryPrice = na
+var float currentStopLoss = na
+var float tp1Price = na
+var float tp2Price = na
+var float tp3Price = na
+var bool trailingStopActive = false
+var float highestSinceEntry = na
+var float lowestSinceEntry = na
+var int lastTPHit = 0
+
+// Amount rounding
+position_amount(float ep, int tp1, int tp2, int tp3) =>
+    var float amount = strategy.default_entry_qty(ep)
+    var float part1 = math.round(amount * tp1 / 100, 3)
+    var float part2 = math.round(amount * tp2 / 100, 3)
+    var float part3 = math.round(amount * tp3 / 100, 3)
+    // Checking the total resulting from rounding
+    total = part1 + part2 + part3
+
+// Function to update trailing stop based on TP levels
+updateTrailingStopTP(currentPrice, isLong, currentStop, entry, tp1, tp2, tp3, lastHit) =>
+    newStop = currentStop
+    newLastHit = lastHit
+    if isLong
+        if currentPrice >= tp3 and lastHit < 3
+            newStop := tp2
+            newLastHit := 3
+        else if currentPrice >= tp2 and lastHit < 2
+            newStop := tp1
+            newLastHit := 2
+        else if currentPrice >= tp1 and lastHit < 1
+            newStop := entry
+            newLastHit := 1
+    else
+        if currentPrice <= tp3 and lastHit < 3
+            newStop := tp2
+            newLastHit := 3
+        else if currentPrice <= tp2 and lastHit < 2
+            newStop := tp1
+            newLastHit := 2
+        else if currentPrice <= tp1 and lastHit < 1
+            newStop := entry
+            newLastHit := 1
+    [newStop, newLastHit]
+
+// Open positions
+if (longCondition) and (posType == "Both" or posType == "Long") and (strategy.position_size == 0 or strategy.position_size < 0) and in_date_range
+    entryPrice := close
+    currentStopLoss := close * (1 - initialStopLossPercent / 100)
+    tp1Price := close * (1 + tp1Percent / 100)
+    tp2Price := close * (1 + tp2Percent / 100)
+    tp3Price := close * (1 + tp3Percent / 100)
+    trailingStopActive := false
+    highestSinceEntry := close
+    lastTPHit := 0
+    longAmount = position_amount(entryPrice, tp1PositionPercent, tp1PositionPercent, tp1PositionPercent)
+    strategy.entry("Long", strategy.long, qty = longAmount)
+    // log.info("\nPozisyon büyüklüğü: {0}\Yaz Kızım: {1}", strategy.position_size, longAmount)
+
+if (shortCondition) and (posType == "Both" or posType == "Short") and (strategy.position_size == 0 or strategy.position_size > 0) and in_date_range
+    entryPrice := close
+    currentStopLoss := close * (1 + initialStopLossPercent / 100)
+    tp1Price := close * (1 - tp1Percent / 100)
+    tp2Price := close * (1 - tp2Percent / 100)
+    tp3Price := close * (1 - tp3Percent / 100)
+    trailingStopActive := false
+    lowestSinceEntry := close
+    lastTPHit := 0
+    shortAmount = position_amount(entryPrice, tp1PositionPercent, tp1PositionPercent, tp1PositionPercent)
+    strategy.entry("Short", strategy.short, qty = shortAmount)
+    // log.info("\nPozisyon büyüklüğü: {0}\Yaz Kızım: {1}", strategy.position_size, shortAmount)
+
+// Update trailing stop
+if (strategy.position_size != 0 and useTrailingStop)
+    isLong = strategy.position_size > 0
+    currentPrice = isLong ? high : low
+    profitPercent = isLong ? (currentPrice - entryPrice) / entryPrice * 100 : (entryPrice - currentPrice) / entryPrice * 100
+
+    if (profitPercent >= trailingStopActivationPercent and not trailingStopActive)
+        trailingStopActive := true
+
+    if (trailingStopActive)
+        if (trailingStopType == "Percent")
+            newStopLoss = isLong ? currentPrice * (1 - trailingStopPercent / 100) : currentPrice * (1 + trailingStopPercent / 100)
+            currentStopLoss := isLong ? math.max(currentStopLoss, newStopLoss) : math.min(currentStopLoss, newStopLoss)
+        else if (trailingStopType == "Previous TP")
+            [newStop, newLastHit] = updateTrailingStopTP(currentPrice, isLong, currentStopLoss, entryPrice, tp1Price, tp2Price, tp3Price, lastTPHit)
+            currentStopLoss := newStop
+            lastTPHit := newLastHit
+
+
+// Close positions with USD-based quantities
+if (strategy.position_size > 0)
+    strategy.exit("TP1 Long", "Long", qty_percent =tp1PositionPercent, limit=tp1Price)
+    if (useTP2)
+        strategy.exit("TP2 Long", "Long", qty_percent =tp2PositionPercent, limit=tp2Price)
+    if (useTP3)
+        strategy.exit("TP3 Long", "Long", qty_percent =tp3PositionPercent, limit=tp3Price)
+
+if (strategy.position_size > 0 and ta.cross(low, currentStopLoss))
+    strategy.close("Long", "SL Long")
+
+if (strategy.position_size < 0)
+    strategy.exit("TP1 Short", "Short", qty_percent =tp1PositionPercent, limit=tp1Price)
+    if (useTP2)
+        strategy.exit("TP2 Short", "Short", qty_percent =tp2PositionPercent, limit=tp2Price)
+    if (useTP3)
+        strategy.exit("TP3 Short", "Short", qty_percent =tp3PositionPercent, limit=tp3Price)
+
+if (strategy.position_size < 0 and ta.cross(high, currentStopLoss))
+    strategy.close("Short", "SL Short")
+
+// Plot stop loss and take profit levels
+avg = plot(strategy.position_size != 0 ? entryPrice : na, color=color.gray, style=plot.style_linebr, title="Stop Loss")
+sl = plot(strategy.position_size != 0 ? currentStopLoss : na, color=color.red, style=plot.style_linebr, title="Stop Loss")
+t1 = plot(strategy.position_size != 0 ? tp1Price : na, color=color.green, style=plot.style_linebr, title="Take Profit 1")
+t2 = plot(useTP2 and strategy.position_size != 0 ? tp2Price : na, color=color.lime, style=plot.style_linebr, title="Take Profit 2")
+t3 = plot(useTP3 and strategy.position_size != 0 ? tp3Price : na, color=color.teal, style=plot.style_linebr, title="Take Profit 3")
+
+fill(avg, sl, color = color.new(color.red, 90))
+fill(avg, t1, color = color.new(color.green, 90))
+fill(t1, t2, color = color.new(color.green, 80))
+fill(t2, t3, color = color.new(color.green, 70))

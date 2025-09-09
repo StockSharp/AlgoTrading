@@ -1,0 +1,52 @@
+//@version=6
+strategy("3 Red / 3 Green Strategy with Volatility Check", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, pyramiding=1, currency = currency.USD)
+
+// Input parameters
+maxTradeDuration = input.int(title="Maximum Trade Duration (days)", defval=22, minval=1)
+useGreenExit   = input.bool(title="Use 3 Green Days Exit", defval=true, tooltip = "Exit condition: either 3 consecutive green days (if enabled) or if the trade duration reaches maxTradeDuration days.")
+atrPeriod      = input.int(title="ATR Period", defval=12, minval=0, step=1, tooltip="Use zero to disable ATR filter")
+
+// Define red and green days based on open vs close prices
+redDay   = close < open
+greenDay = close > open
+
+// Conditions: 3 consecutive red days trigger an entry; 3 consecutive green days trigger an exit.
+threeRed   = redDay and redDay[1] and redDay[2]
+threeGreen = greenDay and greenDay[1] and greenDay[2]
+
+var float currentATR = 0.0
+var float averageATR = 0.0
+var bool atr_entry = true
+
+// Calculate ATR and its 30-day average
+if(atrPeriod>0)
+    currentATR := ta.atr(atrPeriod)
+    averageATR := ta.sma(currentATR, 30)
+
+atr_entry := (currentATR > 0 and averageATR > 0) ? (currentATR > averageATR) : true
+// Persistent variable to record the bar index when the trade is entered.
+var int entryBarIndex = na
+
+// Entry: When no position is open, 3 consecutive red days occur, and current ATR is above its 30-day average, enter a long trade.
+if (strategy.position_size == 0 and threeRed and atr_entry)
+    strategy.entry("Long", strategy.long)
+    entryBarIndex := bar_index
+
+// Compute trade duration in days using the absolute difference
+tradeDuration = not na(entryBarIndex) ? math.abs(bar_index - entryBarIndex) : 0
+
+// Exit condition: either 3 consecutive green days (if enabled) or if the trade duration reaches maxTradeDuration days.
+exitCondition = (useGreenExit and threeGreen) or (tradeDuration >= maxTradeDuration)
+
+if (strategy.position_size > 0 and exitCondition)
+    strategy.close("Long")
+
+// Reset the entry bar index when a trade just closed.
+if (strategy.position_size[1] > 0 and strategy.position_size == 0)
+    entryBarIndex := na
+
+// Optional: Plot signals and ATR values for visual confirmation.
+//plotshape(threeRed, title="Entry Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.tiny)
+//plotshape(threeGreen, title="Green Exit Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.tiny)
+//plot(currentATR, title="Current ATR", color=color.blue)
+//plot(averageATR, title="30-Day Average ATR", color=color.orange)

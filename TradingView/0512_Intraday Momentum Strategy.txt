@@ -1,0 +1,53 @@
+//@version=5
+strategy("Intraday Momentum Strategy", overlay=true, margin_long=100, margin_short=100)
+
+// Input parameters
+emaFastLength = input.int(9, "Fast EMA Length", minval=1)
+emaSlowLength = input.int(21, "Slow EMA Length", minval=1)
+rsiLength = input.int(14, "RSI Length", minval=1)
+rsiOverbought = input.int(70, "RSI Overbought", minval=0, maxval=100)
+rsiOversold = input.int(30, "RSI Oversold", minval=0, maxval=100)
+stopLossPerc = input.float(1.0, "Stop Loss %", minval=0.1, step=0.1)
+takeProfitPerc = input.float(2.0, "Take Profit %", minval=0.1, step=0.1)
+startHour = input.int(9, "Session Start Hour", minval=0, maxval=23)
+startMinute = input.int(30, "Session Start Minute", minval=0, maxval=59)
+endHour = input.int(15, "Session End Hour", minval=0, maxval=23)
+endMinute = input.int(45, "Session End Minute", minval=0, maxval=59)
+
+// Calculate indicators
+emaFast = ta.ema(close, emaFastLength)
+emaSlow = ta.ema(close, emaSlowLength)
+rsi = ta.rsi(close, rsiLength)
+vwapValue = ta.vwap(hlc3)
+
+// Define trading session
+sessionString = str.tostring(startHour, "00") + str.tostring(startMinute, "00") + "-" + str.tostring(endHour, "00") + str.tostring(endMinute, "00")
+inSession = time(timeframe.period, sessionString)
+
+// Entry conditions
+longCondition = ta.crossover(emaFast, emaSlow) and rsi < rsiOverbought and close > vwapValue and inSession
+shortCondition = ta.crossunder(emaFast, emaSlow) and rsi > rsiOversold and close < vwapValue and inSession
+
+// Exit conditions (time-based)
+exitTime = not inSession
+
+// Position sizing and risk management
+lotSize = 1  // Fixed lot size (adjust based on account size in backtesting)
+
+// Strategy logic
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=lotSize)
+    strategy.exit("Long Exit", "Long", stop=strategy.position_avg_price * (1 - stopLossPerc / 100), limit=strategy.position_avg_price * (1 + takeProfitPerc / 100))
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short, qty=lotSize)
+    strategy.exit("Short Exit", "Short", stop=strategy.position_avg_price * (1 + stopLossPerc / 100), limit=strategy.position_avg_price * (1 - takeProfitPerc / 100))
+
+// Close all positions at session end
+if (exitTime)
+    strategy.close_all("Session End")
+
+// Plot indicators
+plot(emaFast, color=color.blue, title="Fast EMA")
+plot(emaSlow, color=color.red, title="Slow EMA")
+plot(vwapValue, color=color.purple, title="VWAP")

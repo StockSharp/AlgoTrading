@@ -1,0 +1,67 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+// This strategy employs a statistical approach by using a Z-score, which measures the deviation of the price from its moving average normalized by the standard deviation.
+// Very simple and effective approach
+
+//@version=5
+strategy('Price Based Z-Trend - strategy [presentTrading]',shorttitle = 'Price Based Z-Trend - strategy [presentTrading]', overlay=false, precision=3,
+         commission_value=0.1, commission_type=strategy.commission.percent, slippage=1,
+         currency=currency.USD, default_qty_type=strategy.percent_of_equity, default_qty_value=10, initial_capital=10000)
+
+// User-definable parameters for the Z-score calculation and bar coloring
+tradeDirection = input.string("Both", "Trading Direction", options=["Long", "Short", "Both"]) // User selects trading direction
+
+priceDeviationLength = input.int(100, "Standard Deviation Length", step=1) // Length for standard deviation calculation
+priceAverageLength = input.int(100, "Average Length", step=1) // Length for moving average calculation
+Threshold = input.float(1, "Threshold", step=0.1) // Number of standard deviations for Z-score threshold
+priceBar = input(title='Bar Color', defval=true) // Toggle for coloring price bars based on Z-score
+
+
+// Z-score calculation based on user input for the price source (typically the closing price)
+priceSource = input(close, title="Source")
+priceZScore = (priceSource - ta.ema(priceSource, priceAverageLength)) / ta.stdev(priceSource, priceDeviationLength) // Z-score calculation
+
+// Conditions for entering and exiting trades based on Z-score crossovers
+priceLongCondition = ta.crossover(priceZScore, Threshold) // Condition to enter long positions
+priceExitLongCondition = ta.crossunder(priceZScore, -Threshold) // Condition to exit long positions
+
+longEntryCondition = ta.crossover(priceZScore, Threshold)
+longExitCondition = ta.crossunder(priceZScore, -Threshold)
+shortEntryCondition = ta.crossunder(priceZScore, -Threshold)
+shortExitCondition = ta.crossover(priceZScore, Threshold)
+
+
+// Strategy conditions and execution based on Z-score crossovers and trading direction
+if (tradeDirection == "Long" or tradeDirection == "Both") and longEntryCondition
+    strategy.entry("Long", strategy.long) // Enter a long position
+
+if (tradeDirection == "Long" or tradeDirection == "Both") and longExitCondition
+    strategy.close("Long") // Close the long position
+
+if (tradeDirection == "Short" or tradeDirection == "Both") and shortEntryCondition
+    strategy.entry("Short", strategy.short) // Enter a short position
+
+if (tradeDirection == "Short" or tradeDirection == "Both") and shortExitCondition
+    strategy.close("Short") // Close the short position
+
+
+// Dynamic Thresholds Visualization using 'plot'
+plot(Threshold, "Dynamic Entry Threshold", color=color.new(color.green, 50))
+plot(-Threshold, "Dynamic Short Entry Threshold", color=color.new(color.red, 50))
+
+
+// Color-coding Z-Score
+priceZScoreColor = priceZScore > Threshold ? color.green :
+              priceZScore < -Threshold ? color.red : color.blue
+plot(priceZScore, "Z-Score", color=priceZScoreColor)
+
+// Lines
+hline(0, color=color.rgb(255, 255, 255, 50), linestyle=hline.style_dotted)
+
+// Bar Color
+priceBarColor = priceZScore > Threshold ? color.green :
+           priceZScore > 0 ? color.lime :
+           priceZScore < Threshold ? color.maroon :
+           priceZScore < 0 ? color.red : color.black
+barcolor(priceBar ? priceBarColor : na)

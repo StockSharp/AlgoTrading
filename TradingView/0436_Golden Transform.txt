@@ -1,0 +1,80 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0
+// © DraftVenture
+
+//@version=5
+strategy("Golden Transform Strategy", overlay=false)
+
+// ROC - to contrast Hull TRIX, no modifications
+roclength = input.int(50, title="Rate of Change Length", minval=1)
+source = input(close, "ROC Source")
+roc = 100 * (source - source[roclength])/source[roclength]
+
+// Hull modified TRIX - for greater weight
+length = input.int(90, title="Hull TRIX Length", minval=1)
+
+hullma(source, length) =>
+    wma1 = ta.wma(source, length / 2)
+    wma2 = ta.wma(source, length)
+    hull = ta.wma(2 * wma1 - wma2, math.floor(math.sqrt(length)))
+    hull
+
+hullmaValue = hullma(math.log(close), length)
+trix = 10000 * ta.change(hullma(hullma(hullma(math.log(close), length), length), length))
+
+// Hull MA - correlates Hull TRIX as an entry filter
+hlength = input.int(65, title= "Hull MA Entry Length", minval=1)
+src = input(close, title="Hull MA Source")
+hullma2 = ta.wma(2*ta.wma(src, hlength/2)-ta.wma(src, hlength), math.floor(math.sqrt(hlength)))
+
+// Fisher Transform - as a preemptive exit filter
+len = input.int(50, minval=1, title="Fisher Reversal Length")
+high_ = ta.highest(hl2, len)
+low_ = ta.lowest(hl2, len)
+round_(val) => val > .99 ? .999 : val < -.99 ? -.999 : val
+value = 0.0
+value := round_(.66 * ((hl2 - low_) / (high_ - low_) - .5) + .67 * nz(value[1]))
+fish0 = 0.0
+fish0 := .5 * math.log((1 + value) / (1 - value)) + .5 * nz(fish0[1])
+fish2 = fish0[1]
+
+// Smooth the Fisher with HMA to correlate with TRIX
+smooth_length = input.int(5, title="Fisher Smoothing Length", minval=1)
+fish1 = ta.hma(fish0, smooth_length)
+
+// Determine long and short conditions
+longCondition = ta.crossover(roc, trix) and trix < 0 and open > hullma2
+shortCondition = ta.crossunder(roc, trix) and trix > 0 and open < hullma2
+
+// Exit conditions
+exitLongCondition = ta.crossunder(roc, trix) or fish1 > 1.5 and ta.crossunder(fish1, fish2)
+exitShortCondition = ta.crossover(roc, trix) or fish1 < -1.5 and ta.crossover(fish1, fish2)
+
+// Strategy entry and exit logic
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if exitLongCondition
+    strategy.close("Long")
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+if exitShortCondition
+    strategy.close("Short")
+
+// Highlight periods for oscillater
+bgcolor(longCondition ? color.new(color.yellow, 50) : na)
+bgcolor(shortCondition ? color.new(color.white, 50) : na)
+
+hline(1.5, "Overbought", color=color.yellow)
+hline(0.75,"Mid High", color=color.gray)
+hline(0, "Zero", color=color.yellow)
+hline(-0.75, "Mid Low", color=color.gray)
+hline(-1.5, "Oversold", color=color.yellow)
+plot(fish1, color=color.yellow, title="Fisher Reversal")
+plot(fish2, color=color.gray, title="Lag Trigger")
+
+plotshape(series=ta.crossunder(roc, trix), style=shape.xcross, location=location.top, color=color.white, size=size.tiny)
+plotshape(series=ta.crossover(roc, trix), style=shape.xcross, location=location.bottom, color=color.white, size=size.tiny)
+
+// Strategy by KP

@@ -1,0 +1,327 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RicardoSantos
+
+//@version=6
+
+// @description Methods for debuging/output into a table, console like style.
+library(title='DebugConsole')
+
+//#region   StyleParameters:
+
+// @field position     Table position in panel.
+// @field bgcolor      Background color.
+// @field border_color Border color.
+// @field border_width border width.
+// @field frame_color  Frame color.
+// @field frame_width  Frame width.
+// @field width        Console width.
+// @field height       Console height.
+// @field text_color   Text color.
+// @field text_halign  Text horizontal alignment.
+// @field text_valign  Text vertical alignment.
+// @field text_size    Size of the text.
+export type StyleParameters
+    // table style:
+    string position     = position.bottom_right
+    color  bgcolor      = #000000
+    color  frame_color  = #787b86
+    int    frame_width  = 3
+    color  border_color = #787b86
+    int    border_width = 2
+    // cell style:
+    int    width       = 95
+    int    height      = 95
+    color  text_color  = #b2b5be
+    string text_halign = text.align_left
+    string text_valign = text.align_bottom
+    string text_size   = size.normal
+
+//#endregion
+//#region   Parameters:
+
+// @type Parameters object.
+// @field size     Number of string cells.
+// @field visible  Is console visible?
+// @field intrabar Is intrabar persistance (`varip`) on?
+export type Parameters
+    // basic initialization:
+    int  size     = 20
+    bool visible  = true
+    bool intrabar = false
+    StyleParameters style
+
+//#endregion
+//#region   Console:
+
+// @type Console object used to store log entries and table.
+// @field entries Message entry stream.
+// @field table   Output table.
+export type Console
+    array<string> entries
+    table table
+
+//#endregion
+// init () {
+
+// @function initializes the Console object.
+// @param this                 Console, Console object with entries array and table.
+// @param size                 int    , Number of entries allowed in the console.
+// @param visible              bool   , Toggles the visibility of the table, (default=true).
+// @param intrabar_persistance bool   , Toggles the entry message intrabar persistance into the console, (default=false).
+// @returns Console object, contains the entries console and output table.
+export method init (
+ Console this                        ,
+ int     size                 = 20   ,
+ bool    visible              = true ,
+ bool    intrabar_persistance = false
+ ) =>
+    color _bg = #000000
+    // intrabar persistance:
+    // configures console entries to accept intrabar persistance entries or not.
+    switch intrabar_persistance
+        true  => varip string[] _console = array.new_string(size, '') , this.entries := _console
+        false => var   string[] _console = array.new_string(size, '') , this.entries := _console
+        => runtime.error('DebugConsole -> init(): Undefined boolean clause for intrabar persistance.')
+    // optional table visibility:
+    if visible
+        var table _table = table.new(
+             position     = position.bottom_left,
+             columns      = 1                   ,
+             rows         = 1                   ,
+             bgcolor      = _bg                 ,
+             frame_color  = #787b86           ,
+             frame_width  = 3                   ,
+             border_color = #787b86           ,
+             border_width = 2
+             )
+        this.table := _table
+        table.cell(
+             table_id    = this.table       ,
+             column      = 0                ,
+             row         = 0                ,
+             text        = ''               ,
+             width       = 100              ,
+             height      = 95               ,
+             text_color  = #b2b5be        ,
+             text_halign = text.align_left  ,
+             text_valign = text.align_bottom,
+             text_size   = size.normal      ,
+             bgcolor     = _bg
+             )
+    else
+        color _alpha100 = #00000000
+        var table _table = table.new(
+             position     = position.bottom_left,
+             columns      = 1                   ,
+             rows         = 1                   ,
+             bgcolor      = _alpha100           ,
+             frame_color  = _alpha100           ,
+             frame_width  = 3                   ,
+             border_color = _alpha100           ,
+             border_width = 2
+             )
+        this.table := _table
+    this
+
+// }
+// new () {
+
+// @function Create a new Console object and inittiate its basic parameters.
+// @param settings `Parameters` Parameters definitions (optional).
+// @returns `Console` A new console object.
+export new (Parameters settings) =>
+    con = Console.new().init(settings.size, settings.visible, settings.intrabar)
+    //
+    con.table.set_bgcolor(      settings.style.bgcolor      )
+    con.table.set_border_color( settings.style.border_color )
+    con.table.set_border_width( settings.style.border_width )
+    con.table.set_frame_color(  settings.style.frame_color  )
+    con.table.set_frame_width(  settings.style.frame_width  )
+    con.table.set_position(     settings.style.position     )
+    //
+    con.table.cell_set_bgcolor(     0, 0, settings.style.bgcolor     )
+    con.table.cell_set_width(       0, 0, settings.style.width       )
+    con.table.cell_set_height(      0, 0, settings.style.height      )
+    con.table.cell_set_text_color(  0, 0, settings.style.text_color  )
+    con.table.cell_set_text_halign( 0, 0, settings.style.text_halign )
+    con.table.cell_set_text_valign( 0, 0, settings.style.text_valign )
+    con.table.cell_set_text_size(   0, 0, settings.style.text_size   )
+    con
+
+// @function Create a new Console object and inittiate its basic parameters.
+// @returns `Console` A new console object.
+export new () =>
+    Parameters settings = Parameters.new(style = StyleParameters.new())
+    new(settings)
+
+// }
+// queue () {
+
+// @function Regular Queue, will be called once every bar its called.
+// @param console_id string array, console configuration array.
+// @param new_line string, with contents for new line.
+// @returns void.
+export method queue (Console this, string new_line) =>
+    array.shift(this.entries)
+    array.push(this.entries, new_line)
+    this
+
+// }
+// queue_one () {
+
+// @function Queue only one time, will not repeat itself.
+// @param console_id string array, console configuration array.
+// @param new_line string, with contents for new line.
+// @returns void.
+export method queue_one (Console this, string new_line) =>
+    var bool _repeat = true
+    if _repeat
+        array.shift(this.entries)
+        array.push(this.entries, new_line)
+        _repeat := false
+    this
+
+// }
+// queue_one_intrabar () {
+
+// @function Queue only one time, will not repeat itself.
+// @param console_id string array, console configuration array.
+// @param new_line string, with contents for new line.
+// @returns void.
+export method queue_one_intrabar (Console this, string new_line) =>
+    varip bool _repeat = true
+    if _repeat
+        array.shift(this.entries)
+        array.push(this.entries, new_line)
+        _repeat := false
+    this
+
+// }
+// update () {
+
+// @function Update method for the console screen.
+// @param table_id table, table to update console text.
+// @param console_id string array, console configuration array.
+// @returns void.
+export method update (Console this) =>
+    string _t = array.join(this.entries, '\n')
+    table.cell_set_text(
+         table_id = this.table,
+         column   = 0         ,
+         row      = 0         ,
+         text     = _t
+         )
+    this
+// }
+
+// ┌────────────────┐
+//   Example Usage:
+// └────────────────┘
+
+// initialize console configuration:
+bool is_visible = input.bool(true)
+bool is_intrabar = input.bool(false)
+// bool is_visible1 = input.bool(true)
+
+settings = Parameters.new(visible = is_visible, intrabar = is_intrabar, style = StyleParameters.new())
+con = new(settings)//Console.new(), log.init(20, is_visible, is_intrabar) // init(Console.new(), 20, is_visible, is_intrabar)
+// NOTE: you may use multiple consoles in one script, but varip console is limited to one !!
+// var log1 = init(Console.new(), 20, is_visible1), table.set_position(log1.table, position.top_center), table.cell_set_width(log1.table, 0, 0, 50), log1.queue(str.tostring(time)), log1.update()
+// var log2 = init(Console.new(), 20, is_visible1), table.set_position(log2.table, position.top_left), table.cell_set_width(log2.table, 0, 0, 20), log2.queue(str.tostring(time)).update()
+
+// can use table.cell_"properties"() to adjust console style definitions:
+table.set_position(con.table, position.bottom_left)
+table.cell_set_width(con.table, 0, 0, 80)
+
+// usage:
+con.queue_one_intrabar(str.format('only one intrabar at: {0}', str.format('{0}-{1}-{2}  {3}:{4}:{5}', year, month, dayofmonth, hour, minute, second)))
+con.queue_one('only one')
+con.queue_one('only one again')
+con.queue_one_intrabar(str.format('another only one intrabar at: {0}', str.format('{0}-{1}-{2}  {3}:{4}:{5}', year, month, dayofmonth, hour, minute, second)))
+if barstate.islastconfirmedhistory
+    con.queue('0: ....')
+    con.queue('1: ....')
+    con.queue('2: ....')
+    con.queue_one_intrabar(str.format('another only one intrabar at the last confirmed history at: {0}', str.format('{0}-{1}-{2}  {3}:{4}:{5}', year, month, dayofmonth, hour, minute, second)))
+if barstate.islast
+    con.queue_one('only one last time')
+    con.queue_one_intrabar(str.format('only one intrabar at the last bar: {0}', str.format('{0}-{1}-{2}  {3}:{4}:{5}', year, month, dayofmonth, hour, minute, second)))
+    con.queue_one_intrabar('only loads at the last bar after loading script into chart, disapears after')
+if is_intrabar
+    con.queue(str.format('realtime intrabar: {0}', close))
+
+// update console screen:
+// this may be called more than one time through the script.
+con.update()
+
+// @function Generate a independent single value output stream.
+// @param message string, the output message.
+// @param size int, number of messages to show.
+// @param text_size string, default=size.normal.
+// @param bg_color color, default=#000000.
+// @param text_color color, default=#ffffff.
+// @param border_color color, default=color.grey.
+// returns void
+// Originaly by Adolgov
+export log (string message, int size = 20, string text_size=size.normal, color bg_color=#000000, color text_color=#ffffff, color border_color=color.gray) => //{
+    var table _table = table.new(
+         position=position.bottom_right,
+         columns=1,
+         rows=1,
+         bgcolor=bg_color,
+         frame_color=border_color,
+         frame_width=3,
+         border_color=border_color,
+         border_width=2)
+    var string[] _console = array.new<string>()
+    array.push(_console, message)
+    if array.size(_console) > size
+        array.shift(_console)
+    table.cell(
+         table_id=_table,
+         column=0,
+         row=0,
+         text=array.join(_console, '\n'),
+         text_color=text_color,
+         text_halign=text.align_left,
+         text_valign=text.align_bottom,
+         text_size=text_size,
+         bgcolor=bg_color)
+// log(str.format("bar_index = {0}, close = {1}", bar_index, close))
+//}
+
+// @function Generate a independent single value output stream supporting intrabar persistance.
+// @param message string, the output message.
+// @param size int, number of messages to show.
+// @param text_size string, default=size.normal.
+// @param bg_color color, default=#000000.
+// @param text_color color, default=#ffffff.
+// @param border_color color, default=color.grey.
+// returns void
+// Originaly by Adolgov
+export log_ip (string message, int size = 20, string text_size=size.normal, color bg_color=#000000, color text_color=#ffffff, color border_color=color.gray) => //{
+    var table _table = table.new(
+         position=position.bottom_right,
+         columns=1,
+         rows=1,
+         bgcolor=bg_color,
+         frame_color=border_color,
+         frame_width=3,
+         border_color=border_color,
+         border_width=2)
+    varip string[] _console = array.new<string>()
+    array.push(_console, message)
+    if array.size(_console) > size
+        array.shift(_console)
+    table.cell(
+         table_id=_table,
+         column=0,
+         row=0,
+         text=array.join(_console, '\n'),
+         text_color=text_color,
+         text_halign=text.align_left,
+         text_valign=text.align_bottom,
+         text_size=text_size,
+         bgcolor=bg_color)
+log_ip(str.format("bar_index = {0}, close = {1}", bar_index, close))
+//}

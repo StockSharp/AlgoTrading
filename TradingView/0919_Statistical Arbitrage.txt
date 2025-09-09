@@ -1,0 +1,41 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © EdgeTools
+
+//@version=5
+strategy("Statistical Arbitrage",  overlay=false, precision=2, calc_on_every_tick=true, initial_capital=30000, currency=currency.USD, slippage=1, commission_type=strategy.commission.cash_per_contract, commission_value=0.05)
+
+// Input for Correlated Symbols
+symbol1Ticker = input.symbol("CBOT_MINI:YM1!", title="Symbol 1")
+symbol2Ticker = input.symbol("CME_MINI:ES1!", title="Symbol 2")
+
+// Input parameters for Spread Calculation
+maLength = input.int(20, title="Lookback Period for Mean and Std Dev", minval=1)
+stdMultiplier = input.float(2.0, title="Standard Deviation Multiplier for Entry")
+
+// Requesting data for the two symbols (on the chart's default timeframe)
+symbol1 = request.security(symbol1Ticker, timeframe.period, close)
+symbol2 = request.security(symbol2Ticker, timeframe.period, close)
+
+// Calculate Spread (Difference between two assets)
+spread = symbol1 - symbol2
+
+// Calculate the mean and standard deviation of the spread
+meanSpread = ta.sma(spread, maLength)
+stdDevSpread = ta.stdev(spread, maLength)
+
+// Entry and Exit Conditions based on GUI inputs
+buyCondition = spread < meanSpread - stdMultiplier * stdDevSpread  // Buy when spread is below lower band
+sellCondition = spread > meanSpread                                // Close when spread reverts to the mean
+
+// Trade Logic
+if (buyCondition)
+    strategy.entry("Long", strategy.long)
+
+if (sellCondition)
+    strategy.close("Long")
+
+// Plot the spread and thresholds
+plot(spread, title="Spread", color=color.blue)
+plot(meanSpread, title="Mean Spread", color=color.gray)
+plot(meanSpread + stdMultiplier * stdDevSpread, title="Upper Band", color=color.red)
+plot(meanSpread - stdMultiplier * stdDevSpread, title="Lower Band", color=color.green)

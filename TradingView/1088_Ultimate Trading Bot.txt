@@ -1,0 +1,43 @@
+//@version=6
+strategy("Ultimate Trading Bot", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Input parameters
+rsiLength = input(14, title="RSI Length")
+rsiOverbought = input(70, title="RSI Overbought Level")
+rsiOversold = input(30, title="RSI Oversold Level")
+maLength = input(50, title="Moving Average Length")
+stochLength = input(14, title="Stochastic Length")
+macdFast = input(12, title="MACD Fast Length")
+macdSlow = input(26, title="MACD Slow Length")
+macdSignal = input(9, title="MACD Signal Length")
+
+// Indicators
+rsi = ta.rsi(close, rsiLength)
+ma = ta.sma(close, maLength)
+k = ta.sma(ta.stoch(close, high, low, stochLength), 3)
+d = ta.sma(k, 3)
+[macdLine, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+
+// Entry Conditions
+longCondition = ta.crossover(rsi, rsiOversold) and close > ma and ta.crossover(macdLine, signalLine) and ta.crossover(k, d)
+shortCondition = ta.crossunder(rsi, rsiOverbought) and close < ma and ta.crossunder(macdLine, signalLine) and ta.crossunder(k, d)
+
+// Execute Trades
+if longCondition
+    strategy.entry("Long", strategy.long)
+if shortCondition
+    strategy.close("Long")
+
+// Plot Indicators
+plot(ma, title="Moving Average", color=color.blue)
+hline(rsiOverbought, "Overbought", color=color.red)
+hline(rsiOversold, "Oversold", color=color.green)
+plot(rsi, title="RSI", color=color.purple)
+plot(macdLine, title="MACD Line", color=color.blue)
+plot(signalLine, title="MACD Signal", color=color.orange)
+plot(k, title="Stochastic K", color=color.aqua)
+plot(d, title="Stochastic D", color=color.yellow)
+
+// Display Buy/Sell Signals
+plotshape(series=longCondition, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy Signal")
+plotshape(series=shortCondition, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal")

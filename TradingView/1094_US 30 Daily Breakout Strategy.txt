@@ -1,0 +1,44 @@
+//@version=5
+strategy("US 30 Daily Breakout Strategy (Single Trade Per Breakout/Breakdown, New York Time)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100, trim_orders = true)
+
+// Set pip size for US 30 (1 pip = 1 point)
+var float pip = 1.0
+
+// Set take profit and stop loss in points (1 pip = 1 point)
+take_profit_pips = 50
+stop_loss_pips = 50
+
+// Calculate the previous day's high and low (assumes chart timezone is set to New York)
+prevDayHigh = request.security(syminfo.tickerid, "D", high[1])
+prevDayLow = request.security(syminfo.tickerid, "D", low[1])
+
+// Initialize flags to track if a breakout/breakdown trade has been taken
+var bool breakout_traded = false
+var bool breakdown_traded = false
+
+// Reset flags at the start of a new day in New York timezone (as per chart setting)
+if (ta.change(time("D")))
+    breakout_traded := false
+    breakdown_traded := false
+
+// Condition for a long entry: candle closes above the previous day's high and no breakout trade has been taken
+longCondition = close > prevDayHigh and strategy.opentrades == 0 and not breakout_traded
+
+// Condition for a short entry: candle closes below the previous day's low and no breakdown trade has been taken
+shortCondition = close < prevDayLow and strategy.opentrades == 0 and not breakdown_traded
+
+// Execute long trade if the condition is met, and set the breakout flag
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Take Profit/Stop Loss", "Long", limit=close + take_profit_pips * pip, stop=close - stop_loss_pips * pip)
+    breakout_traded := true  // Set breakout flag
+
+// Execute short trade if the condition is met, and set the breakdown flag
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Take Profit/Stop Loss", "Short", limit=close - take_profit_pips * pip, stop=close + stop_loss_pips * pip)
+    breakdown_traded := true  // Set breakdown flag
+
+// Plotting the previous day's high and low for visualization
+plot(prevDayHigh, color=color.green, linewidth=1, title="Previous Day High")
+plot(prevDayLow, color=color.red, linewidth=1, title="Previous Day Low")

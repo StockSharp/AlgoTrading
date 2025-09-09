@@ -1,0 +1,64 @@
+//@version=6
+strategy("VWAP PRO V21 - Final Ultimate Edition", overlay=true, initial_capital=100000)
+
+// === الإعدادات ===
+emaFast  = input.int(9, "EMA Fast")
+emaSlow  = input.int(21, "EMA Slow")
+atrLen   = input.int(14, "ATR Length")
+tpMult   = input.float(0.7, "TP ATR Multiplier")
+slMult   = input.float(1.4, "SL ATR Multiplier")
+
+// === المؤشرات الأساسية ===
+emaF = ta.ema(close, emaFast)
+emaS = ta.ema(close, emaSlow)
+vwapLine = ta.vwap
+atr = ta.atr(atrLen)
+
+// === فلتر الاتجاه الذكي من الفريم الأكبر (1H) ===
+trendHTF = request.security(syminfo.tickerid, "60", ta.ema(close, 50))
+trendOK  = close > trendHTF ? 1 : close < trendHTF ? -1 : 0
+
+// === شروط الدخول ===
+longCond  = close > emaF and emaF > emaS and close > vwapLine and trendOK == 1
+shortCond = close < emaF and emaF < emaS and close < vwapLine and trendOK == -1
+
+// === مستويات TP / SL (قيم فقط) ===
+tpL = close + atr * tpMult
+slL = close - atr * slMult
+tpS = close - atr * tpMult
+slS = close + atr * slMult
+
+// === تنفيذ الصفقات ===
+if (longCond)
+    strategy.entry("CALL", strategy.long)
+    strategy.exit("EXIT CALL", "CALL", stop=slL, limit=tpL)
+
+if (shortCond)
+    strategy.entry("PUT", strategy.short)
+    strategy.exit("EXIT PUT", "PUT", stop=slS, limit=tpS)
+
+// ✅ ✅ ✅ واجهة بصرية محسّنة
+
+// 🔹 Box خفيف يحيط بالشمعة عند الصفقة
+boxColor = longCond ? color.new(color.green, 90) : shortCond ? color.new(color.red, 90) : na
+bgcolor(boxColor)
+
+// 🔹 سهم دخول بسيط
+plotshape(longCond, title="CALL ENTRY", location=location.belowbar, color=color.new(color.lime, 0), style=shape.triangleup, size=size.small, text="CALL")
+plotshape(shortCond, title="PUT ENTRY", location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.small, text="PUT")
+
+// 🔹 علامات TP/SL أنيقة فقط وقت الصفقة
+plotshape(longCond, title="TP CALL", location=location.abovebar, color=color.new(color.green, 20), style=shape.circle, size=size.tiny, text="🎯")
+plotshape(longCond, title="SL CALL", location=location.belowbar, color=color.new(color.red, 20), style=shape.circle, size=size.tiny, text="⛔")
+plotshape(shortCond, title="TP PUT", location=location.belowbar, color=color.new(color.green, 20), style=shape.circle, size=size.tiny, text="🎯")
+plotshape(shortCond, title="SL PUT", location=location.abovebar, color=color.new(color.red, 20), style=shape.circle, size=size.tiny, text="⛔")
+
+// === تنبيهات ===
+alertcondition(longCond, title="🚀 CALL Alert", message="✅ دخول صفقة CALL - VWAP PRO V21")
+alertcondition(shortCond, title="🔥 PUT Alert", message="❌ دخول صفقة PUT - VWAP PRO V21")
+
+// === تنبيه Pre-Signal قبل الصفقة بشمعة واحدة ===
+preLong  = ta.crossover(emaF, emaS) and trendOK == 1
+preShort = ta.crossunder(emaF, emaS) and trendOK == -1
+alertcondition(preLong, title="🔔 Pre CALL", message="📢 صفقة CALL محتملة قريبة!")
+alertcondition(preShort, title="🔔 Pre PUT", message="📢 صفقة PUT محتملة قريبة!")

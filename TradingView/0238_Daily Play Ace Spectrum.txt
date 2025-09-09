@@ -1,0 +1,13 @@
+//@version=4
+study("Day Play Ace Spectrum", overlay=true)
+
+n = input(120)
+
+a = input(18)
+b = input(9)
+
+s = input(50)
+t = input(4)
+
+for i = 1 to n
+    line.new(bar_index[i*a], open[i*a], bar_index[i*b], open[i*b], xloc.bar_index, extend.right, color.new(color.blue, 90), line.style_solid, (i/(n/s))+t)

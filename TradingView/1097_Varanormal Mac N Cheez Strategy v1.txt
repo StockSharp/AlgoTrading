@@ -1,0 +1,45 @@
+//@version=5
+strategy("NQ Futures $200/day Strategy", overlay=true)
+
+// Input Parameters
+fastLength = input.int(9, title="Fast MA Length")
+slowLength = input.int(21, title="Slow MA Length")
+dailyTarget = input.float(200, title="Daily Profit Target (Set to 0 to disable)", step=0.01)
+stopLossAmount = input.float(100, title="Stop Loss Amount", step=0.01)
+trailOffset = input.float(20, title="Trailing Stop Offset", step=0.01)
+
+// Moving Averages
+fastMA = ta.sma(close, fastLength)
+slowMA = ta.sma(close, slowLength)
+
+// Crossover Conditions for Buy and Sell
+longCondition = ta.crossover(fastMA, slowMA)
+shortCondition = ta.crossunder(fastMA, slowMA)
+
+// Entry conditions
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Sell", strategy.short)
+
+// Set Stop Loss and Trailing Stop
+if (strategy.opentrades > 0)
+    strategy.exit("Exit Long", from_entry="Buy", stop=strategy.position_avg_price - stopLossAmount, trail_offset=trailOffset)
+    strategy.exit("Exit Short", from_entry="Sell", stop=strategy.position_avg_price + stopLossAmount, trail_offset=trailOffset)
+
+// Conditional Daily Profit Target (disabled if dailyTarget is 0)
+if (dailyTarget > 0 and strategy.netprofit >= dailyTarget)
+    strategy.close_all(comment="Daily Target Reached")
+
+// Plotting the moving averages on the main chart
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+
+// Plot "Long" and "Short" signals on the main chart
+plotshape(series=longCondition, title="Long Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="Long")
+plotshape(series=shortCondition, title="Short Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="Short")
+
+// Markers for entry on the price chart
+plotshape(series=longCondition, title="Buy Marker", location=location.belowbar, color=color.green, style=shape.triangledown, size=size.small)
+plotshape(series=shortCondition, title="Sell Marker", location=location.abovebar, color=color.red, style=shape.triangleup, size=size.small)

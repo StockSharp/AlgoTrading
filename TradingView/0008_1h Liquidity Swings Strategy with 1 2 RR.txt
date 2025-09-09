@@ -1,0 +1,68 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Grok
+
+//@version=6
+strategy("1h Liquidity Swings Strategy with 1:2 RR", overlay=true, margin_long=100, margin_short=100)
+
+// Input parameters
+lookback = input.int(5, "Pivot Lookback", minval=1, step=1) // Swing high/low lookback period for Liquidity Swings
+stopLossBuffer = input.float(0.5, "Stop Loss Buffer %", minval=0.1, step=0.1) // Buffer for initial stop loss
+
+// --- Liquidity Swings Indicator (Simulated with Pivot High/Low) ---
+pivotHigh1h = ta.pivothigh(high, lookback, lookback)
+pivotLow1h = ta.pivotlow(low, lookback, lookback)
+
+// Store latest support/resistance levels
+var float resistance1h = na
+var float support1h = na
+if not na(pivotHigh1h)
+    resistance1h := pivotHigh1h
+if not na(pivotLow1h)
+    support1h := pivotLow1h
+
+// --- Entry Signals (Strictly at 1h Support/Resistance) ---
+// Long: Price crosses above support (swing low) and is below resistance
+// Short: Price crosses below resistance (swing high) and is above support
+buySignal = ta.crossover(low, support1h) and close < resistance1h
+sellSignal = ta.crossunder(high, resistance1h) and close > support1h
+
+// --- Stop Loss and Take Profit ---
+// Initial stop loss: Below support (for long) or above resistance (for short) with buffer
+slLong = support1h * (1 - stopLossBuffer / 100)
+slShort = resistance1h * (1 + stopLossBuffer / 100)
+
+// --- Take Profit Logic (1:2 Risk-Reward) ---
+var float entryPrice = na
+var float initialStopLoss = na
+var float takeProfitPrice = na
+
+// Track entry and stop loss
+if buySignal
+    entryPrice := close
+    initialStopLoss := slLong
+    takeProfitPrice := entryPrice + 2 * (entryPrice - initialStopLoss)
+
+if sellSignal
+    entryPrice := close
+    initialStopLoss := slShort
+    takeProfitPrice := entryPrice - 2 * (initialStopLoss - entryPrice)
+
+// --- Stop Loss on Support/Resistance Breakout ---
+// Breakout: Price closes below support (for long) or above resistance (for short)
+stopLong = close < support1h
+stopShort = close > resistance1h
+
+// --- Strategy Execution ---
+if (buySignal)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", "Long", stop=stopLong ? support1h : slLong, limit=takeProfitPrice)
+
+if (sellSignal)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit Short", "Short", stop=stopShort ? resistance1h : slShort, limit=takeProfitPrice)
+
+// --- Visualization ---
+plot(resistance1h, "1h Resistance", color=color.red, linewidth=1, offset=-lookback)
+plot(support1h, "1h Support", color=color.green, linewidth=1, offset=-lookback)
+plotshape(buySignal, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(sellSignal, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)

@@ -1,0 +1,31 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Botnet101
+
+//@version=6
+strategy("4 Bar Momentum Reversal strategy", overlay=false, fill_orders_on_standard_ohlc=true, initial_capital=1000000, default_qty_value=100, default_qty_type=strategy.percent_of_equity, process_orders_on_close=true, margin_long=5, margin_short=5, calc_on_every_tick=true)
+
+in_start_time = input.time(timestamp('1 Jan 2014'), title='Start Time', group='Time Settings')
+in_end_time = input.time(timestamp('1 Jan 2099'), title='End Time', group='Time Settings')
+in_window = time >= in_start_time and time <= in_end_time
+
+buyThreshold = input.int(defval=4, title="Buy Threshold")
+lookback = input.int(defval=4, title="Lookback")
+
+var int aboveCount = 0
+var int belowCount = 0
+closeXBarsAgo = close[lookback]
+
+aboveCount := close > closeXBarsAgo ? aboveCount + 1 : 0
+belowCount := close < closeXBarsAgo ? belowCount + 1 : 0
+
+plot(aboveCount, "Up Count", color=color.green, style=plot.style_columns)
+plot(-belowCount,"Down Count",  color=color.red, style=plot.style_columns)
+plot(closeXBarsAgo, "Reference Close", color=color.gray, force_overlay=true)
+
+buyCondition = belowCount >= buyThreshold and in_window
+sellCondition = close>high[1]
+
+if buyCondition
+    strategy.entry("Long", strategy.long)
+if sellCondition
+    strategy.close_all()

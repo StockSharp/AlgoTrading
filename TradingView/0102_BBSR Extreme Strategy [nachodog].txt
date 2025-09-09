@@ -1,0 +1,90 @@
+//@version=5
+strategy("BB Stochastic with Trailing Stop [nachodog] + JMA + Dynamic Trailing Stop", shorttitle="BBStoch TB + JMA + Trail", overlay=true)
+
+// JMA Parameters Group
+groupJMA = "JMA"
+lengthJMA = input.int(7, title="Length", group=groupJMA)
+phaseJMA = input.int(50, title="Phase", group=groupJMA)
+powerJMA = input.int(2, title="Power", group=groupJMA)
+srcJMA = input.source(close, title="Source", group=groupJMA)
+highlightMovements = input.bool(true, title="Highlight Movements ?", group=groupJMA)
+
+// JMA Calculation
+beta = 0.45 * (lengthJMA - 1) / (0.45 * (lengthJMA - 1) + 2)
+alpha = math.pow(beta, powerJMA)
+var float jma = na
+var float e0 = na
+var float e1 = na
+var float e2 = na
+e0 := na(srcJMA) ? na : (1 - alpha) * srcJMA + alpha * nz(e0[1])
+e1 := na(srcJMA) ? na : (srcJMA - e0) * (1 - beta) + beta * nz(e1[1])
+e2 := na(srcJMA) ? na : (e0 + phaseJMA / 100 + 1.5 * e1 - nz(jma[1])) * math.pow(1 - alpha, 2) + math.pow(alpha, 2) * nz(e2[1])
+jma := na(srcJMA) ? na : e2 + nz(jma[1])
+jmaColor = jma > nz(jma[1]) ? color.green : color.red
+plot(jma, title="JMA", linewidth=2, color=jmaColor)
+
+// Original Strategy Inputs
+src = input(close, title="Source")
+offset = input.int(0, title="Offset", minval=-500, maxval=500)
+length = input.int(20, title="Bollinger Band Length", minval=1)
+mult = input.float(2.0, title="StdDev", minval=0.001, maxval=50)
+basis = ta.sma(src, length)
+dev = mult * ta.stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+p1 = plot(upper, "BB Upper", color=color.teal, offset=offset)
+p2 = plot(lower, "BB Lower", color=color.teal, offset=offset)
+fill(p1, p2, title="BB Background", color=color.new(#198787, 95))
+
+// Trailing Stop Logic Inputs
+groupTS = "Trailing Stop"
+atrLength = input.int(14, title="ATR Length", group=groupTS, minval=1)
+atrMultStop = input.float(2.0, title="ATR Multiplier for Stop", group=groupTS, step=0.1)
+atrMultProfit = input.float(3.0, title="ATR Multiplier for Profit", group=groupTS, step=0.1)
+
+// ATR calculations
+atrValueStop = atrMultStop * ta.atr(atrLength)
+atrValueProfit = atrMultProfit * ta.atr(atrLength)
+trailStopLong = strategy.position_avg_price - atrValueStop
+trailStopShort = strategy.position_avg_price + atrValueStop
+takeProfitLong = strategy.position_avg_price + atrValueProfit
+takeProfitShort = strategy.position_avg_price - atrValueProfit
+
+// Entry Conditions
+Bull = close[1] < lower[1] and close > lower and jma > nz(jma[1])
+Bear = close[1] > upper[1] and close < upper and jma < nz(jma[1])
+if (Bull)
+    strategy.entry("Bull Entry", strategy.long)
+if (Bear)
+    strategy.entry("Bear Entry", strategy.short)
+
+// Exit conditions using dynamic trailing stops and take profits
+strategy.exit("Exit Long", "Bull Entry", stop=trailStopLong, limit=takeProfitLong)
+strategy.exit("Exit Short", "Bear Entry", stop=trailStopShort, limit=takeProfitShort)
+
+// Define state variables for managing plot visibility
+var float plotTrailStopLong = na
+var float plotTrailStopShort = na
+var float plotTakeProfitLong = na
+var float plotTakeProfitShort = na
+
+// Update the plot variables on trade entry and reset on trade exit
+if (strategy.position_size > 0)
+    plotTrailStopLong := strategy.position_avg_price - atrValueStop
+    plotTakeProfitLong := strategy.position_avg_price + atrValueProfit
+else
+    plotTrailStopLong := na
+    plotTakeProfitLong := na
+
+if (strategy.position_size < 0)
+    plotTrailStopShort := strategy.position_avg_price + atrValueStop
+    plotTakeProfitShort := strategy.position_avg_price - atrValueProfit
+else
+    plotTrailStopShort := na
+    plotTakeProfitShort := na
+
+// Conditional plotting based on the state variables
+plot(strategy.position_size > 0 ? plotTrailStopLong : na, "Trailing Stop Long", color=color.red)
+plot(strategy.position_size < 0 ? plotTrailStopShort : na, "Trailing Stop Short", color=color.green)
+plot(strategy.position_size > 0 ? plotTakeProfitLong : na, "Take Profit Long", color=color.blue)
+plot(strategy.position_size < 0 ? plotTakeProfitShort : na, "Take Profit Short", color=color.blue)

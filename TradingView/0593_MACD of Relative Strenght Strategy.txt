@@ -1,0 +1,109 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © gsanson66
+
+
+//This strategy calculates the Relative Strength and plot the MACD of this Relative Strenght
+//We take only buy signals send by MACD
+//@version=5
+strategy("MACD OF RELATIVE STRENGHT STRATEGY", shorttitle="MACD RS STRATEGY", precision=4, overlay=false, initial_capital=1000, default_qty_type=strategy.cash, default_qty_value=950, commission_type=strategy.commission.percent, commission_value=0.18, slippage=3)
+
+
+//------------------------------TOOL TIPS--------------------------------//
+
+t1 = "Relative Strength length i.e. number of candles back to find the highest high and compare the current price with this high."
+t2 = "Relative Strength fast EMA length used to plot the MACD."
+t3 = "Relative Strength slow EMA length used to plot the MACD."
+t4 = "Macdline SMA length used to plot the MACD."
+t5 = "The maximum loss a trade can incur (in percentage of the trade value)"
+t6 = "Each gain or losse (relative to the previous reference) in an amount equal to this fixed ratio will change quantity of orders."
+t7 = "The amount of money to be added to or subtracted from orders once the fixed ratio has been reached."
+
+
+//----------------------------------------FUNCTIONS---------------------------------------//
+
+//@function Displays text passed to `txt` when called.
+debugLabel(txt, color, loc) =>
+    label.new(bar_index, loc, text=txt, color=color, style=label.style_label_lower_right, textcolor=color.black, size=size.small)
+
+//@function which looks if the close date of the current bar falls inside the date range
+inBacktestPeriod(start, end) => (time >= start) and (time <= end)
+
+
+//---------------------------------------USER INPUTS--------------------------------------//
+
+//Technical parameters
+rs_lenght = input.int(defval=300, minval=1, title="RS Length", group="Technical parameters", tooltip=t1)
+fast_length = input(title="MACD Fast Length", defval=14, group="Technical parameters", tooltip=t2)
+slow_length = input(title="MACD Slow Length", defval=26, group="Technical parameters", tooltip=t3)
+signal_length = input.int(title="MACD Signal Smoothing",  minval=1, maxval=50, defval=10, group="Technical parameters", tooltip=t4)
+//Risk Management
+slMax = input.float(8, "Max risk per trade (in %)", minval=0, group="Risk Management", tooltip=t5)
+//Money Management
+fixedRatio = input.int(defval=400, minval=1, title="Fixed Ratio Value ($)", group="Money Management", tooltip=t6)
+increasingOrderAmount = input.int(defval=200, minval=1, title="Increasing Order Amount ($)", group="Money Management", tooltip=t7)
+//Backtesting period
+startDate = input.time(title="Start Date", defval=timestamp("1 Jan 2020 00:00:00"), group="Backtesting Period")
+endDate = input.time(title="End Date", defval=timestamp("1 July 2024 00:00:00"), group="Backtesting Period")
+
+
+//----------------------------------VARIABLES INITIALISATION-----------------------------//
+
+//Relative Strenght Calculation
+rs = close/ta.highest(high, rs_lenght)
+//MACD of RS Calculation
+[macdLine, signalLine, histLine] = ta.macd(rs, fast_length, slow_length, signal_length)
+//Money management
+equity = math.abs(strategy.equity - strategy.openprofit)
+var float capital_ref = strategy.initial_capital
+var float cashOrder = strategy.initial_capital * 0.95
+//Backtesting period
+bool inRange = na
+
+
+//------------------------------CHECKING SOME CONDITIONS ON EACH SCRIPT EXECUTION-------------------------------//
+
+//Checking if the date belong to the range
+inRange := inBacktestPeriod(startDate, endDate)
+
+//Checking performances of the strategy
+if equity > capital_ref + fixedRatio
+    spread = (equity - capital_ref)/fixedRatio
+    nb_level = int(spread)
+    increasingOrder = nb_level * increasingOrderAmount
+    cashOrder := cashOrder + increasingOrder
+    capital_ref := capital_ref + nb_level*fixedRatio
+if equity < capital_ref - fixedRatio
+    spread = (capital_ref - equity)/fixedRatio
+    nb_level = int(spread)
+    decreasingOrder = nb_level * increasingOrderAmount
+    cashOrder := cashOrder - decreasingOrder
+    capital_ref := capital_ref - nb_level*fixedRatio
+
+//Checking if we close all trades in case where we exit the backtesting period
+if strategy.position_size!=0 and not inRange
+    strategy.close_all()
+    debugLabel("END OF BACKTESTING PERIOD : we close the trade", color=color.rgb(116, 116, 116), loc=macdLine)
+
+
+//-----------------------------------EXIT SIGNAL------------------------------//
+
+if strategy.position_size>0 and histLine<0
+    strategy.close("Long")
+
+
+//-------------------------------BUY CONDITION-------------------------------------//
+
+if histLine>0 and not (strategy.position_size>0) and inRange
+    qty = cashOrder/close
+    stopLoss = close*(1-slMax/100)
+    strategy.entry("Long", strategy.long, qty)
+    strategy.exit("Exit Long", "Long", stop=stopLoss)
+
+
+//---------------------------------PLOTTING ELEMENT----------------------------------//
+
+hline(0, "Zero Line", color=color.new(#787B86, 50))
+plot(macdLine, title="MACD", color=color.blue)
+plot(signalLine, title="Signal", color=color.orange)
+plot(histLine, title="Histogram", style=plot.style_columns, color=(histLine>=0 ? (histLine[1] < histLine ? #26A69A : #B2DFDB) : (histLine[1] < histLine ? #FFCDD2 : #FF5252)))
+plotchar(rs, "Relative Strenght", "", location.top, color=color.yellow)

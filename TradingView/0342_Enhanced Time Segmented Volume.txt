@@ -1,0 +1,25 @@
+//@version=4
+//      Written by liw0 active on https://www.tradingview.com/u/liw0
+//      corrected version by vitelot December 2018 -- no charity required
+//      Updated/Enhanced version by @eylwithsteph inspired by @storma
+//      CREDITS: http://quant.stackexchange.com/questions/2816/how-to-calculate-time-segmented-volume
+study("Enhanced Time Segmented Volume", shorttitle="TSV")
+
+l = input(13, title="TSV Length")
+l_ma = input(7, title="MA Length")
+
+t = sum(close > close[1] ? volume * (close - close[1]) : close < close[1] ? volume * (close - close[1]) : 0, l)
+m = sma(t, l_ma)
+
+PAL = (t > m) and (t > 0)
+PAL_fail = (t < m) and (t > 0)
+PAS = (t < m) and (t < 0)
+PAS_fail = (t > m) and (t < 0)
+
+plot(t, color=color.red, style=plot.style_histogram, title="TSV")
+plot(m, color=color.green, title="MA")
+
+plotshape(PAL, title="Price Action Long", location=location.bottom, style=shape.square, size=size.auto, color=color.green, transp=80)
+plotshape(PAS, title="Price Action Short", location=location.bottom, style=shape.square, size=size.auto, color=color.red, transp=80)
+plotshape(PAL_fail, title="Price Action Long - FAILURE", location=location.bottom, style=shape.xcross, size=size.auto, color=color.black, transp=60)
+plotshape(PAS_fail, title="Price Action Short - FAILURE", location=location.bottom, style=shape.xcross, size=size.auto, color=color.black, transp=60)

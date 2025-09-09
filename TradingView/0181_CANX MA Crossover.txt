@@ -1,0 +1,44 @@
+//@version=6
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// // © CanxStixTrader
+//
+
+strategy(title = 'CANX MA Crossover', shorttitle = 'CANX MAC', overlay = true, pyramiding = 0, default_qty_type = strategy.percent_of_equity, default_qty_value = 10, currency = currency.USD, commission_type = strategy.commission.percent, commission_value = 0.1)
+// === GENERAL INPUTS ===
+//strategy start date
+start_year = input(defval = 2024, title = 'Backtest Start Year')
+
+// === LOGIC ===
+length = input.int(defval = 17, minval = 1, title = 'Length')
+ratio = input.int(defval = 6, title = 'Multiplier (3x length, 4x length, etc)', options = [3, 4, 5, 6, 7, 8, 9, 10])
+longOnly = input(defval = false, title = 'Long Only')
+fast = ta.ema(hl2, length)
+slow = ta.ema(hl2, length * ratio)
+plot(fast, linewidth = 1, color = color.new(#063cfd, 0), title = 'Fast')
+plot(slow, linewidth = 2, color = color.new(#e5ff00, 0), title = 'Slow')
+longEntry = ta.crossover(fast, slow)
+shortEntry = ta.crossunder(fast, slow)
+
+plotshape(longEntry ? close : na, style = shape.cross, color = color.new(#00ff2a, 0), location = location.belowbar, size = size.small, title = 'Long Triangle')
+plotshape(shortEntry and not longOnly ? close : na, style = shape.xcross, color = color.new(#ff0000, 0), location = location.abovebar, size = size.small, title = 'Short Triangle')
+plotshape(shortEntry and longOnly ? close : na, style = shape.xcross, color = color.new(#ff00fb, 0), location = location.abovebar, size = size.large, title = 'Exit Sign')
+
+// === STRATEGY - LONG POSITION EXECUTION ===
+enterLong() =>
+    ta.crossover(fast, slow) and time >timestamp(start_year, 1, 1, 01, 01)
+exitLong() =>
+    longOnly and ta.crossunder(fast, slow)
+if enterLong()
+    strategy.entry(id = 'Long', direction = strategy.long)
+if exitLong()
+    strategy.close(id = 'Long')
+    // === STRATEGY - SHORT POSITION EXECUTION ===
+enterShort() =>
+    not longOnly and ta.crossunder(fast, slow) and time > timestamp(start_year, 1, 1, 01, 01)
+exitShort() =>
+    false
+if enterShort()
+    strategy.entry(id = 'Short', direction = strategy.short)
+if exitShort()
+    strategy.close(id = 'Short')

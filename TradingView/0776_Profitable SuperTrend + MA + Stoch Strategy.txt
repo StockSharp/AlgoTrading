@@ -1,0 +1,79 @@
+//@version=6
+strategy("Profitable SuperTrend + MA + Stoch Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === INPUTS ===
+atrPeriod     = input.int(10, title="ATR Period")
+atrMultiplier = input.float(3.0, title="ATR Multiplier")
+maFastLength  = input.int(9, title="Fast MA Period")
+maSlowLength  = input.int(21, title="Slow MA Period")
+stochKLen     = input.int(14, title="Stochastic %K Period")
+stochDLen     = input.int(3, title="Stochastic %D Smoothing")
+
+takeProfitPerc = input.float(2.0, title="Take Profit %", minval=0.1)
+stopLossPerc   = input.float(1.0, title="Stop Loss %", minval=0.1)
+
+// === SUPER TREND ===
+atr       = ta.atr(atrPeriod)
+hl2       = (high + low) / 2
+upperBand = hl2 + atrMultiplier * atr
+lowerBand = hl2 - atrMultiplier * atr
+
+var float superTrend = na
+var bool trendUp = true
+
+superTrend := na(superTrend[1]) ? upperBand :
+     close > superTrend[1] ? math.max(lowerBand, superTrend[1]) :
+     close < superTrend[1] ? math.min(upperBand, superTrend[1]) : superTrend[1]
+
+trendUp := close > superTrend[1] ? true :
+           close < superTrend[1] ? false : trendUp[1]
+
+// === MOVING AVERAGES ===
+maFast = ta.ema(close, maFastLength)
+maSlow = ta.ema(close, maSlowLength)
+maBullish = ta.crossover(maFast, maSlow)
+maBearish = ta.crossunder(maFast, maSlow)
+
+// === STOCHASTIC ===
+stochK = ta.stoch(close, high, low, stochKLen)
+stochD = ta.sma(stochK, stochDLen)
+
+// === ENTRY CONDITIONS ===
+longCondition  = trendUp and maBullish and stochK < 80
+shortCondition = not trendUp and maBearish and stochK > 20
+
+// === EXIT CONDITIONS ===
+exitLong  = maBearish
+exitShort = maBullish
+
+// === TRADE EXECUTION ===
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+if (shortCondition)
+    strategy.entry("Sell", strategy.short)
+
+if (exitLong)
+    strategy.close("Buy")
+if (exitShort)
+    strategy.close("Sell")
+
+// === OPTIONAL TP/SL ===
+longSL  = strategy.position_avg_price * (1 - stopLossPerc / 100)
+longTP  = strategy.position_avg_price * (1 + takeProfitPerc / 100)
+shortSL = strategy.position_avg_price * (1 + stopLossPerc / 100)
+shortTP = strategy.position_avg_price * (1 - takeProfitPerc / 100)
+
+strategy.exit("TP/SL Buy", from_entry="Buy", stop=longSL, limit=longTP)
+strategy.exit("TP/SL Sell", from_entry="Sell", stop=shortSL, limit=shortTP)
+
+// === PLOTTING ===
+plot(maFast, title="Fast MA", color=color.orange)
+plot(maSlow, title="Slow MA", color=color.red)
+
+plotshape(longCondition, title="Buy Signal", location=location.belowbar, style=shape.triangleup, color=color.green, size=size.small)
+plotshape(shortCondition, title="Sell Signal", location=location.abovebar, style=shape.triangledown, color=color.red, size=size.small)
+
+superTrendUp = trendUp ? superTrend : na
+superTrendDn = not trendUp ? superTrend : na
+plot(superTrendUp, title="SuperTrend Up", color=color.lime, linewidth=2)
+plot(superTrendDn, title="SuperTrend Down", color=color.red, linewidth=2)

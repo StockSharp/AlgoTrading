@@ -1,0 +1,65 @@
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © wielkieef
+
+//@version=5
+strategy(title='Quatro SMA ', overlay=true, pyramiding=1, initial_capital=10000, default_qty_type=strategy.percent_of_equity, default_qty_value=50, calc_on_order_fills=false, slippage=0, commission_type=strategy.commission.percent, commission_value=0.03)
+
+// Volume
+vol_sma_length = input.int(40, title='Volume lenght  ', minval=1)
+Volume_condt = volume > ta.sma(volume, vol_sma_length) * 2.5
+
+// SMAas
+Length1 = input.int(4, title='  1-SMA Lenght', minval=1, group='SMA')
+Length2 = input.int(16, title='  2-SMA Lenght', minval=1, group='SMA')
+Length3 = input.int(32, title='  3-SMA Lenght', minval=1, group='SMA')
+lengthSMA = input(200, title="Lenght SMA")
+SMA1 = ta.sma(close, Length1)
+SMA2 = ta.sma(close, Length2)
+SMA3 = ta.sma(close, Length3)
+SMA = ta.sma(close, lengthSMA)
+
+//SMA cond
+Long_ma = SMA1 > SMA2 and SMA2 > SMA3
+Short_ma = SMA1 < SMA2 and SMA2 < SMA3
+
+//Entry cond
+Long_cond = (Long_ma and close > SMA) and Volume_condt
+Short_cond = (Short_ma and close < SMA) and Volume_condt
+
+//Close cond
+Long_close = Short_ma and close > SMA
+Short_close = Long_ma and close < SMA
+
+//Entry
+if Long_cond
+    strategy.entry("Long", strategy.long)
+if  Short_cond
+    strategy.entry("Short", strategy.short)
+
+//Close
+if (Long_close)
+    strategy.close("Long")
+if (Short_close)
+    strategy.close("Short")
+
+//Backtesting inputs
+sl = input.float(10.0, '% Stop Loss', step=0.1)
+
+tp_1 = input.float(10.0,"  TP 1", minval=1.0, step=0.1)
+tp_2 = input.float(20.0,"  TP 2", minval=1.0, step=0.1)
+tp_3 = input.float(50.0,"  TP 3", minval=1.0, step=0.1)
+
+q_1 = input.int(title='  % TP 1 Q ', defval=25,  minval=1, step=10)
+q_2 = input.int(title='  % TP 2 Q ', defval=50,  minval=1, step=10)
+q_3 = input.int(title='  % TP 3 Q ', defval=100,  minval=1, step=10)
+
+//Stop-Loss// this code is from author RafaelZioni, modified by wielkieef
+per(procent) =>
+    strategy.position_size != 0 ? math.round(procent / 100 * strategy.position_avg_price / syminfo.mintick) : float(na)
+// --------------------------------------------------------------------------------------------------------------------
+strategy.exit('TP 1', qty_percent=q_1, profit=per(tp_1), loss=per(sl) )
+strategy.exit('TP 2', qty_percent=q_2, profit=per(tp_2), loss=per(sl) )
+strategy.exit('TP 3', qty_percent=q_3, profit=per(tp_3), loss=per(sl) )
+
+
+// by wielkieef

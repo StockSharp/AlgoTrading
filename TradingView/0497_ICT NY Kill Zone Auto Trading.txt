@@ -1,0 +1,50 @@
+//@version=5
+strategy("ICT NY Kill Zone Auto Trading", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// Ensure the script runs only on the 5-minute chart
+if (timeframe.period != "5")
+    strategy.close_all()
+
+// Get the current date values
+yearVal = year(time)
+monthVal = month(time)
+dayVal = dayofmonth(time)
+
+// Define ICT Kill Zones
+sessionNYOpen = timestamp(yearVal, monthVal, dayVal, 09, 30) // 9:30 AM NY Time (UTC+0)
+sessionNYClose = timestamp(yearVal, monthVal, dayVal, 16, 00) // 11 AM NY Time (UTC+0)
+
+killZoneStart = timestamp(yearVal, monthVal, dayVal, 09, 30) // 9:30 AM NY Time
+killZoneEnd = timestamp(yearVal, monthVal, dayVal, 16, 00) // 11 AM NY Time
+
+isKillZone = (time >= killZoneStart and time <= killZoneEnd)
+
+// Define Fair Value Gaps (FVG)
+length = 5
+highGap = ta.highest(high, length)
+lowGap = ta.lowest(low, length)
+isFVG = high[2] < low[0] and high[1] < low[0]
+
+// Order Block Detection
+bullishOB = close[2] < open[2] and close[1] > open[1] and close > open
+bearishOB = close[2] > open[2] and close[1] < open[1] and close < open
+
+// Entry Conditions
+longCondition = isKillZone and isFVG and bullishOB
+shortCondition = isKillZone and isFVG and bearishOB
+
+// Execute Trades Automatically
+if longCondition
+    strategy.entry("Long", strategy.long)
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+// Exit Conditions
+stopLoss = 30 // 30 pips stop loss
+takeProfit = 60 // 60 pips take profit
+
+strategy.exit("Exit Long", from_entry="Long", stop=close - stopLoss * syminfo.mintick, limit=close + takeProfit * syminfo.mintick)
+strategy.exit("Exit Short", from_entry="Short", stop=close + stopLoss * syminfo.mintick, limit=close - takeProfit * syminfo.mintick)
+
+// Plot Kill Zone Background
+bgcolor(isKillZone ? color.blue : na, transp=85)

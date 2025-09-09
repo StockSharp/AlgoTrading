@@ -1,0 +1,85 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © mdenson
+//@version=4
+strategy("Hoffman Heiken Bias", overlay=true, margin_long=100, margin_short=100)
+b = sma(close,5)
+c = ema(close,18)
+d = ema(close,20)
+e = sma(close,50)
+f = sma(close,89)
+g = ema(close,144)
+k = ema(close,35)
+r = rma(tr,35)
+ku = k + r*0.5
+kl = k - r*0.5
+
+downtrend   = d>c and e>c and f>c and g>c and k>c and ku>c and kl>c
+uptrend     = d<c and e<c and f<c and g<c and k<c and ku<c and kl<c
+
+//========================================================================================
+//Volatility Osc
+//Volatility OSC
+volatilitylength = input(100)
+spike = close - open
+volupband = stdev(spike, volatilitylength)
+voldnband = stdev(spike, volatilitylength) * -1
+
+//Hoffman IRBs
+
+z = input(45, title="Inventory Retracement Percentage %", maxval=100)
+
+// Candle Range
+a2 = abs(high - low)
+// Candle Body
+b2 = abs(close - open)
+// Percent to Decimal
+c2 = z/100
+
+// Range Verification
+rv = b2 < c2*a2
+
+// Price Level for Retracement
+x = low + (c2 * a2)
+y = high - (c2 * a2)
+
+sl = rv == 1 and high > y and close < y and open < y
+ss = rv == 1 and low < x and close > x and open > x
+
+// Line Definition
+li = sl ? y : ss ? x : (x+y)/2
+//==========================================================================================
+
+
+//==================================================================
+//Heiken Ashi Candle Calculations
+hkClose         = (open + high + low + close) / 4
+hkOpen          = float(na)
+hkOpen          := na(hkOpen[1]) ? (open + close) / 2 : (nz(hkOpen[1]) + nz(hkClose[1])) / 2
+hkHigh          = max(high, max(hkOpen, hkClose))
+hkLow           = min(low,  min(hkOpen, hkClose))
+hkHl2           = (hkOpen + hkClose)/2
+volumeHA        = security(heikinashi(syminfo.tickerid), timeframe.period, volume)
+
+//===================================================================
+//volume Net Histogram calculations
+topwick         = iff(hkOpen<hkClose, hkHigh - hkClose, hkHigh - hkOpen)
+bottomwick      = iff(hkOpen<hkClose, hkOpen-hkLow, hkClose-hkLow)
+body            = iff(hkOpen<hkClose, hkClose-hkOpen, hkOpen-hkClose)
+ohcl4           = (hkHigh+hkLow+hkOpen+hkClose)/4
+
+fractionup      = iff( hkOpen<hkClose, (topwick + bottomwick + 2*body)/(2*topwick + 2*bottomwick + 2*body), (topwick + bottomwick)/(2*topwick + 2*bottomwick + 2*body) )
+fractiondown    = iff( hkOpen<hkClose, (topwick + bottomwick)/(2*topwick + 2*bottomwick + 2*body), (topwick + bottomwick + 2*body)/(2*topwick + 2*bottomwick + 2*body) )
+volumeup        = volume * fractionup * ohcl4
+
+volumedown      = volume * fractiondown * ohcl4
+
+netvolume       = volumeup - volumedown
+
+lengthMA        =input(25, title="length")
+netplot         = linreg(netvolume, lengthMA, -lengthMA)
+
+
+long = b>c and uptrend and netplot>0 //and close[3]<close[2] and close[2] > close [1] and close>close[1] and spike > volupband
+short = b<c and downtrend and netplot<0 // and close[3]>close[2] and close[2] < close [1] and close<close[1] and spike < voldnband
+plotshape(long, style=shape.triangleup, location=location.belowbar, color=color.new(color.green, 0), size=size.small)
+plotshape(short, style=shape.triangledown, location=location.abovebar, color=color.new(color.red, 0), size=size.small)

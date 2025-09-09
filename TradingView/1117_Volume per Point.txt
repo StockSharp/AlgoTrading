@@ -1,0 +1,100 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © JulyVibes
+
+//@version=4
+study("Volume per Point")
+
+bsvol = input(title="Display Volume?", type=input.bool, defval=false, group="Multipliers")
+vmul = input(title="Volume Multiplier", type=input.float, defval=1, group="Multipliers")
+avp = input(title="Abnormal VP Multiplier", type=input.float, defval=2, group="Multipliers")
+
+rf = input(title="Use RSI Filters?", type=input.bool, defval=false, group="Filters")
+r1 = input(title="RSI Above", type=input.integer, defval=60, group="Filters")
+r2 = input(title="RSI Below", type=input.integer, defval=40, group="Filters")
+
+if rf
+    r1 := r1
+    r2 := r2
+else
+    r1 := 0
+    r2 := 150
+
+vf = input(title="Use Percent Filters?", type=input.bool, defval=true, group="Filters")
+vper = input(title="Volume Percent Difference", type=input.integer, defval=5, group="Filters")
+lper = input(title="Length Percent Difference", type=input.integer, defval=5, group="Filters")
+
+hl = high-low
+hl1 = high[1]-low[1]
+
+nvol = volume/(hl)
+
+rlen = input(title="RSI Length", type=input.integer, defval=14, group="Input Settings")
+rsrc = input(title="RSI Source", type=input.source, defval= hl2, group="Input Settings")
+vpma = input(title="MA", type=input.integer, defval=15, group="Input Settings")
+ma = sma(nvol, vpma)
+
+bvol = iff( (high==low), na, volume*(close-low)/(high-low))*vmul
+svol = volume*vmul
+
+if bsvol
+    bvol := iff( (high==low), na, volume*(close-low)/(high-low))*vmul
+    svol := volume*vmul
+else
+    bvol := na
+    svol := na
+
+dpaint = (hl < hl1) and (volume > volume[1])
+epaint = (hl > hl1) and (volume < volume[1])
+nvd = (nvol > nvol[1]) and (hl < hl[1])
+nve = (nvol < nvol[1]) and (hl > hl[1])
+
+adot = nvol
+var color adotc = na
+
+if ((nvol[1]*avp) < nvol) and (nvol > ma*avp)
+    adot := nvol
+    adotc := color(#ff0000)
+else
+    adot := na
+    adotc := na
+
+RSI = rsi(rsrc,rlen)
+
+if vf
+    dpaint := (hl*(lper/100+1) < hl1) and (volume > volume[1]*((vper/100)+1))
+    epaint := (hl > hl1*(lper/100+1)) and (volume*((vper/100)+1) < volume[1])
+else
+    dpaint := dpaint
+    epaint := epaint
+
+var color a = na
+var color b = na
+var color c = na
+
+if nvol > nvol[1]
+    a := color.green
+else
+    a := color.red
+
+if ((RSI > r1) or (RSI < r2)) and dpaint
+    b := color.yellow
+else
+    b := na
+
+if ((RSI > r1) or (RSI < r2)) and epaint
+    c := color.purple
+else
+    c := na
+
+plot(nvol, title="Net Change",color=a, linewidth=2, style=plot.style_columns)
+plot(nvol, title="Volume Divergence",color=b, linewidth=2, style=plot.style_columns)
+plot(nvol, title="Volume Exhaustion",color=c, linewidth=2, style=plot.style_columns)
+plot(adot, title="Abnormal VP", color=adotc, linewidth=3, style=plot.style_circles)
+
+plot(svol, title="Sell Volume", color=#e91e63, linewidth=10, style=plot.style_histogram)
+plot(bvol, title="Buy Volume", color=color.lime, linewidth=10, style=plot.style_histogram)
+
+barcolor(dpaint ? color(b) : na, title="Volume Divergence (candle)")
+barcolor(epaint ? color(c) : na, title="Volume Exhaustion (candle)")
+
+plot(ma, title="Moving Average")

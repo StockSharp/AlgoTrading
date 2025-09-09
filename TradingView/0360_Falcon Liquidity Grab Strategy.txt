@@ -1,0 +1,80 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sadboyX
+
+//@version=5
+strategy("Falcon Liquidity Grab Strategy with Visual Levels", overlay=true)
+
+// Inputs for settings
+risk_percent = input.float(1.0, "Risk Percentage", minval=0.1, tooltip="Risk percentage per trade")
+stop_loss_points = input.int(20, "Stop Loss (points)", minval=5, tooltip="Stop loss distance in points")
+take_profit_multiplier = input.float(2.0, "Take Profit Multiplier", minval=1.0, tooltip="Multiplier for take profit distance (e.g., 2x SL)")
+ma_period = input.int(20, "Trend MA Period", minval=1, tooltip="Moving Average period for trend")
+pattern_lookback = input.int(10, "Pattern Lookback Period", minval=1, tooltip="Lookback period for identifying patterns")
+
+// Session Times (in UTC)
+london_start = timestamp("UTC+0", year, month, dayofmonth, 7, 0)
+london_end = timestamp("UTC+0", year, month, dayofmonth, 16, 0)
+newyork_start = timestamp("UTC+0", year, month, dayofmonth, 12, 0)
+newyork_end = timestamp("UTC+0", year, month, dayofmonth, 21, 0)
+sydney_start = timestamp("UTC+0", year, month, dayofmonth, 22, 0)
+sydney_end = timestamp("UTC+0", year, month, dayofmonth, 6, 0)
+tokyo_start = timestamp("UTC+0", year, month, dayofmonth, 0, 0)
+tokyo_end = timestamp("UTC+0", year, month, dayofmonth, 9, 0)
+
+// Session Filters
+is_london_session = (time >= london_start and time <= london_end)
+is_newyork_session = (time >= newyork_start and time <= newyork_end)
+is_sydney_session = (time >= sydney_start or time <= sydney_end)
+is_tokyo_session = (time >= tokyo_start and time <= tokyo_end)
+
+// Moving average for trend direction
+ma = ta.sma(close, ma_period)
+is_uptrend = close > ma
+is_downtrend = close < ma
+
+// Market structure: Higher highs/lows and lower highs/lows
+swing_high = ta.highest(high, 5)
+swing_low = ta.lowest(low, 5)
+liquidity_grab_long = low < swing_low and is_uptrend and (is_london_session or is_newyork_session or is_tokyo_session or is_sydney_session)
+liquidity_grab_short = high > swing_high and is_downtrend and (is_london_session or is_newyork_session or is_tokyo_session or is_sydney_session)
+
+// Stop-loss and take-profit levels (points-based)
+point_value = syminfo.mintick
+long_stop_loss = close - stop_loss_points * point_value
+long_take_profit = close + stop_loss_points * take_profit_multiplier * point_value
+short_stop_loss = close + stop_loss_points * point_value
+short_take_profit = close - stop_loss_points * take_profit_multiplier * point_value
+
+// Entry conditions
+if liquidity_grab_long
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Take Profit/Stop Loss", "Buy", stop=long_stop_loss, limit=long_take_profit)
+if liquidity_grab_short
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("Take Profit/Stop Loss", "Sell", stop=short_stop_loss, limit=short_take_profit)
+
+// Visualization: Moving average
+plot(ma, color=color.blue, title="Trend MA")
+
+// Visual Levels
+if liquidity_grab_long
+    // Green dotted line for take profit
+    line.new(bar_index, long_take_profit, bar_index + 1, long_take_profit, color=color.new(color.green, 0), style=line.style_dotted, width=2)
+    // Red dotted line for stop loss
+    line.new(bar_index, long_stop_loss, bar_index + 1, long_stop_loss, color=color.new(color.red, 0), style=line.style_dotted, width=2)
+    // Block for entry level
+    line.new(bar_index, close, bar_index + 1, close, color=color.new(color.blue, 0), style=line.style_solid, width=2)
+
+if liquidity_grab_short
+    // Green dotted line for take profit
+    line.new(bar_index, short_take_profit, bar_index + 1, short_take_profit, color=color.new(color.green, 0), style=line.style_dotted, width=2)
+    // Red dotted line for stop loss
+    line.new(bar_index, short_stop_loss, bar_index + 1, short_stop_loss, color=color.new(color.red, 0), style=line.style_dotted, width=2)
+    // Block for entry level
+    line.new(bar_index, close, bar_index + 1, close, color=color.new(color.blue, 0), style=line.style_solid, width=2)
+
+// Session Visualization
+bgcolor(is_london_session ? color.new(color.blue, 90) : na, title="London Session")
+bgcolor(is_newyork_session ? color.new(color.green, 90) : na, title="New York Session")
+bgcolor(is_sydney_session ? color.new(color.yellow, 90) : na, title="Sydney Session")
+bgcolor(is_tokyo_session ? color.new(color.purple, 90) : na, title="Tokyo Session")

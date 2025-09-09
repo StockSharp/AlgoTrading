@@ -1,0 +1,103 @@
+//@version=5
+strategy(title='Bias Ratio-ETH-3H @CTTC5108',
+   overlay=true,
+   pyramiding=0,
+   initial_capital=10000,
+   default_qty_type=strategy.cash,
+   default_qty_value=1000,
+   commission_type=strategy.commission.percent,
+   commission_value=0.05)
+
+lookbackType = input.string('Years', 'Backtesting timeframes', options=['Years', 'Months', 'Days', 'Hours'], group='📅')
+lookbackValue = input.int(7, 'Threshold', minval=0, group='📅')
+var int testPeriodStart = na
+if lookbackType == 'Years'
+    startYear = year(timenow) - lookbackValue
+    testPeriodStart := timestamp(startYear, month(timenow), dayofmonth(timenow), 0, 0)
+else if lookbackType == 'Months'
+    totalMonths = year(timenow) * 12 + month(timenow) - lookbackValue
+    startYear = int(totalMonths / 12)
+    startMonth = totalMonths % 12
+    if startMonth == 0
+        startYear := startYear - 1
+        startMonth := 12
+    testPeriodStart := timestamp(startYear, startMonth, dayofmonth(timenow), 0, 0)
+else if lookbackType == 'Days'
+    testPeriodStart := timenow - lookbackValue * 86400000
+else if lookbackType == 'Hours'
+    testPeriodStart := timenow - lookbackValue * 3600000
+testStopYear = input.int(2099, 'STOP YEAR', minval=1980, maxval=2099, group='📅')
+testStopMonth = input.int(12, 'STOP MONTH', minval=1, maxval=12, group='📅')
+testStopDay = input.int(31, 'STOP DAY', minval=1, maxval=31, group='📅')
+testPeriodStop = timestamp(testStopYear, testStopMonth, testStopDay, 0, 0)
+testPeriod = time >= testPeriodStart and time <= testPeriodStop ? true : false //开仓条件加入： and testPeriod
+bgcolor(testPeriod ? #5155521a : na)
+
+strat_dir_input = input.string(title='LONG ＆ SHORT',group='↗️🔛↘️', defval='all', options=['LONG', 'SHORT', 'all'])
+strat_dir_value = strat_dir_input == 'LONG' ? strategy.direction.long : strat_dir_input == 'SHORT' ? strategy.direction.short : strategy.direction.all
+strategy.risk.allow_entry_in(strat_dir_value)
+
+od = input.int(defval=20,title='len',group='len',minval=1,step=1)*10
+X = input.float(defval=0.025,title='X',group='X',minval=0.001,step=0.005)
+EntryL = close / ta.ema(close, od)>=1+X
+EntryS = close / ta.sma(close, od)<=1-X
+if EntryL and testPeriod
+    strategy.entry("L", strategy.long)
+if EntryS and testPeriod
+    strategy.entry("S", strategy.short)
+
+
+////////////////////////////////分批获利//////////////////////////////////////////////////////////...至于怎么用不要来问我...///
+use5 = input(defval=false, title='4TP',group='we', inline='w')
+p1 = strategy.position_avg_price / 100 / syminfo.mintick
+X1 =   input.float(4, step = 0.2,    title = "💹Exit--TP1 %",    group="we")
+X2 =   input.float(15, step = 0.2,    title = "💹Exit--TP2 %",    group="we")
+X3 =   input.float(30, step = 0.2,    title = "💹Exit--TP3 %",    group="we")
+X4 =   input.float(35, step = 0.2,    title = "💹Exit--TP4 %",    group="we")
+A1=input.int(25,title='QTY1',step = 5)
+A2=input.int(25,title='QTY2',step = 5)
+A3=input.int(25,title='QTY3',step = 5)
+A4=input.int(25,title='QTY4',step = 5)
+takeprofit1a3 = 1*X1
+takeprofit2a3 = 2*X2
+takeprofit3a3 = 3*X3
+takeprofit4a3 = 4*X4
+takeprofitqt13 = A1
+takeprofitqt23 = A2
+takeprofitqt33 = A3
+takeprofitqt43 = A4
+if  use5
+    strategy.exit('EL1', 'L', qty_percent=takeprofitqt13, profit=takeprofit1a3 * p1)
+    strategy.exit('EL2', 'L', qty_percent=takeprofitqt23, profit=takeprofit2a3 * p1)
+    strategy.exit('EL3', 'L', qty_percent=takeprofitqt33, profit=takeprofit3a3 * p1)
+    strategy.exit('EL4', 'L', qty_percent=takeprofitqt43, profit=takeprofit4a3 * p1)
+if  use5
+    strategy.exit('ES1', 'S', qty_percent=takeprofitqt13, profit=takeprofit1a3 * p1)
+    strategy.exit('ES2', 'S', qty_percent=takeprofitqt23, profit=takeprofit2a3 * p1)
+    strategy.exit('ES3', 'S', qty_percent=takeprofitqt33, profit=takeprofit3a3 * p1)
+    strategy.exit('ES4', 'S', qty_percent=takeprofitqt43, profit=takeprofit4a3 * p1)
+
+
+////////////////////////////////分批获利//////////////////////////////////////////////////////////
+
+var float max = 0.0  //此代码可任意添加.
+var float man = 0.0
+cu = strategy.netprofit_percent
+max := math.max(max, cu)
+dr = cu - max
+man := math.min(man, dr)
+var label ml = na
+var float mt = 0.0
+ct = strategy.netprofit_percent
+mt := math.max(mt, ct)
+dw = ct - mt
+if (na(ml))
+    ml := label.new(bar_index, close, "Drawdown: " + str.tostring(dw), xloc=xloc.bar_index, yloc=yloc.price, style=label.style_label_upper_left, color=color.white, textcolor=#e310e3)
+else
+    label.set_xy(ml, bar_index, close)
+    label.set_text(ml, "Drawdown: " + str.tostring(dw))
+var table tab = table.new(position.bottom_right, 3, 2)
+if (cu - max < 0)
+    table.cell(tab, 0, 1, "Max Drawdown", bgcolor=color.rgb(244, 7, 82))
+    table.cell(tab, 1, 1, str.tostring(man), bgcolor=#f47607)
+plotchar(dw, "Drawdown", "",color=#f71111)

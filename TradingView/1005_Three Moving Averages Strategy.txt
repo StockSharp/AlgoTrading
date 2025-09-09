@@ -1,0 +1,31 @@
+//@version=5
+strategy("Three Moving Averages Strategy", overlay=true)
+
+// Input for moving averages
+ma_short_length = input.int(20, title="Short Moving Average (20)")
+ma_medium_length = input.int(50, title="Medium Moving Average (50)")
+ma_long_length = input.int(200, title="Long Moving Average (200)")
+
+// Calculate moving averages
+ma_short = ta.sma(close, ma_short_length)
+ma_medium = ta.sma(close, ma_medium_length)
+ma_long = ta.sma(close, ma_long_length)
+
+// Plot moving averages
+plot(ma_short, color=color.blue, title="20-day MA")
+plot(ma_medium, color=color.orange, title="50-day MA")
+plot(ma_long, color=color.red, title="200-day MA")
+
+// Generate buy and sell signals
+buy_signal = ta.crossover(ma_short, ma_medium) and ma_medium > ma_long
+sell_signal = ta.crossunder(ma_short, ma_medium) and ma_medium < ma_long
+
+// Execute strategy
+if (buy_signal)
+    strategy.entry("Buy", strategy.long)
+if (sell_signal)
+    strategy.close("Buy")
+
+// Add plot shapes for signals
+plotshape(series=buy_signal, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.labelup, text="Buy")
+plotshape(series=sell_signal, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.labeldown, text="Sell")

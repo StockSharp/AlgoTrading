@@ -1,0 +1,174 @@
+// ------------------------------------------------------------------------------------
+//
+//     Mean Deviation Index
+//     Version 1.2
+//
+// ------------------------------------------------------------------------------------
+//
+// The Mean Deviation Index (MDX) is used to see how much price is deviating from the
+// mean. This indicator takes both volatility and mean deviation in consideration.
+//
+// It uses the standard deviation of the ATR to filter an EMA, and uses this as the
+// mean. It then only plots > or < 0 if price is more than 1 x ATR away from the
+// mean. If index is positive, the background turns green, meaning price is more than
+// 1 x ATR above the mean. If the index is negative, the background turns red,
+// meaning price is more than 1 x ATR below the mean. This setting can be changed
+// by changing the setting "ATR Multiplier", but the default is 1 x ATR.
+//
+// There are two main ways to use this index.
+//
+// 1. Use it aggressively to find trends (by combining it with other indicators) by
+//    entereding each time the background changes color to green for longs or red for
+//    shorts.
+// 2. Use it to spot breakouts, waiting for a pullback, and then entering on the next
+//    move in the same direction. In this context for a short, you wait for the
+//    background color to turn green, then wait for the index to pull back, and then
+//    enter once it starts moving up again.
+//
+// ------------------------------------------------------------------------------------
+//
+// Changelog:
+//
+//  - Version 1.0 -
+//     * Initial release.
+//  - Version 1.1 -
+//     * Added option to plot in a percentage scale instead of pure instrument value.
+//     * Changed the default of the different period settings to 26.
+//  - Version 1.2 -
+//     * Added the option to plot levels on the indicator, alongh with alerts for when
+//       the MDX crosses these lines. Also added an option to show or hide these lines.
+//       These lines are hidden by default.
+//     * Added the option to make the indicator volume weighted.
+//       This is off by default.
+//
+// ------------------------------------------------------------------------------------
+//
+// Licensed under CC BY-NC.
+// https://creativecommons.org/licenses/by-nc/4.0/
+//
+// Copyright © Anton Berlin, 2020.
+//
+// ------------------------------------------------------------------------------------
+
+//@version=4
+
+
+
+// ------------------------------------------------------------------------------------
+//    Setup
+// ------------------------------------------------------------------------------------
+
+study(title = "Mean Deviation Index", shorttitle = "MDX", overlay = false)
+
+
+
+// ------------------------------------------------------------------------------------
+//    Input
+// ------------------------------------------------------------------------------------
+
+ema_period = input(title = "EMA Period", defval = 26, minval = 3, type = input.integer)
+atr_period = input(title = "ATR Period", defval = 26, minval = 1, type = input.integer)
+atr_mult = input(title = "ATR Multiplier", defval = 1.0, minval = 0.1, type = input.float)
+atr_filter_type = input(title = "ATR Filter Type", defval = "Away from price", options = ["Away from price", "Closer to price"], type = input.string)
+atr_stddev_length = input(title = "ATR Filter Standard Deviation Length", defval = 26, minval = 1, type = input.integer)
+atr_stddev_low_lookback = input(title = "ATR Filter Standard Deviation Low Lookback Period", defval = 26, minval = 1, type = input.integer)
+use_normalized = input(title = "Use normalized ATR for the ATR Filter?", defval = true, type = input.bool)
+levels = input(title = "Levels", defval = 4, minval = 0, type = input.float)
+show_levels = input(title = "Show levels?", defval = false, type = input.bool)
+show_as_perc = input(title = "Show value as percentage away from the mean?", defval = false, type = input.bool)
+use_volume = input(title = "Use a volume weighted calculation?", defval = false, type = input.bool)
+
+
+
+// ------------------------------------------------------------------------------------
+//    ATR-filtered EMA
+// ------------------------------------------------------------------------------------
+
+get_atr(period, use_volume) =>
+    tr_val = use_normalized ? tr / close : tr
+    atr_val =
+         (
+             use_volume ?
+                 (rma(tr * volume, atr_period) / rma(volume, atr_period)) :
+                 atr(atr_period)
+         ) * atr_mult
+
+get_afema(src, period, atr_period, stdev_period, filter_type, low_lookback, use_volume) =>
+    float result = na
+    float alpha = na
+    float stddev_factor = na
+
+    atr_val = get_atr(atr_period, use_volume)
+
+    stddev_a = sma(pow(atr_val, 2), stdev_period)
+    stddev_b = pow(sum(atr_val, stdev_period), 2) / pow(stdev_period, 2)
+    stddev = sqrt(stddev_a - stddev_b)
+    stddev_lo = lowest(stddev, low_lookback)
+
+    if (filter_type == "Away from price")
+        stddev_factor := min(stddev_lo / stddev, 5.0)
+    else if (filter_type == "Closer to price")
+        stddev_factor := min(stddev / stddev_lo, 5.0)
+
+    alpha := (2.0 * stddev_factor) / (period + 1.0)
+
+    if (na(src[1]))
+        result := sum(src, period) / period
+    else
+        result := alpha * src + (1.0 - alpha) * nz(result[1])
+
+    // Return the result
+    result
+
+
+
+// ------------------------------------------------------------------------------------
+//    Mean Deviation Index calculations
+// ------------------------------------------------------------------------------------
+
+nom_source = use_volume ? close * volume : close
+nom_val = get_afema(nom_source,
+     ema_period,
+     atr_period,
+     atr_stddev_length,
+     atr_filter_type,
+     atr_stddev_low_lookback,
+     use_volume)
+
+denom_val = get_afema(volume,
+     ema_period,
+     atr_period,
+     atr_stddev_length,
+     atr_filter_type,
+     atr_stddev_low_lookback,
+     use_volume)
+
+vema_val = use_volume ? nom_val / denom_val : nom_val
+
+dev_val = close - vema_val
+atr_val = get_atr(atr_period, use_volume)
+mdx_val = dev_val > 0 ? max(dev_val - atr_val, 0) : min(dev_val + atr_val, 0)
+mdx_out = show_as_perc ? 100 * ((mdx_val + vema_val - atr_val) / (vema_val - atr_val) - 1.0) : mdx_val
+
+
+
+// ------------------------------------------------------------------------------------
+//    Plotting
+// ------------------------------------------------------------------------------------
+
+bg_clr = mdx_out > (show_levels ? levels : 0) ? color.green : mdx_out < (show_levels ? -levels : 0) ? color.red : na
+
+bgcolor(title = "BG color for positive or negative deviation", color = bg_clr, transp = 70)
+plot(title = "MDX value", series = mdx_out, color = color.gray, linewidth = 2)
+
+plot(show_levels ? levels : na, title = "Upper level", color = color.gray)
+plot(show_levels ? -levels : na, title = "Lower level", color = color.gray)
+
+
+
+// ------------------------------------------------------------------------------------
+//    Alerts
+// ------------------------------------------------------------------------------------
+
+alertcondition(crossover(mdx_out, levels), "Cross upper level", "MDX crossed upper level")
+alertcondition(crossunder(mdx_out, -levels), "Cross lower level", "MDX crossed lower level")

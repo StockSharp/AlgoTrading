@@ -1,0 +1,28 @@
+//@version=5
+strategy("Williams %R Strategy", overlay=true, commission_type=strategy.commission.cash_per_contract, commission_value=0.5, slippage=1)
+
+// Input values for the lookback period and position size
+lookbackPeriod = input.int(2, minval=2, maxval=25, title="Lookback Period for Williams %R")
+positionSize = input.float(10, minval=0, title="Position Size (%)")
+
+// Calculate Williams %R
+highestHigh = ta.highest(high, lookbackPeriod)
+lowestLow = ta.lowest(low, lookbackPeriod)
+williamsR = -100 * (highestHigh - close) / (highestHigh - lowestLow)
+
+// Conditions for entry and exit
+longCondition = williamsR < -90
+exitCondition1 = close > ta.highest(high, 1)[1]
+exitCondition2 = williamsR > -30
+
+// Entry and exit logic
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=positionSize)
+
+if (exitCondition1 or exitCondition2)
+    strategy.close("Long")
+
+// Plot Williams %R indicator
+plot(williamsR, title="Williams %R", color=color.blue)
+hline(-90, "Oversold", color=color.green)
+hline(-30, "Overbought", color=color.red)

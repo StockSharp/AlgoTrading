@@ -1,0 +1,51 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © abdllhatn
+
+//@version=5
+strategy("Alpha RSI Breakout Strategy", overlay=true, initial_capital=10000, default_qty_value=100)
+
+// Inputs
+sma_length = input(200, title="SMA Length")
+rsi_length = input(14, title="RSI Length")
+rsi_entry = input(34, title="RSI Entry Level")
+rsi_stop_loss = input(30, title="RSI Stop Loss Level")
+rsi_take_profit = input(50, title="RSI Take Profit Level")
+
+// Indicators
+sma_value = ta.sma(close, sma_length)
+rsi_value = ta.rsi(close, rsi_length)
+
+var bool trailing_stop_activate = false
+var float trailingStop = na
+var float lastClose = na
+
+// Conditions
+longCondition = ta.crossover(rsi_value, rsi_entry) and close > sma_value
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+    trailingStop := na
+    lastClose := na
+    trailing_stop_activate := false
+
+if (strategy.position_size > 0)
+    if (na(lastClose) or close < lastClose)
+        lastClose := close
+        trailingStop := close
+    if (rsi_value >= rsi_take_profit)
+        trailing_stop_activate := true
+
+if (trailing_stop_activate and not na(trailingStop) and close < trailingStop)
+    strategy.close("Buy")
+
+if (rsi_value <= rsi_stop_loss)
+    strategy.close("Buy")
+
+if (not trailing_stop_activate and rsi_value >= rsi_take_profit)
+    strategy.close("Buy")
+
+if (trailing_stop_activate and rsi_value >= rsi_take_profit)
+    strategy.close("Buy")
+
+// Plot
+plot(sma_value, color=color.red, linewidth=2)
+plot(rsi_value, color=color.blue, linewidth=2)

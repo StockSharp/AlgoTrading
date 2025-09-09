@@ -1,0 +1,49 @@
+//@version=5
+strategy("Enhanced BarUpDn Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Input Variables
+maxIdLossPcnt = input.float(1, title="Max Intraday Loss(%)")
+strategy.risk.max_intraday_loss(maxIdLossPcnt, strategy.percent_of_equity)
+
+length = input(20, title="BB Length")
+mult = input(2.0, title="BB Multiplier")
+ma_length = input(50, title="Trend Filter MA")
+
+// Bollinger Bands Calculation
+basis = ta.sma(close, length)
+dev = mult * ta.stdev(close, length)
+upper = basis + dev
+lower = basis - dev
+
+// Moving Average for Trend Confirmation
+trend_ma = ta.sma(close, ma_length)
+is_uptrend = close > trend_ma
+is_downtrend = close < trend_ma
+
+// BarUpDn Strategy Conditions
+barUp = close > open and open > close[1] and is_uptrend and close > lower
+barDn = close < open and open < close[1] and is_downtrend and close < upper
+
+// Stop-Loss & Take-Profit (Based on ATR)
+atr_length = input(14, title="ATR Length")
+atr_mult = input(2, title="ATR Multiplier")
+atr = ta.atr(atr_length)
+long_sl = close - (atr * atr_mult)  // Stop-Loss below entry
+long_tp = close + (atr * atr_mult * 1.5)  // Take-Profit (1.5x ATR)
+short_sl = close + (atr * atr_mult)
+short_tp = close - (atr * atr_mult * 1.5)
+
+// Execute Trades with Risk Management
+if (barUp)
+    strategy.entry("BarUp", strategy.long)
+    strategy.exit("BarUp Exit", from_entry="BarUp", stop=long_sl, limit=long_tp)
+
+if (barDn)
+    strategy.entry("BarDn", strategy.short)
+    strategy.exit("BarDn Exit", from_entry="BarDn", stop=short_sl, limit=short_tp)
+
+// Plot Bollinger Bands & Trend MA
+plot(basis, color=color.blue, title="Middle Band")
+plot(upper, color=color.red, title="Upper Band")
+plot(lower, color=color.green, title="Lower Band")
+plot(trend_ma, color=color.orange, title="Trend MA")

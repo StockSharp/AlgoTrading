@@ -1,0 +1,31 @@
+//@version=5
+strategy("ETH Signal 15m", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=15)
+
+// Backtest period
+start_time = input.time(timestamp("2024-08-01 00:00"), title="Backtest Start Time")
+end_time = input.time(timestamp("2054-01-01 00:00"), title="Backtest End Time")
+
+atrPeriod = input(12, "ATR Length")
+factor = input.float(2.76, "Factor", step=0.01)
+rsiLength = input(12, title="RSI Length")
+rsiOverbought = input(70, title="RSI Overbought Level")
+rsiOversold = input(30, title="RSI Oversold Level")
+
+[_, direction] = ta.supertrend(factor, atrPeriod)
+rsi = ta.rsi(close, rsiLength)
+
+// Ensure current time is within the backtest period
+in_date_range = (time >= start_time) and (time <= end_time)
+
+// Long condition: Supertrend buy signal and RSI not overbought
+if in_date_range and ta.change(direction) < 0 and rsi < rsiOverbought
+    strategy.entry("Long", strategy.long)
+
+// Short condition: Supertrend sell signal and RSI not oversold
+if in_date_range and ta.change(direction) > 0 and rsi > rsiOversold
+    strategy.entry("Short", strategy.short)
+
+// Optional: Add stop loss and take profit using ATR
+atr = ta.atr(atrPeriod)
+strategy.exit("Exit Long", "Long", stop=close - 4 * atr, limit=close + 2 * atr)
+strategy.exit("Exit Short", "Short", stop=close + 4 * atr, limit=close - 2.237 * atr)

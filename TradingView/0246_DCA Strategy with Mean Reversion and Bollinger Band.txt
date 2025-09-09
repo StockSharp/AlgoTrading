@@ -1,0 +1,77 @@
+//@version=5
+strategy("DCA Strategy with Mean Reversion and Bollinger Band Three Combination", overlay=true, pyramiding= 1, default_qty_type = strategy.percent_of_equity,initial_capital=1200, default_qty_value=10 ,currency=currency.USD ,commission_type = strategy.commission.percent, commission_value = 0.2,slippage=300)
+
+// Inputs for investment amount, dates, and strategy mode
+investment_amount = input.float(10, title="Investment Amount (USD)", tooltip="Amount to be invested in each buy order (in USD)")
+open_date = input.time(timestamp("2018-01-01 00:00:00"), title="Open All Positions On", tooltip="Date when to start opening positions for DCA strategy")
+close_date = input.time(timestamp("2025-01-02 00:00:00"), title="Close All Positions On", tooltip="Date when to close all open positions for DCA strategy")
+strategy_mode = input.string("BB Mean Reversion", title="Strategy Mode", options=["BB Mean Reversion", "Monthly DCA", "Combined BB and Monthly DCA"], tooltip="Select the strategy mode: Bollinger Band Mean Reversion, Monthly DCA, or Combined")
+
+// Bollinger Band parameters
+source = input.source(title="Source", defval=close, group="Bollinger Band Parameter", tooltip="The price source to calculate the Bollinger Bands (e.g., closing price)")
+length = input.int(200, minval=1, title='Period', group="Bollinger Band Parameter", tooltip="Period for the Bollinger Band calculation (e.g., 200-period moving average)")
+mult = input.float(2, minval=0.1, maxval=50, step=0.1, title='Standard Deviation', group="Bollinger Band Parameter", tooltip="Multiplier for the standard deviation to define the upper and lower bands")
+tf = input.timeframe(title="Bollinger Band Timeframe", defval="240", group="Bollinger Band Parameter", tooltip="The timeframe used to calculate the Bollinger Bands (e.g., 4-hour chart)")
+
+// Calculate BB for the chosen timeframe using security
+[basis, bb_dev] = request.security(syminfo.tickerid, tf, [ta.ema(source, length), mult * ta.stdev(source, length)])
+upper = basis + bb_dev
+lower = basis - bb_dev
+
+// Plot Bollinger Bands
+plot(basis, color=color.red, title="Middle Band (EMA)")
+plot(upper, color=color.blue, title="Upper Band")
+plot(lower, color=color.blue, title="Lower Band")
+fill(plot(upper), plot(lower), color=color.blue, transp=90)
+
+// Define buy conditions
+// Condition 1: Bollinger Band Mean Reversion (price crosses under Lower Band)
+buy_condition_bb = ta.crossunder(source, lower)
+
+// Condition 2: Monthly DCA (buy on the 1st of each month)
+is_first_day = dayofmonth == 1 and ta.change(month) // Check if it's the 1st day of the month
+buy_condition_monthly = is_first_day
+
+// Condition 3: Combined BB Mean Reversion and Monthly DCA
+buy_condition_combined = buy_condition_bb or is_first_day
+
+// Select buy condition based on strategy mode
+var bool buy_condition = false
+if strategy_mode == "BB Mean Reversion"
+    buy_condition := buy_condition_bb
+else if strategy_mode == "Monthly DCA"
+    buy_condition := buy_condition_monthly
+else if strategy_mode == "Combined BB and Monthly DCA"
+    buy_condition := buy_condition_combined
+
+// Execute buy orders based on selected condition
+if (buy_condition and time >= open_date and time <= close_date)
+    strategy.order("DCA Buy", strategy.long, qty=investment_amount / close)
+
+// Close all positions on the specified date
+if (time >= close_date)
+    strategy.close_all()
+
+// Track and apply background color
+var color bgColor = na
+if close > upper
+    bgColor := color.red
+else if close < lower
+    bgColor := color.green
+bgcolor(bgColor, transp=90, title="Background Color Based on Bollinger Bands")
+
+// Postscript:
+
+// 1. Configuration of Initial Capital:
+//    - After setting the "Investment Amount (USD)" in the input box, proceed with additional configuration.
+//    - Navigate to the "Properties" section and adjust the "Initial Capital" value by calculating it as the product of "Total Closed Trades" and "Investment Amount (USD)".
+//    - This ensures that the backtest results accurately reflect the actual investment values.
+//    - Examples:
+//      - Investment Amount (USD) = 10 USD, Total Closed Trades = 10, Initial Capital = 10 × 10 = 100 USD
+//      - Investment Amount (USD) = 20 USD, Total Closed Trades = 24, Initial Capital = 24 × 20 = 480 USD
+
+// 2. Strategy Evaluation and Stop-Loss Approach:
+//    - This system utilizes a fundamentals-based stop-loss (Fundamentals Stoploss) instead of a technical stop-loss, focusing on underlying asset fundamentals rather than short-term price movements.
+//    - The performance evaluation is tailored to assess the effectiveness of the Dollar-Cost Averaging (DCA) accumulation process.
+//    - Consequently, traditional metrics such as Win Rate and Profit Factor hold less significance in this testing context.
+//    - The primary focus is on achieving long-term accumulation of assets at favorable average prices, aligning with the DCA philosophy of minimizing timing risk and building positions gradually over time.

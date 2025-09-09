@@ -1,0 +1,36 @@
+//@version=4
+study("McGinley Dynamic (Improved) - John R. McGinley, Jr.", "MD(I)", true, resolution="")
+
+imd(Series, fPeriod, fK, fExponent) => // "Improved McGinley Dynamic" Function - @midtownsk8rguy
+    period = max(1.0, fPeriod)
+    float return = na, priorMD = nz(return[1], Series)
+    return := priorMD + (Series - priorMD) / min(period, max(1.0, fK * period * pow(Series / priorMD, fExponent)))
+    return
+
+// BEWARE: ***DO NOT USE*** BELOW FUNCTION IN ANY OTHER SCRIPT
+umd(Series, fPeriod, fK, fExponent) => // Unconstrained McGinley Dynamic - Susceptible to miscalculation
+    period = max(1.0, fPeriod)
+    float return = na, priorMD = nz(return[1], Series)
+    return := priorMD + (Series - priorMD) / (fK * period * pow(Series / priorMD, fExponent))
+    return
+
+period   = input(      14,              "   Period", input.float ,  minval=  1, step= 0.5)
+source   = input(   close,     "===== Source =====", input.source)
+formula  = input("Modern",            "Formulation", input.string, options=["Modern","Original","Custom k"])
+kCustom  = input(     0.5,      " Custom k (tweak)", input.float ,  minval=0.3, step=0.05)
+exponent = input(     4.0,      " Exponent (tweak)", input.float ,  minval=1.0, step= 0.1)
+umdOnOff = input(   false, "Disable Inferior umd()", input.bool  )
+var k = if formula=="Modern"
+    0.6
+else if formula=="Original"
+    1.0
+else
+    kCustom
+
+errataProneMD = umd(source, period, k, exponent) // Susceptible to miscalculation
+plot(umdOnOff ? na : errataProneMD, "umd()", color=#990099ff, linewidth=3)
+
+McGinleyDynamic = imd(source, period, k, exponent)
+plot(McGinleyDynamic, "imd()", color=#FFFF00ff)
+
+plot(ema(source, int(period)), "ema()") // Ordinary ema()

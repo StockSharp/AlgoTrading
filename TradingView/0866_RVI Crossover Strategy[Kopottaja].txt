@@ -1,0 +1,45 @@
+//@version=5
+strategy("RVI Crossover Strategy", overlay=false)
+import TradingView/ta/8
+
+// Asetukset
+rviLength = input.int(10, title="RVI Length")
+src = close
+
+
+
+
+len = input.int(10, title="Length", minval=1)
+rvi = math.sum(ta.swma(close-open), len)/math.sum(ta.swma(high-low),len)
+sig = ta.swma(rvi)
+offset = input.int(0, "Offset", minval = -500, maxval = 500, display = display.data_window)
+plot(rvi, color=#008000, title="RVGI", offset = offset)
+plot(sig, color=#FF0000, title="Signal", offset = offset)
+
+signalLine = ta.sma(rvi, rviLength)
+
+
+plot(rvi, color=color.green, title="RVI")
+plot(signalLine, color=color.red, title="Signal Line")
+
+pituusnopea = input(18, title="VWMANOPEA")
+pituusnopea2 = input(1, title="VWMAHIDAS")
+
+emapituus = input(31, title="EMAPITUUS")
+WVMA1= ta.vwma(close, pituusnopea)
+WVMA2 = ta.vwma(close, pituusnopea2)
+WVMA3 = ta.vwma(close, 1)
+Bullish = ta.ema(close, emapituus) < WVMA2
+Bearish =  ta.ema(close, emapituus) > WVMA2
+
+longCondition = ta.crossover(rvi, sig) and (Bearish)
+shortCondition = ta.crossunder(rvi, sig) and (Bullish)
+
+
+
+
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Sell", strategy.short)

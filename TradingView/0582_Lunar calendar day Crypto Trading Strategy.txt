@@ -1,0 +1,111 @@
+//@version=5
+strategy("Lunar ETHUSDT Trading 100% Invest with Fee & Slippage (2020~2026)", overlay=true, commission_type=strategy.commission.percent, commission_value=0.1)
+
+// Fee and slippage settings
+feePercent = 0.1    // 0.1%
+slippageTicks = 3
+tickSize = syminfo.mintick
+slippage = slippageTicks * tickSize
+
+// Function for lunar new year start date and monthly lengths by year
+f_get_lunar_data() =>
+    y = year(time)
+    if y == 2020
+        [timestamp("Asia/Seoul", 2020, 1, 25, 0, 0), array.from(29,30,29,30,29,30,29,30,29,30,30,29)]
+    else if y == 2021
+        [timestamp("Asia/Seoul", 2021, 2, 12, 0, 0), array.from(30,29,30,29,30,29,30,29,30,29,30,30)]
+    else if y == 2022
+        [timestamp("Asia/Seoul", 2022, 2, 1, 0, 0), array.from(29,30,29,30,29,30,29,30,30,29,30,29)]
+    else if y == 2023
+        [timestamp("Asia/Seoul", 2023, 1, 22, 0, 0), array.from(30,29,30,29,30,29,30,30,29,30,29,30)]
+    else if y == 2024
+        [timestamp("Asia/Seoul", 2024, 2, 10, 0, 0), array.from(30,29,30,29,30,29,30,29,30,29,30,30,29)]
+    else if y == 2025
+        [timestamp("Asia/Seoul", 2025, 1, 29, 0, 0), array.from(29,30,29,30,29,30,29,30,30,29,30,29)]
+    else if y == 2026
+        [timestamp("Asia/Seoul", 2026, 2, 17, 0, 0), array.from(30,29,30,29,30,29,30,30,29,30,29,30)]
+    else
+        [na, array.new_int()]
+
+// Function to create cumulative monthly days array
+f_get_lunar_md(days_arr) =>
+    arr = array.new_int()
+    sum = 0
+    for i = 0 to array.size(days_arr) - 1
+        sum += array.get(days_arr, i)
+        array.push(arr, sum)
+    arr
+
+// Get lunar start date and monthly lengths
+[ts_start, lunar_lengths] = f_get_lunar_data()
+valid = not na(ts_start)
+days_since = valid ? math.floor((time - ts_start) / 86400000) : na
+cumulative = valid ? f_get_lunar_md(lunar_lengths) : na
+
+// Declare lunar month, day, last day variables
+var int lunar_month = na
+var int lunar_day = na
+var int lunar_last_day = na
+
+// Calculate lunar date
+if valid and not na(days_since) and days_since >= 0
+    lunar_month := na
+    lunar_day := na
+    lunar_last_day := na
+    for i = 0 to array.size(cumulative) - 1
+        cum = array.get(cumulative, i)
+        prev = i == 0 ? 0 : array.get(cumulative, i - 1)
+        if days_since < cum
+            lunar_month := i + 1
+            lunar_day := days_since - prev + 1
+            lunar_last_day := array.get(lunar_lengths, i)
+            break
+else
+    lunar_month := na
+    lunar_day := na
+    lunar_last_day := na
+
+// Buy condition: Lunar day 5 and no current position
+buy_condition = not na(lunar_day) and lunar_day == 5 and strategy.position_size == 0
+
+// Sell condition: Lunar day 26 and holding position
+sell_condition = not na(lunar_day) and lunar_day == 26 and strategy.position_size > 0
+
+// Buy/sell price adjusted for slippage and fee
+price_buy = close + slippage
+price_buy_with_fee = price_buy * (1 + feePercent * 0.01)
+
+price_sell = close - slippage
+price_sell_with_fee = price_sell * (1 - feePercent * 0.01)
+
+// Calculate buy quantity using 100% of equity
+qty = math.floor(strategy.equity / price_buy_with_fee)
+
+// Buy order (limit)
+if buy_condition and qty > 0
+    strategy.entry("Lunar Buy", strategy.long, qty, limit=price_buy)
+
+// Sell order (close all)
+if sell_condition and strategy.position_size > 0
+    strategy.close("Lunar Buy")
+
+// True range variable (for label position adjustment)
+tr = ta.tr(true)
+
+// Date format creation
+yr = year(time)
+mo = month(time)
+dy = dayofmonth(time)
+mo_str = mo < 10 ? "0" + str.tostring(mo) : str.tostring(mo)
+dy_str = dy < 10 ? "0" + str.tostring(dy) : str.tostring(dy)
+solar_str = str.tostring(yr) + "-" + mo_str + "-" + dy_str
+
+// Display solar and lunar date and position label (on bar close)
+if barstate.islastconfirmedhistory and not na(lunar_day)
+    label.new(bar_index, high - tr * 6,  "Solar: " + solar_str + "\nLunar: " + str.tostring(lunar_month) + "-" + str.tostring(lunar_day) ,
+      style=label.style_label_up, size=size.normal, color=color.new(color.teal, 50), textcolor=color.white)
+
+// Display "15" label at bottom on lunar day 15 (lowest of last 50 bars - 1 true range)
+if not na(lunar_day) and lunar_day == 15
+    low_offset = ta.lowest(low, 50) - tr
+    label.new(bar_index, low_offset, "15", style=label.style_label_down, color=color.orange, textcolor=color.white, size=size.normal)

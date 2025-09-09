@@ -1,0 +1,546 @@
+//@version=6
+strategy("NY First Candle Break and Retest", overlay=true,
+         default_qty_type=strategy.percent_of_equity, default_qty_value=90,
+         initial_capital=50000, commission_value=0.01, slippage=3)
+
+// ==========================================
+// Session and Time Parameters
+// ==========================================
+nyStartHour = input.int(9, "NY Session Start Hour", minval=0, maxval=23, group="Session Settings")
+nyStartMinute = input.int(30, "NY Session Start Minute", minval=0, maxval=59, group="Session Settings")
+sessionLength = input.int(4, "Session Length (Hours)", minval=1, maxval=8, group="Session Settings")
+
+// ==========================================
+// Strategy Parameters
+// ==========================================
+atrPeriod = input.int(14, "ATR Period", minval=1, group="Risk Management")
+atrMultiplier = input.float(1.2, "ATR Multiplier for Stop Loss", minval=0.5, maxval=4.0, step=0.1, group="Risk Management")
+rewardRiskRatio = input.float(1.5, "Reward-to-Risk Ratio", minval=1.0, maxval=5.0, step=0.1, group="Risk Management")
+minBreakSize = input.float(0.15, "Minimum Break Size (% of ATR)", minval=0.1, maxval=2.0, step=0.05, group="Break Settings")
+retestThreshold = input.float(0.25, "Retest Threshold (% of ATR)", minval=0.1, maxval=1.0, step=0.05, group="Break Settings")
+minCandlesAfterBreak = input.int(2, "Min Candles Between Break & Retest", minval=1, maxval=10, group="Break Settings")
+maxCandlesAfterBreak = input.int(25, "Max Candles Between Break & Retest", minval=5, maxval=40, group="Break Settings")
+
+// ==========================================
+// Indicator Settings
+// ==========================================
+useEmaFilter = input.bool(true, "Use EMA Filter", group="Indicators")
+emaLength = input.int(13, "EMA Length", minval=5, maxval=50, group="Indicators")
+useVwap = input.bool(true, "Use VWAP", group="Indicators")
+useVolumeConfirmation = input.bool(true, "Use Volume Confirmation", group="Indicators")
+volumeThreshold = input.float(1.2, "Volume Threshold", minval=1.0, maxval=3.0, step=0.1, group="Indicators")
+
+// ==========================================
+// Trade Management
+// ==========================================
+useTrailingStop = input.bool(true, "Enable Trailing Stop", group="Trade Management")
+trailingActivation = input.float(0.6, "Trailing Stop Activation (% of Target)", minval=0.3, maxval=0.9, step=0.1, group="Trade Management")
+trailingAmount = input.float(0.4, "Trailing Stop Amount (% of ATR)", minval=0.1, maxval=1.0, step=0.1, group="Trade Management")
+useMultipleTP = input.bool(true, "Use Multiple Take Profits", group="Trade Management")
+tp1Percentage = input.float(33, "TP1 Percentage", minval=10, maxval=100, step=1, group="Trade Management") / 100
+tp2Percentage = input.float(67, "TP2 Percentage", minval=10, maxval=100, step=1, group="Trade Management") / 100
+tp3Percentage = input.float(100, "TP3 Percentage", minval=10, maxval=100, step=1, group="Trade Management") / 100
+
+// ==========================================
+// Alert Settings - NEW SECTION
+// ==========================================
+enableSessionAlerts = input.bool(true, "Session Start/End Alerts", group="Alerts")
+enableFirstCandleAlerts = input.bool(true, "First Candle Alerts", group="Alerts")
+enableBreakoutAlerts = input.bool(true, "Breakout Alerts", group="Alerts")
+enableRetestAlerts = input.bool(true, "Retest Alerts", group="Alerts")
+enableEntryAlerts = input.bool(true, "Entry Alerts", group="Alerts")
+enableExitAlerts = input.bool(true, "Exit Alerts", group="Alerts")
+enableTrailingStopAlerts = input.bool(true, "Trailing Stop Alerts", group="Alerts")
+
+// ==========================================
+// Market Detection and Parameter Optimization
+// ==========================================
+symbol = syminfo.ticker
+
+// Apply market-specific optimizations
+// Set optimal session length based on market
+if symbol == "MES" or symbol == "ES" or
+   symbol == "MNQ" or symbol == "NQ" or
+   symbol == "MYM" or symbol == "YM" or
+   symbol == "M2K" or symbol == "RTY"
+    sessionLength := 3  // Index futures: 3 hours
+
+// Set optimal ATR multiplier based on market
+if symbol == "MES" or symbol == "ES" or symbol == "MYM" or symbol == "YM"
+    atrMultiplier := 1.0  // Tight stops for index futures
+else if symbol == "MNQ" or symbol == "NQ" or symbol == "M6E" or symbol == "MBT" or symbol == "6E" or symbol == "6B"
+    atrMultiplier := 1.1  // Slightly wider
+else if symbol == "M2K" or symbol == "RTY"
+    atrMultiplier := 1.2  // Moderate
+else if symbol == "MGC" or symbol == "GC"
+    atrMultiplier := 1.3  // Wider
+else if symbol == "MCL" or symbol == "CL"
+    atrMultiplier := 1.4  // Wider for crude
+else if symbol == "MNG" or symbol == "NG"
+    atrMultiplier := 1.5  // Widest for natural gas
+
+// Set optimal reward to risk ratio based on market
+if symbol == "MES" or symbol == "ES" or symbol == "MYM" or symbol == "YM"
+    rewardRiskRatio := 1.6
+else if symbol == "MNQ" or symbol == "NQ" or symbol == "M2K" or symbol == "RTY"
+    rewardRiskRatio := 1.7
+else if symbol == "MNG" or symbol == "NG" or symbol == "MCL" or symbol == "CL"
+    rewardRiskRatio := 1.8
+else if symbol == "M6E" or symbol == "6E" or symbol == "MBT" or symbol == "6B"
+    rewardRiskRatio := 1.4
+
+// ==========================================
+// Session and Time Logic
+// ==========================================
+// Convert session start time to milliseconds since midnight
+nySessionStartTime = (nyStartHour * 60 + nyStartMinute) * 60 * 1000
+nySessionEndTime = nySessionStartTime + (sessionLength * 60 * 60 * 1000)
+
+// Check if current bar is within NY session
+currentTimeOfDay = (hour * 60 + minute) * 60 * 1000
+isNewYorkSession = currentTimeOfDay >= nySessionStartTime and currentTimeOfDay <= nySessionEndTime
+
+// ==========================================
+// Variables to track session and candles
+// ==========================================
+// Track the first candle of the session
+var float firstCandleHigh = na
+var float firstCandleLow = na
+var float firstCandleOpen = na
+var float firstCandleClose = na
+var int firstCandleBarIndex = na
+var bool isFirstCandleOfSession = false
+var bool sessionStarted = false
+var bool newSessionDay = false
+
+// Check if we have a new trading day
+newDay = dayofweek != dayofweek[1]
+
+// Reset session tracking on a new day
+if newDay
+    sessionStarted := false
+    newSessionDay := true
+
+// Detect session start
+isSessionStart = isNewYorkSession and not isNewYorkSession[1]
+
+// Alert variables to prevent duplicates
+var bool sessionStartAlertSent = false
+var bool firstCandleAlertSent = false
+var bool highBreakAlertSent = false
+var bool lowBreakAlertSent = false
+var int lastBreakAlertBar = 0
+var int lastRetestAlertBar = 0
+
+// Reset tracking at the start of each session
+if isSessionStart or (isNewYorkSession and not sessionStarted and newSessionDay)
+    // Send session start alert
+    if enableSessionAlerts and not sessionStartAlertSent
+        alert(symbol + ": New York Session Started", alert.freq_once_per_bar)
+        sessionStartAlertSent := true
+
+    firstCandleHigh := high
+    firstCandleLow := low
+    firstCandleOpen := open
+    firstCandleClose := close
+    firstCandleBarIndex := bar_index
+    isFirstCandleOfSession := true
+    sessionStarted := true
+    newSessionDay := false
+
+    // Reset alert flags for the new session
+    firstCandleAlertSent := false
+    highBreakAlertSent := false
+    lowBreakAlertSent := false
+    lastBreakAlertBar := 0
+    lastRetestAlertBar := 0
+else
+    isFirstCandleOfSession := false
+
+// Reset session alert flag at the end of the session
+if not isNewYorkSession and isNewYorkSession[1]
+    sessionStartAlertSent := false
+    if enableSessionAlerts
+        alert(symbol + ": New York Session Ended", alert.freq_once_per_bar)
+
+// First candle completion alert
+if isFirstCandleOfSession and barstate.isconfirmed and enableFirstCandleAlerts and not firstCandleAlertSent
+    alert(symbol + ": First NY Candle Completed - High: " + str.tostring(firstCandleHigh, "#.##") +
+           " Low: " + str.tostring(firstCandleLow, "#.##"), alert.freq_once_per_bar)
+    firstCandleAlertSent := true
+
+// ==========================================
+// Indicator Calculations
+// ==========================================
+// ATR for dynamic thresholds
+atrValue = ta.atr(atrPeriod)
+
+// EMA for trend direction
+ema = useEmaFilter ? ta.ema(close, emaLength) : na
+
+// VWAP for additional price reference
+vwap = useVwap ? ta.vwap(close) : na
+
+// Volume analysis
+avgVolume = ta.sma(volume, 10)
+volumeConfirmation = not useVolumeConfirmation or volume > avgVolume * volumeThreshold
+
+// ==========================================
+// Break and Retest Detection
+// ==========================================
+// Variables to track breaks
+var bool highBroken = false
+var bool lowBroken = false
+var int highBreakBarIndex = na
+var int lowBreakBarIndex = na
+
+// Reset break detection at the start of each session
+if isSessionStart or (isNewYorkSession and not sessionStarted[1] and newSessionDay)
+    highBroken := false
+    lowBroken := false
+    highBreakBarIndex := na
+    lowBreakBarIndex := na
+
+// Detect breaks of first candle high/low with minimum break size
+minimumBreakSize = atrValue * minBreakSize
+
+// Only detect breaks during the session after the first candle
+if isNewYorkSession and not isFirstCandleOfSession and not na(firstCandleHigh) and not highBroken and high > (firstCandleHigh + minimumBreakSize)
+    highBroken := true
+    highBreakBarIndex := bar_index
+
+    // Send breakout alert
+    if enableBreakoutAlerts and not highBreakAlertSent and (bar_index - lastBreakAlertBar) > 3
+        alert(symbol + ": HIGH BREAK - Price broke above first candle high at " + str.tostring(high, "#.##"),
+              alert.freq_once_per_bar)
+        highBreakAlertSent := true
+        lastBreakAlertBar := bar_index
+
+if isNewYorkSession and not isFirstCandleOfSession and not na(firstCandleLow) and not lowBroken and low < (firstCandleLow - minimumBreakSize)
+    lowBroken := true
+    lowBreakBarIndex := bar_index
+
+    // Send breakout alert
+    if enableBreakoutAlerts and not lowBreakAlertSent and (bar_index - lastBreakAlertBar) > 3
+        alert(symbol + ": LOW BREAK - Price broke below first candle low at " + str.tostring(low, "#.##"),
+              alert.freq_once_per_bar)
+        lowBreakAlertSent := true
+        lastBreakAlertBar := bar_index
+
+// Define retest zones
+highRetestUpperBound = firstCandleHigh + (atrValue * retestThreshold)
+highRetestLowerBound = firstCandleHigh - (atrValue * retestThreshold)
+lowRetestUpperBound = firstCandleLow + (atrValue * retestThreshold)
+lowRetestLowerBound = firstCandleLow - (atrValue * retestThreshold)
+
+// Check if current bar is in retest zone with timing constraints
+highRetestZone = highBroken and (bar_index - highBreakBarIndex) >= minCandlesAfterBreak and (bar_index - highBreakBarIndex) <= maxCandlesAfterBreak and low <= highRetestUpperBound and low >= highRetestLowerBound
+
+lowRetestZone = lowBroken and (bar_index - lowBreakBarIndex) >= minCandlesAfterBreak and (bar_index - lowBreakBarIndex) <= maxCandlesAfterBreak and high >= lowRetestLowerBound and high <= lowRetestUpperBound
+
+// Retest alerts
+if highRetestZone and enableRetestAlerts and (bar_index - lastRetestAlertBar) > 3
+    alert(symbol + ": HIGH RETEST - Price retesting first candle high at " + str.tostring(close, "#.##"),
+          alert.freq_once_per_bar)
+    lastRetestAlertBar := bar_index
+
+if lowRetestZone and enableRetestAlerts and (bar_index - lastRetestAlertBar) > 3
+    alert(symbol + ": LOW RETEST - Price retesting first candle low at " + str.tostring(close, "#.##"),
+          alert.freq_once_per_bar)
+    lastRetestAlertBar := bar_index
+
+// ==========================================
+// Entry Conditions
+// ==========================================
+// Trend filters
+bullishFilter = not useEmaFilter or close > ema
+bearishFilter = not useEmaFilter or close < ema
+vwapBullishFilter = not useVwap or close > vwap
+vwapBearishFilter = not useVwap or close < vwap
+
+// Long entry condition: Retest of broken high with confirmation
+longCondition = isNewYorkSession and highRetestZone and close > firstCandleHigh and bullishFilter and vwapBullishFilter and volumeConfirmation
+
+// Short entry condition: Retest of broken low with confirmation
+shortCondition = isNewYorkSession and lowRetestZone and close < firstCandleLow and bearishFilter and vwapBearishFilter and volumeConfirmation
+
+// ==========================================
+// Stop Loss and Take Profit Calculations
+// ==========================================
+// For longs: SL below the retest wick with ATR buffer
+longSL = low - (atrValue * atrMultiplier)
+
+// For shorts: SL above the retest wick with ATR buffer
+shortSL = high + (atrValue * atrMultiplier)
+
+// Calculate take profit levels based on risk:reward and partial targets
+longRisk = close - longSL
+shortRisk = shortSL - close
+
+longTP1 = close + (longRisk * rewardRiskRatio * tp1Percentage)
+longTP2 = close + (longRisk * rewardRiskRatio * tp2Percentage)
+longTP3 = close + (longRisk * rewardRiskRatio * tp3Percentage)
+
+shortTP1 = close - (shortRisk * rewardRiskRatio * tp1Percentage)
+shortTP2 = close - (shortRisk * rewardRiskRatio * tp2Percentage)
+shortTP3 = close - (shortRisk * rewardRiskRatio * tp3Percentage)
+
+// ==========================================
+// Strategy Execution
+// ==========================================
+// Track entry prices for trailing stop calculation
+var float longEntryPrice = na
+var float shortEntryPrice = na
+
+// Alert variables for trade management
+var bool longEntryAlertSent = false
+var bool shortEntryAlertSent = false
+var bool trailingStopAlertSent = false
+
+// Strategy entries
+if (longCondition and strategy.position_size <= 0)
+    strategy.entry("Long", strategy.long)
+    longEntryPrice := close
+
+    // Entry alert
+    if enableEntryAlerts and not longEntryAlertSent
+        alert(symbol + ": BUY SIGNAL - Price: " + str.tostring(close, "#.##") +
+              " | SL: " + str.tostring(longSL, "#.##") +
+              " | TP1: " + str.tostring(longTP1, "#.##") +
+              " | TP2: " + str.tostring(longTP2, "#.##") +
+              " | TP3: " + str.tostring(longTP3, "#.##"),
+              alert.freq_once_per_bar)
+        longEntryAlertSent := true
+        shortEntryAlertSent := false  // Reset short alert flag
+
+if (shortCondition and strategy.position_size >= 0)
+    strategy.entry("Short", strategy.short)
+    shortEntryPrice := close
+
+    // Entry alert
+    if enableEntryAlerts and not shortEntryAlertSent
+        alert(symbol + ": SELL SIGNAL - Price: " + str.tostring(close, "#.##") +
+              " | SL: " + str.tostring(shortSL, "#.##") +
+              " | TP1: " + str.tostring(shortTP1, "#.##") +
+              " | TP2: " + str.tostring(shortTP2, "#.##") +
+              " | TP3: " + str.tostring(shortTP3, "#.##"),
+              alert.freq_once_per_bar)
+        shortEntryAlertSent := true
+        longEntryAlertSent := false  // Reset long alert flag
+
+// Handle multiple take profits if enabled
+if useMultipleTP
+    // For long position with partial take profits
+    if strategy.position_size > 0
+        strategy.exit("Long TP1", "Long", qty_percent=tp1Percentage*100, limit=longTP1, stop=longSL)
+        strategy.exit("Long TP2", "Long", qty_percent=tp2Percentage*100, limit=longTP2, stop=longSL)
+        strategy.exit("Long TP3", "Long", qty_percent=100, limit=longTP3, stop=longSL)
+
+    // For short position with partial take profits
+    if strategy.position_size < 0
+        strategy.exit("Short TP1", "Short", qty_percent=tp1Percentage*100, limit=shortTP1, stop=shortSL)
+        strategy.exit("Short TP2", "Short", qty_percent=tp2Percentage*100, limit=shortTP2, stop=shortSL)
+        strategy.exit("Short TP3", "Short", qty_percent=100, limit=shortTP3, stop=shortSL)
+else
+    // Simple single target
+    strategy.exit("Long TP/SL", "Long", limit=longTP3, stop=longSL)
+    strategy.exit("Short TP/SL", "Short", limit=shortTP3, stop=shortSL)
+
+// ==========================================
+// Tracking position changes for exit alerts
+// ==========================================
+var float prevPositionSize = 0.0
+positionClosed = strategy.position_size == 0 and prevPositionSize != 0
+
+// Detect specific exit types
+sl_hit = positionClosed and ((prevPositionSize > 0 and close <= longSL) or (prevPositionSize < 0 and close >= shortSL))
+tp_hit = positionClosed and ((prevPositionSize > 0 and close >= longTP1) or (prevPositionSize < 0 and close <= shortTP1))
+session_exit = positionClosed and (isNewYorkSession == false and isNewYorkSession[1] == true)
+
+// Generate exit alerts
+if positionClosed and enableExitAlerts
+    exitType = sl_hit ? "Stop Loss" : tp_hit ? "Take Profit" : session_exit ? "Session End" : "Manual/Other"
+    direction = prevPositionSize > 0 ? "LONG" : "SHORT"
+
+    alert(symbol + ": EXIT " + direction + " POSITION - Type: " + exitType +
+          " | Entry: " + str.tostring(prevPositionSize > 0 ? longEntryPrice : shortEntryPrice, "#.##") +
+          " | Exit: " + str.tostring(close, "#.##"),
+          alert.freq_once_per_bar)
+
+// Update previous position size for next bar
+prevPositionSize := strategy.position_size
+
+// ==========================================
+// Trailing Stop Implementation
+// ==========================================
+// Variables to track trailing stop
+var bool trailingStopActive = false
+var float trailStopPrice = na
+
+if (useTrailingStop)
+    // For long positions
+    if (strategy.position_size > 0 and not na(longEntryPrice))
+        // Calculate profit target for trailing stop activation
+        longProfitTarget = (longTP3 - longEntryPrice) * trailingActivation
+
+        // Check if price has moved enough to activate trailing stop
+        if (close - longEntryPrice >= longProfitTarget)
+            // Calculate new trailing stop level
+            newTrailStopPrice = close - (atrValue * trailingAmount)
+
+            // Only update if the new stop is higher than previous and above the initial stop
+            if (not trailingStopActive or newTrailStopPrice > trailStopPrice) and newTrailStopPrice > longSL
+                trailingStopActive := true
+                trailStopPrice := newTrailStopPrice
+
+                // Send trailing stop activation alert
+                if enableTrailingStopAlerts and not trailingStopAlertSent
+                    alert(symbol + ": TRAILING STOP ACTIVATED for LONG - New stop: " + str.tostring(trailStopPrice, "#.##"),
+                          alert.freq_once_per_bar)
+                    trailingStopAlertSent := true
+
+                strategy.exit("Long Trail", "Long", stop=trailStopPrice)
+
+    // For short positions
+    if (strategy.position_size < 0 and not na(shortEntryPrice))
+        // Calculate profit target for trailing stop activation
+        shortProfitTarget = (shortEntryPrice - shortTP3) * trailingActivation
+
+        // Check if price has moved enough to activate trailing stop
+        if (shortEntryPrice - close >= shortProfitTarget)
+            // Calculate new trailing stop level
+            newTrailStopPrice = close + (atrValue * trailingAmount)
+
+            // Only update if the new stop is lower than previous and below the initial stop
+            if (not trailingStopActive or newTrailStopPrice < trailStopPrice) and newTrailStopPrice < shortSL
+                trailingStopActive := true
+                trailStopPrice := newTrailStopPrice
+
+                // Send trailing stop activation alert
+                if enableTrailingStopAlerts and not trailingStopAlertSent
+                    alert(symbol + ": TRAILING STOP ACTIVATED for SHORT - New stop: " + str.tostring(trailStopPrice, "#.##"),
+                          alert.freq_once_per_bar)
+                    trailingStopAlertSent := true
+
+                strategy.exit("Short Trail", "Short", stop=trailStopPrice)
+
+// Reset trailing stop and other variables on position close
+if (strategy.position_size == 0)
+    trailingStopActive := false
+    trailStopPrice := na
+    longEntryPrice := na
+    shortEntryPrice := na
+    trailingStopAlertSent := false
+
+// ==========================================
+// End of Session Exit
+// ==========================================
+// Check if session is ending
+isSessionEnd = not isNewYorkSession and isNewYorkSession[1]
+
+// Close all positions at the end of the session
+if (isSessionEnd and strategy.position_size != 0)
+    strategy.close_all()
+
+    // Send session end exit alert
+    if enableExitAlerts
+        direction = strategy.position_size > 0 ? "LONG" : "SHORT"
+        alert(symbol + ": SESSION END EXIT - Closing " + direction + " position at " + str.tostring(close, "#.##"),
+              alert.freq_once_per_bar)
+
+// ==========================================
+// Visualization
+// ==========================================
+// Plot the first candle high and low levels
+plot(isNewYorkSession and not na(firstCandleHigh) ? firstCandleHigh : na, "First Candle High", color.green, 2)
+plot(isNewYorkSession and not na(firstCandleLow) ? firstCandleLow : na, "First Candle Low", color.red, 2)
+
+// Highlight the first candle
+bgcolor(isFirstCandleOfSession ? color.new(color.blue, 90) : na)
+
+// Highlight retest zones
+bgcolor(highRetestZone ? color.new(color.green, 90) : na)
+bgcolor(lowRetestZone ? color.new(color.red, 90) : na)
+
+// Mark entry signals
+plotshape(longCondition, "Buy Signal", shape.triangleup, location.belowbar, color.green, size=size.small)
+plotshape(shortCondition, "Sell Signal", shape.triangledown, location.abovebar, color.red, size=size.small)
+
+// Show entry arrows with SL and TP info
+if longCondition
+    label.new(bar_index, low, text="BUY " + symbol +
+              "\nSL: " + str.tostring(longSL, "#.##") +
+              "\nTP: " + str.tostring(longTP3, "#.##"),
+              style=label.style_label_up, color=color.green,
+              textcolor=color.white, size=size.small)
+
+if shortCondition
+    label.new(bar_index, high, text="SELL " + symbol +
+              "\nSL: " + str.tostring(shortSL, "#.##") +
+              "\nTP: " + str.tostring(shortTP3, "#.##"),
+              style=label.style_label_down, color=color.red,
+              textcolor=color.white, size=size.small)
+
+// ==========================================
+// Alert Conditions for Mobile Alerts Setup
+// ==========================================
+// Session alerts
+alertcondition(isSessionStart or (isNewYorkSession and not sessionStarted and newSessionDay),
+               "NY Session Start",
+               "{{ticker}}: New York Session Started")
+
+alertcondition(not isNewYorkSession and isNewYorkSession[1],
+               "NY Session End",
+               "{{ticker}}: New York Session Ended")
+
+// First candle alerts
+alertcondition(isFirstCandleOfSession and barstate.isconfirmed,
+               "First NY Candle Complete",
+               "{{ticker}}: First NY Candle Completed")
+
+// Breakout alerts
+alertcondition(isNewYorkSession and not isFirstCandleOfSession and not na(firstCandleHigh) and
+               not highBroken[1] and highBroken,
+               "High Breakout",
+               "{{ticker}}: BREAKOUT ABOVE First Candle High")
+
+alertcondition(isNewYorkSession and not isFirstCandleOfSession and not na(firstCandleLow) and
+               not lowBroken[1] and lowBroken,
+               "Low Breakout",
+               "{{ticker}}: BREAKOUT BELOW First Candle Low")
+
+// Retest alerts
+alertcondition(highRetestZone and not highRetestZone[1],
+               "High Retest",
+               "{{ticker}}: RETESTING First Candle High")
+
+alertcondition(lowRetestZone and not lowRetestZone[1],
+               "Low Retest",
+               "{{ticker}}: RETESTING First Candle Low")
+
+// Entry alerts
+alertcondition(longCondition,
+               "Buy Signal",
+               "{{ticker}}: BUY SIGNAL - Check for entry details")
+
+alertcondition(shortCondition,
+               "Sell Signal",
+               "{{ticker}}: SELL SIGNAL - Check for entry details")
+
+// Exit alerts
+alertcondition(positionClosed and sl_hit,
+               "Stop Loss Hit",
+               "{{ticker}}: STOP LOSS HIT")
+
+alertcondition(positionClosed and tp_hit,
+               "Take Profit Hit",
+               "{{ticker}}: TAKE PROFIT HIT")
+
+alertcondition(positionClosed and session_exit,
+               "Session End Exit",
+               "{{ticker}}: SESSION END EXIT")
+
+// Trailing stop alerts
+alertcondition(not trailingStopActive[1] and trailingStopActive,
+               "Trailing Stop Activated",
+               "{{ticker}}: TRAILING STOP ACTIVATED")

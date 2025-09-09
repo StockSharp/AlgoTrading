@@ -1,0 +1,485 @@
+//@version=6
+strategy('Prop Firm Business Simulator', overlay = false, default_qty_type = strategy.percent_of_equity, default_qty_value = 25, calc_on_every_tick = true, commission_type = strategy.commission.percent, commission_value = 0.05, margin_long=5, margin_short=5)
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//--------------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--Strategy--[REPLACE WITH YOUR OWN]--$$$$$$--// ******************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//--------------------------------------------------------------------------------------------------------------------------$$$$$$
+length          = input.int(20, minval=1, group="Keltner Channel Breakout")
+mult            = input(2.0, "Multiplier", group="Keltner Channel Breakout")
+src             = input(close, title="Source", group="Keltner Channel Breakout")
+exp             = input(true, "Use Exponential MA", display = display.data_window, group="Keltner Channel Breakout")
+BandsStyle      = input.string("Average True Range", options = ["Average True Range", "True Range", "Range"], title="Bands Style", display = display.data_window, group="Keltner Channel Breakout")
+atrlength       = input(10, "ATR Length", display = display.data_window, group="Keltner Channel Breakout")
+esma(source, length)=>
+    s = ta.sma(source, length)
+    e = ta.ema(source, length)
+    exp ? e : s
+ma              = esma(src, length)
+rangema         = BandsStyle == "True Range" ? ta.tr(true) : BandsStyle == "Average True Range" ? ta.atr(atrlength) : ta.rma(high - low, length)
+upper           = ma + rangema * mult
+lower           = ma - rangema * mult
+
+//--Graphical Display--// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-$$$$$$
+u = plot(upper, color=#2962FF, title="Upper", force_overlay=true)
+plot(ma, color=#2962FF, title="Basis", force_overlay=true)
+l = plot(lower, color=#2962FF, title="Lower", force_overlay=true)
+fill(u, l, color=color.rgb(33, 150, 243, 95), title="Background")
+
+//--Risk Management--// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-$$$$$$
+riskPerTradePerc = input.float(1, title="Risk per trade (%)", group="Keltner Channel Breakout")
+le = high>upper ? false : true
+se = low<lower ? false : true
+// Target risk per trade based on distance to other side of bands
+targetRisk          = math.abs(strategy.equity*(riskPerTradePerc/100))
+riskPerContract     = math.abs(close)
+riskWith1Contract   = riskPerContract*math.abs((upper-lower)/close)
+riskNeeded          = math.abs(targetRisk/riskWith1Contract)
+riskToLots          = math.round(riskNeeded*100)/100
+
+//--Strategy Execution--// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*$$$$$$
+if le and upper>lower
+    strategy.entry('PivRevLE', strategy.long, comment = 'PivRevLE', stop = upper, qty=riskToLots)
+if se and upper>lower
+    strategy.entry('PivRevSE', strategy.short, comment = 'PivRevSE', stop = lower, qty=riskToLots)
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//----------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--CONVERT--STRATEGY--TO--PROP--BUSINESS--$$$$$$--// **************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//----------------------------------------------------------------------------------------------------------------------$$$$$$
+strategyEquityInput = strategy.equity
+i_startTime         = input.time(defval = timestamp('01 Jan 2011 00:00'), inline = 'd_1', title = 'Start', group = 'Prop Calender Test Range')
+i_endTime           = input.time(defval = timestamp('01 Jan 2030 00:00'), inline = 'd_1', title = 'End', group = 'Prop Calender Test Range')
+i_inDateRange       = time >= i_startTime and time <= i_endTime
+
+//--CFD Firm Settings--// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-$$$$$$
+accountCost         = input.float(defval = 593.24, title = 'Account Price $', group = 'Prop Account Specs')
+propPreset          = input.string(defval="FTMO 100K", options=["custom","FTMO 10K","FTMO 25K","FTMO 50K","FTMO 100K","FTMO 200K","The5ers 5K", "The5ers 10K", "The5ers 20K", "The5ers 60K", "The5ers 100K"], group="Prop Account Specs")
+accountSize         = input.int(defval = 100000, title = 'Account Size', group = 'Prop Account Specs')
+maxDailyDrawdown    = input.int(defval = 5, title = 'Maximum Daily Drawdown (%)', group = 'Prop Account Specs')
+DDFromStartOfDay    = input.bool(defval = true, title = 'Daily Drawdown resets at start of day?')
+maxDrawdown         = input.int(defval = 10, title = 'Maximum Drawdown (%)', group = 'Prop Account Specs')
+phase1Target        = input.int(defval = 10, title = 'Phase 1 Target (%)', group = 'Prop Account Specs', inline = 'p1f1')
+phase1Gain          = input.float(defval = 0, title = 'Gain', group = 'Prop Account Specs', inline = 'p1f1')
+phase1Color         = input.color(defval=#E65E22, title="", group="Prop Account Specs", inline="p1f1")
+phase2Target        = input.int(defval = 5, title = 'Phase 2 Target (%)', group = 'Prop Account Specs', inline = 'p1f2')
+phase2Gain          = input.float(defval = 0, title = 'Gain', group = 'Prop Account Specs', inline = 'p1f2')
+phase2Color         = input.color(defval=#E68022, title="", group="Prop Account Specs", inline="p1f2")
+phase3Target        = input.int(defval = 5, title = 'Phase 3 Target (%)', group = 'Prop Account Specs', inline = 'p1f3')
+phase3Gain          = input.float(defval = 4593.24, title = 'Gain', group = 'Prop Account Specs', inline = 'p1f3')
+phase3Color         = input.color(defval=#E69E22, title="", group="Prop Account Specs", inline="p1f3")
+phase4Target        = input.int(defval = 10, title = 'Phase 4 Target (%)', group = 'Prop Account Specs', inline = 'p1f4')
+phase4Gain          = input.float(defval = 8000, title = 'Gain', group = 'Prop Account Specs', inline = 'p1f4')
+phase4Color         = input.color(defval=#E6B622, title="", group="Prop Account Specs", inline="p1f4")
+phase5Gain          = input.float(defval = 11250, title = 'Phase 5 Gain', group = 'Prop Account Specs', inline='p1f5')
+phase5Color         = input.color(defval=#213DDD, title="", group="Prop Account Specs", inline="p1f5")
+phase6Gain          = input.float(defval = 13500, title = 'Phase 6 Gain', group = 'Prop Account Specs', inline='p1f6')
+phase6Color         = input.color(defval=#2240E6, title="", group="Prop Account Specs", inline="p1f6")
+phase7Gain          = input.float(defval = 15750, title = 'Phase 7 Gain', group = 'Prop Account Specs', inline='p1f7')
+phase7Color         = input.color(defval=#227EE6, title="", group="Prop Account Specs", inline="p1f7")
+phase8Gain          = input.float(defval = 18000, title = 'Phase 8 Gain', group = 'Prop Account Specs', inline='p1f8')
+phase8Color         = input.color(defval=#22BBE6, title="", group="Prop Account Specs", inline="p1f8")
+phase9Gain          = input.float(defval = 20250, title = 'Phase 9 Gain', group = 'Prop Account Specs', inline='p1f9')
+phase9Color         = input.color(defval=#338500, title="", group="Prop Account Specs", inline="p1f9")
+phase10Gain         = input.float(defval = 22500, title = 'Phase 10 Gain', group = 'Prop Account Specs', inline='p1f10')
+phase10Color        = input.color(defval=#48a80d, title="", group="Prop Account Specs", inline="p1f10")
+phase11Gain         = input.float(defval = 24750, title = 'Phase 11 Gain', group = 'Prop Account Specs', inline='p1f11')
+phase11Color        = input.color(defval=color.rgb(109, 230, 34), title="", group="Prop Account Specs", inline="p1f11")
+phase12Gain         = input.float(defval = 27000, title = 'Phase 12 Gain', group = 'Prop Account Specs', inline='p1f12')
+phase12Color        = input.color(defval=#99ff5a, title="", group="Prop Account Specs", inline="p1f12")
+phase13Gain         = input.float(defval = 29250, title = 'Phase 13 Gain', group = 'Prop Account Specs', inline='p1f13')
+phase13Color        = input.color(defval=#7d0643, title="", group="Prop Account Specs", inline="p1f13")
+phase14Gain         = input.float(defval = 31500, title = 'Phase 14 Gain', group = 'Prop Account Specs', inline='p1f14')
+phase14Color        = input.color(defval=color.rgb(175, 21, 100), title="", group="Prop Account Specs", inline="p1f14")
+phase15Gain         = input.float(defval = 33750, title = 'Phase 15 Gain', group = 'Prop Account Specs', inline='p1f15')
+phase15Color        = input.color(defval=color.rgb(230, 54, 145), title="", group="Prop Account Specs", inline="p1f15")
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//--------------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--PRESET--LIBRARY--$$$$$$--// ************************************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//--------------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+if propPreset == "FTMO 10K"
+    accountCost := 145
+    accountSize := 10000
+    maxDrawdown := 10
+    phase1Target := 10
+    phase1Gain := 0
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 400 + accountCost
+    phase4Target := 10
+    phase4Gain := 800
+    phase5Gain := 1125
+    phase6Gain := 1350
+    phase7Gain := 1575
+    phase8Gain := 1800
+    phase9Gain := 2025
+    phase10Gain := 2250
+    phase11Gain := 2475
+    phase12Gain := 2700
+    phase13Gain := 2925
+    phase14Gain := 3150
+    phase15Gain := 3375
+
+if propPreset == "FTMO 25K"
+    accountCost := 250
+    accountSize := 10000
+    maxDrawdown := 10
+    phase1Target := 10
+    phase1Gain := 0
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 1000 + accountCost
+    phase4Target := 10
+    phase4Gain := 2000
+    phase5Gain := 2812.25
+    phase6Gain := 3375
+    phase7Gain := 3937.75
+    phase8Gain := 4500.5
+    phase9Gain := 5063.25
+    phase10Gain := 5626
+    phase11Gain := 6188.75
+    phase12Gain := 6751.5
+    phase13Gain := 7314.25
+    phase14Gain := 7877
+    phase15Gain := 8439.75
+
+if propPreset == "FTMO 50K"
+    accountCost := 345
+    accountSize := 50000
+    maxDrawdown := 10
+    phase1Target := 10
+    phase1Gain := 0
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 2000 + accountCost
+    phase4Target := 10
+    phase4Gain := 4000
+    phase5Gain := 5625
+    phase6Gain := 6750
+    phase7Gain := 7875
+    phase8Gain := 9000
+    phase9Gain := 10125
+    phase10Gain := 11250
+    phase11Gain := 12375
+    phase12Gain := 13500
+    phase13Gain := 14625
+    phase14Gain := 15750
+    phase15Gain := 16875
+
+if propPreset == "FTMO 100K"
+    accountCost := 590.99
+    accountSize := 100000
+    maxDrawdown := 10
+    phase1Target := 10
+    phase1Gain := 0
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 4000 + accountCost
+    phase4Target := 10
+    phase4Gain := 8000
+    phase5Gain := 11250
+    phase6Gain := 13500
+    phase7Gain := 15750
+    phase8Gain := 18000
+    phase9Gain := 20250
+    phase10Gain := 22500
+    phase11Gain := 24750
+    phase12Gain := 27000
+    phase13Gain := 29250
+    phase14Gain := 31500
+    phase15Gain := 33750
+
+if propPreset == "FTMO 200K"
+    accountCost := 1080
+    accountSize := 200000
+    maxDrawdown := 10
+    phase1Target := 10
+    phase1Gain := 0
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 8000 + accountCost
+    phase4Target := 10
+    phase4Gain := 16000
+    phase5Gain := 22500
+    phase6Gain := 27000
+    phase7Gain := 31500
+    phase8Gain := 36000
+    phase9Gain := 40500
+    phase10Gain := 45000
+    phase11Gain := 49500
+    phase12Gain := 54000
+    phase13Gain := 58500
+    phase14Gain := 63000
+    phase15Gain := 67500
+
+
+if propPreset == "The5ers 5K"
+    accountCost := 39
+    accountSize := 5000
+    maxDrawdown := 10
+    phase1Target := 8
+    phase1Gain := 5
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 200 + accountCost
+    phase4Target := 10
+    phase4Gain := 400
+    phase5Gain := 600
+    phase6Gain := 800
+    phase7Gain := 1000
+    phase8Gain := 1600
+    phase9Gain := 2400
+    phase10Gain := 3200
+    phase11Gain := 4000
+    phase12Gain := 4800
+    phase13Gain := 5600
+    phase14Gain := 6400
+    phase15Gain := 8000
+
+if propPreset == "The5ers 10K"
+    accountCost := 78
+    accountSize := 10000
+    maxDrawdown := 10
+    phase1Target := 8
+    phase1Gain := 10
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 400 + accountCost
+    phase4Target := 10
+    phase4Gain := 800
+    phase5Gain := 1000
+    phase6Gain := 1600
+    phase7Gain := 2400
+    phase8Gain := 3200
+    phase9Gain := 4000
+    phase10Gain := 4800
+    phase11Gain := 5600
+    phase12Gain := 6400
+    phase13Gain := 8000
+    phase14Gain := 10000
+    phase15Gain := 12000
+
+if propPreset == "The5ers 20K"
+    accountCost := 165
+    accountSize := 20000
+    maxDrawdown := 10
+    phase1Target := 8
+    phase1Gain := 15
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 800 + accountCost
+    phase4Target := 10
+    phase4Gain := 1600
+    phase5Gain := 2400
+    phase6Gain := 3200
+    phase7Gain := 4000
+    phase8Gain := 4800
+    phase9Gain := 5600
+    phase10Gain := 6400
+    phase11Gain := 8000
+    phase12Gain := 10000
+    phase13Gain := 12000
+    phase14Gain := 14875
+    phase15Gain := 17000
+
+if propPreset == "The5ers 60K"
+    accountCost := 329
+    accountSize := 60000
+    maxDrawdown := 10
+    phase1Target := 8
+    phase1Gain := 25
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 2400 + accountCost
+    phase4Target := 10
+    phase4Gain := 4800
+    phase5Gain := 5600
+    phase6Gain := 6400
+    phase7Gain := 8000
+    phase8Gain := 10000
+    phase9Gain := 12000
+    phase10Gain := 14875
+    phase11Gain := 17000
+    phase12Gain := 22500
+    phase13Gain := 27000
+    phase14Gain := 35000
+    phase15Gain := 40000
+
+if propPreset == "The5ers 100K"
+    accountCost := 545
+    accountSize := 100000
+    maxDrawdown := 10
+    phase1Target := 8
+    phase1Gain := 40
+    phase2Target := 5
+    phase2Gain := 0
+    phase3Target := 5
+    phase3Gain := 4000 + accountCost
+    phase4Target := 10
+    phase4Gain := 8000
+    phase5Gain := 10000
+    phase6Gain := 12000
+    phase7Gain := 14875
+    phase8Gain := 17000
+    phase9Gain := 22500
+    phase10Gain := 27000
+    phase11Gain := 35000
+    phase12Gain := 40000
+    phase13Gain := 45000
+    phase14Gain := 50000
+    phase15Gain := 50000
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//-----------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--SETTING--STANDARDS--$$$$$$--// *********************************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//-----------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+var float propEquityPerc = 0
+var float strategyEqyuityPerc = 0
+var float dailyEquityPerc = 0
+var float investmentEquity = 0
+var int propPhase = 1
+var float phaseTarget = 0
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//------------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--FUNCTION--LIBRARY--$$$$$$--// **********************************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//------------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+get_Target(int phase, target1, target2, target3, target4) =>
+    target = 0
+    if phase == 1
+        target := target1
+        target
+    if phase == 2
+        target := target2
+        target
+    if phase == 3
+        target := target3
+        target
+    if phase >= 4
+        target := target4
+        target
+    target
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//-------------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--MANAGE--ACCOUNTS--$$$$$$--// ***********************************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//-------------------------------------------------------------------------------------------------------------------------------------------$$$$$$
+newday = ta.change(dayofweek) != 0
+float todaysGain = 0
+equityChangePerc = (strategyEquityInput - strategyEquityInput[1]) / strategyEquityInput[1] * 100
+if i_inDateRange
+    if newday
+        dailyEquityPerc := 0
+    phaseTarget := get_Target(propPhase, phase1Target, phase2Target, phase3Target, phase4Target)
+    propEquityPerc += ((not na(equityChangePerc)) ? equityChangePerc : 0)
+    strategyEqyuityPerc += ((not na(equityChangePerc)) ? equityChangePerc : 0)
+    dailyEquityPerc += ((not na(equityChangePerc)) ? equityChangePerc : 0)
+    if dailyEquityPerc <= -maxDailyDrawdown
+        investmentEquity += -accountCost
+        todaysGain := -accountCost
+        propPhase := 1
+        propPhase
+        propEquityPerc := 0
+    if propEquityPerc >= phaseTarget or propEquityPerc <= -maxDrawdown
+        if propEquityPerc >= phaseTarget
+            investmentEquity += (propPhase == 1 ? phase1Gain : propPhase == 2 ? phase2Gain : propPhase == 3 ? phase3Gain : propPhase == 4 ? phase4Gain : propPhase == 5 ? phase5Gain : propPhase == 6 ? phase6Gain : propPhase == 7 ? phase7Gain : propPhase == 8 ? phase8Gain : propPhase == 9 ? phase9Gain : propPhase == 10 ? phase10Gain : propPhase == 11 ? phase11Gain : propPhase == 12 ? phase12Gain : propPhase == 13 ? phase13Gain : propPhase == 14 ? phase14Gain : propPhase >= 15 ? phase15Gain : 0)
+            todaysGain := (propPhase == 1 ? phase1Gain : propPhase == 2 ? phase2Gain : propPhase == 3 ? phase3Gain : propPhase == 4 ? phase4Gain : propPhase == 5 ? phase5Gain : propPhase == 6 ? phase6Gain : propPhase == 7 ? phase7Gain : propPhase == 8 ? phase8Gain : propPhase == 9 ? phase9Gain : propPhase >= 10 ? phase10Gain : propPhase == 11 ? phase11Gain : propPhase == 12 ? phase12Gain : propPhase == 13 ? phase13Gain : propPhase == 14 ? phase14Gain : propPhase >= 15 ? phase15Gain : 0)
+            propPhase += 1
+            propPhase
+        if propEquityPerc <= -maxDrawdown
+            investmentEquity += -accountCost
+            todaysGain := -accountCost
+            propPhase := 1
+            propPhase
+        propEquityPerc := 0
+
+//--Draw Current Account Performance--// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*$$$$$$
+phaseColor = propPhase==1 ? phase1Color : propPhase==2 ? phase2Color : propPhase==3 ? phase3Color : propPhase==4 ? phase4Color : propPhase==5 ? phase5Color : propPhase==6 ? phase6Color : propPhase==7 ? phase7Color : propPhase==8 ? phase8Color : propPhase==9 ? phase9Color : propPhase==10 ? phase10Color : propPhase==11 ? phase11Color : propPhase==12 ? phase12Color : propPhase==13 ? phase13Color : propPhase==14 ? phase14Color : propPhase>=15 ? phase15Color : na
+plot(0, color = color.white)
+plot(-maxDrawdown, color = color.red, title = 'Max Drawdown', linewidth=1, style=plot.style_circles)
+plot(phaseTarget, color = color.green, title = 'Phase Target', linewidth=1, style=plot.style_circles)
+plot(propEquityPerc, color = phaseColor, title = 'New Prop Equity Perc', linewidth=2)
+
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//-------------------------------------------------------------------------------------------------------------------------------$$$$$$
+//--$$$$$--MONTHLY--TABLE--[QUANTNOMAD]--$$$$$$--// ***********************************************************************************************************************************
+//--$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$--//-------------------------------------------------------------------------------------------------------------------------------$$$$$$
+new_month = month(time) != month(time[1])
+new_year = year(time) != year(time[1])
+eq = investmentEquity
+float bar_pnl = todaysGain
+var float cur_month_pnl = 0.0
+var float cur_year_pnl = 0.0
+
+// Current Monthly Payouts
+cur_month_pnl := new_month ? 0.0 : cur_month_pnl + bar_pnl
+
+// Current Yearly Payouts
+cur_year_pnl := new_year ? 0.0 : cur_year_pnl + bar_pnl
+
+// Arrays to store Yearly and Monthly Payouts
+var month_pnl = array.new_float(0)
+var month_time = array.new_int(0)
+var year_pnl = array.new_float(0)
+var year_time = array.new_int(0)
+
+// Manage Array Values
+last_computed = false
+if not na(cur_month_pnl[1]) and (new_month or barstate.islast) and i_inDateRange
+    if last_computed[1]
+        array.pop(month_pnl)
+        array.pop(month_time)
+
+    array.push(month_pnl, cur_month_pnl[1])
+    array.push(month_time, time[1])
+if not na(cur_year_pnl[1]) and (new_year or barstate.islast) and i_inDateRange
+    if last_computed[1]
+        array.pop(year_pnl)
+        array.pop(year_time)
+
+    array.push(year_pnl, cur_year_pnl[1])
+    array.push(year_time, time[1])
+last_computed := barstate.islast ? true : (bar_index>=1 ? last_computed[1] : false)
+
+//--Draw Final Table and Styling--// *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*$$$$$$
+var monthly_table = table(na)
+//Color List
+noGainCellColor = color.new(color.gray, transp = 0)
+gainCellColor = color.new(color.green, transp = 0)
+lossCellColor = color.new(color.red, transp = 0)
+borderColor = #cccccc
+textColor = #000000
+boldTextColor = #000000
+//Draw Final Table
+if barstate.islast
+    monthly_table := table.new(position.bottom_right, columns = 14, rows = array.size(year_pnl) + 2, border_width = 1, force_overlay=true)
+
+    table.cell(monthly_table, 0, 0, '', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 1, 0, 'Jan', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 2, 0, 'Feb', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 3, 0, 'Mar', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 4, 0, 'Apr', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 5, 0, 'May', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 6, 0, 'Jun', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 7, 0, 'Jul', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 8, 0, 'Aug', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 9, 0, 'Sep', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 10, 0, 'Oct', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 11, 0, 'Nov', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 12, 0, 'Dec', bgcolor = #cccccc, text_color=textColor)
+    table.cell(monthly_table, 13, 0, 'Year', bgcolor = #999999, text_color=textColor)
+
+    for yi = 0 to array.size(year_pnl) - 1 by 1
+        table.cell(monthly_table, 0, yi + 1, str.tostring(year(array.get(year_time, yi))), bgcolor = borderColor, text_color=textColor)
+
+        y_color = array.get(year_pnl, yi) > 0 ?gainCellColor : array.get(year_pnl, yi) == 0 ? noGainCellColor :  lossCellColor
+        table.cell(monthly_table, 13, yi + 1, "$" + str.tostring(math.round(array.get(year_pnl, yi))), bgcolor = y_color, text_color=boldTextColor, text_formatting=text.format_bold)
+    for mi = 0 to array.size(month_time) - 1 by 1
+        m_row = year(array.get(month_time, mi)) - year(array.get(year_time, 0)) + 1
+        m_col = month(array.get(month_time, mi))
+        m_color = array.get(month_pnl, mi) > 0 ? gainCellColor : array.get(month_pnl, mi) == 0 ? noGainCellColor : lossCellColor
+
+        table.cell(monthly_table, m_col, m_row, "$" + str.tostring(math.round(array.get(month_pnl, mi))), bgcolor = m_color, text_color=textColor)

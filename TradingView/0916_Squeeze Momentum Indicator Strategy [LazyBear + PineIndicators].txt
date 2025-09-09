@@ -1,0 +1,55 @@
+//@version=5
+//
+// @author LazyBear + PineIndicators
+// List of all my indicators: https://www.tradingview.com/v/4IneGo8h/
+
+strategy(shorttitle='SQZMOM_LB Strategy', title='Squeeze Momentum Indicator Strategy [LazyBear + PineIndicators]', overlay=false)
+
+length = input(20, title='BB Length')
+mult = input(2.0, title='BB MultFactor')
+lengthKC = input(20, title='KC Length')
+multKC = input(1.5, title='KC MultFactor')
+
+useTrueRange = input(true, title='Use TrueRange (KC)')
+
+// Calculate BB
+source = close
+basis = ta.sma(source, length)
+dev = multKC * ta.stdev(source, length)
+upperBB = basis + dev
+lowerBB = basis - dev
+
+// Calculate KC
+ma = ta.sma(source, lengthKC)
+range_1 = useTrueRange ? ta.tr : high - low
+rangema = ta.sma(range_1, lengthKC)
+upperKC = ma + rangema * multKC
+lowerKC = ma - rangema * multKC
+
+sqzOn = lowerBB > lowerKC and upperBB < upperKC
+sqzOff = lowerBB < lowerKC and upperBB > upperKC
+noSqz = sqzOn == false and sqzOff == false
+
+val = ta.linreg(source - math.avg(math.avg(ta.highest(high, lengthKC), ta.lowest(low, lengthKC)), ta.sma(close, lengthKC)), lengthKC, 0)
+
+iff_1 = val > nz(val[1]) ? color.lime : color.green
+iff_2 = val < nz(val[1]) ? color.red : color.maroon
+bcolor = val > 0 ? iff_1 : iff_2
+scolor = noSqz ? color.blue : sqzOn ? color.black : color.gray
+plot(val, color=bcolor, style=plot.style_histogram, linewidth=4)
+plot(0, color=scolor, style=plot.style_cross, linewidth=2)
+
+qty = strategy.equity * 8 / close
+
+if scolor == color.gray and scolor[1] == color.black and val > val[1] and val > ta.lowest(val, 100)[1] and close > close[1] and close > ta.ema(close, 100)
+    strategy.entry('L', strategy.long, qty=qty)
+
+if val < val[1]
+    strategy.close('L')
+
+
+if scolor == color.black and scolor[1] == color.gray and val < val[1] and val < ta.highest(val, 100)[1] and close < close[1] and close < ta.ema(close, 100)
+    strategy.entry('S', strategy.short, qty=qty)
+
+if val > val[1]
+    strategy.close('S')

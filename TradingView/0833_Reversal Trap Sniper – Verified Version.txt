@@ -1,0 +1,41 @@
+//@version=5
+strategy("Reversal Trap Sniper – Verified Version", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=25, commission_type=strategy.commission.percent, commission_value=0.05, slippage=1)
+
+// === INPUTS ===
+rsiLength     = input.int(14, title="RSI Length")
+rsiOverbought = input.int(70, title="Overbought Level")
+rsiOversold   = input.int(30, title="Oversold Level")
+riskReward    = input.float(2.0, title="Risk-Reward Ratio")
+maxBars       = input.int(30, title="Max Holding Bars")
+atrLen        = input.int(14, title="ATR Length")
+
+// === INDICATORS ===
+rsi = ta.rsi(close, rsiLength)
+atr = ta.atr(atrLen)
+
+// === SIMPLIFIED TRAP DETECTION ===
+// Trap: RSI önce 70 üzerindeydi, şimdi 70 altı ve aynı zamanda fiyat yükselmeye devam ediyor
+
+rsiTrapLong  = rsi[3] > rsiOverbought and rsi < rsiOverbought and close > close[1]
+rsiTrapShort = rsi[3] < rsiOversold and rsi > rsiOversold and close < close[1]
+
+// === ENTRY ===
+if (rsiTrapLong)
+    strategy.entry("Trap Long", strategy.long)
+
+if (rsiTrapShort)
+    strategy.entry("Trap Short", strategy.short)
+
+// === SL & TP ===
+longSL  = strategy.position_avg_price - atr
+longTP  = strategy.position_avg_price + atr * riskReward
+
+shortSL = strategy.position_avg_price + atr
+shortTP = strategy.position_avg_price - atr * riskReward
+
+strategy.exit("Long Exit", from_entry="Trap Long", stop=longSL, limit=longTP, when=bar_index - strategy.opentrades.entry_bar_index(0) >= maxBars)
+strategy.exit("Short Exit", from_entry="Trap Short", stop=shortSL, limit=shortTP, when=bar_index - strategy.opentrades.entry_bar_index(0) >= maxBars)
+
+// === VISUAL DEBUGGING ===
+plotshape(rsiTrapLong, title="Long Trap", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(rsiTrapShort, title="Short Trap", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)

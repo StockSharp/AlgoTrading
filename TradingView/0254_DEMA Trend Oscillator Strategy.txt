@@ -1,0 +1,55 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PakunFX
+
+//@version=6
+strategy("DEMA Trend Oscillator Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+src_dema = input.source(close, "Calculation src_dema (Dema)")
+len_dema = input.int(40, "Dema Period")
+base_len = input.int(20, 'Base length')
+Lu       = input.float(55, 'Long Threshold')
+Su       = input.float(45, 'Short Threshold')
+RR       = input.float(1.5, "Risk Reward Ratio", step=0.1)
+trailATRmult = input.float(2.0, "ATR Multiplier for Trailing Stop", step=0.1)
+
+// === FUNCTION ===
+F_DEMA(SRC, LEN) =>
+    E1 = ta.ema(SRC, LEN)
+    E2 = ta.ema(E1, LEN)
+    2 * E1 - E2
+
+// === DEMA & NORMALIZATION ===
+DEMA     = F_DEMA(src_dema, len_dema)
+BASE     = ta.sma(DEMA, base_len)
+SD       = ta.stdev(DEMA, base_len) * 2
+upperSD  = BASE + SD
+lowerSD  = BASE - SD
+NormBase = 100 * (DEMA - lowerSD)/(upperSD - lowerSD)
+
+// === ENTRY CONDITIONS ===
+long_cond  = NormBase > Lu and low > upperSD
+short_cond = NormBase < Su and high < lowerSD
+
+// === DELAYED ENTRY TRIGGERS ===
+long_trigger  = long_cond[1]
+short_trigger = short_cond[1]
+
+// === ATR-BASED TRAILING STOP ===
+atr = ta.atr(14)
+trail_offset = atr * trailATRmult
+trail_points = trail_offset / syminfo.mintick
+
+// === TRADE DIRECTION CONTROL ===
+var string lastDirection = "none"
+
+// === ENTRY LOGIC ===
+if long_trigger and lastDirection != "long"
+    strategy.entry("Long", strategy.long)
+    strategy.exit("TP/SL/Trail Long", from_entry="Long", stop=upperSD, limit=close + (close - upperSD) * RR, trail_points=trail_points, trail_offset=trail_points)
+    lastDirection := "long"
+
+if short_trigger and lastDirection != "short"
+    strategy.entry("Short", strategy.short)
+    strategy.exit("TP/SL/Trail Short", from_entry="Short", stop=lowerSD, limit=close - (lowerSD - close) * RR, trail_points=trail_points, trail_offset=trail_points)
+    lastDirection := "short"

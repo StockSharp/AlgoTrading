@@ -1,0 +1,44 @@
+//@version=4
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RedKTrader
+
+study("Comp_Ratio_MA", shorttitle = "CoRa Wave", overlay = true, resolution ="")
+
+// ======================================================================
+// Compound Ratio Weight MA function
+// Compound Ratio Weight is where the weight increases in a "logarithmicly linear" way (i.e., linear when plotted on a log chart) - similar to compound ratio
+// the "step ratio" between weights is consistent - that's not the case with linear-weight moving average (WMA), or EMA
+// another advantage is we can significantly reduce the "tail weight" - which is "relatively" large in other MAs and contributes to lag
+//
+// Compound Weight ratio     r = (A/P)^1/t - 1
+// Weight at time t         A = P(1 + r)^t
+//                            = Start_val * (1 + r) ^ index
+// Note: index is 0 at the furthest point back -- num periods = length -1
+//
+f_adj_crwma(source, length, Start_Wt, r_multi) =>
+    numerator = 0.0, denom = 0.0, c_weight = 0.0
+    //Start_Wt = 1.0    // Start Wight is an input in this version - can also be set to a basic value here.
+    End_Wt = length     // use length as initial End Weight to calculate base "r"
+    r = pow((End_Wt / Start_Wt),(1 / (length - 1))) - 1
+    base = 1 + r * r_multi
+    for i = 0 to length -1
+        c_weight    := Start_Wt * pow(base,(length - i))
+        numerator   := numerator + source[i] * c_weight
+        denom       := denom + c_weight
+    numerator / denom
+// ====================================================================== ==
+
+data        = input(title = "Source",                 type = input.source,      defval = hlc3)
+length      = input(title = "length",                 type = input.integer,     defval = 20,  minval = 1)
+r_multi     = input(title = "Comp Ratio Multiplier",  type = input.float,       defval = 2.0, minval = 0, step = .1)
+smooth      = input(title = "Auto Smoothing",         type = input.bool,        defval = true,                    group = "Smoothing")
+man_smooth  = input(title = "Manual Smoothing",       type = input.integer,     defval = 1, minval = 1, step = 1, group = "Smoothing")
+
+s           = smooth ? max(round(sqrt(length)),1) : man_smooth
+cora_raw    = f_adj_crwma(data, length, 0.01, r_multi)
+cora_wave   = wma(cora_raw, s)
+
+c_up        = color.new(color.aqua, 0)
+c_dn        = color.new(#FF9800   , 0)
+cora_up     = cora_wave > cora_wave[1]
+plot(cora_wave, title="Adjustible CoRa_Wave", color = cora_up ? c_up : c_dn, linewidth = 3)

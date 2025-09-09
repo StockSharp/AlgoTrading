@@ -1,0 +1,76 @@
+//This bot is designed to buy and sell bitcoins profitably. If the closing price is X% below the last entry, the bot will make a new entry and continue entering until the closing price is X% above the average entry price.
+//The bot respects the trading rules of your exchange, such as minimum order value and minimum price movement. These values   are editable in the strategy properties and are essential to prevent the bot from making mistakes. If you have any questions, follow the tips on the side.
+//Also, change the value of the initial capital and commission (%). Once this is done, the alerts will be in perfect working order.
+
+//@version=5
+strategy("Bot for Spot Market - Custom Grid", pyramiding = 1, margin_long = 100, margin_short = 100, commission_value = 0.1, initial_capital = 500.00)
+
+// Calculate the price based on the exchange minimum requirements.
+price = input.float(10.00, title = "Order value", minval = 5.00, tooltip = "The bot will respect the minimum requirements to open an order. This means that the amount may be slightly higher.") / close
+mov = input.float(0.00001, title = "Minimum Amount Movement", tooltip = "According to the rules of your exchange. Per exemple: https://www.binance.com/en/trade-rule")
+round = math.round(price, input.int(5, title = "Rounding", tooltip = "Decimal places to round. For example: if the minimum amount movement is 0.00001, use 5 decimal places."))
+quant = round >= price ? round + mov : round + (mov * 2)
+below = input.float(0.5, title = "Next entry less than (%)", step = 0.5, minval = 0, tooltip = "Increase if you have a small equity.")
+prof = strategy.position_avg_price * (1 + (input.float(2.0, step = 0.5, minval = 0, title = "Profit (%)", tooltip = "Higher value does not guarantee higher profit. Find a balance. Observation: if the profit is less than the Minimum Amount Movement, it will possibly be saved in BTC.") / 100))
+
+// Target.
+plot(prof, force_overlay = true, title = "Target", color = color.green)
+
+// Average entry price from current market position.
+plot(strategy.position_avg_price, force_overlay = true, title = "Average entry price", color=color.blue)
+
+// Return the entry price for the latest trade.
+currEntryPrice = strategy.opentrades.entry_price(strategy.opentrades - 1)
+plot(currEntryPrice, force_overlay = true, title = "Last entry price", color=color.black)
+
+// Next entry
+next = currEntryPrice * (1 - below / 100)
+plot(next, "Next entry", force_overlay = true, color = color.gray)
+
+// Maximum number of orders allowed according to your equity.
+pir = (strategy.initial_capital + strategy.netprofit)/(quant*close)
+plot(pir, color = color.red, title="Maximum orders allowed")
+
+// Number of open orders.
+plot(strategy.opentrades, "Open orders", color = color.green)
+
+// Start date.
+FromMin    = input.int(defval = 0, title = "From minute", minval = 0, maxval = 59)
+FromHour    = input.int(defval = 0, title = "From hour", minval = 0, maxval = 23)
+FromDay    = input.int(defval = 1, title = "From day", minval = 1, maxval = 31)
+FromMonth  = input.int(defval = 1, title = "From month", minval = 1, maxval = 12)
+FromYear   = input.int(defval = 2000, title = "From year", minval = 2000)
+Start     = timestamp(FromYear, FromMonth, FromDay, FromHour, FromMin)
+Timerange() =>
+    time >= Start ? true : false
+
+// Entries.
+if Timerange()
+    strategy.entry("Long", strategy.long, qty = quant, comment = str.tostring(quant*close, "$ #.##"))
+if Timerange() and close < currEntryPrice * (1 - (below / 100))
+    strategy.order("Long", strategy.long, qty = quant, comment = str.tostring(quant*close, "$ #.##"))
+
+// Calculate open profit or loss for the open positions.
+tradeOpenPL() =>
+    sumProfit = 0.0
+    for tradeNo = 0 to strategy.opentrades - 1
+        sumProfit += strategy.opentrades.profit(tradeNo)
+    result = sumProfit
+
+// Exit.
+if tradeOpenPL() > 0 and close > prof
+    strategy.close_all(comment = "Profit")
+
+// Table.
+exitStats() =>
+    int tpCount = 0
+    if strategy.closedtrades > 0
+        for i = 0 to strategy.closedtrades - 1
+            switch strategy.closedtrades.exit_comment(i)
+                "Profit"    => tpCount    += 1
+    [tpCount]
+var testTable = table.new(position.bottom_center, 1, 4, color.lime, border_width = 1)
+if barstate.islastconfirmedhistory
+    [tpCount] = exitStats()
+    table.cell(testTable, 0, 0, "Open trades: " + str.tostring(strategy.opentrades) + " | Closed trades: " + str.tostring(strategy.closedtrades))
+    table.cell(testTable, 0, 2, "Profit: " + str.tostring(strategy.netprofit, "$ #.##") + " | Equity: " + str.tostring(strategy.equity, "$ #.##"))

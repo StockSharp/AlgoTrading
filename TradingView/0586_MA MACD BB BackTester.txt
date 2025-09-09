@@ -1,0 +1,127 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Future_Billi0naire_
+
+//@version=5
+strategy("MA MACD BB Backtester", overlay = true, max_lines_count = 500, max_boxes_count = 100, initial_capital = 10000, currency = currency.USD, commission_type = strategy.commission.percent, commission_value = 0.01, default_qty_type = strategy.percent_of_equity, default_qty_value = 80)
+
+//@variable Input for Strategy
+which_ta = input.string("MA", title="Select Indicator", options=["MACD", "BB", "MA"])
+which_camp = input.string("Long", title="Select Long / Short", options=["Short", "Long"])
+
+var int startDate = input.time(timestamp("2015-01-02 00:00"), "SIP / Lumpsum Start Date")
+var int endDate = input.time(timestamp("2023-12-29 00:00"), "SIP End Date")
+
+
+//@variable Input parameters for Risk Management
+positionSize = input.float(100.0, title="Each position's capital allocation %", minval=0.0, maxval = 100.0) / 100
+
+//@variable Input parameters for MACD
+fast_length = input.int(12, title="MACD Fast Length")
+slow_length = input.int(26, title="MACD Slow Length")
+signal_smoothing = input.int(9, title="MACD Signal Smoothing")
+macd_source = input.source(close, title="MACD Source")
+
+//@variable Input parameters for Moving Average
+ma_length = input.int(50, title="Moving Average Length")
+
+//@variable Input parameters for Bollinger Bands
+bb_length = input.int(20, title="Bollinger Bands Length")
+bb_mult = input.float(2.0, title="Bollinger Bands Multiplier")
+
+// Choosing the Strategy
+int x = na
+if which_ta == "MA"
+    x := 1
+else if which_ta == "MACD"
+    x := 2
+else if which_ta == "BB"
+    x := 3
+
+// Calculate MACD and Signal line
+[macdLine, signalLine, _] = ta.macd(macd_source, fast_length, slow_length, signal_smoothing)
+
+// Calculate Moving Average
+ma = ta.sma(close, ma_length)
+
+// Calculate Bollinger Bands
+basis = ta.sma(close, bb_length)
+dev = bb_mult * ta.stdev(close, bb_length)
+upper = basis + dev
+lower = basis - dev
+
+// Plotting MACD and Signal lines
+plot(x == 2 ? macdLine : na, color=color.blue, title="MACD Line")
+plot(x == 2 ? signalLine : na, color=color.red, title="Signal Line")
+
+// Plotting histogram
+histogram = macdLine - signalLine
+plot(x == 2 ? histogram : na, color=color.gray, style=plot.style_histogram, title="MACD Histogram")
+
+// Plotting Moving Average
+plot(x == 1 ? ma : na, color=color.orange, title="Moving Average")
+
+// Plotting Bollinger Bands
+plot(x == 3 ? upper : na, color=color.green, title="Upper Bollinger Band")
+plot(x == 3 ? lower : na, color=color.red, title="Lower Bollinger Band")
+plot(x == 3 ? basis : na, color=color.blue, title="Basis Bollinger Band")
+
+// Generate buy signals
+buySignalMACD = ta.crossover(macdLine, signalLine)
+buySignalMA = ta.crossover(close, ma)
+buySignalBB = close < lower
+sellSignalBBExit = close > basis
+
+// Generate sell signals
+sellSignalMACD = ta.crossunder(macdLine, signalLine)
+sellSignalMA = ta.crossunder(close, ma)
+sellSignalBB = close > upper
+buySignalBBExit = close < basis
+
+// Plot buy signals on the chart
+plotshape(series=buySignalMACD and x == 2 and which_camp=="Long" and strategy.opentrades == 0 and time >= startDate and time <= endDate? buySignalMACD : na, title="Buy Signal MACD", location=location.belowbar, color=color.lime, style=shape.labelup, text="BUY MACD")
+plotshape(series=buySignalMA and x == 1 and which_camp=="Long" and strategy.opentrades == 0 and time >= startDate and time <= endDate? buySignalMA : na, title="Buy Signal MA", location=location.belowbar, color=color.lime, style=shape.labelup, text="BUY MA")
+plotshape(series=buySignalBB and x == 3 and which_camp=="Long" and strategy.opentrades == 0 and time >= startDate and time <= endDate? buySignalBB : na, title="Buy Signal BB", location=location.belowbar, color=color.lime, style=shape.labelup, text="BUY BB")
+
+// Plot sell signals on the chart
+plotshape(series=sellSignalMACD and x == 2 and which_camp=="Short" and strategy.opentrades == 0 and time >= startDate and time <= endDate? sellSignalMACD : na, title="Sell Signal MACD", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL MACD")
+plotshape(series=sellSignalMA and x == 1 and which_camp=="Short" and strategy.opentrades == 0 and time >= startDate and time <= endDate? sellSignalMA : na, title="Sell Signal MA", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL MA")
+plotshape(series=sellSignalBB and x == 3 and which_camp=="Short" and strategy.opentrades == 0 and time >= startDate and time <= endDate? sellSignalBB : na, title="Sell Signal BB", location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL BB")
+
+// Calculate stop loss and take profit levels
+accountSize = strategy.equity
+positionSizeAmount = accountSize * positionSize
+
+// Calculate order size based on stop loss amount
+orderSize = math.floor(positionSizeAmount / close)
+
+// Enter long positions based on buy signals
+if strategy.opentrades == 0
+    if (buySignalMACD) and x == 2 and which_camp == "Long" and time >= startDate and time <= endDate
+        strategy.entry("Buy MACD", strategy.long, qty=orderSize)
+    if (buySignalMA) and x == 1 and which_camp == "Long" and time >= startDate and time <= endDate
+        strategy.entry("Buy MA", strategy.long, qty=orderSize)
+    if (buySignalBB) and x == 3 and which_camp == "Long" and time >= startDate and time <= endDate
+        strategy.entry("Buy BB", strategy.long, qty=orderSize)
+
+// Enter short positions based on sell signals
+if strategy.opentrades == 0
+    if (sellSignalMACD) and x == 2 and which_camp == "Short" and time >= startDate and time <= endDate
+        strategy.entry("Sell MACD", strategy.short, qty=orderSize)
+    if (sellSignalMA) and x == 1 and which_camp == "Short" and time >= startDate and time <= endDate
+        strategy.entry("Sell MA", strategy.short, qty=orderSize)
+    if (sellSignalBB) and x == 3 and which_camp == "Short" and time >= startDate and time <= endDate
+        strategy.entry("Sell BB", strategy.short, qty=orderSize)
+
+// Close positions based on exit signals
+if (sellSignalMACD) and which_camp == "Long"
+    strategy.close("Buy MACD")
+if (sellSignalMA) and which_camp == "Long"
+    strategy.close("Buy MA")
+if (sellSignalBBExit) and which_camp == "Long"
+    strategy.close("Buy BB")
+if (buySignalMACD) and which_camp == "Short"
+    strategy.close("Sell MACD")
+if (buySignalMA) and which_camp == "Short"
+    strategy.close("Sell MA")
+if (buySignalBBExit) and which_camp == "Short"
+    strategy.close("Sell BB")

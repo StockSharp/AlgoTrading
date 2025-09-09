@@ -1,0 +1,82 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © girishmanuja
+
+//@version=5
+strategy("Scalping Strategy with Williams %R, MACD, and SMA (1-Minute Only)", overlay=true)
+
+// Check if the current timeframe is 1 minute
+isOneMinute = (str.tostring(timeframe.period) == "1")
+
+// Display a warning if not on 1-minute timeframe
+if not isOneMinute
+    label.new(x=bar_index, y=na, text="WARNING: Switch to 1-Minute Timeframe", color=color.red, textcolor=color.white, size=size.large, style=label.style_label_down)
+
+// Williams %R Settings
+williamsLength = 140
+williamsHigh = ta.highest(high, williamsLength)
+williamsLow = ta.lowest(low, williamsLength)
+williamsR = (williamsHigh - close) / (williamsHigh - williamsLow) * -100
+
+// MACD Settings
+fastLength = 24
+slowLength = 52
+macdLength = 9
+[macdLine, signalLine, macdHistogram] = ta.macd(close, fastLength, slowLength, macdLength)
+
+// SMA Settings
+smaLength = 7
+sma = ta.sma(close, smaLength)
+
+// Plot Williams %R, MACD Histogram, and SMA
+//plot(isOneMinute ? williamsR : na, color=color.blue, title="Williams %R")
+//hline(-92, "Williams %R -94", color=color.red)
+//hline(-60, "Williams %R -60", color=color.red)
+//hline(-8, "Williams %R -6", color=color.green)
+//hline(-40, "Williams %R -40", color=color.green)
+
+//plot(isOneMinute ? macdHistogram : na, color=color.purple, title="MACD Histogram", style=plot.style_histogram)
+//plot(isOneMinute ? sma : na, color=color.orange, title="SMA")
+
+// Define conditions only if on 1-minute timeframe
+if isOneMinute
+    // Define conditions
+    buyCondition = ta.crossover(williamsR, -94)
+    sellCondition = ta.crossunder(williamsR, -6)
+    deactivateBuyCondition = ta.crossover(williamsR, -40)
+    deactivateSellCondition = ta.crossunder(williamsR, -60)
+
+    // MACD Histogram Conditions for entry and exit
+    macdHistPositive = macdHistogram > 0
+    macdHistNegative = macdHistogram < 0
+    macdHistPositiveAfterNegative = macdHistogram[1] < 0 and macdHistPositive
+    macdHistNegativeAfterPositive = macdHistogram[1] > 0 and macdHistNegative
+
+    // Trend Confirmation
+    isBullTrend = close > sma
+    isBearTrend = close < sma
+
+    // Buy and sell signals
+    var bool buyActive = false
+    var bool sellActive = false
+
+    if buyCondition and isBullTrend
+        buyActive := true
+    if deactivateBuyCondition
+        buyActive := false
+    if buyActive and macdHistPositiveAfterNegative
+        strategy.entry("Buy", strategy.long)
+        alert("Long entry signal: Buy order executed", alert.freq_once_per_bar_close)
+    if macdHistogram < macdHistogram[1]
+        strategy.close("Buy")
+        alert("Long exit signal: Buy order closed", alert.freq_once_per_bar_close)
+
+    if sellCondition and isBearTrend
+        sellActive := true
+    if deactivateSellCondition
+        sellActive := false
+    if sellActive and macdHistNegativeAfterPositive
+        strategy.entry("Sell", strategy.short)
+        alert("Short entry signal: Sell order executed", alert.freq_once_per_bar_close)
+    if macdHistogram > macdHistogram[1]
+        strategy.close("Sell")
+        alert("Short exit signal: Sell order closed", alert.freq_once_per_bar_close)

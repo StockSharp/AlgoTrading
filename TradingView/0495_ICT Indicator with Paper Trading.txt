@@ -1,0 +1,20 @@
+//@version=5
+strategy("ICT Indicator with Paper Trading", overlay=true)
+
+// Order Blocks
+order_block_high = ta.valuewhen(ta.crossover(high, high[1]), high, 1)
+order_block_low = ta.valuewhen(ta.crossover(low, low[1]), low, 1)
+
+// ... (other indicators)
+
+// Buy and Sell Signals
+buy_signal = ta.crossover(close, order_block_high)
+sell_signal = ta.crossover(order_block_low, close)
+
+// Plot Signals
+plotshape(buy_signal, location=location.abovebar, style=shape.triangleup, color=color.lime, size=size.small)
+plotshape(sell_signal, location=location.belowbar, style=shape.triangledown, color=color.red, size=size.small)
+
+// Paper Trading
+strategy.entry("Buy", strategy.long, when=buy_signal)
+strategy.close("Buy", when=sell_signal)

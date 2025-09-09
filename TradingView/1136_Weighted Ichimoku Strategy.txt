@@ -1,0 +1,605 @@
+//@version=6
+strategy('Weighted Ichimoku Strategy', overlay=true, initial_capital=2500, currency=currency.GBP, default_qty_type=strategy.percent_of_equity, default_qty_value=100, pyramiding=0, commission_type=strategy.commission.cash_per_order, commission_value=3, slippage=0, calc_on_every_tick=true, use_bar_magnifier=false, process_orders_on_close=true, backtest_fill_limits_assumption=2, behind_chart=false)
+// === Inputs ===
+periodsGroup = "Ichimoku Periods"
+ichimokuSettings = input.string('9/26/52/26 – 6D Markets (Original)', options=[
+ '8/22/44/22 – 5D Markets',
+ '7/22/44/22 – Forex Intraday',
+ '12/24/120/24 – Forex Swing',
+ '9/26/52/26 – 6D Markets (Original)',
+ '9/30/60/30 – 24h/7D Markets (Crypto)',
+ '20/60/120/60 – 24h/7D Markets (Slow)',
+ 'Custom – User Defined'
+ ], group=periodsGroup)
+
+customTenkanPeriod = input.int(9, 'Custom Tenkan Period', minval=1, group=periodsGroup, tooltip="Period for Tenkan-sen (conversion line). Only used when Ichimoku Settings is 'Custom'.")
+customKijunPeriod = input.int(26, 'Custom Kijun Period', minval=1, group=periodsGroup, tooltip="Period for Kijun-sen (base line). Only used when Ichimoku Settings is 'Custom'.")
+customSenkouBPeriod = input.int(52, 'Custom Senkou B Period', minval=1, group=periodsGroup, tooltip="Period for Senkou Span B (leading span B). Only used when Ichimoku Settings is 'Custom'.")
+customOffset = input.int(26, 'Custom Offset', minval=1, group=periodsGroup, tooltip="Offset for leading spans (Senkou A/B, Chikou). Only used when Ichimoku Settings is 'Custom'.")
+generalGroup = "General Settings"
+buyThreshold = input.float(60.0, 'Buy Threshold (%)', minval=-110, maxval=110, group=generalGroup)
+
+useSellThreshold = input.bool(true, 'Use Sell Threshold', group=generalGroup)
+sellThreshold = input.float(-49.0, 'Sell Threshold (%)', minval=-110, maxval=110, group=generalGroup, tooltip="Only applies if 'Use Sell Threshold' is enabled.")
+
+sellBelowKumo = input.bool(false, 'Use Sell Below Kumo', group=generalGroup)
+sellBelowKumoType = input.string('Close - Kumo Bottom', 'Sell Below Kumo Type', options=[
+  'Open - Senkou Span A', 'Open - Senkou Span B', 'Open - Kumo Top', 'Open - Kumo Bottom',
+  'Close - Senkou Span A', 'Close - Senkou Span B', 'Close - Kijun', 'Close - Kumo Top', 'Close - Kumo Bottom',
+  'High - Senkou Span A', 'High - Senkou Span B', 'High - Kumo Top', 'High - Kumo Bottom',
+  'Low - Senkou Span A', 'Low - Senkou Span B', 'Low - Kumo Top', 'Low - Kumo Bottom',
+  'Close & Open - Senkou Span A', 'Close & Open - Senkou Span B', 'Close & Open - Kumo Top', 'Close & Open - Kumo Bottom',
+  'High & Low - Senkou Span A', 'High & Low - Senkou Span B', 'High & Low - Kumo Top', 'High & Low - Kumo Bottom',
+  'Any - Senkou Span A', 'Any - Senkou Span B', 'Any - Kumo Top', 'Any - Kumo Bottom'
+ ], group=generalGroup, tooltip="Only applies if 'Use Sell Below Kumo' is enabled.")
+useConsolidationExit = input.bool(false, 'Use Consolidation Exit', group=generalGroup, tooltip="Enable this to exit trades during consolidation periods, potentially lessening drawdown by avoiding prolonged sideways movements. This filter does not obey the Chikou Filter or Sell Cooldown.")
+consolidationExitType = input.string('Any - Kumo Bottom', 'Consolidation Exit Type', options=[
+  'Open - Senkou Span A', 'Open - Senkou Span B', 'Open - Kumo Top', 'Open - Kumo Bottom',
+  'Close - Senkou Span A', 'Close - Senkou Span B', 'Close - Kijun', 'Close - Kumo Top', 'Close - Kumo Bottom',
+  'High - Senkou Span A', 'High - Senkou Span B', 'High - Kumo Top', 'High - Kumo Bottom',
+  'Low - Senkou Span A', 'Low - Senkou Span B', 'Low - Kumo Top', 'Low - Kumo Bottom',
+  'Close & Open - Senkou Span A', 'Close & Open - Senkou Span B', 'Close & Open - Kumo Top', 'Close & Open - Kumo Bottom',
+  'High & Low - Senkou Span A', 'High & Low - Senkou Span B', 'High & Low - Kumo Top', 'High & Low - Kumo Bottom',
+  'Any - Senkou Span A', 'Any - Senkou Span B', 'Any - Kumo Top', 'Any - Kumo Bottom'
+ ], group=generalGroup, tooltip="Only applies if 'Use Consolidation Exit' is enabled.")
+
+useAtrSell = input.bool(false, 'Use ATR Sell', group=generalGroup)
+atrTargetMultiplier = input.float(3.0, 'Fixed ATR Target Multiplier', minval=0.1, step=0.1, group=generalGroup, tooltip="Multiplier for ATR-based profit target. Only used if 'Use ATR Sell' is enabled.")
+atrStopMultiplier = input.float(1.0, 'Fixed ATR Stop-Loss Multiplier', minval=0.1, step=0.1, group=generalGroup, tooltip="Multiplier for ATR-based stop-loss. Only used if 'Use ATR Sell' is enabled.")
+
+filtersGroup = "Filters"
+buyFiltersGroup = "Buy Filters"
+useKumoBreakoutFilter = input.bool(false, 'Use Kumo Breakout Filter', group=buyFiltersGroup, tooltip="Require price to close above the Kumo (e.g., low buy threshold that does not include the signal will wait).")
+useWhipsawFilter = input.bool(true, 'Use Whipsaw Filter', group=buyFiltersGroup, tooltip="Require sustained trend strength (weight >= 30 over Whipsaw Filter Days) for buy signals. If disabled, ignores trend buildup check.")
+whipsawDays = input.int(1, title="Whipsaw Filter Days", minval=1, group=buyFiltersGroup, tooltip="Set the lookback days to confirm sustained trend strength (weight >= 30) before allowing buy signals.")
+useSellCooldown = input.bool(true, 'Use Sell Cooldown (Kijun/2)', group=buyFiltersGroup, tooltip="Prevent new entry signals until half the Kijun period passes after an exit, reducing rapid re-entries.")
+
+sellFiltersGroup = "Sell Filters"
+useChikouFilter = input.bool(false, 'Use Chikou Filter (Above Delay Exit)', group=sellFiltersGroup, tooltip="Delay exit signals unless the previous close is below the Chikou Span, confirming bearish momentum.")
+useConsolidationTrendFilter = input.bool(false, "Filter Consolidation Exit if Trend Up", group=sellFiltersGroup)
+
+debuggingGroup = "Debugging"
+oneInOneOut = input.bool(true, 'One In, One Out (Close Before New Entry)', group=debuggingGroup)
+showLabels = input.bool(true, 'Show Buy/Sell Labels (Debugging)', group=debuggingGroup)
+paintAtrTargets = input.bool(false, 'Paint ATR Targets', group=debuggingGroup)
+candleSentimentPainting = input.bool(true, 'Candle Sentiment Painting', group=debuggingGroup, tooltip="Enable or disable candle sentiment painting.")
+
+// Check if we are in a position and reuse rather than checking over and over.
+bool hasPosition = strategy.position_size > 0
+
+// Define periods based on settings
+var int tenkanPeriod = switch ichimokuSettings
+    '8/22/44/22 – 5D Markets' => 8
+    '7/22/44/22 – Forex Intraday' => 7
+    '12/24/120/24 – Forex Swing' => 12
+    '9/26/52/26 – 6D Markets (Original)' => 9
+    '9/30/60/30 – 24h/7D Markets (Crypto)' => 9
+    '20/60/120/60 – 24h/7D Markets (Slow)' => 20
+    'Custom – User Defined' => customTenkanPeriod
+    => 9  // Default fallback (standard Ichimoku)
+
+var int kijunPeriod = switch ichimokuSettings
+    '8/22/44/22 – 5D Markets' => 22
+    '7/22/44/22 – Forex Intraday' => 22
+    '12/24/120/24 – Forex Swing' => 24
+    '9/26/52/26 – 6D Markets (Original)' => 26
+    '9/30/60/30 – 24h/7D Markets (Crypto)' => 30
+    '20/60/120/60 – 24h/7D Markets (Slow)' => 60
+    'Custom – User Defined' => customKijunPeriod
+    => 26
+
+var int senkouBPeriod = switch ichimokuSettings
+    '8/22/44/22 – 5D Markets' => 44
+    '7/22/44/22 – Forex Intraday' => 44
+    '12/24/120/24 – Forex Swing' => 120
+    '9/26/52/26 – 6D Markets (Original)' => 52
+    '9/30/60/30 – 24h/7D Markets (Crypto)' => 60
+    '20/60/120/60 – 24h/7D Markets (Slow)' => 120
+    'Custom – User Defined' => customSenkouBPeriod
+    => 52
+
+var int offset = switch ichimokuSettings
+    '8/22/44/22 – 5D Markets' => 22
+    '7/22/44/22 – Forex Intraday' => 22
+    '12/24/120/24 – Forex Swing' => 24
+    '9/26/52/26 – 6D Markets (Original)' => 26
+    '9/30/60/30 – 24h/7D Markets (Crypto)' => 30
+    '20/60/120/60 – 24h/7D Markets (Slow)' => 60
+    'Custom – User Defined' => customOffset
+    => 26
+
+var int atrLength = switch ichimokuSettings
+    '8/22/44/22 – 5D Markets' => kijunPeriod
+    '7/22/44/22 – Forex Intraday' => kijunPeriod
+    '12/24/120/24 – Forex Swing' => kijunPeriod
+    '9/26/52/26 – 6D Markets (Original)' => kijunPeriod
+    '9/30/60/30 – 24h/7D Markets (Crypto)' => tenkanPeriod
+    '20/60/120/60 – 24h/7D Markets (Slow)' => kijunPeriod
+    'Custom – User Defined' => kijunPeriod
+    => 26  // Default kijunPeriod for 9/26/52/26
+
+// Track the last exit bar index
+var int lastExitBarIndex = na
+
+// === Ichimoku Calculations ===
+
+// Adjusts lookback to available bars to ensure Tenkan and Kijun plot to the latest candle.
+calculateHighLow(period) =>
+    // Determine the number of available bars to avoid exceeding chart data
+    availableBars = math.min(period, bar_index + 1)
+    // Use the minimum of available bars or the intended period to prevent NaN values
+    lookbackPeriod = math.min(availableBars, period)
+    // Compute the highest high and lowest low over the adjusted lookback period
+    highValue = ta.highest(high, lookbackPeriod)
+    lowValue = ta.lowest(low, lookbackPeriod)
+    [highValue, lowValue]
+
+// Calculate Tenkan-sen (Conversion Line)
+[tenkanHigh, tenkanLow] = calculateHighLow(tenkanPeriod)
+tenkan = (tenkanHigh + tenkanLow) / 2
+
+// Calculate Kijun-sen (Base Line)
+[kijunHigh, kijunLow] = calculateHighLow(kijunPeriod)
+kijun = (kijunHigh + kijunLow) / 2
+
+bool tenkanCrossesOverKijun = ta.crossover(tenkan, kijun)
+bool tenkanCrossesUnderKijun = ta.crossunder(tenkan, kijun)
+
+// Calculate Senkou Span A (Leading Span A)
+senkouA = (tenkan + kijun) / 2
+
+// Calculate Senkou Span B (Leading Span B)
+[senkouBHigh, senkouBLow] = calculateHighLow(senkouBPeriod)
+senkouB = (senkouBHigh + senkouBLow) / 2
+
+// Calculate Kumo (Cloud) boundaries
+kumoTop = math.max(senkouA[offset], senkouB[offset])
+kumoBottom = math.min(senkouA[offset], senkouB[offset])
+
+// Chikou Span (Lagging Span) with lookback-based coloring
+chikou = close
+chikouAboveHighs = chikou > ta.highest(high, kijunPeriod)[kijunPeriod]
+chikouBelowLows = chikou < ta.lowest(low, kijunPeriod)[kijunPeriod]
+chikouConsolidating = not chikouAboveHighs and not chikouBelowLows
+chikouColor = chikouAboveHighs ? color.green : chikouBelowLows ? color.red : color.orange
+
+// Calculate Average True Range (ATR)
+atr = ta.atr(atrLength)
+
+// Determine if the close price is above the Kumo and Kijun, indicating a potential buy signal
+buySignalKumo = close > kumoTop and close > kijun
+
+// === Trend Filter ===
+
+// Determine the trend direction based on the cloud's configuration
+bool isCloudBullish = senkouA > senkouB
+bool isCloudBearish = senkouA < senkouB
+
+// Determine if the trend is upwards
+bool trendCheckUp = close > senkouA and isCloudBullish
+
+// Determine if the trend is downwards
+bool trendCheckDown = close < senkouA and isCloudBearish
+
+// Set the trend text based on the trend direction
+trendText = trendCheckUp ? "Up" : (trendCheckDown ? "Down" : "No")
+
+// === Signal Definitions ===
+
+// Kumo Breakout
+kumoBreakoutBullish = close > kumoTop
+kumoBreakoutNeutral = kumoBottom <= close and close <= kumoTop
+kumoBreakoutBearish = close < kumoBottom
+kumoBreakoutWeight = kumoBreakoutBullish ? 30.0 : (kumoBreakoutBearish ? -30.0 : 0.0)
+kumoBreakoutState = kumoBreakoutBullish ? 'Bullish' : (kumoBreakoutBearish ? 'Bearish' : 'Neutral')
+
+// Chikou Cross
+chikouCrossBullish = chikou > close[offset]
+chikouCrossNeutral = math.abs(chikou - close[offset]) <= 0.75 * atr
+chikouCrossBearish = chikou < close[offset]
+chikouCrossWeight = chikouCrossBullish ? 20.0 : (chikouCrossBearish ? -20.0 : 0.0)
+chikouCrossState = chikouCrossBullish ? 'Bullish' : (chikouCrossBearish ? 'Bearish' : 'Neutral')
+
+// Kijun Cross
+kijunCrossBullish = tenkanCrossesOverKijun
+kijunCrossNeutral = math.abs(tenkan - kijun) <= 0.75 * atr and not tenkanCrossesOverKijun and not tenkanCrossesUnderKijun
+kijunCrossBearish = tenkanCrossesUnderKijun
+kijunCrossWeight = kijunCrossBullish ? 15.0 : (kijunCrossBearish ? -15.0 : 0.0)
+kijunCrossState = kijunCrossBullish ? 'Bullish' : (kijunCrossBearish ? 'Bearish' : 'Neutral')
+
+// Tenkan Cross
+tenkanCrossBullish = ta.crossover(close, tenkan)
+tenkanCrossNeutral = math.abs(close - tenkan) <= 0.75 * atr
+tenkanCrossBearish = ta.crossunder(close, tenkan)
+tenkanCrossWeight = tenkanCrossBullish ? 10.0 : (tenkanCrossBearish ? -10.0 : 0.0)
+tenkanCrossState = tenkanCrossBullish ? 'Bullish' : (tenkanCrossBearish ? 'Bearish' : 'Neutral')
+
+// Kumo Twist
+kumoTwistBullish = senkouA[offset] > senkouB[offset]
+kumoTwistNeutral = math.abs(senkouA[offset] - senkouB[offset]) <= 0.5 * atr
+kumoTwistBearish = senkouA[offset] < senkouB[offset]
+kumoTwistWeight = kumoTwistBullish ? 5.0 : (kumoTwistBearish ? -5.0 : 0.0)
+kumoTwistState = kumoTwistBullish ? 'Bullish' : (kumoTwistBearish ? 'Bearish' : 'Neutral')
+
+// Kijun Confirmation
+kijunConfirmationBullish = close > kijun
+kijunConfirmationNeutral = math.abs(close - kijun) <= 0.75 * atr
+kijunConfirmationBearish = close < kijun
+kijunConfirmationWeight = kijunConfirmationBullish ? 8.0 : (kijunConfirmationBearish ? -8.0 : 0.0)
+kijunConfirmationState = kijunConfirmationBullish ? 'Bullish' : (kijunConfirmationBearish ? 'Bearish' : 'Neutral')
+
+// Tenkan-Kijun Above Cloud
+tenkanKijunAboveCloudBullish = tenkan > kijun and tenkan > kumoTop
+tenkanKijunAboveCloudNeutral = (kumoBottom <= tenkan and tenkan <= kumoTop) or math.abs(tenkan - kijun) <= 0.75 * atr
+tenkanKijunAboveCloudBearish = tenkan < kijun and kijun < kumoBottom
+tenkanKijunAboveCloudWeight = tenkanKijunAboveCloudBullish ? 5.0 : (tenkanKijunAboveCloudBearish ? -5.0 : 0.0)
+tenkanKijunAboveCloudState = tenkanKijunAboveCloudBullish ? 'Bullish' : (tenkanKijunAboveCloudBearish ? 'Bearish' : 'Neutral')
+
+// Chikou Above Cloud
+chikouAboveCloudBullish = chikou > kumoTop
+chikouAboveCloudNeutral = kumoBottom <= chikou and chikou <= kumoTop
+chikouAboveCloudBearish = chikou < kumoBottom
+chikouAboveCloudWeight = chikouAboveCloudBullish ? 5.0 : (chikouAboveCloudBearish ? -5.0 : 0.0)
+chikouAboveCloudState = chikouAboveCloudBullish ? 'Bullish' : (chikouAboveCloudBearish ? 'Bearish' : 'Neutral')
+
+// Price-Kijun Cross
+priceKijunCrossBullish = ta.crossover(close, kijun)
+priceKijunCrossNeutral = math.abs(close - kijun) <= 0.75 * atr
+priceKijunCrossBearish = ta.crossunder(close, kijun)
+priceKijunCrossWeight = priceKijunCrossBullish ? 2.0 : (priceKijunCrossBearish ? -2.0 : 0.0)
+priceKijunCrossState = priceKijunCrossBullish ? 'Bullish' : (priceKijunCrossBearish ? 'Bearish' : 'Neutral')
+
+/// Chikou Span Signal
+chikouSpanBullish = chikouAboveHighs
+chikouSpanNeutral = not chikouAboveHighs and not chikouBelowLows
+chikouSpanBearish = chikouBelowLows
+chikouSpanWeight = chikouSpanBullish ? 10.0 : (chikouSpanBearish ? -10.0 : 0.0)
+chikouSpanState = chikouSpanBullish ? 'Bullish' : (chikouSpanBearish ? 'Bearish' : 'Neutral')
+
+// Price Positioning (New Signal)
+pricePositioningNeutral = close >= tenkan and close <= kijun
+pricePositioningWeight = pricePositioningNeutral ? 0.0 : (close > kijun ? 10.0 : -10.0)
+pricePositioningState = pricePositioningNeutral ? 'Neutral' : (close > kijun ? 'Bullish' : 'Bearish')
+
+// Total Weight
+totalWeight = kumoBreakoutWeight + chikouCrossWeight + kijunCrossWeight + tenkanCrossWeight +
+               kumoTwistWeight + kijunConfirmationWeight + tenkanKijunAboveCloudWeight +
+               chikouAboveCloudWeight + priceKijunCrossWeight + chikouSpanWeight + pricePositioningWeight
+
+// === Sentiment Logic ===
+
+// Initialize overall sentiment
+var string overallSentiment = 'Neutral'
+
+// Define thresholds for sentiment classification
+int bullishThreshold = 7
+int bearishThreshold = 7
+int weakBullishThreshold = 5
+int weakBearishThreshold = 5
+int consolidationThreshold = 1
+float dynamicPriceChangeThreshold = atr * 0.5  // Define a dynamic threshold for significant price change
+
+// Calculate the number of bullish and bearish signals
+int bullishSignals = (kumoBreakoutBullish ? 1 : 0) + (chikouCrossBullish ? 1 : 0) + (kijunCrossBullish ? 1 : 0) +
+                     (tenkanCrossBullish ? 1 : 0) + (kumoTwistBullish ? 1 : 0) + (kijunConfirmationBullish ? 1 : 0) +
+                     (tenkanKijunAboveCloudBullish ? 1 : 0) + (chikouAboveCloudBullish ? 1 : 0) + (priceKijunCrossBullish ? 1 : 0) +
+                     (chikouSpanBullish ? 1 : 0) + (pricePositioningState == 'Bullish' ? 1 : 0)
+int bearishSignals = (kumoBreakoutBearish ? 1 : 0) + (chikouCrossBearish ? 1 : 0) + (kijunCrossBearish ? 1 : 0) +
+                     (tenkanCrossBearish ? 1 : 0) + (kumoTwistBearish ? 1 : 0) + (kijunConfirmationBearish ? 1 : 0) +
+                     (tenkanKijunAboveCloudBearish ? 1 : 0) + (chikouAboveCloudBearish ? 1 : 0) + (priceKijunCrossBearish ? 1 : 0) +
+                     (chikouSpanBearish ? 1 : 0) + (pricePositioningState == 'Bearish' ? 1 : 0)
+
+// Calculate price change
+float priceChange = (close - open) / open * 100
+
+// Determine overall sentiment based on total weight, signal counts, price change, and Chikou Span signal
+if totalWeight >= bullishThreshold and bullishSignals >= bullishThreshold
+    overallSentiment := 'Bullish'
+else if totalWeight <= -bearishThreshold and bearishSignals >= bearishThreshold
+    overallSentiment := 'Bearish'
+else if priceChange < -dynamicPriceChangeThreshold  // Significant price drop
+    overallSentiment := 'Bearish'
+else if priceChange > dynamicPriceChangeThreshold  // Significant price rise
+    overallSentiment := 'Bullish'
+else if bullishSignals >= weakBullishThreshold and bearishSignals <= consolidationThreshold
+    overallSentiment := 'Bullish (Weak)'
+else if bearishSignals >= weakBearishThreshold and bullishSignals <= consolidationThreshold
+    overallSentiment := 'Bearish (Weak)'
+else if math.abs(bullishSignals - bearishSignals) <= consolidationThreshold
+    overallSentiment := 'Consolidating'
+else if chikouSpanBullish
+    overallSentiment := 'Bullish'
+else if chikouSpanBearish
+    overallSentiment := 'Bearish'
+else if chikouSpanNeutral
+    overallSentiment := 'Consolidating'
+else
+    overallSentiment := 'Neutral'
+
+// === Filters ===
+
+// Determine if there is a trend buildup based on past total weight
+trendBuildup = totalWeight[whipsawDays] >= 30
+
+// Check if the sell cooldown period has passed
+sellCooldownPassed = useSellCooldown ? (na(lastExitBarIndex) or (bar_index - lastExitBarIndex >= kijunPeriod / 2)) : true
+
+// Filter the buy signal based on various conditions
+buySignalFiltered = totalWeight >= buyThreshold and
+ (not useWhipsawFilter or trendBuildup) and
+ (not useKumoBreakoutFilter or buySignalKumo) and
+ sellCooldownPassed
+
+// Filter the Chikou condition based on the useChikouFilter setting
+chikouFilter = not useChikouFilter or close[1] <= chikou[offset]
+
+// === Trade Signals ===
+sellSignalThreshold = totalWeight < sellThreshold
+
+// Function to determine price-span comparison
+priceBelowSpan(priceType, spanType) =>
+    var float priceToCompare = na
+    var float spanToCompare = na
+
+    // Extract the price type as a single string
+    priceTypeArray = str.split(priceType, ' - ')
+    priceTypeStr = array.get(priceTypeArray, 0)
+
+    // Extract the span type as a single string
+    spanTypeArray = str.split(spanType, ' - ')
+    spanTypeStr = array.get(spanTypeArray, 1)
+
+    // Determine the price to compare based on price type
+    if priceTypeStr == 'Open'
+        priceToCompare := open
+    else if priceTypeStr == 'Close'
+        priceToCompare := close
+    else if priceTypeStr == 'High'
+        priceToCompare := high
+    else if priceTypeStr == 'Low'
+        priceToCompare := low
+    else if priceTypeStr == 'Close & Open'
+        priceToCompare := math.max(open, close)
+    else if priceTypeStr == 'High & Low'
+        priceToCompare := math.max(high, low)
+    else if priceTypeStr == 'Any'
+        priceToCompare := math.min(open, high, low, close)
+
+    // Determine the span to compare based on span type
+    if spanTypeStr == 'Senkou Span A'
+        spanToCompare := senkouA[offset]
+    else if spanTypeStr == 'Senkou Span B'
+        spanToCompare := senkouB[offset]
+    else if spanTypeStr == 'Kumo Top'
+        spanToCompare := kumoTop
+    else if spanTypeStr == 'Kumo Bottom'
+        spanToCompare := kumoBottom
+    else if spanTypeStr == 'Kijun'
+        spanToCompare := kijun
+
+    // Return whether the price is below the span
+    priceToCompare < spanToCompare
+
+/// Global variables to store priceBelowSpan results
+var bool priceBelowSpanResult1 = false
+var bool priceBelowSpanResult2 = false
+
+// Update priceBelowSpan results on every bar/tick only if the relevant inputs are enabled
+if sellBelowKumo or useConsolidationExit
+    priceBelowSpanResult1 := priceBelowSpan(sellBelowKumoType, sellBelowKumoType)
+    priceBelowSpanResult2 := priceBelowSpan(consolidationExitType, consolidationExitType)
+
+// Determine sell signals using global variables
+sellSignalKumo = sellBelowKumo and priceBelowSpanResult1
+consolidationInTenkan = ta.highest(overallSentiment == 'Consolidating' ? 1 : 0, tenkanPeriod) > 0
+sellSignalKumoEnhanced = useConsolidationExit and consolidationInTenkan and priceBelowSpanResult2 and hasPosition and (not useConsolidationTrendFilter or not trendCheckUp)
+
+// === ATR Logic (Fixed at Entry Only) ===
+
+// Initialize variables to store ATR-based entry values
+var float entryAtr = na
+var float atrTargetPrice = na
+var float atrStopPrice = na
+
+// Check if a buy signal is filtered and if it's a new entry
+if buySignalFiltered and (not oneInOneOut or not hasPosition)
+    // Set the entry ATR value
+    entryAtr := atr
+
+    // Calculate the target price for taking profit
+    atrTargetPrice := close + entryAtr * atrTargetMultiplier
+
+    // Calculate the stop-loss price
+    atrStopPrice := close - entryAtr * atrStopMultiplier
+
+// Determine if a sell signal should be triggered based on ATR
+sellSignalAtr = useAtrSell and hasPosition and (close >= atrTargetPrice or close <= atrStopPrice)
+
+// === Sell Signal Order ===
+
+// Priority of sell signals:
+// 1. ATR Sell (sellSignalAtr) - Highest priority, based on ATR targets and stops.
+// 2. Consolidation Exit (sellSignalKumoEnhanced) - Next priority, based on consolidation exit logic.
+// 3. Sell Below Kumo (sellSignalKumo) - Lower priority, based on price relative to Kumo.
+// 4. Sell Threshold (sellSignalThreshold) - Lowest priority, based on total weight threshold.
+sellSignal = ((useAtrSell and sellSignalAtr) or
+              (useConsolidationExit and sellSignalKumoEnhanced) or
+              (sellBelowKumo and sellSignalKumo and not (useConsolidationExit and sellSignalKumoEnhanced)) or
+              (useSellThreshold and sellSignalThreshold))
+
+var string lastSellReason = 'None'
+if sellSignal and hasPosition
+    lastSellReason := sellSignalKumoEnhanced ? "Consolidation" :
+                      sellSignalAtr ? (close >= atrTargetPrice ? "ATR Target" : "ATR Stop") :
+                      sellSignalKumo ? "Kumo Breakout" :
+                      sellSignalThreshold ? "Threshold" : "Other"
+
+// === Alert Conditions ===
+alertcondition(buySignalFiltered, title='Buy Alert', message='Buy Signal Triggered: Sentiment {{overallSentiment}}, Weight: {{totalWeight}}, Trend: {{trendText}}')
+alertcondition(sellSignal, title='Sell Alert', message='Sell Signal Triggered: Sentiment {{overallSentiment}}, Weight: {{totalWeight}}, Reason: {{lastSellReason}}, Trend: {{trendText}}')
+
+// === Strategy Logic ===
+if buySignalFiltered and (not oneInOneOut or not hasPosition)
+    strategy.entry('Long', strategy.long, comment="Sentiment: " + overallSentiment + ', Weight: ' + str.tostring(totalWeight) + ', Trend: ' + trendText)
+    if showLabels
+        label.new(bar_index, high, 'Buy - Sentiment: ' + overallSentiment + '\nWeight: ' + str.tostring(totalWeight, '#.##') + '\nTrend: ' + (trendCheckUp ? 'Up' : 'No'), color=color.new(color.green, 50), style=label.style_label_down, textcolor=color.white, size=size.small)
+    alert('Buy Alert: Sentiment ' + overallSentiment + ', Weight: ' + str.tostring(totalWeight) + ', Trend: ' + trendText, alert.freq_once_per_bar_close)
+
+if sellSignal and hasPosition
+    strategy.close('Long', comment="Sentiment: " + overallSentiment + ', Weight: ' + str.tostring(totalWeight) + ', Reason: ' + lastSellReason + ', Trend: ' + trendText)
+    lastExitBarIndex := bar_index
+    if showLabels
+        labelColor = lastSellReason == 'Consolidation' ? color.new(color.yellow, 50) : (lastSellReason == 'ATR Target' or lastSellReason == 'ATR Stop' ? color.new(color.orange, 50) : color.new(color.red, 50))
+        labelText = 'Sell - ' + overallSentiment + '\nWeight: ' + str.tostring(totalWeight, '#.##') + '\nReason: ' + lastSellReason + '\nTrend: ' + trendText
+        if lastSellReason == 'ATR Target' or lastSellReason == 'ATR Stop'
+            labelText := labelText + '\n' + str.tostring(atrTargetMultiplier, '#.#') + '/' + str.tostring(atrStopMultiplier, '#.#')
+        label.new(bar_index, low, labelText, color=labelColor, textcolor=color.white, style=label.style_label_up, size=size.small)
+    alert('Sell Alert: Sentiment ' + overallSentiment + ', Weight: ' + str.tostring(totalWeight) + ', Reason: ' + lastSellReason + ', Trend: ' + trendText, alert.freq_once_per_bar_close)
+
+// === Signals Table & Candles ===
+
+// Draw candles first so that they don't overlap labels!
+
+// Define base colors
+color strongBullishColor = color.new(color.teal, 0)
+color weakBullishColor = color.new(color.teal, 50)
+color strongBearishColor = color.new(color.red, 0)
+color weakBearishColor = color.new(color.red, 50)
+color consolidatingColor = color.new(color.yellow, 0)
+color neutralColor = color.new(color.gray, 0)
+color blackCoverColor = color.new(color.black, 0)
+
+// Assign candle color based on sentiment
+candleColor = overallSentiment == 'Consolidating' ? consolidatingColor :
+              overallSentiment == 'Neutral' ? neutralColor :
+              overallSentiment == 'Bullish' ? strongBullishColor :
+              overallSentiment == 'Bullish (Weak)' ? weakBullishColor :
+              overallSentiment == 'Bearish' ? strongBearishColor :
+              overallSentiment == 'Bearish (Weak)' ? weakBearishColor :
+              neutralColor
+
+// Plot black candle to hide default chart candles, controlled by the same input
+plotcandle(open, high, low, close,
+ title="Cover Candles",
+ color=candleSentimentPainting ? blackCoverColor : na,
+ wickcolor=candleSentimentPainting ? blackCoverColor : na,
+ bordercolor=candleSentimentPainting ? blackCoverColor : na,
+ display=display.all
+ )
+
+// Plot sentiment-based candles on top with conditional coloring
+plotcandle(open, high, low, close,
+ title="Sentiment Candles",
+ color=candleSentimentPainting ? candleColor : na,
+ wickcolor=candleSentimentPainting ? candleColor : na,
+ bordercolor=candleSentimentPainting ? candleColor : na,
+ display=display.all
+ )
+
+// Define the table
+var table signalTable = na
+
+// Calculate RVOL
+averageVolume = ta.sma(volume, senkouBPeriod)
+rvol = averageVolume > 0 ? volume / averageVolume : 1.0
+// Calculate the standard deviation of RVOL
+rvolStdDev = ta.stdev(rvol, kijunPeriod)
+
+// Determine RVOL strength
+rawRvolStrength = rvolStdDev > 0 ? (rvol - 1) / rvolStdDev : 0
+rvolStrength = math.max(math.min(rawRvolStrength, 5), -5)  // Clamp to [-5, 5]
+
+if barstate.islastconfirmedhistory or barstate.isrealtime
+    table.delete(signalTable)
+    signalTable := table.new(position.top_right, 3, 15, border_width=1, border_color=color.gray)
+
+    // Add headers
+    table.cell(signalTable, 0, 0, 'Signal', bgcolor=color.new(color.gray, 90), text_color=color.white)
+    table.cell(signalTable, 1, 0, 'State', bgcolor=color.new(color.gray, 90), text_color=color.white)
+    table.cell(signalTable, 2, 0, 'Weight', bgcolor=color.new(color.gray, 90), text_color=color.white)
+
+    // Add signal rows sorted by weight/strength
+
+    // Strong Bullish Signals
+    table.cell(signalTable, 0, 1, 'Kumo Breakout', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 1, kumoBreakoutState, bgcolor=kumoBreakoutBullish ? color.new(color.green, 80) : kumoBreakoutBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 1, str.tostring(kumoBreakoutWeight), bgcolor=kumoBreakoutBullish ? color.new(color.green, 80) : kumoBreakoutBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    table.cell(signalTable, 0, 2, 'Chikou Cross', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 2, chikouCrossState, bgcolor=chikouCrossBullish ? color.new(color.green, 80) : chikouCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 2, str.tostring(chikouCrossWeight), bgcolor=chikouCrossBullish ? color.new(color.green, 80) : chikouCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    // Medium Bullish Signals
+    table.cell(signalTable, 0, 3, 'Kijun Cross', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 3, kijunCrossState, bgcolor=kijunCrossBullish ? color.new(color.green, 80) : kijunCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 3, str.tostring(kijunCrossWeight), bgcolor=kijunCrossBullish ? color.new(color.green, 80) : kijunCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    table.cell(signalTable, 0, 4, 'Tenkan Cross', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 4, tenkanCrossState, bgcolor=tenkanCrossBullish ? color.new(color.green, 80) : tenkanCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 4, str.tostring(tenkanCrossWeight), bgcolor=tenkanCrossBullish ? color.new(color.green, 80) : tenkanCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    // Weak Bullish Signals
+    table.cell(signalTable, 0, 5, 'Kumo Twist', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 5, kumoTwistState, bgcolor=kumoTwistBullish ? color.new(color.green, 80) : kumoTwistBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 5, str.tostring(kumoTwistWeight), bgcolor=kumoTwistBullish ? color.new(color.green, 80) : kumoTwistBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    table.cell(signalTable, 0, 6, 'Kijun Confirmation', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 6, kijunConfirmationState, bgcolor=kijunConfirmationBullish ? color.new(color.green, 80) : kijunConfirmationBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 6, str.tostring(kijunConfirmationWeight), bgcolor=kijunConfirmationBullish ? color.new(color.green, 80) : kijunConfirmationBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    table.cell(signalTable, 0, 7, 'Tenkan/Kijun Above Cloud', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 7, tenkanKijunAboveCloudState, bgcolor=tenkanKijunAboveCloudBullish ? color.new(color.green, 80) : tenkanKijunAboveCloudBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 7, str.tostring(tenkanKijunAboveCloudWeight), bgcolor=tenkanKijunAboveCloudBullish ? color.new(color.green, 80) : tenkanKijunAboveCloudBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    table.cell(signalTable, 0, 8, 'Chikou Above Cloud', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 8, chikouAboveCloudState, bgcolor=chikouAboveCloudBullish ? color.new(color.green, 80) : chikouAboveCloudBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 8, str.tostring(chikouAboveCloudWeight), bgcolor=chikouAboveCloudBullish ? color.new(color.green, 80) : chikouAboveCloudBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    table.cell(signalTable, 0, 9, 'Price Kijun Cross', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 9, priceKijunCrossState, bgcolor=priceKijunCrossBullish ? color.new(color.green, 80) : priceKijunCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 9, str.tostring(priceKijunCrossWeight), bgcolor=priceKijunCrossBullish ? color.new(color.green, 80) : priceKijunCrossBearish ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    // Chikou State (Consolidating)
+    table.cell(signalTable, 0, 10, 'Chikou State', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 10, chikouSpanState, bgcolor=chikouSpanBullish ? color.new(color.green, 80) : chikouSpanBearish ? color.new(color.red, 80) : color.new(color.orange, 80), text_color=color.white)
+    table.cell(signalTable, 2, 10, str.tostring(chikouSpanWeight), bgcolor=chikouSpanBullish ? color.new(color.green, 80) : chikouSpanBearish ? color.new(color.red, 80) : color.new(color.orange, 80), text_color=color.white)
+
+    // Price Positioning
+    table.cell(signalTable, 0, 11, 'Price Positioning', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 11, pricePositioningState, bgcolor=pricePositioningState == 'Bullish' ? color.new(color.green, 80) : pricePositioningState == 'Bearish' ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 11, str.tostring(pricePositioningWeight), bgcolor=pricePositioningState == 'Bullish' ? color.new(color.green, 80) : pricePositioningState == 'Bearish' ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    // Overall Sentiment
+    table.cell(signalTable, 0, 12, 'Overall Sentiment', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 12, overallSentiment, bgcolor=overallSentiment == 'Bullish' or overallSentiment == 'Bullish (Weak)' ? color.new(color.green, 80) : overallSentiment == 'Bearish' or overallSentiment == 'Bearish (Weak)' ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+    table.cell(signalTable, 2, 12, str.tostring(totalWeight), bgcolor=overallSentiment == 'Bullish' or overallSentiment == 'Bullish (Weak)' ? color.new(color.green, 80) : overallSentiment == 'Bearish' or overallSentiment == 'Bearish (Weak)' ? color.new(color.red, 80) : color.new(color.gray, 80), text_color=color.white)
+
+    // Last Sell Reason
+    table.cell(signalTable, 0, 13, 'Last Sell Reason', bgcolor=color.new(color.black, 90), text_color=color.white)
+    table.cell(signalTable, 1, 13, lastSellReason, bgcolor=color.new(color.gray, 90), text_color=color.white)
+
+    // Determine color and opacity
+    opacity = math.abs(rvolStrength) * 20  // Scale for [-5, 5] to [0, 100]
+    opacity := math.max(10, math.min(opacity, 90))  // Range [10, 90]
+    rvolColor = rvolStrength >= 3 ? color.new(color.lime, opacity) : rvolStrength <= -3 ? color.new(color.fuchsia, opacity) : rvolStrength > 0 ? color.new(color.green, opacity) : color.new(color.red, opacity)
+
+    // Display "RVOL" in the table
+    table.cell(signalTable, 2, 13, "RVOL", bgcolor=rvolColor, text_color=color.white)
+
+// === Plotting ===
+plot(tenkan, 'Tenkan', color=color.red)
+plot(kijun, 'Kijun', color=color.blue)
+plot(chikou, 'Chikou', color=chikouColor, offset=-offset)
+p123 = plot(senkouA, 'Senkou A', color=color.green, offset=offset)
+p234 = plot(senkouB, 'Senkou B', color=color.red, offset=offset)
+fillColor = senkouA > senkouB ? color.new(color.green, 80) : color.new(color.red, 80)
+fill(p123, p234, color=fillColor)
+plot(totalWeight, 'Total Weight', color=color.gray, style=plot.style_histogram, display=display.none)
+
+// Plot ATR targets and stops with visibility control
+plot(hasPosition and (useAtrSell or paintAtrTargets) ? atrTargetPrice : na, 'ATR Target', color=color.orange, style=plot.style_stepline)
+plot(hasPosition and (useAtrSell or paintAtrTargets) ? atrStopPrice : na, 'ATR Stop', color=color.red, style=plot.style_stepline)
+
+// Plot sell signals with labels
+plotshape(sellSignal and not sellSignal[1] and hasPosition, title='Sell', location=location.belowbar, color=color.red, style=shape.triangleup, size=size.tiny)
+plotshape(buySignalFiltered and not buySignalFiltered[1] and not hasPosition, title='Buy', location=location.abovebar, color=color.green, style=shape.triangledown, size=size.tiny)

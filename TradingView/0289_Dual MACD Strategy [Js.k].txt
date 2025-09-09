@@ -1,0 +1,63 @@
+//@version=6
+strategy (title = "Dual MACD Strategy [Js.k]", shorttitle = "DualMACD",overlay = false,default_qty_type = strategy.percent_of_equity, default_qty_value = 10, initial_capital = 10000, commission_type = strategy.commission.percent, commission_value = 0.04, slippage = 2, pyramiding = 1, process_orders_on_close = true)
+
+// ─── 输入参数 ───────────────────────────────────
+//* MACD #1 */
+macd1_fast_len     = input.int(34 ,  "MACD1 Fast Length")
+macd1_slow_len     = input.int(144,  "MACD1 Slow Length")
+macd1_sig_len      = input.int(9  ,  "MACD1 Signal Smoothing" , minval = 1, maxval = 50)
+macd1_ma_src       = input.string("EMA", "MACD1 Oscillator MA", options = ["SMA","EMA"])
+macd1_ma_sig       = input.string("EMA", "MACD1 Signal MA"    , options = ["SMA","EMA"])
+
+//* MACD #2 */
+macd2_fast_len     = input.int(100, "MACD2 Fast Length")
+macd2_slow_len     = input.int(200, "MACD2 Slow Length")
+macd2_sig_len      = input.int(50 , "MACD2 Signal Smoothing"  , minval = 1, maxval = 50)
+macd2_ma_src       = input.string("EMA", "MACD2 Oscillator MA", options = ["SMA","EMA"])
+macd2_ma_sig       = input.string("EMA", "MACD2 Signal MA"    , options = ["SMA","EMA"])
+
+//* 止损 / 止盈（百分比） */
+stop_loss_pct      = input.float(1.0, "Stop Loss %" , minval = 0.1, step = 0.1)
+take_profit_pct    = input.float(1.5, "Take Profit %", minval = 0.1, step = 0.1)
+
+// ─── MACD 计算函数 ──────────────────────────────
+f_ma(src, len, use_sma) => use_sma ? ta.sma(src, len) : ta.ema(src, len)
+
+f_macd(src, fast_len, slow_len, sig_len, use_sma_price, use_sma_sig)=>
+    fast = f_ma(src, fast_len , use_sma_price)
+    slow = f_ma(src, slow_len , use_sma_price)
+    macd_line = fast - slow
+    sig_line  = f_ma(macd_line, sig_len, use_sma_sig)
+    hist      = macd_line - sig_line
+    [macd_line, sig_line, hist]
+
+// ─── 计算两组 MACD ──────────────────────────────
+[macd1, sig1, hist1] = f_macd(close, macd1_fast_len, macd1_slow_len, macd1_sig_len, macd1_ma_src=="SMA", macd1_ma_sig=="SMA")
+[macd2, sig2, hist2] = f_macd(close, macd2_fast_len, macd2_slow_len, macd2_sig_len, macd2_ma_src=="SMA", macd2_ma_sig=="SMA")
+
+// ─── 画图（便于理解，不影响交易） ───────────────
+//hline(0, "Zero", color=color.new(#999,60))
+plot(hist1, "MACD1 Hist", color = hist1>=0?#00d4c9:color.red, linewidth=2)
+plot(hist2, "MACD2 Hist", color = hist2>=0?#00bcd4:color.maroon, style=plot.style_histogram)
+
+// ─── 交易条件 ───────────────────────────────────
+long_ready  = ta.crossover(hist2, 0) and hist1 > 0 and hist2 > hist2[1]
+short_ready = ta.crossunder(hist2, 0) and hist1 < 0 and hist2 < hist2[1]
+
+// ─── 入场与风控 ─────────────────────────────────
+if long_ready
+    strategy.entry("Long" , strategy.long )
+if hist1 < 0 and hist1 < hist1[1]
+    strategy.close("long")
+    sl = strategy.position_avg_price * (1 - stop_loss_pct / 100)
+    tp = strategy.position_avg_price * (1 + take_profit_pct / 100)
+    strategy.exit("Long Exit", from_entry = "Long", stop = sl, limit = tp)
+
+
+if short_ready
+    strategy.entry("Short", strategy.short)
+if hist1 > 0 and hist1 > hist1[1]
+    strategy.close("short")
+    sl = strategy.position_avg_price * (1 + stop_loss_pct / 100)
+    tp = strategy.position_avg_price * (1 - take_profit_pct / 100)
+    strategy.exit("Short Exit", from_entry = "Short", stop = sl, limit = tp)

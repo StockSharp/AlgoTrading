@@ -1,0 +1,31 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © francis1970
+
+//@version=6
+strategy('Smoothed Heiken-Ashi', overlay = true)
+
+emalength = input.int(40, title="multiplier")
+
+shaOpen = (ta.ema(open[1], emalength) + ta.ema(close[1], emalength)) / 2
+shaLow = math.min(ta.ema(low, emalength),ta.ema(open, emalength),ta.ema(close, emalength))
+shaHigh = math.max(ta.ema(high, emalength),ta.ema(open, emalength),ta.ema(close, emalength))
+shaClose = (ta.ema(open, emalength) + ta.ema(high, emalength) + ta.ema(low, emalength) + ta.ema(close, emalength)) / 4
+
+// ========== Buy/Sell signal ===============//
+//buysignal = (shaClose > shaOpen) and (shaHigh > shaLow)
+//sellsignal  = (shaClose < shaOpen) and (shaLow <  shaHigh)
+
+buysignal = (shaClose > shaOpen) and ( (shaClose -shaOpen) > (shaClose[1] - shaOpen[1]))
+sellsignal  = (shaClose < shaOpen) and ( (shaOpen - shaClose) > (shaOpen[1] - shaClose[1]))
+
+
+if (buysignal and strategy.position_size == 0.0 )
+    strategy.entry("Buy", strategy.long)
+
+if sellsignal and strategy.position_size > 0.0
+    strategy.close("Buy")
+
+plotcandle(shaOpen,shaHigh,shaLow,shaClose,"Smoothed Heiken Ashi", color=shaClose >= shaOpen ? color.green : color.red)
+plotcandle(open,high,low,close)
+plotshape(buysignal,"KKKKKKKKKK")
+plotshape(sellsignal,"sell")

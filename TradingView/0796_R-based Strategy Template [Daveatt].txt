@@ -1,0 +1,231 @@
+//@version=6
+strategy("R-based Strategy Template", overlay=true, initial_capital=10000, default_qty_type=strategy.percent_of_equity,
+ default_qty_value=1, max_labels_count=500,margin_long=0, margin_short=0, process_orders_on_close=true, calc_on_every_tick=true)
+
+// Input Groups
+var string GRP_RISK = "Risk Management"
+var string GRP_RSI = "RSI Settings"
+var string GRP_SL_TP = "Stop Loss & Take Profit"
+var string GRP_DISPLAY = "Display Settings"
+
+// Risk Management Inputs
+risk_per_trade_percent = input.float(1.0, "Risk per trade (% of capital)", minval=0.1, maxval=100.0, step=0.1, group=GRP_RISK)
+
+// RSI Parameters
+rsi_length = input.int(14, "RSI Length", minval=1, group=GRP_RSI)
+oversold_level = input.int(30, "Oversold Level", minval=0, maxval=100, group=GRP_RSI)
+overbought_level = input.int(70, "Overbought Level", minval=0, maxval=100, group=GRP_RSI)
+
+// SL/TP Settings
+sl_choice = input.string("Fixed", "Stop Loss Type", options=["Fixed", "ATR Based", "Percentage", "Ticks"], group=GRP_SL_TP)
+sl_value = input.float(100, "Fixed SL Value", tooltip="In points", group=GRP_SL_TP)
+atr_length = input.int(14, "ATR Length", group=GRP_SL_TP)
+atr_multiplier = input.float(2, "ATR Multiplier", group=GRP_SL_TP)
+tp_r_value = input.float(2, "Fixed TP R Value", group=GRP_SL_TP, tooltip="R = TP / SL")
+
+// Display Settings
+show_sl_tp_zones = input.bool(true, "Show SL/TP Zones", group=GRP_DISPLAY)
+
+// Calculate RSI
+rsi = ta.rsi(close, rsi_length)
+
+// Calculate ATR
+atr = ta.atr(atr_length)
+
+// Trading Variables
+var float entry_price = na
+var float sl_price = na
+var float tp_price = na
+var string current_position = "flat"
+
+// Colors for zones
+var color sl_color = color.new(color.red, 80)
+var color tp_color = color.new(color.green, 80)
+
+// Calculate SL/TP prices
+calculate_sl(entry_price, direction) =>
+    float sl = na
+    if sl_choice == "Fixed"
+        sl := direction == "long" ? entry_price - sl_value : entry_price + sl_value
+    else if sl_choice == "ATR Based"
+        sl := direction == "long" ? entry_price - (atr * atr_multiplier) : entry_price + (atr * atr_multiplier)
+    else if sl_choice == "Percentage"
+        sl := direction == "long" ? entry_price - (entry_price * sl_value / 100) : entry_price + (entry_price * sl_value / 100)
+    else if sl_choice == "Ticks"
+        sl := direction == "long" ? entry_price - (sl_value * syminfo.mintick) : entry_price + (sl_value * syminfo.mintick)
+    sl
+
+calculate_tp(entry_price, sl_price, direction) =>
+    direction == "long" ? entry_price + (math.abs(entry_price - sl_price) * tp_r_value) : entry_price - (math.abs(entry_price - sl_price) * tp_r_value)
+
+
+// Entry conditions
+long_condition = ta.crossunder(rsi, oversold_level)
+short_condition = ta.crossover(rsi, overbought_level)
+
+plotshape(long_condition, location=location.bottom, color=color.green, style=shape.circle, title="Long Entry", size=size.normal)
+plotshape(short_condition, location=location.top, color=color.red, style=shape.circle, title="Short Entry", size=size.normal)
+
+// Strategy logic
+if long_condition and strategy.position_size <= 0
+    entry_price := close
+    sl_price := calculate_sl(entry_price, "long")
+    tp_price := calculate_tp(entry_price, sl_price, "long")
+    sl_distance = math.abs(entry_price - sl_price)
+    risk_amount = (strategy.equity * (risk_per_trade_percent / 100))
+    position_size = risk_amount / (sl_distance * syminfo.pointvalue)
+    strategy.entry("Long", strategy.long, qty=position_size)
+
+else if short_condition and strategy.position_size >= 0
+    entry_price := close
+    sl_price := calculate_sl(entry_price, "short")
+    tp_price := calculate_tp(entry_price, sl_price, "short")
+    sl_distance = math.abs(entry_price - sl_price)
+    risk_amount = (strategy.equity * (risk_per_trade_percent / 100))
+    position_size = risk_amount / (sl_distance * syminfo.pointvalue)
+    strategy.entry("Short", strategy.short, qty=position_size)
+
+// Exit logic
+strategy.exit("Long Exit", "Long", stop=sl_price, limit=tp_price, comment_loss="Long SL", comment_profit="Long TP", alert_loss="Long SL", alert_profit="Long TP")
+strategy.exit("Short Exit", "Short", stop=sl_price, limit=tp_price, comment_loss="Short SL", comment_profit="Short TP", alert_loss="Short SL", alert_profit="Short TP")
+
+// Reset position when stopped out or target hit
+//if strategy.position_size == 0
+//    entry_price := na
+//    sl_price := na
+//    tp_price := na
+
+// Plot SL/TP zones
+plot_long = plot(strategy.position_size > 0 ? entry_price : na, "Long Entry", color=color.blue, style=plot.style_linebr)
+plot_long_sl = plot(strategy.position_size > 0 ? sl_price : na, "Long SL", color=color.red, style=plot.style_linebr)
+plot_long_tp = plot(strategy.position_size > 0 ? tp_price : na, "Long TP", color=color.green, style=plot.style_linebr)
+
+plot_short = plot(strategy.position_size < 0 ? entry_price : na, "Short Entry", color=color.blue, style=plot.style_linebr)
+plot_short_sl = plot(strategy.position_size < 0 ? sl_price : na, "Short SL", color=color.red, style=plot.style_linebr)
+plot_short_tp = plot(strategy.position_size < 0 ? tp_price : na, "Short TP", color=color.green, style=plot.style_linebr)
+
+// Fill SL/TP zones
+fill(plot_long, plot_long_sl, color = show_sl_tp_zones ? sl_color : na, title = "Long SL Zone")
+fill(plot_long, plot_long_tp, color = show_sl_tp_zones ? tp_color : na, title = "Long TP Zone")
+fill(plot_short, plot_short_sl, color = show_sl_tp_zones ? sl_color : na, title = "Short SL Zone")
+fill(plot_short, plot_short_tp, color = show_sl_tp_zones ? tp_color : na, title = "Short TP Zone")
+
+// Statistics tracking
+var float total_R = 0.0
+var int total_trades = 0
+var int profitable_trades = 0
+var int losing_trades = 0
+var int consecutive_wins = 0
+var int consecutive_losses = 0
+var int max_consecutive_wins = 0
+var int max_consecutive_losses = 0
+var float total_R_won = 0.0
+var float total_R_lost = 0.0
+
+// Calculate R value for closed trades
+f_calculate_R(profit_amount, entry_price, sl_price, tp_price) =>
+    float R_value = 0.0
+    if profit_amount > 0
+        risk = math.abs(entry_price - sl_price)
+        reward = math.abs(tp_price - entry_price)
+        R_value := risk != 0 ? reward / risk : 0.0
+    else
+        R_value := -1.0
+    math.round(R_value, 3)
+
+var label cumulative_R_label = na
+
+// Function to create trade labels
+f_create_trade_labels(entry_price, sl_price, tp_price, is_long, entry_bar_index, exit_bar_index) =>
+    middle_bar = math.round(math.avg(entry_bar_index, exit_bar_index))
+
+    // Calculate price differences
+    tp_diff = tp_price - entry_price
+    sl_diff = sl_price - entry_price
+
+    // Calculate vertical midpoints for R:R label
+    rr_price_long = math.avg(entry_price, tp_price)  // Middle between entry and TP for longs
+    rr_price_short = math.avg(entry_price, sl_price) // Middle between entry and SL for shorts
+
+    // Format R:R info
+    rr_text = str.format("Risk/Reward Ratio: {0}", str.tostring(math.round(math.abs(tp_diff/sl_diff), 2)))
+
+    if is_long
+        // Target label above TP price
+        //label.new(middle_bar, tp_price, f_format_price_info(tp_diff, entry_price, "Target"), color=color.green, textcolor=color.white, style=label.style_label_down, yloc=yloc.price)
+
+        // R:R label at midpoint between entry and TP
+        label.new(middle_bar, rr_price_long, rr_text, color=color.green, textcolor=color.white, style=label.style_label_center, size=size.normal)
+
+        // Stop label below SL price
+        //label.new(middle_bar, sl_price, f_format_price_info(sl_diff, entry_price, "Stop"), color=color.red, textcolor=color.white, style=label.style_label_up, yloc=yloc.price)
+    else
+        // Stop label above SL price
+        //label.new(middle_bar, sl_price, f_format_price_info(sl_diff, entry_price, "Stop"), color=color.red, textcolor=color.white, style=label.style_label_down, yloc=yloc.price)
+
+        // R:R label at midpoint between entry and SL
+        label.new(middle_bar, rr_price_short, rr_text, color=color.red, textcolor=color.white, style=label.style_label_center, size=size.normal)
+
+        // Target label below TP price
+        //label.new(middle_bar, tp_price, f_format_price_info(tp_diff, entry_price, "Target"), color=color.green, textcolor=color.white, style=label.style_label_up, yloc=yloc.price)
+
+
+// Update statistics for closed trades
+if strategy.closedtrades > 0 and strategy.closedtrades != strategy.closedtrades[1]
+    last_trade_profit = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    last_trade_entry = strategy.closedtrades.entry_price(strategy.closedtrades - 1)
+    R_value = f_calculate_R(last_trade_profit, last_trade_entry, sl_price, tp_price)
+
+    total_R += R_value
+    total_trades += 1
+
+    if R_value > 0
+        profitable_trades += 1
+        total_R_won += R_value
+        consecutive_wins += 1
+        consecutive_losses := 0
+    else
+        losing_trades += 1
+        total_R_lost += R_value
+        consecutive_losses += 1
+        consecutive_wins := 0
+
+    max_consecutive_wins := math.max(max_consecutive_wins, consecutive_wins)
+    max_consecutive_losses := math.max(max_consecutive_losses, consecutive_losses)
+
+    if strategy.closedtrades.size(strategy.closedtrades - 1) > 0
+        cumulative_R_label := label.new(bar_index, low - (low * 0.009), "Cum Total R: " + str.tostring(math.round(total_R, 2)) + "R", color=color.black, textcolor=color.white, style=label.style_label_up, size=size.large)
+    else if strategy.closedtrades.size(strategy.closedtrades - 1) < 0
+        cumulative_R_label := label.new(bar_index, high + (high * 0.009), "Cum Total R: " + str.tostring(math.round(total_R, 2)) + "R", color=color.black, textcolor=color.white, style=label.style_label_down, size=size.large)
+
+    last_trade = strategy.closedtrades - 1
+    entry_price = strategy.closedtrades.entry_price(last_trade)
+    exit_price = strategy.closedtrades.exit_price(last_trade)
+    is_long = strategy.closedtrades.size(last_trade) > 0
+    entry_bar = strategy.closedtrades.entry_bar_index(last_trade)
+    exit_bar = strategy.closedtrades.exit_bar_index(last_trade)
+
+    f_create_trade_labels(entry_price, sl_price, tp_price, is_long, entry_bar, exit_bar)
+
+// Statistics table
+var table stats_table = table.new(position.top_right, 10, 10, border_width=2, border_color=color.white, frame_color=color.white, frame_width=2)
+
+if barstate.islast
+    float win_rate = total_trades > 0 ? (profitable_trades / total_trades) * 100 : 0
+    float avg_r_per_trade = total_trades > 0 ? total_R / total_trades : 0
+
+    table.cell(stats_table, 0, 0, "STATISTICS", bgcolor=color.gray, text_color=color.white)
+    table.cell(stats_table, 0, 1, "Total Trades: " + str.tostring(total_trades), text_color = color.white)
+    table.cell(stats_table, 0, 2, "Win Rate: " + str.tostring(math.round(win_rate, 2)) + "%", text_color = color.white)
+    table.cell(stats_table, 0, 3, "Total R Won: " + str.tostring(math.round(total_R_won, 2)), text_color = color.white)
+    table.cell(stats_table, 0, 4, "Total R Lost: " + str.tostring(math.round(total_R_lost, 2)), text_color = color.white)
+    table.cell(stats_table, 0, 5, "Total R: " + str.tostring(math.round(total_R, 2)), text_color = color.white)
+    table.cell(stats_table, 0, 6, "Avg R/Trade: " + str.tostring(math.round(avg_r_per_trade, 2)), text_color = color.white)
+    table.cell(stats_table, 0, 7, "Max Cons. Wins: " + str.tostring(max_consecutive_wins), text_color = color.white)
+    table.cell(stats_table, 0, 8, "Max Cons. Losses: " + str.tostring(max_consecutive_losses), text_color = color.white)
+    table.cell(stats_table, 0, 9, "Net Profit: $" + str.tostring(math.round(strategy.netprofit, 2)), text_color = color.white)
+
+
+// Debug
+
+plot(strategy.equity, title="Equity", display = display.data_window)

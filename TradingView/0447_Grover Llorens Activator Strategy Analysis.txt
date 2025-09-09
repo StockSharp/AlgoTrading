@@ -1,0 +1,31 @@
+// This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License https://creativecommons.org/licenses/by-sa/4.0/
+// © alexgrover & Lucía Llorens
+
+//@version=4
+strategy("Grover Llorens Activator")
+length = input(480),mult = input(14),src = input(close)
+//----
+ts = 0.
+diff = src - nz(ts[1],src[1])
+atr = atr(length)
+//----
+up = crossover(diff,0)
+dn = crossunder(diff,0)
+val = valuewhen(up or dn,atr/length,0)
+bars = barssince(up or dn)
+ts := up ? nz(ts[1],src) - atr*mult : dn ? nz(ts[1],src) + atr*mult : nz(ts[1],src) + sign(diff)*val*bars
+//----
+if up
+    strategy.entry("Buy", strategy.long)
+if dn
+    strategy.entry("Sell", strategy.short)
+//----
+cap = strategy.initial_capital
+eq = strategy.equity
+rmax = 0.
+rmax := max(eq,nz(rmax[1]))
+//----
+css = eq > cap ? #0cb51a : #e65100
+a = plot(eq,"Equity",#2196f3,2,transp=0)
+b = plot(rmax,"Maximum",css,2,transp=0)
+fill(a,b,css,80)

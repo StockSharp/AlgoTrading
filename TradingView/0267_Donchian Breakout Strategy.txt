@@ -1,0 +1,78 @@
+//@version=5
+strategy("Donchian Breakout Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.045)
+
+// === Inputs ===
+entryLen = input.int(20, "Donchian Entry Length", minval=1)
+exitLen = input.int(10, "Donchian Exit Length", minval=1)
+atrLength = input.int(14, "ATR Length", minval=1)
+atrMult = input.float(1.5, "ATR Stop Multiplier", minval=0.1)
+emaLen = input.int(50, "EMA Trend Filter Length")
+
+useLongs = input.bool(true, "Enable Longs")
+useShorts = input.bool(true, "Enable Shorts")
+useVolatilityFilter = input.bool(true, "Use Volatility Filter (ATR must be above SMA of ATR)")
+useVolumeFilter = input.bool(false, "Use Volume Filter (Volume above SMA)")
+
+volSmaLen = input.int(20, "Volume SMA Length")
+volatilitySmaLen = input.int(20, "ATR SMA Length")
+
+// === Time Filter for Backtest ===
+startDate = timestamp("2025-01-01 00:00 +0000")
+if (time < startDate)
+    strategy.cancel_all()
+
+// === Indicators ===
+highestHigh = ta.highest(high, entryLen)
+lowestLow = ta.lowest(low, entryLen)
+exitLong = ta.lowest(low, exitLen)
+exitShort = ta.highest(high, exitLen)
+
+atr = ta.atr(atrLength)
+atrSMA = ta.sma(atr, volatilitySmaLen)
+volatilityPass = not useVolatilityFilter or (atr > atrSMA)
+
+volSMA = ta.sma(volume, volSmaLen)
+volumePass = not useVolumeFilter or (volume > volSMA)
+
+ema = ta.ema(close, emaLen)
+
+// === Entry Conditions ===
+longCondition = useLongs and close > highestHigh[1] and close > ema and ta.rsi(close, 14) > 50 and volatilityPass and volumePass
+shortCondition = useShorts and close < lowestLow[1] and close < ema and ta.rsi(close, 14) < 50 and volatilityPass and volumePass
+
+// === Exit Conditions ===
+longExit = close < exitLong[1]
+shortExit = close > exitShort[1]
+
+// === ATR-Based Stop Loss ===
+longStop = close - atr * atrMult
+shortStop = close + atr * atrMult
+
+// === Entry Execution ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long Exit", from_entry="Long", stop=longStop)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Short Exit", from_entry="Short", stop=shortStop)
+
+// === Exit Execution ===
+if (strategy.position_size > 0 and longExit)
+    strategy.close("Long")
+
+if (strategy.position_size < 0 and shortExit)
+    strategy.close("Short")
+
+// === Plotting ===
+plot(highestHigh, title="Donchian High", color=color.green)
+plot(lowestLow, title="Donchian Low", color=color.red)
+plot(exitLong, title="Long Exit Level", color=color.orange)
+plot(exitShort, title="Short Exit Level", color=color.purple)
+plot(ema, title="EMA Filter", color=color.blue)
+
+// === Visual Debug ===
+plotshape(longCondition, title="Long Entry", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(shortCondition, title="Short Entry", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+plotshape(longExit, title="Long Exit", location=location.abovebar, color=color.orange, style=shape.xcross, size=size.tiny)
+plotshape(shortExit, title="Short Exit", location=location.belowbar, color=color.purple, style=shape.xcross, size=size.tiny)

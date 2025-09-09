@@ -1,0 +1,139 @@
+//@version=6
+strategy("Dskyz (DAFE) Quantum Sentiment Flux - Beginners", overlay=true, max_bars_back=500, default_qty_type=strategy.fixed, default_qty_value=1)
+
+// === Preset Mode ===
+presetCategory = input.string(defval="Balanced", options=["Aggressive", "Balanced", "Conservative"], title="Mode Preset 🎛️")
+contracts_per_trade = input.int(defval=1, minval=1, maxval=10, title="Contracts Per Trade")
+
+// === Preset-Driven Parameters for More Trades ===
+atr_length          = presetCategory == "Aggressive" ? 9 : presetCategory == "Conservative" ? 12 : 10
+atr_mult            = presetCategory == "Aggressive" ? 1.1 : presetCategory == "Conservative" ? 1.3 : 1.2
+ma_len              = presetCategory == "Aggressive" ? 5 : presetCategory == "Conservative" ? 9 : 7
+slow_len            = presetCategory == "Aggressive" ? 12 : presetCategory == "Conservative" ? 18 : 14
+ma_strength_th      = presetCategory == "Aggressive" ? 0.15 : presetCategory == "Conservative" ? 0.25 : 0.18
+cooldown            = presetCategory == "Aggressive" ? 1 : presetCategory == "Conservative" ? 2 : 1
+breadth_sma_len     = presetCategory == "Aggressive" ? 5 : presetCategory == "Conservative" ? 12 : 8
+sector_sma_len      = breadth_sma_len // Dashboard/visual only
+
+// === System Risk Overlay ===
+vix_limit = input.float(defval=20, minval=10, maxval=60, title="VIX Block Threshold")
+
+// === Sector ETF Arrays ===
+sector_syms   = array.from("XLK","XLF","XLE","XLY","XLV","XLI","XLB","XLRE","XLU","XLC")
+sector_names  = array.from("Tech","Financial","Energy","ConsDisc","Health","Industrl","Materials","REIT","Utility","Comm")
+int sector_count = array.size(sector_syms)
+
+// === Overlay assets ===
+float vix_close = request.security("VIX", timeframe.period, close)
+float spx_close = request.security("SPX", timeframe.period, close)
+float spx_sma   = request.security("SPX", timeframe.period, ta.sma(close, sector_sma_len))
+int spx_trend   = spx_close > spx_sma ? 1 : spx_close < spx_sma ? -1 : 0
+string spx_trend_txt = spx_trend==1 ? "UP" : spx_trend==-1 ? "DOWN" : "FLAT"
+
+// === ATR & MAs ===
+float myATR   = ta.atr(atr_length)
+float ma_fast = ta.ema(close, ma_len)
+float ma_slow = ta.ema(close, slow_len)
+trend_dir = ma_fast > ma_slow + (myATR * ma_strength_th) ? 1 : ma_fast < ma_slow - (myATR * ma_strength_th) ? -1 : 0
+
+// === Entry/Exit Signals ===
+buy_signal  = ta.crossover(ma_fast, ma_slow) and trend_dir == 1
+sell_signal = ta.crossunder(ma_fast, ma_slow) and trend_dir == -1
+
+var float last_entry_bar = na
+var float last_trade_bar = na
+can_trade = na(last_trade_bar) or (bar_index - last_trade_bar) >= cooldown
+
+// === VIX filter ===
+can_long = vix_close < vix_limit
+can_short = true
+
+// === ATR-based Stops/Targets ===
+stop_dist = myATR * atr_mult
+take_mult = atr_mult * 2
+
+if buy_signal and strategy.position_size == 0 and can_trade and can_long
+    strategy.entry("Long", strategy.long, qty=contracts_per_trade)
+    last_entry_bar := bar_index
+    last_trade_bar := bar_index
+
+if sell_signal and strategy.position_size == 0 and can_trade and can_short
+    strategy.entry("Short", strategy.short, qty=contracts_per_trade)
+    last_entry_bar := bar_index
+    last_trade_bar := bar_index
+
+if strategy.position_size > 0
+    strategy.exit("Long Exit", "Long", stop=close-stop_dist, limit=close+take_mult*myATR)
+if strategy.position_size < 0
+    strategy.exit("Short Exit", "Short", stop=close+stop_dist, limit=close-take_mult*myATR)
+
+// ===== Table/Breadth Dashboard with Heatmap Detail =====
+int tableRows = sector_count + 8
+var table dashboard = table.new(position.bottom_left, 3, tableRows, bgcolor=color.new(#191922, 96), border_color=color.rgb(120,120,140), border_width=1)
+float[] sector_closes = array.new_float(sector_count, na)
+float[] sector_smas   = array.new_float(sector_count, na)
+int[]   sector_trends = array.new_int(sector_count, na)
+
+for i=0 to sector_count-1
+    string sym = array.get(sector_syms, i)
+    float s_close = request.security(sym, timeframe.period, close)
+    float s_sma   = request.security(sym, timeframe.period, ta.sma(close, sector_sma_len))
+    int s_trend   = s_close > s_sma ? 1 : s_close < s_sma ? -1 : 0
+    array.set(sector_closes, i, s_close)
+    array.set(sector_smas, i, s_sma)
+    array.set(sector_trends, i, s_trend)
+
+regime    = presetCategory
+regimeCol = presetCategory == "Aggressive" ? color.green : presetCategory == "Conservative" ? color.red : color.orange
+
+if barstate.islast
+    table.cell(dashboard, 0, 0, "⚡Quantum Sentiment Flux", text_color=color.orange, text_size=size.normal)
+    table.cell(dashboard, 1, 0, regime, text_color=regimeCol, text_size=size.normal)
+    // The rest of your table code...
+
+if barstate.islast
+    // Title/Regime row
+    table.cell(dashboard, 0, 0, "⚡Quantum Sentiment Flux", text_color=color.orange, text_size=size.normal)
+    table.cell(dashboard, 1, 0, regime, text_color=regimeCol, text_size=size.normal)
+    // Explanatory row for heatmap
+    table.cell(dashboard, 0, 1, "Breadth BG", text_color=color.yellow, text_size=size.small)
+    table.cell(dashboard, 1, 1, "Green = Strength\nRed = Weakness", text_color=color.yellow, text_size=size.tiny)
+    // Other market context rows
+    color vixCol = vix_close > vix_limit ? color.rgb(255,32,64,0) : color.gray
+    table.cell(dashboard, 0, 2, "VIX", text_color=color.gray, text_size=size.small)
+    table.cell(dashboard, 1, 2, str.tostring(vix_close,"#.##"), text_color=vixCol, text_size=size.normal)
+    color spxCol = spx_trend == 1 ? color.new(color.green, 0) : spx_trend == -1 ? color.rgb(255,32,64,0) : color.gray
+    table.cell(dashboard, 0, 3, "SPX", text_color=color.gray, text_size=size.small)
+    table.cell(dashboard, 1, 3, spx_trend_txt, text_color=spxCol, text_size=size.normal)
+    string blockCell = can_long ? "OK" : "BLOCK"
+    color blockCol = can_long ? color.green : color.rgb(244,86,98,0)
+    table.cell(dashboard, 0, 4, "Trade Longs", text_color=color.gray, text_size=size.normal)
+    table.cell(dashboard, 1, 4, blockCell, text_color=blockCol, text_size=size.normal)
+    table.cell(dashboard, 0, 5, "SECTOR BREADTH", text_color=color.orange, text_size=size.normal)
+    // Each sector row (advance indices by +2 for new header/explanation rows)
+    for i=0 to sector_count-1
+        string sect_name = array.get(sector_names, i)
+        int s_trend = array.get(sector_trends, i)
+        string sTxt = s_trend==1 ? "↑" : s_trend==-1 ? "↓" : "-"
+        color sCol = s_trend==1 ? color.new(color.green, 20) : s_trend==-1 ? color.new(color.red, 20) : color.gray
+        table.cell(dashboard, 0, i+6, sect_name, text_color=color.gray, text_size=size.small)
+        table.cell(dashboard, 1, i+6, sTxt, text_color=sCol, text_size=size.normal)
+// === Chart Markers ===
+plot(ma_fast, color=color.blue, linewidth=2, title="Fast EMA")
+plot(ma_slow, color=color.orange, linewidth=2, title="Slow EMA")
+plotshape(bar_index == last_entry_bar and strategy.position_size > 0, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.normal, title="Long Entry")
+plotshape(bar_index == last_entry_bar and strategy.position_size < 0, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.normal, title="Short Entry")
+
+// === Breadth Background ===
+int breadth = 0
+for i=0 to sector_count-1
+    int s_trend = array.get(sector_trends, i)
+    breadth := breadth + s_trend
+color bg_col = breadth > 4 ? color.new(color.green,90) : breadth < -4 ? color.new(color.red,90) : na
+bgcolor(bg_col, title="Sector Breadth BG")
+
+// DASHBOARD: WATERMARK LOGO (Bottom-Right) D===Z
+
+var table watermarkTable = table.new(position.bottom_right, 1, 1, bgcolor=color.rgb(0,0,0,80), border_color=color.rgb(0,50,137), border_width=1)
+if barstate.islast
+    table.cell(watermarkTable, 0, 0, "⚡ Dskyz (DAFE) Trading Systems", text_color=color.rgb(159,127,255,80), text_size=size.large)

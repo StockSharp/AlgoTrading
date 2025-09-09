@@ -1,0 +1,114 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © OversoldPOS
+
+//@version=5
+strategy("Keltner Channel Strategy by OversoldPOS", overlay=true,initial_capital = 100000,default_qty_type = strategy.percent_of_equity,default_qty_value = 10, commission_type = strategy.commission.cash_per_order, commission_value = 7)
+
+// Parameters
+length = input(21, title="MA Length")
+Entrymult = input(1, title="Entry ATR")
+profit_mult = input(4, title="Profit Taker")
+exit_mult = input(-1, title="Exit ATR")
+
+// Moving Average Type Input
+ma_type = input.string("SMA", title="Moving Average Type", options=["SMA", "EMA", "WMA"])
+
+// Calculate Keltner Channels for different ATR multiples
+atr_value = ta.atr(length)
+
+basis = switch ma_type
+    "SMA" => ta.sma(close, length)
+    "EMA" => ta.ema(close, length)
+    "WMA" => ta.wma(close, length)
+
+
+//
+EntryKeltLong = basis + Entrymult * ta.atr(10)
+EntryKeltShort = basis - Entrymult * ta.atr(10)
+upper_channel1 = basis + 1 * ta.atr(10)
+lower_channel1 = basis - 1 * ta.atr(10)
+upper_channel2 = basis + 2 * ta.atr(10)
+lower_channel2 = basis - 2 * ta.atr(10)
+upper_channel3 = basis + 3 * ta.atr(10)
+lower_channel3 = basis - 3 * ta.atr(10)
+upper_channel4 = basis + 4 * ta.atr(10)
+lower_channel4 = basis - 4 * ta.atr(10)
+
+// Entry condition parameters
+long_entry_condition = input(true, title="Long Positions")
+short_entry_condition = input(true, title="Enable Short Positions")
+
+// Additional conditions for long and short entries
+is_long_entry = ta.ema(close, 20) > ta.ema(close, 50)
+is_short_entry = ta.ema(close, 20) < ta.ema(close, 50)
+
+// Additional conditions for long and short entries
+MAShort =  input(50, title="Short MA for Golden Cross")
+MALong =  input(200, title="Long MA for Golden Cross")
+is_long_entry2 = ta.ema(close, MAShort) > ta.ema(close, MALong)
+is_short_entry2 = ta.ema(close, MAShort) < ta.ema(close, MALong)
+
+// Exit condition parameters
+long_exit_condition1_enabled = input(true, title="Enable Long Profit Taker")
+long_exit_condition2_enabled = input(true, title="Enable Long Stop")
+short_exit_condition1_enabled = input(true, title="Enable Short Profit Taker")
+short_exit_condition2_enabled = input(true, title="Enable Short Stop")
+
+// Take Profit condition parameters
+take_profit_enabled = input(true, title="Enable Take Profit Condition")
+
+Takeprofit = basis + profit_mult * atr_value
+STakeprofit = basis - profit_mult * atr_value
+
+// Long entry condition
+long_condition = long_entry_condition and ta.crossover(close, EntryKeltLong) and is_long_entry2
+
+// Short entry condition
+short_condition = short_entry_condition and ta.crossunder(close, EntryKeltShort) and is_short_entry2
+
+// Exit conditions
+long_exit_condition1 = long_exit_condition1_enabled and close > Takeprofit
+long_exit_condition2 = long_exit_condition2_enabled and close < basis + exit_mult * atr_value
+short_exit_condition1 = short_exit_condition1_enabled and close < STakeprofit
+short_exit_condition2 = short_exit_condition2_enabled and close > basis - exit_mult * atr_value
+
+// Strategy logic
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+
+if (long_exit_condition1 or long_exit_condition2)
+    strategy.close("Long")
+
+if (short_exit_condition1 or short_exit_condition2)
+    strategy.close("Short")
+
+// Moving Averages
+var float MA1 = na
+var float MA2 = na
+
+if (ma_type == "SMA")
+    MA1 := ta.sma(close, MAShort)
+    MA2 := ta.sma(close, MALong)
+else if (ma_type == "EMA")
+    MA1 := ta.ema(close, MAShort)
+    MA2 := ta.ema(close, MALong)
+else if (ma_type == "WMA")
+    MA1 := ta.wma(close, MAShort)
+    MA2 := ta.wma(close, MALong)
+
+// Plotting Keltner Channels with adjusted transparency
+transparentColor = color.rgb(255, 255, 255, 56)
+
+plot(upper_channel1, color=transparentColor, title="Upper Channel 1")
+plot(lower_channel1, color=transparentColor, title="Lower Channel 1")
+plot(upper_channel2, color=transparentColor, title="Upper Channel 2")
+plot(lower_channel2, color=transparentColor, title="Lower Channel 2")
+plot(upper_channel3, color=transparentColor, title="Upper Channel 3")
+plot(lower_channel3, color=transparentColor, title="Lower Channel 3")
+plot(upper_channel4, color=transparentColor, title="Upper Channel 4")
+plot(lower_channel4, color=transparentColor, title="Lower Channel 4")
+plot(basis, color=color.white, title="Basis")
+plot(MA1, color=color.rgb(4, 248, 216), linewidth=2, title="Middle MA")
+plot(MA2, color=color.rgb(220, 7, 248), linewidth=2, title="Long MA")

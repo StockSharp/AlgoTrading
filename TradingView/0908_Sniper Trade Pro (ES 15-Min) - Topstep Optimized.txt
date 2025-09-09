@@ -1,0 +1,93 @@
+//@version=6
+strategy("Sniper Trade Pro (ES 15-Min) - Topstep Optimized", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1)
+
+// === Market Session (NY Open) ===
+sessionStart = timestamp(year(time), month(time), dayofmonth(time), 9, 30)  // 9:30 AM ET
+sessionEnd = timestamp(year(time), month(time), dayofmonth(time), 12, 0)   // 12:00 PM ET
+inSession = time >= sessionStart and time <= sessionEnd
+
+// === Topstep Risk Management ===
+accountSize = 50000  // Topstep $50K Combine
+maxDailyLoss = -1000  // Stop trading if daily loss hits -$1,000
+riskPerTrade = 400  // Max risk per trade: $400
+atr = ta.atr(14)
+tickValue = 12.50  // ES tick value ($12.50 per 0.25 point)
+
+// === Dynamic Position Sizing for ES ===
+lotSize = riskPerTrade / (atr * tickValue)
+
+// === Trend Confirmation: EMA + VWAP + Custom ADX ===
+emaFast = ta.ema(close, 9)
+emaSlow = ta.ema(close, 21)
+vwapLine = ta.vwap(close)
+
+// === Fixed Custom ADX Calculation ===
+adxLength = 14
+upMove = high - high[1]
+downMove = low[1] - low
+plusDM = upMove > downMove and upMove > 0 ? upMove : 0
+minusDM = downMove > upMove and downMove > 0 ? downMove : 0
+
+// ✅ Corrected True Range Calculation (Fix for `ta.max()` error)
+tr1 = high - low
+tr2 = math.abs(high - close[1])
+tr3 = math.abs(low - close[1])
+tr = math.max(tr1, math.max(tr2, tr3)) + 1e-10  // ✅ Ensure no division by zero
+
+plusDI = ta.sma(plusDM / tr * 100, adxLength)
+minusDI = ta.sma(minusDM / tr * 100, adxLength)
+adx = ta.sma(math.abs(plusDI - minusDI) / (plusDI + minusDI) * 100, adxLength)
+
+// === Money Flow Divergence (MFD) - Simulated ===
+mfd = ta.ema(ta.mom(close, 14), 10)
+mfdSignal = mfd > ta.sma(mfd, 10) ? 1 : -1
+
+// === Key Candlestick Patterns ===
+bullEngulfing = (close > open[1]) and (open < close[1]) and ((high - low) > (high[1] - low[1]))
+bearEngulfing = (close < open[1]) and (open > close[1]) and ((high - low) > (high[1] - low[1]))
+
+// === Entry Conditions ===
+buySignal = inSession and emaFast > emaSlow and close > vwapLine and mfdSignal == 1 and bullEngulfing and adx > 20
+sellSignal = inSession and emaFast < emaSlow and close < vwapLine and mfdSignal == -1 and bearEngulfing and adx > 20
+
+// === Stricter Stop Loss & Take Profit ===
+stopLossBuy = close - (atr * 0.8)  // Smaller SL for lower drawdown
+stopLossSell = close + (atr * 0.8)
+takeProfitBuy = close + (atr * 2.0)  // Keeps R:R at 2:1
+takeProfitSell = close - (atr * 2.0)
+
+// === Break-Even Stop Logic ===
+var float moveToBreakEvenBuy = na
+var float moveToBreakEvenSell = na
+
+if strategy.position_size > 0 and close >= strategy.position_avg_price + atr
+    moveToBreakEvenBuy := strategy.position_avg_price  // Set BE for Buy
+
+if strategy.position_size < 0 and close <= strategy.position_avg_price - atr
+    moveToBreakEvenSell := strategy.position_avg_price  // Set BE for Sell
+
+// === Daily Loss Limit Enforcement ===
+var float cumulativeLoss = 0
+tradeLoss = strategy.opentrades == 0 ? strategy.netprofit : 0
+cumulativeLoss := cumulativeLoss + tradeLoss
+withinRiskLimits = cumulativeLoss > maxDailyLoss  // Stop trading if loss exceeds -$1,000
+
+// === Strategy Execution ===
+if buySignal and withinRiskLimits
+    strategy.entry("BUY", strategy.long, qty=lotSize)
+    strategy.exit("TP/SL Buy", from_entry="BUY", stop=stopLossBuy, limit=takeProfitBuy)
+
+if sellSignal and withinRiskLimits
+    strategy.entry("SELL", strategy.short, qty=lotSize)
+    strategy.exit("TP/SL Sell", from_entry="SELL", stop=stopLossSell, limit=takeProfitSell)
+
+// Move Stop Loss to Break-Even Manually
+if not na(moveToBreakEvenBuy)
+    strategy.exit("BE Buy", from_entry="BUY", stop=moveToBreakEvenBuy)
+
+if not na(moveToBreakEvenSell)
+    strategy.exit("BE Sell", from_entry="SELL", stop=moveToBreakEvenSell)
+
+// === Plot Signals on Chart ===
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, title="Buy Signal")
+plotshape(series=sellSignal, location=location.abovebar, color=color.red, style=shape.labeldown, title="Sell Signal")

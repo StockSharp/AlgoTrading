@@ -1,0 +1,2680 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © lejmer
+
+//@version=4
+
+study("MatrixLib", max_bars_back = 1000, overlay = true)
+
+
+
+// ====================================================================================================================================================
+//
+//       LIBRARY: GlobalVariables
+//
+// ====================================================================================================================================================
+//{
+
+// ------------------------------------------------------------------------------------
+//    Helper functions for simulating global variables using arrays
+// ------------------------------------------------------------------------------------
+
+new_string(value) =>
+//{
+    array.new_string(1, value)
+//}
+
+new_color(value) =>
+//{
+    array.new_color(1, value)
+//}
+
+get(global_variable_id) =>
+//{
+    if (array.size(global_variable_id) > 0)
+        array.get(global_variable_id, 0)
+//}
+
+set(global_variable_id, value) =>
+//{
+    if (array.size(global_variable_id) > 0)
+        array.set(global_variable_id, 0, value)
+//}
+
+//} GlobalVariables
+
+
+
+// ====================================================================================================================================================
+//
+//       LIBRARY: OutputStreams
+//
+// ====================================================================================================================================================
+//{
+
+// ------------------------------------------------------------------------------------
+//    Standard output
+// ------------------------------------------------------------------------------------
+
+var color NO_COLOR = color.new(#000000, 100)
+
+var string[] output_stream = new_string("")
+var color[] output_color = new_color(color.white)
+var label output_label = label.new(0, 0, style = label.style_label_left, color = NO_COLOR, textcolor = array.get(output_color, 0))
+
+clear_output() =>
+//{
+    array.clear(output_stream)
+    array.push(output_stream, "")
+    label.set_text(output_label, get(output_stream))
+//}
+
+set_output_visible(visible) =>
+//{
+    if (not visible)
+    //{
+        label.set_style(output_label, label.style_none)
+        label.set_textcolor(output_label, NO_COLOR)
+    //}
+    else
+    //{
+        label.set_style(output_label, label.style_label_left)
+        label.set_textcolor(output_label, get(output_color))
+    //}
+//}
+
+set_output_color(clr) =>
+//{
+    set(output_color, clr)
+//}
+
+set_output_location(max_y, min_y) =>
+//{
+    label.set_y(output_label, (max_y + min_y) / 2)
+//}
+
+output(msg) =>
+//{
+    set(output_stream, get(output_stream) + msg)
+
+    label.set_x(output_label, bar_index)
+    label.set_text(output_label, get(output_stream))
+//}
+
+reset_output() =>
+//{
+    clear_output()
+    set_output_color(color.white)
+    set_output_location(0, 0)
+//}
+
+//} OutputStreams
+
+
+
+// ====================================================================================================================================================
+//
+//       LIBRARY: MathLib
+//
+// ====================================================================================================================================================
+//{
+
+// ------------------------------------------------------------------------------------
+//    Constants
+// ------------------------------------------------------------------------------------
+//{
+
+var float E = 2.7182818284
+
+//} Constants
+
+
+
+// ------------------------------------------------------------------------------------
+//    Approximation of the normal cumulative distribution function,
+//    by Bowling et al. (2009)
+// ------------------------------------------------------------------------------------
+
+norm_cdf_bowling(z) =>
+//{
+    1 / (1 + pow(E, -1.5976 * z - 0.07056 * pow(z, 3)))
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apprixmation of the F cumulative distribution function,
+//    by Fisher
+// ------------------------------------------------------------------------------------
+
+f_cdf_fisher(f_value, df1, df2) =>
+//{
+    float v1 = float(df1)
+    float v2 = float(df2)
+
+    float _2v1 = 2 * v1
+    float _2v2 = 2 * v2
+
+    float z2 = (sqrt((1 - 1 / _2v2) * f_value) - sqrt(1 - 1 / _2v1)) / sqrt(f_value / _2v2 + 1 / _2v1)
+
+    norm_cdf_bowling(z2)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apprixmation of the students T cumulative distribution function,
+//    ACM algorithm #209, by Ibbetson (1963)
+// ------------------------------------------------------------------------------------
+
+t_cdf_ibbetson(t, df) =>
+//{
+    float a = na
+    float b = na
+    float y = na
+    float t2 = t * t
+
+    y := t2 / df
+    b := y + 1
+
+    if (y > 1.0E-6)
+        y := log(b)
+
+    a := df - 0.5
+    b := 48 * a * a
+    y := a * y
+    y := (((((-0.4 * y - 3.3) * y - 24) * y - 85.5) /
+         (0.8 * y * y + 100 + b) + y + 3) / b + 1) * sqrt(y)
+
+    2 * norm_cdf_bowling(-y)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Inverse hyperbolic tangent function
+// ------------------------------------------------------------------------------------
+
+atanh(value) =>
+//{
+    0.5 * log((1 + value) / (1 - value))
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Hyperbolic tangent function
+// ------------------------------------------------------------------------------------
+
+tanh(value) =>
+//{
+    float a = pow(E, 2 * value)
+    (a - 1) / (a + 1)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Converts influx floats into probabilities between 0 and 1
+// ------------------------------------------------------------------------------------
+
+sigmoid(value) =>
+//{
+    1 / (1 + pow(E, -value))
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Sigmoid Linear Unit
+// ------------------------------------------------------------------------------------
+
+silu(value) =>
+//{
+    value * sigmoid(value)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Gaussian Error Linear Unit
+// ------------------------------------------------------------------------------------
+
+gelu(value) =>
+//{
+    value * norm_cdf_bowling(value)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Leaky Rectified Linear Unit
+// ------------------------------------------------------------------------------------
+
+leaky_relu(value) =>
+//{
+    value > 0 ? value : 0.01 * value
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Rectified Linear Unit
+// ------------------------------------------------------------------------------------
+
+relu(value) =>
+//{
+    max(0, value)
+//}
+
+//} MathLib
+
+
+
+// ====================================================================================================================================================
+//
+//       LIBRARY: ArrayLib
+//
+// ====================================================================================================================================================
+//{
+
+// ------------------------------------------------------------------------------------
+//    Create an array from a time series
+// ------------------------------------------------------------------------------------
+
+array_create_from_series(series, lookback) =>
+//{
+    float[] new_array = array.copy(array.new_float(lookback, 0))
+
+    for i = 0 to lookback - 1
+    //{
+        if (i >= lookback)
+            break
+
+        array.set(new_array, i, nz(series[i]))
+    //}
+
+    new_array
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Euclidean 2-norm of an array
+// ------------------------------------------------------------------------------------
+
+array_2_norm(array) =>
+//{
+    int size = array.size(array)
+    float result = 0
+
+    for i = 0 to size - 1
+    //{
+        if (i >= size)
+            break
+
+        result := result + pow(array.get(array, i), 2)
+    //}
+
+    sqrt(result)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Dot product of two arrays (vectors)
+// ------------------------------------------------------------------------------------
+
+array_dot_product(a_vector, b_vector) =>
+//{
+    int size_a = array.size(a_vector)
+    int size_b = array.size(b_vector)
+
+    float result = 0
+
+    if (size_b >= size_a)
+    //{
+        for i = 0 to size_a - 1
+        //{
+            if (i >= size_a)
+                break
+
+            result := result + array.get(a_vector, i) * array.get(b_vector, i)
+        //}
+    //}
+
+    result
+//}
+
+//} ArrayLib
+
+
+
+// ====================================================================================================================================================
+//
+//       LIBRARY: MatrixLib
+//
+// ====================================================================================================================================================
+//{
+
+// ------------------------------------------------------------------------------------
+//    Constants
+// ------------------------------------------------------------------------------------
+//{
+
+var bool MM_END_IF = false
+var float MM_RANK_CUTOFF = 10E-12
+
+var int MM_META_SIZE = 2
+
+var int MM_ROWS_INDEX = 0
+var int MM_COLUMNS_INDEX = 1
+
+var int MM_OP_ADD = 100
+var int MM_OP_SUBTRACT = 101
+var int MM_OP_MULTIPLY = 102
+var int MM_OP_DIVIDE = 103
+var int MM_OP_MODULUS = 104
+
+var int MM_OP_SIN = 200
+var int MM_OP_ASIN = 201
+var int MM_OP_COS = 202
+var int MM_OP_ACOS = 203
+var int MM_OP_TAN = 204
+var int MM_OP_ATAN = 205
+var int MM_OP_TANH = 206
+var int MM_OP_ATANH = 207
+var int MM_OP_LOG = 208
+var int MM_OP_LOG10 = 209
+var int MM_OP_SIGMOID = 210
+var int MM_OP_SILU = 211
+var int MM_OP_GELU = 212
+var int MM_OP_RELU = 213
+var int MM_OP_LEAKY_RELU = 214
+var int MM_OP_SIGN = 215
+
+var int MM_MLR_ESTIMATE = 0
+var int MM_MLR_SE_ESTIMATE = 1
+var int MM_MLR_F_VALUE = 2
+var int MM_MLR_CI = 3
+var int MM_MLR_P_VALUE = 4
+var int MM_MLR_R2 = 5
+var int MM_MLR_ADJ_R2 = 6
+var int MM_MLR_SSR = 7
+var int MM_MLR_SSE = 8
+var int MM_MLR_SST = 9
+var int MM_MLR_MSR = 10
+var int MM_MLR_MSE = 11
+var int MM_MLR_MST = 12
+var int MM_MLR_DFR = 13
+var int MM_MLR_DFE = 14
+var int MM_MLR_DFT = 15
+var int MM_MLR_NUM_OF_OBSERVATIONS = 16
+var int MM_MLR_NUM_OF_X_VARS = 17
+var int MM_MLR_HAS_CONSTANT = 18
+
+//} Constants
+
+
+
+// ------------------------------------------------------------------------------------
+//    Functions
+// ------------------------------------------------------------------------------------
+//{
+
+// ------------------------------------------------------------------------------------
+//    Create and return a copy of the specified matrix
+// ------------------------------------------------------------------------------------
+
+matrix_copy(matrix_array) =>
+//{
+    array.copy(matrix_array)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create and return a new matrix with the same shape as the specified matrix, but
+//    filled with 0's
+// ------------------------------------------------------------------------------------
+
+matrix_copy_shape(matrix_array) =>
+//{
+    int size = array.size(matrix_array)
+    float[] result = array.copy(matrix_array)
+
+    if (size > MM_META_SIZE)
+    //{
+        for i = MM_META_SIZE to size - 1
+            array.set(result, i, 0)
+    //}
+
+    result
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Clear a matrix, removing all rows and columns, resulting in an empty matrix
+// ------------------------------------------------------------------------------------
+
+matrix_clear(matrix_array) =>
+//{
+    array.clear(matrix_array)
+
+    for i = 1 to MM_META_SIZE
+        array.push(matrix_array, 0)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create an empty matrix
+// ------------------------------------------------------------------------------------
+
+matrix_create_empty() =>
+//{
+    array.copy(array.new_float(MM_META_SIZE, 0))
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create a 'rows' by 'columns' matrix
+// ------------------------------------------------------------------------------------
+
+matrix_create(rows, columns) =>
+//{
+    float[] new_matrix = matrix_create_empty()
+
+    if (rows > 0 and columns > 0)
+    //{
+        for i = 0 to rows * columns - 1
+            array.push(new_matrix, 0)
+
+        array.set(new_matrix, MM_ROWS_INDEX, rows)
+        array.set(new_matrix, MM_COLUMNS_INDEX, columns)
+    //}
+
+    new_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create an identity matrix
+// ------------------------------------------------------------------------------------
+
+matrix_create_identity(size) =>
+//{
+    float[] new_matrix = matrix_create_empty()
+
+    if (size > 0)
+    //{
+        for column = 0 to size - 1
+            for row = 0 to size - 1
+                array.push(new_matrix, column == row ? 1 : 0)
+
+        array.set(new_matrix, MM_ROWS_INDEX, size)
+        array.set(new_matrix, MM_COLUMNS_INDEX, size)
+    //}
+
+    new_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the column count of a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_column_count(matrix_array) =>
+//{
+    int(array.get(matrix_array, MM_COLUMNS_INDEX))
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the row count of a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_row_count(matrix_array) =>
+//{
+    int(array.get(matrix_array, MM_ROWS_INDEX))
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the underlying array index of the start of the specified column
+// ------------------------------------------------------------------------------------
+
+matrix_get_column_index(matrix_array, column) =>
+//{
+    int(MM_META_SIZE + matrix_get_row_count(matrix_array) * column)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get matrix order as a string in the format "ROWSxCOLUMNS"
+// ------------------------------------------------------------------------------------
+
+matrix_get_order(matrix_array) =>
+//{
+    tostring(matrix_get_row_count(matrix_array), "0") + "x" + tostring(matrix_get_column_count(matrix_array), "0")
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the size of the matrix (row count multiplied by column count)
+// ------------------------------------------------------------------------------------
+
+matrix_get_size(matrix_array) =>
+//{
+    matrix_get_row_count(matrix_array) * matrix_get_column_count(matrix_array)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is square (same number of rows as columns)
+// ------------------------------------------------------------------------------------
+
+matrix_is_square(matrix_array) =>
+//{
+    matrix_get_row_count(matrix_array) == matrix_get_column_count(matrix_array)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is rectangular (different number of rows than columns)
+// ------------------------------------------------------------------------------------
+
+matrix_is_rectangular(matrix_array) =>
+//{
+    matrix_get_row_count(matrix_array) != matrix_get_column_count(matrix_array)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is underdetermined (row count < column count)
+// ------------------------------------------------------------------------------------
+
+matrix_is_underdetermined(matrix_array) =>
+//{
+    matrix_get_row_count(matrix_array) < matrix_get_column_count(matrix_array)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is overdetermined (row count > column count)
+// ------------------------------------------------------------------------------------
+
+matrix_is_overdetermined(matrix_array) =>
+//{
+    matrix_get_row_count(matrix_array) > matrix_get_column_count(matrix_array)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the value from a specific position in a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get(matrix_array, row, column) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    int value_index = matrix_get_column_index(matrix_array, column) + row
+
+    if (value_index <= array.size(matrix_array) - 1 and row < row_count and column < column_count and row >= 0 and column >= 0)
+        array.get(matrix_array, value_index)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Set the value at a specific position in a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_set(matrix_array, row, column, value) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    int value_index = matrix_get_column_index(matrix_array, column) + row
+
+    if (value_index <= array.size(matrix_array) - 1 and row < row_count and column < column_count and row >= 0 and column >= 0)
+        array.set(matrix_array, value_index, value)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create a matrix from an array as a row
+// ------------------------------------------------------------------------------------
+
+matrix_create_from_array_as_column(array_id) =>
+//{
+    int size = array.size(array_id)
+    float[] new_matrix = matrix_create(size, 1)
+
+    array.set(new_matrix, MM_ROWS_INDEX, size)
+    array.set(new_matrix, MM_COLUMNS_INDEX, 1)
+
+    array.concat(new_matrix, array_id)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create a matrix from an array as a column
+// ------------------------------------------------------------------------------------
+
+matrix_create_from_array_as_row(array_id) =>
+//{
+    int size = array.size(array_id)
+    float[] new_matrix = matrix_create(1, size)
+
+    array.set(new_matrix, MM_ROWS_INDEX, 1)
+    array.set(new_matrix, MM_COLUMNS_INDEX, size)
+
+    for column = 0 to size - 1
+        matrix_set(new_matrix, 0, column, array.get(array_id, column))
+
+    new_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create a matrix from a time series as a row
+// ------------------------------------------------------------------------------------
+
+matrix_create_from_series_as_column(series, lookback) =>
+//{
+    float[] new_matrix = matrix_create(lookback, 1)
+
+    array.set(new_matrix, MM_ROWS_INDEX, lookback)
+    array.set(new_matrix, MM_COLUMNS_INDEX, 1)
+
+    if (lookback > 0)
+    //{
+        for row = 0 to lookback - 1
+            matrix_set(new_matrix, row, 0, series[row])
+    //}
+
+    new_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create a matrix from a time series as a column
+// ------------------------------------------------------------------------------------
+
+matrix_create_from_series_as_row(series, lookback) =>
+//{
+    float[] new_matrix = matrix_create(1, lookback)
+
+    array.set(new_matrix, MM_ROWS_INDEX, 1)
+    array.set(new_matrix, MM_COLUMNS_INDEX, lookback)
+
+    if (lookback > 0)
+    //{
+        for column = 0 to lookback - 1
+            matrix_set(new_matrix, 0, column, series[column])
+    //}
+
+    new_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if matrix A is equal to matrix B, otherwise false
+// ------------------------------------------------------------------------------------
+
+matrix_equals(matrix_a, matrix_b) =>
+//{
+    int row_count_a = matrix_get_row_count(matrix_a)
+    int column_count_a = matrix_get_column_count(matrix_a)
+    int row_count_b = matrix_get_row_count(matrix_b)
+    int column_count_b = matrix_get_column_count(matrix_b)
+
+    bool result = true
+
+    if (row_count_a != row_count_b or column_count_a != column_count_b or array.size(matrix_a) != array.size(matrix_b))
+        result := false
+    else
+    //{
+        int column_index = na
+        int value_index = na
+
+        for column = 0 to column_count_a - 1
+        //{
+            column_index := matrix_get_column_index(matrix_a, column)
+
+            for row = 0 to row_count_a - 1
+            //{
+                value_index := column_index + row
+
+                if (array.get(matrix_a, value_index) != array.get(matrix_b, value_index))
+                //{
+                    result := false
+                    break
+                //}
+            //}
+
+            if (not result)
+                break
+        //}
+
+        MM_END_IF
+    //}
+
+    result
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Transpose a matrix so that each row becomes a column and return the new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_transpose(matrix_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    // Create the matrix that will store the result of the operation
+    float[] result_matrix = matrix_create_empty()
+
+    // Set the metadata of the transposed matrix
+    array.set(result_matrix, MM_ROWS_INDEX, column_count)
+    array.set(result_matrix, MM_COLUMNS_INDEX, row_count)
+
+    // Transpose the matrix
+    int value_index = na
+
+    if (row_count > 0 and column_count > 0)
+    //{
+        for row = 0 to row_count - 1
+        //{
+            for column = 0 to column_count - 1
+            //{
+                value_index := matrix_get_column_index(matrix_array, column) + row
+                array.push(result_matrix, array.get(matrix_array, value_index))
+            //}
+        //}
+    //}
+
+    result_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Append an array to a matrix as a row
+//
+//    If the matrix column count and the row column count do not match, gaps will be
+//    filled with 0's
+// ------------------------------------------------------------------------------------
+
+matrix_append_row(matrix_array, row_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    int row_array_size = array.size(row_array)
+    int extra_columns = row_array_size - column_count
+
+    if (row_count > 0 and column_count > 0)
+    //{
+        // Fill gaps with 0's
+        if (extra_columns > 0)
+        //{
+            for i = 1 to extra_columns
+                array.concat(matrix_array, array.new_float(row_count, 0))
+
+            array.set(matrix_array, MM_COLUMNS_INDEX, column_count + extra_columns)
+        //}
+
+        // Create a copy of the matrix
+        float[] temp_matrix = array.copy(matrix_array)
+
+        // Clear the matrix
+        matrix_clear(matrix_array)
+
+        // Recreate the matrix and append it with the new row
+        int column_index = na
+
+        for column = 0 to column_count + (extra_columns > 0 ? extra_columns : 0) - 1
+        //{
+            column_index := matrix_get_column_index(temp_matrix, column)
+
+            for row = 0 to row_count - 1
+                array.push(matrix_array, array.get(temp_matrix, column_index + row))
+
+            if (column > row_array_size - 1)
+                array.push(matrix_array, 0)
+            else
+                array.push(matrix_array, array.get(row_array, column))
+        //}
+
+        // Set the new column and row meta data
+        array.set(matrix_array, MM_COLUMNS_INDEX, column_count + (extra_columns > 0 ? extra_columns : 0))
+        array.set(matrix_array, MM_ROWS_INDEX, row_count + 1)
+    //}
+    else
+    //{
+        // The matrix is empty, so just create a new row with the data from the array
+        for i = 0 to row_array_size - 1
+            array.push(matrix_array, array.get(row_array, i))
+
+        // Set the new column and row meta data
+        array.set(matrix_array, MM_COLUMNS_INDEX, row_array_size)
+        array.set(matrix_array, MM_ROWS_INDEX, 1)
+    //}
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Append an array to a matrix as a column
+//
+//    If the matrix row count and the column row count do not match, gaps will be
+//    filled with 0's
+// ------------------------------------------------------------------------------------
+
+matrix_append_column(matrix_array, column_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    int column_array_size = array.size(column_array)
+    int extra_rows = column_array_size - row_count
+
+    // Fill gaps with 0's
+    if (row_count > 0 and column_count > 0 and extra_rows > 0)
+    //{
+        // Create a copy of the matrix
+        float[] temp_matrix = array.copy(matrix_array)
+
+        // Clear the matrix
+        matrix_clear(matrix_array)
+
+        // Set the metadata of the cleared matrix
+        for i = 0 to MM_META_SIZE - 1
+            array.set(matrix_array, i, array.get(temp_matrix, i))
+
+        // Recreate the matrix with 0's filling any gaps
+        int column_index = na
+
+        for column = 0 to column_count - 1
+        //{
+            column_index := matrix_get_column_index(temp_matrix, column)
+
+            for row = 0 to row_count - 1
+                array.push(matrix_array, array.get(temp_matrix, column_index + row))
+
+            if (extra_rows > 0)
+            //{
+                for extra_row = 0 to extra_rows - 1
+                    array.push(matrix_array, 0)
+            //}
+        //}
+    //}
+
+    // Set the new column and row meta data
+    array.set(matrix_array, MM_COLUMNS_INDEX, column_count + 1)
+    array.set(matrix_array, MM_ROWS_INDEX, max(row_count, column_array_size))
+
+    // Append the column_array to the matrix array
+    array.concat(matrix_array, column_array)
+
+    // Make sure that if the column array has less rows than the matrix, fill the gap with 0's
+    if (column_array_size < row_count)
+    //{
+        for i = 0 to row_count - column_array_size - 1
+            array.push(matrix_array, 0)
+    //}
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform an element-wise unary operation and returns the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_unary_operation(matrix_array, operation) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    // Create the matrix that will store the result of the operation
+    float[] result_matrix = matrix_create_empty()
+
+    // Make sure the orders of the matrices are equal
+    if (row_count > 0 and column_count > 0)
+    //{
+        int column_index = na
+        int value_index = na
+
+        float value = na
+        float computed_value = na
+
+        // Set the meta data of the result matrix
+        array.set(result_matrix, MM_ROWS_INDEX, row_count)
+        array.set(result_matrix, MM_COLUMNS_INDEX, column_count)
+
+        // Perform the addition or subtraction matrix operation and store this in the result matrix
+        for column = 0 to column_count - 1
+        //{
+            column_index := matrix_get_column_index(matrix_array, column)
+
+            for row = 0 to row_count - 1
+            //{
+                value_index := column_index + row
+                value := array.get(matrix_array, value_index)
+
+                computed_value :=
+                     operation == MM_OP_SIN        ? sin(value) :
+                     operation == MM_OP_ASIN       ? asin(value) :
+                     operation == MM_OP_COS        ? cos(value) :
+                     operation == MM_OP_ACOS       ? acos(value) :
+                     operation == MM_OP_TAN        ? tan(value) :
+                     operation == MM_OP_ATAN       ? atan(value) :
+                     operation == MM_OP_TANH       ? tanh(value) :
+                     operation == MM_OP_ATANH      ? atanh(value) :
+                     operation == MM_OP_LOG        ? log(value) :
+                     operation == MM_OP_LOG10      ? log10(value) :
+                     operation == MM_OP_SIGMOID    ? sigmoid(value) :
+                     operation == MM_OP_SILU       ? silu(value) :
+                     operation == MM_OP_GELU       ? gelu(value) :
+                     operation == MM_OP_RELU       ? relu(value) :
+                     operation == MM_OP_LEAKY_RELU ? leaky_relu(value) :
+                     operation == MM_OP_SIGN       ? sign(value) :
+                     0
+
+                array.push(result_matrix, computed_value)
+            //}
+        //}
+    //}
+
+    result_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the sign function to each element and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_sign(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_SIGN)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the SiLU activation function to each element and return the result in a
+//    new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_silu(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_SILU)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the GELU activation function to each element and return the result in a
+//    new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_gelu(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_GELU)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the ReLU activation function to each element and return the result in a
+//    new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_relu(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_RELU)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the Leaky ReLU activation function to each element and return the result in
+//    a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_leaky_relu(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_LEAKY_RELU)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the sigmoid function to each element and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_sigmoid(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_SIGMOID)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the logarithmic function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_log(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_LOG)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the base 10 logarithmic function to each element and return the result in
+//    a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_log10(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_LOG10)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the sinus function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_sin(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_SIN)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the inverse sinus function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_asin(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_ASIN)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the cosinus function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_cos(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_COS)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the inverse cosinus function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_acos(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_ACOS)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the tangent function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_tan(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_TAN)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the inverse tangent function to each element and return the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_atan(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_ATAN)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the hyperbolic tangent function to each element and return the result in a
+//    new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_tanh(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_TANH)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Apply the inverse hyperbolic tangent function to each element and return the
+//    result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_atanh(matrix_array) =>
+//{
+    matrix_element_unary_operation(matrix_array, MM_OP_ATANH)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform an element-wise power of n operation and returns the result in a new
+//    matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_power(matrix_array, n, operation) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    // Create the matrix that will store the result of the operation
+    float[] result_matrix = matrix_create_empty()
+
+    // Make sure the orders of the matrices are equal
+    if (row_count > 0 and column_count > 0)
+    //{
+        int column_index = na
+        int value_index = na
+
+        float value = na
+        float computed_value = na
+
+        // Set the meta data of the result matrix
+        array.set(result_matrix, MM_ROWS_INDEX, row_count)
+        array.set(result_matrix, MM_COLUMNS_INDEX, column_count)
+
+        // Perform the addition or subtraction matrix operation and store this in the result matrix
+        for column = 0 to column_count - 1
+        //{
+            column_index := matrix_get_column_index(matrix_array, column)
+
+            for row = 0 to row_count - 1
+            //{
+                value_index := column_index + row
+                value := array.get(matrix_array, value_index)
+
+                array.push(result_matrix, pow(value, n))
+            //}
+        //}
+    //}
+
+    result_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform an element-wise binary operation and returns the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_binary_operation(matrix_a, matrix_b, operation) =>
+//{
+    int row_count_a = matrix_get_row_count(matrix_a)
+    int column_count_a = matrix_get_column_count(matrix_a)
+    int row_count_b = matrix_get_row_count(matrix_b)
+    int column_count_b = matrix_get_column_count(matrix_b)
+
+    // Create the matrix that will store the result of the operation
+    float[] result_matrix = matrix_create_empty()
+
+    // Make sure the orders of the matrices are equal
+    if (row_count_a > 0 and column_count_a > 0 and row_count_a == row_count_b and column_count_a == column_count_b)
+    //{
+        int column_index = na
+        int value_index = na
+
+        float value_a = na
+        float value_b = na
+        float computed_value = na
+
+        // Set the meta data of the result matrix
+        array.set(result_matrix, MM_ROWS_INDEX, row_count_a)
+        array.set(result_matrix, MM_COLUMNS_INDEX, column_count_a)
+
+        // Perform the addition or subtraction matrix operation and store this in the result matrix
+        for column = 0 to column_count_a - 1
+        //{
+            column_index := matrix_get_column_index(matrix_a, column)
+
+            for row = 0 to row_count_a - 1
+            //{
+                value_index := column_index + row
+                value_a := array.get(matrix_a, value_index)
+                value_b := array.get(matrix_b, value_index)
+
+                computed_value :=
+                     operation == MM_OP_ADD      ? value_a + value_b :
+                     operation == MM_OP_SUBTRACT ? value_a - value_b :
+                     operation == MM_OP_MULTIPLY ? value_a * value_b :
+                     operation == MM_OP_DIVIDE   ? value_a / value_b :
+                     operation == MM_OP_MODULUS  ? value_a % value_b :
+                     0
+
+                array.push(result_matrix, computed_value)
+            //}
+        //}
+    //}
+
+    result_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform a matrix addition and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_add(matrix_a, matrix_b) =>
+//{
+    matrix_element_binary_operation(matrix_a, matrix_b, MM_OP_ADD)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform a matrix subtraction and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_subtract(matrix_a, matrix_b) =>
+//{
+    matrix_element_binary_operation(matrix_a, matrix_b, MM_OP_SUBTRACT)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform an element-wise multiplication and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_hadarmard_multiplication(matrix_a, matrix_b) =>
+//{
+    matrix_element_binary_operation(matrix_a, matrix_b, MM_OP_MULTIPLY)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform element-wise modulus and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_element_modulus(matrix_a, matrix_b) =>
+//{
+    matrix_element_binary_operation(matrix_a, matrix_b, MM_OP_MODULUS)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform a matrix scalar multiplication and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_scalar_multiplication(matrix_array, x) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    // Create the matrix that will store the result of the operation
+    float[] result_matrix = matrix_create_empty()
+
+    if (row_count > 0 and column_count > 0)
+    //{
+        int column_index = na
+        float value = na
+
+        // Set the meta data of the result matrix
+        array.set(result_matrix, MM_ROWS_INDEX, row_count)
+        array.set(result_matrix, MM_COLUMNS_INDEX, column_count)
+
+        // Perform the scalar multiplication matrix operation and store this in the result matrix
+        for column = 0 to column_count - 1
+        //{
+            column_index := matrix_get_column_index(matrix_array, column)
+
+            for row = 0 to row_count - 1
+            //{
+                value := array.get(matrix_array, column_index + row) * x
+                array.push(result_matrix, abs(value) == 0 ? 0 : value)
+            //}
+        //}
+    //}
+
+    result_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform a matrix multiplication and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_multiply(matrix_a, matrix_b) =>
+//{
+    int row_count_a = matrix_get_row_count(matrix_a)
+    int row_count_b = matrix_get_row_count(matrix_b)
+    int column_count_a = matrix_get_column_count(matrix_a)
+    int column_count_b = matrix_get_column_count(matrix_b)
+
+    // Create a new matrix to store the result of the operation in
+    float[] result_matrix = matrix_create(row_count_a, column_count_b)
+
+    if (row_count_a > 0 and column_count_a > 0 and column_count_b > 0 and column_count_a == row_count_b)
+    //{
+        float value_a = na
+        float value_b = na
+        float value_result = na
+        int result_index = na
+
+        // Perform the multiplication matrix operation and store this in the result matrix
+        for row_a = 0 to row_count_a - 1
+        //{
+            for column_b = 0 to column_count_b - 1
+            //{
+                for column_a = 0 to column_count_a - 1
+                //{
+                    float temp = 0
+
+                    for row_b = 0 to row_count_b - 1
+                    //{
+                        float element_a = matrix_get(matrix_a, row_a, row_b)
+                        float element_b = matrix_get(matrix_b, row_b, column_b)
+
+                        temp := temp + element_a * element_b
+                    //}
+
+                    matrix_set(result_matrix, row_a, column_b, temp)
+                //}
+            //}
+        //}
+    //}
+
+    result_matrix
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Perform a matrix negation and return the result in a new matrix
+// ------------------------------------------------------------------------------------
+
+matrix_negate(matrix_array) =>
+//{
+    matrix_scalar_multiplication(matrix_array, -1)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is symmetric, otherwise false
+// ------------------------------------------------------------------------------------
+
+matrix_is_symmetric(matrix_array) =>
+//{
+    if (matrix_is_square(matrix_array))
+    //{
+        float[] transposed = matrix_transpose(matrix_array)
+        matrix_equals(matrix_array, transposed)
+    //}
+    else
+        false
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is skew symmetric, otherwise false
+// ------------------------------------------------------------------------------------
+
+matrix_is_skew_symmetric(matrix_array) =>
+//{
+    if (matrix_is_square(matrix_array))
+    //{
+        float[] transposed = matrix_transpose(matrix_array)
+        float[] negated = matrix_negate(matrix_array)
+        matrix_equals(negated, transposed)
+    //}
+    else
+        false
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is an identity matrix, otherwise false
+// ------------------------------------------------------------------------------------
+
+matrix_is_identity(matrix_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    bool result = true
+
+    // Check if the matrix is square
+    if (row_count > 0 and column_count > 0 and row_count == column_count)
+    //{
+        int column_index = na
+        float value = na
+
+        for column = 0 to column_count - 1
+        //{
+            column_index := matrix_get_column_index(matrix_array, column)
+
+            for row = 0 to row_count - 1
+            //{
+                value := array.get(matrix_array, column_index + row)
+
+                if ((column == row and value != 1) or (column != row and value != 0))
+                //{
+                    result := false
+                    break
+                //}
+            //}
+
+            if (not result)
+                break
+        //}
+
+        MM_END_IF
+    //}
+    else
+        result := false
+
+    result
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns an array containing the specified row of a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_row(matrix_array, row) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    float[] result = array.new_float()
+
+    if (row_count > 0 and column_count > 0 and row >= 0)
+    //{
+        for column = 0 to column_count - 1
+            array.push(result, matrix_get(matrix_array, row, column))
+    //}
+
+    result
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns an array containing the specified row of a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_column(matrix_array, column) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    float[] result = array.new_float()
+
+    if (row_count > 0 and column_count > 0 and column >= 0)
+    //{
+        for row = 0 to row_count - 1
+            array.push(result, matrix_get(matrix_array, row, column))
+    //}
+
+    result
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns a sub-matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_sub_matrix(matrix_array, start_row, end_row, start_column, end_column) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    float[] sub_matrix = matrix_create(max(1, end_row - start_row + 1), max(1, end_column - start_column + 1))
+
+    if (row_count > 0 and column_count > 0 and start_row <= end_row and start_row >= 0 and start_column <= end_column and start_column >= 0)
+    //{
+        for row = start_row to end_row
+            for column = start_column to end_column
+                matrix_set(sub_matrix, row - start_row, column - start_column, matrix_get(matrix_array, row, column))
+    //}
+
+    sub_matrix
+//}
+
+
+
+
+// ------------------------------------------------------------------------------------
+//    Decomposer the matrix into an orthogonal matrix and an upper triangular matrix,
+//    using QR decomposition
+//
+//    Original code taken from here (with consent from the author, tbiktag):
+//    https://www.tradingview.com/script/0GhsW1KR-Moving-Regression/
+// ------------------------------------------------------------------------------------
+
+matrix_get_qr_decomposition(matrix_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    float[] q = matrix_create(row_count, column_count)
+    float[] r = matrix_create(column_count, column_count)
+
+    if (row_count > 0 and column_count > 0)
+    //{
+        float norm = 0
+        float value = 0
+
+        float[] a = array.new_float(row_count)
+
+        // Get the first column of 'matrix_array' and its 2-norm
+        for row = 0 to row_count - 1
+        //{
+            value := matrix_get(matrix_array, row, 0)
+            norm := norm + pow(value, 2)
+            array.set(a, row, value)
+        //}
+
+        norm := sqrt(norm)
+
+        // Assign first diagonal element of R and first column of Q
+        matrix_set(r, 0, 0, norm)
+
+        for row = 0 to row_count - 1
+            matrix_set(q, row, 0, array.get(a, row) / norm)
+
+        // Repeat for the rest of the columns
+        if (column_count > 1)
+        //{
+            for k = 1 to column_count - 1
+            //{
+                for row = 0 to row_count - 1
+                    array.set(a, row, matrix_get(matrix_array, row, k))
+
+                for column = 0 to k - 1
+                //{
+                    if (column >= k)
+                        break
+
+                    // Get R[column, k] as scalar product of Q[column] column an A[k] column
+                    norm := 0
+
+                    for row = 0 to row_count - 1
+                        norm := norm + matrix_get(q, row, column) * array.get(a, row)
+
+                    matrix_set(r, column, k, norm)
+
+                    // Update vector A
+                    for row = 0 to row_count - 1
+                    //{
+                        value := array.get(a, row) - norm * matrix_get(q, row, column)
+                        array.set(a, row, value)
+                    //}
+                //}
+
+                // Get diagonal R[k, k] and Q[k] column
+                norm := array_2_norm(a)
+                matrix_set(r, k, k, norm)
+
+                for row = 0 to row_count - 1
+                    matrix_set(q, row, k, array.get(a, row) / norm)
+            //}
+        //}
+
+        [q, r]
+    //}
+    else
+        [matrix_create_empty(), matrix_create_empty()]
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Decomposer the matrix into upper and lower triangular matrices, and a
+//    permutation array, using LU decomposition
+//
+//    Original code taken from here (for decoposition into upper and lower triangular matrices):
+//    https://www.geeksforgeeks.org/doolittle-algorithm-lu-decomposition/
+//
+//    And here (for permutation):
+//    http://home.apache.org/~luc/commons-math-3.6-RC2-site/jacoco/org.apache.commons.math3.linear/LUDecomposition.java.html
+// ------------------------------------------------------------------------------------
+
+matrix_get_lu_decomposition(matrix_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    float[] lower = matrix_create(row_count, column_count)
+    float[] upper = matrix_create(row_count, column_count)
+    int[] pivot = array.new_int()
+
+    int max = na
+    float largest = na
+
+    if (row_count == column_count and row_count > 0 and column_count > 0)
+    //{
+        // Initialize permutation array and parity
+        for i = 0 to row_count - 1
+            array.push(pivot, i)
+
+        // Decomposing matrix into upper and lower triangular matrices
+        for column = 0 to row_count - 1
+        //{
+            // Upper triangular matrix
+            for row = column to row_count - 1
+            //{
+                // Summation of L(column, i) * U(i, row)
+                float sum = 0
+
+                if (column > 0)
+                //{
+                    for i = 0 to column - 1
+                        sum := sum + matrix_get(lower, column, i) * matrix_get(upper, i, row)
+                //}
+
+                // Evaluating U(column, row)
+                matrix_set(upper, column, row, matrix_get(matrix_array, column, row) - sum)
+            //}
+
+            // Lower triangular matrix
+            max := column
+            largest := -10E10
+
+            for row = column to row_count - 1
+            //{
+                if (column == row)
+                //{
+                    // Diagonal as 1
+                    matrix_set(lower, column, column, 1)
+                //}
+                else
+                //{
+                    // Summation of L(row, i) * U(i, column)
+                    float sum = 0
+
+                    if (column > 0)
+                    //{
+                        for i = 0 to column - 1
+                            sum := sum + matrix_get(lower, row, i) * matrix_get(upper, i, column)
+                    //}
+
+                    // Maintain best permutation choice
+                    if (abs(sum) > largest)
+                        largest := abs(sum)
+                        max := row
+
+                    // Evaluating L(row, column)
+                    matrix_set(lower, row, column, (matrix_get(matrix_array, row, column) - sum) / matrix_get(upper, column, column))
+                //}
+            //}
+
+            if (max != column and max < array.size(pivot))
+            //{
+                int temp = array.get(pivot, max)
+                array.set(pivot, max, array.get(pivot, column))
+                array.set(pivot, column, temp)
+            //}
+        //}
+        [lower, upper, pivot]
+    //}
+    else
+        [matrix_create_empty(), matrix_create_empty(), pivot]
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Combine the upper and lower matrix of an LU decomposition, for ease of
+//    calculation (so basically a quicker way to do L * U = LU)
+// ------------------------------------------------------------------------------------
+
+matrix_get_lu(lower, upper) =>
+//{
+    int row_count_l = matrix_get_row_count(lower)
+    int column_count_l = matrix_get_column_count(lower)
+
+    int row_count_u = matrix_get_row_count(upper)
+    int column_count_u = matrix_get_column_count(upper)
+
+    // Combine the upper and lower triangular matrix into a single matrix
+    if (row_count_l == column_count_l and row_count_u == column_count_u and row_count_l == row_count_u and row_count_l > 0 and row_count_u > 0 and column_count_l > 0 and column_count_u > 0)
+    //{
+        // Create a new matrix with the same shape as the upper matrix but filled with 0's
+        // This will store the result of the operation
+        float[] lu = matrix_copy_shape(upper)
+
+        for row = 0 to row_count_u - 1
+        //{
+            for column = 0 to column_count_u - 1
+            //{
+                if (row <= column)
+                    matrix_set(lu, row, column, matrix_get(upper, row, column))
+                else
+                    matrix_set(lu, row, column, matrix_get(lower, row, column))
+            //}
+        //}
+
+        // Return the combined LU matrix
+        lu
+    //}
+    else
+        matrix_create_empty()
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Calculate the determinant of a matrix using LU decomposition
+// ------------------------------------------------------------------------------------
+
+matrix_get_determinant_from_lu(lower, upper) =>
+//{
+    int row_count_l = matrix_get_row_count(lower)
+    int column_count_l = matrix_get_column_count(lower)
+
+    int row_count_u = matrix_get_row_count(upper)
+    int column_count_u = matrix_get_column_count(upper)
+
+    float determinant = na
+
+    if (row_count_l > 0 and row_count_u > 0 and column_count_l > 0 and column_count_u > 0)
+    //{
+        determinant := 1
+
+        for row = 0 to row_count_u - 1
+        //{
+            for column = 0 to row_count_u - 1
+            //{
+                if (row == column)
+                    determinant := determinant * matrix_get(upper, row, column) * matrix_get(lower, row, column)
+            //}
+        //}
+    //}
+
+    determinant := determinant == 0 ? abs(0) : determinant
+//}
+
+matrix_get_determinant(matrix_array) =>
+//{
+    [lower, upper, pivot] = matrix_get_lu_decomposition(matrix_array)
+
+    matrix_get_determinant_from_lu(lower, upper)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix is singular, otherwise false
+// ------------------------------------------------------------------------------------
+
+matrix_is_singular_from_lu(lower, upper) =>
+//{
+    int row_count = matrix_get_row_count(upper)
+    int column_count = matrix_get_column_count(upper)
+
+    row_count == column_count and matrix_get_determinant_from_lu(lower, upper) <= MM_RANK_CUTOFF
+//}
+
+matrix_is_singular(matrix_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+
+    row_count == column_count and matrix_get_determinant(matrix_array) <= MM_RANK_CUTOFF
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Returns true if the matrix has full rank
+// ------------------------------------------------------------------------------------
+
+matrix_has_full_rank_from_lu(lower, upper) =>
+//{
+    not matrix_is_singular_from_lu(lower, upper)
+//}
+
+matrix_has_full_rank_from_r(r) =>
+//{
+    int row_count = matrix_get_row_count(r)
+    int column_count = matrix_get_column_count(r)
+
+    bool result = true
+
+    if (column_count > 0 and row_count >= column_count)
+    //{
+        for column = 0 to column_count - 1
+        //{
+            if (matrix_get(r, column, column) <= MM_RANK_CUTOFF)
+            //{
+                result := false
+                break
+            //}
+        //}
+
+        result
+    //}
+    else
+        false
+//}
+
+matrix_has_full_rank(matrix_array) =>
+//{
+    if (matrix_is_square(matrix_array))
+        not matrix_is_singular(matrix_array)
+    else
+    //{
+        [q, r] = matrix_get_qr_decomposition(matrix_array)
+        matrix_has_full_rank_from_r(r)
+    //}
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Solve A * X = B in exact linear sense, where A = LU
+//
+//    Original code:
+//    https://github.com/accord-net/framework/blob/master/Sources/Accord.Math/Decompositions/LuDecomposition.cs
+// ------------------------------------------------------------------------------------
+
+matrix_solve_from_lu(lower_a, upper_a, matrix_b) =>
+//{
+    float[] lu = matrix_get_lu(lower_a, upper_a) // <-- A
+
+    int row_count_lu = matrix_get_row_count(lu)
+    int column_count_lu = matrix_get_column_count(lu)
+    int size = row_count_lu
+
+    bool is_singular = matrix_is_singular_from_lu(lower_a, upper_a)
+
+    if (row_count_lu > 0 and column_count_lu > 0 and size > 0 and not is_singular)
+    //{
+        // Create a copy of matrix B so we can modify (solve) it
+        float[] result_matrix = matrix_copy(matrix_b)
+
+        // Solve LY = I
+        for k = 0 to size - 1
+        //{
+            for i = k + 1 to size - 1
+            //{
+                if (k + 1 >= size)
+                    break
+
+                for j = 0 to size - 1
+                //{
+                    float result_ij = matrix_get(result_matrix, i, j)
+                    float result_kj = matrix_get(result_matrix, k, j)
+                    float lu_ik = matrix_get(lu, i, k)
+
+                    matrix_set(result_matrix, i, j, result_ij - result_kj * lu_ik)
+                //}
+            //}
+        //}
+
+        // Solve UX = I
+        for k = size - 1 to 0
+        //{
+            for j = 0 to size - 1
+            //{
+                float result_kj = matrix_get(result_matrix, k, j)
+                float lu_kk = matrix_get(lu, k, k)
+
+                matrix_set(result_matrix, k, j, result_kj / lu_kk)
+            //}
+
+            for i = 0 to k - 1
+            //{
+                if (i < 0)
+                    break
+
+                for j = 0 to size - 1
+                //{
+                    float result_ij = matrix_get(result_matrix, i, j)
+                    float result_kj = matrix_get(result_matrix, k, j)
+                    float lu_ik = matrix_get(lu, i, k)
+
+                    matrix_set(result_matrix, i, j, result_ij - result_kj * lu_ik)
+                //}
+            //}
+        //}
+
+        result_matrix
+    //}
+    else
+        matrix_create_empty()
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the inverse of a matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_inverse_from_lu(lower, upper) =>
+//{
+    int size = matrix_get_row_count(upper)
+    float[] identity_matrix = matrix_create_identity(size)
+
+    matrix_solve_from_lu(lower, upper, identity_matrix)
+//}
+
+matrix_get_inverse(matrix_array) =>
+//{
+    if (matrix_is_square(matrix_array))
+    //{
+        [lower, upper, pivot] = matrix_get_lu_decomposition(matrix_array)
+        matrix_get_inverse_from_lu(lower, upper)
+    //}
+    else
+        matrix_create_empty()
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the pseudo-inverse from QR
+//
+//    Original code taken from here (with consent from the author, tbiktag):
+//    https://www.tradingview.com/script/0GhsW1KR-Moving-Regression/
+// ------------------------------------------------------------------------------------
+
+matrix_get_pseudo_inverse_from_qr(q, r) =>
+//{
+    int column_count = matrix_get_column_count(q)
+    float[] q_transposed = matrix_transpose(q)
+    var r_inv = matrix_create(column_count, column_count)
+    float value = 0
+
+    matrix_set(r_inv, 0, 0, 1 / matrix_get(r, 0, 0))
+
+    if (column_count > 1)
+    //{
+        for column = 1 to column_count - 1
+        //{
+            for row = 0 to column - 1
+            //{
+                value := 0
+
+                for k = row to column - 1
+                //{
+                    if (k >= column)
+                        break
+
+                    value := value + matrix_get(r_inv, row, k) * matrix_get(r, k, column)
+                //}
+
+                matrix_set(r_inv, row, column, value)
+            //}
+
+            for k = 0 to column - 1
+                matrix_set(r_inv, k, column, -matrix_get(r_inv, k, column) / matrix_get(r, column, column))
+
+            matrix_set(r_inv, column, column, 1 / matrix_get(r, column, column))
+        //}
+    //}
+
+    matrix_multiply(r_inv, q_transposed)
+//}
+
+matrix_get_pseudo_inverse(matrix_array) =>
+//{
+    [q, r] = matrix_get_qr_decomposition(matrix_array)
+    matrix_get_pseudo_inverse_from_qr(q, r)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Get the projection matrix
+// ------------------------------------------------------------------------------------
+
+matrix_get_projection_matrix_from_qr(matrix_array, q, r) =>
+//{
+    matrix_multiply(matrix_array, matrix_get_pseudo_inverse_from_qr(q, r))
+//}
+
+matrix_get_projection_matrix(matrix_array) =>
+//{
+    [q, r] = matrix_get_qr_decomposition(matrix_array)
+    matrix_get_projection_matrix_from_qr(matrix_array, q, r)
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Least squares solution of A * X = B
+// ------------------------------------------------------------------------------------
+
+matrix_solve_from_qr(q, r, matrix_b) =>
+//{
+    int row_count_q = matrix_get_row_count(q)
+    int column_count_q = matrix_get_column_count(q)
+
+    int row_count_r = matrix_get_row_count(r)
+    int column_count_r = matrix_get_column_count(r)
+
+    int row_count_b = matrix_get_row_count(matrix_b)
+    int column_count_b = matrix_get_column_count(matrix_b)
+
+    int row_count = row_count_q
+    int column_count = column_count_q
+
+    bool has_full_rank = matrix_has_full_rank_from_r(r)
+
+    if (row_count_q > 0 and column_count_q > 0 and row_count_q == row_count_b and column_count_q == row_count_r and has_full_rank)
+    //{
+        // Compute Q' * b
+        float[] qtb = matrix_multiply(matrix_transpose(q), matrix_b)
+        float[] solution = matrix_create(column_count_q, 1)
+
+        // Solve
+        for row = column_count_q - 1 to 0
+        //{
+            matrix_set(solution, row, 0, matrix_get(qtb, row, 0))
+
+            for column = row + 1 to column_count_q - 1
+            //{
+                if (column >= column_count_q)
+                    break
+
+                matrix_set(solution, row, 0, matrix_get(solution, row, 0) - matrix_get(solution, column, 0) * matrix_get(r, row, column))
+            //}
+
+            matrix_set(solution, row, 0, matrix_get(solution, row, 0) / matrix_get(r, row, row))
+        //}
+
+        solution
+    //}
+    else
+        matrix_create_empty()
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Multiple Linear Regression
+// ------------------------------------------------------------------------------------
+
+matrix_mlr_get_statistic(mlr_result_matrix, stat_index) =>
+//{
+    matrix_get(mlr_result_matrix, stat_index, 0)
+//}
+
+matrix_mlr_get_estimate(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_ESTIMATE)
+//}
+
+matrix_mlr_get_stderr_estimate(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_SE_ESTIMATE)
+//}
+
+matrix_mlr_get_f_value(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_F_VALUE)
+//}
+
+matrix_mlr_get_confidence_interval(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_CI)
+//}
+
+matrix_mlr_get_p_value(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_P_VALUE)
+//}
+
+matrix_mlr_get_r2(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_R2)
+//}
+
+matrix_mlr_get_adjusted_r2(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_ADJ_R2)
+//}
+
+matrix_mlr_get_adjusted_ssr(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_SSR)
+//}
+
+matrix_mlr_get_adjusted_sse(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_SSE)
+//}
+
+matrix_mlr_get_adjusted_sst(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_SST)
+//}
+
+matrix_mlr_get_adjusted_msr(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_MSR)
+//}
+
+matrix_mlr_get_adjusted_mse(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_MSE)
+//}
+
+matrix_mlr_get_adjusted_mst(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_MST)
+//}
+
+matrix_mlr_get_adjusted_df_regression(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_DFR)
+//}
+
+matrix_mlr_get_adjusted_df_errors(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_DFE)
+//}
+
+matrix_mlr_get_adjusted_df_total(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_DFT)
+//}
+
+matrix_mlr_get_number_of_observations(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_NUM_OF_OBSERVATIONS)
+//}
+
+matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_NUM_OF_X_VARS)
+//}
+
+matrix_mlr_has_constant(mlr_result_matrix) =>
+//{
+    matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_HAS_CONSTANT) == 1
+//}
+
+matrix_mlr_get_coefficients(mlr_result_matrix) =>
+//{
+    matrix_get_column(mlr_result_matrix, 1)
+//}
+
+matrix_mlr_get_coefficient_stderrs(mlr_result_matrix) =>
+//{
+    matrix_get_column(mlr_result_matrix, 2)
+//}
+
+matrix_mlr_get_coefficient_t_stats(mlr_result_matrix) =>
+//{
+    matrix_get_column(mlr_result_matrix, 3)
+//}
+
+matrix_mlr_get_coefficient_p_values(mlr_result_matrix) =>
+//{
+    matrix_get_column(mlr_result_matrix, 4)
+//}
+
+matrix_mlr_get_coefficient_matrix(mlr_result_matrix) =>
+//{
+    int m = int(matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix)) +
+         int(matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_HAS_CONSTANT))
+
+    if (m >= 0)
+        matrix_get_sub_matrix(mlr_result_matrix, 0, m - 1, 1, 4)
+//}
+
+matrix_mlr_get_coefficient(mlr_result_matrix, coefficient_index) =>
+//{
+    int m = int(matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix)) +
+         int(matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_HAS_CONSTANT))
+
+    if (coefficient_index < m and coefficient_index >= 0)
+        matrix_get(mlr_result_matrix, coefficient_index, 1)
+//}
+
+matrix_mlr_get_coefficient_stderr(mlr_result_matrix, coefficient_index) =>
+//{
+    int m = int(matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix)) +
+         int(matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_HAS_CONSTANT))
+
+    if (coefficient_index < m and coefficient_index >= 0)
+        matrix_get(mlr_result_matrix, coefficient_index, 2)
+//}
+
+matrix_mlr_get_coefficient_t_stat(mlr_result_matrix, coefficient_index) =>
+//{
+    int m = int(matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix)) +
+         int(matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_HAS_CONSTANT))
+
+    if (coefficient_index < m and coefficient_index >= 0)
+        matrix_get(mlr_result_matrix, coefficient_index, 3)
+//}
+
+matrix_mlr_get_coefficient_p_value(mlr_result_matrix, coefficient_index) =>
+//{
+    int m = int(matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix)) +
+         int(matrix_mlr_get_statistic(mlr_result_matrix, MM_MLR_HAS_CONSTANT))
+
+    if (coefficient_index < m and coefficient_index >= 0)
+        matrix_get(mlr_result_matrix, coefficient_index, 4)
+//}
+
+matrix_mlr(x_matrix, y_vector, use_constant, report_stats) =>
+//{
+    int row_count_y = matrix_get_row_count(y_vector)
+    int column_count_y = matrix_get_column_count(y_vector)
+
+    int row_count_x = matrix_get_row_count(x_matrix)
+    int column_count_x = matrix_get_column_count(x_matrix)
+
+    float[] x = matrix_create_empty()
+    float[] coeffs = matrix_copy(x)
+    float[] variance_matrix = matrix_copy(coeffs)
+    float[] result = matrix_copy(variance_matrix)
+
+    float ssr = na
+    float sse = na
+    float sst = na
+
+    float r2 = na
+    float adjusted_r2 = na
+
+    float dfr = na
+    float dfe = na
+    float dft = na
+
+    float msr = na
+    float mse = na
+    float mst = na
+
+    float f = na
+    float ci = na
+    float p = na
+
+    float y_hat = na
+    float se_y_hat = na
+
+    int num_of_x_vars = column_count_x
+
+    float[] const_array = array_create_from_series(1, row_count_x)
+
+    if (row_count_y > 1 and column_count_y == 1 and row_count_x > 1 and column_count_x > 0 and row_count_y == row_count_x)
+    //{
+        // Add a column of 1s first in the X-matrix, if 'use_constant' is true
+        if (use_constant)
+        //{
+            matrix_append_column(x, const_array)
+
+            for column = 0 to column_count_x - 1
+            //{
+                float[] column_array = matrix_get_column(x_matrix, column)
+                matrix_append_column(x, column_array)
+            //}
+
+            column_count_x := column_count_x + 1
+
+            MM_END_IF
+        //}
+        else
+        //{
+            x := x_matrix
+            MM_END_IF
+        //}
+
+        // Calculate betas (Coefficients)
+        [q, r] = matrix_get_qr_decomposition(x)
+        coeffs := matrix_solve_from_qr(q, r, y_vector)
+
+        // Calculate various statistics
+        float[] coeffs_std_errors = array.new_float(column_count_x, 0)
+        float[] coeffs_t_stats = array.copy(coeffs_std_errors)
+        float[] coeffs_p_values = array.copy(coeffs_t_stats)
+
+        if (report_stats)
+        //{
+            // Calculate Degrees of Freedom
+            dfr := max(0, column_count_x - 1)                                       // DF for Corrected SSR
+            dfe := max(0, row_count_x - column_count_x - (use_constant ? 1 : 0))    // DF for SSE
+            dft := max(0, row_count_x - 1)                                          // DF for Corrected SST
+
+            // Calculate mean of the Y-vector
+            float avg_y = array.avg(matrix_get_column(y_vector, 0))
+
+            // Calculate SST (Total Sum of Squares)
+            sst := 0
+
+            for row = 1 to row_count_y - 1
+            //{
+                if (row >= row_count_y)
+                    break
+
+                sst := sst + pow(matrix_get(y_vector, row, 0) - avg_y, 2)
+            //}
+
+            // Calculate SSE (Sum of Squared Estimate of Errors)
+            float[] y_transposed = matrix_transpose(y_vector)
+            float[] proj_matrix = matrix_get_projection_matrix_from_qr(x, q, r)
+
+            sse := matrix_get(matrix_subtract(matrix_multiply(y_transposed, y_vector), matrix_multiply(matrix_multiply(y_transposed, proj_matrix), y_vector)), 0, 0)
+
+            // Calculate SSR (Sum of Squares due to Regression)
+            ssr := sst - sse
+
+            // Calculate Mean of Squares
+            msr := ssr / dfr    // Mean of Squares due to Regression
+            mse := sse / dfe    // Mean of Squared Estimate of Errors (sample variance of the residuals)
+            mst := sst / dft    // Mean of Squares Total (sample variance of Y)
+
+            // Calculate Standard Error of the Estimate
+            se_y_hat := sqrt(mse)
+
+            // Calculate the F-value
+            f := msr / mse
+
+            // Calculate the Confidence Interval and p-value
+            ci := f_cdf_fisher(f, column_count_x, row_count_x - 1)
+            p := 1 - ci
+
+            // Calculate R2 (Coefficient of Determination)
+            r2 := ssr / sst
+
+            // Calculate the Adjusted R2
+            adjusted_r2 := 1 - ((1 - r2) * dft / (row_count_x - column_count_x))
+
+            // Calculate the variance matrix
+            float[] r_aug = matrix_get_sub_matrix(r, 0, column_count_x - 1, 0, column_count_x - 1)
+            float[] r_inv = matrix_get_inverse(r_aug)
+
+            variance_matrix := matrix_multiply(r_inv, matrix_transpose(r_inv))
+
+            // Calculate the Standard Errors, T-stats and p-values of the coefficients
+            for column = 0 to column_count_x - 1
+            //{
+                float se = sqrt(matrix_get(variance_matrix, column, column))
+                float coeff = matrix_get(coeffs, column, 0)
+                float t = coeff / se
+                float df = column_count_x - 1
+
+                array.set(coeffs_std_errors, column, se)
+                array.set(coeffs_t_stats, column, t)
+                array.set(coeffs_p_values, column, t_cdf_ibbetson(t, df))
+            //}
+        //}
+
+        // Calculate Y-hat (Estimate of Y)
+        y_hat := 0
+
+        for column = 0 to column_count_x - 1
+            y_hat := y_hat + matrix_get(coeffs, column, 0) * matrix_get(x, 0, column)
+
+        // Create a vector containing all the model statistics and
+        // append these vectors to the result matrix
+        float[] model_stats = array.new_float()
+
+        array.push(model_stats, y_hat)                  // Estimate of Y
+        array.push(model_stats, se_y_hat)               // Standard Error of Estimate
+        array.push(model_stats, f)                      // F-value
+        array.push(model_stats, ci)                     // Confidence Interval (from F-test)
+        array.push(model_stats, p)                      // p-value (from F-test)
+        array.push(model_stats, r2)                     // R-squared
+        array.push(model_stats, adjusted_r2)            // Adjusted R-squared
+        array.push(model_stats, ssr)                    // Sum of Squares due to Regression (SSR)
+        array.push(model_stats, sse)                    // Sum of Squared Estimate of Errors (SSE)
+        array.push(model_stats, sst)                    // Total Sum of Squares (SST)
+        array.push(model_stats, msr)                    // Mean of Squares due to Regression
+        array.push(model_stats, mse)                    // Mean of Squared Estimate of Errors
+        array.push(model_stats, mst)                    // Mean of Squares Total
+        array.push(model_stats, dfr)                    // Degrees of Freedom for Corrected SSR
+        array.push(model_stats, dfe)                    // Degrees of Freedom for SSE
+        array.push(model_stats, dft)                    // Degrees of Freedom for Corrected SST
+        array.push(model_stats, row_count_x)            // Number of Observations
+        array.push(model_stats, num_of_x_vars)          // Number of Explanatory X Variables
+        array.push(model_stats, use_constant ? 1 : 0)   // Whether or not a constant was used
+
+        matrix_append_column(result, model_stats)                   // Model Statistics (Including Estimate of Y)
+        matrix_append_column(result, matrix_get_column(coeffs, 0))  // Regression Coefficients
+
+        if (report_stats)
+        //{
+            matrix_append_column(result, coeffs_std_errors)         // Standard Errors of the Regression Coefficients
+            matrix_append_column(result, coeffs_t_stats)            // T-Statistics of the Regression Coefficients
+            matrix_append_column(result, coeffs_p_values)           // p-values of the Regression Coefficients
+        //}
+    //}
+
+    result
+//}
+
+
+
+// ------------------------------------------------------------------------------------
+//    Create a string representation of the matrix
+// ------------------------------------------------------------------------------------
+
+matrix_tostring(matrix_array) =>
+//{
+    int row_count = matrix_get_row_count(matrix_array)
+    int column_count = matrix_get_column_count(matrix_array)
+    string result = ""
+
+    result := result + "["
+
+    if (row_count > 0 and column_count > 0)
+    //{
+        for row = 0 to row_count - 1
+        //{
+            for column = 0 to column_count - 1
+            //{
+                result := result + tostring(matrix_get(matrix_array, row, column))
+
+                if (column < column_count - 1)
+                    result := result + ", "
+            //}
+
+            if (row < row_count - 1)
+                result := result + "\n"
+        //}
+    //}
+
+    result := result + "]"
+//}
+
+//} Functions
+
+//} MatrixLib
+
+
+
+// ====================================================================================================================================================
+//
+//       TESTING
+//
+// ====================================================================================================================================================
+//{
+
+// ------------------------------------------------------------------------------------
+//    Input
+// ------------------------------------------------------------------------------------
+//{
+
+var bool _00 = input(false, "--------------- Independent Variables ---------------")
+var string symbol1 = input("TVC:US02Y-TVC:CA02Y", "X1 Data Source (Symbol)", type = input.symbol)
+var string symbol2 = input("TVC:USOIL", "X2 Data Source (Symbol)", type = input.symbol)
+
+var bool _01 = input(false, "------------------ General Settings -----------------")
+var int lookback = input(10, "Lookback [>= 2]", minval = 2)
+var bool use_constant = input(true, "Use Constant?")
+var bool report_stats = input(true, "Report Statistics?")
+var bool show_se_bands = input(true, "Plot Bands Based on Std. Error of the Estimate?")
+var bool calc_on_history = input(true, "Calculate on Historical Data (Warning: Requires a Small Lookback Period)")
+
+//} Input
+
+
+
+// ------------------------------------------------------------------------------------
+//    Fill with data
+// ------------------------------------------------------------------------------------
+//{
+
+// Get data from other sources and populate arrays with samples from them
+float x1_data = security(symbol1, timeframe.period, close)
+float x2_data = security(symbol2, timeframe.period, close)
+
+float[] close_array = array_create_from_series(close,   lookback)
+float[] x1_array    = array_create_from_series(x1_data, lookback)
+float[] x2_array    = array_create_from_series(x2_data, lookback)
+
+// Create two matrices. One for the Y-variable and one for the X-variables.
+// Because of how Pine Script works we initiate the Y-vector like normal, but then create
+// a copy in order to create the X-matrix, to make sure we end up with two separate matrices,
+// not one matrix that is referenced by two variables. Two identical calls to a function will
+// usually result in only one call, and the result from both calls will be the same series,
+// i.e. both calls will return the same array. This is a work-around for that issue.
+var float[] y_vector = matrix_create_empty()
+var float[] x_matrix = matrix_copy(y_vector)
+
+if (barstate.islast or calc_on_history)
+//{
+    // Clear Y-vector and fill with new data
+    matrix_clear(y_vector)
+    matrix_append_column(y_vector, close_array)
+
+    // Clear X-matrix and fill with new data
+    matrix_clear(x_matrix)
+    matrix_append_column(x_matrix, x1_array)
+    matrix_append_column(x_matrix, x2_array)
+//}
+
+//} Fill with data
+
+
+
+// ------------------------------------------------------------------------------------
+//    Main code
+// ------------------------------------------------------------------------------------
+//{
+
+// Regress Y on the X variables
+float[] mlr_result_matrix = matrix_mlr(x_matrix, y_vector, use_constant, report_stats)
+
+// Store the resulting estimation and some of the statistics from the multiple linear regression above
+float[] coeffs        = matrix_mlr_get_coefficient_matrix(mlr_result_matrix)
+float   num_of_obs    = matrix_mlr_get_number_of_observations(mlr_result_matrix)
+float   num_of_x_vars = matrix_mlr_get_number_of_explanatory_variables(mlr_result_matrix)
+int     has_constant  = matrix_mlr_has_constant(mlr_result_matrix) ? 1 : 0
+float   estimate      = matrix_mlr_get_estimate(mlr_result_matrix)
+float   se_estimate   = matrix_mlr_get_stderr_estimate(mlr_result_matrix)
+float   r2            = matrix_mlr_get_r2(mlr_result_matrix)
+float   adjusted_r2   = matrix_mlr_get_adjusted_r2(mlr_result_matrix)
+float   p             = matrix_mlr_get_p_value(mlr_result_matrix)
+
+//} Main code
+
+
+
+// ------------------------------------------------------------------------------------
+//    Output
+// ------------------------------------------------------------------------------------
+//{
+
+set_output_location(highest(close, 300), lowest(close, 300))
+
+if (barstate.islast)
+//{
+    clear_output()
+
+    output("MULTIPLE LINEAR REGRESSION")
+    output("\n----------------------------------------")
+    output("\n\nY: " + syminfo.tickerid)
+    output("\nX1: " + symbol1)
+    output("\nX2: " + symbol2)
+    output("\n\nObservations: " + tostring(num_of_obs))
+    output("\nExplanatory variables: " + tostring(num_of_x_vars))
+
+    if (has_constant == 1)
+        output(" (+ constant)")
+
+    output("\n\n\nSTATISTICS")
+    output("\n----------------------------------------")
+    output("\n\nEstimate: " + tostring(estimate))
+
+    if (report_stats)
+    //{
+        output("\nStd. Error of the Estimate: " + tostring(se_estimate))
+        output("\nR2: " + tostring(r2))
+        output("\nAdjusted R2: " + tostring(adjusted_r2))
+        output("\np-value: " + tostring(p))
+        output("\n\nCoefficient, Std. Error, T-stat, p-value:\n" + matrix_tostring(coeffs))
+    //}
+    else
+        output("\n\nCoefficients:\n" + matrix_tostring(matrix_get_sub_matrix(coeffs, 0, num_of_x_vars - 1 + has_constant, 0, 0)))
+//}
+
+//} Output
+
+
+
+// ------------------------------------------------------------------------------------
+//    Plotting
+// ------------------------------------------------------------------------------------
+//{
+
+plot(estimate, "Y Estimate", color = #dddddd, linewidth = 2, style = plot.style_linebr)
+u = plot(estimate + se_estimate, "Upper Estimate", color = na, style = plot.style_linebr)
+l = plot(estimate - se_estimate, "Lower Estimate", color = na, style = plot.style_linebr)
+
+fill(u, l, color = #60a0ff, transp = 75)
+
+//} Plotting
+
+//} Testing

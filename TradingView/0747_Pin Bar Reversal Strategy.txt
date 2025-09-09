@@ -1,0 +1,52 @@
+//@version=6
+strategy("Pin Bar Reversal Strategy", overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=100,
+     calc_on_every_tick=false)
+
+// ── INPUTS ───────────────────────────────────────────────────────────────
+trendLen     = input.int(50,    "Trend SMA Length",            minval=1)
+maxBodyPct   = input.float(30,  "Max Body (% of range)",       minval=1) / 100
+minWickPct   = input.float(66,  "Min Wick (% of range)",       minval=1) / 100
+atrLen       = input.int(14,    "ATR Length",                  minval=1)
+stopMult     = input.float(1.0, "ATR Stop‑Loss Multiplier",     step=0.1)
+tpMult       = input.float(1.5, "ATR Take‑Profit Multiplier",   step=0.1)
+minATR       = input.float(0.0015, "Minimum ATR to Enter",   step=0.001)
+
+
+// ── CALCULATIONS ────────────────────────────────────────────────────────
+// Trend filter: price above/below a simple moving average
+trendSMA     = ta.sma(close, trendLen)
+inUpTrend    = close > trendSMA
+inDownTrend  = close < trendSMA
+
+// Candle geometry
+cRange       = high - low
+cBody        = math.abs(close - open)
+lowerWick    = math.min(open, close) - low
+upperWick    = high - math.max(open, close)
+
+// Identify pin bars
+bullPin      = inUpTrend and cBody <= maxBodyPct * cRange and lowerWick >= minWickPct * cRange
+bearPin      = inDownTrend and cBody <= maxBodyPct * cRange and upperWick >= minWickPct * cRange
+
+// ATR for dynamic stops/targets
+atrVal       = ta.atr(atrLen)
+
+// ── ENTRIES & EXITS ─────────────────────────────────────────────────────
+if bullPin and strategy.position_size == 0 and (atrVal > minATR)
+    stopLevel   = low  - atrVal * stopMult
+    profitLevel = close + atrVal * tpMult
+    strategy.entry("Long",  strategy.long)
+    strategy.exit ("Exit Long", from_entry="Long",
+                   stop=stopLevel, limit=profitLevel)
+
+if bearPin and strategy.position_size == 0 and (atrVal > minATR)
+    stopLevel   = high + atrVal * stopMult
+    profitLevel = close - atrVal * tpMult
+    strategy.entry("Short", strategy.short)
+    strategy.exit ("Exit Short", from_entry="Short",
+                   stop=stopLevel, limit=profitLevel)
+
+//plot(ta.sma(close,trendLen))
+plot(ta.atr(atrLen))

@@ -1,0 +1,133 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © RicardoSantos
+
+//@version=4
+study(title="[RS]Majors Volume Sum", overlay=false, format=format.volume)
+
+string currency = input(defval="EUR", type=input.string, options=["EUR", "USD", "GBP", "JPY", "AUD", "CAD", "CHF", "NZD"])
+
+color c_plot_max = input(defval=color.black, title='Max:', group='Color Profile:')
+color c_plot_3qmax = input(defval=color.red, title='3 Quarter Max:', group='Color Profile:')
+color c_plot_oscup = input(defval=color.green, title='Oscillator +:', group='Color Profile:')
+color c_plot_oscdo = input(defval=color.maroon, title='Oscillator -:', group='Color Profile:')
+
+color c_tb_bg = input(defval=color.white, title='Table BG:', group='Color Profile:')
+color c_tb_text = input(defval=color.black, title='Table text:', group='Color Profile:')
+string s_tb_textsize = input(defval=size.small, title='Table Text Size:', group='Color Profile:', options=[size.auto, size.huge, size.large, size.normal, size.small, size.tiny])
+
+string s1 = currency == "EUR" ? "EURUSD" : (currency == "USD" ? "1/EURUSD"  : (currency == "JPY" ? "1/USDJPY" : (currency == "GBP" ? "GBPUSD"   : (currency == "AUD" ? "AUDUSD"     : (currency == "CAD" ? "1/USDCAD"   : (currency == "CHF" ? "1/USDCHF"   : (currency == "NZD" ? "NZDUSD" : "")))))))
+string s2 = currency == "EUR" ? "EURJPY" : (currency == "USD" ? "USDJPY"    : (currency == "JPY" ? "1/EURJPY" : (currency == "GBP" ? "GBPJPY"   : (currency == "AUD" ? "AUDJPY"     : (currency == "CAD" ? "CADJPY"     : (currency == "CHF" ? "CHFJPY"     : (currency == "NZD" ? "NZDJPY" : "")))))))
+string s3 = currency == "EUR" ? "EURGBP" : (currency == "USD" ? "1/GBPUSD"  : (currency == "JPY" ? "1/GBPJPY" : (currency == "GBP" ? "1/EURGBP" : (currency == "AUD" ? "1/GBPAUD"   : (currency == "CAD" ? "1/GBPCAD"   : (currency == "CHF" ? "1/GBPCHF"   : (currency == "NZD" ? "1/GBPNZD" : "")))))))
+string s4 = currency == "EUR" ? "EURAUD" : (currency == "USD" ? "1/AUDUSD"  : (currency == "JPY" ? "1/AUDJPY" : (currency == "GBP" ? "GBPAUD"   : (currency == "AUD" ? "1/EURAUD"   : (currency == "CAD" ? "1/AUDCAD"   : (currency == "CHF" ? "1/AUDCHF"   : (currency == "NZD" ? "1/AUDNZD" : "")))))))
+string s5 = currency == "EUR" ? "EURCAD" : (currency == "USD" ? "USDCAD"    : (currency == "JPY" ? "1/CADJPY" : (currency == "GBP" ? "GBPCAD"   : (currency == "AUD" ? "AUDCAD"     : (currency == "CAD" ? "1/EURCAD"   : (currency == "CHF" ? "1/CADCHF"   : (currency == "NZD" ? "NZDCAD" : "")))))))
+string s6 = currency == "EUR" ? "EURCHF" : (currency == "USD" ? "USDCHF"    : (currency == "JPY" ? "1/CHFJPY" : (currency == "GBP" ? "GBPCHF"   : (currency == "AUD" ? "AUDCHF"     : (currency == "CAD" ? "CADCHF"     : (currency == "CHF" ? "1/EURCHF"   : (currency == "NZD" ? "NZDCHF" : "")))))))
+string s7 = currency == "EUR" ? "EURNZD" : (currency == "USD" ? "1/NZDUSD"  : (currency == "JPY" ? "1/NZDJPY" : (currency == "GBP" ? "GBPNZD"   : (currency == "AUD" ? "AUDNZD"     : (currency == "CAD" ? "1/NZDCAD"   : (currency == "CHF" ? "1/NZDCHF"   : (currency == "NZD" ? "1/EURNZD" : "")))))))
+
+float expression = close>close[1]?volume:-volume
+f_s(_s)=>security(symbol=_s, resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+//if currency == "EUR"
+
+float v0 =f_s(s1)// security(symbol="EURUSD", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+float v1 =f_s(s2)// security(symbol="EURJPY", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+float v2 =f_s(s3)// security(symbol="EURGBP", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+float v3 =f_s(s4)// security(symbol="EURAUD", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+float v4 =f_s(s5)// security(symbol="EURCAD", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+float v5 =f_s(s6)// security(symbol="EURCHF", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+float v6 =f_s(s7)// security(symbol="EURNZD", resolution=timeframe.period, expression=expression, lookahead=barmerge.lookahead_on)
+
+float t0 = sum(v0, 10)
+float t1 = sum(v1, 10)
+float t2 = sum(v2, 10)
+float t3 = sum(v3, 10)
+float t4 = sum(v4, 10)
+float t5 = sum(v5, 10)
+float t6 = sum(v6, 10)
+float c10_sum = t0 + t1 + t2 + t3 + t4 + t5 + t6
+
+float c100_t0 = sum(v0[10], 100)
+float c100_t1 = sum(v1[10], 100)
+float c100_t2 = sum(v2[10], 100)
+float c100_t3 = sum(v3[10], 100)
+float c100_t4 = sum(v4[10], 100)
+float c100_t5 = sum(v5[10], 100)
+float c100_t6 = sum(v6[10], 100)
+float c100_sum = c100_t0 + c100_t1 + c100_t2 + c100_t3 + c100_t4 + c100_t5 + c100_t6
+
+float c200_t0 = sum(v0[110], 200)
+float c200_t1 = sum(v1[110], 200)
+float c200_t2 = sum(v2[110], 200)
+float c200_t3 = sum(v3[110], 200)
+float c200_t4 = sum(v4[110], 200)
+float c200_t5 = sum(v5[110], 200)
+float c200_t6 = sum(v6[110], 200)
+float c200_sum = c200_t0 + c200_t1 + c200_t2 + c200_t3 + c200_t4 + c200_t5 + c200_t6
+
+f_vol_value(_v)=>
+    string _str = ""
+    string _sign = sign(_v) >= 0 ? "+" : "-"
+    int _digits = floor(log10(abs(_v)))
+    string _prefix_zeros = ""
+    int _digit_houses = floor(_digits % 3)
+    if _digit_houses == 0
+        _prefix_zeros := _sign + "00"
+    if _digit_houses == 1
+        _prefix_zeros := _sign + "0"
+    if _digit_houses == 2
+        _prefix_zeros := _sign + ""
+
+    float _thousands =    abs(_v / 1000)
+    float _millions =     abs(_v / 1000000)
+    float _billions =     abs(_v / 1000000000)
+    float _trillions =    abs(_v / 1000000000000)
+    float _quadrillions = abs(_v / 1000000000000000)
+    if _thousands < 1000
+        _str := _prefix_zeros + tostring(_thousands, "###.000") + "K"
+    else
+        if _millions < 1000
+            _str := _prefix_zeros + tostring(_millions, "###.000") + "M"
+        else
+            if _billions < 1000
+                _str := _prefix_zeros + tostring(_billions, "###.000") + "B"
+            else
+                if _trillions < 1000
+                    _str := _prefix_zeros + tostring(_trillions, "###.000") + "T"
+                else
+                    if _quadrillions < 1000
+                        _str := _prefix_zeros + tostring(_quadrillions, "###.000") + "Q"
+                    else
+                        _str := _prefix_zeros + tostring(_quadrillions, "###.000") + "_"
+    _str
+
+
+var float max = 0.0
+if c10_sum > max
+    max := c10_sum
+
+color col = close > open ? c_plot_oscup : c_plot_oscdo
+plot(series=c10_sum, title="M", color=col, linewidth=1, style=plot.style_columns)
+plot(series=max, title="M", color=c_plot_max, linewidth=1, style=plot.style_circles)
+plot(series=max*0.75, title="M", color=c_plot_3qmax, linewidth=1, style=plot.style_circles)
+hline(0)
+
+var table T = table.new(position=position.top_right, columns=4, rows=9, bgcolor=c_tb_bg, frame_color=c_tb_text, frame_width=1, border_color=c_tb_text, border_width=1)
+f_update_values(_row, _c0, _c1, _c2, _c3)=>
+    table.cell(table_id=T, column=0, row=_row, text=_c0, width=0, height=0, text_color=c_tb_text, text_halign=text.align_right, text_size=s_tb_textsize)
+    table.cell(table_id=T, column=1, row=_row, text=_c1, width=0, height=0, text_color=c_tb_text, text_halign=text.align_right, text_size=s_tb_textsize)
+    table.cell(table_id=T, column=2, row=_row, text=_c2, width=0, height=0, text_color=c_tb_text, text_halign=text.align_right, text_size=s_tb_textsize)
+    table.cell(table_id=T, column=3, row=_row, text=_c3, width=0, height=0, text_color=c_tb_text, text_halign=text.align_right, text_size=s_tb_textsize)
+
+if barstate.isfirst
+    table.cell(table_id=T, column=0, row=0, text='PAIR', width=0, height=0, text_color=c_tb_text, text_halign=text.align_center, text_size=s_tb_textsize)
+    table.cell(table_id=T, column=1, row=0, text='SUM(200)', width=0, height=0, text_color=c_tb_text, text_halign=text.align_center, text_size=s_tb_textsize)
+    table.cell(table_id=T, column=2, row=0, text='SUM(100)', width=0, height=0, text_color=c_tb_text, text_halign=text.align_center, text_size=s_tb_textsize)
+    table.cell(table_id=T, column=3, row=0, text='CURRENT', width=0, height=0, text_color=c_tb_text, text_halign=text.align_center, text_size=s_tb_textsize)
+
+if barstate.islast
+    f_update_values(1, s1, f_vol_value(c200_t0), f_vol_value(c100_t0), f_vol_value(t0))
+    f_update_values(2, s2, f_vol_value(c200_t1), f_vol_value(c100_t1), f_vol_value(t1))
+    f_update_values(3, s3, f_vol_value(c200_t2), f_vol_value(c100_t2), f_vol_value(t2))
+    f_update_values(4, s4, f_vol_value(c200_t3), f_vol_value(c100_t3), f_vol_value(t3))
+    f_update_values(5, s5, f_vol_value(c200_t4), f_vol_value(c100_t4), f_vol_value(t4))
+    f_update_values(6, s6, f_vol_value(c200_t5), f_vol_value(c100_t5), f_vol_value(t5))
+    f_update_values(7, s7, f_vol_value(c200_t6), f_vol_value(c100_t6), f_vol_value(t6))
+    f_update_values(8, 'TOTALS:', f_vol_value(c200_sum), f_vol_value(c100_sum), f_vol_value(c10_sum))

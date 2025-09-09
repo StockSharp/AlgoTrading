@@ -1,0 +1,200 @@
+// This work is licensed under a Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © LuxAlgo
+
+//@version=4
+study("Normalized Oscillators Spider Chart [LuxAlgo]",overlay=true,scale=scale.none,max_lines_count=500,max_labels_count=500)
+rsi_tog   = input(true,'RSI  ',inline='inline1')
+rsi_len   = input(14,'',inline='inline1')
+
+stoch_tog = input(true,'%K ',inline='inline1')
+stoch_len = input(14,'',inline='inline1')
+
+cor_tog   = input(true,'COR',inline='inline2')
+cor_len   = input(14,'',inline='inline2')
+
+mfi_tog   = input(true,'MFI',inline='inline2')
+mfi_len   = input(14,'',inline='inline2')
+
+wpr_tog   = input(true,'WPR',inline='inline3')
+wpr_len   = input(14,'',inline='inline3')
+
+pr_tog    = input(true,'%UP',inline='inline3')
+pr_len    = input(14,'',inline='inline3')
+
+cmo_tog   = input(true,'CMO',inline='inline4')
+cmo_len   = input(14,'',inline='inline4')
+
+aos_tog   = input(true,'AOS',inline='inline4')
+aos_len   = input(14,'',inline='inline4')
+
+glen_tog  = input(false,'Global Oscillators Length',inline='inline5')
+glen      = input(14,'',inline='inline5')
+//------------------------------------------------------------------------------
+radius  = input(100,'Spider Chart Length',group='Style Settings')
+offset  = input(10,'Spider Chart Offset',group='Style Settings')
+//----
+n = bar_index
+src = close
+
+rsi   = rsi(src,glen_tog ? glen : rsi_len)/100
+
+stoch = stoch(src,high,low,glen_tog ? glen : stoch_len)/100
+
+r     = .5*correlation(src,n,glen_tog ? glen : cor_len)+.5
+
+mfi   = sma(volume*(hlc3 > hlc3[1] ? hlc3 : 0),glen_tog ? glen : mfi_len)
+  /sma(volume*hlc3,glen_tog ? glen : mfi_len)
+
+wpr   = wpr(glen_tog ? glen : wpr_len)/100 + 1
+
+pr    = sma(max(sign(change(src)),0),glen_tog ? glen : pr_len)
+
+cmo   = sum(max(change(src),0),glen_tog ? glen : cmo_len)
+  /sum(abs(change(src)),glen_tog ? glen : cmo_len)
+
+aos   = (highestbars(high,glen_tog ? glen+1 : aos_len+1)
+  - lowestbars(low,glen_tog ? glen+1 : aos_len+1))
+  /(glen_tog ? glen*2 : aos_len*2) + .5
+
+//------------------------------------------------------------------------------
+var names = array.new_string(0)
+values = array.new_float(0)
+
+if barstate.isfirst
+    if rsi_tog
+        array.push(names,'RSI')
+    if stoch_tog
+        array.push(names,'%K')
+    if cor_tog
+        array.push(names,'COR')
+    if mfi_tog
+        array.push(names,'MFI')
+    if wpr_tog
+        array.push(names,'WPR')
+    if pr_tog
+        array.push(names,'%UP')
+    if cmo_tog
+        array.push(names,'CMO')
+    if aos_tog
+        array.push(names,'AOS')
+
+if barstate.islast
+    if rsi_tog
+        array.push(values,rsi)
+    if stoch_tog
+        array.push(values,stoch)
+    if cor_tog
+        array.push(values,r)
+    if mfi_tog
+        array.push(values,mfi)
+    if wpr_tog
+        array.push(values,wpr)
+    if pr_tog
+        array.push(values,pr)
+    if cmo_tog
+        array.push(values,cmo)
+    if aos_tog
+        array.push(values,aos)
+    array.push(values,array.get(values,0))
+
+length = array.size(names)
+seg = math.pi*2/length
+//------------------------------------------------------------------------------
+var borders_lines = array.new_line(0)
+var diag_lines    = array.new_line(0)
+var mid_lines     = array.new_line(0)
+var value_lines   = array.new_line(0)
+var scale_lines   = array.new_line(0)
+var name_labels   = array.new_label(0)
+//----
+if barstate.isfirst
+    for i = 0 to length-1
+        array.push(borders_lines,line.new(na,na,na,na))
+        array.push(diag_lines,line.new(na,na,na,na))
+        array.push(mid_lines,line.new(na,na,na,na))
+        array.push(value_lines,line.new(na,na,na,na))
+        array.push(name_labels,label.new(na,na,na))
+    for i = 0 to 99
+        array.push(scale_lines,line.new(na,na,na,na))
+//------------------------------------------------------------------------------
+dt = round(time - time[1])
+
+get_cord(x,y,z)=>
+    y1 = sin(seg*x)*y
+    y2 = sin(seg*(x+1))*z
+    x1 = time + dt*offset + dt*round((.5*cos(seg*x)*y+.5)*radius)
+    x2 = time + dt*offset + dt*round((.5*cos(seg*(x+1))*z+.5)*radius)
+    [x1,y1,x2,y2]
+//------------------------------------------------------------------------------
+if barstate.islast
+    for i = 0 to length-1
+        [x1,y1,x2,y2] = get_cord(i,1,1)
+
+        [x1_mid,y1_mid,x2_mid,y2_mid] = get_cord(i,.5,.5)
+
+        osc_val_0 = array.get(values,i)
+        osc_val_1 = array.get(values,i+1)
+        [x1_val,y1_val,x2_val,y2_val] = get_cord(i,osc_val_0,osc_val_1)
+
+        borders_line = array.get(borders_lines,i)
+        line.set_xloc(borders_line,x1,x2,xloc=xloc.bar_time)
+        line.set_y1(borders_line,y1)
+        line.set_y2(borders_line,y2)
+        line.set_color(borders_line,color.gray)
+
+        diag_line = array.get(diag_lines,i)
+        diag_x1 = time + dt*offset + dt*round(radius/2)
+        line.set_xloc(diag_line,diag_x1,x2,xloc=xloc.bar_time)
+        line.set_y1(diag_line,0)
+        line.set_y2(diag_line,y2)
+        line.set_color(diag_line,color.gray)
+
+        mid_line = array.get(mid_lines,i)
+        line.set_xloc(mid_line,x1_mid,x2_mid,xloc=xloc.bar_time)
+        line.set_y1(mid_line,y1_mid)
+        line.set_y2(mid_line,y2_mid)
+        line.set_style(mid_line,line.style_dashed)
+        line.set_color(mid_line,color.gray)
+
+        css = color.from_gradient(osc_val_1,0,1,#ff1100,#2157f3)
+        value_line = array.get(value_lines,i)
+        line.set_xloc(value_line,x1_val,x2_val,xloc=xloc.bar_time)
+        line.set_y1(value_line,y1_val)
+        line.set_y2(value_line,y2_val)
+        line.set_color(value_line,css)
+
+        label_loc = y1 == 1 ? label.style_label_down :
+          y1 == -1 ? label.style_label_up :
+          x1 > (diag_x1) ? label.style_label_left :
+          label.style_label_right
+
+        osc_name = array.get(names,i)
+        name_label = array.get(name_labels,i)
+        label.set_xloc(name_label,x1,xloc=xloc.bar_time)
+        label.set_y(name_label,y1)
+        label.set_text(name_label,osc_name)
+        label.set_textcolor(name_label,color.gray)
+        label.set_color(name_label,#00000000)
+        label.set_style(name_label,label_loc)
+
+    for i = 1 to 99
+        y1 = ((i-1)/99 - .5)*2
+        y2 = (i/99 - .5)*2
+
+        css = color.from_gradient(i,1,100,#ff1100,#2157f3)
+        scale_line = array.get(scale_lines,i)
+        line.set_xloc(scale_line,time+dt*offset+dt*(radius+25),time+dt*offset+dt*(radius+25),xloc=xloc.bar_time)
+        line.set_y1(scale_line,y1)
+        line.set_y2(scale_line,y2)
+        line.set_color(scale_line,css)
+
+    label.delete(label.new(time+dt*offset+dt*(radius+25),1,"100",xloc.bar_time,color=#00000000
+      ,style=label.style_label_left,textcolor=#2157f3,textalign=text.align_left)[1])
+    label.delete(label.new(time+dt*offset+dt*(radius+25),-1,"0",xloc.bar_time,color=#00000000
+      ,style=label.style_label_left,textcolor=#ff1100,textalign=text.align_left)[1])
+
+    avg = (array.avg(values) - .5)*2
+    avg_css = color.from_gradient(avg,-1,1,#ff1100,#2157f3)
+
+    label.delete(label.new(time+dt*offset+dt*(radius+25),avg,"◄",xloc.bar_time,color=#00000000
+      ,style=label.style_label_left,textcolor=avg_css,textalign=text.align_left)[1])

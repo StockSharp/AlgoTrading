@@ -1,0 +1,28 @@
+//@version=5
+strategyTitle = "Signal Tester (v1.3)"
+strategy(strategyTitle, overlay=true, calc_on_every_tick=false, initial_capital=100, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.1, slippage=5)
+
+// Date condition inputs
+startDate = timestamp(year(timenow), month(timenow), dayofmonth(timenow), hour(timenow), minute(timenow)-3)
+// startDate = input.time(title="Date Start", defval=timestamp("11 October 2023 11:00 +0000"), group="Dates")
+timeCondition = time >= startDate
+
+// Execute strategy
+longCondition = strategy.position_size <= 0 and timeCondition
+if (longCondition)
+    strategy.entry(id="long", direction=strategy.long)
+
+closeLongCondition = strategy.position_size > 0
+if (closeLongCondition)
+    strategy.close(id="long")
+
+
+messageToShow = ""
+if (timeframe.period != "1")
+    messageToShow := "Please switch your chart to the 1 minute timeframe before using this test strategy!"
+else
+    messageToShow := "Now set up the Strategy Alert to send trading signals. Turn off the Alert after your testing is done."
+
+var infoLabel = label.new(x=bar_index + 2, y=close, style=label.style_label_left, size=size.large, color=#ffeecc, textcolor=color.black, text=messageToShow)
+label.set_x(infoLabel, bar_index + 2)
+label.set_y(infoLabel, close)

@@ -1,0 +1,206 @@
+//@version=6
+strategy("Professional ORB Strategy - Fixed Continuous Lines",
+         shorttitle="Pro ORB",
+         overlay=true,
+         initial_capital=20000,
+         calc_on_every_tick=true)
+
+// === INPUT PARAMETERS ===
+orb_minutes = input.int(15, title="ORB Duration (Minutes)", minval=5, maxval=60)
+sess = input.session("0915-0930", title="ORB Session Time")
+min_orb_range = input.float(40.0, title="Minimum ORB Range", minval=10.0)
+stop_loss_atr = input.float(1.5, title="Stop Loss ATR Multiplier", minval=0.5)
+profit_target_mult = input.float(2.0, title="Profit Target Multiplier", minval=1.0)
+max_trades = input.int(2, title="Max Trades Per Day", minval=1, maxval=5)
+
+// === NEW PROFIT POINTS SETTING ===
+profit_points = input.float(50.0, title="Profit Target Points", minval=1.0, maxval=500.0)
+
+// === ORB LINE CALCULATION ===
+t = time(timeframe.period, sess + ":1234567")
+hide = timeframe.isintraday and timeframe.multiplier <= orb_minutes
+
+in_session = not na(t)
+is_first = in_session and not in_session[1]
+
+var float orb_high = na
+var float orb_low = na
+
+if is_first
+    orb_high := high
+    orb_low := low
+else if in_session
+    if high > orb_high
+        orb_high := high
+    if low < orb_low
+        orb_low := low
+
+// === STRATEGY VARIABLES ===
+var float orb_range = na
+var bool orb_formed = false
+var int trades_today = 0
+var bool in_position = false
+var string position_type = ""
+
+// === NEW PROFIT TARGET VARIABLES ===
+var float entry_price = na
+var float profit_target_level = na
+
+// === NEW BREAKOUT CANDLE VARIABLES FOR IMMEDIATE STOP ===
+var float breakout_candle_high = na
+var float breakout_candle_low = na
+
+// === TIME LOGIC ===
+is_new_day = dayofweek != dayofweek[1]
+current_minutes = hour * 60 + minute
+orb_start = 9 * 60 + 15
+orb_end = orb_start + orb_minutes
+
+is_orb_time = current_minutes >= orb_start and current_minutes < orb_end
+orb_ended = current_minutes >= orb_end and current_minutes[1] < orb_end
+
+// Reset daily
+if is_new_day
+    orb_range := na
+    orb_formed := false
+    trades_today := 0
+    in_position := false
+    position_type := ""
+    entry_price := na
+    profit_target_level := na
+    breakout_candle_high := na
+    breakout_candle_low := na
+
+// Mark ORB as formed when period ends
+if orb_ended and not orb_formed
+    orb_formed := true
+    orb_range := orb_high - orb_low
+
+// === SIGNAL LOGIC ===
+atr_val = ta.atr(14)
+valid_range = orb_formed and orb_range >= min_orb_range
+can_trade = valid_range and trades_today < max_trades and not in_position
+after_orb = orb_formed and current_minutes > orb_end
+
+// Breakout conditions
+bull_break = after_orb and close > orb_high and close[1] <= orb_high
+bear_break = after_orb and close < orb_low and close[1] >= orb_low
+
+// Buy signal
+if can_trade and bull_break
+    strategy.entry("Long", strategy.long, comment="ORB Bull")
+    in_position := true
+    position_type := "long"
+    trades_today := trades_today + 1
+    entry_price := close
+    profit_target_level := entry_price + profit_points
+    // CAPTURE BREAKOUT CANDLE FOR IMMEDIATE STOP
+    breakout_candle_high := high
+    breakout_candle_low := low
+
+// Sell signal
+if can_trade and bear_break
+    strategy.entry("Short", strategy.short, comment="ORB Bear")
+    in_position := true
+    position_type := "short"
+    trades_today := trades_today + 1
+    entry_price := close
+    profit_target_level := entry_price - profit_points
+    // CAPTURE BREAKOUT CANDLE FOR IMMEDIATE STOP
+    breakout_candle_high := high
+    breakout_candle_low := low
+
+// === IMMEDIATE TICK-BASED STOP LOSS EXECUTION ===
+// Long: Exit immediately if price touches breakout candle LOW
+if position_type == "long" and in_position and (low <= breakout_candle_low or close <= breakout_candle_low)
+    strategy.close("Long", comment="Immediate Breakout Stop")
+    in_position := false
+    position_type := ""
+    entry_price := na
+    profit_target_level := na
+
+// Short: Exit immediately if price touches breakout candle HIGH
+if position_type == "short" and in_position and (high >= breakout_candle_high or close >= breakout_candle_high)
+    strategy.close("Short", comment="Immediate Breakout Stop")
+    in_position := false
+    position_type := ""
+    entry_price := na
+    profit_target_level := na
+
+// Exit conditions
+long_stop = position_type == "long" and close < (orb_high - atr_val * stop_loss_atr)
+short_stop = position_type == "short" and close > (orb_low + atr_val * stop_loss_atr)
+long_profit = position_type == "long" and close >= profit_target_level
+short_profit = position_type == "short" and close <= profit_target_level
+end_day = hour >= 15 and minute >= 15
+
+if long_stop or short_stop or end_day
+    strategy.close_all(comment="Exit")
+    in_position := false
+    position_type := ""
+    entry_price := na
+    profit_target_level := na
+
+if long_profit or short_profit
+    strategy.close_all(comment="Profit " + str.tostring(profit_points) + " pts")
+    in_position := false
+    position_type := ""
+    entry_price := na
+    profit_target_level := na
+
+// === VISUAL ELEMENTS - CONTINUOUS LINES THAT RESIZE PROPERLY ===
+// Show ORB lines continuously (not just last day)
+orb_high_visible = hide and orb_formed ? orb_high : na
+orb_low_visible = hide and orb_formed ? orb_low : na
+
+// Use hline for better chart resize behavior
+var line orb_high_hline = na
+var line orb_low_hline = na
+
+// Update lines when ORB is formed
+if orb_formed and hide
+    // Delete old lines
+    if not na(orb_high_hline)
+        line.delete(orb_high_hline)
+    if not na(orb_low_hline)
+        line.delete(orb_low_hline)
+
+    // Create new lines that extend properly
+    orb_high_hline := line.new(bar_index - 50, orb_high, bar_index + 300, orb_high, color=color.green, width=2, extend=extend.right)
+    orb_low_hline := line.new(bar_index - 50, orb_low, bar_index + 300, orb_low, color=color.red, width=2, extend=extend.right)
+
+// Alternative: Use plot for continuous display (choose one method)
+plot(orb_high_visible, style=plot.style_line, color=orb_high[1] != orb_high ? na : color.green, title="ORB High", linewidth=2)
+plot(orb_low_visible, style=plot.style_line, color=orb_low[1] != orb_low ? na : color.red, title="ORB Low", linewidth=2)
+
+// Background coloring for ORB period
+bgcolor(is_orb_time ? color.new(color.yellow, 90) : na, title="ORB Period")
+
+// === ORIGINAL PLOTSHAPE SIGNALS (As requested) ===
+plotshape(bull_break and can_trade, "Buy", shape.triangleup, location.belowbar, color.lime, size=size.normal, text="BUY")
+plotshape(bear_break and can_trade, "Sell", shape.triangledown, location.abovebar, color.red, size=size.normal, text="SELL")
+
+// Info table
+if barstate.islast and orb_formed
+    var table info = table.new(position.top_right, 2, 7, bgcolor=color.white, border_width=1)
+
+    table.cell(info, 0, 0, "ORB Stats", text_color=color.black)
+    table.cell(info, 1, 0, "", text_color=color.black)
+
+    table.cell(info, 0, 1, "High", text_color=color.black)
+    table.cell(info, 1, 1, str.tostring(orb_high, "#.##"), text_color=color.green)
+
+    table.cell(info, 0, 2, "Low", text_color=color.black)
+    table.cell(info, 1, 2, str.tostring(orb_low, "#.##"), text_color=color.red)
+
+    table.cell(info, 0, 3, "Range", text_color=color.black)
+    table.cell(info, 1, 3, str.tostring(orb_range, "#.##"), text_color=color.blue)
+
+    table.cell(info, 0, 4, "Profit Points", text_color=color.black)
+    table.cell(info, 1, 4, str.tostring(profit_points), text_color=color.green)
+
+    table.cell(info, 0, 5, "Trades", text_color=color.black)
+    table.cell(info, 1, 5, str.tostring(trades_today), text_color=color.purple)
+
+    table.cell(info, 0, 6, "Position", text_color=color.black)
+    table.cell(info, 1, 6, in_position ? position_type : "None", text_color=color.gray)

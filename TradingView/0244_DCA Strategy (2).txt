@@ -1,0 +1,35 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © topgun31
+
+//@version=5
+strategy('DCA Strategy', overlay = true, currency = currency.USD, initial_capital = 1000, default_qty_value = 20, pyramiding = 100, default_qty_type = strategy.percent_of_equity, commission_value = 0.1, commission_type = strategy.commission.percent, slippage = 2)
+
+startYear = input.int(2004, 'Start year', tooltip = 'The year at which the strategy to start backtesting')
+endYear = input.int(2030, 'End year', tooltip = 'The year at which the strategy to stop backtesting')
+exitPercent = input.int(100, 'Exit percent', tooltip = 'How much capital should be sold at exit.')
+exitRSI = input.int(85, 'Exit RSI value', tooltip = 'The RSI value to exit at. Set to 100 if you want to be automatically calculated')
+
+// Period
+start = timestamp(startYear, 1, 1, 00, 00)
+finish = timestamp(endYear, 1, 1, 00, 00)
+window() => time >= start and time <= finish ? true : false
+
+// Heikin Ashi
+openD = request.security(ticker.heikinashi(syminfo.tickerid), timeframe.period, open)
+closeD = request.security(ticker.heikinashi(syminfo.tickerid), timeframe.period, close)
+
+// RSI
+greenCandle = closeD > openD
+redCandle = closeD < openD
+rsi = ta.rsi(closeD, 14)
+isBitcoin = str.contains(syminfo.ticker, 'BTC')
+rsiExit = exitRSI < 100 ? exitRSI : isBitcoin ? 92 : 84
+
+entry = greenCandle and redCandle[1] and window()
+exit = ta.crossunder(rsi, rsiExit) or time >= finish
+
+if entry
+    strategy.entry('Long', strategy.long, comment = 'BUY ' + syminfo.ticker)
+
+if (exit)
+    strategy.close('Long', qty_percent = exitPercent, comment = 'SELL ' + syminfo.ticker)

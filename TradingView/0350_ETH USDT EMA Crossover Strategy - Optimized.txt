@@ -1,0 +1,54 @@
+//@version=6
+strategy("ETH/USDT EMA Crossover Strategy - Optimized", overlay=true)
+
+// Parámetros de las EMAs
+ema200_length = input.int(200, title="EMA 200 Length")
+ema50_length = input.int(50, title="EMA 50 Length")
+ema20_length = input.int(20, title="EMA 20 Length")
+ema50_length_short = input.int(50, title="EMA 50 Length")
+
+// Parámetros del RSI
+rsi_length = input.int(14, title="RSI Length")
+
+// Parámetros del ATR
+atr_length = input.int(14, title="ATR Length")
+
+// Cálculo de las EMAs
+ema200 = ta.ema(close, ema200_length)
+ema50 = ta.ema(close, ema50_length)
+ema20 = ta.ema(close, ema20_length)
+ema50_short = ta.ema(close, ema50_length_short)
+
+// Cálculo del RSI
+rsi = ta.rsi(close, rsi_length)
+
+// Cálculo del ATR
+atr = ta.atr(atr_length)
+
+// Filtros adicionales
+trend_filter = close > ema200  // Tendencia alcista (solo 1 vela)
+rsi_filter_long = rsi > 30  // Filtro de RSI más relajado para operaciones largas
+rsi_filter_short = rsi < 70  // Filtro de RSI más relajado para operaciones cortas
+volatility_filter = atr > ta.sma(atr, 10)  // Filtro de volatilidad
+volume_filter = volume > ta.sma(volume, 20)  // Filtro de volumen
+
+// Condiciones de la estrategia
+long_condition = ta.crossover(ema20, ema50_short) and trend_filter and rsi_filter_long and volatility_filter and volume_filter
+short_condition = ta.crossunder(ema20, ema50_short) and close < ema200 and rsi_filter_short and volatility_filter and volume_filter
+
+// Ejecución de las órdenes
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+
+// Visualización de las EMAs en el gráfico (solo las esenciales)
+plot(ema200, color=color.red, linewidth=2, title="EMA 200", display=display.none)  // Ocultar EMA 200
+plot(ema50, color=color.blue, linewidth=2, title="EMA 50", display=display.none)  // Ocultar EMA 50
+plot(ema20, color=color.orange, linewidth=2, title="EMA 20")  // Mostrar EMA 20
+plot(ema50_short, color=color.green, linewidth=2, title="EMA 50 Short")  // Mostrar EMA 50 Short
+
+// Visualización del RSI (opcional)
+hline(50, "RSI Midline", color=color.gray, linestyle=hline.style_dotted, display=display.none)  // Ocultar línea de RSI
+plot(rsi, color=color.purple, linewidth=2, title="RSI", display=display.none)  // Ocultar RSI

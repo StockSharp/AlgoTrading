@@ -1,0 +1,56 @@
+//@version=6
+strategy("ChopFlow ATR Scalp Strategy (OBV EMA)", overlay=true, default_qty_type=strategy.fixed, default_qty_value=1)
+
+// === Inputs ===
+atrLength     = input.int(14, title="ATR Length", minval=1)
+atrMult       = input.float(1.5, title="ATR Multiplier", minval=0.1)
+chopLength    = input.int(14, title="Choppiness Length", minval=1)
+chopThresh    = input.float(60.0, title="Choppiness Threshold")
+obvEmaLength  = input.int(10, title="OBV EMA Length", minval=1)
+sessionInput  = input.session("1700-1600:1234567", title="Trade Session")
+
+// === ATR ===
+atr = ta.rma(ta.tr(true), atrLength)
+
+// === Choppiness Index ===
+tr     = ta.tr(true)
+sumTR  = math.sum(tr, chopLength)
+range_ = ta.highest(high, chopLength) - ta.lowest(low, chopLength)
+chop   = 100 * math.log(sumTR / range_) / math.log(chopLength)
+
+// === On-Balance Volume with EMA ===
+obv    = ta.cum(math.sign(ta.change(close)) * volume)
+obvEma = ta.ema(obv, obvEmaLength)
+
+// === Session Filter ===
+inSession = not na(time(timeframe.period, sessionInput))
+
+// === Entry Conditions ===
+longCond  = inSession and chop < chopThresh and obv > obvEma
+shortCond = inSession and chop < chopThresh and obv < obvEma
+
+if longCond
+    strategy.entry("Long", strategy.long)
+if shortCond
+    strategy.entry("Short", strategy.short)
+
+// === Visual: Vertical bars and horizontal lines on entries ===
+// Highlight bar background when entries occur
+bgcolor(longCond  ? color.new(color.green,  85) : na)
+bgcolor(shortCond ? color.new(color.red,    85) : na)
+
+// Draw a horizontal line at entry price
+if longCond
+    line.new(bar_index, close, bar_index + 5, close, extend=extend.none, color=color.green, width=1)
+if shortCond
+    line.new(bar_index, close, bar_index + 5, close, extend=extend.none, color=color.red,   width=1)
+
+// === ATR-Based Exit ===
+strategy.exit("Exit Long",  from_entry="Long",  stop=close - atr * atrMult, profit=atr * atrMult)
+strategy.exit("Exit Short", from_entry="Short", stop=close + atr * atrMult, profit=atr * atrMult)
+
+// === (Optional) Debug Plots ===
+//plot(chop,     title="Choppiness", color=color.green)
+//hline(chopThresh, "Chop Threshold", color=color.yellow)
+//plot(obv,      title="OBV",         color=color.blue)
+//plot(obvEma,   title="OBV EMA",     color=color.orange)

@@ -1,0 +1,123 @@
+//@version=5
+strategy("CVD Divergence + Volume HMA RSI MACD Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Input Parameters
+hma20_length         = input.int(20, "HMA 20 Length", minval=1)
+hma50_length         = input.int(50, "HMA 50 Length", minval=1)
+rsi_length           = input.int(14, "RSI Length", minval=1)
+rsi_overbought       = input.int(70, "RSI Overbought", minval=50, maxval=100)
+rsi_oversold         = input.int(30, "RSI Oversold", minval=0, maxval=50)
+macd_fast            = input.int(12, "MACD Fast Length", minval=1)
+macd_slow            = input.int(26, "MACD Slow Length", minval=1)
+macd_signal          = input.int(9, "MACD Signal Length", minval=1)
+volume_ma_length     = input.int(20, "Volume MA Length", minval=1)
+volume_multiplier    = input.float(1.5, "Volume Multiplier", minval=1.0)
+cvd_length           = input.int(14, "CVD Length", minval=1)
+divergence_lookback  = input.int(5, "Divergence Lookback", minval=2)
+indicator_panel      = input.bool(true, "Show Indicator Panel")
+
+// Hull Moving Average Function
+hma(src, length) =>
+    wma_half = ta.wma(src, length / 2)
+    wma_full = ta.wma(src, length)
+    ta.wma(2 * wma_half - wma_full, math.round(math.sqrt(length)))
+
+// Calculate Indicators
+hma20       = hma(close, hma20_length)
+hma50       = hma(close, hma50_length)
+rsi_val     = ta.rsi(close, rsi_length)
+[macd_line, signal_line, macd_histogram] = ta.macd(close, macd_fast, macd_slow, macd_signal)
+volume_ma   = ta.sma(volume, volume_ma_length)
+high_volume = volume > volume_ma * volume_multiplier
+
+// CVD Calculation (Simplified version using volume and price action)
+cvd_raw = volume * (close > open ? 1 : close < open ? -1 : 0)
+cvd     = ta.sma(cvd_raw, cvd_length)
+
+// Divergence Detection Functions
+find_pivot_high(src, leftbars, rightbars) => ta.pivothigh(src, leftbars, rightbars)
+find_pivot_low(src, leftbars, rightbars)  => ta.pivotlow(src, leftbars, rightbars)
+
+// Price and CVD Pivots
+price_pivot_high = find_pivot_high(high, divergence_lookback, divergence_lookback)
+price_pivot_low  = find_pivot_low(low, divergence_lookback, divergence_lookback)
+cvd_pivot_high   = find_pivot_high(cvd, divergence_lookback, divergence_lookback)
+cvd_pivot_low    = find_pivot_low(cvd, divergence_lookback, divergence_lookback)
+
+// Variables to store last pivot values
+var float last_price_high = na
+var float last_cvd_high   = na
+var float last_price_low  = na
+var float last_cvd_low    = na
+var int   last_high_bar   = na
+var int   last_low_bar    = na
+
+// Divergence Detection
+bullish_divergence = false
+if not na(price_pivot_low) and not na(last_price_low)
+    // Bullish divergence: Price makes a lower low while CVD makes a higher low
+    if low[divergence_lookback] < last_price_low and cvd[divergence_lookback] > last_cvd_low
+        bullish_divergence := true
+
+bearish_divergence = false
+if not na(price_pivot_high) and not na(last_price_high)
+    // Bearish divergence: Price makes a higher high while CVD makes a lower high
+    if high[divergence_lookback] > last_price_high and cvd[divergence_lookback] < last_cvd_high
+        bearish_divergence := true
+
+// Update last pivot values
+if not na(price_pivot_high)
+    last_price_high := high[divergence_lookback]
+    last_cvd_high   := cvd[divergence_lookback]
+    last_high_bar   := bar_index
+
+if not na(price_pivot_low)
+    last_price_low := low[divergence_lookback]
+    last_cvd_low   := cvd[divergence_lookback]
+    last_low_bar   := bar_index
+
+// Trading Conditions
+// Long Conditions
+hma_bullish    = hma20 > hma50 and close > hma20
+rsi_bullish    = rsi_val < rsi_overbought and rsi_val > 40
+macd_bullish   = macd_line > signal_line and macd_histogram > macd_histogram[1]
+volume_bullish = high_volume
+cvd_bullish    = bullish_divergence or (cvd > cvd[1])
+long_condition = hma_bullish and rsi_bullish and macd_bullish and volume_bullish and cvd_bullish
+
+// Short Conditions
+hma_bearish     = hma20 < hma50 and close < hma20
+rsi_bearish     = rsi_val > rsi_oversold and rsi_val < 60
+macd_bearish    = macd_line < signal_line and macd_histogram < macd_histogram[1]
+volume_bearish  = high_volume
+cvd_bearish     = bearish_divergence or (cvd < cvd[1])
+short_condition = hma_bearish and rsi_bearish and macd_bearish and volume_bearish and cvd_bearish
+
+// Exit Conditions
+long_exit  = close < hma20 or rsi_val > rsi_overbought or macd_line < signal_line
+short_exit = close > hma20 or rsi_val < rsi_oversold or macd_line > signal_line
+
+// Strategy Execution
+if long_condition and strategy.position_size == 0
+    strategy.entry("Long", strategy.long)
+if short_condition and strategy.position_size == 0
+    strategy.entry("Short", strategy.short)
+if strategy.position_size > 0 and long_exit
+    strategy.close("Long")
+if strategy.position_size < 0 and short_exit
+    strategy.close("Short")
+
+// Plotting on main chart
+plot(hma20, title="HMA 20", color=color.blue, linewidth=2)
+plot(hma50, title="HMA 50", color=color.red, linewidth=2)
+
+// Plot signals and divergences
+plotshape(long_condition,  title="Long Signal",  style=shape.triangleup, location=location.belowbar, color=color.green, size=size.small)
+plotshape(short_condition, title="Short Signal", style=shape.triangledown, location=location.abovebar, color=color.red, size=size.small)
+plotshape(bullish_divergence,  title="Bullish Divergence", style=shape.circle, location=location.belowbar, color=color.lime,  size=size.tiny)
+plotshape(bearish_divergence,  title="Bearish Divergence", style=shape.circle, location=location.abovebar, color=color.orange, size=size.tiny)
+
+// Zero line on main chart
+hline(0, title="Zero Line", color=color.gray, linestyle=hline.style_dashed)
+
+// Display strategy

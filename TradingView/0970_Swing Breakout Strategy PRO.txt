@@ -1,0 +1,52 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © VISHALSWINGTRADE
+
+
+//@version=5
+strategy("Swing Breakout Strategy PRO", overlay=true, margin_long=100, margin_short=100, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs ===
+leftBars   = input.int(5, "Left Bars", minval=1)
+rightBars  = input.int(5, "Right Bars", minval=1)
+showLines  = input.bool(true, "Show SL & Target Lines")
+
+// === Detect Pivots ===
+pivotHigh = ta.pivothigh(high, leftBars, rightBars)
+pivotLow  = ta.pivotlow(low, leftBars, rightBars)
+
+// === Store last confirmed swings ===
+var float lastSwingHigh = na
+var float lastSwingLow  = na
+
+if not na(pivotHigh)
+    lastSwingHigh := pivotHigh
+if not na(pivotLow)
+    lastSwingLow := pivotLow
+
+// === Conditions ===
+longCondition  = close[1] > lastSwingHigh and high > high[1] and not na(lastSwingHigh) and not na(lastSwingLow)
+shortCondition = close[1] < lastSwingLow and low < low[1] and not na(lastSwingHigh) and not na(lastSwingLow)
+
+// === Targets ===
+rangeGap = math.abs(lastSwingHigh - lastSwingLow)
+longSL   = lastSwingLow
+shortSL  = lastSwingHigh
+longTP   = lastSwingHigh + rangeGap
+shortTP  = lastSwingLow - rangeGap
+
+// === Execute Trades ===
+if longCondition
+    strategy.entry("BUY", strategy.long, comment="Swing High Break")
+    strategy.exit("BUY EXIT", from_entry="BUY", stop=longSL, limit=longTP)
+    if showLines
+        line.new(bar_index, longSL, bar_index + 5, longSL, color=color.red, width=2, style=line.style_dotted)
+        line.new(bar_index, longTP, bar_index + 5, longTP, color=color.green, width=2, style=line.style_dotted)
+        label.new(bar_index, close, "BUY", style=label.style_label_up, color=color.green)
+
+if shortCondition
+    strategy.entry("SELL", strategy.short, comment="Swing Low Break")
+    strategy.exit("SELL EXIT", from_entry="SELL", stop=shortSL, limit=shortTP)
+    if showLines
+        line.new(bar_index, shortSL, bar_index + 5, shortSL, color=color.red, width=2, style=line.style_dotted)
+        line.new(bar_index, shortTP, bar_index + 5, shortTP, color=color.green, width=2, style=line.style_dotted)
+        label.new(bar_index, close, "SELL", style=label.style_label_down, color=color.red)

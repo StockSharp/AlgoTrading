@@ -1,0 +1,112 @@
+// This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License https://creativecommons.org/licenses/by-sa/4.0/
+// © alexgrover
+
+//@version=4
+study("Time Range Statistics",overlay=true)
+//------------------------------------------------------------------------------
+// User Settings
+//------------------------------------------------------------------------------
+start = input(9000),End = input(10000)
+Last = input(false,"Evaluate To Last Bar")
+//----
+Pt = input(true,"[-----------------Info & Date-----------------]")
+Pp = input(true,"Ticker Prefix")
+Pd = input(true,"Date Range")
+//----
+Ps = input(true,"[------------------Statistics-------------------]")
+//----
+Mu = input(true,"Mean")
+Nn = input(true,"Normalized Range")
+Pc = input(true,"Percent Change")
+Av = input(true,"Average Volume")
+Ng = input(false,"Number Of Gaps")
+//----
+Cor = input(true,"[-----------------Correlation-----------------]")
+Sym = input("GOOG","Symbol",type=input.symbol)
+//------------------------------------------------------------------------------
+// Recurrent Data
+//------------------------------------------------------------------------------
+n = bar_index,o = open,c = close,y = year
+mo = month,d = dayofmonth,h = hour,mi = minute
+tick = Pp ? syminfo.tickerid : syminfo.ticker
+tf = timeframe.period,end = Last ? n : End
+//------------------------------------------------------------------------------
+// Statistics
+//------------------------------------------------------------------------------
+//----
+vs(x)=>valuewhen(n==start,x,0)
+ve(x)=>valuewhen(n==end,x,0)
+//----
+mean(x)=>
+    csum = cum(x)
+    a = ve(csum)
+    b = vs(csum)
+    (a - b)/(end - start)
+//----
+Stdev(x)=>sqrt(mean(x*x) - pow(mean(x),2))
+//----
+max=0.,min = 0.
+max := n > end ? max[1] : n >= start ? nz(max(c,max[1]),c) : c
+min := n > end ? min[1] : n >= start ? nz(min(c,min[1]),c) : c
+//----
+ngap = cum(n > end ? 0 : n >= start and o > high[1] or o < low[1] ? 1 : 0)
+nh = cum(n > end ? 0 : n >= start and change(max) ? 1 : 0)
+nl = cum(n > end ? 0 : n >= start and change(min) ? 1 : 0)
+//----
+pmean = mean(c)
+avgv = mean(volume)
+normR = (max - min)/(max + min)
+pc = (ve(c) - vs(c))/vs(c)*100
+trend = nh > nl ? " 📈" : " 📉"
+//----
+sym = security(Sym,tf,c)
+cov = mean(c*sym) - pmean*mean(sym)
+pdev = Stdev(c)*Stdev(sym)
+cor = cov/pdev
+//------------------------------------------------------------------------------
+// Date Range Text
+//------------------------------------------------------------------------------
+Sy=vs(y),Smo=vs(mo),Sd=vs(d),Sh=vs(h),Smi=vs(mi)
+Ey=ve(y),Emo=ve(mo),Ed=ve(d),Eh=ve(h),Emi=ve(mi)
+//----
+Z(x)=>x/10 < 1 ? "0" : ""
+Sdate = "From : " + tostring(Sy) + "/" + Z(Smo) + tostring(Smo) + "/"
+  + Z(Sd) + tostring(Sd) + "/" + Z(Sh) + tostring(Sh) + ":" + Z(Smi)
+  + tostring(Smi)
+Edate = "To     : " + tostring(Ey) + "/" + Z(Emo) + tostring(Emo) + "/"
+  + Z(Ed) + tostring(Ed) + "/" + Z(Eh) + tostring(Eh) + ":" + Z(Emi)
+  + tostring(Emi)
+//------------------------------------------------------------------------------
+// Text
+//------------------------------------------------------------------------------
+lim = "------------------------------------------------------"
+title = Pt ? lim + "\n" + tick + " " + tf + trend + " " + "\n" + lim + "\n" : na
+daterange = Pt and Pd ? Sdate + "\n" + "\n" + Edate + "\n" + lim + "\n" : na
+stats = Ps ? iff(Mu,"\n" + "Mean : " + tostring(pmean) + "\n",na)
+  + iff(Nn,"\n" + "Normalized Range : " + tostring(normR,"#.####") + "\n",na)
+  + iff(Pc,"\n" + "Percent Change : " + tostring(pc,"#.####") + "%" + "\n",na)
+  + iff(Av,"\n" + "Average Volume : " + tostring(avgv/1000,"#.###")
+  + (avgv >= 1E6 ? "M" : avgv >= 1E3 ? "K" : na) + "\n",na)
+  + iff(Ng,"\n" + "Number Of Gaps : " + tostring(ngap) + "\n",na)
+  + "\n" + lim : na
+correl = Cor ? "\n" + "Correlation " + "[" + Sym + "] : "
+  + tostring(cor,"#.####") : na
+//------------------------------------------------------------------------------
+// Plots
+//------------------------------------------------------------------------------
+label l = label.new(n,c,text=title+daterange+stats+correl,color=color.black,
+  style=label.style_label_left,textcolor=color.white,
+  textalign=text.align_left)
+label.delete(l[1])
+//----
+line maxl = line.new(n[1],max,n,max,extend=extend.left,
+  color=#2157f3,width=2)
+line meanl = line.new(n[1],pmean,n,pmean,extend=extend.left,
+  color=color.orange,width=2)
+line minl = line.new(n[1],min,n,min,extend=extend.left,
+  color=#ff1100,width=2)
+line.delete(maxl[1]),line.delete(meanl[1]),line.delete(minl[1])
+//----
+css = n >= start and n <= end ? #2157f3 : na
+bgcolor(css,transp=80)
+plotchar(n,"Bar Index","‎",color=#2157f3,editable=false)

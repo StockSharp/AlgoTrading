@@ -1,0 +1,110 @@
+//@version=5
+strategy("30M Scalping Strategy with Debug Logs",
+     overlay=true,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=1)
+
+// ─── Inputs ──────────────────────────────────────────────────────────────────
+fastLen   = input.int(12,    title="Fast EMA Length")
+slowLen   = input.int(26,    title="Slow EMA Length")
+trendLen  = input.int(55,    title="Trend EMA Length")
+rsiLen    = input.int(14,    title="RSI Length")
+rsiOB     = input.int(65,    title="RSI Overbought")
+rsiOS     = input.int(35,    title="RSI Oversold")
+macdFast  = input.int(12,    title="MACD Fast")
+macdSlow  = input.int(26,    title="MACD Slow")
+macdSig   = input.int(9,     title="MACD Signal")
+atrLen    = input.int(14,    title="ATR Length")
+atrMult   = input.float(2.0, title="ATR SL Multiplier")
+rr        = input.float(2.0, title="Risk:Reward Ratio")
+volLen    = input.int(20,    title="Volume MA Length")
+volMult   = input.float(1.3, title="Volume Threshold")
+
+// ─── Calculations ────────────────────────────────────────────────────────────
+fastEMA    = ta.ema(close, fastLen)
+slowEMA    = ta.ema(close, slowLen)
+trendEMA   = ta.ema(close, trendLen)
+rsiVal     = ta.rsi(close, rsiLen)
+[macdLine, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSig)
+atr        = ta.atr(atrLen)
+volMA      = ta.sma(volume, volLen)
+highVol    = volume > volMA * volMult
+
+// ─── Trend & Cross Conditions ────────────────────────────────────────────────
+upTrend   = close > trendEMA and fastEMA > slowEMA
+dnTrend   = close < trendEMA and fastEMA < slowEMA
+bullCross = ta.crossover(fastEMA, slowEMA)
+bearCross = ta.crossunder(fastEMA, slowEMA)
+
+// ─── Entry Conditions ────────────────────────────────────────────────────────
+longCondition  = bullCross and upTrend  and rsiVal > 40   and rsiVal < rsiOB and macdLine > signalLine and highVol
+shortCondition = bearCross and dnTrend  and rsiVal < 60   and rsiVal > rsiOS and macdLine < signalLine and highVol
+
+// ─── Entries & Exits ─────────────────────────────────────────────────────────
+if longCondition
+    sl = close - atr * atrMult
+    tp = close + (close - sl) * rr
+    strategy.entry(id="Long",  direction=strategy.long)
+    strategy.exit(id="Exit Long", from_entry="Long", stop=sl, limit=tp)
+
+if shortCondition
+    sl = close + atr * atrMult
+    tp = close - (sl - close) * rr
+    strategy.entry(id="Short", direction=strategy.short)
+    strategy.exit(id="Exit Short", from_entry="Short", stop=sl, limit=tp)
+
+// ─── Plot EMAs ───────────────────────────────────────────────────────────────
+plot(fastEMA,  title="Fast EMA",  color=color.blue)
+plot(slowEMA,  title="Slow EMA",  color=color.orange)
+plot(trendEMA, title="Trend EMA", color=color.purple)
+
+// ─── Debug Logging ───────────────────────────────────────────────────────────
+// We track position size changes to log entries/exits
+var string[] logArr    = array.new_string()
+var float    prevPos   = 0.0
+pos = strategy.position_size
+
+// On new entry
+if prevPos == 0 and pos > 0
+    entryLog = "🔵 ENTRY LONG  | " +
+               str.tostring(time, "yyyy-MM-dd HH:mm") +
+               " | Price:" + str.tostring(close, "#.#####") +
+               " | ATR:" + str.tostring(atr, "#.##") +
+               " | RSI:" + str.tostring(rsiVal, "#.##")
+    array.push(logArr, entryLog)
+
+if prevPos == 0 and pos < 0
+    entryLog = "🔴 ENTRY SHORT | " +
+               str.tostring(time, "yyyy-MM-dd HH:mm") +
+               " | Price:" + str.tostring(close, "#.#####") +
+               " | ATR:" + str.tostring(atr, "#.##") +
+               " | RSI:" + str.tostring(rsiVal, "#.##")
+    array.push(logArr, entryLog)
+
+// On exit back to flat
+if prevPos > 0 and pos == 0
+    exitLog = "🔵 EXIT LONG   | " +
+              str.tostring(time, "yyyy-MM-dd HH:mm") +
+              " | Price:" + str.tostring(close, "#.#####") +
+              " | ATR:" + str.tostring(atr, "#.##") +
+              " | RSI:" + str.tostring(rsiVal, "#.##")
+    array.push(logArr, exitLog)
+
+if prevPos < 0 and pos == 0
+    exitLog = "🔴 EXIT SHORT  | " +
+              str.tostring(time, "yyyy-MM-dd HH:mm") +
+              " | Price:" + str.tostring(close, "#.#####") +
+              " | ATR:" + str.tostring(atr, "#.##") +
+              " | RSI:" + str.tostring(rsiVal, "#.##")
+    array.push(logArr, exitLog)
+
+// update for next bar
+prevPos := pos
+
+// Create a fixed 1×10 table and on the last bar, fill it with the last 10 logs
+var table logTable = table.new(position.top_left, 1, 10, border_width=1)
+if barstate.islast
+    for i = 0 to 9
+        idx = array.size(logArr) - 1 - i
+        txt = idx >= 0 ? array.get(logArr, idx) : ""
+        table.cell(logTable, 0, i, txt, text_size=size.tiny)

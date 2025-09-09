@@ -1,0 +1,168 @@
+// This Pine Script™ code is subject to the terms of the Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © UAlgo
+//@version=5
+strategy("Trend Signals with TP & SL [UAlgo] Strategy", shorttitle = "Trend Signals with TP & SL [UAlgo] Strategy", overlay = true)
+
+// Trend Continuation Signals with TP & SL
+src = input(hl2, title="Source", group = "Trend Continuation Signals with TP & SL")
+Multiplier = input.float(2, title="Sensitivity (0.5 - 5)", step=0.1, defval=2, minval=0.5, maxval=5, group = "Trend Continuation Signals with TP & SL")
+atrPeriods = input.int(14, title="ATR Length", defval=10, group = "Trend Continuation Signals with TP & SL")
+atrCalcMethod = input.string("Method 1", title="ATR Calculation Methods", options=["Method 1", "Method 2"], group = "Trend Continuation Signals with TP & SL")
+cloud_val = input.int(10, title="Cloud Moving Average Length", defval=10, minval=5, maxval=500, group = "Trend Continuation Signals with TP & SL")
+showBuySellSignals = input.bool(true, title="Show Buy/Sell Signals", defval=true, group = "Trend Continuation Signals with TP & SL")
+showMovingAverageCloud = input.bool(true, title="Show Cloud MA", group = "Trend Continuation Signals with TP & SL")
+
+// TP & SL Group
+tp_sl_method = input.string("ATR", title="TP & SL Type", options=["ATR", "Percent"], group="TP & SL")
+atr_tp_multiplier = input.float(2.0, title="ATR TP Multiplier", defval=1.0, group="TP & SL", tooltip="Multiplier for ATR-based Take Profit", inline="ATR")
+atr_sl_multiplier = input.float(1.0, title="ATR SL Multiplier", defval=1.0, group="TP & SL", tooltip="Multiplier for ATR-based Stop Loss", inline="ATR")
+percent_tp = input.float(2.0, title="Percent TP (0 for Disabling)", minval=0, defval=2.0, group="TP & SL", tooltip="Percent for Take Profit", inline="Percent")
+percent_sl = input.float(1.0, title="Percent SL (0 for Disabling)", minval=0, defval=2.0, group="TP & SL", tooltip="Percent for Stop Loss", inline="Percent")
+
+// New signal handling option
+prevent_multiple_positions = input.bool(true, title="Prevent Multiple Positions", defval=true, group="Position Management")
+
+// Utility Functions
+percent(nom, div) =>
+    100 * nom / div
+
+src1 = ta.hma(open, 5)[1]
+src2 = ta.hma(close, 12)
+momm1 = ta.change(src1)
+momm2 = ta.change(src2)
+f1(m, n) => m >= n ? m : 0.0
+f2(m, n) => m >= n ? 0.0 : -m
+m1 = f1(momm1, momm2)
+m2 = f2(momm1, momm2)
+sm1 = math.sum(m1, 1)
+sm2 = math.sum(m2, 1)
+
+cmoCalc = percent(sm1 - sm2, sm1 + sm2)
+
+hh = ta.highest(2)
+h1 = ta.dev(hh, 2) ? na : hh
+hpivot = fixnan(h1)
+ll = ta.lowest(2)
+l1 = ta.dev(ll, 2) ? na : ll
+lpivot = fixnan(l1)
+
+rsiCalc = ta.rsi(close, 9)
+lowPivot = lpivot
+highPivot = hpivot
+
+sup = rsiCalc < 25 and cmoCalc > 50 and lowPivot
+res = rsiCalc > 75 and cmoCalc < -50 and highPivot
+
+atr2 = ta.sma(ta.tr, atrPeriods)
+atr = atrCalcMethod == "Method 1" ? ta.atr(atrPeriods) : atr2
+up = src - (Multiplier * atr)
+up1 = nz(up[1], up)
+up := close[1] > up1 ? math.max(up, up1) : up
+dn = src + (Multiplier * atr)
+dn1 = nz(dn[1], dn)
+dn := close[1] < dn1 ? math.min(dn, dn1) : dn
+
+trend = 1
+trend := nz(trend[1], trend)
+trend := trend == -1 and close > dn1 ? 1 : trend == 1 and close < up1 ? -1 : trend
+buySignal = trend == 1 and trend[1] == -1
+sellSignal = trend == -1 and trend[1] == 1
+
+pos = 0.0
+pos := buySignal ? 1 : sellSignal ? -1 : pos[1]
+
+longCond = buySignal and pos[1] != 1
+shortCond = sellSignal and pos[1] != -1
+
+entryOfLongPosition = ta.valuewhen(longCond, close, 0)
+entryOfShortPosition = ta.valuewhen(shortCond, close, 0)
+
+sl_percent = percent_sl > 0 ? percent_sl / 100 : 99999
+tp_percent = percent_tp > 0 ? percent_tp / 100 : 99999
+
+stopLossForLong = tp_sl_method == "Percent" ? entryOfLongPosition * (1 - sl_percent) : entryOfLongPosition - atr_sl_multiplier * atr
+stopLossForShort = tp_sl_method == "Percent" ? entryOfShortPosition * (1 + sl_percent) : entryOfShortPosition + atr_sl_multiplier * atr
+
+takeProfitForLong = tp_sl_method == "Percent" ? entryOfLongPosition * (1 + tp_percent) : entryOfLongPosition + atr_tp_multiplier * atr
+takeProfitForShort = tp_sl_method == "Percent" ? entryOfShortPosition * (1 - tp_percent) : entryOfShortPosition - atr_tp_multiplier * atr
+
+long_sl = low < stopLossForLong and pos[1] == 1
+short_sl = high > stopLossForShort and pos[1] == -1
+
+if long_sl or short_sl
+    pos := 0
+
+lindex = ta.valuewhen(longCond, bar_index, 0)
+sindex = ta.valuewhen(shortCond, bar_index, 0)
+
+entryColor = pos == 1 ? color.blue : color.purple
+
+if pos != 0
+    lineEntry = line.new(bar_index, pos > 0 ? entryOfLongPosition : entryOfShortPosition, pos > 0 ? lindex : sindex, pos > 0 ? entryOfLongPosition : entryOfShortPosition, color=entryColor)
+    line.delete(lineEntry[1])
+
+    stopLine = line.new(bar_index, pos > 0 ? stopLossForLong : stopLossForShort, pos > 0 ? lindex : sindex, pos > 0 ? stopLossForLong : stopLossForShort, color=color.red)
+    tpLine = line.new(bar_index, pos > 0 ? takeProfitForLong : takeProfitForShort, pos > 0 ? lindex : sindex, pos > 0 ? takeProfitForLong : takeProfitForShort, color=color.green)
+    line.delete(stopLine[1])
+    line.delete(tpLine[1])
+
+    labelEntry = label.new(bar_index, pos > 0 ? entryOfLongPosition : entryOfShortPosition, color=entryColor, textcolor=#000000, style=label.style_label_left, text="Entry Price: " + str.tostring(pos > 0 ? entryOfLongPosition : entryOfShortPosition))
+    label.delete(labelEntry[1])
+
+    labelStop = label.new(bar_index, pos > 0 ? stopLossForLong : stopLossForShort, color=color.red, textcolor=#000000, style=label.style_label_left, text="Stop Loss Price: " + str.tostring(math.round((pos > 0 ? stopLossForLong : stopLossForShort) * 100) / 100))
+    labelTp = label.new(bar_index, pos > 0 ? takeProfitForLong : takeProfitForShort, color=color.green, textcolor=#000000, style=label.style_label_left, text="Take Profit: " + str.tostring(math.round((pos > 0 ? takeProfitForLong : takeProfitForShort) * 100) / 100))
+    label.delete(labelStop[1])
+    label.delete(labelTp[1])
+
+changeCond = trend != trend[1]
+smaSrcHigh = ta.ema(high, cloud_val)
+smaSrcLow = ta.ema(low, cloud_val)
+[macdLine, signalLine, histLine] = ta.macd(close, 12, 26, 9)
+plot_high = plot(showMovingAverageCloud ? smaSrcHigh : na, color=na, transp=1, editable=false)
+plot_low = plot(showMovingAverageCloud ? smaSrcLow : na, color=na, transp=1, editable=false)
+
+plotshape(longCond ? up : na, title="UpTrend Begins", location=location.belowbar, style=shape.circle, size=size.tiny, color=color.new(color.teal, transp=50))
+plotshape(longCond and showBuySellSignals ? up : na, title="Buy", text="Buy", location=location.belowbar, style=shape.labelup, size=size.tiny, color=color.new(color.teal, transp=50), textcolor=color.white)
+plotshape(shortCond ? dn : na, title="DownTrend Begins", location=location.abovebar, style=shape.circle, size=size.tiny, color=color.new(color.red, transp=50))
+plotshape(shortCond and showBuySellSignals ? dn : na, title="Sell", text="Sell", location=location.abovebar, style=shape.labeldown, size=size.tiny, color=color.new(color.red, transp=50), textcolor=color.white)
+
+fill(plot_high, plot_low, color=(macdLine > 0) and (macdLine[0] > macdLine[1]) ? color.new(color.aqua, transp=85) : na, title="Positive Cloud Uptrend")
+fill(plot_high, plot_low, color=macdLine > 0 and macdLine[0] < macdLine[1] ? color.new(color.aqua, transp=85) : na, title="Positive Cloud Downtrend")
+fill(plot_high, plot_low, color=macdLine < 0 and macdLine[0] < macdLine[1] ? color.new(color.red, transp=85) : na, title="Negative Cloud Uptrend")
+fill(plot_high, plot_low, color=macdLine < 0 and macdLine[0] > macdLine[1] ? color.new(color.red, transp=85) : na, title="Negative Cloud Downtrend")
+mPlot = plot(ohlc4, title="", style=plot.style_circles, linewidth=0)
+
+alertcondition(changeCond, title="Trend Direction Change", message="Trend direction has changed!")
+
+// Strategy entry and exit conditions
+if longCond and (not prevent_multiple_positions or strategy.opentrades == 0)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Take Profit/Stop Loss", "Long", stop=stopLossForLong, limit=takeProfitForLong)
+
+if shortCond and (not prevent_multiple_positions or strategy.opentrades == 0)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Take Profit/Stop Loss", "Short", stop=stopLossForShort, limit=takeProfitForShort)
+
+// Table to display strategy performance
+var tbl = table.new(position.top_right, 5, 2, border_width = 1, frame_color=color.yellow, border_color=color.aqua)
+
+if (bar_index == 0)
+    table.cell(tbl, 0, 0, "Metric", bgcolor=color.blue, text_color=color.white)
+    table.cell(tbl, 0, 1, "Value", bgcolor=color.blue, text_color=color.white)
+
+totalTrades = strategy.closedtrades
+winTrades = strategy.wintrades
+loseTrades = strategy.losstrades
+winRate = winTrades / totalTrades * 100
+
+table.cell(tbl, 1, 0, "Total", text_color=color.white)
+table.cell(tbl, 1, 1, str.tostring(totalTrades), text_color=color.white)
+
+table.cell(tbl, 2, 0, "Win", text_color=color.teal)
+table.cell(tbl, 2, 1, str.tostring(winTrades), text_color=color.white)
+
+table.cell(tbl, 3, 0, "Lose", text_color=color.red)
+table.cell(tbl, 3, 1, str.tostring(loseTrades), text_color=color.white)
+
+table.cell(tbl, 4, 0, "%", text_color=color.orange)
+table.cell(tbl, 4, 1, str.tostring(winRate, "#.00"), text_color=color.white)

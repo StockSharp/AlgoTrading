@@ -1,0 +1,43 @@
+//@version=4
+study("Reflex Oscillator - Dr. John Ehlers", "RO", false, format.price, 2)
+
+bgcolor(color.new(#000000,15), title="Dark Background")
+
+reflex(Series, SSPeriod, ReflexPeriod, PeriodEMA) =>
+    var SQRT2xPI = sqrt(8.0) * asin(1.0) // 4.44288293815 Constant
+    alpha = SQRT2xPI / SSPeriod
+    beta = exp(-alpha)
+    gamma = -beta * beta
+    delta = 2.0 * beta * cos(alpha)
+    float superSmooth = na, superSmooth := (1.0 - delta - gamma) * (Series + nz(Series[1])) * 0.5 + delta * nz(superSmooth[1]) + gamma * nz(superSmooth[2])
+    slope = (nz(superSmooth[ReflexPeriod]) - superSmooth) / ReflexPeriod
+    E = 0.0
+    for i=1 to ReflexPeriod
+        E := E + (superSmooth + i * slope) - nz(superSmooth[i])
+    epsilon = E / ReflexPeriod
+    zeta = 2.0 / (PeriodEMA + 1.0)
+    float EMA = na, EMA := zeta * epsilon * epsilon + (1.0 - zeta) * nz(EMA[1])
+    return = EMA==0.0 ? 0.0 : epsilon / sqrt(EMA)
+
+source                  = input( close,                              "Source", input.source)
+periodReflex            = input(    20,                       "Reflex Period", input.integer, minval=2)
+useSuperSmootherOveride = input( false, "Apply SuperSmoother Override Below*", input.bool)
+periodSuperSmoother     = input(   8.0,               "SuperSmoother Period*", input.float  , minval=4.0, step=0.5)
+postSmooth              = input(  33.0,                "Post Smooth Period**", input.float  , minval=1.0, step=0.5)
+lineThickness           = input(     2,            "---- Line Thickness ----", input.integer, options=[1,2,3])
+showArea                = input("Show",                        "Display Area", input.string , options=["Show","Hide"])
+upperLevel              = input(   1.0,                         "Upper Level", input.float  , minval= 0.1, maxval= 2.0, step=0.1)
+lowerLevel              = input(  -1.0,                         "Lower Level", input.float  , minval=-2.0, maxval=-0.1, step=0.1)
+var HIDE_AREA = not (showArea=="Show")
+if(not useSuperSmootherOveride)
+    periodSuperSmoother := periodReflex * 0.5
+
+reflexOscillator = reflex(source, periodSuperSmoother, periodReflex, postSmooth)
+
+plot(        0.0, color=#FFFFFF22, linewidth=7            , editable=false)
+hline(       0.0, color=#FFFFFFff, title=           "Zero", editable=false)
+hline(upperLevel, color=#FF0000ff, title="Upper Threshold")
+hline(lowerLevel, color=#00FF00ff, title="Lower Threshold")
+
+plot(HIDE_AREA ? na : reflexOscillator, color=#FFFF00  , transp=80, style=plot.style_area, title="Reflex Area")
+plot(                 reflexOscillator, color=#FFFF00ff, linewidth=lineThickness         , title="Reflex")

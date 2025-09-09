@@ -1,0 +1,47 @@
+//@version=5
+strategy(title="Balance of Power for US30 4H", format=format.price, precision=2, default_qty_type=strategy.percent_of_equity, default_qty_value=100, overlay=true, commission_value=0.01, max_labels_count=500, max_lines_count = 500)
+
+leverage = input.float(5, "Leverage 1:", tooltip="Multiply your equity (100%) times the leverage.")
+
+p = (close - open) / (high - low)
+qty = strategy.equity * leverage / close
+
+if ta.crossover(p, 0.8)
+    strategy.entry("L", strategy.long, qty=qty)
+
+if ta.crossunder(p, -0.8)
+    strategy.close("L")
+
+green   = color.new(#0097a7, 0)
+red     = color.new(#ff195f, 0)
+green90 = color.new(#0097a7, 85)
+red90   = color.new(#ff195f, 85)
+
+if strategy.position_size > strategy.position_size[1]
+    label.new(bar_index, low * 0.999, text="▲", textcolor=green, size=size.normal, textalign=text.align_center, color=green90, style=label.style_text_outline)
+    label.new(bar_index, low * 0.999, text="Buy", textcolor=green, size=size.tiny, textalign=text.align_center, color=green90, style=label.style_label_up)
+
+if strategy.position_size < strategy.position_size[1]
+    label.new(bar_index, high * 1.001, text="▼", textcolor=red, size=size.normal, textalign=text.align_center, color=red90, style=label.style_text_outline)
+    label.new(bar_index, high * 1.001, text="Close", textcolor=red, size=size.tiny, textalign=text.align_center, color=red90, style=label.style_label_down)
+
+// --- Speichere Trade-Daten ---
+var float tradeEntryPrice = na
+var int   tradeEntryBar   = na
+
+if strategy.position_size > 0 and strategy.position_size[1] == 0
+    tradeEntryPrice := close
+    tradeEntryBar   := bar_index
+
+
+if strategy.position_size == 0 and strategy.position_size[1] > 0
+    exitPrice = close
+    exitBar   = bar_index
+    tradeColor = (exitPrice - tradeEntryPrice > 0) ? green : red
+
+    topPrice    = math.max(tradeEntryPrice, exitPrice)
+    bottomPrice = math.min(tradeEntryPrice, exitPrice)
+
+    box.new(tradeEntryBar, topPrice, exitBar, bottomPrice, border_width=0, bgcolor=color.new(tradeColor, 85))
+    line.new(tradeEntryBar, topPrice, exitBar, topPrice, color=tradeColor, width=1)
+    line.new(tradeEntryBar, bottomPrice, exitBar, bottomPrice, color=tradeColor, width=1)

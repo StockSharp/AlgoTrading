@@ -1,0 +1,23 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © EdgeTools
+
+//@version=5
+strategy("S&P 100 Option Expiration Week Strategy", overlay=true, precision=2, calc_on_every_tick=true, initial_capital=50000, currency=currency.USD, slippage=1, commission_type=strategy.commission.cash_per_contract, commission_value=0.05)
+
+// Helper function to determine if today is the third Friday of the month
+isThirdFriday() =>
+    dayofweek == dayofweek.friday and dayofmonth >= 15 and dayofmonth <= 21
+
+// Calculate if it's option expiration week
+isOptionExpirationWeek = (dayofmonth >= 15 and dayofmonth <= 21) and (dayofweek >= dayofweek.monday and dayofweek <= dayofweek.friday)
+
+// Entry condition: Enter long on Monday of option expiration week
+if (dayofweek == dayofweek.monday and isOptionExpirationWeek)
+    strategy.entry("Long SP100 during Expiration Week", strategy.long)
+
+// Exit condition: Close position on Friday of option expiration week
+if (isThirdFriday())
+    strategy.close("Long SP100 during Expiration Week")
+
+// Visual aid: Highlight the option expiration week
+bgcolor(isOptionExpirationWeek ? color.new(color.blue, 80) : na, title="Option Expiration Week Highlight")

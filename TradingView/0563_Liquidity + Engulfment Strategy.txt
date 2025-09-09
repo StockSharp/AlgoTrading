@@ -1,0 +1,207 @@
+//@version=6
+strategy("Liquidity + Engulfment Strategy", overlay=true)
+
+// ======== Mode Selection ========
+mode = input.string("Both", title="Mode", options=["Both", "Bullish Only", "Bearish Only"])
+
+// ======== Time Range Selection ========
+start_date = input.time(timestamp("2024-01-01 00:00 +0000"), title="Start Date and Time")
+end_date = input.time(timestamp("2024-12-31 23:59 +0000"), title="End Date and Time")
+
+// ======== Stop-Loss and Take-Profit Input (in pips) ========
+enableTakeProfit = input.bool(true, title="Enable Custom Take Profit")
+stopLossPips = input.int(10, title="Stop Loss (in pips)", minval=1)
+takeProfitPips = input.int(20, title="Take Profit (in pips)", minval=1)
+
+// ======== Corrected Engulfing Candles Logic ========
+var float lastBullishOpen = na
+var float lastBearishOpen = na
+var int lastBullishIndex = na
+var int lastBearishIndex = na
+var string lastSignal = ""
+
+isBullish = close > open
+isBearish = close < open
+
+if isBullish
+    lastBullishOpen := open
+    lastBullishIndex := bar_index
+else if isBearish
+    lastBearishOpen := open
+    lastBearishIndex := bar_index
+
+bullishEngulfing = not na(lastBearishOpen) and close > lastBearishOpen and close > low[1] and bar_index > lastBearishIndex
+bearishEngulfing = not na(lastBullishOpen) and close < lastBullishOpen and close < high[1] and bar_index > lastBullishIndex
+
+bullishEngulfingSignal = bullishEngulfing and lastSignal != "bullish"
+bearishEngulfingSignal = bearishEngulfing and lastSignal != "bearish"
+
+if bullishEngulfingSignal
+    lastSignal := "bullish"
+if bearishEngulfingSignal
+    lastSignal := "bearish"
+
+// ======== Liquidity Seal-Off Points Logic ========
+upperLiquidityLookback = input.int(10, title="Lookback Period for Upper Liquidity Line")
+lowerLiquidityLookback = input.int(10, title="Lookback Period for Lower Liquidity Line")
+
+isLocalHigh = high == ta.highest(high, upperLiquidityLookback)
+isLocalLow = low == ta.lowest(low, lowerLiquidityLookback)
+
+var bool touchedLowerLiquidityLine = false
+var bool touchedUpperLiquidityLine = false
+
+if (low <= ta.lowest(low, lowerLiquidityLookback))
+    touchedLowerLiquidityLine := true
+
+if (high >= ta.highest(high, upperLiquidityLookback))
+    touchedUpperLiquidityLine := true
+
+var bool lockedBullish = false
+var bool lockedBearish = false
+var int barSinceLiquidityTouch = na
+
+// ======== Combined Signals ========
+bullishSignal = bullishEngulfingSignal and touchedLowerLiquidityLine and not lockedBullish
+bearishSignal = bearishEngulfingSignal and touchedUpperLiquidityLine and not lockedBearish
+
+if bullishSignal
+    lockedBullish := true
+    touchedLowerLiquidityLine := false
+    barSinceLiquidityTouch := 0
+
+if bearishSignal
+    lockedBearish := true
+    touchedUpperLiquidityLine := false
+    barSinceLiquidityTouch := 0
+
+if not na(barSinceLiquidityTouch)
+    barSinceLiquidityTouch += 1
+
+if barSinceLiquidityTouch >= 3
+    lockedBullish := false
+    lockedBearish := false
+
+if touchedLowerLiquidityLine
+    lockedBullish := false
+
+if touchedUpperLiquidityLine
+    lockedBearish := false
+
+// ======== Plot Combined Signals ========
+plotshape(bullishSignal, style=shape.triangleup, location=location.belowbar, color=color.green, size=size.tiny, title="Bullish Signal")
+plotshape(bearishSignal, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.tiny, title="Bearish Signal")
+
+plot(isLocalHigh ? high : na, color=color.red, linewidth=2, style=plot.style_stepline, title="Local High Line")
+plot(isLocalLow ? low : na, color=color.green, linewidth=2, style=plot.style_stepline, title="Local Low Line")
+
+// ======== Time Range Condition ========
+inTimeRange = (time >= start_date) and (time <= end_date)
+
+// ======== Strategy Execution ========
+var float entryPrice = na
+var int entryTime = na
+var string positionSide = ""
+
+// Strategy Modes
+if (mode == "Both")
+    if (bearishSignal and inTimeRange and na(entryPrice))
+        strategy.entry("Short", strategy.short)
+        entryPrice := close
+        entryTime := time
+        positionSide := "short"
+
+    if (bullishSignal and inTimeRange and na(entryPrice))
+        strategy.entry("Long", strategy.long)
+        entryPrice := close
+        entryTime := time
+        positionSide := "long"
+
+    if (positionSide == "short" and bullishSignal and time > entryTime)
+        strategy.close("Short")
+        entryPrice := na
+        positionSide := ""
+
+    if (positionSide == "long" and bearishSignal and time > entryTime)
+        strategy.close("Long")
+        entryPrice := na
+        positionSide := ""
+
+    stopLossPriceLong = entryPrice - stopLossPips * syminfo.mintick
+    takeProfitPriceLong = entryPrice + takeProfitPips * syminfo.mintick
+    stopLossPriceShort = entryPrice + stopLossPips * syminfo.mintick
+    takeProfitPriceShort = entryPrice - takeProfitPips * syminfo.mintick
+
+    if (positionSide == "long" and close <= stopLossPriceLong)
+        strategy.close("Long", comment="Stop Loss Triggered")
+        entryPrice := na
+        positionSide := ""
+
+    if (positionSide == "long" and enableTakeProfit and close >= takeProfitPriceLong)
+        strategy.close("Long", comment="Take Profit Triggered")
+        entryPrice := na
+        positionSide := ""
+
+    if (positionSide == "short" and close >= stopLossPriceShort)
+        strategy.close("Short", comment="Stop Loss Triggered")
+        entryPrice := na
+        positionSide := ""
+
+    if (positionSide == "short" and enableTakeProfit and close <= takeProfitPriceShort)
+        strategy.close("Short", comment="Take Profit Triggered")
+        entryPrice := na
+        positionSide := ""
+
+if (mode == "Bullish Only")
+    if (bullishSignal and inTimeRange and na(entryPrice))
+        strategy.entry("Long", strategy.long)
+        entryPrice := close
+        entryTime := time
+        positionSide := "long"
+
+    if (positionSide == "long" and bearishSignal and time > entryTime)
+        strategy.close("Long")
+        entryPrice := na
+        positionSide := ""
+
+    stopLossPriceLong = entryPrice - stopLossPips * syminfo.mintick
+    takeProfitPriceLong = entryPrice + takeProfitPips * syminfo.mintick
+
+    if (positionSide == "long" and close <= stopLossPriceLong)
+        strategy.close("Long", comment="Stop Loss Triggered")
+        entryPrice := na
+        positionSide := ""
+
+    if (positionSide == "long" and enableTakeProfit and close >= takeProfitPriceLong)
+        strategy.close("Long", comment="Take Profit Triggered")
+        entryPrice := na
+        positionSide := ""
+
+if (mode == "Bearish Only")
+    if (bearishSignal and inTimeRange and na(entryPrice))
+        strategy.entry("Short", strategy.short)
+        entryPrice := close
+        entryTime := time
+        positionSide := "short"
+
+    if (positionSide == "short" and bullishSignal and time > entryTime)
+        strategy.close("Short")
+        entryPrice := na
+        positionSide := ""
+
+    stopLossPriceShort = entryPrice + stopLossPips * syminfo.mintick
+    takeProfitPriceShort = entryPrice - takeProfitPips * syminfo.mintick
+
+    if (positionSide == "short" and close >= stopLossPriceShort)
+        strategy.close("Short", comment="Stop Loss Triggered")
+        entryPrice := na
+        positionSide := ""
+
+    if (positionSide == "short" and enableTakeProfit and close <= takeProfitPriceShort)
+        strategy.close("Short", comment="Take Profit Triggered")
+        entryPrice := na
+        positionSide := ""
+
+// ======== Alerts ========
+alertcondition(bullishSignal, title="Bullish Engulfing after Lower Liquidity Touch", message="Bullish Engulfing after Lower Liquidity Touch detected at [CurrencyPair] [TimeFrame]")
+alertcondition(bearishSignal, title="Bearish Engulfing after Upper Liquidity Touch", message="Bearish Engulfing after Upper Liquidity Touch detected at [CurrencyPair] [TimeFrame]")

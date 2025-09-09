@@ -1,0 +1,16 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © melihtuna
+//@version=4
+study(title="Vortex MTF", shorttitle="VI MTF")
+period_ = input(14, title="Period", minval=2)
+res = input("240", type=input.resolution, title="Resolution")
+r = res == "" ? timeframe.period : res
+
+VMP = sum(security(syminfo.tickerid, r, abs(high - low[1])), period_)
+VMM = sum(security(syminfo.tickerid, r, abs(low - high[1])), period_)
+STR = sum(security(syminfo.tickerid, r, atr(1)), period_)
+VIP = VMP / STR
+VIM = VMM / STR
+
+plot(VIP, title="VI +", color=#3BB3E4)
+plot(VIM, title="VI -", color=#FF006E)

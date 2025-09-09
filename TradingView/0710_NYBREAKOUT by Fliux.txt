@@ -1,0 +1,32 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Fliux
+
+//@version=5
+strategy("NYBREAKOUT by Fliux", overlay=true, calc_on_every_tick=true)
+
+// 1) Сессия 13:00–13:30 UTC = 18:00–18:30 YEKT, фиксированная 30-минутка:
+sess = time("30", "1300-1330:1234567")
+
+// 2) Переменные диапазона
+var float hi = na
+var float lo = na
+
+if sess
+    // В слоте 18:00–18:30 ЕКТ накапливаем максимум/минимум
+    hi := na(hi) ? high : math.max(hi, high)
+    lo := na(lo) ? low  : math.min(lo,  low)
+else if not sess and sess[1]
+    // Первое появление бара после 18:30 — вход по пробою
+    if close > hi
+        strategy.entry("Long", strategy.long)
+        strategy.exit("Exit Long", from_entry="Long",
+                      stop = lo - syminfo.mintick,
+                      limit= close + (close - lo) * 2)
+    if close < lo
+        strategy.entry("Short", strategy.short)
+        strategy.exit("Exit Short", from_entry="Short",
+                      stop = hi + syminfo.mintick,
+                      limit= close - (hi - close) * 2)
+    // Сбрасываем диапазон
+    hi := na
+    lo := na

@@ -1,0 +1,75 @@
+//@version=6
+strategy("Momentum + Keltner Stochastic Combo)", overlay=true, default_qty_type=strategy.fixed, initial_capital=30000, pyramiding=0, commission_type=strategy.commission.cash_per_contract, commission_value=0.05, slippage=1)
+
+// === Parameters
+momLength     = input.int(7, title="Momentum Lookback")
+keltnerLength = input.int(9, title="Keltner Length")
+keltnerMult   = input.float(0.5, title="Keltner Multiplier", step=0.1)
+threshold     = input.float(99, title="Stochastic Threshold")
+atrLength     = input.int(20, title="ATR Length")
+slPoints      = input.float(1185, title="Stop Loss (Index Points)")
+
+// === Scaling Logic
+enableScaling  = input.bool(true, title="Enable Dynamic Contracts?")
+baseContracts  = input.int(1, title="Base Contract Size")
+initialCapital = input.float(30000, title="Starting Capital")
+equityStep     = input.float(150000, title="Equity Step for Contract Increase")
+maxContracts   = input.int(15, title="Maximum Contracts")
+
+// Calculate current profit/loss compared to initial capital
+currentEquity = strategy.equity
+profitLoss = currentEquity - initialCapital
+
+// Calculate contract increase based on profit
+contractIncrease = math.floor(math.max(profitLoss, 0) / equityStep)
+contractDecrease = math.floor(math.abs(math.min(profitLoss, 0)) / equityStep)
+
+// Final contract size
+contractSize = enableScaling ?
+     math.max(baseContracts + contractIncrease - contractDecrease, baseContracts) :
+     baseContracts
+
+// Enforce contract cap
+contractSize := math.min(contractSize, maxContracts)
+
+// === Keltner Channel
+basis         = ta.ema(close, keltnerLength)
+keltnerATR    = ta.atr(atrLength)
+upperKeltner  = basis + keltnerMult * keltnerATR
+lowerKeltner  = basis - keltnerMult * keltnerATR
+
+// === Keltner Stochastic
+denominator = upperKeltner - lowerKeltner
+keltnerStoch = denominator != 0 ? 100 * (close - lowerKeltner) / denominator : 50
+
+// === Entry Conditions
+longCondition  = close > close[momLength] and keltnerStoch < threshold
+shortCondition = close < close[momLength] and keltnerStoch > threshold
+
+// === Exit Conditions
+exitLongCondition  = strategy.position_size > 0 and keltnerStoch > threshold
+exitShortCondition = strategy.position_size < 0 and keltnerStoch < threshold
+
+// === Stop-Loss Calculations
+atr = ta.atr(atrLength)
+stopATR_Long  = strategy.position_avg_price - 4.0 * atr
+stopATR_Short = strategy.position_avg_price + 1.0 * atr
+
+stopPoint_Long  = strategy.position_avg_price - slPoints
+stopPoint_Short = strategy.position_avg_price + slPoints
+
+// === Orders
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=contractSize)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short, qty=contractSize)
+
+if (exitLongCondition)
+    strategy.close("Long")
+
+if (exitShortCondition)
+    strategy.close("Short")
+
+strategy.exit("Long SL", from_entry="Long", stop=stopPoint_Long)
+strategy.exit("Short SL", from_entry="Short", stop=stopPoint_Short)

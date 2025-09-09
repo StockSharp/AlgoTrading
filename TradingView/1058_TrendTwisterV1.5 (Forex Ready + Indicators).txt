@@ -1,0 +1,63 @@
+//@version=5
+strategy("TrendTwisterV1.5 (Forex Ready + Indicators)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.01)
+
+// === Parameters ===
+hmaLength = 12
+emaLength = 5
+rsiLength = 14
+profitFactor = 1.65
+
+// === Indicators ===
+hma = ta.hma(close, hmaLength)
+ema = ta.ema(close, emaLength)
+emaShifted = ema[2]
+rsi = ta.rsi(close, rsiLength)
+
+// === Stochastic Oscillators ===
+k1 = ta.stoch(close, high, low, 12)
+k1Smooth = ta.sma(k1, 3)
+
+k2 = ta.stoch(close, high, low, 5)
+k2Smooth = ta.sma(k2, 3)
+
+// === Plots: Main Strategy Indicators ===
+plot(hma, color=color.orange, title="HMA 12")
+plot(emaShifted, color=color.blue, title="Shifted EMA 5 (+2)")
+
+// === Stop Loss & Take Profit ===
+longStop = ta.lowest(low[1], 2)
+shortStop = ta.highest(high[1], 2)
+
+longSL_pips = close - longStop
+shortSL_pips = shortStop - close
+
+pip = syminfo.mintick
+longTP = close + (longSL_pips * profitFactor)
+shortTP = close - (shortSL_pips * profitFactor)
+
+// === Crossover Conditions ===
+hmaCrossesAbove = ta.crossover(hma, emaShifted)
+hmaCrossesBelow = ta.crossunder(hma, emaShifted)
+
+// === Entry Conditions ===
+longCondition = close > hma and close > emaShifted and rsi > 50 and k1Smooth > 50 and k2Smooth > 50 and hmaCrossesAbove
+shortCondition = close < hma and close < emaShifted and rsi < 50 and k1Smooth < 50 and k2Smooth < 50 and hmaCrossesBelow
+
+// === Entries & Exits ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long Exit", from_entry="Long", stop=longStop, limit=longTP)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Short Exit", from_entry="Short", stop=shortStop, limit=shortTP)
+
+// === Signal Arrows ===
+plotshape(longCondition, title="Buy Signal", location=location.belowbar, color=color.green, style=shape.arrowup, size=size.small)
+plotshape(shortCondition, title="Sell Signal", location=location.abovebar, color=color.red, style=shape.arrowdown, size=size.small)
+
+// === Overlay RSI + Stochs in strategy panel ===
+rsiPlot = plot(rsi, title="RSI", color=color.purple, linewidth=1, offset=-10, display=display.data_window)
+k1Plot = plot(k1Smooth, title="Stoch %K (12,3,3)", color=color.green, linewidth=1, offset=-10, display=display.data_window)
+k2Plot = plot(k2Smooth, title="Stoch %K (5,3,3)", color=color.fuchsia, linewidth=1, offset=-10, display=display.data_window)
+hline(50, "Midline", color=color.gray, linestyle=hline.style_dashed)

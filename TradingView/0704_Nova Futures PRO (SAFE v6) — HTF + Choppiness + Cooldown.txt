@@ -1,0 +1,239 @@
+//@version=6
+strategy("Nova Futures PRO (SAFE v6) — HTF + Choppiness + Cooldown",
+     overlay=true,
+     initial_capital=10000, currency=currency.USD,
+     commission_type=strategy.commission.percent, commission_value=0.06,
+     slippage=1,                               // const int (edit if you want)
+     pyramiding=0, calc_on_order_fills=true, process_orders_on_close=true,
+     max_labels_count=200, max_lines_count=400)
+
+// ========= Inputs =========
+groupSig = "Signals"
+confirmBars  = input.int(1,  "Confirm after N bars (0=intra)", minval=0, maxval=3, group=groupSig)
+emaLen       = input.int(200,"EMA Trend", minval=20, group=groupSig)
+diLen        = input.int(14, "ADX DI Len", group=groupSig)
+adxSmooth    = input.int(14, "ADX Smoothing (for ta.dmi)", group=groupSig)
+minADX       = input.float(18.0, "Min ADX (trend on)", step=0.5, group=groupSig)
+bbLen        = input.int(20, "BB Len", group=groupSig)
+bbMult       = input.float(2.0, "BB Mult", step=0.1, group=groupSig)
+kcLen        = input.int(20, "KC Len", group=groupSig)
+kcMult       = input.float(1.6, "KC Mult", step=0.1, group=groupSig)
+donLen       = input.int(20, "Donchian (prev only)", minval=2, group=groupSig)
+
+// Higher TF confirm
+groupHTF = "Higher-Timeframe Confirm"
+useHTF      = input.bool(true, "Use HTF confirm", group=groupHTF)
+htfTF       = input.timeframe("60", "HTF timeframe", group=groupHTF)
+htfEmaLen   = input.int(200, "HTF EMA len", group=groupHTF)
+htfMinADX   = input.float(18.0, "HTF min ADX", step=0.5, group=groupHTF)
+
+// Choppiness filter
+groupChop = "Choppiness Filter"
+useChop    = input.bool(true, "Avoid choppy periods", group=groupChop)
+chopLen    = input.int(14, "Chop length", group=groupChop)
+chopMax    = input.float(61.8, "Chop threshold (<= trade)", step=0.1, group=groupChop)
+
+// Futures sizing
+groupFut   = "Futures Sizing"
+sizingMode = input.string("Risk-based (stop)", "Sizing mode",
+     options=["Risk-based (stop)","Notional % × Leverage","Fixed qty"], group=groupFut)
+acctRiskPct  = input.float(1.0, "Risk % of equity (stop-based)", step=0.1, group=groupFut)
+notionalPct  = input.float(10,  "Notional % of equity", step=1, group=groupFut)
+leverage     = input.float(10,  "Leverage (for notional sizing)", minval=1, maxval=125, step=1, group=groupFut)
+fixedQty     = input.float(1.0, "Fixed qty (coins/contracts)", step=0.001, group=groupFut)
+
+// Stops / Targets
+groupRisk = "Stops / Targets"
+atrLenSL   = input.int(14, "ATR Len (SL/Trail)", group=groupRisk)
+slAtrX     = input.float(1.9, "Stop = ATR ×", step=0.1, group=groupRisk)
+tpR1       = input.float(1.3, "TP1 (R)", step=0.1, group=groupRisk)
+tpR2       = input.float(2.2, "TP2 (R)", step=0.1, group=groupRisk)
+tp1Pct     = input.float(40,  "TP1 %", minval=0, maxval=100, group=groupRisk)
+tp2Pct     = input.float(30,  "TP2 %", minval=0, maxval=100, group=groupRisk)
+trailX     = input.float(1.3, "Runner trail = ATR ×", step=0.1, group=groupRisk)
+useBE      = input.bool(true, "Move SL to BE after TP1", group=groupRisk)
+
+// Trade management
+groupMgmt = "Trade Management"
+cooldownBars   = input.int(3, "Cooldown bars after exit", minval=0, group=groupMgmt)
+maxBarsInTrade = input.int(240, "Max bars in trade (time exit)", minval=1, group=groupMgmt)
+
+// Display
+groupDisp = "Display"
+showLabels = input.bool(true, "Show entry labels", group=groupDisp)
+showTable  = input.bool(false,"Show planner table", group=groupDisp)
+
+// ========= Core =========
+emaBase = ta.ema(close, emaLen)
+atr     = ta.atr(atrLenSL)
+[plusDI, minusDI, adx] = ta.dmi(diLen, adxSmooth)
+trending = adx >= minADX
+
+// --- HTF confirm using ta.dmi (no ta.adx) ---
+adx_htf(_len, _smooth) =>
+    // return only ADX from ta.dmi()
+    [_p, _m, _a] = ta.dmi(_len, _smooth)
+    _a
+
+htfClose = request.security(syminfo.tickerid, htfTF, close,                           lookahead=barmerge.lookahead_off)
+htfEma   = request.security(syminfo.tickerid, htfTF, ta.ema(close, htfEmaLen),         lookahead=barmerge.lookahead_off)
+htfAdx   = request.security(syminfo.tickerid, htfTF, adx_htf(diLen, adxSmooth),        lookahead=barmerge.lookahead_off)
+htfOKLong  = htfClose > htfEma and htfAdx >= htfMinADX
+htfOKShort = htfClose < htfEma and htfAdx >= htfMinADX
+
+// Volatility & squeeze release
+bbBasis = ta.sma(close, bbLen)
+bbDev   = ta.stdev(close, bbLen)
+bbU = bbBasis + bbMult*bbDev
+bbL = bbBasis - bbMult*bbDev
+kcMid = ta.ema(close, kcLen)
+kcU = kcMid + kcMult*ta.atr(kcLen)
+kcL = kcMid - kcMult*ta.atr(kcLen)
+squeezeOn  = (bbU - bbL) < (kcU - kcL)
+releaseNow = squeezeOn[1] and not squeezeOn
+
+// Structure (previous window only)
+prevHigh = ta.highest(high, donLen)[1]
+prevLow  = ta.lowest(low,  donLen)[1]
+bosUp    = close > prevHigh
+bosDown  = close < prevLow
+
+// Choppiness (0..100), small = trendier
+float trSum = 0.0
+for i = 0 to chopLen - 1
+    trSum += nz(ta.tr(true)[i])
+rangeHL = ta.highest(high, chopLen) - ta.lowest(low, chopLen)
+chop = rangeHL > 0 ? 100 * math.log10(trSum / rangeHL) / math.log10(chopLen) : 100
+chopOK = not useChop or chop <= chopMax
+
+// Engines & gate (need 2 of 3) + filters
+trendLong  = trending and close > emaBase and plusDI > minusDI
+trendShort = trending and close < emaBase and minusDI > plusDI
+volLong    = releaseNow and close > bbBasis
+volShort   = releaseNow and close < bbBasis
+engLong    = (trendLong?1:0) + (bosUp?1:0) + (volLong?1:0)
+engShort   = (trendShort?1:0) + (bosDown?1:0) + (volShort?1:0)
+rawLong    = engLong  >= 2
+rawShort   = engShort >= 2
+passHTF_L  = (not useHTF) or htfOKLong
+passHTF_S  = (not useHTF) or htfOKShort
+
+// Signals at bar close with filters
+longSig  = barstate.isconfirmed and rawLong  and chopOK and passHTF_L
+shortSig = barstate.isconfirmed and rawShort and chopOK and passHTF_S
+
+// ========= Cooldown =========
+var int barsSinceExit = 1000000000     // int (not 1e9 float)
+barsSinceExit += 1
+closedNow = strategy.closedtrades > 0 and strategy.closedtrades != nz(strategy.closedtrades[1])
+if closedNow
+    barsSinceExit := 0
+canTrade = barsSinceExit >= cooldownBars
+
+// ========= Sizing & targets =========
+entryL = close
+entryS = close
+slLong  = entryL - slAtrX*atr
+slShort = entryS + slAtrX*atr
+stopL   = math.max(entryL - slLong, 0.0)
+stopS   = math.max(slShort - entryS, 0.0)
+
+var float qtyL = na
+var float qtyS = na
+if sizingMode == "Risk-based (stop)"
+    riskCash  = strategy.equity * (acctRiskPct/100.0)
+    qtyL := stopL > 0 ? riskCash / stopL : 0.0
+    qtyS := stopS > 0 ? riskCash / stopS : 0.0
+else if sizingMode == "Notional % × Leverage"
+    notional  = strategy.equity * (notionalPct/100.0) * leverage
+    qtyL := notional / entryL
+    qtyS := notional / entryS
+else
+    qtyL := fixedQty
+    qtyS := fixedQty
+
+tp1L = entryL + tpR1*stopL
+tp2L = entryL + tpR2*stopL
+tp1S = entryS - tpR1*stopS
+tp2S = entryS - tpR2*stopS
+
+// ========= Orders + time exit =========
+tp1Q = math.max(math.min(tp1Pct, 100), 0)
+tp2Q = math.max(math.min(tp2Pct, 100 - tp1Q), 0)
+runQ = math.max(100 - tp1Q - tp2Q, 0)
+
+var int entryBar = na
+newLong  = canTrade and longSig  and strategy.position_size <= 0
+newShort = canTrade and shortSig and strategy.position_size >= 0
+
+if newLong
+    strategy.entry("LONG", strategy.long, qty=qtyL)
+    entryBar := bar_index
+if newShort
+    strategy.entry("SHORT", strategy.short, qty=qtyS)
+    entryBar := bar_index
+
+if strategy.position_size > 0
+    strategy.exit("L-TP1", "LONG", qty_percent=tp1Q, stop=slLong, limit=tp1L)
+    strategy.exit("L-TP2", "LONG", qty_percent=tp2Q, stop=slLong, limit=tp2L)
+    if runQ > 0
+        trailPts = int(math.max(math.round(trailX * atr / syminfo.mintick), 1))
+        strategy.exit("L-Run", "LONG", qty_percent=runQ, trail_points=trailPts, trail_offset=trailPts)
+    if useBE and high >= tp1L
+        strategy.exit("L-BE", "LONG", stop=strategy.position_avg_price)
+    if not na(entryBar) and bar_index - entryBar >= maxBarsInTrade
+        strategy.close("LONG", comment="TimeExit")
+        entryBar := na
+
+if strategy.position_size < 0
+    strategy.exit("S-TP1", "SHORT", qty_percent=tp1Q, stop=slShort, limit=tp1S)
+    strategy.exit("S-TP2", "SHORT", qty_percent=tp2Q, stop=slShort, limit=tp2S)
+    if runQ > 0
+        trailPtsS = int(math.max(math.round(trailX * atr / syminfo.mintick), 1))
+        strategy.exit("S-Run", "SHORT", qty_percent=runQ, trail_points=trailPtsS, trail_offset=trailPtsS)
+    if useBE and low <= tp1S
+        strategy.exit("S-BE", "SHORT", stop=strategy.position_avg_price)
+    if not na(entryBar) and bar_index - entryBar >= maxBarsInTrade
+        strategy.close("SHORT", comment="TimeExit")
+        entryBar := na
+
+// ========= Visuals =========
+plot(emaBase, "EMA200", color=color.new(color.orange, 0))
+plot(prevHigh, "Prev High", color=color.new(color.green, 75))
+plot(prevLow,  "Prev Low",  color=color.new(color.red,   75))
+plotshape(longSig,  "BUY LONG",  style=shape.triangleup,   location=location.belowbar, color=color.new(color.green,0), size=size.tiny, text="BUY")
+plotshape(shortSig, "SELL SHORT", style=shape.triangledown, location=location.abovebar, color=color.new(color.red,0),   size=size.tiny, text="SELL")
+
+// Labels
+var label L = na
+var label S = na
+if showLabels and longSig
+    label.delete(L)
+    txtL = "BUY LONG | Lev " + str.tostring(leverage) + " | Entry " + str.tostring(entryL, format.mintick) + " | SL " + str.tostring(slLong, format.mintick) + " | TP1 " + str.tostring(tp1L, format.mintick) + " | TP2 " + str.tostring(tp2L, format.mintick) + " | Qty " + str.tostring(qtyL)
+    L := label.new(bar_index, close, txtL, style=label.style_label_up, color=color.new(color.green, 0), textcolor=color.white)
+if showLabels and shortSig
+    label.delete(S)
+    txtS = "SELL SHORT | Lev " + str.tostring(leverage) + " | Entry " + str.tostring(entryS, format.mintick) + " | SL " + str.tostring(slShort, format.mintick) + " | TP1 " + str.tostring(tp1S, format.mintick) + " | TP2 " + str.tostring(tp2S, format.mintick) + " | Qty " + str.tostring(qtyS)
+    S := label.new(bar_index, close, txtS, style=label.style_label_down, color=color.new(color.red, 0), textcolor=color.white)
+
+// Optional planner table
+if showTable
+    var table plan = table.new(position.bottom_right, 2, 6)
+    if barstate.islast
+        table.cell(plan, 0, 0, "Futures Plan", text_color=color.white, bgcolor=color.new(color.gray,80))
+        table.cell(plan, 1, 0, longSig? "BUY" : shortSig? "SELL" : "—")
+        table.cell(plan, 0, 1, "Entry", text_color=color.white, bgcolor=color.new(color.gray,90))
+        table.cell(plan, 1, 1, str.tostring(longSig?entryL:shortSig?entryS:na, format.mintick))
+        table.cell(plan, 0, 2, "SL", text_color=color.white, bgcolor=color.new(color.gray,90))
+        table.cell(plan, 1, 2, str.tostring(longSig?slLong:shortSig?slShort:na, format.mintick))
+        table.cell(plan, 0, 3, "TP1/TP2", text_color=color.white, bgcolor=color.new(color.gray,90))
+        table.cell(plan, 1, 3, longSig? str.tostring(tp1L, format.mintick) + " / " + str.tostring(tp2L, format.mintick)
+                           : shortSig? str.tostring(tp1S, format.mintick) + " / " + str.tostring(tp2S, format.mintick) : "—")
+        table.cell(plan, 0, 4, "Qty", text_color=color.white, bgcolor=color.new(color.gray,90))
+        table.cell(plan, 1, 4, str.tostring(longSig?qtyL:shortSig?qtyS:na))
+        table.cell(plan, 0, 5, "Chop", text_color=color.white, bgcolor=color.new(color.gray,90))
+        table.cell(plan, 1, 5, str.tostring(chop, format.mintick))
+
+// Alerts
+alertcondition(longSig,  "Nova Futures Long",  "NOVA FUTURES LONG - {{ticker}} {{interval}}")
+alertcondition(shortSig, "Nova Futures Short", "NOVA FUTURES SHORT - {{ticker}} {{interval}}")

@@ -1,0 +1,179 @@
+//@version=5
+strategy("REVELATIONS (VoVix - PoC)", default_qty_type=strategy.fixed, initial_capital=10000, overlay=true, pyramiding=1)
+
+// === 📈 Main Signal Parameters ===
+group_signal = "📈 Main Signal Params"
+atr_fast = input.int(14, title="⚡ ATR Fast Length", group=group_signal, tooltip="ATR Fast: Short-term period for measuring fast volatility. Lower = more sensitive, higher = smoother.")
+atr_slow = input.int(21, title="⚡ ATR Slow Length", group=group_signal, tooltip="ATR Slow: Used as baseline for regime shift via fast-vs-slow relationship.")
+atr_stdev = input.int(12, title="⚡ ATR StdDev Window", group=group_signal, tooltip="Standard deviation window for ATR, used to normalize VoVix spikes.")
+vrt = input.float(0.5, title="⚡ Base Spike Threshold", group=group_signal, tooltip="Sets minimum normalized spike for event. Higher = stricter, fewer triggers; lower = more signals.")
+super_mult = input.float(1.5, title="⚡ Super Spike Multiplier", group=group_signal, tooltip="Only enter at spikes that are this multiple over local average. Raise for more selectivity.")
+
+// === ⚙️ Regime & MultiTF ===
+group_regime = "⚙️ Regime & MultiTF"
+regime_len = input.int(8, title="⚙️ Regime Window (Bars)", group=group_regime, tooltip="Count of bars for regime summing. Controls smoothing of regime index.")
+regime_thresh = input.int(3, title="⚙️ Regime Event Count", group=group_regime, tooltip="Spike count threshold in regime window to allow trades. Higher = only high-stress clusters trade.")
+local_n = input.int(3, title="⚙️ Local Window for Extremes", group=group_regime, tooltip="Bars to confirm local spike maxima. Higher = more filtered, lower = faster reacting.")
+higher_tf = input.timeframe("45", title="⚙️ HTF Confirm (e.g. '45')", group=group_regime, tooltip="Require regime confirmation from this higher timeframe for confirmation.")
+
+// === 🎛️ Adaptive Sizing ===
+group_size = "🎛️ Adaptive Sizing"
+max_qty = input.float(2, title="📈 Max Contracts (Adaptive)", minval=1, group=group_size, tooltip="Max allowed position size, contracts/shares/units. Adaptive sizing caps at this.")
+min_qty = input.float(1, title="📉 Min Contracts (Adaptive)", minval=0.1, group=group_size, tooltip="Minimum allowed size. Ensures some size even on smallest signals.")
+
+// === 💰 Trade Management ===
+group_trade = "💰 Trade Management"
+stop_perc = input.float(0.9, title="💰 Stop %", group=group_trade, tooltip="Stop loss as % away from entry. Lower = tighter stops.")
+tp_perc = input.float(1.8, title="💰 Take Profit %", group=group_trade, tooltip="Take profit % from entry. Lower = faster profit, higher = runner trades.")
+decay_buffer = input.int(0, title="💰 Decay Exit Sensitivity Buffer", group=group_trade, tooltip="Regime index must fall this far below threshold before a decay exit. Higher/slower.")
+decay_confirm_bars = input.int(4, title="💰 Bars Decay Must Persist to Exit", group=group_trade, tooltip="Decay must last this many bars before exit (anti-whipsaw).")
+
+// ========= QUANT CORE =========
+atr_f = ta.atr(atr_fast)
+atr_s = ta.atr(atr_slow)
+atr_vol = ta.stdev(atr_f, atr_stdev)
+vo_spike = (atr_f - atr_s) / (atr_vol + 1e-6)
+base_spike = math.abs(vo_spike[1]) > vrt
+is_long_spike = vo_spike[1] > 0
+is_short_spike = vo_spike[1] < 0
+regime_index = math.sum(base_spike ? 1 : 0, regime_len)
+vovix_avg = ta.sma(math.abs(vo_spike), local_n * 4)
+vovix_local_max = math.abs(vo_spike[1]) == ta.highest(math.abs(vo_spike), local_n)[1]
+super_spike = math.abs(vo_spike[1]) > (vovix_avg[1] * super_mult)
+at_local_low = close[1] == ta.lowest(close, local_n)[1]
+at_local_high = close[1] == ta.highest(close, local_n)[1]
+vovix_htf = request.security(syminfo.tickerid, higher_tf, (ta.atr(atr_fast) - ta.atr(atr_slow)) / (ta.stdev(ta.atr(atr_fast), atr_stdev) + 1e-6))
+htf_trigger_long = vovix_htf[1] > vrt
+htf_trigger_short = vovix_htf[1] < -vrt
+delta_spike = math.abs(vo_spike[1] - vovix_avg[1])
+sizing_factor = delta_spike / (vrt * super_mult + 1e-8)
+tanh(x) => (math.exp(x) - math.exp(-x)) / (math.exp(x) + math.exp(-x))
+trade_qty_fine = min_qty + ((max_qty - min_qty) * tanh(sizing_factor))
+trade_qty = math.round(trade_qty_fine)
+
+// ========= ENTRY LOGIC (NON-REPAINTING) =========
+can_trade_long = base_spike and vovix_local_max and super_spike and regime_index[1] >= regime_thresh and is_long_spike and at_local_low and htf_trigger_long
+can_trade_short = base_spike and vovix_local_max and super_spike and regime_index[1] >= regime_thresh and is_short_spike and at_local_high and htf_trigger_short
+if (not barstate.islast) and strategy.position_size == 0
+    if can_trade_long
+        strategy.entry("EventLong", strategy.long, qty=trade_qty[1])
+    else if can_trade_short
+        strategy.entry("EventShort", strategy.short, qty=trade_qty[1])
+
+// ========= DECAY EXIT LOGIC =========
+regime_decay_condition = regime_index[2] >= regime_thresh and regime_index[1] <= (regime_thresh - decay_buffer)
+decay_bars = ta.barssince(regime_index[1] > (regime_thresh - decay_buffer))
+bool decay_confirmed = na
+decay_confirmed := decay_confirm_bars <= 1 ? regime_decay_condition : (regime_index[1] < (regime_thresh - decay_buffer) and decay_bars >= decay_confirm_bars)
+
+// ========= EXIT LOGIC =========
+tp_level_long = strategy.position_avg_price * (1 + tp_perc / 100)
+sl_level_long = strategy.position_avg_price * (1 - stop_perc / 100)
+tp_level_short = strategy.position_avg_price * (1 - tp_perc / 100)
+sl_level_short = strategy.position_avg_price * (1 + stop_perc / 100)
+exited_tp_long = strategy.position_size[1] > 0 and high >= tp_level_long and strategy.closedtrades > nz(strategy.closedtrades[1], 0)
+exited_sl_long = strategy.position_size[1] > 0 and low <= sl_level_long and strategy.closedtrades > nz(strategy.closedtrades[1], 0)
+exited_decay_long = strategy.position_size[1] > 0 and decay_confirmed and strategy.closedtrades > nz(strategy.closedtrades[1], 0)
+exited_tp_short = strategy.position_size[1] < 0 and low <= tp_level_short and strategy.closedtrades > nz(strategy.closedtrades[1], 0)
+exited_sl_short = strategy.position_size[1] < 0 and high >= sl_level_short and strategy.closedtrades > nz(strategy.closedtrades[1], 0)
+exited_decay_short = strategy.position_size[1] < 0 and decay_confirmed and strategy.closedtrades > nz(strategy.closedtrades[1], 0)
+if strategy.position_size > 0
+    if high >= tp_level_long
+        strategy.close("EventLong", comment="ExitLong_TP")
+    else if low <= sl_level_long
+        strategy.close("EventLong", comment="ExitLong_SL")
+    else if decay_confirmed
+        strategy.close("EventLong", comment="ExitLong_Decay")
+if strategy.position_size < 0
+    if low <= tp_level_short
+        strategy.close("EventShort", comment="ExitShort_TP")
+    else if high >= sl_level_short
+        strategy.close("EventShort", comment="ExitShort_SL")
+    else if decay_confirmed
+        strategy.close("EventShort", comment="ExitShort_Decay")
+if barstate.islast
+    strategy.close_all(comment="FinalFlush")
+
+// ========= ENTRY/EXIT VISUALS =========
+plotshape(can_trade_long and strategy.position_size == 0, style=shape.triangleup, location=location.belowbar, color=color.lime, size=size.normal, title="Long Entry")
+plotshape(can_trade_short and strategy.position_size == 0, style=shape.triangledown, location=location.abovebar, color=color.red, size=size.normal, title="Short Entry")
+plotshape(exited_tp_long or exited_tp_short, style=shape.diamond, location=location.abovebar, offset=-1, color=color.lime, text="TP", title="TP Exit", size=size.tiny)
+plotshape(exited_sl_long or exited_sl_short, style=shape.diamond, location=location.abovebar, offset=-1, color=color.red, text="SL", title="SL Exit", size=size.tiny)
+plotshape(exited_decay_long or exited_decay_short, style=shape.diamond, location=location.bottom, offset=-1, color=color.rgb(49, 27, 146, 32), text="D", title="Decay Exit", size=size.tiny)
+
+// ========= REGIME DECAY ZONE AREA =========
+var float decay_zone_start = na
+bool show_decay_area = na
+if regime_decay_condition and na(decay_zone_start)
+    decay_zone_start := bar_index
+if decay_confirmed
+    decay_zone_start := na
+show_decay_area := not na(decay_zone_start)
+bgcolor(show_decay_area ? color.new(color.aqua, 92) : na)
+
+// --- REAL-TIME SHARPE / SORTINO CALCULATION ---
+var float[] returns = array.new_float()
+if strategy.closedtrades > nz(strategy.closedtrades[1])
+    profit = strategy.closedtrades > 0 ? (strategy.netprofit - nz(strategy.netprofit[1])) : na
+    if not na(profit)
+        array.unshift(returns, profit)
+    if array.size(returns) > 100
+        array.pop(returns)
+
+float sharpe = na
+float sortino = na
+if array.size(returns) > 1
+    avg = array.avg(returns)
+    stdev = array.stdev(returns)
+    float[] downside_list = array.new_float()
+    for i = 0 to array.size(returns) - 1
+        val = array.get(returns, i)
+        if val < 0
+            array.push(downside_list, val)
+    downside_stdev = array.size(downside_list) > 0 ? array.stdev(downside_list) : na
+    sharpe := stdev != 0 ? avg / stdev : na
+    sortino := downside_stdev != 0 ? avg / downside_stdev : na
+
+//// ========== PRO DASHBOARD ==========
+get_progress(pct) =>
+    nBars = 10
+    on = math.round(pct * 0.10)
+    off = nBars - on
+    str.repeat('█', on) + str.repeat('░', off)
+
+var table dashboard = na
+if na(dashboard)
+    dashboard := table.new(position.top_right, 2, 3, bgcolor=color.new(color.black, 95), border_color=color.purple)
+table.clear(dashboard, 0, 0)
+table.cell(dashboard, 0, 0, '   ⚡ Dskyz (DAFE) REVELATIONS   ', bgcolor=color.purple, text_color=color.black, text_size=size.large)
+table.merge_cells(dashboard, 0, 0, 1, 0)
+
+table.cell(
+  dashboard, 0, 1,
+  'Regime Strength: ' + str.tostring(regime_index) +
+  ' | Size: ' + str.tostring(trade_qty) +
+  '\nStatus: ' + (strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "NEUTRAL"),
+  text_color=(strategy.position_size > 0 ? color.lime : strategy.position_size < 0 ? color.red : color.silver),
+  text_size=size.normal)
+table.merge_cells(dashboard, 0, 1, 1, 1)
+
+win_pct = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades : na
+win_pct_display = na(win_pct) ? 0 : win_pct * 100
+win_color = win_pct_display > 50 ? color.lime : color.red
+table.cell(dashboard, 0, 2, 'Trades: ' + str.tostring(strategy.closedtrades) + ' | Net: ' + str.tostring(strategy.netprofit, '0.##') + '\nWin %: ' + (na(win_pct) ? 'N/A' : str.tostring(win_pct_display, '#.##') + '% ' + get_progress(win_pct_display)) + ' | # Wins: ' + str.tostring(strategy.wintrades) + '\nSharpe: ' + str.tostring(sharpe, "#.##") + ' | Sortino: ' + str.tostring(sortino, "#.##"), text_color=win_color, text_size=size.normal)
+table.merge_cells(dashboard, 0, 2, 1, 2)
+
+// === Bottom-right WATERMARK/VoVix PROGRESSION BAR ===
+var table infoTable = na
+if na(infoTable)
+    infoTable := table.new(position.bottom_right, 1, 2, bgcolor=color.new(color.black, 90), border_color=color.new(color.purple, 80), border_width=1)
+table.clear(infoTable, 0, 0)
+table.cell(infoTable, 0, 0, '⚡ Dskyz (DAFE) Trading Systems', text_color=color.rgb(200, 200, 255), text_size=size.normal)
+super_val = na(vovix_avg) ? 1.0 : vovix_avg * super_mult
+progress_pct = math.min(1.0, math.abs(vo_spike) / (super_val + 1e-5))
+int bar_length = 20
+int full_bars = math.round(progress_pct * bar_length)
+int empty_bars = bar_length - full_bars
+string vovix_bar_str = str.repeat('█', full_bars) + str.repeat('░', empty_bars)
+color vovix_color = progress_pct > 0.8 ? color.lime : progress_pct > 0.6 ? color.green : progress_pct > 0.3 ? color.yellow : progress_pct > 0.1 ? color.orange : color.red
+table.cell(infoTable, 0, 1, "VoVix [" + vovix_bar_str + "] " + str.tostring(progress_pct, "#.##"), text_color=vovix_color, text_size=size.normal)

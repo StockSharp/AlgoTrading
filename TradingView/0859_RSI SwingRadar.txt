@@ -1,0 +1,77 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © mramoraf
+
+//@version=6
+strategy("RSI SwingRadar", overlay = true,
+     calc_on_order_fills = true,      // Recalculate on order fills to handle intra-bar fills
+     currency = currency.USDT,        // Use USDT as the account currency
+     initial_capital = 10000,         // Starting capital for backtest
+     default_qty_type = strategy.percent_of_equity,
+     default_qty_value = 100,         // Risk 100% of equity per trade
+     commission_type=strategy.commission.cash_per_contract,
+     commission_value = 0.01)         // Commission per contract
+
+
+
+// ── Inputs ─────────────────────────────────────────────────────────────────────
+
+rr = input.float(4, 'Risk:Reward')                      // Reward:risk ratio
+atrMulti = input.float(0.5, 'Atr Multiplier', tooltip = 'Stop Loss is calculated based on ATR value so the larger you set your ATR Multiplier, the larger your stop is going to be.')
+rsiOversold = input.int(35, 'RSI Oversold')              // Threshold for oversold
+rsiOverbought = input.int(65, 'RSI Overbought')          // Threshold for overbought
+
+
+
+// ── Indicator Calculations ────────────────────────────────────────────────────
+
+rsi = ta.rsi(close, 14)        // 14-period RSI
+rsiMA = ta.sma(rsi, 14)        // 14-period simple MA of RSI
+atr = ta.atr(14)               // 14-period Average True Range
+
+
+
+// ── Entry Conditions ──────────────────────────────────────────────────────────
+
+buyCondition = ta.crossover(rsi, rsiMA) and rsi[1] < rsiOversold
+// Trigger long when RSI crosses above its MA AND previous RSI was below oversold
+
+
+
+// ── Trade Variables ───────────────────────────────────────────────────────────
+
+var float TradeStop   = na      // Will hold dynamic stop-loss price
+var float TradeTarget = na      // Will hold dynamic take-profit price
+
+
+
+// ── Entry Logic ──────────────────────────────────────────────────────────────
+
+if buyCondition and barstate.isconfirmed and strategy.position_size == 0
+    // Calculate stop: ATR distance below the low
+    TradeStop := low - atr * atrMulti
+    // Distance from entry to stop
+    tradeStopSize = close - TradeStop
+    // Calculate target: entry plus R:R multiple of stop distance
+    TradeTarget := close + tradeStopSize * rr
+    // Enter long trade
+    strategy.entry('Long', strategy.long)
+
+
+
+// ── Exit Logic ────────────────────────────────────────────────────────────────
+
+strategy.exit('Exit', from_entry = 'Long', stop = TradeStop, limit = TradeTarget)
+// Exits the 'Long' trade on either the stop-loss or take-profit price
+
+
+
+// ── Visuals ───────────────────────────────────────────────────────────────────
+
+fill(plot(strategy.position_size != 0 ? TradeStop : na, 'Stop Loss', color=color.red, style = plot.style_linebr),
+     plot(strategy.position_size != 0 ? strategy.position_avg_price : na, 'Entry Price', color=color.white, style = plot.style_linebr),
+     color.new(color.red, 85)
+     )
+
+fill(plot(strategy.position_size != 0 ? strategy.position_avg_price : na, 'Entry Price', color=color.white, style = plot.style_linebr),
+     plot(strategy.position_size != 0 ? TradeTarget : na, 'Take Profit', color=color.green, style=plot.style_linebr),
+     color.new(color.green, 85))

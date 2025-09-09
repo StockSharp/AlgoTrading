@@ -1,0 +1,122 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © smoyer
+
+//@version=6
+strategy("Random State Machine Strategy",
+     overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 10)
+
+import robbatt/lib_statemachine/1 as sm
+
+// === INPUTS ===
+resetInterval = input.int(100, "State Reset Interval (bars)", tooltip = "State machine resets every N bars if at least 2 transitions occurred. Helps prevent stale state.")
+// --- Tips ---
+// Risk/Reward Ratio: Multiplier applied to your risk value to calculate take profit.
+// For example, a 2.0 ratio with 1 point risk means 2 points profit target.
+// Risk per Trade (pts): Distance in price (points) from entry to stop loss.
+// Example: If risk is 1.0 and entry is at 100.0, the stop loss will be at 99.0 (for long trades).
+
+maLength         = input.int(14, "MA Length")
+maType           = input.string("EMA", "MA Type", options=["SMA", "EMA", "WMA", "HMA", "RMA", "DEMA", "TEMA", "VWMA", "LSMA", "Kijun", "McGinley", "ALMA"])
+enableLongs      = input.bool(true, "Enable Long Trades")
+enableShorts     = input.bool(true, "Enable Short Trades")
+useTP_SL_Long    = input.bool(true, "Use TP/SL for Long")
+useTP_SL_Short   = input.bool(true, "Use TP/SL for Short")
+useTimed_Long    = input.bool(true, "Use Timed Exit for Long")
+useTimed_Short   = input.bool(true, "Use Timed Exit for Short")
+useMACross_Long  = input.bool(true, "Use MA Cross Exit for Long")
+useMACross_Short = input.bool(true, "Use MA Cross Exit for Short")
+rrRatio_Long     = input.float(2.0, "Risk/Reward Ratio Long", tooltip = "TP = Risk × Ratio. Example: 2.0 R/R with 1pt risk gives 2pt profit target.")
+rrRatio_Short    = input.float(2.0, "Risk/Reward Ratio Short", tooltip = "TP = Risk × Ratio. Example: 2.0 R/R with 1pt risk gives 2pt profit target.")
+riskPts_Long     = input.float(1.0, "Risk per Long Trade (pts)", tooltip = "Fixed distance from entry to stop loss in points. Example: 1.0pt means SL = Entry - 1.0")
+riskPts_Short    = input.float(1.0, "Risk per Short Trade (pts)", tooltip = "Fixed distance from entry to stop loss in points. Example: 1.0pt means SL = Entry + 1.0")
+barsHold_Long    = input.int(10, "Hold Bars for Long")
+barsHold_Short   = input.int(10, "Hold Bars for Short")
+
+// === BACKTEST RANGE ===
+startDate = input.time(timestamp("2022-01-01 00:00 +0000"), "Backtest Start Date")
+endDate   = input.time(timestamp("2099-12-31 00:00 +0000"), "Backtest End Date")
+inRange   = time >= startDate and time <= endDate
+
+// === RANDOM LOGIC ===
+random(minRange, maxRange) =>
+    seed = (timenow % 1000000) + (volume % 1000000)
+    var float s1 = na, s1 := 171.0 * nz(s1[1], seed) % 30269.0
+    var float s2 = na, s2 := 172.0 * nz(s2[1], s1 * seed) % 30307.0
+    var float s3 = na, s3 := 170.0 * nz(s3[1], s2 * seed) % 30323.0
+    combined = (s1 / 30269.0 + s2 / 30307.0 + s3 / 30323.0) % 1.0
+    minRange + (combined * (maxRange - minRange))
+
+// === STATE LOGIC ===
+var sm.StateMachine state = sm.StateMachine.new()
+rand = random(0, 1)
+trigger = rand > 0.95
+stateChanged = sm.step(state, 1, trigger)
+sm.reset(state, condition = bar_index % resetInterval == 0, min_occurrences = 2)
+
+// === MA CALCULATION ===
+ma = switch maType
+    "SMA" => ta.sma(close, maLength)
+    "EMA" => ta.ema(close, maLength)
+    "WMA" => ta.wma(close, maLength)
+    "HMA" => ta.hma(close, maLength)
+    "RMA" => ta.rma(close, maLength)
+    "DEMA" => 2 * ta.ema(close, maLength) - ta.ema(ta.ema(close, maLength), maLength)
+    "TEMA" =>
+        ema1 = ta.ema(close, maLength)
+        ema2 = ta.ema(ema1, maLength)
+        ema3 = ta.ema(ema2, maLength)
+        3 * ema1 - 3 * ema2 + ema3
+    "VWMA" => ta.vwma(close, maLength)
+    "LSMA" => ta.linreg(close, maLength, 0)
+    "Kijun" => (ta.highest(high, maLength) + ta.lowest(low, maLength)) / 2
+    "McGinley" =>
+        var float mg = close
+        mg := mg[1] + (close - mg[1]) / (maLength * math.pow(close / mg[1], 4))
+        mg
+    "ALMA" => ta.alma(close, maLength, 0.85, 6)
+    => close
+
+// === CONDITIONS ===
+aboveMA = close > ma
+belowMA = close < ma
+
+// === STRATEGY ===
+tpPts_Long  = rrRatio_Long * riskPts_Long
+slPts_Long  = riskPts_Long
+tpPts_Short = rrRatio_Short * riskPts_Short
+slPts_Short = riskPts_Short
+
+if inRange
+    if enableLongs and stateChanged and aboveMA
+        strategy.entry("Random Long", strategy.long)
+    if enableShorts and stateChanged and belowMA
+        strategy.entry("Random Short", strategy.short)
+
+    if useTP_SL_Long
+        strategy.exit("Exit Long TP/SL", from_entry = "Random Long", profit = tpPts_Long, loss = slPts_Long)
+    if useTP_SL_Short
+        strategy.exit("Exit Short TP/SL", from_entry = "Random Short", profit = tpPts_Short, loss = slPts_Short)
+
+    if strategy.opentrades > 0
+        entryBarIndex = strategy.opentrades.entry_bar_index(0)
+        if not na(entryBarIndex)
+            if useTimed_Long and bar_index - entryBarIndex >= barsHold_Long
+                strategy.close("Random Long")
+            if useTimed_Short and bar_index - entryBarIndex >= barsHold_Short
+                strategy.close("Random Short")
+
+    if useMACross_Long and ta.crossunder(close, ma)
+        strategy.close("Random Long")
+    if useMACross_Short and ta.crossover(close, ma)
+        strategy.close("Random Short")
+
+// === PLOTS ===
+plotshape(inRange and stateChanged and aboveMA,
+          title = "Long Trigger", location = location.belowbar,
+          color = color.green, style = shape.triangleup)
+
+plotshape(inRange and stateChanged and belowMA,
+          title = "Short Trigger", location = location.abovebar,
+          color = color.red, style = shape.triangledown)
+
+plot(ma, "MA", color = color.orange)

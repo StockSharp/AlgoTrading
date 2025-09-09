@@ -1,0 +1,79 @@
+//@version=5
+strategy("Scalping Strategy By TradingConToto", overlay=true)
+
+pivot = input(16, "Pivot")
+pips = input(64, "Pips de SL y TP")
+spread = input(0, "Spread en ticks")
+
+// Calculate pivot highs and lows (based on a period of 10 bars before and after)
+ph = ta.pivothigh(pivot, 10)
+pl = ta.pivotlow(pivot, 10)
+
+// Calculate exponential moving averages (EMAs) to identify trend direction
+emaTrend = ta.ema(close, 100) // Long-term trend (100-period EMA)
+emaFastTrend = ta.ema(close, 25) // Short-term trend (25-period EMA)
+
+drawLabel(_offset, _pivot, _style, _color, _textColor, HighLow) =>
+    if not na(_pivot)
+        label.new(bar_index[_offset], _pivot, HighLow, style=_style, color=_color, textcolor=_textColor)
+
+if(emaTrend > emaFastTrend)
+    drawLabel(10, pl, label.style_label_up, color.red, color.white, "L")
+else
+    drawLabel(10, ph, label.style_label_down, color.green, color.white, "H")
+
+
+sesion = input.session("0830-0930", "Sesion de scalping")
+plot(emaTrend, color = emaTrend > emaFastTrend ? color.red : color.green, linewidth = 3)
+bgcolor( time(timeframe.period, sesion) ? color.new(color.blue, 85) : na, transp=85)
+
+// Variables to store the last two pivot highs and the last line drawn
+var float auxHigh = na
+var int auxHighBar = na
+var line lastHighLine = na
+
+// Variables to store the last two pivot lows and the last line drawn
+var float auxLow = na
+var int auxLowBar = na
+var line lastLowLine = na
+
+// Process pivot highs and draw line if slope is valid
+if not na(ph) and emaFastTrend > emaTrend
+    if not na(auxHigh) and ph < auxHigh
+        if not na(lastHighLine)
+            line.delete(lastHighLine)  // Delete the previous line before drawing a new one
+        lastHighLine := line.new(auxHighBar, auxHigh, bar_index[10], ph, color=color.black, width=2, extend = extend.right)
+    auxHigh := ph
+    auxHighBar := bar_index[10]  // Update auxHigh to the new higher high
+
+// Process pivot lows and draw line if slope is valid
+if not na(pl) and emaFastTrend < emaTrend
+    if not na(auxLow) and pl > auxLow
+        if not na(lastLowLine)
+            line.delete(lastLowLine)  // Delete the previous line before drawing a new one
+        lastLowLine := line.new(auxLowBar, auxLow, bar_index[10], pl, color=color.black, width=2, extend = extend.right)
+    auxLow := pl
+    auxLowBar := bar_index[10]  // Update auxLow to the new higher low
+
+// Reset when EMA crosses over/under
+if(ta.crossover(emaFastTrend, emaTrend) or ta.crossunder(emaFastTrend, emaTrend))
+    auxHigh := na
+    auxHighBar := na
+    auxLow := na
+    auxLowBar := na
+    if not na(lastHighLine)
+        line.delete(lastHighLine)
+    if not na(lastLowLine)
+        line.delete(lastLowLine)
+
+
+
+if (emaFastTrend > emaTrend and not na(auxHighBar) and close > line.get_price(lastHighLine,bar_index) and open < line.get_price(lastHighLine,bar_index) and time(timeframe.period, sesion) and input(true, "Activar compras"))
+    strategy.entry("Buy", strategy.long)
+    strategy.exit("Take Profit", "Buy", profit = pips+spread, loss = pips)
+    line.delete(lastHighLine)
+
+if (emaFastTrend < emaTrend and not na(auxLowBar) and close < line.get_price(lastLowLine,bar_index) and open > line.get_price(lastLowLine,bar_index) and time(timeframe.period, sesion) and input(true, "Activar ventas"))
+    strategy.entry("Sell", strategy.short)
+    strategy.exit("Take Profit", "Sell", profit = pips+spread, loss = pips)
+    line.delete(lastLowLine)

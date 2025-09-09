@@ -1,0 +1,44 @@
+//@version=5
+strategy("EMA 34 Crossover with Break Even Stop Loss", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// EMA 34
+ema34 = ta.ema(close, 34)
+plot(ema34, color=color.orange, title="EMA 34")
+
+// Variables to manage trade
+var float entryPrice = na
+var float stopLoss = na
+var float takeProfit = na
+var bool inTrade = false
+var float breakEvenLevel = na
+var float risk = na
+
+// Condition for EMA 34 crossover (price crossing above EMA 34)
+longCondition = close > ema34 and close[1] <= ema34[1]
+
+// Set up the trade when the crossover occurs
+if longCondition and not inTrade
+    entryPrice := close
+    stopLoss := low[1]  // Set stop loss to the low of the previous candle (not the crossover candle)
+    risk := entryPrice - stopLoss
+    takeProfit := entryPrice + (risk * 10)  // 1:10 risk-to-reward ratio
+    strategy.entry("Long", strategy.long)
+    inTrade := true
+
+// Move stop loss to break-even when 1:3 RR is reached
+if inTrade and close >= entryPrice + (risk * 3)  // 1:3 RR reached
+    stopLoss := entryPrice  // Move stop loss to entry price (break-even)
+    breakEvenLevel := entryPrice
+
+// Exit the trade if stop loss or take profit is hit
+if inTrade
+    if low <= stopLoss  // Stop loss condition
+        strategy.close("Long", comment="Stop Loss Hit")
+        inTrade := false
+    if high >= takeProfit  // Take profit condition
+        strategy.close("Long", comment="Take Profit Hit")
+        inTrade := false
+
+// Optionally plot stop loss and take profit levels for visualization
+plot(stopLoss, color=color.red, title="Stop Loss", linewidth=2, style=plot.style_line)
+plot(takeProfit, color=color.green, title="Take Profit", linewidth=2, style=plot.style_line)

@@ -1,0 +1,101 @@
+//@version=6
+strategy("NY Opening Range Breakout + Retest [Enhanced]", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs ===
+userRangeLength = input.int(2000, "Range Line Length (bars)", minval=100)
+rangeLineLength = math.min(userRangeLength, 500)
+tz = "America/New_York"
+minRangePoints = input.float(60, "Minimum NY Range (points)", minval=1)
+riskRatio = input.float(3.0, "Risk/Reward Ratio", step=0.1)
+maxTradesPerSession = input.int(3, "Max Trades per NY Session", minval=1)
+maxDailyLoss = input.float(-1000.0, "Max Daily Loss ($)", step=10)
+
+// === NY Session Time Window ===
+nyStartHour = 9
+nyEndHour   = 9
+nyStartMin  = 30
+nyEndMin    = 45
+
+nyHour   = hour(time, tz)
+nyMinute = minute(time, tz)
+
+// === NY Session Variables ===
+var float nyHigh = na
+var float nyLow = na
+var line nyHighLine = na
+var line nyLowLine = na
+var bool nyRangeDone = false
+var int nyTradeCount = 0
+var float dailyProfit = 0.0
+
+// === Daily Reset ===
+newDay = dayofmonth != dayofmonth[1]
+if newDay
+    nyHigh := na
+    nyLow := na
+    nyRangeDone := false
+    nyTradeCount := 0
+    dailyProfit := 0.0
+    line.delete(nyHighLine)
+    line.delete(nyLowLine)
+
+// === Build NY Range ===
+nyInRange = nyHour == nyStartHour and nyMinute >= nyStartMin and nyMinute < nyEndMin
+nyRangeEnd = nyHour == nyEndHour and nyMinute == nyEndMin
+
+if nyInRange
+    nyHigh := na(nyHigh) ? high : math.max(nyHigh, high)
+    nyLow := na(nyLow) ? low : math.min(nyLow, low)
+
+if nyRangeEnd and not nyRangeDone and not na(nyHigh) and not na(nyLow)
+    nyRangeDone := true
+    nyHighLine := line.new(bar_index, nyHigh, bar_index + rangeLineLength, nyHigh, xloc.bar_index, extend=extend.none, color=color.green, style=line.style_dashed)
+    nyLowLine := line.new(bar_index, nyLow, bar_index + rangeLineLength, nyLow, xloc.bar_index, extend=extend.none, color=color.red, style=line.style_dashed)
+    label.new(bar_index, nyHigh, "NY Range: " + str.tostring(nyHigh - nyLow, "#.##"), style=label.style_label_down, color=color.yellow)
+
+// === Filters ===
+ema200 = ta.ema(close, 200)
+vwap = ta.vwap
+volumeFilter = volume > ta.sma(volume, 20)
+trendUp = close > ema200 and close > vwap
+trendDown = close < ema200 and close < vwap
+
+// === Breakout + Retest Logic ===
+nyRangeSize = nyHigh - nyLow
+validRange = nyRangeDone and nyRangeSize >= minRangePoints
+
+longBreakout = validRange and high > nyHigh
+longRetest   = longBreakout and low <= nyHigh and close > nyHigh
+
+shortBreakout = validRange and low < nyLow
+shortRetest   = shortBreakout and high >= nyLow and close < nyLow
+
+// === Entry Conditions ===
+canTrade = dailyProfit > maxDailyLoss
+longCondition = longRetest and nyTradeCount < maxTradesPerSession and trendUp and volumeFilter and canTrade
+shortCondition = shortRetest and nyTradeCount < maxTradesPerSession and trendDown and volumeFilter and canTrade
+
+// === Dynamic SL/TP ===
+longSL = close - nyRangeSize * 0.33
+longTP = close + nyRangeSize * 0.33 * riskRatio
+shortSL = close + nyRangeSize * 0.33
+shortTP = close - nyRangeSize * 0.33 * riskRatio
+
+// === Execute Trades ===
+if longCondition
+    strategy.entry("NY Long", strategy.long)
+    strategy.exit("NY Long Exit", from_entry="NY Long", stop=longSL, limit=longTP)
+    nyTradeCount += 1
+
+if shortCondition
+    strategy.entry("NY Short", strategy.short)
+    strategy.exit("NY Short Exit", from_entry="NY Short", stop=shortSL, limit=shortTP)
+    nyTradeCount += 1
+
+// === Track Daily Profit ===
+if strategy.closedtrades > 0
+    lastProfit = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    dailyProfit += lastProfit
+
+// === Visual Enhancements ===
+bgcolor(nyInRange ? color.new(color.gray, 90) : na)

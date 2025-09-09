@@ -1,0 +1,35 @@
+//@version=5
+strategy("Tick Marubozu Strategy", overlay=true)
+
+// User Inputs
+tick_size = input.float(5, title="Marubozu Min Size (pips)") * syminfo.mintick
+vol_length = input(20, title="Volume SMA Length")
+
+// Candle Properties
+candle_body = math.abs(close - open)
+candle_high_wick = high - math.max(open, close)
+candle_low_wick = math.min(open, close) - low
+
+// Marubozu Conditions
+is_bearish_marubozu = (close < open) and (candle_high_wick <= tick_size) and (candle_body >= tick_size)
+is_bullish_marubozu = (close > open) and (candle_low_wick <= tick_size) and (candle_body >= tick_size)
+
+// Volume Confirmation
+vol_ma = ta.sma(volume, vol_length)
+high_volume = volume > vol_ma
+
+// Entry Signals
+sell_signal = is_bearish_marubozu and high_volume
+buy_signal = is_bullish_marubozu and high_volume
+
+// Plot Signals on Chart
+plotshape(buy_signal, location=location.belowbar, color=color.green, style=shape.labelup, title="BUY Signal")
+plotshape(sell_signal, location=location.abovebar, color=color.red, style=shape.labeldown, title="SELL Signal")
+
+// Strategy Execution
+strategy.entry("BUY", strategy.long, when=buy_signal)
+strategy.entry("SELL", strategy.short, when=sell_signal)
+
+// Alerts for Binary Options Trading
+alertcondition(buy_signal, title="BUY Signal", message="Bullish Marubozu with High Volume!")
+alertcondition(sell_signal, title="SELL Signal", message="Bearish Marubozu with High Volume!")

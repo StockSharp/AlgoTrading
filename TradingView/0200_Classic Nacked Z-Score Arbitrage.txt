@@ -1,0 +1,38 @@
+//@version=6
+strategy("Classic Nacked Z-Score Arbitrage", shorttitle="Z-Score Arbitrage", overlay=false, commission_type=strategy.commission.cash_per_order, commission_value=0.05, slippage=1)
+
+// Inputs
+assetA = input.symbol("TLT", title="Security A")  // Asset A (e.g., SPY)
+assetB = input.symbol("SPY", title="Security B")  // Asset B (e.g., TLT)
+lookback = input.int(33, title="Lookback Period", minval=1)  // Period for mean and standard deviation calculation
+zscoreThreshold = input.float(2.0, title="Z-Score Threshold", step=0.1)  // Z-Score threshold
+
+// Fetching the prices of the two assets
+priceA = request.security(assetA, "D", close)
+priceB = request.security(assetB, "D", close)
+
+// Calculate the spread
+spread = priceA - priceB
+
+// Calculate the mean and standard deviation of the spread over the lookback period
+meanSpread = ta.sma(spread, lookback)
+stdDevSpread = ta.stdev(spread, lookback)
+
+// Calculate the Z-Score of the spread
+zScore = (spread - meanSpread) / stdDevSpread
+
+// Trading conditions based on Z-Score
+longCondition = zScore > zscoreThreshold
+shortCondition = zScore < -zscoreThreshold
+
+// Strategy entries with conditions
+if longCondition
+    strategy.entry("Long", strategy.long, comment="Buy Asset B, Sell Asset A")
+
+if shortCondition
+    strategy.entry("Short", strategy.short, comment="Sell Asset B, Buy Asset A")
+
+// Plotting the Z-Score for visualization
+plot(zScore, title="Z-Score", color=color.blue, linewidth=2)
+hline(zscoreThreshold, "Z-Score Threshold (Long)", color=color.green, linestyle=hline.style_dashed)
+hline(-zscoreThreshold, "Z-Score Threshold (Short)", color=color.red, linestyle=hline.style_dashed)

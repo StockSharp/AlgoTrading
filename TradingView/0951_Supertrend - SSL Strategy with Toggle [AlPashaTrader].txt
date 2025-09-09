@@ -1,0 +1,99 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © LePasha
+
+//@version=6
+strategy("Supertrend - SSL Strategy with Toggle [LePasha]", "SP-SSL [LePasha]", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=15)
+// Watermark
+watermarkTable = table.new(position.bottom_left, 1, 1, border_width=3, force_overlay=true)
+table.cell(watermarkTable, 0, 0, text='AlPashaTrader ', text_color=color.new(color.white, 95), text_size=size.huge)
+
+// === Toggle between strategies ===
+useConfirmation = input.bool(true, "Require confirmation from both indicators?")
+
+// === User-defined date range ===
+startDate = input.time(timestamp("2024-05-15 00:00 +0000"), "Start Date")
+endDate   = input.time(timestamp("2050-05-15 00:00 +0000"), "End Date")
+inDateRange = (time >= startDate and time <= endDate)
+
+// === Supertrend ===
+atrPeriod = input.int(10, "ATR Length")
+factor    = input.float(2.4, "Factor", step = 0.01)
+[_, supertrendDir] = ta.supertrend(factor, atrPeriod)
+
+supertrendBuy  = ta.change(supertrendDir) < 0
+supertrendSell = ta.change(supertrendDir) > 0
+
+// === SSL Channel ===
+sslPeriod = input.int(13, title="SSL Period")
+smaHigh   = ta.sma(high, sslPeriod)
+smaLow    = ta.sma(low, sslPeriod)
+
+var float hlv = na
+hlv := close > smaHigh ? 1 : close < smaLow ? -1 : hlv[1]
+
+sslDown = hlv < 0 ? smaHigh : smaLow
+sslUp   = hlv < 0 ? smaLow  : smaHigh
+
+plot(sslDown, title="SSL Down", linewidth=2, color=inDateRange ? #ff5d00 : color.new(#ff5d00, 85))
+plot(sslUp,   title="SSL Up",   linewidth=2, color=inDateRange ? #2157f3 : color.new(#2157f3, 85))
+
+sslBuy  = ta.crossover(sslUp, sslDown)
+sslSell = ta.crossunder(sslUp, sslDown)
+
+// === Waiting signals ===
+var bool waitForSSLBuy  = false
+var bool waitForSSLSell = false
+var bool waitForSTBuy   = false
+var bool waitForSTSell  = false
+
+if inDateRange
+    if useConfirmation
+        // Long setup
+        if sslBuy and not waitForSTBuy
+            waitForSSLBuy := true
+        if supertrendBuy and not waitForSSLBuy
+            waitForSTBuy := true
+
+        if sslBuy and waitForSTBuy
+            strategy.entry("Long", strategy.long)
+            waitForSTBuy := false
+            waitForSSLBuy := false
+        if supertrendBuy and waitForSSLBuy
+            strategy.entry("Long", strategy.long)
+            waitForSTBuy := false
+            waitForSSLBuy := false
+
+        // Short setup
+        if sslSell and not waitForSTSell
+            waitForSSLSell := true
+        if supertrendSell and not waitForSSLSell
+            waitForSTSell := true
+
+        if sslSell and waitForSTSell
+            strategy.entry("Short", strategy.short)
+            waitForSTSell := false
+            waitForSSLSell := false
+        if supertrendSell and waitForSSLSell
+            strategy.entry("Short", strategy.short)
+            waitForSTSell := false
+            waitForSSLSell := false
+
+        // Exit positions
+        if strategy.position_size > 0 and (sslSell or supertrendSell)
+            strategy.close("Long")
+            waitForSTBuy := false
+            waitForSSLBuy := false
+        if strategy.position_size < 0 and (sslBuy or supertrendBuy)
+            strategy.close("Short")
+            waitForSTSell := false
+            waitForSSLSell := false
+    else
+        if sslBuy or supertrendBuy
+            strategy.entry("Long", strategy.long)
+        if sslSell or supertrendSell
+            strategy.entry("Short", strategy.short)
+
+        if strategy.position_size > 0 and (sslSell or supertrendSell)
+            strategy.close("Long")
+        if strategy.position_size < 0 and (sslBuy or supertrendBuy)
+            strategy.close("Short")

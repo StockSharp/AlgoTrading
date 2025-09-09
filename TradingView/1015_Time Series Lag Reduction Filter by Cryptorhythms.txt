@@ -1,0 +1,18 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © theheirophant
+//@version=4
+study("Time Series Lag Reduction Filter by Cryptorhythms", overlay=true)
+
+//SETTINGS
+lagReduce = input(20.0, title="Lag Reduction", minval=1, maxval=100)
+seriesSource = input(close, title="Source", type=input.source)
+seriesLength = input(100, title="Example Series Length for EMA")
+yes1=input(true, title="Plot Original EMA as well?")
+
+//FILTER
+exampleSeries=ema(seriesSource, seriesLength)
+lagFilter = exp(lagReduce*log(exampleSeries / exampleSeries[1]))*exampleSeries
+
+//PLOTS
+plot(lagFilter, color=color.lime)
+plot(yes1? exampleSeries : na, color=color.red)

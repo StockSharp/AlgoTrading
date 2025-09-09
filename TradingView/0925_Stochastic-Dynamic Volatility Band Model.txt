@@ -1,0 +1,35 @@
+//@version=6
+strategy("Stochastic-Dynamic Volatility Band Model", overlay=true, initial_capital=20000, slippage=1, commission_value=0.01)
+
+// Input Parameters
+length = input.int(5, "Band Length")
+mult = input.float(1.67, "Multiplier", step=0.01)
+exitBars = input.int(7, "Exit After X Bars")
+
+// Volatility Bands Calculation
+source = close
+volatility = ta.stdev(source, length)
+upperBand = ta.sma(source, length) + (mult * volatility)
+lowerBand = ta.sma(source, length) - (mult * volatility)
+
+// Entry Conditions
+longCondition = ta.crossover(source, lowerBand)
+shortCondition = ta.crossunder(source, upperBand)
+
+// Exit Condition
+exitLong = ta.barssince(longCondition) >= exitBars
+exitShort = ta.barssince(shortCondition) >= exitBars
+
+// Strategy Execution
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+if (exitLong)
+    strategy.close("Long")
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+if (exitShort)
+    strategy.close("Short")
+
+// Plot Bands
+plot(upperBand, "Upper Band", color=color.red)
+plot(lowerBand, "Lower Band", color=color.green)

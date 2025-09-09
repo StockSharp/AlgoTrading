@@ -1,0 +1,143 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © AHMEDABDELAZIZZIZO
+
+//@version=5
+strategy("Ta Strategy", overlay=true,initial_capital = 1000 ,default_qty_type = strategy.percent_of_equity ,default_qty_value = 5 , commission_type = strategy.commission.percent , commission_value = 0.1 )
+
+// inputs
+inversestrategy = input.bool(false, title = "Inverse Strategy",tooltip = "This option makes you reverse the strategy so that long signals become where to short  ")
+direction = input.string(defval = "Both" , options = ["Both" , "Short" , "Long"] )
+
+leftbars= input(6,title = " Left Bars" , group = "Support and resistance")
+rightbars = input(6, title = " Right Bars", group = "Support and resistance")
+
+macdfast = input(12, title = "MACD Fast", group = "MACD")
+macdslow = input(26, title = "MACD Slow",group = "MACD")
+macdsignal = input(7, "MACD Signal",group = "MACD")
+
+sellqty = input(50, title = "QTY to sell at TP 1")
+
+len = input(14, title="ADX Length" , group = "ADX")
+
+
+// sup and res
+res = fixnan(ta.pivothigh(high,leftbars,rightbars))
+sup = fixnan(ta.pivotlow(low , leftbars,rightbars))
+
+// macd
+macd =ta.ema(close,macdfast) - ta.ema(close,macdslow)
+signal=ta.ema(macd,macdsignal)
+
+
+//adx
+up = ta.change(high)
+down = -ta.change(low)
+plusDM = na(up) ? na : (up > down and up > 0 ? up : 0)
+minusDM = na(down) ? na : (down > up and down > 0 ? down : 0)
+truerange = ta.rma(ta.tr,len)
+plusDI = 100 * ta.rma(plusDM, len) / truerange
+minusDI = 100 * ta.rma(minusDM, len) / truerange
+dx = 100 * ta.rma(math.abs(plusDI - minusDI) / (plusDI + minusDI), len)
+adx = ta.sma(dx, len)
+
+// start deal condition
+longcondition =  ta.crossover(macd,signal) and close > res and ta.rsi(close,14) > 50 and plusDI > minusDI and adx > 20
+shortcondition = ta.crossunder(macd,signal) and close < sup and ta.rsi(close,14) < 50 and plusDI < minusDI and adx > 20
+
+//tp
+longtp1   = input.float(6, "Long TP 1", minval = 0.0, step = 0.25, group = "Exit LONG Orders") /100
+longtp2   = input.float(12, "Long TP 2", minval = 0.0, step = 0.25, group = "Exit LONG Orders") /100
+longsl1 = input.float(3.0, "Long SL",  minval = 0.0, step = 0.25, group = "Exit LONG Orders") /100
+longtakeprofit1 = (strategy.position_avg_price * (1 + longtp1))
+longstoploss1 = (strategy.position_avg_price * (1 - longsl1))
+longtakeprofit2 = (strategy.position_avg_price * (1 + longtp2))
+
+//sl
+shorttp1   = input.float(6.0, "Short TP 1 ", minval = 0.0, step = 0.25, group = "Exit SHORT Orders")/100
+shorttp2   = input.float(12.0, "Short TP 2", minval = 0.0, step = 0.25, group = "Exit SHORT Orders")/100
+shortsl1 = input.float(3.0, "Short SL",  minval = 0.0, step = 0.25, group = "Exit SHORT Orders")/100
+shorttakeprofit1 = (strategy.position_avg_price * (1- shorttp1))
+shortstoploss1 = (strategy.position_avg_price * (1 + shortsl1))
+shorttakeprofit2 = (strategy.position_avg_price * (1- shorttp2))
+
+//placeorders
+if inversestrategy == false
+    if direction == "Both"
+        if longcondition and strategy.opentrades == 0
+            strategy.entry("long" , strategy.long )
+        strategy.exit("exit long 1","long",qty_percent = sellqty ,limit = longtakeprofit1,stop = longstoploss1)
+        strategy.exit("exit long 2","long",qty_percent = 100 ,limit = longtakeprofit2,stop = longstoploss1)
+        if high >= longtakeprofit1
+            strategy.cancel("exit long 2")
+            strategy.exit("exit long 3","long",qty_percent = 100 ,limit = longtakeprofit2,stop = strategy.position_avg_price)
+        if shortcondition and strategy.opentrades == 0
+            strategy.entry("short",strategy.short)
+        strategy.exit("exit short 1","short",qty_percent = sellqty ,limit = shorttakeprofit1,stop = shortstoploss1)
+        strategy.exit("exit short 2","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = shortstoploss1)
+        if low <= shorttakeprofit1
+            strategy.cancel("exit short 2")
+        strategy.exit("exit short 3","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = strategy.position_avg_price)
+    else if direction == "Long"
+        if longcondition and strategy.opentrades == 0
+            strategy.entry("long" , strategy.long )
+        strategy.exit("exit long 1","long",qty_percent = sellqty ,limit = longtakeprofit1,stop = longstoploss1)
+        strategy.exit("exit long 2","long",qty_percent = 100 ,limit = longtakeprofit2,stop = longstoploss1)
+        if high >= longtakeprofit1
+            strategy.cancel("exit long 2")
+            strategy.exit("exit long 3","long",qty_percent = 100 ,limit = longtakeprofit2,stop = strategy.position_avg_price)
+    else if direction == "Short"
+        if shortcondition and strategy.opentrades == 0
+            strategy.entry("short",strategy.short)
+        strategy.exit("exit short 1","short",qty_percent = sellqty ,limit = shorttakeprofit1,stop = shortstoploss1)
+        strategy.exit("exit short 2","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = shortstoploss1)
+        if low <= shorttakeprofit1
+            strategy.cancel("exit short 2")
+        strategy.exit("exit short 3","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = strategy.position_avg_price)
+else
+    if direction == "Both"
+        if shortcondition and strategy.opentrades == 0
+            strategy.entry("long" , strategy.long )
+        strategy.exit("exit long 1","long",qty_percent = sellqty ,limit = longtakeprofit1,stop = longstoploss1)
+        strategy.exit("exit long 2","long",qty_percent = 100 ,limit = longtakeprofit2,stop = longstoploss1)
+        if high >= longtakeprofit1
+            strategy.cancel("exit long 2")
+            strategy.exit("exit long 3","long",qty_percent = 100 ,limit = longtakeprofit2,stop = strategy.position_avg_price)
+        if longcondition and strategy.opentrades == 0
+            strategy.entry("short",strategy.short)
+        strategy.exit("exit short 1","short",qty_percent = sellqty ,limit = shorttakeprofit1,stop = shortstoploss1)
+        strategy.exit("exit short 2","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = shortstoploss1)
+        if low <= shorttakeprofit1
+            strategy.cancel("exit short 2")
+        strategy.exit("exit short 3","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = strategy.position_avg_price)
+    else if direction == "Long"
+        if shortcondition and strategy.opentrades == 0
+            strategy.entry("long" , strategy.long )
+        strategy.exit("exit long 1","long",qty_percent = sellqty ,limit = longtakeprofit1,stop = longstoploss1)
+        strategy.exit("exit long 2","long",qty_percent = 100 ,limit = longtakeprofit2,stop = longstoploss1)
+        if high >= longtakeprofit1
+            strategy.cancel("exit long 2")
+            strategy.exit("exit long 3","long",qty_percent = 100 ,limit = longtakeprofit2,stop = strategy.position_avg_price)
+    else if direction == "Short"
+        if longcondition and strategy.opentrades == 0
+            strategy.entry("short",strategy.short)
+        strategy.exit("exit short 1","short",qty_percent = sellqty ,limit = shorttakeprofit1,stop = shortstoploss1)
+        strategy.exit("exit short 2","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = shortstoploss1)
+        if low <= shorttakeprofit1
+            strategy.cancel("exit short 2")
+        strategy.exit("exit short 3","short",qty_percent = 100 ,limit = shorttakeprofit2,stop = strategy.position_avg_price)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+lsl1 = plot(strategy.position_size <= 0 ? na : longstoploss1, color=color.rgb(124, 11, 11), style=plot.style_linebr, linewidth=1)
+ltp1 = plot(strategy.position_size <= 0 ? na : longtakeprofit1, color=color.rgb(15, 116, 18), style=plot.style_linebr, linewidth=1)
+ltp2 = plot(strategy.position_size <= 0 ? na : longtakeprofit2, color=color.rgb(15, 116, 18), style=plot.style_linebr, linewidth=1)
+avg = plot(strategy.position_avg_price, color=color.rgb(255, 153, 0, 47), style=plot.style_linebr, linewidth=1)
+fill(ltp1,avg , color =strategy.position_size <= 0 ? na : color.rgb(82, 255, 97, 90))
+fill(ltp2,ltp1 , color =strategy.position_size <= 0 ? na : color.rgb(82, 255, 97, 90))
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ssl1 = plot(strategy.position_size >= 0 ? na : shortstoploss1, color=color.red, style=plot.style_linebr, linewidth=1)
+stp1 = plot(strategy.position_size >= 0 ? na : shorttakeprofit2, color=color.green, style=plot.style_linebr, linewidth=1)
+stp2 = plot(strategy.position_size >= 0 ? na : shorttakeprofit1, color=color.green, style=plot.style_linebr, linewidth=1)
+fill(stp1,avg , color =strategy.position_size >= 0 ? na : color.rgb(30, 92, 35, 90))
+fill(stp2,stp1 , color =strategy.position_size >= 0 ? na : color.rgb(30, 92, 35, 90))
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+resplot = plot(res, color=ta.change(res) ? na : #bf141446,  linewidth=3, offset=-(rightbars+1), title="res")
+supplot = plot(sup, color=ta.change(sup) ? na : #118f113a,  linewidth=3, offset=-(rightbars+1), title="sup")

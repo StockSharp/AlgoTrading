@@ -1,0 +1,65 @@
+//@version=5
+strategy("Bollinger Bands & Fibonacci Strategy", shorttitle="BB & Fib Strategy", overlay=true)
+
+// Initialize position variables
+var bool long_position = false
+var bool short_position = false
+
+// Bollinger Bands settings
+length = input.int(20, title="Bollinger Bands Length")
+src = input(close, title="Source")
+mult = input.float(2.0, title="Standard Deviation Multiplier")
+
+basis = ta.sma(src, length)
+dev = mult * ta.stdev(src, length)
+
+upper_band = basis + dev
+lower_band = basis - dev
+
+// Fibonacci retracement levels
+fib_0 = input.float(0.0, title="Fibonacci 0% Level", minval=-100, maxval=100) / 100
+fib_100 = input.float(1.0, title="Fibonacci 100% Level", minval=-100, maxval=100) / 100
+
+// Plotting Bollinger Bands
+plot(upper_band, color=color.red, title="Upper Bollinger Band")
+plot(lower_band, color=color.green, title="Lower Bollinger Band")
+
+// Calculate Fibonacci levels
+fib_range = ta.highest(high, 50) - ta.lowest(low, 50)
+fib_high = ta.highest(high, 50) - fib_range * fib_0
+fib_low = ta.lowest(low, 50) + fib_range * fib_100
+
+// Plot Fibonacci retracement levels
+plot(fib_high, color=color.blue, title="Fibonacci High")
+plot(fib_low, color=color.orange, title="Fibonacci Low")
+
+// Entry conditions
+long_condition = ta.crossover(close, upper_band) and low > fib_low
+short_condition = ta.crossunder(close, lower_band) and high < fib_high
+
+// Plot arrows on the chart
+plotshape(series=long_condition, title="Long Entry", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(series=short_condition, title="Short Entry", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// Entry and exit logic
+if long_condition and not short_position
+    strategy.entry("Long", strategy.long)
+    long_position := true
+    short_position := false
+
+if short_condition and not long_position
+    strategy.entry("Short", strategy.short)
+    short_position := true
+    long_position := false
+
+// Exit conditions (you can customize these)
+long_exit_condition = ta.crossunder(close, basis)
+short_exit_condition = ta.crossover(close, basis)
+
+if long_exit_condition
+    strategy.close("Long")
+    long_position := false
+
+if short_exit_condition
+    strategy.close("Short")
+    short_position := false

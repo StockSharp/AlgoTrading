@@ -1,0 +1,108 @@
+//@version=5
+// Bollinger Bounce Reversal Strategy - Visual Edition
+//
+// Description:
+// This strategy seeks to capture reversal moves at extreme price levels (“bounce points”) using Bollinger Bands.
+// A long entry is triggered when the price, after being below the lower Bollinger Band, crosses upward above it,
+// provided that the MACD line is above its signal line (indicating bullish momentum) and volume is strong.
+// Conversely, a short entry is triggered when the price, after being above the upper Bollinger Band, crosses downward
+// below it, with the MACD line below its signal line and high volume.
+// To help avoid overtrading, the strategy limits entries to a maximum of 5 trades per day.
+// Risk management is applied via fixed stop‑loss and take‑profit orders.
+// This version overlays many visual cues on the chart: filled Bollinger Bands, signal markers, background colors,
+// and an on‑chart information table displaying key values.
+//
+// Backtesting Parameters:
+// • Initial Capital: $10,000
+// • Commission: 0.1% per trade
+// • Slippage: 1 tick per bar
+//
+// Disclaimer:
+// Past performance is not indicative of future results. This strategy is experimental and provided solely for educational
+// purposes. Please backtest and paper trade under your own conditions before live deployment.
+//
+// Author: [Your Name]
+// Date: [Date]
+
+strategy("Bollinger Bounce Reversal Strategy - Visual Edition", overlay=true, initial_capital=10000,
+     default_qty_type=strategy.percent_of_equity, default_qty_value=5,
+     commission_type=strategy.commission.percent, commission_value=0.1, slippage=1)
+
+// ─── INPUTS ─────────────────────────────────────────────────────────────
+bbPeriod        = input.int(20, "Bollinger Bands Period", minval=1)
+bbStd           = input.float(2.0, "BB StdDev Multiplier", step=0.1)
+macdFast        = input.int(12, "MACD Fast Length", minval=1)
+macdSlow        = input.int(26, "MACD Slow Length", minval=1)
+macdSignal      = input.int(9,  "MACD Signal Length", minval=1)
+volAvgPeriod    = input.int(20, "Volume MA Period", minval=1)
+volFactor       = input.float(1.0, "Volume Spike Factor", step=0.1)  // Volume must be >= volAvg * factor
+stopLossPerc    = input.float(2.0,  "Stop Loss (%)", step=0.1) * 0.01
+takeProfitPerc  = input.float(4.0,  "Take Profit (%)", step=0.1) * 0.01
+
+// ─── CALCULATIONS ─────────────────────────────────────────────────────────
+basis    = ta.sma(close, bbPeriod)
+dev      = bbStd * ta.stdev(close, bbPeriod)
+upperBB  = basis + dev
+lowerBB  = basis - dev
+
+[macdLine, signalLine, _] = ta.macd(close, macdFast, macdSlow, macdSignal)
+volAvg   = ta.sma(volume, volAvgPeriod)
+
+// ─── VISUALS: Bollinger Bands & Fill ───────────────────────────────────────
+pBasis = plot(basis, color=color.gray, title="BB Basis")
+pUpper = plot(upperBB, color=color.red, title="Upper BB")
+pLower = plot(lowerBB, color=color.green, title="Lower BB")
+fill(pUpper, pLower, color=color.new(color.blue, 90), title="BB Fill")
+
+// ─── DAILY TRADE LIMIT ─────────────────────────────────────────────────────
+// Reset the daily trade count at the start of each new day; limit entries to 5 per day.
+var int tradesToday = 0
+if ta.change(time("D"))
+    tradesToday := 0
+
+// ─── SIGNAL LOGIC ─────────────────────────────────────────────────────────
+// Define a "bounce" signal:
+// For a long signal, require that the previous bar was below the lower band and the current bar crosses above it,
+// the MACD line is above its signal, and volume is high.
+longSignal = (close[1] < lowerBB and close > lowerBB) and (macdLine > signalLine) and (volume >= volFactor * volAvg)
+// For a short signal, require that the previous bar was above the upper band and the current bar crosses below it,
+// the MACD line is below its signal, and volume is high.
+shortSignal = (close[1] > upperBB and close < upperBB) and (macdLine < signalLine) and (volume >= volFactor * volAvg)
+
+// Plot visual signal markers on the chart.
+plotshape(longSignal, title="Long Signal", style=shape.labelup, location=location.belowbar, color=color.green, text="Long", size=size.small)
+plotshape(shortSignal, title="Short Signal", style=shape.labeldown, location=location.abovebar, color=color.red, text="Short", size=size.small)
+
+// Change background color on signal bars for an extra cue.
+bgcolor(longSignal ? color.new(color.green, 80) : shortSignal ? color.new(color.red, 80) : na, title="Signal BG")
+
+// Only enter trades if fewer than 5 have been taken today.
+if longSignal and (tradesToday < 5)
+    strategy.entry("Long", strategy.long)
+    tradesToday += 1
+
+if shortSignal and (tradesToday < 5)
+    strategy.entry("Short", strategy.short)
+    tradesToday += 1
+
+// ─── RISK MANAGEMENT: STOP-LOSS & TAKE-PROFIT ─────────────────────────────
+// For long positions: set stop loss and take profit relative to the entry price.
+if strategy.position_size > 0
+    strategy.exit("Long Exit", "Long", stop=strategy.position_avg_price*(1 - stopLossPerc), limit=strategy.position_avg_price*(1 + takeProfitPerc))
+// For short positions: set stop loss and take profit relative to the entry price.
+if strategy.position_size < 0
+    strategy.exit("Short Exit", "Short", stop=strategy.position_avg_price*(1 + stopLossPerc), limit=strategy.position_avg_price*(1 - takeProfitPerc))
+
+// ─── ON-CHART INFORMATION TABLE ───────────────────────────────────────────
+var table infoTable = table.new(position.top_left, 5, 2, border_width=1, frame_color=color.gray)
+if barstate.islast
+    table.cell(infoTable, 0, 0, "MACD", text_color=color.white, bgcolor=color.blue)
+    table.cell(infoTable, 1, 0, str.tostring(macdLine, "#.###"), text_color=color.white, bgcolor=color.black)
+    table.cell(infoTable, 0, 1, "Signal", text_color=color.white, bgcolor=color.blue)
+    table.cell(infoTable, 1, 1, str.tostring(signalLine, "#.###"), text_color=color.white, bgcolor=color.black)
+    table.cell(infoTable, 0, 2, "Volume", text_color=color.white, bgcolor=color.blue)
+    table.cell(infoTable, 1, 2, str.tostring(volume, "#.###"), text_color=color.white, bgcolor=color.black)
+    table.cell(infoTable, 0, 3, "VolAvg", text_color=color.white, bgcolor=color.blue)
+    table.cell(infoTable, 1, 3, str.tostring(volAvg, "#.###"), text_color=color.white, bgcolor=color.black)
+    table.cell(infoTable, 0, 4, "Trades Today", text_color=color.white, bgcolor=color.blue)
+    table.cell(infoTable, 1, 4, str.tostring(tradesToday), text_color=color.white, bgcolor=color.black)

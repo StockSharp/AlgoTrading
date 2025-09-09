@@ -1,0 +1,102 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// @ presentTrading
+
+//@version=5
+strategy("RMI Trend Sync - Strategy [presentTrading]", shorttitle = "RMI Sync [presentTrading]", overlay=true, precision=3,
+ commission_value= 0.1, commission_type=strategy.commission.percent, slippage= 1,
+  currency=currency.USD, default_qty_type = strategy.percent_of_equity, default_qty_value = 10, initial_capital= 10000)
+
+// ---> Inputs --------------
+// Add Button for Trading Direction
+tradeDirection = input.string("Both", "Select Trading Direction", options=["Long", "Short", "Both"])
+
+// Relative Momentum Index (RMI) Settings
+Length = input.int(21, "RMI Length", group = "RMI Settings")
+pmom = input.int(70, "Positive Momentum Threshold", group = "RMI Settings")
+nmom = input.int(30, "Negative Momentum Threshold", group = "RMI Settings")
+bandLength = input.int(30, "Band Length", group = "Momentum Settings")
+rwmaLength = input.int(20, "RWMA Length", group = "Momentum Settings")
+
+
+// Super Trend Settings
+len = input.int(10, "Super Trend Length", minval=1, group="Super Trend Settings")
+higherTf1 = input.timeframe('480', "Higher Time Frame", group="Super Trend Settings")
+factor = input.float(3.5, "Super Trend Factor", step=.1, group="Super Trend Settings")
+maSrc = input.string("WMA", "MA Source", options=["SMA", "EMA", "WMA", "RMA", "VWMA"], group="Super Trend Settings")
+atr = request.security(syminfo.tickerid, higherTf1, ta.atr(len))
+TfClose1 = request.security(syminfo.tickerid, higherTf1, close)
+
+// Visual Settings
+filleshow = input.bool(true, "Display Range MA", group = "Visual Settings")
+bull = input.color(#00bcd4, "Bullish Color", group = "Visual Settings")
+bear = input.color(#ff5252, "Bearish Color", group = "Visual Settings")
+
+// Calculation of Bar Range
+barRange = high - low
+
+// RMI and MFI Calculations
+upChange = ta.rma(math.max(ta.change(close), 0), Length)
+downChange = ta.rma(-math.min(ta.change(close), 0), Length)
+rsi = downChange == 0 ? 100 : upChange == 0 ? 0 : 100 - (100 / (1 + upChange / downChange))
+mf = ta.mfi(hlc3, Length)
+rsiMfi = math.avg(rsi, mf)
+
+// Momentum Conditions
+positiveMomentum = rsiMfi[1] < pmom and rsiMfi > pmom and rsiMfi > nmom and ta.change(ta.ema(close,5)) > 0
+negativeMomentum = rsiMfi < nmom and ta.change(ta.ema(close,5)) < 0
+
+// Momentum Status
+bool positive = positiveMomentum ? true : negativeMomentum ? false : na
+bool negative = negativeMomentum ? true : positiveMomentum ? false : na
+
+// Band Calculation
+calculateBand(len) =>
+    math.min(ta.atr(len) * 0.3, close * (0.3/100)) * 4
+
+band = calculateBand(bandLength)
+
+// Range Weighted Moving Average (RWMA) Calculation
+calculateRwma(range_, period) =>
+    weight = range_ / math.sum(range_, period)
+    sumWeightedClose = math.sum(close * weight, period)
+    totalWeight = math.sum(weight, period)
+    sumWeightedClose / totalWeight
+
+rwma = calculateRwma(barRange, rwmaLength)
+colour = positive ? bull : negative ? bear : na
+rwmaAdjusted = positive ? rwma - band : negative ? rwma + band : na
+
+max = rwma + band
+min = rwma - band
+
+longCondition       = positive and not positive[1]
+shortCondition      = negative and not negative[1]
+
+longExitCondition   = shortCondition
+shortExitCondition  = longCondition
+
+// Dynamic Trailing Stop Loss
+
+vwma1 = switch maSrc
+    "SMA"  => ta.sma(TfClose1*volume, len) / ta.sma(volume, len)
+    "EMA"  => ta.ema(TfClose1*volume, len) / ta.ema(volume, len)
+    "WMA"  => ta.wma(TfClose1*volume, len) / ta.wma(volume, len)
+
+upperBand = vwma1 + factor * atr
+lowerBand = vwma1 - factor * atr
+prevLowerBand = nz(lowerBand[1])
+prevUpperBand = nz(upperBand[1])
+float superTrend = na
+int direction = na
+superTrend := direction == -1 ? lowerBand : upperBand
+
+longTrailingStop = superTrend - atr * factor
+shortTrailingStop = superTrend + atr * factor
+
+// Strategy Order Execution
+if (tradeDirection == "Long" or tradeDirection == "Both")
+    strategy.entry("Long", strategy.long, when = longCondition)
+    strategy.exit("Exit Long", "Long", when=longExitCondition, stop = longTrailingStop)
+if (tradeDirection == "Short" or tradeDirection == "Both")
+    strategy.entry("Short", strategy.short, when =shortCondition)
+    strategy.exit("Exit Short", "Short", when=shortExitCondition, stop = shortTrailingStop)

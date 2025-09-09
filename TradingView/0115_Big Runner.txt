@@ -1,0 +1,84 @@
+//@version=5
+strategy("Big Runner", shorttitle="Sprinter", overlay=true,
+         initial_capital=100000,
+         default_qty_type=strategy.percent_of_equity,
+         default_qty_value=100)
+
+// Leverage Input
+leverage = input.float(1, title="Leverage", minval=1, step=0.1)
+
+// Moving Average Settings
+fastLength = input(5, title="Fast Length")
+slowLength = input(20, title="Slow Length")
+
+fastMA = ta.sma(close, fastLength)
+slowMA = ta.sma(close, slowLength)
+
+// Trend Ribbon Settings
+ribbonColor = input(true, title="Show Trend Ribbon")
+ribbonLength = input(20, title="Ribbon Length")
+ribbonColorUp = color.new(color.blue, 80)
+ribbonColorDown = color.new(color.red, 80)
+
+ribbonUp = ta.crossover(close, ta.sma(close, ribbonLength))
+ribbonDown = ta.crossunder(close, ta.sma(close, ribbonLength))
+
+// Buy and Sell Signals
+buySignal = ta.crossover(close, fastMA) and ta.crossover(fastMA, slowMA)
+sellSignal = ta.crossunder(close, fastMA) and ta.crossunder(fastMA, slowMA)
+
+// Input for SL/TP percentages and toggle
+use_sl_tp = input(true, title="Use Stop Loss/Take Profit")
+take_profit_long_percent = input(4.0, title="Take Profit Long (%)") / 100
+take_profit_short_percent = input(7.0, title="Take Profit Short (%)") / 100
+stop_loss_long_percent = input(2.0, title="Stop Loss Long (%)") / 100
+stop_loss_short_percent = input(2.0, title="Stop Loss Short (%)") / 100
+
+// Calculate SL and TP levels
+calculate_sl_tp(entryPrice, isLong) =>
+    stopLoss = isLong ? entryPrice * (1 - stop_loss_long_percent) : entryPrice * (1 + stop_loss_short_percent)
+    takeProfit = isLong ? entryPrice * (1 + take_profit_long_percent) : entryPrice * (1 - take_profit_short_percent)
+    [stopLoss, takeProfit]
+
+// Plotting Moving Averages
+plot(fastMA, color=color.blue, title="Fast MA")
+plot(slowMA, color=color.red, title="Slow MA")
+
+// Plotting Trend Ribbon
+bgcolor(ribbonColor ? ribbonUp ? ribbonColorUp : ribbonDown ? ribbonColorDown : na : na)
+
+// Calculate position size based on the percentage of the portfolio and leverage
+percentOfPortfolio = input.float(10, title="Percent of Portfolio")
+positionSizePercent = percentOfPortfolio / 100 * leverage
+positionSize = strategy.equity * positionSizePercent / close
+
+// Strategy Execution with Leverage
+var float stopLossLong = na
+var float takeProfitLong = na
+var float stopLossShort = na
+var float takeProfitShort = na
+
+if (buySignal)
+    entryPrice = close
+    [stopLossLong, takeProfitLong] = calculate_sl_tp(entryPrice, true)
+    strategy.entry("Buy", strategy.long, qty=positionSize)
+    if use_sl_tp
+        strategy.exit("Take Profit Long", "Buy", limit=takeProfitLong)
+        strategy.exit("Stop Loss Long", "Buy", stop=stopLossLong)
+
+if (sellSignal)
+    entryPrice = close
+    [stopLossShort, takeProfitShort] = calculate_sl_tp(entryPrice, false)
+    strategy.entry("Sell", strategy.short, qty=positionSize)
+    if use_sl_tp
+        strategy.exit("Take Profit Short", "Sell", limit=takeProfitShort)
+        strategy.exit("Stop Loss Short", "Sell", stop=stopLossShort)
+
+strategy.close("Buy", when = sellSignal)
+strategy.close("Sell", when = buySignal)
+
+// Manual Input Fields for API Parameters
+var string api_enter_long = input("", title="API Enter Long Parameters")
+var string api_exit_long = input("", title="API Exit Long Parameters")
+var string api_enter_short = input("", title="API Enter Short Parameters")
+var string api_exit_short = input("", title="API Exit Short Parameters")

@@ -1,0 +1,327 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © AliceTears
+
+//@version=5
+strategy("Indicator Test with Conditions Table", overlay=true, process_orders_on_close=true,initial_capital = 1000,currency = currency.USD,default_qty_type=strategy.cash,default_qty_value =10)
+
+// table
+enableTable = input.bool(true, "Show Table", group="Conditions Table")
+posTable = input.string("top right", "Table Condition Position",options = ["top left","top center","top right","middle left","middle center","middle right","bottom left","bottom center","bottom right"], group="Conditions Table")
+
+enableCloseTable = input.bool(true, "Show Close Condition Table", group="Conditions Table")
+posCloseTable = input.string("bottom right", "Close Condition Table Position",options = ["top left","top center","top right","middle left","middle center","middle right","bottom left","bottom center","bottom right"], group="Conditions Table")
+
+// Input sources for Long Conditions
+inputLong1_1 = input.source(close, "Long Input 1_1", group="Long Conditions1")
+longCond1 = input.string(">", "Long Condition 1", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Long Conditions1")
+inputLong1_2Source = input.source(close, "Long Input 1_2 (Source)", group="Long Conditions1")
+enableFloatLong1_2 = input.bool(false, "Use Float for Long Condition 1", group="Long Conditions1")
+inputLong1_2Float = enableFloatLong1_2 ? input.float(0.0, "Long Input 1_2 (Float)", group="Long Conditions1") : na
+enableLongCond1 = input.bool(true, "Enable Long Condition 1", group="Long Conditions1")
+
+logicalOperator12Long = input.string("AND", "Combine Long Input 1_2 and Input 2_1", options=["AND", "OR"], group="Long Conditions12")
+
+inputLong2_1 = input.source(close, "Long Input 2_1", group="Long Conditions2")
+longCond2 = input.string(">", "Long Condition 2", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Long Conditions2")
+inputLong2_2Source = input.source(close, "Long Input 2_2 (Source)", group="Long Conditions2")
+enableFloatLong2_2 = input.bool(false, "Use Float for Long Condition 2", group="Long Conditions2")
+inputLong2_2Float = input.float(0.0, "Long Input 2_2 (Float)", group="Long Conditions2")
+enableLongCond2 = input.bool(false, "Enable Long Condition 2", group="Long Conditions2")
+
+logicalOperator23Long = input.string("AND", "Combine Long Input 2_2 and Input 3_1", options=["AND", "OR"], group="Long Conditions23")
+
+inputLong3_1 = input.source(close, "Long Input 3_1", group="Long Conditions3")
+longCond3 = input.string(">", "Long Condition 3", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Long Conditions3")
+inputLong3_2Source = input.source(close, "Long Input 3_2 (Source)", group="Long Conditions3")
+enableFloatLong3_2 = input.bool(false, "Use Float for Long Condition 3", group="Long Conditions3")
+inputLong3_2Float = input.float(0.0, "Long Input 3_2 (Float)", group="Long Conditions3")
+enableLongCond3 = input.bool(false, "Enable Long Condition 3", group="Long Conditions3")
+
+// Input sources for Close Long Conditions
+inputCloseLong1_1 = input.source(close, "Close Long Input 1_1", group="Close Long Conditions1")
+longCloseCond1 = input.string(">", "Close Long Condition 1", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Close Long Conditions1")
+inputCloseLong1_2Source = input.source(close, "Close Long Input 1_2 (Source)", group="Close Long Conditions1")
+enableFloatCloseLong1_2 = input.bool(false, "Use Float for Long Condition 1", group="Close Long Conditions1")
+inputCloseLong1_2Float = enableFloatCloseLong1_2 ? input.float(0.0, "Close Long Input 1_2 (Float)", group="Close Long Conditions1") : na
+enableCloseLongCond1 = input.bool(false, "Enable Close Long Condition 1", group="Close Long Conditions1")
+
+logicalOperator12CloseLong = input.string("AND", "Combine Close Long Input 1_2 and Input 2_1", options=["AND", "OR"], group="Close Long Conditions12")
+
+inputCloseLong2_1 = input.source(close, "Close Long Input 2_1", group="Close Long Conditions2")
+longCloseCond2 = input.string(">", "Close Long Condition 2", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Close Long Conditions2")
+inputCloseLong2_2Source = input.source(close, "Close Long Input 2_2 (Source)", group="Close Long Conditions2")
+enableFloatCloseLong2_2 = input.bool(false, "Use Float for Close Long Condition 2", group="Close Long Conditions2")
+inputCloseLong2_2Float = input.float(0.0, "Close Long Input 2_2 (Float)", group="Close Long Conditions2")
+enableCloseLongCond2 = input.bool(false, "Enable Close Long Condition 2", group="Close Long Conditions2")
+
+logicalOperator23CloseLong = input.string("AND", "Combine Long Input 2_2 and Input 3_1", options=["AND", "OR"], group="Close Long Conditions23")
+
+inputCloseLong3_1 = input.source(close, "Close Long Input 3_1", group="Close Long Conditions3")
+longCloseCond3 = input.string(">", "Close Long Condition 3", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Close Long Conditions3")
+inputCloseLong3_2Source = input.source(close, "Close Long Input 3_2 (Source)", group="Close Long Conditions3")
+enableFloatCloseLong3_2 = input.bool(false, "Use Float for Close Long Condition 3", group="Close Long Conditions3")
+inputCloseLong3_2Float = input.float(0.0, "Close Long Input 3_2 (Float)", group="Close Long Conditions3")
+enableCloseLongCond3 = input.bool(false, "Enable Close Long Condition 3", group="Close Long Conditions3")
+
+// Input sources for Short Conditions
+inputShort1_1 = input.source(close, "Short Input 1_1", group="Short Conditions1")
+shortCond1 = input.string(">", "Short Condition 1", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Short Conditions1")
+inputShort1_2Source = input.source(close, "Short Input 1_2 (Source)", group="Short Conditions1")
+enableFloatShort1_2 = input.bool(false, "Use Float for Short Condition 1", group="Short Conditions1")
+inputShort1_2Float = input.float(0.0, "Short Input 1_2 (Float)", group="Short Conditions1")
+enableShortCond1 = input.bool(false, "Enable Short Condition 1", group="Short Conditions1")
+
+logicalOperator12Short = input.string("AND", "Combine Short Input 1_2 and Input 2_1", options=["AND", "OR"], group="Short Conditions12")
+
+inputShort2_1 = input.source(close, "Short Input 2_1", group="Short Conditions2")
+shortCond2 = input.string(">", "Short Condition 2", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Short Conditions2")
+inputShort2_2Source = input.source(close, "Short Input 2_2 (Source)", group="Short Conditions2")
+enableFloatShort2_2 = input.bool(false, "Use Float for Short Condition 2", group="Short Conditions2")
+inputShort2_2Float = input.float(0.0, "Short Input 2_2 (Float)", group="Short Conditions2")
+enableShortCond2 = input.bool(false, "Enable Short Condition 2", group="Short Conditions2")
+
+logicalOperator23Short = input.string("AND", "Combine Short Input 2_2 and Input 3_1", options=["AND", "OR"], group="Short Conditions23")
+
+inputShort3_1 = input.source(close, "Short Input 3_1", group="Short Conditions3")
+shortCond3 = input.string(">", "Short Condition 3", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Short Conditions3")
+inputShort3_2Source = input.source(close, "Short Input 3_2 (Source)", group="Short Conditions3")
+enableFloatShort3_2 = input.bool(false, "Use Float for Short Condition 3", group="Short Conditions3")
+inputShort3_2Float = input.float(0.0, "Short Input 3_2 (Float)", group="Short Conditions3")
+enableShortCond3 = input.bool(false, "Enable Short Condition 3", group="Short Conditions3")
+
+// Input sources for Close Short Conditions
+inputCloseShort1_1 = input.source(close, "Close Short Input 1_1", group="Close Short Conditions1")
+shortCloseCond1 = input.string(">", "Close Short Condition 1", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Close Short Conditions1")
+inputCloseShort1_2Source = input.source(close, "Close Short Input 1_2 (Source)", group="Close Short Conditions1")
+enableFloatCloseShort1_2 = input.bool(false, "Use Float for Short Condition 1", group="Close Short Conditions1")
+inputCloseShort1_2Float = enableFloatCloseShort1_2 ? input.float(0.0, "Close Short Input 1_2 (Float)", group="Close Short Conditions1") : na
+enableCloseShortCond1 = input.bool(false, "Enable Close Short Condition 1", group="Close Short Conditions1")
+
+logicalOperator12CloseShort = input.string("AND", "Combine Close Short Input 1_2 and Input 2_1", options=["AND", "OR"], group="Close Short Conditions12")
+
+inputCloseShort2_1 = input.source(close, "Close Short Input 2_1", group="Close Short Conditions2")
+shortCloseCond2 = input.string(">", "Close Short Condition 2", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Close Short Conditions2")
+inputCloseShort2_2Source = input.source(close, "Close Short Input 2_2 (Source)", group="Close Short Conditions2")
+enableFloatCloseShort2_2 = input.bool(false, "Use Float for Close Short Condition 2", group="Close Short Conditions2")
+inputCloseShort2_2Float = input.float(0.0, "Close Short Input 2_2 (Float)", group="Close Short Conditions2")
+enableCloseShortCond2 = input.bool(false, "Enable Close Short Condition 2", group="Close Short Conditions2")
+
+logicalOperator23CloseShort = input.string("AND", "Combine Short Input 2_2 and Input 3_1", options=["AND", "OR"], group="Close Short Conditions23")
+
+inputCloseShort3_1 = input.source(close, "Close Short Input 3_1", group="Close Short Conditions3")
+shortCloseCond3 = input.string(">", "Close Short Condition 3", options=[">", "<", "=", ">=", "<=", "crossover", "crossunder", "!="], group="Close Short Conditions3")
+inputCloseShort3_2Source = input.source(close, "Close Short Input 3_2 (Source)", group="Close Short Conditions3")
+enableFloatCloseShort3_2 = input.bool(false, "Use Float for Close Short Condition 3", group="Close Short Conditions3")
+inputCloseShort3_2Float = input.float(0.0, "Close Short Input 3_2 (Float)", group="Close Short Conditions3")
+enableCloseShortCond3 = input.bool(false, "Enable Close Short Condition 3", group="Close Short Conditions3")
+
+// Function to evaluate the condition based on the operator
+evaluateCondition(input1, cond, input2) =>
+    switch cond
+        ">" => input1 > input2
+        "<" => input1 < input2
+        "=" => input1 == input2
+        ">=" => input1 >= input2
+        "<=" => input1 <= input2
+        "!=" => input1 != input2
+        "crossover" => ta.crossover(input1, input2)
+        "crossunder" => ta.crossunder(input1, input2)
+        => false // Default case if no condition matches
+
+// Function to check condition with enable flag
+checkCondition(input1, cond, input2, enabled) =>
+    enabled ? evaluateCondition(input1, cond, input2) : false
+
+// Get the appropriate input based on checkbox (source or float)
+getInputValue(enableFloat, inputSource, inputFloat) =>
+    enableFloat ? inputFloat : inputSource
+
+// Evaluate Long Conditions with float/source check
+longInput1_2 = getInputValue(enableFloatLong1_2, inputLong1_2Source, inputLong1_2Float)
+longCondition1 = enableLongCond1 ? checkCondition(inputLong1_1, longCond1, longInput1_2, true) : false
+
+longInput2_2 = getInputValue(enableFloatLong2_2, inputLong2_2Source, inputLong2_2Float)
+longCondition2 = enableLongCond2 ? checkCondition(inputLong2_1, longCond2, longInput2_2, true) : false
+
+longInput3_2 = getInputValue(enableFloatLong3_2, inputLong3_2Source, inputLong3_2Float)
+longCondition3 = enableLongCond3 ? checkCondition(inputLong3_1, longCond3, longInput3_2, true) : false
+
+// Evaluate logical operators between Long conditions
+longEntryCondition = enableLongCond1 ? (enableLongCond2 ? (enableLongCond3 ? (logicalOperator23Long == 'OR' ? (logicalOperator12Long == 'OR' ? longCondition1 or longCondition2 or longCondition3 : longCondition1 and (longCondition2 or longCondition3)) : (logicalOperator12Long == 'OR' ? longCondition1 or (longCondition2 and longCondition3) : longCondition1 and longCondition2 and longCondition3)) : (logicalOperator12Long == 'OR' ? longCondition1 or longCondition2 : longCondition1 and longCondition2)) : longCondition1) : false
+
+// Evaluate Close Long Conditions with float/source check
+longCloseInput1_2 = getInputValue(enableFloatCloseLong1_2, inputCloseLong1_2Source, inputCloseLong1_2Float)
+longCloseCondition1 = enableCloseLongCond1 ? checkCondition(inputCloseLong1_1, longCloseCond1, longCloseInput1_2, true) : false
+
+longCloseInput2_2 = getInputValue(enableFloatCloseLong2_2, inputCloseLong2_2Source, inputCloseLong2_2Float)
+longCloseCondition2 = enableCloseLongCond2 ? checkCondition(inputCloseLong2_1, longCloseCond2, longCloseInput2_2, true) : false
+
+longCloseInput3_2 = getInputValue(enableFloatCloseLong3_2, inputCloseLong3_2Source, inputCloseLong3_2Float)
+longCloseCondition3 = enableCloseLongCond3 ? checkCondition(inputCloseLong3_1, longCloseCond3, longCloseInput3_2, true) : false
+
+// Evaluate logical operators between Long conditions
+longCloseCondition = enableCloseLongCond1 ? (enableCloseLongCond2 ? (enableCloseLongCond3 ? (logicalOperator23CloseLong == 'OR' ? (logicalOperator12CloseLong == 'OR' ? longCloseCondition1 or longCloseCondition2 or longCloseCondition3 : longCloseCondition1 and (longCloseCondition2 or longCloseCondition3)) : (logicalOperator12CloseLong == 'OR' ? longCloseCondition1 or (longCloseCondition2 and longCloseCondition3) : longCloseCondition1 and longCloseCondition2 and longCloseCondition3)) : (logicalOperator12CloseLong == 'OR' ? longCloseCondition1 or longCloseCondition2 : longCloseCondition1 and longCloseCondition2)) : longCloseCondition1) : false
+
+
+// Evaluate Short Conditions with float/source check
+shortInput1_2 = getInputValue(enableFloatShort1_2, inputShort1_2Source, inputShort1_2Float)
+shortCondition1 = enableShortCond1 ? checkCondition(inputShort1_1, shortCond1, shortInput1_2, true) : false
+
+shortInput2_2 = getInputValue(enableFloatShort2_2, inputShort2_2Source, inputShort2_2Float)
+shortCondition2 = enableShortCond2 ? checkCondition(inputShort2_1, shortCond2, shortInput2_2, true) : false
+
+shortInput3_2 = getInputValue(enableFloatShort3_2, inputShort3_2Source, inputShort3_2Float)
+shortCondition3 = enableShortCond3 ? checkCondition(inputShort3_1, shortCond3, shortInput3_2, true) : false
+
+// Evaluate logical operators between Short conditions
+shortConditionCombined = (logicalOperator12Short == 'OR') ? (shortCondition1 or shortCondition2) : (shortCondition1 and shortCondition2)
+shortConditionFinal = (enableShortCond3) ? ((logicalOperator23Short == 'OR') ? (shortConditionCombined or shortCondition3) : (shortConditionCombined and shortCondition3)) : shortConditionCombined
+
+shortEntryCondition = enableShortCond1 ? (enableShortCond2 ? (enableShortCond3 ? (logicalOperator23Short == 'OR' ? (logicalOperator12Short == 'OR' ? shortCondition1 or shortCondition2 or shortCondition3 : shortCondition1 and (shortCondition2 or shortCondition3)) : (logicalOperator12Short == 'OR' ? shortCondition1 or (shortCondition2 and shortCondition3) : shortCondition1 and shortCondition2 and shortCondition3)) : (logicalOperator12Short == 'OR' ? shortCondition1 or shortCondition2 : shortCondition1 and shortCondition2)) : shortCondition1) : false
+
+// Evaluate Close Short Conditions with float/source check
+shortCloseInput1_2 = getInputValue(enableFloatCloseShort1_2, inputCloseShort1_2Source, inputCloseShort1_2Float)
+shortCloseCondition1 = enableCloseShortCond1 ? checkCondition(inputCloseShort1_1, shortCloseCond1, shortCloseInput1_2, true) : false
+
+shortCloseInput2_2 = getInputValue(enableFloatCloseShort2_2, inputCloseShort2_2Source, inputCloseShort2_2Float)
+shortCloseCondition2 = enableCloseShortCond2 ? checkCondition(inputCloseShort2_1, shortCloseCond2, shortCloseInput2_2, true) : false
+
+shortCloseInput3_2 = getInputValue(enableFloatCloseShort3_2, inputCloseShort3_2Source, inputCloseShort3_2Float)
+shortCloseCondition3 = enableCloseShortCond3 ? checkCondition(inputCloseShort3_1, shortCloseCond3, shortCloseInput3_2, true) : false
+
+// Evaluate logical operators between Short conditions
+shortCloseCondition = enableCloseShortCond1 ? (enableCloseShortCond2 ? (enableCloseShortCond3 ? (logicalOperator23CloseShort == 'OR' ? (logicalOperator12CloseShort == 'OR' ? shortCloseCondition1 or shortCloseCondition2 or shortCloseCondition3 : shortCloseCondition1 and (shortCloseCondition2 or shortCloseCondition3)) : (logicalOperator12CloseShort == 'OR' ? shortCloseCondition1 or (shortCloseCondition2 and shortCloseCondition3) : shortCloseCondition1 and shortCloseCondition2 and shortCloseCondition3)) : (logicalOperator12CloseShort == 'OR' ? shortCloseCondition1 or shortCloseCondition2 : shortCloseCondition1 and shortCloseCondition2)) : shortCloseCondition1) : false
+
+if longCloseCondition
+    strategy.close("Long","close long")
+if shortCloseCondition
+    strategy.close("Short","close short")
+
+// Enter long position if combined long condition is met
+if longEntryCondition
+    strategy.entry("Long", strategy.long)
+
+// Enter short position if combined short condition is met
+if shortEntryCondition
+    strategy.entry("Short", strategy.short)
+
+
+tablepos(input) =>
+    switch input
+        "top left" => position.top_left
+        "top center" => position.top_center
+        "top right" => position.top_right
+        "middle left" => position.middle_left
+        "middle center" => position.middle_center
+        "middle right" => position.middle_right
+        "bottom left" => position.bottom_left
+        "bottom center" => position.bottom_center
+        "bottom right" => position.bottom_right
+        => position.top_left // Default case if no condition matches
+
+// Create a table to display the conditions
+if enableTable
+    var table conditionTable = table.new(tablepos(posTable), 6, 11, border_width=1, frame_color=color.gray, bgcolor=color.white)
+
+    // Update the table with the current condition status
+    table.cell(conditionTable, 0, 0, "Condition", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 0, "Enabled", bgcolor=color.gray)
+    table.cell(conditionTable, 2, 0, "Cond", bgcolor=color.gray)
+    table.cell(conditionTable, 3, 0, "Cond value", bgcolor=color.gray)
+
+    table.cell(conditionTable, 0, 1, "Long 1", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 1, str.tostring(enableLongCond1))
+    table.cell(conditionTable, 2, 1, str.tostring(longCondition1))
+    table.cell(conditionTable, 3, 1, str.tostring(inputLong1_1)+str.tostring(longCond1)+str.tostring(longInput1_2))
+
+    table.cell(conditionTable, 0, 2, "Long 12", bgcolor=color.gray)
+    table.cell(conditionTable, 2, 2, str.tostring(logicalOperator12Long))
+
+    table.cell(conditionTable, 0, 3, "Long 2", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 3, str.tostring(enableLongCond2))
+    table.cell(conditionTable, 2, 3, str.tostring(longCondition2))
+    table.cell(conditionTable, 3, 3, str.tostring(inputLong2_1)+str.tostring(longCond2)+str.tostring(longInput2_2))
+
+
+    table.cell(conditionTable, 0, 4, "Long 23", bgcolor=color.gray)
+    table.cell(conditionTable, 2, 4, str.tostring(logicalOperator23Long))
+
+    table.cell(conditionTable, 0, 5, "Long 3", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 5, str.tostring(enableLongCond3))
+    table.cell(conditionTable, 2, 5, str.tostring(longCondition3))
+    table.cell(conditionTable, 3, 5, str.tostring(inputLong3_1)+str.tostring(longCond3)+str.tostring(longInput3_2))
+
+    // Short condition rows in the table
+    table.cell(conditionTable, 0, 6, "Short 1", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 6, str.tostring(enableShortCond1))
+    table.cell(conditionTable, 2, 6, str.tostring(shortCondition1))
+    table.cell(conditionTable, 3, 6, str.tostring(inputShort1_1)+str.tostring(shortCond1)+str.tostring(shortInput1_2))
+
+    table.cell(conditionTable, 0, 7, "Short 12", bgcolor=color.gray)
+    table.cell(conditionTable, 2, 7, str.tostring(logicalOperator12Short))
+
+    table.cell(conditionTable, 0, 8, "Short 2", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 8, str.tostring(enableShortCond2))
+    table.cell(conditionTable, 2, 8, str.tostring(shortCondition2))
+    table.cell(conditionTable, 3, 8, str.tostring(inputShort2_1)+str.tostring(shortCond2)+str.tostring(shortInput2_2))
+
+    table.cell(conditionTable, 0, 9, "Short 23", bgcolor=color.gray)
+    table.cell(conditionTable, 2, 9, str.tostring(logicalOperator23Short))
+
+    table.cell(conditionTable, 0, 10, "Short 3", bgcolor=color.gray)
+    table.cell(conditionTable, 1, 10, str.tostring(enableShortCond3))
+    table.cell(conditionTable, 2, 10, str.tostring(shortCondition3))
+    table.cell(conditionTable, 3, 10, str.tostring(inputShort3_1)+str.tostring(shortCond3)+str.tostring(shortInput3_2))
+
+if enableCloseTable
+    var table closeconditionTable = table.new(tablepos(posCloseTable), 6, 11, border_width=1, frame_color=color.gray, bgcolor=color.white)
+
+    // Update the table with the current condition status
+    table.cell(closeconditionTable, 0, 0, "Condition", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 0, "Enabled", bgcolor=color.gray)
+    table.cell(closeconditionTable, 2, 0, "Cond", bgcolor=color.gray)
+    table.cell(closeconditionTable, 3, 0, "Cond value", bgcolor=color.gray)
+
+    table.cell(closeconditionTable, 0, 1, "Close Long 1", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 1, str.tostring(enableCloseLongCond1))
+    table.cell(closeconditionTable, 2, 1, str.tostring(longCloseCondition1))
+    table.cell(closeconditionTable, 3, 1, str.tostring(inputCloseLong1_1)+str.tostring(longCloseCond1)+str.tostring(longCloseInput1_2))
+
+    table.cell(closeconditionTable, 0, 2, "Close Long 12", bgcolor=color.gray)
+    table.cell(closeconditionTable, 2, 2, str.tostring(logicalOperator12CloseLong))
+
+    table.cell(closeconditionTable, 0, 3, "Close Long 2", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 3, str.tostring(enableCloseLongCond2))
+    table.cell(closeconditionTable, 2, 3, str.tostring(longCloseCondition2))
+    table.cell(closeconditionTable, 3, 3, str.tostring(inputCloseLong2_1)+str.tostring(longCloseCond2)+str.tostring(longCloseInput2_2))
+
+
+    table.cell(closeconditionTable, 0, 4, "Close Long 23", bgcolor=color.gray)
+    table.cell(closeconditionTable, 2, 4, str.tostring(logicalOperator23CloseLong))
+
+    table.cell(closeconditionTable, 0, 5, "Close Long 3", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 5, str.tostring(enableCloseLongCond3))
+    table.cell(closeconditionTable, 2, 5, str.tostring(longCloseCondition3))
+    table.cell(closeconditionTable, 3, 5, str.tostring(inputCloseLong3_1)+str.tostring(longCloseCond3)+str.tostring(longCloseInput3_2))
+
+    // Short condition rows in the table
+    table.cell(closeconditionTable, 0, 6, "Close Short 1", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 6, str.tostring(enableCloseShortCond1))
+    table.cell(closeconditionTable, 2, 6, str.tostring(shortCloseCondition1))
+    table.cell(closeconditionTable, 3, 6, str.tostring(inputCloseShort1_1)+str.tostring(shortCloseCond1)+str.tostring(shortCloseInput1_2))
+
+    table.cell(closeconditionTable, 0, 7, "Close Short 12", bgcolor=color.gray)
+    table.cell(closeconditionTable, 2, 7, str.tostring(logicalOperator12CloseShort))
+
+    table.cell(closeconditionTable, 0, 8, "Close Short 2", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 8, str.tostring(enableCloseShortCond2))
+    table.cell(closeconditionTable, 2, 8, str.tostring(shortCloseCondition2))
+    table.cell(closeconditionTable, 3, 8, str.tostring(inputCloseShort2_1)+str.tostring(shortCloseCond2)+str.tostring(shortCloseInput2_2))
+
+    table.cell(closeconditionTable, 0, 9, "Close Short 23", bgcolor=color.gray)
+    table.cell(closeconditionTable, 2, 9, str.tostring(logicalOperator23Short))
+
+    table.cell(closeconditionTable, 0, 10, "Close Short 3", bgcolor=color.gray)
+    table.cell(closeconditionTable, 1, 10, str.tostring(enableCloseShortCond3))
+    table.cell(closeconditionTable, 2, 10, str.tostring(shortCloseCondition3))
+    table.cell(closeconditionTable, 3, 10, str.tostring(inputCloseShort3_1)+str.tostring(shortCloseCond3)+str.tostring(shortCloseInput3_2))

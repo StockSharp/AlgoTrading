@@ -1,0 +1,61 @@
+//@version=5
+strategy("Supertrend and MACD strategy", overlay=true)
+
+// Supertrend
+atrPeriod = input.int(10, "ATR Length", minval=1)
+factor = input.float(3.0, "Factor", minval=0.01, step=0.01)
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+supertrend := barstate.isfirst ? na : supertrend
+upTrend = plot(direction < 0 ? supertrend : na, "Up Trend", color=color.green, style=plot.style_linebr)
+downTrend = plot(direction < 0 ? na : supertrend, "Down Trend", color=color.red, style=plot.style_linebr)
+bodyMiddle = plot(barstate.isfirst ? na : (open + close) / 2, "Body Middle", display=display.none)
+fill(bodyMiddle, upTrend, color.new(color.green, 90), fillgaps=false)
+fill(bodyMiddle, downTrend, color.new(color.red, 90), fillgaps=false)
+
+// EMA 200
+ema200 = ta.ema(close, 200)
+plot(ema200, title="EMA 200", color=color.blue, linewidth=2)
+
+// MACD
+fast_length = 12
+slow_length = 26
+src = close
+signal_length = 9
+fast_ma = ta.ema(src, fast_length)
+slow_ma = ta.ema(src, slow_length)
+macd = fast_ma - slow_ma
+signal = ta.ema(macd, signal_length)
+hist = macd - signal
+
+plot(hist, title="Histogram", style=plot.style_columns, color=(hist >= 0 ? (hist[1] < hist ? color.green : color.lime) : (hist[1] < hist ? color.red : color.maroon)))
+plot(macd, title="MACD", color=color.blue)
+plot(signal, title="Signal", color=color.orange)
+hline(0, "Zero Line", color=color.gray)
+
+// Entry and Exit Conditions
+longCondition = direction > 0 and macd > signal and close > ema200
+shortCondition = direction < 0 and macd < signal and close < ema200
+
+lowestLow = ta.lowest(low, 10)
+highestHigh = ta.highest(high, 10)
+
+// Preventing New Entries if There is an Open Trade
+if (strategy.opentrades == 0)
+    // Long Entry
+    if (longCondition)
+        strategy.entry("Long", strategy.long)
+        strategy.exit("Exit Long", "Long", stop = lowestLow - 1)  // SL below the last low
+
+    // Short Entry
+    if (shortCondition)
+        strategy.entry("Short", strategy.short)
+        strategy.exit("Exit Short", "Short", stop = highestHigh + 1)  // SL above the last high
+
+// Exit
+if (ta.crossover(macd, signal))
+    strategy.close("Long")
+if (ta.crossunder(macd, signal))
+    strategy.close("Short")
+
+alertcondition(ta.crossover(macd, signal), title='MACD Crossover', message='MACD crossed above the signal line')
+alertcondition(ta.crossunder(macd, signal), title='MACD Crossunder', message='MACD crossed below the signal line')

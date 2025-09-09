@@ -1,0 +1,332 @@
+// This work is licensed under Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License (CC BY-NC-SA 4.0) https://creativecommons.org/licenses/by-nc-sa/4.0/
+// © Trendoscope Pty Ltd Trendoscope®
+//                                       ░▒
+//                                  ▒▒▒   ▒▒
+//                              ▒▒▒▒▒     ▒▒
+//                      ▒▒▒▒▒▒▒░     ▒     ▒▒
+//                  ▒▒▒▒▒▒           ▒     ▒▒
+//             ▓▒▒▒       ▒        ▒▒▒▒▒▒▒▒▒▒▒
+//   ▒▒▒▒▒▒▒▒▒▒▒ ▒        ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+//   ▒  ▒       ░▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░
+//   ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒░▒▒▒▒▒▒▒▒
+//   ▓▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒ ▒▒
+//    ▒▒▒▒▒         ▒▒▒▒▒▒▒
+//                 ▒▒▒▒▒▒▒▒▒
+//                ▒▒▒▒▒ ▒▒▒▒▒
+//               ░▒▒▒▒   ▒▒▒▒▓      ████████╗██████╗ ███████╗███╗   ██╗██████╗  ██████╗ ███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+//              ▓▒▒▒▒     ▒▒▒▒      ╚══██╔══╝██╔══██╗██╔════╝████╗  ██║██╔══██╗██╔═══██╗██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+//              ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒        ██║   ██████╔╝█████╗  ██╔██╗ ██║██║  ██║██║   ██║███████╗██║     ██║   ██║██████╔╝█████╗
+//             ▒▒▒▒▒       ▒▒▒▒▒       ██║   ██╔══██╗██╔══╝  ██║╚██╗██║██║  ██║██║   ██║╚════██║██║     ██║   ██║██╔═══╝ ██╔══╝
+//            ▒▒▒▒▒         ▒▒▒▒▒      ██║   ██║  ██║███████╗██║ ╚████║██████╔╝╚██████╔╝███████║╚██████╗╚██████╔╝██║     ███████╗
+//             ▒▒             ▒
+//@version=6
+import Trendoscope/Drawing/4 as dr
+import Trendoscope/Zigzag/11 as zg
+import Trendoscope/oota/1 as eta
+strategy('Divergence Strategy [Trendoscope®]', 'DStr1.1[Trendoscope®]', overlay = false, max_lines_count = 500, max_labels_count = 500, max_polylines_count = 100, calc_bars_count = 5000,
+     dynamic_requests = true, initial_capital=1000000, default_qty_type=strategy.percent_of_equity, default_qty_value=20,
+     commission_type=strategy.commission.percent, pyramiding=4, commission_value=0.1, explicit_plot_zorder=true,
+     margin_long=100.0, margin_short=100.0, max_bars_back=5000)
+import HeWhoMustNotBeNamed/strategy/5 as st
+
+oscillator(simple string type = 'rsi', simple int length = 14, float source = close, float highSource = high, float lowSource = low) =>
+    oscillator = switch type
+        'cci' => ta.cci(source, length)
+        'cmo' => ta.cmo(source, length)
+        'cog' => ta.cog(source, length)
+        'mfi' => ta.mfi(source, length)
+        'roc' => ta.roc(source, length)
+        'rsi' => ta.rsi(source, length)
+        'stoch' => ta.stoch(source, highSource, lowSource, length)
+        'wpr' => ta.wpr(length)
+        => ta.rsi(source, length)
+    oscillator
+
+enum TradeDirection
+    Long
+    Short
+
+enum TradeDivergence
+    Regular
+    Hidden
+    Both
+
+enum EntryType
+    Cautious
+    Confident
+    Mixed
+
+tradeDirection = input.enum(TradeDirection.Long, 'Direction', tooltip='Choose to trade only long or short positions. Simultaneous long and short trades are disabled to avoid conflicts.', group='Trade', display = display.none)
+tradeDivergence = input.enum(TradeDivergence.Both, 'Divergence', tooltip='Select to trade regular divergences (reversals), hidden divergences (continuations), or both.', group='Trade', display = display.none)
+entryType = input.enum(EntryType.Cautious, 'Entry/Exit Type', tooltip = 'Cautious: Conservative entry, quick exit. \nConfident: Aggressive entry, delayed exit. \nMixed: Conservative entry, delayed exit.', group='Trade', display=display.none)
+riskReward = input.float(2.0, 'Risk/Reward', tooltip = 'Define the profit target as a multiple of the risk (stop-loss distance) for each trade.', group = 'Trade', display = display.none)
+marketEntry = input.bool(false, 'Use Market Order', tooltip = 'Enable to execute trades at the current market price; disable for stop orders at specific price levels.', group='Trade', display=display.none)
+cancelPendingOrders = input.bool(true, 'Cancel On Break', 'If enabled, pending orders are canceled when price moves against the divergence. If disabled, orders remain active until entry is triggered', group='Trade', display=display.none)
+
+oscillatorType = input.string('rsi', 'Oscillator', ['rsi', 'cci', 'cmo', 'cog', 'mfi', 'roc', 'stoch', 'wpr'], inline = 'osc', group = 'Oscillator', display = display.none)
+length = input.int(14, '', group = 'Oscillator', inline = 'osc', tooltip = 'Select the oscillator type and period, or use an external oscillator for divergence calculations.', display = display.none)
+useExternalOscillator = input.bool(false, 'Use External Oscillator', inline = 'eosc', group = 'Oscillator', display = display.none)
+externalOscillator = input.source(close, '', 'Use external oscillator instead of the built ins', inline = 'eosc', group = 'Oscillator', display = display.none)
+
+rsiColor = color.blue
+
+trendTypeTooltip = 'Choose how trends are identified:\n' + '\tZigzag - HH, HL on the starting pivot of divergence line is considered as uptrend and LL, LH on the starting pivot of divergence line is considered as downtrend\n' + '\tMA Difference - Difference between moving average of divergence line pivot will define the trend\n' + '\tExternal - Use External Oscillator Input'
+trendMethod = input.string('Zigzag', 'Trend Detection Method', ['Zigzag', 'MA Difference', 'External'], group = 'Trend', display = display.none, tooltip = trendTypeTooltip)
+maType = input.enum(eta.CustomSeries.SMA, 'MA Filter', inline = 'ma', group = 'Trend', display = display.none)
+maLength = input.int(200, '', minval = 5, step = 50, inline = 'ma', group = 'Trend', display = display.none, tooltip = 'Moving Average to identify trend. Direction of moving average between the divergence pivots identify trend')
+externalTrendSignal = input.source(close, 'External Trend Signal', 'Use External trend signal instead of the built in. The external indicator should return positive value for uptrend and negative value for downtrend', group = 'Trend', display = display.none)
+
+zigzagLength = input.int(13, 'Length', group = 'Zigzag', tooltip = 'Set the zigzag length to adjust pivot detection sensitivity for divergence signals.', display = display.none)
+
+repaint = true
+textColor = chart.bg_color
+
+trendMethodInt = trendMethod == 'Zigzag' ? 1 : trendMethod == 'External' ? 3 : 2
+var map<int, float> priceMap = map.new<int, float>()
+var map<int, float> oscillatorMap = map.new<int, float>()
+priceMap.put(bar_index, close)
+
+enum DivergenceType
+    BullishDivergence = "Bullish Divergence"
+    BearishDivergence = "Bearish Divergence"
+    BullishHiddenDivergence = "Bullish Hidden Divergence"
+    BearishHiddenDivergence = "Bearish Hidden Divergence"
+    None = "None"
+
+type TradeDrawing
+    dr.Box targetBox
+    dr.Box stopBox
+    dr.Box progressBox
+
+type DivergenceObject
+    int id
+    dr.Line priceLine
+    dr.Line oscillatorLine
+    dr.Label priceLabel
+    dr.Label oscillatorLabel
+    chart.point pricePoint
+    chart.point pivotPoint
+    chart.point lastPoint
+    DivergenceType divergenceType
+    TradeDrawing trade
+    bool broken = false
+
+method delete(TradeDrawing this)=>
+    this.targetBox.delete()
+    this.stopBox.delete()
+
+method draw(TradeDrawing this)=>
+    this.targetBox.draw()
+    this.stopBox.draw()
+
+method delete(DivergenceObject this)=>
+    this.priceLine.delete()
+    this.oscillatorLine.delete()
+    this.priceLabel.delete()
+    this.oscillatorLabel.delete()
+    if not na(this.trade)
+        this.trade.delete()
+    this
+
+method draw(DivergenceObject this)=>
+    this.delete()
+    this.priceLine.draw()
+    this.oscillatorLine.draw()
+    this.priceLabel.draw()
+    this.oscillatorLabel.draw()
+    if not na(this.trade)
+        this.trade.draw()
+    this
+
+type ZigzagProperties
+    color textColor = color.black
+    int trendMethod = 1
+    bool repaint = false
+
+enum PivotDirection
+    HH = "Higher High"
+    LH = "Lower High"
+    HL = "Higher Low"
+    LL = "Lower Low"
+
+getDivergenceType(direction, divergence)=>
+    direction > 0?
+         (divergence > 0 ? DivergenceType.BearishDivergence : DivergenceType.BearishHiddenDivergence):
+         (divergence > 0 ? DivergenceType.BullishDivergence : DivergenceType.BullishHiddenDivergence)
+
+getPivotDirection(dir, ratio) =>
+    dir > 0 ? (ratio > 1 ? PivotDirection.HH : PivotDirection.LH) : ratio > 1 ? PivotDirection.LL : PivotDirection.HL
+
+getLinePropertiesMap(bool force_overlay=false)=>
+    linePropertiesMap = map.new<DivergenceType, dr.LineProperties>()
+    linePropertiesMap.put(DivergenceType.BullishDivergence, dr.LineProperties.new(xloc.bar_time, extend.none, color.green, line.style_solid, 1, force_overlay))
+    linePropertiesMap.put(DivergenceType.BearishDivergence, dr.LineProperties.new(xloc.bar_time, extend.none, color.red, line.style_solid, 1, force_overlay))
+    linePropertiesMap.put(DivergenceType.BullishHiddenDivergence, dr.LineProperties.new(xloc.bar_time, extend.none, color.lime, line.style_solid, 1, force_overlay))
+    linePropertiesMap.put(DivergenceType.BearishHiddenDivergence, dr.LineProperties.new(xloc.bar_time, extend.none, color.orange, line.style_solid, 1, force_overlay))
+    linePropertiesMap
+
+getLabelPropertiesMap(bool force_overlay=false)=>
+    labelPropertiesMap = map.new<DivergenceType, dr.LabelProperties>()
+    labelPropertiesMap.put(DivergenceType.BullishDivergence, dr.LabelProperties.new(xloc.bar_time, yloc.price, color.green, label.style_label_up, chart.bg_color, size.small, force_overlay = force_overlay))
+    labelPropertiesMap.put(DivergenceType.BearishDivergence, dr.LabelProperties.new(xloc.bar_time, yloc.price, color.red, label.style_label_down, chart.bg_color, size.small, force_overlay = force_overlay))
+    labelPropertiesMap.put(DivergenceType.BullishHiddenDivergence, dr.LabelProperties.new(xloc.bar_time, yloc.price, color.lime, label.style_label_up, chart.bg_color, size.small, force_overlay = force_overlay))
+    labelPropertiesMap.put(DivergenceType.BearishHiddenDivergence, dr.LabelProperties.new(xloc.bar_time, yloc.price, color.orange, label.style_label_down, chart.bg_color, size.small, force_overlay = force_overlay))
+    labelPropertiesMap
+
+getDeniedDivergenceTypes(TradeDirection direction = TradeDirection.Long, TradeDivergence divergence = TradeDivergence.Both)=>
+    array<DivergenceType> denyTrading = array.new<DivergenceType>()
+    if(direction == TradeDirection.Long)
+        denyTrading.push(DivergenceType.BearishDivergence)
+        denyTrading.push(DivergenceType.BearishHiddenDivergence)
+    if(direction == TradeDirection.Short)
+        denyTrading.push(DivergenceType.BullishDivergence)
+        denyTrading.push(DivergenceType.BullishHiddenDivergence)
+    if(divergence == TradeDivergence.Regular)
+        denyTrading.push(DivergenceType.BullishHiddenDivergence)
+        denyTrading.push(DivergenceType.BearishHiddenDivergence)
+    if(divergence == TradeDivergence.Hidden)
+        denyTrading.push(DivergenceType.BullishDivergence)
+        denyTrading.push(DivergenceType.BearishDivergence)
+    denyTrading
+
+const array<DivergenceType> denyTrading = getDeniedDivergenceTypes(tradeDirection, tradeDivergence)
+
+const map<DivergenceType, dr.LineProperties> priceLinePropertiesMap = getLinePropertiesMap(true)
+const map<DivergenceType, dr.LineProperties> oscillatorLinePropertiesMap = getLinePropertiesMap()
+
+const map<DivergenceType, dr.LabelProperties> priceLabelPropertiesMap = getLabelPropertiesMap(true)
+const map<DivergenceType, dr.LabelProperties> oscillatorLabelPropertiesMap = getLabelPropertiesMap()
+
+method createTradeDrawing(DivergenceObject object, float entry, float stop, float target, bool marketEntry)=>
+    newEntry = marketEntry? close : entry
+    entryPoint = chart.point.now(newEntry)
+    stopPoint = chart.point.from_index(bar_index+10, stop)
+    targetPoint = chart.point.from_index(bar_index+10, target)
+    dr.BoxProperties targetProps = dr.BoxProperties.new(color.blue, color.new(color.lime, 80), 0, line.style_dotted, extend.none, xloc.bar_index, true)
+    dr.BoxProperties stopProps = dr.BoxProperties.new(color.blue, color.new(color.orange, 80), 0, line.style_dotted, extend.none, xloc.bar_index, true)
+    object.trade := TradeDrawing.new(dr.Box.new(entryPoint, targetPoint, targetProps), dr.Box.new(entryPoint, stopPoint, stopProps))
+
+method trade(DivergenceObject object, array<DivergenceType> denyTrading, EntryType entryType, bool marketEntry, float riskReward = 2.0)=>
+
+    if(not denyTrading.includes(object.divergenceType))
+        if(object.divergenceType == DivergenceType.BullishHiddenDivergence or object.divergenceType == DivergenceType.BearishHiddenDivergence)
+            log.info('{0} Pivots : [{1}, {2}, {3}], Bars : [{4}, {5}, {6}]', object.id, object.pricePoint.price, object.pivotPoint.price, object.lastPoint.price,
+                                                                                     object.pricePoint.index, object.pivotPoint.index, object.lastPoint.index)
+            entry = object.pivotPoint.price
+            exit = entryType == EntryType.Cautious and not marketEntry? object.pricePoint.price : object.lastPoint.price
+            target = entry + riskReward*(entry-exit)
+            st.bracketOrderWithoutLeverage(str.tostring(object.id), entry,  exit, target, marketEntry)
+            object.createTradeDrawing(entry,  exit, target, marketEntry)
+        if(object.divergenceType == DivergenceType.BullishDivergence or object.divergenceType == DivergenceType.BearishDivergence)
+            entry = entryType == EntryType.Confident? object.lastPoint.price : object.pivotPoint.price
+            exit = entryType == EntryType.Cautious or marketEntry? object.lastPoint.price : object.pricePoint.price
+            target = entry + riskReward*(entry-exit)
+            st.bracketOrderWithoutLeverage(str.tostring(object.id), entry,  exit, target, marketEntry)
+            object.createTradeDrawing(entry,  exit, target, marketEntry)
+    object
+
+method cancelTrade(DivergenceObject object)=>
+    if(cancelPendingOrders)
+        strategy.close(str.tostring(object.id))
+        strategy.cancel(str.tostring(object.id))
+method divergence(zg.Zigzag this, array<DivergenceObject> divergenceObjects, ZigzagProperties properties) =>
+    startIndex = properties.repaint ? 0 : 1
+    DivergenceType divergenceType = DivergenceType.None
+    if this.zigzagPivots.size() > 2 + startIndex
+        lastPivot = this.zigzagPivots.get(startIndex)
+        oppositePivot = this.zigzagPivots.get(startIndex+1)
+        llastPivot = this.zigzagPivots.get(startIndex + 2)
+        skip = false
+        if this.flags.updateLastPivot
+            if divergenceObjects.size() > 0
+                lastDivergence = divergenceObjects.last()
+                divergenceStartBar = lastDivergence.priceLine.start.index
+                llastPivotBar = llastPivot.point.index
+
+                divergenceEndBar = lastDivergence.priceLine.end.index
+                lastPivotBar = lastPivot.point.index
+                if llastPivotBar == divergenceStartBar and lastPivotBar > divergenceEndBar
+                    divergenceObjects.pop().delete().cancelTrade()
+                skip := llastPivotBar == divergenceStartBar and lastPivotBar == divergenceEndBar
+                skip
+
+        if this.flags.newPivot and not skip
+            dir = math.sign(lastPivot.dir)
+            lastOsc = lastPivot.point.price
+            lastPrice = lastPivot.indicatorValues.get(0)
+            oscRatio = lastPivot.ratio
+            priceRatio = lastPivot.indicatorRatios.get(0)
+
+            priceDirection = getPivotDirection(lastPivot.dir, priceRatio)
+            oscillatorDirection = getPivotDirection(lastPivot.dir, oscRatio)
+
+            lastTrend = lastPivot.indicatorValues.get(2)
+            lastMa = lastPivot.indicatorValues.get(1)
+
+            pricePoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPrice)
+            oscillatorPoint = chart.point.new(lastPivot.point.time, lastPivot.point.index, lastPivot.point.price)
+
+            if priceDirection != oscillatorDirection and llastPivot.indicatorRatios.size() > 0
+                midPrice = oppositePivot.indicatorValues.get(0)
+                llastPrice = llastPivot.indicatorValues.get(0)
+                llastRatio = llastPivot.indicatorRatios.get(0)
+                llastMa = llastPivot.indicatorValues.get(1)
+                lastPricePoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPrice)
+                pivotPoint = chart.point.new(oppositePivot.point.time, oppositePivot.point.index, midPrice)
+                llastOscillatorPoint = chart.point.new(llastPivot.point.time, llastPivot.point.index, llastPivot.point.price)
+
+                sentiment = math.sign(oscRatio - priceRatio)
+                trend = properties.trendMethod == 3 ? math.sign(lastTrend) : properties.trendMethod == 1 ? math.sign(dir * (llastRatio - 1)) : math.sign(llastMa - lastMa)
+                divergence = trend == dir and sentiment < 0 ? 1 : trend != dir and sentiment > 0 ? -1 : 0
+                if divergence != 0
+                    divergenceType := getDivergenceType(dir, divergence)
+                    priceDivergenceLine = dr.Line.new(lastPricePoint, pricePoint, priceLinePropertiesMap.get(divergenceType))
+                    oscillatorDivergenceLine = dr.Line.new(llastOscillatorPoint, oscillatorPoint, oscillatorLinePropertiesMap.get(divergenceType))
+
+                    validDivergence = true
+                    for bar = lastPricePoint.index + 1 to pricePoint.index - 1 by 1
+                        priceAtBar = priceMap.get(bar)
+                        oscillatorAtBar = oscillatorMap.get(bar)
+                        if priceAtBar * dir > priceDivergenceLine.get_price(bar) * dir or oscillatorAtBar * dir > oscillatorDivergenceLine.get_price(bar) * dir
+                            validDivergence := false
+                            break
+
+                    if validDivergence
+                        var id = 0
+                        priceLabelText = (divergenceType == DivergenceType.BullishDivergence or divergenceType == DivergenceType.BearishDivergence ? 'D' : 'H')+' : '+str.tostring(id)
+                        priceTooltipText = str.tostring(divergenceType) + ' ' + str.tostring(id) + '\nPrice : ' + str.tostring(lastPrice) + ' ( ' + str.tostring(priceRatio) + ' ) - ' +
+                                         str.tostring(priceDirection) + '\n' + 'Oscillator :' + str.tostring(lastMa) + ' ( ' + str.tostring(oscRatio) + ' ) - ' + str.tostring(oscillatorDirection)
+                        priceDivergenceLabel = dr.Label.new(pricePoint, priceLabelText, priceTooltipText, priceLabelPropertiesMap.get(divergenceType))
+                        oscillatorDivergenceLabel = dr.Label.new(oscillatorPoint, priceLabelText, priceTooltipText, oscillatorLabelPropertiesMap.get(divergenceType))
+                        divergenceObject = DivergenceObject.new(id, priceDivergenceLine, oscillatorDivergenceLine,priceDivergenceLabel, oscillatorDivergenceLabel, pricePoint, pivotPoint, lastPricePoint, divergenceType)
+                        id+=1
+                        divergenceObject.trade(denyTrading, entryType, marketEntry, riskReward)
+                        divergenceObjects.push(divergenceObject.draw())
+                        true
+                    else
+                        priceDivergenceLine.delete()
+                        false
+    divergenceType
+ma = maType.ma(maLength)
+oscillator = useExternalOscillator ? externalOscillator : oscillator(oscillatorType, length)
+plot(oscillator, 'Oscillator')
+
+oscillatorMap.put(bar_index, oscillator)
+indicators = matrix.new<float>()
+indicatorNames = array.from('Price', str.tostring(maType) +'-' +str.tostring(maLength), 'External Trend')
+
+indicators.add_row(0, array.from(close, close, close))
+indicators.add_row(1, array.from(ma, ma, ma))
+indicators.add_row(2, array.from(externalTrendSignal, externalTrendSignal, externalTrendSignal))
+
+var zg.Zigzag zigzag = zg.Zigzag.new(zigzagLength, 300, 0)
+var ZigzagProperties properties = ZigzagProperties.new(textColor, trendMethodInt, repaint)
+var divergenceObjects = array.new<DivergenceObject>()
+zigzag.calculate(array.from(oscillator), indicators, indicatorNames)
+currentDivergence = zigzag.divergence(divergenceObjects, properties)
+
+for divergence in divergenceObjects
+    direction = divergence.divergenceType == DivergenceType.BullishDivergence or divergence.divergenceType == DivergenceType.BullishHiddenDivergence ? 1 : -1
+    if(not divergence.broken and divergence.pricePoint.price*direction > close*direction)
+        divergence.broken := true
+        divergence.cancelTrade()

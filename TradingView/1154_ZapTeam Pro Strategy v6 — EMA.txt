@@ -1,0 +1,229 @@
+//@version=6
+strategy("Pro Strategy v6 — EMA • Ichimoku • Fib/SR (dynamic lines) • ATR-R • ETH.D",
+     overlay=true, initial_capital=10000,
+     commission_type=strategy.commission.percent, commission_value=0.06,
+     pyramiding=2, calc_on_every_tick=true, calc_on_order_fills=true,
+     max_labels_count=400, max_lines_count=400)
+
+// ========= Inputs
+riskPct   = input.float(1.0, "Risk per trade, % of equity", minval=0.1, maxval=10, step=0.1)
+useTwoTP  = input.bool(true, "Use two take-profits (50/50)")
+tpRR1     = input.float(1.5, "TP1 R multiple", step=0.1)
+tpRR2     = input.float(3.0, "TP2 R multiple", step=0.1)
+
+atrLen    = input.int(14, "ATR length", minval=1)
+atrMult   = input.float(2.5, "ATR SL multiple", step=0.1)
+
+ema21Len  = input.int(21, "EMA 21")
+ema50Len  = input.int(50, "EMA 50")
+ema200Len = input.int(200,"EMA 200")
+useIchi   = input.bool(true, "Use Ichimoku filter")
+convLen   = input.int(9,  "Ichimoku Tenkan")
+baseLen   = input.int(26, "Ichimoku Kijun")
+spanBLen  = input.int(52, "Ichimoku Span B")
+disp      = input.int(26, "Ichimoku Displacement")
+
+useEthD      = input.bool(false, "Filter by ETH Dominance (ETH.D < EMA for longs)")
+ethDomTicker = input.symbol("CRYPTOCAP:ETH.D", "ETH.D symbol")
+ethDomTF     = input.timeframe("", "ETH.D timeframe (blank = current)")
+ethDomEmaLen = input.int(50, "ETH.D EMA")
+
+enableShorts = input.bool(false, "Allow short trades")
+
+// Fibonacci (dynamic)
+useFib     = input.bool(true,  "Show Fibonacci levels (dynamic lines)")
+autoSwing  = input.bool(true,  "Use auto swings by lookback")
+lookback   = input.int(500,    "Auto lookback bars", minval=50, step=10)
+manualLow  = input.float(0.6300, "Manual Swing Low",  step=0.0001)
+manualHigh = input.float(0.6900, "Manual Swing High", step=0.0001)
+showExt    = input.bool(true,  "Show Extensions 1.272/1.618")
+
+// Custom S/R (dynamic)
+useSR  = input.bool(true, "Show custom S/R levels (dynamic lines)")
+srList = input.string("0.650,0.657,0.670,0.690,0.700,0.740,0.860,1.190", "S/R levels (comma-separated)")
+
+// ========= Core series
+c      = close
+ema21  = ta.ema(c, ema21Len)
+ema50  = ta.ema(c, ema50Len)
+ema200 = ta.ema(c, ema200Len)
+
+// Ichimoku
+tenkan  = (ta.highest(high, convLen) + ta.lowest(low, convLen)) / 2.0
+kijun   = (ta.highest(high, baseLen) + ta.lowest(low, baseLen)) / 2.0
+senkouA = (tenkan + kijun) / 2.0
+senkouB = (ta.highest(high, spanBLen) + ta.lowest(low, spanBLen)) / 2.0
+cloudBull       = senkouA > senkouB
+cloudBear       = senkouA < senkouB
+priceAboveCloud = close > math.max(senkouA, senkouB)
+priceBelowCloud = close < math.min(senkouA, senkouB)
+
+// ETH.D (context)
+ethD   = request.security(ethDomTicker, ethDomTF == "" ? timeframe.period : ethDomTF, close)
+ethDma = ta.ema(ethD, ethDomEmaLen)
+ethD_ok_for_long  = ethD < ethDma or not useEthD
+ethD_ok_for_short = ethD > ethDma or not useEthD
+
+// ========= Plots (global only)
+plot(ema21,  "EMA 21",  linewidth=2)
+plot(ema50,  "EMA 50",  linewidth=2)
+plot(ema200, "EMA 200", linewidth=2)
+pA = plot(useIchi ? senkouA : na, "Senkou A", offset=disp, linewidth=1)
+pB = plot(useIchi ? senkouB : na, "Senkou B", offset=disp, linewidth=1)
+fill(pA, pB, color = useIchi ? (cloudBull ? color.new(color.green,85) : color.new(color.red,85)) : na)
+
+// ========= Dynamic LINES helpers (time/zoom safe)
+f_make_or_update_lines(linesArr, labelsArr, yVals, titles) =>
+    // Создание недостающих, потом обновление всех.
+    sz = array.size(yVals)
+    // Создание
+    while array.size(linesArr) < sz
+        y = array.get(yVals, array.size(linesArr))
+        l = line.new(bar_index - 1, y, bar_index, y, xloc=xloc.bar_index, extend=extend.both, width=1, style=line.style_dotted)
+        array.push(linesArr, l)
+        lb = label.new(bar_index, y, array.get(titles, array.size(labelsArr)), yloc=yloc.price, textcolor=color.white, style=label.style_label_left)
+        array.push(labelsArr, lb)
+    // Удаление лишних
+    while array.size(linesArr) > sz
+        line.delete(array.pop(linesArr))
+        label.delete(array.pop(labelsArr))
+    // Обновление координат и текста (якоря всегда рядом с текущими барами)
+    for i = 0 to sz - 1
+        y  = array.get(yVals, i)
+        l  = array.get(linesArr, i)
+        lb = array.get(labelsArr, i)
+        line.set_y1(l, y), line.set_y2(l, y)
+        line.set_x1(l, bar_index - 1), line.set_x2(l, bar_index)
+        label.set_y(lb, y), label.set_x(lb, bar_index)
+        label.set_text(lb, array.get(titles, i))
+
+// ========= Fibonacci (dynamic lines)
+var line[]  fibLines = array.new_line()
+var label[] fibLbls  = array.new_label()
+
+autoLo = ta.lowest(low,  lookback)
+autoHi = ta.highest(high, lookback)
+useLo  = autoSwing ? autoLo  : manualLow
+useHi  = autoSwing ? autoHi  : manualHigh
+sLow   = math.min(useLo, useHi)
+sHigh  = math.max(useLo, useHi)
+rng    = sHigh - sLow
+enoughHistory = bar_index >= lookback
+
+if useFib and enoughHistory and (rng > 0)
+    fibY = array.new_float()
+    array.push(fibY, sHigh)
+    array.push(fibY, sHigh - 0.786 * rng)
+    array.push(fibY, sHigh - 0.618 * rng)
+    array.push(fibY, sHigh - 0.500 * rng)
+    array.push(fibY, sHigh - 0.382 * rng)
+    array.push(fibY, sHigh - 0.236 * rng)
+    array.push(fibY, sLow)
+    fibT = array.new_string()
+    array.push(fibT, "Fib 1.000")
+    array.push(fibT, "Fib 0.786")
+    array.push(fibT, "Fib 0.618")
+    array.push(fibT, "Fib 0.500")
+    array.push(fibT, "Fib 0.382")
+    array.push(fibT, "Fib 0.236")
+    array.push(fibT, "Fib 0.000")
+    if showExt
+        array.push(fibY, sHigh + 0.272 * rng)
+        array.push(fibT, "Ext 1.272")
+        array.push(fibY, sHigh + 0.618 * rng)
+        array.push(fibT, "Ext 1.618")
+    f_make_or_update_lines(fibLines, fibLbls, fibY, fibT)
+else
+    // Очистка, если выключили/недостаточно истории
+    while array.size(fibLines) > 0
+        line.delete(array.pop(fibLines))
+    while array.size(fibLbls) > 0
+        label.delete(array.pop(fibLbls))
+
+// ========= Custom S/R (dynamic lines)
+var line[]  srLines = array.new_line()
+var label[] srLbls  = array.new_label()
+
+if useSR
+    cleaned = str.replace_all(srList, " ", "")
+    parts   = str.split(cleaned, ",")
+    vals    = array.new_float()
+    for i = 0 to array.size(parts) - 1
+        v = str.tonumber(array.get(parts, i))
+        if not na(v)
+            array.push(vals, v)
+    if array.size(vals) > 0
+        titles = array.new_string()
+        for i = 0 to array.size(vals) - 1
+            array.push(titles, "S/R")
+        f_make_or_update_lines(srLines, srLbls, vals, titles)
+    else
+        while array.size(srLines) > 0
+            line.delete(array.pop(srLines))
+        while array.size(srLbls) > 0
+            label.delete(array.pop(srLbls))
+else
+    while array.size(srLines) > 0
+        line.delete(array.pop(srLines))
+    while array.size(srLbls) > 0
+        label.delete(array.pop(srLbls))
+
+// ========= Signals & trend logic
+emaCrossUp   = ta.crossover(ema21, ema50)
+emaCrossDown = ta.crossunder(ema21, ema50)
+trendLong  = close > ema200 and (not useIchi or (cloudBull and priceAboveCloud))
+trendShort = close < ema200 and (not useIchi or (cloudBear and priceBelowCloud))
+longSignal  = emaCrossUp   and trendLong  and ethD_ok_for_long
+shortSignal = emaCrossDown and trendShort and ethD_ok_for_short and enableShorts
+
+// ========= Risk & sizing
+atr = ta.atr(atrLen)
+longSL  = close - atrMult * atr
+shortSL = close + atrMult * atr
+longRiskPerUnit  = close - longSL
+shortRiskPerUnit = shortSL - close
+equity = strategy.equity
+longQty  = (equity * (riskPct/100.0)) / math.max(longRiskPerUnit,  syminfo.mintick)
+shortQty = (equity * (riskPct/100.0)) / math.max(shortRiskPerUnit, syminfo.mintick)
+
+// ========= Entries (split 50/50 if two TP)
+if longSignal and longQty > 0
+    strategy.entry("LONG_1", strategy.long,  qty=longQty * (useTwoTP ? 0.5 : 1.0))
+    if useTwoTP
+        strategy.entry("LONG_2", strategy.long, qty=longQty * 0.5)
+
+if shortSignal and shortQty > 0
+    strategy.entry("SHORT_1", strategy.short, qty=shortQty * (useTwoTP ? 0.5 : 1.0))
+    if useTwoTP
+        strategy.entry("SHORT_2", strategy.short, qty=shortQty * 0.5)
+
+// ========= Exits (dynamic TP/SL)
+var float tp1Long  = na
+var float tp2Long  = na
+var float tp1Short = na
+var float tp2Short = na
+
+longEntryPrice  = strategy.position_size > 0 ? strategy.position_avg_price : na
+shortEntryPrice = strategy.position_size < 0 ? strategy.position_avg_price : na
+
+longStop  = longSL
+longDist  = not na(longEntryPrice)  ? (longEntryPrice  - longStop)  : na
+if not na(longDist)
+    tp1Long := longEntryPrice + longDist * tpRR1
+    tp2Long := longEntryPrice + longDist * tpRR2
+
+shortStop = shortSL
+shortDist = not na(shortEntryPrice) ? (shortStop - shortEntryPrice) : na
+if not na(shortDist)
+    tp1Short := shortEntryPrice - shortDist * tpRR1
+    tp2Short := shortEntryPrice - shortDist * tpRR2
+
+strategy.exit("LX1", from_entry="LONG_1",  stop=longStop,  limit=tp1Long)
+strategy.exit("SX1", from_entry="SHORT_1", stop=shortStop, limit=tp1Short)
+if useTwoTP
+    strategy.exit("LX2", from_entry="LONG_2",  stop=longStop,  limit=tp2Long)
+    strategy.exit("SX2", from_entry="SHORT_2", stop=shortStop, limit=tp2Short)
+
+// ========= Alerts
+alertcondition(longSignal,  "Long Signal",  "LONG: EMA21>EMA50, trend up, filters OK")
+alertcondition(shortSignal, "Short Signal", "SHORT: EMA21<EMA50, trend down, filters OK")

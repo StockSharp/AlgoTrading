@@ -1,0 +1,199 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © 2023 Strambatax (Alessandro Arrabito) - Trading Bot con Ale @arrabyte
+
+// ████████  ██     ██
+// ██░██░░░   ██  ██
+// ████████░    ██
+//    ██ ██   ██  ██
+// ████████  ██     ██
+
+//@version=5
+
+// Monthly profit displays profits in a grid and allows you to know the gain related to the investment during each month.
+// The profit could be computed in terms of gain/trade_cost or as percentage of equity update.
+// The table display profit as percentage, the first cell at the top left display the global profit (not percetage) and can be compared
+// with net profit reported by tradingview.
+
+// Instruction:
+// To insert the snippet in your code get the slice of code that starts below just after the line : "Insert the code below in your strategy"
+
+// Settings:
+// Profit: Monthly profit percentage or percentage of equity
+// Table position
+
+// This strategy is intended only as a container for the code and for testing the script of the profit table.
+// Setting of strategy allows to select the test case for this snippet (percentage grid).
+// Money management: not relevant as strategy is a test case.
+
+// This script stand out as take in account the gain of each trade in relation to the capital invested in each trade.
+// For example consider the following scenario:
+// We have a start capital 10000$, and we invest 1000$ for every trade,
+// Without compound interest.
+// If in January we gain 50% or our trades investment, the capital become of 10500$, the percentage of equity is 10500/10000 -1 = 5% but trades have gains 50%.
+// Consider another scenario. Capital of 1000$ and we invest a fixed amount of 1000$, I know is too risky but is an example, we gain 10% every month.
+// After 10 months our capital is of 2000$ and our strategy is perfect as we have the same performance every month. Instead, evaluating the percentage of equity
+// we have 10% the first month, 9.9% the second (1200$/1100$ - 1) and 5.26% the tenth month. So seems that strategy degrade with times but this is not true.
+// For this reason, to evaluate my strategy I prefer to see the montly return of investment.
+// WARNING: The strategy provided with this script is just a test case and allows to see the behavior with different "trades" management, for this reason commission are set to zero.
+// At the moment only the trading scenario related to this test cases are tested, for example pyramiding is not handled.
+// The test cases are:
+// 1 - single entry and single exit;
+// 2 - single entry and multiple exits;
+// 3 - single entry and switch position;
+
+
+// The gain could be calculated
+strategy(title="Stx Monthly Trades Profit", shorttitle = "monthly profit", overlay=true, default_qty_type=strategy.cash, initial_capital = 5000,
+ default_qty_value=1000, pyramiding=0, process_orders_on_close=false, commission_type=strategy.commission.percent, commission_value=0)
+
+string testCase = input.string("single_entry_exit", "test case", options = ["single_entry_exit", "single_entry_multiple_exit", "single_entry_switch_position"])
+// case 1 single entry long and short
+bool longCondition = dayofmonth == 1 and hour == 10 and minute == 0
+bool shortCondition = dayofmonth == 10 and hour == 10 and minute == 0
+
+if testCase == "single_entry_exit"
+    if longCondition and strategy.position_size == 0
+        strategy.entry("entry_long", strategy.long)
+        strategy.exit("exit_long", "entry_long", limit=close*(1+0.01), stop=close*(1-0.005))
+    if shortCondition and strategy.position_size == 0
+        strategy.entry("entry_short", strategy.short)
+        strategy.exit("exit_short", "entry_short", limit=close*(1-0.01), stop=close*(1+0.005))
+
+else if testCase == "single_entry_multiple_exit"
+    if longCondition and strategy.position_size == 0
+        strategy.entry("entry_long", strategy.long)
+        strategy.exit("exit_long_1", "entry_long", limit=close*(1+0.01), stop=close*(1-0.005), qty_percent=50)
+        strategy.exit("exit_long_2", "entry_long", limit=close*(1+0.02), stop=close*(1-0.005), qty_percent=100)
+    if shortCondition and strategy.position_size == 0
+        strategy.entry("entry_short", strategy.short)
+        strategy.exit("exit_short_1", "entry_short", limit=close*(1-0.01), stop=close*(1+0.005), qty_percent=50)
+        strategy.exit("exit_short_2", "entry_short", limit=close*(1-0.02), stop=close*(1+0.005), qty_percent=100)
+
+else if testCase == "single_entry_switch_position"
+    if longCondition
+        strategy.close_all()
+        strategy.entry("entry_long", strategy.long)
+    if shortCondition
+        strategy.close_all()
+        strategy.entry("entry_short", strategy.short)
+
+
+// ---------------- Insert the code below in your strategy  ---------------- //
+// ----------------------- Stx Monthly Profit Table  ----------------------- //
+//                 © 2023 Strambatax (Alessandro Arrabito)
+// ------------------------------------------------------------------------- //
+string enableProfiTable = input.string("montly_profit", "profit table", options = ["disabled", "montly_profit", "montly_equity"], group = "trades profit table")
+string positionProfiTable = input.string("top_right", "position", options = ["top_right", "top_center", "top_left", "bottom_right", "bottom_center", "bottom_left", "middle_center"], group = "trades profit table")
+int profiTableLeverage = input.int(1, "leverage", minval=1, tooltip = "take in account a fixed leverage value used for each trade. This option have effects only for 'montly_profit' selection", group = "trades profit table")
+bool profiTableShowYearlyProfit = input.bool(true, "show yearly profit", group = "trades profit table")
+var float monthlyProfit = 0.0
+var int startYear = year
+var string[] monthNames = array.from("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+var monthlyPnL = matrix.new<float>(1, 12)
+var table profiTable = na
+
+var startEquity = strategy.equity
+var startMonthEquity = strategy.equity
+int closeTrades = ta.change(strategy.closedtrades)
+var float tradeProfit = 0
+var float tradeCost = .0
+var float globalProfit = .0
+
+if closeTrades > 0 and enableProfiTable == "montly_profit"
+    for i = 1 to closeTrades
+        idx = strategy.closedtrades - i
+        size = strategy.closedtrades.size(idx)
+        tradeProfit += strategy.closedtrades.profit(idx)
+        tradeCost += strategy.closedtrades.entry_price(idx) * strategy.closedtrades.size(idx)
+
+    // check for reversal: close and entry trade in the same bar
+    isPositionReversal = strategy.opentrades.entry_bar_index(strategy.opentrades -1) == bar_index and strategy.position_size[1] != 0
+    // trade is closed ?
+    //strategy.opentrades
+    if strategy.opentrades == 0 or isPositionReversal
+        monthlyProfit += tradeProfit / math.abs(tradeCost)
+        globalProfit += tradeProfit
+        // label.new(bar_index, high + 100*(syminfo.mintick), str.tostring(tradeProfit, "#.###") + " " + str.tostring(monthlyProfit, "#.####"), style=label.style_label_lower_left)
+        tradeProfit := 0
+        tradeCost := 0
+
+if enableProfiTable == "montly_equity"
+    monthlyProfit := (strategy.equity / startMonthEquity) - 1
+    globalProfit := strategy.equity - startEquity
+
+// add new row for a new year
+if ta.change(year) != 0 and not na(year[1])
+    matrix.add_row(monthlyPnL)
+
+// Store monthly P&L in an array
+if ta.change(month) != 0
+    startMonthEquity := strategy.equity
+    monthlyProfit := 0
+
+if monthlyProfit != monthlyProfit[1]
+    lev = enableProfiTable == "montly_profit" ? profiTableLeverage : 1
+    matrix.set(monthlyPnL, matrix.rows(monthlyPnL) - 1, month - 1, monthlyProfit * lev)
+
+pTabHeaderBgColor = color.new(#cad5f1, 24)
+pTabHeaderTextColor = color.new(#000000, 25)
+pTabBgBullColor = color.new(#006d09, 26)
+pTabBgBearColor = color.new(#f31201, 26)
+pTabTextColor = color.new(#ffffff, 15)
+pTabBdColor = color.new(#000000, 18)
+
+// Create the P&L table
+if bar_index >= 11 and barstate.islastconfirmedhistory and enableProfiTable != "disabled"
+    tradingYears = (year - startYear + 1)
+    pos = switch positionProfiTable
+        "top_right" => position.top_right
+        "top_center" => position.top_center
+        "top_left" => position.top_left
+        "bottom_right" => position.bottom_right
+        "bottom_center" => position.bottom_center
+        "bottom_left" => position.bottom_left
+        "middle_center" => position.middle_center
+
+    profiTable := table.new(position = pos, rows = 1 + tradingYears, columns = 14, bgcolor = pTabHeaderBgColor, border_width = 1, border_color = pTabBdColor)
+
+    // month header
+    int monthIndex = 0
+    table.cell(profiTable, row = 0, column = 0, text = "", bgcolor = pTabHeaderBgColor, text_color = pTabHeaderTextColor, text_size = size.small)
+    for i = 0 to 11
+        table.cell(profiTable, row = 0, column = i + 1, text = array.get(monthNames, i), bgcolor = pTabHeaderBgColor, text_size = size.small)
+    if (profiTableShowYearlyProfit)
+        table.cell(profiTable, row = 0, column = 13, text = "Year", bgcolor = pTabHeaderBgColor, text_color = pTabHeaderTextColor, text_size = size.small)
+
+    maxVal = array.from<float>(-100, 0, 0) // max, row, col
+    minVal = array.from<float>(100, 0, 0) // min, row, col
+
+    for r = 0 to  tradingYears - 1
+        // years side header
+        table.cell(profiTable, row = r + 1, column = 0, text = str.tostring(startYear + r), text_color = pTabHeaderTextColor, bgcolor = pTabHeaderBgColor, text_size = size.small)
+        float yearlyProfit = 0
+        for c = 0 to 11
+            val = nz(matrix.get(monthlyPnL, r, c))
+            table.cell(profiTable, row = r + 1, column = c + 1, bgcolor = val >= 0 ? pTabBgBullColor : pTabBgBearColor, text_color = pTabTextColor, text = str.format("{0,number,#.##%}", val), text_size = size.small)
+            monthIndex += 1
+            yearlyProfit += val
+            // get max, min and row , col position
+            if val > array.get(maxVal, 0)
+                maxVal := array.from(val, c+1, r+1)
+            if val < array.get(minVal, 0)
+                minVal := array.from(val, c+1, r+1)
+
+        if (profiTableShowYearlyProfit)
+            table.cell(profiTable, row = r + 1, column = 13, bgcolor = yearlyProfit >= 0 ? pTabBgBullColor : pTabBgBearColor, text_color = pTabTextColor, text = str.format("{0,number,#.##%}", yearlyProfit), text_size = size.small)
+
+    // set global profit at 0,0
+    table.cell(profiTable, row = 0, column = 0, bgcolor = globalProfit >= 0 ? pTabBgBullColor : pTabBgBearColor, text_color = pTabTextColor, text = "Profit " +str.format("{0,number,#.##}", globalProfit), text_size = size.small)
+
+    if array.get(maxVal, 1) > 0 // check column value (it's initialized with 0) to see if maxVal were setted
+        bgcolor = array.get(maxVal, 0) >= 0 ? color.rgb(216, 230, 98) : color.rgb(245, 160, 80)
+        table.cell_set_bgcolor(profiTable, int(array.get(maxVal, 1)), int(array.get(maxVal, 2)), bgcolor)
+        table.cell_set_text_color(profiTable, int(array.get(maxVal, 1)), int(array.get(maxVal, 2)), color.black)
+    if array.get(minVal, 1) > 0
+        bgcolor = array.get(minVal, 0) >= 0 ? color.rgb(216, 230, 98) : color.rgb(245, 160, 80)
+        table.cell_set_bgcolor(profiTable, int(array.get(minVal, 1)), int(array.get(minVal, 2)), bgcolor)
+        table.cell_set_text_color(profiTable, int(array.get(minVal, 1)), int(array.get(minVal, 2)), color.black)
+
+// ----------------------- @@@@@@@@@@@@@@@@@@@@@@@@  ----------------------- //

@@ -1,0 +1,28 @@
+//@version=5
+strategy("EMA 10/20/50 Alignment Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === Inputs ===
+startTime = input.time(timestamp("2023-05-17 00:00"), title="Start Time")
+endTime   = input.time(timestamp("2025-05-17 00:00"), title="End Time")
+
+// === EMAs ===
+ema10 = ta.ema(close, 10)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+
+inDateRange = (time >= startTime and time <= endTime)
+
+// === Entry/Exit Conditions ===
+bullishStack = ema10 > ema20 and ema20 > ema50
+bearishStack = ema10 < ema20 and ema20 < ema50
+
+if inDateRange
+    if bullishStack
+        strategy.entry("Long", strategy.long)
+    else if bearishStack
+        strategy.close("Long")
+
+// === Plot EMAs ===
+plot(ema10, color=color.orange, title="EMA 10")
+plot(ema20, color=color.teal, title="EMA 20")
+plot(ema50, color=color.purple, title="EMA 50")

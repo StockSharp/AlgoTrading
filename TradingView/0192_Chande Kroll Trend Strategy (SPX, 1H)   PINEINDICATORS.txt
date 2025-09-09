@@ -1,0 +1,50 @@
+//@version=5
+strategy("Chande Kroll Stop Strategy", overlay=true, initial_capital = 1000, commission_type = strategy.commission.percent, commission_value = 0.01, slippage = 3)
+
+// Chande Kroll Stop parameters
+calcMode = input.string(title="Calculation Mode", defval="Exponential", options=["Linear", "Exponential"])
+riskMultiplier = input(5, "Risk Multiplier")
+atrPeriod = input(10, "ATR Period")
+atrMultiplier = input(3, "ATR Multiplier")
+stopLength = input(21, "Stop Length")
+smaLength = input(21, "SMA Length")
+
+// Calculate ATR
+atr = ta.atr(atrPeriod)
+
+// Calculate Chande Kroll Stop
+highStop = ta.highest(high, stopLength) - atrMultiplier * atr
+lowStop = ta.lowest(low, stopLength) + atrMultiplier * atr
+
+sma21 = ta.sma(close, smaLength)
+
+// Entry and Exit conditions
+longCondition = ta.crossover(close, lowStop) and close > sma21
+exitLongCondition = close < highStop
+
+// Funktion zur Berechnung der Menge
+calc_qty(mode, riskMultiplier) =>
+    lowestClose = ta.lowest(close, 1560)
+    if mode == "Exponential"
+        qty = riskMultiplier / lowestClose * 1000 * strategy.equity / strategy.initial_capital
+    else
+        qty = riskMultiplier / lowestClose * 1000
+
+// Berechnung der Menge basierend auf der Benutzerwahl
+qty = calc_qty(calcMode, riskMultiplier)
+
+// Execute strategy
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=qty)
+    alert("Buy Signal", alert.freq_once_per_bar_close)
+
+if (exitLongCondition)
+    strategy.close("Long")
+    alert("Sell Signal", alert.freq_once_per_bar_close)
+
+// Plotting
+plotshape(series=longCondition, location=location.belowbar, color=#0097a7, style=shape.triangleup, size=size.small, title="Buy Signal")
+plotshape(series=ta.crossunder(close, highStop), location=location.abovebar, color=#ff195f, style=shape.triangledown, size=size.small, title="Sell Signal")
+plot(sma21, color=color.gray)
+plot(highStop, color=#0097a7)
+plot(lowStop, color=#ff195f)

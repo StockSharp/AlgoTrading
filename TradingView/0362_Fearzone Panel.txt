@@ -1,0 +1,130 @@
+//@version=4
+//
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © kruskakli
+//
+// FearZone
+// --------
+// A strategy described in the book (Swedish):
+//
+//  "Framgångsrik Aktiehandel" by: Peter Nilsson, Jonny Torsell, Johan Hellström
+//
+// Idea: Fearzone tries to indicate when a stock has fallen to a level where
+//       fear, instead of common sense, control the further development.
+//
+// The authors devise two Fearzone-indicators: FZ1 and FZ2 that must give signal to proceed.
+// Then we have 3 different trigger events that indenpendently signals to enter a Long position.
+// They are:
+//
+// - Negative Impulse : price is down at least 10% compared to 10 periods ago.
+// - Ricochet Zone.   : price closed in the lowest 10% of the current period range.
+// - Magic-K1         : Stochastic SlowK(2,3) falls below 30.
+//
+// Finally we have a MA-200 that we need to be above.
+//
+// The Panel consists of the following rows:
+// -----------------------------------------
+// 1. FZ1 indicator (lime)
+// 2. FZ2 indicator (lime)
+// 3. Impulse down 10% (blue)
+// 4. In Ricochet zone (yellow)
+// 5. Magic-K1 (white)
+// 4. Above MA-200 (lime)
+//
+study("Fearzone Panel", shorttitle="FZ Panel", overlay=false)
+
+//
+// Helper functions
+//
+
+in_ricochet_zone(_high, _low, _close) =>
+    _range = _high - _low
+    _upper_zone_border = (_range * 0.1) + _low
+    (_close < _upper_zone_border)
+
+fz1() =>
+    highest_22_ohlc4 = highest(ohlc4, 22)
+    v1 = highest_22_ohlc4 - ohlc4
+    fz1 = v1/highest_22_ohlc4
+    [fz1_middle, fz1_upper, fz1_lower] = bb(fz1, 200, 1)
+    fz1 > fz1_upper
+
+fz2() =>
+    v2 = sma(ohlc4, 22)
+    fz2 = ohlc4 - v2
+    [fz2_middle, fz2_upper, fz2_lower] = bb(fz2, 200, 1)
+    fz2 < fz2_lower
+
+//
+// FZ1 indicator
+//
+in_fz1 = fz1()
+
+//
+// FZ2 indicator
+//
+in_fz2 = fz2()
+
+//
+// MagicK1 : (Fast/Slow K/D Stochastics)
+//
+K = 2
+D = 3
+U = 70
+L = 30
+
+fast_k = sma(stoch(close, high, low, K), D)
+fast_d = sma(fast_k, D)
+
+slow_k = fast_d
+slow_d = sma(slow_k, D)
+
+is_magic_K1 = slow_k < L
+
+//
+// Negative impulse
+//
+is_down10 = close < (close[10] * 0.9)
+
+
+//
+// Ricochet zone
+//
+in_rt_zone = in_ricochet_zone(high, low, close)
+
+
+//
+// 200-periods filter
+//
+ma200 = sma(close, 200)
+
+is_above_ma200 = close > ma200
+
+
+//
+// Logic
+//
+fz1_clr = in_fz1 ? color.lime : color.gray
+fz2_clr = in_fz2 ? color.lime : color.gray
+d10_clr = is_down10 ? color.blue : color.gray
+rtz_clr = in_rt_zone ? color.yellow : color.gray
+mk1_clr = is_magic_K1 ? color.white : color.gray
+ma200_clr = is_above_ma200 ? color.lime : color.gray
+
+
+//
+// Plotting
+//
+fz1_bar = 6
+fz2_bar = 5
+d10_bar = 4
+rtz_bar = 3
+mk1_bar = 2
+ma200_bar = 1
+
+plot(fz1_bar,   title="FZ1",      color = fz1_clr,   transp = 0, style = plot.style_columns)
+plot(fz2_bar,   title="FZ2",      color = fz2_clr,   transp = 0, style = plot.style_columns)
+plot(d10_bar,   title="Down 10%", color = d10_clr,   transp = 0, style = plot.style_columns)
+plot(rtz_bar,   title="Ricochet", color = rtz_clr,   transp = 0, style = plot.style_columns)
+plot(mk1_bar,   title="Magic-K1", color = mk1_clr,   transp = 0, style = plot.style_columns)
+plot(ma200_bar, title="MA-200",   color = ma200_clr, transp = 0, style = plot.style_columns)

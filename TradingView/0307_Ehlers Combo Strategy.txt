@@ -1,0 +1,178 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © simwai
+
+//@version=5
+strategy('Ehlers Elegant Oscillator + Ehlers Decycler + Ehlers Instantaneous Trend + Ehlers Spearman Rank + Ehlers Signal to Noise Ratio', 'Ehlers Combo', overlay=true, calc_on_order_fills=false, process_orders_on_close=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100, initial_capital=1000, currency=currency.EUR, commission_type=strategy.commission.percent, commission_value=0.075, backtest_fill_limits_assumption=2, use_bar_magnifier=true)
+
+// -- Inputs --
+inp = input(title='Source', defval=close)
+res = input.timeframe(title='Resolution', defval='')
+bar = input(title='Enable Bar Color Change', defval=true)
+isLengthAdaptive = input.bool(false, 'Enable Adaptive Length')
+src = inp
+length = input.int(title='Length', defval=20, minval=2, maxval=300)
+rmsLength = input.int(title='Rms Length', defval=50, minval=2)
+snrThreshold = input.float(0.1, title='SNR Threshold', minval=0, maxval=2, step=0.05)
+exitLength = input.int(100, title='Exit Length', minval=1)
+
+// -- Calculation --
+normalize(float _src, int _min, int _max) =>
+    var float _historicMin = 1.0
+    var float _historicMax = -1.0
+    _historicMin := math.min(nz(_src, _historicMin), _historicMin)
+    _historicMax := math.max(nz(_src, _historicMax), _historicMax)
+    _min + (_max - _min) * (_src - _historicMin) / math.max(_historicMax - _historicMin, 1)
+
+// Ehlers Signal to Noise Ratio
+Price = src
+Range = 0.00
+Smooth = 0.00
+Detrender = 0.00
+I1 = 0.00
+Q1 = 0.00
+jI = 0.00
+jQ = 0.00
+I2 = 0.00
+Q2 = 0.00
+Re = 0.00
+Im = 0.00
+Period = 0.00
+SmoothPeriod = 0.00
+SNR = 0.00
+
+//Compute "Noise" as the average range
+Range := .1 * (high - low) + .9 * nz(Range[1])
+//Hilbert Transform
+Smooth := bar_index >5 ? (4*Price + 3*nz(Price[1]) + 2*nz(Price[2]) + nz(Price[3]) ) / 10 : Smooth
+Detrender := bar_index >5 ? (.0962*Smooth + .5769*nz(Smooth[2]) - .5769*nz(Smooth[4]) - .0962*nz(Smooth[6])) *( .075*nz(Period[1]) + .54) : Detrender
+//Compute InPhase and Quadrature components
+Q1 := bar_index >5 ? ( .0962*Detrender + .5769*nz(Detrender[2]) -.5769*nz(Detrender[4]) - .0962*nz(Detrender[6]) ) *( .075*nz(Period[1]) + .54) : Q1
+I1 := bar_index >5 ? nz(Detrender[3]) : I1
+
+//Advance the phase of I1 and Q1 by 90 degrees
+jI := (.0962*I1 + .5769*nz(I1[2]) - .5769*nz(I1[4]) - .0962*nz(I1[6]) ) * ( .075*nz(Period[1]) + .54)
+jQ := (.0962*Q1 + .5769*nz(Q1[2]) - .5769*nz(Q1[4]) - .0962*nz(Q1[6]) ) * ( .075*nz(Period[1]) + .54)
+
+//Phasor addition for 3 bar averaging
+I2 := I1 - jQ
+Q2 := Q1 + jI
+
+//Smooth the I and Q components before applying the discriminator
+I2 := .2*I2 + .8*nz(I2[1])
+Q2 := .2*Q2 + .8*nz(Q2[1])
+
+//Homodyne Discriminator
+Re := I2*nz(I2[1]) + Q2*nz(Q2[1])
+Im := I2*nz(Q2[1]) - Q2*nz(I2[1])
+Re := .2*Re + .8*nz(Re[1])
+Im := .2*Im + .8*nz(Im[1])
+
+Period := Im != 0 and Re != 0 ? 2*math.pi / math.atan(Im/Re) : Period
+Period := Period > 1.5*nz(Period[1]) ? 1.5*nz(Period[1]) : Period
+Period := Period < .67*nz(Period[1]) ? .67*nz(Period[1]) : Period
+//Limit Period to be within the bounds of 6 bar and 100 bar cycles
+Period := Period < 6 ? 6 : Period
+Period := Period > 100 ? 100 : Period
+Period := .2*Period + .8*nz(Period[1])
+
+var int _length = isLengthAdaptive ? math.round(Period) : length
+if (isLengthAdaptive and Period > 2)
+    // Divide length of dominant cycle by 2, because Ehlers recommends that
+    _length := math.round(Period) / 2
+
+//Compute smoothed SNR in Decibels, guarding against a divide by zero error
+SNR := .25*(10*math.log((I1*I1 +Q1*Q1) / (Range*Range) /math.log(10) + 6) +.75*nz(SNR[1]))
+float nSNR = normalize(SNR, 0, 2)
+plot(src, color=nSNR > snrThreshold ? color.new(color.gray, 80) : na, linewidth=20, title='Signal to Noise Ratio', style=plot.style_line)
+
+// Ehlers Elegant Oscillator
+a1 = math.exp(-1.414 * math.pi / _length)
+b1 = 2 * a1 * math.cos(1.414 * math.pi / _length)
+c2 = b1
+c3 = -a1 * a1
+c1 = 1 - c2 - c3
+
+deriv = src - nz(src[2])
+rms = math.avg(math.pow(deriv, 2), rmsLength)
+rms := rms != 0 ? math.sqrt(rms) : 0
+nDeriv = rms != 0 ? deriv / rms : 0
+iFish = nDeriv != 0 ? (math.exp(2 * nDeriv) - 1) / (math.exp(2 * nDeriv) + 1) : 0
+
+ss = 0.0
+ss := bar_index < 3 ? 0 : (c1 * ((iFish + nz(iFish[1])) / 2)) + (c2 * nz(ss[1])) + (c3 * nz(ss[2]))
+ssSig = ta.wma(ss, _length)
+
+slo = ss - ssSig
+sig = slo > 0 ? slo > nz(slo[1]) ? 2 : 1 : slo < 0 ? slo < nz(slo[1]) ? -2 : -1 : 0
+eoColor = sig > 1 ? color.green : sig > 0 ? color.lime : sig < -1 ? color.maroon : sig < 0 ? color.red : color.black
+
+plot(src - (syminfo.mintick * 1000), title='Elegant Oscillator', color=color.new(eoColor, 70), linewidth=1, style=plot.style_line)
+
+// Ehlers Decycler
+twoPiPrd = 2 * math.pi / _length
+alpha = (math.cos(twoPiPrd) + math.sin(twoPiPrd) - 1) / math.cos(twoPiPrd)
+
+dec = 0.0
+dec := ((alpha / 2) * (src + nz(src[1]))) + ((1 - alpha) * nz(dec[1]))
+
+decyclerSig = src > dec ? 1 : src < dec ? -1 : 0
+decColor = decyclerSig > 0 ? color.green : decyclerSig < 0 ? color.red : color.black
+plot(dec, title='Decycler', color=decColor, linewidth=2)
+
+// Ehlers Instantaneous Trend
+getItrend(src, alpha) =>
+    Price = src
+    ITrend = 0.0
+    Trigger = 0.0
+
+    ITrend := (alpha - alpha * alpha / 4) * Price + .5 * alpha * alpha  * Price[1] - (alpha - .75 * alpha * alpha) * Price[2] + 2 * (1 - alpha) * nz(ITrend[1]) - (1 - alpha) * (1 - alpha) * nz(ITrend[2])
+    if(bar_index < 7)
+        ITrend := (Price + 2 * Price[1] + Price[2]) / 4
+    Trigger := 2 * ITrend - ITrend[2]
+    [ITrend, Trigger]
+
+itrendAlpha = 2 / (_length + 1) / 2
+[iT, Tr] = getItrend(src, itrendAlpha)
+
+iTColor = Tr > iT ? color.aqua : color.maroon
+plot(iT, 'Instantaneous Trend', iTColor, 2)
+
+// Ehlers Spearman Rank
+priceArray = array.new_float(300, 0.0)
+rank = array.new_float(300, 0.0)
+for i = 1 to _length
+    array.set(priceArray, i, nz(src[i - 1]))
+    array.set(rank, i, i)
+
+for i = 1 to _length
+    count = _length + 1 - i
+    for j = 1 to _length - count
+        if array.get(priceArray, j + 1) < array.get(priceArray, j)
+            tempPrice = array.get(priceArray, j)
+            tempRank = array.get(rank, j)
+            array.set(priceArray, j, array.get(priceArray, j + 1))
+            array.set(rank, j, array.get(rank, j + 1))
+            array.set(priceArray, j + 1, tempPrice)
+            array.set(rank, j + 1, tempRank)
+
+sum = 0.0
+for i = 1 to _length
+    sum := sum + math.pow(i - array.get(rank, i), 2)
+signal = 2 * (0.5 - (1 - ((6 * sum) / (_length * (math.pow(_length, 2) - 1)))))
+spearmanSlo = signal - nz(signal[1])
+spearmanSig = spearmanSlo > 0 or signal > 0 ? spearmanSlo > nz(spearmanSlo[1]) ? 2 : 1 : spearmanSlo < 0 or signal < 0 ? spearmanSlo < nz(spearmanSlo[1]) ? -2 : -1 : 0
+
+plot(src + (1000 * syminfo.mintick), color=spearmanSig > 0 ? color.new(color.green, 70) : color.new(color.red, 70), title='Spearman Rank')
+
+// -- Signals --
+bool enterLong = ta.crossover(sig, 0) and ta.crossover(decyclerSig, 0) and ta.crossover(src, dec) and (src > iT) and iT[1] < iT and spearmanSig > 0 and nSNR > snrThreshold
+bool enterShort = ta.crossunder(sig, 0) and ta.crossunder(decyclerSig, 0) and ta.crossunder(src, dec) and (src < iT) and iT[1] > iT and spearmanSig < 0 and nSNR > snrThreshold
+bool exitLong = ta.crossunder(src[exitLength], iT)
+bool exitShort = ta.crossover(src[exitLength], iT)
+
+barcolor(bar and strategy.position_size > 0 ? color.green : bar and strategy.position_size < 0 ? color.red : color.gray)
+
+strategy.close('long', when=exitLong and strategy.position_size > 0, comment='EXIT_LONG')
+strategy.close('short', when=exitShort and strategy.position_size < 0, comment='EXIT_SHORT')
+strategy.entry('long', strategy.long, when=enterLong, comment='ENTER_LONG')
+strategy.entry('short', strategy.short, when=enterShort, comment='ENTER_SHORT')

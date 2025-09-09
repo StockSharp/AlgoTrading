@@ -1,0 +1,29 @@
+//@version=5
+strategy("Larry Connors 3 Day High/Low Strategy", overlay=true)
+
+// Definition of Moving Averages
+sma200 = ta.sma(close, 200)
+sma5 = ta.sma(close, 5)
+
+// Strategy Conditions
+condition1 = close > sma200                        // Condition 1: Close is above the 200-day moving average
+condition2 = close < sma5                          // Condition 2: Close is below the 5-day moving average
+
+// High and Low conditions for the last three days
+condition3 = high[2] < high[3] and low[2] < low[3] // Condition 3: Two days ago, both high and low were lower than the previous day
+condition4 = high[1] < high[2] and low[1] < low[2] // Condition 4: Yesterday, both high and low were lower than the day before
+condition5 = high < high[1] and low < low[1]       // Condition 5: Today, both high and low are lower than yesterday
+
+// Combined Buy Condition
+buyCondition = condition1 and condition2 and condition3 and condition4 and condition5
+
+// Sell Condition: Close is above the 5-day moving average
+sellCondition = close > sma5
+
+// Entry command to buy when the conditions are met
+if buyCondition
+    strategy.entry("Buy", strategy.long)
+
+// Exit command to sell when the sell condition is met
+if sellCondition
+    strategy.close("Buy")

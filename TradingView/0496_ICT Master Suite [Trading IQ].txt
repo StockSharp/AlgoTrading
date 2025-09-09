@@ -1,0 +1,3378 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TradingIQ
+
+//@version=5
+
+strategy("ICT Master Suite [Trading IQ]", overlay = true, initial_capital = 1000,
+         process_orders_on_close         = true,
+         calc_on_every_tick              = true,
+         default_qty_type                = strategy.percent_of_equity,
+         default_qty_value               = 5,
+         max_labels_count                = 500,
+         max_lines_count                 = 500,
+         max_boxes_count                 = 500,
+         max_polylines_count             = 100,
+         dynamic_requests                = true,
+         slippage                        = 2,
+         commission_type                 = strategy.commission.percent,
+         commission_value                = 0.02,
+         calc_bars_count                 = 20000,
+         backtest_fill_limits_assumption = 2
+         )
+
+import Trading-IQ/ICTlibrary/1 as IQ
+
+userTF = timeframe.in_seconds(input.timeframe("", title = "Timeframe"))
+
+liteMode        = input.bool(defval = false, title = "Lite Mode")
+labelLevels     = input.string(defval = "Inside" , title = "Box Label Placement", options = ["Inside", "Outside", "None"])
+noBorders       = input.bool(defval = false, title = "No Borders On Levels")
+labelSize       = input.string(defval = "Default", title = "Label Size", options = ["Default", "Auto", "Tiny", "Small", "Normal"])
+tablePlace      = input.string(defval = "Top Right", title = "Strategy Table Location", options = ["Remove Table", "Top Right", "Middle Right", "Bottom Right", "Top Left", "Middle Left", "Bottom Left", "Top Center", "Middle Center", "Bottom Center"])
+tableTxt        = input.string(defval = "Normal", title = "Table Size", options = ["Tiny", "Small", "Normal"])
+
+showBOS         = input.bool(defval = true, title = "Show BoS", group = "Market Structure", inline = "BoS"), boScol = input.color(defval = #74ffbc, title = "", group = "Market Structure", inline = "BoS")
+showMSS         = input.bool(defval = true, title = "Show MSS", group = "Market Structure", inline = "MSS"), MSScol = input.color(defval = color.rgb(255, 116, 116), title = "", group = "Market Structure", inline = "MSS")
+
+
+bullishOBshow   = input.int(minval = 0, defval = 1, title = "Bullish Order Blocks To Show",   inline = "Bullish OB", group = "Blocks"), bullishOBcol = input.color(defval = #74ffbc, title = "",  inline = "Bullish OB", group = "Blocks")
+bearishOBshow   = input.int(minval = 0, defval = 1, title = "Bearish Order Blocks To Show",   inline = "Bearish OB", group = "Blocks"), bearishOBcol = input.color(defval = color.rgb(255, 116, 116), title = "",  inline = "Bearish OB", group = "Blocks")
+bullishBBshow   = input.int(minval = 0, defval = 1, title = "Bullish Breaker Blocks To Show", inline = "Bullish BB", group = "Blocks"), bullishBBcol = input.color(defval = #0072ff, title = "",  inline = "Bullish BB", group = "Blocks")
+bearishBBshow   = input.int(minval = 0, defval = 1, title = "Bearish Breaker Blocks To Show", inline = "Bearish BB", group = "Blocks"), bearishBBcol = input.color(defval = #ff65fb, title = "",  inline = "Bearish BB", group = "Blocks")
+bullishRBshow   = input.int(minval = 0, defval = 1, title = "Bullish Rejection Blocks To Show",   inline = "Bullish RB", group = "Blocks"), bullishRBcol = input.color(defval = #c1fe6d, title = "",  inline = "Bullish RB", group = "Blocks")
+bearishRBshow   = input.int(minval = 0, defval = 1, title = "Bearish Rejection Blocks To Show",   inline = "Bearish RB", group = "Blocks"), bearishRBcol = input.color(defval = #ff854f, title = "",  inline = "Bearish RB", group = "Blocks")
+
+
+
+strongHighsShow = input.int(minval = 0, defval = 1, title = "Strong Highs To Show",  inline = "Strong Highs", group = "Strong Levels"), strongHighscol = input.color(defval = color.rgb(255, 116, 116), title = "",  inline = "Strong Highs", group = "Strong Levels")
+strongLowsShow  = input.int(minval = 0, defval = 1, title = "Strong Lows To Show" ,  inline = "Strong Lows" , group = "Strong Levels"), strongLowscol  = input.color(defval = #74ffbc, title = "",  inline = "Strong Lows" , group = "Strong Levels")
+onlyFVGliq      = input.bool(defval = false, title = "Only FVGs Formed After Liquidity Sweep", group = "FVG")
+FVGUpShow       = input.int(minval = 0, defval = 1, title = "FVG Up To Show", inline = "FVG Up", group = "FVG"), FVGupcol = input.color(defval = #74ffbc, title = "",  inline = "FVG Up", group = "FVG")
+FVGDnShow       = input.int(minval = 0, defval = 1, title = "FVG Down To Show", inline = "FVG Down", group = "FVG"), FVGdncol = input.color(defval = color.rgb(255, 116, 116), title = "",  inline = "FVG Down", group = "FVG")
+upDispShow      = input.int(minval = 0, defval = 0, title = "Up Displacements To Show", inline = "Displacement Up", group = "Displacement")   , dispUpcol = input.color(defval = #74ffbc, title = "",  inline = "Displacement Up", group = "Displacement")
+dnDispShow      = input.int(minval = 0, defval = 0, title = "Down Displacements To Show", inline = "Displacement Down", group = "Displacement") , dispDncol = input.color(defval = color.rgb(255, 116, 116), title = "",  inline = "Displacement Down", group = "Displacement")
+
+pbTF            = input.timeframe("1D", title = "Previous Bar TF",group = "Previous Bar Levels And Equal Levels" )
+showpbH         = input.bool(defval = true, title = "Previous Bar High", group = "Previous Bar Levels And Equal Levels", inline = "PBH")
+pdHcol          = input.color(defval = color.rgb(255, 116, 116), title = "", inline = "PBH", group = "Previous Bar Levels And Equal Levels")
+showpbL         = input.bool(defval = true, title = "Previous Bar Low" , group = "Previous Bar Levels And Equal Levels", inline = "PBL")
+pdLcol          = input.color(defval = #74ffbc, title = "", inline = "PBL", group = "Previous Bar Levels And Equal Levels")
+
+equalLevels     = input.bool (defval = true, title = "Show Equal Levels", group = "Previous Bar Levels And Equal Levels")
+equalHighsCol   = input.color(defval = color.rgb(255, 116, 116), title = "Equal Lows Color" , group = "Previous Bar Levels And Equal Levels")
+equalLowsCol    = input.color(defval = #74ffbc, title = "Equal Highs Color", group = "Previous Bar Levels And Equal Levels")
+
+liqShow         = input.bool(defval = true, title = "Show Liquidity Sweep", group = "Liquidity Sweep")
+liqSweepAgg     = 10 - input.int(defval = 5, minval = 2, maxval = 8, title = "Liquidity Sweep Aggressiveness", group = "Liquidity Sweep")
+liqText         = input.bool(defval = true, title = "Liquidity Sweep Text", group = "Liquidity Sweep")
+
+po3tf           = input.timeframe("1D", "Po3 Timeframe", inline = "Po31", group  = "Power Of Three")
+showpo3         = input.bool(defval =true, title = "", inline = "Po31", group  = "Power Of Three")
+po3tf2          = input.timeframe("1W", "Po3 Timeframe 2", inline = "Po32", group  = "Power Of Three")
+showpo32        = input.bool(defval = true, title = "", inline = "Po32", group  = "Power Of Three")
+showMacros      = input.bool(defval = true, title = "Show Macros", group = "Macros")
+
+
+liqSweepAgg2022          = 10 - input.int(defval = 6, minval = 2, maxval = 8, title = "Model 2022 Liquidity Sweep Aggressiveness", group = "Model 2022")
+model2022Long            = input.bool(defval = true, title = "Model 2022 Long" , group = "Model 2022")
+long2022nearestFib       = input.float(defval = 0.5, minval = 0, step = 0.01, maxval = 1, title = "Long Entry At FVG Nearest This Fib: ", group = "Model 2022")
+model2022Short           = input.bool(defval = true, title = "Model 2022 Short", group = "Model 2022")
+short2022nearestFib      = input.float(defval = 0.5, minval = 0, step = 0.01, maxval = 1, title = "Short Entry At FVG Nearest This Fib: ", group = "Model 2022")
+
+uniLong     = input.bool(defval = false , title = "Unicorn Long", group = "Unicorn Model")
+
+uniLongTP   = input.enum(IQ.unicornExits.sH, title = "Unicorn Long TP" , options =  [IQ.unicornExits.sH , IQ.unicornExits.zero5,
+                                                                                 IQ.unicornExits.one5, IQ.unicornExits.two5], group = "Unicorn Model")
+
+uniLongSL   = input.enum(IQ.unicornExits.sL, title = "Unicorn Long SL" , options = [IQ.unicornExits.sL, IQ.unicornExits.bFVG], group = "Unicorn Model")
+uniLongAdd  = input.int (defval = 0, title = "Subtract Ticks From Long Stop Loss", group = "Unicorn Model", minval = 0)
+uniShort    = input.bool(defval = false , title = "Unicorn Short", group = "Unicorn Model")
+
+uniShortTP  = input.enum(IQ.unicornExits.sL, title = "Unicorn Short TP", options = [IQ.unicornExits.sL , IQ.unicornExits.zero5,
+                                                                                 IQ.unicornExits.one5, IQ.unicornExits.two5], group = "Unicorn Model")
+uniShortSL  = input.enum(IQ.unicornExits.sH, title = "Unicorn Short SL", options = [IQ.unicornExits.sH, IQ.unicornExits.tFVG], group = "Unicorn Model")
+uniShortAdd = input.int (defval = 0, title = "Add Ticks Short Stop Loss", group = "Unicorn Model", minval = 0)
+
+
+silverBulletStratLong    = input.bool(defval = false, title = "Silver Bullet Strategy Long", group = "Silver Bullet")
+silverBulletLongTP       = input.enum(defval = IQ.silverBulletLevels.sH, title = "Silver Bullet Long Strategy TP", options = [IQ.silverBulletLevels.pdH, IQ.silverBulletLevels.sH], group = "Silver Bullet")
+silverBulletLongSL       = input.enum(defval = IQ.silverBulletLevels.sL, title = "Silver Bullet Long Strategy SL", options = [IQ.silverBulletLevels.pdL, IQ.silverBulletLevels.sL], group = "Silver Bullet")
+silverBulletStratShort   = input.bool(defval = false, title = "Silver Bullet Strategy Short", group = "Silver Bullet")
+silverBulletShortTP      = input.enum(defval = IQ.silverBulletLevels.sL, title = "Silver Bullet Short Strategy TP", options = [IQ.silverBulletLevels.pdL, IQ.silverBulletLevels.sL], group = "Silver Bullet")
+silverBulletShortSL      = input.enum(defval = IQ.silverBulletLevels.sH, title = "Silver Bullet Short Strategy SL", options = [IQ.silverBulletLevels.pdH, IQ.silverBulletLevels.sH], group = "Silver Bullet")
+
+
+lRaidSessions            = input.session("1330-1600", title = "Session Range (New York Time)", group = "Liquidity Raid")
+longLiquidityRaid        = input.bool(defval = false, title = "Trade Long Liquidity Raid", group = "Liquidity Raid")
+tpLongLiquidityRaid      = input.string(defval = "Swing High", title = "Long Liquidity Raid TP", options = ["Swing High", "Use Fib (Option Below)"], group = "Liquidity Raid")
+slLongLiquidityRaid      = input.string(defval = "Swing Low" , title = "Long Liquidity Raid SL", options = ["Swing Low", "Breakerblock Bottom", "Use Fib (Option Below)"], group = "Liquidity Raid")
+liquidityRaidFibTP       = input.float(defval = -0.5, title = "Fib TP (Optional)", group = "Liquidity Raid", inline = "LRLfib")
+liquidityRaidFibSL       = input.float(defval = -0.5, title = "Fib SL (Optional)", group = "Liquidity Raid", inline = "LRLfib")
+shortLiquidityRaid       = input.bool(defval = false, title = "Trade Short Liquidity Raid", group = "Liquidity Raid")
+tpShortLiquidityRaid     = input.string(defval = "Swing Low", title = "Short Liquidity Raid TP", options = ["Swing Low", "Use Fib (Option Below)"], group = "Liquidity Raid")
+slShortLiquidityRaid     = input.string(defval = "Swing High" , title = "Short Liquidity Raid SL", options = ["Swing High", "Breakerblock Top", "Use Fib (Option Below)"], group = "Liquidity Raid"), buffer = 0
+
+liquidityRaidFibTPshort  = input.float(defval = -0.5, title = "Fib TP (Optional)", group = "Liquidity Raid", inline = "LRSfib")
+liquidityRaidFibSLshort  = input.float(defval = -0.5, title = "Fib SL (Optional)", group = "Liquidity Raid", inline = "LRSfib")
+
+oteLongs        = input.bool(defval = false, title = "OTE Longs", group = "Optimal Trade Entry")
+longOTElevel    = input.float(defval = 0.79, title = "Long Entry Retracement Level", options = [0.79, 0.705, 0.62], group = "Optimal Trade Entry")
+longOTEPT       = input.string(defval = "-0.5", title = "Long TP", options = ["-0.5", "-1", "-2", "Swing High"], group = "Optimal Trade Entry")
+longOTESL       = input.int(defval = 0, title = "How Many Ticks Below Swing Low For Stop Loss", group = "Optimal Trade Entry")
+oteShorts       = input.bool(defval = false, title = "OTE Shorts", group = "Optimal Trade Entry")
+shortOTElevel   = input.float(defval = 0.79, title = "Short Entry Retracement Level", options = [0.79, 0.705, 0.62], group = "Optimal Trade Entry")
+shortOTEPT      = input.string(defval = "-0.5", title = "Short TP", options = ["-0.5", "-1", "-2", "Swing Low"], group = "Optimal Trade Entry")
+shortOTESL      = input.int(defval = 0, title = "How Many Ticks Above Swing Low For Stop Loss", group = "Optimal Trade Entry")
+
+
+var model2022 = false
+
+if model2022Long or model2022Short
+    model2022   := true
+    onlyFVGliq  := true
+    liqSweepAgg := liqSweepAgg2022
+
+var upRejections                = array.new<IQ.rejectionBlocks>(), var dnRejections       = array.new<IQ.rejectionBlocks>()
+var upFVGpricesSorted           = array.new<float>(),              var dnFVGpricesSorted  = array.new<float>()
+var upRejectionsPrices          = array.new<float>(),              var dnRejectionsPrices = array.new<float>()
+map<string, float> masterCoords = map.new<string, float>(),        var takeFVGs          = map.new<string, int>()
+
+if takeFVGs.size() == 0
+
+    takeFVGs.put("Up"  , 0)
+    takeFVGs.put("Down", 0)
+
+future = time("", -1), timen5 = time("", -5), var finalTF = timeframe.from_seconds(math.max(timeframe.in_seconds(""), userTF))
+
+getSwings(tf) =>
+
+    atr = ta.atr(14)
+
+    [high[1], low[1], ta.pivothigh(3, 3), ta.pivotlow(3, 3), high[2], low, high, low[2], atr * .05, atr * 2, atr, atr * liqSweepAgg, time[3], time[1]]
+
+[pdH, pdL, getPH, getPL, H2, L, H, L2, threshold, atrTF, atrTFreg, atrLiqSweep, time3, time1]
+             = request.security(syminfo.tickerid, finalTF, getSwings(finalTF))
+
+[historicalData, logZ] = IQ.necessaryData(atrTF)
+
+var borderTransp = switch noBorders
+
+    true => 100
+    =>      0
+
+getOB() =>
+
+    atr = nz(atrTFreg)
+
+    var lower  = 20e20
+    var higher = 0.
+
+    var isRange = false
+
+    if lower == lower[10]
+        isRange := true
+
+    lower  := math.min(lower , low)
+    higher := math.max(higher, high)
+
+    var bullishOBbox = array.new<IQ.orderBlock>()
+    var bearishOBbox = array.new<IQ.orderBlock>()
+
+    IQ.invalidBlockCheck(bullishOBbox, bearishOBbox, userTF)
+
+    if higher != higher[1]
+
+        if isRange
+
+            switch
+
+                logZ >=  2 => bullishOBbox.OB(historicalData.highArr, historicalData.signArr, historicalData.lowArr, historicalData.timeArr, -1)
+                logZ <= -2 => bullishOBbox.OB(historicalData.highArr, historicalData.signArr, historicalData.lowArr, historicalData.timeArr,  1)
+
+            isRange := false
+
+        lower  := low  - atr
+        higher := high + atr
+
+
+    else if lower != lower[1]
+
+        if isRange
+
+            switch
+
+                logZ >=  2 => bearishOBbox.OB(historicalData.highArr, historicalData.signArr, historicalData.lowArr, historicalData.timeArr, -1)
+                logZ <= -2 => bearishOBbox.OB(historicalData.highArr, historicalData.signArr, historicalData.lowArr, historicalData.timeArr,  1)
+
+            isRange := false
+
+        higher := high + atr
+        lower  := low  - atr
+
+    bullishOBbox.OBdraw(bullishOBshow, bearishBBshow, bullishOBcol, bearishBBcol, "Bullish OB", "Bearish BB", true ,
+                             labelLevels, borderTransp, liteMode, timen5, masterCoords)
+
+    bearishOBbox.OBdraw(bearishOBshow, bullishBBshow, bearishOBcol, bullishBBcol, "Bearish OB", "Bullish BB", false,
+                             labelLevels, borderTransp, liteMode, timen5, masterCoords)
+
+    [bullishOBbox, bearishOBbox]
+
+
+
+
+zzLiq(float atr, float buffer, array<IQ.FVG> FVGarr) =>
+    if liqShow or onlyFVGliq or model2022
+
+        var point        = close
+        var timeP        = time
+        var dir          = 0
+
+        var chart.point cPoint  = na
+        var chart.point pPoint  = na
+        var chart.point p2Point = na
+        var chart.point sweepPoint = na
+        var chart.point sweepPointDn = na
+
+        var mostRecentPoint    = 0.
+
+        var sweepPointArr  = array.new<chart.point>()
+        var upSweepArr     = array.new<chart.point>(),
+        var upSweepDispose = array.new<int>()
+
+
+        var sweepPointArrDn = array.new<chart.point>()
+        var dnSweepArr      = array.new<chart.point>(),
+        var dnSweepDispose  = array.new<int>()
+
+        var sweepUpHighPoint = 0.
+        var sweepDnLowPoint = 20e20
+
+        var sweepData = IQ.sweeps.new(matrix.new<float>(4, 0), matrix.new<float>(4, 0), array.new<box>(), array.new<box>())
+
+        if dir == 1
+
+            point := math.max(point, high)
+
+            timeP := switch high == point
+
+                true => time
+                =>      timeP
+
+            cPoint := chart.point.from_time(timeP, point)
+
+            addition = math.abs(point - pPoint.price) * buffer
+
+            if low <= point - atrLiqSweep - addition and high != point
+
+                if not na(p2Point)
+
+                    sweepPoint := p2Point.copy()
+                    sweepPointArr.push(sweepPoint)
+
+                if not na(sweepPointDn) and not na(p2Point)
+
+                    if sweepPointArrDn.size() >= 2
+
+                        if dnSweepArr.size() == 0
+
+                            getPlow = p2Point
+                            getClow = cPoint
+
+                            if not dnSweepDispose.includes(getClow.time) and not dnSweepDispose.includes(getPlow.time)
+
+                                if getClow.price >= getPlow.price - atrTFreg and getClow.price <= getPlow.price + atrTFreg
+
+                                    sweepDnLowPoint := sweepPointArrDn.last().price
+                                    dnSweepArr.push(getPlow)
+                                    dnSweepArr.push(getClow)
+
+
+                        else
+
+                            getClow = p2Point
+                            getFirst = dnSweepArr.first()
+
+                            if getClow.price >= getFirst.price - atrTFreg and getClow.price <= getFirst.price + atrTFreg
+
+                                sweepDnLowPoint := math.min(sweepPointArrDn.last().price, sweepDnLowPoint)
+
+                                dnSweepArr.push(getClow)
+
+                            else
+
+                                dnSweepArr.clear()
+                                sweepDnLowPoint := 20e20
+
+                                getPlow = sweepPointArrDn.get(sweepPointArrDn.size() - 2)
+
+                                if not dnSweepDispose.includes(getClow.time) and not dnSweepDispose.includes(getPlow.time)
+
+                                    if getClow.price >= getPlow.price - atrTFreg and getClow.price <= getPlow.price + atrTFreg
+
+                                        sweepDnLowPoint := sweepPointArrDn.last().price
+
+                                        dnSweepArr.push(getPlow)
+                                        dnSweepArr.push(getClow)
+
+
+
+                if not na(p2Point)
+
+                    sweepPointDn := p2Point.copy()
+                    sweepPointArrDn.push(sweepPointDn)
+
+
+                if not na(pPoint)
+
+                    p2Point    := pPoint.copy()
+
+
+                pPoint  := chart.point.from_time(timeP, point)
+                cPoint  := chart.point.from_time(time, low)
+
+                dir   := -1
+                point := low
+                timeP := time
+
+        else if dir == -1
+
+
+            point := math.min(low, point)
+
+            timeP := switch low == point
+                true => time
+                =>      timeP
+
+            cPoint := chart.point.from_time(timeP, point)
+
+
+            addition = math.abs(point - pPoint.price) * buffer
+
+            if high >= point + atr + addition and low != point
+
+                if not na(p2Point)
+
+                    sweepPointDn := p2Point.copy()
+                    sweepPointArrDn.push(sweepPointDn)
+
+
+                if not na(sweepPoint) and not na(p2Point)
+
+                    if sweepPointArr.size() >= 2
+
+                        if upSweepArr.size() == 0
+
+                            getPlow = p2Point
+                            getClow = cPoint
+
+                            if not upSweepDispose.includes(getClow.time) and not upSweepDispose.includes(getPlow.time)
+
+                                if getClow.price >= getPlow.price - atrTFreg and getClow.price <= getPlow.price + atrTFreg
+
+                                    sweepUpHighPoint := sweepPointArr.last().price
+                                    upSweepArr.push(getPlow)
+                                    upSweepArr.push(getClow)
+
+
+                        else
+
+                            getClow = p2Point
+                            getFirst = upSweepArr.first()
+
+                            if getClow.price >= getFirst.price - atrTFreg and getClow.price <= getFirst.price + atrTFreg
+
+                                sweepUpHighPoint := math.max(sweepPointArr.last().price, sweepUpHighPoint)
+
+                                upSweepArr.push(getClow)
+
+                            else
+
+                                upSweepArr.clear()
+                                sweepUpHighPoint := 0
+
+                                getPlow = sweepPointArr.get(sweepPointArr.size() - 2)
+
+                                if not upSweepDispose.includes(getClow.time) and not upSweepDispose.includes(getPlow.time)
+
+
+                                    if getClow.price >= getPlow.price - atrTFreg and getClow.price <= getPlow.price + atrTFreg
+
+                                        sweepUpHighPoint := sweepPointArr.last().price
+
+                                        upSweepArr.push(getPlow)
+                                        upSweepArr.push(getClow)
+
+                if not na(p2Point)
+
+                    sweepPoint := p2Point.copy()
+                    sweepPointArr.push(sweepPoint)
+
+                if not na(pPoint)
+
+                    p2Point := pPoint.copy()
+
+                pPoint := chart.point.from_time(timeP, point)
+                cPoint := chart.point.from_time(time, high)
+
+                dir   := 1
+                point := high
+                timeP := time
+
+        if dir == 0
+
+            if high >= point + atr
+
+                if not na(pPoint)
+                    p2Point := pPoint.copy()
+
+                pPoint := chart.point.from_time(timeP, point)
+                cPoint := chart.point.from_time(time, high)
+
+                dir   := 1
+                point := high
+                timeP := time
+
+
+            else if low <= point + atr
+
+
+                if not na(pPoint)
+                    p2Point := pPoint.copy()
+
+                pPoint := chart.point.from_time(timeP, point)
+                cPoint := chart.point.from_time(time, low)
+
+                dir   := -1
+                point := low
+                timeP := time
+
+        if IQ.isLastBar(userTF) and liqShow
+
+            if upSweepArr.size() > 0 and sweepUpHighPoint != 0 and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                if close >= sweepUpHighPoint + atrTFreg
+
+                    topSweep = 0., botSweep = 20e20
+
+                    for data in upSweepArr
+
+                        topSweep := math.max(topSweep, data.price)
+                        botSweep := math.min(botSweep, data.price)
+
+                        upSweepDispose.push(data.time)
+
+                    if not sweepData.upSweeps.row(0).includes(upSweepArr.first().time)
+
+                        sweepData.upSweeps.add_col(sweepData.upSweeps.columns(),
+                                         array.from(upSweepArr.first().time,
+                                                     topSweep,
+                                                     time    ,
+                                                     botSweep
+                                                     ))
+
+                        if onlyFVGliq
+                            takeFVGs.put("Up", 1)
+
+                            for i = historicalData.timeArr.indexof(upSweepArr.last().time) to 1
+                                if i + 2 < historicalData.timeArr.size()
+
+                                    getH2 = historicalData.highArr.get(i + 2), getL = historicalData.lowArr.get(i)
+                                    getT  = historicalData.timeArr.get(i + 1)
+
+                                    if getH2 < getL
+
+                                        FVGarr.unshift(IQ.FVG.new(getH2, getL, "Up", getT))
+                                        upFVGpricesSorted.insert(upFVGpricesSorted.binary_search_rightmost(getH2), getH2)
+                                        takeFVGs.put("Up", 2)
+
+                        sweepUpHighPoint := 0
+
+                        upSweepArr.clear()
+
+            if dnSweepArr.size() > 0 and sweepDnLowPoint != 20e20 and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                if close <= sweepDnLowPoint - atrTFreg
+
+                    topSweep = 0., botSweep = 20e20
+
+                    for data in dnSweepArr
+
+                        topSweep := math.max(topSweep, data.price)
+                        botSweep := math.min(botSweep, data.price)
+
+                        dnSweepDispose.push(data.time)
+
+                    if not sweepData.dnSweeps.row(0).includes(dnSweepArr.first().time)
+
+                        sweepData.dnSweeps.add_col(sweepData.dnSweeps.columns(),
+                                         array.from(dnSweepArr.first().time,
+                                                     topSweep,
+                                                     time    ,
+                                                     botSweep
+                                                     ))
+
+
+                        if onlyFVGliq
+                            takeFVGs.put("Down", 1)
+
+                            for i = historicalData.timeArr.indexof(dnSweepArr.last().time) to 1
+
+                                if i + 2 < historicalData.timeArr.size()
+
+                                    getH = historicalData.highArr.get(i), getL2 = historicalData.lowArr.get(i + 2)
+                                    getT = historicalData.timeArr.get(i + 1)
+
+                                    if getL2 > getH
+
+                                        FVGarr.unshift(IQ.FVG.new(getH, getL2, "Down", getT))
+                                        dnFVGpricesSorted.insert(dnFVGpricesSorted.binary_search_rightmost(getL2), getL2)
+
+                                        takeFVGs.put("Down", 2)
+
+
+                        sweepDnLowPoint := 20e20
+
+                        dnSweepArr.clear()
+
+        if barstate.islast
+
+            if sweepData.upSweepDrawings.size() > 0
+                for i = 0 to sweepData.upSweepDrawings.size() - 1
+                    sweepData.upSweepDrawings.shift().delete()
+
+            if sweepData.dnSweepDrawings.size() > 0
+                for i = 0 to sweepData.dnSweepDrawings.size() - 1
+                    sweepData.dnSweepDrawings.shift().delete()
+
+
+            if sweepData.upSweeps.columns() > 0
+
+                var polyline outlineFirst = na
+
+                outlineFirst.delete()
+
+                getCols = sweepData.upSweeps.columns()
+
+                for i = 0 to getCols - 1
+
+                    getStartTime = int(sweepData.upSweeps.get(0, i)), getTop = sweepData.upSweeps.get(1, i)
+                    getEndTime   = int(sweepData.upSweeps.get(2, i)), getBot = sweepData.upSweeps.get(3, i)
+
+                    sweepData.upSweepDrawings.push(
+                             box.new(getStartTime, getTop,
+                                     getEndTime  , getBot,
+                                     bgcolor      = color.new(#6929F2, 90),
+                                     text         = liqText ? "Liquidity Sweep" : "",
+                                     text_color   = chart.fg_color,
+                                     text_halign  = text.align_left,
+                                     text_size    = size.auto,
+                                     text_wrap    = text.wrap_auto,
+                                     xloc         = xloc.bar_time,
+                                     border_color = color.new(#6929F2, borderTransp)
+                             ))
+
+                    if i == getCols - 1 and not noBorders and not liteMode
+
+                        points = array.from( chart.point.from_time(getStartTime, getTop),
+                                             chart.point.from_time(getEndTime  , getTop),
+                                             chart.point.from_time(getEndTime  , getBot),
+                                             chart.point.from_time(getStartTime, getBot))
+
+                        outlineFirst := polyline.new(points, closed = true, xloc = xloc.bar_time, line_width = 5,
+                                             line_color = color.new(#6929F2, 80)
+                                             )
+
+            if sweepData.dnSweeps.columns() > 0
+
+                var polyline outlineFirst = na
+
+                outlineFirst.delete()
+
+                getCols = sweepData.dnSweeps.columns()
+
+                for i = 0 to getCols - 1
+
+                    getStartTime = int(sweepData.dnSweeps.get(0, i)), getTop = sweepData.dnSweeps.get(1, i)
+                    getEndTime   = int(sweepData.dnSweeps.get(2, i)), getBot = sweepData.dnSweeps.get(3, i)
+
+                    sweepData.dnSweepDrawings.push(
+                             box.new(int(sweepData.dnSweeps.get(0, i)), sweepData.dnSweeps.get(1, i),
+                                     int(sweepData.dnSweeps.get(2, i)), sweepData.dnSweeps.get(3, i),
+                                     bgcolor      = color.new(#F24968, 90),
+                                     text         = liqText ? "Liquidity Sweep" : "",
+                                     text_color   = chart.fg_color,
+                                     text_halign  = text.align_left,
+                                     text_size    = size.auto,
+                                     text_wrap    = text.wrap_auto,
+                                     xloc         = xloc.bar_time,
+                                     border_color = color.new(#F24968, borderTransp)
+                             ))
+
+
+
+                    if i == getCols - 1 and not noBorders and not liteMode
+
+                        points = array.from( chart.point.from_time(getStartTime, getTop),
+                                             chart.point.from_time(getEndTime  , getTop),
+                                             chart.point.from_time(getEndTime  , getBot),
+                                             chart.point.from_time(getStartTime, getBot))
+
+                        outlineFirst := polyline.new(points, closed = true, xloc = xloc.bar_time, line_width = 5,
+                                             line_color = color.new(#F24968, 80)
+                                             )
+
+
+        sweepData
+
+
+zz(float atr, float buffer) =>
+
+    var strongHighSorted = array.new<float>()
+    var strongLowSorted  = array.new<float>()
+
+    var point        = close
+    var pointTrail   = close
+    var timeP        = time
+    var dir          = 0
+
+    var chart.point cPoint     = na
+    var chart.point pPoint     = na
+    var chart.point p2Point    = na
+
+    var bosUpL = array.new<IQ.labelLine>(), var choUpL = array.new<IQ.labelLine>()
+    var bosDnL = array.new<IQ.labelLine>(), var mssDnL = array.new<IQ.labelLine>()
+
+    var strongHighs = array.new<IQ.strongPoints>()
+    var strongLows  = array.new<IQ.strongPoints>()
+
+    var structureDirection = ""
+    var mostRecentPoint    = 0.
+
+    var historicalPoints = array.new<chart.point>()
+
+    var chart.point OTEstart = chart.point.now()
+
+    if IQ.isLastBar(userTF)
+
+        if close > strongHighSorted.min() and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+            for i = strongHighs.size() - 1 to 0
+
+                data = strongHighs.get(i)
+
+                if close > data.price
+
+                    data.strongPointLabel.delete()
+                    data.strongPointLine .delete()
+
+                    strongHighs.remove(i)
+                    strongHighSorted.remove(i)
+
+        if close < strongLowSorted.max() and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+
+            for i = strongLows.size() - 1 to 0
+
+                data = strongLows.get(i)
+
+                if close < data.price
+
+                    data.strongPointLabel.delete()
+                    data.strongPointLine .delete()
+
+                    strongLows.remove(i)
+                    strongLowSorted.remove(i)
+
+    if barstate.islast
+
+
+        if strongHighs.size() > 0
+
+            for i = 0 to strongHighs.size() - 1
+
+                getStrongHigh = strongHighs.get(i)
+
+                getStrongHigh.strongPointLabel.delete()
+                getStrongHigh.strongPointLine .delete()
+
+                if not na(getStrongHigh.overlayLine)
+
+                    getStrongHigh.overlayLine  .delete()
+                    getStrongHigh.overlayLine2 .delete()
+
+                getHighTime = getStrongHigh.timeAtprice, getHigh = getStrongHigh.price
+
+                if i < strongHighsShow
+
+
+                    getStrongHigh.strongPointLabel := label.new(getHighTime, getHigh, xloc = xloc.bar_time,
+                                     color      = #00000000,
+                                     textcolor  = strongHighscol,
+                                     text       = "Strong High",
+                                     size       = size.tiny
+                                     )
+
+                    getStrongHigh.strongPointLine := line.new(getHighTime, getHigh, timen5, getHigh, xloc = xloc.bar_time,
+                                         color = strongHighscol,
+                                         style = line.style_dashed
+                                         )
+
+                    if i == 0
+
+                        getIndex = historicalData.timeArr.indexof(getHighTime)
+
+                        if getIndex > 150
+
+                            getStrongHigh.strongPointLabel.set_x(timen5)
+
+                        if not liteMode
+
+                            futTime = switch getIndex + 1 < historicalData.timeArr.size()
+
+                                true => historicalData.timeArr.get(getIndex + 1)
+                                =>      time("", -1)
+
+                            pTime = historicalData.timeArr.get(getIndex - 1)
+
+                            getStrongHigh.overlayLine  := line.new(pTime, getHigh, futTime, getHigh,
+                                                                 width = 2,
+                                                                 color = strongHighscol,
+                                                                 xloc  = xloc.bar_time
+                                                                 )
+                            getStrongHigh.overlayLine2 := line.new(pTime, getHigh, futTime, getHigh,
+                                                                 width = 5,
+                                                                 color = color.new(strongHighscol, 80),
+                                                                 xloc  = xloc.bar_time
+                                                                 )
+
+
+                if na(masterCoords.get("Strong High")) and strongHighsShow != 0
+
+                    masterCoords.put("Strong High", getStrongHigh.strongPointLine.get_y2())
+
+        if strongLows.size() > 0
+
+            for i = 0 to strongLows.size() - 1
+
+                getStrongLow = strongLows.get(i)
+
+                getStrongLow.strongPointLabel.delete()
+                getStrongLow.strongPointLine .delete()
+
+                if not na(getStrongLow.overlayLine)
+
+                    getStrongLow.overlayLine  .delete()
+                    getStrongLow.overlayLine2 .delete()
+
+                getLowTime = getStrongLow.timeAtprice, getLow = getStrongLow.price
+
+                if i < strongLowsShow
+
+                    getStrongLow.strongPointLabel := label.new(getLowTime, getLow, xloc = xloc.bar_time,
+                                     color      = #00000000,
+                                     textcolor  = strongLowscol,
+                                     text       = "Strong Low",
+                                     size       = size.tiny,
+                                     style      = label.style_label_up
+                                     )
+
+                    getStrongLow.strongPointLine := line.new(getLowTime, getLow, timen5, getLow, xloc = xloc.bar_time,
+                                         color = strongLowscol,
+                                         style = line.style_dashed
+                                         )
+
+                    if i == 0
+
+
+                        getIndex = historicalData.timeArr.indexof(getLowTime)
+
+                        if getIndex > 150
+
+                            getStrongLow.strongPointLabel.set_x(timen5)
+
+                        if not liteMode
+
+                            futTime = switch getIndex + 1 < historicalData.timeArr.size()
+
+                                true => historicalData.timeArr.get(getIndex + 1)
+                                =>      time("", -1)
+
+                            pTime = historicalData.timeArr.get(getIndex - 1)
+
+                            getStrongLow.overlayLine  := line.new(pTime, getLow, futTime, getLow,
+                                                                 width = 2,
+                                                                 color = strongLowscol,
+                                                                 xloc  = xloc.bar_time
+                                                                 )
+                            getStrongLow.overlayLine2 := line.new(pTime, getLow, futTime, getLow,
+                                                                 width = 5,
+                                                                 color = color.new(strongLowscol, 80),
+                                                                 xloc  = xloc.bar_time
+                                                                 )
+
+                if na(masterCoords.get("Strong Low")) and strongLowsShow != 0
+
+                    masterCoords.put("Strong Low", getStrongLow.strongPointLine.get_y2())
+
+    if dir == 1
+
+        if not na(p2Point)
+
+            if structureDirection == "Up"
+
+                if close[1] <= p2Point.price and close > p2Point.price and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                    if p2Point.price != mostRecentPoint
+
+                        if bosUpL.size() == 0
+
+                            bosUpL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, false)
+                            mostRecentPoint := p2Point.price
+
+                            startIndex = historicalData.timeArr.indexof(p2Point.time)
+
+                            strongLows.getStrongLow(startIndex, historicalData.timeArr, historicalData.lowArr, strongLowSorted)
+
+
+                        else
+
+                            if p2Point.price != bosUpL.last().lin.get_y2()
+
+                                bosUpL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, false)
+                                mostRecentPoint := p2Point.price
+
+                                startIndex = historicalData.timeArr.indexof(p2Point.time)
+
+                                strongLows.getStrongLow(startIndex, historicalData.timeArr, historicalData.lowArr, strongLowSorted)
+
+            else if structureDirection == "Down"
+
+                if close[1] <= p2Point.price and close > p2Point.price
+
+                    if p2Point.price != mostRecentPoint
+
+                        if mssDnL.size() == 0
+
+                            mssDnL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, false, upRejections, dnRejections,
+                                 historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                 historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                 upRejectionsPrices, dnRejectionsPrices
+                                 )
+
+                            mostRecentPoint := p2Point.price
+                            structureDirection := "Up"
+
+                            OTEstart := pPoint.copy()
+
+
+                        else
+
+                            if p2Point.price != mssDnL.last().lin.get_y2()
+
+                                mssDnL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, false, upRejections, dnRejections,
+                                 historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                 historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                 upRejectionsPrices, dnRejectionsPrices
+
+                                 )
+
+                                mostRecentPoint := p2Point.price
+                                structureDirection := "Up"
+
+
+                                OTEstart := pPoint.copy()
+
+
+
+
+        point := math.max(point, high)
+
+        timeP := switch high == point
+
+            true => time
+            =>      timeP
+
+        cPoint := chart.point.from_time(timeP, point)
+
+        addition = math.abs(point - pPoint.price) * buffer
+
+        if low <= point - atr - addition and high != point
+
+            if not na(pPoint)
+
+                p2Point    := pPoint.copy()
+
+                if close < p2Point.price and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                    if structureDirection == "Up"
+
+                        if p2Point.price != mostRecentPoint
+
+                            if choUpL.size() == 0
+
+                                choUpL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, true, upRejections, dnRejections,
+                                 historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                 historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                 upRejectionsPrices, dnRejectionsPrices
+                                 )
+                                mostRecentPoint := p2Point.price
+                                structureDirection := "Down"
+
+
+                                OTEstart := cPoint.copy()
+
+
+                            else
+
+                                if p2Point.price != choUpL.last().lin.get_y2()
+
+                                    choUpL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, true, upRejections, dnRejections,
+                                      historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                      historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                      upRejectionsPrices, dnRejectionsPrices
+
+                                      )
+                                    mostRecentPoint := p2Point.price
+                                    structureDirection := "Down"
+
+                                    OTEstart := cPoint.copy()
+
+
+                    else if structureDirection == "Down"
+
+                        if p2Point.price != mostRecentPoint
+
+                            if bosDnL.size() == 0
+
+                                bosDnL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, true)
+                                mostRecentPoint := p2Point.price
+
+                                startIndex = historicalData.timeArr.indexof(p2Point.time)
+                                strongHighs.getStrongHigh(startIndex, historicalData.timeArr, historicalData.highArr, strongHighSorted)
+
+                            else
+
+                                if p2Point.price != bosDnL.last().lin.get_y2()
+
+                                    bosDnL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, true)
+                                    mostRecentPoint := p2Point.price
+
+                                    startIndex = historicalData.timeArr.indexof(p2Point.time)
+                                    strongHighs.getStrongHigh(startIndex, historicalData.timeArr, historicalData.highArr, strongHighSorted)
+
+            pPoint  := chart.point.from_time(timeP, point)
+            cPoint  := chart.point.from_time(time, low)
+            historicalPoints.unshift(pPoint)
+
+            dir   := -1
+            point := low
+            timeP := time
+
+
+    else if dir == -1
+
+        if not na(p2Point)
+
+            if structureDirection == "Up"
+
+                if close[1] > p2Point.price and close <= p2Point.price and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                    if p2Point.price != mostRecentPoint
+
+                        if choUpL.size() == 0
+
+                            choUpL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, true, upRejections, dnRejections,
+                                 historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                 historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                 upRejectionsPrices, dnRejectionsPrices
+                                 )
+                            mostRecentPoint := p2Point.price
+                            structureDirection := "Down"
+
+
+                            OTEstart := pPoint.copy()
+
+
+
+                        else
+
+                            if p2Point.price != choUpL.last().lin.get_y2()
+
+                                choUpL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, true, upRejections, dnRejections,
+                                 historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                 historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                 upRejectionsPrices, dnRejectionsPrices
+
+                                 )
+                                mostRecentPoint := p2Point.price
+                                structureDirection := "Down"
+
+
+                                OTEstart := pPoint.copy()
+
+
+
+            else if structureDirection == "Down"
+
+                if close[1] > p2Point.price and close <= p2Point.price and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                    if p2Point.price != mostRecentPoint
+
+                        if bosDnL.size() == 0
+
+                            bosDnL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, true)
+                            mostRecentPoint := p2Point.price
+
+                            startIndex = historicalData.timeArr.indexof(p2Point.time)
+                            strongHighs.getStrongHigh(startIndex, historicalData.timeArr, historicalData.highArr, strongHighSorted)
+
+
+                        else
+
+                            if p2Point.price != bosDnL.last().lin.get_y2()
+
+                                bosDnL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, true)
+                                mostRecentPoint := p2Point.price
+
+                                startIndex = historicalData.timeArr.indexof(p2Point.time)
+                                strongHighs.getStrongHigh(startIndex, historicalData.timeArr, historicalData.highArr, strongHighSorted)
+
+
+
+        point := math.min(low, point)
+
+        timeP := switch low == point
+            true => time
+            =>      timeP
+
+        cPoint := chart.point.from_time(timeP, point)
+
+
+        addition = math.abs(point - pPoint.price) * buffer
+
+        if high >= point + atr + addition and low != point
+
+            if not na(pPoint)
+
+                p2Point := pPoint.copy()
+
+                if close > p2Point.price and barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                    if structureDirection == "Up"
+
+                        if p2Point.price != mostRecentPoint
+
+                            if bosUpL.size() == 0
+
+                                bosUpL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, false)
+                                mostRecentPoint := p2Point.price
+                                startIndex = historicalData.timeArr.indexof(p2Point.time)
+
+                                strongLows.getStrongLow(startIndex, historicalData.timeArr, historicalData.lowArr, strongLowSorted)
+
+                            else
+
+                                if p2Point.price != bosUpL.last().lin.get_y2()
+
+                                    bosUpL.drawBos(p2Point, p2Point.time, p2Point.price, boScol, showBOS, false)
+                                    mostRecentPoint := p2Point.price
+                                    startIndex = historicalData.timeArr.indexof(p2Point.time)
+
+                                    strongLows.getStrongLow(startIndex, historicalData.timeArr, historicalData.lowArr, strongLowSorted)
+
+                    else if structureDirection == "Down"
+
+                        if p2Point.price != mostRecentPoint
+
+                            if mssDnL.size() == 0
+
+                                mssDnL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, false, upRejections, dnRejections,
+                                 historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                 historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                 upRejectionsPrices, dnRejectionsPrices
+                                 )
+                                mostRecentPoint := p2Point.price
+                                structureDirection := "Up"
+
+
+                                OTEstart := cPoint.copy()
+
+
+                            else
+
+                                if p2Point.price != mssDnL.last().lin.get_y2()
+
+                                    mssDnL.drawMSS(p2Point, p2Point.time, p2Point.price, MSScol, showMSS, false, upRejections, dnRejections,
+                                         historicalData.highArr , historicalData.lowArr , historicalData.timeArr,
+                                         historicalData.closeArr, historicalData.openArr, historicalData.atrTFarr,
+                                         upRejectionsPrices, dnRejectionsPrices
+                                         )
+                                    mostRecentPoint := p2Point.price
+                                    structureDirection := "Up"
+
+                                    OTEstart := cPoint.copy()
+
+
+
+            pPoint := chart.point.from_time(timeP, point)
+            cPoint := chart.point.from_time(time, high)
+            historicalPoints.unshift(pPoint)
+
+            dir   := 1
+            point := high
+            timeP := time
+
+    if dir == 0
+
+        if high >= point + atr
+
+            if not na(pPoint)
+                p2Point := pPoint.copy()
+
+            pPoint := chart.point.from_time(timeP, point)
+            cPoint := chart.point.from_time(time, high)
+            historicalPoints.unshift(pPoint)
+
+            dir   := 1
+            pointTrail := point
+            point := high
+            timeP := time
+            structureDirection := "Up"
+
+
+        else if low <= point + atr
+
+
+            if not na(pPoint)
+                p2Point := pPoint.copy()
+
+            pPoint := chart.point.from_time(timeP, point)
+            cPoint := chart.point.from_time(time, low)
+            historicalPoints.unshift(pPoint)
+
+            dir   := -1
+            pointTrail := point
+            point := low
+            timeP := time
+            structureDirection := "Down"
+
+    [cPoint, pPoint, p2Point, structureDirection, OTEstart, historicalPoints, dir]
+
+
+
+[cPoint, pPoint, getKeyPoint, structureDirection, OTEstart, historicalPoints, trendDir] = zz(atrTF, buffer)
+
+
+
+model2022Long(IQ.sweeps sweepData, array<IQ.FVG> FVGarr) =>
+
+    if model2022Long
+        var includesSweep = array.new<int>(), var trailingSweep = 0
+
+        var longFVGdrawings = IQ.m2022.new()
+
+        openTrades = strategy.opentrades - 1, closedTrades = strategy.closedtrades - 1
+
+        var getHighestHigh = 0.
+
+        if IQ.checkIfTraded("Long 2022 Model")
+
+            includesSweep.push(trailingSweep)
+            longFVGdrawings.longFVGentryBox.set_right(time)
+
+            if not na(longFVGdrawings.sweepData)
+
+                chart.point secondLow = na, chart.point peak = na, chart.point secondHigh = na
+
+                startTimeIndex      = historicalData.binaryTimeArr.binary_search_leftmost(int(longFVGdrawings.sweepData.get(0)))
+                startTime           = historicalData.binaryTimeArr.get(startTimeIndex)
+
+                binaryLowArr        = historicalData.lowArr .copy(), binaryLowArr .reverse()
+                binaryHighArr       = historicalData.highArr.copy(), binaryHighArr.reverse()
+
+                initialLow = chart.point.from_time(startTime, binaryLowArr .get(startTimeIndex))
+                peak      := chart.point.from_time(startTime, binaryHighArr.get(startTimeIndex))
+
+                secondLowPrice = switch
+
+                    longFVGdrawings.sweepData.get(3) == initialLow.price => longFVGdrawings.sweepData.get(1)
+                    =>                                                      longFVGdrawings.sweepData.get(3)
+
+                isActive = false
+
+                for i = startTimeIndex to historicalData.binaryTimeArr.size() - 1
+
+                    getHigh = binaryHighArr.get(i), getLow = binaryLowArr.get(i)
+
+                    if getLow == secondLowPrice and not isActive or isActive and getLow <= secondLowPrice
+
+                        getTime      = historicalData.binaryTimeArr.get(i)
+
+                        sliceHigh    = binaryHighArr.slice(startTimeIndex, i + 1)
+                        sliceTime    = historicalData.binaryTimeArr.slice(startTimeIndex, i + 1)
+
+                        getHighest = sliceHigh.lastindexof(sliceHigh.max())
+
+                        peak := chart.point.from_time(sliceTime.get(getHighest), sliceHigh.max())
+
+                        secondLow  := chart.point.from_time(getTime, getLow )
+                        secondHigh := chart.point.from_time(getTime, getHigh)
+
+                        secondLowPrice := getLow
+
+                        isActive := true
+
+                    if not na(secondHigh)
+
+                        if getHigh >= secondHigh.price
+
+                            secondHigh := chart.point.from_time(historicalData.binaryTimeArr.get(i), getHigh)
+
+
+                points = array.from( chart.point.from_time(int(longFVGdrawings.sweepData.get(0)), longFVGdrawings.sweepData.get(1)),
+                                     peak, secondLow, secondHigh, chart.point.from_time(time, longFVGdrawings.longFVGentryBox.get_top()))
+
+
+                polyline.new(points, xloc = xloc.bar_time, line_width = 2, line_color = #74ffbc)
+
+            longFVGdrawings.longFVGentryBox := box(na)
+
+        if IQ.checkIfClosed("Long 2022 Model")
+
+            longFVGdrawings.line0P    := line(na)
+            longFVGdrawings.line50P   := line(na)
+            longFVGdrawings.line100P  := line(na)
+            longFVGdrawings.label0P   := label(na)
+            longFVGdrawings.label50P  := label(na)
+            longFVGdrawings.label100P := label(na)
+            longFVGdrawings.mEntryDistance := 20e20
+
+        if not na(longFVGdrawings.line0P)
+
+            longFVGdrawings.line0P          .set_x2   (future)
+            longFVGdrawings.line50P         .set_x2   (future)
+            longFVGdrawings.line100P        .set_x2   (future)
+
+            longFVGdrawings.label0P         .set_x    (future)
+            longFVGdrawings.label50P        .set_x    (future)
+            longFVGdrawings.label100P       .set_x    (future)
+
+        if sweepData.upSweeps.columns() > 0
+
+            getSweepTimeUp = sweepData.upSweeps.get(0, sweepData.upSweeps.columns() - 1)
+
+            m2022LongLevels = IQ.m2022.new()
+            if strategy.opentrades == 0
+                if trailingSweep != getSweepTimeUp or close >= longFVGdrawings.line0P.get_y1() + atrTFreg * 10
+
+
+                    strategy.cancel("Long 2022 Model")
+                    includesSweep.push(int(trailingSweep))
+                    getHighestHigh := 0.
+                    longFVGdrawings.mEntryDistance := 20e20
+                    longFVGdrawings.mIndex := int(na)
+
+                    longFVGdrawings.label0P.delete()
+                    longFVGdrawings.label50P.delete()
+                    longFVGdrawings.label100P.delete()
+                    longFVGdrawings.longFVGentryBox.delete()
+                    longFVGdrawings.line0P  .delete()
+                    longFVGdrawings.line50P .delete()
+                    longFVGdrawings.line100P.delete()
+
+
+            if strategy.position_size < 0
+
+                strategy.cancel("Long 2022 Model")
+                getHighestHigh := 0.
+                longFVGdrawings.mEntryDistance := 20e20
+                longFVGdrawings.mIndex := int(na)
+
+                longFVGdrawings.label0P.delete()
+                longFVGdrawings.label50P.delete()
+                longFVGdrawings.label100P.delete()
+                longFVGdrawings.longFVGentryBox.delete()
+                longFVGdrawings.line0P  .delete()
+                longFVGdrawings.line50P .delete()
+                longFVGdrawings.line100P.delete()
+
+
+            if not includesSweep.includes(int(getSweepTimeUp)) and strategy.opentrades == 0
+
+                if high > getHighestHigh
+                    longFVGdrawings.mEntryDistance := 20e20
+
+                getHighestHigh := math.max(high, getHighestHigh)
+
+                Lx = sweepData.upSweeps.get(3, sweepData.upSweeps.columns() - 1)
+
+                getRange = Lx + ((getHighestHigh - Lx) * long2022nearestFib)
+
+                for [i, data] in FVGarr
+
+                    if data.direction == "Up"
+
+                        if close > math.max(data.H, data.L) and math.max(data.H, data.L) >= Lx
+
+                            longFVGdrawings.mEntryDistance := math.min(math.abs(math.max(data.H, data.L) - getRange), longFVGdrawings.mEntryDistance)
+
+                            if longFVGdrawings.mEntryDistance == math.abs(math.max(data.H, data.L) - getRange)
+
+                                m2022LongLevels.mIndex  := i
+                                m2022LongLevels.mTime   := data.T
+                                m2022LongLevels.mEntry  := math.max(data.H, data.L)
+                                m2022LongLevels.fvgHigh := m2022LongLevels.mEntry
+                                m2022LongLevels.fvgLow  := math.min(data.H, data.L)
+
+                if not na(m2022LongLevels.mIndex)
+
+                    longFVGdrawings.longFVGentryBox.delete()
+                    longFVGdrawings.line0P  .delete()
+                    longFVGdrawings.line50P .delete()
+                    longFVGdrawings.line100P.delete()
+
+                    longFVGdrawings.label0P  .delete()
+                    longFVGdrawings.label50P .delete()
+                    longFVGdrawings.label100P.delete()
+
+
+                    longFVGdrawings.longFVGentryBox := box.new(m2022LongLevels.mTime, m2022LongLevels.fvgHigh, time, m2022LongLevels.fvgLow,
+                                             xloc         = xloc.bar_time,
+                                             bgcolor      = color.new(#74ffbc, 95),
+                                             border_color = color.new(#74ffbc, borderTransp),
+                                             text         = "FVG",
+                                             text_size    = size.small,
+                                             text_halign  = text.align_left,
+                                             text_color   = chart.fg_color
+                                             )
+
+
+                    getLow = sweepData.upSweeps.get(3, sweepData.upSweeps.columns() - 1)
+
+                    longFVGdrawings.line0P   := line.new(m2022LongLevels.mTime, getLow, time, getLow,
+                                                         xloc  = xloc.bar_time,
+                                                         color = color.red,
+                                                         style = line.style_dotted)
+                    longFVGdrawings.line50P  := line.new(m2022LongLevels.mTime, getRange, time, getRange,
+                                                         xloc = xloc.bar_time,
+                                                         color  = color.gray,
+                                                         style  = line.style_dotted
+                                                         )
+                    longFVGdrawings.line100P := line.new(m2022LongLevels.mTime, getHighestHigh, time, getHighestHigh,
+                                                         xloc  = xloc.bar_time,
+                                                         color = #74ffbc,
+                                                         style = line.style_dotted)
+
+                    linefill.new(longFVGdrawings.line0P, longFVGdrawings.line100P, color.new(chart.fg_color, 95))
+
+                    longFVGdrawings.label0P   := label.new(time, getLow  , xloc = xloc.bar_time, textcolor = color.red    ,
+                                                     size  = size.small,
+                                                     text  = "0%",
+                                                     style = label.style_label_upper_right,
+                                                     color = #00000000
+                                                     )
+                    longFVGdrawings.label50P  := label.new(time, getRange, xloc = xloc.bar_time, textcolor = color.gray   ,
+                                                     size  = size.small,
+                                                     text  = str.tostring(long2022nearestFib * 100, format.percent),
+                                                     style = label.style_label_left,
+                                                     color = #00000000
+                                                     )
+                    longFVGdrawings.label100P := label.new(time, getHighestHigh, xloc = xloc.bar_time, textcolor = #74ffbc,
+                                                     size  = size.small,
+                                                     text  = "100%",
+                                                     style = label.style_label_lower_right,
+                                                     color = #00000000
+                                                     )
+
+                    longFVGdrawings.sweepData := sweepData.upSweeps.col(sweepData.upSweeps.columns() - 1).copy()
+
+                    strategy.entry("Long 2022 Model", strategy.long, limit = m2022LongLevels.mEntry)
+                    strategy.exit("L2", "Long 2022 Model", limit = getHighestHigh, stop = getLow)
+
+            trailingSweep := int(getSweepTimeUp)
+
+model2022Short(IQ.sweeps sweepData, array<IQ.FVG> FVGarr) =>
+
+    if model2022Short
+
+        var includesSweep = array.new<int>(), var trailingSweep = 0
+
+        var shortFVGdrawings = IQ.m2022.new()
+
+        openTrades = strategy.opentrades - 1, closedTrades = strategy.closedtrades - 1
+
+        var getLowestLow = 0.
+
+        if IQ.checkIfTraded("Short 2022 Model")
+
+
+            includesSweep.push(trailingSweep)
+            shortFVGdrawings.shortFVGentryBox.set_right(time)
+
+            if not na(shortFVGdrawings.sweepData)
+
+                chart.point secondHigh = na, chart.point trough = na, chart.point secondLow = na
+
+                startTimeIndex      = historicalData.binaryTimeArr.binary_search_leftmost(int(shortFVGdrawings.sweepData.get(0)))
+                startTime           = historicalData.binaryTimeArr.get(startTimeIndex)
+
+                binaryLowArr        = historicalData.lowArr .copy(), binaryLowArr .reverse()
+                binaryHighArr       = historicalData.highArr.copy(), binaryHighArr.reverse()
+
+                initialHigh   = chart.point.from_time(startTime, binaryHighArr .get(startTimeIndex))
+                trough       := chart.point.from_time(startTime, binaryLowArr  .get(startTimeIndex))
+
+                secondHighPrice = switch
+
+                    shortFVGdrawings.sweepData.get(3) == initialHigh.price => shortFVGdrawings.sweepData.get(1)
+                    =>                                                        shortFVGdrawings.sweepData.get(3)
+
+                isActive = false
+
+                for i = startTimeIndex to historicalData.binaryTimeArr.size() - 1
+
+                    getHigh = binaryHighArr.get(i), getLow = binaryLowArr.get(i)
+
+                    if getHigh == secondHighPrice and not isActive or isActive and getHigh >= secondHighPrice
+
+                        getTime      = historicalData.binaryTimeArr.get(i)
+
+                        sliceLow     = binaryLowArr .slice(startTimeIndex, i + 1)
+                        sliceTime    = historicalData.binaryTimeArr.slice(startTimeIndex, i + 1)
+
+                        getLowest    = sliceLow.lastindexof(sliceLow.min())
+
+                        trough := chart.point.from_time(sliceTime.get(getLowest), sliceLow.min())
+
+                        secondHigh  := chart.point.from_time(getTime, getHigh)
+                        secondLow   := chart.point.from_time(getTime, getLow)
+
+                        secondHighPrice := getHigh
+                        isActive        := true
+
+                    if not na(secondLow)
+
+                        if getLow <= secondLow.price
+
+                            secondLow := chart.point.from_time(historicalData.binaryTimeArr.get(i), getLow)
+
+
+                points = array.from( chart.point.from_time(int(shortFVGdrawings.sweepData.get(0)), shortFVGdrawings.sweepData.get(1)),
+                                     trough, secondHigh, secondLow, chart.point.from_time(time, shortFVGdrawings.shortFVGentryBox.get_bottom()))
+
+
+                polyline.new(points, xloc = xloc.bar_time, line_width = 2, line_color = #74ffbc)
+
+            shortFVGdrawings.shortFVGentryBox := box(na)
+
+        if IQ.checkIfClosed("Short 2022 Model")
+
+            shortFVGdrawings.line0P    := line(na)
+            shortFVGdrawings.line50P   := line(na)
+            shortFVGdrawings.line100P  := line(na)
+            shortFVGdrawings.label0P   := label(na)
+            shortFVGdrawings.label50P  := label(na)
+            shortFVGdrawings.label100P := label(na)
+            shortFVGdrawings.mEntryDistance := 20e20
+
+
+        if not na(shortFVGdrawings.line0P)
+
+            shortFVGdrawings.line0P          .set_x2   (future)
+            shortFVGdrawings.line50P         .set_x2   (future)
+            shortFVGdrawings.line100P        .set_x2   (future)
+
+            shortFVGdrawings.label0P         .set_x    (future)
+            shortFVGdrawings.label50P        .set_x    (future)
+            shortFVGdrawings.label100P       .set_x    (future)
+
+        if sweepData.dnSweeps.columns() > 0
+
+            getSweepTimeDn = sweepData.dnSweeps.get(0, sweepData.dnSweeps.columns() - 1)
+
+            m2022ShortLevels = IQ.m2022.new()
+
+            if strategy.opentrades == 0
+                if trailingSweep != getSweepTimeDn or close <= shortFVGdrawings.line0P.get_y1() - atrTFreg * 10
+
+                    strategy.cancel("Short 2022 Model")
+                    includesSweep.push(int(trailingSweep))
+                    getLowestLow := 20e20
+                    shortFVGdrawings.mEntryDistance := 20e20
+                    shortFVGdrawings.mIndex := int(na)
+                    m2022ShortLevels.mTime := time
+
+                    shortFVGdrawings.line0P          .delete()
+                    shortFVGdrawings.line50P         .delete()
+                    shortFVGdrawings.line100P        .delete()
+                    shortFVGdrawings.shortFVGentryBox.delete()
+                    shortFVGdrawings.label0P         .delete()
+                    shortFVGdrawings.label50P        .delete()
+                    shortFVGdrawings.label100P       .delete()
+
+            if strategy.position_size > 0
+
+                strategy.cancel("Short 2022 Model")
+                getLowestLow := 20e20
+                shortFVGdrawings.mEntryDistance := 20e20
+                shortFVGdrawings.mIndex := int(na)
+
+                shortFVGdrawings.line0P          .delete()
+                shortFVGdrawings.line50P         .delete()
+                shortFVGdrawings.line100P        .delete()
+                shortFVGdrawings.shortFVGentryBox.delete()
+                shortFVGdrawings.label0P         .delete()
+                shortFVGdrawings.label50P        .delete()
+                shortFVGdrawings.label100P       .delete()
+
+
+            if not includesSweep.includes(int(getSweepTimeDn)) and strategy.opentrades == 0
+
+                if low < getLowestLow
+                    shortFVGdrawings.mEntryDistance := 20e20
+
+                getLowestLow := math.min(low, getLowestLow)
+
+                Hx = sweepData.dnSweeps.get(1, sweepData.dnSweeps.columns() - 1)
+
+                getRange = Hx +((getLowestLow - Hx) * short2022nearestFib)
+
+                for [i, data] in FVGarr
+
+                    if data.direction == "Down"
+
+                        if close < math.min(data.H, data.L) and math.min(data.H, data.L) <= Hx
+
+                            shortFVGdrawings.mEntryDistance := math.min(math.abs(math.min(data.H, data.L) - getRange),
+                                                                     shortFVGdrawings.mEntryDistance)
+
+                            if shortFVGdrawings.mEntryDistance == math.abs(math.min(data.H, data.L) - getRange)
+
+                                m2022ShortLevels.mIndex  := i
+                                m2022ShortLevels.mTime   := data.T
+                                m2022ShortLevels.mEntry  := math.min(data.H, data.L)
+                                m2022ShortLevels.fvgHigh := math.max(data.H, data.L)
+                                m2022ShortLevels.fvgLow  := m2022ShortLevels.mEntry
+
+                if not na(m2022ShortLevels.mIndex)
+
+                    shortFVGdrawings.shortFVGentryBox.delete()
+                    shortFVGdrawings.line0P  .delete()
+                    shortFVGdrawings.line50P .delete()
+                    shortFVGdrawings.line100P.delete()
+
+                    shortFVGdrawings.label0P  .delete()
+                    shortFVGdrawings.label50P .delete()
+                    shortFVGdrawings.label100P.delete()
+
+
+                    shortFVGdrawings.shortFVGentryBox := box.new(m2022ShortLevels.mTime, m2022ShortLevels.fvgHigh, time, m2022ShortLevels.fvgLow,
+                                             xloc         = xloc.bar_time,
+                                             bgcolor      = color.new(color.red, 95),
+                                             border_color = color.new(color.red, borderTransp),
+                                             text         = "FVG",
+                                             text_size    = size.small,
+                                             text_halign  = text.align_left,
+                                             text_color   = chart.fg_color
+                                             )
+
+
+                    getHigh = sweepData.dnSweeps.get(1, sweepData.dnSweeps.columns() - 1)
+
+                    shortFVGdrawings.line0P   := line.new(m2022ShortLevels.mTime, getHigh, time, getHigh,
+                                                             xloc  = xloc.bar_time,
+                                                             color = color.red,
+                                                             style = line.style_dotted
+                                                             )
+                    shortFVGdrawings.line50P  := line.new(m2022ShortLevels.mTime, getRange, time, getRange, xloc = xloc.bar_time,
+                                                             color = color.gray,
+                                                             style = line.style_dotted)
+                    shortFVGdrawings.line100P := line.new(m2022ShortLevels.mTime, getLowestLow, time, getLowestLow,
+                                                             xloc  = xloc.bar_time,
+                                                             color = #74ffbc,
+                                                             style = line.style_dotted)
+
+                    linefill.new(shortFVGdrawings.line0P, shortFVGdrawings.line100P, color.new(chart.fg_color, 95))
+
+                    shortFVGdrawings.label0P   := label.new(time, getHigh , xloc = xloc.bar_time, textcolor = color.red    ,
+                                                     size  = size.small,
+                                                     text  = "0%",
+                                                     style = label.style_label_lower_right,
+                                                     color = #00000000
+                                                     )
+                    shortFVGdrawings.label50P  := label.new(time, getRange, xloc = xloc.bar_time, textcolor = color.gray   ,
+                                                     size  = size.small,
+                                                     text  = str.tostring(short2022nearestFib * 100, format.percent),
+                                                     style = label.style_label_left,
+                                                     color = #00000000
+                                                     )
+                    shortFVGdrawings.label100P := label.new(time, getLowestLow, xloc = xloc.bar_time, textcolor = #74ffbc,
+                                                     size  = size.small,
+                                                     text  = "100%",
+                                                     style = label.style_label_upper_right,
+                                                     color = #00000000
+                                                     )
+
+
+                    strategy.entry("Short 2022 Model", strategy.short, limit = m2022ShortLevels.mEntry)
+                    strategy.exit("L2", "Short 2022 Model", limit = getLowestLow, stop = getHigh)
+
+                    shortFVGdrawings.sweepData := sweepData.dnSweeps.col(sweepData.dnSweeps.columns() - 1).copy()
+
+
+            trailingSweep := int(getSweepTimeDn)
+
+method unicornExitRemove(IQ.unicornModel points, string strategyName, bool isLong) =>
+
+    openTrades = strategy.opentrades - 1, closedTrades = strategy.closedtrades - 1
+
+    if IQ.checkIfClosed(strategyName)
+
+        if isLong
+
+            switch strategy.closedtrades.exit_price(closedTrades) >= strategy.closedtrades.entry_price(closedTrades)
+
+                true =>
+                     points.tpLine  := line (na),
+                     points.tpLabel := label(na),
+                     points.slLine .delete(),
+                     points.slLabel.delete()
+
+                =>
+                     points.tpLine  .delete(),
+                     points.tpLabel .delete(),
+                     points.slLine  := line (na),
+                     points.slLabel := label(na)
+
+        else
+
+            switch strategy.closedtrades.exit_price(closedTrades) <= strategy.closedtrades.entry_price(closedTrades)
+
+                true =>
+                     points.tpLine  := line (na),
+                     points.tpLabel := label(na),
+                     points.slLine .delete(),
+                     points.slLabel.delete()
+
+                =>
+                     points.tpLine  .delete(),
+                     points.tpLabel .delete(),
+                     points.slLine  := line (na),
+                     points.slLabel := label(na)
+
+    0
+
+unicorn(array<IQ.orderBlock> bearishOBbox,array<IQ.FVG> FVGarr, array<IQ.orderBlock> bullishOBbox) =>
+
+    if (uniLong or uniShort) and historicalPoints.size() >= 10
+
+        getPrevPoint   = historicalPoints.get(1)
+        getPrevPoint2  = historicalPoints.get(2)
+        getPrevPoint3  = historicalPoints.get(3)
+
+        var longPoints  = IQ.unicornModel.new(includes = array.new<int>())
+        var shortPoints = IQ.unicornModel.new(includes = array.new<int>())
+
+        if strategy.opentrades > 0
+            strategy.cancel("Long Unicorn")
+            strategy.cancel("Short Unicorn")
+
+        if not na(longPoints.hPoint)
+
+            if IQ.checkIfTraded("Long Unicorn")
+
+                longPoints.includes.push(getPrevPoint2.time)
+
+                points = array.from(chart.point.from_time(time, longPoints.entry))
+
+
+                for dataPoints in historicalPoints
+
+                    switch dataPoints.time >= longPoints.hPoint3.time
+
+                        true => points.push(dataPoints)
+                        =>      break
+
+
+                polyline.new(points, xloc = xloc.bar_time, line_color = #74ffbc, line_width = 2)
+
+                longPoints.breakerBlock.set_right(time)
+                longPoints.FVG.set_right         (time)
+
+                longPoints.breakerBlock := box(na)
+                longPoints.FVG          := box(na)
+
+                longPoints.topBlock     := float(na)
+                longPoints.botBlock     := float(na)
+                longPoints.startBlock   := int  (na)
+
+                longPoints.unicornExitRemove("Long Unicorn", true)
+
+            if not na(longPoints.tpLine)
+
+                longPoints.tpLine .set_x2(future)
+                longPoints.tpLabel.set_x (future)
+                longPoints.slLine .set_x2(future)
+                longPoints.slLabel.set_x (future)
+
+                longPoints.unicornExitRemove("Long Unicorn", true)
+
+
+            longRange = math.abs(longPoints.hPoint.price - longPoints.hPoint2.price)
+
+            if barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                if low <= longPoints.hPoint.price or cPoint.price >= longPoints.hPoint2.price + longRange
+                     or historicalPoints.first().price >=  longPoints.hPoint2.price + longRange
+
+                    strategy.cancel("Long Unicorn")
+
+                    longPoints.hPoint       := na
+                    longPoints.hPoint2      := na
+                    longPoints.hPoint3      := na
+                    longPoints.includes     .push(getPrevPoint2.time)
+                    longPoints.breakerBlock .delete()
+                    longPoints.FVG          .delete()
+                    longPoints.topBlock     := float(na)
+                    longPoints.botBlock     := float(na)
+                    longPoints.startBlock   := int  (na)
+
+        if not na(shortPoints.hPoint)
+
+            if IQ.checkIfTraded("Short Unicorn")
+
+                shortPoints.includes.push(getPrevPoint2.time)
+
+                points = array.from(chart.point.from_time(time, shortPoints.entry))
+
+                for dataPoints in historicalPoints
+
+                    switch dataPoints.time >= shortPoints.hPoint3.time
+
+                        true => points.push(dataPoints)
+                        =>      break
+
+
+                polyline.new(points, xloc = xloc.bar_time, line_color = #74ffbc, line_width = 2)
+
+                shortPoints.breakerBlock.set_right(time)
+                shortPoints.FVG.set_right         (time)
+
+                shortPoints.breakerBlock := box(na)
+                shortPoints.FVG          := box(na)
+
+                shortPoints.topBlock     := float(na)
+                shortPoints.botBlock     := float(na)
+                shortPoints.startBlock   := int  (na)
+
+                shortPoints.unicornExitRemove("Short Unicorn", false)
+
+
+            if not na(shortPoints.tpLine)
+
+                shortPoints.tpLine .set_x2(future)
+                shortPoints.tpLabel.set_x (future)
+                shortPoints.slLine .set_x2(future)
+                shortPoints.slLabel.set_x (future)
+
+                shortPoints.unicornExitRemove("Short Unicorn", false)
+
+            shortRange = math.abs(shortPoints.hPoint.price - shortPoints.hPoint2.price)
+
+            if barstate.isconfirmed and IQ.isLastBar(userTF)
+
+                if high >= shortPoints.hPoint.price or cPoint.price <= shortPoints.hPoint2.price - shortRange
+                     or historicalPoints.first().price <= shortPoints.hPoint2.price - shortRange
+
+                    strategy.cancel("Short Unicorn")
+
+                    shortPoints.hPoint       := na
+                    shortPoints.hPoint2      := na
+                    shortPoints.hPoint3      := na
+
+                    shortPoints.breakerBlock .delete()
+                    shortPoints.FVG          .delete()
+                    shortPoints.topBlock     := float(na)
+                    shortPoints.botBlock     := float(na)
+                    shortPoints.startBlock   := int  (na)
+                    shortPoints.includes     .push(getPrevPoint2.time)
+
+        if barstate.isconfirmed and IQ.isLastBar(userTF) and strategy.opentrades == 0
+            if strategy.opentrades == 0 and not longPoints.includes.includes(getPrevPoint2.time) and uniLong
+                if getPrevPoint2.price > getPrevPoint.price and close >= getPrevPoint2.price and getPrevPoint.price < getPrevPoint3.price
+
+                    if bearishOBbox.size() > 0 and FVGarr.size() > 0
+
+                        var getEntry = 0.
+
+                        for [i, block] in bearishOBbox
+                            if block.status == "BB"
+
+                                getBox = bearishOBbox.get(i), getStart = getBox.orderBlockData.first()
+
+                                if getBox.orderBlockData.get(3) >= getPrevPoint.price and getStart >= getPrevPoint3.time
+
+                                    longPoints.topBlock    := getBox.orderBlockData.get(1)
+                                    longPoints.botBlock    := getBox.orderBlockData.get(3)
+                                    longPoints.startBlock  := int(getStart)
+
+                                    break
+
+                        for FVG in FVGarr
+                            if FVG.direction == "Up" and FVG.T >= getPrevPoint3.time
+
+                                highest = math.max(FVG.H, FVG.L), lowest = math.min(FVG.H, FVG.L)
+
+                                if close >= highest
+
+                                    statusPoss =
+
+                                                 highest >= longPoints.topBlock and lowest <= longPoints.topBlock or
+                                                 highest >= longPoints.botBlock and lowest <= longPoints.botBlock or
+                                                 highest >= longPoints.topBlock and lowest <= longPoints.botBlock or
+                                                 highest <= longPoints.topBlock and lowest >= longPoints.botBlock
+
+                                    if statusPoss
+
+                                        longPoints.entry := math.min(highest, longPoints.topBlock)
+
+                                        longPoints.hPoint  := getPrevPoint
+                                        longPoints.hPoint2 := getPrevPoint2
+                                        longPoints.hPoint3 := getPrevPoint3
+
+                                        slTime = int(longPoints.startBlock), slStr = "Breakerblock SL"
+
+                                        sl = switch uniLongSL
+
+                                            IQ.unicornExits.bFVG => math.min(lowest, longPoints.botBlock) - uniLongAdd * syminfo.mintick
+                                            =>                   longPoints.hPoint.price               - uniLongAdd * syminfo.mintick
+
+                                        if sl == lowest - uniLongAdd * syminfo.mintick
+
+                                            slTime := FVG.T, slStr := "FVG SL"
+
+                                        if sl == longPoints.hPoint.price - uniLongAdd * syminfo.mintick
+
+                                            slTime := longPoints.hPoint.time, slStr := "Swing Low SL"
+
+                                        tp = float(na), tpTime = int(na), tpStr = string(na)
+
+                                        if uniLongTP == IQ.unicornExits.sH
+
+                                            for data in historicalPoints
+
+                                                if data.price > longPoints.entry
+
+                                                    tp     := data.price
+                                                    tpTime := data.time
+                                                    tpStr  := "Swing High"
+                                                    break
+
+                                        else
+
+                                            getFib = 0.
+
+                                            switch uniLongTP
+
+                                                IQ.unicornExits.zero5 => getFib := -0.5, tpStr := "Fib -0.5"
+                                                IQ.unicornExits.one5  => getFib := -1  , tpStr := "Fib -1"
+                                                =>                       getFib := -2  , tpStr := "Fib -2"
+
+
+                                            tpTime := historicalPoints.first().time
+
+                                            tp := historicalPoints .first().price -
+                                                 ((historicalPoints.first().price - longPoints.hPoint.price) * getFib)
+
+                                        if not na(tp)
+
+                                            strategy.entry("Long Unicorn", strategy.long, limit = longPoints.entry)
+                                            strategy.exit("Long Unicorn Exit" ,"Long Unicorn", limit = tp, stop = sl)
+
+                                            longPoints.FVG         .delete()
+                                            longPoints.breakerBlock.delete()
+
+                                            longPoints.FVG := box.new(FVG.T, highest, future, lowest,
+                                                                 border_color = color.new(#74ffbc, borderTransp),
+                                                                 bgcolor      = color.new(#74ffbc, 95),
+                                                                 xloc         = xloc.bar_time,
+                                                                 text         = "FVG",
+                                                                 text_color   = chart.fg_color,
+                                                                 text_size    = size.small,
+                                                                 text_halign  = text.align_left
+                                                                 )
+
+                                            longPoints.breakerBlock := box.new(longPoints.startBlock, longPoints.topBlock, future,
+                                                             longPoints.botBlock,
+                                                             bgcolor      = color.new(color.blue, 95),
+                                                             border_color = color.new(color.blue, borderTransp),
+                                                             xloc         = xloc.bar_time,
+                                                             text         = "Breaker Block",
+                                                             text_color   = chart.fg_color,
+                                                             text_size    = size.small,
+                                                             text_halign  = text.align_left
+                                                             )
+
+                                            longPoints.tpLine .delete()
+                                            longPoints.tpLabel.delete()
+                                            longPoints.slLine .delete()
+                                            longPoints.slLabel.delete()
+
+                                            longPoints.tpLine  := line.new(chart.point.from_time(tpTime, tp), chart.point.from_time(future, tp),
+                                                                         xloc  = xloc.bar_time,
+                                                                         style = line.style_dotted,
+                                                                         color = #74ffbc
+                                                                         )
+
+                                            longPoints.tpLabel := label.new(future, tp, xloc = xloc.bar_time,
+                                                                         color     = #00000000,
+                                                                         style     = label.style_label_lower_right,
+                                                                         textcolor = #74ffbc,
+                                                                         size      = size.small,
+                                                                         text      = tpStr
+                                                                         )
+
+
+                                            longPoints.slLine  := line.new(chart.point.from_time(slTime, sl), chart.point.from_time(future, sl),
+                                                                         xloc  = xloc.bar_time,
+                                                                         style = line.style_dotted,
+                                                                         color = color.red
+                                                                         )
+
+                                            longPoints.slLabel := label.new(future, sl, xloc = xloc.bar_time,
+                                                                         color     = #00000000,
+                                                                         style     = label.style_label_upper_right,
+                                                                         textcolor = color.red,
+                                                                         size      = size.small,
+                                                                         text      = slStr
+                                                                         )
+
+                                        break
+
+            if strategy.opentrades == 0 and not shortPoints.includes.includes(getPrevPoint2.time) and uniShort
+                if getPrevPoint2.price < getPrevPoint.price and close <= getPrevPoint2.price and getPrevPoint.price > getPrevPoint3.price
+
+                    if bullishOBbox.size() > 0 and FVGarr.size() > 0
+
+                        var getEntry = 0.
+
+                        for [i, block] in bullishOBbox
+                            if block.status == "BB"
+
+                                getBox = bullishOBbox.get(i), getStart = getBox.orderBlockData.first()
+
+                                if getBox.orderBlockData.get(3) <= getPrevPoint.price and getStart >= getPrevPoint3.time
+
+                                    shortPoints.topBlock    := getBox.orderBlockData.get(1)
+                                    shortPoints.botBlock    := getBox.orderBlockData.get(3)
+                                    shortPoints.startBlock  := int(getStart)
+
+                                    break
+
+                        for FVG in FVGarr
+                            if FVG.direction == "Down" and FVG.T >= getPrevPoint3.time
+
+                                highest = math.max(FVG.H, FVG.L), lowest = math.min(FVG.H, FVG.L)
+
+                                if close <= lowest
+
+                                    statusPoss =
+
+                                                 highest >= shortPoints.topBlock and lowest <= shortPoints.topBlock or
+                                                 highest >= shortPoints.botBlock and lowest <= shortPoints.botBlock or
+                                                 highest >= shortPoints.topBlock and lowest <= shortPoints.botBlock or
+                                                 highest <= shortPoints.topBlock and lowest >= shortPoints.botBlock
+
+                                    if statusPoss
+
+                                        shortPoints.entry := math.max(lowest, shortPoints.botBlock)
+
+                                        shortPoints.hPoint  := getPrevPoint
+                                        shortPoints.hPoint2 := getPrevPoint2
+                                        shortPoints.hPoint3 := getPrevPoint3
+
+
+                                        slTime = int(shortPoints.startBlock), slStr = "Breakerblock SL"
+
+                                        sl = switch uniShortSL
+
+                                            IQ.unicornExits.tFVG => math.max(highest, shortPoints.topBlock) + uniShortAdd * syminfo.mintick
+                                            =>                   shortPoints.hPoint.price                   + uniShortAdd * syminfo.mintick
+
+                                        if sl == highest + uniShortAdd * syminfo.mintick
+
+                                            slTime := FVG.T, slStr := "FVG SL"
+
+                                        if sl == shortPoints.hPoint.price + uniShortAdd * syminfo.mintick
+
+                                            slTime := shortPoints.hPoint.time, slStr := "Swing High SL"
+
+                                        tp = float(na), tpTime = int(na), tpStr = string(na)
+
+                                        if uniShortTP == IQ.unicornExits.sL
+
+                                            for data in historicalPoints
+
+                                                if data.price < shortPoints.entry
+
+                                                    tp     := data.price
+                                                    tpTime := data.time
+                                                    tpStr  := "Swing Low"
+                                                    break
+
+                                        else
+
+                                            getFib = 0.
+
+                                            switch uniShortTP
+
+                                                IQ.unicornExits.zero5 => getFib := -0.5, tpStr := "Fib -0.5"
+                                                IQ.unicornExits.one5  => getFib := -1  , tpStr := "Fib -1"
+                                                =>                       getFib := -2  , tpStr := "Fib -2"
+
+
+                                            tpTime := historicalPoints.first().time
+
+                                            tp :=  historicalPoints.first().price -
+                                                 ((historicalPoints.first().price - shortPoints.hPoint.price) * getFib)
+
+                                        if not na(tp)
+
+                                            strategy.entry("Short Unicorn", strategy.short, limit = shortPoints.entry)
+                                            strategy.exit("Short Unicorn Exit" ,"Short Unicorn", limit = tp, stop = sl)
+
+                                            shortPoints.FVG         .delete()
+                                            shortPoints.breakerBlock.delete()
+
+
+                                            shortPoints.FVG := box.new(FVG.T, highest, future, lowest,
+                                                                 border_color = color.new(color.red, borderTransp),
+                                                                 bgcolor      = color.new(color.red, 95),
+                                                                 xloc         = xloc.bar_time,
+                                                                 text         = "FVG",
+                                                                 text_color   = chart.fg_color,
+                                                                 text_size    = size.small,
+                                                                 text_halign  = text.align_left
+                                                                 )
+
+                                            shortPoints.breakerBlock := box.new(shortPoints.startBlock, shortPoints.topBlock, future,
+                                                             shortPoints.botBlock,
+                                                             bgcolor      = color.new(#6929F2, 95),
+                                                             border_color = color.new(#6929F2, borderTransp),
+                                                             xloc         = xloc.bar_time,
+                                                             text         = "Breaker Block",
+                                                             text_color   = chart.fg_color,
+                                                             text_size    = size.small,
+                                                             text_halign  = text.align_left
+                                                             )
+
+                                            shortPoints.tpLine .delete()
+                                            shortPoints.tpLabel.delete()
+                                            shortPoints.slLine .delete()
+                                            shortPoints.slLabel.delete()
+
+                                            shortPoints.tpLine  := line.new(chart.point.from_time(tpTime, tp),chart.point.from_time(future, tp),
+                                                                         xloc  = xloc.bar_time,
+                                                                         style = line.style_dotted,
+                                                                         color = #74ffbc
+                                                                         )
+
+                                            shortPoints.tpLabel := label.new(future, tp, xloc = xloc.bar_time,
+                                                                         color     = #00000000,
+                                                                         style     = label.style_label_upper_right,
+                                                                         textcolor = #74ffbc,
+                                                                         size      = size.small,
+                                                                         text      = tpStr
+                                                                         )
+
+
+                                            shortPoints.slLine  := line.new(chart.point.from_time(slTime, sl), chart.point.from_time(future, sl),
+                                                                         xloc  = xloc.bar_time,
+                                                                         style = line.style_dotted,
+                                                                         color = color.red
+                                                                         )
+
+                                            shortPoints.slLabel := label.new(future, sl, xloc = xloc.bar_time,
+                                                                         color     = #00000000,
+                                                                         style     = label.style_label_lower_right,
+                                                                         textcolor = color.red,
+                                                                         size      = size.small,
+                                                                         text      = slStr
+                                                                         )
+
+                                        break
+
+
+liquidityRaid(array<IQ.orderBlock> bullishOBbox, array<IQ.orderBlock> bearishOBbox, string lRaidSessions, int future,
+                 color bearishBBcol, color bullishBBcol, string tpLongLiquidityRaid, string slLongLiquidityRaid,
+                 string tpShortLiquidityRaid, string slShortLiquidityRaid, float liquidityRaidFibTP, float liquidityRaidFibSL,
+                 float liquidityRaidFibTPshort, float liquidityRaidFibSLshort, bool longLiquidityRaid, bool shortLiquidityRaid,
+                 array<chart.point> historicalPoints, bool noBorders) =>
+
+    keyPointsTime = not na(time("", lRaidSessions, "America/New_York"))
+
+    var highest = float(na), var lowest = float(na)
+
+    var keyLevels    = map  .new<IQ.raidCoordinates, float>()
+    var exitDrawings = array.new<IQ.raidExitDrawings>()
+    var includesArr  = array.new<int>()
+
+    openTrades = strategy.opentrades - 1, closedTrades = strategy.closedtrades - 1
+
+    if strategy.position_size != 0
+        strategy.cancel("Long Liquidity Raid")
+        strategy.cancel("Short Liquidity Raid")
+
+    if exitDrawings.size() > 0
+        if not na(exitDrawings.last().tpLine)
+
+            getDrawings = exitDrawings.last()
+
+            getDrawings.tpLine .set_x2 (future)
+            getDrawings.tpLabel.set_x  (future)
+            getDrawings.slLine .set_x2 (future)
+            getDrawings.slLabel.set_x  (future)
+
+            if IQ.checkIfClosed("Long Liquidity Raid")
+
+                switch strategy.closedtrades.exit_price(closedTrades) > strategy.closedtrades.entry_price(closedTrades)
+
+                    true =>
+                             getDrawings.slLine  .delete(),
+                             getDrawings.slLabel .delete(),
+                             getDrawings.tpLine  := line(na),
+                             getDrawings.tpLabel := label(na)
+
+                    =>
+                             getDrawings.tpLine  .delete(),
+                             getDrawings.tpLabel .delete(),
+                             getDrawings.slLine  := line(na),
+                             getDrawings.slLabel := label(na)
+
+            if IQ.checkIfClosed("Short Liquidity Raid")
+
+                switch strategy.closedtrades.exit_price(closedTrades) < strategy.closedtrades.entry_price(closedTrades)
+
+                    true =>
+                             getDrawings.slLine  .delete(),
+                             getDrawings.slLabel .delete(),
+                             getDrawings.tpLine  := line(na),
+                             getDrawings.tpLabel := label(na)
+
+                    =>
+                             getDrawings.tpLine  .delete(),
+                             getDrawings.tpLabel .delete(),
+                             getDrawings.slLine  := line(na),
+                             getDrawings.slLabel := label(na)
+
+
+    if IQ.checkIfTraded("Long Liquidity Raid")
+
+        points = array.from(
+
+                         chart.point.from_time(int(keyLevels.get(IQ.raidCoordinates.ET))    , keyLevels.get(IQ.raidCoordinates.EP)),
+                         chart.point.from_time(int(keyLevels.get(IQ.raidCoordinates.LRVT))  , keyLevels.get(IQ.raidCoordinates.LRP)),
+                         chart.point.from_time(int(keyLevels.get(IQ.raidCoordinates.HPRLRT)), keyLevels.get(IQ.raidCoordinates.HPRLR)),
+                                         chart.point.from_time(time, keyLevels.get(IQ.raidCoordinates.CB)))
+
+
+        polyline.new(points, xloc = xloc.bar_time, line_width = 2, line_color = color.rgb(128, 116, 255))
+
+        includesArr.push(int(keyLevels.get(IQ.raidCoordinates.ST)))
+
+        getStart   = int(keyLevels.get(IQ.raidCoordinates.ST ))
+        getEnd     = int(keyLevels.get(IQ.raidCoordinates.ET ))
+        getHigh    = keyLevels.get    (IQ.raidCoordinates.H   )
+        getLow     = keyLevels.get    (IQ.raidCoordinates.L   )
+        getBBstart = int(keyLevels.get(IQ.raidCoordinates.CBS))
+
+
+        box.new(getBBstart, keyLevels.get(IQ.raidCoordinates.CB), time, keyLevels.get(IQ.raidCoordinates.CBB),
+                                             border_color = color.new(bearishBBcol, borderTransp),
+                                             bgcolor      = color.new(bearishBBcol, 95),
+                                             xloc         = xloc.bar_time,
+                                             border_style = line.style_dashed)
+
+        l  = line.new(getStart, getHigh, getEnd, getHigh, xloc = xloc.bar_time, color = chart.fg_color)
+        l1 = line.new(getStart, getLow , getEnd, getLow , xloc = xloc.bar_time, color = chart.fg_color)
+
+        linefill.new(l, l1, color = color.new(chart.fg_color, 90))
+
+        l2  = line.new(getEnd, getHigh, time, getHigh, xloc = xloc.bar_time, color = chart.fg_color, style = line.style_dotted)
+        l3  = line.new(getEnd, getLow , time, getLow, xloc = xloc.bar_time, color = chart.fg_color, style = line.style_dotted)
+
+        getTP = keyLevels.get(IQ.raidCoordinates.LTP), getTPtime = int(keyLevels.get(IQ.raidCoordinates.LTPT))
+        getSL = keyLevels.get(IQ.raidCoordinates.LSL), getSLtime = int(keyLevels.get(IQ.raidCoordinates.LSLT))
+
+        longTPtext = switch tpLongLiquidityRaid
+
+            "Swing High"                   => "Swing High TP"
+            "Use Fib (Option Below)"       => "Fib " + str.tostring(liquidityRaidFibTP) + " TP"
+
+
+        longSLtext = switch slLongLiquidityRaid
+
+            "Swing Low"  => "Swing Low SL"
+            "Use Fib (Option Below)"       => "Fib " + str.tostring(liquidityRaidFibSL) + " SL"
+            "Breakerblock Bottom"          => "Breakerblock Bottom SL"
+
+
+        exitDrawings.push(IQ.raidExitDrawings.new(
+
+             line.new(getTPtime, getTP, future, getTP, color = #74ffbc, style = line.style_dotted,
+                                                 xloc = xloc.bar_time),
+
+             label.new(future, getTP,  color = #00000000, style = label.style_label_lower_right,
+                                                 xloc      = xloc.bar_time,
+                                                 textcolor = #74ffbc,
+                                                 size      = size.small,
+                                                 text      = longTPtext
+
+                         ),
+
+             line.new( getSLtime, getSL, future, getSL, color = color.rgb(255, 116, 116), style = line.style_dotted,
+                                                 xloc = xloc.bar_time),
+
+             label.new(future, getSL,  color = #00000000, style = label.style_label_upper_right,
+                                                 xloc      = xloc.bar_time,
+                                                 textcolor = color.rgb(255, 116, 116),
+                                                 size      = size.small,
+                                                 text      = longSLtext
+
+                                                 )))
+
+        if IQ.checkIfClosed("Long Liquidity Raid")
+
+            getDrawings = exitDrawings.last()
+
+            switch strategy.closedtrades.exit_price(closedTrades) > strategy.closedtrades.entry_price(closedTrades)
+
+                true =>
+                         getDrawings.slLine  .delete(),
+                         getDrawings.slLabel .delete(),
+                         getDrawings.tpLine  := line(na),
+                         getDrawings.tpLabel := label(na)
+
+                =>
+                         getDrawings.tpLine  .delete(),
+                         getDrawings.tpLabel .delete(),
+                         getDrawings.slLine  := line(na),
+                         getDrawings.slLabel := label(na)
+
+        label.new(math.round(math.avg(getStart, time)), getHigh, xloc = xloc.bar_time,
+                                     text      = "Session High",
+                                     color     = #00000000,
+                                     textcolor = chart.fg_color,
+                                     size      = size.small
+                                     )
+
+        label.new(math.round(math.avg(getStart, time)), getLow, xloc = xloc.bar_time,
+                                     text      = "Session Low",
+                                     color     = #00000000,
+                                     textcolor = chart.fg_color,
+                                     style     = label.style_label_up,
+                                     size      = size.small
+                                     )
+
+        label.new(int(keyLevels.get(IQ.raidCoordinates.LRVT)), keyLevels.get(IQ.raidCoordinates.LRP),
+                                     text      = "Session Low Liquidity Raid",
+                                     color     = #00000000,
+                                     textcolor = chart.fg_color,
+                                     style     = label.style_label_upper_right,
+                                     size      = size.small,
+                                     xloc      = xloc.bar_time
+                                     )
+
+        keyLevels.put(IQ.raidCoordinates.CB, float(na))
+
+
+    if IQ.checkIfTraded("Short Liquidity Raid")
+
+
+        points = array.from(
+
+                         chart.point.from_time(int(keyLevels.get(IQ.raidCoordinates.ET))   ,  keyLevels.get(IQ.raidCoordinates.EP   )),
+                         chart.point.from_time(int(keyLevels.get(IQ.raidCoordinates.HRVT)) ,  keyLevels.get(IQ.raidCoordinates.HRP  )),
+                         chart.point.from_time(int(keyLevels.get(IQ.raidCoordinates.LPRHRT)), keyLevels.get(IQ.raidCoordinates.LPRHR)),
+                                              chart.point.from_time(time, keyLevels.get(IQ.raidCoordinates.CB)))
+
+
+        polyline.new(points, xloc = xloc.bar_time, line_width = 2, line_color = color.rgb(128, 116, 255))
+
+        includesArr.push(int(keyLevels.get(IQ.raidCoordinates.ST)))
+
+        getStart   = int(keyLevels.get(IQ.raidCoordinates.ST ))
+        getEnd     = int(keyLevels.get(IQ.raidCoordinates.ET ))
+        getHigh    = keyLevels.get    (IQ.raidCoordinates.H   )
+        getLow     = keyLevels.get    (IQ.raidCoordinates.L   )
+        getBBstart = int(keyLevels.get(IQ.raidCoordinates.CBS))
+
+        box.new(getBBstart, keyLevels.get(IQ.raidCoordinates.CBT), time, keyLevels.get(IQ.raidCoordinates.CB),
+                                             border_color = color.new(bullishBBcol, borderTransp),
+                                             bgcolor      = color.new(bullishBBcol, 95),
+                                             xloc         = xloc.bar_time,
+                                             border_style = line.style_dashed)
+
+        l  = line.new(getStart, getHigh, getEnd, getHigh, xloc = xloc.bar_time, color = chart.fg_color)
+        l1 = line.new(getStart, getLow , getEnd, getLow , xloc = xloc.bar_time, color = chart.fg_color)
+
+        linefill.new(l, l1, color = color.new(chart.fg_color, 90))
+
+        l2  = line.new(getEnd, getHigh, time, getHigh, xloc = xloc.bar_time, color = chart.fg_color, style = line.style_dotted)
+        l3  = line.new(getEnd, getLow , time, getLow, xloc = xloc.bar_time, color = chart.fg_color, style = line.style_dotted)
+
+
+        getTP = keyLevels.get(IQ.raidCoordinates.STP), getTPtime = int(keyLevels.get(IQ.raidCoordinates.STPT))
+        getSL = keyLevels.get(IQ.raidCoordinates.SSL), getSLtime = int(keyLevels.get(IQ.raidCoordinates.SSLT))
+
+        shortTPtext = switch tpShortLiquidityRaid
+
+            "Swing Low" => "Swing Low TP"
+            "Use Fib (Option Below)"       => "Fib " + str.tostring(liquidityRaidFibTPshort) + " TP"
+
+
+        shortSLtext = switch slShortLiquidityRaid
+
+            "Swing High" => "Swing High SL"
+            "Use Fib (Option Below)"       => "Fib " + str.tostring(liquidityRaidFibSLshort) + " SL"
+            "Breakerblock Top"     => "Breakerblock Top SL"
+
+
+        exitDrawings.push(IQ.raidExitDrawings.new(
+
+             line.new(getTPtime, getTP, future, getTP, color = #74ffbc, style = line.style_dotted,
+                                                 xloc = xloc.bar_time),
+
+             label.new(future, getTP,  color = #00000000, style = label.style_label_upper_right,
+                                                 xloc      = xloc.bar_time,
+                                                 textcolor = #74ffbc,
+                                                 size      = size.small,
+                                                 text      = shortTPtext
+
+                         ),
+
+             line.new( getSLtime, getSL, future, getSL, color = color.rgb(255, 116, 116), style = line.style_dotted,
+                                                 xloc = xloc.bar_time),
+
+             label.new(future, getSL,  color = #00000000, style = label.style_label_lower_right,
+                                                 xloc      = xloc.bar_time,
+                                                 textcolor = color.rgb(255, 116, 116),
+                                                 size      = size.small,
+                                                 text      = shortSLtext
+
+                                                 )))
+
+        if IQ.checkIfClosed("Short Liquidity Raid")
+
+            getDrawings = exitDrawings.last()
+
+            switch strategy.closedtrades.exit_price(closedTrades) < strategy.closedtrades.entry_price(closedTrades)
+
+                true =>
+                         getDrawings.slLine  .delete(),
+                         getDrawings.slLabel .delete(),
+                         getDrawings.tpLine  := line(na),
+                         getDrawings.tpLabel := label(na)
+
+                =>
+                         getDrawings.tpLine  .delete(),
+                         getDrawings.tpLabel .delete(),
+                         getDrawings.slLine  := line(na),
+                         getDrawings.slLabel := label(na)
+
+        label.new(math.round(math.avg(getStart, time)), getHigh, xloc = xloc.bar_time,
+                                     text      = "Session High",
+                                     color     = #00000000,
+                                     textcolor = chart.fg_color,
+                                     size      = size.small
+                                     )
+
+        label.new(math.round(math.avg(getStart, time)), getLow, xloc = xloc.bar_time,
+                                     text      = "Session Low",
+                                     color     = #00000000,
+                                     textcolor = chart.fg_color,
+                                     style     = label.style_label_up,
+                                     size      = size.small
+                                     )
+
+        label.new(int(keyLevels.get(IQ.raidCoordinates.HRVT)), keyLevels.get(IQ.raidCoordinates.HRP),
+                                     text      = "Session High Liquidity Raid",
+                                     color     = #00000000,
+                                     textcolor = chart.fg_color,
+                                     style     = label.style_label_lower_right,
+                                     size      = size.small,
+                                     xloc      = xloc.bar_time
+                                     )
+
+        keyLevels.put(IQ.raidCoordinates.CB, float(na))
+
+
+    if keyPointsTime
+
+        if not keyPointsTime[1]
+
+            highest := high
+            lowest  := low
+
+            keyLevels.clear()
+
+            strategy.cancel("Long Liquidity Raid")
+            strategy.cancel("Short Liquidity Raid")
+
+            keyLevels.put(IQ.raidCoordinates.HR, 0)
+            keyLevels.put(IQ.raidCoordinates.LR , 0)
+
+            keyLevels.put(IQ.raidCoordinates.ST , time)
+            keyLevels.put(IQ.raidCoordinates.SP, ohlc4)
+
+            keyLevels.put(IQ.raidCoordinates.CB, float(na))
+
+        highest := math.max(high, highest)
+        lowest  := math.min(low , lowest)
+
+        keyLevels.put(IQ.raidCoordinates.H, highest)
+        keyLevels.put(IQ.raidCoordinates.L , lowest)
+
+
+    else
+
+        if keyPointsTime[1]
+
+            keyLevels.put(IQ.raidCoordinates.H, highest)
+            keyLevels.put(IQ.raidCoordinates.L , lowest)
+
+            highest := float(na)
+            lowest  := float(na)
+
+            keyLevels.put(IQ.raidCoordinates.ET, time)
+            keyLevels.put(IQ.raidCoordinates.EP, ohlc4)
+
+
+        if keyLevels.get(IQ.raidCoordinates.HR) == 0 and keyLevels.get(IQ.raidCoordinates.LR) == 0
+
+            switch
+
+                high >= keyLevels.get(IQ.raidCoordinates.H) =>
+
+                                                 keyLevels.put(IQ.raidCoordinates.HR, 1), keyLevels.put(IQ.raidCoordinates.HRT, time),
+                                                 keyLevels.put(IQ.raidCoordinates.HRP   , high),
+                                                 keyLevels.put(IQ.raidCoordinates.HRVT  , time),
+                                                 keyLevels.put(IQ.raidCoordinates.LPRHR , low ),
+                                                 keyLevels.put(IQ.raidCoordinates.LPRHRT, time),
+
+                low  <= keyLevels.get(IQ.raidCoordinates.L) =>
+
+                                                 keyLevels.put(IQ.raidCoordinates.LR, 1) , keyLevels.put(IQ.raidCoordinates.LRT , time),
+                                                 keyLevels.put(IQ.raidCoordinates.LRP   , low ),
+                                                 keyLevels.put(IQ.raidCoordinates.LRVT  , time),
+                                                 keyLevels.put(IQ.raidCoordinates.HPRLR , high),
+                                                 keyLevels.put(IQ.raidCoordinates.HPRLRT, time),
+
+
+        if keyLevels.get(IQ.raidCoordinates.LR) == 1
+
+            if low <= keyLevels.get(IQ.raidCoordinates.LRP)
+
+                keyLevels.put(IQ.raidCoordinates.LRVT , time)
+                keyLevels.put(IQ.raidCoordinates.LRP  , low)
+
+            if high >= keyLevels.get(IQ.raidCoordinates.HPRLR) and not na(IQ.raidCoordinates.CB)
+
+                keyLevels.put(IQ.raidCoordinates.HPRLR , high)
+                keyLevels.put(IQ.raidCoordinates.HPRLRT, time)
+
+
+        if keyLevels.get(IQ.raidCoordinates.HR) == 1
+
+            if high >= keyLevels.get(IQ.raidCoordinates.HRP)
+
+                keyLevels.put(IQ.raidCoordinates.HRVT , time)
+                keyLevels.put(IQ.raidCoordinates.HRP  , high)
+
+            if low <= keyLevels.get(IQ.raidCoordinates.LPRHR) and not na(IQ.raidCoordinates.CB)
+
+                keyLevels.put(IQ.raidCoordinates.LPRHR  , low)
+                keyLevels.put(IQ.raidCoordinates.LPRHRT, time)
+
+
+        if keyLevels.get(IQ.raidCoordinates.LR) == 1 and longLiquidityRaid and not includesArr.includes(int(keyLevels.get(IQ.raidCoordinates.ST)))
+
+            closestBB = 0., closestBBstart = 0, closestBBbottom = 0.
+
+            if bearishOBbox.size() > 0
+
+                getLowRaidTime = keyLevels.get(IQ.raidCoordinates.LRT)
+                getLow         = keyLevels.get(IQ.raidCoordinates.L)
+
+                for i = 0 to bearishOBbox.size() - 1
+
+                    getOrderBlock = bearishOBbox.get(i)
+                    getTop        = getOrderBlock.orderBlockData.get(1)
+
+                    if getOrderBlock.orderBlockData.first() >= getLowRaidTime
+                        if getOrderBlock.status == "BB"
+
+                            if close > getTop and getTop > getLow
+
+                                closestBB := math.max(closestBB, getTop)
+
+                                if closestBB == getTop
+
+                                    closestBBstart  := int(getOrderBlock.orderBlockData.first())
+                                    closestBBbottom := getOrderBlock.orderBlockData.last()
+
+                                    if na(keyLevels.get(IQ.raidCoordinates.CB))
+
+                                        keyLevels.put(IQ.raidCoordinates.HPRLR, high)
+                                        keyLevels.put(IQ.raidCoordinates.HPRLRT, time)
+
+                    else
+
+                        break
+
+                if closestBB != 0
+
+
+                    if tpLongLiquidityRaid == "Swing High"
+
+                        if historicalPoints.size() > 0
+
+                            for points in historicalPoints
+
+                                if points.price > closestBB
+
+                                    keyLevels.put(IQ.raidCoordinates.LTP, points.price)
+                                    keyLevels.put(IQ.raidCoordinates.LTPT, points.time)
+                                    break
+
+
+                    else
+
+                        getHighSession = keyLevels.get(IQ.raidCoordinates.H), getLowRaid = keyLevels.get(IQ.raidCoordinates.LRP)
+
+                        fib = getHighSession - ((getHighSession - getLowRaid) * liquidityRaidFibTP)
+
+                        keyLevels.put(IQ.raidCoordinates.LTP, fib)
+                        keyLevels.put(IQ.raidCoordinates.LTPT, keyLevels.get(IQ.raidCoordinates.ET))
+
+                    switch slLongLiquidityRaid
+
+                        "Swing Low" =>
+
+                                              keyLevels.put(IQ.raidCoordinates.LSL, keyLevels.get(IQ.raidCoordinates.LRP)),
+                                              keyLevels.put(IQ.raidCoordinates.LSLT, keyLevels.get(IQ.raidCoordinates.LRVT))
+
+                        "Breakerblock Bottom" =>
+
+                                             keyLevels.put(IQ.raidCoordinates.LSL, closestBBbottom),
+                                             keyLevels.put(IQ.raidCoordinates.LSLT, closestBBstart)
+
+                        "Use Fib (Option Below)"      =>
+
+                                             getHighSession = keyLevels.get(IQ.raidCoordinates.H), getLowRaid = keyLevels.get(IQ.raidCoordinates.LRP),
+                                             fib = getLowRaid + ((getHighSession - getLowRaid) * liquidityRaidFibTP),
+
+                                             keyLevels.put(IQ.raidCoordinates.LSL, fib),
+                                             keyLevels.put(IQ.raidCoordinates.LSLT, keyLevels.get(IQ.raidCoordinates.ET))
+
+
+                    if not na(keyLevels.get(IQ.raidCoordinates.LTP)) and not na(keyLevels.get(IQ.raidCoordinates.LSL))
+                         and strategy.opentrades == 0 and barstate.isconfirmed and not includesArr.includes(int(keyLevels.get(IQ.raidCoordinates.ST)))
+
+                        strategy.entry("Long Liquidity Raid", strategy.long, limit = closestBB, comment = "Long Liquidity Raid")
+
+                        strategy.exit ("Long Liquidity Raid Exit", "Long Liquidity Raid",
+                                                         limit = keyLevels.get(IQ.raidCoordinates.LTP), stop = keyLevels.get(IQ.raidCoordinates.LSL))
+
+                        keyLevels.put(IQ.raidCoordinates.CB, closestBB)
+                        keyLevels.put(IQ.raidCoordinates.CBB, closestBBbottom)
+                        keyLevels.put(IQ.raidCoordinates.CBS, closestBBstart)
+
+
+                if close < getLow
+                    strategy.cancel("Long Liquidity Raid")
+
+
+
+
+        if keyLevels.get(IQ.raidCoordinates.HR) == 1 and shortLiquidityRaid and not includesArr.includes(int(keyLevels.get(IQ.raidCoordinates.ST)))
+
+            closestBB = 20e20, closestBBstart = 0, closestBBtop = 0.
+
+            if bullishOBbox.size() > 0
+
+                getHighRaidTime = keyLevels.get(IQ.raidCoordinates.HRT)
+                getHigh         = keyLevels.get(IQ.raidCoordinates.H)
+
+                for i = 0 to bullishOBbox.size() - 1
+
+                    getOrderBlock = bullishOBbox.get(i)
+                    getBot        = getOrderBlock.orderBlockData.last()
+
+                    if getOrderBlock.orderBlockData.first() >= getHighRaidTime
+                        if getOrderBlock.status == "BB"
+
+                            if close < getBot and getBot < getHigh
+
+                                closestBB := math.min(closestBB, getBot)
+
+                                if closestBB == getBot
+                                    closestBBstart  := int(getOrderBlock.orderBlockData.first())
+                                    closestBBtop    := getOrderBlock.orderBlockData.get(1)
+
+                                    if na(keyLevels.get(IQ.raidCoordinates.CB))
+
+                                        keyLevels.put(IQ.raidCoordinates.LPRHR, low)
+                                        keyLevels.put(IQ.raidCoordinates.LPRHRT, time)
+
+                    else
+
+                        break
+
+                if closestBB != 20e20
+
+                    if tpShortLiquidityRaid == "Swing Low"
+
+                        if historicalPoints.size() > 0
+
+                            for points in historicalPoints
+
+                                if points.price < closestBB
+
+                                    keyLevels.put(IQ.raidCoordinates.STP, points.price)
+                                    keyLevels.put(IQ.raidCoordinates.STPT, points.time)
+                                    break
+
+                    else
+
+                        getLowSession = keyLevels.get(IQ.raidCoordinates.L), getHighRaid = keyLevels.get(IQ.raidCoordinates.HRP)
+
+                        fib = getLowSession - ((getLowSession - getHighRaid) * liquidityRaidFibTPshort)
+
+                        keyLevels.put(IQ.raidCoordinates.STP, fib)
+                        keyLevels.put(IQ.raidCoordinates.STPT, keyLevels.get(IQ.raidCoordinates.ET))
+
+
+                    switch slShortLiquidityRaid
+
+                        "Swing High" =>
+
+                                              keyLevels.put(IQ.raidCoordinates.SSL, keyLevels.get(IQ.raidCoordinates.HRP)),
+                                              keyLevels.put(IQ.raidCoordinates.SSLT, keyLevels.get(IQ.raidCoordinates.HRVT))
+
+                        "Breakerblock Top" =>
+
+                                             keyLevels.put(IQ.raidCoordinates.SSL, closestBBtop),
+                                             keyLevels.put(IQ.raidCoordinates.SSLT, closestBBstart)
+
+                        "Use Fib (Option Below)"      =>
+
+                                             getLowSession = keyLevels.get(IQ.raidCoordinates.L), getHighRaid = keyLevels.get(IQ.raidCoordinates.HRP),
+                                             fib = getHighRaid + ((getLowSession - getHighRaid) * liquidityRaidFibTPshort),
+
+                                             keyLevels.put(IQ.raidCoordinates.SSL, fib),
+                                             keyLevels.put(IQ.raidCoordinates.SSLT, keyLevels.get(IQ.raidCoordinates.ET))
+
+
+
+                    if not na(keyLevels.get(IQ.raidCoordinates.STP)) and not na(keyLevels.get(IQ.raidCoordinates.SSL))
+                     and strategy.opentrades == 0 and barstate.isconfirmed and not includesArr.includes(int(keyLevels.get(IQ.raidCoordinates.ST)))
+
+                        strategy.entry("Short Liquidity Raid", strategy.short, limit = closestBB, comment = "Short Liquidity Raid")
+
+                        strategy.exit ("Short Liquidity Raid Exit", "Short Liquidity Raid",
+
+                                                         limit = keyLevels.get(IQ.raidCoordinates.STP),
+                                                         stop  = keyLevels.get(IQ.raidCoordinates.SSL)
+                                                         )
+
+                        keyLevels .put(IQ.raidCoordinates.CB, closestBB)
+                        keyLevels .put(IQ.raidCoordinates.CBT, closestBBtop)
+                        keyLevels .put(IQ.raidCoordinates.CBS, closestBBstart)
+
+                if close > getHigh
+                    strategy.cancel("Short Liquidity Raid")
+
+
+    0
+
+
+method fairValueGap(array<IQ.FVG> FVGarr) =>
+
+    if barstate.isconfirmed and IQ.isLastBar(userTF)
+
+        FVGarr.invalidFVGcheck(upFVGpricesSorted, dnFVGpricesSorted)
+
+        if onlyFVGliq
+
+            getUpStatus = takeFVGs.get("Up")
+
+            if getUpStatus != 0 and H2 < L
+
+                if getUpStatus == 1 or FVGarr.size() == 0
+
+                    FVGarr            .unshift(IQ.FVG.new(H2, L, "Up", time1))
+                    upFVGpricesSorted .insert(upFVGpricesSorted.binary_search_rightmost(H2), H2)
+                    takeFVGs          .put("Up", 2)
+
+                else
+
+                    switch L > FVGarr.first().L
+
+                        true =>  FVGarr            .unshift(IQ.FVG.new(H2, L, "Up", time1)),
+                                 upFVGpricesSorted .insert(upFVGpricesSorted.binary_search_rightmost(H2), H2)
+
+                        =>       takeFVGs          .put("Up", 0)
+
+            getDnStatus = takeFVGs.get("Down")
+
+            if getDnStatus != 0 and L2 > H
+
+                if getDnStatus == 1 or FVGarr.size() == 0
+
+                    FVGarr            .unshift(IQ.FVG.new(H, L2, "Down", time1))
+                    dnFVGpricesSorted .insert(dnFVGpricesSorted.binary_search_rightmost(L2), L2)
+                    takeFVGs          .put("Down", 2)
+
+                else
+
+                    switch H < FVGarr.first().H
+
+                        true =>  FVGarr            .unshift(IQ.FVG.new(H, L2, "Down", time1)),
+                                 dnFVGpricesSorted .insert(dnFVGpricesSorted.binary_search_rightmost(L2), L2)
+                        =>       takeFVGs          .put("Down", 0)
+
+        else
+            switch
+
+                H2  < L  =>  FVGarr           .unshift(IQ.FVG.new(H2, L, "Up"  , time1)),
+                             upFVGpricesSorted.insert(upFVGpricesSorted.binary_search_rightmost(H2), H2)
+
+                L2  > H  =>  FVGarr           .unshift(IQ.FVG.new(H, L2, "Down", time1)),
+                             dnFVGpricesSorted.insert(dnFVGpricesSorted.binary_search_rightmost(L2), L2)
+
+    if barstate.islast
+
+        counter = map.new<string, int>()
+
+        counter.put("FVG Up", 0), counter.put("FVG Down", 0)
+
+        if FVGarr.size() > 0
+
+            for i = 0 to FVGarr.size() - 1
+
+                data = FVGarr.get(i)
+
+                data.fvgBox  .delete()
+
+                if labelLevels == "Outside"
+
+                    data.fvgLabel.delete()
+
+                switch data.direction
+
+                    "Up" => IQ.drawFVG(counter, FVGUpShow, "FVG Up", FVGupcol, data, masterCoords, labelLevels, borderTransp, liteMode, timen5)
+                    =>      IQ.drawFVG(counter, FVGDnShow, "FVG Down", FVGdncol, data, masterCoords, labelLevels, borderTransp, liteMode, timen5)
+
+
+    FVGarr
+
+
+
+drawRejections(array<IQ.rejectionBlocks> upRejections, array<IQ.rejectionBlocks> dnRejections) =>
+
+    if IQ.isLastBar(userTF)
+
+        if close > upRejectionsPrices.min()
+
+            for i = upRejections.size() - 1 to 0
+
+                data = upRejections.get(i)
+
+                if close > data.rejectionPoint.price
+
+                    if not na(data.rejectionBox)
+
+                        data.rejectionBox  .delete()
+                        data.rejectionLabel.delete()
+
+                    upRejections.remove(i)
+
+            slice = upRejectionsPrices.slice(0, upRejectionsPrices.binary_search_rightmost(close))
+            slice.clear()
+
+        if close < dnRejectionsPrices.max()
+
+            for i = dnRejections.size() - 1 to 0
+
+                data = dnRejections.get(i)
+
+                if close < data.rejectionPoint.price
+
+                    if not na(data.rejectionBox)
+
+                        data.rejectionBox  .delete()
+                        data.rejectionLabel.delete()
+
+                    dnRejections.remove(i)
+
+            getIndex = math.min(dnRejectionsPrices.size() - 1, dnRejectionsPrices.binary_search_rightmost(close))
+
+            slice = dnRejectionsPrices.slice(getIndex, dnRejectionsPrices.size())
+            slice.clear()
+
+    upRejections.lastBarRejections(bearishRBcol, bearishRBshow, "Up Rejection"  ,
+                                 labelLevels, borderTransp, liteMode, timen5, masterCoords)
+    dnRejections.lastBarRejections(bullishRBcol, bullishRBshow, "Down Rejection",
+                                 labelLevels, borderTransp, liteMode, timen5, masterCoords)
+
+
+calcKeyLevels() =>
+
+    var swingHighs = array.new<float>()
+    var swingLows  = array.new<float>()
+
+    var FVGarr     = array.new<IQ.FVG>()
+
+    [bullishOBbox, bearishOBbox] = getOB()
+
+    liquidityRaid(bullishOBbox,
+                     bearishOBbox,
+                     lRaidSessions,
+                     future,
+                     bearishBBcol,
+                     bullishBBcol,
+                     tpLongLiquidityRaid,
+                     slLongLiquidityRaid,
+                     tpShortLiquidityRaid,
+                     slShortLiquidityRaid,
+                     liquidityRaidFibTP,
+                     liquidityRaidFibSL,
+                     liquidityRaidFibTPshort,
+                     liquidityRaidFibSLshort,
+                     longLiquidityRaid,
+                     shortLiquidityRaid,
+                     historicalPoints,
+                     noBorders
+                     )
+
+    IQ.OTEstrat(OTEstart,
+                 future,
+                 historicalData.closeArr,
+                 historicalData.highArr,
+                 historicalData.lowArr,
+                 historicalData.timeArr,
+                 longOTEPT,
+                 longOTESL,
+                 longOTElevel,
+                 shortOTEPT,
+                 shortOTESL,
+                 shortOTElevel,
+                 structureDirection,
+                 oteLongs,
+                 atrTF,
+                 oteShorts
+                 )
+
+    IQ.displacement( logZ,
+                     atrTFreg,
+                     historicalData.highArr,
+                     historicalData.timeArr,
+                     historicalData.lowArr,
+                     upDispShow,
+                     dnDispShow,
+                     masterCoords,
+                     labelLevels,
+                     dispUpcol,
+                     timen5,
+                     dispDncol,
+                     noBorders
+                     )
+
+    IQ.po3   (po3tf , 70 , 80 , showpo3 )
+    IQ.po3   (po3tf2, 150, 160, showpo32)
+    IQ.macros(showMacros, noBorders)
+
+    IQ.silverBullet( silverBulletStratLong,
+                     silverBulletStratShort,
+                     future,
+                     userTF,
+                     H,
+                     L,
+                     H2,
+                     L2,
+                     noBorders,
+                     silverBulletLongTP,
+                     historicalPoints,
+                     historicalData,
+                     silverBulletLongSL,
+                     silverBulletShortTP,
+                     silverBulletShortSL
+                     )
+
+    FVGarr.fairValueGap()
+
+    sweepData = zzLiq(atrLiqSweep, buffer, FVGarr)
+    unicorn          (bearishOBbox, FVGarr, bullishOBbox)
+    drawRejections   (upRejections, dnRejections)
+
+    if IQ.isLastBar(userTF)
+
+        if close > swingHighs.min()
+
+            slice = swingHighs.slice(0, swingHighs.binary_search_rightmost(close))
+            slice.clear()
+
+        if close < swingLows.max()
+
+            slice = swingLows.slice(math.min(swingLows.size() - 1, swingLows.binary_search_rightmost(close)), swingLows.size())
+            slice.clear()
+
+        if not na(getPH)
+            swingHighs.insert(swingHighs.binary_search_rightmost(getPH), getPH)
+
+        if not na(getPL)
+            swingLows.insert(swingLows.binary_search_rightmost(getPL), getPL)
+
+    model2022Long(sweepData, FVGarr)
+    model2022Short(sweepData, FVGarr)
+
+    if equalLevels
+        IQ.equalLevels(historicalData.highArr, historicalData.lowArr, historicalData.timeArr, timen5, equalHighsCol, equalLowsCol, liteMode)
+
+    if barstate.islast
+
+        if labelSize != "Default"
+
+            var sz = switch labelSize
+
+                "Auto"   => size.auto
+                "Tiny"   => size.tiny
+                "Small"  => size.small
+                "Normal" => size.normal
+
+            for lab in label.all
+                lab.set_size(sz)
+
+        if not na(getKeyPoint)
+
+            tip = "", col = color(na), var isActive = false
+            var trailPoint = getKeyPoint.price
+
+            if getKeyPoint.price != trailPoint
+
+                isActive   := true
+                trailPoint := getKeyPoint.price
+
+
+            isHigh = getKeyPoint.price > pPoint.price
+
+            if isActive and IQ.isLastBar(userTF)
+
+                if close > getKeyPoint.price and isHigh
+                    isActive := false
+
+                if close < getKeyPoint.price and not isHigh
+                    isActive := false
+
+            if structureDirection == "Up"
+
+                tip += switch
+
+                    isHigh => "BoS"
+                    =>        "MSS"
+
+                col := switch
+
+                    isHigh => #74ffbc
+                    =>        color.rgb(255, 116, 116)
+
+            else
+
+                tip += switch
+
+                    isHigh => "MSS"
+                    =>        "BoS"
+
+
+                col := switch
+
+                    isHigh => color.rgb(255, 116, 116)
+                    =>        #74ffbc
+
+
+            var lastPoint = line.new(getKeyPoint.time, getKeyPoint.price, timen5, getKeyPoint.price,
+                                               xloc  = xloc.bar_time,
+                                               style = line.style_dotted,
+                                               color = col
+                                               )
+
+
+            var lastPointLab = label.new(math.round(math.avg(time, getKeyPoint.time)), getKeyPoint.price,
+                                      text      = tip,
+                                      color     = #00000000,
+                                      xloc      = xloc.bar_time,
+                                      size      = size.small,
+                                      textcolor = col
+                                      )
+
+
+            switch isActive
+
+                true =>
+
+                         lastPoint   .set_first_point (getKeyPoint),
+                         lastPoint   .set_xy2(timen5, getKeyPoint.price),
+                         lastPointLab.set_xy (math.round(math.avg(time, getKeyPoint.time)), getKeyPoint.price),
+                         lastPoint   .set_color(col),
+                         lastPointLab.set_textcolor(col),
+                         lastPointLab.set_text(tip)
+                =>
+
+                         lastPoint   .set_color    (#00000000),
+                         lastPointLab.set_textcolor(#00000000)
+
+
+        getReqTF = timeframe.from_seconds(math.max(timeframe.in_seconds(""), timeframe.in_seconds(pbTF)))
+
+
+        if showpbH
+
+            getTFhigh = request.security(syminfo.tickerid, getReqTF,
+                                         high[1],
+                                         lookahead = barmerge.lookahead_on)
+
+            [sty, width] = switch liteMode
+
+                true => [line.style_dashed, 1]
+                =>      [line.style_solid , 2]
+
+            var pdHline  = line.new(time, getTFhigh, time("" , -5), getTFhigh, color = pdHcol, xloc = xloc.bar_time, width = width, style = sty)
+
+            var pdHlab = label.new(timen5, getTFhigh,  textcolor = pdHcol,
+                                                 size    = size.tiny,
+                                                 xloc    = xloc.bar_time,
+                                                 style   = label.style_label_left,
+                                                 color   = #00000000,
+                                                 text    = "p" + getReqTF + " High"
+                                                 )
+
+            var pdHlineN = line.new(time, getTFhigh, time("" , -5), getTFhigh,
+                                     color = color.new(pdHcol, 80),
+                                     width = 5,
+                                     xloc  = xloc.bar_time,
+                                     style = line.style_solid)
+
+
+            var pdHlabN = label.new(time, getTFhigh,
+                                                 size      = size.normal,
+                                                 xloc      = xloc.bar_time,
+                                                 text      = "•",
+                                                 style     = label.style_text_outline,
+                                                 color     = color.new(pdHcol, 80),
+                                                 textcolor = pdHcol
+
+                                                 )
+
+
+            pdHlab .set_xy(timen5, getTFhigh)
+
+            startHigh = historicalData.highArr.getTime(getTFhigh, historicalData.timeArr)
+
+            pdHline.set_xy1(startHigh, getTFhigh)
+            pdHline.set_xy2(time("" , -5), getTFhigh)
+
+            if liteMode and not na(pdHlabN)
+
+                pdHlineN.delete()
+                pdHlineN.delete()
+                pdHlabN .delete()
+
+            else
+
+                pdHlineN.set_xy1(startHigh, getTFhigh)
+                pdHlineN.set_xy2(time("" , -5), getTFhigh)
+                pdHlabN .set_xy(startHigh, getTFhigh)
+
+            masterCoords.put("p" + getReqTF + " High", getTFhigh)
+
+        if showpbL
+
+            getTFlow = request.security(syminfo.tickerid, getReqTF,
+                                         low[1],
+                                         lookahead = barmerge.lookahead_on)
+
+            [sty, width] = switch liteMode
+
+                true => [line.style_dashed, 1]
+                =>      [line.style_solid , 2]
+
+            var pdLline = line.new(time, getTFlow, time("" , -5), getTFlow,  color = pdLcol, xloc = xloc.bar_time, width = width, style = sty)
+
+            var pdLlab = label.new(timen5, getTFlow,  textcolor = pdLcol,
+                                                 size  = size.tiny,
+                                                 xloc  = xloc.bar_time,
+                                                 text  = "p" + getReqTF + " Low",
+                                                 style = label.style_label_left,
+                                                 color = #00000000
+
+                                                 )
+
+
+            var pdLlineN = line.new(time, getTFlow, time("" , -5), getTFlow,
+                                     color = color.new(pdLcol, 80),
+                                     width = 5,
+                                     xloc  = xloc.bar_time,
+                                     style = line.style_solid
+                                     )
+
+
+            var pdLlabN = label.new(time, getTFlow,
+                                                 size      = size.normal,
+                                                 xloc      = xloc.bar_time,
+                                                 text      = "•",
+                                                 style     = label.style_text_outline,
+                                                 color     = color.new(pdLcol, 80),
+                                                 textcolor = pdLcol
+
+                                                 )
+
+
+            startLow  = historicalData.lowArr .getTime(getTFlow, historicalData.timeArr)
+
+            pdLlab.set_xy(timen5, getTFlow)
+
+            pdLline.set_xy1(startLow, getTFlow)
+            pdLline.set_xy2(time("" , -5), getTFlow)
+
+            if liteMode and not na(pdLlineN)
+
+                pdLlineN.delete()
+                pdLlineN.delete()
+                pdLlabN .delete()
+
+            else
+
+                pdLlineN.set_xy1(startLow, getTFlow)
+                pdLlineN.set_xy2(time("" , -5), getTFlow)
+                pdLlabN .set_xy(startLow, getTFlow)
+
+
+            masterCoords.put("p" + getReqTF + " Low" , getTFlow)
+
+
+        var swingHighDline = line(na)
+        var swingLowDline  = line(na)
+
+        swingHighDline.delete()
+        swingLowDline .delete()
+
+        var swingHighDlab = label(na)
+        var swingLowDlab  = label(na)
+
+        swingHighDlab.delete()
+        swingLowDlab .delete()
+
+
+        if swingHighs.size() > 0
+
+            getFirst  = swingHighs.first()
+            startTime = historicalData.highArr.getTime(getFirst, historicalData.timeArr)
+
+            swingHighDline := line.new(startTime, getFirst, time("" , -5), getFirst,
+                             color  = color.rgb(255, 116, 116),
+                             xloc   = xloc.bar_time,
+                             style  = line.style_dashed
+                             )
+
+            sty = label.style_label_left
+
+            swingHighDlab   := label.new(time("" , -5), getFirst,
+                             textcolor  = color.rgb(255, 116, 116),
+                             xloc       = xloc.bar_time,
+                             text       = "Swing High",
+                             size       = size.tiny,
+                             style      = sty,
+                             color      = #00000000
+                             )
+
+            masterCoords.put("Swing High", getFirst)
+
+
+        if swingLows.size() > 0
+
+            getLast   = swingLows.last()
+            startTime = historicalData.lowArr   .getTime(getLast, historicalData.timeArr)
+
+            swingLowDline := line.new(startTime, getLast, time("" , -5), getLast,
+                             color  = #74ffbc,
+                             xloc   = xloc.bar_time,
+                             style  = line.style_dashed
+                             )
+
+
+            sty = label.style_label_left
+
+            swingLowDlab   := label.new(time("" , -5), getLast,
+                             textcolor  = #74ffbc,
+                             xloc       = xloc.bar_time,
+                             text       = "Swing Low",
+                             size       = size.tiny,
+                             style      = sty,
+                             color      = #00000000
+                             )
+
+            masterCoords.put("Swing Low", getLast)
+
+    atr = ta.atr(14) / 10
+
+    var position = switch tablePlace
+
+        "Top Right"      => position.top_right
+        "Middle Right"   => position.middle_right
+        "Bottom Right"   => position.bottom_right
+        "Top Left"       => position.top_left
+        "Middle Left"    => position.middle_left
+        "Bottom Left"    => position.bottom_left
+        "Top Center"     => position.top_center
+        "Middle Center"  => position.middle_center
+        =>                  position.bottom_center
+
+    var sz = switch tableTxt
+
+        "Tiny"   => size.tiny
+        "Small"  => size.small
+        "Normal" => size.normal
+
+    var strategyTab = table.new(position.top_right, 99, 99, bgcolor = #20222C, border_color = #363843,
+                         frame_color  = #363843,
+                         border_width = 1,
+                         frame_width  = 1
+                         )
+    var strategyArr     = array.from(model2022Long, model2022Short, uniLong, uniShort, longLiquidityRaid,
+                           shortLiquidityRaid, oteLongs, oteShorts, silverBulletStratLong, silverBulletStratShort)
+
+    var strategyNameArr = array.from("Model 2022", "Model 2022", "Unicorn", "Unicorn", "Liquidity Raid",
+                             "Liquidity Raid", "OTE", "OTE", "Silver Bullet", "Silver Bullet")
+
+
+    if barstate.islastconfirmedhistory
+
+        strategyTab.cell(0, 0, "TradingIQ\n\nICT Trading Framework", text_color = color.white, text_size = sz)
+
+        txt = ""
+
+        if strategyArr.some()
+
+            for [i, index] in strategyArr
+
+                if index
+
+                    append = strategyNameArr.get(i)
+
+                    if not str.contains(txt, append)
+
+                        switch txt == ""
+
+                            true => txt += append
+                            =>      txt += "\n" + append
+
+                strategyTab.cell(0, 1, text = "Strategies Used: ", text_color = color.white, text_size = sz)
+                strategyTab.cell(1, 1, text = txt, text_color = color.white, text_size = sz)
+
+                strategyTab.merge_cells(0, 0, 1, 0)
+
+    if barstate.islast
+
+        if strategyArr.some()
+
+            strategyTab.cell(0, 2, text = "Profit: ", text_color = color.white, text_size = sz)
+
+            profColor = switch math.sign(strategy.netprofit_percent)
+
+                1  =>   #74ffbc
+                -1 =>   color.rgb(255, 116, 116)
+                =>      color.white
+
+            strategyTab.cell(1, 2, text = str.tostring(strategy.netprofit_percent, format.percent), text_color = profColor, text_size = sz)
+
+            strategyTab.cell(0, 3, text = "Win Rate: ", text_color = color.white, text_size = sz)
+            strategyTab.cell(1, 3, text = str.tostring(strategy.wintrades / strategy.closedtrades * 100, format.percent), text_color = #74ffbc, text_size = sz)
+
+            // strategyTab.cell(0, 4, text = "Profit Factor: ", text_color = color.white)
+            // strategyTab.cell(1, 4, text = str.tostring(strategy.grossprofit / strategy.grossloss, "###,###.##"), text_color = profColor)
+
+
+            if syminfo.type == "futures"
+
+                if strategy.closedtrades == 0
+                    strategyTab.clear(0, 0, 1, 3)
+                    strategyTab.cell(0, 0,
+                         text = 'If There Are No Trades,\n Please Try Changing The \n"Order Size" In The "Properties" Tab To "Contracts"',
+                         text_color = color.white, text_size = size.tiny)
+
+        if tablePlace == "Remove Table"
+
+            strategyTab.clear(0, 0, 1, 3)
+
+        if not liteMode
+
+            var gradBox = array.new<box>(50)
+
+            values = masterCoords.values()
+
+            minValue = math.min(values.min(), historicalData.lowArr .slice(0, math.min(300, historicalData.lowArr .size() - 1)).min()) - atr * 10 * 4
+            maxValue = math.max(values.max(), historicalData.highArr.slice(0, math.min(300, historicalData.highArr.size() - 1)).max()) + atr * 10 * 4
+
+            Range = math.abs(maxValue - minValue) / 50
+
+            if gradBox.includes(box(na))
+
+                for i = 0 to 49
+
+                    col = switch
+
+                        i <= 24 => color.from_gradient(i, 0, 24,   #74ffbc, #6929F2)
+                        =>         color.from_gradient(i, 25, 49,  #6929F2, color.rgb(255, 116, 116))
+
+                    gradBox.set(i, box.new(time, minValue + Range * (i + 1), timen5, minValue + Range * i,
+                                                             xloc         = xloc.bar_time,
+                                                             bgcolor      = color.new(col, 95),
+                                                             border_color = #00000000,
+                                                             extend       = extend.left
+                                                     ))
+            else
+
+                for [i, boxes] in gradBox
+
+                    boxes.set_rightbottom(timen5, minValue + Range * i)
+                    boxes.set_top        (minValue + Range * (i + 1))
+
+
+
+        getLabSize = label.all.size()
+
+        if getLabSize > 0
+
+            for i = 0 to getLabSize - 1
+
+                getLabOuter  = label.all.get(i)
+                getLabOuterY = getLabOuter.get_y()
+
+                if getLabOuter.get_x() >= time
+
+                    for x = 0 to getLabSize - 1
+
+                        getInnerLab = label.all.get(x)
+
+                        if getInnerLab.get_x() >= time
+
+                            if getLabOuterY == label.all.get(x).get_y() and getLabOuter != getInnerLab
+
+                                if not str.contains(getLabOuter.get_text(), getInnerLab.get_text())
+
+                                    getLabOuter.set_text(getLabOuter.get_text() + "/" + getInnerLab.get_text())
+                                    getInnerLab.set_text("")
+                                    getInnerLab.set_xy(int(na), float(na))
+
+calcKeyLevels()

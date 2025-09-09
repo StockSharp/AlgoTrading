@@ -1,0 +1,189 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Copyright (c) 2024-present, (DailyPanda)
+//@version=5
+strategy('CE_ZLSMA_5MIN_CANDLECHART',
+     shorttitle='CE_ZLSMA',
+     overlay=true,
+     initial_capital=4000,
+     currency=currency.USD)
+
+
+//USER INPUT
+i_startYear = input.int(defval=2024, title="Start Year for Strategy", minval=2020)
+i_startTime = input.int(defval=9, title="Start Trading at: (0-23)", minval=0, maxval=24)
+i_stopTime = input.int(defval=15, title="Stop Trading at: (0-23)", minval=0, maxval=24)
+
+i_usemaxStop = input.bool(title="Check StopLoss to filter Entry", defval=true, group="Risk Management")
+i_maxStop = input.int(defval=230, title="Max Stop in 'Points'", minval=0, step=5, group="Risk Management")
+i_lossPct = input.int(defval=10, title="% max Day DD", minval=1, maxval=100, step=1, group="Risk Management")
+i_meta = input.bool(title="Stop at Day Goal", defval=false, group="Risk Management")
+i_metaPct = input.int(defval=6, title="Day % Goal", minval=1, step=1, group="Risk Management")
+i_fixContract = input.bool(title="Use a Fix Contract Size per Operation", defval=true, group="Risk Management")
+i_contractSize = input.int(defval=10, title="Number of contracts per op", minval=1, step=1, group="Risk Management")
+i_riskPercent = input.float(defval=5, title="Numb of contracts based on % of equitiy", minval=0, step=0.1, group="Risk Management")
+
+i_showFills   = input(true,   "Show HA order", group="HA Chart")
+i_showCandles = input(false,  "Show HA price candlesticks", group="HA Chart")
+
+//SHOW MOVING AVERAGES
+i_showZone200   = input.bool(title="Show Zone 200 (EMAxSMA)", defval=true, group="Moving Averages")
+i_ma9 = input.bool(title="MA 9", defval=false, group="Moving Averages")
+i_ma20 = input.bool(title="MA 20", defval=false, group="Moving Averages")
+i_ma50 = input.bool(title="MA 50", defval=false, group="Moving Averages")
+i_ma72 = input.bool(title="MA 72", defval=false, group="Moving Averages")
+
+//############################## RISK MANAGEMENT ##############################
+// Set maximum intraday loss to our lossPct input
+strategy.risk.max_intraday_loss(i_lossPct, strategy.percent_of_equity)
+//strategy.risk.max_intraday_loss(value=1200, type=strategy.cash)
+
+// Store equity value from the beginning of the day
+eqFromDayStart = ta.valuewhen(ta.change(dayofweek) > 0, strategy.equity, 0)
+// Calculate change of the current equity from the beginning of the current day.
+eqChgPct = 100 * ((strategy.equity - eqFromDayStart - strategy.openprofit) / (strategy.equity-strategy.openprofit))
+f_stopGain = eqChgPct >= i_metaPct and i_meta ? true : false
+
+
+//############################## LIBRARIES ##############################
+import TradingView/Strategy/3 as tvS
+
+
+//############################## HEIKIN ASHI VALUES ##############################
+haOpen    = request.security(ticker.heikinashi(syminfo.tickerid), timeframe.period, open)
+haHigh    = request.security(ticker.heikinashi(syminfo.tickerid), timeframe.period, high)
+haLow     = request.security(ticker.heikinashi(syminfo.tickerid), timeframe.period, low)
+haClose   = request.security(ticker.heikinashi(syminfo.tickerid), timeframe.period, close)
+
+//############################## AVERAGES ##############################
+// Get indicator values
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20) //9do5
+ema50 = ta.ema(close, 50) //9 do 17
+ema72 = ta.ema(close, 72)
+ema200 = ta.ema(close,200)
+sma200  = ta.sma(close, 200) //9do60
+sma500  = ta.sma(close, 500)
+lower200 = math.min(ema200, sma200)
+ema200falling = ta.falling(ema200, 1)
+sma200falling = ta.falling(sma200, 1)
+
+
+// Plot 200 MAs danger zone
+z1 = plot(i_showZone200 ? ema200 : na, title="EMA 200", color=color.new(color.lime, 50))
+z2 = plot(i_showZone200 ? sma200 : na, title="SMA 200", color=color.new(color.lime, 50))
+z3 = plot(i_showZone200 ? sma500 : na, title="SMA 500", color=color.new(color.purple, 75))
+
+ma9 = plot(i_ma9 ? ema9 : na, title="EMA 9", color=color.new(color.green, 50))
+ma20 = plot(i_ma20 ? ema20 : na, title="EMA 20", color=color.new(color.red, 50))
+ma50 = plot(i_ma50 ? ema50 : na, title="EMA 50", color=color.new(color.orange, 50))
+ma72 = plot(i_ma72 ? ema72 : na, title="EMA 72", color=color.new(color.purple, 50), style=plot.style_linebr)
+// Fill 200 zone
+fill(z1, z2, title="Zone of Value 200", color=ema200falling ? color.new(color.red,75) : color.new(color.lime, 75))
+
+
+
+//############################## ZLSMA ##############################
+zlsma_length = input.int(title="ZLSMA Length", defval=50, group='zlsma')
+offset = input.int(title="ZLSMA Offset", defval=0, group='zlsma')
+lsma = ta.linreg(haClose, zlsma_length, offset)
+lsma2 = ta.linreg(lsma, zlsma_length, offset)
+eq= lsma-lsma2
+zlsma = lsma+eq
+
+zlsma_rising = ta.rising(zlsma, 2)
+zlsma_falling = ta.falling(zlsma, 2)
+pcol_zlsma = zlsma_rising ? #43e648 : color.gray
+plot(zlsma, color=pcol_zlsma, linewidth=2)
+
+//############################## CHANDELIER EXIT ##############################
+var string calcGroup = 'Calculation'
+length = input.int(title='ATR Period', defval=1, group=calcGroup)
+mult = input.float(title='ATR Multiplier', step=0.1, defval=2.0, group=calcGroup)
+
+
+//the same on pine
+pine_atr(length) =>
+    trueRange = na(haHigh[1])? haHigh-haLow : math.max(math.max(haHigh - haLow, math.abs(haHigh - haClose[1])), math.abs(haLow - haClose[1]))
+    //true range can be also calculated with ta.tr(true)
+    ta.rma(trueRange, length)
+
+//atr using HA chart
+atr = mult * pine_atr(length)
+
+longStop = (ta.highest(haClose, length)) - atr
+longStopPrev = nz(longStop[1], longStop)
+longStop := haClose[1] > longStopPrev ? math.max(longStop, longStopPrev) : longStop
+
+shortStop = (ta.lowest(haClose, length)) + atr
+shortStopPrev = nz(shortStop[1], shortStop)
+shortStop := haClose[1] < shortStopPrev ? math.min(shortStop, shortStopPrev) : shortStop
+
+var int dir = 1
+dir := haClose > shortStopPrev ? 1 : haClose < longStopPrev ? -1 : dir
+
+var color longColor = color.green
+var color shortColor = color.red
+var color longFillColor = color.new(color.green, 90)
+var color shortFillColor = color.new(color.red, 90)
+var color textColor = color.new(color.white, 0)
+//############################## END CHANDELIER ##############################
+
+// ————— Enter/Exit trades at HA chart
+var float HAEntry = na
+var float HAprofit = 0
+
+//############################## FILTERS ##############################
+// Fetch the strategy's current position size
+posSize = math.abs(strategy.position_size)
+// Check filter(s)
+f_dateFilter = hour >= i_startTime and hour < i_stopTime and year >= i_startYear
+barcolor(f_dateFilter ? na : color.purple)
+//First bar of day session
+f_firstBar = session.isfirstbar_regular and session.ismarket ? true : false
+barcolor(f_firstBar ? color.black : na)
+
+//############################## BUY STRATEGY ##############################
+buySignal = dir == 1 and dir[1] == -1 and haClose > zlsma and haClose > haOpen
+
+//Check BUY conditions
+buyCondition = (posSize == 0) and buySignal and f_dateFilter and not f_firstBar and (not f_stopGain)
+//Use Stop Conditions?
+stopBuyPrice = math.min(haLow, haLow[1], haLow[2], haLow[3], haLow[4])
+stopBuyPriceTicks = tvS.priceToTicks(stopBuyPrice)
+//Either look for max stop range or
+stopCondition = i_usemaxStop ? math.abs(shortStop[1] - stopBuyPrice) <= i_maxStop : true
+
+// Enter positions
+if buyCondition and stopCondition
+    HAEntry := haOpen
+    // Save previous fills.
+    entryTicks = tvS.priceToTicks(close)
+    riskSize = math.round(entryTicks - stopBuyPriceTicks)
+    qtySize = i_fixContract ? i_contractSize : tvS.calcPositionSizeByStopLossTicks(riskSize, i_riskPercent)
+    strategy.entry(id="CE_ZLSMA", direction=strategy.long, stop=stopBuyPrice, qty=qtySize, comment="Entry Long", alert_message="Entry Long")
+
+if haClose < zlsma and posSize > 0
+    strategy.close(id="CE_ZLSMA", comment="TP", qty_percent=100, alert_message="TP", immediately=true)
+
+tvS.closeAtEndOfSession("CE_ZLSMA", comment="EoS")
+
+
+//############################## PLOTS ##############################
+// HA Plots
+// HA Market Enter Price.
+plot(i_showFills and not ta.change(HAEntry) ? HAEntry : na, 'Market Fills', color.new(color.gray, 0), style=plot.style_linebr, offset=-1)
+// HA Candles.
+plotcandle(i_showCandles ? haOpen : na, i_showCandles ? haHigh : na, i_showCandles ? haLow : na, i_showCandles ? haClose : na, 'Candles', haClose > haOpen ? color.black : color.black, color.black)
+
+longStopPlot = plot(dir == 1 ? longStop : na, title='Long Stop', style=plot.style_linebr, linewidth=2, color=color.new(longColor, 0))
+
+// Concatenate text based on buyCondition
+plotshape(buyCondition and stopCondition ? longStop : na, title='Buy Label', text='Buy', location=location.absolute, style=shape.labelup, size=size.tiny, color=color.new(longColor, 0), textcolor=textColor)
+
+shortStopPlot = plot(dir == 1 ? na : shortStop, title='Short Stop', style=plot.style_linebr, linewidth=2, color=color.new(shortColor, 0))
+sellSignal = dir == -1 and dir[1] == 1 and close < zlsma and f_dateFilter
+plotshape(sellSignal ? shortStop : na, title='Short Stop Start', location=location.absolute, style=shape.circle, size=size.tiny, color=color.new(shortColor, 0))
+
+await = barstate.isconfirmed
+alertcondition(buyCondition and await, title='Alert: CE_ZLSMA Buy', message='CE_ZLSMA Buy')
+//-------------------------------------------------------------------------//

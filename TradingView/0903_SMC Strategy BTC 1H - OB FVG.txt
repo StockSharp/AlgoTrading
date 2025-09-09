@@ -1,0 +1,83 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Boubizee
+
+//@version=6
+strategy('SMC Strategy BTC 1H - OB/FVG', overlay = true, default_qty_type = strategy.percent_of_equity, default_qty_value = 100, commission_type = strategy.commission.percent, commission_value = 0.06)
+
+// === PARAMÈTRES === //
+useOB = input.bool(true, title = 'Entrée via Order Block')
+useFVG = input.bool(true, title = 'Entrée via FVG')
+atrFactor = input.float(6, title = 'Multiplicateur ATR (Stop Loss)', minval = 0.1, step = 0.1)
+rrRatio = input.float(2.5, title = 'Risk/Reward Ratio', minval = 0.5, step = 0.1)
+zoneTimeout = input.int(10, title = 'Durée max des zones (en barres)', minval = 1)
+
+// === INDICATEURS === //
+atr = ta.atr(14)
+
+// === LOGIQUE BOS === //
+swingHigh = high > high[1] and high > high[2] and high > high[3] and high > high[4]
+var float lastSwingHigh = na
+if swingHigh
+    lastSwingHigh := high
+    lastSwingHigh
+
+bullishBOS = not na(lastSwingHigh) and close > lastSwingHigh[1]
+
+// === ORDER BLOCK === //
+isDownCandle = close[1] < open[1]
+newOB = bullishBOS and isDownCandle
+
+var float obLow = na
+var float obHigh = na
+var int obTimer = na
+
+if newOB
+    obLow := low[1]
+    obHigh := high[1]
+    obTimer := zoneTimeout
+    obTimer
+
+obTimer := obTimer > 0 ? obTimer - 1 : 0
+obActive = obTimer > 0
+
+// === FVG === //
+fvgExists = high[2] < low
+var float fvgLow = na
+var float fvgHigh = na
+var int fvgTimer = na
+
+if fvgExists
+    fvgHigh := high[2]
+    fvgLow := low
+    fvgTimer := zoneTimeout
+    fvgTimer
+
+fvgTimer := fvgTimer > 0 ? fvgTimer - 1 : 0
+fvgActive = fvgTimer > 0
+
+// === CONDITIONS D’ENTRÉE === //
+entryPrice = obLow
+stopLoss = obLow - atr * atrFactor
+takeProfit = entryPrice + (entryPrice - stopLoss) * rrRatio
+
+inOB = obActive and close <= obHigh and close >= obLow
+inFVG = fvgActive and close <= fvgLow and close >= fvgHigh
+
+canEnter = strategy.position_size == 0 and (useOB and inOB or useFVG and inFVG)
+
+if canEnter
+    strategy.entry('Long', strategy.long)
+    strategy.exit('TP/SL', from_entry = 'Long', stop = stopLoss, limit = takeProfit)
+    obTimer := 0
+    fvgTimer := 0
+    fvgTimer
+
+// === VISUELS === //
+plotshape(bullishBOS, title = 'BOS', location = location.abovebar, color = color.green, style = shape.labelup, text = 'BOS')
+plotshape(canEnter, title = 'ENTRY', location = location.belowbar, color = color.lime, style = shape.triangleup, text = 'BUY')
+plot(useOB and obActive ? obLow : na, 'OB Low', color = color.orange)
+plot(useOB and obActive ? obHigh : na, 'OB High', color = color.orange)
+plot(useFVG and fvgActive ? fvgLow : na, 'FVG Bas', color = color.new(color.blue, 60))
+plot(useFVG and fvgActive ? fvgHigh : na, 'FVG Haut', color = color.new(color.blue, 60))
+plot(stopLoss, 'SL', color = color.red)
+plot(takeProfit, 'TP', color = color.green)

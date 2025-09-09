@@ -1,0 +1,145 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0
+// © jontucklogic
+//@version=6
+
+strategy (title = "Optimized Auto-Detect Strategy (MA, ATR, Trend, RSI)",overlay = true, initial_capital  = 500, default_qty_type = strategy.percent_of_equity, default_qty_value= 10)
+
+//=================================================================================================
+// ► 1. User Inputs
+//=================================================================================================
+useTrendFilter   = input.bool(title="Use 200 SMA Trend Filter?", defval=true,  tooltip="Only go long if above 200 SMA, short if below 200 SMA.")
+useRSIFilter     = input.bool(title="Use RSI Filter?",            defval=false, tooltip="Only go long if RSI > RSI Long Threshold, short if RSI < RSI Short Threshold.")
+rsiPeriod        = input.int(title="RSI Period", defval=14, minval=1)
+rsiLongThresh    = input.float(title="RSI Long Threshold",  defval=50, minval=1, maxval=99)
+rsiShortThresh   = input.float(title="RSI Short Threshold", defval=50, minval=1, maxval=99)
+
+useATRStop       = input.bool(title="Use ATR-Based Stop?",        defval=true,  tooltip="If enabled, uses ATR for stop distance instead of fixed %.")
+atrPeriod        = input.int(title="ATR Period",                  defval=14, minval=1)
+atrMultiplier    = input.float(title="ATR Multiplier for Stop",   defval=1.0, step=0.1)
+riskRewardRatio  = input.float(title="Risk/Reward Ratio",         defval=3.0, step=0.5)
+
+//=================================================================================================
+// ► 2. Auto-Detect Current Symbol
+//=================================================================================================
+var string currentSymbol = syminfo.ticker
+
+//=================================================================================================
+// ► 3. Default Parameters (Overrides Per Symbol)
+//=================================================================================================
+var int   shortMAPeriod   = 9
+var int   longMAPeriod    = 21
+var float customATRMult   = atrMultiplier
+var float customRR        = riskRewardRatio
+
+// -------------------------------------------
+// Example overrides for each symbol
+// -------------------------------------------
+if currentSymbol == "OANDA:EURUSD"
+    shortMAPeriod   := 10
+    longMAPeriod    := 30
+    customATRMult   := 1.0
+    customRR        := 3.0
+
+else if currentSymbol == "OANDA:GBPUSD"
+    shortMAPeriod   := 12
+    longMAPeriod    := 35
+    customATRMult   := 1.2
+    customRR        := 2.5
+
+else if currentSymbol == "OANDA:USDJPY"
+    shortMAPeriod   := 9
+    longMAPeriod    := 21
+    customATRMult   := 1.0
+    customRR        := 3.0
+
+else if currentSymbol == "OANDA:AUDUSD"
+    shortMAPeriod   := 10
+    longMAPeriod    := 34
+    customATRMult   := 1.2
+    customRR        := 2.5
+
+else if currentSymbol == "OANDA:USDCAD"
+    shortMAPeriod   := 8
+    longMAPeriod    := 21
+    customATRMult   := 1.0
+    customRR        := 3.0
+
+else if currentSymbol == "OANDA:XAUUSD"  // Gold
+    shortMAPeriod   := 20
+    longMAPeriod    := 50
+    customATRMult   := 2.0
+    customRR        := 2.0
+
+else if currentSymbol == "OANDA:NZDUSD"
+    shortMAPeriod   := 10
+    longMAPeriod    := 30
+    customATRMult   := 1.2
+    customRR        := 2.5
+
+//=================================================================================================
+// ► 4. Indicator Calculations (MAs, RSI, ATR, Trend SMA)
+//=================================================================================================
+shortSMA = ta.sma(close, shortMAPeriod)
+longSMA  = ta.sma(close, longMAPeriod)
+trendSMA = ta.sma(close, 200)
+rsiValue = ta.rsi(close, rsiPeriod)
+atrValue = ta.atr(atrPeriod)
+
+// Plot references
+plot(shortSMA, color=color.blue,   title="Short MA")
+plot(longSMA,  color=color.orange, title="Long MA")
+plot(trendSMA, color=color.purple, title="200 SMA")
+
+//=================================================================================================
+// ► 5. Entry Conditions (MA Cross + Optional Filters)
+//=================================================================================================
+bool maLong  = ta.crossover(shortSMA, longSMA)
+bool maShort = ta.crossunder(shortSMA, longSMA)
+
+// 5.1 Trend Filter
+bool bullishTrend = close > trendSMA
+bool bearishTrend = close < trendSMA
+if useTrendFilter
+    maLong  := maLong  and bullishTrend
+    maShort := maShort and bearishTrend
+
+// 5.2 RSI Filter
+bool rsiLongAllowed  = rsiValue > rsiLongThresh
+bool rsiShortAllowed = rsiValue < rsiShortThresh
+if useRSIFilter
+    maLong  := maLong  and rsiLongAllowed
+    maShort := maShort and rsiShortAllowed
+
+//=================================================================================================
+// ► 6. Strategy Entries
+//=================================================================================================
+if maLong
+    strategy.close("Short")
+    strategy.entry("Long", strategy.long)
+
+if maShort
+    strategy.close("Long")
+    strategy.entry("Short", strategy.short)
+
+//=================================================================================================
+// ► 7. ATR-Based or Fixed Stop/Take Profit
+//=================================================================================================
+float entryPrice = strategy.position_avg_price
+
+if strategy.position_size > 0
+    float stopDist  = useATRStop ? (customATRMult * atrValue) : (entryPrice * 0.01)
+    float stopPrice = entryPrice - stopDist
+    float tpPrice   = entryPrice + (stopDist * customRR)
+    strategy.exit("Exit Long", from_entry="Long", stop=stopPrice, limit=tpPrice)
+
+if strategy.position_size < 0
+    float stopDistShort  = useATRStop ? (customATRMult * atrValue) : (entryPrice * 0.01)
+    float stopPriceShort = entryPrice + stopDistShort
+    float tpPriceShort   = entryPrice - (stopDistShort * customRR)
+    strategy.exit("Exit Short", from_entry="Short", stop=stopPriceShort, limit=tpPriceShort)
+
+//=================================================================================================
+// ► 8. Optional Alerts
+//=================================================================================================
+alertcondition(maLong,  title="Long Setup",  message="Crossover + Filters => Long on {{ticker}}")
+alertcondition(maShort, title="Short Setup", message="Crossover + Filters => Short on {{ticker}}")

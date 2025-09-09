@@ -1,0 +1,52 @@
+// Enhanced Doji Candle Trading Strategy in Pine Script
+//@version=5
+strategy("Enhanced Doji Candle Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Parameters
+riskRewardRatio = input.float(2.0, title="Risk-Reward Ratio")
+stopLossPips = input.int(5, title="Stop Loss (in pips)")  // Reduced to allow more trades
+
+defineDoji(threshold) =>
+    body = math.abs(close - open)
+    candleRange = high - low
+    body <= (candleRange * threshold)
+
+// Detect Doji candle with a higher threshold for more signals
+doji = defineDoji(0.3)  // Less strict detection
+
+// Determine Market Trend Using Shorter Moving Average
+smaPeriod = input.int(20, title="SMA Period")  // Shorter period for faster signals
+sma = ta.sma(close, smaPeriod)
+bullishTrend = close > sma
+bearishTrend = close < sma
+
+// Confirmation of Entry with Looser Requirements
+// Allow small wicks (up to 10% of the candle range)
+bullishConfirm = close > open and (low >= open * 0.99)
+bearishConfirm = close < open and (high <= open * 1.01)
+
+// Trade Entry Logic
+if doji
+    if bullishConfirm or bullishConfirm[1]  // Loosen confirmation to 1 candle
+        entryPrice = close
+        stopLossPrice = entryPrice - (stopLossPips * syminfo.mintick)
+        takeProfitPrice = entryPrice + ((entryPrice - stopLossPrice) * riskRewardRatio)
+        strategy.entry("Buy", strategy.long)
+        strategy.exit("Exit Buy", "Buy", stop=stopLossPrice, limit=takeProfitPrice)
+
+    if bearishConfirm or bearishConfirm[1]  // Loosen confirmation to 1 candle
+        entryPrice = close
+        stopLossPrice = entryPrice + (stopLossPips * syminfo.mintick)
+        takeProfitPrice = entryPrice - ((stopLossPrice - entryPrice) * riskRewardRatio)
+        strategy.entry("Sell", strategy.short)
+        strategy.exit("Exit Sell", "Sell", stop=stopLossPrice, limit=takeProfitPrice)
+
+// Early Exit on Reversal Signal
+reversalDoji = doji
+if reversalDoji
+    strategy.close("Buy")
+    strategy.close("Sell")
+
+// Plotting
+plotshape(doji, style=shape.cross, color=color.yellow, title="Doji Candle")
+plot(sma, color=color.blue, title="SMA Trend")

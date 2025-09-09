@@ -1,0 +1,630 @@
+// @version=6
+strategy("Volume Block Order Analyzer", overlay=true)
+
+// Create input group sections for better organization
+var g_volume = "Volume Analysis Settings"
+var g_impact = "Impact Calculation Settings"
+var g_visual = "Visual Settings"
+var g_strategy = "Strategy Settings"
+var g_colors = "Color Settings"
+var g_bands = "Standard Deviation Bands Settings"
+var g_exhaustion = "Exhaustion Detection Settings"
+
+// Enhanced input parameters for customization
+volumeThreshold = input.float(2.5, title="Volume Threshold (x Average)", minval=1.0, step=0.1, group=g_volume)
+lookbackPeriod = input.int(40, title="Lookback Period", minval=5, group=g_volume)
+minVolumeFilter = input.float(0, title="Minimum Volume Filter (0 = disabled)", minval=0, group=g_volume)
+
+// Impact settings
+impactDecay = input.float(0.95, title="Impact Decay Factor", minval=0.5, maxval=1.0, step=0.01, group=g_impact)
+impactNormalization = input.float(2.0, title="Impact Normalization Divisor", minval=1.0, step=1.0, tooltip="Higher values create smaller impact scores", group=g_impact)
+useAbsolutePrice = input.bool(false, title="Consider Price Movement Size", tooltip="Factor in size of price movement, not just direction", group=g_impact)
+allowExtreme = input.bool(true, title="Allow Extreme Values Beyond Bands", group=g_impact, tooltip="When enabled, extreme impact values can exceed the standard deviation bands")
+
+// Exhaustion detection settings
+detectExhaustion = input.bool(true, title="Detect Potential Exhaustion Points", group=g_exhaustion)
+exhaustionBarsThreshold = input.int(30, title="Minimum Bars in Same Direction", minval=1, maxval=100, group=g_exhaustion)
+exhaustionPriceThreshold = input.float(20, title="Max Price Movement % for Exhaustion", minval=0.1, step=0.1, group=g_exhaustion)
+exhaustionLabelSize = input.string("Tiny", title="Exhaustion Label Size", options=["Tiny", "Small", "Normal", "Large"], group=g_exhaustion)
+showExhaustionBackground = input.bool(true, title="Highlight Exhaustion with Background", group=g_exhaustion)
+useExhaustionSignals = input.bool(true, title="Generate Exhaustion Signals", group=g_exhaustion)
+useBreakoutSignals = input.bool(true, title="Generate Breakout Signals on Exhaustion Failure", group=g_exhaustion)
+exhaustionPositionSize = input.float(2.5, title="Exhaustion Position Size", minval=0.1, maxval=5.0, step=0.1, group=g_exhaustion)
+breakoutPositionSize = input.float(2.0, title="Breakout Position Size", minval=0.1, maxval=5.0, step=0.1, group=g_exhaustion)
+showExhaustionText = input.bool(true, title="Show Exhaustion Text", group=g_exhaustion)
+exhaustionTextSize = input.string("Large", title="Exhaustion Text Size", options=["Small", "Normal", "Large", "Huge"], group=g_exhaustion)
+bullishExhaustionTextColor = input.color(color.rgb(50, 200, 255), title="Bullish Exhaustion Text Color", group=g_exhaustion)
+bearishExhaustionTextColor = input.color(color.rgb(255, 100, 200), title="Bearish Exhaustion Text Color", group=g_exhaustion)
+consolidateExhaustionLabels = input.bool(true, title="Consolidate Exhaustion Labels", tooltip="Show a single moving label instead of multiple labels", group=g_exhaustion)
+
+// Standard Deviation Bands settings
+showBands = input.bool(true, title="Show Standard Deviation Bands", group=g_bands)
+bandsPeriod = input.int(20, title="Bands Period", minval=5, group=g_bands)
+bandsMultiplier = input.float(3.0, title="Bands Deviation Multiplier", minval=0.5, step=0.1, group=g_bands)
+bandsSource = input.source(close, title="Bands Source", group=g_bands)
+
+// Color customization settings
+var float EXTREME_THRESHOLD = 0.5
+var float STRONG_THRESHOLD = 0.1
+var float MILD_THRESHOLD = 0.0
+
+// Color inputs with clearer threshold annotations
+extremeBullishColor = input.color(color.rgb(0, 150, 0), title="Extreme Bullish Color (> 0.5)", group=g_colors)
+strongBullishColor = input.color(color.rgb(100, 200, 0), title="Strong Bullish Color (0.1 to 0.5)", group=g_colors)
+mildBullishColor = input.color(color.rgb(170, 220, 0), title="Mild Bullish Color (0 to 0.1)", group=g_colors)
+equilibriumColor = input.color(color.rgb(240, 240, 0), title="Equilibrium Color (= 0)", group=g_colors)
+mildBearishColor = input.color(color.rgb(220, 170, 0), title="Mild Bearish Color (-0.1 to 0)", group=g_colors)
+strongBearishColor = input.color(color.rgb(220, 100, 0), title="Strong Bearish Color (-0.5 to -0.1)", group=g_colors)
+extremeBearishColor = input.color(color.rgb(220, 0, 0), title="Extreme Bearish Color (< -0.5)", group=g_colors)
+exhaustionBullishColor = input.color(color.rgb(50, 200, 255), title="Bullish Exhaustion Color", group=g_colors)
+exhaustionBearishColor = input.color(color.rgb(255, 100, 200), title="Bearish Exhaustion Color", group=g_colors)
+
+// Visual settings
+showLabels = input.bool(true, title="Show Block Trade Labels", group=g_visual)
+showBarColor = input.bool(true, title="Color Chart Bars", group=g_visual)
+showImpactLine = input.bool(true, title="Show Impact Line", group=g_visual)
+lineWidth = input.int(2, title="Line Width", minval=1, maxval=5, group=g_visual)
+plotStyle = input.string("Line", title="Impact Plot Style", options=["Line", "Histogram", "Area"], group=g_visual)
+showHelp = input.bool(false, title="Show Information Legend", group=g_visual, tooltip="Display explanations for values in the info box")
+
+// Strategy settings
+enableStrategy = input.bool(true, title="Enable Trading Strategy", group=g_strategy)
+signalThreshold = input.float(0.0, title="Signal Threshold", tooltip="Minimum absolute impact value to generate signals", minval=0.0, step=0.1, group=g_strategy)
+useTrendProtection = input.bool(true, title="Use Trend Protection", tooltip="Prevent trading against strong trends", group=g_strategy)
+bullishTrendThreshold = input.float(0.5, title="Bullish Trend Protection", tooltip="No sell signals when cumulative impact exceeds this value", minval=0.0, step=0.1, group=g_strategy)
+bearishTrendThreshold = input.float(-0.5, title="Bearish Trend Protection", tooltip="No buy signals when cumulative impact is below this value", maxval=0.0, step=0.1, group=g_strategy)
+useTrailingStop = input.bool(true, title="Use Trailing Stop", group=g_strategy)
+stopPercent = input.float(10.0, title="Trailing Stop Loss (%)", minval=0.1, step=0.1, group=g_strategy)
+showStopLevels = input.bool(false, title="Show Stop Loss Levels", group=g_strategy)
+
+// Calculate average volume for current timeframe
+avgVolume = ta.sma(volume, lookbackPeriod)
+
+// Calculate Standard Deviation Bands
+basis = ta.sma(bandsSource, bandsPeriod)
+dev = ta.stdev(bandsSource, bandsPeriod)
+upperBand = basis + bandsMultiplier * dev
+lowerBand = basis - bandsMultiplier * dev
+
+// Determine if current volume is significantly higher than average based on current timeframe
+isHighVolume = volume > avgVolume * volumeThreshold and (minVolumeFilter == 0 or volume >= minVolumeFilter)
+
+// Determine if the block order is buy or sell based on price action
+isBullish = close > open
+isBearish = close < open
+
+// Calculate price movement size if enabled
+priceChange = useAbsolutePrice ? math.abs((close - open) / open) * 10 : 1.0
+
+// Calculate impact score (-1.0 to 1.0)
+blockImpact = 0.0
+
+if isHighVolume
+    // Calculate volume weight (how much larger than the threshold)
+    volumeWeight = volume / avgVolume
+
+    if isBullish
+        // Bullish high volume bar
+        blockImpact := 1.0 * (volumeWeight / impactNormalization) * priceChange
+    else if isBearish
+        // Bearish high volume bar
+        blockImpact := -1.0 * (volumeWeight / impactNormalization) * priceChange
+
+// Initialize variables for tracking cumulative impact
+var float cumulativeImpact = 0.0
+var float highestImpact = 0.0
+var float lowestImpact = 0.0
+
+// Variables to track if we have a new breakout signal this bar
+var bool newBearishBreakout = false
+var bool newBullishBreakout = false
+
+// Persistent variables for tracking exhaustion points
+var int bearishExhaustionCount = 0
+var int bullishExhaustionCount = 0
+var int bearishExhaustionFirstBar = 0
+var int bullishExhaustionFirstBar = 0
+var bool previousBearishExhaustion = false
+var bool previousBullishExhaustion = false
+var float bearishExhaustionFirstLow = na  // Track low of first bearish exhaustion bar
+var float bullishExhaustionFirstHigh = na  // Track high of first bullish exhaustion bar
+var float bearishExhaustionFirstHigh = na  // Track high of first bearish exhaustion bar
+var float bullishExhaustionFirstLow = na   // Track low of first bullish exhaustion bar
+var float firstBullishExhaustionBarLow = na  // Track low of first bar in bullish exhaustion series
+var float firstBearishExhaustionBarHigh = na // Track high of first bar in bearish exhaustion series
+var bool isBearishExhaustion = false
+var bool isBullishExhaustion = false
+
+// Variables for exhaustion series tracking
+var int consecutiveBullishExhaustionBars = 0
+var int consecutiveBearishExhaustionBars = 0
+var bool validBullishExhaustionSeries = false
+var bool validBearishExhaustionSeries = false
+var bool hadValidBullishSeries = false
+var bool hadValidBearishSeries = false
+var bool validatedBearishExhaustion = false
+var bool validatedBullishExhaustion = false
+
+// Entry signals with threshold filter and trend protection
+bool canBuySignal = not useTrendProtection or cumulativeImpact >= bearishTrendThreshold
+bool canSellSignal = not useTrendProtection or cumulativeImpact <= bullishTrendThreshold
+
+// Add a variable to track bars since last exhaustion invalidation
+var int barsSinceLastBearishInvalidation = 0
+var int barsSinceLastBullishInvalidation = 0
+var int minimumBarsBeforeNewExhaustion = 15 // Minimum bars required before allowing a new exhaustion signal
+
+// Text size settings for exhaustion text - moved up to fix undeclared reference
+var string actualExhaustionTextSize = size.small
+
+// Apply decay to previous cumulative impact and add new impact
+cumulativeImpact := cumulativeImpact * impactDecay + blockImpact
+
+// Track highest and lowest impact values for color scaling
+highestImpact := math.max(highestImpact, cumulativeImpact)
+lowestImpact := math.min(lowestImpact, cumulativeImpact)
+
+// Add a small buffer to prevent equal min/max values
+if highestImpact == lowestImpact
+    highestImpact := highestImpact + 0.01
+    lowestImpact := lowestImpact - 0.01
+
+// Plot standard deviation bands
+plot(showBands ? upperBand : na, title="Upper Band", color=color.new(color.blue, 50), linewidth=1)
+plot(showBands ? basis : na, title="Middle Band", color=color.new(color.blue, 70), linewidth=1)
+plot(showBands ? lowerBand : na, title="Lower Band", color=color.new(color.blue, 50), linewidth=1)
+
+// Scale the cumulative impact to fit inside the standard deviation bands
+scaleImpactToPrice(impact) =>
+    // For standard values, map impact from -1 to 1 range to lowerBand to upperBand
+    // For extreme values (if allowed), let them protrude beyond the bands
+    normalizedRange = math.max(math.min(impact, 1), -1) / 2  // Convert -1 to 1 range to -0.5 to 0.5
+    midPoint = (upperBand + lowerBand) / 2
+    scaledRange = (upperBand - lowerBand) / 2
+
+    if allowExtreme
+        // Allow extremes to protrude beyond bands
+        result = midPoint + normalizedRange * scaledRange * 2  // Scale by 2 to allow extremes beyond bands
+        if impact > 1
+            result := result + (impact - 1) * scaledRange  // Add extra beyond upper band
+        else if impact < -1
+            result := result + (impact + 1) * scaledRange  // Add extra beyond lower band
+        result
+    else
+        // Constrain within bands
+        midPoint + normalizedRange * scaledRange
+
+// Map impact to price for visualization
+impactPrice = scaleImpactToPrice(cumulativeImpact)
+
+// Color gradient from red (selling pressure) to green (buying pressure)
+impactColor = color.from_gradient(cumulativeImpact, lowestImpact, highestImpact, color.red, color.green)
+
+// Plot the cumulative impact with selected style - using conditional value assignment
+plotLine = (showImpactLine and plotStyle == "Line") ? impactPrice : na
+plot(plotLine, title="Impact Line", color=impactColor, linewidth=lineWidth, style=plot.style_line)
+
+plotHist = (showImpactLine and plotStyle == "Histogram") ? impactPrice : na
+plot(plotHist, title="Impact Histogram", color=impactColor, linewidth=lineWidth, style=plot.style_histogram)
+
+plotArea = (showImpactLine and plotStyle == "Area") ? impactPrice : na
+plot(plotArea, title="Impact Area", color=impactColor, linewidth=lineWidth, style=plot.style_area)
+
+// Calculate bar color based on cumulative impact with clearer step-by-step conditions
+color finalBarColor = na
+if showBarColor
+    if cumulativeImpact > EXTREME_THRESHOLD
+        finalBarColor := extremeBullishColor                   // Extreme Bullish > 0.5
+    else if cumulativeImpact > STRONG_THRESHOLD
+        finalBarColor := strongBullishColor                    // Strong Bullish 0.1-0.5
+    else if cumulativeImpact > 0
+        finalBarColor := mildBullishColor                      // Mild Bullish 0-0.1
+    else if cumulativeImpact == 0
+        finalBarColor := equilibriumColor                      // Equilibrium = 0
+    else if cumulativeImpact >= -STRONG_THRESHOLD
+        finalBarColor := mildBearishColor                      // Mild Bearish -0.1-0
+    else if cumulativeImpact >= -EXTREME_THRESHOLD
+        finalBarColor := strongBearishColor                    // Strong Bearish -0.5--0.1
+    else
+        finalBarColor := extremeBearishColor                   // Extreme Bearish < -0.5
+
+// Exhaustion detection logic
+// Track consecutive bars in the same direction
+var int consecutiveBearish = 0
+var int consecutiveBullish = 0
+var int consecutiveNeutralOrBearish = 0  // For bearish exhaustion
+var int consecutiveNeutralOrBullish = 0  // For bullish exhaustion
+
+// Reset counters based on current bar direction
+if cumulativeImpact > 0
+    consecutiveBearish := 0
+    consecutiveNeutralOrBearish := 0
+    consecutiveBullish := consecutiveBullish + 1
+    consecutiveNeutralOrBullish := consecutiveNeutralOrBullish + 1
+else if cumulativeImpact < 0
+    consecutiveBullish := 0
+    consecutiveNeutralOrBullish := 0
+    consecutiveBearish := consecutiveBearish + 1
+    consecutiveNeutralOrBearish := consecutiveNeutralOrBearish + 1
+else  // Equilibrium
+    consecutiveBullish := 0
+    consecutiveBearish := 0
+    consecutiveNeutralOrBullish := consecutiveNeutralOrBullish + 1
+    consecutiveNeutralOrBearish := consecutiveNeutralOrBearish + 1
+
+// Calculate price range as percentage of average price
+priceRange = math.abs(high - low)
+avgPrice = (high + low) / 2
+priceRangePercent = priceRange / avgPrice * 100
+
+// Update these counts at each bar
+barsSinceLastBearishInvalidation := barsSinceLastBearishInvalidation + 1
+barsSinceLastBullishInvalidation := barsSinceLastBullishInvalidation + 1
+
+// Check for price breakout that would invalidate previous exhaustion
+bool bearishExhaustionInvalidated = not na(bearishExhaustionFirstLow) and low < bearishExhaustionFirstLow
+bool bullishExhaustionInvalidated = not na(bullishExhaustionFirstHigh) and high > bullishExhaustionFirstHigh
+
+// Reset breakout signals at the start of each bar
+newBearishBreakout := false
+newBullishBreakout := false
+
+// Handle invalidation immediately
+if bearishExhaustionInvalidated and previousBearishExhaustion
+    // Completely remove all exhaustion state and labeling
+    isBearishExhaustion := false
+    bearishExhaustionFirstBar := 0
+    bearishExhaustionFirstHigh := na
+    bearishExhaustionFirstLow := na
+    consecutiveNeutralOrBearish := 0
+    barsSinceLastBearishInvalidation := 0
+    consecutiveBearishExhaustionBars := 0
+    validBearishExhaustionSeries := false
+    hadValidBearishSeries := false
+
+if bullishExhaustionInvalidated and previousBullishExhaustion
+    // Completely remove all exhaustion state and labeling
+    isBullishExhaustion := false
+    bullishExhaustionFirstBar := 0
+    bullishExhaustionFirstHigh := na
+    bullishExhaustionFirstLow := na
+    consecutiveNeutralOrBullish := 0
+    barsSinceLastBullishInvalidation := 0
+    consecutiveBullishExhaustionBars := 0
+    validBullishExhaustionSeries := false
+    hadValidBullishSeries := false
+
+// Check for price movement that validates exhaustion
+bool bearishExhaustionValidated = previousBearishExhaustion and not na(bearishExhaustionFirstHigh) and high > bearishExhaustionFirstHigh
+bool bullishExhaustionValidated = previousBullishExhaustion and not na(bullishExhaustionFirstLow) and low < bullishExhaustionFirstLow
+
+// Handle validation and signal generation
+if bearishExhaustionValidated
+    // Price moved up, validating bearish exhaustion - generate LONG entry
+    strategy.entry("Exhaustion Long", strategy.long, comment="Validated Bearish Exhaustion", qty=exhaustionPositionSize)
+    if showExhaustionText
+        label.new(x=bar_index, y=low, text="BEARISH EXHAUSTION VALIDATED - LONG ENTRY ↑", color=color.new(exhaustionBullishColor, 80), style=label.style_label_up, textcolor=color.white, size=actualExhaustionTextSize, yloc=yloc.belowbar)
+    validatedBearishExhaustion := true
+
+if bullishExhaustionValidated
+    // Price moved down, validating bullish exhaustion - generate SHORT entry
+    strategy.entry("Exhaustion Short", strategy.short, comment="Validated Bullish Exhaustion", qty=exhaustionPositionSize)
+    if showExhaustionText
+        label.new(x=bar_index, y=high, text="BULLISH EXHAUSTION VALIDATED - SHORT ENTRY ↓", color=color.new(exhaustionBearishColor, 80), style=label.style_label_down, textcolor=color.white, size=actualExhaustionTextSize, yloc=yloc.abovebar)
+    validatedBullishExhaustion := true
+
+// Reset states after validation
+if bearishExhaustionValidated
+    isBearishExhaustion := false
+    bearishExhaustionFirstBar := 0
+    bearishExhaustionFirstHigh := na
+    bearishExhaustionFirstLow := na
+    consecutiveNeutralOrBearish := 0
+    barsSinceLastBearishInvalidation := 0
+    consecutiveBearishExhaustionBars := 0
+    validBearishExhaustionSeries := false
+    hadValidBearishSeries := false
+else
+    validatedBearishExhaustion := false
+
+if bullishExhaustionValidated
+    isBullishExhaustion := false
+    bullishExhaustionFirstBar := 0
+    bullishExhaustionFirstHigh := na
+    bullishExhaustionFirstLow := na
+    consecutiveNeutralOrBullish := 0
+    barsSinceLastBullishInvalidation := 0
+    consecutiveBullishExhaustionBars := 0
+    validBullishExhaustionSeries := false
+    hadValidBullishSeries := false
+else
+    validatedBullishExhaustion := false
+
+// Add background for exhaustion if enabled
+var color bgcolorValue = na
+if showExhaustionBackground
+    // First, reset the background color
+    bgcolorValue := na
+
+    // Show background for active exhaustion or validation bar
+    if isBearishExhaustion and not bearishExhaustionInvalidated
+        bgcolorValue := color.new(exhaustionBearishColor, 70)
+    else if isBullishExhaustion and not bullishExhaustionInvalidated
+        bgcolorValue := color.new(exhaustionBullishColor, 70)
+    else if validatedBearishExhaustion
+        bgcolorValue := color.new(exhaustionBullishColor, 70)  // Use bullish color for long entry
+    else if validatedBullishExhaustion
+        bgcolorValue := color.new(exhaustionBearishColor, 70)  // Use bearish color for short entry
+
+bgcolor(bgcolorValue)
+
+// Override bar color if exhaustion is detected or validated
+if showBarColor
+    if isBearishExhaustion and not bearishExhaustionInvalidated
+        finalBarColor := exhaustionBearishColor
+    else if isBullishExhaustion and not bullishExhaustionInvalidated
+        finalBarColor := exhaustionBullishColor
+    else if validatedBearishExhaustion
+        finalBarColor := exhaustionBullishColor  // Use bullish color for long entry
+    else if validatedBullishExhaustion
+        finalBarColor := exhaustionBearishColor  // Use bearish color for short entry
+
+// Apply bar color at global scope
+barcolor(finalBarColor)
+
+// Arrays to track recent buy/sell signals for negation logic
+var buySignals = array.new_int(0)
+var sellSignals = array.new_int(0)
+
+// Function to maintain arrays of recent signals, keeping only within lookback period
+processSignalArrays() =>
+    // Remove signals older than the lookback period
+    if array.size(buySignals) > 0
+        while array.size(buySignals) > 0 and (bar_index - array.get(buySignals, 0)) >= lookbackPeriod
+            array.remove(buySignals, 0)
+
+    if array.size(sellSignals) > 0
+        while array.size(sellSignals) > 0 and (bar_index - array.get(sellSignals, 0)) >= lookbackPeriod
+            array.remove(sellSignals, 0)
+
+// Check if we have a valid block trade signal that isn't negated by an opposite signal
+isValidBuySignal = isHighVolume and isBullish
+isValidSellSignal = isHighVolume and isBearish
+
+// Process arrays before checking for negation
+processSignalArrays()
+
+// Check for negation - if opposite signal exists in the lookback period
+if isValidBuySignal and array.size(sellSignals) > 0
+    isValidBuySignal := false  // Negate buy if recent sell exists
+    array.clear(sellSignals)   // Clear sells as they're now negated by this buy
+
+if isValidSellSignal and array.size(buySignals) > 0
+    isValidSellSignal := false  // Negate sell if recent buy exists
+    array.clear(buySignals)     // Clear buys as they're now negated by this sell
+
+// Add current signals to arrays if they're valid
+if isValidBuySignal
+    array.push(buySignals, bar_index)
+
+if isValidSellSignal
+    array.push(sellSignals, bar_index)
+
+// Modify exhaustion detection to only trigger after minimum bars since last invalidation
+isBearishExhaustion := detectExhaustion and cumulativeImpact < -EXTREME_THRESHOLD and consecutiveNeutralOrBearish >= exhaustionBarsThreshold and priceRangePercent <= exhaustionPriceThreshold and barsSinceLastBearishInvalidation >= minimumBarsBeforeNewExhaustion and not bearishExhaustionInvalidated
+
+isBullishExhaustion := detectExhaustion and cumulativeImpact > EXTREME_THRESHOLD and consecutiveNeutralOrBullish >= exhaustionBarsThreshold and priceRangePercent <= exhaustionPriceThreshold and barsSinceLastBullishInvalidation >= minimumBarsBeforeNewExhaustion and not bullishExhaustionInvalidated
+
+// Add exhaustion labels if detected
+if detectExhaustion
+    // Bearish exhaustion handling
+    if isBearishExhaustion
+        bearishExhaustionCount := bearishExhaustionCount + 1
+
+        // Only create a label for the first bar of a new exhaustion sequence
+        if not previousBearishExhaustion
+            // New exhaustion sequence - store starting bar and first bar's low
+            bearishExhaustionFirstBar := bar_index
+            bearishExhaustionFirstLow := low
+            bearishExhaustionFirstHigh := high  // Store high for validation
+
+            // Create a permanent text label at the first bar of the exhaustion sequence
+            if showExhaustionText
+                label.new(x=bar_index, y=low, text="BEARISH EXHAUSTION", color=color.new(exhaustionBearishColor, 80), style=label.style_label_up, textcolor=color.white, size=actualExhaustionTextSize, yloc=yloc.belowbar)
+
+    // Bullish exhaustion handling
+    if isBullishExhaustion
+        bullishExhaustionCount := bullishExhaustionCount + 1
+
+        // Only create a label for the first bar of a new exhaustion sequence
+        if not previousBullishExhaustion
+            // New exhaustion sequence - store starting bar and first bar's high
+            bullishExhaustionFirstBar := bar_index
+            bullishExhaustionFirstHigh := high
+            bullishExhaustionFirstLow := low  // Store low for validation
+
+            // Create a permanent text label at the first bar of the exhaustion sequence
+            if showExhaustionText
+                label.new(x=bar_index, y=high, text="BULLISH EXHAUSTION", color=color.new(exhaustionBullishColor, 80), style=label.style_label_down, textcolor=color.white, size=actualExhaustionTextSize, yloc=yloc.abovebar)
+
+    // Store current exhaustion states for next bar
+    previousBearishExhaustion := isBearishExhaustion
+    previousBullishExhaustion := isBullishExhaustion
+
+// Reset and update exhaustion series tracking
+if isBullishExhaustion
+    if consecutiveBullishExhaustionBars == 0
+        firstBullishExhaustionBarLow := low
+    consecutiveBullishExhaustionBars := consecutiveBullishExhaustionBars + 1
+    validBullishExhaustionSeries := consecutiveBullishExhaustionBars >= 3
+else if not bullishExhaustionValidated  // Only reset if not validated
+    consecutiveBullishExhaustionBars := 0
+    firstBullishExhaustionBarLow := na
+    validBullishExhaustionSeries := false
+
+if isBearishExhaustion
+    if consecutiveBearishExhaustionBars == 0
+        firstBearishExhaustionBarHigh := high
+    consecutiveBearishExhaustionBars := consecutiveBearishExhaustionBars + 1
+    validBearishExhaustionSeries := consecutiveBearishExhaustionBars >= 3
+else if not bearishExhaustionValidated  // Only reset if not validated
+    consecutiveBearishExhaustionBars := 0
+    firstBearishExhaustionBarHigh := na
+    validBearishExhaustionSeries := false
+
+// Store current series state for next bar
+hadValidBullishSeries := validBullishExhaustionSeries
+hadValidBearishSeries := validBearishExhaustionSeries
+
+// Add to strategy execution section
+if enableStrategy
+    // Exit positions when impact moves in the opposite direction
+    if cumulativeImpact < -signalThreshold
+        strategy.close("Long")
+        strategy.close("Exhaustion Long")
+
+    if cumulativeImpact > signalThreshold
+        strategy.close("Short")
+        strategy.close("Exhaustion Short")
+
+// Calculate and plot stop levels if enabled
+var float longStopLevel = na
+var float shortStopLevel = na
+
+// Update stop levels based on position
+if enableStrategy and useTrailingStop and showStopLevels
+    // Update long stop level (for longs, stop tracks below price)
+    if strategy.position_size > 0
+        stopPrice = high - (stopPercent / 100 * close)
+        longStopLevel := na(longStopLevel) ? stopPrice : math.max(longStopLevel, stopPrice)
+    else
+        longStopLevel := na
+
+    // Update short stop level (for shorts, stop tracks above price)
+    if strategy.position_size < 0
+        stopPrice = low + (stopPercent / 100 * close)
+        shortStopLevel := na(shortStopLevel) ? stopPrice : math.min(shortStopLevel, stopPrice)
+    else
+        shortStopLevel := na
+
+// Plot stop levels at global scope using conditional values
+plot(showStopLevels ? longStopLevel : na, title="Long Stop Level", color=color.new(color.red, 0), style=plot.style_linebr, linewidth=2)
+plot(showStopLevels ? shortStopLevel : na, title="Short Stop Level", color=color.new(color.blue, 0), style=plot.style_linebr, linewidth=2)
+
+// Display additional information on the chart
+var table infoTable = table.new(position.bottom_right, 2, 8, border_width=1)
+table.cell(infoTable, 0, 0, "Current Impact", bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 1, 0, str.tostring(cumulativeImpact, "#.##"), bgcolor=impactColor, text_color=color.white)
+table.cell(infoTable, 0, 1, "Bands Width", bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 1, 1, str.tostring((upperBand - lowerBand) / basis * 100, "#.##") + "%", bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 0, 2, "Avg Volume", bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 1, 2, str.tostring(avgVolume, "#.##"), bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 0, 3, "Block Trades", bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 1, 3, str.tostring(ta.cum(isHighVolume ? 1 : 0)), bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 0, 4, "Signal", bgcolor=color.gray, text_color=color.white)
+
+// Use the same logic as the bar color for the impact description and background color
+string impactDescription = ""
+color impactBgColor = na
+
+// Check for current invalidation before assigning description
+bool bearishInvalidatedNow = not na(bearishExhaustionFirstLow) and low < bearishExhaustionFirstLow
+bool bullishInvalidatedNow = not na(bullishExhaustionFirstHigh) and high > bullishExhaustionFirstHigh
+
+if isBullishExhaustion and not bullishInvalidatedNow
+    impactDescription := "BULLISH EXHAUSTION"
+    impactBgColor := exhaustionBullishColor
+else if isBearishExhaustion and not bearishInvalidatedNow
+    impactDescription := "BEARISH EXHAUSTION"
+    impactBgColor := exhaustionBearishColor
+else if cumulativeImpact > EXTREME_THRESHOLD
+    impactDescription := "EXTREME BULLISH"
+    impactBgColor := extremeBullishColor
+else if cumulativeImpact > STRONG_THRESHOLD
+    impactDescription := "STRONG BULLISH"
+    impactBgColor := strongBullishColor
+else if cumulativeImpact > 0
+    impactDescription := "MILD BULLISH"
+    impactBgColor := mildBullishColor
+else if cumulativeImpact == 0
+    impactDescription := "EQUILIBRIUM"
+    impactBgColor := equilibriumColor
+else if cumulativeImpact >= -STRONG_THRESHOLD
+    impactDescription := "MILD BEARISH"
+    impactBgColor := mildBearishColor
+else if cumulativeImpact >= -EXTREME_THRESHOLD
+    impactDescription := "STRONG BEARISH"
+    impactBgColor := strongBearishColor
+else
+    impactDescription := "EXTREME BEARISH"
+    impactBgColor := extremeBearishColor
+
+// Exhaustion info for table
+string exhaustionTableText = ""
+color exhaustionBgColor = color.gray
+
+if isBullishExhaustion
+    exhaustionTableText := "BULLISH (" + str.tostring(consecutiveNeutralOrBullish) + " bars)"
+    exhaustionBgColor := exhaustionBullishColor
+else if isBearishExhaustion
+    exhaustionTableText := "BEARISH (" + str.tostring(consecutiveNeutralOrBearish) + " bars)"
+    exhaustionBgColor := exhaustionBearishColor
+else if validatedBearishExhaustion
+    exhaustionTableText := "BEARISH EXHAUSTION VALIDATED LONG ENTRY ↑"
+    exhaustionBgColor := color.new(exhaustionBullishColor, 50)
+else if validatedBullishExhaustion
+    exhaustionTableText := "BULLISH EXHAUSTION VALIDATED SHORT ENTRY ↓"
+    exhaustionBgColor := color.new(exhaustionBearishColor, 50)
+else
+    exhaustionTableText := "NONE"
+    exhaustionBgColor := color.gray
+
+table.cell(infoTable, 1, 4, impactDescription, bgcolor=impactBgColor, text_color=color.white)
+table.cell(infoTable, 0, 5, "Min/Max Impact", bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 1, 5, str.tostring(lowestImpact, "#.##") + "/" + str.tostring(highestImpact, "#.##"), bgcolor=color.gray, text_color=color.white)
+table.cell(infoTable, 0, 6, "Exhaustion", bgcolor=exhaustionBgColor, text_color=color.white)
+table.cell(infoTable, 1, 6, exhaustionTableText, bgcolor=exhaustionBgColor, text_color=color.white)
+
+// Create a legend table that explains each reading (toggle with showHelp)
+if showHelp
+    var table legendTable = table.new(position.bottom_right, 1, 8, border_width=1, bgcolor=color.new(color.black, 60), frame_width=1, frame_color=color.white)
+
+    // Set the descriptions for each metric
+    table.cell(legendTable, 0, 0, "📊 INFORMATION LEGEND", text_color=color.white, bgcolor=color.new(color.blue, 70), text_size=size.small)
+    table.cell(legendTable, 0, 1, "Current Impact: Cumulative effect of volume blocks over time. Positive = bullish pressure, negative = bearish pressure. Values decay over time.", text_color=color.white, text_size=size.small)
+    table.cell(legendTable, 0, 2, "Bands Width: How wide the standard deviation bands are (as % of price). Higher values indicate higher volatility.", text_color=color.white, text_size=size.small)
+    table.cell(legendTable, 0, 3, "Avg Volume: Average volume over the lookback period. Used to detect significant volume spikes.", text_color=color.white, text_size=size.small)
+    table.cell(legendTable, 0, 4, "Block Trades: Total count of significant volume blocks detected since chart start.", text_color=color.white, text_size=size.small)
+    table.cell(legendTable, 0, 5, "Min/Max Impact: Historical extremes for the impact score. Used for color scaling and context.", text_color=color.white, text_size=size.small)
+    table.cell(legendTable, 0, 6, "Exhaustion: Identifies potential reversal points when extreme bars follow a series of similar direction bars with minimal price movement.", text_color=color.white, text_size=size.small)
+    table.cell(legendTable, 0, 7, "Breakout Signals: Generated when price breaks through an exhaustion pattern's key level. Bearish breakout = short, Bullish breakout = long.", text_color=color.white, text_size=size.small)
+
+// Plot labels for significant block trades with adjusted positioning
+if showLabels
+    if isValidBuySignal
+        label.new(bar_index, low, text="↑BUY\n" + str.tostring(volume, format.volume), color=color.green, size=size.small, style=label.style_label_up, textcolor=color.white, yloc=yloc.belowbar)
+
+    if isValidSellSignal
+        label.new(bar_index, high, text="↓SELL\n" + str.tostring(volume, format.volume), color=color.red, size=size.small, style=label.style_label_down, textcolor=color.white, yloc=yloc.abovebar)
+
+// Add to strategy execution section
+if enableStrategy
+    // Exit positions when impact moves in the opposite direction
+    if cumulativeImpact < -signalThreshold
+        strategy.close("Long")
+        strategy.close("Exhaustion Long")
+
+    if cumulativeImpact > signalThreshold
+        strategy.close("Short")
+        strategy.close("Exhaustion Short")
+
+// Add to information table
+table.cell(infoTable, 0, 7, "Exhaustion Series", bgcolor=color.gray, text_color=color.white)
+string seriesText = ""
+if validBullishExhaustionSeries
+    seriesText := "BULL (" + str.tostring(consecutiveBullishExhaustionBars) + " bars)"
+else if validBearishExhaustionSeries
+    seriesText := "BEAR (" + str.tostring(consecutiveBearishExhaustionBars) + " bars)"
+else
+    seriesText := "NONE"
+table.cell(infoTable, 1, 7, seriesText, bgcolor=color.gray, text_color=color.white)

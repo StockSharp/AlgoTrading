@@ -1,0 +1,113 @@
+// ================================================== //
+//      Precision Trading Strategy: Golden Edge       //
+//           By: iamjasonj | December 2024            //
+//                                                    //
+//   Description:                                     //
+//   The PTS: Golden Edge strategy is designed for    //
+//   scalping Gold (XAU/USD) on lower timeframes,     //
+//   such as the 1-minute chart. It captures          //
+//   high-probability trade setups by aligning with   //
+//   strong trends and momentum, while filtering out  //
+//   low-quality trades during consolidation or low-  //
+//   volatility periods.                              //
+//                                                    //
+//   The strategy uses a combination of technical     //
+//   indicators to identify optimal entry points:     //
+//                                                    //
+//   1. Exponential Moving Averages (EMAs):           //
+//      - A fast EMA (3-period) and a slow EMA        //
+//        (33-period) are used to detect short-term   //
+//        trend reversals via crossover signals.      //
+//                                                    //
+//   2. Hull Moving Average (HMA):                    //
+//      - A 66-period HMA acts as a higher-timeframe  //
+//        trend filter to ensure trades align with    //
+//        the overall market direction.               //
+//                                                    //
+//   3. Relative Strength Index (RSI):                //
+//      - A 12-period RSI identifies momentum.        //
+//      - The strategy requires RSI > 55 for long     //
+//        trades and RSI < 45 for short trades,       //
+//        ensuring entries are backed by strong       //
+//        buying or selling pressure.                 //
+//                                                    //
+//   4. Average True Range (ATR):                     //
+//      - A 14-period ATR ensures trades occur only   //
+//        during volatile conditions, avoiding choppy //
+//        or low-movement markets.                    //
+//                                                    //
+//   By combining these tools, the PTS: Golden Edge   //
+//   strategy creates a precise framework for scalping//
+//   and offers a systematic approach to capitalize   //
+//   on Gold’s price movements efficiently.           //
+// ================================================== //
+//
+//@version=5
+strategy("PTS: Golden Edge", shorttitle = "PTS: GE", overlay=true)
+
+// === Input Parameters ===
+fastEMA = input(3, title="Fast EMA")
+slowEMA = input(33, title="Slow EMA")
+hmaLength = input(66, title="HMA Length for Trend Filter")
+rsiLength = input(12, title="RSI Length")
+atrLength = input(14, title="ATR Length")
+atrThreshold = input.float(0.1, title="Minimum ATR Threshold (Volatility)")
+rangeFilterMultiplier = input.float(0.5, title="Range Filter Multiplier (ATR)")
+
+// === Backtesting Range ===
+startTestTime = input.time(timestamp("2023-01-01 00:00"), title="Backtest Start Time")
+endTestTime = input.time(timestamp("2024-12-31 23:59"), title="Backtest End Time")
+
+// Check if the current bar is within the backtesting range
+isInBacktestRange = (time >= startTestTime and time <= endTestTime)
+
+// === Indicators ===
+// EMAs
+fastEMAValue = ta.ema(close, fastEMA)
+slowEMAValue = ta.ema(close, slowEMA)
+
+// Hull Moving Average (HMA)
+hma = ta.hma(close, hmaLength)
+
+// RSI
+rsi = ta.rsi(close, rsiLength)
+
+// ATR for Volatility
+atr = ta.atr(atrLength)
+
+// === Filters ===
+// Higher timeframe trend filter (using HMA direction)
+trendUp = hma > hma[1]
+trendDown = hma < hma[1]
+
+// Avoid choppy markets (price range filter)
+rangeFilter = ta.highest(high, atrLength) - ta.lowest(low, atrLength) > atr * rangeFilterMultiplier
+
+// === Trade Conditions ===
+// Buy Signal: Fast EMA crosses above Slow EMA, RSI > 55, HMA confirms uptrend, sufficient volatility
+buySignal = ta.crossover(fastEMAValue, slowEMAValue) and rsi > 56 and trendUp and rangeFilter
+
+// Sell Signal: Fast EMA crosses below Slow EMA, RSI < 45, HMA confirms downtrend, sufficient volatility
+sellSignal = ta.crossunder(fastEMAValue, slowEMAValue) and rsi < 45 and trendDown and rangeFilter
+
+// === Strategy Execution (within backtest range) ===
+if isInBacktestRange
+    if buySignal
+        strategy.entry("Buy", strategy.long)
+    if sellSignal
+        strategy.entry("Sell", strategy.short)
+
+// === 2x2 Table with Current Position ===
+// Define table variables
+var table trendTable = table.new(position.top_right, 2, 2, frame_color=color.black, border_color = color.new(color.white, 90), border_width = 2, bgcolor=color.gray, frame_width=2, force_overlay = true)
+
+// Determine current position
+var string currentPosition = "NONE"  // Explicitly declare the variable with type string
+if strategy.position_size > 0
+    currentPosition := "BUY"
+else if strategy.position_size < 0
+    currentPosition := "SELL"
+
+// Update table with strategy name and position
+table.cell(trendTable, 0, 0, "PTS: Golden Edge", text_color=#ffd815, bgcolor=color.new(color.black, 40), text_halign=text.align_center)
+table.cell(trendTable, 1, 0, currentPosition, text_color=(currentPosition == "BUY" ? #3da8ff : currentPosition == "SELL" ? color.new(color.red, 0) : color.new(color.gray, 0)), bgcolor=color.new(color.black, 0), text_halign=text.align_center)

@@ -1,0 +1,246 @@
+//@version=6
+strategy('Dskyz (DAFE) Aurora Divergence – Quant Master', overlay = true, default_qty_type = strategy.fixed, default_qty_value = 1, calc_on_every_tick = true, max_bars_back = 2000)
+
+// === USER INPUTS ===
+instrument = input.string('MNQ', 'Instrument', options = ['MNQ', 'NQ', 'MES', 'ES'], group = 'Futures Contract')
+cooldownBars = input.int(2, 'Base Signal Cooldown (Bars)', minval = 1, group = 'Signal')
+lookback = input.int(9, 'Divergence Lookback', minval = 3, group = 'Signal')
+zLength = input.int(50, 'Z-Score Lookback', minval = 5, group = 'Z-Score Filter')
+zThreshold = input.float(1.5, 'Max |Z-Score| to Enter', minval = 0.1, step = 0.1, group = 'Z-Score Filter')
+useZFilter = input.bool(true, 'Enable Z-Score Filter', group = 'Z-Score Filter')
+htf_tf = input.timeframe('60', 'HTF Trend TF', group = 'Multi-Timeframe Filter')
+htf_len = input.int(50, 'HTF MA Length', group = 'Multi-Timeframe Filter')
+atrLen = input.int(100, 'ATR Percentile Window', group = 'Volatility Filter')
+atrPercentile = input.float(80, 'ATR Percentile Threshold', minval = 50, maxval = 99, group = 'Volatility Filter')
+dynamicStopMult = input.float(1.0, 'Stop ATR Multiplier', group = 'Risk/Reward')
+dynamicProfitMult = input.float(1.5, 'Profit ATR Multiplier', group = 'Risk/Reward')
+maxBarsInTrade = input.int(8, 'Max Bars in Trade', minval = 1, group = 'Risk/Reward')
+killSwitch = input.bool(true, 'Enable Max Daily Loss Kill Switch', group = 'Risk/Reward')
+maxDailyLoss = input.float(300, 'Max Daily Loss ($)', minval = 10, group = 'Risk/Reward')
+maxRollingDD = input.float(1000, 'Max Rolling Drawdown ($)', group = 'Risk/Reward')
+rollingLen = input.int(100, 'Rolling Window (Bars)', group = 'Risk/Reward')
+useSession = input.bool(true, 'Restrict to US Session Only', group = 'Session Filter')
+bandWidth = input.float(0.5, 'Aurora Band Width (% of ATR)', step = 0.1, minval = 0.1, group = 'DAFE Visuals')
+sensitivity = input.float(1.0, 'Divergence Sensitivity', step = 0.1, minval = 0.5, group = 'DAFE Visuals')
+minStrength = input.float(0.3, 'Minimum Strength', step = 0.1, minval = 0.0, maxval = 1.0, group = 'DAFE Visuals')
+
+// === CONTRACT POINT VALUES ===
+pointValue = switch instrument
+    'MNQ' => 2.0
+    'NQ' => 20.0
+    'MES' => 5.0
+    'ES' => 50.0
+    => 1.0
+
+// Helper: Calculate Day of Year from date parts
+f_dayofyear(_year, _month, _day) =>
+    daysToMonth = array.from(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+    doy = array.get(daysToMonth, _month - 1) + _day
+    leap = _month > 2 and _year % 4 == 0 and (_year % 100 != 0 or _year % 400 == 0) ? 1 : 0
+    doy + leap
+
+currentYear = year(time('D'))
+currentMonth = month(time('D'))
+currentDay = dayofmonth(time('D'))
+currentDayOfYear = f_dayofyear(currentYear, currentMonth, currentDay)
+
+// === STRATEGY RISK/REWARD SETTINGS ===
+atr = ta.atr(14)
+stopDist = dynamicStopMult * atr
+profitDist = dynamicProfitMult * atr
+
+// === SESSION FILTER ===
+sess = '0930-1600'
+tz = 'America/New_York'
+inSession = useSession ? na(time(timeframe.period, sess, tz)) == false : true
+
+// === DAILY KILL SWITCH ===
+var float dayStartEquity = na
+var int prevDayOfYear = na
+if currentDayOfYear != prevDayOfYear
+    dayStartEquity := strategy.equity
+    prevDayOfYear := currentDayOfYear
+    prevDayOfYear
+dailyLoss = dayStartEquity - strategy.equity
+killSwitchActive = killSwitch and dailyLoss >= maxDailyLoss
+
+// === ROLLING DRAWDOWN KILL SWITCH ===
+rollingPeak = ta.highest(strategy.equity, rollingLen)
+rollingDD = rollingPeak - strategy.equity
+rollingKill = rollingDD > maxRollingDD
+
+// === ATR PERCENTILE VOLATILITY FILTER ===
+var array<float> atrArr = array.new<float>()
+var float percATR = na
+if bar_index > atrLen
+    if array.size(atrArr) >= atrLen
+        array.shift(atrArr)
+    array.push(atrArr, atr)
+    sorted = array.copy(atrArr)
+    array.sort(sorted, order.ascending)
+    percIndex = math.round(atrPercentile / 100 * (array.size(sorted) - 1))
+    percATR := array.get(sorted, percIndex)
+    percATR
+tradeOk = bar_index > atrLen and atr > percATR
+
+// === DIVERGENCE LOGIC ===
+priceSlope = ta.linreg(close, lookback, 0) - ta.linreg(close, lookback, 1)
+obv = ta.cum(close > close[1] ? volume : close < close[1] ? -volume : 0)
+obvSlope = ta.linreg(obv, lookback, 0) - ta.linreg(obv, lookback, 1)
+trend_ma = ta.sma(close, 50)
+bullDiv = priceSlope < 0 and obvSlope > 0 and close > trend_ma
+bearDiv = priceSlope > 0 and obvSlope < 0 and close < trend_ma
+divStrength = math.abs(priceSlope * obvSlope) * sensitivity
+divStrengthNorm = math.min(divStrength, 1.0)
+
+// === SIGNAL SMOOTHING ===
+bullDiv2 = bullDiv and bullDiv[1]
+bearDiv2 = bearDiv and bearDiv[1]
+
+// === Z-SCORE FILTER ===
+zMean = ta.sma(close, zLength)
+zStd = ta.stdev(close, zLength)
+zScore = zStd != 0 ? (close - zMean) / zStd : 0
+zOk = not useZFilter or math.abs(zScore) < zThreshold
+
+// === MULTI-TIMEFRAME TREND FILTER ===
+htf_ma = request.security(syminfo.tickerid, htf_tf, ta.sma(close, htf_len))
+bullTrendOK = close > htf_ma
+bearTrendOK = close < htf_ma
+
+// === SIGNAL DEBOUNCE, ADAPTIVE COOLDOWN ===
+var int lastSignalBar = na
+var int lastDirection = 0 // 1=long, -1=short, 0=neutral
+var int dynamicCooldown = cooldownBars
+if strategy.closedtrades > 0
+    lastTrade = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    if lastTrade < 0
+        dynamicCooldown := math.min(dynamicCooldown * 2, 10)
+        dynamicCooldown
+    else
+        dynamicCooldown := cooldownBars
+        dynamicCooldown
+canSignal = na(lastSignalBar) or bar_index - lastSignalBar >= dynamicCooldown
+
+// === ENTRY LOGIC ===
+if canSignal and tradeOk and inSession and not killSwitchActive and not rollingKill and zOk
+    if bullDiv2 and lastDirection != 1 and strategy.position_size <= 0 and bullTrendOK
+        if strategy.position_size < 0
+            strategy.close('Short')
+        strategy.entry('Long', strategy.long)
+        lastDirection := 1
+        lastSignalBar := bar_index
+        lastSignalBar
+    else if bearDiv2 and lastDirection != -1 and strategy.position_size >= 0 and bearTrendOK
+        if strategy.position_size > 0
+            strategy.close('Long')
+        strategy.entry('Short', strategy.short)
+        lastDirection := -1
+        lastSignalBar := bar_index
+        lastSignalBar
+
+if strategy.position_size == 0
+    lastDirection := 0
+    lastDirection
+
+// === TRADE MANAGEMENT ===
+var float stopPrice = na
+var float limitPrice = na
+if strategy.position_size != 0 and strategy.opentrades > 0
+    fillPx = strategy.opentrades.entry_price(0)
+    barsInTrade = bar_index - strategy.opentrades.entry_bar_index(0)
+    if strategy.position_size > 0
+        stopPrice := fillPx - stopDist
+        limitPrice := fillPx + profitDist
+        strategy.exit('LongExit', from_entry = 'Long', stop = stopPrice, limit = limitPrice, alert_message = 'Long Stop/TP Exit')
+        if barsInTrade >= maxBarsInTrade or not tradeOk or killSwitchActive or rollingKill
+            strategy.close('Long')
+    if strategy.position_size < 0
+        stopPrice := fillPx + stopDist
+        limitPrice := fillPx - profitDist
+        strategy.exit('ShortExit', from_entry = 'Short', stop = stopPrice, limit = limitPrice, alert_message = 'Short Stop/TP Exit')
+        if barsInTrade >= maxBarsInTrade or not tradeOk or killSwitchActive or rollingKill
+            strategy.close('Short')
+else
+    stopPrice := na
+    limitPrice := na
+    limitPrice
+
+// === AURORA BANDS ===
+bandOffset = atr * bandWidth
+bullTopPlot = plot(bullDiv2 ? low - bandOffset : na, color = color.new(color.white, 100), title = 'Bull Top')
+bullBottomPlot = plot(bullDiv2 ? low - 2 * bandOffset : na, color = color.new(color.white, 100), title = 'Bull Bottom')
+bearTopPlot = plot(bearDiv2 ? high + 2 * bandOffset : na, color = color.new(color.white, 100), title = 'Bear Top')
+bearBottomPlot = plot(bearDiv2 ? high + bandOffset : na, color = color.new(color.white, 100), title = 'Bear Bottom')
+bullColor = color.new(color.aqua, 60 - divStrengthNorm * 15)
+bearColor = color.new(color.fuchsia, 60 - divStrengthNorm * 15)
+fill(bullTopPlot, bullBottomPlot, color = bullColor, title = 'Bullish Aurora')
+fill(bearTopPlot, bearBottomPlot, color = bearColor, title = 'Bearish Aurora')
+
+// === DIVERGENCE ORBS WITH GLOW AND LABELS ===
+plotshape(bullDiv2 and canSignal, style = shape.circle, location = location.belowbar, color = color.new(color.aqua, 40), size = size.large, offset = 0)
+plotshape(bullDiv2 and canSignal, style = shape.circle, location = location.belowbar, color = color.new(color.aqua, 0), size = size.normal, offset = 0)
+plotshape(bearDiv2 and canSignal, style = shape.circle, location = location.abovebar, color = color.new(color.fuchsia, 40), size = size.large, offset = 0)
+plotshape(bearDiv2 and canSignal, style = shape.circle, location = location.abovebar, color = color.new(color.fuchsia, 0), size = size.normal, offset = 0)
+y_pos_bull = bullDiv2 and canSignal ? low - atr * 0.5 : na
+y_pos_bear = bearDiv2 and canSignal ? high + atr * 0.5 : na
+label.new(bullDiv2 and canSignal ? bar_index : na, y_pos_bull, str.tostring(divStrengthNorm, '#.##'), color = color.new(color.white, 0), textcolor = color.white, style = label.style_none)
+label.new(bearDiv2 and canSignal ? bar_index : na, y_pos_bear, str.tostring(divStrengthNorm, '#.##'), color = color.new(color.white, 0), textcolor = color.white, style = label.style_none)
+
+// === GRADIENT BACKGROUND ===
+bgColor = bullDiv2 ? color.new(color.green, 90) : bearDiv2 ? color.new(color.red, 90) : color.new(color.gray, 95)
+bgcolor(bgColor, title = 'DAFE Aurora Gradient')
+
+// === STRATEGY PLOTS ===
+plot(series = strategy.position_size > 0 ? stopPrice : na, title = 'Long Stop', color = color.red, linewidth = 1, style = plot.style_linebr)
+plot(series = strategy.position_size > 0 ? limitPrice : na, title = 'Long TP', color = color.green, linewidth = 1, style = plot.style_linebr)
+plot(series = strategy.position_size < 0 ? stopPrice : na, title = 'Short Stop', color = color.red, linewidth = 1, style = plot.style_linebr)
+plot(series = strategy.position_size < 0 ? limitPrice : na, title = 'Short TP', color = color.green, linewidth = 1, style = plot.style_linebr)
+plot(series = htf_ma, title = 'HTF MA', color = color.yellow, linewidth = 1)
+plot(series = useZFilter ? zScore : na, title = 'Z-Score', color = color.blue, linewidth = 1, style = plot.style_stepline)
+bgcolor(killSwitchActive or rollingKill ? color.new(color.red, 90) : na, title = 'Kill Switch Warning')
+hline(0, title = 'Zero Line', color = color.gray, linestyle = hline.style_dotted, linewidth = 1)
+
+// === METRICS DASHBOARD ===
+var table dashboard = table.new(position.top_right, 2, 8, bgcolor = color.new(color.black, 80), border_color = color.new(color.silver, 50), border_width = 1)
+dailyBuffer = maxDailyLoss - dailyLoss
+rollingBuffer = maxRollingDD - rollingDD
+killSwitchBuffer = killSwitchActive or rollingKill ? 0.0 : math.min(dailyBuffer, rollingBuffer)
+table.cell(dashboard, 0, 0, '⚡ Aurora Divergence – Quant Master', text_color = color.rgb(200, 200, 255), text_size = size.small)
+table.cell(dashboard, 0, 1, 'Daily Loss ($):', text_color = color.white, text_size = size.small)
+table.cell(dashboard, 1, 1, str.tostring(dailyLoss, '#.##'), text_color = dailyLoss > maxDailyLoss ? color.red : color.white, text_size = size.small)
+table.cell(dashboard, 0, 2, 'Rolling DD ($):', text_color = color.white, text_size = size.small)
+table.cell(dashboard, 1, 2, str.tostring(rollingDD, '#.##'), text_color = rollingDD > maxRollingDD ? color.red : color.white, text_size = size.small)
+table.cell(dashboard, 0, 3, 'ATR Threshold:', text_color = color.white, text_size = size.small)
+table.cell(dashboard, 1, 3, str.tostring(percATR, '#.##'), text_color = tradeOk ? color.green : color.red, text_size = size.small)
+table.cell(dashboard, 0, 4, 'Z-Score:', text_color = color.white, text_size = size.small)
+table.cell(dashboard, 1, 4, str.tostring(zScore, '#.##'), text_color = zOk ? color.green : color.red, text_size = size.small)
+table.cell(dashboard, 0, 5, 'Signal:', text_color = color.white, text_size = size.small)
+signalText = bullDiv2 ? 'Bullish Div' : bearDiv2 ? 'Bearish Div' : 'None'
+signalColor = bullDiv2 ? color.aqua : bearDiv2 ? color.fuchsia : color.gray
+table.cell(dashboard, 1, 5, signalText, text_color = signalColor, text_size = size.small)
+table.cell(dashboard, 0, 6, 'Action:', text_color = color.white, text_size = size.small)
+actionText = bullDiv2 and canSignal ? 'Consider Buying' : bearDiv2 and canSignal ? 'Consider Selling' : 'Wait'
+table.cell(dashboard, 1, 6, actionText, text_color = signalColor, text_size = size.small)
+table.cell(dashboard, 0, 7, 'Kill Switch Buffer ($):', text_color = color.white, text_size = size.small)
+table.cell(dashboard, 1, 7, str.tostring(killSwitchBuffer, '#.##'), text_color = killSwitchBuffer > 0 ? color.green : color.red, text_size = size.small)
+
+// === WATERMARK ===
+var table watermark = table.new(position.bottom_right, 1, 1, bgcolor = color.new(color.black, 80), border_color = color.new(color.silver, 50), border_width = 1)
+if barstate.islast
+    table.cell(watermark, 0, 0, '⚡ Dskyz (DAFE) Trading Systems', text_color = color.rgb(159, 127, 255, 80), text_size = size.normal)
+
+// === BEGINNER GUIDE ===
+var bool guideShown = false
+if not guideShown and barstate.isfirst
+    guideShown := true
+    var table guide = table.new(position.middle_right, 2, 3, bgcolor = color.new(color.black, 70), border_color = color.new(color.silver, 50), border_width = 1)
+    table.cell(guide, 0, 0, 'Dskyz (DAFE) Aurora Divergence Guide', text_color = color.rgb(200, 200, 255), text_size = size.normal)
+    table.cell(guide, 0, 1, 'Aqua Orbs (Below): Bullish Divergence - Consider Buying', text_color = color.aqua, text_size = size.small)
+    table.cell(guide, 0, 2, 'Fuchsia Orbs (Above): Bearish Divergence - Consider Selling', text_color = color.fuchsia, text_size = size.small)
+
+// === ALERTS ===
+alertcondition(bullDiv2 and canSignal, title = 'DAFE Bullish Divergence', message = 'Aurora: Bullish Divergence Detected (Strength: {{divStrengthNorm}})')
+alertcondition(bearDiv2 and canSignal, title = 'DAFE Bearish Divergence', message = 'Aurora: Bearish Divergence Detected (Strength: {{divStrengthNorm}})')
+
+// === END OF STRATEGY ===

@@ -1,0 +1,190 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © dg_factor [26.11.2023, Istanbul]
+
+//@version=5
+strategy("Backtesting Module", overlay=true, initial_capital=10000,
+ default_qty_type=strategy.percent_of_equity, default_qty_value=10,
+ commission_type=strategy.commission.percent, commission_value=0.04)
+//
+
+// Default Test - Golden & Death Cross (When you enter your own conditions it'll be neutralized.)
+default_long  = ta.crossover(ta.sma(close, 50), ta.sma(close, 200))
+default_short = ta.crossunder(ta.sma(close, 50), ta.sma(close, 200))
+
+// ╠═══════════════════════════ Backtesting Module ════════════════════════════╣
+
+// Source Inputs
+string tt_l = "If you don't have any long conditions, deactivate this parameter."
+string tt_s = "If you don't have any short conditions, deactivate this parameter."
+string tt_0 =
+ "To test your own system, you must enter your conditions as a series of integers (1 or 0). " +
+ "In this context, 1 represents true and 0 represents false for each condition. " +
+ "You can obtain the inputs from another indicator by utilizing those parameters. " +
+ "For more detailed information, please refer to the description of the 'Backtesting Module'."
+string gr_l = "ENTER YOUR LONG CONDITIONS"
+string gr_s = "ENTER YOUR SHORT CONDITIONS"
+go_long     = input.bool(group=gr_l, inline="l1", tooltip=tt_l, defval=true, title="Long ")
+go_short    = input.bool(group=gr_s, inline="s1", tooltip=tt_s, defval=true, title="Short ")
+long_entry  = input(group=gr_l, inline="l2", tooltip=tt_0, defval=close, title="Entry ")
+long_exit   = input(group=gr_l, inline="l2", tooltip=tt_0, defval=close, title="   Exit ")
+short_entry = input(group=gr_s, inline="s2", tooltip=tt_0, defval=close, title="Entry ")
+short_exit  = input(group=gr_s, inline="s2", tooltip=tt_0, defval=close, title="   Exit")
+
+// Configuration Inputs
+string grc = "CONFIGURATION"
+string tt1 = "Enter your time zone's offset.\nE.g. GMT+3 for Istanbul"
+trade_mode = input.string(title="Trade ", defval="Both ", options=["Both ", "Long ", "Short "], group=grc)
+set_gmt    = input.int(title="GMT+", defval=3, minval=-12, maxval=14, tooltip=tt1, group=grc)
+start_ts   = timestamp("01 Jan 1980 03:00")
+end_ts     = timestamp("31 Dec 2050 03:00")
+start_i    = input.time(group=grc, defval=start_ts, title="Start ")
+end_i      = input.time(group=grc, defval=end_ts, title="End ")
+sh_entry   = input.bool(defval=false, title="Entry Price ")
+sh_avg     = input.bool(defval=false, title="Average Entry Price ")
+sh_barc    = input.bool(defval=false, title="Barcolor ")
+
+// Table Inputs
+string grt = "TABLE SETTINGS"
+tb_pos  = input.string(title="Position", defval="Right 1", group=grt,
+ options=["Left 1", "Left 2", "Center 1", "Center 2", "Right 1", "Right 2"])
+c1 = input.color(#686868, "", group=grt, inline="c")
+c2 = input.color(#8c00ff, "", group=grt, inline="c")
+c3 = input.color(#00ff00, "", group=grt, inline="c")
+c4 = input.color(#ff4242, "", group=grt, inline="c")
+c5 = input.color(#00bbff, "", group=grt, inline="c")
+c6 = input.color(#ff9800, "", group=grt, inline="c")
+
+// Direction and Interval Calcs
+strategy.risk.allow_entry_in(
+ trade_mode == "Long "  ? strategy.direction.long  :
+ trade_mode == "Short " ? strategy.direction.short :
+ strategy.direction.all)
+offset   = set_gmt * 1000 * 60 * 60
+start    = start_i == start_ts ? ta.valuewhen(bar_index==0, time, 0) + offset : start_i + offset
+end      = end_i == end_ts ? timenow + offset : end_i + offset
+interval = start <= time + offset and end >= time + offset
+
+// Run
+f_run(x) => not (x == open or x == high or x == low or x == close or x == hl2 or x == hlc3 or x == ohlc4 or x == hlcc4)
+run_long  = go_long  and f_run(long_entry)  and f_run(long_exit)
+run_short = go_short and f_run(short_entry) and f_run(short_exit)
+
+// Don't Run
+none = not (run_long or run_short)
+
+// Entry & Exit Orders
+if interval
+    if none
+        if default_long
+            strategy.entry(id="Long", direction=strategy.long, comment="Golden Cross")
+        if default_short
+            strategy.entry(id="Short", direction=strategy.short, comment="Death Cross")
+    if run_long
+        if long_exit == 1
+            strategy.close(id="Long", comment="Long Exit")
+        if long_entry == 1
+            strategy.close(id="Short", comment="Short Exit")
+            strategy.entry(id="Long", direction=strategy.long, comment="Long Entry")
+    if run_short
+        if short_exit == 1
+            strategy.close(id="Short", comment="Short Exit")
+        if short_entry == 1
+            strategy.close(id="Long", comment="Long Exit")
+            strategy.entry(id="Short", direction=strategy.short, comment="Short Entry")
+else
+    strategy.close(id="Long", comment="Long Exit")
+    strategy.close(id="Short", comment="Short Exit")
+//
+
+// Variables
+var int twl = 0
+var int tws = 0
+var int tll = 0
+var int tls = 0
+das_capital = strategy.initial_capital
+profit      = strategy.netprofit
+equity      = strategy.equity
+in_long     = strategy.position_size > 0
+in_short    = strategy.position_size < 0
+in_position = strategy.position_size != 0
+trades      = strategy.closedtrades
+trades_win  = strategy.wintrades
+trades_loss = strategy.losstrades
+bars        = ta.cum(interval ? 1 : 0)
+r_pnl_p     = profit / das_capital * 100
+unr_pnl_p   = (equity - das_capital) / das_capital * 100
+st_dir      = in_long ? 1 : in_short ? -1 : 0
+st_exit_l   = st_dir != 1  and st_dir[1] == 1
+st_exit_s   = st_dir != -1 and st_dir[1] == -1
+diff_win    = trades_win  - trades_win[1]
+diff_loss   = trades_loss - trades_loss[1]
+if st_exit_l
+    twl += diff_win
+    tll += diff_loss
+if st_exit_s
+    tws += diff_win
+    tls += diff_loss
+win_ratio_l = twl / (twl + tll) * 100
+win_ratio_s = tws / (tws + tls) * 100
+win_ratio   = trades_win / trades * 100
+r_pnl_c     = r_pnl_p >= 0   ? c3 : c4
+unr_pnl_c   = unr_pnl_p >= 0 ? c3 : c4
+
+// Plots & Barcolor
+plot(not sh_entry ? na : strategy.opentrades.entry_price(strategy.opentrades - 1), "Entry price", chart.fg_color, 2, plot.style_circles)
+plot(not sh_avg ? na : strategy.position_avg_price, "Average Entry price", #2962ff, 2, plot.style_circles)
+barcolor(not sh_barc ? na : st_dir==1 ? #00ff00 : st_dir==-1 ? #ff0000 : #333333, title="Barcolor")
+
+// Table
+pos =
+ tb_pos == "Left 1"   ? position.top_left   : tb_pos == "Left 2"   ? position.bottom_left :
+ tb_pos == "Center 1" ? position.top_center : tb_pos == "Center 2" ? position.bottom_center :
+ tb_pos == "Right 1"  ? position.top_right  : position.bottom_right
+var table tb = table.new(pos, 5, 15, na, #5d606b, 3, #5d606b, 1)
+f_print(x, y, c, t) => table.cell(tb, x-1, y-1, t, text_color=c)
+f_merge(x, y) => table.merge_cells(tb, x-1, y-1, 4, y-1)
+f_txt_l(x) => trade_mode == "Short " or not run_long  ? "─" : x
+f_txt_s(x) => trade_mode == "Long "  or not run_short ? "─" : x
+if barstate.islastconfirmedhistory or barstate.isrealtime
+    f_print(1, 1,  c1, "PNL")
+    f_print(1, 2,  c1, "Realized")
+    f_print(1, 3,  c1, "Unrealized")
+    f_print(1, 4,  c1, "REPORT")
+    f_print(1, 5,  c1, "Trades")
+    f_print(2, 5,  c1, "  Σ  ")
+    f_print(3, 5,  c1, " Win ")
+    f_print(4, 5,  c1, "Loss")
+    f_print(5, 5,  c1, "Win Rate")
+    f_print(1, 6,  c1, "Long")
+    f_print(1, 7,  c1, "Short")
+    f_print(1, 8,  c1, "Total")
+    f_print(1, 9,  c1, "INTERVAL [GMT+" + str.tostring(int(set_gmt)) + "]")
+    f_print(1, 10, c1, "Start")
+    f_print(1, 11, c1, "End")
+    f_print(1, 12, c1, "Bars")
+    f_print(2, 2,  r_pnl_c, "% " + str.tostring(r_pnl_p, "#.##"))
+    f_print(2, 3,  unr_pnl_c, not in_position ? "─" : "% " + str.tostring(unr_pnl_p, "#.##"))
+    f_print(2, 6,  c2, f_txt_l(str.tostring(twl + tll)))
+    f_print(3, 6,  c3, f_txt_l(str.tostring(twl)))
+    f_print(4, 6,  c4, f_txt_l(str.tostring(tll)))
+    f_print(5, 6,  c5, f_txt_l("% " + str.tostring(win_ratio_l, "#.##")))
+    f_print(2, 7,  c2, f_txt_s(str.tostring(tws + tls)))
+    f_print(3, 7,  c3, f_txt_s(str.tostring(tws)))
+    f_print(4, 7,  c4, f_txt_s(str.tostring(tls)))
+    f_print(5, 7,  c5, f_txt_s("% " + str.tostring(win_ratio_s, "#.##")))
+    f_print(2, 8,  c2, str.tostring(trades_win + trades_loss))
+    f_print(3, 8,  c3, str.tostring(trades_win))
+    f_print(4, 8,  c4, str.tostring(trades_loss))
+    f_print(5, 8,  c5, "% " + str.tostring(win_ratio, "#.##"))
+    f_print(2, 10, c6, str.format_time(start, "dd.MM.yyyy - HH:mm"))
+    f_print(2, 11, c6, str.format_time(end, "dd.MM.yyyy - HH:mm"))
+    f_print(2, 12, c6, str.tostring(bars))
+    f_merge(1, 1), f_merge(1, 9), f_merge(2, 3),  f_merge(2, 11)
+    f_merge(1, 4), f_merge(2, 2), f_merge(2, 10), f_merge(2, 12)
+    if none
+        table.cell(tb, 0, 12, "\n// Deafult Test : Golden & Death Cross\n ", text_color=c1,
+         tooltip="When you enter your own conditions the default test will be neutralized."), f_merge(1, 13)
+//
+
+// Bitti :)
+plotshape(barstate.isfirst, "@ dg_factor", shape.flag, location.bottom, #00000000, editable=false)

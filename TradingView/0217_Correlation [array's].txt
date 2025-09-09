@@ -1,0 +1,65 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © fikira
+//@version=4
+study("Correlation [array's]", overlay=false)
+
+barstateIsReallyLast = barstate.isrealtime and not barstate.isconfirmed
+tf                   = input("" , title="Timeframe", type=input.resolution)
+length               = input(100, title="Numbers of Bars Back"            )
+
+s1  = input("BTCUSDT", type=input.symbol, title="", group="symbols", inline="1"), sec1 = security(s1, tf, close)
+s2  = input("ETHUSDT", type=input.symbol, title="", group="symbols", inline="1"), sec2 = security(s2, tf, close)
+s3  = input("FILUSDT", type=input.symbol, title="", group="symbols", inline="1"), sec3 = security(s3, tf, close)
+s4  = input("SXPUSDT", type=input.symbol, title="", group="symbols", inline="2"), sec4 = security(s4, tf, close)
+s5  = input("XTZUSDT", type=input.symbol, title="", group="symbols", inline="2"), sec5 = security(s5, tf, close)
+s6  = input("UNIUSDT", type=input.symbol, title="", group="symbols", inline="2"), sec6 = security(s6, tf, close)
+
+val1  = input( 0.3 , title="|﹢"        , step=0.05, group="positive correlation limits", inline="val" ) //  0.3 to 0.5  : Possible correlation
+val2  = input( 0.5 , title="﹢|﹢﹢"    , step=0.05, group="positive correlation limits", inline="val" ) //  0.5 to 0.7  : Medium positive correlation
+val3  = input( 0.7 , title="﹢﹢|﹢﹢﹢", step=0.05, group="positive correlation limits", inline="val" ) //  0.7 to 1    : Strong positive correlation
+// -0.3 to 0.3  : Weak correlation
+val1_ = input(-0.3 , title="|﹣"        , step=0.05, group="negative correlation limits", inline="val_") // -0.3 to -0.5 : Possible negative correlation
+val2_ = input(-0.5 , title="﹣|﹣﹣"    , step=0.05, group="negative correlation limits", inline="val_") // -0.5 to -0.7 : Medium negative correlation
+val3_ = input(-0.7 , title="﹣﹣|﹣﹣﹣", step=0.05, group="negative correlation limits", inline="val_") // -0.7 to -1   : Strong negative correlation
+
+col1  = input(color.fuchsia, type=input.color, title=""       , group="colors", inline="col")
+col2  = input(color.red    , type=input.color, title="---|--" , group="colors", inline="col")
+col3  = input(color.orange , type=input.color, title="--|-"   , group="colors", inline="col")
+col4  = input(color.blue   , type=input.color, title="-|"     , group="colors", inline="col")
+col5  = input(color.yellow , type=input.color, title="|+"     , group="colors", inline="col")
+col6  = input(color.green  , type=input.color, title="+|++"   , group="colors", inline="col")
+col7  = input(color.lime   , type=input.color, title="++|+++" , group="colors", inline="col")
+
+f_tos(x) => tostring(round(x*100)/100)
+
+f_col(x) => col = x <= val3_ ? col1 : x <= val2_ ? col2 : x <= val1_ ? col3 : x <= val1 ? col4 : x <= val2 ? col5 : x <= val3 ? col6 : col7
+
+aString = array.new_string()
+array.push(aString, s1) , array.push(aString, s2) , array.push(aString, s3)
+array.push(aString, s4) , array.push(aString, s5) , array.push(aString, s6)
+
+f_afloat(sec, length) =>
+    f = array.new_float()
+    for i = 0 to length - 1
+        array.push(f, sec[i])
+        fl = array.get(f, i)
+    [f]
+
+[f1] = f_afloat(sec1, length), [f2] = f_afloat(sec2, length), [f3] = f_afloat(sec3, length)
+[f4] = f_afloat(sec4, length), [f5] = f_afloat(sec5, length), [f6] = f_afloat(sec6, length)
+
+size = array.size(aString) - 1
+for i = 0 to size
+    lstr = array.get(aString, i)
+    aI   = i == 0 ? f1 : i == 1 ? f2 : i == 2 ? f3 : i == 3 ? f4 : i == 4 ? f5 : f6
+    for j = 0 to size
+        aJ   = j == 0 ? f1 : j == 1 ? f2 : j == 2 ? f3 : j == 3 ? f4 : j == 4 ? f5 : f6
+        cov  = array.covariance(aI, aJ)
+        devI =      array.stdev(aI)
+        devJ =      array.stdev(aJ)
+        cor  = cov / (devJ * devI)
+        if barstateIsReallyLast
+            lab  = label.new(x=bar_index[i * 10]   , y=   j * 20, text=f_tos(cor), color=color.black, style=label.style_none, textcolor=f_col(cor), size=size.normal)
+    if barstateIsReallyLast
+        lx       = label.new(x=bar_index[i * 10]   , y=size * 22, text=lstr      , color=color.black, style=label.style_none, textcolor=#b2b5be   , size=size.small)
+        ly       = label.new(x=bar_index[size * 12], y=   i * 20, text=lstr      , color=color.black, style=label.style_none, textcolor=#b2b5be   , size=size.small)

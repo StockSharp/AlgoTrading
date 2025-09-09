@@ -1,0 +1,103 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © dPEngineering
+//This strategy open a sell order when close price crosses above upper level
+//and a buy order when close price crosses below lower level
+//Levels are calculated with Fibonacci sequence using standard deviation
+//
+//@version=6
+
+strategy('Fibonacci Counter-Trend Trading', shorttitle = 'FiboCTT', overlay = true, margin_long = 100, margin_short = 100, initial_capital = 10000, commission_type =  strategy.commission.percent, commission_value = 0.01,calc_on_every_tick = false, slippage = 3)
+//Inputs
+length = input.int(100, title = 'Moving Average Length', minval = 1)
+src = input(close, title = 'Source')
+mult = input.float(2.0, minval = 0.001, maxval = 50, title = 'Bands multiplier')
+// Input for trading levels
+upperLevel = input.string("1", title="Upper level", options=["0.236", "0.382", "0.5", "0.618", "0.764", "1"])
+lowerLevel = input.string("1", title="Lower level", options=["0.236", "0.382", "0.5", "0.618", "0.764", "1"])
+exitBasis = input.bool(false, title = "Exit at base line?")
+
+//Calculation
+basis = ta.vwma(src, length)
+dev = mult * ta.stdev(src, length)
+upper_1 = basis + 0.236 * dev
+upper_2 = basis + 0.382 * dev
+upper_3 = basis + 0.5 * dev
+upper_4 = basis + 0.618 * dev
+upper_5 = basis + 0.764 * dev
+upper_6 = basis + 1 * dev
+lower_1 = basis - 0.236 * dev
+lower_2 = basis - 0.382 * dev
+lower_3 = basis - 0.5 * dev
+lower_4 = basis - 0.618 * dev
+lower_5 = basis - 0.764 * dev
+lower_6 = basis - 1 * dev
+
+//Plots
+color_1 = color.new(color.red, 90)
+color_2 = color.new(color.green, 90)
+
+p0 = plot(basis, linewidth = 2)
+p1 = plot(upper_1, linewidth = 1, title = '0.236', color = color_1)
+p2 = plot(upper_2, linewidth = 1, title = '0.382', color = color_1)
+p3 = plot(upper_3, linewidth = 1, title = '0.5', color = color_1)
+p4 = plot(upper_4, linewidth = 1, title = '0.618', color = color_1)
+p5 = plot(upper_5, linewidth = 1, title = '0.764', color = color_1)
+p6 = plot(upper_6, linewidth = 2, title = '1', color = color_1)
+
+p13 = plot(lower_1, linewidth = 1, title = '0.236', color = color_2)
+p14 = plot(lower_2, linewidth = 1, title = '0.382', color = color_2)
+p15 = plot(lower_3, linewidth = 1, title = '0.5', color = color_2)
+p16 = plot(lower_4, linewidth = 1, title = '0.618', color = color_2)
+p17 = plot(lower_5, linewidth = 1, title = '0.764', color = color_2)
+p18 = plot(lower_6, linewidth = 2, title = '1', color = color_2)
+// Area fill
+fill(p1, p2, color=color.new(color_1, 95), title='Area 0.236 - 0.382')
+fill(p2, p3, color=color.new(color_1, 85), title='Area 0.382 - 0.5')
+fill(p3, p4, color=color.new(color_1, 75), title='Area 0.5 - 0.618')
+fill(p4, p5, color=color.new(color_1, 65), title='Area 0.618 - 0.764')
+fill(p5, p6, color=color.new(color_1, 55), title='Area 0.764 - 1')
+
+fill(p13, p14, color=color.new(color_2, 95), title='Area 0.236 - 0.382 (Lower)')
+fill(p14, p15, color=color.new(color_2, 85), title='Area 0.382 - 0.5 (Lower)')
+fill(p15, p16, color=color.new(color_2, 75), title='Area 0.5 - 0.618 (Lower)')
+fill(p16, p17, color=color.new(color_2, 65), title='Area 0.618 - 0.764 (Lower)')
+fill(p17, p18, color=color.new(color_2, 55), title='Area 0.764 - 1 (Lower)')
+
+fill (p13,p1, color = color.new(#a952ff, 95),title='Basis Area')
+
+// Select levels from inputs
+upperValue = switch upperLevel
+    "0.236" => upper_1
+    "0.382" => upper_2
+    "0.5" => upper_3
+    "0.618" => upper_4
+    "0.764" => upper_5
+    "1" => upper_6
+
+lowerValue = switch lowerLevel
+    "0.236" => lower_1
+    "0.382" => lower_2
+    "0.5" => lower_3
+    "0.618" => lower_4
+    "0.764" => lower_5
+    "1" => lower_6
+
+// Trading logic
+buyEntry = ta.crossover(lowerValue, src)
+sellEntry = ta.crossunder(upperValue, src)
+
+// Order execution
+if buyEntry
+    strategy.entry('Long', strategy.long)
+if sellEntry
+    strategy.entry('Short', strategy.short)
+
+// Exits
+if sellEntry and not exitBasis
+    strategy.exit('Exit Long', 'Long', stop = lowerValue)
+if buyEntry and not exitBasis
+    strategy.exit('Exit Short', 'Short', stop = upperValue)
+
+crossBasis = ta.cross(basis, src)
+if exitBasis and crossBasis
+    strategy.close_all(comment = "Close at blue line")

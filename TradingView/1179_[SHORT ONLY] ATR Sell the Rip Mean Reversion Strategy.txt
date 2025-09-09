@@ -1,0 +1,57 @@
+//@version=6
+strategy("[SHORT ONLY] ATR Sell the Rip Mean Reversion Strategy", overlay=true, initial_capital = 1000000, default_qty_value = 100, default_qty_type = strategy.percent_of_equity, process_orders_on_close = true, margin_long = 5, margin_short = 5, calc_on_every_tick = true, fill_orders_on_standard_ohlc = true)
+
+//#region INPUTS SECTION
+// ============================================
+// Time Settings
+// ============================================
+startTimeInput = input.time(timestamp("1 Jan 2014"), "Start Time", group = "Time Settings")
+endTimeInput = input.time(timestamp("1 Jan 2099"), "End Time", group = "Time Settings")
+isWithinTradingWindow = time >= startTimeInput and time <= endTimeInput
+
+// ============================================
+// Strategy Settings
+// ============================================
+atrPeriod = input.int(title="ATR Period", defval=20, minval=1, group="Strategy Settings")
+atrMultInput = input.float(title='ATR Multiplier', defval=1.0, step=0.25, group="Strategy Settings")
+smoothPeriodInput = input.int(title='Smoothing Period', defval=10, minval=1, group="Strategy Settings")
+//#endregion
+
+// ============================================
+// EMA Filter Settings
+// ============================================
+useEmaFilter = input.bool(true, "Use EMA Filter", group="Trend Filter")
+emaPeriodInput = input.int(200, "EMA Period", minval=1, group="Trend Filter")
+
+//#region INDICATOR CALCULATIONS
+// ============================================
+// Calculate ATR Signal Trigger
+// ============================================
+atrValue = ta.atr(atrPeriod)
+atrThreshold = close + atrValue * atrMultInput
+signalTrigger = ta.sma(atrThreshold, smoothPeriodInput)
+
+plot(signalTrigger, title="Smoothed ATR Trigger", color=color.white)
+
+// ============================================
+// Trend Filter
+// ============================================
+ma200 = ta.ema(close, emaPeriodInput)
+plot(ma200, color=color.red, force_overlay=true)
+
+//#region TRADING CONDITIONS
+// ============================================
+// Entry/Exit Logic
+// ============================================
+shortCondition = close>signalTrigger and isWithinTradingWindow
+exitCondition = close<low[1]
+
+// Apply EMA Filter if enabled
+if useEmaFilter
+    shortCondition := shortCondition and close < ma200
+//#endregion
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+if exitCondition
+    strategy.close_all()

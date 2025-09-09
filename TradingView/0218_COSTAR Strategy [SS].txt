@@ -1,0 +1,218 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//  /$$$$$$   /$$                                                         /$$
+// /$$__  $$ | $$                                                        | $$
+//| $$  \__//$$$$$$    /$$$$$$  /$$    /$$ /$$$$$$   /$$$$$$   /$$$$$$$ /$$$$$$    /$$$$$$  /$$    /$$ /$$$$$$   /$$$$$$$
+//|  $$$$$$|_  $$_/   /$$__  $$|  $$  /$$//$$__  $$ /$$__  $$ /$$_____/|_  $$_/   /$$__  $$|  $$  /$$//$$__  $$ /$$_____/
+// \____  $$ | $$    | $$$$$$$$ \  $$/$$/| $$$$$$$$| $$  \__/|  $$$$$$   | $$    | $$$$$$$$ \  $$/$$/| $$$$$$$$|  $$$$$$
+// /$$  \ $$ | $$ /$$| $$_____/  \  $$$/ | $$_____/| $$       \____  $$  | $$ /$$| $$_____/  \  $$$/ | $$_____/ \____  $$
+//|  $$$$$$/ |  $$$$/|  $$$$$$$   \  $/  |  $$$$$$$| $$       /$$$$$$$/  |  $$$$/|  $$$$$$$   \  $/  |  $$$$$$$ /$$$$$$$/
+// \______/   \___/   \_______/    \_/    \_______/|__/      |_______/    \___/   \_______/    \_/    \_______/|_______/
+
+//       ___________________
+//      /                   \
+//     /  _____        _____ \
+//    /  /     \      /     \  \
+// __/__/       \____/       \__\_____
+//|           ___________           ____|
+// \_________/           \_________/
+//            \  /////// /
+//             \/////////
+// © Steversteves
+//@version=5
+strategy("COSTAR Strategy [SS]", overlay=true, margin_long=100, margin_short=100)
+import Steversteves/SPTS_StatsPakLib/4 as spts
+
+// Groups
+g1 = "Settings"
+g2 = "Display"
+
+ticker2 =       input.symbol("", "Ticker for Pair", group = g1)
+timeframe =     input.timeframe("D", "Select timeframe for Cointegration", group = g1)
+pltfills =      input.bool(true, "Plot Fills?", group = g2)
+showstats =     input.bool(true, "Show Stats Table", group = g2)
+showstrategy =  input.bool(true, "Show & Backtest Strategy", group = g2)
+
+// Linreg for cointegrating model
+sc(ticker) =>
+    request.security(ticker, timeframe, close, lookahead = barmerge.lookahead_on)
+f_linear_regression(float dependent, float independent, int len) =>
+    float result = 0.0
+    float pear_cor = 0.0
+    float rsqrd = 0.0
+    float std_err = 0.0
+    dep_array = array.new<float>()
+    indep_array = array.new<float>()
+    for i = 0 to len
+        array.push(dep_array, dependent[i])
+        array.push(indep_array, independent[i])
+    // Average
+    dep_avg = array.avg(dep_array)
+    indep_avg = array.avg(indep_array)
+    // Covariance
+    integration_covariance = array.covariance(dep_array, indep_array)
+    variance = array.variance(indep_array)
+    slope = (integration_covariance / variance)
+    intercept = dep_avg - (indep_avg * slope)
+    result := (independent * slope) + intercept
+     // Correlation
+    stdev1 = array.stdev(dep_array)
+    stdev2 = array.stdev(indep_array)
+    xy_cov = array.covariance(dep_array, indep_array)
+    pear_cor := xy_cov / (stdev1 * stdev2)
+    // R2
+    rsqrd := math.pow(pear_cor,2)
+    // Standard Error
+    se_residuals = array.new_float()
+    for i = 0 to len
+        array.push(se_residuals, (result[i] - dependent[i]) * (result[i] - dependent[i]))
+    se_add = array.sum(se_residuals)
+    r1 = se_add / (len - 2)
+    std_err := math.sqrt(r1)
+    [result, std_err, pear_cor]
+///////
+cl = sc(syminfo.tickerid)
+clt2 = sc(ticker2)
+// Calculate the co-integration model for both plotting and later differencing
+
+int length = 0
+float tstat = 0.0
+float result = 0.0
+float ucl = 0.0
+float lcl = 0.0
+float cor = 0.0
+string info = na
+color textc = na
+// Lag1
+[lag1, lag1_er, lag1cor] = f_linear_regression(cl, clt2, 50)
+lag1_x = lag1 - cl
+lag1_deltax = lag1_x - lag1_x[1]
+lag1_lag = lag1_deltax[1]
+[lag1_tstat, lag1_result] = spts.f_dickey_fuller_test(lag1_deltax, lag1_lag, 50)
+// Lag2
+[lag2, lag2_er, lag2cor] = f_linear_regression(cl, clt2, 100)
+lag2_x = lag2 - cl
+lag2_deltax = lag2_x - lag2_x[1]
+lag2_lag = lag2_deltax[1]
+[lag2_tstat, lag2_result] = spts.f_dickey_fuller_test(lag2_deltax, lag2_lag, 100)
+// Lag3
+[lag3, lag3_er, lag3cor] = f_linear_regression(cl, clt2, 150)
+lag3_x = lag3 - cl
+lag3_deltax = lag3_x - lag3_x[1]
+lag3_lag = lag3_deltax[1]
+[lag3_tstat, lag3_result] = spts.f_dickey_fuller_test(lag3_deltax, lag3_lag, 150)
+// Lag4
+[lag4, lag4_er, lag4cor] = f_linear_regression(cl, clt2, 200)
+lag4_x = lag4 - cl
+lag4_deltax = lag4_x - lag4_x[1]
+lag4_lag = lag4_deltax[1]
+[lag4_tstat, lag4_result] = spts.f_dickey_fuller_test(lag4_deltax, lag4_lag, 200)
+// Lag5
+[lag5, lag5_er, lag5cor] = f_linear_regression(cl, clt2, 250)
+lag5_x = lag5 - cl
+lag5_deltax = lag5_x - lag5_x[1]
+lag5_lag = lag5_deltax[1]
+[lag5_tstat, lag5_result] = spts.f_dickey_fuller_test(lag5_deltax, lag5_lag, 250)
+// Lag6
+[lag6, lag6_er, lag6cor] = f_linear_regression(cl, clt2, 300)
+lag6_x = lag6 - cl
+lag6_deltax = lag6_x - lag6_x[1]
+lag6_lag = lag6_deltax[1]
+[lag6_tstat, lag6_result] = spts.f_dickey_fuller_test(lag6_deltax, lag6_lag, 300)
+
+if lag1_result == true
+    length := 50
+    tstat := lag1_tstat
+    result := lag1
+    ucl := lag1 + lag1_er
+    lcl := lag1 - lag1_er
+    cor := lag1cor
+    info := "Lag 1"
+    textc := color.lime
+else if lag2_result == true
+    length := 100
+    tstat := lag2_tstat
+    result := lag2
+    ucl := lag2 + lag2_er
+    lcl := lag2 - lag2_er
+    cor := lag2cor
+    info := "Lag 2"
+    textc := color.lime
+else if lag3_result == true
+    length := 150
+    tstat := lag3_tstat
+    result := lag3
+    ucl := lag3 + lag3_er
+    lcl := lag3 - lag3_er
+    cor := lag3cor
+    info := "Lag 3"
+    textc := color.lime
+else if lag4_result == true
+    length := 200
+    tstat := lag4_tstat
+    result := lag4
+    ucl := lag4 + lag4_er
+    lcl := lag4 - lag4_er
+    cor := lag4cor
+    info := "Lag 4"
+    textc := color.lime
+else if lag5_result == true
+    length := 250
+    tstat := lag5_tstat
+    result := lag5
+    ucl := lag5 + lag5_er
+    lcl := lag5 - lag5_er
+    cor := lag5cor
+    info := "Lag 5"
+    textc := color.lime
+else if lag6_result == true
+    length := 300
+    tstat := lag6_tstat
+    result := lag6
+    ucl := lag6 + lag6_er
+    lcl := lag6 - lag6_er
+    cor := lag6cor
+    info := "Lag 6"
+    textc := color.lime
+else
+    info := "Unable to create co-integrated model from \n selected ticker (no stationarity was found). \n Try selecting a different ticker or \n select a different timeframe."
+    textc := color.red
+
+// Colours
+color black = color.rgb(0, 0, 0)
+color white = color.white
+color hi_fill = color.new(color.rgb(1, 89, 143), 85),           color lo_fill = color.new(color.rgb(116, 7, 135), 85)
+color hi_border = color.rgb(7, 205, 227),                       color lo_border = color.rgb(214, 15, 191)
+// Table
+if showstats
+    var table stats_table = table.new(position.middle_right, 5, 5, bgcolor = black, frame_color = white, frame_width = 3)
+    table.cell(stats_table, 1, 1, text = "T Statistic: " + str.tostring(math.round(tstat,2)), text_color = white)
+    table.cell(stats_table, 1, 2, text ="Assessment Length: " +  str.tostring(length), text_color = white)
+    table.cell(stats_table, 1, 3, text ="Model Correlation: " +  str.tostring(math.round(cor,2)), text_color = white)
+    table.cell(stats_table, 1, 4, text = str.tostring(info), text_color = textc)
+
+// Plots
+a = plot(ta.sma(result, 14), "Co-integration Result", color = black, linewidth = 3)
+b = plot(ta.sma(ucl, 14), "UCL CoIntegration Band", color = hi_border, linewidth=3)
+c = plot(ta.sma(lcl, 14), "LCL Cointegration Band", color = lo_border, linewidth = 3)
+
+fill(a, b, color = pltfills ? hi_fill : na)
+fill(a, c, color = pltfills ? lo_fill : na)
+
+// Strategy
+
+longCondition = ta.crossover(close, lcl)
+exit_long = ta.crossover(close, result)
+
+if (longCondition) and showstrategy
+    strategy.entry("Buy", strategy.long)
+if exit_long and showstrategy
+    strategy.close("Buy")
+
+
+shortCondition = ta.crossunder(close, ucl)
+close_short = ta.crossunder(close, result)
+if (shortCondition) and showstrategy
+    strategy.entry("Sell", strategy.short)
+
+if close_short and showstrategy
+    strategy.close("Sell")

@@ -1,0 +1,88 @@
+//@version=5
+strategy(title='Breakout Range', shorttitle='BrkRange&Vol', overlay=true)
+
+volmalen = input(20, title='Avg Length Vol')
+volmult = input(3, title='Avg Multiplier Vol')
+rangemalen = input(20, title='Avg Length Range')
+rangemult = input(4, title='Avg Multiplier Range')
+
+rsiLengthInput = input.int(14, minval=1, title="RSI Length", group="RSI Settings")
+rsiSourceInput = input.source(close, "Source", group="RSI Settings")
+maTypeInput = input.string("SMA", title="MA Type", options=["SMA", "Bollinger Bands", "EMA", "SMMA (RMA)", "WMA", "VWMA"], group="MA Settings")
+maLengthInput = input.int(14, title="MA Length", group="MA Settings")
+bbMultInput = input.float(2.0, minval=0.001, maxval=50, title="BB StdDev", group="MA Settings")
+
+FilterTradeTime = input.bool(defval=false,title='Filter 0600-1600 CET')
+
+
+//VOL BREAKOUT INDIKATOR
+volma = ta.sma(volume, volmalen)
+volcolor = close > open and volume > volma * volmult ? color.lime : close < open and volume > volma * volmult ? color.red : color.gray
+
+
+//RANGE BREAKOUT INDIKATOR
+Range = if close > open
+    close - open
+else if open > close
+    open - close
+
+rangema = ta.sma(Range, rangemalen)
+rangecolor = close > open and Range > rangema * rangemult ? color.lime : close < open and Range > rangema * rangemult ? color.red : color.gray
+
+
+//RSI INDIKATOR
+ma(source, length, type) =>
+    switch type
+        "SMA" => ta.sma(source, length)
+        "Bollinger Bands" => ta.sma(source, length)
+        "EMA" => ta.ema(source, length)
+        "SMMA (RMA)" => ta.rma(source, length)
+        "WMA" => ta.wma(source, length)
+        "VWMA" => ta.vwma(source, length)
+
+
+
+up = ta.rma(math.max(ta.change(rsiSourceInput), 0), rsiLengthInput)
+down = ta.rma(-math.min(ta.change(rsiSourceInput), 0), rsiLengthInput)
+rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+rsiMA = ma(rsi, maLengthInput, maTypeInput)
+isBB = maTypeInput == "Bollinger Bands"
+
+GrenzeLong = input.int(50, minval=1, title="Value SMA RSI > Long Trades")
+GrenzeShort = input.int(70, minval=1, title="Value SMA RSI < Short Trades")
+
+// Input TP SL
+TP = input.int(title="TP",minval=1, maxval=100000, defval=400)
+SL = input.int(title="SL",minval=1, maxval=100000, defval=300)
+
+
+//FILTER TRADING HOURS
+tradinghours = time(timeframe.period, "0600-1600", "UTC")
+time_condition = FilterTradeTime ? not na(tradinghours) : true
+bgcolor(not na(tradinghours) ? color.rgb(1, 75, 1, 72) : na)
+
+//Entry Condition
+conditionlong = close > open and volume > volma * volmult and Range > rangema * rangemult and rsiMA > GrenzeLong
+conditionshort = close < open and volume > volma * volmult and Range > rangema * rangemult and rsiMA < GrenzeShort
+
+// Show MegaBar
+megabarlong = close > open and volume > volma * volmult and Range > rangema * rangemult
+megabarshort = close < open and volume > volma * volmult and Range > rangema * rangemult
+
+megabarlongarrow = if megabarlong
+    close - open
+
+megabarshortarrow = if megabarshort
+    close - open
+
+plotarrow(megabarlongarrow, colorup = color.rgb(226, 156, 5), colordown = color.red)
+plotarrow(megabarshortarrow, colorup = color.rgb(114, 235, 2), colordown = color.rgb(233, 7, 56))
+
+if (conditionlong and time_condition)
+    strategy.entry("Long", strategy.long, comment="entry Long")
+strategy.exit("Long", comment_profit = "TP Long", comment_loss = "SL Long", profit = TP, loss = SL)
+
+
+if (conditionshort and time_condition)
+    strategy.entry("Short", strategy.short, comment="entry Short")
+strategy.exit("Short", comment_profit = "TP Short", comment_loss = "SL Short", profit = TP, loss = SL)

@@ -1,0 +1,31 @@
+//@version=5
+strategy("Friday Bond Short Strategy", overlay=true)
+
+// Custom inputs for weekdays and hours
+entry_day = input.int(6, title="Entry Day (2=Mon, 6=Fri)", minval=2, maxval=6)
+entry_hour = input.int(13, title="Entry Hour (ET)")
+exit_day = input.int(2, title="Exit Day (2=Mon, 6=Fri)", minval=2, maxval=6)
+exit_hour = input.int(13, title="Exit Hour (ET)")
+
+// Adjust the time to Eastern Time (New York)
+et_time = timestamp("America/New_York", year, month, dayofmonth, hour, minute, second)
+et_hour = hour(et_time)
+et_dayofweek = dayofweek(et_time)
+
+// Check if it's the entry day and time
+is_entry_day = (et_dayofweek == entry_day)
+is_exit_day = (et_dayofweek == exit_day)
+
+// Entry on the specified day and hour
+if (is_entry_day and et_hour == entry_hour)
+    strategy.entry("Short", strategy.short)
+
+// Exit on the specified day and hour
+if (is_exit_day and et_hour == exit_hour)
+    strategy.close("Short")
+
+// Determine background color based on position status
+bg_color = strategy.position_size > 0 ? color.new(color.green, 90) : na
+
+// Apply the background color
+bgcolor(bg_color)

@@ -1,0 +1,122 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © ChartPrime
+//@version=6
+strategy("RSI-Adaptive T3 [ChartPrime] — Strategy (Long Only, 1D)",
+     overlay = true,
+     initial_capital = 100000,
+     default_qty_type = strategy.percent_of_equity,
+     default_qty_value = 100,
+     commission_type = strategy.commission.percent,
+     commission_value = 0.1,     // 0.1%
+     slippage = 1,               // 1 tick
+     pyramiding = 0,
+     calc_on_order_fills = false,
+     calc_on_every_tick = false,
+     process_orders_on_close = true)
+
+// ---------------------------------------------------------
+// Inputs
+// ---------------------------------------------------------
+src         = close
+rsiLen      = input.int(14, 'RSI Length', group = "T3")
+minLen      = input.int(5,  'Min T3 Length', group = "T3")
+maxLen      = input.int(50, 'Max T3 Length', group = "T3")
+v           = input.float(0.7, 'T3 Volume Factor', step = 0.01, maxval = 2, minval = 0.1, group = "T3")
+color_up    = input.color(#21b8f3, 'Rising Color', group = "Style")
+color_dn    = input.color(#fd761b, 'Falling Color', group = "Style")
+
+grp_vol_b   = 'Volatility Bands'
+show_bands  = input.bool(true, 'Display', group = grp_vol_b, inline = "vol")
+vol_col     = input.color(#21c9f380, "", group = grp_vol_b, inline = "vol")
+volat       = input.int(100, 'Volatility (Stdev Length)', group = grp_vol_b)
+
+// Backtest window (UTC)
+startYear   = input.int(2018, "Start Year", minval = 2000, group="Backtest Window")
+startMonth  = input.int(1,    "Start Month", minval = 1, maxval = 12, group="Backtest Window")
+startDay    = input.int(1,    "Start Day",   minval = 1, maxval = 31, group="Backtest Window")
+endYear     = input.int(2069, "End Year",    minval = 2000, group="Backtest Window")
+endMonth    = input.int(12,   "End Month",   minval = 1, maxval = 12, group="Backtest Window")
+endDay      = input.int(31,   "End Day",     minval = 1, maxval = 31, group="Backtest Window")
+
+enforce1D   = input.bool(true, "Warn if not on 1-Day chart", group="Safety")
+
+// ---------------------------------------------------------
+// Calculations (no lookahead)
+// ---------------------------------------------------------
+rsi       = ta.rsi(src, rsiLen)
+rsi_scale = 1.0 - rsi / 100.0
+len       = math.round(minLen + (maxLen - minLen) * rsi_scale)
+
+pine_ema(src_, length) =>
+    alpha = 2.0 / (length + 1.0)
+    sum = 0.0
+    sum := na(sum[1]) ? src_ : alpha * src_ + (1 - alpha) * nz(sum[1])
+    sum
+
+e1 = pine_ema(src, len)
+e2 = pine_ema(e1, len)
+e3 = pine_ema(e2, len)
+e4 = pine_ema(e3, len)
+e5 = pine_ema(e4, len)
+e6 = pine_ema(e5, len)
+
+c1 = -v * v * v
+c2 =  3 * v * v + 3 * v * v * v
+c3 = -6 * v * v - 3 * v - 3 * v * v * v
+c4 =  1 + 3 * v + v * v * v + 3 * v * v
+t3 = c1 * e6 + c2 * e5 + c3 * e4 + c4 * e3
+t3_lag = t3[2]
+
+t3_col = t3 > t3_lag ? color_up : color_dn
+stdv   = ta.stdev(t3, volat)
+
+// ---------------------------------------------------------
+// Signals (pre-computed)
+// ---------------------------------------------------------
+longEntry = ta.crossover(t3, t3_lag)
+longExit  = ta.crossunder(t3, t3_lag)
+
+// Time filter
+start_ts = timestamp("UTC", startYear, startMonth, startDay, 0, 0)
+end_ts   = timestamp("UTC", endYear,   endMonth,   endDay,   23, 59)
+inWindow = time >= start_ts and time <= end_ts
+
+// Optional warning if not daily (single-line call to avoid parser quirk)
+if enforce1D and not timeframe.isdaily and barstate.islast
+    label.new(bar_index, high, "Use 1-Day chart for intended results", style=label.style_label_down, textcolor=color.white, color=color.new(color.red, 0))
+
+// Orders (on bar close, no repaint)
+if inWindow
+    if longEntry and strategy.position_size <= 0
+        strategy.entry("Long", strategy.long)
+    if longExit and strategy.position_size > 0
+        strategy.close("Long")
+
+// ---------------------------------------------------------
+// Visuals
+// ---------------------------------------------------------
+pt31 = plot(t3,     color = t3_col, linewidth = 1, editable = false, title="T3")
+pt32 = plot(t3_lag, color = t3_col, linewidth = 1, editable = false, title="T3 (2-bar lag)")
+fill(pt31, pt32, color.new(t3_col, 90))
+
+pu = plot(t3 + stdv, "Upper Volatility Band", style = plot.style_cross, color = vol_col, display = show_bands ? display.all : display.none)
+pl = plot(t3 - stdv, "Lower Volatility Band", style = plot.style_cross, color = vol_col, display = show_bands ? display.all : display.none)
+fill(pu, pl, color.new(vol_col, 95), display = show_bands ? display.all : display.none)
+
+pivotFlip = longEntry or longExit
+plotchar(pivotFlip ? t3 : na, "", "🞛", location.absolute, t3_col)
+
+// Info table (create once; update—no clear() needed)
+var table tbl = table.new(position.middle_right, 4, 2)
+if barstate.islast
+    table.cell(tbl, 0, 0, "RSI Adaptive Length:", text_color = chart.fg_color)
+    table.cell(tbl, 1, 0, str.tostring(len), text_color = color.from_gradient(len, minLen, maxLen, color_dn, color_up))
+    table.cell(tbl, 0, 1, "Min / Max:", text_color = chart.fg_color, text_halign = text.align_right)
+    table.cell(tbl, 1, 1, "▲" + str.tostring(minLen) + "  ▼" + str.tostring(maxLen),
+               text_color = chart.fg_color, text_halign = text.align_left)
+
+// ---------------------------------------------------------
+// Alerts
+// ---------------------------------------------------------
+alertcondition(longEntry,  title="T3 Upturn (Entry)", message="RSI-Adaptive T3 upturn: Enter Long")
+alertcondition(longExit,   title="T3 Downturn (Exit)", message="RSI-Adaptive T3 downturn: Exit Long")

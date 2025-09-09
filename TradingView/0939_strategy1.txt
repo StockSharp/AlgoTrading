@@ -1,0 +1,52 @@
+//@version=5
+strategy("strategy1", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// 通道上下轨
+sma = ta.sma(close, 20)
+stdev = ta.stdev(close, 20)
+upper = sma + stdev
+lower = sma - stdev
+
+// 中轨线
+midPrice = (upper + lower) / 2
+
+// 用变量记录是否曾经突破
+
+var bool wasBelowLower = false
+
+// 在每根K线上更新突破状
+if (close < lower)
+    wasBelowLower := true
+
+
+// 当前是否无仓
+noPosition = strategy.position_size == 0
+
+    // 做多：跌破下轨后回升
+if (noPosition and wasBelowLower and close > lower)
+    strategy.entry("Long", strategy.long)
+    wasBelowLower := true
+
+
+// === 平仓逻辑（每根K线都执行） ===
+longPosition = strategy.position_size > 0
+
+mid_point = longPosition and close[1] < midPrice and close >= midPrice
+upper_point = longPosition and high > upper and close <= upper
+
+// 多头穿越中轨止盈
+if (mid_point or upper_point)
+    strategy.close("Long")
+
+// 止损设置（最大亏损 2%）
+buffer = stdev * 0.2
+if longPosition
+    stopLossPrice = lower - buffer
+    strategy.exit("StopLong", "Long", stop=stopLossPrice)
+
+
+
+// 通道可视化
+plot(upper, color=color.orange)
+plot(lower, color=color.teal)
+plot(midPrice, color=color.gray, linewidth=2)

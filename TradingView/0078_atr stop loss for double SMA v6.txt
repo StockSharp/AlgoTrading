@@ -1,0 +1,190 @@
+//@version=6
+//v6 version
+//author genlius credit @Daveatt
+
+SystemName = "atr stop loss for double SMA v6"
+TradeId    = "genlius"
+
+
+// Initial strategy settings
+InitCapital      = 100000
+InitPosition     = 100
+InitCommission   = 0.075
+InitPyramidMax   = 1
+CalcOnOrderFills = true
+CalcOnTick       = false
+Precision        = 2
+Overlay          = true
+
+strategy(title= SystemName,
+ shorttitle = SystemName,
+ overlay             = Overlay,
+ pyramiding          = InitPyramidMax,
+ initial_capital     = InitCapital,
+ default_qty_type    = strategy.fixed,
+ default_qty_value   = InitPosition,
+ commission_type     = strategy.commission.percent,
+ commission_value    = InitCommission,
+ calc_on_order_fills = CalcOnOrderFills,
+ calc_on_every_tick  = CalcOnTick,
+ precision           = Precision)
+
+// —— Inputs ——
+fastSMAperiod    = input.int(15, title="Fast SMA", minval=2, step=1)
+slowSMAperiod    = input.int(45, title="Slow SMA", minval=2, step=1)
+useSL            = input.bool(true, title="Use stop Loss")
+stop_atr_length  = input.int(14, title="ATR Length", minval=1)
+stop_atr_mult    = input.float(2.0, title="ATR Multiple", minval=0.05, step=0.1)
+longColor = input.color(color.green, "long entry color")
+shortColor = input.color(color.red, "short entry color")
+
+// —— Source and moving averages ——
+src     = close
+fastSMA = ta.sma(src, fastSMAperiod)
+slowSMA = ta.sma(src, slowSMAperiod)
+
+// —— Entry conditions ——
+enterLong  = ta.crossover(fastSMA, slowSMA)
+enterShort = ta.crossunder(fastSMA, slowSMA)
+
+
+// —— Determine trend states ——
+//barssince会在series上寻找上一个true
+since_buy  = ta.barssince(enterLong)
+since_sell = ta.barssince(enterShort)
+buy_trend  = since_sell > since_buy
+sell_trend = since_sell < since_buy
+
+
+// If either long or short entry just occurred, this is a signal bar
+is_signal = enterLong or enterShort
+
+// —— Capture the entry price on the signal bar ——
+entry_price = ta.valuewhen(enterLong or enterShort, src, occurrence = 0)
+
+// —— Plot moving averages and entry markers ——
+plot(series=fastSMA, color=color.teal, title  = "fastSMA")
+plot(series=slowSMA, color=color.orange, title  = "slowSMA")
+
+//plotshape 第一个参数是个series bool
+plotshape(enterLong,
+ style    = shape.labelup,
+ location = location.belowbar,
+ color    = color.green,
+ size     = size.small,
+ title ="enterLong")
+
+plotshape(
+ enterShort,
+ style    = shape.labeldown,
+ location = location.abovebar,
+ color    = color.red,
+ size     = size.small,
+ title ="enterShort")
+
+///////////////////////////////
+//====== [ Trailing STOP ] ======//
+///////////////////////////////
+
+// “Global” stop_price (not used elsewhere but kept to match original structure)
+var float stop_price = 0.0
+stop_price := nz(stop_price[1])//其实有些多此一举，对于var变量
+
+// Compute ATR every bar
+var float stop_atr       = na
+var float entry_stop_atr = na
+stop_atr := ta.atr(stop_atr_length)
+
+// On a new entry bar, set the initial ATR‐based stop‐distance
+if enterLong or enterShort
+    entry_stop_atr := stop_atr * stop_atr_mult
+
+
+
+// Display ATR and ATR multiple on the entry bar
+var label atr_long_label  = na
+var label atr_short_label = na
+
+lapos_y_entry_up = ta.lowest(30)   // lowest price over last 30 bars
+lapos_y_entry_dn = ta.highest(30)  // highest price over last 30 bars
+
+text_label = "ATR value: " + str.tostring(stop_atr, "#.#") +
+             "\nATR Multiple value: " + str.tostring(entry_stop_atr, "#.#")
+
+
+
+if enterLong
+    //delete prior labels and only keep the latest buy/sell
+    label.delete(atr_long_label)
+
+    atr_long_label := label.new(bar_index, lapos_y_entry_up, text = text_label,
+      xloc      = xloc.bar_index,
+      yloc      = yloc.price,
+      color     = longColor,
+      style     = label.style_label_up,
+      textcolor = color.rgb(208, 235, 34),
+      size      = size.small)
+
+if enterShort
+    label.delete(atr_short_label)
+    atr_short_label := label.new(
+     bar_index,
+     lapos_y_entry_dn,
+     text      = text_label,
+     xloc      = xloc.bar_index,
+     yloc      = yloc.price,
+     color     = shortColor,
+     style     = label.style_label_down,
+     textcolor = color.rgb(163, 175, 76),
+     size      = size.small)
+
+// —— Determine trailing stop prices ——
+var float longStopPrice  = na
+var float shortStopPrice = na
+
+longStopPrice := if useSL and buy_trend
+    entry_price - entry_stop_atr
+else
+    0
+
+shortStopPrice := if useSL and sell_trend
+    entry_price + entry_stop_atr
+else
+    99999
+
+// —— Stop loss hit conditions for alerts ——
+
+
+cond_long_stop_loss_hit  = useSL and buy_trend and ta.crossunder(low,  longStopPrice[1])
+cond_short_stop_loss_hit = useSL and sell_trend and ta.crossover(high, shortStopPrice[1])
+
+
+// —— Plot stop‐loss levels on the chart ——
+plot(
+ series = (useSL and buy_trend and low  >= longStopPrice) ? longStopPrice  : na,
+ color  = longColor,
+ style  = plot.style_cross,
+ linewidth = 1,
+ title  = "Long Trail Stop")
+
+plot(series = (useSL and sell_trend and high <= shortStopPrice) ? shortStopPrice : na,
+ color  = shortColor,
+ style  = plot.style_cross,
+ linewidth = 1,
+ title  = "Short Trail Stop")
+
+
+int count = 0
+// —— Submit entry orders and exits ——
+if enterLong
+    strategy.entry(TradeId + " L", direction=strategy.long)
+
+
+if cond_long_stop_loss_hit
+    strategy.close(TradeId + " L")
+
+if enterShort
+    strategy.entry(TradeId + " S", direction = strategy.short)
+
+if cond_short_stop_loss_hit
+    strategy.close(TradeId + " S")

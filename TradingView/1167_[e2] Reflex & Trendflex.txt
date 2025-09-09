@@ -1,0 +1,149 @@
+// February 2020 Technical Analysis of Stocks and Commodities article
+// Reflex: A New Zero-Lag Indicator
+// John F. Ehlers
+//
+// Created by e2e4mfck for tradingview.com
+// @version=4
+
+study (title = "Reflex & TrendFlex", shorttitle = "xFlex", overlay = false)
+
+// - - - - - - - - - - - - - - - - - - - - Inputs - - - - - - - - - - - - - - - - - - - - - - - //
+// Code{
+//
+src1 = (high), src2 = (low)
+
+// inputs
+src                 = input(close,      title = "Source", type = input.source)
+bool    rFlexSw     = input(true,       title = "============ Reflex  ===========")
+int     rFlexLen    = input(20,         title = "Length")
+bool    tFlexSw     = input(true,       title = "============ Trendflex =========")
+int     tFlexLen    = input(20,         title = "Length")
+bool    pivSw       = input(true,       title = "============ Pivots ============")
+int     lbR         = input(5,          title = "Pivot Lookback Right")
+int     lbL         = input(5,          title = "Pivot Lookback Left")
+bool    pivRangeSw  = input(true,       title = "Show pivot Max Range as borders")
+int     pivMaxRange = input(200,        title = "Max of Lookback Range")
+int     pivMinRange = input(5,          title = "Min of Lookback Range")
+bool    divSw       = input(false,       title = "============ Divergences =======")
+bool    divRSw      = input(false,      title = "Show Divergences without offset")
+bool    plotBull    = input(true,       title = "Plot Bullish")
+bool    plotHBull   = input(false,      title = "Plot Hidden Bullish")
+bool    plotBear    = input(true,       title = "Plot Bearish")
+bool    plotHBear   = input(false,      title = "Plot Hidden Bearish")
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -//
+//}
+
+// - - - - - - - - - - - - - - - - - - - - Reflex - - - - - - - - - - - - - - - - - - - - - - - //
+// Code{
+f_xFlex (_src, _len, _mode) =>
+    float _f = 0, float _sum = 0, float _ms = 0, float _xFlex = .0, float _slp = 0
+    // SuperSmooth Filter
+    _pi = 2 * asin(1)
+    _a1 = exp(-1.414 * _pi / (0.5 * _len))
+    // SSF Coefficients
+    _c2 = 2 * _a1 * cos(1.414 * 180 / (0.5 * _len))
+    _c3 = (-_a1) * _a1
+    _c1 = 1 - _c2 - _c3
+    // nz() from source allows to apply the filter on any dataseries
+    _x1 = nz(_src) + nz(_src[1])
+    // SSF
+    _f := bar_index < 2 ? .0 : _c1 * _x1 / 2  + _c2 * _f[1] + _c3 * _f[2]
+    // Cycle slope
+    _slp := (_f[_len] - _f) / _len
+    for _i = 1 to _len
+        // Define the component and sum the results on the visible range.
+        // _mode == true for the cycle component: reFlex
+        // _mode == false for the trend component: trendFlex
+        _sum := nz(_sum) + ( _mode? (_f + _i * _slp - _f[_i]) : (_f - _f[_i]) )
+    // Sum the difference onreflex cycle period
+    _sum := _sum / _len
+    // Normalize in terms of standard deviation
+    _ms     := 0.04 * _sum * _sum + 0.96 * nz(_ms[1])
+    _xFlex  := _ms != 0 ? _sum / sqrt(nz(_ms)) : .0
+    _xFlex
+
+reFlex = f_xFlex(src, rFlexLen, true)
+trendFlex = f_xFlex(src, tFlexLen, false)
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -//
+//}
+
+// - - - - - - - - - - - - - - - - - - - - Divergences - - - - - - - - - - - - - - - - - - - - -//
+// Code{
+// Modified bult-in divergences
+// Reflex Pivots
+rPlFound = na(pivotlow(reFlex, lbL, lbR))  ? false : true
+rPhFound = na(pivothigh(reFlex, lbL, lbR)) ? false : true
+// Trendflex Pivots
+tPlFound = na(pivotlow(trendFlex, lbL, lbR))  ? false : true
+tPhFound = na(pivothigh(trendFlex, lbL, lbR)) ? false : true
+
+f_range(cond) =>
+    bars = barssince(cond == true)
+    pivMinRange <= bars and bars <= pivMaxRange
+
+f_div (_osc, lbR, _src1, _src2, pl, ph) =>
+    bool oscHL      = _osc[lbR]  > valuewhen(pl, _osc[lbR],  1) and f_range(pl[1])
+    bool oscLL      = _osc[lbR]  < valuewhen(pl, _osc[lbR],  1) and f_range(pl[1])
+    bool oscLH      = _osc[lbR]  < valuewhen(ph, _osc[lbR],  1) and f_range(ph[1])
+    bool oscHH      = _osc[lbR]  > valuewhen(ph, _osc[lbR],  1) and f_range(ph[1])
+    bool priceLL    = _src2[lbR] < valuewhen(pl, _src2[lbR], 1)
+    bool priceHL    = _src2[lbR] > valuewhen(pl, _src2[lbR], 1)
+    bool priceHH    = _src1[lbR] > valuewhen(ph, _src1[lbR], 1)
+    bool priceLH    = _src1[lbR] < valuewhen(ph, _src1[lbR], 1)
+    bool bullCond   = priceLL and oscHL and pl
+    bool hBullCond  = priceHL and oscLL and pl
+    bool bearCond   = priceHH and oscLH and ph
+    bool hBearCond  = priceLH and oscHH and ph
+    [bullCond, hBullCond, bearCond, hBearCond]
+
+[bullCond, hBullCond, bearCond, hBearCond]      = f_div (reFlex, lbR, src1, src2, rPlFound, rPhFound) // ReFlex Divs
+[bullCond2, hBullCond2, bearCond2, hBearCond2]  = f_div (trendFlex, lbR, src1, src2, tPlFound, tPhFound) // TrendFlex Divs
+
+divOff = divRSw ? 0 : -lbR
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -//
+//}
+
+// - - - - - - - - - - - - - - - - - - - - Colors - - - - - - - - - - - - - - - - - - - - - - - //
+// Code{
+rFlexCol   = color.blue
+tFlexCol   = color.red
+bearCol     = color.red
+bullCol     = color.green
+hBullCol    = color.new(color.green, 80)
+hBearCol    = color.new(color.red, 80)
+textColor   = color.white
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -//
+//}
+
+// - - - - - - - - - - - - - - - - - - - - Plots - - - - - - - - - - - - - - - - - - - - - - - -//
+// Code{
+// Reflex
+plot(rFlexSw ? reFlex : na,                                                     title = "Reflex",                   color = rFlexCol)
+plot(tFlexSw? trendFlex : na,                                                   title = "TrendFlex",                color = tFlexCol)
+// Reflex Divergences
+plot(rFlexSw and divSw and plotBull and rPlFound ?        reFlex[lbR] : na,     title = "Regular Bullish",          color = (bullCond ? bullCol : na),          offset = divOff,    linewidth=1,    transp=50)
+plot(rFlexSw and divSw and plotHBull and rPlFound ?       reFlex[lbR] : na,     title = "Hidden Bullish",           color = (hBullCond ? hBullCol : na),        offset = divOff,    linewidth=1,    transp=50)
+plot(rFlexSw and divSw and plotBear and rPhFound ?        reFlex[lbR] : na,     title = "Regular Bearish",          color = (bearCond ? bearCol : na),          offset = divOff,    linewidth=1,    transp=50)
+plot(rFlexSw and divSw and plotHBear and rPhFound ?       reFlex[lbR] : na,     title = "Hidden Bearish",           color = (hBearCond ? hBearCol : na),        offset = divOff,    linewidth=1,    transp=50)
+plotshape(rFlexSw and divSw and plotBull and bullCond ?   reFlex[lbR] : na,     title = "Regular Bullish Label",    color = bullCol,  textcolor = textColor,    offset = divOff,    text = "D",     style=shape.labelup,    location=location.absolute,   transp=50)
+plotshape(rFlexSw and divSw and plotHBull and hBullCond ? reFlex[lbR] : na,     title = "Hidden Bullish Label",     color = bullCol,  textcolor = textColor,    offset = divOff,    text = "hD",    style=shape.labelup,    location=location.absolute,   transp=50)
+plotshape(rFlexSw and divSw and plotBear and bearCond ?   reFlex[lbR] : na,     title = "Regular Bearish Label",    color = bearCol,  textcolor = textColor,    offset = divOff,    text = "D",     style=shape.labeldown,  location=location.absolute,   transp=50)
+plotshape(rFlexSw and divSw and plotHBear and hBearCond ? reFlex[lbR] : na,     title = "Hidden Bearish Label",     color = bearCol,  textcolor = textColor,    offset = divOff,    text = "hD",    style=shape.labeldown,  location=location.absolute,   transp=50)
+// Trendflex Divergences
+plot(tFlexSw and divSw and plotBull and tPlFound ?         trendFlex[lbR] : na, title = "Regular Bullish",          color = (bullCond2 ? bullCol : na),         offset = divOff,    linewidth=1,    transp=50)
+plot(tFlexSw and divSw and plotHBull and tPlFound ?        trendFlex[lbR] : na, title = "Hidden Bullish",           color = (hBullCond2 ? hBullCol : na),       offset = divOff,    linewidth=1,    transp=50)
+plot(tFlexSw and divSw and plotBear and tPhFound ?         trendFlex[lbR] : na, title = "Regular Bearish",          color = (bearCond2 ? bearCol : na),         offset = divOff,    linewidth=1,    transp=50)
+plot(tFlexSw and divSw and plotHBear and tPhFound ?        trendFlex[lbR] : na, title = "Hidden Bearish",           color = (hBearCond2 ? hBearCol : na),       offset = divOff,    linewidth=1,    transp=50)
+plotshape(tFlexSw and divSw and plotBull and bullCond2 ?   trendFlex[lbR] : na, title = "Regular Bullish Label",    color = bullCol,  textcolor = textColor,    offset = divOff,    text = "D",     style=shape.labelup,    location=location.absolute,   transp=50)
+plotshape(tFlexSw and divSw and plotHBull and hBullCond2 ? trendFlex[lbR] : na, title = "Hidden Bullish Label",     color = bullCol,  textcolor = textColor,    offset = divOff,    text = "hD",    style=shape.labelup,    location=location.absolute,   transp=50)
+plotshape(tFlexSw and divSw and plotBear and bearCond2 ?   trendFlex[lbR] : na, title = "Regular Bearish Label",    color = bearCol,  textcolor = textColor,    offset = divOff,    text = "D",     style=shape.labeldown,  location=location.absolute,   transp=50)
+plotshape(tFlexSw and divSw and plotHBear and hBearCond2 ? trendFlex[lbR] : na, title = "Hidden Bearish Label",     color = bearCol,  textcolor = textColor,    offset = divOff,    text = "hD",    style=shape.labeldown,  location=location.absolute,   transp=50)
+// range
+plot(rFlexSw and pivRangeSw ? lowest(reFlex, pivMaxRange) : na,                 title = "Reflex Top Range",         color = rFlexCol, style = plot.style_cross)
+plot(rFlexSw and pivRangeSw ? highest(reFlex, pivMaxRange) : na,                title = "Reflex Bottom Range",      color = rFlexCol, style = plot.style_cross)
+plot(tFlexSw and pivRangeSw ? lowest(trendFlex, pivMaxRange) : na,              title = "Trendflex Top Range",      color = tFlexCol, style = plot.style_cross)
+plot(tFlexSw and pivRangeSw ? highest(trendFlex, pivMaxRange) : na,             title = "Trendflex Bottom Range",   color = tFlexCol, style = plot.style_cross)
+plot(0,                                                                         title = "Zero line",                color = color.gray)
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -//
+//}

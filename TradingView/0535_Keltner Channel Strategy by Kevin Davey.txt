@@ -1,0 +1,33 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © EdgeTools
+
+//@version=5
+strategy("Keltner Channel Strategy by Kevin Davey",  overlay=true, precision=2, calc_on_every_tick=true, initial_capital=50000, currency=currency.USD, slippage=1, commission_type=strategy.commission.cash_per_contract, commission_value=0.05)
+
+// Keltner Channel Inputs
+length = input.int(10, title="EMA Length")
+mult = input.float(1.6, title="ATR Multiplier")
+
+// Calculate EMA and ATR
+ema = ta.ema(close, length)
+atr = ta.atr(14)
+
+// Calculate Keltner Channel
+upperChannel = ema + mult * atr
+lowerChannel = ema - mult * atr
+
+// Entry and Exit Conditions
+longCondition = close < lowerChannel
+shortCondition = close > upperChannel
+
+// Trade Logic
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// Plot Keltner Channels
+plot(upperChannel, color=color.red, title="Upper Keltner Channel")
+plot(ema, color=color.blue, title="EMA")
+plot(lowerChannel, color=color.green, title="Lower Keltner Channel")

@@ -1,0 +1,49 @@
+//@version=5
+strategy("XAUUSD Simple $20 Profit / $100 Loss Strategy", overlay=true, margin_long=100, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// Inputs
+profitTarget = 20.0
+lossLimit = 100.0
+tradeCooldown = 12 * 60 * 60  // 12 hours in seconds
+entryCooldown = 15 * 60       // 15 minutes in seconds
+
+// Variables to track state
+var float entryPrice = na
+var int lastLossTime = na
+var int lastProfitTime = na
+
+// Calculate current PnL in USD
+// For XAUUSD assume contract size = 1 oz, price is in USD
+// PnL = (current price - entry price) * contract size * position size
+// Strategy.position_avg_price gives entry price, strategy.position_size gives position size in contracts
+pnl = strategy.position_size * (close - strategy.position_avg_price) * 1  // contract size = 1
+
+// Time checks
+timeNow = timenow  // current time in milliseconds
+
+// Check if cooldown from loss is active
+lossCooldownActive = not na(lastLossTime) and (timeNow - lastLossTime*1000 < tradeCooldown * 1000)
+
+// Check if cooldown from profit entry delay is active
+profitCooldownActive = not na(lastProfitTime) and (timeNow - lastProfitTime*1000 < entryCooldown * 1000)
+
+// Entry condition: no current position, no loss cooldown, no profit cooldown
+canEnter = strategy.position_size == 0 and not lossCooldownActive and not profitCooldownActive
+
+// Enter trade: for example, buy long when canEnter
+if (canEnter)
+    strategy.entry("Long", strategy.long)
+
+// Exit conditions
+if (strategy.position_size > 0)
+    if (pnl >= profitTarget)
+        strategy.close("Long")
+        lastProfitTime := math.round(timeNow/1000)  // record profit exit time in seconds
+    else if (pnl <= -lossLimit)
+        strategy.close("Long")
+        lastLossTime := math.round(timeNow/1000)  // record loss exit time in seconds
+
+// Plot some info
+plot(pnl, title="PnL", color=color.new(color.green, 0))
+hline(profitTarget, "Profit Target", color=color.green)
+hline(-lossLimit, "Loss Limit", color=color.red)

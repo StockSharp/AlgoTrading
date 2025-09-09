@@ -1,0 +1,213 @@
+// This work is licensed under a Creative Commons Attribution-ShareAlike 4.0 International License https://creativecommons.org/licenses/by-sa/4.0/
+// © corgalicious
+// RESPONSIVE LINEAR REGRESSION ver 1.0
+//
+// This is a linear trend indicator that can:
+// - automagically adjust to different chart resolutions
+// - snap to day/session boundaries on intraday
+// - totally not do the above and use ye olde good fixed lookback window
+// - show the regression trend and its RMSE channels
+// - disregard the trend and just show the period average and standard deviation lines (often acting as support and resistance)
+//
+// Caveats:
+// - More data means more noise and slower calculations.
+// - HLC3 source is recommended, especially at resolutions above hourly.
+// - Trend will be slightly different if you use extended hours.
+// - If you use extended hours and don't have a data subscription, trend will be SUBSTANTIALLY different, especially at smaller resolutions like 1m.
+// - You might want to use 3.5 days per week for crypto (it's 7 days by default).
+//
+// Known problems:
+// - If you can't see the trendlines, scroll to the left or zoom out - the origin could be outside of your viewport.
+// - Futures' sessions start on the previous day. We currently snap only to day boundaries, not session breaks.
+// - UVXY and the like that have extremely high price datapoints. The calculations will be wrong on some resolutions.
+// - Replay can freeze circa bar_index 244 — disable smart lookback and keep your window under 240 bars if you encounter this.
+//
+// ACKNOWLEDGEMENTS:
+// Many thanks to alexgrover for his extremely efficient functions (used with permission)
+//
+//@version=4
+study("[crg] Responsive Linear Regression", shorttitle="[crg] RLinReg", overlay=true, max_bars_back=3000)
+
+_source =        input( hlc3, title="Source", type=input.source)
+var _bars =      input(  100, title="Lookback bars", type=input.integer, minval=2)
+var usePeriods = input( true, title="Use smart lookback", type=input.bool)
+var useStDev =   input(false, title="Plot average+stdev (instead of trend+RMSE)", type=input.bool)
+
+var _dummy0 =    input(  false, title="========== APPEARANCE ==========")
+var _extend =    input("Right", title="Extend lines", type=input.string, options=["Right", "Both", "None"])
+var showHiLo =   input(   true, title="Hi/lo labels for the period", type=input.bool)
+var showStats =  input(   true, title="Show stats", type=input.bool)
+var extendL = _extend == "Right" ? extend.right : _extend == "Both" ? extend.both : extend.none
+
+var _dummy1 =    input(false, title="========== DEVIATIONS ==========")
+var sdMult =     input(  1.0, title="Deviation multiplier",  type=input.float,   minval=0.1, step=0.1)
+var showD =      input(    3, title="Deviations shown",      type=input.integer, minval=0, maxval=3)
+var showHD =     input(    2, title="Half-deviations shown", type=input.integer, minval=0, maxval=3)
+var _cT1 =       input(color.new(color.white,   35), "Trendline color")
+var _cD1 =       input(color.new(color.yellow,  35), "1st dev color")
+var _cD2 =       input(color.new(color.lime,    35), "2nd dev color")
+var _cD3 =       input(color.new(color.aqua,    35), "3rd dev color")
+var _cL  =       input(color.new(color.white,   35), "Label color")
+
+var _dummy2 =    input(false, title="========== SMART PERIOD SETTINGS ==========")
+var _wlStocks =  input(5.0 ,  title="Stocks week length, days", type=input.float,   minval=1, maxval=14, step=0.5)
+var _wlCrypto =  input(7.0 ,  title="Crypto week length, days", type=input.float,   minval=1, maxval=14, step=0.5)
+var _extraDays = input(1,     title="Add extra days",           type=input.integer, minval=0, maxval=14)
+
+var _dummy3 = input(false, title="========== SMART PERIOD FINE-TUNING ==========")
+var _p1mD   = input(  1, "1m, D",        type=input.integer, minval=1, maxval=3)
+var _p3mD   = input(  2, "3m / 5m, D",   type=input.integer, minval=1, maxval=7)
+var _p10mD  = input(  3, "10m, D",       type=input.integer, minval=1, maxval=14)
+var _p15mW  = input(  1, "15m, W",       type=input.integer, minval=1, maxval=8)
+var _p30mW  = input(  2, "30m, W",       type=input.integer, minval=1, maxval=12)
+var _p60mW  = input(  4, "1h, W",        type=input.integer, minval=1, maxval=16)
+var _p120mW = input(  8, "2h, W",        type=input.integer, minval=1, maxval=32)
+var _p180mW = input( 13, "3h, W",        type=input.integer, minval=1, maxval=52)
+var _p240mW = input( 25, "4h / 195m, W", type=input.integer, minval=1, maxval=104)
+var _p360mW = input( 36, "6h, W",        type=input.integer, minval=1, maxval=104)
+var _pD     = input( 50, "1D, W",        type=input.integer, minval=1, maxval=156)
+var _pW     = input(104, "1W, bars",     type=input.integer, minval=1, maxval=1300)
+var _pM     = input( 60, "1M, bars",     type=input.integer, minval=1, maxval=1200)
+
+
+// === SMART PERIODS
+var _wl = iff(syminfo.type == 'bitcoin', _wlCrypto, _wlStocks)
+var _bi = array.new_int(0, -1)
+
+is_new_dayofweek() => _d = dayofweek, na(_d[1]) or _d != _d[1]
+if is_new_dayofweek()
+    array.unshift(_bi, bar_index)
+
+_db(n) => bar_index - (array.size(_bi) >= (n + _extraDays) ? (array.get(_bi, (n + _extraDays) - 1)) : array.get(_bi, array.size(_bi) - 1)) + 1
+_wb(n) => _db(int(n * _wl))
+
+__p() =>
+    _p = 0
+    if usePeriods and not timeframe.isseconds
+        _p := iff(timeframe.isminutes,
+                 iff(timeframe.period ==   '1', _db(_p1mD),
+                 iff(timeframe.period ==   '3' or timeframe.period == '5', _db(_p3mD),
+                 iff(timeframe.period ==  '10', _db(_p10mD),
+                 iff(timeframe.period ==  '15', _wb(_p15mW),
+                 iff(timeframe.period ==  '30', _wb(_p30mW),
+                 iff(timeframe.period ==  '60', _wb(_p60mW),
+                 iff(timeframe.period == '120', _wb(_p120mW),
+                 iff(timeframe.period == '180', _wb(_p180mW),
+                 iff(timeframe.period == '240' or timeframe.period == '195', _wb(_p240mW),
+                 iff(timeframe.period == '360', _wb(_p360mW),
+                 _wb(4))))))))))),
+             iff(timeframe.period == 'D', _wb(_pD),
+             iff(timeframe.period == 'W', _pW,
+             iff(timeframe.period == 'M', _pM,
+             _db(10)))))
+    else
+        _p := _bars
+    _p := bar_index - 1 < _p ? bar_index - 1 : _p
+    _p < 2 ? 2 : _p                       // we need at least 2 complete bars to make a line
+
+var int _p = na
+_p := __p()
+
+
+// === Variable length functions and RMSE © by alexgrover
+// https://www.tradingview.com/script/kY5hhjA7-Functions-Allowing-Series-As-Length-PineCoders-FAQ/
+// https://www.tradingview.com/script/FGvtpiFR-TF-Segmented-Linear-Regression/
+Sum(src,p) => a = cum(src), a - a[max(p,0)]
+Sma(src,p) => a = cum(src), (a - a[max(p,0)])/max(p,0)
+Wma(src,p) =>
+    mp = max(p,0)
+    denom = mp*(mp+1)/2
+    a = cum(src), (mp*a - Sum(a[1],p))/denom
+
+Stdev(src,p) => p == 1 ? 0 : sqrt(Sma(src*src,p) - pow(Sma(src,p),2))
+Covariance(x,y,p) => Sma(x*y,p) - Sma(x,p)*Sma(y,p)
+Correlation(x,y,p) => Covariance(x,y,p)/(Stdev(x,p)*Stdev(y,p))
+
+// alexgrover's code doesn't use the latest/current bar, but we do
+a = Wma(_source, _p)
+b = Sma(_source, _p)
+
+A = 4*b - 3*a
+B = 3*a - 2*b
+m = (A - B) / (_p - 1)
+sse = 0.0
+ssr = 0.0
+for i = 0 to max(_p - 1, 1)
+    l = B + m*i
+    // sst := sst + pow(_source[i] - b, 2)
+    ssr := ssr + pow(l - b, 2)
+    sse := sse + pow(_source[i] - l, 2)
+sst = ssr + sse
+
+// Correlating to bar_index will yield the same results as correlating to the trendline, but without an extra loop,
+// because correlation is basically checking how much the actual price action resembles _a line_ without any regard for its slope.
+// The sign shows trend direction, but we don't care about it
+_corr = abs(Correlation(_source, bar_index, _p))
+_dev = iff(useStDev, Stdev(_source, _p), sqrt(sse / (_p - 1))) * sdMult
+
+// === CHART PREP
+startX = bar_index - (_p - 1)
+YA = iff(useStDev, b, A)
+YB = iff(useStDev, b, B)
+
+// === LABELS
+_strf(_s) => tostring(_s, "#.####")
+_lbu(_lbl, _x, _y, _txt, _st) => label.set_xy(_lbl, _x, _y), label.set_text(_lbl, _txt), label.set_style(_lbl, _st)
+var label _lbR = label.new(0, 0, "", textcolor=_cL, color=#00000000, textalign=text.align_left)
+var label _lbH = label.new(0, 0, "", color=_cL, textcolor=#000000)
+var label _lbL = label.new(0, 0, "", color=_cL, textcolor=#000000)
+
+_hb = int(abs(highestbars(_p)))
+_lb = int(abs(lowestbars(_p)))
+
+// === LINES
+_lc(_c, _s) => line.new(0, 0, 0, 0, xloc=xloc.bar_index, extend=extendL, color=_c, style=(_s == 1 ? line.style_solid : line.style_dashed), width=1)
+_lu(_l, _d) => line.set_xy1(_l, startX, YA+_dev*_d), line.set_xy2(_l, bar_index, YB+_dev*_d)
+
+var line _lnT = _lc(_cT1, 1)
+var line _lnUD05 = _lc(_cT1, 0), var line _lnUD10 = _lc(_cD1, 1), var line _lnUD15 = _lc(_cT1, 0), var line _lnUD20 = _lc(_cD2, 1), var line _lnUD25 = _lc(_cT1, 0), var line _lnUD30 = _lc(_cD3, 1)
+var line _lnLD05 = _lc(_cT1, 0), var line _lnLD10 = _lc(_cD1, 1), var line _lnLD15 = _lc(_cT1, 0), var line _lnLD20 = _lc(_cD2, 1), var line _lnLD25 = _lc(_cT1, 0), var line _lnLD30 = _lc(_cD3, 1)
+
+if bar_index >= 4       // don't barstate.islast me
+    _lu(_lnT, 0)
+
+    if showD > 0
+        _lu(_lnUD10,  1.0), _lu(_lnLD10, -1.0)
+    else
+        line.delete(_lnUD10), line.delete(_lnLD10)
+
+    if showD > 1
+        _lu(_lnUD20,  2.0), _lu(_lnLD20, -2.0)
+    else
+        line.delete(_lnUD20), line.delete(_lnLD20)
+
+    if showD > 2
+        _lu(_lnUD30,  3.0), _lu(_lnLD30, -3.0)
+    else
+        line.delete(_lnUD30), line.delete(_lnLD30)
+
+    if showHD > 0
+        _lu(_lnUD05,  0.5), _lu(_lnLD05, -0.5)
+    else
+        line.delete(_lnUD05), line.delete(_lnLD05)
+
+    if showHD > 1
+        _lu(_lnUD15,  1.5), _lu(_lnLD15, -1.5)
+    else
+        line.delete(_lnUD15), line.delete(_lnLD15)
+
+    if showHD > 2
+        _lu(_lnUD25,  2.5), _lu(_lnLD25, -2.5)
+    else
+        line.delete(_lnUD25), line.delete(_lnLD25)
+
+    if showStats
+        _lbu(_lbR, bar_index - (int(_p / 2 - 1)), iff(A < B, (A+B)/2 - _dev * showD, (A+B)/2 + _dev * showD), "r = " + _strf(_corr) + " ⋯ " + "R² = " + _strf(ssr/sst) + "\n" + tostring(_p) + " bars", iff(A < B, label.style_label_up, label.style_label_down))
+    else
+        label.delete(_lbR)
+
+    if showHiLo
+        _lbu(_lbH, bar_index - _hb, high[_hb], "Hi: " + tostring(high[_hb]), (_hb <= _lb ? label.style_label_lower_left : label.style_label_lower_right))
+        _lbu(_lbL, bar_index - _lb, low[_lb],  "Lo: " + tostring(low[_lb]),  (_hb <= _lb ? label.style_label_upper_right : label.style_label_upper_left))
+    else
+        label.delete(_lbH), label.delete(_lbL)

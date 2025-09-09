@@ -1,0 +1,96 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © HeWhoMustNotBeNamed
+
+//@version=4
+study("Zigzag Candles", shorttitle="ZCandles", overlay=true, max_boxes_count=500, max_lines_count=100)
+zigzagLength = input(5, step=5, minval=2, title="Zigzag Length", group="Zigzag Candles")
+candleSize = input(4, step=1, minval=3, title="Candle Width", group="Zigzag Candles")
+
+bullishColor = input(color.green, title="Bullish", group="Generic Colors", inline="gc")
+bearishColor = input(color.red, title="Bearish", group="Generic Colors", inline="gc")
+neutralColor = input(color.silver, title="Neutral", group="Generic Colors", inline="gc")
+transparency = input(70, step=10, minval=0, maxval=100, title="", group="Generic Colors", inline="gc")
+max_array_size= candleSize+2
+var zigzagpivots = array.new_float(0)
+var zigzagpivotbars = array.new_int(0)
+var zigzagpivotdirs = array.new_int(0)
+
+pivots(length)=>
+    float phigh = highestbars(high, length) == 0 ? high : na
+    float plow = lowestbars(low, length) == 0 ? low : na
+    dir = 0
+    dir := iff(phigh and na(plow), 1, iff(plow and na(phigh), -1, dir[1]))
+    [dir, phigh, plow, bar_index, bar_index]
+
+zigzagcore(dir, phigh, plow, phighbar, plowbar, zigzagpivots, zigzagpivotbars, zigzagpivotdirs)=>
+    dirchanged = change(dir)
+    newZG = false
+    if(phigh or plow)
+        value = (dir == 1? phigh : plow)
+        bar = phigh? phighbar : plowbar
+        newDir = dir
+        if(not dirchanged and array.size(zigzagpivots) >=1)
+            pivot = array.shift(zigzagpivots)
+            pivotbar = array.shift(zigzagpivotbars)
+            pivotdir = array.shift(zigzagpivotdirs)
+            useNewValues = value*pivotdir < pivot*pivotdir
+            value:= useNewValues? pivot : value
+            bar := useNewValues? pivotbar : bar
+
+        if(array.size(zigzagpivots) >=2)
+            LastPoint = array.get(zigzagpivots,1)
+            newDir := dir*value > dir*LastPoint? dir*2 : dir
+
+        array.unshift(zigzagpivots, value = value)
+        array.unshift(zigzagpivotbars, bar)
+        array.unshift(zigzagpivotdirs, newDir)
+        newZG := true
+        if(array.size(zigzagpivots) > max_array_size)
+            array.pop(zigzagpivots)
+            array.pop(zigzagpivotbars)
+            array.pop(zigzagpivotdirs)
+    newZG
+
+zigzag(length, zigzagpivots, zigzagpivotbars, zigzagpivotdirs)=>
+    [dir, phigh, plow, phighbar, plowbar] = pivots(length)
+    zigzagcore(dir, phigh, plow, phighbar, plowbar, zigzagpivots, zigzagpivotbars, zigzagpivotdirs)
+
+zigzagcandle(zigzagpivots, zigzagpivotbars)=>
+    if(array.size(zigzagpivots) > candleSize+1)
+        index = 1
+        zOpen = array.remove(zigzagpivots, index+candleSize)
+        zOpenBar = array.remove(zigzagpivotbars, index+candleSize)
+
+        zClose = array.get(zigzagpivots, index)
+        zCloseBar = array.get(zigzagpivotbars, index)
+
+        zHigh = zOpen > zClose? zOpen : zClose
+        zHighBar = zOpen > zClose? zOpenBar : zCloseBar
+        zLow = zOpen < zClose? zOpen : zClose
+        zLowBar = zOpen < zClose? zOpenBar : zCloseBar
+
+        if(candleSize > 2)
+            for i=index+candleSize-1 to index+1
+                middle = array.remove(zigzagpivots, i)
+                middleBar = array.remove(zigzagpivotbars, i)
+                if(middle >= zHigh)
+                    zHigh := middle
+                    zHighBar := middleBar
+                if(middle <= zLow)
+                    zLow := middle
+                    zLowBar := middleBar
+
+        barColor = zClose > zOpen? color.new(bullishColor, transparency) : zClose < zOpen ? color.new(bearishColor, transparency)  : color.new(neutralColor, transparency)
+
+        zLowBar := zLowBar == zOpenBar? zLowBar+1 : zLowBar == zCloseBar? zLowBar -1 : zLowBar
+        zHighBar := zHighBar == zOpenBar? zHighBar+1 : zHighBar == zCloseBar? zHighBar -1 : zHighBar
+        zOpenBar := zOpenBar+1
+        zCloseBar := zCloseBar-1
+        candle = box.new(zOpenBar, max(zOpen, zClose), zCloseBar, min(zOpen, zClose), border_color=barColor, bgcolor=barColor)
+        if(zLow < min(zOpen, zClose))
+            lWick = line.new(zLowBar, zLow, zLowBar, min(zOpen, zClose), color=barColor, width=1, style=line.style_solid)
+        if(zHigh > max(zOpen, zClose))
+            uWick = line.new(zHighBar, zHigh, zHighBar, max(zOpen, zClose), color=barColor, width=1, style=line.style_solid)
+
+ZG = zigzag(zigzagLength, zigzagpivots, zigzagpivotbars, zigzagpivotdirs)
+zigzagcandle(zigzagpivots, zigzagpivotbars)

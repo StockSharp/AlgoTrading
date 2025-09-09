@@ -1,0 +1,66 @@
+//@version=4
+strategy("Optimized Liquidity Grab & Market Structure Shift Strategy for Gold & EUR/USD", overlay=true)
+
+// Define input parameters
+lengthRSI = input(14, title="RSI Length")
+overbought = input(70, title="Overbought Level")
+oversold = input(30, title="Oversold Level")
+maLength = input(50, title="Moving Average Length")
+stochLength = input(14, title="Stochastic Length")
+stochOverbought = input(80, title="Stochastic Overbought Level")
+stochOversold = input(20, title="Stochastic Oversold Level")
+
+// RSI Calculation
+rsi = rsi(close, lengthRSI)
+
+// Moving Average
+ma = sma(close, maLength)
+
+// Stochastic Oscillator Calculation
+k = sma(stoch(close, high, low, stochLength), 3)
+d = sma(k, 3)
+
+// Identify Supply and Demand Zones
+demandZone = lowest(low, 20)
+supplyZone = highest(high, 20)
+
+// Plot supply and demand zones
+plot(demandZone, color=color.green, linewidth=2, title="Demand Zone")
+plot(supplyZone, color=color.red, linewidth=2, title="Supply Zone")
+
+// Liquidity Grab - look for a wick below recent lows (demand zone) or above recent highs (supply zone)
+liquidityGrabLow = low < demandZone
+liquidityGrabHigh = high > supplyZone
+
+// Market Structure Shift
+// Bullish shift: higher high and higher low
+bullishShift = (high > highest(high[1], 5)) and (low > lowest(low[1], 5))
+// Bearish shift: lower high and lower low
+bearishShift = (low < lowest(low[1], 5)) and (high < highest(high[1], 5))
+
+// Fair Value Gap (FVG) detection
+fairValueGap = (abs(close - close[1]) > (atr(14) * 0.5))
+
+// Buy condition: Liquidity grab at demand zone, bullish market structure shift, and FVG, plus MA and Stoch
+buyCondition = liquidityGrabLow and bullishShift and fairValueGap and (rsi < oversold) and (close > ma) and (k < stochOversold) and (d < stochOversold)
+if (buyCondition)
+    strategy.entry("Buy", strategy.long)
+
+// Sell condition: Liquidity grab at supply zone, bearish market structure shift, and FVG, plus MA and Stoch
+sellCondition = liquidityGrabHigh and bearishShift and fairValueGap and (rsi > overbought) and (close < ma) and (k > stochOverbought) and (d > stochOverbought)
+if (sellCondition)
+    strategy.entry("Sell", strategy.short)
+
+// Plot RSI for reference
+hline(overbought, "Overbought", color=color.red)
+hline(oversold, "Oversold", color=color.green)
+plot(rsi, color=color.blue, title="RSI")
+
+// Plot Moving Average
+plot(ma, color=color.orange, title="Moving Average")
+
+// Plot Stochastic Oscillator
+hline(stochOverbought, "Stoch Overbought", color=color.red)
+hline(stochOversold, "Stoch Oversold", color=color.green)
+plot(k, color=color.blue, title="Stochastic %K")
+plot(d, color=color.red, title="Stochastic %D")

@@ -1,0 +1,55 @@
+//@version=5
+strategy("Bitcoin 1H-15M Breakout Strategy", overlay=true)
+
+// === Inputs ===
+lot_size = input.float(1, title="Lot Size") // Trade size
+sl_buffer = input.float(50, title="Stop Loss Buffer (pips)", step=1) // Buffer in pips for stop loss
+risk_reward_ratio = input.float(2.0, title="Risk-Reward Ratio") // 2:1 RRR
+show_debug = input.bool(false, title="Show Debug Info") // Debug mode
+
+// === Timeframes ===
+higher_tf = "60"    // 1-hour timeframe
+lower_tf = "15"     // 15-minute timeframe
+
+// === Retrieve Data from Higher Timeframe (1H) ===
+range_high = request.security(syminfo.tickerid, higher_tf, high[1]) // Previous 1H high
+range_low = request.security(syminfo.tickerid, higher_tf, low[1])   // Previous 1H low
+
+// === 15-Minute Candle Close ===
+close_15m = request.security(syminfo.tickerid, lower_tf, close)
+
+// === Breakout Conditions ===
+long_condition = close_15m > range_high  // 15M close above previous 1H high
+short_condition = close_15m < range_low // 15M close below previous 1H low
+
+// === Variables for Risk Management ===
+var float entry_price = na // Entry price
+var float sl_price = na    // Stop-loss price
+var float tp_price = na    // Take-profit price
+
+// === Long Entry Logic ===
+if (long_condition)
+    entry_price := close_15m
+    sl_price := entry_price - (sl_buffer / 1) // Adjust buffer based on price scale
+    tp_price := entry_price + (entry_price - sl_price) * risk_reward_ratio
+    if (sl_price > 0 and tp_price > 0)
+        strategy.entry("Long", strategy.long, qty=lot_size)
+        strategy.exit("TP/SL Long", from_entry="Long", stop=sl_price, limit=tp_price)
+
+// === Short Entry Logic ===
+if (short_condition)
+    entry_price := close_15m
+    sl_price := entry_price + (sl_buffer / 1) // Adjust buffer based on price scale
+    tp_price := entry_price - (sl_price - entry_price) * risk_reward_ratio
+    if (sl_price > 0 and tp_price > 0)
+        strategy.entry("Short", strategy.short, qty=lot_size)
+        strategy.exit("TP/SL Short", from_entry="Short", stop=sl_price, limit=tp_price)
+
+// === Debugging and Visualization ===
+if (show_debug)
+    label.new(bar_index, high, "SL: " + str.tostring(sl_price) + "\nTP: " + str.tostring(tp_price), style=label.style_circle, color=color.yellow)
+
+// === Plotting ===
+// Visualize the 1H high and low levels
+plot(range_high, title="Range High (1H)", color=color.green, linewidth=2)
+plot(range_low, title="Range Low (1H)", color=color.red, linewidth=2)

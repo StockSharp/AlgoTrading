@@ -1,0 +1,150 @@
+//@version=5
+strategy("Options Strategy V1.4", overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0, pyramiding=0, calc_on_every_tick=true, process_orders_on_close=true)
+
+// === PRESET SELECTOR ===
+preset = input.string("Custom", "Preset",
+     options=["SPY","TSLA","AAPL","MSFT","META","AMZN","Custom"],
+     tooltip="Choose a preset or 'Custom' to edit manually")
+
+// === INPUTS (used only when 'Custom' is selected) ===
+enableEODClose    = input.bool(true,  "Auto-close at 15:55 EST?", tooltip="Automatically close all positions at 15:55 EST")
+enableORBreakout  = input.bool(false, "Require OR Breakout?",   tooltip="Only fire entries when price closes beyond Opening Range")
+signalDir         = input.string("Both", "Signal Direction", options=["Long","Short","Both"])
+
+emaShortInput     = input.int(8,      "EMA Short Length",      minval=1)
+emaLongInput      = input.int(28,     "EMA Long Length",       minval=1)
+rsiLengthInput    = input.int(12,     "RSI Length",            minval=1)
+rsiLongThreshIn   = input.int(56,     "RSI Long Threshold",    minval=50, maxval=100)
+rsiShortThreshIn  = input.int(26,     "RSI Short Threshold",   minval=0,  maxval=50)
+atrLengthInput    = input.int(14,     "ATR Length",            minval=1)
+slMultInput       = input.float(1.4,  "SL Multiplier (× ATR)", step=0.1)
+tpSlRatioInput    = input.float(4.0,  "TP/SL Ratio",           step=0.1)
+lineExtendInput   = input.int(50,     "SL/TP Line Extend Bars",minval=1)
+
+// === NEW: No-Trade Session Input ===
+noTradeSession = input.session("1200-1500", "No-Trade Time", tooltip="HHMM-HHMM in NY time, during which no new entries fire")
+
+// === NEW: Volume MA Input ===
+volMaLenInput = input.int(20, "Volume MA Length", minval=1, tooltip="Length for volume moving average")
+volMa = ta.sma(volume, volMaLenInput)
+plot(volMa, title="Volume MA", color=color.gray)
+volOk = volume >= volMa
+
+// === APPLY PRESETS ===
+emaShortLength  = preset=="SPY"  ? 13 : preset=="TSLA" ? 23 : preset=="AAPL" ? 6  : preset=="MSFT" ? 25 : preset=="META" ? 25 : preset=="AMZN" ? 28 : emaShortInput
+emaLongLength   = preset=="SPY"  ? 28 : preset=="TSLA" ? 27 : preset=="AAPL" ? 13 : preset=="MSFT" ? 32 : preset=="META" ? 32 : preset=="AMZN" ? 32 : emaLongInput
+rsiLength       = preset=="SPY"  ? 14 : preset=="TSLA" ? 12 : preset=="AAPL" ? 11 : preset=="MSFT" ? 10 : preset=="META" ? 8  : preset=="AMZN" ? 7  : rsiLengthInput
+rsiLongThresh   = preset=="SPY"  ? 54 : preset=="TSLA" ? 56 : preset=="AAPL" ? 61 : preset=="MSFT" ? 54 : preset=="META" ? 53 : preset=="AMZN" ? 55 : rsiLongThreshIn
+rsiShortThresh  = preset=="SPY"  ? 27 : preset=="TSLA" ? 33 : preset=="AAPL" ? 26 : preset=="MSFT" ? 26 : preset=="META" ? 26 : preset=="AMZN" ? 25 : rsiShortThreshIn
+atrLength       = preset=="SPY"  ? 10 : preset=="TSLA" ? 13 : preset=="AAPL" ? 23 : preset=="MSFT" ? 14 : preset=="META" ? 17 : preset=="AMZN" ? 16 : atrLengthInput
+slMultiplier    = preset=="SPY"  ? 1.3: preset=="TSLA" ? 1.4: preset=="AAPL" ? 1.4: preset=="MSFT" ? 1.2: preset=="META" ? 1.8: preset=="AMZN" ? 1.8: slMultInput
+tpSlRatio       = preset=="SPY"  ? 4.5: preset=="TSLA" ? 3.6: preset=="AAPL" ? 2.1: preset=="MSFT" ? 2.2: preset=="META" ? 2.3: preset=="AMZN" ? 2.3: tpSlRatioInput
+lineExtendBars  = lineExtendInput
+
+// === INDICATORS ===
+emaShort = ta.ema(close, emaShortLength)
+emaLong  = ta.ema(close, emaLongLength)
+rsiVal   = ta.rsi(close, rsiLength)
+atrVal   = ta.atr(atrLength)
+
+plot(emaShort, title="EMA Short", color=color.blue)
+plot(emaLong,  title="EMA Long",   color=color.orange)
+
+// === OPENING RANGE ===
+sessionOR       = time(timeframe.period, "0930-0945", "America/New_York")
+inOR            = not na(sessionOR)
+var float orHigh = na
+var float orLow  = na
+var bool orRun   = false
+var line orHighLine = na
+var line orLowLine  = na
+
+if inOR
+    if not orRun
+        orRun := true
+        orHigh := high
+        orLow  := low
+    else
+        orHigh := math.max(orHigh, high)
+        orLow  := math.min(orLow, low)
+else
+    if orRun
+        if not na(orHighLine)
+            line.delete(orHighLine)
+        if not na(orLowLine)
+            line.delete(orLowLine)
+        orHighLine := line.new(bar_index-1, orHigh, bar_index-1 + lineExtendBars, orHigh, extend=extend.none, color=color.white, width=2)
+        orLowLine  := line.new(bar_index-1, orLow,  bar_index-1 + lineExtendBars, orLow,  extend=extend.none, color=color.white, width=2)
+        orRun := false
+
+// === SESSION BLOCKING ===
+blockedMorning = not na(time(timeframe.period, "0400-0930", "America/New_York"))
+blockedEvening = not na(time(timeframe.period, "1600-2000", "America/New_York"))
+inNoTrade      = not na(time(timeframe.period, noTradeSession,    "America/New_York"))
+blockedSession = blockedMorning or blockedEvening or inNoTrade
+
+// === TRACK ENTRY ===
+var int   entryBar = na
+var float slVal    = na
+var float tpVal    = na
+var line  slLine   = na
+var line  tpLine   = na
+
+// === CROSSOVER FLAGS ===
+var bool readyLong  = false
+var bool readyShort = false
+if ta.crossover(emaShort, emaLong)
+    readyLong  := true
+    readyShort := false
+if ta.crossunder(emaShort, emaLong)
+    readyShort := true
+    readyLong  := false
+
+// === EOD CLOSE ===
+if enableEODClose
+    nyHour   = hour(time, "America/New_York")
+    nyMinute = minute(time, "America/New_York")
+    if nyHour == 15 and nyMinute == 55 and barstate.isconfirmed
+        strategy.close_all()
+
+// === ENTRY LOGIC (with volume filter) ===
+if not blockedSession and volOk
+    if (signalDir == "Long" or signalDir == "Both") and readyLong and rsiVal >= rsiLongThresh and (not enableORBreakout or close > orHigh)
+        strategy.entry("Long", strategy.long)
+        entryBar := bar_index
+        if not na(slLine)
+            line.delete(slLine)
+        if not na(tpLine)
+            line.delete(tpLine)
+        slVal := close - atrVal * slMultiplier
+        tpVal := close + atrVal * slMultiplier * tpSlRatio
+        slLine := line.new(bar_index, slVal, bar_index + lineExtendBars, slVal, extend=extend.none, color=color.red, width=2)
+        tpLine := line.new(bar_index, tpVal, bar_index + lineExtendBars, tpVal, extend=extend.none, color=color.green, width=2)
+        readyLong := false
+
+    if (signalDir == "Short" or signalDir == "Both") and readyShort and rsiVal <= rsiShortThresh and (not enableORBreakout or close < orLow)
+        strategy.entry("Short", strategy.short)
+        entryBar := bar_index
+        if not na(slLine)
+            line.delete(slLine)
+        if not na(tpLine)
+            line.delete(tpLine)
+        slVal := close + atrVal * slMultiplier
+        tpVal := close - atrVal * slMultiplier * tpSlRatio
+        slLine := line.new(bar_index, slVal, bar_index + lineExtendBars, slVal, extend=extend.none, color=color.red, width=2)
+        tpLine := line.new(bar_index, tpVal, bar_index + lineExtendBars, tpVal, extend=extend.none, color=color.green, width=2)
+        readyShort := false
+
+// === EXIT LOGIC ===
+if not na(entryBar) and bar_index > entryBar
+    strategy.exit("Exit Long",  from_entry="Long",  stop=slVal, limit=tpVal)
+    strategy.exit("Exit Short", from_entry="Short", stop=slVal, limit=tpVal)
+
+// === EMA CROSS EXIT ===
+crossUnderPrev = emaShort[1] > emaLong[1] and emaShort < emaLong
+crossOverPrev  = emaShort[1] < emaLong[1] and emaShort > emaLong
+if not na(entryBar) and bar_index > entryBar and barstate.isconfirmed
+    if strategy.position_size > 0 and crossUnderPrev
+        strategy.close("Long")
+    if strategy.position_size < 0 and crossOverPrev
+        strategy.close("Short")

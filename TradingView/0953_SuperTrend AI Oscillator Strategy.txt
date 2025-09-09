@@ -1,0 +1,78 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=6
+strategy('SuperTrend AI Oscillator Strategy', overlay = true, max_labels_count = 500, default_qty_type = strategy.percent_of_equity, default_qty_value = 100)
+
+//------------------------------------------------------------------------------
+// 📌 SuperTrend 計算
+//------------------------------------------------------------------------------
+length = input(10, 'ATR Length')
+atr = ta.atr(length)
+
+minMult = input.int(1, 'Factor Range', minval = 0, inline = 'factor')
+maxMult = input.int(5, '', minval = 0, inline = 'factor')
+step = input.float(.5, 'Step', minval = 0, step = 0.1)
+
+var float target_factor = na
+target_factor := na(target_factor) ? minMult : target_factor
+
+var float upper = hl2
+var float lower = hl2
+var int os = 0
+
+up = hl2 + atr * target_factor
+dn = hl2 - atr * target_factor
+upper := close[1] < upper ? math.min(up, upper) : up
+lower := close[1] > lower ? math.max(dn, lower) : dn
+os := close > upper ? 1 : close < lower ? 0 : os
+ts = os == 1 ? lower : upper // トレーリングストップ
+
+//------------------------------------------------------------------------------
+// 📌 Super Oscillator 計算
+//------------------------------------------------------------------------------
+super_osc = 3 * ta.sma((close - ta.lowest(low, 13)) / (ta.highest(high, 13) - ta.lowest(low, 13)) * 100, 5) - 2 * ta.sma(ta.sma((close - ta.lowest(low, 13)) / (ta.highest(high, 13) - ta.lowest(low, 13)) * 100, 5), 3)
+
+// **Super Oscillator フィルタ**
+superOscFilterLong = super_osc > 50
+superOscFilterShort = super_osc < 50
+
+//------------------------------------------------------------------------------
+// 📌 ストラテジーロジック（確定バーを利用）
+//------------------------------------------------------------------------------
+// **エントリーを次の足の始値で実行**
+longCondition = not na(os[1]) and os[1] == 0 and os == 1 and superOscFilterLong
+shortCondition = not na(os[1]) and os[1] == 1 and os == 0 and superOscFilterShort
+
+// 🎯 **反転売買の実装 (次の足の始値でエントリー)**
+if longCondition
+    strategy.close('Short') // 既存のショートポジションをクローズ
+    if bar_index != last_bar_index // **次の足の始値でロング**
+        strategy.entry('Long', strategy.long, comment = 'BUY')
+
+if shortCondition
+    strategy.close('Long') // 既存のロングポジションをクローズ
+    if bar_index != last_bar_index // **次の足の始値でショート**
+        strategy.entry('Short', strategy.short, comment = 'SELL')
+
+// 🎯 **トレーリングストップの適用**
+strategy.exit('Long Exit', from_entry = 'Long', stop = ts)
+strategy.exit('Short Exit', from_entry = 'Short', stop = ts)
+
+// 🎯 **オプション: テイクプロフィットを追加 (リスクリワード 1:2)**
+riskRewardRatio = input.float(2.0, title = 'Risk-Reward Ratio', minval = 1.0)
+takeProfitLong = ts + (ts - strategy.position_avg_price) * riskRewardRatio
+takeProfitShort = ts - (strategy.position_avg_price - ts) * riskRewardRatio
+
+strategy.exit('Long TP', from_entry = 'Long', limit = takeProfitLong)
+strategy.exit('Short TP', from_entry = 'Short', limit = takeProfitShort)
+
+//------------------------------------------------------------------------------
+// 🎨 プロット (オリジナルの LuxAlgo スタイル)
+//------------------------------------------------------------------------------
+plot(ts, 'Trailing Stop', color = os == 1 ? color.green : color.red, linewidth = 2)
+
+// **シグナルの可視化 (シグナルが確定した足にラベルを表示)**
+if longCondition
+    label.new(bar_index, low, 'BUY', color = color.green, textcolor = color.white, size = size.tiny, style = label.style_label_up)
+
+if shortCondition
+    label.new(bar_index, high, 'SELL', color = color.red, textcolor = color.white, size = size.tiny, style = label.style_label_down)

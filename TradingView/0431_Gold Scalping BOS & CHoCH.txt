@@ -1,0 +1,55 @@
+//@version=6
+strategy("Gold Scalping BOS & CHoCH", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1)
+
+// Support & Resistance Levels
+recentLow = ta.lowest(low, 10)
+recentHigh = ta.highest(high, 10)
+
+// Break of Structure (BOS) with Confirmation
+var float lastSwingHigh = na
+var float lastSwingLow = na
+bosBullish = false
+bosBearish = false
+
+lastSwingHigh := ta.highest(high[1], 5)
+bosBullish := high > lastSwingHigh
+
+lastSwingLow := ta.lowest(low[1], 5)
+bosBearish := low < lastSwingLow
+
+// Change of Character (CHoCH) with Immediate Reaction
+chochBullish = bosBearish and ta.crossover(close, lastSwingLow)
+chochBearish = bosBullish and ta.crossunder(close, lastSwingHigh)
+
+// Buy Entry Conditions (Refined for Early Entries)
+buyCondition = bosBullish and chochBullish
+
+// Sell Entry Conditions (Refined for Early Entries)
+sellCondition = bosBearish and chochBearish
+
+// Stop Loss & Take Profit (Dynamic and Adaptive)
+longSL = recentLow
+shortSL = recentHigh
+longTP = close + ((close - longSL) * 2)
+shortTP = close - ((shortSL - close) * 2)
+
+// Ensure SL and TP are valid before executing trades
+validLongTrade = buyCondition and (longSL < close)
+validShortTrade = sellCondition and (shortSL > close)
+
+// Execute Trades
+if validLongTrade
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", from_entry="Long", stop=longSL, limit=longTP)
+
+if validShortTrade
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit Short", from_entry="Short", stop=shortSL, limit=shortTP)
+
+// Plot Buy/Sell Signals
+plotshape(series=buyCondition, location=location.belowbar, color=color.green, style=shape.labelup, title="BUY")
+plotshape(series=sellCondition, location=location.abovebar, color=color.red, style=shape.labeldown, title="SELL")
+
+// Debugging: Show swing high/low levels
+plot(lastSwingHigh, title="Last Swing High", color=color.blue, linewidth=2, style=plot.style_linebr)
+plot(lastSwingLow, title="Last Swing Low", color=color.orange, linewidth=2, style=plot.style_linebr)

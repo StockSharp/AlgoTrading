@@ -1,0 +1,25 @@
+//@version=5
+strategy("Averaging Down Strategy", overlay=false)
+
+// Parameter
+rsiLength = input(10, title="RSI Length")
+rsiBuyThreshold = input(33, title="RSI Buy Threshold")
+
+// Berechnung des RSI
+rsiValue = ta.rsi(close, rsiLength)
+
+// Kaufbedingung: RSI unter dem Schwellenwert
+buyCondition = rsiValue < rsiBuyThreshold
+
+// Verkaufsbedingung: Schlusskurs höher als das Hoch des Vortages
+sellCondition = close > ta.highest(high, 1)[1]
+
+// Backtesting der Strategie
+if (buyCondition)
+    strategy.entry("Buy", strategy.long)
+if (sellCondition)
+    strategy.close("Buy")
+
+// Plot von RSI für Referenz
+plot(rsiValue, title="RSI", color=color.blue)
+hline(rsiBuyThreshold, "RSI Buy Threshold", color=color.red)

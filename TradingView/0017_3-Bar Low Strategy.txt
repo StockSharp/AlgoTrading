@@ -1,0 +1,30 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Botnet101
+
+//@version=6
+strategy('3-Bar Low Strategy', overlay = true, precision = 4, initial_capital = 1000000, default_qty_value = 100, default_qty_type = strategy.percent_of_equity, process_orders_on_close = true, margin_long = 5, margin_short = 5, calc_on_every_tick = true)
+
+in_start_time = input.time(timestamp('1 Jan 2014'), title = 'Start Time', group = 'Time Settings')
+in_end_time = input.time(timestamp('1 Jan 2099'), title = 'End Time', group = 'Time Settings')
+in_window = time >= in_start_time and time <= in_end_time
+
+maPeriod = input.int(defval = 200)
+useEmaFilter = input.bool(defval = false, title = 'Use EMA Filter?')
+
+_ma = ta.ema(close, maPeriod)
+
+_lowest = ta.lowest(close, 3)
+_highest = ta.highest(close, 7)
+
+longCondition = close < _lowest[1] and in_window
+exitCondition = close > _highest[1]
+
+if useEmaFilter
+    longCondition := longCondition and close > _ma
+
+if longCondition
+    strategy.entry('long', strategy.long)
+if exitCondition
+    strategy.close_all()
+
+plot(_highest[1])

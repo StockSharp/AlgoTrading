@@ -1,0 +1,321 @@
+//@version=5
+strategy(title="Honest Volatility Grid Strategy", shorttitle="Honest Volatility", overlay=true, max_bars_back=2000, initial_capital = 25000, slippage=20, backtest_fill_limits_assumption=20, commission_value = 0.00005, commission_type=strategy.commission.cash_per_contract, pyramiding=3)
+KClength            = input.int(defval=200, minval=1,                  title="Volatility Channel Length"  )
+KCmult1             = input(defval=1.0,                                title="Volatility Multiplier"      )
+longRangeLows       = 14
+longRangeHigh       = 7
+useLEntry1          = input.bool(defval=true,                          title="Long Entry(1)",           group="long strategy inputs",    inline = "LEntry1")
+LEntry1Level        = input.int(defval=-2,                             title="level",                   group="long strategy inputs",    inline = "LEntry1")
+LEntry1Size         = input.float(defval=0.01,                         title="size",                    group="long strategy inputs",    inline = "LEntry1")
+useLEntry2          = input.bool(defval=true,                          title="Long Entry(2)",           group="long strategy inputs",    inline = "LEntry2")
+LEntry2Level        = input.int(defval=-6,                             title="level",                   group="long strategy inputs",    inline = "LEntry2")
+LEntry2Size         = input.float(defval=0.01,                         title="size",                    group="long strategy inputs",    inline = "LEntry2")
+useLEntry3          = input.bool(defval=true,                          title="Long Entry(3)",           group="long strategy inputs",    inline = "LEntry3")
+LEntry3Level        = input.int(defval=-8,                             title="level",                   group="long strategy inputs",    inline = "LEntry3")
+LEntry3Size         = input.float(defval=0.01,                         title="size",                    group="long strategy inputs",    inline = "LEntry3")
+longRangeSL         = input.int(defval=-10,                            title="stop loss",               group="long strategy inputs",    inline = "2")
+longRangeTP         = input.int(defval=0,                              title="take profit",             group="long strategy inputs",    inline = "2")
+shortRangeLows      = 14
+shortRangeHigh      = 7
+useSEntry1          = input.bool(defval=true,                          title="Short Entry(1)",          group="short strategy inputs",    inline = "SEntry1")
+SEntry1Level        = input.int(defval=2,                              title="level",                   group="short strategy inputs",    inline = "SEntry1")
+SEntry1Size         = input.float(defval=0.01,                         title="size",                    group="short strategy inputs",    inline = "SEntry1")
+useSEntry2          = input.bool(defval=true,                          title="Short Entry(2)",          group="short strategy inputs",    inline = "SEntry2")
+SEntry2Level        = input.int(defval=6,                              title="level",                   group="short strategy inputs",    inline = "SEntry2")
+SEntry2Size         = input.float(defval=0.01,                         title="size",                    group="short strategy inputs",    inline = "SEntry2")
+useSEntry3          = input.bool(defval=true,                          title="Short Entry(3)",          group="short strategy inputs",    inline = "SEntry3")
+SEntry3Level        = input.int(defval=8,                              title="level",                   group="short strategy inputs",    inline = "SEntry3")
+SEntry3Size         = input.float(defval=0.01,                         title="size",                    group="short strategy inputs",    inline = "SEntry3")
+shortRangeSL        = input.int(defval=10,                             title="stop loss",               group="short strategy inputs",    inline = "4")
+shortRangeTP        = input.int(defval=0,                              title="take profit",             group="short strategy inputs",    inline = "4")
+rawStopLevel        = input.int(defval=20,                             title="raw stop level",          group="extra security", tooltip="A fixed stop that the trade starts with. This is also for safety in the broker as we exit using market orders. In case there is a heavy news event you want to be protected.\nThis is calculated using same deviations as the bands are. So it's multiplier from center moving average.")
+
+bandsColor          = input.color(defval=#b6b6b6,                    title="Bands Color",             group="Visual Style")
+
+KCmult2             = KCmult1+KCmult1
+KCmult3             = KCmult2+KCmult1
+KCmult4             = KCmult3+KCmult1
+KCmult5             = KCmult4+KCmult1
+KCmult6             = KCmult5+KCmult1
+KCmult7             = KCmult6+KCmult1
+KCmult8             = KCmult7+KCmult1
+KCmult9             = KCmult8+KCmult1
+KCmult10            = KCmult9+KCmult1
+
+
+// ================================== //
+// -----> Immutable Constants <------ //
+// ================================== //
+
+sync            =   bar_index
+confirmed       =   barstate.isconfirmed
+extrap          =   extend.none
+
+var longRange   =   array.new_bool   (1)
+var shortRange  =   array.new_bool   (1)
+
+// ====================================== //
+// -----> Functional Declarations <------ //
+// ====================================== //
+
+_arrayLoad(_x, _max, _val) =>
+    array.unshift                               (_x,   _val)
+    if  array.size                              (_x) > _max
+        array.pop                               (_x)
+
+// ==================================== //
+// -----> Variables Calculation <------ //
+// ==================================== //
+
+src                 = close
+ma                  = ta.ema(src, KClength)
+rangema             = ta.rma(high - low, KClength)
+upper1              = ma + rangema * KCmult1
+lower1              = ma - rangema * KCmult1
+upper2              = ma + rangema * KCmult2
+lower2              = ma - rangema * KCmult2
+upper3              = ma + rangema * KCmult3
+lower3              = ma - rangema * KCmult3
+upper4              = ma + rangema * KCmult4
+lower4              = ma - rangema * KCmult4
+upper5              = ma + rangema * KCmult5
+lower5              = ma - rangema * KCmult5
+upper6              = ma + rangema * KCmult6
+lower6              = ma - rangema * KCmult6
+upper7              = ma + rangema * KCmult7
+lower7              = ma - rangema * KCmult7
+upper8              = ma + rangema * KCmult8
+lower8              = ma - rangema * KCmult8
+upper9              = ma + rangema * KCmult9
+lower9              = ma - rangema * KCmult9
+upper10             = ma + rangema * KCmult10
+lower10             = ma - rangema * KCmult10
+rawLowerStop        = ma - rangema * rawStopLevel
+rawUpperStop        = ma + rangema * rawStopLevel
+
+// ======================================== //
+// ---------> Market Profiling <----------- //
+// ======================================== //
+
+marketProfileSource1 = close
+marketProfileSource2 = high
+marketProfileSource3 = low
+marketProfileLength  = input.int(defval=200,minval=10,                    title="lookback",                          group="market profiling")
+amountOfColumns      = 20
+distLastCandle       = input.int(defval=1,minval=0,                       title="distance from indicator (visual)",  group="market profiling")
+borderWidth          = input.int(defval=1,minval=1,                       title="linewidth (visual)",                group="market profiling")
+boxColor             = input.color(defval=color.rgb(238,130,238,20),    title="Box Color",                         group="market profiling")
+boxBorderColor       = input.color(color.rgb(75,0,130,70),              title="Outline Color",                     group="market profiling")
+topOfProfile         = upper8
+bottomOfProfile      = lower8
+ColumnSize           = (topOfProfile-bottomOfProfile)/amountOfColumns
+a_allBoxes = box.all
+if array.size(a_allBoxes) > 0
+    for i = 0 to array.size(a_allBoxes) - 1
+        box.delete(array.get(a_allBoxes, i))
+
+f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, topOfZone, bottomOfZone) =>
+    occurenceInZone = 0
+
+    if barstate.islast
+        for counter = 0 to marketProfileLength
+            if (marketProfileSource1[counter]>bottomOfZone[counter] and marketProfileSource1[counter]<topOfZone[counter]) or (marketProfileSource2[counter]>bottomOfZone[counter] and marketProfileSource2[counter]<bottomOfZone[counter]) or (marketProfileSource3[counter]>bottomOfZone[counter] and marketProfileSource3[counter]<bottomOfZone[counter])
+                occurenceInZone := occurenceInZone>=0?occurenceInZone+1:0
+    [occurenceInZone,topOfZone,bottomOfZone]
+
+[occurenceBox1,topOfBox1,bottomOfBox1]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper10, upper9)
+[occurenceBox2,topOfBox2,bottomOfBox2]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper9, upper8)
+[occurenceBox3,topOfBox3,bottomOfBox3]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper8, upper7)
+[occurenceBox4,topOfBox4,bottomOfBox4]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper7, upper6)
+[occurenceBox5,topOfBox5,bottomOfBox5]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper6, upper5)
+[occurenceBox6,topOfBox6,bottomOfBox6]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper5, upper4)
+[occurenceBox7,topOfBox7,bottomOfBox7]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper4, upper3)
+[occurenceBox8,topOfBox8,bottomOfBox8]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper3, upper2)
+[occurenceBox9,topOfBox9,bottomOfBox9]    = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper2, upper1)
+[occurenceBox10,topOfBox10,bottomOfBox10] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, upper1, ma    )
+[occurenceBox11,topOfBox11,bottomOfBox11] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, ma    , lower1)
+[occurenceBox12,topOfBox12,bottomOfBox12] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower1, lower2)
+[occurenceBox13,topOfBox13,bottomOfBox13] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower2, lower3)
+[occurenceBox14,topOfBox14,bottomOfBox14] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower3, lower4)
+[occurenceBox15,topOfBox15,bottomOfBox15] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower4, lower5)
+[occurenceBox16,topOfBox16,bottomOfBox16] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower5, lower6)
+[occurenceBox17,topOfBox17,bottomOfBox17] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower6, lower7)
+[occurenceBox18,topOfBox18,bottomOfBox18] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower7, lower8)
+[occurenceBox19,topOfBox19,bottomOfBox19] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower8, lower9)
+[occurenceBox20,topOfBox20,bottomOfBox20] = f_occurenceInZone(marketProfileSource1,marketProfileSource2,marketProfileSource3, marketProfileLength, lower9, lower10)
+if barstate.islast
+    if occurenceBox1>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox1,  right=bar_index + distLastCandle + occurenceBox1,  bottom=bottomOfBox1,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox2>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox2,  right=bar_index + distLastCandle + occurenceBox2,  bottom=bottomOfBox2,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox3>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox3,  right=bar_index + distLastCandle + occurenceBox3,  bottom=bottomOfBox3,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox4>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox4,  right=bar_index + distLastCandle + occurenceBox4,  bottom=bottomOfBox4,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox5>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox5,  right=bar_index + distLastCandle + occurenceBox5,  bottom=bottomOfBox5,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox6>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox6,  right=bar_index + distLastCandle + occurenceBox6,  bottom=bottomOfBox6,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox7>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox7,  right=bar_index + distLastCandle + occurenceBox7,  bottom=bottomOfBox7,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox8>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox8,  right=bar_index + distLastCandle + occurenceBox8,  bottom=bottomOfBox8,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox9>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox9,  right=bar_index + distLastCandle + occurenceBox9,  bottom=bottomOfBox9,  bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox10>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox10, right=bar_index + distLastCandle + occurenceBox10, bottom=bottomOfBox10, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox11>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox11, right=bar_index + distLastCandle + occurenceBox11, bottom=bottomOfBox11, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox12>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox12, right=bar_index + distLastCandle + occurenceBox12, bottom=bottomOfBox12, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox13>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox13, right=bar_index + distLastCandle + occurenceBox13, bottom=bottomOfBox13, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox14>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox14, right=bar_index + distLastCandle + occurenceBox14, bottom=bottomOfBox14, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox15>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox15, right=bar_index + distLastCandle + occurenceBox15, bottom=bottomOfBox15, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox16>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox16, right=bar_index + distLastCandle + occurenceBox16, bottom=bottomOfBox16, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox17>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox17, right=bar_index + distLastCandle + occurenceBox17, bottom=bottomOfBox17, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox18>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox18, right=bar_index + distLastCandle + occurenceBox18, bottom=bottomOfBox18, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox19>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox19, right=bar_index + distLastCandle + occurenceBox19, bottom=bottomOfBox19, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+    if occurenceBox20>0
+        box.new(left=bar_index + distLastCandle, top=topOfBox20, right=bar_index + distLastCandle + occurenceBox20, bottom=bottomOfBox20, bgcolor=boxColor, border_color=boxBorderColor, border_width=borderWidth)
+
+    firstCleanBox = occurenceBox1>0 ? 0 : occurenceBox2>0 ? 1 : occurenceBox3>0 ? 2 : occurenceBox4>0 ? 3 : occurenceBox5>0 ? 4 : occurenceBox6>0 ? 5 : occurenceBox7>0 ? 6 : occurenceBox8>0 ? 7 : occurenceBox9>0 ? 8 : occurenceBox10>0 ? 9 : occurenceBox11>0 ? 10 : occurenceBox12>0 ? 11 : occurenceBox13>0 ? 12 : occurenceBox14>0 ? 13 : occurenceBox15>0 ? 14 : occurenceBox16>0 ? 15 : occurenceBox17>0 ? 16 : occurenceBox18>0 ? 17 : occurenceBox19>0 ? 18 : occurenceBox20>0 ? 19 : 20
+    lastCleanBox  = occurenceBox20>0 ? 21 : occurenceBox19>0 ? 20 : occurenceBox18>0 ? 19 : occurenceBox17>0 ? 18 : occurenceBox16>0 ? 17 : occurenceBox15>0 ? 16 : occurenceBox14>0 ? 15 : occurenceBox13>0 ? 14 : occurenceBox12>0 ? 13 : occurenceBox11>0 ? 12 : occurenceBox10>0 ? 11 : occurenceBox9>0 ? 10 : occurenceBox8>0 ? 9 : occurenceBox7>0 ? 8 : occurenceBox6>0 ? 7 : occurenceBox5>0 ? 6 : occurenceBox4>0 ? 5 : occurenceBox3>0 ? 4 : occurenceBox2>0 ? 3 : occurenceBox1>0 ? 2 : 1
+    longRangeCheck  = (not(firstCleanBox<longRangeHigh))  and (not(lastCleanBox>longRangeLows))
+    shortRangeCheck = (not(firstCleanBox<shortRangeHigh)) and (not(lastCleanBox>shortRangeLows))
+    _arrayLoad(longRange,1,longRangeCheck)
+    _arrayLoad(shortRange,1,shortRangeCheck)
+
+// ======================================================= //
+// ---------> Full Automation Framework Start <----------- //
+// ======================================================= //
+
+platform = input.string(defval="Tradingview.to MT5", title="Platform Select", options=["Tradingview.to MT5", "Tradingview.to MT4"], group="Automation Options")
+
+// ============================================================ //
+// ---------> Full Automation Execution <----------- //
+// ============================================================ //
+
+levelSelect(_number)=>
+    _number==10 ? upper10 : _number==9 ? upper9 : _number==8 ? upper8 : _number==7 ? upper7 : _number==6 ? upper6 : _number==5 ? upper5 : _number==4 ? upper4 : _number==3 ? upper3 : _number==2 ? upper2 : _number==1 ? upper1 : _number==0 ? ma : _number==-1 ? lower1 : _number==-2 ? lower2 : _number==-3 ? lower3 : _number==-4 ? lower4 : _number==-5 ? lower5 : _number==-6 ? lower6 : _number==-7 ? lower7 : _number==-8 ? lower8 : _number==-9 ? lower9 : _number==-10 ? lower10 : na
+longEntryLevel1     = levelSelect(LEntry1Level)
+longEntryLevel2     = levelSelect(LEntry2Level)
+longEntryLevel3     = levelSelect(LEntry3Level)
+longSLLevel         = levelSelect(longRangeSL)
+longTPLevel         = levelSelect(longRangeTP)
+shortEntryLevel1    = levelSelect(SEntry1Level)
+shortEntryLevel2    = levelSelect(SEntry2Level)
+shortEntryLevel3    = levelSelect(SEntry3Level)
+shortSLLevel        = levelSelect(shortRangeSL)
+shortTPLevel        = levelSelect(shortRangeTP)
+
+inLongTrade         = strategy.position_size > 0
+inShortTrade        = strategy.position_size < 0
+
+var bool inLEntry1 = false
+var bool inLEntry2 = false
+var bool inLEntry3 = false
+var bool inSEntry1 = false
+var bool inSEntry2 = false
+var bool inSEntry3 = false
+//
+longExitQuantity  = ((useLEntry1?LEntry1Size:0) + (useLEntry2?LEntry2Size:0) + (useLEntry3?LEntry3Size:0)) * (syminfo.type == "forex" ? 100000 : 1)
+shortExitQuantity = ((useSEntry1?SEntry1Size:0) + (useSEntry2?SEntry2Size:0) + (useSEntry3?SEntry3Size:0)) * (syminfo.type == "forex" ? 100000 : 1)
+if high>ma and low>longSLLevel
+    strategy.order(id="standard long stop", direction=strategy.short, qty=longExitQuantity, stop=longSLLevel)
+    strategy.cancel(id="standard Short stop")
+if low<ma and high<shortSLLevel
+    strategy.order(id="standard Short stop", direction=strategy.long, qty=shortExitQuantity, stop=shortSLLevel)
+    strategy.cancel(id="standard long stop")
+
+
+if (not inShortTrade) and (not na(ma))
+    if low<longEntryLevel1[1]
+        if (not inLEntry1)
+            alert("buy " + str.tostring(syminfo.ticker) + " q=" + str.tostring(LEntry1Size) + " sl=" + str.tostring(rawLowerStop), freq=alert.freq_once_per_bar)
+        inLEntry1 := true
+    if low<longEntryLevel2[1]
+        if (not inLEntry2)
+            alert("buy " + str.tostring(syminfo.ticker) + " q=" + str.tostring(LEntry2Size) + " sl=" + str.tostring(rawLowerStop), freq=alert.freq_once_per_bar)
+        inLEntry2 := true
+    if low<longEntryLevel3[1]
+        if (not inLEntry3)
+            alert("buy " + str.tostring(syminfo.ticker) + " q=" + str.tostring(LEntry3Size) + " sl=" + str.tostring(rawLowerStop), freq=alert.freq_once_per_bar)
+        inLEntry3 := true
+    if inLEntry1 and high>ma[1]
+        alert("close " + str.tostring(syminfo.ticker))
+    if useLEntry1 and (not inLEntry1) and (not inLEntry1[1])
+        strategy.entry("LEntry(1)", strategy.long, qty=LEntry1Size*(syminfo.type == "forex" ? 100000 : 1), limit=longEntryLevel1)
+    if useLEntry2 and (not inLEntry2) and (not inLEntry2[1])
+        strategy.entry("LEntry(2)", strategy.long, qty=LEntry2Size*(syminfo.type == "forex" ? 100000 : 1), limit=longEntryLevel2)
+    if useLEntry3 and (not inLEntry3) and (not inLEntry3[1])
+        strategy.entry("LEntry(3)", strategy.long, qty=LEntry3Size*(syminfo.type == "forex" ? 100000 : 1), limit=longEntryLevel3)
+    if inLongTrade
+        strategy.exit(id="close Long Trades", limit=longTPLevel, stop=longSLLevel)
+    if high>longTPLevel and (not inLongTrade)
+        inLEntry1 := false
+        inLEntry2 := false
+        inLEntry3 := false
+
+if (not inLongTrade) and (not na(ma))
+    if high>shortEntryLevel1[1]
+        if (not inSEntry1)
+            alert("sell " + str.tostring(syminfo.ticker) + " q=" + str.tostring(SEntry1Size) + " sl=" + str.tostring(rawUpperStop), freq=alert.freq_once_per_bar)
+        inSEntry1 := true
+    if high>shortEntryLevel2[1]
+        if (not inSEntry1)
+            alert("sell " + str.tostring(syminfo.ticker) + " q=" + str.tostring(SEntry2Size) + " sl=" + str.tostring(rawUpperStop), freq=alert.freq_once_per_bar)
+        inSEntry2 := true
+    if high>shortEntryLevel3[1]
+        if (not inSEntry1)
+            alert("sell " + str.tostring(syminfo.ticker) + " q=" + str.tostring(SEntry3Size) + " sl=" + str.tostring(rawUpperStop), freq=alert.freq_once_per_bar)
+        inSEntry3 := true
+    if inSEntry1 and low<ma[1]
+        alert("close " + str.tostring(syminfo.ticker))
+    if useSEntry1 and (not inSEntry1)
+        strategy.entry("SEntry(1)", strategy.short, qty=SEntry1Size*(syminfo.type == "forex" ? 100000 : 1),limit=shortEntryLevel1)
+    if useSEntry2 and (not inSEntry2)
+        strategy.entry("SEntry(2)", strategy.short, qty=SEntry2Size*(syminfo.type == "forex" ? 100000 : 1),limit=shortEntryLevel2)
+    if useSEntry3 and (not inSEntry3)
+        strategy.entry("SEntry(3)", strategy.short, qty=SEntry2Size*(syminfo.type == "forex" ? 100000 : 1),limit=shortEntryLevel3)
+    if inShortTrade
+        strategy.exit(id="close Short Trades", limit=shortTPLevel, stop=shortSLLevel)
+    if low<shortTPLevel and (not inShortTrade)
+        inSEntry1 := false
+        inSEntry2 := false
+        inSEntry3 := false
+
+// ======================================= //
+// ---------> Graphical Display <--------- //
+// ======================================= //
+plot(ma,                                                 color=bandsColor,                                                                                                                  title="Basis"                     )
+u1  = plot(upper1,                                       color=bandsColor,                                                                                                                 title="Upper 1"                   )
+l1  = plot(lower1,                                       color=bandsColor,                                                                                                                 title="Lower 1"                   )
+u2  = plot(upper2,                                       color=bandsColor,                                                                                                                 title="Upper 2"                   )
+l2  = plot(lower2,                                       color=bandsColor,                                                                                                                 title="Lower 2"                   )
+u3  = plot(upper3,                                       color=bandsColor,                                                                                                                  title="Upper 3"                   )
+l3  = plot(lower3,                                       color=bandsColor,                                                                                                                  title="Lower 3"                   )
+u4  = plot(upper4,                                       color=bandsColor,                                                                                                                  title="Upper 4"                   )
+l4  = plot(lower4,                                       color=bandsColor,                                                                                                                  title="Lower 4"                   )
+u5  = plot(upper5,                                       color=bandsColor,                                                                                                                  title="Upper 5"                   )
+l5  = plot(lower5,                                       color=bandsColor,                                                                                                                  title="Lower 5"                   )
+u6  = plot(upper6,                                       color=bandsColor,                                                                                                                  title="Upper 6"                   )
+l6  = plot(lower6,                                       color=bandsColor,                                                                                                                  title="Lower 6"                   )
+u7  = plot(upper7,                                       color=bandsColor,                                                                                                                  title="Upper 7"                   )
+l7  = plot(lower7,                                       color=bandsColor,                                                                                                                  title="Lower 7"                   )
+u8  = plot(upper8,                                       color=bandsColor,                                                                                                                  title="Upper 8"                   )
+l8  = plot(lower8,                                       color=bandsColor,                                                                                                                  title="Lower 8"                   )
+u9  = plot(upper9,                                       color=bandsColor,                                                                                                                  title="Upper 9"                   )
+l9  = plot(lower9,                                       color=bandsColor,                                                                                                                  title="Lower 9"                   )
+u10 = plot(upper10,                                      color=bandsColor,                                                                                                                  title="Upper 10"                  )
+l10 = plot(lower10,                                      color=bandsColor,                                                                                                                  title="Lower 10"                  )
+fill(u1, u2,                                             color=color.rgb(75,0,130,45),                                                                                                               title="BB Upper Background 1"     )
+fill(l1, l2,                                             color=color.rgb(0,100,0,45),                                                                                                                title="BB Lower Background 1"     )
+fill(u2, u3,                                             color=color.rgb(238,130,238,50),                                                                                                            title="BB Upper Background 2"     )
+fill(l2, l3,                                             color=color.rgb(0,255,0,50),                                                                                                                title="BB Lower Background 2"     )

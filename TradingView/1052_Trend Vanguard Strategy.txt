@@ -1,0 +1,697 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © MaximusGains
+
+//  ┌─────────────────────────────────────────────────────────────────┐
+//  │                        STRATEGY OVERVIEW                         │
+//  └─────────────────────────────────────────────────────────────────┘
+//
+//  This advanced trading system combines traditional technical analysis with
+//  machine learning and quantum-inspired algorithms to identify high-probability
+//  trading opportunities across multiple timeframes.
+//
+//  Core Components:
+//  • ZigZag Pattern Recognition - Identifies key market structure and pivot points
+//  • k-Nearest Neighbors (kNN) Machine Learning - Pattern recognition engine
+//  • Quantum-Inspired Probability Smoothing - Reduces noise and enhances signals
+//  • Adaptive Risk Management - Dynamically adjusts position sizing and stops
+//  • Multi-Timeframe Confirmation - Validates signals against higher timeframes
+//  • Self-Optimizing Parameters - Adjusts to current market volatility conditions
+//
+//  ┌─────────────────────────────────────────────────────────────────┐
+//  │                         SETUP GUIDE                              │
+//  └─────────────────────────────────────────────────────────────────┘
+//
+//  1. TIMEFRAME SELECTION
+//     • Best results on 5m to 4h charts
+//     • Longer timeframes (1h+) provide more reliable but fewer signals
+//     • Shorter timeframes offer more signals but higher noise
+//
+//  2. RECOMMENDED SETTINGS
+//     • ZigZag: Depth 21, Deviation 6, Backstep 4 (adjust based on volatility)
+//     • kNN: Lookback 100, k-Value 9, Confidence Threshold 0.55
+//     • Risk Management: 0.5% risk per trade, ATR-based stops (1.5x multiplier)
+//     • Enable Dynamic Depth Adjustment for volatile markets
+//     • Enable Multi-Timeframe Confirmation for trend alignment
+//
+//  3. VISUAL ELEMENTS
+//     • Dashboard shows real-time performance metrics and signal confidence
+//     • ZigZag lines identify trend structure
+//     • Colored clouds visualize probability of trend continuation/reversal
+//     • Labels mark high-confidence entry signals
+//
+//  ┌─────────────────────────────────────────────────────────────────┐
+//  │                       HOW TO USE                                 │
+//  └─────────────────────────────────────────────────────────────────┘
+//
+//  SIGNAL INTERPRETATION:
+//  • BUY signals appear at potential bullish reversals with green labels
+//  • SELL signals appear at potential bearish reversals with red labels
+//  • Dashboard shows confidence percentage and market regime
+//  • Higher confidence values (>70%) indicate stronger signals
+//
+//  OPTIMAL USAGE:
+//  • Use the "Self-Optimizing Mode" for automatic parameter adjustment
+//  • Monitor "Recent Win Rate" in dashboard to gauge current performance
+//  • "Market Regime" helps identify overbought/oversold conditions
+//  • The strategy performs best during trending markets with clear pullbacks
+//  • Consider reducing position size during choppy/sideways markets
+//
+//  RISK MANAGEMENT:
+//  • ATR-based stops automatically adjust to market volatility
+//  • Trend Anticipation Algorithm (TAA) provides enhanced stop placement
+//  • Limit Entry with Dynamic Pullback (LEDP) improves entry prices
+//  • The system will close all positions if equity drops below 10% of initial capital
+//
+//  PERFORMANCE METRICS:
+//  • Dashboard displays: Win Rate, Net Profit, Max Drawdown, Sharpe Ratio
+//  • "Status" indicator shows if system is operational or in warm-up phase
+//  • Warm-up requires at least k_value×2 historical signals to function
+//
+//  ┌─────────────────────────────────────────────────────────────────┐
+//  │                ADVANCED FEATURES EXPLAINED                       │
+//  └─────────────────────────────────────────────────────────────────┘
+//
+//  QUANTUM-INSPIRED ALGORITHM:
+//  • Not actual quantum computing, but inspired by quantum probability concepts
+//  • Implements "entanglement-like" effects through historical pattern correlation
+//  • Enhances signal smoothing and reduces false positives
+//
+//  MACHINE LEARNING IMPLEMENTATION:
+//  • k-Nearest Neighbors (kNN) algorithm identifies similar historical patterns
+//  • Features include: normalized price, ATR, RSI, and volume
+//  • Weighted distance calculation prioritizes more relevant features
+//  • Confidence threshold filters out low-probability signals
+//
+//  ADAPTIVE PARAMETERS:
+//  • Dynamic Depth Adjustment scales ZigZag sensitivity with volatility
+//  • Volatility-Adjusted Confidence Boost enhances signals in trending markets
+//  • Micro-Trend Detection captures short-term momentum shifts
+//  • Recent performance feedback loop adjusts confidence thresholds
+//
+//  ┌─────────────────────────────────────────────────────────────────┐
+//  │                   PERFORMANCE OPTIMIZATION                       │
+//  └─────────────────────────────────────────────────────────────────┘
+//
+//  • Calculation Precision settings balance accuracy vs. speed
+//  • Reduce Max Training Size for faster execution on slower systems
+//  • Disable dashboard and visual elements for backtesting speed
+//  • Use Market Regime Filter to avoid trading during extreme conditions
+//  • Adjust Feature Weights to emphasize more reliable indicators
+//
+//  IMPORTANT NOTE: This strategy utilizes advanced techniques that require
+//  significant historical data. Allow at least 500-1000 bars of history
+//  before expecting optimal performance. The "Status" indicator in the
+//  dashboard will show "Operational" when ready.
+//
+//  ========================================================================
+
+//@version=5
+//@author=MaximusGains
+strategy('Quantum-Enhanced kNN ZigZag Strategy v1.2', overlay = true, initial_capital = 50000, default_qty_type = strategy.percent_of_equity, default_qty_value = 0.5, commission_value = 0.06, slippage = 1, max_labels_count = 20, max_boxes_count = 20, max_bars_back = 5000, calc_on_every_tick = true)
+
+// Declare zzSignal
+var string zzSignal = ''
+
+// --- ZigZag Settings ---
+var string group_zigzag = 'ZigZag Settings'
+Depth = input.int(21, title = 'ZigZag Depth', minval = 3, step = 1, group = group_zigzag, tooltip = 'Number of bars to look back for pivot points. Lower values detect trends faster.')
+Deviation = input.int(6, title = 'ZigZag Deviation', minval = 1, step = 1, group = group_zigzag, tooltip = 'Minimum price change (in ticks) to form a new pivot. Smaller values increase sensitivity.')
+Backstep = input.int(4, title = 'ZigZag Backstep', minval = 1, step = 1, group = group_zigzag, tooltip = 'Minimum bars between pivots to avoid overlap.')
+line_thick = input.int(2, title = 'Line Thickness', minval = 1, maxval = 4, group = group_zigzag, tooltip = 'Thickness of ZigZag lines on the chart.')
+upcolor = input(color.rgb(37, 95, 67, 54), title = 'Bullish Color', group = group_zigzag, tooltip = 'Color for upward ZigZag movements.')
+dncolor = input(color.rgb(133, 47, 47, 50), title = 'Bearish Color', group = group_zigzag, tooltip = 'Color for downward ZigZag movements.')
+repaint = input.bool(false, title = 'Smooth Lines (Repaint)', group = group_zigzag, tooltip = 'Enable to update lines in real-time (repaints); disable for fixed historical lines.')
+use_dynamic_depth = input.bool(true, title = 'Dynamic Depth Adjustment', group = group_zigzag, tooltip = 'Adjusts Depth based on volatility for adaptability.')
+
+// --- Price Action Patterns ---
+isEngulfingBullish() =>
+    close > open[1] and open < close[1] and close > high[1]
+isEngulfingBearish() =>
+    close < open[1] and open > close[1] and close < low[1]
+isHammer() =>
+    high - low > 2 * (open - close) and (close - low) / (high - low) > 0.6
+isDoji() =>
+    math.abs(open - close) / (high - low) < 0.1
+
+// --- Pivot Settings ---
+var string group_pivot = 'Pivot Settings'
+plotpivots = input(true, title = 'Show Pivot Points', group = group_pivot, tooltip = 'Displays pivot high/low points on the chart.')
+leftbars = input.int(65, title = 'Pivot Left Bars', minval = 1, group = group_pivot, tooltip = 'Bars to the left for pivot calculation.')
+rightbars = input.int(65, title = 'Pivot Right Bars', minval = 1, group = group_pivot, tooltip = 'Bars to the right for pivot confirmation.')
+
+// --- EMA Settings ---
+var string group_ema = 'EMA Settings'
+showEMA = input(false, title = 'Show EMA', group = group_ema, tooltip = 'Toggle visibility of the short-term EMA.')
+ema_length = input.int(21, title = 'EMA Length', minval = 1, group = group_ema, tooltip = 'Period for the short-term EMA.')
+ema_color = input(color.new(#ff9900, 51), title = 'EMA Color', group = group_ema, tooltip = 'Color of the short-term EMA.')
+showEMA1 = input.bool(false, title = 'Show EMA1', group = group_ema, tooltip = 'Toggle visibility of the medium-term EMA.')
+ema1_length = input.int(89, title = 'EMA1 Length', minval = 1, group = group_ema, tooltip = 'Period for the medium-term EMA.')
+ema1_color = input(color.new(#df40fb, 49), title = 'EMA1 Color', group = group_ema, tooltip = 'Color of the medium-term EMA.')
+showEMA2 = input(false, title = 'Show EMA2', group = group_ema, tooltip = 'Toggle visibility of the long-term EMA.')
+ema2_length = input.int(144, title = 'EMA2 Length', minval = 1, group = group_ema, tooltip = 'Period for the long-term EMA.')
+ema2_color = input(color.new(#4caf4f, 49), title = 'EMA2 Color', group = group_ema, tooltip = 'Color of the long-term EMA.')
+showEMA3 = input(false, title = 'Show EMA3', group = group_ema, tooltip = 'Toggle visibility of the very long-term EMA.')
+ema3_length = input.int(233, title = 'EMA3 Length', minval = 1, group = group_ema, tooltip = 'Period for the very long-term EMA.')
+ema3_color = input(color.new(#ffffff, 54), title = 'EMA3 Color', group = group_ema, tooltip = 'Color of the very long-term EMA.')
+
+// --- System Settings ---
+var string group_system = 'System Settings'
+calculation_precision = input.string('High', 'Calculation Precision', options = ['Standard', 'High', 'Ultra'], group = group_system, tooltip = 'Controls computational accuracy. Higher settings increase precision but may slow performance.')
+adaptive_mode = input.bool(true, 'Self-Optimizing Mode', group = group_system, tooltip = 'Enables adaptive kNN parameters based on market conditions.')
+visual_theme = input.string('Dark', 'Visual Theme', options = ['Dark', 'Light', 'Blue', 'Green', 'Red'], group = group_system, tooltip = 'Sets the color scheme for visual elements.')
+max_computation_bars = input.int(1500, 'Computation History', minval = 500, maxval = 5000, group = group_system, tooltip = 'Maximum bars used for historical calculations.')
+show_dashboard = input.bool(true, 'Show Performance Dashboard', group = group_system, tooltip = 'Displays real-time performance metrics.')
+dashboard_location = input.string('Bottom-Right', 'Dashboard Location', options = ['Top-Right', 'Bottom-Right', 'Top-Left', 'Bottom-Left'], group = group_system, tooltip = 'Position of the dashboard on the chart.')
+
+// --- Quantum Settings ---
+var string group_quantum = 'Quantum Algorithm Settings'
+use_quantum_algo = input.bool(true, 'Use Quantum-Inspired Algorithm', group = group_quantum, tooltip = 'Enables quantum-inspired probability smoothing.')
+entanglement_lookback = input.int(21, 'Entanglement Lookback', minval = 5, maxval = 100, group = group_quantum, tooltip = 'Period for quantum probability SMA calculation.')
+
+// --- Machine Learning Settings ---
+var string group_ml = 'Machine Learning Settings'
+knn_lookback = input.int(100, 'kNN Lookback', minval = 10, group = group_ml, tooltip = 'Bars of historical data for kNN training.')
+knn_k = input.int(9, 'kNN k Value', minval = 1, maxval = 37, group = group_ml, tooltip = 'Number of nearest neighbors to consider.')
+use_atr = input.bool(true, 'Include Volatility (ATR)', group = group_ml, tooltip = 'Includes ATR as a feature in kNN.')
+use_rsi = input.bool(true, 'Include Momentum (RSI)', group = group_ml, tooltip = 'Includes RSI as a feature in kNN.')
+use_volume = input.bool(true, 'Include Volume', group = group_ml, tooltip = 'Includes volume as a feature in kNN.')
+rsi_length = input.int(7, 'RSI Length', minval = 1, group = group_ml, tooltip = 'Period for RSI calculation.')
+max_training_size = input.int(500, 'Max Training Size', minval = 100, group = group_ml, tooltip = 'Maximum number of data points in kNN training set.')
+confidence_threshold = input.float(0.55, 'Confidence Threshold', minval = 0.5, maxval = 0.95, step = 0.05, group = group_ml, tooltip = 'Minimum confidence level to generate a signal.')
+use_mtf_confirmation = input.bool(true, 'Use Multi-Timeframe Confirmation', group = group_ml, tooltip = 'Validates signals against higher timeframe trends.')
+
+// --- Feature Weights ---
+var string group_weights = 'Feature Weights'
+price_weight = input.float(1.2, 'Price Weight', minval = 0.1, step = 0.1, group = group_weights, tooltip = 'Weight of price in kNN distance calculation.')
+atr_weight = input.float(0.8, 'ATR Weight', minval = 0.1, step = 0.1, group = group_weights, tooltip = 'Weight of ATR in kNN distance calculation.')
+rsi_weight = input.float(0.9, 'RSI Weight', minval = 0.1, step = 0.1, group = group_weights, tooltip = 'Weight of RSI in kNN distance calculation.')
+volume_weight = input.float(0.7, 'Volume Weight', minval = 0.1, step = 0.1, group = group_weights, tooltip = 'Weight of volume in kNN distance calculation.')
+
+// --- Filtering Settings ---
+var string group_filter = 'Filtering Settings'
+use_regime_filter = input.bool(true, 'Use Market Regime Filter', group = group_filter, tooltip = 'Filters signals based on overbought/oversold conditions.')
+
+// --- Visual Elements ---
+var string group_visual = 'Visual Elements'
+show_zigzag = input.bool(true, 'Show ZigZag Lines', group = group_visual, tooltip = 'Displays ZigZag lines on the chart.')
+show_signals = input.bool(true, 'Show Trade Signals', group = group_visual, tooltip = 'Displays BUY/SELL labels on the chart.')
+show_quantum_prob = input.bool(true, 'Show Quantum Probability', group = group_visual, tooltip = 'Visualizes quantum probability as clouds above/below price.')
+
+// --- Risk Management ---
+var string group_risk = 'Risk Management'
+risk_per_trade = input.float(0.5, 'Risk Per Trade (%)', minval = 0.1, maxval = 10.0, step = 0.1, group = group_risk, tooltip = 'Percentage of equity risked per trade.')
+use_atr_stops = input.bool(true, 'ATR-Based Stops', group = group_risk, tooltip = 'Uses ATR to set dynamic stop-loss levels.')
+atr_length = input.int(5, 'ATR Length', minval = 1, group = group_risk, tooltip = 'Period for ATR calculation.')
+atr_multiplier = input.float(1.5, 'ATR Multiplier', minval = 0.5, step = 0.1, group = group_risk, tooltip = 'Multiplier for ATR-based stops.')
+use_taa = input.bool(true, 'Use Trend Anticipation Algorithm', group = group_risk, tooltip = 'Adjusts stops based on trend strength and volatility.')
+use_ledp = input.bool(true, 'Use Limit Entry with Dynamic Pullback', group = group_risk, tooltip = 'Places limit orders at pullback levels for better entries.')
+
+// --- Color Definitions ---
+var color bullish_color = color.green
+var color bearish_color = color.red
+var color neutral_color = color.gray
+var color text_color = visual_theme == 'Light' ? color.rgb(76, 94, 94) : color.white
+var color bg_color = visual_theme == 'Dark' ? color.new(#242527, 3) : color.new(#ffffff, 37)
+
+// --- Precision Adjustments ---
+float precision_multiplier = calculation_precision == 'Standard' ? 1.0 : calculation_precision == 'High' ? 1.5 : 2.0
+int adjusted_knn_lookback = math.max(1, int(math.round(knn_lookback * precision_multiplier)))
+int adjusted_max_training_size = math.max(100, int(math.round(max_training_size * precision_multiplier)))
+int adjusted_entanglement_lookback = math.max(5, int(math.round(entanglement_lookback * precision_multiplier)))
+
+// --- Utility Functions ---
+normalize(value, min_val, max_val) =>
+    max_val == min_val ? 0.0 : (value - min_val) / (max_val - min_val)
+exponential_weight(dist) =>
+    dist == 0 ? 1.0 : math.exp(-dist * 0.5)
+
+// --- Dynamic Depth Adjustment ---
+atr_vol = ta.atr(atr_length)
+dynamic_depth = use_dynamic_depth ? math.max(5, math.min(30, math.round(Depth * (1 + atr_vol / ta.atr(20))))) : Depth
+
+// --- Micro-Trend Detection ---
+micro_trend = ta.sma(ta.change(close, 2), 3)
+micro_trend_acceleration = ta.sma(ta.change(micro_trend, 1), 2)
+micro_trend_strength = math.abs(micro_trend) / atr_vol
+
+// --- Trend Anticipation Algorithm (TAA) ---
+var float taa_buffer = 0.0
+var float momentum = ta.ema(ta.change(close), 5)
+var float volatility_spike = ta.ema(math.abs(ta.change(close)) / atr_vol, 5)
+var float rsi_divergence = ta.rsi(close, 5) - ta.rsi(close, 14)
+taa_buffer := use_taa ? math.max(0.3, math.min(1.5, volatility_spike * 1.2 - math.abs(momentum) / atr_vol + math.abs(rsi_divergence) * 0.5)) * atr_vol : 0.0
+
+// --- Volatility-Adjusted Confidence Boost (VACB) ---
+var float vacb_adjustment = 0.0
+sma_atr_10 = ta.sma(atr_vol, 10)
+if atr_vol > sma_atr_10
+    vacb_adjustment := (atr_vol - sma_atr_10) / sma_atr_10 * 0.1
+    vacb_adjustment
+
+// --- Pivot Calculation ---
+ph = ta.pivothigh(high, leftbars, rightbars)
+pl = ta.pivotlow(low, leftbars, rightbars)
+phv1 = ta.valuewhen(bool(ph), high[rightbars], 0)
+phb1 = ta.valuewhen(bool(ph), bar_index[rightbars], 0)
+phv2 = ta.valuewhen(bool(ph), high[rightbars], 1)
+phb2 = ta.valuewhen(bool(ph), bar_index[rightbars], 1)
+plv1 = ta.valuewhen(bool(pl), low[rightbars], 0)
+plb1 = ta.valuewhen(bool(pl), bar_index[rightbars], 0)
+plv2 = ta.valuewhen(bool(pl), low[rightbars], 1)
+plb2 = ta.valuewhen(bool(pl), bar_index[rightbars], 1)
+plotshape(plotpivots and bool(ph) ? high[rightbars] : na, style = shape.circle, location = location.abovebar, color = color.new(#ff0066, 0), title = 'Pivot High', offset = -rightbars)
+plotshape(plotpivots and bool(pl) ? low[rightbars] : na, style = shape.circle, location = location.belowbar, color = color.new(#4df2ab, 0), title = 'Pivot Low', offset = -rightbars)
+
+// --- Trendlines ---
+get_slope(x1, x2, y1, y2) =>
+    (y2 - y1) / (x2 - x1)
+get_y_intercept(m, x1, y1) =>
+    y1 - m * x1
+get_y(m, b, ts) =>
+    m * ts + b
+var int res_x1 = na
+var float res_y1 = na
+var int res_x2 = na
+var float res_y2 = na
+var int sup_x1 = na
+var float sup_y1 = na
+var int sup_x2 = na
+var float sup_y2 = na
+res_x1 := bool(ph) ? phb1 : res_x1[1]
+res_y1 := bool(ph) ? phv1 : res_y1[1]
+res_x2 := bool(ph) ? phb2 : res_x2[1]
+res_y2 := bool(ph) ? phv2 : res_y2[1]
+res_m = get_slope(res_x1, res_x2, res_y1, res_y2)
+res_b = get_y_intercept(res_m, res_x1, res_y1)
+res_y = get_y(res_m, res_b, bar_index)
+sup_x1 := bool(pl) ? plb1 : sup_x1[1]
+sup_y1 := bool(pl) ? plv1 : sup_y1[1]
+sup_x2 := bool(pl) ? plb2 : sup_x2[1]
+sup_y2 := bool(pl) ? plv2 : sup_y2[1]
+sup_m = get_slope(sup_x1, sup_x2, sup_y1, sup_y2)
+sup_b = get_y_intercept(sup_m, sup_x1, sup_y1)
+sup_y = get_y(sup_m, sup_b, bar_index)
+plot(res_y, color = color.new(#ff5252, 46), title = 'Resistance Trendline', linewidth = 1, style = plot.style_circles)
+plot(sup_y, color = color.new(#329163, 24), title = 'Support Trendline', linewidth = 1, style = plot.style_circles)
+if bool(ph)
+    line.new(phb1, phv1, bar_index, res_y, style = line.style_dashed, color = color.rgb(33, 243, 54, 64))
+if bool(pl)
+    line.new(plb1, plv1, bar_index, sup_y, style = line.style_dashed, color = color.rgb(240, 16, 109, 50))
+
+// --- EMAs ---
+ema = ta.ema(close, ema_length)
+ema1 = ta.ema(close, ema1_length)
+ema2 = ta.ema(close, ema2_length)
+ema3 = ta.ema(close, ema3_length)
+plot(showEMA ? ema : na, title = 'EMA', linewidth = 2, color = ema_color)
+plot(showEMA1 ? ema1 : na, title = 'EMA1', linewidth = 3, color = ema1_color)
+plot(showEMA2 ? ema2 : na, title = 'EMA2', linewidth = 4, color = ema2_color)
+plot(showEMA3 ? ema3 : na, title = 'EMA3', linewidth = 7, color = ema3_color)
+
+// --- Breakout Signals ---
+long_break = ta.crossover(close, res_y)
+short_break = ta.crossunder(close, sup_y)
+plotshape(long_break, style = shape.triangleup, color = color.new(#4caf4f, 49), size = size.tiny, location = location.belowbar, title = 'Long Break')
+plotshape(short_break, style = shape.triangledown, color = color.new(#ff5252, 49), size = size.tiny, location = location.abovebar, title = 'Short Break')
+
+// --- ZigZag ---
+var last_h = 1
+last_h := last_h + 1
+var last_l = 1
+last_l := last_l + 1
+var lw = 1
+var hg = 1
+lw := lw + 1
+hg := hg + 1
+p_lw = -ta.lowestbars(Depth)
+p_hg = -ta.highestbars(Depth)
+lowing = lw == p_lw or low - low[p_lw] > Deviation * syminfo.mintick
+highing = hg == p_hg or high[p_hg] - high > Deviation * syminfo.mintick
+lh = ta.barssince(not highing[1])
+ll = ta.barssince(not lowing[1])
+down = ta.barssince(not(lh > ll)) >= Backstep
+lower = low[lw] > low[p_lw]
+higher = high[hg] < high[p_hg]
+if lw != p_lw and (not down[1] or lower)
+    lw := p_lw < hg ? p_lw : 0
+    lw
+if hg != p_hg and (down[1] or higher)
+    hg := p_hg < lw ? p_hg : 0
+    hg
+
+line zz = na
+label point = na
+x1 = down ? lw : hg
+y1 = down ? low[lw] : high[hg]
+
+if down == down[1]
+    if repaint
+        label.delete(point[1])
+        line.delete(zz[1])
+if down != down[1]
+    if down
+        last_h := hg
+        last_h
+    else
+        last_l := lw
+        last_l
+    if not repaint
+        nx = down ? last_h : last_l
+        zz := line.new(bar_index - nx, down ? high[nx] : low[nx], bar_index - (down ? last_l : last_h), down ? low[last_l] : high[last_h], width = line_thick, color = down ? upcolor : dncolor)
+        zzSignal := down ? high[nx] > high[last_h[1]] ? 'Sell' : 'Ex.long' : low[nx] < low[last_l[1]] ? 'Buy' : 'Ex.short'
+        point := label.new(bar_index - nx, down ? high[nx] : low[nx], zzSignal, style = down ? label.style_label_down : label.style_label_up, size = size.tiny, color = down ? dncolor : upcolor, textcolor = color.rgb(43, 192, 202, 18), tooltip = down ? high[nx] > high[last_h[1]] ? 'Sell' : 'Ex.long,ᴱˣⁱᵗ ˡᵒⁿᵍ ᵖᵒˢⁱᵗⁱᵒⁿ ᵒʳ ᵗᵃᵏᵉ ˢᵒᵐᵉ ᵖʳᵒᶠⁱᵗˢ' : low[nx] < low[last_l[1]] ? 'Buy' : 'Ex.short, ᴱˣⁱᵗ ˢʰᵒʳᵗ ᵖᵒˢⁱᵗⁱᵒⁿ ᵒʳ ᵗᵃᵏᵉ ˢᵒᵐᵉ ᵖʳᵒᶠⁱᵗˢ ')
+        point
+if repaint
+    zz := line.new(bar_index - (down ? last_h : last_l), down ? high[last_h] : low[last_l], bar_index - x1, y1, width = line_thick, color = down ? dncolor : upcolor)
+    zzSignal := down ? low[x1] < low[last_l] ? 'Buy' : 'Ex.short' : high[x1] > high[last_h] ? 'Sell' : 'Ex.long'
+    point := label.new(bar_index - x1, y1, zzSignal, style = down ? label.style_label_up : label.style_label_down, size = size.tiny, color = down ? upcolor : dncolor, textcolor = color.rgb(78, 212, 233), tooltip = down ? low[x1] < low[last_l] ? 'Buy' : 'Ex.short' : high[x1] > high[last_h] ? 'Sell' : 'Ex.long')
+    point
+
+// Final
+bear = down
+
+// --- Price Action Confirmation ---
+var bool confirmed_signal = false
+if zzSignal == 'Buy' or zzSignal == 'Ex.short'
+    confirmed_signal := isEngulfingBullish() or isHammer() or isDoji()
+    confirmed_signal
+else if zzSignal == 'Sell' or zzSignal == 'Ex.long'
+    confirmed_signal := isEngulfingBearish() or isHammer() or isDoji()
+    confirmed_signal
+
+// --- Volatility Breakout Filter ---
+vol_breakout = ta.crossover(atr_vol, ta.sma(atr_vol, 20) * 1.2)
+
+// --- Indicator Calculations ---
+rsi = ta.rsi(close, rsi_length)
+market_regime = rsi > 65 ? 'Overbought' : rsi < 35 ? 'Oversold' : 'Neutral'
+
+// --- Multi-Timeframe Confirmation ---
+var float mtf_trend = 0.0
+[mtf_ema1, mtf_ema2] = request.security(syminfo.tickerid, '137', [ta.ema(close, ema1_length), ta.ema(close, ema2_length)])
+if use_mtf_confirmation
+    mtf_trend := mtf_ema1 > mtf_ema2 ? 1.0 : mtf_ema1 < mtf_ema2 ? -1.0 : 0.0
+    mtf_trend
+else
+    mtf_trend := 0.0
+    mtf_trend
+
+// --- Pre-calculate min/max for normalization ---
+low_min = ta.lowest(low, adjusted_knn_lookback)
+high_max = ta.highest(high, adjusted_knn_lookback)
+atr_min = ta.lowest(atr_vol, adjusted_knn_lookback)
+atr_max = ta.highest(atr_vol, adjusted_knn_lookback)
+volume_min = ta.lowest(volume, adjusted_knn_lookback)
+volume_max = ta.highest(volume, adjusted_knn_lookback)
+
+// --- kNN Implementation ---
+var array<float> training_inputs_price = array.new_float(0)
+var array<float> training_inputs_atr = array.new_float(0)
+var array<float> training_inputs_rsi = array.new_float(0)
+var array<float> training_inputs_volume = array.new_float(0)
+var array<float> training_outputs = array.new_float(0)
+var array<int> training_timestamps = array.new_int(0)
+if bar_index == 0
+    for i = 0 to knn_k - 1 by 1
+        array.push(training_inputs_price, normalize(close, low_min, high_max))
+        array.push(training_inputs_atr, use_atr ? normalize(atr_vol, atr_min, atr_max) : 0.0)
+        array.push(training_inputs_rsi, use_rsi ? rsi / 100 : 0.0)
+        array.push(training_inputs_volume, use_volume ? normalize(volume, volume_min, volume_max) : 0.0)
+        array.push(training_outputs, i % 2 == 0 ? 1 : -1)
+        array.push(training_timestamps, bar_index)
+if zzSignal != ''
+    price_norm = normalize(close, low_min, high_max)
+    atr_norm = use_atr ? normalize(atr_vol, atr_min, atr_max) : 0.0
+    rsi_norm = use_rsi ? rsi / 100 : 0.0
+    volume_norm = use_volume ? normalize(volume, volume_min, volume_max) : 0.0
+    output = zzSignal == 'Buy' or zzSignal == 'Ex.short' ? 1 : -1
+    if array.size(training_inputs_price) < adjusted_max_training_size
+        array.push(training_inputs_price, price_norm)
+        array.push(training_inputs_atr, atr_norm)
+        array.push(training_inputs_rsi, rsi_norm)
+        array.push(training_inputs_volume, volume_norm)
+        array.push(training_outputs, output)
+        array.push(training_timestamps, bar_index)
+    else
+        max_dist = -1.0
+        max_index = -1
+        for i = 0 to array.size(training_inputs_price) - 1 by 1
+            dist_squared = price_weight * math.pow(price_norm - array.get(training_inputs_price, i), 2) + atr_weight * math.pow(atr_norm - array.get(training_inputs_atr, i), 2) + rsi_weight * math.pow(rsi_norm - array.get(training_inputs_rsi, i), 2) + volume_weight * math.pow(volume_norm - array.get(training_inputs_volume, i), 2)
+            dist = math.sqrt(dist_squared)
+            if dist > max_dist
+                max_dist := dist
+                max_index := i
+                max_index
+        array.remove(training_inputs_price, max_index)
+        array.remove(training_inputs_atr, max_index)
+        array.remove(training_inputs_rsi, max_index)
+        array.remove(training_inputs_volume, max_index)
+        array.remove(training_outputs, max_index)
+        array.remove(training_timestamps, max_index)
+        array.push(training_inputs_price, price_norm)
+        array.push(training_inputs_atr, atr_norm)
+        array.push(training_inputs_rsi, rsi_norm)
+        array.push(training_inputs_volume, volume_norm)
+        array.push(training_outputs, output)
+        array.push(training_timestamps, bar_index)
+var float knn_confidence = 0.0
+var int knn_direction = 0
+effective_k = adaptive_mode ? math.max(2, math.min(10, math.round(3 + nz(atr_vol / ta.atr(20), 1) * 3))) : knn_k
+if array.size(training_inputs_price) >= math.max(2, effective_k)
+    current_price_norm = normalize(close, low_min, high_max)
+    current_atr_norm = use_atr ? normalize(atr_vol, atr_min, atr_max) : 0.0
+    current_rsi_norm = use_rsi ? rsi / 100 : 0.0
+    current_volume_norm = use_volume ? normalize(volume, volume_min, volume_max) : 0.0
+    distances = array.new_float(array.size(training_inputs_price))
+    weights = array.new_float(array.size(training_inputs_price))
+    for i = 0 to array.size(training_inputs_price) - 1 by 1
+        dist_squared = price_weight * math.pow(current_price_norm - array.get(training_inputs_price, i), 2) + atr_weight * math.pow(current_atr_norm - array.get(training_inputs_atr, i), 2) + rsi_weight * math.pow(current_rsi_norm - array.get(training_inputs_rsi, i), 2) + volume_weight * math.pow(current_volume_norm - array.get(training_inputs_volume, i), 2)
+        dist = math.sqrt(dist_squared)
+        time_diff = (bar_index - array.get(training_timestamps, i)) / adjusted_knn_lookback
+        temp_weight = exponential_weight(dist) * math.exp(-time_diff)
+        array.set(distances, i, dist)
+        array.set(weights, i, temp_weight)
+    sorted_indices = array.sort_indices(distances)
+    weighted_sum = 0.0
+    total_weight = 0.0
+    for i = 0 to effective_k - 1 by 1
+        idx = array.get(sorted_indices, i)
+        weight = array.get(weights, idx)
+        weighted_sum := weighted_sum + array.get(training_outputs, idx) * weight
+        total_weight := total_weight + weight
+        total_weight
+    prediction = total_weight == 0 ? 0 : weighted_sum / total_weight
+    knn_confidence := math.abs(prediction)
+    knn_direction := prediction > 0 ? 1 : -1
+    knn_direction
+
+// --- Quantum Enhancement ---
+quantum_prob = use_quantum_algo ? ta.sma(knn_direction * knn_confidence, adjusted_entanglement_lookback) : knn_confidence
+quantum_direction = quantum_prob > 0 ? 1 : -1
+quantum_confidence = math.abs(quantum_prob)
+
+// --- Apply VACB ---
+adjusted_confidence = quantum_confidence + vacb_adjustment
+
+// --- Recent Trades and Dynamic Threshold ---
+var array<float> recent_trades = array.new_float(0)
+if strategy.closedtrades > strategy.closedtrades[1]
+    outcome = strategy.wintrades > strategy.wintrades[1] ? 1.0 : 0.0
+    array.push(recent_trades, outcome)
+    if array.size(recent_trades) > 20
+        array.remove(recent_trades, 0)
+recent_win_rate = array.size(recent_trades) > 0 ? array.sum(recent_trades) / array.size(recent_trades) : 0.0
+dynamic_threshold = math.max(0.4, math.min(0.90, confidence_threshold * (1 + 0.5 - recent_win_rate)))
+
+// --- Signal Generation ---
+signal = 0
+if adjusted_confidence >= dynamic_threshold and vol_breakout
+    if use_regime_filter
+        signal := quantum_direction == 1 and market_regime != 'Overbought' ? 1 : quantum_direction == -1 and market_regime != 'Oversold' ? -1 : 0
+        signal
+    else
+        signal := quantum_direction
+        signal
+if use_mtf_confirmation
+    signal := signal == 1 and mtf_trend >= 0 ? 1 : signal == -1 and mtf_trend <= 0 ? -1 : 0
+    signal
+if micro_trend_strength > 0.3 and micro_trend_acceleration > 0
+    signal := signal == 1 ? 1 : signal == -1 ? -1 : micro_trend > 0 ? 1 : -1
+    signal
+var string final_signal = ''
+if zzSignal != ''
+    if signal == 1 and (zzSignal == 'Buy' or zzSignal == 'Ex.short')
+        final_signal := 'Buy'
+        final_signal
+    else if signal == -1 and (zzSignal == 'Sell' or zzSignal == 'Ex.long')
+        final_signal := 'Sell'
+        final_signal
+    else
+        final_signal := 'Neutral'
+        final_signal
+
+// --- Adaptive Risk Management ---
+volatility_factor = atr_vol / ta.atr(20)
+adjusted_risk = risk_per_trade * math.min(1.5, volatility_factor)
+base_stop_loss = use_atr_stops ? atr_vol * atr_multiplier * volatility_factor : close * 0.01
+adjusted_stop_loss = use_taa ? base_stop_loss + taa_buffer : base_stop_loss
+take_profit = adjusted_stop_loss * 2
+
+// Close all positions if equity drops below 10% of initial capital
+if strategy.equity < strategy.initial_capital * 0.1
+    strategy.close('Long')
+    strategy.close('Short')
+position_size = math.max(0, strategy.equity * adjusted_risk / 100 / adjusted_stop_loss)
+
+// --- Strategy Orders ---
+if barstate.isconfirmed and final_signal != '' and strategy.equity > 0
+    if use_ledp
+        if final_signal == 'Buy'
+            ledp_price = close - atr_vol * 0.5
+            strategy.order('Long', strategy.long, qty = position_size, limit = ledp_price)
+            strategy.exit('Exit Long', 'Long', stop = ledp_price - adjusted_stop_loss, limit = ledp_price + take_profit)
+        else if final_signal == 'Sell'
+            ledp_price = close + atr_vol * 0.5
+            strategy.order('Short', strategy.short, qty = position_size, limit = ledp_price)
+            strategy.exit('Exit Short', 'Short', stop = ledp_price + adjusted_stop_loss, limit = ledp_price - take_profit)
+    else
+        switch final_signal
+            'Buy' =>
+                strategy.close('Short')
+                strategy.entry('Long', strategy.long, qty = position_size)
+                strategy.exit('Exit Long', 'Long', stop = close - adjusted_stop_loss, profit = close + take_profit)
+            'Sell' =>
+                strategy.close('Long')
+                strategy.entry('Short', strategy.short, qty = position_size)
+                strategy.exit('Exit Short', 'Short', stop = close + adjusted_stop_loss, profit = close - take_profit)
+    final_signal := ''
+    final_signal
+
+// --- Enhanced Visualization with Dynamic Elements ---
+// For signal labels and improved visual cues
+
+// Calculate opacity and confidence-based values (global scope)
+var float conf_opacity = 50
+var string label_text = ""
+conf_opacity := final_signal != "" ? math.round(math.max(20, math.min(70, 70 - adjusted_confidence * 40))) : conf_opacity
+
+// Buy/Sell arrows - using conditional expressions at global scope
+plotshape(final_signal == "Buy" and show_signals ? high : na,
+         "Buy Signal Arrow",
+         color = bullish_color,
+         style = shape.triangleup,
+         location = location.abovebar,
+         size = size.normal)
+
+plotshape(final_signal == "Sell" and show_signals ? low : na,
+         "Sell Signal Arrow",
+         color = bearish_color,
+         style = shape.triangledown,
+         location = location.belowbar,
+         size = size.normal)
+
+// Labels can remain in conditional blocks (allowed in local scope)
+if show_signals and final_signal != ""
+    if final_signal == "Buy"
+        label_text := "BUY " + str.tostring(math.round(adjusted_confidence * 100, 0)) + "%"
+        label.new(bar_index, high + (atr_vol * 0.4), label_text,
+                 color = color.new(bullish_color, conf_opacity),
+                 textcolor = text_color,
+                 style = label.style_label_down,
+                 size = size.normal)
+
+    if final_signal == "Sell"
+        label_text := "SELL " + str.tostring(math.round(adjusted_confidence * 100, 0)) + "%"
+        label.new(bar_index, low - (atr_vol * 0.4), label_text,
+                 color = color.new(bearish_color, conf_opacity),
+                 textcolor = text_color,
+                 style = label.style_label_up,
+                 size = size.normal)
+
+// Enhanced quantum probability clouds with gradient effects
+// Calculate cloud size based on signal confidence
+float cloud_strength = math.max(0.5, math.min(2.0, quantum_confidence * 2.0))
+
+// Dynamic boundaries for probability clouds - all at global scope with conditional expressions
+float bull_cloud_top = show_quantum_prob and quantum_prob > 0 ? close + (atr_vol * cloud_strength) : na
+float bull_cloud_bottom = show_quantum_prob and quantum_prob > 0 ? close : na
+float bear_cloud_top = show_quantum_prob and quantum_prob < 0 ? close : na
+float bear_cloud_bottom = show_quantum_prob and quantum_prob < 0 ? close - (atr_vol * cloud_strength) : na
+
+// Plot invisible lines for cloud fill boundaries
+var p_bull_top = plot(bull_cloud_top, "", color = na)
+var p_bull_bottom = plot(bull_cloud_bottom, "", color = na)
+var p_bear_top = plot(bear_cloud_top, "", color = na)
+var p_bear_bottom = plot(bear_cloud_bottom, "", color = na)
+
+// Calculate opacity based on confidence (higher confidence = more visible)
+var int bull_opacity = 60
+var int bear_opacity = 60
+bull_opacity := math.round(math.max(40, math.min(85, 40 + quantum_confidence * 50)))
+bear_opacity := math.round(math.max(40, math.min(85, 40 + quantum_confidence * 50)))
+
+// Create gradient fills for probability clouds
+fill(p_bull_top, p_bull_bottom, color = color.new(bullish_color, bull_opacity), title = "Bullish Cloud")
+fill(p_bear_top, p_bear_bottom, color = color.new(bearish_color, bear_opacity), title = "Bearish Cloud")
+
+// Add decorative borders to enhance cloud visibility
+plot(bull_cloud_top, "Bullish Border",
+     color = show_quantum_prob and quantum_prob > 0 ? color.new(bullish_color, bull_opacity - 30) : na,
+     style = plot.style_line,
+     linewidth = 2)
+
+plot(bear_cloud_bottom, "Bearish Border",
+     color = show_quantum_prob and quantum_prob < 0 ? color.new(bearish_color, bear_opacity - 30) : na,
+     style = plot.style_line,
+     linewidth = 2)
+
+// Add visual accent with dotted line for depth effect
+plot(show_quantum_prob and quantum_prob > 0 ? bull_cloud_top - (atr_vol * 0.3) : na, "Bullish Accent",
+     color = color.new(bullish_color, bull_opacity),
+     style = plot.style_circles,
+     linewidth = 1)
+
+plot(show_quantum_prob and quantum_prob < 0 ? bear_cloud_bottom + (atr_vol * 0.3) : na, "Bearish Accent",
+     color = color.new(bearish_color, bear_opacity),
+     style = plot.style_circles,
+     linewidth = 1)
+
+// --- Performance Metrics ---
+var float max_drawdown = 0.0
+var float equity_peak = strategy.equity
+if strategy.equity > equity_peak
+    equity_peak := strategy.equity
+    equity_peak
+max_drawdown := math.max(max_drawdown, (equity_peak - strategy.equity) / equity_peak * 100)
+var float sharpe_ratio = 0.0
+std_dev = ta.stdev(strategy.netprofit / strategy.initial_capital, 10)
+if strategy.closedtrades > 0 and std_dev != 0
+    sharpe_ratio := strategy.netprofit / strategy.initial_capital / std_dev
+    sharpe_ratio
+else
+    sharpe_ratio := 0.0
+    sharpe_ratio
+
+// --- Dashboard ---
+if show_dashboard and barstate.islast
+    var table dashboard = table.new(dashboard_location == 'Top-Right' ? position.top_right : dashboard_location == 'Bottom-Right' ? position.bottom_right : dashboard_location == 'Top-Left' ? position.top_left : position.bottom_left, 2, 9, bgcolor = bg_color, border_width = 1, border_color = text_color)
+    table.cell(dashboard, 0, 0, 'Prediction', text_color = text_color)
+    table.cell(dashboard, 1, 0, final_signal == 'Buy' ? 'Bullish' : final_signal == 'Sell' ? 'Bearish' : 'Neutral', text_color = final_signal == 'Buy' ? bullish_color : final_signal == 'Sell' ? bearish_color : neutral_color)
+    table.cell(dashboard, 0, 1, 'Confidence', text_color = text_color)
+    table.cell(dashboard, 1, 1, str.tostring(math.round(adjusted_confidence * 100, 2)) + '%', text_color = text_color)
+    table.cell(dashboard, 0, 2, 'Market Regime', text_color = text_color)
+    table.cell(dashboard, 1, 2, market_regime, text_color = market_regime == 'Overbought' ? bearish_color : market_regime == 'Oversold' ? bullish_color : neutral_color)
+    table.cell(dashboard, 0, 3, 'Recent Win Rate', text_color = text_color)
+    table.cell(dashboard, 1, 3, str.tostring(math.round(recent_win_rate * 100, 2)) + '%', text_color = text_color)
+    overall_win_rate = strategy.closedtrades > 0 ? strategy.wintrades / strategy.closedtrades : 0.0
+    table.cell(dashboard, 0, 4, 'Overall Win Rate', text_color = text_color)
+    table.cell(dashboard, 1, 4, str.tostring(math.round(overall_win_rate * 100, 2)) + '%', text_color = text_color)
+    table.cell(dashboard, 0, 5, 'Net Profit', text_color = text_color)
+    table.cell(dashboard, 1, 5, str.tostring(math.round(strategy.netprofit, 2)), text_color = strategy.netprofit > 0 ? bullish_color : bearish_color)
+    table.cell(dashboard, 0, 6, 'Max Drawdown', text_color = text_color)
+    table.cell(dashboard, 1, 6, str.tostring(math.round(max_drawdown, 2)) + '%', text_color = max_drawdown < 10 ? bullish_color : bearish_color)
+    table.cell(dashboard, 0, 7, 'Sharpe Ratio', text_color = text_color)
+    table.cell(dashboard, 1, 7, str.tostring(math.round(sharpe_ratio, 2)), text_color = sharpe_ratio > 1 ? bullish_color : bearish_color)
+    table.cell(dashboard, 0, 8, 'Status', text_color = text_color)
+    status = array.size(training_inputs_price) < math.max(2, effective_k) ? 'Warming Up' : strategy.equity <= 0 ? 'No Capital' : 'Operational'
+    table.cell(dashboard, 1, 8, status, text_color = status == 'Operational' ? bullish_color : status == 'Warming Up' ? color.yellow : bearish_color)

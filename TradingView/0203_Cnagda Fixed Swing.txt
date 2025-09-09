@@ -1,0 +1,138 @@
+//@version=6
+strategy("Cnagda Fixed Swing SL & RR 1:3", overlay=true, max_boxes_count=500, max_labels_count=500)
+input_strategy = input.string("RSI", "Trade Logic", options=["RSI", "Scalp"])
+swing_lookback = input.int(34, "Swing Lookback", minval=5)
+rr_multiple = input.int(3, "Risk Reward Multiple", minval=1)
+
+// --- Heikin Ashi Calculation ---
+ha_close = (open + high + low + close) / 4
+var float ha_open = na
+if bar_index == 0
+    ha_open := (open + close) / 2
+else
+    ha_open := (ha_open[1] + ha_close[1]) / 2
+ha_high = math.max(high, math.max(ha_open, ha_close))
+ha_low = math.min(low, math.min(ha_open, ha_close))
+
+// --- MA/Signal Logic on Heikin Ashi ---
+ma1 = ta.ema(ha_close, 34)
+ma2 = ta.wma(ha_close, 34)
+wma34 = ta.wma(ha_close, 34)
+ema34 = ta.ema(ha_close, 34)
+sma34 = ta.sma(ha_close, 34)
+vwma34 = ta.vwma(ha_close, 34)
+ma_sum = (not na(wma34) ? wma34 : 0) + (not na(vwma34) ? vwma34 : 0) + (not na(ema34) ? ema34 : 0) + (not na(sma34) ? sma34 : 0)
+ma_avg = ma_sum / 4
+
+// --- Scalp/Swing Logic ---
+buySignal = ta.crossover(ma1, ma2)
+sellSignal = ta.crossunder(ma1, ma2)
+var string scalp_state = "NEUTRAL"
+var float refHigh = na
+var float refLow = na
+if buySignal or sellSignal
+    refHigh := ha_high
+    refLow := ha_low
+    scalp_state := "WAIT_ENTRY"
+if (scalp_state == "WAIT_ENTRY" or scalp_state == "SELL") and not na(refHigh) and ha_close > refHigh
+    scalp_state := "BUY"
+if (scalp_state == "WAIT_ENTRY" or scalp_state == "BUY") and not na(refLow) and ha_close < refLow
+    scalp_state := "SELL"
+if scalp_state == "BUY" and ha_close < ma_avg
+    scalp_state := "NEUTRAL"
+    refHigh := na
+    refLow := na
+if scalp_state == "SELL" and ha_close > ma_avg
+    scalp_state := "NEUTRAL"
+    refHigh := na
+    refLow := na
+
+// --- RSI Logic ---
+rsi_val = ta.rsi(ha_close, 14)
+rsi_ema_3 = ta.ema(rsi_val, 3)
+rsi_ema_10 = ta.ema(rsi_val, 10)
+high_vol = volume > ta.sma(volume, 20) * 1.5
+bar_is_high = high_vol
+prev_bar_is_high = high_vol[1]
+any_high_bar = bar_is_high or prev_bar_is_high
+_base_rsi_cross_bull = ta.crossover(rsi_ema_3, rsi_ema_10) and any_high_bar
+_base_rsi_cross_bear = ta.crossunder(rsi_ema_3, rsi_ema_10) and any_high_bar
+rsi_cross_bull = _base_rsi_cross_bull and (ha_close < ma_avg)
+rsi_cross_bear = _base_rsi_cross_bear and (ha_close > ma_avg)
+
+// ENTRY LOGIC
+var float rsi_signal_high = na
+var float rsi_signal_low = na
+var int rsi_signal_bar = na
+var string rsi_entry_state = ""
+
+if rsi_cross_bull
+    rsi_signal_high := high
+    rsi_signal_low := na
+    rsi_signal_bar := bar_index
+    rsi_entry_state := "WAIT ENTRY"
+else if rsi_cross_bear
+    rsi_signal_low := low
+    rsi_signal_high := na
+    rsi_signal_bar := bar_index
+    rsi_entry_state := "WAIT ENTRY"
+else if not na(rsi_signal_bar)
+    if not na(rsi_signal_high)
+        if close > rsi_signal_high and bar_index > rsi_signal_bar
+            rsi_entry_state := "BUY"
+            rsi_signal_high := na
+            rsi_signal_bar := na
+        else
+            rsi_entry_state := "WAIT ENTRY"
+    else if not na(rsi_signal_low)
+        if close < rsi_signal_low and bar_index > rsi_signal_bar
+            rsi_entry_state := "SELL"
+            rsi_signal_low := na
+            rsi_signal_bar := na
+        else
+            rsi_entry_state := "WAIT ENTRY"
+    else
+        rsi_entry_state := ""
+else
+    rsi_entry_state := ""
+
+// --- Swing High/Low (Stoploss reference) ---
+swingLow  = ta.pivotlow(ha_low, swing_lookback, swing_lookback)
+swingHigh = ta.pivothigh(ha_high, swing_lookback, swing_lookback)
+
+// -- Entry/Exit conditions --
+long_condition  = input_strategy == "RSI" ? (rsi_entry_state == "BUY" and rsi_entry_state[1] != "BUY") : (scalp_state == "BUY" and scalp_state[1] != "BUY")
+short_condition = input_strategy == "RSI" ? (rsi_entry_state == "SELL" and rsi_entry_state[1] != "SELL") : (scalp_state == "SELL" and scalp_state[1] != "SELL")
+exit_long_condition  = input_strategy == "RSI" ? (rsi_entry_state == "SELL" and rsi_entry_state[1] != "SELL") : (scalp_state == "SELL" and scalp_state[1] != "SELL")
+exit_short_condition = input_strategy == "RSI" ? (rsi_entry_state == "BUY" and rsi_entry_state[1] != "BUY") : (scalp_state == "BUY" and scalp_state[1] != "BUY")
+
+// --- Final Entry & SL/Target (NO TRAIL) ---
+var float sl_long = na
+var float sl_short = na
+var float tg_long = na
+var float tg_short = na
+
+if long_condition and not na(swingLow)
+    sl_long := swingLow         // SL = last swing low after entry candle close
+    entry_price = close
+    risk = entry_price - sl_long
+    tg_long := entry_price + (risk * rr_multiple)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Long_SL", from_entry="Long", stop=sl_long, limit=tg_long)
+
+if short_condition and not na(swingHigh)
+    sl_short := swingHigh      // SL = last swing high after entry candle close
+    entry_price = close
+    risk = sl_short - entry_price
+    tg_short := entry_price - (risk * rr_multiple)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Short_SL", from_entry="Short", stop=sl_short, limit=tg_short)
+
+if exit_long_condition
+    strategy.close("Long")
+if exit_short_condition
+    strategy.close("Short")
+
+// --- Visuals (optional, for clarity) ---
+barcolor(long_condition ? color.green : short_condition ? color.red : na)
+plot(ma_avg, "MA Avg", color=color.blue, linewidth=2)

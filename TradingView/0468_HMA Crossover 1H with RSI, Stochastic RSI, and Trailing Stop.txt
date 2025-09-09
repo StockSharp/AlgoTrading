@@ -1,0 +1,25 @@
+//@version=5
+strategy("HMA Crossover 1H with RSI, Stochastic RSI, and Trailing Stop", overlay=true)
+
+hma50 = ta.hma(close, 5)
+hma100 = ta.hma(close, 20)
+rsi = ta.rsi(close, 14)
+k = ta.sma(ta.stoch(close, high, low, 14), 3)
+
+buySignal = ta.crossover(hma50, hma100) and rsi < 45 and k < 39
+sellSignal = ta.crossunder(hma50, hma100) and rsi > 60 and k > 63
+
+plot(hma50, color=color.blue, linewidth=2)
+plot(hma100, color=color.red, linewidth=2)
+
+plotshape(series=buySignal, location=location.belowbar, color=color.green, style=shape.labelup, text="BUY")
+plotshape(series=sellSignal, location=location.abovebar, color=color.red, style=shape.labeldown, text="SELL")
+
+if (buySignal)
+    strategy.entry("Buy", strategy.long, stop=na, limit=na, oca_name="Buy", oca_type=strategy.oca.cancel, comment="Buy Signal", when=buySignal)
+
+if (sellSignal)
+    strategy.entry("Sell", strategy.short, stop=na, limit=na, oca_name="Sell", oca_type=strategy.oca.cancel, comment="Sell Signal", when=sellSignal)
+
+strategy.exit("Trailing Stop", from_entry="Buy", trail_offset=0.05, trail_points=na)
+strategy.exit("Trailing Stop", from_entry="Sell", trail_offset=0.05, trail_points=250)

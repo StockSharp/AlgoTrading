@@ -1,0 +1,246 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+//@version=5
+strategy("Multi-Step FlexiSuperTrend - Strategy [presentTrading]", shorttitle = "Multi-Step FlexiST-VT - Strategy [presentTrading]", overlay = false, precision=3, commission_value=0.1, commission_type=strategy.commission.percent, slippage=1, currency=currency.USD, default_qty_type=strategy.percent_of_equity, default_qty_value=10, initial_capital=10000)
+
+// Inputs
+tradeDirectionChoice = input.string("Both", "Trading Direction", options=["Both", "Long", "Short"])
+indicatorSource = input.source(hlc3, title="Indicator Source")
+indicatorLength = input.int(10, minval = 2, title="Indicator Length")
+startingFactor = input.float(0.618, title="Starting Factor", minval = 0)
+incrementFactor_1 = input.float(.382, minval = 0, step = .10, title="Increment Factor")
+normalizeMethod = input.string('None', options = ['None', 'Max-Min', 'Absolute Sum'], title="Normalization Method")
+
+// Multi-Step Take Profit Inputs
+tp_level1 = input.float(title="Take Profit Level 1 (%)", defval=2.0)
+tp_level2 = input.float(title="Take Profit Level 2 (%)", defval=8.0)
+tp_level3 = input.float(title="Take Profit Level 3 (%)", defval=18.0)
+
+tp_percent1 = input.float(title="Take Profit Percent 1 (%)", defval=30.0)
+tp_percent2 = input.float(title="Take Profit Percent 2 (%)", defval=20.0)
+tp_percent3 = input.float(title="Take Profit Percent 3 (%)", defval=15.0)
+
+var float longEntryTime = na
+var float shortEntryTime = na
+var bool recentlyExitedLong = false
+var bool recentlyExitedShort = false
+
+// Supertrend Type
+type supertrend
+    float upper = hl2
+    float lower = hl2
+    float output
+    float perf = 0
+    float factor
+    int trend = 0
+
+norm(value, diffs, den)=>
+    normalizeMethod = switch normalizeMethod
+        'Max-Min' => (value - diffs.min()) / diffs.range()
+        'Absolute Sum' => value / den
+        => value
+
+// Function to calculate SuperTrend Polyfactor Oscillator
+SuperTrendPolyfactorOscillator(indicatorSource, indicatorLength, startingFactor, incrementFactor, normalizeMethod) =>
+    var holder = array.new<supertrend>(0)
+    diffs = array.new<float>(0)
+    den = 0.0
+    factor = startingFactor
+
+    // Populate supertrend type array
+    if barstate.isfirst
+        for i = 0 to 19
+            holder.push(supertrend.new())
+
+    atr = ta.atr(indicatorLength)
+
+    for i = 0 to 19
+        get_spt = holder.get(i)
+        atr = ta.atr(indicatorLength)
+        up = hl2 + atr * (factor)
+        dn = hl2 - atr * (factor)
+
+        get_spt.trend := indicatorSource > get_spt.upper ? 1 : indicatorSource < get_spt.lower ? 0 : get_spt.trend
+        get_spt.upper := indicatorSource[1] < get_spt.upper ? math.min(up, get_spt.upper) : up
+        get_spt.lower := indicatorSource[1] > get_spt.lower ? math.max(dn, get_spt.lower) : dn
+        get_spt.output := get_spt.trend == 1 ? get_spt.lower : get_spt.upper
+
+        diffs.push(indicatorSource - get_spt.output)
+        den += math.abs(indicatorSource - get_spt.output)
+        factor += incrementFactor
+
+    median = norm(diffs.median(), diffs, den)
+    stdev = normalizeMethod != 'Max-Min' ? norm(diffs.stdev(), diffs, den) : na
+    [median, stdev, diffs, den]
+
+// Access the SuperTrend Polyfactor Oscillator values
+[medianValue, stdevValue, diffs, den] = SuperTrendPolyfactorOscillator(indicatorSource, indicatorLength, startingFactor, incrementFactor_1, normalizeMethod)
+
+// Style
+mesh = input(true, inline = 'mesh', group = 'Style')
+upCss = input.color(color.new(#089981, 90), '', inline = 'mesh', group = 'Style')
+dnCss = input.color(color.new(#f23645, 90), '', inline = 'mesh', group = 'Style')
+
+//-----------------------------------------------------------------------------
+// Plots
+//-----------------------------------------------------------------------------
+
+// Plot each individual deviation using the array.get function outside of the loop
+// Manually plot each deviation since 'plot' cannot be used in a loop
+plot(mesh ? norm(array.get(diffs, 0), diffs, den) : na, "Deviation 1", color=array.get(diffs, 0) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 1), diffs, den) : na, "Deviation 2", color=array.get(diffs, 1) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 2), diffs, den) : na, "Deviation 3", color=array.get(diffs, 2) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 3), diffs, den) : na, "Deviation 4", color=array.get(diffs, 3) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 4), diffs, den) : na, "Deviation 5", color=array.get(diffs, 4) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 5), diffs, den) : na, "Deviation 6", color=array.get(diffs, 5) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 6), diffs, den) : na, "Deviation 7", color=array.get(diffs, 6) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 7), diffs, den) : na, "Deviation 8", color=array.get(diffs, 7) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 8), diffs, den) : na, "Deviation 9", color=array.get(diffs, 8) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 9), diffs, den) : na, "Deviation 10", color=array.get(diffs, 9) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 10), diffs, den) : na, "Deviation 11", color=array.get(diffs, 10) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 11), diffs, den) : na, "Deviation 12", color=array.get(diffs, 11) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 12), diffs, den) : na, "Deviation 13", color=array.get(diffs, 12) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 13), diffs, den) : na, "Deviation 14", color=array.get(diffs, 13) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 14), diffs, den) : na, "Deviation 15", color=array.get(diffs, 14) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 15), diffs, den) : na, "Deviation 16", color=array.get(diffs, 15) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 16), diffs, den) : na, "Deviation 17", color=array.get(diffs, 16) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 17), diffs, den) : na, "Deviation 18", color=array.get(diffs, 17) > 0 ? upCss : dnCss, style=plot.style_histogram)
+plot(mesh ? norm(array.get(diffs, 18), diffs, den) : na, "Deviation 19", color=array.get(diffs, 18) > 0 ? upCss : dnCss, style=plot.style_histogram)
+
+// Median
+plot(medianValue, 'Median', medianValue > (normalizeMethod == 'Max-Min' ? .5 : 0) ? #90bff9 : #ffcc80)
+
+// Stdev Area
+up = plot(stdevValue, color = na, editable = false)
+dn = plot(-stdevValue, color = na, editable = false)
+fill(up, dn, color.new(#90bff9, 80), title = 'Stdev Area')
+
+//-----------------------------------------------------------------------------
+
+type bar
+    float o = na
+    float h = na
+    float l = na
+    float c = na
+
+type supertrend_
+    float s = na
+    int   d = na
+
+method src(bar b, simple string src) =>
+    float x = switch src
+        'oc2'   => math.avg(b.o, b.c)
+        'hl2'   => math.avg(b.h, b.l)
+        'hlc3'  => math.avg(b.h, b.l, b.c)
+        'ohlc4' => math.avg(b.o, b.h, b.l, b.c)
+        'hlcc4' => math.avg(b.h, b.l, b.c, b.c)
+    x
+
+method atr(bar b, simple int len) =>
+    float tr =
+         na(b.h[1]) ?
+         b.h - b.l  :
+         math.max(
+             math.max(
+                 b.h - b.l,
+                 math.abs(b.h - b.c[1])),
+             math.abs    (b.l - b.c[1]))
+    len == 1 ? tr : ta.rma(tr, len)
+
+method st(bar b, simple float factor, simple int len) =>
+    float atr = b.atr(len)
+    float up  = b.src('hl2') + factor * atr
+    up       := up < nz(up[1]) or b.c[1] > nz(up[1]) ? up : nz(up[1])
+    float dn  = b.src('hl2') - factor * atr
+    dn       := dn > nz(dn[1]) or b.c[1] < nz(dn[1]) ? dn : nz(dn[1])
+
+    float st  = na
+    int   dir = na
+    dir := switch
+        na(atr[1])         => 1
+        st[1] == nz(up[1]) => dir := b.c > up ? -1 : +1
+        =>                    dir := b.c < dn ? +1 : -1
+    st  :=                    dir == -1 ? dn : up
+
+    supertrend_.new(st, dir)
+
+var string tp = 'Choose an indicator source of which to base the SuperTrend on.'
+var string g1 = "Entry/Exit: SuperTrend Settings", var string gu = "UI Options"
+src  = medianValue
+len  = input.int(10, "Length", inline = '1', group = g1)
+mlt  = input.float(15., "Factor", 1, 20, 0.5, inline = '1', group = g1)
+clbl = input.bool(true, "Contrarian Signals", group = gu)
+colu = input.color(#008cff, "Bull Color", group = gu)
+cold = input.color(#ff4800, "Bear Color", group = gu)
+
+bar        b  = bar.new(nz(src[1]), math.max(nz(src[1]), src), math.min(nz(src[1]), src), src)
+float      tr = b.atr(len)
+supertrend_ st = b.st(mlt, len)
+
+color cst = switch st.d
+    +1 => cold
+    -1 => colu
+
+t = plot(st.d > 0 ? st.s : na, 'Bear ST', cst, 1, plot.style_linebr)
+d = plot(st.d < 0 ? st.s : na, 'Bull ST', cst, 1, plot.style_linebr)
+i = plot(st.d, 'Direction', display = display.none)
+c = plot(b.src('oc2'), 'Filler', display = display.none)
+
+fill(t, c, color.new(cold, 90))
+fill(d, c, color.new(colu, 90))
+
+bool scon = clbl and math.sign(ta.change(st.d)) ==  1 ? true : false
+bool bcon = clbl and math.sign(ta.change(st.d)) == -1 ? true : false
+
+plotshape(scon ? st.s + tr / 3 : na, 'Sell Signal', shape.labeldown, location.absolute, color.new(cold, 60), 0, '𝓢', chart.fg_color)
+plotshape(bcon ? st.s - tr / 3 : na, 'Buy Signal', shape.labelup, location.absolute, color.new(colu, 60), 0, '𝓑', chart.fg_color)
+
+// Entry/Exit conditions
+enterLongCondition = st.d < 0 and medianValue > 0
+enterShortCondition = st.d > 0 and medianValue < 0
+
+// Check trade direction choice before executing trade entries.
+if (enterLongCondition and (tradeDirectionChoice == "Long" or tradeDirectionChoice == "Both") and strategy.equity > 0)
+    if (strategy.position_size < 0)
+        strategy.close("Short Position")
+    strategy.entry("Long Position", strategy.long)
+    longEntryTime := time
+    recentlyExitedLong := false
+    recentlyExitedShort := false
+
+if (enterShortCondition and (tradeDirectionChoice == "Short" or tradeDirectionChoice == "Both") and strategy.equity > 0)
+    if (strategy.position_size > 0)
+        strategy.close("Long Position")
+    strategy.entry("Short Position", strategy.short)
+    shortEntryTime := time
+    recentlyExitedShort := false
+    recentlyExitedLong := false
+
+// =============================================================================
+// MULTI-STEP TAKE PROFIT
+// =============================================================================
+
+// Calculate the take profit prices based on the average entry price
+tp_price1_long = strategy.position_avg_price * (1 + tp_level1 / 100)
+tp_price2_long = strategy.position_avg_price * (1 + tp_level2 / 100)
+tp_price3_long = strategy.position_avg_price * (1 + tp_level3 / 100)
+
+tp_price1_short = strategy.position_avg_price * (1 - tp_level1 / 100)
+tp_price2_short = strategy.position_avg_price * (1 - tp_level2 / 100)
+tp_price3_short = strategy.position_avg_price * (1 - tp_level3 / 100)
+
+// Exit portions of the position at each take profit level
+if strategy.position_size > 0
+    strategy.exit("Take Profit 1", from_entry="Long Position", qty_percent=tp_percent1, limit=tp_price1_long)
+    strategy.exit("Take Profit 2", from_entry="Long Position", qty_percent=tp_percent2, limit=tp_price2_long)
+    strategy.exit("Take Profit 3", from_entry="Long Position", qty_percent=tp_percent3, limit=tp_price3_long)
+
+if strategy.position_size < 0
+    strategy.exit("Take Profit 1", from_entry="Short Position", qty_percent=tp_percent1, limit=tp_price1_short)
+    strategy.exit("Take Profit 2", from_entry="Short Position", qty_percent=tp_percent2, limit=tp_price2_short)
+    strategy.exit("Take Profit 3", from_entry="Short Position", qty_percent=tp_percent3, limit=tp_price3_short)
+
+// =============================================================================
+// END
+// =============================================================================

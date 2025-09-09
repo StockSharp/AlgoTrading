@@ -1,0 +1,70 @@
+//@version=5
+strategy("High Yield Spread Strategy with SMA Filter", overlay=false)
+
+// Ensure the script runs only on the daily timeframe
+if (timeframe.period != "D")
+    runtime.error("This script only works on the daily timeframe (D).")
+
+// Dropdown for the basis calculation
+basis = input.string("High Yield Spread", title="Select Basis Calculation", options=["High Yield Spread", "VIX"])
+
+// Input for the High Yield Spread (external source)
+spread_hy = request.security("FRED:BAMLH0A0HYM2", "D", close)  // High Yield Spread
+spread_vix = request.security("CBOE:VIX", "D", close)  // VIX
+
+// Dynamic threshold input
+threshold = input.float(5, title="Threshold", step=0.1)
+
+// Dropdown for Long/Short decision
+direction = input.string("Long", title="Select Direction", options=["Long", "Short"])
+
+// Input for holding period
+holdingPeriod = input.int(5, title="Holding Period (Periods)", minval=1)
+
+// Input for SMA filter
+use_sma_filter = input.bool(true, title="Use SMA Filter")  // Checkbox to toggle SMA filter on/off
+sma_length = input.int(50, title="SMA Length", minval=1)  // Input for SMA length
+
+// Calculate the SMA
+sma_value = ta.sma(close, sma_length)
+
+// Strategy logic variables
+var float entryPrice = na
+var int entryBar = na
+
+// Choose the correct spread based on the basis input
+spread = basis == "High Yield Spread" ? spread_hy : spread_vix
+
+// Apply the SMA filter condition (price above SMA for long, below SMA for short) if enabled
+sma_condition_long = not use_sma_filter or (use_sma_filter and close > sma_value)
+sma_condition_short = not use_sma_filter or (use_sma_filter and close < sma_value)
+
+// Logic to open a trade based on the selected direction, threshold, and SMA filter
+if (strategy.position_size == 0)  // Ensure only one position is open at a time
+    if (direction == "Long" and spread > threshold and sma_condition_long)
+        entryPrice := close
+        entryBar := bar_index
+        strategy.entry("Long Entry", strategy.long)
+    if (direction == "Short" and spread < threshold and sma_condition_short)
+        entryPrice := close
+        entryBar := bar_index
+        strategy.entry("Short Entry", strategy.short)
+
+// Exit the trade after the defined holding period
+if (not na(entryBar) and (bar_index - entryBar >= holdingPeriod))
+    if (strategy.position_size > 0)  // Close only long positions
+        strategy.close("Long Entry")
+    if (strategy.position_size < 0)  // Close only short positions
+        strategy.close("Short Entry")
+    entryPrice := na
+    entryBar := na
+
+// Plot the High Yield Spread and VIX, but make the inactive one invisible
+plot(spread_hy, title="High Yield Spread", color=color.blue, display=basis == "High Yield Spread" ? display.all : display.none)
+plot(spread_vix, title="VIX", color=color.blue, display=basis == "VIX" ? display.all : display.none)
+
+// Draw the threshold line
+hline(threshold, "Threshold", color=color.red)
+
+// Plot the SMA only if the filter is enabled
+//plot(use_sma_filter ? sma_value : na, title="SMA", color=color.green)

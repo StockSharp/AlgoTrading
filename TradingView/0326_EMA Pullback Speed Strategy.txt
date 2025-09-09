@@ -1,0 +1,88 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PakunFX
+
+
+//@version=6
+strategy("EMA Pullback Speed Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+max_length       = input.int(50, title="Maximum Length")
+accel_multiplier = input.float(3.0, title="Accelerator Multiplier")
+return_threshold = input.float(5.0, title="Pullback Threshold (%)", step=0.01)
+atr_length       = input.int(14, title="ATR Period")
+atr_mult         = input.float(4.0, title="ATR Multiplier (Stop Loss)")
+fixed_tp_pct     = input.float(1.5, title="Fixed Take Profit (%)")
+short_ema_len    = input.int(21, title="Short EMA Length")
+long_ema_len     = input.int(50, title="Long EMA Length")
+long_speed_min   = input.float(1000.0, title="Minimum Speed for Long Entry", step=0.1)
+short_speed_max  = input.float(-1000.0, title="Maximum Speed for Short Entry", step=0.1)
+
+// === EMA FILTER ===
+ema_short = ta.ema(close, short_ema_len)
+ema_long  = ta.ema(close, long_ema_len)
+ema_uptrend = ema_short > ema_long
+ema_downtrend = ema_short < ema_long
+
+// === DYNAMIC EMA ===
+counts_diff = close
+max_abs_counts_diff = ta.highest(math.abs(counts_diff), 200)
+counts_diff_norm = (counts_diff + max_abs_counts_diff) / (2 * max_abs_counts_diff)
+dyn_length = 5 + counts_diff_norm * (max_length - 5)
+
+calc_accel_factor(float counts_diff, float prev_counts_diff) =>
+    delta_counts_diff = math.abs(counts_diff - prev_counts_diff)
+    max_delta_counts_diff = ta.highest(delta_counts_diff, 200)
+    max_delta_counts_diff := max_delta_counts_diff == 0 ? 1 : max_delta_counts_diff
+    delta_counts_diff / max_delta_counts_diff
+
+adjust_alpha(float dyn_length, float accel_factor, float accel_multiplier) =>
+    alpha_base = 2 / (dyn_length + 1)
+    alpha = alpha_base * (1 + accel_factor * accel_multiplier)
+    math.min(1, alpha)
+
+accel_factor = calc_accel_factor(counts_diff, nz(counts_diff[1]))
+alpha = adjust_alpha(dyn_length, accel_factor, accel_multiplier)
+var float dyn_ema = na
+dyn_ema := na(dyn_ema[1]) ? close : alpha * close + (1 - alpha) * dyn_ema[1]
+
+// === TREND LOGIC ===
+is_uptrend = close > dyn_ema
+is_downtrend = close < dyn_ema
+distance = math.abs(close - dyn_ema) / dyn_ema * 100
+returned_to_trend = distance < return_threshold
+
+// === CANDLE CONFIRMATION ===
+bullish_reversal = close[2] > open[2] and close[1] > open[1] and close > high[1]
+bearish_reversal = close[2] < open[2] and close[1] < open[1] and close < low[1]
+
+// === SPEED & FILTER ===
+speed = close - open
+trend_speed_up = speed > 0
+trend_speed_dn = speed < 0
+trend_speed_filter_long  = speed >= long_speed_min
+trend_speed_filter_short = speed <= short_speed_max
+
+// === ATR FOR STOPS AND TARGETS ===
+atr = ta.atr(atr_length)
+long_sl = close - atr * atr_mult
+short_sl = close + atr * atr_mult
+long_tp = close + close * fixed_tp_pct / 100
+short_tp = close - close * fixed_tp_pct / 100
+
+// === ENTRY CONDITIONS ===
+long_condition = is_uptrend and bullish_reversal and returned_to_trend and trend_speed_up and ema_uptrend and trend_speed_filter_long
+short_condition = is_downtrend and bearish_reversal and returned_to_trend and trend_speed_dn and ema_downtrend and trend_speed_filter_short
+
+if (long_condition)
+    strategy.entry("Long", strategy.long)
+if (short_condition)
+    strategy.entry("Short", strategy.short)
+
+// === EXITS ===
+strategy.exit("Exit Long", from_entry="Long", stop=long_sl, limit=long_tp)
+strategy.exit("Exit Short", from_entry="Short", stop=short_sl, limit=short_tp)
+
+// === VISUALIZATION PLOTS ===
+plot(ema_short, color=color.teal, linewidth=1, title="EMA Short", style=plot.style_line)
+plot(ema_long, color=color.orange, linewidth=1, title="EMA Long", style=plot.style_line)
+plot(dyn_ema, color=color.blue, linewidth=2, title="Dynamic EMA", style=plot.style_line)

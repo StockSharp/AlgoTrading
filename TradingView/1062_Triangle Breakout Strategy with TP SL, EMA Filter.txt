@@ -1,0 +1,73 @@
+//@version=5
+strategy("Triangle Breakout Strategy with TP/SL, EMA Filter", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === Inputs === //
+pivotLen     = input.int(5, title="Pivot Length")
+slopeThresh  = input.float(0.1, title="Slope Threshold", step=0.01)
+minBars      = input.int(10, title="Min Bars for Pattern")
+showBreakout = input.bool(true, title="Show Breakout Signal")
+tpPerc       = input.float(3.0, title="Take Profit %", step=0.1)  // %3 TP
+slPerc       = input.float(1.5, title="Stop Loss %", step=0.1)   // %1.5 SL
+useEMAFilter = input.bool(true, title="Use EMA 20/50 Filter")
+
+// === EMA Filters === //
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+
+// === Pivot Detection === //
+ph = ta.pivothigh(high, pivotLen, pivotLen)
+pl = ta.pivotlow(low, pivotLen, pivotLen)
+
+var float[] tops_x = array.new_float()
+var float[] tops_y = array.new_float()
+var float[] bots_x = array.new_float()
+var float[] bots_y = array.new_float()
+
+if ph
+    array.push(tops_x, bar_index - pivotLen)
+    array.push(tops_y, high[pivotLen])
+if pl
+    array.push(bots_x, bar_index - pivotLen)
+    array.push(bots_y, low[pivotLen])
+
+var line topLine = na
+var line botLine = na
+
+var bool longSignal = false
+
+if array.size(tops_x) >= 2 and array.size(bots_x) >= 2
+    top1_idx = array.get(tops_x, array.size(tops_x) - 2)
+    top2_idx = array.get(tops_x, array.size(tops_x) - 1)
+    bot1_idx = array.get(bots_x, array.size(bots_x) - 2)
+    bot2_idx = array.get(bots_x, array.size(bots_x) - 1)
+
+    top1_val = array.get(tops_y, array.size(tops_y) - 2)
+    top2_val = array.get(tops_y, array.size(tops_y) - 1)
+    bot1_val = array.get(bots_y, array.size(bots_y) - 2)
+    bot2_val = array.get(bots_y, array.size(bots_y) - 1)
+
+    slopeTop = (top2_val - top1_val) / (top2_idx - top1_idx)
+    slopeBot = (bot2_val - bot1_val) / (bot2_idx - bot1_idx)
+    interceptTop = top2_val - slopeTop * top2_idx
+    interceptBot = bot2_val - slopeBot * bot2_idx
+
+    line.delete(topLine)
+    line.delete(botLine)
+
+    topLine := line.new(x1=int(top1_idx), y1=top1_val, x2=int(top2_idx), y2=top2_val, color=color.red, width=2)
+    botLine := line.new(x1=int(bot1_idx), y1=bot1_val, x2=int(bot2_idx), y2=bot2_val, color=color.green, width=2)
+
+    expectedTop = slopeTop * bar_index + interceptTop
+    expectedBot = slopeBot * bar_index + interceptBot
+
+    isBreakoutUp = showBreakout and close > expectedTop
+
+    if isBreakoutUp and (not useEMAFilter or (close > ema20 and close > ema50))
+        strategy.entry("Triangle Long", strategy.long)
+        tpLevel = close * (1 + tpPerc / 100)
+        slLevel = close * (1 - slPerc / 100)
+        strategy.exit("TP/SL", from_entry="Triangle Long", limit=tpLevel, stop=slLevel)
+        label.new(bar_index, high, "Breakout Up", style=label.style_label_up, color=color.lime)
+
+plot(ema20, color=color.orange, title="EMA 20")
+plot(ema50, color=color.blue, title="EMA 50")

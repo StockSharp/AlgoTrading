@@ -1,0 +1,123 @@
+//@version=5
+strategy("5 EMA STRATEGY by Power of Stocks(StockYogi)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+emaLen           = input.int(5, title="EMA Length")
+filterBuy        = input.bool(true, title="Enable Buy Trades")
+filterSell       = input.bool(true, title="Enable Sell Trades")
+targetRR         = input.float(3.0, title="Target R:R (e.g. 3 = 1:3)")
+entryOnCloseOnly = input.bool(false, title="Only Enter on Candle Close?")
+
+// === TOGGLES ===
+enableCustomExitTime  = input.bool(true, title="Enable Custom Exit Time")
+enableBlockTradeTime  = input.bool(true, title="Enable Block Trade Time Window")
+
+// === CUSTOM TIME SETTINGS ===
+exitHour     = input.int(15, title="Exit Hour (IST)", minval=0, maxval=23)
+exitMinute   = input.int(30, title="Exit Minute (IST)", minval=0, maxval=59)
+blockStartHr = input.int(15, title="Block Start Hour (IST)", minval=0, maxval=23)
+blockStartMn = input.int(0,  title="Block Start Minute (IST)", minval=0, maxval=59)
+blockEndHr   = input.int(15, title="Block End Hour (IST)", minval=0, maxval=23)
+blockEndMn   = input.int(30, title="Block End Minute (IST)", minval=0, maxval=59)
+
+// === TIME MANAGEMENT (IST) ===
+ist = timestamp("Asia/Kolkata", year, month, dayofmonth, hour, minute)
+istHour = hour(ist)
+istMinute = minute(ist)
+
+exitNow = enableCustomExitTime and (istHour == exitHour and istMinute == exitMinute)
+
+// === ENTRY BLOCK ZONE LOGIC ===
+afterBlockStart = istHour > blockStartHr or (istHour == blockStartHr and istMinute >= blockStartMn)
+beforeBlockEnd  = istHour < blockEndHr or (istHour == blockEndHr and istMinute < blockEndMn)
+inBlockZone     = enableBlockTradeTime and (afterBlockStart and beforeBlockEnd)
+
+// === CALCULATE EMA ===
+ema = ta.ema(close, emaLen)
+plot(ema, color=color.orange, title="5 EMA")
+
+// === SIGNAL CANDLE STORAGE ===
+var float signalHigh = na
+var float signalLow  = na
+var int signalIndex  = na
+var bool isBuySignal = false
+var bool isSellSignal = false
+
+// === SIGNAL CONDITIONS ===
+newBuySignal  = close < ema and high < ema
+newSellSignal = close > ema and low > ema
+
+if newBuySignal
+    signalHigh := high
+    signalLow := low
+    signalIndex := bar_index
+    isBuySignal := true
+    isSellSignal := false
+
+if newSellSignal
+    signalHigh := high
+    signalLow := low
+    signalIndex := bar_index
+    isBuySignal := false
+    isSellSignal := true
+
+// === HIGHLIGHT SIGNAL BAR ===
+isSignalBar = bar_index == signalIndex
+barcolor(isSignalBar ? color.blue : na)
+
+// === TRIGGER CONDITIONS ===
+withinWindow = bar_index > signalIndex and bar_index <= signalIndex + 3
+buyTrigger  = isBuySignal and withinWindow and high > signalHigh and not inBlockZone
+sellTrigger = isSellSignal and withinWindow and low < signalLow and not inBlockZone
+
+// === UNIQUE TRADE ID GENERATOR ===
+getId(prefix) =>
+    var int counter = 0
+    counter += 1
+    prefix + "_" + str.tostring(counter)
+
+// === BUY ENTRY ===
+if buyTrigger and filterBuy
+    entry = signalHigh
+    sl = signalLow
+    risk = entry - sl
+    target = entry + risk * targetRR
+    tradeId = getId("Buy")
+
+    if entryOnCloseOnly
+        if close > signalHigh
+            strategy.entry(tradeId, strategy.long)
+            strategy.exit("TP_" + tradeId, from_entry=tradeId, limit=target, stop=sl)
+    else
+        strategy.entry(tradeId, strategy.long, stop=entry)
+        strategy.exit("TP_" + tradeId, from_entry=tradeId, limit=target, stop=sl)
+
+    // Visual lines
+    line.new(bar_index, entry, bar_index + 1, entry, color=color.green, style=line.style_dashed, width=1, extend=extend.right)
+    line.new(bar_index, target, bar_index + 1, target, color=color.teal, style=line.style_dashed, width=1, extend=extend.right)
+    line.new(bar_index, sl, bar_index + 1, sl, color=color.red, style=line.style_dashed, width=1, extend=extend.right)
+
+// === SELL ENTRY ===
+if sellTrigger and filterSell
+    entry = signalLow
+    sl = signalHigh
+    risk = sl - entry
+    target = entry - risk * targetRR
+    tradeId = getId("Sell")
+
+    if entryOnCloseOnly
+        if close < signalLow
+            strategy.entry(tradeId, strategy.short)
+            strategy.exit("TP_" + tradeId, from_entry=tradeId, limit=target, stop=sl)
+    else
+        strategy.entry(tradeId, strategy.short, stop=entry)
+        strategy.exit("TP_" + tradeId, from_entry=tradeId, limit=target, stop=sl)
+
+    // Visual lines
+    line.new(bar_index, entry, bar_index + 1, entry, color=color.red, style=line.style_dashed, width=1, extend=extend.right)
+    line.new(bar_index, target, bar_index + 1, target, color=color.orange, style=line.style_dashed, width=1, extend=extend.right)
+    line.new(bar_index, sl, bar_index + 1, sl, color=color.green, style=line.style_dashed, width=1, extend=extend.right)
+
+// === TIME-BASED EXIT FOR ALL TRADES ===
+if exitNow
+    strategy.close_all(comment="Exited at Custom Time")

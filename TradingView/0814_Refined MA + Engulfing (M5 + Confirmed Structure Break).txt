@@ -1,0 +1,91 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © IamKRfx
+
+//@version=6
+//@version=6
+strategy("Refined MA + Engulfing (M5 + Confirmed Structure Break)", overlay=true, default_qty_type=strategy.fixed, default_qty_value=5)
+
+// === INPUTS ===
+ma1Len = input.int(66, title="MA1 Length")
+ma2Len = input.int(85, title="MA2 Length")
+cooldownBars = input.int(5, title="Directional Cooldown (bars)")
+
+// === MOVING AVERAGES ===
+ma1 = ta.sma(close, ma1Len)
+ma2 = ta.sma(close, ma2Len)
+plot(ma1, color=color.orange, title="MA 66")
+plot(ma2, color=color.blue, title="MA 85")
+
+aboveMAs = close > ma1 and close > ma2
+belowMAs = close < ma1 and close < ma2
+
+// === ENGULFING LOGIC ===
+bullEngulf = close > open and close > close[1] and open <= close[1]
+bearEngulf = close < open and close < close[1] and open >= close[1]
+
+// === SWING HIGH/LOW DETECTION ===
+pivotHigh = ta.pivothigh(high, 2, 2)
+pivotLow  = ta.pivotlow(low, 2, 2)
+
+var float lastSwingHigh = na
+var float lastSwingLow = na
+var string marketStructure = "none"  // can be "bullish", "bearish", or "none"
+var bool structureConfirmed = false
+
+// Track last swing points
+if not na(pivotHigh)
+    lastSwingHigh := pivotHigh
+if not na(pivotLow)
+    lastSwingLow := pivotLow
+
+// Confirm structure breaks
+bullBreakConfirmed = not na(lastSwingHigh) and close > lastSwingHigh
+bearBreakConfirmed = not na(lastSwingLow) and close < lastSwingLow
+
+if bullBreakConfirmed
+    marketStructure := "bullish"
+    structureConfirmed := true
+if bearBreakConfirmed
+    marketStructure := "bearish"
+    structureConfirmed := true
+
+bullishStructure = marketStructure == "bullish" and structureConfirmed
+bearishStructure = marketStructure == "bearish" and structureConfirmed
+
+// === PLACEHOLDER FOR FIB CONFLUENCE ===
+inFibLong = true
+inFibShort = true
+
+// === CONFLUENCE CHECK (2 of 4) ===
+longConfluence = 0
+longConfluence += bullEngulf ? 1 : 0
+longConfluence += bullishStructure ? 1 : 0
+longConfluence += aboveMAs ? 1 : 0
+longConfluence += inFibLong ? 1 : 0
+
+shortConfluence = 0
+shortConfluence += bearEngulf ? 1 : 0
+shortConfluence += bearishStructure ? 1 : 0
+shortConfluence += belowMAs ? 1 : 0
+shortConfluence += inFibShort ? 1 : 0
+
+longReady = longConfluence >= 2
+shortReady = shortConfluence >= 2
+
+// === COOLDOWN TRACKING ===
+var int lastLongBar = na
+var int lastShortBar = na
+canLong = na(lastLongBar) or (bar_index - lastLongBar >= cooldownBars)
+canShort = na(lastShortBar) or (bar_index - lastShortBar >= cooldownBars)
+
+// === FINAL ENTRY CONDITIONS ===
+longCondition = longReady and canLong and bullishStructure and aboveMAs
+shortCondition = shortReady and canShort and bearishStructure and belowMAs
+
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    lastLongBar := bar_index
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    lastShortBar := bar_index

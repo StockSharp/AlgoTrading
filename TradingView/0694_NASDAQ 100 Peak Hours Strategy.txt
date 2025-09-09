@@ -1,0 +1,77 @@
+//@version=5
+strategy("NASDAQ 100 Peak Hours Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=1.5)
+
+startSession = timestamp("GMT-5", year, month, dayofmonth, 09, 30)
+endSession = timestamp("GMT-5", year, month, dayofmonth, 11, 30)
+
+extendedStartSession = timestamp("GMT-5", year, month, dayofmonth, 08, 00)
+extendedEndSession = timestamp("GMT-5", year, month, dayofmonth, 16, 00)
+
+longTermEmaLength = 21
+shortTermEmaLength = 9
+rsiLength = 14
+atrLength = 14
+vwap = ta.vwap(hlc3)
+
+longTermEma = ta.ema(close, longTermEmaLength)
+shortTermEma = ta.ema(close, shortTermEmaLength)
+rsi = ta.rsi(close, rsiLength)
+atr = ta.atr(atrLength)
+volatilityFilter = atr > ta.sma(atr, 20)
+
+longEmaDirection = longTermEma > ta.ema(longTermEma[1], 3)
+shortEmaDirection = shortTermEma > ta.ema(shortTermEma[1], 3)
+
+isTradeWindow = (time >= extendedStartSession and time <= extendedEndSession) and volatilityFilter
+
+longCondition = (close > shortTermEma) and (shortTermEma > longTermEma) and longEmaDirection and shortEmaDirection and (rsi > 50) and (close > vwap) and isTradeWindow and (time >= startSession and time <= endSession)
+shortCondition = (close < shortTermEma) and (shortTermEma < longTermEma) and not longEmaDirection and not shortEmaDirection and (rsi < 50) and (close < vwap) and isTradeWindow and (time >= startSession and time <= endSession)
+
+var int longEntryBar = na
+var int shortEntryBar = na
+var float longEntryPrice = na
+var float shortEntryPrice = na
+
+if (longCondition)
+    strategy.entry("Long", strategy.long, qty=1.5)
+    longEntryBar := bar_index
+    longEntryPrice := close
+if (shortCondition)
+    strategy.entry("Short", strategy.short, qty=1.5)
+    shortEntryBar := bar_index
+    shortEntryPrice := close
+
+trailStopATRMultiplier = 1.5
+trailStopLong = atr * trailStopATRMultiplier
+trailStopShort = atr * trailStopATRMultiplier
+initialStopLossMultiplier = 0.5
+
+strategy.exit("Exit Long", "Long", stop=close - atr * initialStopLossMultiplier, trail_points=trailStopLong, trail_offset=trailStopLong / 2)
+strategy.exit("Exit Short", "Short", stop=close + atr * initialStopLossMultiplier, trail_points=trailStopShort, trail_offset=trailStopShort / 2)
+
+breakEvenTrigger = 1.5 * atr
+if (strategy.position_size > 0 and close > longEntryPrice + breakEvenTrigger)
+    strategy.exit("Break-even Long", "Long", stop=longEntryPrice)
+if (strategy.position_size < 0 and close < shortEntryPrice - breakEvenTrigger)
+    strategy.exit("Break-even Short", "Short", stop=shortEntryPrice)
+
+timeExitBars = 20
+if (not na(longEntryBar) and bar_index - longEntryBar >= timeExitBars)
+    strategy.close("Long")
+    longEntryBar := na
+if (not na(shortEntryBar) and bar_index - shortEntryBar >= timeExitBars)
+    strategy.close("Short")
+    shortEntryBar := na
+
+trendReversalExitLong = (shortTermEma < longTermEma) and not longEmaDirection
+trendReversalExitShort = (shortTermEma > longTermEma) and not shortEmaDirection
+
+if (strategy.position_size > 0 and trendReversalExitLong)
+    strategy.close("Long")
+if (strategy.position_size < 0 and trendReversalExitShort)
+    strategy.close("Short")
+
+maxDrawdown = 20
+if (strategy.equity / strategy.initial_capital < 1 - (maxDrawdown / 100.0))
+    strategy.cancel_all()
+    strategy.close_all()

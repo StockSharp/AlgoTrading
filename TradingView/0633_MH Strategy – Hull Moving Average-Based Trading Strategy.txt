@@ -1,0 +1,42 @@
+//@version=6
+strategy("mh", shorttitle="my", default_qty_type=strategy.percent_of_equity, default_qty_value=100, calc_on_order_fills=true, calc_on_every_tick=true, pyramiding=0)
+hullperiod = input.int(title="HullMA Period", defval=210, minval=1)
+price = input.source(open, title="Price data")
+
+n2ma = 2 * ta.wma(price, math.round(hullperiod / 2))
+nma = ta.wma(price, hullperiod)
+diff = n2ma - nma
+sqn = math.round(math.sqrt(hullperiod))
+n2ma1 = 2 * ta.wma(price[1], math.round(hullperiod / 2))
+nma1 = ta.wma(price[1], hullperiod)
+diff1 = n2ma1 - nma1
+n1 = ta.wma(diff, sqn)
+n2 = ta.wma(diff1, sqn)
+Hull_Line = n1 / n1 * n2
+Hull_retracted = if n1 > n2
+    Hull_retracted = Hull_Line - 2
+else
+    Hull_retracted = Hull_Line + 2
+c1 = Hull_retracted + n1 - price
+c2 = Hull_retracted - n2 + price
+c4 = n1 > n2 ? color.green : color.red
+c2p = plot(c2, color=color.black, linewidth=1)
+c3p = plot(price, color=color.black, linewidth=1)
+fill(c3p, c2p, color=c4)
+//plot(cross(c1, c2) ? c1 : na, style=plot.style_circles, color=c4, linewidth=4)
+if price < c2
+    strategy.close("BUY")
+if price > c2
+    strategy.close("SELL")
+
+if price > c2 and price[1] > c1
+    strategy.entry("BUY", strategy.long  , alert_message = 'Buy')
+    // alert('Buy')
+if price < c1 and price[1] < c2
+    strategy.entry("SELL", strategy.short, alert_message = 'Sell')
+    // alert('Sell')
+
+// if price > c2 and price[1] > c1
+//     alert('Buy', alert.freq_once_per_bar_close)
+// if price < c1 and price[1] < c2
+//     alert('Sell', alert.freq_once_per_bar_close)

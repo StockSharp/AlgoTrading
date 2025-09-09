@@ -1,0 +1,39 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © BillionaireLau
+
+//@version=4
+study("Nasdaq futures Day and night breakdown")
+sym1 = input(title="Symbo 1", type=input.symbol, defval="NQ1!")
+sym2 = input(title="Symbol 2", type=input.symbol, defval="TVC:NDX")
+s1 = security(sym1,timeframe.period,open)
+s2 = security(sym2,timeframe.period,open)
+s3 = security(sym2,timeframe.period,close)
+Before_market_open = s2 - s1
+
+//after market open histograms
+After_market_open = s3 - s2
+
+//does direction switched?
+direction_continues = Before_market_open * After_market_open
+
+//For better display
+Better_display =  direction_continues > 0 ? Before_market_open + After_market_open : After_market_open
+
+
+//plot(After_market_open, linewidth=1,color=color.green)
+//plot(Before_market_open, linewidth=1,color=color.red)
+
+//swings up and down range
+s4 = security(sym1,timeframe.period,high)
+s5 = security(sym1,timeframe.period,low)
+
+up_swing = s4 - s1
+down_swing = s5 - s1
+plot(up_swing,style=plot.style_histogram, linewidth=1,color=color.gray)
+plot(down_swing,style=plot.style_histogram, linewidth=1,color=color.gray)
+
+
+plot(Better_display,style=plot.style_histogram, linewidth=4,color=color.blue)
+plot(Before_market_open,style=plot.style_histogram, linewidth=4,color=color.orange)
+
+hline(0)

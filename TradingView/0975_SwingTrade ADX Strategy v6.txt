@@ -1,0 +1,204 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TiamatCrypto
+// Description: A swing trading strategy using VWAP, ADX, and volume filters for entry/exit signals. Customizable parameters for backtesting and indicators.
+
+//@version=6
+strategy("SwingTrade ADX Strategy v6", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10,
+         initial_capital=10000, commission_type=strategy.commission.percent, commission_value=0.1,
+         use_bar_magnifier=true, pyramiding=0, calc_on_every_tick=false,
+         max_bars_back=5000)
+
+// =============================
+// Backtesting parameters
+// =============================
+string group_backtest = "Backtest Settings"
+// For defval in input.time we'll use timestamp("YYYY-MM-DD"), which is reliably constant.
+var startTimeDefault = timestamp("2020-01-01") // Returns const int (Unix timestamp ms for 00:00:00 UTC of the day)
+var endTimeDefault = timestamp("2099-12-31") // Default value as date far in the future (const int for 00:00:00 UTC of the day)
+
+startDate = input.time(startTimeDefault, "Backtest Start", confirm=false, group=group_backtest, tooltip="Date and time for the start of the backtesting period.")
+endDate = input.time(endTimeDefault, "Backtest End", confirm=false, group=group_backtest, tooltip="Date and time for the end of the backtesting period. Default value is far in the future, set a specific date for a backtest.")
+
+// Filter trades by selected time frame
+bool dateFilter = time >= startDate and time <= endDate
+
+// =============================
+// Input parameters
+// =============================
+string group_display = "Display"
+bool showVWAP = input.bool(true, "Show VWAP", group=group_display, tooltip="Show/hide VWAP line on the chart.")
+bool showLabels = input.bool(true, "Show Labels", group=group_display, tooltip="Show/hide labels for signals.")
+
+string group_indicators = "Enable Indicators"
+// Default VWAP signals to OFF
+bool enableVwapSignals = input.bool(false, "VWAP Signals", group=group_indicators, tooltip="Enable/disable signals based on VWAP.")
+bool enableADX = input.bool(true, "Enable ADX Filter", group=group_indicators, tooltip="Enable/disable ADX as a trend filter.")
+bool enableVolume = input.bool(true, "Enable Volume Signals", group=group_indicators, tooltip="Enable/disable signals based on volume ratio.")
+
+// VWAP parameters
+string group_vwap_params = "VWAP Parameters"
+int vwapSignalPeriod = input.int(3, "VWAP Signal Period (for Delta)", minval=1, group=group_vwap_params, tooltip="Number of periods to determine rising/falling VWAP delta.")
+float vwapSignalSensitivity = input.float(0.5, "VWAP Signal Sensitivity (%)", step=0.1, minval=0.1, group=group_vwap_params, tooltip="Minimum percentage price deviation from VWAP for a valid signal (e.g., 0.5 for 0.5%).")
+
+// ADX parameters
+string group_adx_params = "ADX Parameters"
+int adxPeriod = input.int(14, "ADX Period", minval=5, group=group_adx_params, tooltip="Period for ADX and DMI calculation.")
+int adxThreshold = input.int(25, "ADX Threshold", minval=10, group=group_adx_params, tooltip="Minimum ADX value to confirm strong trend.")
+
+// Volume parameters
+string group_volume_params = "Volume Parameters"
+int volumePeriod = input.int(20, "Volume Period", minval=5, group=group_volume_params, tooltip="Period for volume ratio calculation.")
+float volumeRatioThreshold = input.float(1.5, "Volume Ratio Threshold", minval=1.01, step=0.1, group=group_volume_params, tooltip="Minimum ratio of volume above VWAP to volume below VWAP for a bullish signal (and vice versa for bearish).")
+
+// =============================
+// VWAP calculation
+// =============================
+float vwapValue = ta.vwap(hlc3) // Built-in VWAP, uses (H+L+C)/3 and resets daily
+
+// Delta (difference from VWAP)
+float deltaValue = close - vwapValue
+float actualDeltaPercent = vwapValue == 0 ? 0.0 : (deltaValue / vwapValue) * 100 // Percentage deviation
+
+// =============================
+// Indicators and signals
+// =============================
+// VWAP trends
+bool risingDelta = ta.rising(actualDeltaPercent, vwapSignalPeriod)
+bool fallingDelta = ta.falling(actualDeltaPercent, vwapSignalPeriod)
+bool aboveVwap = close > vwapValue
+bool belowVwap = close < vwapValue
+bool crossingUp = ta.crossover(close, vwapValue)
+bool crossingDown = ta.crossunder(close, vwapValue)
+
+// ADX and DMI calculation using built-in function
+[diPlus, diMinus, adxVal] = ta.dmi(adxPeriod, adxPeriod) // adxPeriod is used for DI length and ADX smoothing length
+
+bool strongTrend = adxVal > adxThreshold
+bool bullTrendADX = diPlus > diMinus and strongTrend
+bool bearTrendADX = diMinus > diPlus and strongTrend
+
+// Volume ratios
+float volumeAboveVWAP = math.sum(volume * (close > vwapValue ? 1.0 : 0.0), volumePeriod)
+float volumeBelowVWAP = math.sum(volume * (close < vwapValue ? 1.0 : 0.0), volumePeriod)
+
+float volumeRatio = if volumeBelowVWAP > 0.00001 // Small tolerance for very small volume
+    volumeAboveVWAP / volumeBelowVWAP
+else if volumeAboveVWAP > 0.00001 // If volume below VWAP is negligible, but above VWAP isn't
+    99999.0 // Very high number indicating strong buying volume
+else
+    1.0 // Neutral, if both volumes are negligible or zero
+
+bool bullVolume = volumeRatio > volumeRatioThreshold
+bool bearVolume = volumeRatio < (1.0 / volumeRatioThreshold)
+
+// =============================
+// Entry signals
+// =============================
+bool vwapBuyCondition = enableVwapSignals ? (crossingUp and risingDelta and actualDeltaPercent > vwapSignalSensitivity) : true
+bool vwapSellCondition = enableVwapSignals ? (crossingDown and fallingDelta and actualDeltaPercent < -vwapSignalSensitivity) : true
+
+bool adxBuyCondition = enableADX ? bullTrendADX : true
+bool adxSellCondition = enableADX ? bearTrendADX : true
+
+bool volumeBuyCondition = enableVolume ? bullVolume : true
+bool volumeSellCondition = enableVolume ? bearVolume : true
+
+// Final trading signals
+bool buySignal = vwapBuyCondition and adxBuyCondition and volumeBuyCondition and dateFilter
+bool sellSignal = vwapSellCondition and adxSellCondition and volumeSellCondition and dateFilter
+
+// =============================
+// Exit signals - Improved logic
+// =============================
+var bool wasDeltaRisingForCurrentTrade = false
+var bool wasDeltaFallingForCurrentTrade = false
+
+// Set helper variables ONLY when entering a trade
+if strategy.position_size > 0 and strategy.position_size[1] <= 0 // Just entered long
+    wasDeltaRisingForCurrentTrade := risingDelta // Save current delta state
+    wasDeltaFallingForCurrentTrade := false     // Reset opposite state
+else if strategy.position_size < 0 and strategy.position_size[1] >= 0 // Just entered short
+    wasDeltaFallingForCurrentTrade := fallingDelta // Save current delta state
+    wasDeltaRisingForCurrentTrade := false      // Reset opposite state
+
+// During trade update if delta ever rose/dropped at any point
+if strategy.position_size > 0
+    if risingDelta
+        wasDeltaRisingForCurrentTrade := true
+if strategy.position_size < 0
+    if fallingDelta
+        wasDeltaFallingForCurrentTrade := true
+
+// Exit conditions
+bool exitLongSignal = strategy.position_size > 0 and aboveVwap and fallingDelta and wasDeltaRisingForCurrentTrade
+bool exitShortSignal = strategy.position_size < 0 and belowVwap and risingDelta and wasDeltaFallingForCurrentTrade
+
+// Reset helper variables after exit
+if strategy.position_size == 0 and strategy.position_size[1] != 0
+    wasDeltaRisingForCurrentTrade := false
+    wasDeltaFallingForCurrentTrade := false
+
+// =============================
+// Plot on chart
+// =============================
+plot(showVWAP ? vwapValue : na, "VWAP", color=color.new(color.purple, 0), linewidth=2)
+
+plotshape(buySignal, "BUY ENTRY", shape.triangleup, location.belowbar, color.new(color.green, 0), size=size.small, text="ENTRY BUY")
+plotshape(sellSignal, "SELL ENTRY", shape.triangledown, location.abovebar, color.new(color.red, 0), size=size.small, text="ENTRY SELL")
+plotshape(exitLongSignal, "Exit Long", shape.xcross, location.abovebar, color.new(color.lime, 0), size=size.small, text="EXIT BUY")
+plotshape(exitShortSignal, "Exit Short", shape.xcross, location.belowbar, color.new(color.orange, 0), size=size.small, text="EXIT SELL")
+
+if showLabels
+    if buySignal
+        label.new(bar_index, low * 0.99, "BUY", color=color.new(color.green, 20), style=label.style_label_up, textcolor=color.white, size=size.small)
+    if sellSignal
+        label.new(bar_index, high * 1.01, "SELL", color=color.new(color.red, 20), style=label.style_label_down, textcolor=color.white, size=size.small)
+    if exitLongSignal
+        label.new(bar_index, high * 1.01, "EXIT L", color=color.new(color.lime, 20), style=label.style_label_down, textcolor=color.black, size=size.small)
+    if exitShortSignal
+        label.new(bar_index, low * 0.99, "EXIT S", color=color.new(color.orange, 20), style=label.style_label_up, textcolor=color.black, size=size.small)
+
+// =============================
+// Information panel
+// =============================
+var table infoTable = table.new(position.top_right, 2, 4, border_width=1)
+if barstate.islast
+    table.cell(infoTable, 0, 0, "Indicator", bgcolor=color.new(color.blue, 90), text_color=color.white)
+    table.cell(infoTable, 1, 0, "Value", bgcolor=color.new(color.blue, 90), text_color=color.white)
+
+    table.cell(infoTable, 0, 1, "VWAP Delta %", bgcolor=color.new(color.blue, 90), text_color=color.white)
+    table.cell(infoTable, 1, 1, str.format("{0,number,#.##}%", actualDeltaPercent), bgcolor=actualDeltaPercent > 0 ? color.new(color.green, 90) : color.new(color.red, 90), text_color=color.white)
+
+    table.cell(infoTable, 0, 2, "ADX (" + str.tostring(adxThreshold) + ")", bgcolor=color.new(color.blue, 90), text_color=color.white)
+    table.cell(infoTable, 1, 2, str.format("{0,number,#.##}", adxVal), bgcolor=adxVal > adxThreshold ? color.new(color.green, 90) : color.new(color.gray, 90), text_color=color.white)
+
+    color volRatioBgColor = bullVolume ? color.new(color.green, 90) : (bearVolume ? color.new(color.red, 90) : color.new(color.gray, 90))
+    table.cell(infoTable, 0, 3, "Volume Ratio (" + str.tostring(volumeRatioThreshold, "#.##") + ")", bgcolor=color.new(color.blue, 90), text_color=color.white)
+    table.cell(infoTable, 1, 3, str.format("{0,number,#.##}", volumeRatio), bgcolor=volRatioBgColor, text_color=color.white)
+
+// =============================
+// Trading logic
+// =============================
+if buySignal and strategy.opentrades == 0 // Enter only if no open trades
+    strategy.entry("Long", strategy.long)
+
+if sellSignal and strategy.opentrades == 0 // Enter only if no open trades
+    strategy.entry("Short", strategy.short)
+
+if exitLongSignal and strategy.position_size > 0
+    strategy.close("Long", comment="VWAP Exit Long")
+
+if exitShortSignal and strategy.position_size < 0
+    strategy.close("Short", comment="VWAP Exit Short")
+
+// =============================
+// Alerts
+// =============================
+if buySignal
+    alert("Buy Signal " + syminfo.ticker, alert.freq_once_per_bar_close)
+if sellSignal
+    alert("Sell Signal " + syminfo.ticker, alert.freq_once_per_bar_close)
+if exitLongSignal and strategy.position_size[1] > 0 // Ensure alert triggers only on actual close
+    alert("Exit Long Signal " + syminfo.ticker, alert.freq_once_per_bar_close)
+if exitShortSignal and strategy.position_size[1] < 0 // Ensure alert triggers only on actual close
+    alert("Exit Short Signal " + syminfo.ticker, alert.freq_once_per_bar_close)

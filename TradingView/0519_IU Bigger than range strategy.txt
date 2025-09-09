@@ -1,0 +1,119 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Shivam_Mandrai
+
+//@version=6
+strategy("IU Bigger than range strategy", overlay = true, initial_capital = 100000, slippage = 1, commission_value = 0.02)
+
+// _____________________________________________ User Inputs _____________________________________________ \\
+look_back     = input.int(22, "Look back Length = ", tooltip = "Look Back Length for the Range")
+RTR           = input.int(3, "Risk to Reward = ")
+SL_method     = input.string("Previous High/Low","Stop Loss Method = ",
+                 options = ["Previous High/Low", "ATR", "Swing High/Low"], group = "<----------Risk Management--------->")
+ATR_lenght    = input.int(14, "ATR Length = ", group = "<----------Risk Management--------->",
+                 tooltip = "This Will only work if 'ATR' is Selected as Stop loss Method")
+ATR_factor    = input.float(2.00, "ATR Factor = ", group = "<----------Risk Management--------->",
+                 tooltip = "This Will only work if 'ATR' is Selected as Stop loss Method")
+swing_lenght  = input.int(10, "Swing High/Low Length = ", group = "<----------Risk Management--------->",
+                 tooltip = "This Will only work if 'Swing High/Low' is Selected as Stop loss Method")
+
+// _____________________________________________ Indicators _______________________________________________ \\
+highest       = ta.highest(math.max(close, open), look_back)
+lowest        = ta.lowest(math.min(close, open) , look_back)
+
+// _______________________________________________ Conditions _______________________________________________ \\
+range_size    = highest - lowest
+candle_range  = math.abs(close - open )
+cond          =  candle_range  > range_size[1]
+
+// _______________________________________________ Going Long and short _____________________________________ \\
+if cond
+    // -------- Going Long ------- \\
+    if strategy.position_size == 0 and close > open
+        strategy.entry("long", strategy.long, comment = "Long Entry")
+    // -------- Going Short ------- \\
+    else if strategy.position_size == 0 and close < open
+        strategy.entry("short", strategy.short, comment = "Short Entry")
+
+
+//_______________________________________________ Stop Loss and Take Profit __________________________________\\
+// -------- ATR Value ------- \\
+atr_and_factor      = ta.atr(ATR_lenght) * ATR_factor
+
+// -------- Swing high and low calculations  ------- \\
+swing_high          = ta.pivothigh(swing_lenght, swing_lenght)
+swing_low           = ta.pivothigh(swing_lenght, swing_lenght)
+
+// -------- Recent valid Swing high and low  ------- \\
+swing_high_value    = ta.valuewhen(not na(swing_high), swing_high, 0)
+swing_low_value     = ta.valuewhen(not na(swing_low), swing_low, 0)
+
+//@function To get the Right value of stop loss based SL type input
+get_SL_value(string sl_type, trade_type = "long")=>
+    float sl = na
+    if sl_type == "Previous High/Low"
+        if trade_type == "long"
+            sl      := low[1]
+        else
+            sl      := high[1]
+
+    else if sl_type == "ATR"
+        if trade_type == "long"
+            sl      := strategy.position_avg_price - atr_and_factor
+        else
+            sl      := strategy.position_avg_price + atr_and_factor
+
+    else
+        if trade_type == "long"
+            sl     := swing_low_value
+        else
+            sl     := swing_high_value
+    // returns SL value
+    sl
+
+
+// ---- long and short SL ------ \\
+long_SL            = ta.valuewhen(strategy.position_size > 0 and strategy.position_size[1] == 0, get_SL_value(SL_method, "long") , 0)
+short_SL           = ta.valuewhen(strategy.position_size < 0 and strategy.position_size[1] == 0, get_SL_value(SL_method, "short"), 0)
+// ----- long and short TP ------ \\
+long_TP            = (strategy.position_avg_price - long_SL) * RTR + strategy.position_avg_price
+short_TP           = strategy.position_avg_price - (short_SL - strategy.position_avg_price) * RTR
+
+// _______________________________________________ Stting long and short SL / TP _______________________________\\
+if strategy.position_size > 0
+    strategy.exit("long", "long", stop = long_SL, limit = long_TP, comment = "Long Exit")
+
+if strategy.position_size < 0
+    strategy.exit("short", "short", stop = short_SL, limit = short_TP, comment = "Short Exit")
+
+//_______________________________________________ Plotting long and short SL , TP _______________________________\\
+// ---- for long positions ------ \\
+long_SL_plot       = plot(strategy.position_size[1] > 0 ? long_SL : na   , 'Long SL', color.red  , style = plot.style_linebr)
+long_TP_plot       = plot(strategy.position_size[1] > 0 ? long_TP[1] : na, 'Long TP', color.green, style = plot.style_linebr)
+// ---- for short positions ----- \\
+short_SL_plot      = plot(strategy.position_size[1] < 0 ? short_SL : na   , 'Short SL', color.red  , style = plot.style_linebr)
+short_TP_plot      = plot(strategy.position_size[1] < 0 ? short_TP[1] : na, 'Short SL', color.green, style = plot.style_linebr)
+
+//_______________________________________________ Filling stop loss and take profits _____________________________ \\
+entry_plot = plot(strategy.position_size[1] != 0 ? strategy.position_avg_price[1] : na,
+             color = color.new(color.silver, 20), style = plot.style_linebr)
+// ------------- for long ----------- \\
+fill(entry_plot, long_SL_plot , color =color.new(color.red, 85)   , title = 'Long SL plot')
+fill(entry_plot, long_TP_plot , color = color.new(color.green, 85), title = 'Long TP plot')
+// ------------- for short ---------- \\
+fill(entry_plot, short_SL_plot, color.new(color.red, 85)  , 'Short SL plot')
+fill(entry_plot, short_TP_plot, color.new(color.green, 85), 'Short TP plot')
+
+// ------------ plotting range value ------------ \\
+highest_plot       = plot(highest, "Highest value", color = color(na))
+lowest_plot        = plot(lowest,  "Lowest value" , color = color(na))
+fill(highest_plot, lowest_plot, color.new(color.yellow, 90), 'Range box')
+
+
+// _______________________________________________ Alerts _______________________________________________ \\
+if strategy.position_size[1] == 0
+    // ---------- long alerts ----------- \\
+    if strategy.position_size > 0
+        alert("Long Entry Triggered", alert.freq_once_per_bar)
+    // ---------- short alerts ----------- \\
+    else if strategy.position_size < 0
+        alert("Short Entry Triggered", alert.freq_once_per_bar)

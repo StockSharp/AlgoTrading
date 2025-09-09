@@ -1,0 +1,504 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © sadeghirashed
+
+//@version=5
+// Strategy: "magic wand stsm"
+// This strategy is designed for automated trading with specific risk management and trend-following signals.
+// It aims to identify potential entry points based on Supertrend and Moving Averages,
+// while also incorporating a dynamic position sizing and daily/monthly profit/loss tracking.
+strategy("magic wand stsm", overlay=true, margin_long=100, margin_short=100, default_qty_value = 2, initial_capital = 10000, commission_value = 0.04, slippage = 2 )
+
+// Import the TradingView Technical Analysis library for common indicators.
+import TradingView/ta/5
+//==================================================================================================================
+//, default_qty_type = strategy.percent_of_equity
+//===================================================================================================================
+// --- Strategy Inputs ---
+// User-defined input for initial equity.
+Equ = input(defval=1000, title='Your Equity ')
+// User-defined input for Risk to Reward ratio.
+rr = input(defval=2.0, title='Risk to Riward ')
+// User-defined input for the percentage of balance to risk per trade.
+risk_percentage = input.float(defval=0.5, step=0.5, title = 'risk percentage for your balance %')
+
+// Deprecated input, likely used for position sizing but commented out.
+i_pctStop = 0.01 //1 "% of Risk to Starting Equity Use to Size Positions
+
+// Supertrend ATR period.
+atrPeriod = 10 //"ATR Length"
+// Supertrend factor.
+factor = 3.0 // "Factor"
+
+// Pivot High/Low lookback periods.
+leftBars = 1800
+rightBars = 0
+
+// Moving Average parameters.
+smoothBars = 3
+maLength = input.int(200, 'MA Length', minval=1)
+src = input(close, 'MA Source') // Source for the Moving Average, defaults to close price.
+
+// --- Global Variables ---
+// Initial capital at the start of the strategy.
+
+// Flag to control trades, currently set to true (trades are allowed).
+bool tradestop = true // Currently unused, but could be implemented for a global trade stop.
+var initialCapital = strategy.equity
+
+// --- Moving Averages ---
+// Exponential Moving Average (EMA) with a period of 60.
+sma100 = ta.ema(close, 60)
+// EMA with a period of 34.
+sma34 = ta.ema(close, 34)
+// Simple Moving Average (SMA) with `maLength` period.
+sma200 = ta.sma(close, maLength)
+// Plot the 200 SMA on the chart.
+plot(sma200, 'SMA 200', color.yellow, 1)
+
+// --- Multi-timeframe Analysis (using request.security) ---
+// Determines a higher timeframe resolution based on the current chart timeframe.
+resolotion = timeframe.period == "1" ? "5" : timeframe.period == "5" ? "15" : timeframe.period == "15" ? "60" : timeframe.period == "60" ? "240" : "1440"
+
+// Calculates pivot high and low using `leftBars` and `rightBars` lookback.
+highUsePivot = fixnan(ta.pivothigh(leftBars, rightBars)[1])
+lowUsePivot = fixnan(ta.pivotlow(leftBars, rightBars)[1])
+
+// Supertrend calculation for the current timeframe.
+[supertrend2, direction2] = ta.supertrend(factor, atrPeriod)
+
+// Request Supertrend direction and value from the higher timeframe.
+dir_up_time = request.security(syminfo.tickerid, resolotion, direction2, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+sup_up_time = request.security(syminfo.tickerid, resolotion, supertrend2, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_off)
+// Request 100 EMA from the higher timeframe.
+//sma100_res = request.security(syminfo.tickerid, resolotion, sma100, gaps=barmerge.gaps_off, lookahead=barmerge.lookahead_on)
+
+// Supertrend calculation for the current timeframe (re-calculated).
+[supertrend, direction] = ta.supertrend(factor, atrPeriod)
+
+// Initialize `supertrend` to `na` on the first bar.
+supertrend := barstate.isfirst ? na : supertrend
+
+// Variables to store uptrend and downtrend Supertrend values.
+downTrendValue = 0.0
+upTrendValue = 0.0
+
+// Assign Supertrend value based on direction for plotting or further analysis.
+upt = direction < 0 ? supertrend : na // If direction is bearish (<0), it's an uptrend (Supertrend acts as resistance).
+downt = direction < 0 ? na : supertrend // If direction is bullish (>0), it's a downtrend (Supertrend acts as support).
+
+// Get the last valid Supertrend value when the direction was bullish (uptrend).
+upTrendValue := ta.valuewhen(direction < 0 ? true : na, supertrend, 0)
+// Get the last valid Supertrend value when the direction was bearish (downtrend).
+downTrendValue := ta.valuewhen(direction < 0 ? na : true, supertrend, 0)
+
+// --- Volatile Variables (re-initialized on each bar if not declared with 'var') ---
+var res = 0.0 // Result for daily profit/loss.
+var tp = 0.0 // Take Profit level.
+var sl = 0.0 // Stop Loss level.
+var lowest = 0.0 // Lowest price.
+var highest = 0.0 // Highest price.
+var bool lock_long = true // Flag to prevent multiple long entries.
+var bool lock_short = true // Flag to prevent multiple short entries.
+
+// Flags for trend change.
+bool ctoup = na
+bool ctodown = na
+
+// Daily performance tracking.
+var float todaysWins = 0 // Number of wins today.
+var float todaysLosses = 0 // Number of losses today.
+var int currentDay = 0 // dayofmonth(time) // Current day of the month.
+var int posCunter = 0 // Position counter for daily trades.
+
+// --- Band 2 (additional Supertrend related logic) ---
+bool buy_visitband = na
+bool sell_visitband = na
+float upband = 0.0
+float downband = 0.0
+// Defines upper and lower bands around the Supertrend (e.g., for potential price pullbacks).
+upband := supertrend2 + (250 * syminfo.mintick)
+downband := supertrend2 - (250 * syminfo.mintick)
+
+// --- Holiday List (Currently commented out, but could be used to avoid trading on holidays) ---
+// Not implemented in the current code.
+
+// --- Custom Functions ---
+
+// Function to find the lowest value and associated bar properties within a lookback period.
+LowestValueAndBar(source, length, u_sp) =>
+    minValue = low // Initialize with current low.
+    buy_ready = false // Flag indicating if a "buy ready" condition is met.
+    closevalue = 0.0 // Close price of the bar with `minValue`.
+    openvalue = 0.0 // Open price of the bar with `minValue`.
+
+    for i = 1 to length // Iterate through past bars.
+        if source[i] - u_sp[i] < minValue - u_sp[i] // If a lower value relative to Supertrend is found.
+            minValue := source[i] // Update `minValue`.
+            //minIndex := bar_index[i]
+            closevalue := close[i] // Store close price of that bar.
+            openvalue := open[i] // Store open price of that bar.
+            buy_ready := true // Set `buy_ready` to true.
+    [minValue, openvalue, closevalue, buy_ready] // Return the found values.
+
+// Function to find the highest value and associated bar properties within a lookback period.
+HighestValueAndBar(source, length, d_sp) =>
+    maxValue = high // Initialize with current high.
+    sell_ready = false // Flag indicating if a "sell ready" condition is met.
+    closevalue = 0.0 // Close price of the bar with `maxValue`.
+    openvalue = 0.0 // Open price of the bar with `maxValue`.
+    for i = 1 to length // Iterate through past bars.
+        if d_sp[i] - source[i] < d_sp[i] - maxValue // If a higher value relative to Supertrend is found.
+            maxValue := source[i] // Update `maxValue`.
+            //maxIndex := bar_index[i]
+            closevalue := close[i] // Store close price of that bar.
+            openvalue := open[i] // Store open price of that bar.
+            sell_ready := true // Set `sell_ready` to true.
+    [maxValue, openvalue, closevalue, sell_ready] // Return the found values.
+
+// --- Supertrend Bar Counting and Stability ---
+bar_i = 0 // Bars since Supertrend was bullish.
+bar_j = 0 // Bars since Supertrend was bearish.
+u_sp = upTrendValue // Alias for `upTrendValue`.
+d_sp = downTrendValue // Alias for `downTrendValue`.
+bar_i := ta.barssince(direction < 0) // Count bars since bearish Supertrend (indicating potential uptrend).
+bar_j := ta.barssince(direction > 0) // Count bars since bullish Supertrend (indicating potential downtrend).
+
+// Flags for identifying stable Supertrend lines.
+bool u_r_line = na
+bool d_r_line = na
+
+// Check for a stable uptrend line (Supertrend value constant for 4 bars, and current trend is up).
+if (u_sp[4] == u_sp[3] and u_sp[3] == u_sp[2] and u_sp[2] == u_sp[1]) and bar_i[1] < bar_j[1]
+    u_r_line := true
+else
+    u_r_line := false
+
+// Check for a stable downtrend line (Supertrend value constant for 4 bars, and current trend is down).
+if (d_sp[4] == d_sp[3] and d_sp[3] == d_sp[2] and d_sp[2] == d_sp[1]) and bar_i[1] > bar_j[1]
+    d_r_line := true
+else
+    d_r_line := false
+
+// Flags for buy/sell situation.
+bool buy_sit = na
+bool sell_sit = na
+
+// --- Trade Statistics Table ---
+// Creates a table to display daily and overall trade statistics.
+var table tradeTable = table.new(position.top_right, 8, 7, border_width=1, frame_color=#2195f366, frame_width=2)
+table.cell(tradeTable, 0, 0, "day of month", text_color=color.white, text_size=size.normal, bgcolor=#2195f366)
+table.cell(tradeTable, 0, 1, "today wins", text_color=color.green, text_size=size.normal, bgcolor=#2195f366)
+table.cell(tradeTable, 0, 2, "today losses", text_color=color.red, text_size=size.normal, bgcolor=#2195f366)
+table.cell(tradeTable, 0, 3, "today profit", text_color=color.rgb(255, 254, 254), text_size=size.normal, bgcolor=#2195f366)
+table.cell(tradeTable, 0, 5, "total deal", text_color=color.rgb(255, 255, 255), text_size=size.normal, bgcolor=#2195f366)
+
+bool newday = false // Flag for new day.
+current_time = hour // Current hour.
+
+// --- Session Management ---
+// Defines trading session times based on the month (for daylight saving adjustments).
+var bool inSession = na
+var string time_range = ""
+// if month(time) >= 3 and month(time) < 11 // March to October (Northern Hemisphere DST)
+//     time_range := "1200-0030"
+// else // November to February
+//     time_range := "1300-0030"
+
+// Adjusts `inSession` based on ticker symbol for specific asset trading hours.
+if syminfo.ticker == "XAUUSD" or syminfo.ticker == "USDCHF" or syminfo.ticker == "USDJPY" or syminfo.ticker == "EURCAD"
+    inSession := not na(time(timeframe.period, "1530-0000")) // 1630-0430 (original comment, likely referring to a different time zone)
+else
+    inSession := not na(time(timeframe.period, "2100-2105")) // A very short window, might be a placeholder or specific for certain assets.
+
+// Background color to indicate if `inSession` is true.
+bgcolor(inSession ? color.rgb(178, 181, 190, 89) : na)
+newday := inSession ? false : true // Resets `newday` if in session.
+in_time_range = inSession ? false : true // Inverted `inSession` for `in_time_range`.
+
+// --- Buy/Sell Signal Logic (based on Supertrend, Pivots, and MA) ---
+
+// Plots a line for the Supertrend.
+var line1 = line.new(bar_index, upTrendValue[0], bar_index - 1, upTrendValue[0], color = color.yellow)
+
+
+if 3 < bar_j
+    // Find the lowest value and associated properties within the `bar_i` lookback.
+    [minValue_b, openvalue_b, closevalue_b, buy_ready] = LowestValueAndBar(low, bar_i, u_sp)
+    // If buy conditions are met, update the Supertrend line plot.
+    if  direction < 0 and dir_up_time < 0 and close > sma200 and bar_j < 20 and closevalue_b < openvalue_b and in_time_range //buy_ready and
+        line.delete(line1)
+        line1 := line.new(bar_index, upTrendValue[0], bar_index - 5, upTrendValue[0])
+
+    // Set `buy_sit` if close price is above the identified open and close of the lowest bar, and current open.
+    if close > openvalue_b and close > open and closevalue_b < openvalue_b
+        buy_sit := true
+    else
+        buy_sit := false
+
+// Sell Signal Logic:
+// Checks for bullish Supertrend (`direction > 0`), higher timeframe bullish Supertrend (`dir_up_time > 0`),
+// price below 200 SMA, and specific conditions from `HighestValueAndBar`.
+if bar_i > 3
+    // Find the highest value and associated properties within the `bar_j` lookback.
+    [maxValue_s, openvalue_s, closevalue_s, sell_ready] = HighestValueAndBar(high, bar_j, d_sp)
+    // If sell conditions are met, update the Supertrend line plot.
+    if  direction > 0 and dir_up_time > 0 and close < sma200 and bar_i < 20 and closevalue_s > openvalue_s and in_time_range//sell_ready and
+        line.delete(line1)
+        line1 := line.new(bar_index, downTrendValue[0], bar_index - 5, downTrendValue[0])
+
+    // Set `sell_sit` if close price is below the identified open and close of the highest bar, and current open.
+    if close < openvalue_s and close < open and closevalue_s > openvalue_s
+        sell_sit := true
+    else
+        sell_sit := false
+
+// --- Trade Conditions ---
+bool daytrade = na // Flag for daily trading.
+currentDay := dayofmonth(time + 1800000) // Calculates current day, adding 30 minutes to account for time zones.
+cuday = dayofmonth(time) // Current day of the month without adjustment.
+
+// "Holiday" logic: Prevents trading on specific days (10th and 21st of the month).
+if currentDay == 10 or currentDay == 21
+    daytrade := false
+else
+    daytrade := true
+
+// Comprehensive buy condition combining Supertrend, higher timeframe, SMA, buy situation, and bar counts.
+buycond = direction < 0 and dir_up_time < 0 and close > sma200 and buy_sit and bar_j < 20 // and daytrade (commented out) // and sma34>sma100 and sma100>sma200 (commented out)
+
+// Comprehensive sell condition combining Supertrend, higher timeframe, SMA, sell situation, and bar counts.
+sellcond = direction > 0 and dir_up_time > 0 and close < sma200 and sell_sit and bar_i < 20 // and daytrade (commented out) // and sma34<sma100 and sma100<sma200 (commented out)
+
+stoploss = 0.0 // Initializing stop loss variable.
+
+// --- Position Sizing Function ---
+// Calculates the lot size based on entry price, stop loss, and equity.
+lotsvalue(entry, sl, Equ) =>
+    var float pip = 0.0 // Pip value.
+    var float lots_val = 0.0 // Calculated lot size.
+    // Adjust pip calculation based on ticker symbol.
+    if syminfo.ticker == "XAUUSD"
+        pip := math.abs(entry - sl) * 100
+    else if syminfo.ticker == "SOLUSD"
+        pip := math.abs(entry - sl)
+    else if syminfo.ticker == "USDCHF"
+        pip := math.abs(entry - sl) * 100000
+    else if syminfo.ticker == "AVAXUSD"
+        pip := math.abs(entry - sl) * 100
+    else if syminfo.ticker == "DOTUSD"
+        pip := math.abs(entry - sl) * 100
+    else
+        pip := 1 // Default pip value.
+
+    equity = Equ // Use the input equity.
+    lots_val := (equity * (risk_percentage / 100)) / pip // Calculate lot size based on risk percentage.
+    if lots_val < 0.01 // Minimum lot size.
+        lots_val := 0.01
+    [lots_val] // Return the calculated lot size.
+
+sl2 = 0.0 // Unused variable, possibly a remnant.
+
+// --- Daily/Monthly Profit/Loss Tracking and Reset ---
+var reset_time = 0 // Time for daily reset.
+var int change_day = 0 // Unused.
+var bool lose_go_long = false // Unused.
+var bool lose_go_short = false // Unused.
+
+if inSession // If currently in a trading session.
+    reset_time := time // Set `reset_time` to current time.
+
+var float lp = 0 // Last trade profit/loss.
+var float ll = 0 // Total losses.
+var float lw = 0 // Total wins.
+var float lres = 0 // Total profit/loss.
+var string mes = "" // Unused message string.
+var string day_mes = "" // Unused message string.
+
+// Update daily wins/losses based on closed trades within the current "session" time.
+if (strategy.closedtrades > 0)
+    for i = 0 to strategy.closedtrades - 1
+        if strategy.closedtrades.exit_time(i) >= reset_time + (4 * 60 * 1000) // Check if trade closed within a 4-minute window after reset_time.
+            posCunter := posCunter + 1 // Increment position counter.
+            // Calculate profit/loss for short trades.
+            if strategy.closedtrades.exit_id(strategy.closedtrades - posCunter) == "short"
+                profit = strategy.closedtrades.entry_price(strategy.closedtrades - posCunter) - strategy.closedtrades.exit_price(strategy.closedtrades - posCunter)
+                if profit > 0
+                    todaysWins += rr // Add `rr` for wins.
+                else
+                    todaysLosses += 1 // Add 1 for losses.
+            // Calculate profit/loss for long trades.
+            if strategy.closedtrades.exit_id(strategy.closedtrades - posCunter) == "long"
+                profit = strategy.closedtrades.exit_price(strategy.closedtrades - posCunter) - strategy.closedtrades.entry_price(strategy.closedtrades - posCunter)
+                if profit > 0
+                    todaysWins += rr // Add `rr` for wins.
+                else
+                    todaysLosses += 1 // Add 1 for losses.
+        else // If trade is older than the reset time, reset daily counters.
+            posCunter := 0
+            todaysLosses := 0
+            todaysWins := 0
+    res := todaysWins - todaysLosses // Calculate daily net result.
+
+// Display start and end dates of the strategy performance.
+end_month = month(strategy.closedtrades.exit_time(strategy.closedtrades - 1))
+start_month = month(strategy.closedtrades.exit_time(0))
+end_day = dayofmonth(strategy.closedtrades.exit_time(strategy.closedtrades - 1))
+start_day = dayofmonth(strategy.closedtrades.exit_time(0))
+start = str.tostring(start_month) + '/' + str.tostring(start_day)
+end = str.tostring(end_month) + '/' + str.tostring(end_day)
+
+table.cell(tradeTable, 0, 4, start + '-' + end, text_color=#ffffff, text_size=size.normal, bgcolor=#2195f367)
+
+// Calculate overall wins and losses for all closed trades.
+for i = 0 to strategy.closedtrades - 1
+    if strategy.closedtrades.exit_time(i) <= time
+        if strategy.closedtrades.exit_id(strategy.closedtrades - (i + 1)) == "short"
+            lp = strategy.closedtrades.entry_price(strategy.closedtrades - (i + 1)) - strategy.closedtrades.exit_price(strategy.closedtrades - (i + 1))
+            if lp > 0
+                lw += rr
+            else
+                ll += 1
+        if strategy.closedtrades.exit_id(strategy.closedtrades - (i + 1)) == "long"
+            lp = strategy.closedtrades.exit_price(strategy.closedtrades - (i + 1)) - strategy.closedtrades.entry_price(strategy.closedtrades - (i + 1))
+            if lp > 0
+                lw += rr
+            else
+                ll += 1
+
+llstr = str.tostring(ll) // String representation of total losses.
+lwstr = str.tostring(lw / rr) // String representation of total wins.
+lres := lw - ll // Overall net result.
+lresstr = str.tostring(lres) // String representation of overall net result.
+
+// Update "total deal" cell in the table.
+table.cell(tradeTable, 1 + 1, 5, str.tostring(lw / rr) + '-' + str.tostring(ll), text_color=color.rgb(255, 255, 255), text_size=size.normal, bgcolor=#ffffff67)
+
+lp := 0 // Reset `lp`.
+lw := 0 // Reset `lw`.
+ll := 0 // Reset `ll`.
+
+// Daily profit target logic:
+var bool day_profit = na
+if (res >= 4 and todaysLosses >= 2) or (res >= 4 and todaysLosses + todaysWins >= 8)
+    day_profit := false // If daily profit is high with some losses, or very high number of trades, set `day_profit` to false (stop trading for the day).
+else
+    day_profit := true
+
+// Update daily stats in the table.
+table.cell(tradeTable, 1 + 1, 0, str.tostring(currentDay), text_color=color.white, text_size=size.normal, bgcolor=#787b8666)
+table.cell(tradeTable, 1 + 1, 1, str.tostring(todaysWins), text_color=color.green, text_size=size.normal, bgcolor=#ffffff66)
+table.cell(tradeTable, 1 + 1, 2, str.tostring(todaysLosses), text_color=color.red, text_size=size.normal, bgcolor=#ffffff66)
+
+// --- Trade Execution Logic ---
+var float lots = 0.0 // Lot size for the current trade.
+pip = syminfo.pointvalue // Pip value of the symbol.
+eqty = strategy.equity * 0.01 // 1% of current equity. (Not used directly for lot sizing, but could be).
+var string size = na // String for lot size display.
+var string stp = na // String for stop loss display.
+var string tkp = na // String for take profit display.
+
+// Track previous closed trades to detect new closures.
+var int previous_closed_trades = 0
+trade_closed = false
+var bool signal_sent = false // Unused, could be for external signal sending.
+
+// Detect if a trade has just closed.
+if (strategy.closedtrades > previous_closed_trades)
+    trade_closed := true
+    previous_closed_trades := strategy.closedtrades
+
+// Monthly stop-out logic (if total losses reach -12, stop trading for a week).
+var int monthly_stop = 0
+var bool set = true
+var bool monthly_trade = true
+if (lres <= -18 and set)
+    monthly_stop := time + 604800000 // Set stop time to one week from now.
+    set := false // Prevent re-setting the stop time.
+    monthly_trade := false // Disable monthly trading.
+if time >= monthly_stop
+    monthly_trade := true // Re-enable monthly trading after the stop period.
+    set := true // Allow setting a new monthly stop.
+dmonth = dayofmonth(time) // Current day of the month. (Redundant with `cuday`).
+
+
+if (sellcond and strategy.position_size == 0   and dir_up_time > 0  and in_time_range and lock_short and res > -3 )//    and day_profit  and monthly_trade
+    lock_short := false // Lock short entries after placing an order.
+    [lots] = lotsvalue(close[0], downTrendValue[0], Equ) // Calculate lot size.
+    lot = (math.round(lots * 100)) / 100 // Round lot size to two decimal places.
+    strategy.entry("short", strategy.short, comment = str.tostring(lot) ) // Place short entry.
+    // Set stop loss based on ticker symbol.
+    if syminfo.ticker == "XAUUSD"
+        sl := downTrendValue[0]
+    else
+        sl := downTrendValue[0]
+    sl_short = sl // Store stop loss for short.
+    size := str.tostring(lot) // Store lot size as string.
+    stp := str.tostring(sl) // Store stop loss as string.
+    tkp := str.tostring(close[0] - ((sl - close[0]) * rr)) // Calculate take profit for short.
+
+// Unlock long entries if Supertrend changes from bullish to bearish.
+if direction[1] + direction[0] == 0 and direction < 0
+    lock_long := true
+
+// Exit for short position:
+// Sets limit (take profit) and stop loss for existing short trades.
+strategy.exit(id = 'short', limit=(strategy.position_avg_price - ((sl - strategy.position_avg_price) * rr)), stop=sl)
+
+// Reset `signal_sent` if no open trades.
+if strategy.opentrades == 0
+    signal_sent := false
+
+// Long Entry:
+// Conditions: `buycond` is true, higher timeframe Supertrend is bearish (`dir_up_time < 0`), no open positions,
+// `lock_long` is true, daily profit condition met (`day_profit`), within trading session (`in_time_range`).
+if(buycond  and strategy.position_size == 0  and dir_up_time < 0 and lock_long   and in_time_range and res > -3 )//     and monthly_trade   and day_profit
+    lock_long := false // Lock long entries after placing an order.
+    [lots] = lotsvalue(close[0], upTrendValue[0], Equ) // Calculate lot size.
+    lot = (math.round(lots * 100)) / 100 // Round lot size to two decimal places.
+    strategy.entry('long', strategy.long, comment = str.tostring(lot)) // Place long entry.
+    // Set stop loss based on ticker symbol.
+    if syminfo.ticker == "XAUUSD"
+        sl := upTrendValue[0]
+    else
+        sl := upTrendValue[0]
+    size := str.tostring(lot) // Store lot size as string.
+    stp := str.tostring(sl) // Store stop loss as string.
+    tkp := str.tostring(close[0] + ((close[0] - sl) * rr)) // Calculate take profit for long.
+
+// Unlock short entries if Supertrend changes from bearish to bullish.
+if direction[1] + direction[0] == 0 and direction > 0
+    lock_short := true
+
+entry = strategy.opentrades.entry_price(0) // Entry price of the current open trade.
+
+// Exit for long position:
+// Sets limit (take profit) and stop loss for existing long trades.
+strategy.exit(id = 'long', limit=(strategy.position_avg_price + ((strategy.position_avg_price - sl) * rr)), stop=sl)
+
+// Reset `signal_sent` if no open trades.
+if strategy.opentrades == 0
+    signal_sent := false
+
+// Calculate take profit for plotting (this will be `na` if no open trades).
+takeProfit = (strategy.position_avg_price + ((strategy.position_avg_price - sl) * rr))
+
+// --- Plotting on Chart ---
+// Plot Stop Loss, Take Profit, and Entry lines if there is an open position.
+bool showPlot = strategy.position_size != 0
+loss = plot(showPlot ? sl : na, "Stop loss limit", color.red, 1, plot.style_linebr)
+profit = plot(showPlot ? takeProfit : na, "Take profit limit 1", color.green, 1, plot.style_linebr)
+enter = plot(showPlot ? entry : na, "Entry", color.rgb(255, 255, 255), 1, plot.style_linebr)
+
+// Fill background between entry and profit/loss lines.
+fill(enter, profit, color.new(#4caf4f, 64), fillgaps = false)
+fill(enter, loss, color.new(#ff5252, 57), fillgaps = false)
+
+// Update remaining cells in the trade statistics table.
+table.cell(tradeTable, 1 + 1, 3, str.tostring(res), text_color=color.rgb(255, 255, 255), text_size=size.normal, bgcolor=#ffffff66)
+table.cell(tradeTable, 1 + 1, 4, str.tostring(lres), text_color=color.rgb(255, 255, 255), text_size=size.normal, bgcolor=#ffffff67)
+
+// Plot diamond shapes at the bottom for buy/sell conditions.
+plotshape(buy_sit and dir_up_time < 0 and close > sma200 and bar_j < 20, 'toup', style = shape.diamond, location = location.bottom, color = color.green)
+plotshape(sell_sit and dir_up_time > 0 and close < sma200 and bar_i < 20, 'toup', style = shape.diamond, location = location.bottom, color = color.red)
+
+// --- Overall Message (if any) ---

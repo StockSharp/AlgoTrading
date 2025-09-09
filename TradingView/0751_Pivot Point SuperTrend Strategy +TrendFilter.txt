@@ -1,0 +1,123 @@
+// © Julien_Eche
+// Strategy based on "Pivot Point Supertrend" Indicator by LonesomeTheBlue
+
+//@version=4
+
+strategy("PPS", overlay=true, initial_capital=500000, currency=currency.USD, default_qty_type=strategy.cash, default_qty_value=50000)
+
+prd = input(defval = 2, title="Pivot Point Period", minval = 1, maxval = 50)
+Factor=input(defval = 3, title = "ATR Factor", minval = 1, step = 0.1)
+Pd=input(defval = 10, title = "ATR Period", minval=1)
+showpivot = input(defval = false, title="Show Pivot Points")
+showlabel = input(defval = true, title="Show Buy/Sell Labels")
+showcl = input(defval = false, title="Show PP Center Line")
+showsr = input(defval = false, title="Show Support/Resistance")
+
+// get Pivot High/Low
+float ph = pivothigh(prd, prd)
+float pl = pivotlow(prd, prd)
+
+// drawl Pivot Points if "showpivot" is enabled
+plotshape(ph and showpivot, text="H",  style=shape.labeldown, color=na, textcolor=color.red, location=location.abovebar, transp=0, offset = -prd)
+plotshape(pl and showpivot, text="L",  style=shape.labeldown, color=na, textcolor=color.lime, location=location.belowbar, transp=0, offset = -prd)
+
+// calculate the Center line using pivot points
+var float center = na
+float lastpp = ph ? ph : pl ? pl : na
+if lastpp
+    if na(center)
+        center := lastpp
+    else
+        //weighted calculation
+        center := (center * 2 + lastpp) / 3
+
+// upper/lower bands calculation
+Up = center - (Factor * atr(Pd))
+Dn = center + (Factor * atr(Pd))
+
+// get the trend
+float TUp = na
+float TDown = na
+Trend = 0
+TUp := close[1] > TUp[1] ? max(Up, TUp[1]) : Up
+TDown := close[1] < TDown[1] ? min(Dn, TDown[1]) : Dn
+Trend := close > TDown[1] ? 1: close < TUp[1]? -1: nz(Trend[1], 1)
+Trailingsl = Trend == 1 ? TUp : TDown
+
+// plot the trend
+linecolor = Trend == 1 and nz(Trend[1]) == 1 ? color.lime : Trend == -1 and nz(Trend[1]) == -1 ? color.red : na
+plot(Trailingsl, color = linecolor ,  linewidth = 2, title = "PP SuperTrend")
+
+plot(showcl ? center : na, color = showcl ? center < hl2 ? color.blue : color.red : na)
+
+// check and plot the signals
+bsignal = Trend == 1 and Trend[1] == -1
+ssignal = Trend == -1 and Trend[1] == 1
+plotshape(bsignal and showlabel ? Trailingsl : na, title="Buy", text="Buy", location = location.absolute, style = shape.labelup, size = size.tiny, color = color.lime, textcolor = color.black, transp = 0)
+plotshape(ssignal and showlabel ? Trailingsl : na, title="Sell", text="Sell", location = location.absolute, style = shape.labeldown, size = size.tiny, color = color.red, textcolor = color.white, transp = 0)
+
+//get S/R levels using Pivot Points
+float resistance = na
+float support = na
+support := pl ? pl : support[1]
+resistance := ph ? ph : resistance[1]
+
+// if enabled then show S/R levels
+plot(showsr and support ? support : na, color = showsr and support ? color.lime : na, style = plot.style_circles, offset = -prd)
+plot(showsr and resistance ? resistance : na, color = showsr and resistance ? color.red : na, style = plot.style_circles, offset = -prd)
+
+// Trend Filter from SuperTrend Long Strategy
+Periods = input(title="ATR Period", type=input.integer, defval=10)
+src = input(hl2, title="Source")
+Multiplier = input(title="ATR Multiplier", type=input.float, step=0.1, defval=3.0)
+changeATR = input(title="Change ATR Calculation Method ?", type=input.bool, defval=true)
+
+// Combine the SuperTrend calculations
+atr2 = sma(tr, Periods)
+atr = changeATR ? atr(Periods) : atr2
+
+up = src - (Multiplier * atr)
+up1 = nz(up[1], up)
+up := close[1] > up1 ? max(up, up1) : up
+
+dn = src + (Multiplier * atr)
+dn1 = nz(dn[1], dn)
+dn := close[1] < dn1 ? min(dn, dn1) : dn
+
+trend = 1
+trend := nz(trend[1], trend)
+trend := trend == -1 and close > dn1 ? 1 : trend == 1 and close < up1 ? -1 : trend
+
+// Moving Average as Trend Filter
+periodes_ma = input(title="Moving Average Period", type=input.integer, defval=20)
+src_ma = input(title="Moving Average Source", type=input.source, defval=close)
+ma = sma(src_ma, periodes_ma)
+
+// Strategy Entry Conditions
+FromMonth = input(defval = 9, title = "From Month", minval = 1, maxval = 12)
+FromDay   = input(defval = 1, title = "From Day", minval = 1, maxval = 31)
+FromYear  = input(defval = 2018, title = "From Year", minval = 999)
+ToMonth   = input(defval = 1, title = "To Month", minval = 1, maxval = 12)
+ToDay     = input(defval = 1, title = "To Day", minval = 1, maxval = 31)
+ToYear    = input(defval = 9999, title = "To Year", minval = 999)
+
+start     = timestamp(FromYear, FromMonth, FromDay, 00, 00)
+finish    = timestamp(ToYear, ToMonth, ToDay, 23, 59)
+
+window()  => time >= start and time <= finish ? true : false
+
+// Combined entry conditions
+longCondition = (trend == 1 and trend[1] == -1 and close > ma) or (bsignal and window())
+shortCondition = (trend == -1 and trend[1] == 1 and close < ma) or (ssignal and window())
+
+if (longCondition)
+    strategy.entry("BUY", strategy.long)
+
+if (shortCondition)
+    strategy.close("BUY")
+    strategy.entry("SELL", strategy.short)
+
+buy1 = barssince((trend == 1 and trend[1] == -1 and close > ma) or (bsignal and window()))
+sell1 = barssince((trend == -1 and trend[1] == 1 and close < ma) or (ssignal and window()))
+color1 = buy1[1] < sell1[1] ? color.green : buy1[1] > sell1[1] ? color.red : na
+barcolor(color1)

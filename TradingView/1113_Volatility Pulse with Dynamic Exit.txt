@@ -1,0 +1,43 @@
+//@version=5
+strategy("Volatility Pulse with Dynamic Exit", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=25, commission_type=strategy.commission.percent, commission_value=0.05, slippage=1, max_bars_back=300)
+
+// === FIXED INPUTS ===
+atrLen        = 14  // ATR Length
+momentumLen   = 20  // Momentum Lookback
+volThreshold  = 0.5 // Volatility Expansion Multiplier
+minVolatility = 1.0 // Minimum ATR Threshold (Low Volatility Filter)
+exitBars      = 42  // Maximum Holding Bars
+riskReward    = 2.0 // Risk-Reward Ratio
+
+// === CALCULATIONS ===
+atrNow  = ta.atr(atrLen)
+atrBase = ta.sma(atrNow, 20)
+volExpansion = atrNow > atrBase * volThreshold
+lowVolatility = atrNow < atrBase * minVolatility
+
+momentumUp   = close > close[momentumLen]
+momentumDown = close < close[momentumLen]
+
+// === CONDITIONS ===
+longCondition  = volExpansion and momentumUp and not lowVolatility
+shortCondition = volExpansion and momentumDown and not lowVolatility
+
+// === ENTRY LOGIC ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+
+// === STOP LOSS & TAKE PROFIT ===
+longSL  = strategy.position_avg_price - atrNow
+longTP  = strategy.position_avg_price + atrNow * riskReward
+
+shortSL = strategy.position_avg_price + atrNow
+shortTP = strategy.position_avg_price - atrNow * riskReward
+
+if (strategy.position_size > 0)
+    strategy.exit("Long Exit", from_entry="Long", stop=longSL, limit=longTP, when=bar_index - strategy.opentrades.entry_bar_index(0) >= exitBars)
+
+if (strategy.position_size < 0)
+    strategy.exit("Short Exit", from_entry="Short", stop=shortSL, limit=shortTP, when=bar_index - strategy.opentrades.entry_bar_index(0) >= exitBars)

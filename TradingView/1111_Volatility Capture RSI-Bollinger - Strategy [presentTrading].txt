@@ -1,0 +1,61 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+//@version=5
+// Define the strategy settings
+strategy('Volatility Capture RSI-Bollinger - Strategy [presentTrading]', overlay=true, precision=3, default_qty_type=strategy.cash,
+ commission_value= 0.1, commission_type=strategy.commission.percent, slippage=1,
+  currency=currency.USD, default_qty_type = strategy.percent_of_equity, default_qty_value = 15, initial_capital= 10000)
+
+// Define the input parameters for the indicator
+priceSource  = input.source(title='Source', defval=hlc3, group='presentBollingBand') // The price source to use
+lengthParam   = input.int(50, 'lengthParam', minval=1, group='presentBollingBand') // The length of the moving average
+multiplier = input.float(2.7183, 'Multiplier', minval=0.1, step=.1, group='presentBollingBand') // The multiplier for the ATR
+useRSI = input.bool(true, 'Use RSI for signals', group='presentBollingBand') // Boolean input to decide whether to use RSI for signals
+rsiPeriod = input.int(10, 'RSI Period', minval=1, group='presentBollingBand') // The period for the RSI calculation
+smaPeriod = input.int(5, 'SMA Period', minval=1, group='presentBollingBand') // The period for the SMA calculation
+boughtRange = input.float(55, 'Bought Range Level', minval=1, group='presentBollingBand') // The level for the bought range
+soldRange = input.float(50, 'Sold Range Level', minval=1, group='presentBollingBand') // The level for the sold range
+
+// Add a parameter for choosing Long or Short
+tradeDirection = input.string("Both", "Trade Direction", options=["Long", "Short", "Both"], group='presentBollingBand') // Dropdown input for trade direction
+
+// Calculate the bollingerBand
+barIndex = bar_index // The current bar index
+upperBollingerBand = ta.sma(high, lengthParam) + ta.stdev(high, lengthParam) * multiplier // Calculate the upper Bollinger Band
+lowerBollingerBand = ta.sma(low, lengthParam) - ta.stdev(low, lengthParam) * multiplier // Calculate the lower Bollinger Band
+
+var float presentBollingBand = na // Initialize the presentBollingBand variable
+crossCount = 0 // Initialize the crossCount variable
+
+// Calculate the buy and sell signals
+longSignal1 = ta.crossover(priceSource, presentBollingBand) // Calculate the long signal
+shortSignal1 = ta.crossunder(priceSource, presentBollingBand) // Calculate the short signal
+
+// Calculate the RSI
+rsiValue = ta.rsi(priceSource, rsiPeriod) // Calculate the RSI value
+rsiSmaValue = ta.sma(rsiValue, smaPeriod) // Calculate the SMA of the RSI value
+
+// Calculate the buy and sell signals
+longSignal2 = rsiSmaValue > boughtRange // Calculate the long signal based on the RSI SMA
+shortSignal2 = rsiSmaValue < soldRange // Calculate the short signal based on the RSI SMA
+
+presentBollingBand := na(lowerBollingerBand) or na(upperBollingerBand)?0.0 : close>presentBollingBand?math.max(presentBollingBand,lowerBollingerBand) : close<presentBollingBand?math.min(presentBollingBand,upperBollingerBand) : 0.0
+
+
+if (tradeDirection == "Long" or tradeDirection == "Both") and longSignal1 and (useRSI ? longSignal2 : true) // Use RSI for signals if useRSI is true
+    presentBollingBand := lowerBollingerBand // If the trade direction is "Long" or "Both", and the long signal is true, and either useRSI is false or the long signal based on RSI is true, then assign the lowerBollingerBand to the presentBollingBand.
+    strategy.entry("Long", strategy.long) // Enter a long position.
+
+if (tradeDirection == "Short" or tradeDirection == "Both") and shortSignal1 and (useRSI ? shortSignal2 : true) // Use RSI for signals if useRSI is true
+    presentBollingBand := upperBollingerBand // If the trade direction is "Short" or "Both", and the short signal is true, and either useRSI is false or the short signal based on RSI is true, then assign the upperBollingerBand to the presentBollingBand.
+    strategy.entry("Short", strategy.short) // Enter a short position.
+
+// Exit condition
+if (strategy.position_size > 0 and ta.crossunder(close, presentBollingBand)) // If the strategy has a long position and the close price crosses under the presentBollingBand, then close the long position.
+    strategy.close("Long")
+if (strategy.position_size < 0 and ta.crossover(close, presentBollingBand)) // If the strategy has a short position and the close price crosses over the presentBollingBand, then close the short position.
+    strategy.close("Short")
+
+//~~ Plot
+plot(presentBollingBand,"presentBollingBand", color=color.blue) // Plot the presentBollingBand on the chart.

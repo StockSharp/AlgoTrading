@@ -1,0 +1,51 @@
+//@version=5
+strategy("AUD/USD 1-Min Scalping Strategy with Labels", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// === INPUTS ===
+emaShort = input.int(13, title="Short EMA")
+emaLong = input.int(26, title="Long EMA")
+rsiPeriod = input.int(4, title="RSI Period")
+rsiOverbought = input.int(70, title="RSI Overbought")
+rsiOversold = input.int(30, title="RSI Oversold")
+bbLength = input.int(20, title="Bollinger Bands Length")
+bbMult = input.float(2.0, title="Bollinger Bands Multiplier")
+takeProfit = input.float(5, title="Take Profit (pips)") * 0.0001
+stopLoss = input.float(4, title="Stop Loss (pips)") * 0.0001
+
+// === CALCULATIONS ===
+// EMA Trend Filter
+emaFast = ta.ema(close, emaShort)
+emaSlow = ta.ema(close, emaLong)
+isUpTrend = emaFast > emaSlow
+isDownTrend = emaFast < emaSlow
+
+// Bollinger Bands
+basis = ta.sma(close, bbLength)
+dev = bbMult * ta.stdev(close, bbLength)
+upperBB = basis + dev
+lowerBB = basis - dev
+
+// RSI
+rsi = ta.rsi(close, rsiPeriod)
+
+// Entry Conditions
+longCondition = isUpTrend and close <= lowerBB and rsi > rsiOversold
+shortCondition = isDownTrend and close >= upperBB and rsi < rsiOverbought
+
+// === TRADE EXECUTION ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("TP/SL Long", from_entry="Long", limit=close + takeProfit, stop=close - stopLoss)
+    label.new(bar_index, low, "Buy", style=label.style_label_up, color=color.green, textcolor=color.white, size=size.small)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("TP/SL Short", from_entry="Short", limit=close - takeProfit, stop=close + stopLoss)
+    label.new(bar_index, high, "Sell", style=label.style_label_down, color=color.red, textcolor=color.white, size=size.small)
+
+// === PLOTS ===
+plot(emaFast, color=color.orange, title="EMA 13")
+plot(emaSlow, color=color.blue, title="EMA 26")
+plot(upperBB, color=color.red, title="Upper BB", linewidth=1)
+plot(lowerBB, color=color.green, title="Lower BB", linewidth=1)
+plot(basis, color=color.gray, title="BB Basis", linewidth=1)

@@ -1,0 +1,225 @@
+// By Alessandro Cacchi
+// Feel free to modify and suggest modifications
+// Multi Timeframe Strategy based on hints from Ross Cameron
+
+//@version=6
+strategy("Timeframe Strategy", overlay=true,
+     default_qty_type=strategy.cash,
+     default_qty_value=100,
+     commission_type=strategy.commission.percent,
+     commission_value=0.1)
+
+use_trailing = input.bool(true, title="Usa Trailing Stop")
+
+// === Timeframe attuale
+tf = timeframe.period
+
+// === Setup personalizzabile per timeframe ===
+tp_1m = input.float(0.18, title="TP% - 1m")
+sl_1m = input.float(0.15, title="SL% - 1m")
+tsl_1m = input.float(0.10, title="Trailing SL % - 1m")
+cd_1m = input.int(10, title="Cooldown - 1m")
+rangeMin_1m = input.float(0.1, title="Min Range % - 1m", minval=0.01)
+
+
+tp_5m = input.float(1.2, title="TP% - 5m")
+sl_5m = input.float(0.8, title="SL% - 5m")
+tsl_5m = input.float(0.5, title="Trailing SL % - 5m")
+cd_5m = input.int(5, title="Cooldown - 5m")
+
+tp_15m = input.float(2.0, title="TP% - 15m")
+sl_15m = input.float(1.0, title="SL% - 15m")
+tsl_15m = input.float(0.8, title="Trailing SL % - 15m")
+cd_15m = input.int(3, title="Cooldown - 15m")
+
+tp_1h = input.float(3.0, title="TP% - 1h")
+sl_1h = input.float(1.5, title="SL% - 1h")
+tsl_1h = input.float(1.2, title="Trailing SL % - 1h")
+cd_1h = input.int(2, title="Cooldown - 1h")
+
+tp_1d = input.float(5.0, title="TP% - 1D")
+sl_1d = input.float(2.5, title="SL% - 1D")
+tsl_1d = input.float(2.5, title="Trailing SL % - 1D")
+cd_1d = input.int(1, title="Cooldown - 1D")
+
+// === Parametri dinamici assegnati in base al timeframe ===
+takeProfitPerc = tf == "1"      ? tp_1m :
+                 tf == "5"      ? tp_5m :
+                 tf == "15"     ? tp_15m :
+                 tf == "60"     ? tp_1h :
+                 tf == "D"      ? tp_1d : 1.5
+
+stopLossPerc = tf == "1"        ? sl_1m :
+               tf == "5"        ? sl_5m :
+               tf == "15"       ? sl_15m :
+               tf == "60"       ? sl_1h :
+               tf == "D"        ? sl_1d : 1.0
+
+cooldownBars = tf == "1"        ? cd_1m :
+               tf == "5"        ? cd_5m :
+               tf == "15"       ? cd_15m :
+               tf == "60"       ? cd_1h :
+               tf == "D"        ? cd_1d : 5
+
+trailingPerc = tf == "1"      ? tsl_1m :
+                 tf == "5"      ? tsl_5m :
+                 tf == "15"     ? tsl_15m :
+                 tf == "60"     ? tsl_1h :
+                 tf == "D"      ? tsl_1d : 0.5
+
+
+// === Input utente per volume e orario ===
+minVolumeMult = input.float(1.2, title="Volume minimo (x media 20)", minval=0.1)
+startHour = input.int(15, title="Ora inizio operazioni (UTC)", minval=0, maxval=23)
+endHour = input.int(20, title="Ora fine operazioni (UTC)", minval=0, maxval=23)
+
+// === Indicatori tecnici ===
+ema9 = ta.ema(close, 9)
+ema20 = ta.ema(close, 20)
+ema50 = ta.ema(close, 50)
+ema200 = ta.ema(close, 200)
+rsi = ta.rsi(close, 14)
+vwap = ta.vwap
+atr = ta.atr(14)
+rangePct = (high - low) / close * 100
+rangeFilter1m = tf == "1" ? rangePct > rangeMin_1m : true
+
+trendLong1m = tf == "1" ? close > ema200 : true
+trendShort1m = tf == "1" ? close < ema200 : true
+
+
+
+// === Calcolo ADX manuale ===
+lengthADX = 14
+
+upMove   = high - high[1]
+downMove = low[1] - low
+plusDM  = (upMove > downMove and upMove > 0) ? upMove : 0
+minusDM = (downMove > upMove and downMove > 0) ? downMove : 0
+
+trur = ta.rma(ta.tr(true), lengthADX)
+plusDI = 100 * ta.rma(plusDM, lengthADX) / trur
+minusDI = 100 * ta.rma(minusDM, lengthADX) / trur
+
+dx = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+adx = ta.rma(dx, lengthADX)
+
+
+// === Filtro ADX (solo su 1m)
+adxFilter = tf == "1" ? adx > 15 : true
+
+// === Segnali di ingresso base ===
+longSignal = ta.crossover(ema9, ema20) and ema50 > ema200
+shortSignal = ta.crossunder(ema9, ema20) and ema50 < ema200
+
+// === Filtri addizionali ===
+useVolFilter = input.bool(true, title="Filtro Volume attivo?")
+volAvg = ta.sma(volume, 20)
+volFilter = useVolFilter ? (volume > volAvg * minVolumeMult) : true
+
+hourNow = hour(time, "UTC")
+timeFilter = hourNow >= startHour and hourNow < endHour
+
+spikeRange = high - low
+spikeFilter = spikeRange < atr * 2
+
+rsiLong = rsi > 50
+rsiShort = rsi < 50
+
+// === Cooldown tra i trade ===
+var int lastTradeBar = na
+cooldownOk = na(lastTradeBar) or (bar_index - lastTradeBar >= cooldownBars)
+
+// === Condizioni di ingresso complete ===
+canEnterLong = longSignal and strategy.opentrades == 0 and volFilter and timeFilter and cooldownOk and spikeFilter and rsiLong and adxFilter and rangeFilter1m and trendLong1m
+canEnterShort = shortSignal and strategy.opentrades == 0 and volFilter and timeFilter and cooldownOk and spikeFilter and rsiShort and adxFilter and rangeFilter1m and trendShort1m
+
+
+
+// === Memoria prezzo ingresso
+var float entryPrice = na
+
+if canEnterLong
+    strategy.entry("Long", strategy.long)
+    entryPrice := close
+    lastTradeBar := bar_index
+
+if canEnterShort
+    strategy.entry("Short", strategy.short)
+    entryPrice := close
+    lastTradeBar := bar_index
+
+// === Uscita TP/SL dinamico
+if (strategy.opentrades > 0 and not na(entryPrice))
+    if (strategy.position_size > 0)
+        if use_trailing
+            strategy.exit("TP Long", from_entry="Long",
+                 limit=entryPrice * (1 + takeProfitPerc / 100),
+                 trail_price=entryPrice,
+                 trail_offset=trailingPerc / 100)
+        else
+            strategy.exit("TP/SL Long", from_entry="Long",
+                 limit=entryPrice * (1 + takeProfitPerc / 100),
+                 stop=entryPrice * (1 - stopLossPerc / 100))
+    else if (strategy.position_size < 0)
+        if use_trailing
+            strategy.exit("TP Short", from_entry="Short",
+                 limit=entryPrice * (1 - takeProfitPerc / 100),
+                 trail_price=entryPrice,
+                 trail_offset=trailingPerc / 100)
+        else
+            strategy.exit("TP/SL Short", from_entry="Short",
+                 limit=entryPrice * (1 - takeProfitPerc / 100),
+                 stop=entryPrice * (1 + stopLossPerc / 100))
+
+
+// === Visualizzazione segnali
+plotshape(canEnterLong, location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(canEnterShort, location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+plot(vwap, title="VWAP", color=color.orange)
+plot(ema9, title="EMA 9", color=color.purple)
+plot(ema20, title="EMA 20", color=color.teal)
+plot(ema50, title="EMA 50", color=color.fuchsia)
+plot(ema200, title="EMA 200", color=color.gray)
+
+// === Tabella tecnica basso sinistra ===
+var table techInfo = table.new(position.bottom_left, 1, 9)
+
+var float preHigh = na
+var float preLow = na
+preHigh := na(preHigh) ? high : math.max(preHigh, high)
+preLow := na(preLow) ? low : math.min(preLow, low)
+
+if bar_index % 5 == 0
+    table.cell(techInfo, 0, 0, "VWAP: " + str.tostring(vwap, "#.###"), text_color=color.orange, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 1, "EMA 9: " + str.tostring(ema9, "#.###"), text_color=color.purple, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 2, "EMA 20: " + str.tostring(ema20, "#.###"), text_color=color.teal, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 3, "EMA 50: " + str.tostring(ema50, "#.###"), text_color=color.fuchsia, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 4, "PreHigh: " + str.tostring(preHigh, "#.###"), text_color=color.blue, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 5, "PreLow: " + str.tostring(preLow, "#.###"), text_color=color.rgb(190, 20, 120), bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 6, "Volume: " + str.tostring(volume, "#.##"), text_color=color.white, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 7, "Volatility ATR: " + str.tostring(atr, "#.##"), text_color=color.yellow, bgcolor=color.rgb(0, 0, 0))
+    table.cell(techInfo, 0, 8, "ADX: " + str.tostring(adx, "#.##"), text_color=color.orange, bgcolor=color.rgb(0, 0, 0))
+
+showInfoTab = input.bool(false, title="Mostra Tab info in alto a destra")
+
+var table infoPanel = na
+if bar_index == 1 and showInfoTab
+    infoPanel := table.new(position.top_right, 1, 9, frame_color=color.gray, border_width=1)
+
+if showInfoTab and bar_index % 5 == 0 and not na(infoPanel)
+    table.cell(infoPanel, 0, 0, "TF: " + tf, text_color=color.white, bgcolor=color.rgb(30, 30, 30))
+    table.cell(infoPanel, 0, 1, "TP: " + str.tostring(takeProfitPerc, "#.##") + "%", text_color=color.lime, bgcolor=color.rgb(30, 30, 30))
+    table.cell(infoPanel, 0, 2, "SL: " + str.tostring(stopLossPerc, "#.##") + "%", text_color=color.red, bgcolor=color.rgb(30, 30, 30))
+    table.cell(infoPanel, 0, 3, "Cooldown: " + str.tostring(cooldownBars), text_color=color.orange, bgcolor=color.rgb(30, 30, 30))
+    table.cell(infoPanel, 0, 4, "Opentrades: " + str.tostring(strategy.opentrades), text_color=color.aqua, bgcolor=color.rgb(30, 30, 30))
+
+    if tf == "1"
+        table.cell(infoPanel, 0, 5, "Vol: " + (volFilter ? "✅" : "❌"), text_color=color.white, bgcolor=color.rgb(40, 40, 40))
+        table.cell(infoPanel, 0, 6, "Time: " + (timeFilter ? "✅" : "❌") + "  CD: " + (cooldownOk ? "✅" : "❌"), text_color=color.white, bgcolor=color.rgb(40, 40, 40))
+        table.cell(infoPanel, 0, 7, "Spike: " + (spikeFilter ? "✅" : "❌") + "  RSI: " + ((rsiLong or rsiShort) ? "✅" : "❌"), text_color=color.white, bgcolor=color.rgb(40, 40, 40))
+        table.cell(infoPanel, 0, 8, "ADX: " + (adxFilter ? "✅" : "❌") + "  Range: " + (rangeFilter1m ? "✅" : "❌") + "  Trend: " + ((trendLong1m or trendShort1m) ? "✅" : "❌"), text_color=color.white, bgcolor=color.rgb(40, 40, 40))
+    else
+        for i = 5 to 8
+            table.cell(infoPanel, 0, i, "", text_color=color.gray, bgcolor=color.rgb(10, 10, 10))

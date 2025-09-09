@@ -1,0 +1,109 @@
+//@version=5
+strategy("TFM", overlay = true, max_lines_count=500, max_labels_count=500)
+tfm = input(2,"Timeframe multiplier")
+lns = input(false,"Long and Short?")
+int chartTf = timeframe.in_seconds()
+string tfTimes = timeframe.from_seconds(chartTf * tfm)
+MintickerClose = request.security(syminfo.tickerid, (tfTimes ), close[1]<open[1] and close[0]>open[0]? math.min(low,low[1]):na) [1]
+MaxtickerClose = request.security(syminfo.tickerid, (tfTimes ) ,close[1]>open[1] and close[0]<open[0]? math.max(high,high[1]):na) [1]
+MaxtickerClose := not na(MaxtickerClose ) ?MaxtickerClose:MaxtickerClose[1]
+MintickerClose := not na(MintickerClose ) ?MintickerClose:MintickerClose[1]
+
+// Create entries based on the cross conditions for both trades biases.
+if close > MaxtickerClose
+    strategy.entry("Long", strategy.long, comment = "B@" +str.tostring(close ))
+if close < MintickerClose
+    if lns
+        strategy.entry("Short", strategy.short, comment = "S@" +str.tostring(close ))
+    else
+        strategy.close("Long", comment = "Exit Long @"+str.tostring(close )  )
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ShowLines = input.bool(false,"Show Lines")
+Showbgc = input.bool(false,"Fill background of bars")
+InputShowEntrylLable = input(true, title='Show Buy/Sell lables', group = 'Strategy GUI')
+
+postrend = strategy.position_size
+
+//Buy Signal
+PosEntryBuy = plot(strategy.position_size > 0 ? strategy.position_avg_price :na, title="Position Long mode", style=plot.style_linebr, linewidth=2, color=color.lime)
+if postrend > 0 and postrend[1] <=0 and InputShowEntrylLable
+    label.new(bar_index, strategy.position_avg_price , "Buy @: " +str.tostring(strategy.position_avg_price ), tooltip = "  Buy@: " +str.tostring(strategy.position_avg_price ) ,color=color.teal, size=size.small, textcolor = color.yellow)
+
+//Sell Signal
+
+PosEntrySell = plot(strategy.position_size < 0 ? strategy.position_avg_price:na , title="Position Short mode", style=plot.style_linebr, linewidth=2, color=color.fuchsia)
+if postrend < 0 and postrend[1] >=0  and InputShowEntrylLable
+    label.new(bar_index, strategy.position_avg_price , "Sell @: " +str.tostring(strategy.position_avg_price ), tooltip = "Sell@: " +str.tostring(strategy.position_avg_price ) ,color=color.orange, size=size.small, textcolor = color.navy)
+
+if postrend == 0 and postrend[1] > 0  and InputShowEntrylLable
+    label.new(bar_index, close , "Exit Long @: " +str.tostring(close ), tooltip = "Sell@: " +str.tostring(close ) ,color=color.blue, size=size.small, textcolor = color.white)
+
+
+InputShowProfitlossLable  = input.bool(false, title='Show Trades Profits lable?'  , group = 'Strategy PNL')
+InputShowPnlLlable = input.bool(false, title='Show Extended PnL lable?'  , group = 'Strategy PNL')
+InputShowShortStylePnlLable = input.bool(false, title='Show PnL lable?'  , group = 'Strategy PNL')
+
+var Profitlabel = label.new(bar_index, close, text="Profit $"+str.tostring(strategy.netprofit), textcolor=color.white )
+if InputShowShortStylePnlLable and last_bar_index- bar_index <= 1
+    label.set_text(Profitlabel, "Profit $"+str.tostring(math.round(strategy.netprofit,2)) )
+    label.set_x(Profitlabel, bar_index)
+    label.set_xloc(Profitlabel, time, xloc.bar_time)
+    label.set_color(Profitlabel, strategy.netprofit < 0 ? color.red : color.green)
+    label.set_yloc(Profitlabel, yloc.abovebar)
+    label.set_size(Profitlabel, size.small)
+    label.set_tooltip(Profitlabel, "Open Positions: "+str.tostring(math.round(strategy.position_size,2)) +"   "  +"Closed Profit $"+str.tostring(math.round(strategy.openprofit[1],2)) +"   "  +"Net Profit $"+str.tostring(math.round(strategy.netprofit,2)) +"   " +"MaxDrawDn $"+str.tostring(math.round(strategy.max_drawdown,2)))
+
+
+
+if InputShowProfitlossLable and (strategy.position_size  != strategy.position_size[1] )  and strategy.opentrades[1] != 0
+    entryprofit = label.new(bar_index, open, text= " Open Profit $"+str.tostring(math.round(strategy.openprofit[1],2)), textcolor=color.white )
+    label.set_text(entryprofit,  "$"+str.tostring(math.round(strategy.openprofit[1],2)) )
+    label.set_size(entryprofit, size.small)
+    label.set_color(entryprofit, strategy.openprofit[1] < 0 ? color.red : strategy.openprofit[1] > 0 ? color.green : color.rgb(15, 30, 231) )
+    label.set_tooltip(entryprofit, "Open Positions: "+str.tostring(math.round(strategy.position_size,2)) +"   "  +"Closed Profit $"+str.tostring(math.round(strategy.openprofit[1],2)) +"   "  +"Net Profit $"+str.tostring(math.round(strategy.netprofit,2)) +"   " +"MaxDrawDn $"+str.tostring(math.round(strategy.max_drawdown,2)))
+
+
+
+var labelop = label.new(bar_index, high, text= " Open Profit $"+str.tostring(math.round(strategy.openprofit,2)), textcolor=color.white )
+if  InputShowPnlLlable and last_bar_index- bar_index <= 1
+    label.set_text(labelop,  " Open Profit $"+str.tostring(math.round(strategy.openprofit,2)) +" (" + str.tostring(math.round(strategy.position_size,2))+str.tostring(strategy.position_size > 0 ?" Long":strategy.position_size < 0 ?" Short":"None")  +")"  )
+    label.set_x(labelop, bar_index)
+    label.set_xloc(labelop, time, xloc.bar_time)
+    label.set_color(labelop, strategy.openprofit < 0 ? color.red : color.green)
+    label.set_yloc(labelop, yloc.abovebar)
+    label.set_size(labelop, size.small)
+    label.set_tooltip(labelop, "Open Positions: "+str.tostring(math.round(strategy.position_size,2)) +"   "  +"Open Profit $"+str.tostring(math.round(strategy.openprofit,2)) +"   "  +"Net Profit $"+str.tostring(math.round(strategy.netprofit,2)) +"   " +"MaxDrawDn $"+str.tostring(math.round(strategy.max_drawdown,2)))
+
+var labelnp = label.new(bar_index, high, text="Profit $"+str.tostring(math.round(strategy.netprofit,2)) +"                                              .", textcolor=color.white )
+if InputShowPnlLlable and last_bar_index- bar_index <= 1
+    label.set_text(labelnp, "Profit Factor: "+str.tostring(math.round(strategy.grossprofit/strategy.grossloss,2)) +"                                                " +"Profit $"+str.tostring(math.round(strategy.netprofit,2)) )
+    label.set_x(labelnp, bar_index)
+    label.set_xloc(labelnp, time, xloc.bar_time)
+    label.set_color(labelnp, strategy.netprofit < 0 ? color.red : color.green)
+    label.set_yloc(labelnp, yloc.belowbar)
+    label.set_size(labelnp, size.small)
+
+var labelmaxdd = label.new(bar_index, low, text="MaxDrawDn $"+str.tostring(math.round(strategy.max_drawdown,2)), textcolor=color.white )
+if InputShowPnlLlable and last_bar_index- bar_index <= 1
+    label.set_text(labelmaxdd, "MaxDrawDn $"+str.tostring(math.round(strategy.max_drawdown,2)) )
+    label.set_x(labelmaxdd, bar_index)
+    label.set_xloc(labelmaxdd, time, xloc.bar_time)
+    label.set_color(labelmaxdd, strategy.max_drawdown > 0 ? color.red : color.green)
+    label.set_yloc(labelmaxdd, yloc.belowbar)
+    label.set_size(labelmaxdd, size.small)
+
+
+// Create cross conditions for the averages.
+bool longCondition  = ta.crossunder(close,MintickerClose ) //and cond < 0
+bool shortCondition = ta.crossover(close,MaxtickerClose  ) //and cond > 0
+cond = 0
+cond := longCondition?1:shortCondition?-1:cond[1]
+plot(cond>0?na: MintickerClose,style=plot.style_linebr, color= color.red)
+plot(cond<0?na: MaxtickerClose,style=plot.style_linebr,   color= color.green)
+bgcolor(not Showbgc?na: close>MintickerClose?color.new(color.green, 70):close<MaxtickerClose?color.new(color.red,70):na)
+bgcolor( not Showbgc ?na: cond>0?color.new(color.green, 70):cond<0?color.new(color.red,70):na)
+if ShowLines
+    line.new(time, MintickerClose, time+86400000*(timeframe.isintraday?1: 7), MintickerClose, xloc=xloc.bar_time, style=line.style_dashed, color=color.green)
+if ShowLines
+    line.new(time, MaxtickerClose, time+86400000*(timeframe.isintraday?1: 7), MaxtickerClose, xloc=xloc.bar_time, style=line.style_dashed, color=color.red)

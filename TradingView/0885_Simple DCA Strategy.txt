@@ -1,0 +1,68 @@
+//@version=5
+strategy("Simple DCA Strategy", overlay=true, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, pyramiding=100)
+
+
+// Restrict to 1-minute or lower timeframes
+if (timeframe.in_seconds(timeframe.period) > 60)
+    runtime.error("This strategy only works on 1-minute or lower timeframes")
+
+// --- Strategy Inputs ---
+baseOrderSize = input.float(50, "Base Order Size (USD/Quote Currency)", minval=0.01)
+priceDeviation = input.float(1.0, "Price Deviation for Safety Order (%)", minval=0.1) / 100
+maxSafetyOrders = input.int(10, "Maximum Safety Orders", minval=0)
+takeProfit = input.float(1.0, "Take Profit (%)", minval=0.1) / 100
+orderSizeMultiplier = input.float(1.3, "Order Size Multiplier", minval=1.0)
+
+// --- Internal Variables ---
+var float lastEntryPrice = na
+var int safetyOrderCount = 0
+var float totalQuantity = 0.0
+var float totalCost = 0.0
+var float averageEntryPrice = na
+
+// --- Reset Logic for New Cycles ---
+// Reset variables when no open positions (or when strategy is initialized)
+if  strategy.position_size == 0
+    lastEntryPrice := na
+    safetyOrderCount := 0
+    totalQuantity := 0.0
+    totalCost := 0.0
+    averageEntryPrice := na
+
+// --- Entry Logic (Base Order and Safety Orders) ---
+// Base Order
+if  strategy.position_size == 0
+    // Enter a long position with the base order size
+    strategy.entry("Base Order", strategy.long, qty=baseOrderSize / close) // Convert USD/Quote Currency to quantity
+    lastEntryPrice := close
+    totalQuantity := baseOrderSize / close
+    totalCost := baseOrderSize
+    averageEntryPrice := close
+    safetyOrderCount := 0
+else
+    // Safety Order Logic
+    // Check if price has deviated enough and we haven't reached max safety orders
+    if low < lastEntryPrice * (1 - priceDeviation) and safetyOrderCount < maxSafetyOrders
+        currentOrderSize = baseOrderSize * math.pow(orderSizeMultiplier, safetyOrderCount + 1) // Calculate next order size
+        strategy.entry("SO " + str.tostring(safetyOrderCount + 1), strategy.long, qty=currentOrderSize / close)
+
+        // Update tracking variables
+        lastEntryPrice := close
+        totalQuantity := totalQuantity + (currentOrderSize / close)
+        totalCost := totalCost + currentOrderSize
+        averageEntryPrice := totalCost / totalQuantity // Recalculate average entry price
+        safetyOrderCount := safetyOrderCount + 1
+
+// --- Exit Logic (Take Profit) ---
+if strategy.position_size > 0
+    // Calculate the target price for take profit
+    targetPrice = averageEntryPrice * (1 + takeProfit)
+
+    // Close the position if the current price reaches the target price
+    if high >= targetPrice
+        strategy.close_all()
+
+// --- Plotting for Visualization ---
+plot(averageEntryPrice, "Average Entry Price", color=color.blue, style=plot.style_linebr)
+plot(strategy.position_size > 0 ? averageEntryPrice * (1 + takeProfit) : na, "Take Profit Target", color=color.green, style=plot.style_linebr)
+plot(strategy.position_size > 0 ? lastEntryPrice * (1 - priceDeviation) : na, "saftyorder", color=color.rgb(175, 91, 76), style=plot.style_linebr)

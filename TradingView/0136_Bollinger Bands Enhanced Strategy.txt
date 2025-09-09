@@ -1,0 +1,115 @@
+//_______ <licence>
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Skyrex
+
+//_______ <version>
+//@version=5
+
+//_______ <declaration_statement>
+strategy(title = "Bollinger Bands Enhanced Strategy",
+         shorttitle = "Bollinger Bands Strategy",
+         overlay = true,
+         format = format.inherit,
+         pyramiding = 1,
+         calc_on_order_fills = false,
+         calc_on_every_tick = true,
+         default_qty_type = strategy.percent_of_equity,
+         default_qty_value = 30,
+         initial_capital = 10000,
+         currency = currency.NONE,
+         commission_type = strategy.commission.percent,
+         commission_value = 0.1,
+         slippage = 5,
+         use_bar_magnifier = true)
+
+
+//_______ <constant_declarations>
+var const color skyrexGreen       = color.new(#2ECD99, 0)
+var const color skyrexGray        = color.new(#F2F2F2, 0)
+var const color skyrexWhite       = color.new(#FFFFFF, 0)
+
+
+//________<variables declarations>
+var float stopLossLevel                = na
+var float takeProfitLevel              = na
+var float tralingProfitActivationLevel = na
+
+
+//_______ <inputs>
+// Trading bot settings
+sourceUuid               = input.string(title = "sourceUuid:", defval = "yourBotSourceUuid", group = "🤖Trading Bot Settings🤖")
+secretToken              = input.string(title = "secretToken:", defval = "yourBotSecretToken", group = "🤖Trading Bot Settings🤖")
+
+
+// Trading period settings
+lookBackPeriodStart      = input.time(title = "Trade Start Date/Time", defval = timestamp('2023-01-01T00:00:00'), group = "🕐Trading Period Settings🕐")
+lookBackPeriodStop       = input.time(title = "Trade Stop Date/Time", defval = timestamp('2025-01-01T00:00:00'), group = "🕐Trading Period Settings🕐")
+
+
+// Strategy settings
+stopLossAtrNum                 = input.float(defval = 1.75, title = "ATR stop loss", step = 0.25, group = "📈Strategy settings📈")
+tralingProfitActivationNum     = input.float(defval = 2.25, title = "ATR Traling profit activation level", step = 0.25, group = "📈Strategy settings📈")
+bollingerMult                  = input.float(2.0, minval=0.001, maxval=50, title="StdDev", group = "📈Strategy settings📈")
+
+//_______ <function_declarations>
+
+
+//_______ <calculations>
+//Calculating Bollinger bands
+basis = ta.sma(close, 20)
+dev = bollingerMult * ta.stdev(close, 20)
+upper = basis + dev
+lower = basis - dev
+
+
+//Average true range (ATR) calculations
+ATR = ta.atr(14)
+
+
+//Calculating EMA
+filterEMA = ta.ema(close, 200)
+
+
+//Calculating stop loss level
+stopLossLevel := strategy.position_avg_price - stopLossAtrNum * ATR
+
+
+//Calculating traling profit activation level
+tralingProfitActivationLevel := strategy.position_avg_price + tralingProfitActivationNum * ATR
+
+
+//Calculating dynamic traling take profit level
+if strategy.opentrades == 0 or ta.barssince(strategy.opentrades == 1 and strategy.opentrades[1] == 0) < ta.barssince(ta.crossover(high, tralingProfitActivationLevel))
+    takeProfitLevel := na
+else
+    takeProfitLevel := basis
+
+
+//_______ <strategy_calls>
+//Defining long condition
+longCondition =  low > filterEMA and low <= lower
+
+
+//Defining trade close condition
+closeCondition =  close < takeProfitLevel or low <= stopLossLevel
+
+
+//Strategy entry
+//Scrip places the stop order at the upFractalActivationLevel if longCondition is true
+if (longCondition and time >= lookBackPeriodStart and time <= lookBackPeriodStop)
+    strategy.entry(id = "entry1", direction = strategy.long,  alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "entry1",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+//Strategy exit
+if (closeCondition)
+    strategy.close(id = "entry1",immediately = true , alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "close",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+
+//_______ <visuals>
+pricePlot = plot(close, title="Price", color=color.new(color.blue, 100))
+emaPlot = plot(takeProfitLevel, title="EMA", color=skyrexGreen, style=plot.style_linebr, linewidth = 3)
+plot(not na(takeProfitLevel) and na(takeProfitLevel[1]) ? takeProfitLevel : na, title="EMA", color=skyrexGreen, join = false, style=plot.style_circles, linewidth = 6)
+fill(pricePlot, emaPlot, color=color.new(skyrexGreen, 70))
+plotshape(not na(takeProfitLevel) and na(takeProfitLevel[1]) ? true: na,text="Strong Uptrend",size=size.small,offset=0,color=color.new(skyrexGreen, 0),textcolor=skyrexWhite,style=shape.triangleup,location=location.belowbar)
+
+
+//_______ <alerts>

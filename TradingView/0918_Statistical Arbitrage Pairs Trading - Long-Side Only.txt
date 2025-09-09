@@ -1,0 +1,97 @@
+//@version=5
+strategy("Statistical Arbitrage Pairs Trading - Long-Side Only",
+     default_qty_type=strategy.percent_of_equity,   // Define the quantity type as a percentage of equity
+     process_orders_on_close = true,                // Ensure orders are processed at the close of each bar
+     initial_capital = 10000,                       // Set initial capital for the strategy
+     commission_value=0.0005,                       // Define commission value
+     shorttitle="Stat Arb",                         // Short title for the strategy
+     default_qty_value=10,                          // Default percentage of equity to be used in each trade
+     overlay = false,                               // Don't display the strategy on the price chart
+     slippage = 1)                                  // Set slippage
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//                                 . USER INPUTS .                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+
+// User-defined symbol for the second instrument in the pair (e.g., stock symbol for comparison)
+pairSymbol = input.symbol("BATS:GOOG", title="Second Pair Symbol")
+
+// User-defined data source for the main instrument (default to 'close' price)
+mainInstrumentSource = input.source(close, title="Main Symbol Source")
+
+// Fetch the price data for the second instrument (paired symbol)
+pairedData = request.security(pairSymbol, timeframe.period, mainInstrumentSource)
+
+// Length for calculating the Z-Score (user input)
+zScoreLength = input(20, title="Z-Score Length")  // Length for Z-Score calculation
+
+// User-defined 'extremeLevel' for triggering the strategy's long entry condition
+extremeLevel = input.float(-1.0, title="Long Entry Threshold", step=0.1,
+                           tooltip="Adjust this value to control when the strategy enters a long position. The lower the value, the more extreme the condition for entering a trade. A lower threshold means the spread between the instruments must be more significant before triggering a long entry.")
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//                                . Z-SCORE CALCULATION .                          //
+/////////////////////////////////////////////////////////////////////////////////////
+
+// Calculate the Z-Score for the main instrument's price series
+priceSource = close  // Using the closing price for the main instrument
+
+// Calculate the moving average and standard deviation for Z-Score calculation of the main instrument
+basisMain = ta.sma(priceSource, zScoreLength)
+zScoreMain = (priceSource - basisMain) / ta.stdev(priceSource, zScoreLength)
+
+// Calculate the Z-Score for the paired instrument
+basisPaired = ta.sma(pairedData, zScoreLength)
+zScorePaired = (pairedData - basisPaired) / ta.stdev(pairedData, zScoreLength)
+
+// Calculate the Z-Score spread between the two instruments
+zScoreSpread = zScoreMain - zScorePaired
+
+// Calculate the Modified Z-Score using the median and MAD (Median Absolute Deviation)
+medianSpread = ta.median(zScoreSpread, zScoreLength)
+madSpread = ta.median(math.abs(zScoreSpread - medianSpread), zScoreLength)
+modifiedZScore = 0.6745 * (zScoreSpread - medianSpread) / madSpread
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//                                 . PLOTTING .                                     //
+/////////////////////////////////////////////////////////////////////////////////////
+
+// Plotting the Long Entry Threshold (extreme level) and the Modified Z-Score
+longEntryLine = plot(extremeLevel, title="Long Entry Level", color=color.rgb(197, 126, 255), linewidth=1)
+modifiedZScorePlot = plot(modifiedZScore, title="Modified Z-Score", color=#311b92, linewidth=4)
+plot(modifiedZScore, title="Modified Z-Score 2", color=#26c6da, linewidth=1)
+plot(modifiedZScore, title="Modified Z-Score 3", color=color.rgb(255, 255, 255, 88), linewidth=8)
+
+
+// Fill the area between the long entry line and the modified Z-score when the Z-Score goes below the extreme level
+fillColor = modifiedZScore < extremeLevel ? #6231b6 : na
+fill(longEntryLine, modifiedZScorePlot, color=fillColor, title="Extreme Zone Fill")
+
+// Display a horizontal line at 0 (neutral Z-Score level)
+hline(0, "Zero Line", color=color.gray, linestyle=hline.style_solid)
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+//                               . TRADING RULES .                                 //
+/////////////////////////////////////////////////////////////////////////////////////
+
+// Define the condition for opening a long position, based on the user-defined threshold
+longEntryCondition = modifiedZScore < extremeLevel
+
+// Execute the long trade when the long entry condition is met
+if longEntryCondition
+    strategy.entry('Long', strategy.long)
+
+// Close the position when the modified Z-Score turns positive (indicating mean reversion)
+if modifiedZScore >= 0
+    strategy.close('Long')

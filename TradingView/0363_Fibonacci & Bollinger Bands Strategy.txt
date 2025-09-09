@@ -1,0 +1,55 @@
+//@version=5
+strategy("Fibonacci & Bollinger Bands Strategy", overlay=true)
+
+// Inputs for Bollinger Bands
+length = input(20, title="Bollinger Bands Length")
+src = input(close, title="Source for Bollinger Bands")
+mult = input(2.0, title="Bollinger Bands Multiplier")
+
+// Bollinger Bands Calculation
+basis = ta.sma(src, length)
+dev = mult * ta.stdev(src, length)
+upper = basis + dev
+lower = basis - dev
+
+// Plot Bollinger Bands
+plot(basis, color=color.blue, linewidth=1)
+p1 = plot(upper, color=color.red, linewidth=1)
+p2 = plot(lower, color=color.green, linewidth=1)
+fill(p1, p2, color=color.new(color.blue, 90))
+
+// Variables to store Fibonacci High and Low
+var float fibLow = na
+var float fibHigh = na
+
+// Fibonacci Retracement Calculation
+if (ta.crossover(close, ta.highest(high, 50)))
+    fibHigh := high
+if (ta.crossunder(close, ta.lowest(low, 50)))
+    fibLow := low
+
+// Create Fibonacci levels array
+var fibLevels = array.new_float(0)
+if (not na(fibHigh) and not na(fibLow)) // Ensure fibHigh and fibLow are defined
+    array.clear(fibLevels) // Clear the array before adding new levels
+    array.push(fibLevels, fibHigh)
+    array.push(fibLevels, fibHigh - 0.618 * (fibHigh - fibLow))  // 61.8% level
+    array.push(fibLevels, fibHigh - 0.786 * (fibHigh - fibLow))  // 78.6% level
+    array.push(fibLevels, fibLow)                               // 100% level
+    array.push(fibLevels, fibLow - 0.618 * (fibHigh - fibLow))  // Extension level
+
+// Only plot Fibonacci levels if the array is populated
+if array.size(fibLevels) > 0
+    for i = 0 to array.size(fibLevels) - 1
+        var color fibColor = i == 0 or i == 3 ? color.green : color.red
+        line.new(bar_index[1], array.get(fibLevels, i), bar_index, array.get(fibLevels, i), color=fibColor, width=1, style=line.style_dotted)
+
+// Entry Condition: Price touches or crosses below lower Bollinger Band and is near a Fibonacci extension level
+longCondition = close < lower and not na(fibLow) and not na(fibHigh) and (close > fibLow - 0.618 * (fibHigh - fibLow))
+if (longCondition)
+    strategy.entry("Buy", strategy.long)
+
+// Exit Condition: Price touches or crosses above upper Bollinger Band or hits a Fibonacci retracement level
+shortCondition = close > upper or (not na(fibHigh) and close >= fibHigh)
+if (shortCondition)
+    strategy.close("Buy")

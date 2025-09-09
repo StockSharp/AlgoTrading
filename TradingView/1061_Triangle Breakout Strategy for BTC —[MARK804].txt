@@ -1,0 +1,33 @@
+//@version=6
+strategy("XAU/USD Triangle Breakout", overlay=true, margin_long=0, margin_short=0)
+
+// === Inputs
+triangle_length = input.int(50, "Triangle Lookback Length", minval=10)
+volMultiplier = input.float(1.5, "Volume Spike Multiplier", step=0.1)
+atrMultSL = input.float(1.0, "ATR Stop‑Loss Multiplier", step=0.1)
+atrMultTP = input.float(1.5, "ATR TP Multiplier", step=0.1)
+
+// === Simple approach to triangle lines (placeholders for demonstration):
+upper = ta.sma(high, triangle_length)
+lower = ta.sma(low, triangle_length)
+plot(upper, color=color.red)
+plot(lower, color=color.green)
+
+// === Breakout Logic
+bool breakoutUp = ta.crossover(close, upper)
+bool breakoutDown = ta.crossunder(close, lower)
+volConfirmed = volume > ta.sma(volume, 20) * volMultiplier
+atr = ta.atr(14)
+
+// === Trading blocks
+if breakoutUp and volConfirmed
+    sl = close - atr * atrMultSL
+    tp = close + atr * atrMultTP
+    strategy.entry("Long Breakout", strategy.long)
+    strategy.exit("Exit Long", "Long Breakout", stop=sl, limit=tp)
+
+if breakoutDown and volConfirmed
+    sl = close + atr * atrMultSL
+    tp = close - atr * atrMultTP
+    strategy.entry("Short Breakout", strategy.short)
+    strategy.exit("Exit Short", "Short Breakout", stop=sl, limit=tp)

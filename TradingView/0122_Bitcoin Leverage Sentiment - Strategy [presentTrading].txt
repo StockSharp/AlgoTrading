@@ -1,0 +1,80 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+// Bitcoin Leverage Sentiment - Strategy leverages Z-Score analysis of the ratio between Bitcoin long and short positions to signal entry and exit points for trading on leverage sentiment.
+// The strategy allows users to specify trading direction (long, short, or both) and utilizes customizable thresholds for Z-Score to determine when to enter or exit trades.
+// Additionally, it plots the Z-Score of the BTC leverage ratio for visual analysis, aiding traders in making informed decisions based on the current sentiment derived from leveraged positions.
+
+
+//@version=5
+strategy("Bitcoin Leverage Sentiment - Strategy [presentTrading]", shorttitle="Bitcoin Leverage Sentiment - Strategy [presentTrading]", overlay=false, precision=3, default_qty_type=strategy.cash,
+ commission_value= 0.1, commission_type=strategy.commission.percent, slippage= 1,
+  currency=currency.USD, default_qty_value= 10000, initial_capital= 10000)
+
+// Input parameters for the user to customize the strategy
+tradeDirection = input.string(title="Trade Direction", defval="Both", options=["Long", "Short", "Both"]) // Allows users to select trading direction
+timeframeInput = input.timeframe("", title = "Input TF") // Timeframe for fetching data
+
+// Settings for calculating the Z-Score
+zScoreCalculationPeriod = input.int(252, title="Z-Score Length", minval=1) // Length of the period for Z-Score calculation
+thresholdLongEntry = input.float(1.0, title="Long Entry Z-Score Threshold") // Z-Score threshold for entering long positions
+thresholdLongExit = input.float(-1.618, title="Long Exit Z-Score Threshold") // Z-Score threshold for exiting long positions
+thresholdShortEntry = input.float(-1.618, title="Short Entry Z-Score Threshold") // Z-Score threshold for entering short positions
+thresholdShortExit = input.float(1.0, title="Short Exit Z-Score Threshold") // Z-Score threshold for exiting short positions
+
+// Placeholder symbols for BTC Longs and Shorts data
+symbolLongs = "BTCUSDLONGS" // Placeholder for BTC Longs symbol, replace with actual symbol if available
+symbolShorts = "BTCUSDSHORTS" // Placeholder for BTC Shorts symbol, replace with actual symbol if available
+
+// Fetching longs and shorts data
+priceLongs = request.security(symbolLongs, timeframeInput, close) // Fetching closing price for longs
+priceShorts = request.security(symbolShorts, timeframeInput, close) // Fetching closing price for shorts
+
+// Calculating the ratio of BTC Longs to the total of Longs and Shorts
+ratioBTC = priceLongs / (priceLongs + priceShorts)
+
+// Z-Score calculation for the BTC Longs/Shorts Ratio
+meanRatioBTC = ta.sma(ratioBTC, zScoreCalculationPeriod) // Simple moving average of the BTC ratio
+stdDevRatioBTC = ta.stdev(ratioBTC, zScoreCalculationPeriod) // Standard deviation of the BTC ratio
+zScoreBTCRatio = (ratioBTC - meanRatioBTC) / stdDevRatioBTC // Z-Score of the BTC ratio
+
+// Define trading signals based on Z-Score thresholds
+conditionLongEntry = ta.crossover(zScoreBTCRatio, thresholdLongEntry) // Condition to enter long positions
+conditionLongExit = ta.crossunder(zScoreBTCRatio, thresholdLongExit) // Condition to exit long positions
+conditionShortEntry = ta.crossunder(zScoreBTCRatio, thresholdShortEntry) // Condition to enter short positions
+conditionShortExit = ta.crossover(zScoreBTCRatio, thresholdShortExit) // Condition to exit short positions
+
+// Execute trading entries and exits based on conditions
+if (conditionLongEntry and (tradeDirection == "Long" or tradeDirection == "Both"))
+    strategy.entry("Long", strategy.long) // Enter long position
+
+if (conditionLongExit and (tradeDirection == "Long" or tradeDirection == "Both"))
+    strategy.close("Long") // Close long position
+
+if (conditionShortEntry and (tradeDirection == "Short" or tradeDirection == "Both"))
+    strategy.entry("Short", strategy.short) // Enter short position
+
+if (conditionShortExit and (tradeDirection == "Short" or tradeDirection == "Both"))
+    strategy.close("Short") // Close short position
+
+// Visualization of the BTC Ratio Z-Score
+plot(zScoreBTCRatio, title="BTC Ratio Z-Score", color=color.blue) // Plotting the Z-Score for visual analysis
+hline(thresholdLongEntry, "Long Entry Threshold", color=color.green) // Horizontal line for long entry threshold
+hline(thresholdShortEntry, "Short Entry Threshold", color=color.red) // Horizontal line for short entry threshold
+
+const color colhu = #d9a8ff
+const color colhd = #ffc973
+var   color colnt = chart.fg_color
+
+m   = hline(0   , "Mid Line", color.white      ,    hline.style_solid                        )
+max = hline(+3.5,                                                                display = display.none)
+hh  = hline(+3,                                                                display = display.none)
+lh  = hline(+2,                                                                display = display.none)
+min = hline(-3.5,                                                                display = display.none)
+ll  = hline(-3,                                                                display = display.none)
+hl  = hline(-2,                                                                display = display.none)
+
+fill(lh, hh , color.new(colhd, 86))
+fill(hh, max, color.new(colhd, 79))
+fill(ll, hl , color.new(colhu, 87))
+fill(ll, min, color.new(colhu, 80))

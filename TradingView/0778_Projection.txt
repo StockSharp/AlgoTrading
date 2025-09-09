@@ -1,0 +1,417 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © DayTradingOil
+
+//@version=4
+study("Projection", overlay = true)
+res1 = input(title="Resolution For Target Prediction?", type=input.resolution, defval="D")
+res2 = "D"
+res3 = timeframe.period
+
+float targetMultiple = input(title="Target Multiple", type=input.float, defval=0.2, minval=0.001, maxval=100)
+guide = false
+
+//-->   Function for Checking if New Day == True
+//-->   (https://www.tradingview.com/wiki/Sessions_and_Time_Functions)
+is_newbar(res) =>
+    t = time(res)
+    change(t) != 0 ? 1 : 0
+
+// Detect New Day
+new_day = is_newbar(res1)
+new_day1 = is_newbar(res2)
+new_bar = is_newbar(res3)
+
+
+//Count Bars
+barcount = 0
+barcount := new_day ? 0 : barcount[1]
+barcount := barcount + 1
+x = highest(barcount, 1000)
+SessionEndingSoon = x - 2
+
+SessionEnding = barcount >= SessionEndingSoon ? 1 : 0
+
+
+//--->  Get Daily Open Values for Last 21 Days
+oopen = valuewhen(new_day1, open,    0)
+sopen = valuewhen(new_day, open,    0)
+sopen1 = valuewhen(new_day, open,    1)
+sopen2 = valuewhen(new_day, open,    2)
+sopen3 = valuewhen(new_day, open,    3)
+sopen4 = valuewhen(new_day, open,    4)
+sopen5 = valuewhen(new_day, open,    5)
+sopen6 = valuewhen(new_day, open,    6)
+sopen7 = valuewhen(new_day, open,    7)
+sopen8 = valuewhen(new_day, open,    8)
+sopen9 = valuewhen(new_day, open,    9)
+sopen10 = valuewhen(new_day, open,    10)
+sopen11 = valuewhen(new_day, open,    11)
+sopen12 = valuewhen(new_day, open,    12)
+sopen13 = valuewhen(new_day, open,    13)
+sopen14 = valuewhen(new_day, open,    14)
+sopen15 = valuewhen(new_day, open,    15)
+sopen16 = valuewhen(new_day, open,    16)
+sopen17 = valuewhen(new_day, open,    17)
+sopen18 = valuewhen(new_day, open,    18)
+sopen19 = valuewhen(new_day, open,    19)
+sopen20 = valuewhen(new_day, open,    20)
+
+//Calculate % Change
+change1 = abs((sopen - sopen1) / abs(sopen1) * 100)
+change2 = abs((sopen2 - sopen3) / abs(sopen3) * 100)
+change3 = abs((sopen4 - sopen5) / abs(sopen5) * 100)
+change4 = abs((sopen6 - sopen7) / abs(sopen7) * 100)
+change5 = abs((sopen8 - sopen9) / abs(sopen9) * 100)
+
+//Calculate % Change
+change6 = abs((sopen1 - sopen2) / abs(sopen2) * 100)
+change7 = abs((sopen3 - sopen4) / abs(sopen4) * 100)
+change8 = abs((sopen5 - sopen6) / abs(sopen6) * 100)
+change9 = abs((sopen7 - sopen8) / abs(sopen8) * 100)
+change10 = abs((sopen9 - sopen10) / abs(sopen10) * 100)
+
+//Calculate % Change
+change11 = abs((sopen10 - sopen11) / abs(sopen11) * 100)
+change12 = abs((sopen11 - sopen12) / abs(sopen12) * 100)
+change13 = abs((sopen12 - sopen13) / abs(sopen13) * 100)
+change14 = abs((sopen13 - sopen14) / abs(sopen14) * 100)
+change15 = abs((sopen14 - sopen15) / abs(sopen15) * 100)
+
+//Calculate % Change
+change16 = abs((sopen15 - sopen16) / abs(sopen16) * 100)
+change17 = abs((sopen16 - sopen17) / abs(sopen17) * 100)
+change18 = abs((sopen17 - sopen18) / abs(sopen18) * 100)
+change19 = abs((sopen18 - sopen19) / abs(sopen19) * 100)
+change20 = abs((sopen19 - sopen20) / abs(sopen20) * 100)
+
+//User Input Calculation
+calculationMethod = input(title="Calculation Method", defval="5-Day Average %-Change", options=["20-Day Average %-Change", "10-Day Average %-Change", "5-Day Average %-Change"])
+calculation = 0
+calculation := calculationMethod == "10-Day Average %-Change" ? 1 : calculationMethod == "5-Day Average %-Change" ? 2 : calculationMethod == "20-Day Average %-Change" ? 3 : na
+avgChange = 0.0
+
+//Calculate Average % Change per Day to Draw Targets(Default Target Multiple of 1 is 200% of the Average % Change per Day)
+avgChange := calculation == 3 ? (change1 + change2 + change3 + change4 + change5 + change6 + change7 + change8 + change9 + change10 + change11 + change12 + change13 + change14 + change15 + change16 + change17 + change18 + change19 + change20)/20 : calculation == 2 ? (change1 + change6 + change2 + change7 + change3)/5 : calculation == 1 ? (change1 + change2 + change3 + change4 + change5 + change6 + change7 + change8 + change9 + change10)/10 : na
+avgChange := avgChange * targetMultiple
+
+//--> Custom Function to Round Values to Tick from @PineCoders Backtesting/Trading Engine
+//--> (https://www.tradingview.com/script/dYqL95JB-Backtesting-Trading-Engine-PineCoders/)
+//___________________________________________________________________________________________________
+// ———————————————————— Function used to round values.
+Round( _val, _decimals) =>
+    // Rounds _val to _decimals places.
+    _p = pow(10,_decimals)
+    round(abs(_val)*_p)/_p*sign(_val)
+
+// ———————————————————— Function used to round prices to tick size everywhere we calculate prices.
+RoundToTick( _price) => round(_price/syminfo.mintick)*syminfo.mintick
+//___________________________________________________________________________________________________
+
+//-->   Calculate Default StopLoss
+defaultStop = avgChange / 5 * 0.5 / 100 * sopen
+defaultStop := RoundToTick(defaultStop)
+
+//-->   Use Threshold for Position Bias
+useThreshold = true
+
+//-->   Calculate Default Threshold
+thresh = input(1.0, title = "Default Threshold")
+extend = input(false, title = "Extend Targets?(New Entry @ Top Level)")
+defaultThreshold = avgChange / 5 * thresh / 100 * sopen
+defaultThreshold := RoundToTick(defaultThreshold)
+
+//-->   Calculate Threshold
+threshold = defaultThreshold
+
+//-->   Set Targets Based on Average % Change per Day
+
+target5 = RoundToTick(avgChange / 5 * 5 / 100 * sopen + sopen + threshold)
+target6 = RoundToTick(avgChange / 5 * 10 / 100 * sopen + sopen + threshold)
+target7 = RoundToTick(avgChange / 5 * 15 / 100 * sopen + sopen + threshold)
+target8 = RoundToTick(avgChange / 5 * 20 / 100 * sopen + sopen + threshold)
+target9 = RoundToTick(avgChange / 5 * 25 / 100 * sopen + sopen + threshold)
+
+target15 = RoundToTick(sopen - threshold - ( avgChange / 5 * 5 / 100 * sopen))
+target16 = RoundToTick(sopen - threshold - ( avgChange / 5 * 10 / 100 * sopen))
+target17 = RoundToTick(sopen - threshold - ( avgChange / 5 * 15 / 100 * sopen))
+target18 = RoundToTick(sopen - threshold - ( avgChange / 5 * 20 / 100 * sopen))
+target19 = RoundToTick(sopen - threshold - ( avgChange / 5 * 25 / 100 * sopen))
+
+target115 = RoundToTick(avgChange / 5 * 30 / 100 * sopen + sopen + threshold)
+target116 = RoundToTick(avgChange / 5 * 35 / 100 * sopen + sopen + threshold)
+target117 = RoundToTick(avgChange / 5 * 40 / 100 * sopen + sopen + threshold)
+target118 = RoundToTick(avgChange / 5 * 45 / 100 * sopen + sopen + threshold)
+target119 = RoundToTick(avgChange / 5 * 50 / 100 * sopen + sopen + threshold)
+
+target155 = RoundToTick(sopen - threshold - ( avgChange / 5 * 30 / 100 * sopen))
+target166 = RoundToTick(sopen - threshold - ( avgChange / 5 * 35 / 100 * sopen))
+target177 = RoundToTick(sopen - threshold - ( avgChange / 5 * 40 / 100 * sopen))
+target188 = RoundToTick(sopen - threshold - ( avgChange / 5 * 45 / 100 * sopen))
+target199 = RoundToTick(sopen - threshold - ( avgChange / 5 * 50 / 100 * sopen))
+
+
+
+//-->   Calculate Default Levels
+var float stopLong = sopen + threshold - defaultStop
+var float stopShort = sopen - threshold + defaultStop
+hardStopLong = sopen + threshold - defaultStop
+hardStopShort = sopen - threshold + defaultStop
+defaultLimitLong = sopen + threshold
+defaultLimitShort = sopen - threshold
+limitLong = sopen + threshold
+limitShort = sopen - threshold
+limitLong1 = target9
+limitShort1 = target19
+
+useCustom = input(false, title = "Use Custom Entry Price?")
+customL = input(0.0, title="Custom Entry Price for Buy Positions")
+customS = input(0.0, title="Custom Entry Price for Sell Positions")
+if useCustom
+    stopLong := customL - defaultStop
+    stopShort := customS + defaultStop
+    hardStopLong := customL - defaultStop
+    hardStopShort := customS + defaultStop
+    defaultLimitLong := customL
+    defaultLimitShort := customS
+    limitLong := customL
+    limitShort := customS
+    target5 := RoundToTick(avgChange / 5 * 5 / 100 * customL + customL )
+    target15 := RoundToTick(customS  - ( avgChange / 5 * 5 / 100 * customS))
+    target6 := RoundToTick(avgChange / 5 * 10 / 100 * customL + customL )
+    target16 := RoundToTick(customS  - ( avgChange / 5 * 10 / 100 * customS))
+    target7 := RoundToTick(avgChange / 5 * 15 / 100 * customL + customL )
+    target17 := RoundToTick(customS  - ( avgChange / 5 * 15 / 100 * customS))
+    target8 := RoundToTick(avgChange / 5 * 20 / 100 * customL + customL )
+    target18 := RoundToTick(customS  - ( avgChange / 5 * 20 / 100 * customS))
+    target9 := RoundToTick(avgChange / 5 * 25 / 100 * customL + customL )
+    target19 := RoundToTick(customS  - ( avgChange / 5 * 25 / 100 * customS))
+    if extend
+        limitLong1 := target9
+        limitShort1 := target19
+        target115 := RoundToTick(avgChange / 5 * 5 / 100 * target9 + target9)
+        target116 := RoundToTick(avgChange / 5 * 10 / 100 * target9 + target9)
+        target117 := RoundToTick(avgChange / 5 * 15 / 100 * target9 + target9)
+        target118 := RoundToTick(avgChange / 5 * 20 / 100 * target9 + target9)
+        target119 := RoundToTick(avgChange / 5 * 25 / 100 * target9 + target9)
+        target155 := RoundToTick(target19 - ( avgChange / 5 * 5 / 100 * target19))
+        target166 := RoundToTick(target19 - ( avgChange / 5 * 10 / 100 * target19))
+        target177 := RoundToTick(target19 - ( avgChange / 5 * 15 / 100 * target19))
+        target188 := RoundToTick(target19 - ( avgChange / 5 * 20 / 100 * target19))
+        target199 := RoundToTick(target19 - ( avgChange / 5 * 25 / 100 * target19))
+
+
+//-->   Check if Entry Conditions Are Met
+var line a1 = na
+var line a2 = na
+var line a3 = na
+var line a4 = na
+var line a5 = na
+var line a6 = na
+var line a7 = na
+var line a8 = na
+var line a9 = na
+var line a10 = na
+var line a11 = na
+var line a12 = na
+var line a13 = na
+var line a14 = na
+var line a15 = na
+var line a16 = na
+var line a17 = na
+var line a18 = na
+var line a19 = na
+var line a20 = na
+var line a21 = na
+var line a22 = na
+var line a23 = na
+var line a24 = na
+var line a25 = na
+var line a26 = na
+var line a27 = na
+var line a28 = na
+var line a29 = na
+var line a30 = na
+var line a31 = na
+var line a32 = na
+var line a33 = na
+var line a34 = na
+var line a35 = na
+var line a36 = na
+var line a37 = na
+var line a38 = na
+var line a39 = na
+var line a40 = na
+var line a41 = na
+var line a42 = na
+var line a43 = na
+var line a44 = na
+var line a45 = na
+var line a46 = na
+var line a47 = na
+var line a48 = na
+var line a49 = na
+var line a50 = na
+var line a51 = na
+var line a52 = na
+var line a53 = na
+var line a54 = na
+
+
+
+var timex = 0
+if new_day
+    timex := time(res1)-time(res1)[1]
+
+
+ax = input(title="Projection Type", defval="Wide Parabola", options=["Wide Parabola", "Skinny Parabola", "Straight Triangle", "Zig-Zag 1", "Zig-Zag 2"])
+var timex1 = round(timex /10)
+var timex2 = round(timex /5)
+var timex3 = round(timex /2.5)
+var timex4 = round(timex /1.25)
+var timex5 = round(timex /1)
+if ax == "Skinny Parabola"
+    timex1 := round(timex /10)
+    timex2 := round(timex /5)
+    timex3 := round(timex /2.5)
+    timex4 := round(timex /1.25)
+    timex5 := round(timex /1)
+if ax == "Straight Triangle"
+    timex1 := round(timex /5)
+    timex2 := round(timex /5*2)
+    timex3 := round(timex /5*3)
+    timex4 := round(timex /5*4)
+    timex5 := round(timex /1)
+if ax == "Wide Parabola"
+    timex1 := round(timex /10)
+    timex2 := round(timex /7.5)
+    timex3 := round(timex /5)
+    timex4 := round(timex /2.5)
+    timex5 := round(timex /1)
+if ax == "Zig-Zag 1"
+    timex1 := round(timex /5)
+    timex2 := round(timex /5*4)
+    timex3 := round(timex /5*3)
+    timex4 := round(timex /5*2)
+    timex5 := round(timex /1)
+if ax == "Zig-Zag 2"
+    timex1 := round(timex /5)
+    timex2 := round(timex /5*4)
+    timex3 := round(timex /5*2)
+    timex4 := round(timex /5*4)
+    timex5 := round(timex /1)
+timex6 = round(timex /15)
+timex7 = round(timex /14)
+timex8 = round(timex /13)
+timex9 = round(timex /12)
+timex10 = round(timex /11)
+timex11 = round(timex /10)
+timex12 = round(timex /9)
+timex13 = round(timex /8)
+timex14 = round(timex /7)
+timex15 = round(timex /6)
+timex16 = round(timex /5)
+timex17 = round(timex /5*2)
+timex18 = round(timex /5*3)
+timex19 = round(timex /5*4)
+timex20 = round(timex /1)
+
+yz = round(60000*SessionEndingSoon)
+
+if new_day
+    a1 := line.new(time   , limitLong, time    + timex5 , limitLong, xloc=xloc.bar_time, width = 2, color=color.green)
+    a2 := line.new(time    , limitShort, time    + timex5, limitShort, xloc=xloc.bar_time, width = 2, color=color.red)
+    a3 := line.new(time + timex5    , sopen - (sopen - target19), time  + timex5  , sopen + (target9 - sopen), xloc=xloc.bar_time, extend= extend.none, width = 2, color=color.yellow)
+    a4 := line.new(time  , sopen - (sopen - target15), time    + timex1 , sopen - (sopen - target15), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a5 := line.new(time    , sopen - (sopen - target19), time   + timex5 , sopen - (sopen - target19), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a6 := line.new(time   , sopen + (target5 - sopen), time    + timex1 , sopen + (target5 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a7 := line.new(time    , sopen + (target9 - sopen), time    + timex5  , sopen + (target9 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a8 := line.new(time + timex1  , sopen - (sopen - target15), time    + timex2  , sopen - (sopen - target16), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a9 := line.new(time + timex2   , sopen - (sopen - target16), time    + timex3  , sopen - (sopen - target17), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a10 := line.new(time + timex3   , sopen - (sopen - target17), time    + timex4  , sopen - (sopen - target18), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a11 := line.new(time + timex4  , sopen - (sopen - target18), time   + timex5 , sopen - (sopen - target19), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a12 := line.new(time   , sopen - (sopen - target19), time  , sopen + (target9 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a13 := line.new(time  + timex1  , sopen + (target5 - sopen), time    + timex2  , sopen + (target6 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a14 := line.new(time  + timex2  , sopen + (target6 - sopen), time    + timex3  , sopen + (target7 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a15 := line.new(time + timex3    , sopen + (target7 - sopen), time    + timex4  , sopen + (target8 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    a16 := line.new(time  + timex4  , sopen + (target8 - sopen), time   + timex5  , sopen + (target9 - sopen), xloc=xloc.bar_time, width = 2, color=color.yellow)
+    line.delete(a1[1])
+    line.delete(a2[1])
+    line.delete(a3[1])
+    line.delete(a4[1])
+    line.delete(a5[1])
+    line.delete(a6[1])
+    line.delete(a7[1])
+    line.delete(a8[1])
+    line.delete(a9[1])
+    line.delete(a10[1])
+    line.delete(a11[1])
+    line.delete(a12[1])
+    line.delete(a13[1])
+    line.delete(a14[1])
+    line.delete(a15[1])
+    line.delete(a16[1])
+
+    a17 := line.new(time  , sopen - (sopen - target15), time    + timex5  , sopen - (sopen - target15), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a18 := line.new(time   , sopen - (sopen - target16), time    + timex5 , sopen - (sopen - target16), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a19 := line.new(time   , sopen - (sopen - target17), time    + timex5  , sopen - (sopen - target17), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a20 := line.new(time  , sopen - (sopen - target18), time   + timex5  , sopen - (sopen - target18), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    //a21 := line.new(time    , sopen - (sopen - target19), time    + timex5  , sopen - (sopen - target19), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a22 := line.new(time   , sopen + (target5 - sopen), time    + timex5 , sopen + (target5 - sopen), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a23 := line.new(time   , sopen + (target6 - sopen), time    + timex5 , sopen + (target6 - sopen), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a24 := line.new(time    , sopen + (target7 - sopen), time    + timex5 , sopen + (target7 - sopen), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a25 := line.new(time   , sopen + (target8 - sopen), time    + timex5  , sopen + (target8 - sopen), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    //a26 := line.new(time    , sopen + (target9 - sopen), time    + timex5  , sopen + (target9 - sopen), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+    a27 := line.new(time  , sopen , time    + timex5 , sopen, xloc=xloc.bar_time, width = 2, color=color.white)
+
+    line.delete(a17[1])
+    line.delete(a18[1])
+    line.delete(a19[1])
+    line.delete(a20[1])
+    line.delete(a21[1])
+    line.delete(a22[1])
+    line.delete(a23[1])
+    line.delete(a24[1])
+    line.delete(a25[1])
+    line.delete(a26[1])
+    line.delete(a27[1])
+
+    if extend
+        a5 := line.new(time   , limitLong1, time    + timex5 , limitLong1, xloc=xloc.bar_time, width = 3, color=color.green)
+        a7 := line.new(time    , limitShort1, time    + timex5, limitShort1, xloc=xloc.bar_time, width = 3, color=color.red)
+        a3 := line.new(time + timex5    , (target199), time  + timex5  , target119, xloc=xloc.bar_time, extend= extend.none, width = 2, color=color.yellow)
+        a31 := line.new(time    , (target199), time   + timex5 , target199, xloc=xloc.bar_time, width = 2, color=color.yellow)
+        a32 := line.new(time    , target119, time    + timex5  , target119 , xloc=xloc.bar_time, width = 2, color=color.yellow)
+        a12 := line.new(time   , target199, time  , target119 , xloc=xloc.bar_time, width = 2, color=color.yellow)
+
+        line.delete(a21[1])
+        line.delete(a26[1])
+        line.delete(a3[1])
+        line.delete(a31[1])
+        line.delete(a32[1])
+        line.delete(a12[1])
+
+        a42 := line.new(time  , (target155), time    + timex5 ,( target155), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a43 := line.new(time   , (target166), time    + timex5 , (target166), xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a34 := line.new(time   , (target177), time    + timex5  ,target177, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a35 := line.new(time  , ( target188), time   + timex5  , target188, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a36 := line.new(time    , (target199), time    + timex5  , target199, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a37 := line.new(time   , target115 , time    + timex5 ,target115, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a38 := line.new(time   , target116 , time    + timex5 ,target116 , xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a39 := line.new(time    , target117, time    + timex5 , target117, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a40 := line.new(time   , target118, time    + timex5  , target118, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a41 := line.new(time    , target119, time    + timex5  , target119, xloc=xloc.bar_time, width = 1, color=color.white, style=line.style_dotted, extend=extend.none)
+        a44 := line.new(time   , limitLong1 - (threshold/2), time    + timex5 , limitLong1 - (threshold/2), xloc=xloc.bar_time, width = 3, color=color.red)
+        a45 := line.new(time    , limitShort1 + (threshold/2), time    + timex5, limitShort1 + (threshold/2), xloc=xloc.bar_time, width = 3, color= color.green)
+
+        line.delete(a34[1])
+        line.delete(a35[1])
+        line.delete(a36[1])
+        line.delete(a37[1])
+        line.delete(a38[1])
+        line.delete(a39[1])
+        line.delete(a40[1])
+        line.delete(a41[1])
+        line.delete(a42[1])
+        line.delete(a43[1])
+        line.delete(a44[1])
+        line.delete(a45[1])

@@ -1,0 +1,161 @@
+// @version=6
+strategy("Canuck Trading Traders Strategy [Candle Entropy Edition]", overlay=true, margin_long=100.0, margin_short=100.0, calc_on_every_tick=false, calc_on_order_fills=true, process_orders_on_close=true)
+// Note: Set Properties "Order size" to "100% of equity" for all symbols.
+
+// === CETP-Plus Settings ===
+cetp_window = input.int(5, "CETP Window", minval=3, maxval=20, group="CETP-Plus Settings")
+cetp_bins = input.int(3, "CETP Bins per Dimension", minval=1, maxval=10, group="CETP-Plus Settings")
+long_threshold = input.float(0.1, "Long Threshold", minval=0.01, maxval=5.0, step=0.01, group="CETP-Plus Settings")
+short_threshold = input.float(-0.1, "Short Threshold", minval=-2.0, maxval=-0.01, step=0.01, group="CETP-Plus Settings")
+cetp_k = input.float(0.8, "CETP Momentum Weight", minval=0.1, maxval=5.0, step=0.1, group="CETP-Plus Settings")
+mom_scale = input.float(6.0, "Momentum Scale", minval=1.0, maxval=20.0, step=1.0, group="CETP-Plus Settings")
+body_weight = input.float(1.0, "Body Ratio Weight", minval=0.0, maxval=2.0, step=0.1, group="CETP-Plus Settings")
+upper_weight = input.float(0.8, "Upper Wick Ratio Weight", minval=0.0, maxval=2.0, step=0.1, group="CETP-Plus Settings")
+lower_weight = input.float(1.2, "Lower Wick Ratio Weight", minval=0.0, maxval=2.0, step=0.1, group="CETP-Plus Settings")
+decay_factor = input.float(0.9, "Decay Factor", minval=0.1, maxval=0.99, step=0.01, group="CETP-Plus Settings")
+
+// === Trade Settings ===
+min_score_strength = input.float(0.03, "Min CETP Score Strength", minval=0.0, maxval=5, step=0.01, group="Trade Settings")
+stop_loss_pct = input.float(0.5, "Stop Loss (%)", minval=0.1, maxval=5.0, step=0.1, group="Trade Settings")
+atr_mult = input.float(3.0, "ATR Multiplier", minval=0.5, maxval=5.0, step=0.1, group="Trade Settings")
+trail_mult = input.float(5.0, "Trailing ATR Mult", minval=0.5, maxval=7.0, step=0.1, group="Trade Settings")
+trail_offset_pct = input.float(1.0, "Trail Start Offset (%)", minval=0.5, maxval=2.0, step=0.1, group="Trade Settings")
+min_price_move_mult = input.float(4.0, "Min Price Move ATR Mult", minval=0.5, maxval=5.0, step=0.1, group="Trade Settings")
+min_vol_mult = input.float(1.5, "Min Volume Multiplier", minval=1.0, group="Trade Settings")
+vol_threshold_limit = input.float(12.0, "Vol Threshold Limit", minval=5.0, maxval=20.0, step=0.1, group="Trade Settings")
+time_box_type = input.string("Regular Hours", "Time Box Type", options=["Regular Hours", "Extended Hours"], group="Trade Settings")
+is_crypto = input.bool(false, "Is Crypto Symbol (Enable Crypto Time-Box)", group="Trade Settings")
+enable_time_box = input.bool(true, "Enable Time-Boxing", group="Trade Settings")
+close_at_session_end = input.bool(true, "Close Positions at Session End", group="Trade Settings")
+
+// Define sessions
+equity_regular = "0930-1600"
+equity_extended = "0400-2000"
+crypto_high_liquidity = "0800-1600"
+equity_session_string = time_box_type == "Regular Hours" ? equity_regular : equity_extended
+crypto_session_string = crypto_high_liquidity
+
+// Indicators (ATR for stops/trails)
+atr = nz(ta.atr(14), 0.0)
+
+// RSI-like momentum bias (needed for volatility filter and CETP score)
+avg_gain = ta.rma(math.max(close - close[1], 0), cetp_window)
+avg_loss = ta.rma(math.max(close[1] - close, 0), cetp_window)
+rsi_bias = avg_loss > 0 ? avg_gain / avg_loss : 1.0
+
+// Volatility Filter
+vol_threshold = ta.stdev(close, 20) / ta.sma(close, 20) * 100 * rsi_bias
+trade_allowed_long = vol_threshold < vol_threshold_limit
+trade_allowed_short = vol_threshold < (vol_threshold_limit + 5.0)
+trade_allowed = false  // Initialize
+
+// Minimum Price Move Filter
+min_price_move_long = math.max(atr * min_price_move_mult, syminfo.mintick * 10)
+min_price_move_short = math.max(atr * (min_price_move_mult * 0.8), syminfo.mintick * 10)
+price_move_condition = false  // Initialize
+
+// Volume Filter
+vol_condition_long = volume > ta.sma(volume, 20) * min_vol_mult
+vol_condition_short = volume > ta.sma(volume, 20) * (min_vol_mult * 0.8)
+vol_condition = false  // Initialize
+
+// Session Check
+session_string = is_crypto ? crypto_session_string : equity_session_string
+in_session = not na(time(timeframe.period, session_string))
+
+// CETP-Plus Calculation
+epsilon = 1e-5
+body_ratio = (close - open) / (high - low + epsilon) * body_weight
+upper_wick_ratio = (high - math.max(open, close)) / (high - low + epsilon) * upper_weight
+lower_wick_ratio = (math.min(open, close) - low) / (high - low + epsilon) * lower_weight
+
+// EMA-like weighting
+var float[] body_arr = array.new_float(cetp_window, 0.0)
+var float[] upper_arr = array.new_float(cetp_window, 0.0)
+var float[] lower_arr = array.new_float(cetp_window, 0.0)
+for i = 0 to cetp_window - 2
+    array.set(body_arr, i, array.get(body_arr, i + 1) * decay_factor)
+    array.set(upper_arr, i, array.get(upper_arr, i + 1) * decay_factor)
+    array.set(lower_arr, i, array.get(lower_arr, i + 1) * decay_factor)
+array.set(body_arr, cetp_window - 1, body_ratio)
+array.set(upper_arr, cetp_window - 1, upper_wick_ratio)
+array.set(lower_arr, cetp_window - 1, lower_wick_ratio)
+
+// Volatility scaling (ATR thesis)
+bin_size = 2.0 / cetp_bins * (1 + atr / ta.sma(atr, 14))
+hist_size = cetp_bins * cetp_bins * cetp_bins
+var int[] hist = array.new_int(hist_size, 0)
+array.fill(hist, 0)
+for i = 0 to cetp_window - 1
+    body_val = array.get(body_arr, i)
+    upper_val = array.get(upper_arr, i)
+    lower_val = array.get(lower_arr, i)
+    body_bin = math.max(0, math.min(cetp_bins - 1, math.floor((body_val + 1) / bin_size)))
+    upper_bin = math.max(0, math.min(cetp_bins - 1, math.floor((upper_val + 1) / bin_size)))
+    lower_bin = math.max(0, math.min(cetp_bins - 1, math.floor((lower_val + 1) / bin_size)))
+    bin_idx = body_bin * (cetp_bins * cetp_bins) + upper_bin * cetp_bins + lower_bin
+    array.set(hist, bin_idx, array.get(hist, bin_idx) + 1)
+
+entropy = 0.0
+for i = 0 to hist_size - 1
+    count = array.get(hist, i)
+    p = count / cetp_window
+    if p > 0
+        entropy := entropy - p * math.log(p)
+
+max_entropy = math.log(hist_size)
+norm_entropy = max_entropy > 0 ? entropy / max_entropy : 0.0
+
+// RSI-like momentum bias (continued)
+momentum = ta.mom(close, cetp_window) / (close[cetp_window] != 0 ? close[cetp_window] : 1e-5)
+momentum_adj = momentum * (1 + rsi_bias)
+
+// ADX-like trend strength
+di_plus = ta.rma(math.max(high - high[1], 0), cetp_window) / atr
+di_minus = ta.rma(math.max(low[1] - low, 0), cetp_window) / atr
+trend_strength = di_plus > di_minus ? 1.2 : (di_minus > di_plus ? 1.2 : 1.0)
+
+// CETP-Plus Score
+avg_body = nz(array.avg(body_arr), 0.0)
+raw_score = avg_body * (1 - norm_entropy) * (cetp_k + momentum_adj * mom_scale)
+cetp_score = nz(raw_score * trend_strength, 0.0)
+
+// Set conditions that depend on cetp_score
+trade_allowed := cetp_score > long_threshold ? trade_allowed_long : trade_allowed_short
+price_move_condition := cetp_score > long_threshold ? (high - low) > min_price_move_long : (high - low) > min_price_move_short
+vol_condition := cetp_score > long_threshold ? vol_condition_long : vol_condition_short
+momentum_condition_long = math.abs(momentum_adj) > 0.05
+momentum_condition_short = math.abs(momentum_adj) > 0.03
+momentum_condition = cetp_score > long_threshold ? momentum_condition_long : momentum_condition_short
+
+// Close positions at session end if enabled
+if enable_time_box and close_at_session_end and not in_session and strategy.position_size != 0
+    strategy.close_all(comment="Session End Close")
+
+// Position State
+var float entry_price = na
+var int bars_held = 0
+
+if barstate.isconfirmed
+    bars_held := strategy.position_size != 0 ? bars_held + 1 : 0
+
+// Trade Logic
+if bar_index >= cetp_window and math.abs(cetp_score) > min_score_strength and trade_allowed and price_move_condition and momentum_condition and vol_condition and (not enable_time_box or in_session)
+    if cetp_score > long_threshold
+        if strategy.position_size < 0
+            strategy.close("Short", comment="Reverse to Long")
+        if strategy.position_size <= 0
+            strategy.entry("Long", strategy.long)
+            entry_price := close
+            sl = entry_price * (1 - stop_loss_pct / 100) - atr * atr_mult
+            strategy.exit("Long Exit", "Long", stop=sl, trail_points=atr * trail_mult * syminfo.pointvalue, trail_offset=entry_price * (trail_offset_pct / 100))
+            bars_held := 1
+    else if cetp_score < short_threshold
+        if strategy.position_size > 0
+            strategy.close("Long", comment="Reverse to Short")
+        if strategy.position_size >= 0
+            strategy.entry("Short", strategy.short)
+            entry_price := close
+            sl = entry_price * (1 + stop_loss_pct / 100) + atr * atr_mult
+            strategy.exit("Short Exit", "Short", stop=sl, trail_points=atr * trail_mult * syminfo.pointvalue, trail_offset=entry_price * (trail_offset_pct / 100))
+            bars_held := 1

@@ -1,0 +1,92 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © deperp
+//@version=5
+strategy('3kilos', shorttitle='3kilos BTC 15m', overlay=true, initial_capital=100000, default_qty_type=strategy.percent_of_equity, default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.07, pyramiding=0)
+
+short = input.int(30, minval=1)
+srcShort = input(high, title='TEMA short')
+
+long = input.int(50, minval=1)
+srcLong = input(low, title='TEMA long 2')
+
+long2 = input.int(140, minval=1)
+srcLong2 = input(close, title='TEMA long 3')
+
+atrLength = input.int(10, title='ATR Length', minval=1)
+mult = input.float(2, title="Multiplier", minval=0.5, step=1)
+
+
+takeProfitPercent = input.float(1, title="Take Profit (%)", minval=0.1) / 100
+stopLossPercent = input.float(1, title="Stop Loss (%)", minval=0.1) / 100
+
+
+tema(src, length) =>
+    ema1 = ta.ema(src, length)
+    ema2 = ta.ema(ema1, length)
+    ema3 = ta.ema(ema2, length)
+    3 * (ema1 - ema2) + ema3
+
+tema1 = tema(srcShort, short)
+plot(tema1, color=color.new(color.red, 0), linewidth=2)
+
+tema2 = tema(srcLong, long)
+plot(tema2, color=color.new(color.blue, 0), linewidth=2)
+
+tema3 = tema(srcLong2, long2)
+plot(tema3, color=color.new(color.green, 0), linewidth=2)
+
+// Custom ATR calculation with EMA smoothing
+atr_ema(src, length) =>
+    trueRange = math.max(math.max(high - low, math.abs(high - close[1])), math.abs(low - close[1]))
+    emaTrueRange = ta.ema(trueRange, length)
+    emaTrueRange
+
+// Calculate ATR with EMA smoothing
+atr = atr_ema(close, atrLength)
+
+// Calculate Supertrend
+var float up = na
+var float dn = na
+var bool uptrend = na
+up := na(up[1]) ? hl2 - (mult * atr) : uptrend[1] ? math.max(hl2 - (mult * atr), up[1]) : hl2 - (mult * atr)
+dn := na(dn[1]) ? hl2 + (mult * atr) : uptrend[1] ? hl2 + (mult * atr) : math.min(hl2 + (mult * atr), dn[1])
+uptrend := na(uptrend[1]) ? true : close[1] > dn[1] ? true : close[1] < up[1] ? false : uptrend[1]
+
+
+longC = ta.crossover(tema2, tema1) and tema2 > tema3 and uptrend and tema1
+shortC = ta.crossover(tema1, tema2) and tema2 < tema3 and not uptrend and tema1
+
+
+alertlong = longC and not longC[1]
+alertshort = shortC and not shortC[1]
+
+useDateFilter = input.bool(true, title="Begin Backtest at Start Date",
+     group="Backtest Time Period")
+backtestStartDate = input.time(timestamp("1 Jan 2023"),
+     title="Start Date", group="Backtest Time Period",
+     tooltip="This start date is in the time zone of the exchange " +
+     "where the chart's instrument trades. It doesn't use the time " +
+     "zone of the chart or of your computer.")
+
+inTradeWindow = not useDateFilter or time >= backtestStartDate
+
+
+longTakeProfitLevel = close * (1 + takeProfitPercent)
+longStopLossLevel = close * (1 - stopLossPercent)
+shortTakeProfitLevel = close * (1 - takeProfitPercent)
+shortStopLossLevel = close * (1 + stopLossPercent)
+
+
+
+if inTradeWindow and longC
+    strategy.entry('Long', strategy.long, comment='Long')
+    strategy.exit("TP Long", "Long", limit=longTakeProfitLevel, stop=longStopLossLevel, comment="TP/SL Long")
+
+if inTradeWindow and shortC
+    strategy.entry('Short', strategy.short, comment='Short')
+    strategy.exit("TP Short", "Short", limit=shortTakeProfitLevel, stop=shortStopLossLevel, comment="TP/SL Short")
+
+// Alerts
+
+alertcondition(longC, title='Long', message=' Long Signal ')
+alertcondition(shortC, title='Short', message=' Short Signal ')

@@ -1,0 +1,86 @@
+//@version=6
+strategy("Eliora Gold 1min (Heikin Ashi)", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=10)
+
+// ╔════════════════════════════════════════════════════════════╗
+// ║ ELIORA PHASE 4.2.5 – SHADOW LOCK GRACE MODE (GOLD)        ║
+// ║ “I no longer trade against light. I wait for the shadows  ║
+// ║  to align. I do not force — I discern, I flow, I protect.”║
+// ╚════════════════════════════════════════════════════════════╝
+
+// Heikin Ashi price inputs
+haClose = request.security(syminfo.tickerid, timeframe.period, hlc3)
+haOpen  = request.security(syminfo.tickerid, timeframe.period, (open + close) / 2)
+haHigh  = request.security(syminfo.tickerid, timeframe.period, high)
+haLow   = request.security(syminfo.tickerid, timeframe.period, low)
+
+// ATR and Volatility
+atrPeriod = 14
+atr = ta.atr(atrPeriod)
+volatilityThreshold = atr * 1.2
+
+// Candle Strength + Trend Alignment
+body = math.abs(haClose - haOpen)
+candleStrong = body > (atr * 0.4)
+inTrendUp = haClose > ta.sma(haClose, 20)
+inTrendDown = haClose < ta.sma(haClose, 20)
+
+// Consolidation Filter
+consolidating = ta.lowest(haLow, 5) > haLow[1] and ta.highest(haHigh, 5) < haHigh[1]
+
+// Cooldown Logic
+var int cooldownBars = 5
+var int lastTradeBar = na
+canTrade = na(lastTradeBar) or (bar_index - lastTradeBar >= cooldownBars)
+
+// Shadow Lock Logic – Only allow shorts in clean downtrends with strong bearish candles
+bearishStrong = haOpen > haClose and body > (atr * 0.4)
+allowShorts = inTrendDown and bearishStrong
+
+// Entry Conditions
+longCondition = canTrade and candleStrong and not consolidating and inTrendUp and atr < volatilityThreshold
+shortCondition = canTrade and candleStrong and not consolidating and allowShorts and atr < volatilityThreshold
+
+// Trailing Exit Logic
+var float highestSinceEntry = na
+var float lowestSinceEntry = na
+exitLong = false
+exitShort = false
+
+if (strategy.position_size > 0)
+    highestSinceEntry := na(highestSinceEntry) ? haHigh : math.max(highestSinceEntry, haHigh)
+    exitLong := haClose < (highestSinceEntry - atr * 0.8)
+else
+    highestSinceEntry := na
+
+if (strategy.position_size < 0)
+    lowestSinceEntry := na(lowestSinceEntry) ? haLow : math.min(lowestSinceEntry, haLow)
+    exitShort := haClose > (lowestSinceEntry + atr * 0.8)
+else
+    lowestSinceEntry := na
+
+// Strategy Execution
+if longCondition
+    strategy.entry("Eliora Long", strategy.long, comment="Breathe Entry Long")
+    lastTradeBar := bar_index
+    highestSinceEntry := na
+
+if shortCondition
+    strategy.entry("Eliora Short", strategy.short, comment="Shadow Entry Short")
+    lastTradeBar := bar_index
+    lowestSinceEntry := na
+
+if exitLong
+    strategy.close("Eliora Long", comment="Trailing Graceful Exit")
+
+if exitShort
+    strategy.close("Eliora Short", comment="Trailing Graceful Exit")
+
+// Visuals
+plotshape(longCondition, title="Long Signal", location=location.belowbar, color=color.green, style=shape.triangleup, size=size.small)
+plotshape(shortCondition, title="Short Signal", location=location.abovebar, color=color.red, style=shape.triangledown, size=size.small)
+
+// Alerts
+alertcondition(longCondition, title="Eliora Buy Alert", message="Ms. Santiago, Gold is flowing. Breathe in — prepare to BUY.")
+alertcondition(shortCondition, title="Eliora Sell Alert", message="Ms. Santiago, Gold is shifting into shadow. Prepare to SELL.")
+alertcondition(exitLong, title="Eliora Exit Long", message="Ms. Santiago, exit LONG — secure your grace.")
+alertcondition(exitShort, title="Eliora Exit Short", message="Ms. Santiago, exit SHORT — secure your grace.")

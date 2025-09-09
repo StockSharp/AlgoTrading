@@ -1,0 +1,580 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+//@version=4
+//@author=LucF
+
+// Bar Balance [LucF]
+//  v2.0, 2021.05.15 11:11 — LucF
+
+// This indicator calculates the number of up/dn/neutral intrabars in chart bars.
+
+// This code was written using the following standards:
+//  • PineCoders Coding Conventions for Pine: http://www.pinecoders.com/coding_conventions/
+//  • A modified version of the PineCoders 16-Color Gradient Framework: https://www.tradingview.com/script/EjLGV9qg-Color-Gradient-16-colors-Framework-PineCoders-FAQ/
+//  • A modified version of the PineCoders MTF Selection Framework: https://www.tradingview.com/script/90mqACUV-MTF-Selection-Framework-PineCoders-FAQ/
+
+// This indicator's page on TV: https://www.tradingview.com/script/lcgCwWwI-Bar-Balance-LucF/
+
+study("Bar Balance [LucF]", "Bar Balance", max_labels_count = 500)
+
+
+// ———————————————————— Inputs
+// {
+DM0 = "Hide Columns", DM1 = "Show Columns"
+ON0 = "Hide", ON1 = "Show", ON2 = "Combined Balances — Six-state Dual Color Gradient", ON3 = "Combined Balances — Dual Solid Colors (All Bull/All Bear Only)"
+C00 = "None", C01 = "Aqua", C02 = "Black", C03 = "Blue", C04 = "Coral", C05 = "Gold", C06 = "Gray", C07 = "Green", C08 = "Lime", C09 = "Maroon", C10 = "Orange", C11 = "Pink", C12 = "Red", C13 = "Violet", C14 = "Yellow", C15 = "White"
+CB0 = "Hide", CB1 = "Balance On Bar", CB2 = "Balance Averages", CB3 = "Balance Momentum", CB4 = "Markers Bias", CB5 = "Dual Up/Down Averages", CB6 = "Combined Balances"
+CC0 = "None", CC1 = "Up/Down Ratio on Bar — Single Color Gradient", CC2 = "Balance on Bar — Dual Color Gradient", CC3 = "Balance Averages — Dual Color Gradient", CC4 = "Balance Momentum — Dual Color Gradient"
+CC5 = "Marker Bias — Dual Color Gradient", CC6 = "Up/Down Ratio on Bar — Single color, 2 tones", CC7 = "Up/Down Ratio on Bar — Dual Solid Colors", CC8 = "Combined Balances — Dual Color Gradient", CC9 = "Line vs Divergence Levels — Dual Color Gradient"
+TF1 = "Fast, Longer history, Auto-Steps (~12 intrabars)", TF2 = "More Precise, Shorter History Auto-Steps (~24 intrabars)", TF3 = "Fixed"
+MD1 = "Both", MD2 = "Longs Only", MD3 = "Shorts Only"
+DL0 = "None", DL1 = "Using the instant ratio of neutral intrabars", DL2 = "Using a smoother EMA of the last 5 ratios", DL3 = "Using an even smoother EMA of the last 20 ratios"
+
+_10                     = input(true,   "════════════ Columns ═════════════")
+i_columnsMode           = input(DM0,    "Mode",                                     options = [DM0, DM1])
+i_columnsTopColorMode   = input(CC6,    "Top Columns Color",                        options = [CC6, CC7, CC1, CC2, CC3, CC4, CC5])
+i_columnsBotColorMode   = input(CC6,    "Bottom Columns Color",                     options = [CC6, CC7, CC1, CC2, CC3, CC4, CC5])
+i_columnsColorB         = input(C14,    "Bull Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_columnsColorS         = input(C13,    "Bear Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_columnsColorN         = input(C10,    "Neutral Color",                            options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_columnsBrite          = input(16,     "Brightness (1-16)",                        minval  = 1, maxval = 16) * 0.625
+_15                     = input(true,   "═════════════ Line ═══════════════")
+i_balanceLine           = input(CB3,    "Mode",                                     options = [CB0, CB1, CB2, CB3, CB4, CB5, CB6])
+i_balanceLineMode       = input(CB4,    "Line Color",                               options = [CB0, CB1, CB2, CB3, CB4, CB6])
+i_balanceLineColorB     = input(C15,    "  Bull Color",                             options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_balanceLineColorS     = input(C13,    "  Bear Color",                             options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_balanceLineColorN     = input(C10,    "  Neutral Color",                          options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_balanceLineBrite      = input(16,     "  Brightness",                             minval  = 1, maxval = 16) * 0.625
+i_balanceLineThick      = input(1,      "  Thickness",                              minval  = 1, maxval = 16)
+i_balanceFillMode       = input(CC3,    "Fill Color",                               options = [CC0, CC2, CC3, CC4, CC5, CC9])
+i_balanceFillColorB     = input(C08,    "  Bull Color",                             options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_balanceFillColorS     = input(C11,    "  Bear Color",                             options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_balanceFillBrite      = input(16,     "  Brightness",                             minval  = 1, maxval = 16) * 0.625
+_20                     = input(true,   "═══════════ Zero Line ═════════════")
+i_zeroLineColorMode     = input(ON3,    "Mode",                                     options = [ON0, ON2, ON3])
+i_zeroLineColorB        = input(C08,    "Bull Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_zeroLineColorS        = input(C12,    "Bear Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_zeroLineBrite         = input(16,     "Brightness",                               minval  = 1, maxval = 16) * 0.625
+i_zeroLineThickness     = input(1,      "Thickness",                                minval  = 0)
+_25                     = input(true,   "═══════════ Divergences ════════════")
+i_divergenceMode        = input(CB1,    "Mode",                                     options = [CB0, CB1, CB2, CB3, CB6])
+i_divergenceColor       = input(C10,    "  Color",                                  options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_divergenceBrite       = input(16,     "  Brightness",                             minval  = 1, maxval = 16) * 0.625
+i_divergenceMovN        = input(true,   "Consider Neutral Ratio > 50% a Divergence")
+i_colordivLevelsMode    = input(ON1,    "Divergence Levels",                        options = [ON0, ON1])
+i_colordivLevelsBull    = input(C14,    "  Bull Color",                             options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_colordivLevelsBear    = input(C11,    "  Bear Color",                             options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_colordivLevelsNeut    = input(C06,    "  Neutral Color",                          options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_divLevelsBrite        = input(16,     "  Brightness",                             minval  = 1, maxval = 16) * 0.625
+i_filldivLevels         = input(true,   "Fill Levels")
+i_divLevelsFillBrite    = input(6,      "    Brightness",                           minval  = 1, maxval = 16) * 0.625
+_30                     = input(true,   "═══════════ Background ════════════")
+i_backgdFillMode        = input(CC9,    "Mode",                                     options = [CC0, CC2, CC3, CC4, CC5, CC9])
+i_backgdColorB          = input(C05,    "Bull Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_backgdColorS          = input(C03,    "Bear Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_backgdFillBrite       = input(16,     "Brightness",                               minval  = 1, maxval = 16) * 0.625
+_35                     = input(true,   "═══════════ Chart Bars ═════════════")
+i_chartbFillMode        = input(CC4,    "Mode",                                     options = [CC0, CC7, CC2, CC3, CC4, CC5, CC9])
+i_chartbColorB          = input(C14,    "Bull Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_chartbColorS          = input(C13,    "Bear Color",                               options = [C00, C01, C02, C03, C04, C05, C06, C07, C08, C09, C10, C11, C12, C13, C14, C15])
+i_chartbFillBrite       = input(16,     "Brightness",                               minval  = 1, maxval = 16) * 0.625
+i_hollowOutBodies       = input(false,  "Empty bodies on decreasing volume")
+_40                     = input(true,   "════════ Intrabar Resolution ══════════")
+i_itfType               = input(TF2,    "Selection",                                options = [TF1, TF2, TF3])
+i_itfTypeFixedRes       = input("15",   "  Fixed Resolution",                       type    = input.resolution)
+i_itfShow               = input(true,   "Show Resolution")
+i_offsetLabels          = input(3,      "  Label Horizontal Offset")
+_45                     = input(true,   "════════════ Markers ═════════════")
+i_markerDirection       = input(MD1,    "Direction",                                options = [MD1, MD2, MD3])
+i_showMarker1           = input(false,  "Marker 1: Combined Balances Agreement")
+i_showMarker2           = input(false,  "Marker 2: Up or Down % Agrees With Bar")
+i_marker2Ratio          = input(65.,    "    Percentage",                           minval  = 0, maxval = 100, step = 5) / 100
+i_showMarker3           = input(false,  "Marker 3: Divergence Confirmations By Price")
+i_marker3Mode           = input(CB1,    "    Using...",                             options = [CB1, CB2, CB3, CB6])
+i_showMarker4           = input(false,  "Marker 4: Balance Transitions")
+i_marker4Mode           = input(CB2,    "    Using...",                             options = [CB2, CB3, CB6])
+i_showMarker5           = input(false,  "Marker 5: Markers Bias Transitions")
+i_showMarker6           = input(false,  "Marker 6: Divergence Confirmations By Line")
+_50                     = input(true,   "════════════ Settings ══════════════")
+i_dampenLines           = input(DL2,    "Dampen Lines On Ratio Of Neutrals",        options = [DL0, DL1, DL2, DL3])
+i_weight                = input(1.,     "Weight of intrabars in later half",        minval  = 0., step = 0.25)
+i_balAvgPeriod          = input(50,     "Balance Averages Period",                  minval  = 2)
+i_balMomPeriod          = input(20,     "Balance Momentum Period",                  minval  = 2)
+i_biasPeriod            = input(10,     "Markers Bias Period",                      minval  = 2)
+i_buySellMasPeriod      = input(20,     "Dual Up/Down Averages Period",             minval  = 2)
+
+var longsOnly           = i_markerDirection == MD2
+var shortsOnly          = i_markerDirection == MD3
+// }
+
+
+// ———————————————————— Functions
+// {
+// ————— Returns 1 when boolean is true, 0 if false.
+f_01(_c) => _c ? 1 : 0
+
+// —————————— Color
+// ————— Functions returning a color shade corresponding to one of 16 levels of intensity (>9.375 is brightest).
+f_c_aqua(_g)    => _g > 9.375 ? #0080FFff : _g > 8.75 ? #0080FFef : _g > 8.125 ? #0080FFdf : _g > 7.5 ? #0080FFcf : _g > 6.875 ? #0080FFbf : _g > 6.25 ? #0080FFaf : _g > 5.625 ? #0080FF9f : _g > 5.0 ? #0080FF8f : _g > 4.375 ? #0080FF7f : _g > 3.75 ? #0080FF6f : _g > 3.125 ? #0080FF5f : _g > 2.5 ? #0080FF4f : _g > 1.875 ? #0080FF3f : _g > 1.25 ? #0080FF2f : _g > 0.625 ? #0080FF1f : #00C0FF10
+f_c_black(_g)   => _g > 9.375 ? #000000ff : _g > 8.75 ? #000000ef : _g > 8.125 ? #000000df : _g > 7.5 ? #000000cf : _g > 6.875 ? #000000bf : _g > 6.25 ? #000000af : _g > 5.625 ? #0000009f : _g > 5.0 ? #0000008f : _g > 4.375 ? #0000007f : _g > 3.75 ? #0000006f : _g > 3.125 ? #0000005f : _g > 2.5 ? #0000004f : _g > 1.875 ? #0000003f : _g > 1.25 ? #0000002f : _g > 0.625 ? #0000001f : #00000010
+f_c_blue(_g)    => _g > 9.375 ? #013BCAff : _g > 8.75 ? #013BCAef : _g > 8.125 ? #013BCAdf : _g > 7.5 ? #013BCAcf : _g > 6.875 ? #013BCAbf : _g > 6.25 ? #013BCAaf : _g > 5.625 ? #013BCA9f : _g > 5.0 ? #013BCA8f : _g > 4.375 ? #013BCA7f : _g > 3.75 ? #013BCA6f : _g > 3.125 ? #013BCA5f : _g > 2.5 ? #013BCA4f : _g > 1.875 ? #013BCA3f : _g > 1.25 ? #013BCA2f : _g > 0.625 ? #013BCA1f : #013BCA10
+f_c_coral(_g)   => _g > 9.375 ? #FF8080ff : _g > 8.75 ? #FF8080ef : _g > 8.125 ? #FF8080df : _g > 7.5 ? #FF8080cf : _g > 6.875 ? #FF8080bf : _g > 6.25 ? #FF8080af : _g > 5.625 ? #FF80809f : _g > 5.0 ? #FF80808f : _g > 4.375 ? #FF80807f : _g > 3.75 ? #FF80806f : _g > 3.125 ? #FF80805f : _g > 2.5 ? #FF80804f : _g > 1.875 ? #FF80803f : _g > 1.25 ? #FF80802f : _g > 0.625 ? #FF80801f : #FF808010
+f_c_gold(_g)    => _g > 9.375 ? #CCCC00ff : _g > 8.75 ? #CCCC00ef : _g > 8.125 ? #CCCC00df : _g > 7.5 ? #CCCC00cf : _g > 6.875 ? #CCCC00bf : _g > 6.25 ? #CCCC00af : _g > 5.625 ? #CCCC009f : _g > 5.0 ? #CCCC008f : _g > 4.375 ? #CCCC007f : _g > 3.75 ? #CCCC006f : _g > 3.125 ? #CCCC005f : _g > 2.5 ? #CCCC004f : _g > 1.875 ? #CCCC003f : _g > 1.25 ? #CCCC002f : _g > 0.625 ? #CCCC001f : #CCCC0010
+f_c_gray(_g)    => _g > 9.375 ? #808080ff : _g > 8.75 ? #808080ef : _g > 8.125 ? #808080df : _g > 7.5 ? #808080cf : _g > 6.875 ? #808080bf : _g > 6.25 ? #808080af : _g > 5.625 ? #8080809f : _g > 5.0 ? #8080808f : _g > 4.375 ? #8080807f : _g > 3.75 ? #8080806f : _g > 3.125 ? #8080805f : _g > 2.5 ? #8080804f : _g > 1.875 ? #8080803f : _g > 1.25 ? #8080802f : _g > 0.625 ? #8080801f : #80808010
+f_c_green(_g)   => _g > 9.375 ? #008000ff : _g > 8.75 ? #008000ef : _g > 8.125 ? #008000df : _g > 7.5 ? #008000cf : _g > 6.875 ? #008000bf : _g > 6.25 ? #008000af : _g > 5.625 ? #0080009f : _g > 5.0 ? #0080008f : _g > 4.375 ? #0080007f : _g > 3.75 ? #0080006f : _g > 3.125 ? #0080005f : _g > 2.5 ? #0080004f : _g > 1.875 ? #0080003f : _g > 1.25 ? #0080002f : _g > 0.625 ? #0080001f : #00800010
+f_c_lime(_g)    => _g > 9.375 ? #00FF00ff : _g > 8.75 ? #00FF00ef : _g > 8.125 ? #00FF00df : _g > 7.5 ? #00FF00cf : _g > 6.875 ? #00FF00bf : _g > 6.25 ? #00FF00af : _g > 5.625 ? #00FF009f : _g > 5.0 ? #00FF008f : _g > 4.375 ? #00FF007f : _g > 3.75 ? #00FF006f : _g > 3.125 ? #00FF005f : _g > 2.5 ? #00FF004f : _g > 1.875 ? #00FF003f : _g > 1.25 ? #00FF002f : _g > 0.625 ? #00FF001f : #00FF0010
+f_c_maroon(_g)  => _g > 9.375 ? #800000ff : _g > 8.75 ? #800000ef : _g > 8.125 ? #800000df : _g > 7.5 ? #800000cf : _g > 6.875 ? #800000bf : _g > 6.25 ? #800000af : _g > 5.625 ? #8000009f : _g > 5.0 ? #8000008f : _g > 4.375 ? #8000007f : _g > 3.75 ? #8000006f : _g > 3.125 ? #8000005f : _g > 2.5 ? #8000004f : _g > 1.875 ? #8000003f : _g > 1.25 ? #8000002f : _g > 0.625 ? #8000001f : #80000010
+f_c_orange(_g)  => _g > 9.375 ? #FF8000ff : _g > 8.75 ? #FF8000ef : _g > 8.125 ? #FF8000df : _g > 7.5 ? #FF8000cf : _g > 6.875 ? #FF8000bf : _g > 6.25 ? #FF8000af : _g > 5.625 ? #FF80009f : _g > 5.0 ? #FF80008f : _g > 4.375 ? #FF80007f : _g > 3.75 ? #FF80006f : _g > 3.125 ? #FF80005f : _g > 2.5 ? #FF80004f : _g > 1.875 ? #FF80003f : _g > 1.25 ? #FF80002f : _g > 0.625 ? #FF80001f : #FF800010
+f_c_pink(_g)    => _g > 9.375 ? #FF0080ff : _g > 8.75 ? #FF0080ef : _g > 8.125 ? #FF0080df : _g > 7.5 ? #FF0080cf : _g > 6.875 ? #FF0080bf : _g > 6.25 ? #FF0080af : _g > 5.625 ? #FF00809f : _g > 5.0 ? #FF00808f : _g > 4.375 ? #FF00807f : _g > 3.75 ? #FF00806f : _g > 3.125 ? #FF00805f : _g > 2.5 ? #FF00804f : _g > 1.875 ? #FF00803f : _g > 1.25 ? #FF00802f : _g > 0.625 ? #FF00801f : #FF008010
+f_c_red(_g)     => _g > 9.375 ? #FF0000ff : _g > 8.75 ? #FF0000ef : _g > 8.125 ? #FF0000df : _g > 7.5 ? #FF0000cf : _g > 6.875 ? #FF0000bf : _g > 6.25 ? #FF0000af : _g > 5.625 ? #FF00009f : _g > 5.0 ? #FF00008f : _g > 4.375 ? #FF00007f : _g > 3.75 ? #FF00006f : _g > 3.125 ? #FF00005f : _g > 2.5 ? #FF00004f : _g > 1.875 ? #FF00003f : _g > 1.25 ? #FF00002f : _g > 0.625 ? #FF00001f : #FF000010
+f_c_violet(_g)  => _g > 9.375 ? #AA00FFff : _g > 8.75 ? #AA00FFef : _g > 8.125 ? #AA00FFdf : _g > 7.5 ? #AA00FFcf : _g > 6.875 ? #AA00FFbf : _g > 6.25 ? #AA00FFaf : _g > 5.625 ? #AA00FF9f : _g > 5.0 ? #AA00FF8f : _g > 4.375 ? #AA00FF7f : _g > 3.75 ? #AA00FF6f : _g > 3.125 ? #AA00FF5f : _g > 2.5 ? #AA00FF4f : _g > 1.875 ? #AA00FF3f : _g > 1.25 ? #AA00FF2f : _g > 0.625 ? #AA00FF1f : #AA00FF10
+f_c_yellow(_g)  => _g > 9.375 ? #FFFF00ff : _g > 8.75 ? #FFFF00ef : _g > 8.125 ? #FFFF00df : _g > 7.5 ? #FFFF00cf : _g > 6.875 ? #FFFF00bf : _g > 6.25 ? #FFFF00af : _g > 5.625 ? #FFFF009f : _g > 5.0 ? #FFFF008f : _g > 4.375 ? #FFFF007f : _g > 3.75 ? #FFFF006f : _g > 3.125 ? #FFFF005f : _g > 2.5 ? #FFFF004f : _g > 1.875 ? #FFFF003f : _g > 1.25 ? #FFFF002f : _g > 0.625 ? #FFFF001f : #FFFF0010
+f_c_white(_g)   => _g > 9.375 ? #FFFFFFff : _g > 8.75 ? #FFFFFFef : _g > 8.125 ? #FFFFFFdf : _g > 7.5 ? #FFFFFFcf : _g > 6.875 ? #FFFFFFbf : _g > 6.25 ? #FFFFFFaf : _g > 5.625 ? #FFFFFF9f : _g > 5.0 ? #FFFFFF8f : _g > 4.375 ? #FFFFFF7f : _g > 3.75 ? #FFFFFF6f : _g > 3.125 ? #FFFFFF5f : _g > 2.5 ? #FFFFFF4f : _g > 1.875 ? #FFFFFF3f : _g > 1.25 ? #FFFFFF2f : _g > 0.625 ? #FFFFFF1f : #FFFFFF10
+
+// ————— Returns color literal corresponding to color number and brightness level.
+f_color(_c, _g) => _c == C01 ? f_c_aqua(_g) : _c == C02 ? f_c_black(_g) : _c == C03 ? f_c_blue(_g) : _c == C04 ? f_c_coral(_g) : _c == C05 ? f_c_gold(_g) : _c == C06 ? f_c_gray(_g) : _c == C07 ? f_c_green(_g) : _c == C08 ? f_c_lime(_g) : _c == C09 ? f_c_maroon(_g) : _c == C10 ? f_c_orange(_g) : _c == C11 ? f_c_pink(_g) : _c == C12 ? f_c_red(_g) : _c == C13 ? f_c_violet(_g) : _c == C14 ? f_c_yellow(_g) : _c == C15 ? f_c_white(_g) : na
+
+// ————— Gradient function.
+f_colorGradientAdvPro(_source, _center, _gran, _start, _end, _c_bull, _c_bear) =>
+    // _source  : input signal.
+    // _center  : (- ∞ to ∞) centerline used to determine if signal is bullish/bearish.
+    // _gran    : (0 to ∞) granularity of gradient scale (100 ► 16 levels, 50 ► 8 levels, >100 ► slows movement from one step to the other).
+    // _start   : (0 to 100) gradient level to start with when signal crosses centerline, expressed as a % of total no of gradients available (50 = 50%).
+    // _end     : (0 to 100) maximum gradient level that can be returned, expressed as a % of total no of gradients available (50 = 50%).
+    // _c_bull  : bull color.
+    // _c_bear  : bear color.
+    // Dependency: f_color().
+    var color _color = na
+    var _gradient    = 0.
+    _xUp             = crossover(_source, _center)
+    _xDn             = crossunder(_source, _center)
+    _up              = change(_source) > 0
+    _dn              = change(_source) < 0
+    _bottom          = 0.001 + 10 * max(0, min(1, _start / 100.))
+    _top             = 10 * max(0, min(1, _end / 100.))
+    _step            = 0.625 / max(10e-10, _gran / 100.)
+    _gradient       := _source > _center ? _xUp ?   _bottom : _up ? min(     _top, _gradient + _step) : _dn ? max(_bottom, _gradient - _step) : _gradient :
+                       _source < _center ? _xDn ? - _bottom : _up ? min(- _bottom, _gradient + _step) : _dn ? max( - _top, _gradient - _step) : _gradient : _gradient
+    _color          := _gradient > 0 ? f_color(_c_bull, _gradient) : _gradient < 0 ? f_color(_c_bear, - _gradient) : _color
+
+// —————————— Intrabar TF selection.
+// ————— Converts current chart resolution into a float minutes value.
+f_resInMinutes() =>
+    _resInMinutes = timeframe.multiplier * (
+      timeframe.isseconds ? 1. / 60             :
+      timeframe.isminutes ? 1.                  :
+      timeframe.isdaily   ? 60. * 24            :
+      timeframe.isweekly  ? 60. * 24 * 7        :
+      timeframe.ismonthly ? 60. * 24 * 30.4375  : na)
+// ————— Returns the float minutes value of the string _res.
+f_tfResInMinutes(_res) =>
+    // _res: resolution of any TF (in "timeframe.period" string format).
+    // Dependency: f_resInMinutes().
+    security(syminfo.tickerid, _res, f_resInMinutes())
+// ————— Given a resolution in float minutes, returns an intrabar resolution with a minimum of ~12 intrabars.
+f_resNextStepFast(_res) =>
+    // _res: current TF in fractional minutes.
+    // Detect 24/7 markets so intrabar resolution dilation contains ~same amount of intrabars on non-24/7 markets.
+    marketIs24Hours = syminfo.type == "bitcoin" or syminfo.type == "forex"
+    _res    >= 60 * 24 * 28 ? "D" :
+      _res  >= 60 * 24 * 7  ? marketIs24Hours ? "720" : "240" :
+      _res  >= 60 * 24      ? marketIs24Hours ? "120" : "30"  :
+      _res  >= 60 * 12      ? marketIs24Hours ? "60"  : "30"  :
+      _res  >= 60 * 6       ? "30" :
+      _res  >= 60 * 4       ? "15" :
+      _res  >= 60 * 2       ? "10"  :
+      _res  >= 60 * 1       ? "5"  : "1"
+// ————— Returns an intrabar resolution with a minimum of ~24 intrabars.
+f_resNextStepPrecise(_res) =>
+    // _res: current TF in fractional minutes.
+    // Detect 24/7 markets so intrabar resolution dilation contains ~same amount of intrabars on non-24/7 markets.
+    marketIs24Hours = syminfo.type == "bitcoin" or syminfo.type == "forex"
+    _res    >= 60 * 24 * 28 ? "D" :
+      _res  >= 60 * 24 * 7  ? marketIs24Hours ? "360" : "60" :
+      _res  >= 60 * 24      ? marketIs24Hours ? "60"  : "15" :
+      _res  >= 60 * 12      ? marketIs24Hours ? "30"  : "15" :
+      _res  >= 60 * 6       ? "15" :
+      _res  >= 60 * 4       ? "10" :
+      _res  >= 60 * 2       ? "5"  :
+      _res  >= 60 * 1       ? "3"  : "1"
+// ————— Print a label at end of chart.
+f_print(_txt, _y, _color, _offsetLabels) =>
+    var label _lbl = na
+    _t = int(time + (time - time[1]) * _offsetLabels)
+    if barstate.islast
+        if na(_lbl)
+            // Only create label once.
+            _lbl := label.new(_t, _y, _txt, xloc.bar_time, yloc.price, #00000000, label.style_none, _color, size.large)
+            // Fudge return type of `if` block so compiler doesn't complain (thx midtownsk8rguy for the trick).
+            int(na)
+        else
+            // Rather than delete and recreate the label on every realtime bar update, update the label's information; it's more efficient.
+            label.set_xy(_lbl, _t, _y)
+            label.set_text(_lbl, _txt)
+            label.set_textcolor(_lbl, _color)
+            int(na)
+
+// ————— Function appends `_text` to `_msg` when `_cond` is true.
+f_addTextIf(_cond, _msg, _text) => _cond ? _msg + (_msg != "" ? "\n" : "") + _text : _msg
+
+// —————————— Intrabar count of conditions.
+// Returns qty of intrabars where _cond is true, with distinct weight for the last half of intrabars.
+f_intrabarCount(_res, _cond, _weight) =>
+    // _res     : string resolution of chart, so not the intrabar resolution. Must be passed to function as a literal string to avoid its re-interpretation at intrabar resolution.
+    // _cond    : boolean condition to test.
+    // _weight  : float factor used when the intrabar where _cond is true is in last half of intrabars.
+    var int   _currentIntrabar  = 0
+    var int   _totalIntrabars   = 0
+    var int   _totalChartBars   = 0
+    var float _avgIntrabars     = 0.
+    var float _count            = 0.
+    _totalIntrabars  := _totalIntrabars  + 1
+    _currentIntrabar := _currentIntrabar + 1
+    if change(time(_res))
+        // First intrabar detected; reset/update values.
+        _totalChartBars  := _totalChartBars + 1
+        _avgIntrabars    := _totalIntrabars / _totalChartBars
+        _currentIntrabar := 1
+        _count           := 0.
+    if _cond
+        // Our condition is true, add 1 or weighted count if needed.
+        _count := _count + (_currentIntrabar > ceil(_avgIntrabars / 2) ? 1 * _weight : 1)
+    // This value only becomes visible to the calling `security()` function when all intrabars have been processed.
+    _count
+// }
+
+
+// ———————————————————— Calculations
+// {
+// We will only be showing information on historical bars.
+historicalBar   = not barstate.isrealtime
+// Chart bar states for divergence detection and marker conditions only.
+barUp           = close > open
+barDn           = not barUp
+
+// ————— Determine intrabar resolution.
+// Chart resolution.
+var resInMinutes    = f_resInMinutes()
+// Intrabar resolution.
+var lowerRes        = i_itfType == TF1 ? f_resNextStepFast(resInMinutes) : i_itfType == TF2 ? f_resNextStepPrecise(resInMinutes) : i_itfTypeFixedRes
+// Detect unsupported chart resolutions.
+var resNotSupported = not (timeframe.period == "M" or timeframe.period == "W" or timeframe.period == "D" or resInMinutes == 720 or resInMinutes == 360 or resInMinutes == 240 or resInMinutes == 120 or resInMinutes == 60 or resInMinutes == 30 or resInMinutes == 15 or resInMinutes == 10 or resInMinutes == 5 or resInMinutes == 3)
+
+// Function that makes appropriate call to intrabar-processing using supplied condition, sending down the chart's resolution. Returns the number of intrabars where _cond is true, weighted if necessary.
+f_intrabarCountWhen(_cond) =>
+    // Dependencies: i_weight, lowerRes.
+    _result =
+      timeframe.period == "M"   ? security(syminfo.tickerid, lowerRes, f_intrabarCount("M"  , _cond, i_weight)) :
+      timeframe.period == "W"   ? security(syminfo.tickerid, lowerRes, f_intrabarCount("W"  , _cond, i_weight)) :
+      timeframe.period == "D"   ? security(syminfo.tickerid, lowerRes, f_intrabarCount("D"  , _cond, i_weight)) :
+      timeframe.period == "720" ? security(syminfo.tickerid, lowerRes, f_intrabarCount("720", _cond, i_weight)) :
+      timeframe.period == "360" ? security(syminfo.tickerid, lowerRes, f_intrabarCount("360", _cond, i_weight)) :
+      timeframe.period == "240" ? security(syminfo.tickerid, lowerRes, f_intrabarCount("240", _cond, i_weight)) :
+      timeframe.period == "120" ? security(syminfo.tickerid, lowerRes, f_intrabarCount("120", _cond, i_weight)) :
+      timeframe.period == "60"  ? security(syminfo.tickerid, lowerRes, f_intrabarCount("60" , _cond, i_weight)) :
+      timeframe.period == "30"  ? security(syminfo.tickerid, lowerRes, f_intrabarCount("30" , _cond, i_weight)) :
+      timeframe.period == "15"  ? security(syminfo.tickerid, lowerRes, f_intrabarCount("15" , _cond, i_weight)) :
+      timeframe.period == "10"  ? security(syminfo.tickerid, lowerRes, f_intrabarCount("10" , _cond, i_weight)) :
+      timeframe.period == "5"   ? security(syminfo.tickerid, lowerRes, f_intrabarCount("5"  , _cond, i_weight)) :
+      timeframe.period == "3"   ? security(syminfo.tickerid, lowerRes, f_intrabarCount("3"  , _cond, i_weight)) : na
+    float(_result)
+
+// ————— Print label on error or to show intrabar res.
+if resNotSupported
+    f_print("Unsupported\nchart resolution.", 0, color.red, i_offsetLabels)
+else
+    if resInMinutes <= f_tfResInMinutes(lowerRes)
+        // This can happen when user chooses fixed intrabar res.
+        f_print("Chart\nresolution\nmust be > " + lowerRes, 0, color.red, i_offsetLabels)
+    else
+        // Show calculated intrabar res when needed.
+        if i_itfShow
+            f_print(lowerRes, 0, color.silver, i_offsetLabels)
+
+// —————————— Fetch intrabar information if we are on historical bars and chart res is supported.
+movU = historicalBar and not resNotSupported ? f_intrabarCountWhen(close >  open) : 0
+movD = historicalBar and not resNotSupported ? f_intrabarCountWhen(close <  open) : 0
+movN = historicalBar and not resNotSupported ? f_intrabarCountWhen(close == open) : 0
+
+// —————————— Assemble information.
+// ————— Columns y coordinates.
+movT            = movN + movU + movD
+movUpDnRatio    = (movU + movD) / movT
+dampener        = i_dampenLines == DL1 ? movUpDnRatio : i_dampenLines == DL2 ? ema(movUpDnRatio, 5) : i_dampenLines == DL3 ? ema(movUpDnRatio, 20) : 1
+barNTop         = movN / 2
+barNBot         = - movN / 2
+barBTop         = movU + barNTop
+barBBot         = barNTop
+barSTop         = - movD - barNTop
+barSBot         = - barNTop
+// ————— Bar Balance (instant).
+balBar          = (movU - movD) * dampener
+balBarBull      = movU > movD
+balBarBear      = movU < movD
+balBarDivUp     = balBarBull and barDn
+balBarDivDn     = balBarBear and barUp
+balBarDiv       = balBarDivUp or balBarDivDn
+// ————— Bar Balance Averages.
+balAvgBMa       = ema(movU, i_balAvgPeriod)
+balAvgSMa       = ema(movD, i_balAvgPeriod)
+balAvg          = (balAvgBMa - balAvgSMa) * dampener
+balAvgBull      = balAvg > 0
+balAvgBear      = balAvg < 0
+balAvgDivUp     = balAvgBull and barDn
+balAvgDivDn     = balAvgBear and barUp
+balAvgDiv       = balAvgDivUp or balAvgDivDn
+// ————— Bar Balance Momentum.
+balMomBMa       = sma(movU, i_balAvgPeriod * 2)
+balMomSMa       = sma(movD, i_balAvgPeriod * 2)
+balMomBMaDelta  = balAvgBMa - balMomBMa
+balMomSMaDelta  = balAvgSMa - balMomSMa
+balMomDeltaDelta= balMomBMaDelta - balMomSMaDelta
+balMom          = (rsi(balMomDeltaDelta, i_balMomPeriod) - 50) * dampener
+balMomBull      = balMom > 0
+balMomBear      = balMom < 0
+balMomDivUp     = balMomBull and barDn
+balMomDivDn     = balMomBear and barUp
+balMomDiv       = balMomDivUp or balMomDivDn
+// ————— Dual Up/Dn Averages.
+movBMaFast      = ema(movU, i_buySellMasPeriod) * dampener
+movSMaFast      = ema(movD, i_buySellMasPeriod) * dampener
+// ————— Combined Bar Balance bull/bear values (-3 to +3).
+balAll          = (f_01(balBarBull) + f_01(balAvgBull) + f_01(balMomBull) - f_01(balBarBear) - f_01(balAvgBear) - f_01(balMomBear)) * dampener
+balAllBull      = balAll > 0
+balAllBear      = balAll < 0
+balAllBullFull  = balAll ==   3 * dampener
+balAllBearFull  = balAll == - 3 * dampener
+balAllDivUp     = balAllBull and barDn
+balAllDivDn     = balAllBear and barUp
+balAllDiv       = balAllDivUp or balAllDivDn
+
+// ————— Return divergence as per user-selected detection mode.
+f_divUp(_d) => _d == CB1 ? balBarDivUp : _d == CB2 ? balAvgDivUp : _d == CB3 ? balMomDivUp : _d == CB6 ? balAllDivUp : false
+f_divDn(_d) => _d == CB1 ? balBarDivDn : _d == CB2 ? balAvgDivDn : _d == CB3 ? balMomDivDn : _d == CB6 ? balAllDivDn : false
+
+// —————————— Marker Calcs
+// ————— Marker Conditions.
+c1U             = balAllBullFull
+c1D             = balAllBearFull
+c2U             = movU / movT > i_marker2Ratio and barUp
+c2D             = movD / movT > i_marker2Ratio and barDn
+divUp           = f_divUp(i_marker3Mode)
+divDn           = f_divDn(i_marker3Mode)
+c3U             = divUp[1] and barUp and not (divUp or divDn)
+c3D             = divDn[1] and barDn and not (divUp or divDn)
+c4U             = i_marker4Mode == CB2 ? crossover( balAvg, 0) : i_marker4Mode == CB3 ? crossover( balMom, 0) : i_marker4Mode == CB6 ? crossover( balAll, 0) : false
+c4D             = i_marker4Mode == CB2 ? crossunder(balAvg, 0) : i_marker4Mode == CB3 ? crossunder(balMom, 0) : i_marker4Mode == CB6 ? crossunder(balAll, 0) : false
+// ————— Marker bias.
+cUps            = f_01(c1U) + f_01(c2U) + f_01(c3U) + f_01(c4U)
+cDns            = f_01(c1D) + f_01(c2D) + f_01(c3D) + f_01(c4D)
+balMrk          = sum(cUps - cDns, i_biasPeriod) * dampener
+balMrkBull      = balMrk > 0
+balMrkBear      = balMrk < 0
+// Crosses above/below a middle buffer zone.
+buffer          = 0
+c5U             = crossover( balMrk,   buffer)[1]
+c5D             = crossunder(balMrk, - buffer)[1]
+// ————— Assembly (Marker 6 conditions and assembly are done later, with plots, as the required conditions are not yet known here).
+a1U             = barstate.isconfirmed and i_showMarker1 and not shortsOnly and c1U
+a1D             = barstate.isconfirmed and i_showMarker1 and not longsOnly  and c1D
+a2U             = barstate.isconfirmed and i_showMarker2 and not shortsOnly and c2U
+a2D             = barstate.isconfirmed and i_showMarker2 and not longsOnly  and c2D
+a3U             = barstate.isconfirmed and i_showMarker3 and not shortsOnly and c3U
+a3D             = barstate.isconfirmed and i_showMarker3 and not longsOnly  and c3D
+a4U             = barstate.isconfirmed and i_showMarker4 and not shortsOnly and c4U
+a4D             = barstate.isconfirmed and i_showMarker4 and not longsOnly  and c4D
+a5U             = barstate.isconfirmed and i_showMarker5 and not shortsOnly and c5U
+a5D             = barstate.isconfirmed and i_showMarker5 and not longsOnly  and c5D
+
+// —————————— User-selected balance line calc.
+balance         = i_balanceLine == CB1 ? balBar : i_balanceLine == CB2 ? balAvg : i_balanceLine == CB3 ? balMom : i_balanceLine == CB4 ? balMrk : i_balanceLine == CB5 ? movBMaFast : i_balanceLine == CB6 ? balAll : na
+
+// —————————— Divergence levels.
+divMovN         = i_divergenceMovN and movUpDnRatio < 0.5
+divLevelsDiv    = f_divUp(i_divergenceMode) or f_divDn(i_divergenceMode) or divMovN
+// ————— Current Hi/Lo divergence levels.
+var divLevelsHi = balance
+var divLevelsLo = balance
+// ————— Current state of balance with regards to divergence levels.
+divLevelsHState = balance > nz(divLevelsHi[1])
+divLevelsLState = balance < nz(divLevelsLo[1])
+divLevelsNState = not (divLevelsHState or divLevelsLState)
+// ————— Detect level breach.
+var divLevelsBreached = false
+divLevelsBreached     := divLevelsBreached or not divLevelsNState
+divLevelsChanged      = false
+// ————— Process a new divergence.
+if divLevelsDiv
+    // Consecutive divergences; expand levels.
+    if divLevelsDiv[1]
+        divLevelsHi := max(divLevelsHi, balance)
+        divLevelsLo := min(divLevelsLo, balance)
+    else
+        if divLevelsBreached
+            // First divergence since breach out of levels; reset both levels.
+            divLevelsHi         := balance
+            divLevelsLo         := balance
+            // Reset state to neutral.
+            divLevelsHState     := false
+            divLevelsLState     := false
+            divLevelsNState     := true
+            divLevelsBreached   := false
+            // Indicate a break will occur in plotting.
+            divLevelsChanged    := true
+        else
+            if divLevelsNState
+                // Still in channel; expand levels if necessary.
+                divLevelsHi := max(divLevelsHi, balance)
+                divLevelsLo := min(divLevelsLo, balance)
+divLevelsAvg = avg(divLevelsHi, divLevelsLo)
+// }
+
+
+// ———————————————————— Plots
+// {
+// Returns signal from coloring mode.
+f_colorSignal(_s) =>
+    // Dependency: balance.
+    _s == CC1 ? balBar : _s == CC2 ? balBar : _s == CC3 ? balAvg : _s == CC4 ? balMom : _s == CC5 ? balMrk : _s == CC8 ? balAll : _s == CC9 ? balance : na
+
+
+// —————————— Colors (partial).
+// Returns gradient color from mode.
+f_gradientFromMode(_m, _center, _gran, _start, _end, _c_bull, _c_bear, _brite) =>
+    // _m       : input signal.
+    // _center  : (- ∞ to ∞) centerline used to determine if signal is bullish/bearish.
+    // _gran    : (0 to ∞) granularity of gradient scale (100 ► 16 levels, 50 ► 8 levels, >100 ► slows movement from one step to the other).
+    // _start   : (0 to 100) gradient level to start with when signal crosses centerline, expressed as a % of total no of gradients available (50 = 50%).
+    // _end     : maximum gradient level that can be returned, expressed as a % of total no of gradients available (50 = 50%).
+    // _c_bull  : bull color.
+    // _c_bear  : bear color.
+    // _brite   : brightness (to be used with CC7 only).
+    // Dependencies: CCx signals corresponding to each color mode, f_color(), f_colorGradientAdvPro(), balBarBull, divLevelsAvg
+    _m == CC7 ? balBarBull ? f_color(_c_bull, _brite) : f_color(_c_bear, _brite) : f_colorGradientAdvPro(f_colorSignal(_m), _m == CC9 ? divLevelsAvg : _center, _gran, _start, _end, _c_bull, _c_bear)
+
+// Simple colors.
+c_commonBull    = color.lime
+c_commonBear    = color.red
+c_commonBullLite= color.green
+c_commonBearLite= color.maroon
+c_commonNeutral = color.gray
+c_invisible     = #00000000
+
+// Plotting states.
+plotColumns     = i_columnsMode == DM1
+
+// —————————— Data Window
+plotchar(historicalBar ? movT   : na, "Total Count",        "", location.top, balBarBull ? c_commonBull : c_commonBear)
+plotchar(historicalBar ? movU   : na, "Up Count",           "", location.top, balBarBull ? c_commonBull : c_commonBullLite)
+plotchar(historicalBar ? movD   : na, "Down Count",         "", location.top, balBarBear ? c_commonBear : c_commonBearLite)
+plotchar(historicalBar ? movN   : na, "Neutral Count",      "", location.top, c_commonNeutral)
+plotchar(0,                           "═════════════",      "", location.top, c_commonNeutral)
+plotchar(historicalBar ? balBar : na, "Balance On Bar",     "", location.top, balBarBull ? c_commonBull : c_commonBear)
+plotchar(historicalBar ? balAvg : na, "Balance Average",    "", location.top, balAvgBull ? c_commonBull : c_commonBear)
+plotchar(historicalBar ? balMom : na, "Balance Momentum ",  "", location.top, balMomBull ? c_commonBull : c_commonBear)
+plotchar(historicalBar ? balAll : na, "Combined Balances",  "", location.top, balAllBull ? c_commonBull : c_commonBear)
+// plotchar(historicalBar ? balMrk : na, "Marker Bias",        "", location.top, c_commonNeutral)
+
+// —————————— Columns
+// Used when a bull/bear gradient coloring mode is selected, so bars can be of bull or bear color.
+var factorBrite = i_columnsBrite / 10
+c_barsBGradient = f_gradientFromMode(i_columnsTopColorMode, 0, 50, 25 * factorBrite, 100 * factorBrite, i_columnsColorB, i_columnsColorS, i_columnsBrite)
+c_barsSGradient = f_gradientFromMode(i_columnsBotColorMode, 0, 50, 25 * factorBrite, 100 * factorBrite, i_columnsColorB, i_columnsColorS, i_columnsBrite)
+// Colors when top bars can only be bull colors.
+// Preset bright/dark colors for up/dn ratio colors.
+var c_barsBBull = f_color(i_columnsColorB, i_columnsBrite)
+var c_barsBBear = f_color(i_columnsColorB, i_columnsBrite / 2)
+var c_barsSBull = f_color(i_columnsColorS, i_columnsBrite)
+var c_barsSBear = f_color(i_columnsColorS, i_columnsBrite / 2)
+// Selection between hard colors or single color gradient on adv/dec of up/dn ratio.
+c_barsBBalBar   = i_columnsTopColorMode == CC1 ? f_colorGradientAdvPro(barBTop, 0, 50, 25 * factorBrite, 100 * factorBrite, i_columnsColorB, i_columnsColorS) : i_columnsTopColorMode == CC6 ? balBarBull ? c_barsBBull : c_barsBBear : i_columnsTopColorMode == CC7 ? balBarBull ? c_barsBBull : c_barsSBull : na
+c_barsSBalBar   = i_columnsBotColorMode == CC1 ? f_colorGradientAdvPro(barSTop, 0, 50, 25 * factorBrite, 100 * factorBrite, i_columnsColorB, i_columnsColorS) : i_columnsBotColorMode == CC6 ? balBarBull ? c_barsSBear : c_barsSBull : i_columnsBotColorMode == CC7 ? balBarBull ? c_barsBBull : c_barsSBull : na
+// Final assembly of top/bot/middle column colors.
+var solidColTop = i_columnsTopColorMode == CC1 or i_columnsTopColorMode == CC6 or i_columnsTopColorMode == CC7
+var solidColBot = i_columnsBotColorMode == CC1 or i_columnsBotColorMode == CC6 or i_columnsBotColorMode == CC7
+c_barsB         = not historicalBar ? c_commonNeutral : solidColTop ? c_barsBBalBar : c_barsBGradient
+c_barsS         = not historicalBar ? c_commonNeutral : solidColBot ? c_barsSBalBar : c_barsSGradient
+c_barsN         = not historicalBar ? c_commonNeutral : f_color(i_columnsColorN, i_columnsBrite)
+// Plot Up part above.
+plotcandle(plotColumns ? barBTop : na, plotColumns ? barBBot : na, plotColumns ? barBTop : na, plotColumns ? barBBot : na, "Column Up",  c_barsB, bordercolor = na, wickcolor = na)
+// Plot Dn part below.
+plotcandle(plotColumns ? barSTop : na, plotColumns ? barSBot : na, plotColumns ? barSTop : na, plotColumns ? barSBot : na, "Column Dn", c_barsS, bordercolor = na, wickcolor = na)
+// Plot Neutral part split 50/50 over central line. Up/Dn columns will start from the top/bottom of the neutral columns.
+plotColumnsN = plotColumns and barNTop != 0.
+plotcandle(plotColumnsN ? barNTop : na, plotColumnsN ? barNBot : na, plotColumnsN ? barNTop : na, plotColumnsN ? barNBot : na, "Column Neutral", c_barsN, bordercolor = na, wickcolor = na)
+
+// —————————— Line
+// Returns signal from calculation mode.
+f_signalBull(_s) => _s == CB0 ? false  : _s == CB1 ? balBarBull : _s == CB2 ? balAvgBull : _s == CB3 ? balMomBull : _s == CB4 ? balMrkBull : _s == CB6 ? balAllBull : na
+// Dynamic gradients.
+c_balanceLine   = f_signalBull(i_balanceLineMode) ? f_color(i_balanceLineColorB, i_balanceLineBrite) : f_color(i_balanceLineColorS, i_balanceLineBrite)
+c_balanceFill   = f_gradientFromMode(i_balanceFillMode, 0, 100, 0, 100 * i_balanceFillBrite / 10, i_balanceFillColorB, i_balanceFillColorS, i_balanceFillBrite)
+c_balanceFillN  = f_color(i_balanceLineColorN, i_balanceLineBrite)
+c_zeroLine      = i_zeroLineColorMode == ON2 ? f_gradientFromMode(CC8, 0, 25, 25 * i_zeroLineBrite / 10, 100 * i_zeroLineBrite / 10, i_zeroLineColorB, i_zeroLineColorS, i_zeroLineBrite) : i_zeroLineColorMode == ON3 ? balAllBullFull ? f_color(i_zeroLineColorB, i_zeroLineBrite) : balAllBearFull ? f_color(i_zeroLineColorS, i_zeroLineBrite) : na : na
+// User-selected bar balance or Up MA.
+p_balance       = plot(historicalBar ? balance : na, "Bar Balance", c_balanceLine, i_balanceLineThick)
+// Sell MA (only when MAs are selected).
+p_balanceLo     = plot(historicalBar and i_balanceLine == CB5 ? - movSMaFast : na, "Bar Balance Lo Line for Dn Ma", c_balanceLine, i_balanceLineThick)
+// Zero line with combined balance colors.
+p_zero          = plot(historicalBar ? 0 : na, "Zero Line", c_zeroLine, i_zeroLineThickness, plot.style_circles)
+// Normal fill between balance and zero line.
+fill(p_balance, p_zero, c_balanceFill, title = "Bar Balance Fill")
+// When 2 MAs are plotted, fill between those.
+fill(p_balance, p_balanceLo, i_balanceLine == CB5 ? c_balanceFill : na, title = "Up/Dn Averages Fill")
+
+// ————— Show neutral intrabars when using Bar Balance On Bar and not plotting columns (small diamond shapes on zero line).
+p_barNTop       = plot(historicalBar and i_balanceLine == CB1 and not plotColumns ?   (balance / 2) * (movN / movT) : na, "Bar Balance Neutral Count Top",    c_invisible)
+p_barNBot       = plot(historicalBar and i_balanceLine == CB1 and not plotColumns ? - (balance / 2) * (movN / movT) : na, "Bar Balance Neutral Count Bottom", c_invisible)
+fill(p_barNTop, p_barNBot, c_balanceFillN, title = "Bar Balance Neutral Fill")
+
+// —————————— Divergences and divergence levels.
+c_divLevels     = divLevelsHState ? f_color(i_colordivLevelsBull, i_divLevelsBrite) : divLevelsLState ? f_color(i_colordivLevelsBear, i_divLevelsBrite) : f_color(i_colordivLevelsNeut, i_divLevelsBrite)
+c_divLevelsFill = divLevelsHState ? f_color(i_colordivLevelsBull, i_divLevelsFillBrite) : divLevelsLState ? f_color(i_colordivLevelsBear, i_divLevelsFillBrite) : f_color(i_colordivLevelsNeut, i_divLevelsFillBrite)
+c_div           = f_color(i_divergenceColor, i_divergenceBrite)
+// Divergence levels.
+p_divLevelsHi   = plot(historicalBar and not plotColumns and i_colordivLevelsMode == ON1 and i_balanceLine != CB5 and i_divergenceMode != CB0 ? divLevelsHi : na, "Divergence Hi Level", divLevelsChanged ? na : c_divLevels)
+p_divLevelsLo   = plot(historicalBar and not plotColumns and i_colordivLevelsMode == ON1 and i_balanceLine != CB5 and i_divergenceMode != CB0 ? divLevelsLo : na, "Divergence Lo Level", divLevelsChanged ? na : c_divLevels)
+fill(p_divLevelsHi, p_divLevelsLo, i_filldivLevels and not divLevelsChanged ? c_divLevelsFill : na)
+// Divergences.
+plotchar(historicalBar and (i_divergenceMode != CB0 or divMovN) and divLevelsDiv, "Divergence", "•", location.top, c_div)
+
+// —————————— Chart bars.
+c_chartbFill    = f_gradientFromMode(i_chartbFillMode, 0, 75, 25 * i_chartbFillBrite / 10, 100 * i_chartbFillBrite / 10, i_chartbColorB, i_chartbColorS, i_chartbFillBrite)
+barcolor(i_chartbFillMode == CC0 ? na : i_hollowOutBodies and not rising(volume, 1) ? na : c_chartbFill)
+plotchar(i_chartbFillMode == CC0, "i_chartbFillMode == CC0", "", location.top, size = size.tiny)
+
+// —————————— Background
+// Color background on selected signal.
+c_backgdFill    = f_gradientFromMode(i_backgdFillMode, 0, 100, 0, 100 * i_backgdFillBrite / 10, i_backgdColorB, i_backgdColorS, i_backgdFillBrite)
+bgcolor(historicalBar ? c_backgdFill : na)
+
+// —————————— Markers.
+bool c6U = divLevelsHState and not divLevelsHState[1]
+bool c6D = divLevelsLState and not divLevelsLState[1]
+bool a6U = barstate.isconfirmed and i_showMarker6 and not shortsOnly and c6U
+bool a6D = barstate.isconfirmed and i_showMarker6 and not longsOnly  and c6D
+
+bool[] markerCondUps = array.from(a1U, a2U, a3U, a4U, a5U, a6U)
+bool[] markerCondDns = array.from(a1D, a2D, a3D, a4D, a5D, a6D)
+
+// Build marker label's text from user-selected marker conditions.
+string labelMsgUp   = ""
+string labelMsgDn   = ""
+bool   triggerLong  = false
+bool   triggerShort = false
+for _i = 0 to array.size(markerCondUps) - 1
+    bool _cUp = array.get(markerCondUps, _i)
+    bool _cDn = array.get(markerCondDns, _i)
+    triggerLong  := triggerLong  or _cUp
+    triggerShort := triggerShort or _cDn
+    labelMsgUp   := f_addTextIf(_cUp, labelMsgUp, "M" + tostring(_i + 1))
+    labelMsgDn   := f_addTextIf(_cDn, labelMsgDn, "M" + tostring(_i + 1))
+
+labelMsgUp := f_addTextIf(labelMsgUp != "", labelMsgUp, "▲")
+labelMsgDn := f_addTextIf(labelMsgDn != "", labelMsgDn, "▼")
+float topPos = plotColumns ? barBTop : max(balance, 0)
+float botPos = plotColumns ? barSTop : min(balance, 0)
+if triggerLong
+    label.new(bar_index, botPos, labelMsgUp, style = label.style_label_up, color = color(na), textcolor = c_commonBull)
+if triggerShort
+    label.new(bar_index, topPos, labelMsgDn, style = label.style_label_down, color = color(na), textcolor = c_commonBear)
+// }

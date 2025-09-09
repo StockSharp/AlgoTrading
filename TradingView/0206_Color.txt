@@ -1,0 +1,2077 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © TradingView
+
+//@version=6
+library("Color")
+
+// Color library
+// v1, 2025.06.23
+
+// This code's style is based on the recommendations from the Pine Script User Manual's Style guide:
+//    https://www.tradingview.com/pine-script-docs/writing/style-guide/
+
+
+
+// This library exports the following functions for color representation and color space conversions:
+
+// • getRGB()
+// • getHexString(), hexStringToRGB(), hexStringToColor()
+// • getLRGB(),      lrgbToRGB(),      lrgbToColor()
+// • getHSL(),       hslToRGB(),       hslToColor()
+// • getHSV(),       hsvToRGB(),       hsvToColor()
+// • getHWB(),       hwbToRGB(),       hwbToColor()
+// • getXYZ(),       xyzToRGB(),       xyzToColor()
+// • getXYY(),       xyyToRGB(),       xyyToColor()
+// • getLAB(),       labToRGB(),       labToColor()
+// • getOKLAB(),     oklabToRGB(),     oklabToColor()
+// • getLCH(),       lchToRGB(),       lchToColor(),
+// • getOKLCH(),     oklchToRGB(),     oklchToColor()
+
+// Additionally, it exports the following functions for color calculations:
+
+// • contrastRatio()
+// • isLightTheme()
+// • grayscale()
+// • negative()
+// • complement()
+// • analogousColors()
+// • splitComplements()
+// • triadicColors()
+// • tetradicColors()
+// • pentadicColors()
+// • hexadicColors()
+// • add()
+// • overlay()
+// • fromGradient()
+// • fromMultiStepGradient()
+// • monoPalette()
+// • gradientPalette()
+// • harmonyPalette()
+
+
+
+//#region ———————————————————— Library functions
+
+
+// @function            Clamps a source value to the range specified by the `min` and `max` values.
+// @param source        (series float) The source value to process.
+// @param min           (series float) Optional. The minimum value of the range. The default is 0.
+// @param max           (series float) Optional. The maximum value of the range. The default is 1.
+// @returns             (float) The `source` value, clamped to the range [`min`, `max`].
+clamp(series float source, series float min = 0.0, series float max = 1.0) =>
+    math.min(math.max(source, min), max)
+
+
+// @function            Converts a transparency value in the range [0, 100] to a whole alpha value scaled to the range
+//                      [0, 255]. Alpha is essentially the opposite of transparency.
+// @param source        (series float) The transparency value to process. The function clamps and rounds the value
+//                      based on "color" value rules.
+// @returns             (float) The alpha channel value in the range [0, 255].
+transpToAlpha(series float source) =>
+    math.round((100 - clamp(source, 0, 100)) * 255 / 100)
+
+
+// @function            Converts an alpha value in the range [0, 255] to a transparency value scaled to the range
+//                      [0, 100]. Alpha is essentially the opposite of transparency.
+// @param source        (series float) The alpha value to process. The function clamps the value to the range [0, 255].
+// @returns             (float) The transparency value.
+alphaToTransp(series float source) =>
+    (255 - clamp(math.round(source), 0, 255)) * 100 / 255
+
+
+// @function            Clamps a value to the range [0, 100] and rounds it to the nearest valid transparency
+//                      corresponding to an eight-bit alpha value.
+// @param source        (series float) The transparency value to process.
+// @returns             (float) The processed transparency value.
+roundTransp(series float source) =>
+    alphaToTransp(transpToAlpha(source))
+
+
+// @function            Retrieves the transparency of a color without rounding to the nearest whole number.
+// @param source        (series color) The source color to process.
+// @returns             (float) The transparency value.
+getTransp(series color source) =>
+    float t = color.t(source)
+    float a = transpToAlpha(t)
+    t := alphaToTransp(a)
+    float result = switch source
+        color.new(source, t) => t
+        =>
+            t := alphaToTransp(a - 1)
+            switch source
+                color.new(source, t) => t
+                => alphaToTransp(a + 1)
+
+
+// @function            Retrieves the sRGB red, green, blue, and transparency components of a "color" value.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The transparency component, within the range [0, 100].
+export getRGB(series color source) =>
+    [color.r(source), color.g(source), color.b(source), getTransp(source)]
+
+
+// @function            Converts an integer to a string representing a hexadecimal digit.
+// @param source        (series int) The value from 0 to 16 to convert. If the value is negative or larger than 15, it
+//                      causes a runtime error.
+// @returns             (string) A string representation of the hex digit.
+decimalToHexDigit(series int source) =>
+    switch source
+        0  => "0"
+        1  => "1"
+        2  => "2"
+        3  => "3"
+        4  => "4"
+        5  => "5"
+        6  => "6"
+        7  => "7"
+        8  => "8"
+        9  => "9"
+        10 => "a"
+        11 => "b"
+        12 => "c"
+        13 => "d"
+        14 => "e"
+        15 => "f"
+        => runtime.error(
+             str.format(
+                 "Cannot convert {0,number,#} to a hex digit. The value must be in the range [0, 15]", source
+             )
+         ), na
+
+
+// @function            Converts a channel value in the sRGB color space to a string representing its hexadecimal form.
+// @param source        (series float) The sRGB value to process.
+// @returns             (string) A two-digit hexadecimal string representing the sRGB channel. Hexadecimal digits range
+//                      from `0` to `9` and `a` to `f`.
+srgbChannelToHex(series float source) =>
+    if source < 0 or source > 255
+        runtime.error(
+             str.format(
+                 "Cannot convert the sRGB channel value {0} to a hexadecimal channel.
+                 The value must be in the range [0, 255].", str.tostring(source)
+             )
+         )
+    int src = int(source)
+    decimalToHexDigit(int(src / 16)) + decimalToHexDigit(src % 16)
+
+
+// @function            Converts a string containing a single hexadecimal digit (`0` to `9`, `a` to `f`, or `A` to `F`)
+//                      to an integer representing the digit's decimal form.
+// @param source        (series string) The single-digit hex string to process.
+// @returns             (int) The decimal number corresponding to the hex digit.
+hexDigitToDecimal(series string source) =>
+    switch str.lower(source)
+        "0" => 0
+        "1" => 1
+        "2" => 2
+        "3" => 3
+        "4" => 4
+        "5" => 5
+        "6" => 6
+        "7" => 7
+        "8" => 8
+        "9" => 9
+        "a" => 10
+        "b" => 11
+        "c" => 12
+        "d" => 13
+        "e" => 14
+        "f" => 15
+        => runtime.error(
+             str.format(
+                 "Invalid hexadecimal digit: ''{0}''. Hex digits include numerals from ''0'' to ''9'' and
+                 letters from ''a'' to ''f'' or ''A'' to ''F''.", source
+             )
+         ), na
+
+
+// @function            Converts a string containing an sRGB channel's hexadecimal form to an integer representing its
+//                      decimal form.
+// @param source        (series string) The two-digit hex string to process.
+// @returns             (int) The decimal sRGB value corresponding to the hexadecimal string.
+hexChannelToSRGB(string source) =>
+    switch str.lower(source)
+        "00" => 0
+        "ff" => 255
+        => hexDigitToDecimal(str.substring(source, 0, 1)) * 16 + hexDigitToDecimal(str.substring(source, 1, 2))
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channel values to a string representing the
+//                      corresponding color's hexadecimal form, where each set of two hex digits represents a specific
+//                      channel.
+// @param r             (series float) The red component.
+// @param g             (series float) The green component.
+// @param b             (series float) The blue component.
+// @param t             (series float) Optional. The transparency component. The default is 0.
+// @returns             (string) An eight-digit hex string representing the sRGB color in the format `#rrggbbaa`.
+//                      The first pair of hex digits represents the red channel; the second pair represents the
+//                      green channel; the third represents the blue channel; and the fourth represents alpha
+//                      (i.e., the opposite of transparency).
+export getHexString(series float r, series float g, series float b, series float t = 0.0) =>
+    str.format(
+         "#{0}{1}{2}{3}", srgbChannelToHex(r), srgbChannelToHex(g), srgbChannelToHex(b),
+         srgbChannelToHex(transpToAlpha(t))
+     )
+
+
+// @function            (Overload 2 of 2) Converts a "color" value to a string representing the sRGB color's hexadecimal
+//                      form, where each set of two digits represents a specific channel.
+// @param source        (series color) The source color to process.
+// @returns             (string) An eight-digit hex string representing the sRGB color in the format `#rrggbbaa`.
+//                      The first pair of hex digits represents the red channel; the second pair represents the
+//                      green channel; the third represents the blue channel; and the fourth represents alpha
+//                      (i.e., the opposite of transparency).
+export getHexString(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getHexString(r, g, b, t)
+
+
+// @function            Converts a string representing an sRGB color's hexadecimal form to a set of decimal channel
+//                      values.
+// @param source        (series string) A string containing the color's six- or eight-digit hexadecimal representation
+//                      in the format `#rrggbb` or `#rrggbbaa`, where each set of two hex digits represents a channel
+//                      value (red, green, blue, alpha). If the string does not contain alpha (opacity) information,
+//                      the function treats the alpha value as `ff` (maximally opaque).
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The transparency component, within the range [0, 100].
+export hexStringToRGB(series string source) =>
+    int len = str.length(source)
+    if not (len == 7 or len == 9) or not str.startswith(source, "#")
+        runtime.error(
+             str.format(
+                 "Invalid hex color code (''{0}'').
+                 The code must contain ''#'' followed by six or eight hexadecimal digits.", source
+             )
+         )
+    float r = hexChannelToSRGB(str.substring(source, 1, 3))
+    float g = hexChannelToSRGB(str.substring(source, 3, 5))
+    float b = hexChannelToSRGB(str.substring(source, 5, 7))
+    float t = len == 7 ? 0 : alphaToTransp(hexChannelToSRGB(str.substring(source, 7, 9)))
+    [r, g, b, t]
+
+
+// @function            Converts a string representing an sRGB color's hexadecimal form to a "color" value.
+// @param source        (series string) A string containing the color's six- or eight-digit hexadecimal representation
+//                      in the format `#rrggbb` or `#rrggbbaa`, where each set of two hex digits represents a channel
+//                      value (red, green, blue, alpha). If the string does not contain alpha (opacity) information,
+//                      the function treats the alpha value as `ff` (maximally opaque).
+// @returns             (color) The color represented by the hexadecimal string.
+export hexStringToColor(series string source) =>
+    [r, g, b, t] = hexStringToRGB(source)
+    color.rgb(r, g, b, t)
+
+
+// @function            Removes piecewise gamma compression from an sRGB channel value, converting it to linear RGB.
+// @param source        (series float) The sRGB channel to process. The function clamps the value to the range [0, 255].
+// @returns             (float) The linear RGB channel value in the range [0, 1].
+srgbChannelToLRGB(series float source) =>
+    float result = int(clamp(source, 0, 255)) / 255
+    result := result <= 0.04045 ? result / 12.92 : math.pow((result + 0.055) / 1.055, 2.4)
+
+
+// @function            Applies piecewise gamma compression to a linear RGB channel value, converting it to sRGB.
+// @param source        (series float) The linear RGB channel to process. The function clamps the value to the range
+//                      [0, 1].
+// @returns             (float) The sRGB channel value in the range [0, 255].
+lrgbChannelToSRGB(series float source) =>
+    float src = clamp(source)
+    math.round((src <= 0.0031308 ? src * 12.92 : 1.055 * math.pow(src, 1.0 / 2.4) - 0.055) * 255.0)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channel values to a set of linear RGB values with
+//                      specified transparency information. In contrast to sRGB, linear RGB is proportional to the
+//                      linear strength of red, green, and blue light relative to the standard white point.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The linear red component, within the range [0, 1].
+//                       - The linear green component, within the range [0, 1].
+//                       - The linear blue component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getLRGB(series float r, series float g, series float b, series float t = 0.0) =>
+    [srgbChannelToLRGB(r), srgbChannelToLRGB(g), srgbChannelToLRGB(b), roundTransp(t)]
+
+
+// @function            (Overload 2 of 2) Retrieves linear RGB channel values and transparency information from a
+//                      "color" value. In contrast to sRGB, linear RGB is proportional to the linear strength of red,
+//                      green, and blue light relative to the standard white point.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The linear red component, within the range [0, 1].
+//                       - The linear green component, within the range [0, 1].
+//                       - The linear blue component, within the range [0, 1].
+//                       - The transparency component, within the range [0, 100].
+export getLRGB(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getLRGB(r, g, b, t)
+
+
+// @function            Converts a set of linear RGB channel values to a set of sRGB values with specified
+//                      transparency information.
+// @param lr            (series float) The linear red component. The function clamps the value to the range [0, 1].
+// @param lg            (series float) The linear green component. The function clamps the value to the range [0, 1].
+// @param lb            (series float) The linear blue component. The function clamps the value to the range [0, 1].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export lrgbToRGB(float lr, float lg, float lb, float t = 0.0) =>
+    [lrgbChannelToSRGB(lr), lrgbChannelToSRGB(lg), lrgbChannelToSRGB(lb), roundTransp(t)]
+
+
+// @function            Converts a set of linear RGB channel values and transparency information to a "color" value.
+// @param lr            (series float) The linear red component. The function clamps the value to the range [0, 1].
+// @param lg            (series float) The linear green component. The function clamps the value to the range [0, 1].
+// @param lb            (series float) The linear blue component. The function clamps the value to the range [0, 1].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the linear RGB and transparency components.
+export lrgbToColor(series float lr, series float lg, series float lb, series float t = 0.0) =>
+    [r, g, b, _] = lrgbToRGB(lr, lg, lb)
+    color.rgb(r, g, b, t)
+
+
+// @function            Converts an angle, in degrees, to an equivalent angle in the range [0, 360). For example, if
+//                      the `source` value is 370, the returned angle is 10, which is equivalent in polar coordinates.
+// @param source        (series float) The source angle to process.
+// @returns             (float) The angle that is equivalent to the `source` angle within the range [0, 360).
+processAngle(series float source) =>
+    float result = source % 360
+    result := (result < 0.0 ? result + 360.0 : result)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of HSL values with specified
+//                      transparency information. HSL (hue, saturation, lightness) is a cylindrical transformation of
+//                      the sRGB color cube:
+//                       - Hue (H) represents the color's angle on a color wheel, in degrees.
+//                       - Saturation (S) roughly describes the color's vividness or purity, with respect to its
+//                         lightness. A saturation of 0 represents the least vivid color at the lightness level
+//                         (a shade of gray), and a saturation of 1 represents the most vivid form of the color at the
+//                         lightness level.
+//                       - Lightness (L) roughly represents the color's brightness relative to white and black. A
+//                         lightness below 0.5 means the color is closer to black, and a lightness above 0.5 means the
+//                         color is closer to white.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The hue angle, in degrees, within the range [0, 360).
+//                       - The saturation component, within the range [0, 1].
+//                       - The lightness component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getHSL(series float r, series float g, series float b, series float t = 0.0) =>
+    float rn = clamp(r, 0.0, 255.0) / 255.0
+    float gn = clamp(g, 0.0, 255.0) / 255.0
+    float bn = clamp(b, 0.0, 255.0) / 255.0
+    float v  = math.max(rn, gn, bn)
+    float v0 = math.min(rn, gn, bn)
+    float c  = v - v0
+    float l  = 0.5 * (v + v0)
+    float s  = l == 0.0 or l == 1.0 ? 0.0 : (v - l) / math.min(l, 1.0 - l)
+    float h  = 0.0
+    if c > 0
+        h := switch v
+            rn => 60.0 * (((gn - bn) / c) % 6.0)
+            gn => 60.0 * (((bn - rn) / c) + 2.0)
+            =>    60.0 * (((rn - gn) / c) + 4.0)
+    if h < 0
+        h += 360.0
+    [h, s, l, roundTransp(t)]
+
+
+// @function            (Overload 2 of 2) Retrieves HSL channel values and transparency information from a
+//                      "color" value. HSL (hue, saturation, lightness) is a cylindrical transformation of
+//                      the sRGB color cube:
+//                       - Hue (H) represents the color's angle on a color wheel, in degrees.
+//                       - Saturation (S) roughly describes the color's vividness or purity, with respect to its
+//                         lightness. A saturation of 0 represents the least vivid color at the lightness level
+//                         (a shade of gray), and a saturation of 1 represents the most vivid form of the color at the
+//                         lightness level.
+//                       - Lightness (L) roughly represents the color's brightness relative to white and black. A
+//                         lightness below 0.5 means the color is closer to black, and a lightness above 0.5 means the
+//                         color is closer to white.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The hue angle, in degrees, within the range [0, 360).
+//                       - The saturation component, within the range [0, 1].
+//                       - The lightness component, within the range [0, 1].
+//                       - The transparency component, within the range [0, 100].
+export getHSL(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getHSL(r, g, b, t)
+
+
+// @function            Converts a set of HSL channel values to a set of sRGB values with specified transparency
+//                      information.
+// @param h             (series float) The hue component, representing the color's angle on a color wheel in degrees.
+// @param s             (series float) The saturation component, roughly describing the color's vividness or purity,
+//                      with respect to its lightness. A saturation of 0 represents the least vivid color at the
+//                      lightness level (a shade of gray), and a saturation of 1 represents the most vivid form of the
+//                      color at the lightness level. The function clamps the argument to the range [0, 1].
+// @param l             (series float) The lightness component, roughly representing the color's brightness relative
+//                      to white and black. A lightness below 0.5 means the color is closer to black, and a lightness
+//                      above 0.5 means it is closer to white. The function clamps the argument to the range [0, 1].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export hslToRGB(series float h, series float s, series float l, series float t = 0.0) =>
+    float hn  = processAngle(h) / 60.0
+    float sn  = clamp(s)
+    float ln  = clamp(l)
+    float tn  = roundTransp(t)
+    float c   = sn * (1.0 - math.abs(2.0 * ln - 1))
+    float x   = c * (1.0 - math.abs(hn % 2.0 - 1.0))
+    float m   = ln - 0.5 * c
+    float ch1 = math.round(255 * (c + m))
+    float ch2 = math.round(255 * (x + m))
+    float ch3 = math.round(255 * m)
+    switch
+        hn < 1.0 => [ch1, ch2, ch3, tn]
+        hn < 2.0 => [ch2, ch1, ch3, tn]
+        hn < 3.0 => [ch3, ch1, ch2, tn]
+        hn < 4.0 => [ch3, ch2, ch1, tn]
+        hn < 5.0 => [ch2, ch3, ch1, tn]
+        hn < 6.0 => [ch1, ch3, ch2, tn]
+
+
+// @function            Converts a set of HSL channel values and transparency information to a "color" value.
+// @param h             (series float) The hue component, representing the color's angle on a color wheel in degrees.
+// @param s             (series float) The saturation component, roughly describing the color's vividness or purity,
+//                      with respect to its lightness. A saturation of 0 represents the least vivid color at the
+//                      lightness level (a shade of gray), and a saturation of 1 represents the most vivid form of the
+//                      color at the lightness level. The function clamps the argument to the range [0, 1].
+// @param l             (series float) The lightness component, roughly representing the color's brightness relative
+//                      to white and black. A lightness below 0.5 means the color is closer to black, and a lightness
+//                      above 0.5 means it is closer to white. The function clamps the argument to the range [0, 1].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the HSL and transparency components.
+export hslToColor(series float h, series float s, series float l, series float t = 0.0) =>
+    [r, g, b, _] = hslToRGB(h, s, l)
+    color.rgb(r, g, b, t)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of HSV values with specified
+//                      transparency information. HSV (hue, saturation, value) is a cylindrical transformation of
+//                      the sRGB color cube:
+//                       - Hue (H) represents the color's angle on a color wheel, in degrees.
+//                       - Saturation (S) roughly describes the color's vividness or purity, with respect to its
+//                         brightness. A saturation of 0 represents the least vivid color at the brightness level
+//                         (a shade of gray), and a saturation of 1 represents the most vivid form of the color at that
+//                         brightness.
+//                       - Value (V) roughly represents the color's brightness relative to black. A value of 0
+//                         represents black, and a value of 1 represents the brightest, most vivid form of the color at
+//                         the given saturation.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The hue angle, in degrees, within the range [0, 360).
+//                       - The saturation component, within the range [0, 1].
+//                       - The value component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getHSV(float r, float g, float b, float t = 0.0) =>
+    float rn = clamp(r, 0.0, 255.0) / 255.0
+    float gn = clamp(g, 0.0, 255.0) / 255.0
+    float bn = clamp(b, 0.0, 255.0) / 255.0
+    float v  = math.max(rn, gn, bn)
+    float v0 = math.min(rn, gn, bn)
+    float c  = v - v0
+    float s  = nz(c / v)
+    float h  = 0.0
+    if c > 0
+        h := switch v
+            rn => 60.0 * (((gn - bn) / c) % 6.0)
+            gn => 60.0 * (((bn - rn) / c) + 2.0)
+            =>    60.0 * (((rn - gn) / c) + 4.0)
+    if h < 0
+        h += 360.0
+    [h, s, v, roundTransp(t)]
+
+
+// @function            (Overload 2 of 2) Retrieves HSV channel values and transparency information from a
+//                      "color" value. HSV (hue, saturation, value) is a cylindrical transformation of
+//                      the sRGB color cube:
+//                       - Hue (H) represents the color's angle on a color wheel, in degrees.
+//                       - Saturation (S) roughly describes the color's vividness or purity, with respect to its
+//                         brightness. It is the ratio of the color's chroma to the maximum chroma at the brightness
+//                         level, where chroma refers to the RGB channel range in this context. A saturation of 0
+//                         represents the least vivid color at the brightness level (a shade of gray), and a saturation
+//                         of 1 represents the most vivid form of the color at that brightness.
+//                       - Value (V) is the largest sRGB channel value, scaled to the range [0, 1]. It roughly
+//                         represents the color's brightness relative to black. A value of 0 represents black, and a
+//                         value of 1 represents the brightest, most vivid form of the color at the given saturation.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The hue angle, in degrees, within the range [0, 360).
+//                       - The saturation component, within the range [0, 1].
+//                       - The value component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getHSV(color source) =>
+    [r, g, b, t] = getRGB(source)
+    getHSV(r, g, b, t)
+
+
+// @function            Converts a set of HSV channel values to a set of sRGB values with specified
+//                      transparency information.
+// @param h             (series float) The hue component, representing the color's angle on a color wheel in degrees.
+// @param s             (series float) The saturation component, roughly describing the color's vividness or purity,
+//                      with respect to its brightness. A saturation of 0 represents the least vivid color at the
+//                      brightness level (a shade of gray), and a saturation of 1 represents the most vivid form of the
+//                      color at that brightness. The function clamps the argument to the range [0, 1].
+// @param v             (series float) The value component, roughly representing the color's brightness relative to
+//                      black. A value of 0 represents black, and a value of 1 represents the brightest, most vivid
+//                      form of the color at the given saturation. The function clamps the argument to the range [0, 1].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export hsvToRGB(float h, float s, float v, float t = 0.0) =>
+    float hn = processAngle(h) / 60.0
+    float sn = clamp(s)
+    float vn = clamp(v)
+    float tn = roundTransp(t)
+    float c  = vn * sn
+    float x  = c * (1.0 - math.abs(hn % 2.0 - 1.0))
+    float m  = vn - c
+    float ch1 = math.round(255 * (c + m))
+    float ch2 = math.round(255 * (x + m))
+    float ch3 = math.round(255 * m)
+    switch
+        hn < 1.0 => [ch1, ch2, ch3, tn]
+        hn < 2.0 => [ch2, ch1, ch3, tn]
+        hn < 3.0 => [ch3, ch1, ch2, tn]
+        hn < 4.0 => [ch3, ch2, ch1, tn]
+        hn < 5.0 => [ch2, ch3, ch1, tn]
+        hn < 6.0 => [ch1, ch3, ch2, tn]
+
+
+// @function            Converts a set of HSV channel values and transparency information to a "color" value.
+// @param h             (series float) The hue component, representing the color's angle on a color wheel in degrees.
+// @param s             (series float) The saturation component, roughly describing the color's vividness or purity,
+//                      with respect to its brightness. A saturation of 0 represents the least vivid color at the
+//                      brightness level (a shade of gray), and a saturation of 1 represents the most vivid form of the
+//                      color at that brightness. The function clamps the argument to the range [0, 1].
+// @param v             (series float) The value component, roughly representing the color's brightness relative to
+//                      black. A value of 0 represents black, and a value of 1 represents the brightest, most vivid
+//                      form of the color at the given saturation. The function clamps the argument to the range [0, 1].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the HSV and transparency components.
+export hsvToColor(float h, float s, float v, float t = 0.0) =>
+    [r, g, b, _] = hsvToRGB(h, s, v)
+    color.rgb(r, g, b, t)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of HWB values with specified
+//                      transparency information. HWB (hue, whiteness, blackness) is a conical transformation of
+//                      the sRGB color cube derived from HSV:
+//                       - Hue (H) represents the color's angle on a color wheel, in degrees.
+//                       - Whiteness (W) roughly represents the amount of white combined with the hue.
+//                       - Blackness (B) roughly represents the amount of black combined with the hue.
+//
+//                      If the W and B values are 0, the result represents the most vivid form of the color. If the W
+//                      value is 1 and the B value is 0, the color is white. Conversely, if the B value is 1 and the
+//                      W value is 0, the color is black.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The hue angle, in degrees, within the range [0, 360).
+//                       - The whiteness component, within the range [0, 1].
+//                       - The blackness component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getHWB(float r, float g, float b, float t = 0.0) =>
+    [h, s, v, t_] = getHSV(r, g, b, t)
+    float w = (1.0 - s) * v
+    float b_ = 1.0 - v
+    [h, w, b_, t_]
+
+
+// @function            (Overload 2 of 2) Retrieves HWB channel values and transparency information from a
+//                      "color" value. HWB (hue, whiteness, blackness) is a conical transformation of
+//                      the sRGB color cube derived from HSV:
+//                       - Hue (H) represents the color's angle on a color wheel, in degrees.
+//                       - Whiteness (W) roughly represents the amount of white combined with the hue.
+//                       - Blackness (B) roughly represents the amount of black combined with the hue.
+//
+//                      If the W and B values are 0, the result represents the most vivid form of the color. If the W
+//                      value is 1 and the B value is 0, the color is white. Conversely, if the B value is 1 and the
+//                      W value is 0, the color is black.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The hue angle, in degrees, within the range [0, 360).
+//                       - The whiteness component, within the range [0, 1].
+//                       - The blackness component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getHWB(color source) =>
+    [r, g, b, t] = getRGB(source)
+    getHWB(r, g, b, t)
+
+
+// @function            Converts a set of HWB channel values to a set of sRGB values with specified
+//                      transparency information.
+// @param h             (series float) The hue component, representing the color's angle on a color wheel in degrees.
+// @param w             (series float) The whiteness component, in the range [0, 1], roughly representing the amount of
+//                      white combined with the hue. If the value is negative, the function sets it to 0. If the sum of
+//                      this value and `b` exceeds 1, the function scales the value proportionally to make the sum equal
+//                      to 1.
+// @param b             (series float) The blackness component, in the range [0, 1], roughly representing the amount of
+//                      black combined with the hue. If the value is negative, the function sets it to 0. If the sum of
+//                      this value and `w` exceeds 1, the function scales the value proportionally to make the sum equal
+//                      to 1.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export hwbToRGB(float h, float w, float b, float t = 0.0) =>
+    float wn = clamp(w)
+    float bn = clamp(b)
+    float wb = wn + bn
+    if wb > 1.0
+        wn /= wb
+        bn /= wb
+    float s = nz(1.0 - wn / (1.0 - bn))
+    float v = 1.0 - bn
+    hsvToRGB(h, s, v, t)
+
+
+// @function            Converts a set of HWB channel values and transparency information to a "color" value.
+// @param h             (series float) The hue component, representing the color's angle on a color wheel in degrees.
+// @param w             (series float) The whiteness component, in the range [0, 1], roughly representing the amount of
+//                      white combined with the hue. If the value is negative, the function sets it to 0. If the sum of
+//                      this value and `b` exceeds 1, the function scales the value proportionally to make the sum equal
+//                      to 1.
+// @param b             (series float) The blackness component, in the range [0, 1], roughly representing the amount of
+//                      black combined with the hue. If the value is negative, the function sets it to 0. If the sum of
+//                      this value and `w` exceeds 1, the function scales the value proportionally to make the sum equal
+//                      to 1.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the HWB and transparency components.
+export hwbToColor(float h, float w, float b, float t = 0.0) =>
+    [r, g, b_, _] = hwbToRGB(h, w, b)
+    color.rgb(r, g, b_, t)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of XYZ values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      XYZ color space aims to encompass all color sensations perceivable to a typical human. It
+//                      is the foundational color space for many other color spaces, including sRGB. X, Y, and Z are
+//                      values that describe an observer's responses to the color spectrum:
+//                       - X represents a weighted response to light across the color spectrum, with the highest
+//                         contribution from long wavelengths (e.g., red).
+//                       - Y represents a weighted response to medium wavelengths (e.g., green), and it corresponds to
+//                         a color's relative luminance (brightness).
+//                       - Z represents a weighted response to short wavelengths (e.g., blue).
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The X component. If the color is white, the value is 0.9505.
+//                       - The Y component, corresponding to relative luminance. If the color is white, the value is 1.
+//                       - The Z component. If the color is white, the value is 1.089.
+//                       - The processed transparency component, within the range [0, 100].
+export getXYZ(series float r, series float g, series float b, series float t = 0.0) =>
+    [lr, lg, lb, tn] = getLRGB(r, g, b, t)
+    float x = 0.4124 * lr + 0.3576 * lg + 0.1805 * lb
+    float y = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb
+    float z = 0.0193 * lr + 0.1192 * lg + 0.9505 * lb
+    [x, y, z, tn]
+
+
+// @function            (Overload 2 of 2) Retrieves XYZ channel values and transparency information from a
+//                      "color" value. Developed by the International Commission on Illumination (CIE), the XYZ color
+//                      space aims to encompass all color sensations perceivable to a typical human. It is the
+//                      foundational color space for many other color spaces, including sRGB. X, Y, and Z are
+//                      values that describe a standard observer's responses to the color spectrum:
+//                       - X represents a weighted response to light across the color spectrum, with the highest
+//                         contribution from long wavelengths (e.g., red).
+//                       - Y represents a weighted response to medium wavelengths (e.g., green), and it corresponds to
+//                         a color's relative luminance (brightness).
+//                       - Z represents a weighted response to short wavelengths (e.g., blue).
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The X component. If the color is white, the value is 0.9505.
+//                       - The Y component, corresponding to relative luminance. If the color is white, the value is 1.
+//                       - The Z component. If the color is white, the value is 1.089.
+//                       - The transparency component, within the range [0, 100].
+export getXYZ(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getXYZ(r, g, b, t)
+
+
+// @function            Converts a set of XYZ channel values to a set of sRGB values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      XYZ color space aims to encompass all color sensations perceivable to a typical human.
+//                      It is the foundational color space for many other models, including sRGB.
+//
+//                      Note: The XYZ space covers a more vast range of colors than the sRGB space. If the set of
+//                      XYZ values represents a color outside the sRGB range, the function clamps the returned values
+//                      to represent the nearest displayable color.
+// @param x             (series float) The X component, representing a weighted response to light across the color
+//                      spectrum, with the highest contribution from long wavelengths like red.
+// @param y             (series float) The Y component, representing a weighted response to medium wavelengths like
+//                      green. It also represents the color's relative luminance (brightness).
+// @param z             (series float) The Z component, representing a weighted response to short wavelengths like blue.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export xyzToRGB(series float x, series float y, series float z, series float t = 0.0) =>
+    float lr =  3.2406255 * x - 1.537208  * y - 0.4986286 * z
+    float lg = -0.9689307 * x + 1.8757561 * y + 0.0415175 * z
+    float lb =  0.0557101 * x - 0.2040211 * y + 1.0569959 * z
+    lrgbToRGB(lr, lg, lb, t)
+
+
+// @function            Converts a set of XYZ channel values and transparency information to a "color" value.
+//                      Developed by the International Commission on Illumination (CIE), the XYZ color space aims to
+//                      encompass all color sensations perceivable to a standard observer. It is the foundational color
+//                      space for many other models, including sRGB.
+//
+//                      Note: The XYZ space covers a more vast range of colors than the sRGB space. If the set of
+//                      XYZ values represents a color outside the sRGB range, the function clamps the returned value
+//                      to the nearest displayable color.
+// @param x             (series float) The X component, representing a weighted response to light across the color
+//                      spectrum, with the highest contribution from long wavelengths like red.
+// @param y             (series float) The Y component, representing a weighted response to medium wavelengths like
+//                      green. It also represents the color's relative luminance (brightness).
+// @param z             (series float) The Z component, representing a weighted response to short wavelengths like blue.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the XYZ and transparency components.
+export xyzToColor(series float x, series float y, series float z, series float t = 0.0) =>
+    [r, g, b, _] = xyzToRGB(x, y, z)
+    color.rgb(r, g, b, t)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of xyY values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      xyY color space is a transformation of the XYZ color space that separates chromaticity
+//                      (hue and colorfulness) from luminance. The CIE uses this space to derive its chromaticity
+//                      diagram. In color science and lighting design, xyY is a common means for specifying colors and
+//                      displaying the ranges of other color spaces.
+//                       - x and y are coordinates on the chromaticity diagram.
+//                       - Y represents the color's relative luminance (brightness).
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The x component, within the range [0, 1].
+//                       - The y component, within the range [0, 1].
+//                       - The Y component, within the range [0, 1].
+//                       - The processed transparency component, within the range [0, 100].
+export getXYY(series float r, series float g, series float b, series float t = 0.0) =>
+    [x, y, z, t_] = getXYZ(r, g, b, t)
+    float sum = x + y + z
+    [nz(x / sum, 0.3127), nz(y / sum, 0.329), y, t_]
+
+
+// @function            (Overload 2 of 2) Retrieves xyY channel values and transparency information from a
+//                      "color" value. Developed by the International Commission on Illumination (CIE), the
+//                      xyY color space is a transformation of the XYZ color space that separates chromaticity
+//                      (hue and colorfulness) from luminance. The CIE uses this space to derive its chromaticity
+//                      diagram. In color science and lighting design, xyY is a common means for specifying colors and
+//                      displaying the ranges of other color spaces.
+//                       - x and y are coordinates on the chromaticity diagram.
+//                       - Y represents the color's relative luminance (brightness).
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The x component, within the range [0, 1].
+//                       - The y component, within the range [0, 1].
+//                       - The Y component, within the range [0, 1].
+//                       - The transparency component, within the range [0, 100].
+export getXYY(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getXYY(r, g, b, t)
+
+
+// @function            Converts a set of xyY channel values to a set of sRGB values with specified transparency
+//                      information. Developed by the International Commission on Illumination (CIE), the xyY color
+//                      space is a transformation of the XYZ color space that separates chromaticity
+//                      (hue and colorfulness) from luminance. The CIE uses this space to derive its chromaticity
+//                      diagram. In color science and lighting design, xyY is a common means for specifying colors and
+//                      displaying the ranges of other color spaces.
+//
+//                      Note: The xyY space covers a more vast range of colors than the sRGB space. If the set of
+//                      xyY values represents a color outside the sRGB range, the function clamps the returned values
+//                      to represent the nearest displayable color.
+// @param xc            (series float) The x-coordinate of the color on the CIE chromaticity diagram.
+// @param yc            (series float) The y-coordinate of the color on the CIE chromaticity diagram.
+// @param y             (series float) The Y component, representing the color's relative luminance (brightness).
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export xyyToRGB(series float xc, series float yc, series float y, series float t = 0.0) =>
+    xyzToRGB(xc * y / yc, y, (1 - xc - yc) * y / yc, t)
+
+
+// @function            Converts a set of xyY channel values and transparency information to a "color" value.
+//                      Developed by the International Commission on Illumination (CIE), the xyY color space is a
+//                      transformation of the XYZ color space that separates chromaticity (hue and colorfulness) from
+//                      luminance. The CIE uses this space to derive its chromaticity diagram. In color science and
+//                      lighting design, xyY is a common means for specifying colors and displaying the ranges of other
+//                      color spaces.
+//
+//                      Note: The xyY space covers a more vast range of colors than the sRGB space. If the set of
+//                      xyY values represents a color outside the sRGB range, the function clamps the returned value
+//                      to the nearest displayable color.
+// @param xc            (series float) The x-coordinate of the color on the CIE chromaticity diagram.
+// @param yc            (series float) The y-coordinate of the color on the CIE chromaticity diagram.
+// @param y             (series float) The Y component, representing the color's relative luminance (brightness).
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the xyY and transparency components.
+export xyyToColor(series float xc, series float yc, series float y, series float t = 0.0) =>
+    [r, g, b, _] = xyyToRGB(xc, yc, y)
+    color.rgb(r, g, b, t)
+
+
+// @function            A helper function for converting XYZ values to channels in the CIELAB color space.
+// @param source        (series float) The X, Y, or Z channel to process.
+// @param reference     (series float) The corresponding X, Y, or Z value of the reference white point.
+// @returns             (float) The processed value for calculating the L*, a*, or b* value of CIELAB.
+xyzLabCalc(series float source, series float reference) =>
+    float norm = source / reference
+    norm > 216 / 24389 ? math.pow(norm, 1 / 3) : (24389 * norm / 27 + 16) / 116
+
+
+// @function            A helper function for converting CIELAB values to channels in the XYZ color space.
+// @param source        (series float) The calculated value to process.
+// @param reference     (series float) The corresponding X, Y, or Z value of the reference white point.
+// @returns             The X, Y, or Z channel value.
+labXyzCalc(float source, float reference) =>
+    float s3 = math.pow(source, 3)
+    (s3 > 216 / 24389 ? s3 : 27 * (116 * source - 16) / 24389) * reference
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of CIELAB values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      CIELAB color space is a transformation of the XYZ space that attempts to model color with
+//                      perceptual uniformity according to a standard observer. It represents colors based on opponent
+//                      process theory:
+//                       - L* represents the color's perceived lightness, according to an average human. A value of 0
+//                         represents black, and a value of 100 represents white.
+//                       - a* represents the green-red opponent value. If the value is negative, the color is more
+//                         green than red. If positive, the color is more red than green.
+//                       - b* represents the blue-yellow opponent value. If the value is negative, the color is more
+//                         blue than yellow. If positive, the color is more yellow than blue.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L* component, within the range [0, 100].
+//                       - The a* component.
+//                       - The b* component.
+//                       - The processed transparency component, within the range [0, 100].
+export getLAB(series float r, series float g, series float b, series float t = 0.0) =>
+    [x, y, z, _] = getXYZ(r, g, b)
+    float fx = xyzLabCalc(x, 0.9505)
+    float fy = xyzLabCalc(y, 1.0)
+    float fz = xyzLabCalc(z, 1.089)
+    float l  = 116 * fy - 16
+    float a  = 500 * (fx - fy)
+    float b_ = 200 * (fy - fz)
+    [l, a, b_, roundTransp(t)]
+
+
+// @function            (Overload 2 of 2) Retrieves CIELAB channel values and transparency information from a
+//                      "color" value. Developed by the International Commission on Illumination (CIE), the
+//                      CIELAB color space is a transformation of the XYZ space that attempts to model color with
+//                      perceptual uniformity according to a standard observer. It represents colors based on opponent
+//                      process theory:
+//                       - L* represents the color's perceived lightness, according to an average human. A value of 0
+//                         represents black, and a value of 100 represents white.
+//                       - a* represents the green-red opponent value. If the value is negative, the color is more
+//                         green than red. If positive, the color is more red than green.
+//                       - b* represents the blue-yellow opponent value. If the value is negative, the color is more
+//                         blue than yellow. If positive, the color is more yellow than blue.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L* component, within the range [0, 100].
+//                       - The a* component.
+//                       - The b* component.
+//                       - The transparency component, within the range [0, 100].
+export getLAB(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getLAB(r, g, b, t)
+
+
+// @function            Converts a set of CIELAB channel values to a set of sRGB values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      CIELAB color space is a transformation of the XYZ space that attempts to model color with
+//                      perceptual uniformity according to a standard observer. Its components represent colors based
+//                      on opponent process theory.
+//
+//                      Note: The CIELAB space covers a more vast range of colors than the sRGB space. If the set of
+//                      CIELAB values represents a color outside the sRGB range, the function clamps the returned values
+//                      to represent the nearest displayable color.
+// @param l             (series float) The L* component, representing the color's perceived lightness. A value of 0
+//                      means the color is black, and a value of 100 means it is white.
+// @param a             (series float) The a* component, representing the green-red opponent. A negative value means
+//                      the color is more green than red, and a positive value means the opposite.
+// @param b             (series float) The b* component, representing the blue-yellow opponent. A negative value means
+//                      the color is more blue than yellow, and a positive value means the opposite.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export labToRGB(series float l, series float a, series float b, series float t = 0.0) =>
+    float lx = (l + 16) / 116
+    float x = labXyzCalc(lx + a / 500, 0.9505)
+    float y = labXyzCalc(lx, 1.0)
+    float z = labXyzCalc(lx - b / 200, 1.089)
+    xyzToRGB(x, y, z, t)
+
+
+// @function            Converts a set of CIELAB channel values and transparency information to a "color" value.
+//                      Developed by the International Commission on Illumination (CIE), the CIELAB color space is a
+//                      transformation of the XYZ space that attempts to model color with perceptual uniformity
+//                      according to a standard observer. It represents colors based on opponent process theory.
+//
+//                      Note: The CIELAB space covers a more vast range of colors than the sRGB space. If the set of
+//                      CIELAB values represents a color outside the sRGB range, the function clamps the returned value
+//                      to the nearest displayable color.
+// @param l             (series float) The L* component, representing the color's perceived lightness. A value of 0
+//                      means the color is black, and a value of 100 means it is white.
+// @param a             (series float) The a* component, representing the green-red opponent. A negative value means
+//                      the color is more green than red, and a positive value means the opposite.
+// @param b             (series float) The b* component, representing the blue-yellow opponent. A negative value means
+//                      the color is more blue than yellow, and a positive value means the opposite.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the L*, a*, b*, and transparency components.
+export labToColor(series float l, series float a, series float b, series float t = 0.0) =>
+    [r, g, b_, _] = labToRGB(l, a, b)
+    color.rgb(r, g, b_, t)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of Oklab values with specified
+//                      transparency information. Designed by Björn Ottosson, the Oklab color space is intended as an
+//                      improved perceptual space for image processing with greater perceptual uniformity than CIELAB,
+//                      particularly in blue hues.
+//                      As with CIELAB, Oklab represents colors based on opponent process theory:
+//                       - L represents the color's perceived lightness. A value of 0 represents black, and a value of
+//                         1 represents white.
+//                       - a represents the green-red opponent value. If the value is negative, the color is more
+//                         green than red. If positive, the color is more red than green.
+//                       - b represents the blue-yellow opponent value. If the value is negative, the color is more
+//                         blue than yellow. If positive, the color is more yellow than blue.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L component, within the range [0, 1].
+//                       - The a component.
+//                       - The b component.
+//                       - The processed transparency component, within the range [0, 100].
+export getOKLAB(series float r, series float g, series float b, series float t = 0.0) =>
+    [lr, lg, lb, tn] = getLRGB(r, g, b, t)
+    float l_ = math.pow(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb, 1 / 3)
+    float m  = math.pow(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb, 1 / 3)
+    float s  = math.pow(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb, 1 / 3)
+    float l  = math.round(0.2104542553 * l_ + 0.7936177850 * m - 0.0040720468 * s, 7)
+    float a  = math.round(1.9779984951 * l_ - 2.4285922050 * m + 0.4505937099 * s, 7)
+    float b_ = math.round(0.0259040371 * l_ + 0.7827717662 * m - 0.8086757660 * s, 7)
+    [l, a, b_, tn]
+
+
+// @function            (Overload 2 of 2) Retrieves Oklab channel values and transparency information from a
+//                      "color" value. Designed by Björn Ottosson, the Oklab color space is intended as an
+//                      improved perceptual space for image processing with greater perceptual uniformity than CIELAB,
+//                      particularly in blue hues.
+//                      As with CIELAB, Oklab represents colors based on opponent process theory:
+//                       - L represents the color's perceived lightness. A value of 0 represents black, and a value of
+//                         1 represents white.
+//                       - a represents the green-red opponent value. If the value is negative, the color is more
+//                         green than red. If positive, the color is more red than green.
+//                       - b represents the blue-yellow opponent value. If the value is negative, the color is more
+//                         blue than yellow. If positive, the color is more yellow than blue.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L component, within the range [0, 1].
+//                       - The a component.
+//                       - The b component.
+//                       - The processed transparency component, within the range [0, 100].
+export getOKLAB(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getOKLAB(r, g, b, t)
+
+
+// @function            Converts a set of Oklab channel values to a set of sRGB values with specified transparency
+//                      information. Designed by Björn Ottosson, the Oklab color space is intended as an improved
+//                      perceptual space for image processing with greater perceptual uniformity than CIELAB,
+//                      particularly in blue hues. As with CIELAB, Oklab represents colors based on opponent process
+//                      theory.
+//
+//                      Note: The Oklab space covers a more vast range of colors than the sRGB space. If the set of
+//                      Oklab values represents a color outside the sRGB range, the function clamps the returned values
+//                      to represent the nearest valid sRGB color.
+// @param l             (series float) The L component, representing the color's perceived lightness. A value of 0
+//                      means the color is black, and a value of 1 means it is white.
+// @param a             (series float) The a component, representing the green-red opponent. A negative value means
+//                      the color is more green than red, and a positive value means the opposite.
+// @param b             (series float) The b component, representing the blue-yellow opponent. A negative value means
+//                      the color is more blue than yellow, and a positive value means the opposite.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export oklabToRGB(series float l, series float a, series float b, series float t = 0.0) =>
+    float l_ = math.pow(l + 0.3963377774 * a + 0.2158037573 * b, 3)
+    float m  = math.pow(l - 0.1055613458 * a - 0.0638541728 * b, 3)
+    float s  = math.pow(l - 0.0894841775 * a - 1.2914855480 * b, 3)
+    float lr = math.round( 4.0767416621 * l_ - 3.3077115913 * m + 0.2309699292 * s, 7)
+    float lg = math.round(-1.2684380046 * l_ + 2.6097574011 * m - 0.3413193965 * s, 7)
+    float lb = math.round(-0.0041960863 * l  - 0.7034186147 * m + 1.7076147010 * s, 7)
+    lrgbToRGB(lr, lg, lb, t)
+
+
+// @function            Converts a set of Oklab channel values and transparency information to a "color" value.
+//                      Designed by Björn Ottosson, the Oklab color space is intended as an improved perceptual space
+//                      for image processing with greater perceptual uniformity than CIELAB, particularly in blue hues.
+//                      As with CIELAB, Oklab represents colors based on opponent process theory.
+//
+//                      Note: The Oklab space covers a more vast range of colors than the sRGB space. If the set of
+//                      Oklab values represents a color outside the sRGB range, the function clamps the returned value
+//                      to the nearest displayable color.
+// @param l             (series float) The L component, representing the color's perceived lightness. A value of 0
+//                      means the color is black, and a value of 1 means it is white.
+// @param a             (series float) The a component, representing the green-red opponent. A negative value means
+//                      the color is more green than red, and a positive value means the opposite.
+// @param b             (series float) The b component, representing the blue-yellow opponent. A negative value means
+//                      the color is more blue than yellow, and a positive value means the opposite.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the L, a, b, and transparency components.
+export oklabToColor(series float l, series float a, series float b, series float t = 0.0) =>
+    [r, g, b_, _] = oklabToRGB(l, a, b)
+    color.rgb(r, g, b_, t)
+
+
+// @function            Calculates the two-argument arctangent. Unlike `math.atan()`, which processes a
+//                      tangent ratio to retrieve an angle, the two-argument arctangent processes Cartesian coordinates.
+//                      The single-argument form returns angles only within the fourth and first quadrants (the range
+//                      [`-math.pi / 2`, `math.pi / 2`]), because identical tangents exist on opposing sides of the
+//                      Cartesian plane, and it's impossible to determine which quadrant the value belongs to. In
+//                      contrast, the two-argument form returns an angle in the range [`-math.pi`, `math.pi`], because
+//                      the combination of coordinates preserves quadrant information.
+// @param x             (series float) The x-coordinate to process.
+// @param y             (series float) The y-coordinate to process.
+// @returns             (float) The angle of the line connecting the point `(0, 0)` to `(x, y)`, in radians.
+atan2(series float x, series float y) =>
+    switch
+        x == 0.0 => y == 0.0 ? na : math.sign(y) * math.pi * 0.5
+        x > 0.0  => math.atan(y / x)
+        x < 0.0  => (y >= 0.0 ? math.pi : -math.pi) + math.atan(y / x)
+
+
+// @function            Converts Cartesian coordinates to polar coordinates.
+// @param x             (series float) The x-coordinate.
+// @param y             (series float) The y-coordinate.
+// @returns             ([float, float]) A tuple containing the following values:
+//                       - The radius, representing the magnitude of the polar vector.
+//                       - The angle of the vector, in radians.
+cartesianToPolar(series float x, series float y) =>
+    [math.sqrt(x * x + y * y), atan2(x, y)]
+
+
+// @function            Converts polar coordinates to Cartesian coordinates.
+// @param radius        (series float) The radius, representing the vector's magnitude.
+// @param angle         (series float) The angle of the vector, in radians.
+// @returns             ([float, float]) A tuple containing the following values:
+//                       - The Cartesian x-coordinate.
+//                       - The Cartesian y-coordinate.
+polarToCartesian(series float radius, series float angle) =>
+    [radius * math.cos(angle), radius * math.sin(angle)]
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of CIELCh values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      CIELCh color space is a cylindrical transformation of the CIELAB space, which attempts to model
+//                      color with perceptual uniformity according to a standard observer:
+//                       - L* represents the color's perceived lightness, according to an average human. A value of 0
+//                         represents black, and a value of 1 represents white.
+//                       - C* represents the perceived chroma (colorfulness). A value of 0 means the color is a shade of
+//                         gray. The larger the value, the more vivid the color.
+//                       - h represents the color's hue as an angle on a color wheel, in degrees.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L* component, within the range [0, 100].
+//                       - The C* component.
+//                       - The h component, within the range [0, 360).
+//                       - The processed transparency component, within the range [0, 100].
+export getLCH(series float r, series float g, series float b, series float t = 0.0) =>
+    [l, a, b_, tn] = getLAB(r, g, b, t)
+    [c, h] = cartesianToPolar(a, b_)
+    [l, c, processAngle(math.todegrees(nz(h))), tn]
+
+
+// @function            (Overload 2 of 2) Retrieves CIELCh channel values and transparency information from a "color"
+//                      value. Developed by the International Commission on Illumination (CIE), the CIELCh color space
+//                      is a cylindrical transformation of the CIELAB space, which attempts to model color with
+//                      perceptual uniformity according to a standard observer:
+//                       - L* represents the color's perceived lightness, according to an average human. A value of 0
+//                         represents black, and a value of 1 represents white.
+//                       - C* represents the perceived chroma (colorfulness). A value of 0 means the color is a shade of
+//                         gray. The larger the value, the more vivid the color.
+//                       - h represents the color's hue as an angle on a color wheel, in degrees.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L* component, within the range [0, 100].
+//                       - The C* component.
+//                       - The h component, within the range [0, 360).
+//                       - The transparency component, within the range [0, 100].
+export getLCH(series color source) =>
+    [r, g, b, t] = getRGB(source)
+    getLCH(r, g, b, t)
+
+
+// @function            Converts a set of CIELCh channel values to a set of sRGB values with specified
+//                      transparency information. Developed by the International Commission on Illumination (CIE), the
+//                      CIELCh color space is a cylindrical transformation of the CIELAB space, which attempts to model
+//                      color with perceptual uniformity according to a standard observer.
+//
+//                      Note: The CIELCh space covers a more vast range of colors than the sRGB space. If the set of
+//                      CIELCh values represents a color outside the sRGB range, the function clamps the returned values
+//                      to represent the nearest displayable color.
+// @param l             (series float) The L* component, representing the color's perceived lightness. A value of 0
+//                      means the color is black, and a value of 100 means it is white.
+// @param c             (series float) The C* component, representing the perceived chroma (colorfulness). A value of
+//                      0 means the color is a shade of gray. The larger the value, the more vivid the color.
+// @param h             (series float) The h component, representing the color's hue as an angle on a color wheel, in
+//                      degrees.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export lchToRGB(series float l, series float c, series float h, series float t = 0.0) =>
+    [a, b] = polarToCartesian(c, math.toradians(processAngle(h)))
+    labToRGB(l, a, b, roundTransp(t))
+
+
+// @function            Converts a set of CIELCh channel values and transparency information to a "color" value.
+//                      Developed by the International Commission on Illumination (CIE), the CIELCh color space is a
+//                      cylindrical transformation of the CIELAB space, which attempts to model color with perceptual
+//                      uniformity according to a standard observer.
+//
+//                      Note: The CIELCh space covers a more vast range of colors than the sRGB space. If the set of
+//                      CIELCh values represents a color outside the sRGB range, the function clamps the returned value
+//                      to the nearest displayable color.
+// @param l             (series float) The L* component, representing the color's perceived lightness. A value of 0
+//                      means the color is black, and a value of 100 means it is white.
+// @param c             (series float) The C* component, representing the perceived chroma (colorfulness). A value of
+//                      0 means the color is a shade of gray. The larger the value, the more vivid the color.
+// @param h             (series float) The h component, representing the color's hue as an angle on a color wheel, in
+//                      degrees.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the L*, C*, h, and transparency components.
+export lchToColor(series float l, series float c, series float h, series float t = 0.0) =>
+    [r, g, b, _] = lchToRGB(l, c, h)
+    color.rgb(r, g, b, t)
+
+
+// @function            (Overload 1 of 2) Converts a set of sRGB channels to a set of Oklch values with specified
+//                      transparency information. Designed by Björn Ottosson, the Oklch color space is a cylindrical
+//                      transformation of the Oklab space, which is intended as an improved perceptual space for image
+//                      processing with greater perceptual uniformity than CIELAB, particularly in blue hues:
+//                       - L represents the color's perceived lightness. A value of 0 represents black, and a value of
+//                         1 represents white.
+//                       - C represents the perceived chroma (colorfulness). A value of 0 means the color is a shade of
+//                         gray. The larger the value, the more vivid the color.
+//                       - h represents the color's hue as an angle on a color wheel, in degrees.
+// @param r             (series float) The red component. The function clamps the value to the range [0, 255].
+// @param g             (series float) The green component. The function clamps the value to the range [0, 255].
+// @param b             (series float) The blue component. The function clamps the value to the range [0, 255].
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L component, within the range [0, 100].
+//                       - The C component.
+//                       - The h component, within the range [0, 360).
+//                       - The processed transparency component, within the range [0, 100].
+export getOKLCH(series float r, series float g, series float b, series float t = 0.0) =>
+    [l, a, b_, tn] = getOKLAB(r, g, b, t)
+    [c, h] = cartesianToPolar(a, b_)
+    [l, c, processAngle(math.todegrees(nz(h))), tn]
+
+
+// @function            (Overload 2 of 2) Retrieves Oklch channel values and transparency information from a "color"
+//                      value. Designed by Björn Ottosson, the Oklch color space is a cylindrical transformation of the
+//                      Oklab space, which is intended as an improved perceptual space for image processing with greater
+//                      perceptual uniformity than CIELAB, particularly in blue hues:
+//                       - L represents the color's perceived lightness. A value of 0 represents black, and a value of
+//                         1 represents white.
+//                       - C represents the perceived chroma (colorfulness). A value of 0 means the color is a shade of
+//                         gray. The larger the value, the more vivid the color.
+//                       - h represents the color's hue as an angle on a color wheel, in degrees.
+// @param source        (series color) The source color to process.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The L component, within the range [0, 100].
+//                       - The C component.
+//                       - The h component, within the range [0, 360).
+//                       - The transparency component, within the range [0, 100].
+export getOKLCH(color source) =>
+    [r, g, b, t] = getRGB(source)
+    getOKLCH(r, g, b, t)
+
+
+// @function            Converts a set of Oklch channel values to a set of sRGB values with specified transparency
+//                      information. Designed by Björn Ottosson, the Oklch color space is a cylindrical transformation
+//                      of the Oklab space, which is intended as an improved perceptual space for image processing with
+//                      greater perceptual uniformity than CIELAB, particularly in blue hues.
+//
+//                      Note: The Oklch space covers a more vast range of colors than the sRGB space. If the set of
+//                      Oklch values represents a color outside the sRGB range, the function clamps the returned values
+//                      to represent the nearest displayable color.
+// @param l             (series float) The L component, representing the color's perceived lightness. A value of 0 means
+//                      the color is black, and a value of 1 means the color is white.
+// @param c             (series float) The C component, representing the perceived chroma (colorfulness). A value of 0
+//                      means the color is a shade of gray. The larger the value, the more vivid the color.
+// @param h             (series float) The h component, representing the color's hue as an angle on a color wheel, in
+//                      degrees.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             ([float, float, float, float]) A tuple containing the following values:
+//                       - The red component, within the range [0, 255].
+//                       - The green component, within the range [0, 255].
+//                       - The blue component, within the range [0, 255].
+//                       - The processed transparency component, within the range [0, 100].
+export oklchToRGB(series float l, series float c, series float h, series float t = 0.0) =>
+    [a, b] = polarToCartesian(c, math.toradians(processAngle(h)))
+    oklabToRGB(l, a, b, roundTransp(t))
+
+
+// @function            Converts a set of Oklch channel values and transparency information to a "color" value.
+//                      Designed by Björn Ottosson, the Oklch color space is a cylindrical
+//                      transformation of the Oklab space, which is intended as an improved perceptual space for image
+//                      processing with greater perceptual uniformity than CIELAB, particularly in blue hues.
+//
+//                      Note: The Oklch space covers a more vast range of colors than the sRGB space. If the set of
+//                      Oklch values represents a color outside the sRGB range, the function clamps the returned values
+//                      to the nearest valid sRGB color.
+// @param l             (series float) The L component, representing the color's perceived lightness. A value of 0 means
+//                      the color is black, and a value of 1 means the color is white.
+// @param c             (series float) The C component, representing the perceived chroma (colorfulness). A value of 0
+//                      means the color is a shade of gray. The larger the value, the more vivid the color.
+// @param h             (series float) The h component, representing the color's hue as an angle on a color wheel, in
+//                      degrees.
+// @param t             (series float) Optional. The transparency component. The function clamps the value to the range
+//                      [0, 100] and rounds it to the nearest transparency corresponding to an eight-bit alpha value.
+//                      The default is 0.
+// @returns             (color) The sRGB color represented by the L, C, h, and transparency components.
+export oklchToColor(series float l, series float c, series float h, series float t = 0.0) =>
+    [r, g, b, _] = oklchToRGB(l, c, h)
+    color.rgb(r, g, b, t)
+
+
+// @function            Calculates the contrast ratio between two colors values based on the formulas from version 2
+//                      of the Web Content Accessibility Guidelines (WCAG). It represents the ratio of the relative
+//                      luminance of the lightest color to the darkest color, adjusted to avoid division by zero.
+// @param value1        (series color) The first color to compare.
+// @param value2        (series color) The second color to compare.
+// @returns             (float) The contrast ratio between `value1` and `value2`.
+export contrastRatio(series color value1, series color value2) =>
+    [lr1, lg1, lb1, _] = getLRGB(value1)
+    [lr2, lg2, lb2, _] = getLRGB(value2)
+    float y1 = 0.2126 * lr1 + 0.7152 * lg1 + 0.0722 * lb1
+    float y2 = 0.2126 * lr2 + 0.7152 * lg2 + 0.0722 * lb2
+    (math.max(y1, y2) + 0.05) / (math.min(y1, y2) + 0.05)
+
+
+// @function            Detects whether a background color represents a light theme or dark theme, based on the amount
+//                      of contrast between the color and the white and black points.
+// @param source        (series color) Optional. The color to inspect. The default is `chart.bg_color`.
+// @returns             (bool) `true` if the `source` background color is light theme; `false` otherwise.
+export isLightTheme(series color source = chart.bg_color) =>
+    [lr, lg, lb, _] = getLRGB(source)
+    0.2126 * lr + 0.7152 * lg + 0.0722 * lb > 0.179128785
+
+
+// @function            Calculates the grayscale version of a color with the same relative luminance (i.e., lightness).
+// @param source        (series color) The source color to process.
+// @returns             (color) The grayscale color corresponding to the `source` color.
+export grayscale(series color source) =>
+    [lr, lg, lb, t] = getLRGB(source)
+    float y = 0.2126 * lr + 0.7152 * lg + 0.0722 * lb
+    lrgbToColor(y, y, y, t)
+
+
+// @function            Calculates the negative (i.e., inverted) form of a specified color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space used for the inversion. Possible options
+//                      are "RGB" for sRGB (standard) and "LRGB" for linear RGB. The default is "RGB".
+// @returns             (color) The negative color corresponding to the `source` color.
+export negative(series color source, string colorSpace = "RGB") =>
+    switch str.upper(colorSpace)
+        "RGB" =>
+            [r, g, b, t] = getRGB(source)
+            color.rgb(255 - r, 255 - g, 255 - b, t)
+        "LRGB" =>
+            [lr, lg, lb, t] = getLRGB(source)
+            lrgbToColor(1 - lr, 1 - lg, 1 - lb, t)
+        => runtime.error("Invalid `colorSpace` argument. Possible values are 'RGB' and 'LRGB'."), na
+
+
+// @function            Calculates the complementary color for a `source` color using a cylindrical color space
+//                      (HSL, CIELCh, or Oklch). The complement is the color on the opposite side of a color wheel, with
+//                      a hue that is 180 degrees away from the base color's hue.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for hue rotation.
+//                      Possible values are "HSL", "LCH", and "OKLCH". The default is "HSL".
+// @returns             (color) The complement of the `source` color in the chosen color space.
+export complement(series color source, series string colorSpace = "HSL") =>
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            hslToColor(h + 180, s, l, t)
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            lchToColor(l, c, h + 180, t)
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            oklchToColor(l, c, h + 180, t)
+        => runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), na
+
+
+// @function            Calculates the analogous colors for a `source` color using a cylindrical color space
+//                      (HSL, CIELCh, or Oklch). Analogous colors are the two colors with hues that are 30 degrees away
+//                      from the base color's hue on a color wheel.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for hue rotation.
+//                      Possible values are "HSL", "LCH", and "OKLCH". The default is "HSL".
+// @returns             ([color, color]) A tuple containing the following values:
+//                       - The first analogous color, which has a hue +30° away from the `source` color's hue.
+//                       - The second analogous color, which has a hue -30° away from the `source` color's hue.
+export analogousColors(series color source, series string colorSpace = "HSL") =>
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            [hslToColor(h + 30, s, l, t), hslToColor(h - 30, s, l, t)]
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            [lchToColor(l, c, h + 30, t), lchToColor(l, c, h - 30, t)]
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            [oklchToColor(l, c, h + 30, t), oklchToColor(l, c, h - 30, t)]
+        => runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), [na, na]
+
+
+// @function            Calculates the split-complementary colors for a `source` color using a cylindrical color space
+//                      (HSL, CIELCh, or Oklch). Split-complementary colors are analogous to the base color's
+//                      complement. A color's split complements have hues that are 150 and 210 degrees away from the
+//                      base color's hue on a color wheel.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for hue rotation.
+//                      Possible values are "HSL", "LCH", and "OKLCH". The default is "HSL".
+// @returns             ([color, color]) A tuple containing the following values:
+//                       - The first split complement, which has a hue +30° away from the `source` color's hue.
+//                       - The second split complement, which has a hue -30° away from the `source` color's hue.
+export splitComplements(series color source, series string colorSpace = "HSL") =>
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            [hslToColor(h + 150, s, l, t), hslToColor(h - 150, s, l, t)]
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            [lchToColor(l, c, h + 150, t), lchToColor(l, c, h - 150, t)]
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            [oklchToColor(l, c, h + 150, t), oklchToColor(l, c, h - 150, t)]
+        => runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), [na, na]
+
+
+// @function            Calculates the two triadic colors for a `source` color using a cylindrical color space
+//                      (HSL, CIELCh, or Oklch). Triadic colors are three colors with hues that are evenly spaced by
+//                      120 degrees around a color wheel.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for hue rotation.
+//                      Possible values are "HSL", "LCH", and "OKLCH". The default is "HSL".
+// @returns             ([color, color]) A tuple containing the following values:
+//                       - The first triadic color, which has a hue +120° away from the `source` color's hue.
+//                       - The second triadic color, which has a hue +240° away from the `source` color's hue.
+export triadicColors(series color source, series string colorSpace = "HSL") =>
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            [hslToColor(h + 120, s, l, t), hslToColor(h + 240, s, l, t)]
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            [lchToColor(l, c, h + 120, t), lchToColor(l, c, h + 240, t)]
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            [oklchToColor(l, c, h + 120, t), oklchToColor(l, c, h + 240, t)]
+        => runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), [na, na]
+
+
+// @function            Calculates the three square or rectangular tetradic colors for a `source` color using a
+//                      cylindrical color space (HSL, CIELCh, or Oklch). Tetradic colors, also known as
+//                      double-complementary colors, contain two sets of complementary hues. Square tetradic colors
+//                      have hues that are 90, 180, and 270 degrees away from the base color's hue on the color wheel.
+//                      Rectangular tetradic colors contain hues rotated by 60, 180, and 240 degrees.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for hue rotation.
+//                      Possible values are "HSL", "LCH", and "OKLCH". The default is "HSL".
+// @param square        (series bool) Optional. If `true`, the function calculates square tetradic colors. Otherwise,
+//                      it calculates rectangular tetradic colors. The default is `true`.
+// @returns             ([color, color, color]) A tuple containing the following values:
+//                       - The first tetradic color, which has a hue +90° or +60° away from the `source` color's hue.
+//                       - The second tetradic color, which has a hue +180° away from the `source` color's hue.
+//                       - The third tetradic color, which has a hue +270° or +240° away from the `source` color's hue.
+export tetradicColors(series color source, series string colorSpace = "HSL", series bool square = true) =>
+    float r1 = square ? 90  : 60
+    float r3 = square ? 270 : 240
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            [hslToColor(h + r1, s, l, t), hslToColor(h + 180, s, l, t), hslToColor(h + r3, s, l, t)]
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            [lchToColor(l, c, h + r1, t), lchToColor(l, c, h + 180, t), lchToColor(l, c, h + r3, t)]
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            [oklchToColor(l, c, h + r1, t), oklchToColor(l, c, h + 180, t), oklchToColor(l, c, h + r3, t)]
+        => runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), [na, na, na]
+
+
+
+
+// @function            Calculates the four pentadic colors for a `source` color using a cylindrical color space
+//                      (HSL, CIELCh, or Oklch). Pentadic colors are five colors with hues that are evenly spaced by
+//                      72 degrees around a color wheel.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color to process.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for hue rotation.
+//                      Possible values are "HSL", "LCH", and "OKLCH". The default is "HSL".
+// @returns             ([color, color, color, color]) A tuple containing the following values:
+//                       - The first pentadic color, which has a hue +72° away from the `source` color's hue.
+//                       - The second pentadic color, which has a hue +144° away from the `source` color's hue.
+//                       - The third pentadic color, which has a hue +216° away from the `source` color's hue.
+//                       - The fourth pentadic color, which has a hue +288° away from the `source` color's hue.
+export pentadicColors(series color source, series string colorSpace = "HSL") =>
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            [
+                 hslToColor(h + 72,  s, l, t), hslToColor(h + 144, s, l, t),
+                 hslToColor(h + 216, s, l, t), hslToColor(h + 288, s, l, t)
+             ]
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            [
+                 lchToColor(l, c, h + 72,  t), lchToColor(l, c, h + 144, t),
+                 lchToColor(l, c, h + 216, t), lchToColor(l, c, h + 288, t)
+             ]
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            [
+                 oklchToColor(l, c, h + 72,  t), oklchToColor(l, c, h + 144, t),
+                 oklchToColor(l, c, h + 216, t), oklchToColor(l, c, h + 288, t)
+             ]
+        => runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), [na, na, na, na]
+
+
+// @function            Calculates the five hexadic colors for a `source` color using a cylindrical color space
+//                      (HSL, CIELCh, or Oklch). Hexadic colors are six colors with hues that are evenly spaced by
+//                      60 degrees around a color wheel.
+//
+//                      Note: CIELCh and Oklch color spaces cover a larger range of colors than the sRGB space, and
+//                      their color wheels differ from that of HSL because they are designed for perceptual uniformity.
+//                      If a calculated color in these spaces is outside the sRGB range, the function clamps the
+//                      value to the nearest displayable color.
+// @param source        (series color) The source color.
+// @param colorSpace    (series string) Optional. "HSL", "LCH", or "OKLCH". Default is "HSL".
+// @returns             ([color, color, color, color, color]) A tuple containing the following values:
+//                       - The first hexadic color, which has a hue +60° away from the `source` color's hue.
+//                       - The second hexadic color, which has a hue +120° away from the `source` color's hue.
+//                       - The third hexadic color, which has a hue +180° away from the `source` color's hue.
+//                       - The fourth hexadic color, which has a hue +240° away from the `source` color's hue.
+//                       - The fifth hexadic color, which has a hue +300° away from the `source` color's hue.
+export hexadicColors(series color source, series string colorSpace = "HSL") =>
+    switch str.upper(colorSpace)
+        "HSL" =>
+            [h, s, l, t] = getHSL(source)
+            [
+                 hslToColor(h +  60, s, l, t),
+                 hslToColor(h + 120, s, l, t),
+                 hslToColor(h + 180, s, l, t),
+                 hslToColor(h + 240, s, l, t),
+                 hslToColor(h + 300, s, l, t)
+             ]
+        "LCH" =>
+            [l, c, h, t] = getLCH(source)
+            [
+                 lchToColor(l, c, h +  60, t),
+                 lchToColor(l, c, h + 120, t),
+                 lchToColor(l, c, h + 180, t),
+                 lchToColor(l, c, h + 240, t),
+                 lchToColor(l, c, h + 300, t)
+             ]
+        "OKLCH" =>
+            [l, c, h, t] = getOKLCH(source)
+            [
+                 oklchToColor(l, c, h +  60, t),
+                 oklchToColor(l, c, h + 120, t),
+                 oklchToColor(l, c, h + 180, t),
+                 oklchToColor(l, c, h + 240, t),
+                 oklchToColor(l, c, h + 300, t)
+             ]
+        =>
+            runtime.error("Invalid `colorSpace` argument. Possible values: 'HSL', 'LCH', 'OKLCH'."), [na, na, na, na, na]
+
+
+// @function            Additively mixes two "color" values, with optional transparency weighting. For example,
+//                      if `value1` is `#ff0000ff` (fully opaque red) and `value2` is `#00ff00ff` (fully opaque green),
+//                      the result is `#ffff00ff` (fully opaque yellow).
+// @param value1        (series color) The first color to add.
+// @param value2        (series color) The second color to add.
+// @param transpWeight  (series bool) Optional. If `true`, the function weights the mixture based on transparency.
+//                      If `false`, it ignores transparency information and returns a fully opaque mixture. The default
+//                      is `false`.
+// @returns             (color) The additively mixed color.
+export add(series color value1, series color value2, series bool transpWeight = false) =>
+    [lr1, lg1, lb1, t1] = getLRGB(value1)
+    [lr2, lg2, lb2, t2] = getLRGB(value2)
+    if transpWeight
+        float a1 = (100 - t1) / 100
+        float a2 = (100 - t2) / 100
+        float a  = clamp(a1 + a2)
+        lrgbToColor(
+             (lr1 * a1 + lr2 * a2) / a, (lg1 * a1 + lg2 * a2) / a, (lb1 * a1 + lb2 * a2) / a, alphaToTransp(a * 255)
+         )
+    else
+        lrgbToColor(lr1 + lr2, lg1 + lg2, lb1 + lb2)
+
+
+// @function            Estimates the resulting color that appears on the chart when placing one color over another.
+// @param fg            (series color) The foreground color to place over the `bg` color.
+// @param bg            (series color) The background color to blend with the `fg` color.
+// @returns             (color) The result of blending `fg` over `bg` based on transparency.
+export overlay(series color fg, series color bg) =>
+    [r1, g1, b1, t1] = getRGB(fg)
+    [r2, g2, b2, t2] = getRGB(bg)
+    float a1 = (100 - t1) / 100
+    float a2 = (100 - t2) / 100
+    float m  = 1 - a1
+    float a  = math.round(255 * (a1 + a2 * m)) / 255
+    float r  = math.round((math.round(r1 * a1) + math.round(r2 * a2) * m) / a)
+    float g  = math.round((math.round(g1 * a1) + math.round(g2 * a2) * m) / a)
+    float b  = math.round((math.round(b1 * a1) + math.round(b2 * a2) * m) / a)
+    float t  = alphaToTransp(a * 255)
+    color.rgb(r, g, b, t)
+
+
+// @function            Linearly mixes two "float" values by a specified amount.
+// @param value1        (series float) The first value to mix.
+// @param value2        (series float) The second value to mix.
+// @param amount        (series float) The interpolation amount between `value1` and `value2`.
+// @returns             (float) The interpolated value.
+lerp(series float value1, series float value2, series float amount) =>
+    (1.0 - amount) * value1 + amount * value2
+
+
+// @function            Adjusts hue angles for cylindrical model interpolation calculations.
+// @param h1            (series float) The first color's hue, in degrees.
+// @param h2            (series float) The second color's hue, in degrees.
+// @param s1            (series float) The first color's saturation or chroma.
+// @param s2            (series float) The second color's saturation or chroma.
+// @returns             ([float, float]) A tuple of adjusted `hue1` and `hue2` values.
+adjustHueAngles(float h1, float h2, float s1, float s2) =>
+    [hue1, hue2] = switch
+        s1 == 0 => [h2, h2]
+        s2 == 0 => [h1, h1]
+        =>         [h1, h2]
+    switch
+        hue2 - hue1 > 180 => [hue1, hue2 - 360]
+        hue1 - hue2 > 180 => [hue1 - 360, hue2]
+        =>                   [hue1, hue2]
+
+
+// @function            Interpolates two colors by a specified amount using a given color space.
+// @param value1        (series color) The first color in the mixture.
+// @param value2        (series color) The second color in the mixture.
+// @param amount        (series float) The interpolation amount. A value of 0 means the result is `value1`; a value
+//                      of 1 means the result is `value2`; and a value between 0 and 1 represents a mixture
+//                      between the colors.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses for interpolation.
+//                      Possible values are "RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH", "OKLCH", and
+//                      "XYY". The default is "RGB".
+// @returns             (color) The interpolated color.
+interpolate(series color value1, series color value2, series float amount, series string colorSpace = "RGB") =>
+    switch str.upper(colorSpace)
+        "RGB" =>
+            [r1, g1, b1, t1] = getRGB(value1)
+            [r2, g2, b2, t2] = getRGB(value2)
+            color.rgb(lerp(r1, r2, amount), lerp(g1, g2, amount), lerp(b1, b2, amount), lerp(t1, t2, amount))
+        "LRGB" =>
+            [lr1, lg1, lb1, t1] = getLRGB(value1)
+            [lr2, lg2, lb2, t2] = getLRGB(value2)
+            lrgbToColor(lerp(lr1, lr2, amount), lerp(lg1, lg2, amount), lerp(lb1, lb2, amount), lerp(t1, t2, amount))
+        "HSL" =>
+            [h1, s1, l1, t1] = getHSL(value1)
+            [h2, s2, l2, t2] = getHSL(value2)
+            [h1Adj, h2Adj]   = adjustHueAngles(h1, h2, s1, s2)
+            hslToColor(lerp(h1Adj, h2Adj, amount), lerp(s1, s2, amount), lerp(l1, l2, amount), lerp(t1, t2, amount))
+        "HSV" =>
+            [h1, s1, v1, t1] = getHSV(value1)
+            [h2, s2, v2, t2] = getHSV(value2)
+            [h1Adj, h2Adj]   = adjustHueAngles(h1, h2, s1, s2)
+            hsvToColor(lerp(h1Adj, h2Adj, amount), lerp(s1, s2, amount), lerp(v1, v2, amount), lerp(t1, t2, amount))
+        "HWB" =>
+            [h1, w1, b1, t1] = getHWB(value1)
+            [h2, w2, b2, t2] = getHWB(value2)
+            [h1Adj, h2Adj]   = adjustHueAngles(h1, h2, 1 - w1 - b1, 1 - w2 - b2)
+            hwbToColor(lerp(h1Adj, h2Adj, amount), lerp(w1, w2, amount), lerp(b1, b2, amount), lerp(t1, t2, amount))
+        "LAB" =>
+            [l1, a1, b1, t1] = getLAB(value1)
+            [l2, a2, b2, t2] = getLAB(value2)
+            labToColor(lerp(l1, l2, amount), lerp(a1, a2, amount), lerp(b1, b2, amount), lerp(t1, t2, amount))
+        "OKLAB" =>
+            [l1, a1, b1, t1] = getOKLAB(value1)
+            [l2, a2, b2, t2] = getOKLAB(value2)
+            oklabToColor(lerp(l1, l2, amount), lerp(a1, a2, amount), lerp(b1, b2, amount), lerp(t1, t2, amount))
+        "LCH" =>
+            [l1, c1, h1, t1] = getLCH(value1)
+            [l2, c2, h2, t2] = getLCH(value2)
+            [h1Adj, h2Adj]   = adjustHueAngles(h1, h2, c1, c2)
+            lchToColor(lerp(l1, l2, amount), lerp(c1, c2, amount), lerp(h1Adj, h2Adj, amount), lerp(t1, t2, amount))
+        "OKLCH" =>
+            [l1, c1, h1, t1] = getOKLCH(value1)
+            [l2, c2, h2, t2] = getOKLCH(value2)
+            [h1Adj, h2Adj]   = adjustHueAngles(h1, h2, c1, c2)
+            oklchToColor(lerp(l1, l2, amount), lerp(c1, c2, amount), lerp(h1Adj, h2Adj, amount), lerp(t1, t2, amount))
+        "XYY" =>
+            [xc1, yc1, y1, t1] = getXYY(value1)
+            [xc2, yc2, y2, t2] = getXYY(value2)
+            xyyToColor(lerp(xc1, xc2, amount), lerp(yc1, yc2, amount), lerp(y1, y2, amount), lerp(t1, t2, amount))
+        => runtime.error(
+             "Invalid `colorSpace` argument.
+             Possible values: 'RGB', 'LRGB', 'HSL', 'HSV', 'HWB', 'LAB', 'OKLAB', 'LCH', 'OKLCH', 'XYY'."
+         ), na
+
+
+// @function            Calculates the gradient color that corresponds to a specific value based on a defined value
+//                      range and color space.
+// @param value         (series float) The source value to process. The function clamps the value to the range
+//                      defined by the `bottomValue` and `topValue`.
+// @param bottomValue   (series float) The minimum possible value that has a corresponding color in the gradient.
+// @param topValue      (series float) The maximum possible value that has a corresponding color in the gradient.
+// @param bottomColor   (series color) The bottom color of the gradient. The function returns this color for all `value`
+//                      arguments that are less than or equal to the `bottomValue`.
+// @param topColor      (series color) The top color of the gradient. The function returns this color for all `value`
+//                      arguments that are greater than or equal to the `topValue`.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses to define the gradient.
+//                      Possible values are "RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH", "OKLCH", and
+//                      "XYY". The default is "RGB".
+// @returns             (color) The color from the gradient between `bottomColor` and `topColor` at the `value` position.
+export fromGradient(
+     series float value, series float bottomValue, series float topValue, series color bottomColor,
+     series color topColor, series string colorSpace = "RGB"
+ ) =>
+    float amount = nz(clamp((value - bottomValue) / (topValue - bottomValue)))
+    interpolate(bottomColor, topColor, amount, colorSpace)
+
+
+// @function            Calculates a multi-step gradient color that corresponds to a specific value based on an array
+//                      of step points, an array of corresponding colors, and a color space.
+// @param value         (series float) The source value to process. The function clamps the value to the range defined
+//                      by the smallest and largest elements in the `steps` array.
+// @param steps         (array<float>) References an array of steps that determine the boundaries of each gradient. The
+//                      function finds the smallest two elements that are closest to the `value` argument and retrieves
+//                      the colors at the same positions in the `colors` array to calculate the gradient. Note that the
+//                      array must be sorted in ascending order and contain two or more elements.
+// @param colors        (array<color>) References an array of colors, where each element is the color that corresponds
+//                      to an element from the `steps` array at the same position. The array must have the same size as
+//                      the `steps` array.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses to define the gradient.
+//                      Possible values are "RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH", "OKLCH", and
+//                      "XYY". The default is "RGB".
+// @returns             (float) The multi-step gradient color corresponding to the `value`.
+export fromMultiStepGradient(
+     series float value, array<float> steps, array<color> colors, series string colorSpace = "RGB"
+ ) =>
+    int stepsSize = steps.size()
+    if stepsSize < 2 or stepsSize != colors.size()
+        runtime.error("The `steps` and `colors` arrays must be of equal size and contain two or more elements.")
+    int   bottomIndex = steps.binary_search_leftmost(value)
+    int   topIndex    = bottomIndex == stepsSize - 1 ? bottomIndex : bottomIndex + 1
+    float bottomValue = steps.get(bottomIndex)
+    float topValue    = steps.get(topIndex)
+    while bottomValue == topValue and bottomIndex != topIndex and topIndex < stepsSize - 1
+        bottomIndex += 1
+        topIndex    += 1
+        topValue    := steps.get(topIndex)
+    fromGradient(
+         value, bottomValue, topValue, colors.get(bottomIndex), colors.get(topIndex), colorSpace
+     )
+
+
+// @function            Generates a palette from a gradient between two base colors.
+// @param baseColor     (series color) The base color to interpolate toward the `stopColor` in stepped amounts.
+// @param stopColor     (series color) The final possible color of the color gradient.
+// @param steps         (series int) Optional. The number of gradient steps to include in the array. The default is 5.
+// @param strength      (series float) Optional. The maximum mix amount from the `baseColor` to the `stopColor`.
+//                      A value of 1 means the last color in the palette is `stopColor`. A value of 0.5 means the
+//                      last color is a 50% mix from the base color to the stop color. The default is 1.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses to calculate the color
+//                      gradient. Possible values are "RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH",
+//                      "OKLCH", and "XYY". The default is "RGB".
+// @returns             (array<float>) The reference of an array containing the base color and stepped colors from
+//                      the gradient.
+export gradientPalette(
+     series color baseColor, series color stopColor, series int steps = 5, series float strength = 1.0,
+     series string colorSpace = "RGB"
+ ) =>
+    if steps < 1
+        runtime.error("The `steps` value must be greater than 0.")
+    array<color> result = array.from(baseColor)
+    int          s1     = steps - 1
+    float        step   = strength / s1
+    if steps > 1
+        for i = 1 to s1
+            result.push(fromGradient(i * step, 0, 1, baseColor, stopColor, colorSpace))
+    result
+
+
+// @function            Generates a monochromatic palette from a specified base color. Monochromatic palettes include
+//                      colors with the same relative hue but different levels of lightness or colorfulness by mixing
+//                      a base color toward white (for tints), black (for shades), or a gray color (for tones).
+// @param baseColor     (series color) The source color from which to generate variations.
+// @param grayLuminance (series float) Optional. The relative luminance (brightness) of the mixed grayscale color. A
+//                      value of 1 means the color is white; a value of 0 means the color is black; and a value between
+//                      0 and 1 is a shade of gray. If `na`, the function selects the brightness that provides the
+//                      highest contrast with the base color. The default is `na`.
+// @param variations    (series int) Optional. The number of variations of the base color to include in the array. The
+//                      default is 5.
+// @param strength      (series float) Optional. The maximum mix amount from the `baseColor` to white, black, or gray.
+//                      A value of 1 means the last color in the palette is the grayscale color. A value of 0.5 means
+//                      the last color is a 50% mix from the base color to the grayscale color. The default is 0.7.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses to calculate the color
+//                      variations. Possible values are "RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH",
+//                      "OKLCH", and "XYY". The default is "RGB".
+// @returns             (array<float>) The reference of an array containing the base color and its tints, tones, or
+//                      shades.
+export monoPalette(
+     series color baseColor, series float grayLuminance = na, series int variations = 5, series float strength = 0.7,
+     series string colorSpace = "RGB"
+ ) =>
+    if variations < 1
+        runtime.error("The `variations` value must be greater than 0.")
+    color targetColor = switch
+        na(grayLuminance) => isLightTheme(baseColor) ? #000000 : #ffffff
+        => lrgbToColor(grayLuminance, grayLuminance, grayLuminance, getTransp(baseColor))
+    array<color> result = gradientPalette(baseColor, targetColor, variations, strength, colorSpace)
+
+
+// @function            Generates a palette consisting of harmonious base colors and their monochromatic variants.
+//                      Harmonious colors are colors with different hues separated at specific angles that, in theory,
+//                      provide aesthetically pleasing contrast or similarity. Monochromatic variants of a color are
+//                      colors that share the same relative hue but different levels of lightness or colorfulness by
+//                      mixing toward a white (for tints), black (for shades), or gray color (for tones).
+// @param baseColor     (series color) The base color from which to calculate the palette.
+// @param harmonyType   (series string) Optional. Specifies the type of color harmony to use in the palette's additional
+//                      base colors. Possible values are:
+//                       - "complementary" to use the complement of `baseColor`.
+//                       - "split-complementary" to use the two split complements of `baseColor`.
+//                       - "analogous" to use the two analogous colors for `baseColor`.
+//                       - "triadic" to use the two triadic colors for `baseColor`.
+//                       - "square" to use the three square tetradic colors for `baseColor`.
+//                       - "rectangular" to use the three rectangular tetradic colors for `baseColor`.
+//                       - "pentadic" to use the four pentadic colors for `baseColor`.
+//                       - "hexadic" to use the five hexadic colors for `baseColor`.
+//
+//                      The default is "complementary".
+// @param grayLuminance (series float) Optional. The relative luminance (brightness) of the mixed grayscale color. A
+//                      value of 1 means the color is white; a value of 0 means the color is black; and a value between
+//                      0 and 1 is a shade of gray. If `na`, the function selects the brightness that provides the
+//                      highest contrast with the base color. The default is `na`.
+// @param variations    (series int) Optional. The number of variations of each base color to include in the matrix.
+//                      The default is 5.
+// @param strength      (series float) Optional. The maximum mix amount from each base color to white, black, or gray.
+//                      A value of 1 means the last color in the palette is the grayscale color. A value of 0.5 means
+//                      the last color is a 50% mix from a base color to the grayscale color. The default is 0.6.
+// @param colorSpace    (series string) Optional. Specifies the color space the function uses to calculate the color
+//                      variations. Possible values are "RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH",
+//                      "OKLCH", and "XYY". The default is "RGB".
+// @returns             (matrix<float>) The reference of a matrix containing the palette colors. Each row correponds
+//                      to one of the harmonious base colors, and each column correponds to a tint, tone, or shade.
+export harmonyPalette(
+     series color baseColor, series string harmonyType = "complementary", series float grayLuminance = na,
+     series int variations = 5, series float strength = 0.7, series string colorSpace = "RGB"
+ ) =>
+    matrix<color> result = matrix.new<color>()
+    string model1        = str.upper(colorSpace)
+    string rotationModel = model1 == "LAB" or model1 == "LCH" or model1 == "XYY" ? "LCH" :
+                           model1 == "OKLAB" or model1 == "OKLCH" ? "OKLCH" : "HSL"
+    float gl = nz(grayLuminance, isLightTheme(baseColor) ? 0 : 1)
+    switch str.lower(harmonyType)
+        "complementary" =>
+            color baseColor2 = complement(baseColor, rotationModel)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+        "split-complementary" =>
+            [baseColor2, baseColor3] = splitComplements(baseColor, rotationModel)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+        "analogous" =>
+            [baseColor2, baseColor3] = analogousColors(baseColor, rotationModel)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+        "triadic" =>
+            [baseColor2, baseColor3] = triadicColors(baseColor, rotationModel)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+        "square" =>
+            [baseColor2, baseColor3, baseColor4] = tetradicColors(baseColor, rotationModel, true)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+            result.add_row(3, monoPalette(baseColor4, gl, variations, strength, colorSpace))
+        "rectangular" =>
+            [baseColor2, baseColor3, baseColor4] = tetradicColors(baseColor, rotationModel, false)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+            result.add_row(3, monoPalette(baseColor4, gl, variations, strength, colorSpace))
+        "pentadic" =>
+            [baseColor2, baseColor3, baseColor4, baseColor5] = pentadicColors(baseColor, rotationModel)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+            result.add_row(3, monoPalette(baseColor4, gl, variations, strength, colorSpace))
+            result.add_row(4, monoPalette(baseColor5, gl, variations, strength, colorSpace))
+        "hexadic" =>
+            [baseColor2, baseColor3, baseColor4, baseColor5, baseColor6] = hexadicColors(baseColor, rotationModel)
+            result.add_row(0, monoPalette(baseColor,  gl, variations, strength, colorSpace))
+            result.add_row(1, monoPalette(baseColor2, gl, variations, strength, colorSpace))
+            result.add_row(2, monoPalette(baseColor3, gl, variations, strength, colorSpace))
+            result.add_row(3, monoPalette(baseColor4, gl, variations, strength, colorSpace))
+            result.add_row(4, monoPalette(baseColor5, gl, variations, strength, colorSpace))
+            result.add_row(5, monoPalette(baseColor6, gl, variations, strength, colorSpace))
+        => runtime.error(
+             "Invalid `harmonyType` argument. Possible values: 'complementary', 'split-complementary', 'analogous',
+             'triadic', 'square', 'rectangular', 'pentadic', 'hexadic'."
+         )
+    result
+//#endregion
+
+
+
+//#region ———————————————————— Example code
+
+
+// Tooltips
+string TT_BC = "The base color from which to calculate the palette. The palette includes this color as its first color."
+string TT_PT = "Specifies the palette calculation type:
+     \n\n- 'Gradient' generates a palette using a specified number of fixed-sized steps along a gradient from the base
+     color to a selected target color.
+     \n\n- 'Monochromatic' generates a palette containing a specified number of monochromatic variants (tints, shades,
+     or tones) of the selected base color.
+     \n\n- 'Harmony' calculates harmonic colors from the base color, then generates tints, tones, or shades for each
+     one."
+string TT_TC = "If the palette type is 'Gradient', the script generates the palette using a gradient from the base
+     color to this color."
+string TT_GL = "If the palette type is 'Monochromatic' or 'Harmony', these inputs determine the grayscale value
+     the script mixes to generate tints, tones, or shades. If The 'Auto' input is enabled, the script mixes
+     the base colors toward white or black, depending on which provides more contrast. Otherwsie, it mixes toward a
+     grayscale color with a specific relative luminance (0 for black, 1 for white, or between 0 and 1 for a gray)."
+string TT_HT = "The type of color harmony in base color calculations for the 'Harmony' palette type:
+     \n\n- 'Complementary' uses the base color and its complement, which is the color on the opposite side of a color
+     wheel.
+     \n- 'Split-complementary' uses the base color and the two colors that are 30 degrees to either side of the
+     complement on the color wheel.
+     \n- 'Analogous' uses the base color and the two colors that are 30 degrees to either side of that color on the
+     color wheel.
+     \n- 'Triadic' uses three colors with evenly spaced angles on the color wheel, starting with the base color.
+     \n- 'Square' uses four colors with evenly spaced angles on the color wheel, starting with the base color.
+     \n- 'Rectangular' uses the base color, a color 30 degrees from the base color on the color wheel, and the
+     complements of those two colors.
+     \n- 'Pentadic' uses five colors with evenly spaced angles on the color wheel, starting with the base color.
+     \n- 'Hexadic' uses six colors with evenly spaced angles on the color wheel, starting with the base color."
+string TT_STP = "If the palette type is 'Gradient', this value specifies the number of steps along the gradient from
+     the base color to the specified target color. For the other palette types, it specifies the number of
+     tints, tones, or shades for each base color. If the value is 1, the palette includes only base colors."
+string TT_STR = "The maximum mix amount from the base color to the specified target color or grayscale color. A value of
+     1 means the last column in the palette contains the target color. A value of 0.5 means the last column represents
+     a 50% mix from the base color to the target."
+string TT_CS = "The color space for generating color variants in the palette. Each space creates a distinct shape,
+     resulting in different color variants for each one. Note that the last five options use use a different color
+     wheel for harmony calculations."
+
+// Inputs
+color  baseColorInput     = input.color(#f23645,        "Base color",     tooltip = TT_BC)
+string paletteTypeInput   = input.string("Harmony",       "Palette type",   ["Gradient", "Monochromatic", "Harmony"], tooltip = TT_PT)
+
+string GRP1 = "Additional settings"
+color  targetColorInput   = input.color(#4a148c,        "Target color",   group = GRP1, tooltip = TT_TC)
+float  grayLuminanceInput = input.float(0.0,              "Gray luminance", 0.0, 1.0, 0.01, inline = "gl", group = GRP1)
+bool   autoGrayInput      = input.bool(true,              "Auto",           inline = "gl", group = GRP1, tooltip = TT_GL)
+string harmonyTypeInput   = input.string("Complementary", "Harmony type",   ["Complementary", "Split-complementary", "Analogous", "Triadic", "Square", "Rectangular", "Pentadic", "Hexadic"], group = GRP1, tooltip = TT_HT)
+int    stepsInput         = input.int(5,                  "Steps",          1, group = GRP1, tooltip = TT_STP)
+float  strengthInput      = input.float(0.7,              "Strength",       0, 1, 0.01, group = GRP1, tooltip = TT_STR)
+string colorSpaceInput    = input.string("RGB",           "Color space",    ["RGB", "LRGB", "HSL", "HSV", "HWB", "LAB", "OKLAB", "LCH", "OKLCH", "XYY"], group = GRP1, tooltip = TT_CS)
+
+// Logic to calculate and display the scheme's palette within a table on the first bar.
+if barstate.isfirst
+    // @variable References a matrix of gradient, monochromatic, or harmony palette colors for the table display.
+    matrix<color> palette = switch paletteTypeInput
+        "Gradient" =>
+            // Use `gradientPalette()` to calculate the palette, then use the resulting array as a matrix row.
+            matrix<color> m     = matrix.new<color>()
+            array<color> colors = gradientPalette(
+                 baseColorInput, targetColorInput, stepsInput, strengthInput, colorSpaceInput
+             )
+            m.add_row(0, colors)
+            m
+        "Monochromatic" =>
+            // Use `monoPalette()` to calculate the palette, then use the resulting array as a matrix row.
+            matrix<color> m     = matrix.new<color>()
+            array<color> colors = monoPalette(
+                 baseColorInput, autoGrayInput ? na : grayLuminanceInput, stepsInput, strengthInput, colorSpaceInput
+             )
+            m.add_row(0, colors)
+            m
+        "Harmony" =>
+            // Use `harmonyPalette()`, which constructs a matrix of colors directly.
+            matrix<color> m = harmonyPalette(
+                 baseColorInput, harmonyTypeInput, autoGrayInput ? na : grayLuminanceInput, stepsInput,
+                 strengthInput, colorSpaceInput
+             )
+    // @variable The number of base colors in the palette.
+    int baseColors = palette.rows()
+    // @variable The number of variants or gradient steps for each base color, including the base color itself.
+    int variants = palette.columns()
+
+    // Calculate the height and width for each cell based on the `baseColors` and `variants` values.
+    int cellWidth  = 100 / variants
+    int cellHeight = 100 / baseColors
+
+    // @variable References a table that displays the generated palette, with tooltips showing each color's hex code.
+    table paletteDisplay = table.new(position.middle_center, variants, baseColors)
+
+    // Loop through the rows in the `palette` matrix.
+    for [i, row] in palette
+        // Loop through the items in each row from the `palette` matrix.
+        for [j, item] in row
+            // Initialize a cell at the `j` column and `i` row with the `item` background color and a tooltip
+            // showing the color's hex code.
+            paletteDisplay.cell(j, i, "", cellWidth, cellHeight, bgcolor = item, tooltip = getHexString(item))
+//#endregion

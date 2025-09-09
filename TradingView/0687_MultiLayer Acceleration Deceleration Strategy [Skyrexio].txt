@@ -1,0 +1,216 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © Skyrexio
+
+//@version=6
+//_______ <licence>
+strategy(title = "MultiLayer Acceleration/Deceleration Strategy [Skyrexio]",
+         shorttitle = "AC Strategy",
+         overlay = true,
+         format = format.inherit,
+         pyramiding = 5,
+         calc_on_order_fills = false,
+         calc_on_every_tick = false,
+         default_qty_type = strategy.percent_of_equity,
+         default_qty_value = 10,
+         initial_capital = 10000,
+         currency = currency.NONE,
+         commission_type = strategy.commission.percent,
+         commission_value = 0.1,
+         slippage = 5,
+         use_bar_magnifier = true)
+
+
+//_______ <constant_declarations>
+var const color skyrexGreen               = color.new(#2ECD99, 0)
+var const color skyrexGray                = color.new(#F2F2F2, 0)
+var const color skyrexWhite               = color.new(#FFFFFF, 0)
+
+
+//________<variables declarations>
+var int trend                             = 0
+var float upFractalLevel                  = na
+var float upFractalActivationLevel        = na
+var float downFractalLevel                = na
+var float downFractalActivationLevel      = na
+var float ACActivationLevel               = na
+bool highCrossesUpfractalLevel            = ta.crossover(high, upFractalActivationLevel)
+bool lowCrossesDownFractalLevel           = ta.crossunder(low, downFractalActivationLevel)
+var int signalsQtyInRow                   = 0
+
+
+//_______ <inputs>
+// Trading bot settings
+sourceUuid               = input.string(title = "sourceUuid:", defval = "yourBotSourceUuid", group = "🤖Trading Bot Settings🤖")
+secretToken              = input.string(title = "secretToken:", defval = "yourBotSecretToken", group = "🤖Trading Bot Settings🤖")
+
+
+// Trading period settings
+lookBackPeriodStart      = input.time(title = "Trade Start Date/Time", defval = timestamp('2023-01-01T00:00:00'), group = "🕐Trading Period Settings🕐")
+lookBackPeriodStop       = input.time(title = "Trade Stop Date/Time", defval = timestamp('2025-01-01T00:00:00'), group = "🕐Trading Period Settings🕐")
+
+
+// Strategy settings
+EMaLength                = input.int(100, minval = 10, step = 10, title = "EMA Length", group = "📈Strategy settings📈")
+
+
+//_______ <function_declarations>
+//@function       Used to calculate Simple moving average for Alligator
+//@param src      Sourse for smma Calculations
+//@param length   Number of bars to calculate smma
+//@returns        The calculated smma value
+smma(src, length) =>
+    var float smma = na
+    sma_value = ta.sma(src, length)
+    smma := na(smma) ? sma_value : (smma * (length - 1) + src) / length
+    smma
+
+//_______ <calculations>
+
+
+//Upfractal calculation
+upFractalPrice = ta.pivothigh(2, 2)
+upFractal = not na(upFractalPrice)
+
+
+//Downfractal calculation
+downFractalPrice = ta.pivotlow(2, 2)
+downFractal = not na(downFractalPrice)
+
+
+//Calculating Alligator's teeth
+teeth = smma(hl2, 8)[5]
+
+
+//Calculating upfractal and downfractal levels
+if upFractal
+    upFractalLevel := upFractalPrice
+else
+    upFractalLevel := upFractalLevel[1]
+
+
+if downFractal
+    downFractalLevel := downFractalPrice
+else
+    downFractalLevel := downFractalLevel[1]
+
+
+//Calculating upfractal activation level, downfractal activation level to approximate the trend and this current trend
+if upFractalLevel > teeth
+    upFractalActivationLevel := upFractalLevel
+
+if highCrossesUpfractalLevel
+    trend := 1
+    upFractalActivationLevel := na
+    downFractalActivationLevel := downFractalLevel
+
+
+if downFractalLevel < teeth
+    downFractalActivationLevel := downFractalLevel
+
+if lowCrossesDownFractalLevel
+    trend := -1
+    downFractalActivationLevel := na
+    upFractalActivationLevel := upFractalLevel
+
+
+if trend == 1
+    upFractalActivationLevel := na
+
+if trend == -1
+    downFractalActivationLevel := na
+
+
+//Calculating filter EMA
+filterEMA = ta.ema(close, EMaLength)
+
+
+//Сalculating AO and AC with signals
+ao = ta.sma(hl2,5) - ta.sma(hl2,34)
+ac = ao - ta.sma(ao,5)
+diff = ac - ac[1]
+//AC signal type 1: when it occurs above zero line
+signal1 = ac > 0 and ac > ac[1] and ac[1] > ac[2] and ac[2] < ac[3]
+//AC signal type 2: when it occurs below zero line
+signal2 = ac < 0 and ac > ac[1] and ac[1] > ac[2] and ac[2] > ac[3] and ac[3] < ac[4]
+//Combining both AC signal types together
+ACSignal = (signal1 or signal2) and trend == 1 and close > filterEMA
+
+
+//Calculating AC signal activation level
+if ACSignal
+    ACActivationLevel := high
+else
+    ACActivationLevel := ACActivationLevel[1]
+
+
+if not na(ACActivationLevel[1]) and high < ACActivationLevel[1] and diff > 0
+    ACActivationLevel := high
+    ACSignal := true
+
+
+if (high > ACActivationLevel[1] and not na(ACActivationLevel)) or diff < 0
+    ACActivationLevel := na
+
+
+//Calculating number of valid AC signals in current trading cycle
+if ACSignal and not ACSignal[1]
+    signalsQtyInRow := signalsQtyInRow + 1
+
+
+if not na(ACActivationLevel[1]) and diff < 0 and na(ACActivationLevel) and not (strategy.opentrades[1] <= strategy.opentrades - 1)
+    signalsQtyInRow := signalsQtyInRow - 1
+
+
+if trend == -1 and trend[1] == 1
+    signalsQtyInRow := 0
+
+
+//_______ <strategy_calls>
+//Defining trade close condition
+closeCondition =  trend[1] == 1 and trend == -1
+
+
+//Cancel stop buy order if current Acceleration/Deceleration column lower, than prevoius
+if diff < 0
+    strategy.cancel_all()
+
+//Strategy entry
+if (signalsQtyInRow == 1 and not na(ACActivationLevel) and time >= lookBackPeriodStart and time <= lookBackPeriodStop)
+    strategy.entry(id = "entry1", direction = strategy.long, stop = ACActivationLevel + syminfo.mintick,  alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "entry1",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+if (signalsQtyInRow == 2 and not na(ACActivationLevel) and time >= lookBackPeriodStart and time <= lookBackPeriodStop)
+    strategy.entry(id = "entry2", direction = strategy.long, stop = ACActivationLevel + syminfo.mintick,  alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "entry2",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+if (signalsQtyInRow == 3 and not na(ACActivationLevel) and time >= lookBackPeriodStart and time <= lookBackPeriodStop)
+    strategy.entry(id = "entry3", direction = strategy.long, stop = ACActivationLevel + syminfo.mintick,  alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "entry3",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+if (signalsQtyInRow == 4 and not na(ACActivationLevel) and time >= lookBackPeriodStart and time <= lookBackPeriodStop)
+    strategy.entry(id = "entry4", direction = strategy.long, stop = ACActivationLevel + syminfo.mintick,  alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "entry4",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+if (signalsQtyInRow == 5 and not na(ACActivationLevel) and time >= lookBackPeriodStart and time <= lookBackPeriodStop)
+    strategy.entry(id = "entry5", direction = strategy.long, stop = ACActivationLevel + syminfo.mintick,  alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "entry5",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+//Strategy exit
+if (closeCondition)
+    strategy.close_all(alert_message = '{\n"base": "' + syminfo.basecurrency + '",\n"quote": "' + syminfo.currency + '",\n"position": "close",\n"price": "' + str.tostring(close) + '",\n"sourceUuid": "' + sourceUuid + '",\n"secretToken": "' + secretToken + '",\n"timestamp": "' + str.tostring(timenow) + '"\n}')
+
+
+//_______ <visuals>
+//Plotting shapes for adding to current long trades
+gradPercent = if strategy.opentrades == 2
+    90
+else if strategy.opentrades == 3
+    80
+else if strategy.opentrades == 4
+    70
+else if strategy.opentrades == 5
+    60
+
+pricePlot = plot(close, title="Price", color=color.new(color.blue, 100))
+teethPlot = plot(strategy.opentrades > 1 ? teeth : na, title="Teeth", color= skyrexGreen, style=plot.style_linebr, linewidth = 2)
+fill(pricePlot, teethPlot, color = color.new(skyrexGreen, gradPercent))
+if strategy.opentrades != 1 and  strategy.opentrades[1] == strategy.opentrades - 1
+    label.new(bar_index, teeth, style = label.style_label_up, color = color.lime, size = size.tiny, text="Buy More", textcolor = color.black, text_formatting = text.format_bold)
+
+
+//_______ <alerts>

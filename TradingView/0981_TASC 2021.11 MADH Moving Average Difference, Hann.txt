@@ -1,0 +1,65 @@
+//  TASC Issue: November 2021 - Vol. 39, Issue 12
+//     Article: "The MAD Indicator, Enhanced" by John Ehlers
+//    Language: TradingView's Pine Script v4
+// Provided By: PineCoders, for tradingview.com
+
+//@version=4
+study("TASC 2021.11 (MADH) Moving Average Difference, Hann", "MADH")
+
+float Source     = input( defval = close,
+                           title = "Source:",
+                           group = "Adjustments")
+int ShortLength  = input( defval = 8,
+                           title = "Short Length:",
+                           group = "Adjustments",
+                          minval = 2)
+int DomCycle     = input( defval = 27,
+                           title = "Dominant Cycle:",
+                           group = "Adjustments",
+                          minval = 4)
+int LineWidth    = input( defval = 2,
+                           title = "Line Width:",
+                           group = "Options",
+                         options = [1,2,3])
+string ColScheme = input( defval = "ZeroCross",
+                           title = "Color Scheme:",
+                           group = "Options",
+                         options = ["ZeroCross","Momentum"])
+
+colorize(signal, scheme, transp) =>
+    if scheme == "ZeroCross"
+        if signal > 0.0
+            color.new(#FF00FF, transp)
+        else
+            color.new(#55CC00, transp)
+    else // "Momentum"
+        if rising(signal, 1)
+            color.new(#00DD00, transp)
+        else
+            color.new(#FF0000, transp)
+
+madh(source, shortLength, dominantCycle) =>
+    int longLength =  int(dominantCycle * 0.5 +  shortLength)
+    float     PIx2LengthLong  = math.pi * 2.0 / ( longLength + 1)
+    var float PIx2LengthShort = math.pi * 2.0 / (shortLength + 1)
+    float filt1 = 0.0
+    float coefs = 0.0
+    for count = 1 to shortLength
+        float coefHann = 1.0 - cos(count * PIx2LengthShort)
+        filt1 += coefHann * source[count - 1]
+        coefs += coefHann
+    filt1 := nz(filt1 / coefs)
+    float filt2 = 0.0
+    coefs      := 0.0
+    for count=1 to longLength
+        float coefHann = 1.0 - cos(count * PIx2LengthLong)
+        filt2 += coefHann * source[count - 1]
+        coefs += coefHann
+    filt2 := nz(filt2 / coefs)
+    nz((filt1 - filt2) / filt2 * 100.0)
+
+MADH = madh(Source, ShortLength, DomCycle)
+
+plot(MADH, "Area", colorize(MADH, ColScheme, 65), style = 4)
+plot(MADH, "MADH", colorize(MADH, ColScheme,  0), LineWidth)
+hline(  0, "Zero", color=color.gray)

@@ -1,0 +1,41 @@
+//@version=6
+strategy('TRIN (Arms Index) Trading Strategy', overlay = false)
+
+// TRIN Index
+trinIndex = request.security('INDEX:TRIN', 'D', close)
+
+// Parameters
+lookbackPeriod = input.int(26, title = 'Lookback Period for Threshold Calculation', minval = 1)
+multiplier = input.float(2.7, title = 'Multiplier for Dynamic Threshold', minval = 1.0, step = 0.1)
+stopLossMultiplier = input.float(3.4, title = 'Multiplier for Volatility-Based Stop Loss', minval = 1.0, step = 0.1)
+volatilityLookback = input.int(24, title = 'Lookback Period for Volatility Calculation')
+
+// Calculate the moving average and standard deviation of the TRIN Index
+trinMa = ta.sma(trinIndex, lookbackPeriod)
+trinStdDev = ta.stdev(trinIndex, lookbackPeriod)
+
+// Dynamically calculate the TRIN threshold
+trinThreshold = trinMa + multiplier * trinStdDev
+
+// Entry condition: When TRIN is above the dynamically calculated threshold
+buyCondition = trinIndex > trinThreshold
+
+// Exit condition: When today's close is higher than yesterday's high
+sellCondition = close > ta.highest(high, 1)[1]
+
+// Calculate volatility-based stop loss
+priceVolatility = ta.stdev(close, volatilityLookback)
+stopLossPrice = strategy.position_avg_price - stopLossMultiplier * priceVolatility
+
+// Execute buy and sell signals
+if buyCondition
+    strategy.entry('Buy', strategy.long)
+if sellCondition
+    strategy.close('Buy')
+
+// Apply volatility-based stop loss
+strategy.exit('Sell with Volatility SL', 'Buy', stop = stopLossPrice)
+
+// Plot TRIN for reference
+plot(trinIndex, title = 'TRIN Index', color = color.orange)
+plot(trinThreshold, title = 'Dynamic TRIN Threshold', color = color.red)

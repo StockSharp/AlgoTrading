@@ -1,0 +1,241 @@
+//@version=6
+strategy(title="Zero Lag MACD + Kijun-sen + EOM Strategy", shorttitle="ZL-KJ-EOM", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// ================================================================================
+// INPUT PARAMETERS - ALL INDICATOR SETTINGS
+// ================================================================================
+
+// === ZERO LAG MACD SETTINGS ===
+group_macd = "Zero Lag MACD Enhanced Settings"
+fastLength = input.int(12, title="Fast MM period", minval=1, group=group_macd)
+slowLength = input.int(26, title="Slow MM period", minval=1, group=group_macd)
+signalLength = input.int(9, title="Signal MM period", minval=1, group=group_macd)
+MacdEmaLength = input.int(9, title="MACD EMA period", minval=1, group=group_macd)
+useEma = input.bool(true, title="Use EMA (otherwise SMA)", group=group_macd)
+useOldAlgo = input.bool(false, title="Use Glaz algo (otherwise 'real' original zero lag)", group=group_macd)
+showDots = input.bool(true, title="Show symbols to indicate crossing", group=group_macd)
+dotsDistance = input.float(1.5, title="Symbols distance factor", minval=0.1, group=group_macd)
+
+// === KIJUN-SEN SETTINGS ===
+group_kijun = "Kijun-Sen Settings"
+basePeriods = input.int(26, minval=1, title="Kijun-Sen Period", group=group_kijun)
+
+// === EASE OF MOVEMENT SETTINGS ===
+group_eom = "Ease of Movement Settings"
+eom_length = input.int(14, minval=1, title="EOM Length", group=group_eom)
+div = input.int(10000, title="EOM Divisor", minval=1, group=group_eom)
+
+// === RISK MANAGEMENT SETTINGS ===
+group_risk = "Risk Management Settings"
+atr_period = input.int(14, title="ATR Period", minval=1, group=group_risk)
+atr_multiplier = input.float(2.5, title="ATR Multiplier for Stop Loss", minval=0.1, step=0.1, group=group_risk)
+risk_reward_ratio = input.float(1.2, title="Risk-to-Reward Ratio", minval=0.1, step=0.1, group=group_risk)
+
+// === DISPLAY SETTINGS ===
+group_display = "Display Settings"
+show_macd_plot = input.bool(false, title="Show MACD Plot (Separate Pane)", group=group_display)
+show_eom_plot = input.bool(false, title="Show EOM Plot (Separate Pane)", group=group_display)
+show_kijun_plot = input.bool(true, title="Show Kijun-Sen Line", group=group_display)
+show_signals = input.bool(true, title="Show Entry Signals", group=group_display)
+show_info_table = input.bool(true, title="Show Info Table", group=group_display)
+
+// ================================================================================
+// ZERO LAG MACD ENHANCED VERSION 1.2 (WITH USER INPUTS)
+// ================================================================================
+
+source = close
+
+// Fast line
+ma1 = useEma ? ta.ema(source, fastLength) : ta.sma(source, fastLength)
+ma2 = useEma ? ta.ema(ma1, fastLength) : ta.sma(ma1, fastLength)
+zerolagEMA = ((2 * ma1) - ma2)
+
+// Slow line
+mas1 = useEma ? ta.ema(source, slowLength) : ta.sma(source, slowLength)
+mas2 = useEma ? ta.ema(mas1, slowLength) : ta.sma(mas1, slowLength)
+zerolagslowMA = ((2 * mas1) - mas2)
+
+// MACD line
+ZeroLagMACD = zerolagEMA - zerolagslowMA
+
+// Signal line
+emasig1 = ta.ema(ZeroLagMACD, signalLength)
+emasig2 = ta.ema(emasig1, signalLength)
+signal = useOldAlgo ? ta.sma(ZeroLagMACD, signalLength) : (2 * emasig1) - emasig2
+
+// MACD Histogram
+hist = ZeroLagMACD - signal
+
+// MACD EMA line
+macd_ema = ta.ema(ZeroLagMACD, MacdEmaLength)
+
+// MACD plot components (for separate pane if enabled)
+upHist = (hist > 0) ? hist : 0
+downHist = (hist <= 0) ? hist : 0
+
+// ================================================================================
+// KIJUN-SEN INDICATOR (WITH USER INPUTS)
+// ================================================================================
+
+donchian(len) => math.avg(ta.lowest(len), ta.highest(len))
+baseLine = donchian(basePeriods)
+
+// ================================================================================
+// EASE OF MOVEMENT INDICATOR (WITH USER INPUTS)
+// ================================================================================
+
+var cumVol = 0.
+cumVol += nz(volume)
+if barstate.islast and cumVol == 0
+    runtime.error("No volume is provided by the data vendor.")
+
+eom = ta.sma(div * ta.change(hl2) * (high - low) / volume, eom_length)
+
+// ================================================================================
+// ATR CALCULATION FOR STOP LOSS
+// ================================================================================
+
+atr = ta.atr(atr_period)
+
+// ================================================================================
+// ENTRY CONDITIONS
+// ================================================================================
+
+// Long Entry Conditions
+macd_cross_up = ta.crossover(ZeroLagMACD, signal)
+macd_below_hist = ZeroLagMACD < hist  // MACD line below histogram
+price_above_kijun = close > baseLine  // Price above Kijun-sen
+eom_above_zero = eom > 0  // EOM above zero
+
+long_condition = macd_cross_up and macd_below_hist and price_above_kijun and eom_above_zero
+
+// Short Entry Conditions
+macd_cross_down = ta.crossunder(ZeroLagMACD, signal)
+macd_above_hist = ZeroLagMACD > hist  // MACD line above histogram
+price_below_kijun = close < baseLine  // Price below Kijun-sen
+eom_below_zero = eom < 0  // EOM below zero
+
+short_condition = macd_cross_down and macd_above_hist and price_below_kijun and eom_below_zero
+
+// ================================================================================
+// STRATEGY EXECUTION
+// ================================================================================
+
+// Entry Logic - Enter at next candle open as specified
+if long_condition
+    strategy.entry("Long", strategy.long, comment="Long Entry")
+
+if short_condition
+    strategy.entry("Short", strategy.short, comment="Short Entry")
+
+// Exit Logic (Stop Loss and Take Profit)
+if strategy.position_size > 0  // Long position
+    stop_loss = strategy.position_avg_price - (atr * atr_multiplier)
+    distance_to_sl = strategy.position_avg_price - stop_loss
+    take_profit = strategy.position_avg_price + (distance_to_sl * risk_reward_ratio)
+    strategy.exit("Long Exit", "Long", stop=stop_loss, limit=take_profit, comment="Long Exit")
+
+if strategy.position_size < 0  // Short position
+    stop_loss = strategy.position_avg_price + (atr * atr_multiplier)
+    distance_to_sl = stop_loss - strategy.position_avg_price
+    take_profit = strategy.position_avg_price - (distance_to_sl * risk_reward_ratio)
+    strategy.exit("Short Exit", "Short", stop=stop_loss, limit=take_profit, comment="Short Exit")
+
+// ================================================================================
+// PLOTTING INDICATORS
+// ================================================================================
+
+// Plot Kijun-sen
+plot(show_kijun_plot ? baseLine : na, color=color.new(color.maroon, 0), title="Kijun-Sen", linewidth=2)
+
+// Plot entry signals
+plotshape(show_signals and long_condition, title="Long Signal", location=location.belowbar, color=color.new(color.green, 0), style=shape.triangleup, size=size.small, text="LONG")
+plotshape(show_signals and short_condition, title="Short Signal", location=location.abovebar, color=color.new(color.red, 0), style=shape.triangledown, size=size.small, text="SHORT")
+
+// Plot stop loss and take profit levels for current position
+plot(strategy.position_size > 0 ? strategy.position_avg_price - (atr * atr_multiplier) : na, color=color.new(color.red, 0), style=plot.style_linebr, linewidth=1, title="Long Stop Loss")
+plot(strategy.position_size > 0 ? strategy.position_avg_price + ((strategy.position_avg_price - (strategy.position_avg_price - (atr * atr_multiplier))) * risk_reward_ratio) : na, color=color.new(color.green, 0), style=plot.style_linebr, linewidth=1, title="Long Take Profit")
+
+plot(strategy.position_size < 0 ? strategy.position_avg_price + (atr * atr_multiplier) : na, color=color.new(color.red, 0), style=plot.style_linebr, linewidth=1, title="Short Stop Loss")
+plot(strategy.position_size < 0 ? strategy.position_avg_price - (((strategy.position_avg_price + (atr * atr_multiplier)) - strategy.position_avg_price) * risk_reward_ratio) : na, color=color.new(color.green, 0), style=plot.style_linebr, linewidth=1, title="Short Take Profit")
+
+// ================================================================================
+// SEPARATE PANE PLOTS (OPTIONAL)
+// ================================================================================
+
+// MACD Plot (separate pane)
+plot(show_macd_plot ? upHist : na, color=color.new(color.green, 40), style=plot.style_columns, title='MACD Positive Histogram', display=display.pane)
+plot(show_macd_plot ? downHist : na, color=color.new(color.purple, 40), style=plot.style_columns, title='MACD Negative Histogram', display=display.pane)
+plot(show_macd_plot ? ZeroLagMACD : na, color=color.new(color.black, 0), linewidth=2, title='MACD Line', display=display.pane)
+plot(show_macd_plot ? signal : na, color=color.new(color.gray, 0), linewidth=2, title='Signal Line', display=display.pane)
+plot(show_macd_plot ? macd_ema : na, color=color.new(color.red, 0), linewidth=2, title='EMA on MACD Line', display=display.pane)
+
+// MACD zero line
+plot(show_macd_plot ? 0 : na, "MACD Zero Line", color=color.new(color.gray, 50), display=display.pane)
+
+// MACD crossover dots - calculate cross condition globally for consistency
+macd_signal_cross = ta.cross(ZeroLagMACD, signal)
+circleYPosition = signal * dotsDistance
+plot(show_macd_plot and showDots and macd_signal_cross ? circleYPosition : na, style=plot.style_circles, linewidth=4, color=hist > 0 ? color.new(color.green, 0) : color.new(color.purple, 0), title='MACD Cross Dots', display=display.pane)
+
+// EOM Plot (separate pane)
+plot(show_eom_plot ? eom : na, "EOM", color=color.new(#43A047, 0), linewidth=2, display=display.pane)
+plot(show_eom_plot ? 0 : na, "EOM Zero Line", color=color.new(color.gray, 50), display=display.pane)
+
+// ================================================================================
+// INFO TABLE
+// ================================================================================
+
+var table info_table = table.new(position.top_right, 2, 8, bgcolor=color.new(color.white, 0), border_width=1)
+if show_info_table and barstate.islast
+    table.cell(info_table, 0, 0, "Position", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 0, strategy.position_size > 0 ? "LONG" : strategy.position_size < 0 ? "SHORT" : "FLAT",
+               text_color=strategy.position_size > 0 ? color.green : strategy.position_size < 0 ? color.red : color.black)
+
+    table.cell(info_table, 0, 1, "Entry Price", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 1, strategy.position_size != 0 ? str.tostring(strategy.position_avg_price, "#.####") : "N/A", text_color=color.black)
+
+    table.cell(info_table, 0, 2, "Current ATR", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 2, str.tostring(atr, "#.####"), text_color=color.black)
+
+    table.cell(info_table, 0, 3, "MACD Value", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 3, str.tostring(ZeroLagMACD, "#.####"), text_color=color.black)
+
+    table.cell(info_table, 0, 4, "Signal Value", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 4, str.tostring(signal, "#.####"), text_color=color.black)
+
+    table.cell(info_table, 0, 5, "EOM Value", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 5, str.tostring(eom, "#.##"), text_color=eom > 0 ? color.green : color.red)
+
+    table.cell(info_table, 0, 6, "Price vs Kijun", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 6, close > baseLine ? "ABOVE" : "BELOW", text_color=close > baseLine ? color.green : color.red)
+
+    table.cell(info_table, 0, 7, "Last Signal", text_color=color.black, bgcolor=color.new(color.gray, 70))
+    table.cell(info_table, 1, 7, long_condition ? "LONG" : short_condition ? "SHORT" : "NONE",
+               text_color=long_condition ? color.green : short_condition ? color.red : color.gray)
+
+// ================================================================================
+// ALERTS
+// ================================================================================
+
+// Alert conditions
+alertcondition(long_condition, title="Long Entry Signal",
+               message="ZL-MACD+KJ+EOM Strategy: Long Entry Signal Triggered\nMACD: {{plot_0}}\nSignal: {{plot_1}}\nEOM: {{plot_2}}\nPrice: {{close}}\nKijun-Sen: {{plot_3}}")
+
+alertcondition(short_condition, title="Short Entry Signal",
+               message="ZL-MACD+KJ+EOM Strategy: Short Entry Signal Triggered\nMACD: {{plot_0}}\nSignal: {{plot_1}}\nEOM: {{plot_2}}\nPrice: {{close}}\nKijun-Sen: {{plot_3}}")
+
+// Position exit alerts
+alertcondition(strategy.position_size[1] != 0 and strategy.position_size == 0, title="Position Closed",
+               message="ZL-MACD+KJ+EOM Strategy: Position Closed")
+
+// ================================================================================
+// STRATEGY PERFORMANCE METRICS (COMMENT DISPLAY)
+// ================================================================================
+
+// Add comments for debugging and analysis
+if long_condition
+    log.info("Long Entry Triggered - MACD: " + str.tostring(ZeroLagMACD) + " | Signal: " + str.tostring(signal) + " | EOM: " + str.tostring(eom) + " | Price: " + str.tostring(close) + " | Kijun: " + str.tostring(baseLine))
+
+if short_condition
+    log.info("Short Entry Triggered - MACD: " + str.tostring(ZeroLagMACD) + " | Signal: " + str.tostring(signal) + " | EOM: " + str.tostring(eom) + " | Price: " + str.tostring(close) + " | Kijun: " + str.tostring(baseLine))

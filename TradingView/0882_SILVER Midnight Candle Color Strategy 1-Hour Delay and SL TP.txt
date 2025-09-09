@@ -1,0 +1,34 @@
+//@version=4
+strategy("Midnight Candle Color Strategy with 1-Hour Delay and SL/TP", shorttitle="12AM +1H SL/TP Strat", overlay=true)
+
+// Adjust for New York time (UTC-5 or UTC-4 for Daylight Saving Time)
+// Assuming UTC-5 for now; adjust as necessary for Daylight Saving Time
+nyHour(hour) => (hour - 5) % 24
+
+// Function to check if the current bar is the 12:00 AM New York time bar
+isMidnightBar() =>
+    nyHour(hour) == 0 and minute == 0
+
+// Function to check if the current bar is the 1:00 AM New York time bar (1 hour after midnight)
+is1AMBar() =>
+    nyHour(hour) == 1 and minute == 0
+
+// Variable to store the color of the previous day's midnight candle
+var color midnightCandleColorPrevDay = na
+
+// Determine the color of the previous day's midnight candle
+if isMidnightBar()
+    midnightCandleColorPrevDay := close[1] > open[1] ? color.green : color.red
+
+// Strategy execution at 1:00 AM based on the color of the previous day's midnight candle
+if is1AMBar()
+    if midnightCandleColorPrevDay == color.green
+        strategy.entry("Long", strategy.long)
+        strategy.exit("Take Profit", "Long", limit=close + 57 * syminfo.mintick, stop=close - 200 * syminfo.mintick)
+    if midnightCandleColorPrevDay == color.red
+        strategy.entry("Short", strategy.short)
+        strategy.exit("Take Profit", "Short", limit=close - 48 * syminfo.mintick, stop=close + 200 * syminfo.mintick)
+
+// Optional: Plot a marker for visualization
+plotshape(series=isMidnightBar(), style=shape.triangleup, location=location.belowbar, color=color.new(midnightCandleColorPrevDay, 90), size=size.small)
+plotshape(series=is1AMBar(), style=shape.triangledown, location=location.abovebar, color=color.blue, size=size.small)

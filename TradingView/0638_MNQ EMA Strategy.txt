@@ -1,0 +1,222 @@
+//@version=6
+strategy("MNQ EMA Strategy", overlay=true, calc_on_every_tick=true, default_qty_type=strategy.fixed, default_qty_value=5)
+
+// === INPUTS ===
+ema13Length             = input.int(13,  title="EMA 13 Length")
+ema200Length            = input.int(200, title="EMA 200 Length")
+ema30Length             = input.int(30,  title="EMA 30 Length")
+ema5Length              = input.int(5,   title="EMA 5 Length")
+ema300Length            = input.int(300, title="EMA 300 Length")
+maxTickMove             = 96 * syminfo.mintick
+pullbackTicksSellExit   = 120* syminfo.mintick
+smallLossThresholdTicks = 20  * syminfo.mintick
+smallBuyProfitTicks     = 72 * syminfo.mintick
+rangeBlockTicks         = 20  * syminfo.mintick
+emaBuyExitThreshold     = 92 * syminfo.mintick
+
+// === CALCULATIONS ===
+ema13   = ta.ema(close, ema13Length)
+ema200  = ta.ema(close, ema200Length)
+ema30   = ta.ema(close, ema30Length)
+ema5    = ta.ema(close, ema5Length)
+ema300  = ta.ema(close, ema300Length)
+
+priceAboveEMA200 = close > ema200
+priceAboveEMA30  = close > ema30
+priceAboveEMA5   = close > ema5
+priceBelowEMA5   = close < ema5
+priceBelowEMA30  = close < ema30
+priceBelowEMA300 = close < ema300
+
+// 1) calculate 14-period RSI on close
+rsiVal   = ta.rsi(close, 14)
+// 2) flag true when RSI is between 45 and 55
+blockRSI = rsiVal >= 41 and rsiVal <= 75
+
+// === STATE FOR TRADE BLOCK LOGIC ===
+var bool skipTrades         = false            // blocks entries after big buy profits
+var array<int> lossCloseBars = array.new_int() // stores bar indices of small or losing trades
+var int prevClosedCount      = 0
+var int lossCooldown         = 0
+
+// Detect new closed trade
+if strategy.closedtrades > prevClosedCount
+    lastProfit = strategy.closedtrades.profit(strategy.closedtrades - 1)
+    // Block new entries if last trade made >=smallBuyProfitTicks
+    if lastProfit >= smallBuyProfitTicks
+        skipTrades := true
+    // Record any trade with profit <20 ticks
+    if lastProfit < smallLossThresholdTicks
+        array.push(lossCloseBars, bar_index)
+    prevClosedCount := strategy.closedtrades
+
+// Reset block when price returns above EMA30
+if skipTrades and priceAboveEMA30
+    skipTrades := false
+
+// Clean old small/losing trades (>15 bars)
+while array.size(lossCloseBars) > 0 and array.get(lossCloseBars, 0) < bar_index - 15
+    array.shift(lossCloseBars)
+
+// === NEW: BLOCK AFTER EMA-30 EXIT WITH ≥100-TICK PROFIT ===
+var int lastEMA30ExitBar = na
+if strategy.position_size[1] != 0 and strategy.position_size == 0
+    float profitTicks = strategy.closedtrades.profit(strategy.closedtrades - 1) / syminfo.mintick
+    bool exitedByEMA30 = (strategy.position_size[1] > 0 and close < ema30) or
+                         (strategy.position_size[1] < 0 and close > ema30)
+    if exitedByEMA30 and profitTicks >= 100
+        lastEMA30ExitBar := bar_index
+bool blockSignals = not na(lastEMA30ExitBar) and (bar_index - lastEMA30ExitBar) < 7
+
+// === NEW: 5-BAR BLOCK AFTER ≥21-TICK PROFIT ===
+var int prevClosedCount21 = 0
+var int lastBigWinBar21   = na
+if strategy.closedtrades > prevClosedCount21
+    float profitTicks21 = strategy.closedtrades.profit(strategy.closedtrades - 1) / syminfo.mintick
+    if profitTicks21 >= 32
+        lastBigWinBar21 := bar_index
+    prevClosedCount21 := strategy.closedtrades
+bool blockBarsEntries = not na(lastBigWinBar21) and (bar_index - lastBigWinBar21) < 8
+// === RANGE FILTER ===
+candleRange       = high - low
+recentLargeCandle = math.max(candleRange[1], math.max(candleRange[2], candleRange[3])) > maxTickMove
+
+// === INPUTS PER SESSION RANGE FILTER ===
+barsSess1  = input.int(9, title="Sess 1 Bars (18:00–23:59)", minval=1)
+ticksSess1 = input.int(92, title="Sess 1 Range Ticks",     minval=1) * syminfo.mintick
+
+barsSess2  = input.int(18, title="Sess 2 Bars (00:00–07:29)", minval=1)
+ticksSess2 = input.int(136, title="Sess 2 Range Ticks",     minval=1) * syminfo.mintick
+
+barsSess3  = input.int(24, title="Sess 3 Bars (07:30–11:59)", minval=1)
+ticksSess3 = input.int(120, title="Sess 3 Range Ticks",     minval=1) * syminfo.mintick
+
+barsSess4  = input.int(16, title="Sess 4 Bars (12:00–17:00)", minval=1)
+ticksSess4 = input.int(44, title="Sess 4 Range Ticks",     minval=1) * syminfo.mintick
+
+// === SESSION STRINGS (UTC-4) ===
+sess1 = not na(time(timeframe.period, "1800-2359", "GMT-4"))
+sess2 = not na(time(timeframe.period, "0000-0729", "GMT-4"))
+sess3 = not na(time(timeframe.period, "0730-1159", "GMT-4"))
+sess4 = not na(time(timeframe.period, "1200-1659", "GMT-4"))
+
+// === DYNAMIC RANGE CALCS PER SESSION (completed bars) ===
+h1 = ta.highest(high[1], barsSess1)
+l1 = ta.lowest(low[1],  barsSess1)
+block1 = sess1 and (h1 - l1) < ticksSess1
+
+h2 = ta.highest(high[1], barsSess2)
+l2 = ta.lowest(low[1],  barsSess2)
+block2 = sess2 and (h2 - l2) < ticksSess2
+
+h3 = ta.highest(high[1], barsSess3)
+l3 = ta.lowest(low[1],  barsSess3)
+block3 = sess3 and (h3 - l3) < ticksSess3
+
+h4 = ta.highest(high[1], barsSess4)
+l4 = ta.lowest(low[1],  barsSess4)
+block4 = sess4 and (h4 - l4) < ticksSess4
+
+// === COMBINED NO-TRADE FLAG ===
+noTradePeriod = block1 or block2 or block3 or block4
+
+// === BUY CONDITIONS ===
+candleIsGreen = close > open
+longCondition = not skipTrades and not blockSignals and not blockBarsEntries and not noTradePeriod and not recentLargeCandle and not blockRSI and priceAboveEMA200 and priceAboveEMA30 and priceAboveEMA5 and candleIsGreen and not (low <= ema200 and high >= ema200)
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+// === STOP LOSS FOR LONG TRADES (122 ticks) ===
+if strategy.position_size > 0
+    float stopPriceLong = strategy.position_avg_price - 122 * syminfo.mintick
+    strategy.exit(id         = "Long SL 122", from_entry = "Long", stop       = stopPriceLong, comment    = "122-tick SL")
+
+// === BUY EXIT CONDITIONS ===
+distanceBetweenEMAs      = math.abs(ema200 - ema30)
+exitLongConditionDynamic = ((distanceBetweenEMAs >= emaBuyExitThreshold and close < ema30) or
+                             (distanceBetweenEMAs <  emaBuyExitThreshold and close < ema13))
+if strategy.position_size > 0 and exitLongConditionDynamic
+    strategy.close("Long", comment="Exit Long on dynamic EMA")
+
+// === PULLBACK EXIT AFTER 400-TICK PROFIT ===
+var float highestSinceEntry = na
+var float lowestSinceEntry  = na
+
+if strategy.position_size > 0
+    highestSinceEntry := nz(highestSinceEntry, strategy.position_avg_price)
+    highestSinceEntry := math.max(highestSinceEntry, high)
+    float profitTicksLong = (highestSinceEntry - strategy.position_avg_price) / syminfo.mintick
+    if profitTicksLong >= 400
+        float pullbackLevelLong = highestSinceEntry - 120 * syminfo.mintick
+        if close <= pullbackLevelLong
+            strategy.close("Long", comment="Pullback exit 120 after 400")
+else
+    highestSinceEntry := na
+
+if strategy.position_size < 0
+    lowestSinceEntry := nz(lowestSinceEntry, strategy.position_avg_price)
+    lowestSinceEntry := math.min(lowestSinceEntry, low)
+    float profitTicksShort = (strategy.position_avg_price - lowestSinceEntry) / syminfo.mintick
+    if profitTicksShort >= 400
+        float pullbackLevelShort = lowestSinceEntry + 120 * syminfo.mintick
+        if close >= pullbackLevelShort
+            strategy.close("Short", comment="Pullback exit 120 after 400")
+else
+    lowestSinceEntry := na
+
+// === BIG-PROFIT EMA-13 BREAK EXIT (800 ticks) ===
+if strategy.position_size > 0
+    float profitTicksLong = (close - strategy.position_avg_price) / syminfo.mintick
+    if profitTicksLong >= 800 and close < ema13
+        strategy.close("Long", comment="Exit Long on EMA13 @800+")
+
+if strategy.position_size < 0
+    float profitTicksShort = (strategy.position_avg_price - close) / syminfo.mintick
+    if profitTicksShort >= 800 and close > ema13
+        strategy.close("Short", comment="Exit Short on EMA13 @800+")
+
+// === SELL CONDITIONS ===
+candleIsRed    = close < open
+shortCondition = not skipTrades and not blockSignals and not blockBarsEntries and not noTradePeriod and not recentLargeCandle and not blockRSI and priceBelowEMA300 and priceBelowEMA30 and priceBelowEMA5 and candleIsRed and not (low <= ema200 and high >= ema200)
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+// === STOP LOSS FOR SHORT TRADES (84 ticks) ===
+if strategy.position_size < 0
+    float stopPriceShort = strategy.position_avg_price + 108 * syminfo.mintick
+    strategy.exit( id        = "Short SL 84", from_entry= "Short", stop      = stopPriceShort, comment   = "84-tick SL")
+
+// === SELL EXIT: INTRABAR PULLBACK & CONDITIONAL EMA EXIT ===
+if strategy.position_size < 0
+    lowestSinceEntry := nz(lowestSinceEntry, low)
+    lowestSinceEntry := math.min(lowestSinceEntry, low)
+
+    pullbackExitPrice = lowestSinceEntry + pullbackTicksSellExit
+    strategy.exit("Exit Short Pullback", from_entry="Short", stop=pullbackExitPrice, comment="Exit Short on Pullback")
+
+    if ema300 - ema30 > 64 * syminfo.mintick
+        if close > ema30
+            strategy.close("Short", comment="Exit Short on EMA30 (gap >120)")
+    else
+        if close > ema13
+            strategy.close("Short", comment="Exit Short on EMA13")
+else
+    lowestSinceEntry := na
+
+// === PLOTS ===
+plot(ema13,  color=color.orange, title="EMA 13")
+plot(ema200, color=color.black,  title="EMA 200")
+plot(ema30,  color=color.blue,   title="EMA 30")
+plot(ema5,   color=color.red,    title="EMA 5")
+plot(ema300, color=color.purple, title="EMA 300")
+
+
+// Plot RSI in its own pane
+plot(rsiVal, title="RSI (14)", linewidth=2, display=display.pane)
+
+// Draw the 55/45 lines via plot() so they can share that pane
+upperLine = plot(55, title="RSI Upper", color=color.red,   display=display.pane)
+lowerLine = plot(45, title="RSI Lower", color=color.red,   display=display.pane)
+
+// Shade between them (no display arg here)
+fill(upperLine, lowerLine, color.new(color.red, 90), title="RSI Block Zone")

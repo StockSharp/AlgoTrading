@@ -1,0 +1,46 @@
+//@version=4
+study(title="RedK_Directional Index", shorttitle="K_xDMI", format=format.price, precision=2)
+
+// Inputs
+len = input(7, minval=1, title="DI Length")
+smooth = input(3, title="ADX Smoothing", minval=1, maxval=8)
+step = input(title="Step", type=input.integer, defval=2, maxval=50, minval=0)
+s = input(title="ADX Style", defval="Area", options=["Area", "V.Bars"])
+KeyLevel = input(25, title="Key Level", type=input.integer, minval=1, maxval=100)
+vol_weighted = input(title="Volume Weighted?", defval=false)
+v = vol_weighted ? volume : 1
+
+// calculations -- these are same as the classic ADX/DMI with couple differences; the use of wma() and the volume weighting
+up = change(high)
+down = -change(low)
+plusDM = na(up) ? na : (up > down and up > 0 ? up * v : 0)
+minusDM = na(down) ? na : (down > up and down > 0 ? down * v : 0)
+trur = wma(tr * v, len)
+plus = fixnan(100 * wma(plusDM, len) / trur)
+minus = fixnan(100 * wma(minusDM, len) / trur)
+
+// implement wma-based smoothing here -- we will not smoothen the ADX line any further
+pluss = wma(plus, smooth)
+minuss = wma(minus, smooth)
+sum = pluss + minuss
+
+// ADX line here is "unrestricted"  -- meaning it can fall below zero when it detects trend down
+adx1 = 100 * (pluss - minuss) / (sum == 0 ? 1 : sum)
+adx =  step > 0 ? round(adx1/step) * step : adx1
+
+// Plot colors & other preps
+col_grow_above = #175707
+col_fall_above = #66bb6a
+col_grow_below = #e01313
+col_fall_below = #e57373
+c = adx >= 0 ? (adx > adx[1] ? col_grow_above : col_fall_above) : (adx < adx[1] ? col_grow_below : col_fall_below)
+adxstyle = s == "Area" ? plot.style_area : plot.style_columns
+
+// Plots -- start with the lines, then the background then main plot lines
+hline(0, color = color.gray, linestyle = hline.style_solid, editable = false)
+hline(KeyLevel, title = "Strong Trend Level", color = color.yellow, linestyle = hline.style_dotted)
+
+plot(adx, title='ADXS', style=adxstyle, color = c, transp=50, linewidth = 3)
+
+plot(pluss, color=color.green, title="+DI", linewidth = 2)
+plot(minuss, color=color.red, title="-DI", linewidth = 2)

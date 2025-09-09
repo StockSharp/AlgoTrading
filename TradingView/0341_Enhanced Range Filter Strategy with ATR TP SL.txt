@@ -1,0 +1,105 @@
+//@version=5
+strategy(title="Enhanced Range Filter Strategy with ATR TP/SL", shorttitle="ERF-ATR Strategy", overlay=true, pyramiding=1, initial_capital=1000, default_qty_type=strategy.percent_of_equity, default_qty_value=100, commission_type=strategy.commission.percent, commission_value=0.075)
+
+// Inputs
+src = input(close, title="Source")
+per = input.int(100, minval=1, title="Sampling Period")
+mult = input.float(3.0, minval=0.1, title="Range Multiplier")
+atrLength = input.int(14, title="ATR Period")
+rsiLength = input.int(14, title="RSI Length")
+rsiOverbought = input.int(65, title="RSI Overbought")
+rsiOversold = input.int(35, title="RSI Oversold")
+emaFastLength = input.int(9, title="Fast EMA Length")
+emaSlowLength = input.int(21, title="Slow EMA Length")
+volumeFilter = input(true, title="Enable Volume Filter")
+riskReward = input.float(2.0, title="Risk/Reward Ratio", minval=1.0)
+showTP_SL = input(true, title="Show TP/SL Levels")
+rangingThreshold = input.float(0.5, title="Ranging Market Threshold", minval=0.1, maxval=1.0)
+
+// Range Filter Calculations
+smoothrng(x, t, m) =>
+    wper = t * 2 - 1
+    avrng = ta.ema(math.abs(x - x[1]), t)
+    ta.ema(avrng, wper) * m
+smrng = smoothrng(src, per, mult)
+
+rngfilt(x, r) =>
+    rngfilt = x
+    rngfilt := x > nz(rngfilt[1]) ? x - r < nz(rngfilt[1]) ? nz(rngfilt[1]) : x - r :
+       x + r > nz(rngfilt[1]) ? nz(rngfilt[1]) : x + r
+filt = rngfilt(src, smrng)
+
+// Filter Direction
+upward = 0.0
+upward := filt > filt[1] ? nz(upward[1]) + 1 : filt < filt[1] ? 0 : nz(upward[1])
+downward = 0.0
+downward := filt < filt[1] ? nz(downward[1]) + 1 : filt > filt[1] ? 0 : nz(downward[1])
+
+// Breakout Conditions
+longCond = src > filt and src > src[1] and upward > 0 or src > filt and src < src[1] and upward > 0
+shortCond = src < filt and src < src[1] and downward > 0 or src < filt and src > src[1] and downward > 0
+
+CondIni = 0
+CondIni := longCond ? 1 : shortCond ? -1 : CondIni[1]
+longCondition = longCond and CondIni[1] == -1
+shortCondition = shortCond and CondIni[1] == 1
+
+// Additional Filters
+// 1. Volume Filter
+avgVolume = ta.sma(volume, 20)
+volumeOk = volume >= avgVolume * 1.2 or not volumeFilter
+
+// 2. RSI Filter
+rsi = ta.rsi(close, rsiLength)
+rsiOk = (longCondition and rsi < rsiOverbought) or (shortCondition and rsi > rsiOversold)
+
+// 3. Trend Filter (EMA Cross)
+emaFast = ta.ema(close, emaFastLength)
+emaSlow = ta.ema(close, emaSlowLength)
+trendOk = (longCondition and emaFast > emaSlow) or (shortCondition and emaFast < emaSlow)
+
+// 4. Ranging Market Detection
+atr = ta.atr(atrLength)
+priceRange = ta.highest(high, 14) - ta.lowest(low, 14)
+atrRatio = atr / (priceRange / 14)
+isRanging = atrRatio < rangingThreshold
+
+// ATR for SL/TP
+atrMultiplierSL = input.float(1.5, title="ATR Multiplier for SL", minval=0.5)
+atrMultiplierTP = input.float(3.0, title="ATR Multiplier for TP", minval=1.0)
+
+// Calculate TP/SL levels
+var float stopLoss = na
+var float takeProfit = na
+
+if (longCondition)
+    stopLoss := close - atr * atrMultiplierSL
+    takeProfit := close + atr * atrMultiplierTP * riskReward
+else if (shortCondition)
+    stopLoss := close + atr * atrMultiplierSL
+    takeProfit := close - atr * atrMultiplierTP * riskReward
+
+// Plot TP/SL levels
+plot(showTP_SL and not na(stopLoss) ? stopLoss : na, color=color.red, style=plot.style_linebr, linewidth=2, title="Stop Loss")
+plot(showTP_SL and not na(takeProfit) ? takeProfit : na, color=color.green, style=plot.style_linebr, linewidth=2, title="Take Profit")
+
+// Final Entry Conditions (exclude ranging markets)
+finalLong = longCondition and volumeOk and rsiOk and trendOk and not isRanging
+finalShort = shortCondition and volumeOk and rsiOk and trendOk and not isRanging
+
+// Strategy Execution
+if (finalLong)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit Long", "Long", stop=stopLoss, limit=takeProfit)
+
+if (finalShort)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit Short", "Short", stop=stopLoss, limit=takeProfit)
+
+// Plotting
+plot(filt, color=upward > 0 ? color.green : downward > 0 ? color.red : color.blue, linewidth=2)
+plotshape(finalLong, title="Buy Signal", text="Buy", textcolor=color.white, style=shape.labelup, size=size.small, location=location.belowbar, color=color.green)
+plotshape(finalShort, title="Sell Signal", text="Sell", textcolor=color.white, style=shape.labeldown, size=size.small, location=location.abovebar, color=color.red)
+
+// Plot ranging market detection
+bgcolor(isRanging ? color.new(color.orange, 80) : na, title="Ranging Market Warning")

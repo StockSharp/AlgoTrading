@@ -1,0 +1,68 @@
+//@version=5
+strategy("safa bot alert", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=100)
+
+// === INPUTS ===
+smaLength         = input.int(3, title="SMA Length")
+tpPoints          = input.float(80, title="Take Profit (Points)")
+slPoints          = input.float(35, title="Stop Loss (Points)")
+trailPoints       = input.float(15, title="Trailing Stop (Points)")
+sessionCloseHour  = input.int(16, "Session Close Hour (24h)")
+sessionCloseMinute = input.int(0, "Session Close Minute")
+
+// === ADX INPUTS ===
+adxLength         = input.int(15, title="ADX Length")
+adxThreshold      = input.float(15, title="Minimum ADX to Trade")
+
+// === INDICATORS ===
+sma = ta.sma(close, smaLength)
+plot(sma, title="3 SMA", color=color.orange)
+
+// === MANUAL ADX CALCULATION ===
+upMove   = high - high[1]
+downMove = low[1] - low
+plusDM   = (upMove > downMove and upMove > 0) ? upMove : 0
+minusDM  = (downMove > upMove and downMove > 0) ? downMove : 0
+
+trur    = ta.rma(ta.tr, adxLength)
+plusDI  = 100 * ta.rma(plusDM, adxLength) / trur
+minusDI = 100 * ta.rma(minusDM, adxLength) / trur
+dx      = 100 * math.abs(plusDI - minusDI) / (plusDI + minusDI)
+adx     = ta.rma(dx, adxLength)
+
+plot(adx, title="ADX", color=color.blue)
+
+// === ENTRY CONDITIONS ===
+longCondition  = ta.crossover(close, sma) and adx > adxThreshold
+shortCondition = ta.crossunder(close, sma) and adx > adxThreshold
+
+// === STRATEGY EXECUTION ===
+if (longCondition)
+    strategy.entry("Long", strategy.long)
+    strategy.exit("Exit", from_entry="Long", limit=close + tpPoints, stop=close - slPoints, trail_points=trailPoints, trail_offset=trailPoints)
+
+    // FIRE ALERT
+    string alertMsg = '{"signal":"BUY","entry":' + str.tostring(close) +
+                      ',"SL":' + str.tostring(close - slPoints) +
+                      ',"TP":' + str.tostring(close + tpPoints) +
+                      ',"time":"' + str.tostring(time) + '"}'
+    alert(alertMsg, alert.freq_once_per_bar_close)
+
+if (shortCondition)
+    strategy.entry("Short", strategy.short)
+    strategy.exit("Exit", from_entry="Short", limit=close - tpPoints, stop=close + slPoints, trail_points=trailPoints, trail_offset=trailPoints)
+
+    // FIRE ALERT
+    string alertMsg = '{"signal":"SELL","entry":' + str.tostring(close) +
+                      ',"SL":' + str.tostring(close + slPoints) +
+                      ',"TP":' + str.tostring(close - tpPoints) +
+                      ',"time":"' + str.tostring(time) + '"}'
+    alert(alertMsg, alert.freq_once_per_bar_close)
+
+// === FORCE EXIT AT SESSION CLOSE ===
+sessionCloseTime = (hour == sessionCloseHour and minute == sessionCloseMinute)
+if (sessionCloseTime)
+    strategy.close_all(comment="Session Close")
+
+// === NO-REPAINT FUNCTION ===
+reso_no_repaint(exp, use, res) =>
+    use ? request.security(syminfo.tickerid, res, exp[1], lookahead=barmerge.lookahead_off, gaps=barmerge.gaps_on)[0] : exp

@@ -1,0 +1,46 @@
+//@version=5
+strategy("Random Entry and Exit", overlay=true, shorttitle = "Random Strategy", default_qty_type = strategy.percent_of_equity, default_qty_value = 100, pyramiding = 0, commission_value = 0.1, initial_capital = 10000)
+
+// Strategy setting
+enable_long = input(defval = true, title = "Enqble Long")
+enable_short = input(defval = false, title = "Enable Short")
+
+// Function to generate random numbers
+random_number(seed, min_val, max_val) =>
+    // Seed-based pseudo-random number generation
+    var float r = na
+    if na(r)
+        r := seed
+    r := (r * 16807) % 2147483647
+    min_val + (max_val - min_val) * (r / 2147483647)
+
+// Input for random seed
+seed = input.int(1, title="Random Seed")
+
+// Generate random numbers for entry and exit points
+entry_prob = random_number(seed, 0.0, 1.0)
+exit_prob = random_number(seed + 1, 0.0, 1.0)
+
+// Parameters for random entry and exit logic
+entry_threshold = 0.01 // Adjust to change the frequency of entries
+exit_threshold = 0.01 // Adjust to change the frequency of exits
+
+// Generate random entries and exits
+enter_long = entry_prob < entry_threshold
+exit_long = exit_prob < exit_threshold
+
+enter_short = entry_prob < entry_threshold
+exit_short = exit_prob < exit_threshold
+
+// Strategy logic
+if (enable_long)
+    if (enter_long)
+        strategy.entry("Random Long", strategy.long)
+    if (exit_long)
+        strategy.close("Random Long")
+
+if (enable_short)
+    if (enter_short)
+        strategy.entry("Random Short", strategy.short)
+    if (exit_short)
+        strategy.close("Random Short")

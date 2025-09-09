@@ -1,0 +1,75 @@
+//@version=4
+//
+/////////////////////////////////////////////////////
+/// © Copyright 2020 to present, Joris Duyck (JD) ///
+/////////////////////////////////////////////////////
+//{
+// This script draws trendlines from the pivot points in the price chart.
+
+// The angle of the trendlines is determined by (a percentage of) the atr.
+// The angle follows the change in price, compared to the atr at the moment where the pivot point is detected
+// The atr percentage determines if the trendline follows the rate of change of the atr or a fraction ( value < 100) or a multiple ( value > 100) of that
+
+// JD.
+
+// #NotTradingAdvice #DYOR
+
+//  Disclaimer.
+// I AM NOT A FINANCIAL ADVISOR.
+// THESE IDEAS ARE NOT ADVICE AND ARE FOR EDUCATION PURPOSES ONLY.
+// ALWAYS DO YOUR OWN RESEARCH!
+//}
+
+study(title = "ATR Based Trendlines - JD", shorttitle="ATR Trendlines - JD", overlay=true)
+
+// Input variables
+//{
+len         = input(30,    title = "loockback length pivots")
+atr_percent = input(100,   title = "atr target percentage", minval = 0) / 100
+wicks       = input(true,  title = "Draw lines from wicks (checked) or real bodies (unchecked)?")
+do_mono     = input(false, title = "checked = monochrome lines, unchecked = direction colored lines?")
+//}
+
+
+// Initialising color scheme
+//{
+var color line_color_high = do_mono ? color.teal : color.lime
+var color line_color_low = do_mono  ? color.teal : color.fuchsia
+//}
+
+/////// Function declarations ///////
+//{
+angle_to_slope_percent (_degrees) =>
+    _slope = (_degrees/100 * atr(len / 2))
+//}
+
+/////// Start of main script ///////
+
+// Calculate pivot points
+//{
+high_point = fixnan(pivothigh(wicks ? high : (max(close, open)), len, len /2 ))
+low_point  = fixnan(pivotlow(wicks ? low : (min(close, open)), len, len / 2))
+//}
+
+// plot trendlines //
+//{
+var line trendline_high = na
+var line trendline_low  = na
+trendline_high := na
+trendline_low  := na
+
+slope_high = atr_percent * angle_to_slope_percent(len / 2)
+slope_low  = atr_percent * angle_to_slope_percent(len / 2)
+
+if change(high_point) != 0
+    trendline_high := line.new(
+     bar_index - len/2, high_point,
+     bar_index        , high_point - (slope_high * len / 2), xloc = xloc.bar_index,
+     extend = extend.right, color = line_color_high, style = line.style_dotted, width = 1)
+
+// plot Low trendlines //
+if change(low_point) != 0
+    trendline_low := line.new(
+     bar_index - len/2, low_point,
+     bar_index        , low_point + (slope_low * len / 2), xloc = xloc.bar_index,
+     extend = extend.right, color = line_color_low, style = line.style_dotted, width = 1)

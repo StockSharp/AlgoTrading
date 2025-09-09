@@ -1,0 +1,120 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// @author Rodrigo F Silveira
+// © RodrigoKazuma
+
+//@version=4
+study("RK's 11 - Auto Color Gradient", "", false)
+
+// >>> Notes >>> {
+// This started as a personal arrays study, but after a few tests I decided to made a framework to get my own scripts simplest, lighter and faster.
+// And now I'm sharing with you guys.
+//
+// Is very simple to use:
+// 1 — Copy evething inside "RK's Auto Color Gradient Framework" block;
+// 2 — Paste anywhere before the plotting;
+// 3 — Declare the color variable name calling the function "f_autocolor(*series*, *scale_length*, *theme_number*)"
+//         *series*        → (series)    Series of values (source) to process.
+//         *scale_length*    → (integer)    Number of bars to measure the highest and lowest values
+//         *theme_number*    → (integer)    Number of the theme
+//
+//  • To be a descending/revert scale color gradient, just put negative sign (-) before the *series*;
+//
+//  • To add your own gradient scale colors, make it in 11 color shades, and put it inside the function array.push(_c, *color*)
+//
+// This indicator link: https://www.tradingview.com/script/00KSO8C2-RK-s-Framework-01-Auto-Color-Gradient/
+//----------------------------------------------------------------- }
+
+
+
+
+
+// ●───────── RK's Auto Color Gradient Framework ─────────● {
+
+_c = array.new_color(na) // Creating Global Variable
+
+// ─── Theme Colors Declaration ───► [
+array.push(_c, #FF0000), array.push(_c, #E51900), array.push(_c, #CC3300), array.push(_c, #B24C00), array.push(_c, #996600), array.push(_c, #7F7F00), array.push(_c, #669900), array.push(_c, #4CB200), array.push(_c, #33CC00), array.push(_c, #19E500), array.push(_c, #00FF00) //Theme 00 Red To Green
+array.push(_c, #FF0000), array.push(_c, #FF3300), array.push(_c, #FF6600), array.push(_c, #FF9900), array.push(_c, #FFCC00), array.push(_c, #FEFF00), array.push(_c, #CBFF00), array.push(_c, #98FF00), array.push(_c, #65FF00), array.push(_c, #32FF00), array.push(_c, #00FF00) //Theme 01 Red To Green HSV
+array.push(_c, #FF0000), array.push(_c, #FF0066), array.push(_c, #FF00CB), array.push(_c, #CB00FF), array.push(_c, #6600FF), array.push(_c, #0000FF), array.push(_c, #0065FF), array.push(_c, #00CBFF), array.push(_c, #00FFCB), array.push(_c, #00FF65), array.push(_c, #00FF00) //Theme 02 Red To Green Inverse HSV
+array.push(_c, #FF0000), array.push(_c, #FF6600), array.push(_c, #FFCC00), array.push(_c, #CCFF00), array.push(_c, #65FF00), array.push(_c, #00FF00), array.push(_c, #00FF65), array.push(_c, #00FFCB), array.push(_c, #00CBFF), array.push(_c, #0065FF), array.push(_c, #0000FF) //Theme 03 Red to Blue HSV
+array.push(_c, #FF0000), array.push(_c, #FF0033), array.push(_c, #FF0066), array.push(_c, #FF0098), array.push(_c, #FF00CB), array.push(_c, #FF00FF), array.push(_c, #CB00FF), array.push(_c, #9800FF), array.push(_c, #6600FF), array.push(_c, #3300FF), array.push(_c, #0000FF) //Theme 04 Red To Blue Inverse HSV
+array.push(_c, #FF0000), array.push(_c, #FF3300), array.push(_c, #FF6600), array.push(_c, #FF9900), array.push(_c, #FFCC00), array.push(_c, #FFFF00), array.push(_c, #CCFF00), array.push(_c, #99FF00), array.push(_c, #66FF00), array.push(_c, #33FF00), array.push(_c, #00FF00) //Theme 05 Red to Yellow to Green
+array.push(_c, #FF0000), array.push(_c, #CC3333), array.push(_c, #996666), array.push(_c, #669999), array.push(_c, #33CCCC), array.push(_c, #00FFFF), array.push(_c, #00FFCC), array.push(_c, #00FF99), array.push(_c, #00FF66), array.push(_c, #00FF33), array.push(_c, #00FF00) //Theme 06 Red to Cyan to Green
+array.push(_c, #FF0000), array.push(_c, #CC0033), array.push(_c, #990066), array.push(_c, #660099), array.push(_c, #3300CC), array.push(_c, #0000FF), array.push(_c, #0033CC), array.push(_c, #006699), array.push(_c, #009966), array.push(_c, #00CC33), array.push(_c, #00FF00) //Theme 07 Red to Blue to Green
+array.push(_c, #FF00FF), array.push(_c, #FF33CC), array.push(_c, #FF6699), array.push(_c, #FF9966), array.push(_c, #FFCC33), array.push(_c, #FFFF00), array.push(_c, #CCFF33), array.push(_c, #99FF66), array.push(_c, #66FF99), array.push(_c, #33FFCC), array.push(_c, #00FFFF) //Theme 08 Red to Yellow to Cyan
+array.push(_c, #000000), array.push(_c, #191919), array.push(_c, #333333), array.push(_c, #4C4C4C), array.push(_c, #666666), array.push(_c, #7F7F7F), array.push(_c, #999999), array.push(_c, #B2B2B2), array.push(_c, #CCCCCC), array.push(_c, #E5E5E5), array.push(_c, #FFFFFF) //Theme 09 Black to White
+array.push(_c, #FF0000), array.push(_c, #FF0000), array.push(_c, #FF0000), array.push(_c, #FF0000), array.push(_c, #FF0000), array.push(_c, #FFFF00), array.push(_c, #00FF00), array.push(_c, #00FF00), array.push(_c, #00FF00), array.push(_c, #00FF00), array.push(_c, #00FF00) //Theme 10 red, yellow and Green
+noColor = color(na)
+array.push(_c, #FF0000), array.push(_c, noColor), array.push(_c, noColor), array.push(_c, noColor), array.push(_c, noColor), array.push(_c, #FFFF00), array.push(_c, noColor), array.push(_c, noColor), array.push(_c, noColor), array.push(_c, noColor), array.push(_c, #00FF00) //Theme 11 Only Max, Middle and Min values as red, yellow and Green.
+// To add themes, put more 11 colors in gradient order with the function: array.push(_c, *color*)
+
+// ◄ ]
+
+// ─── Auto Color Gradient Function ───► [
+f_autocolor(_src, _lengthScale, _selectTheme)=>
+    var int _themeSize  = (_selectTheme % int(array.size(_c)/11))*11
+    _fixLen  = min(nz(bar_index)+1, _lengthScale)
+    _highest = highest(_src, _fixLen)
+    _lowest     =  lowest(_src, _fixLen)
+    _scaled     = round(10*(_src - _lowest)/(_highest - _lowest))
+    _theme      = _themeSize + nz(_scaled, 5)
+    _color     = array.get(_c, int(_theme))
+// ◄ ]
+
+// ●───────────────────────────────── ∴ ─────────────────────────────────● }
+
+
+
+
+// ●───────── Example ─────────● {
+i_source =         input(close, "⮚  Source List: ")
+i_length =         input(21,      "⮚  Moving Average Length: ")
+i_scaleLength = input(200,     "⮚  Scale Length: ",    minval=2,     maxval=500, step=25)
+i_colorTheme  = input(2,     "⮚  Color Theme: " ,    minval=0,     maxval=120)
+i_revertScale= input(true,     " Reverse Scale? ")
+
+
+// ► My Stochastic Function --- [
+f_stoch(_src, _length)=>
+    _fixLen = min(_length, bar_index+1)
+    _highest = highest(_src, _fixLen)
+    _lowest     =  lowest(_src, _fixLen)
+    _out = (_src - _lowest)/(_highest - _lowest)
+// ◄ ]
+
+
+// ─── Bollinger Bands %B Function (BB %B) ───► [
+f_bbPercent(_src, _length)=>
+    _mult    = 2.0 //input(2.0, minval=0.001, maxval=50, title="StdDev")
+    _basis     = sma(_src, _length)
+    _dev     = _mult * stdev(_src, _length)
+    _bbr     = (_src - _basis - _dev)/(2 * _dev)
+// ◄ ]
+
+
+o_bbr = f_bbPercent(i_source, i_length)
+o_rsi = rsi(i_source, i_length)
+
+s_bbr = stoch(o_bbr, o_bbr, o_bbr, i_scaleLength)
+s_rsi = stoch(o_rsi, o_rsi, o_rsi, i_scaleLength)
+
+o_avg = avg(s_bbr, s_rsi)/50-1
+r_avg = i_revertScale ? - o_avg : o_avg
+
+c_avg = f_autocolor(r_avg, i_scaleLength, i_colorTheme)
+p_avg = plot(o_avg, "average Bollinger + RSI", c_avg, 3, trackprice=true, editable=true)
+
+
+// ─── Lines Plots) ───► [
+p_hLineL2 = hline(-1.1, "Low Border",    color(na),    editable=false)
+p_hLineL1 = hline(-1.0, "Lower Level",    #C0C0C055,    editable=false)
+p_hLineL0 = hline(-0.8, "Low Level",    #C0C0C055,    editable=true)
+p_hLineM0 = hline( 0.0, "Middle Level",    #C0C0C055,    editable=false)
+p_hLineH0 = hline( 0.8, "High Level",    #C0C0C055,    editable=true)
+p_hLineH1 = hline( 1.0, "Higher Level",    #C0C0C055,    editable=false)
+p_hLineH2 = hline( 1.1, "High Border",    color(na),    editable=false)
+
+fill(p_hLineL1, p_hLineH1, color=#9915FF, transp=90, title="Background")
+// ◄ ]
+
+// ●───────────────────────────────── ∴ ─────────────────────────────────● }

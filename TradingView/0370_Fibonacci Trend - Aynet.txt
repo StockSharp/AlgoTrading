@@ -1,0 +1,117 @@
+//@version=5
+strategy("Fibonacci Trend - Aynet", overlay=true)
+
+// ===== Inputs =====
+lookbackPeriod = input.int(20, "Lookback Period")
+fibLevel1 = input.float(0.236, "Fib Level 1")
+fibLevel2 = input.float(0.382, "Fib Level 2")
+fibLevel3 = input.float(0.500, "Fib Level 3")
+fibLevel4 = input.float(0.618, "Fib Level 4")
+fibLevel5 = input.float(0.786, "Fib Level 5")
+useTime = input.bool(true, "Use Time Projections")
+riskPercent = input.float(1.0, "Risk Percentage", step=0.1)
+
+// ===== Functions =====
+isSwingHigh(index) =>
+    high[index] > high[index + 1] and high[index] > high[index - 1]
+
+isSwingLow(index) =>
+    low[index] < low[index + 1] and low[index] < low[index - 1]
+
+// ===== Variables =====
+var float swingHigh = na
+var float swingLow = na
+var int swingHighTime = na
+var int swingLowTime = na
+var float fib1 = na
+var float fib2 = na
+var float fib3 = na
+var float fib4 = na
+var float fib5 = na
+
+// ===== Swing Points Detection =====
+if isSwingHigh(1)
+    swingHigh := high[1]
+    swingHighTime := time[1]
+
+if isSwingLow(1)
+    swingLow := low[1]
+    swingLowTime := time[1]
+
+// ===== Calculate Fibonacci Levels =====
+if not na(swingHigh) and not na(swingLow)
+    priceDiff = swingHigh - swingLow
+    fib1 := swingLow + priceDiff * fibLevel1
+    fib2 := swingLow + priceDiff * fibLevel2
+    fib3 := swingLow + priceDiff * fibLevel3
+    fib4 := swingLow + priceDiff * fibLevel4
+    fib5 := swingLow + priceDiff * fibLevel5
+
+// ===== Plot Fibonacci Levels with Labels =====
+var line fib1_line = na
+var line fib2_line = na
+var line fib3_line = na
+var line fib4_line = na
+var line fib5_line = na
+var label fib1_label = na
+var label fib2_label = na
+var label fib3_label = na
+var label fib4_label = na
+var label fib5_label = na
+
+if not na(fib1)
+    line.delete(fib1_line)
+    label.delete(fib1_label)
+    fib1_line := line.new(bar_index[lookbackPeriod], fib1, bar_index, fib1, color=color.blue, width=1)
+    fib1_label := label.new(bar_index + 2, fib1, "23.6%", color=color.blue, style=label.style_label_left, textcolor=color.white)
+
+if not na(fib2)
+    line.delete(fib2_line)
+    label.delete(fib2_label)
+    fib2_line := line.new(bar_index[lookbackPeriod], fib2, bar_index, fib2, color=color.green, width=1)
+    fib2_label := label.new(bar_index + 2, fib2, "38.2%", color=color.green, style=label.style_label_left, textcolor=color.white)
+
+if not na(fib3)
+    line.delete(fib3_line)
+    label.delete(fib3_label)
+    fib3_line := line.new(bar_index[lookbackPeriod], fib3, bar_index, fib3, color=color.yellow, width=1)
+    fib3_label := label.new(bar_index + 2, fib3, "50.0%", color=color.yellow, style=label.style_label_left, textcolor=color.white)
+
+if not na(fib4)
+    line.delete(fib4_line)
+    label.delete(fib4_label)
+    fib4_line := line.new(bar_index[lookbackPeriod], fib4, bar_index, fib4, color=color.orange, width=1)
+    fib4_label := label.new(bar_index + 2, fib4, "61.8%", color=color.orange, style=label.style_label_left, textcolor=color.white)
+
+if not na(fib5)
+    line.delete(fib5_line)
+    label.delete(fib5_label)
+    fib5_line := line.new(bar_index[lookbackPeriod], fib5, bar_index, fib5, color=color.red, width=1)
+    fib5_label := label.new(bar_index + 2, fib5, "78.6%", color=color.red, style=label.style_label_left, textcolor=color.white)
+
+// ===== Fill Between Levels =====
+p1 = plot(fib1, "0.236", color=color.blue, linewidth=1)
+p2 = plot(fib2, "0.382", color=color.green, linewidth=1)
+p3 = plot(fib3, "0.500", color=color.yellow, linewidth=1)
+p4 = plot(fib4, "0.618", color=color.orange, linewidth=1)
+p5 = plot(fib5, "0.786", color=color.red, linewidth=1)
+
+fill(p1, p2, color=color.new(color.blue, 90))
+fill(p2, p3, color=color.new(color.green, 90))
+fill(p3, p4, color=color.new(color.yellow, 90))
+fill(p4, p5, color=color.new(color.orange, 90))
+
+// ===== Time Labels =====
+if useTime and not na(swingHighTime) and not na(swingLowTime)
+    timeDiff = swingHighTime - swingLowTime
+    for i = 1 to 5
+        timeProj = swingHighTime + (timeDiff * (i * 0.236))
+        if time >= timeProj and time[1] < timeProj
+            label.new(bar_index, high, text="T" + str.tostring(i),
+                     style=label.style_label_down,
+                     color=color.new(color.gray, 50),
+                     textcolor=color.white)
+
+// ===== Trading Logic =====
+var bool longCondition = false
+var bool shortCondition = false

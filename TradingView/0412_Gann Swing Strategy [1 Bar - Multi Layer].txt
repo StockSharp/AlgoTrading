@@ -1,0 +1,291 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © AutomatedTradingAlgorithms
+//  Credit to meomeo105 for writing the gann swing part
+
+//@version=5
+strategy('Gann Swing Strategy [1 Bar - Multi Layer]', shorttitle='GSC strat[1B-ML]', overlay=true, max_lines_count=500, default_qty_type ="percent_of_equity" , default_qty_value = 100, max_boxes_count = 500, max_labels_count = 500)
+
+DefaultGannMLSetting = "[Gann][SGann][Color][ChoCh Gann][ChoCh SGann]"
+showF1GannML = true // input.bool(true,"", group = DefaultGannMLSetting,inline = "showF1GannML")
+showSF1GannML = true // input.bool(true,"F1", group = DefaultGannMLSetting,inline = "showF1GannML")
+colorF1GannML = input.color(color.aqua, '', group = DefaultGannMLSetting,inline = "showF1GannML")
+showChoChF1GannML = input.bool(true,"", group = DefaultGannMLSetting,inline = "showF1GannML")
+showChoChSF1GannML = input.bool(true,"", group = DefaultGannMLSetting,inline = "showF1GannML")
+
+showF2GannML = true // input.bool(true,"", group = DefaultGannMLSetting,inline = "showF2GannML")
+showSF2GannML = true // input.bool(true,"F2", group = DefaultGannMLSetting,inline = "showF2GannML")
+colorF2GannML = input.color(color.yellow, '', group = DefaultGannMLSetting,inline = "showF2GannML")
+showChoChF2GannML = input.bool(true,"", group = DefaultGannMLSetting,inline = "showF2GannML")
+showChoChSF2GannML = input.bool(false,"", group = DefaultGannMLSetting,inline = "showF2GannML")
+
+showF3GannML = true // input.bool(true,"", group = DefaultGannMLSetting,inline = "showF3GannML")
+showSF3GannML = true // input.bool(true,"F3", group = DefaultGannMLSetting,inline = "showF3GannML")
+colorF3GannML = input.color(color.purple, '', group = DefaultGannMLSetting,inline = "showF3GannML")
+showChoChF3GannML = input.bool(false,"", group = DefaultGannMLSetting,inline = "showF3GannML")
+showChoChSF3GannML = input.bool(false,"", group = DefaultGannMLSetting,inline = "showF3GannML")
+
+
+//  Credit to meomeo105 for writing the gann swing part
+
+f_CalculateF0(_pointX,_pointY,arrayX0,arrayY0)=>
+    array.unshift(arrayX0,_pointX)
+    array.unshift(arrayY0,_pointY)
+    [1]
+
+f_CalculateFn1(_pointX,_pointY,arrayXn,arrayYn,arrayXFn1,arrayYFn1)=>
+    //_resultdraw 2:Tiếp tục 1:Đảo chiều
+    int _resultdraw = 0
+    //OSB pha dinh/day
+    if((array.get(arrayYFn1,0) >= array.get(arrayYFn1,1) and array.get(arrayYn,0) < array.get(arrayYFn1,1)) or (array.get(arrayYFn1,0) <= array.get(arrayYFn1,1) and array.get(arrayYn,0) > array.get(arrayYFn1,1)))
+        array.unshift(arrayXFn1,_pointX)
+        array.unshift(arrayYFn1,_pointY)
+        _resultdraw := 1
+    //Dao chieu sang giam
+    else if(array.get(arrayYFn1,0) >= array.get(arrayYFn1,1) and (array.get(arrayYn,0) < array.get(arrayYn,1) and array.get(arrayYn,0) < array.get(arrayYn,2) and array.get(arrayYn,1) < array.get(arrayYn,3)) and array.get(arrayYn,2) < array.get(arrayYn,3))
+        array.unshift(arrayXFn1,_pointX)
+        array.unshift(arrayYFn1,_pointY)
+        _resultdraw := 1
+    //Dao chieu sang tang
+    else if(array.get(arrayYFn1,0) <= array.get(arrayYFn1,1) and (array.get(arrayYn,0) > array.get(arrayYn,1) and array.get(arrayYn,0) > array.get(arrayYn,2) and array.get(arrayYn,1) > array.get(arrayYn,3)) and array.get(arrayYn,2) > array.get(arrayYn,3))
+        array.unshift(arrayXFn1,_pointX)
+        array.unshift(arrayYFn1,_pointY)
+        _resultdraw := 1
+    else if(array.get(arrayYFn1,0) >= array.get(arrayYFn1,1) and _pointY >= array.get(arrayYFn1,0) and (_pointY >= array.get(arrayYFn1,0) or (array.get(arrayYn,0) > array.get(arrayYn,2) and array.get(arrayYn,2) > array.get(arrayYn,1)) or (array.get(arrayYn,0) > array.get(arrayYn,1) and array.get(arrayYn,1) > array.get(arrayYn,2) and array.get(arrayYn,2) > array.get(arrayYn,3))))
+        array.set(arrayXFn1, 0, _pointX)
+        array.set(arrayYFn1, 0, _pointY)
+        _resultdraw := 2
+    else if(array.get(arrayYFn1,0) <= array.get(arrayYFn1,1) and _pointY <= array.get(arrayYFn1,0) and (_pointY <= array.get(arrayYFn1,0) or (array.get(arrayYn,0) < array.get(arrayYn,2) and array.get(arrayYn,2) < array.get(arrayYn,1)) or (array.get(arrayYn,0) < array.get(arrayYn,1) and array.get(arrayYn,1) < array.get(arrayYn,2) and array.get(arrayYn,2) < array.get(arrayYn,3))))
+        array.set(arrayXFn1, 0, _pointX)
+        array.set(arrayYFn1, 0, _pointY)
+        _resultdraw := 2
+    [_resultdraw]
+
+f_CalculateSFn1(_pointX,_pointY,_arrayMark,_mIdxMark,arraySXFn1,arraySYFn1)=>
+    int _resultdraw = 0
+    if(array.get(_arrayMark,_mIdxMark) == 0)
+        if((array.get(arraySYFn1,0) >= array.get(arraySYFn1,1) and _pointY >= array.get(arraySYFn1,0)) or (array.get(arraySYFn1,0) <= array.get(arraySYFn1,1) and _pointY <= array.get(arraySYFn1,0)))
+            array.set(arraySXFn1, 0, _pointX)
+            array.set(arraySYFn1, 0, _pointY)
+            _resultdraw := 2
+        else if((array.get(arraySYFn1,0) >= array.get(arraySYFn1,1) and _pointY < array.get(arraySYFn1,1)) or (array.get(arraySYFn1,0) <= array.get(arraySYFn1,1) and _pointY > array.get(arraySYFn1,1)))
+            array.unshift(arraySXFn1,_pointX)
+            array.unshift(arraySYFn1,_pointY)
+            _resultdraw := 1
+        else if((array.get(arraySYFn1,0) >= array.get(arraySYFn1,1) and _pointY < array.get(arraySYFn1,0) and _pointY > array.get(arraySYFn1,1)) or (array.get(arraySYFn1,0) <= array.get(arraySYFn1,1) and _pointY > array.get(arraySYFn1,0) and _pointY < array.get(arraySYFn1,1)))
+            array.unshift(arraySXFn1,_pointX)
+            array.unshift(arraySYFn1,_pointY)
+            array.set(_arrayMark,_mIdxMark,_pointY)
+            _resultdraw := 1
+    else if(array.get(_arrayMark,_mIdxMark) > 0)
+        if((array.get(arraySYFn1,0) >= array.get(arraySYFn1,1) and _pointY < array.get(arraySYFn1,1)) or (array.get(arraySYFn1,0) <= array.get(arraySYFn1,1) and _pointY > array.get(arraySYFn1,1)))
+            array.unshift(arraySXFn1,_pointX)
+            array.unshift(arraySYFn1,_pointY)
+            array.set(_arrayMark,_mIdxMark,0)
+            _resultdraw := 1
+        else if((array.get(arraySYFn1,0) >= array.get(arraySYFn1,1) and _pointY > array.get(arraySYFn1,2)) or (array.get(arraySYFn1,0) <= array.get(arraySYFn1,1) and _pointY < array.get(arraySYFn1,2)))
+            array.set(arraySXFn1, 0, _pointX)
+            array.set(arraySYFn1, 0, _pointY)
+            array.set(_arrayMark,_mIdxMark,0)
+            _resultdraw := 2
+        else if((array.get(arraySYFn1,0) >= array.get(arraySYFn1,1) and _pointY <= array.get(arraySYFn1,2) and _pointY >= array.get(arraySYFn1,0)) or (array.get(arraySYFn1,0) <= array.get(arraySYFn1,1) and _pointY >= array.get(arraySYFn1,2) and _pointY <= array.get(arraySYFn1,0)))
+            array.set(arraySXFn1, 0, _pointX)
+            array.set(arraySYFn1, 0, _pointY)
+            array.set(_arrayMark,_mIdxMark,_pointY)
+            _resultdraw := 2
+
+    [_resultdraw]
+
+f_CalculateRemoveDuplicateLine(arrayLine,arraySLine)=>
+    if(array.size(arraySLine) > 1 and array.size(arrayLine) >1)
+        if(line.get_y1(array.get(arraySLine,1)) == line.get_y1(array.get(arrayLine,1)) and line.get_y2(array.get(arraySLine,1)) == line.get_y2(array.get(arrayLine,1))and line.get_x1(array.get(arraySLine,1)) == line.get_x1(array.get(arrayLine,1)) and line.get_x2(array.get(arraySLine,1)) == line.get_x2(array.get(arrayLine,1)))
+            line.delete(array.get(arrayLine,1))
+            array.remove(arrayLine,1)
+
+f_CalculateChoCh(arraySXFn1,arraySYFn1) =>
+    int _X = 0
+    float _Y = 0
+    // ChoCh Trường hợp chữ N ngược, chữ N
+    if((array.get(arraySYFn1,3) > array.get(arraySYFn1,2) and array.get(arraySYFn1,3) < array.get(arraySYFn1,1) and array.get(arraySYFn1,0) < array.get(arraySYFn1,2)) or (array.get(arraySYFn1,3) < array.get(arraySYFn1,2) and array.get(arraySYFn1,3) > array.get(arraySYFn1,1) and array.get(arraySYFn1,0) > array.get(arraySYFn1,2)))
+        _X := array.get(arraySXFn1,2)
+        _Y := array.get(arraySYFn1,2)
+    [_X,_Y]
+
+f_CalculateDrawF(_drawF,_showSF,arrayLine,arrayX,arrayY,showChoCh,arrayMChoCh,idxChoCh,_color) =>
+    if(_drawF > 0)
+        if(_drawF == 1)
+            array.unshift(arrayLine,line.new(array.get(arrayX,1),array.get(arrayY,1),array.get(arrayX,0),array.get(arrayY,0), color = _color,xloc = xloc.bar_time,width = 1,style = line.style_dotted))
+        else if(_drawF == 2 and array.size(arrayLine) >0)
+            line.set_xy2(array.get(arrayLine,0),array.get(arrayX,0),array.get(arrayY,0))
+        [XChoCh,YChoCh] = f_CalculateChoCh(arrayX,arrayY)
+        if(showChoCh and YChoCh >0 and array.get(arrayMChoCh,idxChoCh) != YChoCh)
+            array.set(arrayMChoCh,idxChoCh,YChoCh)
+            line.new(XChoCh,YChoCh,time,YChoCh, color = _color,xloc = xloc.bar_time,width = 1,style = line.style_dotted)
+
+f_CalculateDrawSF(_drawSF,arrayLine,arraySLine,arraySX,arraySY,showChoCh,arrayMChoCh,idxChoCh,_color) =>
+    if(_drawSF > 0)
+        if(_drawSF == 1)
+            array.unshift(arraySLine,line.new(array.get(arraySX,1),array.get(arraySY,1),array.get(arraySX,0),array.get(arraySY,0), color = _color,xloc = xloc.bar_time,width = 1))
+        else if(_drawSF == 2 and array.size(arraySLine) >0)
+            line.set_xy2(array.get(arraySLine,0),array.get(arraySX,0),array.get(arraySY,0))
+        f_CalculateRemoveDuplicateLine(arrayLine,arraySLine)
+        [XChoChS,YChoChS] = f_CalculateChoCh(arraySX,arraySY)
+        if(showChoCh and YChoChS >0 and array.get(arrayMChoCh,idxChoCh) != YChoChS)
+            array.set(arrayMChoCh,idxChoCh,YChoChS)
+            line.new(XChoChS,YChoChS,time,YChoChS, color = _color,xloc = xloc.bar_time,width = 1,style = line.style_dashed)
+
+var arrayMarkGannML = array.new_float(3,0)
+var arrayMarkChoChGannML = array.new_float(6,0)
+var arrayXF0GannML = array.new_int(5,time)
+var arrayYF0GannML = array.new_float(5,close)
+var arrayXF1GannML = array.new_int(5,time)
+var arrayYF1GannML = array.new_float(5,close)
+var arrayLineF1GannML = array.new_line()
+var arraySXF1GannML = array.new_int(5,time)
+var arraySYF1GannML = array.new_float(5,close)
+var arraySLineF1GannML = array.new_line()
+var arrayXF2GannML = array.new_int(5,time)
+var arrayYF2GannML = array.new_float(5,close)
+var arrayLineF2GannML = array.new_line()
+var arraySXF2GannML = array.new_int(5,time)
+var arraySYF2GannML = array.new_float(5,close)
+var arraySLineF2GannML = array.new_line()
+var arrayXF3GannML = array.new_int(5,time)
+var arrayYF3GannML = array.new_float(5,close)
+var arrayLineF3GannML = array.new_line()
+var arraySXF3GannML = array.new_int(5,time)
+var arraySYF3GannML = array.new_float(5,close)
+var arraySLineF3GannML = array.new_line()
+f_CalculateAndDrawFn1(_pointX,_pointY) =>
+    //F0 : Song cua nen
+    array.unshift(arrayXF0GannML,_pointX)
+    array.unshift(arrayYF0GannML,_pointY)
+    //F1,F2,...: Song cua song theo Gann
+    if(showF1GannML or showF2GannML or showF3GannML or showSF1GannML or showSF2GannML or showSF3GannML)
+        [drawF1] = f_CalculateFn1(_pointX,_pointY,arrayXF0GannML,arrayYF0GannML,arrayXF1GannML,arrayYF1GannML)
+        f_CalculateDrawF(showF1GannML?drawF1:0,showSF1GannML,arrayLineF1GannML,arrayXF1GannML,arrayYF1GannML,showChoChF1GannML,arrayMarkChoChGannML,0,colorF1GannML)
+        if(drawF1 > 0 and (showF2GannML or showF3GannML or showSF1GannML or showSF2GannML or showSF3GannML))
+            [drawSF1] = f_CalculateSFn1(_pointX,_pointY,arrayMarkGannML,0,arraySXF1GannML,arraySYF1GannML)
+            f_CalculateDrawSF(showSF1GannML?drawSF1:0,arrayLineF1GannML,arraySLineF1GannML,arraySXF1GannML,arraySYF1GannML,showChoChSF1GannML,arrayMarkChoChGannML,1,colorF1GannML)
+            if(drawSF1 > 0 and (showF2GannML or showF3GannML or showSF2GannML or showSF3GannML))
+                [drawF2] = f_CalculateFn1(_pointX,_pointY,arraySXF1GannML,arraySYF1GannML,arrayXF2GannML,arrayYF2GannML)
+                f_CalculateDrawF(showF2GannML?drawF2:0,showSF2GannML,arrayLineF2GannML,arrayXF2GannML,arrayYF2GannML,showChoChF2GannML,arrayMarkChoChGannML,2,colorF2GannML)
+                if(drawF2 > 0 and (showF3GannML or showSF2GannML or showSF3GannML))
+                    [drawSF2] = f_CalculateSFn1(_pointX,_pointY,arrayMarkGannML,1,arraySXF2GannML,arraySYF2GannML)
+                    f_CalculateDrawSF(showSF2GannML?drawSF2:0,arrayLineF2GannML,arraySLineF2GannML,arraySXF2GannML,arraySYF2GannML,showChoChSF2GannML,arrayMarkChoChGannML,3,colorF2GannML)
+                    if(drawSF2 > 0 and (showF3GannML or showSF3GannML))
+                        [drawF3] = f_CalculateFn1(_pointX,_pointY,arraySXF2GannML,arraySYF2GannML,arrayXF3GannML,arrayYF3GannML)
+                        f_CalculateDrawF(showF3GannML?drawF3:0,showSF3GannML,arrayLineF3GannML,arrayXF3GannML,arrayYF3GannML,showChoChF3GannML,arrayMarkChoChGannML,4,colorF3GannML)
+                        if(drawF3 > 0 and (showSF3GannML))
+                            [drawSF3] = f_CalculateSFn1(_pointX,_pointY,arrayMarkGannML,2,arraySXF3GannML,arraySYF3GannML)
+                            f_CalculateDrawSF(showSF3GannML?drawSF3:0,arrayLineF3GannML,arraySLineF3GannML,arraySXF3GannML,arraySYF3GannML,showChoChSF3GannML,arrayMarkChoChGannML,5,colorF3GannML)
+
+f_CalculateAndDraw(_pointX,_pointY1,_pointY2) =>
+    if((array.get(arrayYF0GannML,0) > _pointY1 and array.get(arrayYF0GannML,0) > _pointY2) or (array.get(arrayYF0GannML,0) < _pointY1 and array.get(arrayYF0GannML,0) < _pointY2))
+        f_CalculateAndDrawFn1(time,array.get(arrayYF0GannML,1))
+    f_CalculateAndDrawFn1(time,_pointY1)
+    f_CalculateAndDrawFn1(time,_pointY2)
+
+highPrev = high
+lowPrev = low
+if(true)
+    if(high > highPrev[1] and low > lowPrev[1])
+        f_CalculateAndDraw(time,low,high)
+    else if(high < highPrev[1] and low < lowPrev[1])
+        f_CalculateAndDraw(time,high,low)
+    else if((high >= highPrev[1] and low < lowPrev[1]) or (high > highPrev[1] and low <= lowPrev[1]))
+        if(close > open)
+            f_CalculateAndDraw(time,low,high)
+        else
+            f_CalculateAndDraw(time,high,low)
+    else if(high[0] <= highPrev[1] and low[0] >= lowPrev[1])
+        highPrev := highPrev[1]
+        lowPrev := lowPrev[1]
+
+//plot(array.get(arrayMarkChoChGannML,1), color = colorF1GannML)
+//plot(array.get(arrayMarkChoChGannML,1)[1], color =colorF1GannML )
+
+//plot(array.get(arrayMarkChoChGannML,2), color = colorF2GannML)
+//plot(array.get(arrayMarkChoChGannML,2)[1], color = colorF2GannML)
+//plot(array.get(arrayMarkChoChGannML,3), color = colorF3GannML)
+//plot(array.get(arrayMarkChoChGannML,3)[1], color =colorF3GannML)
+//plot(array.get(arrayMarkChoChGannML,4))
+//plot(array.get(arrayMarkChoChGannML,4)[1])
+
+
+
+var a = true
+var b = true
+var e = true
+var f = true
+var a2 = true
+var b2 = true
+var a3 = true
+var b3 = true
+
+
+if array.get(arrayMarkChoChGannML,4) < array.get(arrayMarkChoChGannML,4)[1]
+    a := true
+    b := false
+if array.get(arrayMarkChoChGannML,4) > array.get(arrayMarkChoChGannML,4)[1]
+    a := false
+    b := true
+
+if array.get(arrayMarkChoChGannML,1) < array.get(arrayMarkChoChGannML,1)[1]
+    e := true
+    f := false
+if array.get(arrayMarkChoChGannML,1) > array.get(arrayMarkChoChGannML,1)[1]
+    e := false
+    f := true
+
+if array.get(arrayMarkChoChGannML,3) < array.get(arrayMarkChoChGannML,3)[1]
+    a3 := true
+    b3 := false
+if array.get(arrayMarkChoChGannML,3) > array.get(arrayMarkChoChGannML,3)[1]
+    a3 := false
+    b3 := true
+
+if array.get(arrayMarkChoChGannML,2) < array.get(arrayMarkChoChGannML,2)[1]
+    a2 := true
+    b2 := false
+if array.get(arrayMarkChoChGannML,2) > array.get(arrayMarkChoChGannML,2)[1]
+    a2 := false
+    b2 := true
+
+c = array.get(arrayMarkChoChGannML,0) != array.get(arrayMarkChoChGannML,0)[1] and array.get(arrayMarkChoChGannML,0) < high and ( array.get(arrayMarkChoChGannML,0) > close[1] ) and  ( f or (b or b2 or b3)) ? true : false
+d = array.get(arrayMarkChoChGannML,0) != array.get(arrayMarkChoChGannML,0)[1] and array.get(arrayMarkChoChGannML,0) > low and ( array.get(arrayMarkChoChGannML,0) < close[1] ) and (  e or (a or a2 or a3)) ? true : false
+
+var position = 1
+toggle = true //, "Stay in trade for longer.")
+short = input.bool(true, "ir true: short ; else close")
+
+if ((d[0]   )and short   )
+    //strategy.entry("short",strategy.short)
+    strategy.entry("short",strategy.short)
+    position := -1
+if ((c or (((b and b2 and b3)) and toggle) ) and not (((d[0] and not short) or not (c or (((b and b2 and b3) and f) and toggle))))  )
+    strategy.entry("long",strategy.long)
+    position := 1
+
+
+
+
+
+if (((d[0] and not short) or not (c and not short or (((b and b2 and b3) and f) and toggle))))
+    //strategy.entry("short",strategy.short)
+    strategy.close_all()
+    position := 0
+
+
+
+
+
+plot(position , "position")
+
+
+
+
+
+//plot(high > highPrev[1] and low > lowPrev[1] ? 1 :0)
+//plot(high < highPrev[1] and low < lowPrev[1] ? 1 :0)
+//plot((high >= highPrev[1] and low < lowPrev[1]) or (high > highPrev[1] and low <= lowPrev[1]) ? 1 :0)
+//plot(high[0] <= highPrev[1] and low[0] >= lowPrev[1] ? 1 :0)

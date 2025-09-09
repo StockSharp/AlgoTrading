@@ -1,0 +1,47 @@
+//@version=6
+strategy("2xSPYTIPS Strategy", overlay=true)
+
+// Input parametri
+sp500_ticker = input("SPX", title="S&P 500 Ticker")
+tips_ticker  = input("TIP", title="TIPS ETF Ticker")
+sma_length   = input(200, title="SMA Length")
+
+// Opzioni di leva personalizzabili
+leverage_option = input.string("1x", title="Leverage", options=["1x", "1.5x", "2x", "2.5x", "3x", "4x", "5x", "6x"])
+leverage = switch leverage_option
+    "1x" => 1
+    "1.5x" => 1.5
+    "2x" => 2
+    "2.5x" => 2.5
+    "3x" => 3
+    "4x" => 4
+    "5x" => 5
+    "6x" => 6
+
+// Caricamento dati
+sp500 = request.security(sp500_ticker, timeframe.period, close)
+tips  = request.security(tips_ticker, timeframe.period, close)
+
+// Calcolo SMA
+sma_sp500 = ta.sma(sp500, sma_length)
+sma_tips  = ta.sma(tips, sma_length)
+
+// Visualizzazione della SMA
+plot(sma_sp500, title="SMA S&P 500", color=color.blue, linewidth=2)
+plot(sma_tips, title="SMA TIPS", color=color.orange, linewidth=2)
+
+// Condizioni di ingresso aggiornate
+month_end = ta.change(time("M")) !=0
+buy_condition = sp500 > sma_sp500 and tips > sma_tips and month_end
+
+// Gestione della strategia migliorata
+if buy_condition
+    capital_per_trade = strategy.equity * 0.1  // Usa il 10% del capitale per ogni trade
+    contract_size = capital_per_trade / close  // Calcola la quantità basata sul prezzo
+    strategy.entry("Long", strategy.long, qty=contract_size * leverage, comment="BUY")
+
+// Aggiunta di segnale per entrate migliorate
+plotshape(series=buy_condition, location=location.belowbar, color=color.green, style=shape.labelup, title="BUY Signal", size=size.small)
+
+// Aggiunta di avvisi
+alertcondition(buy_condition, title="BUY Alert", message="BUY Signal Triggered")

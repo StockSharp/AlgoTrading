@@ -1,0 +1,238 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © PresentTrading
+
+// The FlexiMA x FlexiST Strategy intricately weaves two distinct analytical methodologies.
+// The FlexiMA component calculates a series of deviations between an indicator source and a dynamically varying moving average.
+// This variance is regulated through a starting factor and increment factor, offering a nuanced view of market trends.
+// Simultaneously, the FlexiST component applies a similar concept using the SuperTrend model, adjusting the ATR (Average True Range) length to
+// create a multifaceted trend-following oscillator. The synergy of these two elements provides a comprehensive market analysis tool.
+
+//@version=5
+strategy("FlexiMA x FlexiST - Strategy [presentTrading]",shorttitle = "Flexi MA x ST - Strategy [presentTrading]", overlay = false, precision=3, commission_value= 0.1, commission_type=strategy.commission.percent, slippage= 1, currency=currency.USD, default_qty_type = strategy.percent_of_equity, default_qty_value = 10, initial_capital= 10000)
+
+// Trading settings
+tradeDirection = input.string("Both", title="Trade Direction", options=["Long", "Short", "Both"])
+
+// FlexiMA Inputs
+indicatorSource_MA = input.source(hlc3, title="Indicator Source", group = "FlexiMA Settings")
+indicatorLength_MA = input.int(20, minval = 2, title="Indicator Length", group = "FlexiMA Settings")
+startingFactor_MA = input.float(1.0, title="Starting Factor", minval = 0, group = "FlexiMA Settings")
+incrementFactor_MA = input.float(1.0, minval = 0, step = .10, title="Increment Factor", group = "FlexiMA Settings")
+normalizeMethod_MA = input.string('None', options = ['None', 'Max-Min', 'Absolute Sum'], title="Normalization Method", group = "FlexiMA Settings")
+
+// FlexiST Inputs
+indicatorSource_ST = input.source(hlc3, title="Indicator Source", group = "FlexiST Settings")
+indicatorLength_ST = input.int(10, minval = 2, title="Indicator Length", group = "FlexiST Settings")
+startingFactor_ST = input.float(1.0, title="Starting Factor", minval = 0, group = "FlexiST Settings")
+incrementFactor_ST = input.float(.5, minval = 0, step = .10, title="Increment Factor", group = "FlexiST Settings")
+normalizeMethod_ST = input.string('None', options = ['None', 'Max-Min', 'Absolute Sum'], title="Normalization Method", group = "FlexiST Settings")
+
+//-----------------------------------------------------------------------------
+// FlexiMA
+//-----------------------------------------------------------------------------
+// This function normalizes an array of deviations according to the specified normalization method.
+normalize(diffs, den, normMethod) =>
+    // Initialize an array to hold the normalized deviations.
+    normalizedDiffs = array.new_float(0)
+    // Loop through each deviation value to apply normalization.
+    for val in diffs
+        // Determine the normalization value based on the chosen method.
+        normValue = switch normMethod
+            // "Max-Min" normalization scales the deviation based on the range of the array values.
+            "Max-Min" => (val - array.min(diffs)) / array.range(diffs)
+            // "Absolute Sum" normalization scales the deviation based on the sum of absolute values.
+            "Absolute Sum" => val / den
+            // Default case, no normalization is applied, so the value remains as is.
+            => val
+        // Add the normalized value to the array.
+        array.push(normalizedDiffs, normValue)
+    // Return the array of normalized values.
+    normalizedDiffs
+
+// This function calculates the standard deviation of an array of values.
+customStdev(values) =>
+    // Calculate the mean (average) of the values.
+    mean = array.sum(values) / array.size(values)
+    // Initialize an array to hold the squared differences from the mean.
+    squareDiffs = array.new_float(0)
+    // Loop through each value to calculate the squared difference from the mean.
+    for val in values
+        // Push the squared difference to the array.
+        array.push(squareDiffs, math.pow(val - mean, 2))
+    // Calculate the variance as the average of the squared differences.
+    variance = array.sum(squareDiffs) / (array.size(values) - 1)
+    // Return the square root of the variance, which is the standard deviation.
+    math.sqrt(variance)
+
+
+// This function calculates an oscillator based on a moving average (MA) where the length of the MA varies.
+// Each iteration applies a different length to the MA calculation by modifying the length factor.
+variableLengthMAOscillator(source, length, startFactor, incFactor, normMethod) =>
+    diffs = array.new_float(0)  // Array to store the deviations of the source from the MA.
+    den = 0.0  // A variable to accumulate the sum of absolute deviations, used for normalization.
+    factor = startFactor  // The starting factor for the MA length variation.
+
+    // Loop to calculate the MA and deviations for different lengths.
+    for i = 0 to 19
+        maLength = math.round(length * factor)  // Adjust the MA length by the current factor.
+        maValue = ta.sma(source, maLength)  // Calculate the Simple Moving Average (SMA) for the given length.
+        deviation = source - maValue  // Compute the deviation from the MA.
+        array.push(diffs, deviation)  // Store the deviation in the array.
+        den += math.abs(deviation)  // Add the absolute deviation to the denominator for normalization.
+        factor += incFactor  // Increment the factor for the next MA length adjustment.
+
+    // Normalize the deviations array using the chosen method and calculate the median and standard deviation.
+    normalizedDiffs = normalize(diffs, den, normMethod)
+    medianValue = array.median(normalizedDiffs)  // Find the median of the normalized deviations.
+    stdevValue = customStdev(normalizedDiffs)  // Calculate the standard deviation of the normalized deviations.
+    [medianValue, stdevValue, diffs, den]  // Return the median, standard deviation, and other variables for further use.
+
+// Calculate the Variable Length MA Oscillator
+// Access the SuperTrend Polyfactor Oscillator values
+[medianValue_MA, stdevValue_MA,diffs_MA,den_MA] = variableLengthMAOscillator(indicatorSource_MA, indicatorLength_MA, startingFactor_MA, incrementFactor_MA, normalizeMethod_MA)
+
+// This function normalizes an array of deviations according to the specified normalization method.
+
+norm(value, diffs, den)=>
+    normalizeMethod = switch normalizeMethod_MA
+        'Max-Min' => (value - diffs.min()) / diffs.range()
+        'Absolute Sum' => value / den
+        => value
+//-----------------------------------------------------------------------------
+// FlexiST
+//-----------------------------------------------------------------------------
+type supertrend
+    float upper = hl2
+    float lower = hl2
+    float output
+    float perf = 0
+    float factor
+    int trend = 0
+
+// Function to calculate SuperTrend Polyfactor Oscillator
+SuperTrendPolyfactorOscillator(indicatorSource, indicatorLength, startingFactor, incrementFactor, normalizeMethod) =>
+    var holder = array.new<supertrend>(0)
+    diffs = array.new<float>(0)
+    den = 0.0
+    factor = startingFactor
+
+    //Populate supertrend type array
+    if barstate.isfirst
+        for i = 0 to 19
+            holder.push(supertrend.new())
+
+    atr = ta.atr(indicatorLength)
+
+
+    for i = 0 to 19
+        get_spt = holder.get(i)
+        atr = ta.atr(indicatorLength)
+        up = hl2 + atr * (factor )
+        dn = hl2 - atr * (factor )
+
+
+        get_spt.trend := indicatorSource > get_spt.upper ? 1 : indicatorSource < get_spt.lower ? 0 : get_spt.trend
+        get_spt.upper := indicatorSource[1] < get_spt.upper ? math.min(up, get_spt.upper) : up
+        get_spt.lower := indicatorSource[1] > get_spt.lower ? math.max(dn, get_spt.lower) : dn
+        get_spt.output := get_spt.trend == 1 ? get_spt.lower : get_spt.upper
+
+        diffs.push(indicatorSource - get_spt.output)
+        den += math.abs(indicatorSource - get_spt.output)
+        factor += incrementFactor
+
+    median = norm(diffs.median(), diffs, den)
+    stdev = normalizeMethod != 'Max-Min' ? norm(diffs.stdev(), diffs, den) : na
+    [median, stdev, diffs, den]
+
+
+// Access the SuperTrend Polyfactor Oscillator values
+[medianValue_ST, stdevValue_ST,diffs_ST,den_ST] = SuperTrendPolyfactorOscillator(indicatorSource_ST, indicatorLength_ST, startingFactor_ST, incrementFactor_ST, normalizeMethod_ST)
+
+EnterLong = medianValue_MA > 0 and  medianValue_ST > 0
+EnterShort = medianValue_MA < 0 and  medianValue_ST < 0
+ExitLong = medianValue_MA < 0 and  medianValue_ST < 0
+ExitShort = medianValue_MA > 0 and  medianValue_ST > 0
+
+// Define alert conditions for entries and exits
+alertcondition(EnterLong, title="Enter Long Alert", message="Long Entry Condition Met")
+alertcondition(EnterShort, title="Enter Short Alert", message="Short Entry Condition Met")
+alertcondition(ExitLong, title="Exit Long Alert", message="Long Exit Condition Met")
+alertcondition(ExitShort, title="Exit Short Alert", message="Short Exit Condition Met")
+
+// Strategy logic
+if  (tradeDirection == "Long" or tradeDirection == "Both")
+    if EnterLong
+        strategy.entry("Long Entry", strategy.long)
+
+if (tradeDirection == "Short" or tradeDirection == "Both")
+    if EnterShort
+        strategy.entry("Short Entry", strategy.short)
+
+if  (tradeDirection == "Long" or tradeDirection == "Both")
+    if ExitLong
+        strategy.close("Long Entry")
+
+if (tradeDirection == "Short" or tradeDirection == "Both")
+    if ExitShort
+        strategy.close("Short Entry")
+
+
+//-----------------------------------------------------------------------------
+//Plots
+//-----------------------------------------------------------------------------
+//Style
+mesh_MA = input(true, inline = 'mesh', group = 'Style - MA')
+upCss_MA = input.color(color.new(#089981, 90), '', inline = 'mesh', group = 'Style - MA')
+dnCss_MA = input.color(color.new(#f23645, 90), '', inline = 'mesh', group = 'Style - MA')
+
+//Style
+mesh_ST = input(true, inline = 'mesh', group = 'Style - ST')
+upCss_ST = input.color(color.new(#089981, 90), '', inline = 'mesh', group = 'Style - ST')
+dnCss_ST = input.color(color.new(#f23645, 90), '', inline = 'mesh', group = 'Style - ST')
+
+norm(array.get(diffs_MA, 0),diffs_MA,den_MA)
+
+// Plot each individual deviation using the array.get function
+plot(mesh_MA ? norm(array.get(diffs_MA, 0),diffs_MA,den_MA) : na, "Deviation 1", color=array.get(diffs_MA, 0) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 1),diffs_MA,den_MA) : na, "Deviation 2", color=array.get(diffs_MA, 1) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 2),diffs_MA,den_MA) : na, "Deviation 3", color=array.get(diffs_MA, 2) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 3),diffs_MA,den_MA) : na, "Deviation 4", color=array.get(diffs_MA, 3) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 4),diffs_MA,den_MA) : na, "Deviation 5", color=array.get(diffs_MA, 4) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 15),diffs_MA,den_MA) : na, "Deviation 16", color=array.get(diffs_MA, 15) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 16),diffs_MA,den_MA) : na, "Deviation 17", color=array.get(diffs_MA, 16) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 17),diffs_MA,den_MA) : na, "Deviation 18", color=array.get(diffs_MA, 17) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+plot(mesh_MA ? norm(array.get(diffs_MA, 18),diffs_MA,den_MA) : na, "Deviation 19", color=array.get(diffs_MA, 18) > 0 ? upCss_MA : dnCss_MA, style=plot.style_histogram)
+
+//Median
+plot(medianValue_MA, 'Median', medianValue_MA > (normalizeMethod_MA == 'Max-Min' ? .5 : 0) ? #90bff9 : #ffcc80)
+//Stdev Area
+up_MA = plot(stdevValue_MA, color = na, editable = false)
+dn_MA = plot(-stdevValue_MA, color = na, editable = false)
+fill(up_MA, dn_MA, color.new(#90bff9, 80), title = 'Stdev Area')
+
+
+//-----------------------------------------------------------------------------}
+//Plots
+//-----------------------------------------------------------------------------{
+// This function normalizes an array of deviations according to the specified normalization method.
+
+norm(array.get(diffs_ST, 0),diffs_ST,den_ST)
+
+// Plot each individual deviation using the array.get function
+plot(mesh_ST ? norm(array.get(diffs_ST, 0),diffs_ST,den_ST) : na, "Deviation 1", color=array.get(diffs_ST, 0) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 1),diffs_ST,den_ST) : na, "Deviation 2", color=array.get(diffs_ST, 1) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 2),diffs_ST,den_ST) : na, "Deviation 3", color=array.get(diffs_ST, 2) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 3),diffs_ST,den_ST) : na, "Deviation 4", color=array.get(diffs_ST, 3) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 4),diffs_ST,den_ST) : na, "Deviation 5", color=array.get(diffs_ST, 4) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 15),diffs_ST,den_ST) : na, "Deviation 16", color=array.get(diffs_ST, 15) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 16),diffs_ST,den_ST) : na, "Deviation 17", color=array.get(diffs_ST, 16) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 17),diffs_ST,den_ST) : na, "Deviation 18", color=array.get(diffs_ST, 17) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+plot(mesh_ST ? norm(array.get(diffs_ST, 18),diffs_ST,den_ST) : na, "Deviation 19", color=array.get(diffs_ST, 18) > 0 ? upCss_ST : dnCss_MA, style=plot.style_histogram)
+
+//Median
+plot(medianValue_ST, 'Median', medianValue_MA > (normalizeMethod_MA == 'Max-Min' ? .5 : 0) ? #90bff9 : #ffcc80)
+
+//Stdev Area
+up_ST = plot(stdevValue_ST, color = na, editable = false)
+dn_ST = plot(-stdevValue_ST, color = na, editable = false)
+fill(up_ST, dn_ST, color.new(#90bff9, 80), title = 'Stdev Area')
