@@ -108,9 +108,9 @@ public class BtcFutureGammaWeightedMomentumModelStrategy : Strategy
 		var shortCondition = candle.ClosePrice < gwap && _prevClose1 < _prevClose2 && _prevClose2 < _prevClose3;
 
 		if (longCondition && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		else if (shortCondition && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		_prevClose3 = _prevClose2;
 		_prevClose2 = _prevClose1;

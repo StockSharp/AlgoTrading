@@ -182,7 +182,7 @@ public class BbRsiStrategy : Strategy
 
 		if (!_inTrade && closePrice < lowerBand && rsiValue < RsiBuyLevel && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_peakPrice = closePrice;
 			_inTrade = true;
 			return;
@@ -198,7 +198,7 @@ public class BbRsiStrategy : Strategy
 
 		if (closePrice <= trailingDrop || rsiValue > RsiExitLevel)
 		{
-			RegisterSell();
+			SellMarket();
 			_inTrade = false;
 		}
 	}

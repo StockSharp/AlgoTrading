@@ -273,7 +273,7 @@ public class StateAwareMaCrossStrategy : Strategy
 
 		if (_wasShortBelowLong[state] && !isShortBelowLong && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (!_wasShortBelowLong[state] && isShortBelowLong && Position > 0)
 		{

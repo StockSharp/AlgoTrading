@@ -201,7 +201,7 @@ public class BreaksAndRetestsStrategy : Strategy
 			if (EnableBreakouts && AllowLong && Position <= 0)
 			{
 				CancelActiveOrders();
-				RegisterBuy();
+				BuyMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 		}
@@ -217,7 +217,7 @@ public class BreaksAndRetestsStrategy : Strategy
 			if (EnableBreakouts && AllowShort && Position >= 0)
 			{
 				CancelActiveOrders();
-				RegisterSell();
+				SellMarket();
 				_entryPrice = candle.ClosePrice;
 			}
 		}
@@ -231,7 +231,7 @@ public class BreaksAndRetestsStrategy : Strategy
 			candle.LowPrice <= res && candle.ClosePrice >= res)
 		{
 			CancelActiveOrders();
-			RegisterBuy();
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_resistanceLevel = null;
 			_barsSinceResBreak = int.MaxValue;
@@ -242,7 +242,7 @@ public class BreaksAndRetestsStrategy : Strategy
 			candle.HighPrice >= sup && candle.ClosePrice <= sup)
 		{
 			CancelActiveOrders();
-			RegisterSell();
+			SellMarket();
 			_entryPrice = candle.ClosePrice;
 			_supportLevel = null;
 			_barsSinceSupBreak = int.MaxValue;
@@ -272,7 +272,7 @@ public class BreaksAndRetestsStrategy : Strategy
 				if (candle.ClosePrice <= stop)
 				{
 					CancelActiveOrders();
-					RegisterSell();
+					SellMarket();
 					_entryPrice = 0m;
 					_trailingStopActive = false;
 					_highestSinceTrailing = 0m;
@@ -284,7 +284,7 @@ public class BreaksAndRetestsStrategy : Strategy
 				if (candle.ClosePrice <= stop)
 				{
 					CancelActiveOrders();
-					RegisterSell();
+					SellMarket();
 					_entryPrice = 0m;
 				}
 			}
@@ -305,7 +305,7 @@ public class BreaksAndRetestsStrategy : Strategy
 				if (candle.ClosePrice >= stop)
 				{
 					CancelActiveOrders();
-					RegisterBuy();
+					BuyMarket();
 					_entryPrice = 0m;
 					_trailingStopActive = false;
 					_lowestSinceTrailing = 0m;
@@ -317,7 +317,7 @@ public class BreaksAndRetestsStrategy : Strategy
 				if (candle.ClosePrice >= stop)
 				{
 					CancelActiveOrders();
-					RegisterBuy();
+					BuyMarket();
 					_entryPrice = 0m;
 				}
 			}

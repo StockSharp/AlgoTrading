@@ -117,10 +117,10 @@ public class BollingerBandsSma202Strategy : Strategy
 		if (_prevClose.HasValue && _prevUpper.HasValue && _prevLower.HasValue)
 		{
 			if (_prevClose < _prevLower && candle.ClosePrice > lower && Position <= 0)
-				RegisterBuy();
+				BuyMarket();
 
 			if (_prevClose > _prevUpper && candle.ClosePrice < upper && Position >= 0)
-				RegisterSell();
+				SellMarket();
 		}
 
 		_prevClose = candle.ClosePrice;

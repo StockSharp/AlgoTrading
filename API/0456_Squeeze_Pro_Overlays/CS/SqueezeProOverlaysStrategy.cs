@@ -139,11 +139,11 @@ public class SqueezeProOverlaysStrategy : Strategy
 		{
 			if (_currentMomentum > 0 && Position <= 0)
 			{
-				RegisterBuy();
+				BuyMarket();
 			}
 			else if (_currentMomentum < 0 && Position >= 0)
 			{
-				RegisterSell();
+				SellMarket();
 			}
 		}
 

@@ -236,7 +236,7 @@ public class BtfdStrategy : Strategy
 		
 		if (Position <= 0 && volumeCond && rsiCond)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_initialVolume = Volume;
 			_soldPercent = 0;

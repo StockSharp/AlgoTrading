@@ -174,16 +174,16 @@ public class BollingerBandsFibonacciStrategy : Strategy
 		var crossUnder = _prevClose >= _prevLower && candle.ClosePrice < lowerBand;
 
 		if (crossOver && candle.LowPrice > fibLow && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 
 		if (crossUnder && candle.HighPrice < fibHigh && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		if (Position > 0 && _prevClose >= _prevMiddle && candle.ClosePrice < middleBand)
-			RegisterSell();
+			SellMarket();
 
 		if (Position < 0 && _prevClose <= _prevMiddle && candle.ClosePrice > middleBand)
-			RegisterBuy();
+			BuyMarket();
 
 		_prevClose = candle.ClosePrice;
 		_prevUpper = upperBand;
@@ -350,16 +350,16 @@ public class BollingerBandsFibonacciStrategy : Strategy
 		var crossUnder = _prevClose >= _prevLower && candle.ClosePrice < lowerBand;
 
 		if (crossOver && candle.LowPrice > fibLow && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 
 		if (crossUnder && candle.HighPrice < fibHigh && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		if (Position > 0 && _prevClose >= _prevMiddle && candle.ClosePrice < middleBand)
-			RegisterSell();
+			SellMarket();
 
 		if (Position < 0 && _prevClose <= _prevMiddle && candle.ClosePrice > middleBand)
-			RegisterBuy();
+			BuyMarket();
 
 		_prevClose = candle.ClosePrice;
 		_prevUpper = upperBand;

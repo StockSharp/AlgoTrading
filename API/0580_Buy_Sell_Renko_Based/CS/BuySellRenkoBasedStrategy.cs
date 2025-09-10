@@ -86,11 +86,11 @@ public class BuySellRenkoBasedStrategy : Strategy
 
 			if (!prevBull && currBull && Position <= 0)
 			{
-				RegisterBuy();
+				BuyMarket();
 			}
 			else if (prevBull && !currBull && Position >= 0)
 			{
-				RegisterSell();
+				SellMarket();
 			}
 		}
 

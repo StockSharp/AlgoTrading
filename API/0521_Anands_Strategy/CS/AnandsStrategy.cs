@@ -117,9 +117,9 @@ public class AnandsStrategy : Strategy
 		var prevLow15m = _prevCandle2.LowPrice;
 
 		if (tradeDirection == 1 && currentClose > prevHigh15m && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		else if (tradeDirection == -1 && currentClose < prevLow15m && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		ShiftCandles(candle);
 	}

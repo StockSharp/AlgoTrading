@@ -132,7 +132,7 @@ public class ZScoreBuySellStrategy : Strategy
 			if (_sellCooldownCounter >= CoolDown)
 			{
 				if (Position >= 0)
-					RegisterSell();
+					SellMarket();
 				_sellCooldownCounter = 0;
 				_buyCooldownCounter = CoolDown;
 			}
@@ -146,7 +146,7 @@ public class ZScoreBuySellStrategy : Strategy
 			if (_buyCooldownCounter >= CoolDown)
 			{
 				if (Position <= 0)
-					RegisterBuy();
+					BuyMarket();
 				_sellCooldownCounter = CoolDown;
 				_buyCooldownCounter = 0;
 			}

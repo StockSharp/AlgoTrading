@@ -167,7 +167,7 @@ public class ThreeDownThreeUpStrategy : Strategy
 
 	if (Position <= 0 && longCondition)
 	{
-		RegisterBuy();
+		BuyMarket();
 		_aboveCount = 0;
 	}
 	else if (Position > 0 && exitCondition)

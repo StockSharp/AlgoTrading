@@ -191,11 +191,11 @@ var rsiBearish = rsi < RsiSellLevel && rsi > 30m;
 
 if (isBullish && macdBullish && rsiBullish && Position <= 0)
 {
-RegisterBuy();
+BuyMarket();
 }
 else if (isBearish && macdBearish && rsiBearish && Position >= 0)
 {
-RegisterSell();
+SellMarket();
 }
 
 _prevMacd = macd;

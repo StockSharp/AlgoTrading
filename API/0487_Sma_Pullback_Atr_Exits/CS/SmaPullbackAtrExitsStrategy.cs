@@ -172,12 +172,12 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 		{
 			if (currentPrice < fastSmaValue && fastSmaValue > slowSmaValue)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_entryPrice = currentPrice;
 			}
 			else if (currentPrice > fastSmaValue && fastSmaValue < slowSmaValue)
 			{
-				RegisterSell();
+				SellMarket();
 				_entryPrice = currentPrice;
 			}
 		}

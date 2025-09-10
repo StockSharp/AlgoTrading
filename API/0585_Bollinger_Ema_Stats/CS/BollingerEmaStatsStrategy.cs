@@ -155,13 +155,13 @@ public class BollingerEmaStatsStrategy : Strategy
 		{
 			if (candle.ClosePrice < entryLower)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_stopPrice = stopLower;
 				_targetPrice = emaValue;
 			}
 			else if (candle.ClosePrice > entryUpper)
 			{
-				RegisterSell();
+				SellMarket();
 				_stopPrice = stopUpper;
 				_targetPrice = emaValue;
 			}

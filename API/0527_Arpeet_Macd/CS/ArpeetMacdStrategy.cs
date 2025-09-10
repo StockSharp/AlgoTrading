@@ -127,11 +127,11 @@ public class ArpeetMacdStrategy : Strategy
 
 		if (crossedUp && macd < 0 && Position <= 0)
 		{
-		RegisterBuy();
+		BuyMarket();
 		}
 		else if (crossedDown && macd > 0 && Position >= 0)
 		{
-		RegisterSell();
+		SellMarket();
 		}
 
 		_prevDiff = diff;

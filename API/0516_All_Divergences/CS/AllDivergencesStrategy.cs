@@ -200,13 +200,13 @@ public class AllDivergencesStrategy : Strategy
 		if (longTrend && _lastLowPrice is decimal prevLow && _lastLowRsi is decimal prevRsi)
 		{
 			if (candle.LowPrice < prevLow && rsiValue > prevRsi && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		}
 
 		if (shortTrend && _lastHighPrice is decimal prevHigh && _lastHighRsi is decimal prevHighRsi)
 		{
 			if (candle.HighPrice > prevHigh && rsiValue < prevHighRsi && Position >= 0)
-			RegisterSell();
+			SellMarket();
 		}
 
 		if (_lastLowPrice is null || candle.LowPrice < _lastLowPrice)

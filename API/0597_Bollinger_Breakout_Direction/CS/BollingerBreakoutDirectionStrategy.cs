@@ -159,25 +159,25 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice * (1 - StopLossPercent / 100m);
 			_takePrice = _entryPrice * (1 + (StopLossPercent / 100m * RiskRewardRatio));
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (shortSignal)
 		{
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = _entryPrice * (1 + StopLossPercent / 100m);
 			_takePrice = _entryPrice * (1 - (StopLossPercent / 100m * RiskRewardRatio));
-			RegisterSell();
+			SellMarket();
 		}
 
 		if (Position > 0)
 		{
 			if (candle.ClosePrice <= _stopPrice || candle.ClosePrice >= _takePrice)
-				RegisterSell();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (candle.ClosePrice >= _stopPrice || candle.ClosePrice <= _takePrice)
-				RegisterBuy();
+				BuyMarket();
 		}
 	}
 }

@@ -164,11 +164,11 @@ public class AutomaticTrendlinesStrategy : Strategy
 			{
 				if (resY is decimal r && _prevResY is decimal pr && pc <= pr && candle.ClosePrice > r && Position <= 0)
 				{
-					RegisterBuy();
+					BuyMarket();
 				}
 				else if (supY is decimal s && _prevSupY is decimal ps && pc >= ps && candle.ClosePrice < s && Position >= 0)
 				{
-					RegisterSell();
+					SellMarket();
 				}
 			}
 		}

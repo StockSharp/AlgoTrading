@@ -89,9 +89,9 @@ public class AdaptiveRsiStrategy : Strategy
 			var shortCondition = _arsiPrev >= _arsiPrevPrev && arsi < _arsiPrev;
 
 			if (longCondition && Position <= 0)
-				RegisterBuy();
+				BuyMarket();
 			else if (shortCondition && Position >= 0)
-				RegisterSell();
+				SellMarket();
 		}
 
 		_arsiPrevPrev = _arsiPrev;

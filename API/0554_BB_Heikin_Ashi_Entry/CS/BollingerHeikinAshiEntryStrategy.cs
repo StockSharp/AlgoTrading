@@ -167,7 +167,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			_firstTarget = _entryPrice + (_entryPrice - _initialStop);
 			_firstTargetReached = false;
 			_trailStop = default;
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (sellSignal && Position >= 0)
 		{
@@ -176,7 +176,7 @@ public class BollingerHeikinAshiEntryStrategy : Strategy
 			_firstTarget = _entryPrice - (_initialStop - _entryPrice);
 			_firstTargetReached = false;
 			_trailStop = default;
-			RegisterSell();
+			SellMarket();
 		}
 
 		if (Position > 0)

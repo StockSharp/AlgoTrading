@@ -92,12 +92,12 @@ public class BackwardNumberOfBarsStrategy : Strategy
 		if (withinWindow)
 		{
 			if (Position <= 0)
-				RegisterBuy();
+				BuyMarket();
 		}
 		else
 		{
 			if (Position >= 0)
-				RegisterSell();
+				SellMarket();
 		}
 	}
 }

@@ -213,9 +213,9 @@ public class AdaptiveKdjMtfStrategy : Strategy
 			return;
 
 		if (Position <= 0 && buySignal)
-			RegisterBuy();
+			BuyMarket();
 		else if (Position >= 0 && sellSignal)
-			RegisterSell();
+			SellMarket();
 
 		_prevSmoothK = smoothK;
 		_prevSmoothD = smoothD;

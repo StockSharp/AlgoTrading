@@ -271,15 +271,15 @@ public class PearsonsROscillatorStrategy : Strategy
 	        return;
 
 	    if (crossUpper && Position <= 0)
-	        RegisterBuy();
+	        BuyMarket();
 	    else if (crossLower && Position >= 0)
-	        RegisterSell();
+	        SellMarket();
 	    else if (crossMid)
 	    {
 	        if (Position > 0)
-	            RegisterSell();
+	            SellMarket();
 	        else if (Position < 0)
-	            RegisterBuy();
+	            BuyMarket();
 	    }
 
 	    _prevClose = currentClose;

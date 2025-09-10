@@ -273,7 +273,7 @@ private void ProcessMain(ICandleMessage candle, decimal atr)
 		if (_prevSmoothedCombined < ThresholdLow && _smoothedCombined >= ThresholdLow)
 		{
 			_stopLossLevel = candle.ClosePrice - VolatilityMultiplier * atr;
-			RegisterBuy();
+			BuyMarket();
 			_barsHeld = 0;
 		}
 	}
@@ -285,7 +285,7 @@ private void ProcessMain(ICandleMessage candle, decimal atr)
 		
 		if (candle.LowPrice <= _stopLossLevel)
 		{
-			RegisterSell();
+			SellMarket();
 			_stopLossLevel = 0m;
 			_barsHeld = 0;
 		}
@@ -294,7 +294,7 @@ private void ProcessMain(ICandleMessage candle, decimal atr)
 			_barsHeld++;
 			if (_barsHeld >= HoldPeriods)
 			{
-				RegisterSell();
+				SellMarket();
 				_stopLossLevel = 0m;
 				_barsHeld = 0;
 			}

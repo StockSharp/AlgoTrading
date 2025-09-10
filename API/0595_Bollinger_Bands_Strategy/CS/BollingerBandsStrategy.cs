@@ -174,13 +174,13 @@ public class BollingerBandsStrategy : Strategy
 		{
 			if (close > upper)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_entryPrice = close;
 				_stopPrice = _entryPrice * (1m - StopLossPercent / 100m);
 			}
 			else if (close < lower)
 			{
-				RegisterSell();
+				SellMarket();
 				_entryPrice = close;
 				_stopPrice = _entryPrice * (1m + StopLossPercent / 100m);
 			}

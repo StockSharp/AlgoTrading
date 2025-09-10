@@ -223,10 +223,10 @@ public class BollingerBandTouchSmiMacdAngleStrategy : Strategy
 		var macdAngledUp = macdAngle > 0m && macdAngle <= MacdAngleThreshold;
 
 		if (priceTouchesLower && smiAngledUp && macdAngledUp && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 
 		if (priceTouchesUpper && Position > 0)
-			RegisterSell();
+			SellMarket();
 
 		_prevSmi = smi;
 		_prevMacd = macd;

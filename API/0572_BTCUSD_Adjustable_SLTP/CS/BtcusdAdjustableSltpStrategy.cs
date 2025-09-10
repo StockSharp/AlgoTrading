@@ -210,13 +210,13 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 
 				if (close > _retraceLevel && _prevClose <= _retraceLevel)
 				{
-					RegisterBuy();
+					BuyMarket();
 					_longSignalActive = false;
 				}
 			}
 
 			if (shortCondition && shortValid)
-				RegisterSell();
+				SellMarket();
 		}
 		else if (Position > 0)
 		{

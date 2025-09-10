@@ -104,11 +104,11 @@ public class BedoOsaimiIstrStrategy : Strategy
 
 		if (prevClose <= prevOpen && closeMaValue > openMaValue && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (prevClose >= prevOpen && closeMaValue < openMaValue && Position >= 0)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 
 		_prevClose = closeMaValue;

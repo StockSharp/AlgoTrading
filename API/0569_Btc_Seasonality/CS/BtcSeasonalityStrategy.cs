@@ -49,17 +49,17 @@ public class BtcSeasonalityStrategy:Strategy
 		{
 			if(IsLong)
 			{
-				if(Position<=0)RegisterBuy();
+				if(Position<=0)BuyMarket();
 			}
 			else
 			{
-				if(Position>=0)RegisterSell();
+				if(Position>=0)SellMarket();
 			}
 		}
 		if(d==ExitDay&&h==ExitHour)
 		{
-			if(Position>0)RegisterSell();
-			else if(Position<0)RegisterBuy();
+			if(Position>0)SellMarket();
+			else if(Position<0)BuyMarket();
 		}
 	}
 }

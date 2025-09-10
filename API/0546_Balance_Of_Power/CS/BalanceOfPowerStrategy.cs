@@ -94,9 +94,9 @@ public class BalanceOfPowerStrategy : Strategy
 		if (_previousBop is decimal prev)
 		{
 			if (prev <= Threshold && bop > Threshold && Position <= 0)
-				RegisterBuy();
+				BuyMarket();
 			else if (prev >= -Threshold && bop < -Threshold && Position > 0)
-				RegisterSell();
+				SellMarket();
 		}
 
 		_previousBop = bop;

@@ -200,7 +200,7 @@ var sellCondition = fastMaValue < slowMaValue || rsiValue > 70m;
 
 if (buyCondition && Position <= 0)
 {
-RegisterBuy();
+BuyMarket();
 }
 else if (sellCondition && Position > 0)
 {

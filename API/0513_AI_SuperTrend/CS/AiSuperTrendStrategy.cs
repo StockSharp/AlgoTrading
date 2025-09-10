@@ -182,16 +182,16 @@ public class AiSuperTrendStrategy : Strategy
 		var shortStop = superTrendValue + atrValue * AtrFactor;
 
 		if (EnableLong && longCondition && Position <= 0)
-		RegisterBuy();
+		BuyMarket();
 
 		if (EnableShort && shortCondition && Position >= 0)
-		RegisterSell();
+		SellMarket();
 
 		if (Position > 0 && (longExit || candle.LowPrice <= longStop))
-		RegisterSell();
+		SellMarket();
 
 		if (Position < 0 && (shortExit || candle.HighPrice >= shortStop))
-		RegisterBuy();
+		BuyMarket();
 
 		_prevIsBull = isBull;
 		_prevDirection = direction;

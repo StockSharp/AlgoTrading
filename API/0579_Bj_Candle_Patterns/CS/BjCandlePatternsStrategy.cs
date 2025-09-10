@@ -89,11 +89,11 @@ public class BjCandlePatternsStrategy : Strategy
 
 		if (isDragonfly && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (isGravestone && Position >= 0)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 	}
 }

@@ -199,19 +199,19 @@ public class MaBbSupertrendStrategy : Strategy
 		var uptrend = candle.ClosePrice > supertrendValue;
 
 		if (crossUp && uptrend && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		else if (crossDown && !uptrend && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		if (Position > 0)
 		{
 			if (candle.ClosePrice >= upper || candle.ClosePrice < supertrendValue)
-				RegisterSell();
+				SellMarket();
 		}
 		else if (Position < 0)
 		{
 			if (candle.ClosePrice <= lower || candle.ClosePrice > supertrendValue)
-				RegisterBuy();
+				BuyMarket();
 		}
 
 		_prevBasis = basis;

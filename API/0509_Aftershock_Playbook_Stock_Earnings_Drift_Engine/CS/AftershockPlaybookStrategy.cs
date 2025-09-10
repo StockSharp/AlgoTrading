@@ -98,14 +98,14 @@ public class AftershockPlaybookStrategy : Strategy
 
 			if (longOk && !_waitNext)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_entry = candle.ClosePrice;
 				_entryTime = candle.OpenTime.DateTime;
 				_lastDir = 1;
 			}
 			else if (shortOk && !_waitNext)
 			{
-				RegisterSell();
+				SellMarket();
 				_entry = candle.ClosePrice;
 				_entryTime = candle.OpenTime.DateTime;
 				_lastDir = -1;
@@ -135,9 +135,9 @@ public class AftershockPlaybookStrategy : Strategy
 		if (Position == 0 && _reenter && _lastDir != 0)
 		{
 			if (_lastDir > 0)
-				RegisterBuy();
+				BuyMarket();
 			else
-				RegisterSell();
+				SellMarket();
 
 			_entry = candle.ClosePrice;
 			_entryTime = candle.OpenTime.DateTime;

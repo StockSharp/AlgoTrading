@@ -242,7 +242,7 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 			_longEntry = close;
 			_longSl = lowerBand;
 			_longTp = _longEntry + (_longEntry - _longSl) * RrRatio;
-			RegisterBuy();
+			BuyMarket();
 		}
 		
 		if (bearCross && squeezeDotGreen && Position >= 0)
@@ -250,19 +250,19 @@ public class BbBreakoutMomentumSqueezeStrategy : Strategy
 			_shortEntry = close;
 			_shortSl = upperBand;
 			_shortTp = _shortEntry - (_shortSl - _shortEntry) * RrRatio;
-			RegisterSell();
+			SellMarket();
 		}
 		
 		if (Position > 0)
 		{
 			if (candle.LowPrice <= _longSl || candle.HighPrice >= _longTp)
-			RegisterSell();
+			SellMarket();
 		}
 		
 		if (Position < 0)
 		{
 			if (candle.HighPrice >= _shortSl || candle.LowPrice <= _shortTp)
-			RegisterBuy();
+			BuyMarket();
 		}
 	}
 }

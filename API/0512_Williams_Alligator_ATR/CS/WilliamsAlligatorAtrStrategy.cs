@@ -199,7 +199,7 @@ public class WilliamsAlligatorAtrStrategy : Strategy
 
 		if (!_prevLipsAboveJaw && lipsAboveJaw && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_entryPrice = price;
 		}
 		else if (_prevLipsAboveJaw && !lipsAboveJaw && Position > 0)

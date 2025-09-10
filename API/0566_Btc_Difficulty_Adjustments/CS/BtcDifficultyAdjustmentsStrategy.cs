@@ -123,17 +123,17 @@ public class BtcDifficultyAdjustmentsStrategy : Strategy
 			if (Math.Abs(change) >= Threshold)
 			{
 				if (change < 0 && Position <= 0)
-					RegisterBuy();
+					BuyMarket();
 				else if (change > 0 && Position >= 0)
-					RegisterSell();
+					SellMarket();
 			}
 		}
 		else
 		{
 			if (higher && Position <= 0)
-				RegisterBuy();
+				BuyMarket();
 			else if (lower && Position >= 0)
-				RegisterSell();
+				SellMarket();
 		}
 
 		_prevChanged = changed;

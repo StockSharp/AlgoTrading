@@ -357,13 +357,13 @@ public class AdvancedSupertrendStrategy : Strategy
 
 		if (supertrendBullish && rsiBuyCondition && maBuyCondition && trendStrengthCondition && breakoutBuy && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_stopLossLevel = UseStopLoss ? candle.ClosePrice - atrValue * SlMultiplier : 0m;
 			_takeProfitLevel = UseTakeProfit ? candle.ClosePrice + atrValue * TpMultiplier : 0m;
 		}
 		else if (supertrendBearish && rsiSellCondition && maSellCondition && trendStrengthCondition && breakoutSell && Position >= 0)
 		{
-			RegisterSell();
+			SellMarket();
 			_stopLossLevel = UseStopLoss ? candle.ClosePrice + atrValue * SlMultiplier : 0m;
 			_takeProfitLevel = UseTakeProfit ? candle.ClosePrice - atrValue * TpMultiplier : 0m;
 		}

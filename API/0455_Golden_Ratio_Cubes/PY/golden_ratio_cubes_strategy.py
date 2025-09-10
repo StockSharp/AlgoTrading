@@ -88,9 +88,9 @@ class golden_ratio_cubes_strategy(Strategy):
         price = candle.ClosePrice
 
         if price > upper and self.Position <= 0:
-            self.RegisterBuy()
+            self.BuyMarket()
         elif price < lower and self.Position >= 0:
-            self.RegisterSell()
+            self.SellMarket()
 
     def CreateClone(self):
         return golden_ratio_cubes_strategy()

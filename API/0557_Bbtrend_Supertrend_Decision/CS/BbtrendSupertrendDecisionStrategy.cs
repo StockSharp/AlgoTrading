@@ -257,14 +257,14 @@ public class BbtrendSupertrendDecisionStrategy : Strategy
 		var allowShort = TradeDirection == TradeDirection.Both || TradeDirection == TradeDirection.Short;
 
 		if (dir > 0 && Position > 0)
-			RegisterSell();
+			SellMarket();
 		if (dir < 0 && Position < 0)
-			RegisterBuy();
+			BuyMarket();
 
 		if (allowLong && dir < 0 && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-			RegisterBuy();
+			BuyMarket();
 		if (allowShort && dir > 0 && Position >= 0 && IsFormedAndOnlineAndAllowTrading())
-			RegisterSell();
+			SellMarket();
 
 		_previousBbTrend = close;
 		_prevAtr = atr;

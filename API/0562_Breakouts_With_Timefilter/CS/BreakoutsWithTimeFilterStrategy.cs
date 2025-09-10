@@ -184,7 +184,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		var stopDistance = candle.ClosePrice - _stopLevel;
 		_targetLevel = candle.ClosePrice + RiskReward * stopDistance;
 
-		RegisterBuy();
+		BuyMarket();
 	}
 
 	private void EnterShort(ICandleMessage candle, decimal atrValue)
@@ -200,7 +200,7 @@ public class BreakoutsWithTimeFilterStrategy : Strategy
 		var stopDistance = _stopLevel - candle.ClosePrice;
 		_targetLevel = candle.ClosePrice - RiskReward * stopDistance;
 
-		RegisterSell();
+		SellMarket();
 	}
 
 	private decimal GetCandleStop(bool isShort)

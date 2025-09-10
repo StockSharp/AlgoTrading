@@ -112,8 +112,8 @@ public class SmaBufferStrategy : Strategy
 		var lowerThreshold = smaValue * (1m - ExitPercent / 100m);
 
 		if (Position <= 0 && candle.ClosePrice > upperThreshold)
-			RegisterBuy();
+			BuyMarket();
 		else if (Position > 0 && candle.ClosePrice < lowerThreshold)
-			RegisterSell();
+			SellMarket();
 	}
 }

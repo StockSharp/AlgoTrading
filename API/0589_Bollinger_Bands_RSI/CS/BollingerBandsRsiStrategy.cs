@@ -117,15 +117,15 @@ public class BollingerBandsRsiStrategy : Strategy
 
 		if (candle.ClosePrice < lower && rsi < RsiOversold && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (Position > 0 && candle.ClosePrice > upper && rsi > RsiOverbought)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 		else if (Position > 0 && rsi > RsiExit)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 	}
 }

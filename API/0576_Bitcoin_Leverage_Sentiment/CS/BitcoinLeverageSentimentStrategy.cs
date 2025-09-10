@@ -163,20 +163,20 @@ public class BitcoinLeverageSentimentStrategy : Strategy
 
 		if (Direction != TradeDirection.Short && Position <= 0 && _prevZ < LongEntryThreshold && z >= LongEntryThreshold)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (Direction != TradeDirection.Short && Position > 0 && _prevZ > LongExitThreshold && z <= LongExitThreshold)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 
 		if (Direction != TradeDirection.Long && Position >= 0 && _prevZ > ShortEntryThreshold && z <= ShortEntryThreshold)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 		else if (Direction != TradeDirection.Long && Position < 0 && _prevZ < ShortExitThreshold && z >= ShortExitThreshold)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 
 		_prevZ = z;

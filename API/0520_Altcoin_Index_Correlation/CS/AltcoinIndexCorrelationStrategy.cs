@@ -219,8 +219,8 @@ public class AltcoinIndexCorrelationStrategy : Strategy
 		}
 
 		if (goLong && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		else if (goShort && Position >= 0)
-			RegisterSell();
+			SellMarket();
 	}
 }

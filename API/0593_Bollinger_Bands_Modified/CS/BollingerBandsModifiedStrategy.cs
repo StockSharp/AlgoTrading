@@ -169,7 +169,7 @@ public class BollingerBandsModifiedStrategy : Strategy
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = lowest;
 			_targetPrice = _entryPrice + Math.Abs(_entryPrice - _stopPrice) * TargetFactor;
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (isShortCondition && Position >= 0 && !_isShortEntry)
 		{
@@ -178,7 +178,7 @@ public class BollingerBandsModifiedStrategy : Strategy
 			_entryPrice = candle.ClosePrice;
 			_stopPrice = highest;
 			_targetPrice = _entryPrice - Math.Abs(_entryPrice - _stopPrice) * TargetFactor;
-			RegisterSell();
+			SellMarket();
 		}
 		
 		if (Position > 0)

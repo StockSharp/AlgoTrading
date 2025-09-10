@@ -72,8 +72,8 @@ public class BollingerBandsMeanReversionStrategy : Strategy
 			return;
 
 		if (candle.ClosePrice < lower && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		else if (candle.ClosePrice > upper && Position > 0)
-			RegisterSell();
+			SellMarket();
 	}
 }

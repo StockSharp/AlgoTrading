@@ -292,8 +292,8 @@ public class ThreeSignalDirectionalTrendStrategy : Strategy
 		shortCount++;
 
 		if (longCount >= 2 && Position <= 0)
-		RegisterBuy();
+		BuyMarket();
 		else if (shortCount >= 2 && Position >= 0)
-		RegisterSell();
+		SellMarket();
 	}
 }

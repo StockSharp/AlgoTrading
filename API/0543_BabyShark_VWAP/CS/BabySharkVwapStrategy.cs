@@ -194,13 +194,13 @@ public class BabySharkVwapStrategy : Strategy
 			{
 				if (candle.ClosePrice <= lower && rsi <= LowerLevel)
 				{
-					RegisterBuy();
+					BuyMarket();
 					_entryPrice = candle.ClosePrice;
 					_barsSinceExit = 0;
 				}
 				else if (candle.ClosePrice >= upper && rsi >= HigherLevel)
 				{
-					RegisterSell();
+					SellMarket();
 					_entryPrice = candle.ClosePrice;
 					_barsSinceExit = 0;
 				}
@@ -211,7 +211,7 @@ public class BabySharkVwapStrategy : Strategy
 			var stop = _entryPrice * (1 - StopLossPercent / 100m);
 			if (candle.ClosePrice >= vwap || candle.ClosePrice <= stop)
 			{
-				RegisterSell();
+				SellMarket();
 				_barsSinceExit = 0;
 			}
 		}
@@ -220,7 +220,7 @@ public class BabySharkVwapStrategy : Strategy
 			var stop = _entryPrice * (1 + StopLossPercent / 100m);
 			if (candle.ClosePrice <= vwap || candle.ClosePrice >= stop)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_barsSinceExit = 0;
 			}
 		}

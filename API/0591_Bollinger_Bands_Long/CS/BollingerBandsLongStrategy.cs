@@ -142,7 +142,7 @@ public class BollingerBandsLongStrategy : Strategy
 
 		if (candle.ClosePrice < lower && rsiValue < RsiOversold && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_inTrade = true;
 			return;
 		}
@@ -152,7 +152,7 @@ public class BollingerBandsLongStrategy : Strategy
 
 		if (candle.ClosePrice >= middle && Position > 0)
 		{
-			RegisterSell();
+			SellMarket();
 			_inTrade = false;
 		}
 	}

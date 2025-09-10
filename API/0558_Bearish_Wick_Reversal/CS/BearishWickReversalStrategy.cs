@@ -167,10 +167,10 @@ public class BearishWickReversalStrategy : Strategy
 		}
 
 		if (longCondition && Position <= 0 && IsFormedAndOnlineAndAllowTrading())
-			RegisterBuy();
+			BuyMarket();
 
 		if (Position > 0 && candle.ClosePrice > _previousHigh)
-			RegisterSell();
+			SellMarket();
 
 		_previousHigh = candle.HighPrice;
 	}

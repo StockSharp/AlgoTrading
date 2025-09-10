@@ -121,7 +121,7 @@ public class Rsi3070Strategy : Strategy
 			if (Position < 0)
 				RegisterBuy(Math.Abs(Position));
 
-			RegisterBuy();
+			BuyMarket();
 			return;
 		}
 

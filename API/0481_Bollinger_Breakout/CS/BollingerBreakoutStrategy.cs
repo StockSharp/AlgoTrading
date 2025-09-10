@@ -190,16 +190,16 @@ public class BollingerBreakoutStrategy : Strategy
 		var bbCrossunderLongExit = _prevClose >= _prevLower && candle.ClosePrice < lowerBand;
 
 		if (UseLongSignals && bbCrossoverLong && Position <= 0 && volConditionLong && trendConditionLong)
-			RegisterBuy();
+			BuyMarket();
 
 		if (UseLongSignals && bbCrossoverShortExit && Position > 0)
-			RegisterSell();
+			SellMarket();
 
 		if (UseShortSignals && bbCrossunderShort && Position >= 0 && volConditionShort && trendConditionShort && rsiConditionShort)
-			RegisterSell();
+			SellMarket();
 
 		if (UseShortSignals && bbCrossunderLongExit && Position < 0)
-			RegisterBuy();
+			BuyMarket();
 
 		_prevClose = candle.ClosePrice;
 		_prevUpper = upperBand;

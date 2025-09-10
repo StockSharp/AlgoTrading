@@ -147,7 +147,7 @@ public class ThreeRedGreenVolatilityStrategy : Strategy
 
 		if (Position == 0 && threeRed && atrEntry)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_entryBarIndex = _barIndex;
 		}
 
@@ -156,7 +156,7 @@ public class ThreeRedGreenVolatilityStrategy : Strategy
 
 		if (Position > 0 && exitCondition)
 		{
-			RegisterSell();
+			SellMarket();
 			_entryBarIndex = null;
 		}
 

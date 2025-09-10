@@ -92,14 +92,14 @@ public class BollingerBandsEnhancedStrategy : Strategy
 			var tp = _trail ? mid : (decimal?)null;
 			if (c.LowPrice <= stop || (tp != null && c.ClosePrice < tp.Value))
 			{
-				RegisterSell();
+				SellMarket();
 				_entry = 0m;
 				_trail = false;
 			}
 		}
 		else if (c.LowPrice > emaVal && c.LowPrice <= low)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_entry = c.ClosePrice;
 		}
 	}

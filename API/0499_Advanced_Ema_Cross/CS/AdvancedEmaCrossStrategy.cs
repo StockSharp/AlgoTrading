@@ -334,7 +334,7 @@ public class AdvancedEmaCrossStrategy : Strategy
 		
 		if (buyCondition && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_entryPrice = candle.ClosePrice;
 			_hasBought = true;
 			_barCount = 0;

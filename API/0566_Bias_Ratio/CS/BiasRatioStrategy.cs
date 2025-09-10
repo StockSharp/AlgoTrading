@@ -107,11 +107,11 @@ public class BiasRatioStrategy : Strategy
 
 		if (longCondition && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (shortCondition && Position >= 0)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 	}
 }

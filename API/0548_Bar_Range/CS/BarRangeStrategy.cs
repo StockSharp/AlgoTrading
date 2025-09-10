@@ -153,7 +153,7 @@ public class BarRangeStrategy : Strategy
 
 		if (percentRank >= PercentRankThreshold && candle.ClosePrice < candle.OpenPrice && Position <= 0)
 		{
-		RegisterBuy();
+		BuyMarket();
 		_barsSinceEntry = 0;
 		}
 	}

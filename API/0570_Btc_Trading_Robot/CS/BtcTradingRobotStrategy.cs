@@ -196,7 +196,7 @@ public class BtcTradingRobotStrategy : Strategy
 		{
 			if (_prevClose < upper - orderDist * tick && candle.HighPrice >= upper && Position <= 0)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_entryPrice = price;
 				_peakPrice = price;
 				return;
@@ -204,7 +204,7 @@ public class BtcTradingRobotStrategy : Strategy
 
 			if (_prevClose > lower + orderDist * tick && candle.LowPrice <= lower && Position >= 0)
 			{
-				RegisterSell();
+				SellMarket();
 				_entryPrice = price;
 				_valleyPrice = price;
 				return;
@@ -218,7 +218,7 @@ public class BtcTradingRobotStrategy : Strategy
 
 			if (price >= _entryPrice + tpPoints || price <= _entryPrice - slPoints)
 			{
-				RegisterSell();
+				SellMarket();
 				ResetPosition();
 				return;
 			}
@@ -226,7 +226,7 @@ public class BtcTradingRobotStrategy : Strategy
 			var profit = _peakPrice - _entryPrice;
 			if (profit >= trailTrigger && price <= _peakPrice - trailPoints)
 			{
-				RegisterSell();
+				SellMarket();
 				ResetPosition();
 			}
 		}
@@ -237,7 +237,7 @@ public class BtcTradingRobotStrategy : Strategy
 
 			if (price <= _entryPrice - tpPoints || price >= _entryPrice + slPoints)
 			{
-				RegisterBuy();
+				BuyMarket();
 				ResetPosition();
 				return;
 			}
@@ -245,7 +245,7 @@ public class BtcTradingRobotStrategy : Strategy
 			var profit = _entryPrice - _valleyPrice;
 			if (profit >= trailTrigger && price >= _valleyPrice + trailPoints)
 			{
-				RegisterBuy();
+				BuyMarket();
 				ResetPosition();
 			}
 		}

@@ -97,7 +97,7 @@ public class BuyAndHoldStrategy : Strategy
 
 		if (!_hasBought && candleTime >= StartDate && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_hasBought = true;
 			return;
 		}

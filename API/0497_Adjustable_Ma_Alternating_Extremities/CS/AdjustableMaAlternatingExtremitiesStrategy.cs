@@ -122,14 +122,14 @@ public class AdjustableMaAlternatingExtremitiesStrategy : Strategy
 			_isUpper = true;
 
 			if (Position <= 0)
-				RegisterBuy();
+				BuyMarket();
 		}
 		else if (candle.Low < lower && _isUpper != false)
 		{
 			_isUpper = false;
 
 			if (Position >= 0)
-				RegisterSell();
+				SellMarket();
 		}
 	}
 }

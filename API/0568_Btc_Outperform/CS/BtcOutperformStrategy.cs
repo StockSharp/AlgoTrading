@@ -85,11 +85,11 @@ public class BtcOutperformStrategy : Strategy
 
 		if (weekly > quarterly && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (quarterly > weekly && Position >= 0)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 	}
 }

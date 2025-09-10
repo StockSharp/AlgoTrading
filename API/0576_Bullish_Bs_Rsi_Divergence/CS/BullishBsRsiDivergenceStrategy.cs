@@ -120,7 +120,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 		if (candle.OpenTime < _startDate || candle.OpenTime > _endDate)
 		{
 			if (Position > 0)
-				RegisterSell();
+				SellMarket();
 			return;
 		}
 
@@ -203,7 +203,7 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 
 		if (longCondition && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 			_trailingStop = null;
 		}
 		else if (Position > 0)
@@ -215,14 +215,14 @@ public class BullishBsRsiDivergenceStrategy : Strategy
 				_trailingStop = _trailingStop is decimal prev ? Math.Max(prev, newStop) : newStop;
 				if (candle.ClosePrice < _trailingStop)
 				{
-					RegisterSell();
+					SellMarket();
 					_trailingStop = null;
 					return;
 				}
 			}
 			if (longCloseCondition)
 			{
-				RegisterSell();
+				SellMarket();
 				_trailingStop = null;
 			}
 		}

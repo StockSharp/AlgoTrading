@@ -120,11 +120,11 @@ public class BitcoinBullishPercentIndexStrategy : Strategy
 
 		if (_previousRsi < Oversold && rsiValue > Oversold && Position <= 0)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (_previousRsi > Overbought && rsiValue < Overbought && Position >= 0)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 
 		_previousRsi = rsiValue;

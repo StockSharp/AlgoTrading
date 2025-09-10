@@ -115,9 +115,9 @@ public class GoldenRatioCubesStrategy : Strategy
 		var price = candle.ClosePrice;
 
 		if (price > upperLevel && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 		else if (price < lowerLevel && Position >= 0)
-			RegisterSell();
+			SellMarket();
 	}
 }
 

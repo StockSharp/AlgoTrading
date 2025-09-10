@@ -190,7 +190,7 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 					_entryPrice = candle.ClosePrice;
 					_atrStopDistance = atrValue * AtrMultiplier;
 					_isLong = true;
-					RegisterBuy();
+					BuyMarket();
 				}
 			}
 			else
@@ -200,7 +200,7 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 					_entryPrice = candle.ClosePrice;
 					_atrStopDistance = atrValue * AtrMultiplier;
 					_isLong = false;
-					RegisterSell();
+					SellMarket();
 				}
 			}
 
@@ -215,7 +215,7 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 			var stopPrice = _entryPrice - _atrStopDistance;
 			if (candle.LowPrice <= stopPrice)
 			{
-				RegisterSell();
+				SellMarket();
 				_entryPrice = 0;
 			}
 		}
@@ -224,7 +224,7 @@ public class AtrStopLossDoubleSmaStrategy : Strategy
 			var stopPrice = _entryPrice + _atrStopDistance;
 			if (candle.HighPrice >= stopPrice)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_entryPrice = 0;
 			}
 		}

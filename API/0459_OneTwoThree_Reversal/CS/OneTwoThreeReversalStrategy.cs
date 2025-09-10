@@ -125,12 +125,12 @@ public class OneTwoThreeReversalStrategy : Strategy
 
 			if (exitCondition)
 			{
-				RegisterSell();
+				SellMarket();
 				_barsSinceEntry = int.MaxValue;
 			}
 			else if (condition1 && condition2 && condition3 && condition4 && Position <= 0)
 			{
-				RegisterBuy();
+				BuyMarket();
 				_barsSinceEntry = 0;
 			}
 		}

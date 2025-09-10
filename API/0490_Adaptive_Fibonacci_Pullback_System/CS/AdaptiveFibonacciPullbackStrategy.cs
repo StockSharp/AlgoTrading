@@ -237,19 +237,19 @@ public class AdaptiveFibonacciPullbackStrategy : Strategy
 		var shortEntry = baseShort && candle.ClosePrice < mid && (!UseRsiFilter || rsiVal < RsiSell);
 
 		if (longEntry && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 
 		if (shortEntry && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		var longExit = _prevClose > _prevSmooth && candle.ClosePrice <= smooth && Position > 0;
 		var shortExit = _prevClose < _prevSmooth && candle.ClosePrice >= smooth && Position < 0;
 
 		if (longExit)
-			RegisterSell();
+			SellMarket();
 
 		if (shortExit)
-			RegisterBuy();
+			BuyMarket();
 
 		_prevClose = candle.ClosePrice;
 		_prevSmooth = smooth;

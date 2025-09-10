@@ -275,9 +275,9 @@ var longSignal = bwConfirmationUp && (longUsingProbPrime || longUsingSigmaProbsU
 var shortSignal = bwConfirmationDown && (shortUsingProbPrime || shortUsingSigmaProbsDown);
 
 if (longSignal && Position <= 0)
-RegisterBuy();
+BuyMarket();
 else if (shortSignal && Position >= 0)
-RegisterSell();
+SellMarket();
 
 _prevAo = ao;
 _prevAc = ac;

@@ -215,7 +215,7 @@ public class AoDivergenceStrategy : Strategy
 				var priceLl = priceLow < _prevPriceLow.Value;
 
 				if (oscHl && priceLl && Position <= 0)
-					RegisterBuy();
+					BuyMarket();
 			}
 
 			_prevAoLow = aoCenter;
@@ -230,7 +230,7 @@ public class AoDivergenceStrategy : Strategy
 				var priceHh = priceHigh > _prevPriceHigh.Value;
 
 				if (oscLh && priceHh && Position >= 0)
-					RegisterSell();
+					SellMarket();
 			}
 
 			_prevAoHigh = aoCenter;

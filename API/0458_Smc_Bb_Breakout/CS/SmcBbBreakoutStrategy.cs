@@ -213,16 +213,16 @@ public class SmcBbBreakoutStrategy : Strategy
 		var exitShortCondition = crossoverBasis || candle.ClosePrice > obHigh * 1.01m;
 
 		if (longCondition && Position <= 0)
-			RegisterBuy();
+			BuyMarket();
 
 		if (shortCondition && Position >= 0)
-			RegisterSell();
+			SellMarket();
 
 		if (exitLongCondition && Position > 0)
-			RegisterSell();
+			SellMarket();
 
 		if (exitShortCondition && Position < 0)
-			RegisterBuy();
+			BuyMarket();
 
 		_prevClose = candle.ClosePrice;
 		_prevUpper = upper;
