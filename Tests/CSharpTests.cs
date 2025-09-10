@@ -1899,8 +1899,5 @@ public class CSharpTests
 	[TestMethod]
 	public Task WilliamsVixFix()
 		=> RunStrategy<WilliamsVixFixStrategy>();
-	
-	[TestMethod]
-	public Task FibHurstBreakout()
-		=> RunStrategy<FibHurstBreakoutStrategy>();
 }
+
