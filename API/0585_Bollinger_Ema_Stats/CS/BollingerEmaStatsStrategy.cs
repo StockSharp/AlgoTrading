@@ -171,7 +171,7 @@ public class BollingerEmaStatsStrategy : Strategy
 			if (_targetPrice != 0m &&
 				(candle.ClosePrice >= _targetPrice || candle.ClosePrice <= _stopPrice))
 			{
-				RegisterSell(Position);
+				SellMarket(Position);
 				_stopPrice = 0m;
 				_targetPrice = 0m;
 			}
@@ -181,7 +181,7 @@ public class BollingerEmaStatsStrategy : Strategy
 			if (_targetPrice != 0m &&
 				(candle.ClosePrice <= _targetPrice || candle.ClosePrice >= _stopPrice))
 			{
-				RegisterBuy(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 				_stopPrice = 0m;
 				_targetPrice = 0m;
 			}

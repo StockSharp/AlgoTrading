@@ -161,9 +161,9 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 			var diff = desired - _hedgePosition;
 
 			if (diff > 0)
-				RegisterBuy(diff);
+				BuyMarket(diff);
 			else if (diff < 0)
-				RegisterSell(-diff);
+				SellMarket(-diff);
 
 			_hedgePosition = desired;
 			_candleCounter = 0;

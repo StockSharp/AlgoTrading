@@ -172,7 +172,7 @@ public class ThreeDownThreeUpStrategy : Strategy
 	}
 	else if (Position > 0 && exitCondition)
 	{
-		RegisterSell(Math.Abs(Position));
+		SellMarket(Math.Abs(Position));
 		_belowCount = 0;
 	}
 	}

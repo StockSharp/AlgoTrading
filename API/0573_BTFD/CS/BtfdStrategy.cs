@@ -250,7 +250,7 @@ public class BtfdStrategy : Strategy
 		var slPrice = _entryPrice * (1m - StopLossPercent / 100m);
 		if (price <= slPrice)
 		{
-			RegisterSell(Position);
+			SellMarket(Position);
 			_soldPercent = 100;
 			return;
 		}
@@ -279,7 +279,7 @@ public class BtfdStrategy : Strategy
 			{
 				var part = qty - _soldPercent;
 				var volumeToSell = _initialVolume * part / 100m;
-				RegisterSell(volumeToSell);
+				SellMarket(volumeToSell);
 				_soldPercent = qty;
 			}
 		}

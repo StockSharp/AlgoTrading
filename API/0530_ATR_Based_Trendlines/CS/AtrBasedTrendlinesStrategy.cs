@@ -72,22 +72,22 @@ public class AtrBasedTrendlinesStrategy : Strategy
 	public AtrBasedTrendlinesStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay("Candle Type", \"Type of candles to use\", \"General\");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_lookbackLength = Param(nameof(LookbackLength), 30)
 			.SetGreaterThanZero()
-			.SetDisplay("Lookback", \"Lookback length for pivots\", \"General\")
+			.SetDisplay("Lookback", "Lookback length for pivots", "General")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 60, 5);
 
 		_atrPercent = Param(nameof(AtrPercent), 1m)
 			.SetRange(0m, 5m)
-			.SetDisplay("ATR Percent", \"ATR target percentage\", \"General\")
+			.SetDisplay("ATR Percent", "ATR target percentage", "General")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_useWicks = Param(nameof(UseWicks), true)
-			.SetDisplay("Use Wicks", \"Use candle wicks for pivots\", \"General\");
+			.SetDisplay("Use Wicks", "Use candle wicks for pivots", "General");
 	}
 
 	/// <inheritdoc />

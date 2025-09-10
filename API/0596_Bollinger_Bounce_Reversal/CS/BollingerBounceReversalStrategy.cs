@@ -253,12 +253,12 @@ public class BollingerBounceReversalStrategy : Strategy
 		
 		if (longSignal)
 		{
-			RegisterBuy(Volume + Math.Abs(Position));
+			BuyMarket(Volume + Math.Abs(Position));
 			_tradesToday++;
 		}
 		else if (shortSignal)
 		{
-			RegisterSell(Volume + Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
 			_tradesToday++;
 		}
 		

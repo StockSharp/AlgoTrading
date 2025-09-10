@@ -149,17 +149,17 @@ public class AnomalousHolonomyFieldTheoryStrategy : Strategy
 		if (signal >= threshold && Position <= 0)
 		{
 			_entryPrice = close;
-			RegisterBuy(Volume + Math.Abs(Position));
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (signal <= -threshold && Position >= 0)
 		{
 			_entryPrice = close;
-			RegisterSell(Volume + Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
 		}
 
 		if (Position > 0 && close <= _entryPrice - atr * 1.5m)
-			RegisterSell(Position);
+			SellMarket(Position);
 		else if (Position < 0 && close >= _entryPrice + atr * 1.5m)
-			RegisterBuy(-Position);
+			BuyMarket(-Position);
 	}
 }

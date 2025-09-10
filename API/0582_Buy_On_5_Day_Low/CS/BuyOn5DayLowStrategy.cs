@@ -104,7 +104,7 @@ public class BuyOn5DayLowStrategy : Strategy
 		if (Position <= 0 && buyCondition)
 			BuyMarket();
 		else if (Position > 0 && exitCondition)
-			RegisterSell(Math.Abs(Position));
+			SellMarket(Math.Abs(Position));
 
 		_prevLowest = lowestValue;
 		_prevHigh = candle.HighPrice;

@@ -206,8 +206,8 @@ public class BonkLongVolatilityStrategy : Strategy
 		{
 			Macd =
 			{
-			~ShortMa = { Length = MacdFast },
-			~LongMa = { Length = MacdSlow }
+				ShortMa = { Length = MacdFast },
+				LongMa = { Length = MacdSlow }
 			},
 			SignalMa = { Length = MacdSignal }
 		};
@@ -280,12 +280,12 @@ public class BonkLongVolatilityStrategy : Strategy
 			var trailDistance = atr * 100m;
 			var newStop = candle.ClosePrice - trailDistance;
 			if (_trailingStop == 0m || newStop > _trailingStop)
-			~_trailingStop = newStop;
+				_trailingStop = newStop;
 
 			if (candle.LowPrice <= _trailingStop)
 			{
-			~SellMarket(Position);
-			~_trailingStop = 0m;
+				SellMarket(Position);
+				_trailingStop = 0m;
 			}
 		}
 	}

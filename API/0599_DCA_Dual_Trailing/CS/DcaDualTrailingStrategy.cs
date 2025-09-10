@@ -352,7 +352,7 @@ _prevSlow = slow;
 if (Position == 0 && trendUp && _cooldownCounter == 0)
 {
 var qty = BaseUsd / close;
-RegisterBuy(qty);
+BuyMarket(qty);
 
 _baseEntryPrice = close;
 _highestSinceEntry = close;
@@ -376,13 +376,13 @@ var so2Trigger = UseAtrSpacing ? basePrice - atr * AtrSo2Multiplier : basePrice 
 if (_safetyOrdersFilled == 0 && close <= so1Trigger)
 {
 var qty = So1Usd / close;
-RegisterBuy(qty);
+BuyMarket(qty);
 _safetyOrdersFilled = 1;
 }
 else if (_safetyOrdersFilled == 1 && close <= so2Trigger)
 {
 var qty = So2Usd / close;
-RegisterBuy(qty);
+BuyMarket(qty);
 _safetyOrdersFilled = 2;
 }
 }
@@ -408,7 +408,7 @@ stopHitLockIn = close < _lockInStopPrice;
 
 if ((stopHitNormal || stopHitLockIn || trendDown) && Position > 0)
 {
-RegisterSell(Position);
+SellMarket(Position);
 _baseEntryPrice = null;
 _highestSinceEntry = null;
 _trailStopPrice = null;

@@ -202,19 +202,19 @@ public class AiSupertrendPivotPercentileStrategy : Strategy
 	if (Position == 0)
 	{
 	if (isBull && strongTrend && pivotBull)
-	RegisterBuy(Volume);
+	BuyMarket(Volume);
 	else if (isBear && strongTrend && pivotBear)
-	RegisterSell(Volume);
+	SellMarket(Volume);
 	}
 	else if (Position > 0)
 	{
 	if (!isBull || !pivotBull)
-	RegisterSell(Volume + Position);
+	SellMarket(Volume + Position);
 	}
 	else if (Position < 0)
 	{
 	if (!isBear || !pivotBear)
-	RegisterBuy(Volume + Math.Abs(Position));
+	BuyMarket(Volume + Math.Abs(Position));
 	}
 	}
 }

@@ -89,11 +89,11 @@ public class CandleBodyShapesStrategy : Strategy
 
 		if (openPos < BodyThreshold && closePos > 1 - BodyThreshold && Position <= 0)
 		{
-			RegisterBuy(Volume + Math.Abs(Position));
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 		else if (openPos > 1 - BodyThreshold && closePos < BodyThreshold && Position >= 0)
 		{
-			RegisterSell(Volume + Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
 		}
 	}
 }

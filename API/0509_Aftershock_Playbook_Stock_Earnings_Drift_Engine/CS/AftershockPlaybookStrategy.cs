@@ -148,9 +148,9 @@ public class AftershockPlaybookStrategy : Strategy
 	private void Exit(decimal price, bool ignore = false)
 	{
 		if (Position > 0)
-			RegisterSell(Position);
+			SellMarket(Position);
 		else if (Position < 0)
-			RegisterBuy(-Position);
+			BuyMarket(-Position);
 
 		if (!ignore)
 		{

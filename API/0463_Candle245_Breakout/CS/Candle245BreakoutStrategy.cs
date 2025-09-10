@@ -118,21 +118,21 @@ public class Candle245BreakoutStrategy : Strategy
 
 		if (candle.HighPrice > _targetHigh && Position <= 0)
 		{
-			RegisterBuy(Volume + Math.Abs(Position));
+			BuyMarket(Volume + Math.Abs(Position));
 			LogInfo("Breakout above target high. Buying.");
 		}
 		else if (candle.LowPrice < _targetLow && Position >= 0)
 		{
-			RegisterSell(Volume + Math.Abs(Position));
+			SellMarket(Volume + Math.Abs(Position));
 			LogInfo("Breakout below target low. Selling.");
 		}
 
 		if (_barsLeft == 0 && Position != 0)
 		{
 			if (Position > 0)
-			RegisterSell(Position);
+			SellMarket(Position);
 			else
-			RegisterBuy(Math.Abs(Position));
+			BuyMarket(Math.Abs(Position));
 
 			LogInfo("Closing position at end of breakout window.");
 		}

@@ -188,7 +188,7 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 
 			if (candle.LowPrice <= stop || candle.HighPrice >= target)
 			{
-				RegisterSell(Position);
+				SellMarket(Position);
 				_entryPrice = default;
 			}
 		}
@@ -199,7 +199,7 @@ public class SmaPullbackAtrExitsStrategy : Strategy
 
 			if (candle.HighPrice >= stop || candle.LowPrice <= target)
 			{
-				RegisterBuy(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 				_entryPrice = default;
 			}
 		}

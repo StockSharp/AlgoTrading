@@ -119,7 +119,7 @@ public class Rsi3070Strategy : Strategy
 		if (rsiValue < RsiOversold && Position <= 0)
 		{
 			if (Position < 0)
-				RegisterBuy(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 
 			BuyMarket();
 			return;
@@ -127,7 +127,7 @@ public class Rsi3070Strategy : Strategy
 
 		if (rsiValue > RsiOverbought && Position > 0)
 		{
-			RegisterSell(Position);
+			SellMarket(Position);
 		}
 	}
 }

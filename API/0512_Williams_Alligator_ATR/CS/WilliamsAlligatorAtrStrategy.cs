@@ -204,7 +204,7 @@ public class WilliamsAlligatorAtrStrategy : Strategy
 		}
 		else if (_prevLipsAboveJaw && !lipsAboveJaw && Position > 0)
 		{
-			RegisterSell(Position);
+			SellMarket(Position);
 			_entryPrice = 0m;
 		}
 		else if (Position > 0)
@@ -212,7 +212,7 @@ public class WilliamsAlligatorAtrStrategy : Strategy
 			var stopPrice = _entryPrice - AtrMultiplier * atr;
 			if (price <= stopPrice)
 			{
-				RegisterSell(Position);
+				SellMarket(Position);
 				_entryPrice = 0m;
 			}
 		}

@@ -224,7 +224,7 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 
 			if (shortCondition && shortValid)
 			{
-				RegisterSell(Position);
+				SellMarket(Position);
 			}
 			else
 			{
@@ -234,11 +234,11 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 				var effectiveLongStop = _beLong ? entry : entry - StopLossDistance;
 				if (close <= effectiveLongStop)
 				{
-					RegisterSell(Position);
+					SellMarket(Position);
 				}
 				else if (close >= entry + TakeProfitDistance)
 				{
-					RegisterSell(Position);
+					SellMarket(Position);
 				}
 			}
 		}
@@ -252,11 +252,11 @@ public class BtcusdAdjustableSltpStrategy : Strategy
 			var effectiveShortStop = _beShort ? entry : entry + StopLossDistance;
 			if (close >= effectiveShortStop)
 			{
-				RegisterBuy(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 			}
 			else if (close <= entry - TakeProfitDistance)
 			{
-				RegisterBuy(Math.Abs(Position));
+				BuyMarket(Math.Abs(Position));
 			}
 		}
 
