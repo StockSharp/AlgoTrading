@@ -1897,7 +1897,11 @@ public class CSharpTests
 		=> RunStrategy<VelaSuperadaStrategy>();
 	
 	[TestMethod]
-	public Task WilliamsVixFix()
-		=> RunStrategy<WilliamsVixFixStrategy>();
+        public Task WilliamsVixFix()
+                => RunStrategy<WilliamsVixFixStrategy>();
+
+        [TestMethod]
+        public Task AoDivergence()
+                => RunStrategy<AoDivergenceStrategy>();
 }
 
