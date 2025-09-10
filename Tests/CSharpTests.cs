@@ -1895,5 +1895,6 @@ public class CSharpTests
 	[TestMethod]
 	public Task VelaSuperada()
 		=> RunStrategy<VelaSuperadaStrategy>();
+
 }
 
