@@ -1899,4 +1899,9 @@ public class CSharpTests
 	[TestMethod]
 	public Task WilliamsVixFix()
 		=> RunStrategy<WilliamsVixFixStrategy>();
+
+		[TestMethod]
+		public Task BbBreakoutMomentumSqueeze()
+			=> RunStrategy<BbBreakoutMomentumSqueezeStrategy>();
 }
+
