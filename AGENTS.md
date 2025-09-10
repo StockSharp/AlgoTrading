@@ -255,11 +255,11 @@ public class ExampleStrategy : Strategy
 		// Example position opening
 		if (/* buy condition */)
 		{
-			RegisterBuy();
+			BuyMarket();
 		}
 		else if (/* sell condition */)
 		{
-			RegisterSell();
+			SellMarket();
 		}
 	}
 }
@@ -346,11 +346,11 @@ public class BollingerSqueezeStrategy : Strategy
 			// Breakout from squeeze
 			if (candle.ClosePrice > upperBand && Position <= 0)
 			{
-				RegisterBuy();
+				BuyMarket();
 			}
 			else if (candle.ClosePrice < lowerBand && Position >= 0)
 			{
-				RegisterSell();
+				SellMarket();
 			}
 		}
 
@@ -375,7 +375,8 @@ public class BollingerSqueezeStrategy : Strategy
 
 ## Правила торговли
 
-- Использовать `RegisterBuy()` и `RegisterSell()` для открытия позиций
+- Использовать `BuyMarket()` и `SellMarket()` для рыночных заявок, а `BuyLimit(price)` и `SellLimit(price)` для лимитных
+- Каждый метод принимает необязательный параметр `security`: если он не указан, используется `Strategy.Security`, при указании заявки регистрируются по выбранному инструменту
 - Проверять `Position` для определения текущей позиции
 - Обрабатывать только завершенные свечи (`candle.State == CandleStates.Finished`)
 - Сохранять состояние между вызовами в переменных класса
