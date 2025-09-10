@@ -1899,4 +1899,8 @@ public class CSharpTests
 	[TestMethod]
 	public Task WilliamsVixFix()
 		=> RunStrategy<WilliamsVixFixStrategy>();
+
+	[TestMethod]
+	public Task AdjustableMaAlternatingExtremities()
+		=> RunStrategy<AdjustableMaAlternatingExtremitiesStrategy>();
 }
