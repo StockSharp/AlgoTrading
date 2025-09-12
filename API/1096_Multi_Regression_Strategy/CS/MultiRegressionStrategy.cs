@@ -92,7 +92,7 @@ public class MultiRegressionStrategy : Strategy
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
 			.SetDisplay("Use Take Profit", "Enable take profit at upper/lower bound", "Risk Management");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for calculations", "Common");
 
 		_isFirst = true;

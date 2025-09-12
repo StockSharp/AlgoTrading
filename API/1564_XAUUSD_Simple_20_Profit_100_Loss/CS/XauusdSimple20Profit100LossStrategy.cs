@@ -32,7 +32,7 @@ public class XauusdSimple20Profit100LossStrategy : Strategy
 			.SetDisplay("Trade Cooldown");
 		_entryCooldown = Param(nameof(EntryCooldown), TimeSpan.FromMinutes(15))
 			.SetDisplay("Entry Cooldown");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type");
 	}
 

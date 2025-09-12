@@ -42,7 +42,7 @@ public class EhlersComboStrategy : Strategy
 
 	public EhlersComboStrategy()
 	{
-		_candleType = Param("Candle Type", DataType.TimeFrame(TimeSpan.FromMinutes(1)));
+		_candleType = Param("Candle Type", TimeSpan.FromMinutes(1).TimeFrame());
 		_length = Param("Length", 20);
 		_rmsLength = Param("Rms length", 50);
 		_snrThreshold = Param("SNR threshold", 0.1m);

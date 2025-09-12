@@ -47,7 +47,7 @@ public class DslStrategy : Strategy
 
 	public DslStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 		_length = Param(nameof(Length), 34).SetDisplay("Length");
 		_offset = Param(nameof(Offset), 30).SetDisplay("Offset");
 		_bandWidth = Param(nameof(BandsWidth), 1m).SetDisplay("Bands Width");

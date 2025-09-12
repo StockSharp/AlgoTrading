@@ -147,7 +147,7 @@ public class AdaptiveOscillatorThresholdStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(500m, 2000m, 100m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for calculations", "General");
 	}
 

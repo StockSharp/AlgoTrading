@@ -26,7 +26,7 @@ public class RandomAtrBybitStrategy : Strategy
 
 	public RandomAtrBybitStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)));
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 		_atrLength = Param(nameof(AtrLength), 14);
 		_slAtrRatio = Param(nameof(SlAtrRatio), 3m);
 		_tpSlRatio = Param(nameof(TpSlRatio), 1m);

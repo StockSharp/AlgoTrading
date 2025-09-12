@@ -80,7 +80,7 @@ public class SimpleDcaStrategy : Strategy
 
 	public SimpleDcaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetCanOptimize(false);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetCanOptimize(false);
 		_baseOrderSize = Param(nameof(BaseOrderSize), 50m);
 		_priceDeviation = Param(nameof(PriceDeviation), 1m);
 		_maxSafetyOrders = Param(nameof(MaxSafetyOrders), 10);

@@ -79,7 +79,7 @@ public class SessionBreakoutScalperTradingBotStrategy : Strategy
 		_useAtrStop = Param(nameof(UseAtrStop), true).SetDisplay("Use ATR Stop").SetCanOptimize(true);
 		_atrLength = Param(nameof(AtrLength), 14).SetDisplay("ATR Length").SetCanOptimize(true);
 		_atrMultiplier = Param(nameof(AtrMultiplier), 2m).SetDisplay("ATR Multiplier").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type").SetCanOptimize(true);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type").SetCanOptimize(true);
 	}
 	
 	/// <inheritdoc />

@@ -139,7 +139,7 @@ public class MovingAverageCrossoverSwingStrategy : Strategy
 			.SetDisplay("Short", "Allow short trades", "General");
 		_enableCrossExit = Param(nameof(EnableCrossExit), true)
 			.SetDisplay("Cross Exit", "Exit on MA cross", "Exit");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");
 	}
 

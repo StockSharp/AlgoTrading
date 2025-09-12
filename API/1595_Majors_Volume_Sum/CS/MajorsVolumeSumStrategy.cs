@@ -44,7 +44,7 @@ public class MajorsVolumeSumStrategy : Strategy
 	/// </summary>
 	public MajorsVolumeSumStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for processing", "General");
 
 		_threshold = Param(nameof(Threshold), 0.75m)

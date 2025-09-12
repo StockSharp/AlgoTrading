@@ -84,7 +84,7 @@ public class SpearmanRankCorrelationCoefficientStrategy : Strategy
 			.SetDisplay("Correlation Period", "Spearman correlation period", "Parameters");
 		_threshold = Param(nameof(Threshold), 0.8m)
 			.SetDisplay("Threshold", "Correlation threshold for entries", "Parameters");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type", "Parameters");
 	}
 

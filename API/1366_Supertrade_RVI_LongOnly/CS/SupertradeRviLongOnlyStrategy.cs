@@ -128,7 +128,7 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Volume", "Order volume", "Trading");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");
 	}
 

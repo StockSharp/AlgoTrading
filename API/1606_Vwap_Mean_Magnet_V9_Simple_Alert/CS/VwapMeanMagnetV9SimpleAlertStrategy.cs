@@ -32,7 +32,7 @@ public class VwapMeanMagnetV9SimpleAlertStrategy : Strategy
 		_rsiOverbought = Param(nameof(RsiOverbought), 65).SetDisplay("RSI Overbought").SetCanOptimize(true);
 		_rsiOversold = Param(nameof(RsiOversold), 25).SetDisplay("RSI Oversold").SetCanOptimize(true);
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.5m).SetDisplay("Stop Loss %").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

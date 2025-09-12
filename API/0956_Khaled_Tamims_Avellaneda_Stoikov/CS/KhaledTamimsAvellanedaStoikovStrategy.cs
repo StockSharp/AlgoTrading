@@ -32,7 +32,7 @@ public class KhaledTamimsAvellanedaStoikovStrategy : Strategy
 		_k = Param("K", 5m).SetDisplay("K").SetCanOptimize(true);
 		_m = Param("M", 0.5m).SetDisplay("M").SetCanOptimize(true);
 		_fee = Param("Fee", 0m).SetDisplay("Fee").SetCanOptimize(true);
-		_candleType = Param("Candle type", DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type").SetCanOptimize(false);
+		_candleType = Param("Candle type", TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type").SetCanOptimize(false);
 	}
 
 	public decimal Gamma { get => _gamma.Value; set => _gamma.Value = value; }

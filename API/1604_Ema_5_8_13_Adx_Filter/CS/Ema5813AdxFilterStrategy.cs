@@ -31,7 +31,7 @@ public class Ema5813AdxFilterStrategy : Strategy
 		_enableShort = Param(nameof(EnableShort), true).SetDisplay("Enable Short");
 		_useAdxFilter = Param(nameof(UseAdxFilter), false).SetDisplay("Use ADX Filter");
 		_adxThreshold = Param(nameof(AdxThreshold), 20).SetDisplay("ADX Threshold").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

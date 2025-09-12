@@ -43,7 +43,7 @@ public class VwapMeanMagnetV2VolFilterStrategy : Strategy
 		_volLookback = Param(nameof(VolLookback), 20).SetDisplay("Volume Lookback").SetCanOptimize(true);
 		_volMultiplier = Param(nameof(VolMultiplier), 3m).SetDisplay("Volume Multiplier").SetCanOptimize(true);
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.5m).SetDisplay("Stop Loss %").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

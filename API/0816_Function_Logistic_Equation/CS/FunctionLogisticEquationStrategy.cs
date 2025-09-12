@@ -43,7 +43,7 @@ public class FunctionLogisticEquationStrategy : Strategy
 			.SetDisplay("Length", "Period for logistic equation calculation", "Parameters")
 			.SetCanOptimize(true);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for analysis", "Parameters");
 	}
 

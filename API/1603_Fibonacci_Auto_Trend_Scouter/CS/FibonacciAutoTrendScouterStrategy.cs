@@ -26,7 +26,7 @@ public class FibonacciAutoTrendScouterStrategy : Strategy
 	{
 		_smallPeriod = Param(nameof(SmallPeriod), 8).SetDisplay("Small Period").SetCanOptimize(true);
 		_mediumPeriod = Param(nameof(MediumPeriod), 21).SetDisplay("Medium Period").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

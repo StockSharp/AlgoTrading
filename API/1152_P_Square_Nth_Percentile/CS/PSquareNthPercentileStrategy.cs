@@ -42,7 +42,7 @@ public class PSquareNthPercentileStrategy : Strategy
 	{
 		_percentile = Param(nameof(Percentile), 84.1m).SetDisplay("Percentile");
 		_useReturns = Param(nameof(UseReturns), true).SetDisplay("Use returns");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle Type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type");
 	}
 
 	/// <inheritdoc />

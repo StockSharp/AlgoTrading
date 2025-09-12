@@ -74,7 +74,7 @@ public class SigmaSpikeFilteredBinnedOprStrategy : Strategy
 		_filterBySigmaSpike = Param(nameof(FilterBySigmaSpike), true).SetDisplay("Filter by sigma spike threshold?");
 		_sigmaSpikeThreshold = Param(nameof(SigmaSpikeThreshold), 2m).SetCanOptimize(true).SetDisplay("Sigma spike threshold");
 		_oprThreshold = Param(nameof(OprThreshold), 10).SetCanOptimize(true).SetDisplay("Upper/lower OPR threshold");
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(1))).SetDisplay("Candle type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle type");
 	}
 
 	/// <inheritdoc />
