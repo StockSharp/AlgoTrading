@@ -67,7 +67,7 @@ public class PaydayAnomalyStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"PaydayAnomalyStrategy\"/> class.
+	/// Initializes a new instance of the <see cref="PaydayAnomalyStrategy"/> class.
 	/// </summary>
 	public PaydayAnomalyStrategy()
 	{

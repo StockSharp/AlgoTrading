@@ -129,55 +129,6 @@ public class HmaCrossoverRsiStochasticTrailingStopStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Initializes a new instance of the strategy.
-	/// </summary>
-	public HmaCrossoverRsiStochasticTrailingStopStrategy()
-	{
-		_fastHmaLength = Param(nameof(FastHmaLength), 5)
-			.SetGreaterThanZero()
-			.SetDisplay("Fast HMA Length", "Period of the fast HMA", "Indicators")
-			.SetCanOptimize(true);
-
-		_slowHmaLength = Param(nameof(SlowHmaLength), 20)
-			.SetGreaterThanZero()
-			.SetDisplay("Slow HMA Length", "Period of the slow HMA", "Indicators")
-			.SetCanOptimize(true);
-
-		_rsiPeriod = Param(nameof(RsiPeriod), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("RSI Period", "RSI calculation period", "Indicators")
-			.SetCanOptimize(true);
-
-		_rsiBuyLevel = Param(nameof(RsiBuyLevel), 45m)
-			.SetDisplay("RSI Buy Level", "RSI level for long entries", "Indicators")
-			.SetCanOptimize(true);
-
-		_rsiSellLevel = Param(nameof(RsiSellLevel), 60m)
-			.SetDisplay("RSI Sell Level", "RSI level for short entries", "Indicators")
-			.SetCanOptimize(true);
-
-		_stochLength = Param(nameof(StochLength), 14)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Length", "Lookback period for Stochastic", "Indicators")
-			.SetCanOptimize(true);
-
-		_stochSmooth = Param(nameof(StochSmooth), 3)
-			.SetGreaterThanZero()
-			.SetDisplay("Stochastic Smooth", "%K smoothing length", "Indicators")
-			.SetCanOptimize(true);
-
-		_stochBuyLevel = Param(nameof(StochBuyLevel), 39m)
-			.SetDisplay("Stochastic Buy Level", "Stochastic level for long entries", "Indicators")
-			.SetCanOptimize(true);
-
-		_stochSellLevel = Param(nameof(StochSellLevel), 63m)
-			.SetDisplay("Stochastic Sell Level", "Stochastic level for short entries", "Indicators")
-			.SetCanOptimize(true);
-
-		_trailingPercent = Param(nameof(TrailingPercent), 5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Trailing 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public HmaCrossoverRsiStochasticTrailingStopStrategy()

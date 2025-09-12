@@ -88,7 +88,7 @@ public class PercentXTrendFollowerStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Initialize <see cref=\"PercentXTrendFollowerStrategy\"/>.
+	/// Initialize <see cref="PercentXTrendFollowerStrategy"/>.
 	/// </summary>
 	public PercentXTrendFollowerStrategy()
 	{

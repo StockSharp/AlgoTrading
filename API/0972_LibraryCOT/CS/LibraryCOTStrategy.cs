@@ -656,7 +656,7 @@ public class LibraryCOTStrategy : Strategy
 		"ZAR" => "122741",
 		"AUD" => "232741",
 		"ETH" => "146021",
-		_ => string.Empty;
+		_ => string.Empty,
 	};
 
 	public static string OptionsToTicker(bool includeOptions) => includeOptions ? "FO" : "F";
@@ -704,7 +704,7 @@ public class LibraryCOTStrategy : Strategy
 			"Long" => "_L",
 			"Short" => "_S",
 			"Spreading" => "_SPREAD",
-			"No direction" => string.Empty;
+			"No direction" => string.Empty,
 			_ => throw new ArgumentException($"'{metricDirection}' is not a valid `metricDirection` argument. Possible values: 'Long', 'Short', 'Spreading', 'No direction'"),
 		};
 
@@ -743,7 +743,7 @@ public class LibraryCOTStrategy : Strategy
 
 	public static string TypeToTicker(string metricType) => metricType switch
 	{
-		"All" => string.Empty;
+		"All" => string.Empty,
 		"Old" => "_OLD",
 		"Other" => "_OTHER",
 		_ => throw new ArgumentException($"'{metricType}' is not a valid `metricType` argument. Possible values: 'All', 'Old', 'Other'"),
@@ -761,7 +761,7 @@ public class LibraryCOTStrategy : Strategy
 			"Auto" => hasRoot && IsNotEmpty(rootCode) ? (convertToCot ? rootCode : root) :
 				IsNotEmpty(baseCurrencyCode) ? (convertToCot ? baseCurrencyCode : baseCurrency) :
 				IsNotEmpty(mainCurrencyCode) ? (convertToCot ? mainCurrencyCode : mainCurrency) :
-				string.Empty;
+				string.Empty,
 			"Root" => convertToCot ? rootCode : root,
 			"Base currency" => convertToCot ? baseCurrencyCode : baseCurrency,
 			"Currency" => convertToCot ? mainCurrencyCode : mainCurrency,
@@ -778,7 +778,7 @@ public class LibraryCOTStrategy : Strategy
 	{
 		var typeCode = COTType switch
 		{
-			"Legacy" => string.Empty;
+			"Legacy" => string.Empty,
 			"Disaggregated" => "2",
 			"Financial" => "3",
 			_ => throw new ArgumentException($"'{COTType}' is not a valid `COTType` argument. Possible values: 'Legacy', 'Disaggregated', 'Financial'"),

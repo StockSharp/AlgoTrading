@@ -234,94 +234,94 @@ public class DualMacdStrategy : Strategy
 		{
 			Macd =
 			{
-				ShortMa = (Macd1UseSmaPrice ? new SimpleMovingAverage() : new ExponentialMovingAverage()) { Length = Macd1FastLength },
-				LongMa = (Macd1UseSmaPrice ? new SimpleMovingAverage() : new ExponentialMovingAverage()) { Length = Macd1SlowLength }
-				},
-				SignalMa = (Macd1UseSmaSignal ? new SimpleMovingAverage() : new ExponentialMovingAverage()) { Length = Macd1SignalLength }
-				};
+				ShortMa = { Length = Macd1FastLength },
+				LongMa = { Length = Macd1SlowLength }
+			},
+			SignalMa = { Length = Macd1SignalLength }
+		};
 
-				var macd2 = new MovingAverageConvergenceDivergenceSignal
-				{
-					Macd =
-					{
-						ShortMa = (Macd2UseSmaPrice ? new SimpleMovingAverage() : new ExponentialMovingAverage()) { Length = Macd2FastLength },
-						LongMa = (Macd2UseSmaPrice ? new SimpleMovingAverage() : new ExponentialMovingAverage()) { Length = Macd2SlowLength }
-						},
-						SignalMa = (Macd2UseSmaSignal ? new SimpleMovingAverage() : new ExponentialMovingAverage()) { Length = Macd2SignalLength }
-						};
+		var macd2 = new MovingAverageConvergenceDivergenceSignal
+		{
+			Macd =
+			{
+				ShortMa = { Length = Macd2FastLength },
+				LongMa = { Length = Macd2SlowLength }
+			},
+			SignalMa = { Length = Macd2SignalLength }
+		};
 
-						var subscription = SubscribeCandles(CandleType);
-						subscription
-						.BindEx(macd1, macd2, ProcessCandle)
-						.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.BindEx(macd1, macd2, ProcessCandle)
+		.Start();
 
-						StartProtection(
-						takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
-						stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
-						useMarketOrders: true);
+		StartProtection(
+		takeProfit: new Unit(TakeProfitPercent, UnitTypes.Percent),
+		stopLoss: new Unit(StopLossPercent, UnitTypes.Percent),
+		useMarketOrders: true);
 
-						var area = CreateChartArea();
-						if (area != null)
-						{
-							DrawCandles(area, subscription);
-							DrawIndicator(area, macd1);
-							DrawIndicator(area, macd2);
-							DrawOwnTrades(area);
-						}
-					}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, subscription);
+			DrawIndicator(area, macd1);
+			DrawIndicator(area, macd2);
+			DrawOwnTrades(area);
+		}
+	}
 
-					private void ProcessCandle(ICandleMessage candle, IIndicatorValue macd1Value, IIndicatorValue macd2Value)
-					{
-						if (candle.State != CandleStates.Finished)
-						return;
+	private void ProcessCandle(ICandleMessage candle, IIndicatorValue macd1Value, IIndicatorValue macd2Value)
+	{
+		if (candle.State != CandleStates.Finished)
+		return;
 
-						var macd1Typed = (MovingAverageConvergenceDivergenceSignalValue)macd1Value;
-						var macd2Typed = (MovingAverageConvergenceDivergenceSignalValue)macd2Value;
+		var macd1Typed = (MovingAverageConvergenceDivergenceSignalValue)macd1Value;
+		var macd2Typed = (MovingAverageConvergenceDivergenceSignalValue)macd2Value;
 
-						if (macd1Typed.Macd is not decimal macd1 ||
-						macd1Typed.Signal is not decimal signal1)
-						return;
+		if (macd1Typed.Macd is not decimal macd1 ||
+		macd1Typed.Signal is not decimal signal1)
+		return;
 
-						if (macd2Typed.Macd is not decimal macd2 ||
-						macd2Typed.Signal is not decimal signal2)
-						return;
+		if (macd2Typed.Macd is not decimal macd2 ||
+		macd2Typed.Signal is not decimal signal2)
+		return;
 
-						var hist1 = macd1 - signal1;
-						var hist2 = macd2 - signal2;
+		var hist1 = macd1 - signal1;
+		var hist2 = macd2 - signal2;
 
-						if (!IsFormedAndOnlineAndAllowTrading())
-						{
-							_prevHist1 = hist1;
-							_prevHist2 = hist2;
-							return;
-						}
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_prevHist1 = hist1;
+			_prevHist2 = hist2;
+			return;
+		}
 
-						var longReady = _prevHist2 is decimal prevH2 && prevH2 <= 0 && hist2 > 0 && hist1 > 0 && hist2 > prevH2 && Position <= 0;
-						var shortReady = _prevHist2 is decimal prevH2s && prevH2s >= 0 && hist2 < 0 && hist1 < 0 && hist2 < prevH2s && Position >= 0;
+		var longReady = _prevHist2 is decimal prevH2 && prevH2 <= 0 && hist2 > 0 && hist1 > 0 && hist2 > prevH2 && Position <= 0;
+		var shortReady = _prevHist2 is decimal prevH2s && prevH2s >= 0 && hist2 < 0 && hist1 < 0 && hist2 < prevH2s && Position >= 0;
 
-						var longExit = _prevHist1 is decimal prevH1 && hist1 < 0 && hist1 < prevH1 && Position > 0;
-						var shortExit = _prevHist1 is decimal prevH1s && hist1 > 0 && hist1 > prevH1s && Position < 0;
+		var longExit = _prevHist1 is decimal prevH1 && hist1 < 0 && hist1 < prevH1 && Position > 0;
+		var shortExit = _prevHist1 is decimal prevH1s && hist1 > 0 && hist1 > prevH1s && Position < 0;
 
-						if (longReady)
-						{
-							var volume = Volume + Math.Abs(Position);
-							BuyMarket(volume);
-						}
-						else if (shortReady)
-						{
-							var volume = Volume + Math.Abs(Position);
-							SellMarket(volume);
-						}
-						else if (longExit)
-						{
-							SellMarket(Math.Abs(Position));
-						}
-						else if (shortExit)
-						{
-							BuyMarket(Math.Abs(Position));
-						}
+		if (longReady)
+		{
+			var volume = Volume + Math.Abs(Position);
+			BuyMarket(volume);
+		}
+		else if (shortReady)
+		{
+			var volume = Volume + Math.Abs(Position);
+			SellMarket(volume);
+		}
+		else if (longExit)
+		{
+			SellMarket(Math.Abs(Position));
+		}
+		else if (shortExit)
+		{
+			BuyMarket(Math.Abs(Position));
+		}
 
-						_prevHist1 = hist1;
-						_prevHist2 = hist2;
-					}
-				}
+		_prevHist1 = hist1;
+		_prevHist2 = hist2;
+	}
+}

@@ -24,7 +24,7 @@ public class SP100OptionExpirationWeekStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"SP100OptionExpirationWeekStrategy\"/> class.
+	/// Initializes a new instance of the <see cref="SP100OptionExpirationWeekStrategy"/> class.
 	/// </summary>
 	public SP100OptionExpirationWeekStrategy()
 	{

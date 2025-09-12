@@ -46,22 +46,22 @@ public class MondayOpenStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"MondayOpenStrategy\"/> class.
+	/// Initializes a new instance of the <see cref="MondayOpenStrategy"/> class.
 	/// </summary>
 	public MondayOpenStrategy()
 	{
 		_startYear = Param(nameof(StartYear), 2023)
-			.SetDisplay(\"Start Year\", \"First year to trade\", \"General\")
+			.SetDisplay("Start Year", "First year to trade", "General")
 			.SetCanOptimize(true)
 			.SetRange(1900, 2100);
 
 		_endYear = Param(nameof(EndYear), 2025)
-			.SetDisplay(\"End Year\", \"Last year to trade\", \"General\")
+			.SetDisplay("End Year", "Last year to trade", "General")
 			.SetCanOptimize(true)
 			.SetRange(1900, 2100);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Type of candles to use\", \"General\");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}
 
 	/// <inheritdoc />

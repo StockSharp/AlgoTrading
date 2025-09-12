@@ -162,28 +162,35 @@ public class HullSuite1RiskNoSlTpStrategy : Strategy
 
 	private decimal? CalculateHull(decimal price)
 	{
-		return Mode switch { HullVariation.Hma => _hma.Process(price).ToNullableDecimal(),
-							 HullVariation.Ehma =>
-							 {
-								 var emaFull = _ehmaFull.Process(price).ToNullableDecimal();
-								 var emaHalf = _ehmaHalf.Process(price).ToNullableDecimal();
-								 if (emaFull is not decimal full || emaHalf is not decimal half)
-									 return null;
-								 var diff = 2m * half - full;
-								 return _ehmaResult.Process(diff).ToNullableDecimal();
-							 },
-							 HullVariation.Thma =>
-							 {
-								 var wmaFull = _thmaFull.Process(price).ToNullableDecimal();
-								 var wmaHalf = _thmaHalf.Process(price).ToNullableDecimal();
-								 var wmaThird = _thmaThird.Process(price).ToNullableDecimal();
-								 if (wmaFull is not decimal full || wmaHalf is not decimal half ||
-									 wmaThird is not decimal third)
-									 return null;
-								 var diff = 3m * third - half - full;
-								 return _thmaResult.Process(diff).ToNullableDecimal();
-							 },
-							 _ => null };
+		switch (Mode)
+		{
+			case HullVariation.Hma:
+			{
+				return _hma.Process(price).ToNullableDecimal();
+			}
+			case HullVariation.Ehma:
+			{
+				var emaFull = _ehmaFull.Process(price).ToNullableDecimal();
+				var emaHalf = _ehmaHalf.Process(price).ToNullableDecimal();
+				if (emaFull is not decimal full || emaHalf is not decimal half)
+					return null;
+				var diff = 2m * half - full;
+				return _ehmaResult.Process(diff).ToNullableDecimal();
+			}
+			case HullVariation.Thma:
+			{
+				var wmaFull = _thmaFull.Process(price).ToNullableDecimal();
+				var wmaHalf = _thmaHalf.Process(price).ToNullableDecimal();
+				var wmaThird = _thmaThird.Process(price).ToNullableDecimal();
+				if (wmaFull is not decimal full || wmaHalf is not decimal half ||
+					wmaThird is not decimal third)
+					return null;
+				var diff = 3m * third - half - full;
+				return _thmaResult.Process(diff).ToNullableDecimal();
+			}
+			default:
+				throw new InvalidOperationException(Mode.ToString());
+		}
 	}
 }
 

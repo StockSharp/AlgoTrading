@@ -26,12 +26,12 @@ public class LetItSnowStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initialize <see cref=\"LetItSnowStrategy\"/>.
+	/// Initialize <see cref="LetItSnowStrategy"/>.
 	/// </summary>
 	public LetItSnowStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Type of candles to process\", \"General\");
+			.SetDisplay("Candle Type", "Type of candles to process", "General");
 	}
 
 	/// <inheritdoc />

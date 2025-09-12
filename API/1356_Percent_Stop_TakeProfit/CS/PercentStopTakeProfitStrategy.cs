@@ -179,7 +179,7 @@ public class PercentStopTakeProfitStrategy : Strategy
 
 				prevFast = fast;
 				prevSlow = slow;
-			}
+			})
 			.Start();
 
 		var area = CreateChartArea();

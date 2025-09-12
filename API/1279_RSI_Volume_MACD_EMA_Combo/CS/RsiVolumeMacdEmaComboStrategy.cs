@@ -107,13 +107,13 @@ public class RsiVolumeMacdEmaComboStrategy : Strategy
 			var volAvg = volVal.ToDecimal();
 
 			var buy = macdLine > signalLine && rsiVal > Overbought && candle.ClosePrice > emaVal && candle.TotalVolume > volAvg;
-			var short = macdLine < signalLine && rsiVal < Oversold && candle.ClosePrice < emaVal && candle.TotalVolume > volAvg;
+			var @short = macdLine < signalLine && rsiVal < Oversold && candle.ClosePrice < emaVal && candle.TotalVolume > volAvg;
 			var sell = !_isFirst && _prevRsi >= 50m && rsiVal < 50m;
 			var cover = !_isFirst && _prevRsi <= 50m && rsiVal > 50m;
 
 			if (buy && Position <= 0)
 				BuyMarket(Volume + Math.Abs(Position));
-			if (short && Position >= 0)
+			if (@short && Position >= 0)
 				SellMarket(Volume + Math.Abs(Position));
 			if (sell && Position > 0)
 				SellMarket(Position);

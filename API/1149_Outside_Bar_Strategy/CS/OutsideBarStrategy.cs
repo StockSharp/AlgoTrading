@@ -110,7 +110,6 @@ public class OutsideBarStrategy : Strategy
 
 		_entryPercentage = Param(nameof(EntryPercentage), 0.5m)
 			.SetGreaterThanZero()
-			.SetLessOrEqual(1m)
 			.SetDisplay("Entry %", "Entry level as % of bar size", "Trading");
 
 		_tpPercentage = Param(nameof(TpPercentage), 1m)
@@ -123,7 +122,6 @@ public class OutsideBarStrategy : Strategy
 
 		_partialExitPercent = Param(nameof(PartialExitPercent), 0.5m)
 			.SetGreaterThanZero()
-			.SetLessOrEqual(1m)
 			.SetDisplay("Partial Exit %", "Volume percent to exit", "Risk");
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 10)
@@ -197,7 +195,7 @@ public class OutsideBarStrategy : Strategy
 			{
 				var barSize = candle.HighPrice - candle.LowPrice;
 				_entryPrice = candle.LowPrice + barSize * EntryPercentage;
-				_stopLoss = candle.LowPrice - Security.PriceStep * StopLossOffset;
+				_stopLoss = candle.LowPrice - (Security.PriceStep ?? 1) * StopLossOffset;
 				_takeProfit = candle.HighPrice + barSize * TpPercentage;
 				_partialTp = _entryPrice + (_entryPrice - _stopLoss) * PartialRR;
 
@@ -207,7 +205,7 @@ public class OutsideBarStrategy : Strategy
 			{
 				var barSize = candle.HighPrice - candle.LowPrice;
 				_entryPrice = candle.HighPrice - barSize * EntryPercentage;
-				_stopLoss = candle.HighPrice + Security.PriceStep * StopLossOffset;
+				_stopLoss = candle.HighPrice + (Security.PriceStep ?? 1) * StopLossOffset;
 				_takeProfit = candle.LowPrice - barSize * TpPercentage;
 				_partialTp = _entryPrice - (_stopLoss - _entryPrice) * PartialRR;
 
@@ -252,7 +250,7 @@ public class OutsideBarStrategy : Strategy
 				BuyMarket(-Position);
 			}
 		}
+
+		_prevCandle = candle;
 	}
-	_prevCandle = candle;
-}
 }

@@ -92,7 +92,7 @@ public class ElioraGold1mHeikinAshiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"ElioraGold1mHeikinAshiStrategy\"/>.
+	/// Initializes a new instance of the <see cref="ElioraGold1mHeikinAshiStrategy"/>.
 	/// </summary>
 	public ElioraGold1mHeikinAshiStrategy()
 	{

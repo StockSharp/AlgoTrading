@@ -108,60 +108,60 @@ public class ExpressGeneratorStrategy : Strategy
 	public int TrailingPips { get => _trailingPips.Value; set => _trailingPips.Value = value; }
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"ExpressGeneratorStrategy\"/>.
+	/// Initializes a new instance of <see cref="ExpressGeneratorStrategy"/>.
 	/// </summary>
 	public ExpressGeneratorStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Type of candles\", \"General\");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_fastMa = Param(nameof(FastMa), 9)
-			.SetDisplay(\"Fast MA\", \"Fast moving average length\", \"Indicators\")
+			.SetDisplay("Fast MA", "Fast moving average length", "Indicators")
 			.SetCanOptimize(true);
 
 		_slowMa = Param(nameof(SlowMa), 21)
-			.SetDisplay(\"Slow MA\", \"Slow moving average length\", \"Indicators\")
+			.SetDisplay("Slow MA", "Slow moving average length", "Indicators")
 			.SetCanOptimize(true);
 
 		_rsiLength = Param(nameof(RsiLength), 14)
-			.SetDisplay(\"RSI Length\", \"RSI calculation period\", \"Indicators\")
+			.SetDisplay("RSI Length", "RSI calculation period", "Indicators")
 			.SetCanOptimize(true);
 
 		_overbought = Param(nameof(Overbought), 70)
-			.SetDisplay(\"Overbought\", \"RSI overbought level\", \"Signals\")
+			.SetDisplay("Overbought", "RSI overbought level", "Signals")
 			.SetCanOptimize(true);
 
 		_oversold = Param(nameof(Oversold), 30)
-			.SetDisplay(\"Oversold\", \"RSI oversold level\", \"Signals\")
+			.SetDisplay("Oversold", "RSI oversold level", "Signals")
 			.SetCanOptimize(true);
 
 		_macdFast = Param(nameof(MacdFast), 12)
-			.SetDisplay(\"MACD Fast\", \"MACD fast period\", \"Indicators\")
+			.SetDisplay("MACD Fast", "MACD fast period", "Indicators")
 			.SetCanOptimize(true);
 
 		_macdSlow = Param(nameof(MacdSlow), 26)
-			.SetDisplay(\"MACD Slow\", \"MACD slow period\", \"Indicators\")
+			.SetDisplay("MACD Slow", "MACD slow period", "Indicators")
 			.SetCanOptimize(true);
 
 		_macdSignal = Param(nameof(MacdSignal), 9)
-			.SetDisplay(\"MACD Signal\", \"MACD signal period\", \"Indicators\")
+			.SetDisplay("MACD Signal", "MACD signal period", "Indicators")
 			.SetCanOptimize(true);
 
 		_atrLength = Param(nameof(AtrLength), 14)
-			.SetDisplay(\"ATR Length\", \"ATR calculation period\", \"Risk\")
+			.SetDisplay("ATR Length", "ATR calculation period", "Risk")
 			.SetCanOptimize(true);
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
-			.SetDisplay(\"Risk %\", \"Risk percent of equity\", \"Risk\");
+			.SetDisplay("Risk %", "Risk percent of equity", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 100)
-			.SetDisplay(\"Stop Loss Pips\", \"Stop loss size in pips\", \"Risk\");
+			.SetDisplay("Stop Loss Pips", "Stop loss size in pips", "Risk");
 
 		_useTrailing = Param(nameof(UseTrailing), true)
-			.SetDisplay(\"Use Trailing\", \"Enable trailing stop\", \"Risk\");
+			.SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
 
 		_trailingPips = Param(nameof(TrailingPips), 50)
-			.SetDisplay(\"Trailing Pips\", \"Trailing stop distance in pips\", \"Risk\");
+			.SetDisplay("Trailing Pips", "Trailing stop distance in pips", "Risk");
 	}
 
 	/// <inheritdoc />

@@ -81,7 +81,7 @@ public class NseIndexStrategyWithEntryExitMarkersStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"NseIndexStrategyWithEntryExitMarkersStrategy\"/> class.
+	/// Initializes a new instance of the <see cref="NseIndexStrategyWithEntryExitMarkersStrategy"/> class.
 	/// </summary>
 	public NseIndexStrategyWithEntryExitMarkersStrategy()
 	{
