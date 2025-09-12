@@ -21,11 +21,11 @@ public class DemaTrendOscillatorStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 	
-	private ExponentialMovingAverage? _ema1;
-	private ExponentialMovingAverage? _ema2;
-	private SimpleMovingAverage? _baseSma;
-	private StandardDeviation? _sd;
-	private AverageTrueRange? _atr;
+	private ExponentialMovingAverage _ema1;
+	private ExponentialMovingAverage _ema2;
+	private SimpleMovingAverage _baseSma;
+	private StandardDeviation _sd;
+	private AverageTrueRange _atr;
 	
 	private bool _prevLongCond;
 	private bool _prevShortCond;

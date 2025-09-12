@@ -26,9 +26,9 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 	private KeltnerChannels _kc;
 	private Highest _highestHigh;
 	private Lowest _lowestLow;
-	private Sma _smaClose;
+	private SMA _smaClose;
 	private LinearRegression _linReg;
-	private Ema _emaTrend;
+	private EMA _emaTrend;
 	private Lowest _lowestVal;
 	private Highest _highestVal;
 
@@ -154,9 +154,9 @@ public class SqueezeMomentumIndicatorStrategy : Strategy
 		_kc = new KeltnerChannels { Length = KcLength, Multiplier = KcMultiplier };
 		_highestHigh = new Highest { Length = KcLength };
 		_lowestLow = new Lowest { Length = KcLength };
-		_smaClose = new Sma { Length = KcLength };
+		_smaClose = new SMA { Length = KcLength };
 		_linReg = new LinearRegression { Length = KcLength };
-		_emaTrend = new Ema { Length = EmaLength };
+		_emaTrend = new EMA { Length = EmaLength };
 		_lowestVal = new Lowest { Length = 100 };
 		_highestVal = new Highest { Length = 100 };
 

@@ -17,14 +17,14 @@ public class RsiCciFusionStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _rsiSma;
-	private StandardDeviation? _rsiStd;
-	private SimpleMovingAverage? _cciSma;
-	private StandardDeviation? _cciStd;
-	private SimpleMovingAverage? _combinedSma;
-	private StandardDeviation? _combinedStd;
-	private SimpleMovingAverage? _rescaledSma;
-	private StandardDeviation? _rescaledStd;
+	private SimpleMovingAverage _rsiSma;
+	private StandardDeviation _rsiStd;
+	private SimpleMovingAverage _cciSma;
+	private StandardDeviation _cciStd;
+	private SimpleMovingAverage _combinedSma;
+	private StandardDeviation _combinedStd;
+	private SimpleMovingAverage _rescaledSma;
+	private StandardDeviation _rescaledStd;
 
 	private decimal _prevRescaled;
 	private decimal _prevUpper;
