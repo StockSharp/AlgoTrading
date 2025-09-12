@@ -165,7 +165,7 @@ public class BestDollarCostAverageStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnStopped(DateTimeOffset time)
+	protected override void OnStopped()
 	{
 		var portfolioValue = _totalQuantity * _lastPrice;
 		var profit = portfolioValue - _totalSpent;
@@ -173,6 +173,6 @@ public class BestDollarCostAverageStrategy : Strategy
 
 		LogInfo($"Spent: {_totalSpent:0.##}, Qty: {_totalQuantity:0.######}, Value: {portfolioValue:0.##}, PnL: {profit:0.##} ({percent:0.##}%)");
 
-		base.OnStopped(time);
+		base.OnStopped();
 	}
 }

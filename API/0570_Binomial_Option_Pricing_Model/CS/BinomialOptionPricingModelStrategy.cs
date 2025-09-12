@@ -16,7 +16,6 @@ public class BinomialOptionPricingModelStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _strikePrice;
-	private readonly StrategyParam<decimal> _riskFreeRate;
 	private readonly StrategyParam<decimal> _dividendYield;
 	private readonly StrategyParam<string> _assetClass;
 	private readonly StrategyParam<string> _optionStyle;
@@ -37,11 +36,6 @@ public class BinomialOptionPricingModelStrategy : Strategy
 	/// Option strike price.
 	/// </summary>
 	public decimal StrikePrice { get => _strikePrice.Value; set => _strikePrice.Value = value; }
-
-	/// <summary>
-	/// Risk free interest rate.
-	/// </summary>
-	public decimal RiskFreeRate { get => _riskFreeRate.Value; set => _riskFreeRate.Value = value; }
 
 	/// <summary>
 	/// Dividend yield or foreign risk free rate.
@@ -93,9 +87,6 @@ public class BinomialOptionPricingModelStrategy : Strategy
 
 		_strikePrice = Param(nameof(StrikePrice), 50m)
 			.SetDisplay("Strike Price", "Option strike price", "Option Parameters");
-
-		_riskFreeRate = Param(nameof(RiskFreeRate), 0.00117m)
-			.SetDisplay("Risk Free Rate", "Risk free interest rate", "Option Parameters");
 
 		_dividendYield = Param(nameof(DividendYield), 0m)
 			.SetDisplay("Dividend Yield", "Dividend yield or foreign risk free rate", "Option Parameters");
