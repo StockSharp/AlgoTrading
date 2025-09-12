@@ -13,13 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NegroniOpeningRangeStrategy : Strategy
 {
-	public enum TradeDirection
-	{
-		LongOnly,
-		ShortOnly,
-		LongShort
-	}
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _maxTradesPerDay;
 	private readonly StrategyParam<TradeDirection> _direction;
@@ -153,7 +146,7 @@ public class NegroniOpeningRangeStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum trades per day", "General");
 
-		_direction = Param(nameof(Direction), TradeDirection.LongShort)
+		_direction = Param(nameof(Direction), TradeDirection.Both)
 			.SetDisplay("Direction", "Trading direction", "General");
 
 		_sessionStart = Param(nameof(SessionStart), new TimeSpan(9, 30, 0))
@@ -275,13 +268,13 @@ public class NegroniOpeningRangeStrategy : Strategy
 
 		var close = candle.ClosePrice;
 
-		if ((Direction == TradeDirection.LongOnly || Direction == TradeDirection.LongShort) &&
+		if ((Direction == TradeDirection.Long || Direction == TradeDirection.Both) &&
 			Position <= 0 && previousClose <= high.Value && close > high.Value)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_tradesToday++;
 		}
-		else if ((Direction == TradeDirection.ShortOnly || Direction == TradeDirection.LongShort) &&
+		else if ((Direction == TradeDirection.Short || Direction == TradeDirection.Both) &&
 			Position >= 0 && previousClose >= low.Value && close < low.Value)
 		{
 			SellMarket(Volume + Math.Abs(Position));

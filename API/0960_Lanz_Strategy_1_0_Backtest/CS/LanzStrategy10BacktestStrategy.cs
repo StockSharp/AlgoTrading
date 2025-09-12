@@ -29,7 +29,7 @@ public class LanzStrategy10BacktestStrategy : Strategy
 	private int _finalSignalDirection;
 	private decimal _baseLevel;
 	private bool _orderSent;
-	private Order? _entryOrder;
+	private Order _entryOrder;
 	private decimal _pipSize;
 
 	private readonly TimeZoneInfo _nyZone = TimeZoneInfo.FindSystemTimeZoneById("America/New_York");

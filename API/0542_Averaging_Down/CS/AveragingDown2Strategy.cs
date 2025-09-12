@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Averaging Down strategy based on RSI oversold levels.
 /// </summary>
-public class AveragingDownStrategy : Strategy
+public class AveragingDown2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _rsiLength;
@@ -50,7 +50,7 @@ public class AveragingDownStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public AveragingDownStrategy()
+	public AveragingDown2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

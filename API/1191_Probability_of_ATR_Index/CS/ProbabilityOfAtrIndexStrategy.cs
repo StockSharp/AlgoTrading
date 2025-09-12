@@ -18,12 +18,12 @@ public class ProbabilityOfAtrIndexStrategy : Strategy
 	private readonly StrategyParam<int> _bars;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageTrueRange? _atr;
-	private SimpleMovingAverage? _smaHigh;
-	private SimpleMovingAverage? _smaLow;
-	private StandardDeviation? _sdHigh;
-	private StandardDeviation? _sdLow;
-	private SimpleMovingAverage? _probSma;
+	private AverageTrueRange _atr;
+	private SimpleMovingAverage _smaHigh;
+	private SimpleMovingAverage _smaLow;
+	private StandardDeviation _sdHigh;
+	private StandardDeviation _sdLow;
+	private SimpleMovingAverage _probSma;
 
 	private bool _prevIsAbove;
 

@@ -37,13 +37,6 @@ public class MultiStepFlexiSuperTrendStrategy : Strategy
 	private bool _tp2Done;
 	private bool _tp3Done;
 
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
 	/// <summary>
 	/// Candle type for calculations.
 	/// </summary>

@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// Multi-timeframe MACD heatmap strategy.
 /// Enters when all monitored MACD histograms cross above/below zero.
 /// </summary>
-public class HeatmapMacdStrategy : Strategy
+public class HeatmapMacd2Strategy : Strategy
 {
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
@@ -86,7 +86,7 @@ public class HeatmapMacdStrategy : Strategy
 	/// <summary>
 	/// Initialize strategy parameters.
 	/// </summary>
-	public HeatmapMacdStrategy()
+	public HeatmapMacd2Strategy()
 	{
 		_fastPeriod = Param(nameof(FastPeriod), 20)
 		.SetDisplay("Fast Period", "Fast EMA period for MACD", "MACD")

@@ -80,7 +80,7 @@ public class HurstExponentStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0.45m, 0.65m, 0.05m);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");
 	}
 

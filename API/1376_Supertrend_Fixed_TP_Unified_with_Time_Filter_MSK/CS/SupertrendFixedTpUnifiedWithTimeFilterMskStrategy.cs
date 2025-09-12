@@ -142,11 +142,11 @@ public class SupertrendFixedTpUnifiedWithTimeFilterMskStrategy : Strategy
 			? mskHour >= TimeFrom && mskHour < TimeTo
 			: mskHour >= TimeFrom || mskHour < TimeTo;
 	}
-}
 
-public enum TradeMode
-{
-	Both,
-	LongOnly,
-	ShortOnly
+	public enum TradeMode
+	{
+		Both,
+		LongOnly,
+		ShortOnly
+	}
 }

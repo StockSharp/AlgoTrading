@@ -38,16 +38,6 @@ public class MultiStepFlexiMaStrategy : Strategy
 	private bool _tp3Done;
 
 	/// <summary>
-	/// Trade direction.
-	/// </summary>
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
-	/// <summary>
 	/// Normalization method for oscillator.
 	/// </summary>
 	public enum NormalizeMethod

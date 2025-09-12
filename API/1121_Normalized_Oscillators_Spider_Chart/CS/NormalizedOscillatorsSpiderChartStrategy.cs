@@ -55,7 +55,7 @@ public class NormalizedOscillatorsSpiderChartStrategy : Strategy
 	public NormalizedOscillatorsSpiderChartStrategy()
 	{
 		_length = Param(nameof(Length), 14).SetDisplay("Length").SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5))).SetDisplay("Candle type");
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle type");
 
 		_prices = new decimal[Length];
 		_upFlags = new decimal[Length];

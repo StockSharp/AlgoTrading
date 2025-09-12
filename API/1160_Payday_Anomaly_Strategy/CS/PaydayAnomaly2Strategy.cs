@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// Payday anomaly strategy.
 /// Opens long positions on selected days of the month and closes on other days.
 /// </summary>
-public class PaydayAnomalyStrategy : Strategy
+public class PaydayAnomaly2Strategy : Strategy
 {
 	private readonly StrategyParam<bool> _trade1st;
 	private readonly StrategyParam<bool> _trade2nd;
@@ -69,7 +69,7 @@ public class PaydayAnomalyStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of the <see cref="PaydayAnomalyStrategy"/> class.
 	/// </summary>
-	public PaydayAnomalyStrategy()
+	public PaydayAnomaly2Strategy()
 	{
 		_trade1st = Param(nameof(Trade1st), true)
 			.SetDisplay("Trade 1st", "Trade on the 1st day", "General")

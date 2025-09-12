@@ -35,10 +35,10 @@ public class MomentumLongShortStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _rsiSmooth;
-	private IIndicator? _adxSmooth;
-	private IIndicator? _atrSmooth;
-	private IIndicator? _atrShortSmooth;
+	private IIndicator _rsiSmooth;
+	private IIndicator _adxSmooth;
+	private IIndicator _atrSmooth;
+	private IIndicator _atrShortSmooth;
 
 	public MomentumLongShortStrategy()
 	{

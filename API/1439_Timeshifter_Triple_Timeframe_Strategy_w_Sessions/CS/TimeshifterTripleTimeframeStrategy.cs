@@ -8,13 +8,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeDirection
-{
-	Long,
-	Short,
-	Both
-}
-
 /// <summary>
 /// Triple timeframe strategy with optional ADX filter and session control.
 /// </summary>

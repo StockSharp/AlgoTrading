@@ -29,7 +29,7 @@ public class HamsterBotMrs2Strategy : Strategy
 	base.OnStarted(time);
 	
 	_ma.Length = Length;
-	SubscribeCandles(DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+	SubscribeCandles(TimeSpan.FromMinutes(5).TimeFrame())
 	.Bind(_ma, OnProcess)
 	.Start();
 	}

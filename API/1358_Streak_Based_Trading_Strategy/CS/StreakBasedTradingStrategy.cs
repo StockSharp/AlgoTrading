@@ -164,12 +164,3 @@ public class StreakBasedTradingStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 }
-
-/// <summary>
-/// Trade direction.
-/// </summary>
-public enum TradeDirection
-{
-	Long,
-	Short
-}

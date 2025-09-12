@@ -77,7 +77,7 @@ public class VaranormalMacNCheezStrategy : Strategy
 		_trailOffset = Param(nameof(TrailOffset), 20m)
 		.SetDisplay("Trailing Stop Offset", "Distance for trailing stop", "Risk")
 		.SetCanOptimize(true);
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for analysis", "General");
 		
 		_prevFast = 0m;

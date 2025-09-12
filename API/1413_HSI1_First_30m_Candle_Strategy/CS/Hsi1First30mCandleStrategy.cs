@@ -12,13 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Hsi1First30mCandleStrategy : Strategy
 {
-	public enum TradeDirection
-	{
-		BuyOnly,
-		SellOnly,
-		Both
-	}
-
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<TradeDirection> _tradeDirection;

@@ -19,8 +19,8 @@ public class LiquidityGrabVolumeTrapStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private SimpleMovingAverage _volumeSma = null!;
-	private ICandleMessage? _prev1;
-	private ICandleMessage? _prev2;
+	private ICandleMessage _prev1;
+	private ICandleMessage _prev2;
 	private decimal _entryPrice;
 	private decimal _stopLoss;
 	private decimal _takeProfit;

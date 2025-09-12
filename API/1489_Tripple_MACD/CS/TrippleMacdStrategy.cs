@@ -76,7 +76,7 @@ public int Slow4 { get => _slow4.Value; set => _slow4.Value = value; }
 
 public TrippleMacdStrategy()
 {
-_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
 _rsiPeriod = Param(nameof(RsiPeriod), 14)
 .SetDisplay("RSI Period", "RSI calculation length", "Indicators");

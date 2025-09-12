@@ -44,13 +44,6 @@ public class MultiStepVegasSuperTrendStrategy : Strategy
 		Jurik
 	}
 
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
 	public MultiStepVegasSuperTrendStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

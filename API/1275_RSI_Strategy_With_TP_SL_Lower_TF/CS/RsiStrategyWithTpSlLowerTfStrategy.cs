@@ -24,16 +24,6 @@ public class RsiStrategyWithTpSlLowerTfStrategy : Strategy
 	private RelativeStrengthIndex _rsi;
 
 	/// <summary>
-	/// Trade direction options.
-	/// </summary>
-	public enum TradeDirection
-	{
-		LongOnly,
-		ShortOnly,
-		Both
-	}
-
-	/// <summary>
 	/// Initializes a new instance of <see cref="RsiStrategyWithTpSlLowerTfStrategy"/>.
 	/// </summary>
 	public RsiStrategyWithTpSlLowerTfStrategy()

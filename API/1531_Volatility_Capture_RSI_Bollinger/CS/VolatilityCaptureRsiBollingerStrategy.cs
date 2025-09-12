@@ -31,13 +31,6 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 	private decimal _prevBand;
 	private decimal? _prevPriceSource;
 
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
 	/// <summary>
 	/// Bollinger calculation length.
 	/// </summary>

@@ -18,8 +18,8 @@ public class FunctionMatrixLibraryStrategy : Strategy
 	private readonly StrategyParam<int> _length2;
 	private readonly StrategyParam<DataType> _candleType;
 	
-	private Sma _sma1 = null!;
-	private Sma _sma2 = null!;
+	private SMA _sma1;
+	private SMA _sma2;
 	
 	private readonly List<decimal> _yValues = new();
 	private readonly List<decimal> _x1Values = new();
@@ -93,8 +93,8 @@ public class FunctionMatrixLibraryStrategy : Strategy
 	{
 		base.OnStarted(time);
 		
-		_sma1 = new Sma { Length = Length1 };
-		_sma2 = new Sma { Length = Length2 };
+		_sma1 = new() { Length = Length1 };
+		_sma2 = new() { Length = Length2 };
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription

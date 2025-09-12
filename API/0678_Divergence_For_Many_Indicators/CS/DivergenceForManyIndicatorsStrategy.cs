@@ -98,7 +98,7 @@ public class DivergenceForManyIndicatorsStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(1, 2, 1);
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for strategy", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1m)

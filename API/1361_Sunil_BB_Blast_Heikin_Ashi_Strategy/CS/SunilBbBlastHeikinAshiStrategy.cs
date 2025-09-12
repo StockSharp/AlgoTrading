@@ -29,16 +29,6 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 	private decimal _target;
 
 	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-	public enum TradeDirection
-	{
-		LongOnly,
-		ShortOnly,
-		Both
-	}
-
-	/// <summary>
 	/// Bollinger Bands period.
 	/// </summary>
 	public int BollingerPeriod { get => _bollingerPeriod.Value; set => _bollingerPeriod.Value = value; }

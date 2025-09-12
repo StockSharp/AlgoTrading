@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// 4H Bollinger Breakout Strategy - trades Bollinger Band breakouts with volume, trend and RSI filters.
 /// </summary>
-public class BollingerBreakoutStrategy : Strategy
+public class BollingerBreakout2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _bollingerLength;
@@ -75,7 +75,7 @@ public class BollingerBreakoutStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public BollingerBreakoutStrategy()
+	public BollingerBreakout2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

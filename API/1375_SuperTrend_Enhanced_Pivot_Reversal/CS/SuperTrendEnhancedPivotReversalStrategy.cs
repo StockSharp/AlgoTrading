@@ -14,19 +14,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SuperTrendEnhancedPivotReversalStrategy : Strategy
 {
-	public enum DirectionOptions
-	{
-		Long,
-		Short,
-		Both
-	}
-
 	private readonly StrategyParam<int> _leftBars;
 	private readonly StrategyParam<int> _rightBars;
 	private readonly StrategyParam<int> _atrLength;
 	private readonly StrategyParam<decimal> _factor;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<DirectionOptions> _tradeDirection;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SuperTrend _superTrend;
@@ -92,7 +85,7 @@ public class SuperTrendEnhancedPivotReversalStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public DirectionOptions TradeDirection
+	public Sides? TradeDirection
 	{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
@@ -127,7 +120,7 @@ public class SuperTrendEnhancedPivotReversalStrategy : Strategy
 		_stopLossPercent = Param(nameof(StopLossPercent), 20m)
 		.SetDisplay("Stop Loss (%)", "Percent stop-loss from pivot", "Risk");
 
-		_tradeDirection = Param(nameof(TradeDirection), DirectionOptions.Both)
+		_tradeDirection = Param<Sides?>(nameof(TradeDirection), null)
 		.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
@@ -175,9 +168,9 @@ public class SuperTrendEnhancedPivotReversalStrategy : Strategy
 		var area = CreateChartArea();
 		if (area != null)
 		{
-		DrawCandles(area, subscription);
-		DrawIndicator(area, _superTrend);
-		DrawOwnTrades(area);
+			DrawCandles(area, subscription);
+			DrawIndicator(area, _superTrend);
+			DrawOwnTrades(area);
 		}
 	}
 
@@ -185,151 +178,151 @@ public class SuperTrendEnhancedPivotReversalStrategy : Strategy
 	{
 		if (_bufferCount < _highs.Length)
 		{
-		_highs[_bufferCount] = high;
-		_lows[_bufferCount] = low;
-		_bufferCount++;
+			_highs[_bufferCount] = high;
+			_lows[_bufferCount] = low;
+			_bufferCount++;
 		}
 		else
 		{
-		for (var i = 0; i < _highs.Length - 1; i++)
-		{
-		_highs[i] = _highs[i + 1];
-		_lows[i] = _lows[i + 1];
-		}
+			for (var i = 0; i < _highs.Length - 1; i++)
+			{
+				_highs[i] = _highs[i + 1];
+				_lows[i] = _lows[i + 1];
+			}
 
-		_highs[^1] = high;
-		_lows[^1] = low;
+			_highs[^1] = high;
+			_lows[^1] = low;
 		}
 	}
 
 	private bool DetectPivotHigh(out decimal price)
 	{
-	price = 0m;
-	if (_bufferCount < _highs.Length)
-	return false;
+		price = 0m;
+		if (_bufferCount < _highs.Length)
+			return false;
 
-	var idx = _highs.Length - 1 - RightBars;
-	var center = _highs[idx];
+		var idx = _highs.Length - 1 - RightBars;
+		var center = _highs[idx];
 
-	for (var i = 0; i < _highs.Length; i++)
-	{
-	if (i == idx)
-	continue;
+		for (var i = 0; i < _highs.Length; i++)
+		{
+			if (i == idx)
+				continue;
 
-	if (_highs[i] >= center)
-	return false;
-	}
+			if (_highs[i] >= center)
+				return false;
+		}
 
-	price = center;
-	return true;
+		price = center;
+		return true;
 	}
 
 	private bool DetectPivotLow(out decimal price)
 	{
-	price = 0m;
-	if (_bufferCount < _lows.Length)
-	return false;
+		price = 0m;
+		if (_bufferCount < _lows.Length)
+			return false;
 
-	var idx = _lows.Length - 1 - RightBars;
-	var center = _lows[idx];
+		var idx = _lows.Length - 1 - RightBars;
+		var center = _lows[idx];
 
-	for (var i = 0; i < _lows.Length; i++)
-	{
-	if (i == idx)
-	continue;
+		for (var i = 0; i < _lows.Length; i++)
+		{
+			if (i == idx)
+				continue;
 
-	if (_lows[i] <= center)
-	return false;
-	}
+			if (_lows[i] <= center)
+				return false;
+		}
 
-	price = center;
-	return true;
+		price = center;
+		return true;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue stVal)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	UpdateBuffers(candle.HighPrice, candle.LowPrice);
+		UpdateBuffers(candle.HighPrice, candle.LowPrice);
 
-	if (DetectPivotHigh(out var ph))
-	{
-	_pivotHigh = ph;
-	_longSignal = true;
-	_buyOrderPlaced = false;
-	CancelActiveOrders();
-	}
+		if (DetectPivotHigh(out var ph))
+		{
+			_pivotHigh = ph;
+			_longSignal = true;
+			_buyOrderPlaced = false;
+			CancelActiveOrders();
+		}
 
-	if (DetectPivotLow(out var pl))
-	{
-	_pivotLow = pl;
-	_shortSignal = true;
-	_sellOrderPlaced = false;
-	CancelActiveOrders();
-	}
+		if (DetectPivotLow(out var pl))
+		{
+			_pivotLow = pl;
+			_shortSignal = true;
+			_sellOrderPlaced = false;
+			CancelActiveOrders();
+		}
 
-	if (_longSignal && _pivotHigh is decimal hp && candle.HighPrice > hp)
-	{
-	_longSignal = false;
-	_buyOrderPlaced = false;
-	CancelActiveOrders();
-	}
+		if (_longSignal && _pivotHigh is decimal hp && candle.HighPrice > hp)
+		{
+			_longSignal = false;
+			_buyOrderPlaced = false;
+			CancelActiveOrders();
+		}
 
-	if (_shortSignal && _pivotLow is decimal lp && candle.LowPrice < lp)
-	{
-	_shortSignal = false;
-	_sellOrderPlaced = false;
-	CancelActiveOrders();
-	}
+		if (_shortSignal && _pivotLow is decimal lp && candle.LowPrice < lp)
+		{
+			_shortSignal = false;
+			_sellOrderPlaced = false;
+			CancelActiveOrders();
+		}
 
-	var st = (SuperTrendIndicatorValue)stVal;
-	var isUp = st.IsUpTrend;
-	var step = Security.PriceStep ?? 1m;
+		var st = (SuperTrendIndicatorValue)stVal;
+		var isUp = st.IsUpTrend;
+		var step = Security.PriceStep ?? 1m;
 
-	if (_longSignal && !isUp && (TradeDirection == DirectionOptions.Long || TradeDirection == DirectionOptions.Both) && !_buyOrderPlaced && Position <= 0 && _pivotHigh is decimal phVal)
-	{
-	BuyStop(Volume + Math.Abs(Position), phVal + step);
-	_buyOrderPlaced = true;
-	}
+		if (_longSignal && !isUp && (TradeDirection == Sides.Buy || TradeDirection == null) && !_buyOrderPlaced && Position <= 0 && _pivotHigh is decimal phVal)
+		{
+			BuyStop(Volume + Math.Abs(Position), phVal + step);
+			_buyOrderPlaced = true;
+		}
 
-	if (_shortSignal && isUp && (TradeDirection == DirectionOptions.Short || TradeDirection == DirectionOptions.Both) && !_sellOrderPlaced && Position >= 0 && _pivotLow is decimal plVal)
-	{
-	SellStop(Volume + Math.Abs(Position), plVal - step);
-	_sellOrderPlaced = true;
-	}
+		if (_shortSignal && isUp && (TradeDirection == Sides.Sell || TradeDirection == null) && !_sellOrderPlaced && Position >= 0 && _pivotLow is decimal plVal)
+		{
+			SellStop(Volume + Math.Abs(Position), plVal - step);
+			_sellOrderPlaced = true;
+		}
 
-	if (Position > 0)
-	{
-	if (_longStop is null && _pivotHigh is decimal hp2)
-	_longStop = hp2 * (1m - StopLossPercent / 100m);
+		if (Position > 0)
+		{
+			if (_longStop is null && _pivotHigh is decimal hp2)
+				_longStop = hp2 * (1m - StopLossPercent / 100m);
 
-	if (_longStop is decimal ls && candle.LowPrice <= ls)
-	{
-	SellMarket(Position);
-	_longStop = null;
-	}
-	}
-	else if (Position < 0)
-	{
-	if (_shortStop is null && _pivotLow is decimal lp2)
-	_shortStop = lp2 * (1m + StopLossPercent / 100m);
+			if (_longStop is decimal ls && candle.LowPrice <= ls)
+			{
+				SellMarket(Position);
+				_longStop = null;
+			}
+		}
+		else if (Position < 0)
+		{
+			if (_shortStop is null && _pivotLow is decimal lp2)
+				_shortStop = lp2 * (1m + StopLossPercent / 100m);
 
-	if (_shortStop is decimal ss && candle.HighPrice >= ss)
-	{
-	BuyMarket(-Position);
-	_shortStop = null;
-	}
-	}
-	else
-	{
-	_longStop = null;
-	_shortStop = null;
-	}
+			if (_shortStop is decimal ss && candle.HighPrice >= ss)
+			{
+				BuyMarket(-Position);
+				_shortStop = null;
+			}
+		}
+		else
+		{
+			_longStop = null;
+			_shortStop = null;
+		}
 
-	if (TradeDirection == DirectionOptions.Long && !isUp && Position > 0)
-	SellMarket(Position);
-	else if (TradeDirection == DirectionOptions.Short && isUp && Position < 0)
-	BuyMarket(-Position);
+		if (TradeDirection == Sides.Buy && !isUp && Position > 0)
+			SellMarket(Position);
+		else if (TradeDirection == Sides.Sell && isUp && Position < 0)
+			BuyMarket(-Position);
 	}
 }

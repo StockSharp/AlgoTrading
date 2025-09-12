@@ -96,7 +96,7 @@ public class MacdStochasticConfirmationReversalStrategy : Strategy
 		_trailingActivationAtr = Param(nameof(TrailingActivationAtrMultiplier), 4.25m)
 			.SetDisplay("ATR Activate", "ATR multiplier to activate trailing", "Strategy");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Base candle type", "Common");
 	}
 
@@ -124,7 +124,7 @@ public class MacdStochasticConfirmationReversalStrategy : Strategy
 			.BindEx(_macd, _atr, _ema, ProcessCandle)
 			.Start();
 
-		var dailySubscription = SubscribeCandles(DataType.TimeFrame(TimeSpan.FromDays(1)));
+		var dailySubscription = SubscribeCandles(TimeSpan.FromDays(1).TimeFrame());
 		dailySubscription
 			.BindEx(_dailyStoch, ProcessDaily)
 			.Start();

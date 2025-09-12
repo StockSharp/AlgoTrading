@@ -5,6 +5,7 @@ using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Charting;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -20,7 +21,7 @@ public class SpeedometerToolboxStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _gaugeDrawn;
-	private IChartArea? _area;
+	private IChartArea _area;
 
 	/// <summary>
 	/// RSI length.

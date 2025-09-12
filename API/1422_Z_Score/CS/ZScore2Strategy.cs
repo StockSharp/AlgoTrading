@@ -8,7 +8,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public class ZScoreStrategy : Strategy
+public class ZScore2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _haEmaLength;
@@ -24,7 +24,7 @@ public class ZScoreStrategy : Strategy
 	private decimal _prevMiddle;
 	private decimal _prevHighest;
 
-	public ZScoreStrategy()
+	public ZScore2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

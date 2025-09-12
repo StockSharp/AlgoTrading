@@ -104,7 +104,7 @@ public class DskyzAiAdaptiveRegimeBeginnersStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "ADX indicator period", "Parameters");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type for subscription", "Common");
 	}
 

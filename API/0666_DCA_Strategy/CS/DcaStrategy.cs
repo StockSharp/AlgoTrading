@@ -98,7 +98,7 @@ public class DcaStrategy : Strategy
 
 	public DcaStrategy()
 	{
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromDays(1))).SetCanOptimize(false);
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame()).SetCanOptimize(false);
 		_toInvestQuote = Param(nameof(ToInvestQuote), 100m);
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(2018, 1, 1, 0, 0, 0, TimeSpan.Zero)).SetCanOptimize(false);
 		_endDate = Param(nameof(EndDate), new DateTimeOffset(2069, 12, 31, 0, 0, 0, TimeSpan.Zero)).SetCanOptimize(false);

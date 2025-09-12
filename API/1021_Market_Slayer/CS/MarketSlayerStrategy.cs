@@ -149,11 +149,10 @@ public class MarketSlayerStrategy : Strategy
 							 .SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType),
-							DataType.TimeFrame(TimeSpan.FromMinutes(5)))
+							TimeSpan.FromMinutes(5).TimeFrame())
 						  .SetDisplay("Candle Type");
 
-		_trendCandleType = Param(nameof(TrendCandleType),
-								 DataType.TimeFrame(TimeSpan.FromMinutes(240)))
+		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(240).TimeFrame())
 							   .SetDisplay("Trend Candle Type");
 	}
 

@@ -132,7 +132,7 @@ public class ProxyFinancialStressIndexStrategy : Strategy
 		_hygSecurity = Param(nameof(HygSecurity), new Security())
 		.SetDisplay("HYG Security", "Security for HYG ETF", "Securities");
 
-		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromDays(1)))
+		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for all securities", "Parameters");
 	}
 

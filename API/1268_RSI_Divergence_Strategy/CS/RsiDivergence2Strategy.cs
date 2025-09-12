@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// RSI Divergence strategy.
 /// </summary>
-public class RsiDivergenceStrategy : Strategy
+public class RsiDivergence2Strategy : Strategy
 {
 	private const int _lookbackLeft = 5;
 	private const int _lookbackRight = 5;
@@ -33,8 +33,8 @@ public class RsiDivergenceStrategy : Strategy
 	}
 
 	private readonly List<BarInfo> _history = [];
-	private BarInfo? _lastPivotLow;
-	private BarInfo? _lastPivotHigh;
+	private BarInfo _lastPivotLow;
+	private BarInfo _lastPivotHigh;
 	private int _index;
 
 	public int RsiLength { get => _rsiLength.Value; set => _rsiLength.Value = value; }
@@ -44,7 +44,7 @@ public class RsiDivergenceStrategy : Strategy
 	public decimal ShortExitRsi { get => _shortExitRsi.Value; set => _shortExitRsi.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public RsiDivergenceStrategy()
+	public RsiDivergence2Strategy()
 	{
 		_rsiLength = Param(nameof(RsiLength), 14)
 			.SetGreaterThanZero()

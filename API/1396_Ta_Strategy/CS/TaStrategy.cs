@@ -289,10 +289,3 @@ public class TaStrategy : Strategy
 		_tp1Done = false;
 	}
 }
-
-public enum TradeDirection
-{
-	Both,
-	Long,
-	Short
-}

@@ -8,13 +8,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeDirection
-{
-	Long,
-	Short,
-	Both
-}
-
 /// <summary>
 /// Bitcoin leverage sentiment strategy using Z-Score of longs vs shorts.
 /// </summary>
