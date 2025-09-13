@@ -18,7 +18,7 @@ public class RmiTrendSyncStrategy : Strategy
 	private readonly StrategyParam<decimal> _negativeThreshold;
 	private readonly StrategyParam<int> _superTrendLength;
 	private readonly StrategyParam<decimal> _superTrendMultiplier;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevRsiMfi;
@@ -56,7 +56,7 @@ public class RmiTrendSyncStrategy : Strategy
 	/// <summary>
 	/// Allowed direction.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Type of candles.
@@ -88,8 +88,8 @@ public class RmiTrendSyncStrategy : Strategy
 			.SetDisplay("SuperTrend Mult", "ATR multiplier for SuperTrend", "SuperTrend")
 			.SetGreaterThanZero();
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed direction", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -173,12 +173,12 @@ public class RmiTrendSyncStrategy : Strategy
 		var longCondition = positiveMomentum && !_isPositive;
 		var shortCondition = negativeMomentum && !_isNegative;
 
-		if (longCondition && (Direction == TradeDirection.Long || Direction == TradeDirection.Both) && Position <= 0)
+if (longCondition && (Direction is null or Sides.Buy) && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 			_stopPrice = st.Value;
 		}
-		else if (shortCondition && (Direction == TradeDirection.Short || Direction == TradeDirection.Both) && Position >= 0)
+else if (shortCondition && (Direction is null or Sides.Sell) && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 			_stopPrice = st.Value;

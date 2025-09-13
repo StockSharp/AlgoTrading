@@ -13,9 +13,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NegroniOpeningRangeStrategy : Strategy
 {
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<int> _maxTradesPerDay;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<int> _maxTradesPerDay;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<TimeSpan> _sessionStart;
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
 	private readonly StrategyParam<TimeSpan> _closeTime;
@@ -56,11 +56,11 @@ public class NegroniOpeningRangeStrategy : Strategy
 	/// <summary>
 	/// Trading direction.
 	/// </summary>
-	public TradeDirection Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
+public Sides? Direction
+{
+	get => _direction.Value;
+	set => _direction.Value = value;
+}
 
 	/// <summary>
 	/// Start of trading session (UTC).
@@ -145,9 +145,8 @@ public class NegroniOpeningRangeStrategy : Strategy
 		_maxTradesPerDay = Param(nameof(MaxTradesPerDay), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Trades", "Maximum trades per day", "General");
-
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Direction", "Trading direction", "General");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Direction", "Trading direction", "General");
 
 		_sessionStart = Param(nameof(SessionStart), new TimeSpan(9, 30, 0))
 			.SetDisplay("Session Start", "Start time for opening trades", "Time");
@@ -267,18 +266,19 @@ public class NegroniOpeningRangeStrategy : Strategy
 			return;
 
 		var close = candle.ClosePrice;
-
-		if ((Direction == TradeDirection.Long || Direction == TradeDirection.Both) &&
-			Position <= 0 && previousClose <= high.Value && close > high.Value)
-		{
-			BuyMarket(Volume + Math.Abs(Position));
-			_tradesToday++;
-		}
-		else if ((Direction == TradeDirection.Short || Direction == TradeDirection.Both) &&
-			Position >= 0 && previousClose >= low.Value && close < low.Value)
-		{
-			SellMarket(Volume + Math.Abs(Position));
-			_tradesToday++;
-		}
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (allowLong &&
+	        Position <= 0 && previousClose <= high.Value && close > high.Value)
+	{
+	        BuyMarket(Volume + Math.Abs(Position));
+	        _tradesToday++;
+	}
+	else if (allowShort &&
+	        Position >= 0 && previousClose >= low.Value && close < low.Value)
+	{
+	        SellMarket(Volume + Math.Abs(Position));
+	        _tradesToday++;
+	}
 	}
 }

@@ -19,24 +19,17 @@ public class BoilerplateConfigurableStrategy : Strategy
 		SmaCross
 	}
 
-	public enum TradeSide
-	{
-		Long,
-		Short,
-		Both
-	}
-
-	public enum RrMode
-	{
-		Atr,
-		Static
-	}
+       public enum RrMode
+       {
+               Atr,
+               Static
+       }
 
 	private readonly StrategyParam<StrategyMode> _mode;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _wideMultiplier;
 	private readonly StrategyParam<decimal> _narrowMultiplier;
-	private readonly StrategyParam<TradeSide> _tradeDirection;
+       private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _tradeInverse;
 	private readonly StrategyParam<decimal> _maxLossPerc;
 	private readonly StrategyParam<RrMode> _rrMode;
@@ -80,7 +73,7 @@ public class BoilerplateConfigurableStrategy : Strategy
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public decimal WideMultiplier { get => _wideMultiplier.Value; set => _wideMultiplier.Value = value; }
 	public decimal NarrowMultiplier { get => _narrowMultiplier.Value; set => _narrowMultiplier.Value = value; }
-	public TradeSide TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public bool TradeInverse { get => _tradeInverse.Value; set => _tradeInverse.Value = value; }
 	public decimal MaxLossPerc { get => _maxLossPerc.Value; set => _maxLossPerc.Value = value; }
 	public RrMode RiskRewardMode { get => _rrMode.Value; set => _rrMode.Value = value; }
@@ -121,8 +114,8 @@ public class BoilerplateConfigurableStrategy : Strategy
 			.SetRange(0.1m, decimal.MaxValue)
 			.SetDisplay("Narrow BB Mult", "Narrow Bollinger multiplier", "Squeeze");
 
-		_tradeDirection = Param(nameof(TradeDirection), TradeSide.Both)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "Trading");
+               _direction = Param(nameof(Direction), (Sides?)null)
+                       .SetDisplay("Trade Direction", "Allowed trade direction", "Trading");
 
 		_tradeInverse = Param(nameof(TradeInverse), false)
 			.SetDisplay("Inverse", "Inverse trade side", "Trading");
@@ -300,8 +293,8 @@ public class BoilerplateConfigurableStrategy : Strategy
 			shortCondition = tmp;
 		}
 
-		var allowLong = TradeDirection == TradeSide.Long || TradeDirection == TradeSide.Both;
-		var allowShort = TradeDirection == TradeSide.Short || TradeDirection == TradeSide.Both;
+               var allowLong = Direction is null or Sides.Buy;
+               var allowShort = Direction is null or Sides.Sell;
 
 		if (allowLong && longCondition && Position <= 0)
 			Enter(true, candle.ClosePrice, atrVal);

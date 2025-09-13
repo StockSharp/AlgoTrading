@@ -14,18 +14,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ParabolicRsiStrategy : Strategy
 {
-	public enum TradeDirections
-	{
-		LongAndShort,
-		LongOnly,
-		ShortOnly
-	}
-
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<decimal> _sarStart;
 	private readonly StrategyParam<decimal> _sarIncrement;
 	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<TradeDirections> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _useFilter;
 	private readonly StrategyParam<decimal> _longRsiMin;
 	private readonly StrategyParam<decimal> _shortRsiMax;
@@ -39,7 +32,7 @@ public class ParabolicRsiStrategy : Strategy
 	public decimal SarStart { get => _sarStart.Value; set => _sarStart.Value = value; }
 	public decimal SarIncrement { get => _sarIncrement.Value; set => _sarIncrement.Value = value; }
 	public decimal SarMax { get => _sarMax.Value; set => _sarMax.Value = value; }
-	public TradeDirections TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public bool UseFilter { get => _useFilter.Value; set => _useFilter.Value = value; }
 	public decimal LongRsiMin { get => _longRsiMin.Value; set => _longRsiMin.Value = value; }
 	public decimal ShortRsiMax { get => _shortRsiMax.Value; set => _shortRsiMax.Value = value; }
@@ -63,8 +56,8 @@ public class ParabolicRsiStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("SAR Max", "Maximum acceleration", "SAR");
 
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirections.LongAndShort)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "Strategy");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trade direction", "Strategy");
 
 		_useFilter = Param(nameof(UseFilter), false)
 			.SetDisplay("Use Filter", "Enable RSI filter", "Filter");
@@ -150,34 +143,34 @@ public class ParabolicRsiStrategy : Strategy
 		var sigLong = _isBelow is bool prev1 && !prev1 && isBelow;
 		var sigShort = _isBelow is bool prev2 && prev2 && !isBelow;
 
-		if (sigLong && (!UseFilter || rsiValue >= LongRsiMin))
-		{
-			if (TradeDirection != TradeDirections.ShortOnly)
-			{
-				if (Position < 0)
-					BuyMarket(Math.Abs(Position));
-				if (Position <= 0)
-					BuyMarket(Volume);
-			}
-			else if (Position < 0)
-			{
-				BuyMarket(Math.Abs(Position));
-			}
-		}
-		else if (sigShort && (!UseFilter || rsiValue <= ShortRsiMax))
-		{
-			if (TradeDirection != TradeDirections.LongOnly)
-			{
-				if (Position > 0)
-					SellMarket(Math.Abs(Position));
-				if (Position >= 0)
-					SellMarket(Volume);
-			}
-			else if (Position > 0)
-			{
-				SellMarket(Math.Abs(Position));
-			}
-		}
+if (sigLong && (!UseFilter || rsiValue >= LongRsiMin))
+{
+if (Direction != Sides.Sell)
+{
+if (Position < 0)
+BuyMarket(Math.Abs(Position));
+if (Position <= 0)
+BuyMarket(Volume);
+}
+else if (Position < 0)
+{
+BuyMarket(Math.Abs(Position));
+}
+}
+else if (sigShort && (!UseFilter || rsiValue <= ShortRsiMax))
+{
+if (Direction != Sides.Buy)
+{
+if (Position > 0)
+SellMarket(Math.Abs(Position));
+if (Position >= 0)
+SellMarket(Volume);
+}
+else if (Position > 0)
+{
+SellMarket(Math.Abs(Position));
+}
+}
 
 		_isBelow = isBelow;
 	}

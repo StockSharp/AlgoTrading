@@ -20,9 +20,9 @@ public class MultiStepFlexiMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _incrementFactor;
 	private readonly StrategyParam<NormalizeMethod> _normalizeMethod;
 	private readonly StrategyParam<int> _superTrendPeriod;
-	private readonly StrategyParam<decimal> _superTrendMultiplier;
-	private readonly StrategyParam<TradeDirection> _direction;
-	private readonly StrategyParam<decimal> _tpLevel1;
+private readonly StrategyParam<decimal> _superTrendMultiplier;
+private readonly StrategyParam<Sides?> _direction;
+private readonly StrategyParam<decimal> _tpLevel1;
 	private readonly StrategyParam<decimal> _tpLevel2;
 	private readonly StrategyParam<decimal> _tpLevel3;
 	private readonly StrategyParam<decimal> _tpPercent1;
@@ -85,7 +85,7 @@ public class MultiStepFlexiMaStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Take profit level 1 in percent.
@@ -145,9 +145,8 @@ public class MultiStepFlexiMaStrategy : Strategy
 		_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 15m)
 		.SetGreaterThanZero()
 		.SetDisplay("SuperTrend Multiplier", "ATR multiplier", "SuperTrend");
-
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-		.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Trade Direction", "Allowed trading direction", "General");
 
 		_tpLevel1 = Param(nameof(TakeProfitLevel1), 2m)
 		.SetDisplay("TP Level 1 (%)", "First take profit level", "Risk");
@@ -261,9 +260,8 @@ public class MultiStepFlexiMaStrategy : Strategy
 		var median = (sorted[9] + sorted[10]) / 2m;
 
 		var direction = candle.ClosePrice > superTrendValue ? -1 : 1;
-
-		var allowLong = Direction == TradeDirection.Both || Direction == TradeDirection.Long;
-		var allowShort = Direction == TradeDirection.Both || Direction == TradeDirection.Short;
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
 
 		if (allowLong && direction < 0 && median > 0 && Position <= 0)
 		{

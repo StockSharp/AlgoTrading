@@ -18,7 +18,7 @@ public class PivotPercentileTrendStrategy : Strategy
 	private readonly StrategyParam<int> _percentileLength;
 	private readonly StrategyParam<int> _supertrendLength;
 	private readonly StrategyParam<decimal> _supertrendFactor;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	
 	private SuperTrend _supertrend;
 	private int[] _lengths = [];
@@ -66,11 +66,11 @@ public class PivotPercentileTrendStrategy : Strategy
 	/// <summary>
 	/// Allowed trading direction.
 	/// </summary>
-	public string TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 	
 	/// <summary>
 	/// Constructor.
@@ -92,8 +92,8 @@ public class PivotPercentileTrendStrategy : Strategy
 	.SetGreaterThanZero()
 	.SetDisplay("SuperTrend Factor", "Multiplier for SuperTrend", "SuperTrend");
 	
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-	.SetDisplay("Trading Direction", "Allowed trade direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trading Direction", "Allowed trade direction", "General");
 	}
 	
 	/// <inheritdoc />
@@ -236,15 +236,18 @@ public class PivotPercentileTrendStrategy : Strategy
 		var enterLong = trendValue > 0 && priceAbove;
 		var enterShort = trendValue < 0 && priceBelow;
 	
-		if ((TradeDirection == "Long" || TradeDirection == "Both") && enterLong && Position <= 0)
-		BuyMarket(Volume + Math.Abs(Position));
-		else if ((TradeDirection == "Short" || TradeDirection == "Both") && enterShort && Position >= 0)
-		SellMarket(Volume + Math.Abs(Position));
-	
-		if ((TradeDirection == "Long" || TradeDirection == "Both") && enterShort && Position > 0)
-		SellMarket(Math.Abs(Position));
-		else if ((TradeDirection == "Short" || TradeDirection == "Both") && enterLong && Position < 0)
-		BuyMarket(Math.Abs(Position));
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
+
+if (allowLong && enterLong && Position <= 0)
+BuyMarket(Volume + Math.Abs(Position));
+else if (allowShort && enterShort && Position >= 0)
+SellMarket(Volume + Math.Abs(Position));
+
+if (allowLong && enterShort && Position > 0)
+SellMarket(Math.Abs(Position));
+else if (allowShort && enterLong && Position < 0)
+BuyMarket(Math.Abs(Position));
 	}
 	
 	private static decimal GetPercentile(Queue<decimal> values, decimal percentile)

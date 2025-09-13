@@ -24,8 +24,8 @@ public class DualSupertrendMacdStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod1;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<int> _atrPeriod2;
-	private readonly StrategyParam<decimal> _factor2;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<decimal> _factor2;
+private readonly StrategyParam<Sides?> _direction;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="DualSupertrendMacdStrategy"/>.
@@ -66,8 +66,8 @@ public class DualSupertrendMacdStrategy : Strategy
 					   .SetCanOptimize(true)
 					   .SetDisplay("Factor 2", "ATR multiplier for second Supertrend", "Supertrend");
 
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-							  .SetDisplay("Direction", "Trading direction: Long, Short or Both", "Strategy");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Direction", "Trading direction: Long, Short or Both", "Strategy");
 	}
 
 	/// <summary>
@@ -163,11 +163,11 @@ public class DualSupertrendMacdStrategy : Strategy
 	/// <summary>
 	/// Trading direction.
 	/// </summary>
-	public string TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities() => [(Security, CandleType)];
@@ -224,17 +224,17 @@ public class DualSupertrendMacdStrategy : Strategy
 		var exitLong = close < st1 || close < st2 || hist < 0;
 		var exitShort = close > st1 || close > st2 || hist > 0;
 
-		var dir = TradeDirection;
+var dir = Direction;
 
-		if ((dir == "Long" || dir == "Both") && isBullish && Position <= 0)
-			BuyMarket(Volume + Math.Abs(Position));
-		else if (Position > 0 && exitLong)
-			SellMarket(Position);
+if ((dir is null or Sides.Buy) && isBullish && Position <= 0)
+BuyMarket(Volume + Math.Abs(Position));
+else if (Position > 0 && exitLong)
+SellMarket(Position);
 
-		if ((dir == "Short" || dir == "Both") && isBearish && Position >= 0)
-			SellMarket(Volume + Math.Abs(Position));
-		else if (Position < 0 && exitShort)
-			BuyMarket(Math.Abs(Position));
+if ((dir is null or Sides.Sell) && isBearish && Position >= 0)
+SellMarket(Volume + Math.Abs(Position));
+else if (Position < 0 && exitShort)
+BuyMarket(Math.Abs(Position));
 	}
 
 	private MovingAverage CreateMa(MovingAverageTypeEnum type, int length)

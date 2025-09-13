@@ -13,19 +13,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaCrossMacdSessionStartStrategy : Strategy
 {
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
-	private readonly StrategyParam<int> _fastEmaLength;
-	private readonly StrategyParam<int> _slowEmaLength;
-	private readonly StrategyParam<int> _macdFastLength;
-	private readonly StrategyParam<int> _macdSlowLength;
-	private readonly StrategyParam<int> _macdSignalLength;
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+private readonly StrategyParam<int> _fastEmaLength;
+private readonly StrategyParam<int> _slowEmaLength;
+private readonly StrategyParam<int> _macdFastLength;
+private readonly StrategyParam<int> _macdSlowLength;
+private readonly StrategyParam<int> _macdSignalLength;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DateTimeOffset> _startDate;
 	private readonly StrategyParam<DateTimeOffset> _endDate;
 	private readonly StrategyParam<string> _session;
@@ -63,7 +56,7 @@ public class EmaCrossMacdSessionStartStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirection Direction { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Trading start date.
@@ -120,8 +113,8 @@ public class EmaCrossMacdSessionStartStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 15, 1);
 
-		_tradeDirection = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
 		_startDate = Param(nameof(StartDate), new DateTimeOffset(new DateTime(1970, 1, 1)))
 			.SetDisplay("Start Date", "Trading start date", "General");
@@ -205,8 +198,8 @@ public class EmaCrossMacdSessionStartStrategy : Strategy
 		var macdOkLong = histogram > 0m;
 		var macdOkShort = histogram < 0m;
 
-		var longAllowed = Direction != TradeDirection.Short;
-		var shortAllowed = Direction != TradeDirection.Long;
+var longAllowed = Direction is null or Sides.Buy;
+var shortAllowed = Direction is null or Sides.Sell;
 
 		if (inDateRange && inSession && longAllowed && macdOkLong && (longSignal || (justSessionStart && fastEma > slowEma)) && Position <= 0)
 		{

@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 public class DualPhaseTrendRegimeStrategy : Strategy
 {
 private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 private readonly StrategyParam<SignalSource> _signalSource;
 private readonly StrategyParam<int> _lengthSlow;
 private readonly StrategyParam<int> _lengthFast;
@@ -39,16 +39,6 @@ private LinearRegression _oscSlow = null!;
 private LinearRegression _oscFast = null!;
 
 /// <summary>
-/// Trade direction options.
-/// </summary>
-public enum TradeDirection
-{
-LongShort,
-LongOnly,
-ShortOnly
-}
-
-/// <summary>
 /// Signal source options.
 /// </summary>
 public enum SignalSource
@@ -65,7 +55,7 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 /// <summary>
 /// Allowed trade direction.
 /// </summary>
-public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 /// <summary>
 /// Source of entry signals.
@@ -105,7 +95,7 @@ public DualPhaseTrendRegimeStrategy()
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 .SetDisplay("Candle Type", "Timeframe for candles", "General");
 
-_direction = Param(nameof(Direction), TradeDirection.LongShort)
+_direction = Param(nameof(Direction), (Sides?)null)
 .SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
 _signalSource = Param(nameof(Source), SignalSource.RegimeShift)
@@ -244,14 +234,14 @@ longX = crossDown;
 shortX = crossUp;
 }
 
-if (longE && Direction != TradeDirection.ShortOnly)
+if (longE && Direction != Sides.Sell)
 {
 if (Position < 0)
 BuyMarket(-Position);
 BuyMarket();
 }
 
-if (shortE && Direction != TradeDirection.LongOnly)
+if (shortE && Direction != Sides.Buy)
 {
 if (Position > 0)
 SellMarket(Position);

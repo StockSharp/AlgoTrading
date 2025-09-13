@@ -8,13 +8,6 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum TradeDirectionOption
-{
-	Both,
-	Long,
-	Short,
-}
-
 /// <summary>
 /// Crypto MVRV ZScore Strategy (642).
 /// Converts the MVRV Z-Score concept into a trading system.
@@ -24,7 +17,7 @@ public class CryptoMvrvZScoreStrategy : Strategy
 	private readonly StrategyParam<int> _zScorePeriod;
 	private readonly StrategyParam<decimal> _longEntryThreshold;
 	private readonly StrategyParam<decimal> _shortEntryThreshold;
-	private readonly StrategyParam<TradeDirectionOption> _tradeDirection;
+	private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _realMarketCap;
@@ -65,11 +58,11 @@ public class CryptoMvrvZScoreStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirectionOption TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+	public Sides? Direction
+       {
+               get => _direction.Value;
+               set => _direction.Value = value;
+       }
 
 	/// <summary>
 	/// Candle type to use.
@@ -101,8 +94,8 @@ public class CryptoMvrvZScoreStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(-0.5m, -0.2m, 0.05m);
 
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirectionOption.Both)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "Parameters");
+               _direction = Param(nameof(Direction), (Sides?)null)
+                       .SetDisplay("Trade Direction", "Allowed trade direction", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Parameters");
@@ -189,21 +182,19 @@ public class CryptoMvrvZScoreStrategy : Strategy
 
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		if (longEntry && (TradeDirection == TradeDirectionOption.Long || TradeDirection == TradeDirectionOption.Both) && Position <= 0)
+		if (longEntry && (Direction is null or Sides.Buy) && Position <= 0)
 		{
 			BuyMarket(Volume + Math.Abs(Position));
 		}
-		else if (longExit && (TradeDirection == TradeDirectionOption.Long || TradeDirection == TradeDirectionOption.Both) && Position > 0)
+		else if (longExit && (Direction is null or Sides.Buy) && Position > 0)
 		{
 			SellMarket(Math.Abs(Position));
 		}
-
-		if (shortEntry && (TradeDirection == TradeDirectionOption.Short || TradeDirection == TradeDirectionOption.Both) && Position >= 0)
+		if (shortEntry && (Direction is null or Sides.Sell) && Position >= 0)
 		{
 			SellMarket(Volume + Math.Abs(Position));
 		}
-		else if (shortExit && (TradeDirection == TradeDirectionOption.Short || TradeDirection == TradeDirectionOption.Both) && Position < 0)
+		else if (shortExit && (Direction is null or Sides.Sell) && Position < 0)
 		{
 			BuyMarket(Math.Abs(Position));
 		}

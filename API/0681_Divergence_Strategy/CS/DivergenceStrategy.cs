@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DivergenceStrategy : Strategy
 {
-	private readonly StrategyParam<Direction> _direction;
+	private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _riskReward;
@@ -32,7 +32,7 @@ public class DivergenceStrategy : Strategy
 	/// <summary>
 	/// Trade direction.
 	/// </summary>
-	public Direction TradeDirection
+	public Sides? Direction
 	{
 		get => _direction.Value;
 		set => _direction.Value = value;
@@ -77,20 +77,13 @@ public class DivergenceStrategy : Strategy
 	/// <summary>
 	/// Trade direction options.
 	/// </summary>
-	public enum Direction
-	{
-		Long,
-		Short,
-		Both,
-	}
-
 	/// <summary>
 	/// Initializes a new instance of the <see cref="DivergenceStrategy"/>.
 	/// </summary>
-	public DivergenceStrategy()
-	{
-		_direction = Param(nameof(TradeDirection), Direction.Both)
-			.SetDisplay("Direction", "Trade direction", "General");
+public DivergenceStrategy()
+{
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Direction", "Trade direction", "General");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(5, 50)
@@ -174,7 +167,7 @@ public class DivergenceStrategy : Strategy
 
 			if (_prevHighPrice != null && _prevHighRsi != null && _lastHighPrice > _prevHighPrice && _lastHighRsi < _prevHighRsi)
 			{
-				if ((TradeDirection == Direction.Short || TradeDirection == Direction.Both) && Position >= 0)
+			if ((Direction is null or Sides.Sell) && Position >= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					SellMarket(volume);
@@ -192,7 +185,7 @@ public class DivergenceStrategy : Strategy
 
 			if (_prevLowPrice != null && _prevLowRsi != null && _lastLowPrice < _prevLowPrice && _lastLowRsi > _prevLowRsi)
 			{
-				if ((TradeDirection == Direction.Long || TradeDirection == Direction.Both) && Position <= 0)
+			if ((Direction is null or Sides.Buy) && Position <= 0)
 				{
 					var volume = Volume + Math.Abs(Position);
 					BuyMarket(volume);

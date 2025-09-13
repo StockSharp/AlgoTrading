@@ -25,7 +25,7 @@ public class DualRsiDifferentialStrategy : Strategy
 	private readonly StrategyParam<TpslCondition> _condition;
 	private readonly StrategyParam<decimal> _takeProfitPerc;
 	private readonly StrategyParam<decimal> _stopLossPerc;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 
 	private decimal _entryPrice;
 	private DateTimeOffset? _entryTime;
@@ -33,17 +33,10 @@ public class DualRsiDifferentialStrategy : Strategy
 	/// <summary>
 	/// Trade direction options.
 	/// </summary>
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
-	/// <summary>
-	/// Take profit and stop loss mode.
-	/// </summary>
-	public enum TpslCondition
+/// <summary>
+/// Take profit and stop loss mode.
+/// </summary>
+public enum TpslCondition
 	{
 		None,
 		TP,
@@ -99,7 +92,7 @@ public class DualRsiDifferentialStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="DualRsiDifferentialStrategy"/> class.
@@ -139,8 +132,8 @@ public class DualRsiDifferentialStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-		.SetDisplay("Trade Direction", "Allowed side", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed side", "General");
 	}
 
 	/// <inheritdoc />
@@ -181,8 +174,8 @@ public class DualRsiDifferentialStrategy : Strategy
 		return;
 
 		var diff = longRsi - shortRsi;
-		var allowLong = Direction == TradeDirection.Both || Direction == TradeDirection.Long;
-		var allowShort = Direction == TradeDirection.Both || Direction == TradeDirection.Short;
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
 
 		if (allowLong && diff < -RsiDiffLevel && Position <= 0)
 		{

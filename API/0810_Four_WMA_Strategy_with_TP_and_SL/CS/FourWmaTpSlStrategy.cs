@@ -22,13 +22,6 @@ Vwma,
 Rma
 }
 
-public enum TradeDirection
-{
-LongOnly,
-ShortOnly,
-Both
-}
-
 public enum AltExitMa
 {
 LongMa1,
@@ -45,7 +38,7 @@ private readonly StrategyParam<MaMode> _maType;
 private readonly StrategyParam<bool> _enableTpSl;
 private readonly StrategyParam<decimal> _takeProfitPercent;
 private readonly StrategyParam<decimal> _stopLossPercent;
-private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 private readonly StrategyParam<bool> _enableAltExit;
 private readonly StrategyParam<AltExitMa> _altExitMa;
 private readonly StrategyParam<DataType> _candleType;
@@ -98,7 +91,7 @@ public decimal StopLossPercent { get => _stopLossPercent.Value; set => _stopLoss
 /// <summary>
 /// Allowed trade direction.
 /// </summary>
-public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 /// <summary>
 /// Enable alternate exit condition.
@@ -154,7 +147,7 @@ _stopLossPercent = Param(nameof(StopLossPercent), 1m)
 .SetGreaterOrEqualZero()
 .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
-_direction = Param(nameof(Direction), TradeDirection.Both)
+_direction = Param(nameof(Direction), (Sides?)null)
 .SetDisplay("Direction", "Allowed trade direction", "General");
 
 _enableAltExit = Param(nameof(EnableAltExit), false)
@@ -266,7 +259,7 @@ if (_prevLongMa1.HasValue && _prevLongMa2.HasValue)
 var longCrossUp = _prevLongMa1 <= _prevLongMa2 && longMa1 > longMa2;
 var longCrossDown = _prevLongMa1 >= _prevLongMa2 && longMa1 < longMa2;
 
-if ((Direction == TradeDirection.Both || Direction == TradeDirection.LongOnly) && Position <= 0 && longCrossUp)
+if ((Direction is null or Sides.Buy) && Position <= 0 && longCrossUp)
 BuyMarket();
 
 if (Position > 0 && (longCrossDown || priceCrossAltExit))
@@ -278,7 +271,7 @@ if (_prevShortMa1.HasValue && _prevShortMa2.HasValue)
 var shortCrossDown = _prevShortMa1 >= _prevShortMa2 && shortMa1 < shortMa2;
 var shortCrossUp = _prevShortMa1 <= _prevShortMa2 && shortMa1 > shortMa2;
 
-if ((Direction == TradeDirection.Both || Direction == TradeDirection.ShortOnly) && Position >= 0 && shortCrossDown)
+if ((Direction is null or Sides.Sell) && Position >= 0 && shortCrossDown)
 SellMarket();
 
 if (Position < 0 && (shortCrossUp || priceCrossAltExit))

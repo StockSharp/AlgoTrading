@@ -13,14 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 {
-	public enum TradeDirections
-	{
-		LongOnly,
-		ShortOnly,
-		Both
-	}
-
-	public enum TakeProfitOptions
+public enum TakeProfitOptions
 	{
 		FixedRiskReward,
 		MovingAverage,
@@ -35,9 +28,9 @@ public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 		VWMA
 	}
 
-	private readonly StrategyParam<int> _cutoffHour;
-	private readonly StrategyParam<int> _cutoffMinute;
-	private readonly StrategyParam<TradeDirections> _tradeDirection;
+private readonly StrategyParam<int> _cutoffHour;
+private readonly StrategyParam<int> _cutoffMinute;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<TakeProfitOptions> _takeProfitType;
 	private readonly StrategyParam<decimal> _tpRatio;
 	private readonly StrategyParam<MovingAverageTypes> _maType;
@@ -76,11 +69,11 @@ public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirections TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+public Sides? Direction
+{
+	get => _direction.Value;
+	set => _direction.Value = value;
+}
 
 	/// <summary>
 	/// Take profit calculation mode.
@@ -139,9 +132,8 @@ public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 		_cutoffMinute = Param(nameof(CutoffMinute), 0)
 			.SetRange(0, 59)
 			.SetDisplay("Cutoff Minute", "Entry cutoff minute", "General");
-
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirections.LongOnly)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+	 _direction = Param(nameof(Direction), Sides.Buy)
+	        .SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
 		_takeProfitType = Param(nameof(TakeProfitType), TakeProfitOptions.FixedRiskReward)
 			.SetDisplay("Take Profit Type", "Take profit mode", "Risk");
@@ -239,18 +231,17 @@ public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 
 		var pastCutoffCurrent = PastCutoff(nyTime);
 		var pastCutoffPrev = _prevCandle is not null && PastCutoff(TimeZoneInfo.ConvertTime(_prevCandle.OpenTime.UtcDateTime, _nyTimeZone));
-
-		var prevLongBreakout = false;
-		var prevShortBreakout = false;
-
-		if (_rangeSet && _prevCandle is not null)
-		{
-			if (!_longBreakout && !pastCutoffPrev && (TradeDirection == TradeDirections.LongOnly || TradeDirection == TradeDirections.Both) && _prevCandle.ClosePrice > _rangeHigh)
-				prevLongBreakout = true;
-
-			if (!_shortBreakout && !pastCutoffPrev && (TradeDirection == TradeDirections.ShortOnly || TradeDirection == TradeDirections.Both) && _prevCandle.ClosePrice < _rangeLow)
-				prevShortBreakout = true;
-		}
+	 var prevLongBreakout = false;
+	var prevShortBreakout = false;
+	var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (_rangeSet && _prevCandle is not null)
+	{
+	        if (!_longBreakout && !pastCutoffPrev && allowLong && _prevCandle.ClosePrice > _rangeHigh)
+	                prevLongBreakout = true;
+	         if (!_shortBreakout && !pastCutoffPrev && allowShort && _prevCandle.ClosePrice < _rangeLow)
+	                prevShortBreakout = true;
+	}
 
 		if (prevLongBreakout)
 			_longBreakout = true;
@@ -260,9 +251,8 @@ public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 
 		var longMaOk = TakeProfitType is TakeProfitOptions.MovingAverage or TakeProfitOptions.Both ? candle.ClosePrice > maValue : true;
 		var shortMaOk = TakeProfitType is TakeProfitOptions.MovingAverage or TakeProfitOptions.Both ? candle.ClosePrice < maValue : true;
-
-		var longEntry = _rangeSet && prevLongBreakout && !pastCutoffCurrent && Position == 0 && longMaOk;
-		var shortEntry = _rangeSet && prevShortBreakout && !pastCutoffCurrent && Position == 0 && shortMaOk;
+	 var longEntry = _rangeSet && prevLongBreakout && !pastCutoffCurrent && Position == 0 && longMaOk;
+	var shortEntry = _rangeSet && prevShortBreakout && !pastCutoffCurrent && Position == 0 && shortMaOk;
 
 		if (longEntry)
 		{
