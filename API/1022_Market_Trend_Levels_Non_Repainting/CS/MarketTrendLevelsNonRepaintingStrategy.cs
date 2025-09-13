@@ -13,9 +13,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 {
-	private readonly StrategyParam<int> _fastLength;
-	private readonly StrategyParam<int> _slowLength;
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+private readonly StrategyParam<int> _fastLength;
+private readonly StrategyParam<int> _slowLength;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _applyExitFilters;
 	private readonly StrategyParam<bool> _useRsi;
 	private readonly StrategyParam<int> _rsiLength;
@@ -35,7 +35,7 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
 
 	/// <summary>Allowed trading direction.</summary>
-	public TradeDirection TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>Apply exit filters on open positions.</summary>
 	public bool ApplyExitFilters { get => _applyExitFilters.Value; set => _applyExitFilters.Value = value; }
@@ -55,15 +55,8 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 	/// <summary>Candle type for strategy.</summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	public enum TradeDirection
-	{
-		LongOnly,
-		ShortOnly,
-		Both
-	}
-
-	public MarketTrendLevelsNonRepaintingStrategy()
-	{
+public MarketTrendLevelsNonRepaintingStrategy()
+{
 		_fastLength = Param(nameof(FastLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Fast EMA period", "Trend");
@@ -71,9 +64,8 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 		_slowLength = Param(nameof(SlowLength), 25)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Slow EMA period", "Trend");
-
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed direction", "Trade");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Trade Direction", "Allowed direction", "Trade");
 
 		_applyExitFilters = Param(nameof(ApplyExitFilters), false)
 			.SetDisplay("Apply Exit Filters", "Close positions when filters fail", "Filters");
@@ -135,37 +127,36 @@ public class MarketTrendLevelsNonRepaintingStrategy : Strategy
 
 		var filterLong = !UseRsi || rsiValue > RsiLongThreshold;
 		var filterShort = !UseRsi || rsiValue < RsiShortThreshold;
-
-		var volume = Volume + Math.Abs(Position);
-
-		if (TradeDirection == TradeDirection.Both)
-		{
-			if (crossUp && Position <= 0 && filterLong)
-				BuyMarket(volume);
-			if (crossDown && Position >= 0 && filterShort)
-				SellMarket(volume);
-
-			if (ApplyExitFilters)
-			{
-				if (Position > 0 && !filterLong)
-					SellMarket(Position);
-				else if (Position < 0 && !filterShort)
-					BuyMarket(Math.Abs(Position));
-			}
-		}
-		else if (TradeDirection == TradeDirection.LongOnly)
-		{
-			if (crossUp && Position <= 0 && filterLong)
-				BuyMarket(volume);
-			if ((crossDown || (ApplyExitFilters && !filterLong)) && Position > 0)
-				SellMarket(Position);
-		}
-		else if (TradeDirection == TradeDirection.ShortOnly)
-		{
-			if (crossDown && Position >= 0 && filterShort)
-				SellMarket(volume);
-			if ((crossUp || (ApplyExitFilters && !filterShort)) && Position < 0)
-				BuyMarket(Math.Abs(Position));
-		}
+	 var volume = Volume + Math.Abs(Position);
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (allowLong && allowShort)
+	{
+	        if (crossUp && Position <= 0 && filterLong)
+	                BuyMarket(volume);
+	        if (crossDown && Position >= 0 && filterShort)
+	                SellMarket(volume);
+	         if (ApplyExitFilters)
+	        {
+	                if (Position > 0 && !filterLong)
+	                        SellMarket(Position);
+	                else if (Position < 0 && !filterShort)
+	                        BuyMarket(Math.Abs(Position));
+	        }
+	}
+	else if (allowLong)
+	{
+	        if (crossUp && Position <= 0 && filterLong)
+	                BuyMarket(volume);
+	        if ((crossDown || (ApplyExitFilters && !filterLong)) && Position > 0)
+	                SellMarket(Position);
+	}
+	else if (allowShort)
+	{
+	        if (crossDown && Position >= 0 && filterShort)
+	                SellMarket(volume);
+	        if ((crossUp || (ApplyExitFilters && !filterShort)) && Position < 0)
+	                BuyMarket(Math.Abs(Position));
+	}
 	}
 }

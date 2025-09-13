@@ -15,9 +15,9 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LiquidityBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<int> _pivotLength;
-	private readonly StrategyParam<TradeDirections> _tradeDirection;
-	private readonly StrategyParam<StopLossModes> _stopLossMode;
+private readonly StrategyParam<int> _pivotLength;
+private readonly StrategyParam<Sides?> _direction;
+private readonly StrategyParam<StopLossModes> _stopLossMode;
 	private readonly StrategyParam<decimal> _fixedPercentage;
 	private readonly StrategyParam<int> _superTrendPeriod;
 	private readonly StrategyParam<decimal> _superTrendMultiplier;
@@ -31,25 +31,17 @@ public class LiquidityBreakoutStrategy : Strategy
 	private decimal _prevLow;
 	private bool _initialized;
 
-	/// <summary>Allowed trade direction.</summary>
-	public enum TradeDirections
-	{
-		Long,
-		Short,
-		Both,
-	}
-
-	/// <summary>Stop loss calculation mode.</summary>
-	public enum StopLossModes
+/// <summary>Stop loss calculation mode.</summary>
+public enum StopLossModes
 	{
 		SuperTrend,
 		FixedPercentage,
 		None,
 	}
 
-	public int PivotLength { get => _pivotLength.Value; set => _pivotLength.Value = value; }
-	public TradeDirections TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
-	public StopLossModes StopLoss { get => _stopLossMode.Value; set => _stopLossMode.Value = value; }
+public int PivotLength { get => _pivotLength.Value; set => _pivotLength.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
+public StopLossModes StopLoss { get => _stopLossMode.Value; set => _stopLossMode.Value = value; }
 	public decimal FixedPercentage { get => _fixedPercentage.Value; set => _fixedPercentage.Value = value; }
 	public int SuperTrendPeriod { get => _superTrendPeriod.Value; set => _superTrendPeriod.Value = value; }
 	public decimal SuperTrendMultiplier { get => _superTrendMultiplier.Value; set => _superTrendMultiplier.Value = value; }
@@ -60,9 +52,8 @@ public class LiquidityBreakoutStrategy : Strategy
 		_pivotLength = Param(nameof(PivotLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Contraction Lookback", "Bars for range detection", "General");
-
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirections.Both)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
 		_stopLossMode = Param(nameof(StopLoss), StopLossModes.SuperTrend)
 			.SetDisplay("Stop Loss Type", "Stop loss mode", "Risk");
@@ -139,9 +130,8 @@ public class LiquidityBreakoutStrategy : Strategy
 			_initialized = true;
 			return;
 		}
-
-		var allowLong = TradeDirection == TradeDirections.Long || TradeDirection == TradeDirections.Both;
-		var allowShort = TradeDirection == TradeDirections.Short || TradeDirection == TradeDirections.Both;
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
 
 		var longEntry = allowLong && candle.ClosePrice > _prevHigh;
 		var shortEntry = allowShort && candle.ClosePrice < _prevLow;

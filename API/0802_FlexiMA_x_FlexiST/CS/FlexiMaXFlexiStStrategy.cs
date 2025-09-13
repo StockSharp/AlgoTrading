@@ -19,21 +19,11 @@ public class FlexiMaXFlexiStStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _stAtrPeriod;
 	private readonly StrategyParam<decimal> _stMultiplier;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 
-	/// <summary>
-	/// Trade direction.
-	/// </summary>
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
-	/// <summary>
-	/// Candle type for calculations.
-	/// </summary>
+/// <summary>
+/// Candle type for calculations.
+/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
@@ -52,9 +42,9 @@ public class FlexiMaXFlexiStStrategy : Strategy
 	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
 
 	/// <summary>
-	/// Allowed trade direction.
-	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+/// Allowed trade direction.
+/// </summary>
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="FlexiMaXFlexiStStrategy"/> class.
@@ -76,8 +66,8 @@ public class FlexiMaXFlexiStStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Multiplier", "ATR multiplier for SuperTrend", "FlexiST");
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trading direction", "General");
 	}
 
 	/// <inheritdoc />
@@ -120,8 +110,8 @@ public class FlexiMaXFlexiStStrategy : Strategy
 		var maDiff = candle.ClosePrice - maValue;
 		var stDiff = candle.ClosePrice - stValue;
 
-		var allowLong = Direction == TradeDirection.Both || Direction == TradeDirection.Long;
-		var allowShort = Direction == TradeDirection.Both || Direction == TradeDirection.Short;
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
 
 		if (allowLong && maDiff > 0 && stDiff > 0 && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));

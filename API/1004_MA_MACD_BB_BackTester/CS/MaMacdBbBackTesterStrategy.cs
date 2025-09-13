@@ -20,15 +20,9 @@ public class MaMacdBbBackTesterStrategy : Strategy
 		BB
 	}
 
-	public enum TradeDirection
-	{
-		Long,
-		Short
-	}
-
-	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<IndicatorType> _indicator;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<DataType> _candleType;
+private readonly StrategyParam<IndicatorType> _indicator;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<int> _maLength;
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
@@ -49,7 +43,7 @@ public class MaMacdBbBackTesterStrategy : Strategy
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public IndicatorType Indicator { get => _indicator.Value; set => _indicator.Value = value; }
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public int FastLength { get => _fastLength.Value; set => _fastLength.Value = value; }
 	public int SlowLength { get => _slowLength.Value; set => _slowLength.Value = value; }
@@ -66,9 +60,8 @@ public class MaMacdBbBackTesterStrategy : Strategy
 
 		_indicator = Param(nameof(Indicator), IndicatorType.MA)
 			.SetDisplay("Indicator", "Trading indicator", "General");
-
-		_direction = Param(nameof(Direction), TradeDirection.Long)
-			.SetDisplay("Direction", "Trade direction", "General");
+	 _direction = Param(nameof(Direction), Sides.Buy)
+	        .SetDisplay("Direction", "Trade direction", "General");
 
 		_maLength = Param(nameof(MaLength), 50)
 			.SetDisplay("MA Length", "Moving average period", "MA");
@@ -164,34 +157,34 @@ public class MaMacdBbBackTesterStrategy : Strategy
 			_prevMa = ma;
 			return;
 		}
-
-		var crossover = prevClose <= prevMa && candle.ClosePrice > ma;
-		var crossunder = prevClose >= prevMa && candle.ClosePrice < ma;
-
-		if (Direction == TradeDirection.Long)
-		{
-			if (crossover && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			else if (crossunder && Position > 0)
-			{
-				SellMarket(Position);
-			}
-		}
-		else
-		{
-			if (crossunder && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
-			else if (crossover && Position < 0)
-			{
-				BuyMarket(-Position);
-			}
-		}
+	 var crossover = prevClose <= prevMa && candle.ClosePrice > ma;
+	var crossunder = prevClose >= prevMa && candle.ClosePrice < ma;
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (allowLong)
+	{
+	        if (crossover && Position <= 0)
+	        {
+	                var volume = Volume + Math.Abs(Position);
+	                BuyMarket(volume);
+	        }
+	        else if (crossunder && Position > 0)
+	        {
+	                SellMarket(Position);
+	        }
+	}
+	 if (allowShort)
+	{
+	        if (crossunder && Position >= 0)
+	        {
+	                var volume = Volume + Math.Abs(Position);
+	                SellMarket(volume);
+	        }
+	        else if (crossover && Position < 0)
+	        {
+	                BuyMarket(-Position);
+	        }
+	}
 
 		_prevClose = candle.ClosePrice;
 		_prevMa = ma;
@@ -219,34 +212,34 @@ public class MaMacdBbBackTesterStrategy : Strategy
 			_prevSignal = signalLine;
 			return;
 		}
-
-		var crossover = prevMacd <= prevSignal && macdLine > signalLine;
-		var crossunder = prevMacd >= prevSignal && macdLine < signalLine;
-
-		if (Direction == TradeDirection.Long)
-		{
-			if (crossover && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			else if (crossunder && Position > 0)
-			{
-				SellMarket(Position);
-			}
-		}
-		else
-		{
-			if (crossunder && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
-			else if (crossover && Position < 0)
-			{
-				BuyMarket(-Position);
-			}
-		}
+	 var crossover = prevMacd <= prevSignal && macdLine > signalLine;
+	var crossunder = prevMacd >= prevSignal && macdLine < signalLine;
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (allowLong)
+	{
+	        if (crossover && Position <= 0)
+	        {
+	                var volume = Volume + Math.Abs(Position);
+	                BuyMarket(volume);
+	        }
+	        else if (crossunder && Position > 0)
+	        {
+	                SellMarket(Position);
+	        }
+	}
+	 if (allowShort)
+	{
+	        if (crossunder && Position >= 0)
+	        {
+	                var volume = Volume + Math.Abs(Position);
+	                SellMarket(volume);
+	        }
+	        else if (crossover && Position < 0)
+	        {
+	                BuyMarket(-Position);
+	        }
+	}
 
 		_prevMacd = macdLine;
 		_prevSignal = signalLine;
@@ -263,30 +256,31 @@ public class MaMacdBbBackTesterStrategy : Strategy
 
 		if (!_bollinger.IsFormed || !IsFormedAndOnlineAndAllowTrading())
 			return;
-
-		if (Direction == TradeDirection.Long)
-		{
-			if (candle.ClosePrice < lower && Position <= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				BuyMarket(volume);
-			}
-			else if (candle.ClosePrice > middle && Position > 0)
-			{
-				SellMarket(Position);
-			}
-		}
-		else
-		{
-			if (candle.ClosePrice > upper && Position >= 0)
-			{
-				var volume = Volume + Math.Abs(Position);
-				SellMarket(volume);
-			}
-			else if (candle.ClosePrice < middle && Position < 0)
-			{
-				BuyMarket(-Position);
-			}
-		}
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (allowLong)
+	{
+	        if (candle.ClosePrice < lower && Position <= 0)
+	        {
+	                var volume = Volume + Math.Abs(Position);
+	                BuyMarket(volume);
+	        }
+	        else if (candle.ClosePrice > middle && Position > 0)
+	        {
+	                SellMarket(Position);
+	        }
+	}
+	 if (allowShort)
+	{
+	        if (candle.ClosePrice > upper && Position >= 0)
+	        {
+	                var volume = Volume + Math.Abs(Position);
+	                SellMarket(volume);
+	        }
+	        else if (candle.ClosePrice < middle && Position < 0)
+	        {
+	                BuyMarket(-Position);
+	        }
+	}
 	}
 }

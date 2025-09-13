@@ -19,7 +19,7 @@ public class FibonacciTrendReversalStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrMultiplier;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<bool> _usePartialTp;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	
 	private Highest _highest;
 	private Lowest _lowest;
@@ -34,11 +34,11 @@ public class FibonacciTrendReversalStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirection Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 	
 	/// <summary>
 	/// Candle type.
@@ -94,19 +94,9 @@ public class FibonacciTrendReversalStrategy : Strategy
 		set => _usePartialTp.Value = value;
 	}
 	
-	/// <summary>
-	/// Direction options.
-	/// </summary>
-	public enum TradeDirection
-	{
-		LongOnly,
-		ShortOnly,
-		Both
-	}
-	
-	/// <summary>
-	/// Initializes a new instance of <see cref="FibonacciTrendReversalStrategy"/>.
-	/// </summary>
+/// <summary>
+/// Initializes a new instance of <see cref="FibonacciTrendReversalStrategy"/>.
+/// </summary>
 	public FibonacciTrendReversalStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -130,8 +120,8 @@ public class FibonacciTrendReversalStrategy : Strategy
 		_usePartialTp = Param(nameof(UsePartialTp), true)
 		.SetDisplay("Use Partial TP", "Close half position at first target", "Risk");
 		
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-		.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 	}
 	
 	/// <inheritdoc />
@@ -187,8 +177,8 @@ public class FibonacciTrendReversalStrategy : Strategy
 		var canLong = candle.ClosePrice >= midLine && candle.OpenPrice < midLine;
 		var canShort = candle.ClosePrice <= midLine && candle.OpenPrice > midLine;
 		
-		var allowLong = Direction != TradeDirection.ShortOnly;
-		var allowShort = Direction != TradeDirection.LongOnly;
+var allowLong = Direction != Sides.Sell;
+var allowShort = Direction != Sides.Buy;
 		
 		if (Position == 0)
 		{

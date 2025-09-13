@@ -20,7 +20,7 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiMidline;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 	private readonly StrategyParam<decimal> _riskRewardRatio;
-	private readonly StrategyParam<TradeDirection> _direction;
+       private readonly StrategyParam<Sides?> _direction;
 
 	private BollingerBands _bollinger = null!;
 	private RelativeStrengthIndex _rsi = null!;
@@ -31,13 +31,6 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 	/// <summary>
 	/// Trade direction.
 	/// </summary>
-	public enum TradeDirection
-	{
-		LongOnly,
-		ShortOnly,
-		Both
-	}
-
 	/// <summary>
 	/// Candle type for strategy calculation.
 	/// </summary>
@@ -76,7 +69,7 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 	/// <summary>
 	/// Trade direction filter.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="BollingerBreakoutDirectionStrategy"/> class.
@@ -109,8 +102,8 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Risk/Reward", "Risk reward ratio", "Risk");
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed side", "General");
+               _direction = Param(nameof(Direction), (Sides?)null)
+                       .SetDisplay("Trade Direction", "Allowed side", "General");
 	}
 
 	/// <inheritdoc />
@@ -147,9 +140,8 @@ public class BollingerBreakoutDirectionStrategy : Strategy
 
 		if (!_bollinger.IsFormed || !_rsi.IsFormed)
 			return;
-
-		var longAllowed = Direction != TradeDirection.ShortOnly;
-		var shortAllowed = Direction != TradeDirection.LongOnly;
+		var longAllowed = Direction is null or Sides.Buy;
+		var shortAllowed = Direction is null or Sides.Sell;
 
 		var longSignal = longAllowed && candle.ClosePrice > upperBand && rsiValue > RsiMidline && Position <= 0;
 		var shortSignal = shortAllowed && candle.ClosePrice < lowerBand && rsiValue < RsiMidline && Position >= 0;

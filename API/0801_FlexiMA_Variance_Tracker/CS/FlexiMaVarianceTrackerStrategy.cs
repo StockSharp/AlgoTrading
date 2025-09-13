@@ -16,27 +16,20 @@ public class FlexiMaVarianceTrackerStrategy : Strategy
 	private readonly StrategyParam<decimal> _stdMultiplier;
 	private readonly StrategyParam<int> _stAtrPeriod;
 	private readonly StrategyParam<decimal> _stMultiplier;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 
 	private SimpleMovingAverage _ma;
 	private SimpleMovingAverage _diffAvg;
 	private StandardDeviation _stdDev;
 	private SuperTrend _superTrend;
 
-	public enum TradeDirection
-	{
-		Long,
-		Short,
-		Both
-	}
-
-	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
+public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int MaLength { get => _maLength.Value; set => _maLength.Value = value; }
 	public int StdLength { get => _stdLength.Value; set => _stdLength.Value = value; }
 	public decimal StdMultiplier { get => _stdMultiplier.Value; set => _stdMultiplier.Value = value; }
 	public int StAtrPeriod { get => _stAtrPeriod.Value; set => _stAtrPeriod.Value = value; }
 	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	public FlexiMaVarianceTrackerStrategy()
 	{
@@ -63,8 +56,8 @@ public class FlexiMaVarianceTrackerStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Mult", "ATR multiplier for SuperTrend", "SuperTrend");
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trading direction", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -101,8 +94,8 @@ public class FlexiMaVarianceTrackerStrategy : Strategy
 		var std = _stdDev.Process(diff).GetValue<decimal>();
 		var threshold = diffAvg + StdMultiplier * std;
 
-		var allowLong = Direction == TradeDirection.Both || Direction == TradeDirection.Long;
-		var allowShort = Direction == TradeDirection.Both || Direction == TradeDirection.Short;
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
 
 		var longCond = st.IsUpTrend && diff > threshold;
 		var shortCond = st.IsDownTrend && diff < -threshold;

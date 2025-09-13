@@ -8,13 +8,6 @@ using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
-public enum TradeDirectionOption
-{
-	Both,
-	Long,
-	Short,
-}
-
 /// <summary>
 /// Integrates weighted buying pressure ratios and ATR thresholds.
 /// </summary>
@@ -31,7 +24,7 @@ public class FibonacciAtrFusionStrategy : Strategy
 	private readonly StrategyParam<decimal> _tp1Percent;
 	private readonly StrategyParam<decimal> _tp2Percent;
 	private readonly StrategyParam<decimal> _tp3Percent;
-	private readonly StrategyParam<TradeDirectionOption> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private SimpleMovingAverage _bp8;
@@ -115,11 +108,11 @@ public class FibonacciAtrFusionStrategy : Strategy
 		set => _tp3Percent.Value = value;
 	}
 	
-	public TradeDirectionOption TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 	
 	public DataType CandleType
 	{
@@ -158,8 +151,8 @@ public class FibonacciAtrFusionStrategy : Strategy
 		_tp3Percent = Param(nameof(Tp3Percent), 12m)
 		.SetDisplay("TP3 Percent", "Percent to close at TP3", "Risk");
 		
-		_tradeDirection = Param(nameof(TradeDirection), TradeDirectionOption.Both)
-		.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -273,21 +266,24 @@ public class FibonacciAtrFusionStrategy : Strategy
 		ClosePosition();
 	}
 	
-	if (longEntry && Position <= 0 && (TradeDirection == TradeDirectionOption.Long || TradeDirection == TradeDirectionOption.Both))
-	{
-		CancelActiveOrders();
-		BuyMarket();
-		
-		if (UseTakeProfit)
-		PlaceTakeProfits(candle.ClosePrice, atrValue, true);
-	}
-else if (shortEntry && Position >= 0 && (TradeDirection == TradeDirectionOption.Short || TradeDirection == TradeDirectionOption.Both))
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
+
+if (longEntry && Position <= 0 && allowLong)
 {
-	CancelActiveOrders();
-	SellMarket();
-	
-	if (UseTakeProfit)
-	PlaceTakeProfits(candle.ClosePrice, atrValue, false);
+CancelActiveOrders();
+BuyMarket();
+
+if (UseTakeProfit)
+PlaceTakeProfits(candle.ClosePrice, atrValue, true);
+}
+else if (shortEntry && Position >= 0 && allowShort)
+{
+CancelActiveOrders();
+SellMarket();
+
+if (UseTakeProfit)
+PlaceTakeProfits(candle.ClosePrice, atrValue, false);
 }
 
 _prevWeighted = weightedSma;

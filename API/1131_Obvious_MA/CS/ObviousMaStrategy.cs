@@ -18,7 +18,7 @@ public class ObviousMaStrategy : Strategy
 	private readonly StrategyParam<int> _longExitLength;
 	private readonly StrategyParam<int> _shortEntryLength;
 	private readonly StrategyParam<int> _shortExitLength;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private OnBalanceVolume _obv = null!;
@@ -63,8 +63,8 @@ public class ObviousMaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(100, 500, 10);
 
-		_tradeDirection = Param(nameof(TradeDirection), "Long")
-			.SetDisplay("Direction", "Trading direction: Long or Short", "Parameters");
+_direction = Param(nameof(Direction), Sides.Buy)
+.SetDisplay("Direction", "Trading direction: Long or Short", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles for strategy calculation", "Parameters");
@@ -109,11 +109,11 @@ public class ObviousMaStrategy : Strategy
 	/// <summary>
 	/// Trading direction.
 	/// </summary>
-	public string TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -192,14 +192,14 @@ public class ObviousMaStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var dir = TradeDirection;
+var dir = Direction;
 
 		if (!_isFirst)
 		{
-			var longCond = _prevObv <= _prevLongEntryMa && obvValue > longEntry && dir != "Short" && Position <= 0;
-			var longExitCond = _prevObv >= _prevLongExitMa && obvValue < longExit && Position > 0;
-			var shortCond = _prevObv >= _prevShortEntryMa && obvValue < shortEntry && dir != "Long" && Position >= 0;
-			var shortExitCond = _prevObv <= _prevShortExitMa && obvValue > shortExit && Position < 0;
+var longCond = _prevObv <= _prevLongEntryMa && obvValue > longEntry && dir != Sides.Sell && Position <= 0;
+var longExitCond = _prevObv >= _prevLongExitMa && obvValue < longExit && Position > 0;
+var shortCond = _prevObv >= _prevShortEntryMa && obvValue < shortEntry && dir != Sides.Buy && Position >= 0;
+var shortExitCond = _prevObv <= _prevShortExitMa && obvValue > shortExit && Position < 0;
 
 			if (longCond)
 				BuyMarket(Volume + Math.Abs(Position));

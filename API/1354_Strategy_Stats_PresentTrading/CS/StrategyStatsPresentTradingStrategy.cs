@@ -25,7 +25,7 @@ public class StrategyStatsPresentTradingStrategy : Strategy
 	private readonly StrategyParam<int> _vegasWindow2;
 	private readonly StrategyParam<decimal> _multiplier2;
 	private readonly StrategyParam<decimal> _volatilityAdjustment2;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _useHoldDays;
 	private readonly StrategyParam<int> _holdDays;
 	private readonly StrategyParam<string> _tpslCondition;
@@ -90,8 +90,8 @@ public class StrategyStatsPresentTradingStrategy : Strategy
 			Param(nameof(VolatilityAdjustment2), 7m)
 				.SetDisplay("Volatility Adjustment 2", "Volatility factor for second SuperTrend", "SuperTrend 2");
 
-		_tradeDirection =
-			Param(nameof(TradeDirection), "Both").SetDisplay("Trade Direction", "Allowed trading direction", "General");
+_direction =
+Param(nameof(Direction), (Sides?)null).SetDisplay("Trade Direction", "Allowed trading direction", "General");
 
 		_useHoldDays = Param(nameof(UseHoldDays), true).SetDisplay("Use Hold Days", "Enable holding period", "Exits");
 
@@ -173,11 +173,11 @@ public class StrategyStatsPresentTradingStrategy : Strategy
 		set => _volatilityAdjustment2.Value = value;
 	}
 
-	public string TradeDirection
-	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 
 	public bool UseHoldDays
 	{
@@ -315,8 +315,8 @@ public class StrategyStatsPresentTradingStrategy : Strategy
 		var exitLong = _trend1 == -1 || _trend2 == -1;
 		var exitShort = _trend1 == 1 || _trend2 == 1;
 
-		var allowLong = TradeDirection == "Long" || TradeDirection == "Both";
-		var allowShort = TradeDirection == "Short" || TradeDirection == "Both";
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
 		var now = candle.OpenTime;
 
 				if (UseHoldDays)

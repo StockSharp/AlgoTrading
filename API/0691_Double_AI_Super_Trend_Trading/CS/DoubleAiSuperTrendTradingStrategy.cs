@@ -7,7 +7,7 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-/// <summary>
+	/// <summary>
 /// Double AI Super Trend Trading Strategy - combines two SuperTrend indicators with WMA filters.
 /// </summary>
 public class DoubleAiSuperTrendTradingStrategy : Strategy
@@ -21,7 +21,7 @@ public class DoubleAiSuperTrendTradingStrategy : Strategy
 	private readonly StrategyParam<int> _superWmaLength1;
 	private readonly StrategyParam<int> _priceWmaLength2;
 	private readonly StrategyParam<int> _superWmaLength2;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	
 	private SuperTrend _superTrend1;
 	private SuperTrend _superTrend2;
@@ -116,10 +116,10 @@ public class DoubleAiSuperTrendTradingStrategy : Strategy
 	/// <summary>
 	/// Trading direction (Long/Short/Both).
 	/// </summary>
-	public string TradeDirection
+	public Sides? Direction
 	{
-		get => _tradeDirection.Value;
-		set => _tradeDirection.Value = value;
+		get => _direction.Value;
+		set => _direction.Value = value;
 	}
 	
 	/// <summary>
@@ -162,8 +162,8 @@ public class DoubleAiSuperTrendTradingStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("SuperTrend WMA Length 2", "SuperTrend WMA length for second SuperTrend", "AI");
 		
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-		.SetDisplay("Direction", "Trading direction (Long/Short/Both)", "Trading");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Direction", "Trading direction (Long/Short/Both)", "Trading");
 	}
 	
 	/// <inheritdoc />
@@ -224,11 +224,11 @@ public class DoubleAiSuperTrendTradingStrategy : Strategy
 		var longStop = st1Value - atr1Value * AtrFactor1;
 		var shortStop = st1Value + atr1Value * AtrFactor1;
 		
-		if ((TradeDirection == "Long" || TradeDirection == "Both") && longCondition && Position <= 0)
-		BuyMarket();
-		
-		if ((TradeDirection == "Short" || TradeDirection == "Both") && shortCondition && Position >= 0)
-		SellMarket();
+		if ((Direction is null or Sides.Buy) && longCondition && Position <= 0)
+			BuyMarket();
+
+		if ((Direction is null or Sides.Sell) && shortCondition && Position >= 0)
+			SellMarket();
 		
 		if (Position > 0 && (longExit || candle.LowPrice <= longStop))
 		SellMarket();

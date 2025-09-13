@@ -19,7 +19,7 @@ public class RsiStrategyWithTpSlLowerTfStrategy : Strategy
 	private readonly StrategyParam<int> _sellLevel;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 
 	private RelativeStrengthIndex _rsi;
 
@@ -56,8 +56,8 @@ public class RsiStrategyWithTpSlLowerTfStrategy : Strategy
 			.SetDisplay("Stop Loss %", "Stop loss percent", "Risk")
 			.SetCanOptimize(true);
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trade direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 	}
 
 	/// <summary>
@@ -93,7 +93,7 @@ public class RsiStrategyWithTpSlLowerTfStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
@@ -139,8 +139,8 @@ public class RsiStrategyWithTpSlLowerTfStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var allowLong = Direction != TradeDirection.ShortOnly;
-		var allowShort = Direction != TradeDirection.LongOnly;
+var allowLong = Direction != Sides.Sell;
+var allowShort = Direction != Sides.Buy;
 
 		if (allowLong && Position <= 0 && rsiValue < BuyLevel)
 			BuyMarket(Volume);

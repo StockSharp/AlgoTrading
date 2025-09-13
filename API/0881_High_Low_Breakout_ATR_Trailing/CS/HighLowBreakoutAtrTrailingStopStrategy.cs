@@ -13,19 +13,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HighLowBreakoutAtrTrailingStopStrategy : Strategy
 {
-	public enum TradeDirection
-	{
-		Both,
-		LongOnly,
-		ShortOnly
-	}
-
-	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _atrMultiplier;
-	private readonly StrategyParam<decimal> _riskPerTrade;
-	private readonly StrategyParam<decimal> _accountSize;
-	private readonly StrategyParam<TradeDirection> _direction;
-	private readonly StrategyParam<int> _sessionStartHour;
+private readonly StrategyParam<int> _atrPeriod;
+private readonly StrategyParam<decimal> _atrMultiplier;
+private readonly StrategyParam<decimal> _riskPerTrade;
+private readonly StrategyParam<decimal> _accountSize;
+private readonly StrategyParam<Sides?> _direction;
+private readonly StrategyParam<int> _sessionStartHour;
 	private readonly StrategyParam<int> _sessionStartMinute;
 	private readonly StrategyParam<int> _exitHour;
 	private readonly StrategyParam<int> _exitMinute;
@@ -78,11 +71,11 @@ public class HighLowBreakoutAtrTrailingStopStrategy : Strategy
 	/// <summary>
 	/// Allowed trading direction.
 	/// </summary>
-	public TradeDirection Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
+public Sides? Direction
+{
+	get => _direction.Value;
+	set => _direction.Value = value;
+}
 
 	/// <summary>
 	/// Session start hour.
@@ -149,9 +142,8 @@ public class HighLowBreakoutAtrTrailingStopStrategy : Strategy
 		_accountSize = Param(nameof(AccountSize), 10000m)
 			.SetDisplay("Account Size", "Total account size", "Risk")
 			.SetGreaterThanZero();
-
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Trade Direction", "Allowed trading direction", "General");
 
 		_sessionStartHour = Param(nameof(SessionStartHour), 9)
 			.SetDisplay("Session Start Hour", "Trading session start hour", "Session");
@@ -243,9 +235,8 @@ public class HighLowBreakoutAtrTrailingStopStrategy : Strategy
 			_prevClose = candle.ClosePrice;
 			return;
 		}
-
-		var allowLong = Direction != TradeDirection.ShortOnly;
-		var allowShort = Direction != TradeDirection.LongOnly;
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
 
 		var stopDistance = atr * AtrMultiplier;
 		var riskAmount = AccountSize * (RiskPerTrade / 100m);

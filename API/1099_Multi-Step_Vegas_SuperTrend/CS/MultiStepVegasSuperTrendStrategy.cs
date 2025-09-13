@@ -17,8 +17,8 @@ public class MultiStepVegasSuperTrendStrategy : Strategy
 	private readonly StrategyParam<int> _vegasWindow;
 	private readonly StrategyParam<decimal> _superTrendMultiplier;
 	private readonly StrategyParam<decimal> _volatilityAdjustment;
-	private readonly StrategyParam<MaType> _maType;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<MaType> _maType;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<decimal> _takeProfitPercent1;
 	private readonly StrategyParam<decimal> _takeProfitPercent2;
@@ -66,9 +66,8 @@ public class MultiStepVegasSuperTrendStrategy : Strategy
 
 		_maType = Param(nameof(MaType), MaType.Simple)
 			.SetDisplay("MA Type", "Vegas moving average type", "Parameters");
-
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Direction", "Trade direction", "Parameters");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Direction", "Trade direction", "Parameters");
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
 			.SetDisplay("Use Take Profit", "Enable take profit", "Take Profit");
@@ -102,7 +101,7 @@ public class MultiStepVegasSuperTrendStrategy : Strategy
 	public decimal SuperTrendMultiplier { get => _superTrendMultiplier.Value; set => _superTrendMultiplier.Value = value; }
 	public decimal VolatilityAdjustment { get => _volatilityAdjustment.Value; set => _volatilityAdjustment.Value = value; }
 	public MaType MaType { get => _maType.Value; set => _maType.Value = value; }
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public bool UseTakeProfit { get => _useTakeProfit.Value; set => _useTakeProfit.Value = value; }
 	public decimal TakeProfitPercent1 { get => _takeProfitPercent1.Value; set => _takeProfitPercent1.Value = value; }
 	public decimal TakeProfitPercent2 { get => _takeProfitPercent2.Value; set => _takeProfitPercent2.Value = value; }
@@ -160,35 +159,35 @@ public class MultiStepVegasSuperTrendStrategy : Strategy
 			return;
 
 		CancelActiveOrders();
-
-		var volume = Volume + Math.Abs(Position);
-
-		if (_trend == 1)
-		{
-			if (Direction == TradeDirection.Short)
-			{
-				if (Position != 0)
-					ClosePosition();
-			}
-			else
-			{
-				BuyMarket(volume);
-				SetTakeProfits(true, candle.ClosePrice, volume);
-			}
-		}
-		else if (_trend == -1)
-		{
-			if (Direction == TradeDirection.Long)
-			{
-				if (Position != 0)
-					ClosePosition();
-			}
-			else
-			{
-				SellMarket(volume);
-				SetTakeProfits(false, candle.ClosePrice, volume);
-			}
-		}
+	 var volume = Volume + Math.Abs(Position);
+	var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (_trend == 1)
+	{
+	        if (!allowLong)
+	        {
+	                if (Position != 0)
+	                        ClosePosition();
+	        }
+	        else
+	        {
+	                BuyMarket(volume);
+	                SetTakeProfits(true, candle.ClosePrice, volume);
+	        }
+	}
+	else if (_trend == -1)
+	{
+	        if (!allowShort)
+	        {
+	                if (Position != 0)
+	                        ClosePosition();
+	        }
+	        else
+	        {
+	                SellMarket(volume);
+	                SetTakeProfits(false, candle.ClosePrice, volume);
+	        }
+	}
 	}
 
 	private void SetTakeProfits(bool isLong, decimal entryPrice, decimal volume)

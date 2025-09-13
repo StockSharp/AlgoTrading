@@ -23,8 +23,8 @@ public class MultiTfAiSuperTrendWithAdxStrategy : Strategy
 	private readonly StrategyParam<int> _priceWmaLength2;
 	private readonly StrategyParam<int> _superWmaLength2;
 	private readonly StrategyParam<int> _adxPeriod;
-	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<decimal> _adxThreshold;
+private readonly StrategyParam<Sides?> _direction;
 
 	private SuperTrend _superTrend1;
 	private SuperTrend _superTrend2;
@@ -46,8 +46,8 @@ public class MultiTfAiSuperTrendWithAdxStrategy : Strategy
 	public int PriceWmaLength2 { get => _priceWmaLength2.Value; set => _priceWmaLength2.Value = value; }
 	public int SuperWmaLength2 { get => _superWmaLength2.Value; set => _superWmaLength2.Value = value; }
 	public int AdxPeriod { get => _adxPeriod.Value; set => _adxPeriod.Value = value; }
-	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	public MultiTfAiSuperTrendWithAdxStrategy()
 	{
@@ -89,13 +89,11 @@ public class MultiTfAiSuperTrendWithAdxStrategy : Strategy
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Period", "Period for ADX", "ADX");
-
-		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-			.SetGreaterThanZero()
-			.SetDisplay("ADX Threshold", "Minimum ADX to trade", "ADX");
-
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-			.SetDisplay("Direction", "Long/Short/Both", "Trading");
+	 _adxThreshold = Param(nameof(AdxThreshold), 20m)
+	        .SetGreaterThanZero()
+	        .SetDisplay("ADX Threshold", "Minimum ADX to trade", "ADX");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Direction", "Long/Short/Both", "Trading");
 	}
 
 	/// <inheritdoc />
@@ -164,12 +162,12 @@ public class MultiTfAiSuperTrendWithAdxStrategy : Strategy
 
 		var longStop = st1 - atr1 * AtrFactor1;
 		var shortStop = st1 + atr1 * AtrFactor1;
-
-		if ((TradeDirection == "Long" || TradeDirection == "Both") && longCond && Position <= 0)
-			BuyMarket();
-
-		if ((TradeDirection == "Short" || TradeDirection == "Both") && shortCond && Position >= 0)
-			SellMarket();
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
+	 if (allowLong && longCond && Position <= 0)
+	        BuyMarket();
+	 if (allowShort && shortCond && Position >= 0)
+	        SellMarket();
 
 		if (Position > 0 && (longExit || candle.LowPrice <= longStop))
 			SellMarket();

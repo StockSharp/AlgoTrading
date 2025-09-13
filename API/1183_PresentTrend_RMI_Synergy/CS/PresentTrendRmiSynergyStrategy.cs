@@ -16,7 +16,7 @@ public class PresentTrendRmiSynergyStrategy : Strategy
 	private readonly StrategyParam<int> _rmiPeriod;
 	private readonly StrategyParam<int> _superTrendLength;
 	private readonly StrategyParam<decimal> _superTrendMultiplier;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _stopPrice;
@@ -51,11 +51,11 @@ public class PresentTrendRmiSynergyStrategy : Strategy
 	/// <summary>
 	/// Allowed trading direction
 	/// </summary>
-	public TradeDirection Direction
-	{
-		get => _direction.Value;
-		set => _direction.Value = value;
-	}
+public Sides? Direction
+{
+get => _direction.Value;
+set => _direction.Value = value;
+}
 
 	/// <summary>
 	/// Type of candles used for strategy calculation
@@ -89,8 +89,8 @@ public class PresentTrendRmiSynergyStrategy : Strategy
 			.SetOptimize(2m, 6m, 0.5m)
 			.SetGreaterThanZero();
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trading direction", "General");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trading direction", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");
@@ -151,12 +151,12 @@ public class PresentTrendRmiSynergyStrategy : Strategy
 
 		if (Position == 0)
 		{
-			if ((Direction == TradeDirection.Long || Direction == TradeDirection.Both) && rsiValue > 60m && trendDir == 1)
+if ((Direction is null or Sides.Buy) && rsiValue > 60m && trendDir == 1)
 			{
 				BuyMarket(Volume);
 				_stopPrice = lowerBand;
 			}
-			else if ((Direction == TradeDirection.Short || Direction == TradeDirection.Both) && rsiValue < 40m && trendDir == -1)
+else if ((Direction is null or Sides.Sell) && rsiValue < 40m && trendDir == -1)
 			{
 				SellMarket(Volume);
 				_stopPrice = upperBand;

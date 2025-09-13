@@ -16,7 +16,7 @@ public class MultiStepFlexiSuperTrendStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _atrFactor;
 	private readonly StrategyParam<int> _smaLength;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<decimal> _takeProfitLevel1;
 	private readonly StrategyParam<decimal> _takeProfitLevel2;
 	private readonly StrategyParam<decimal> _takeProfitLevel3;
@@ -60,7 +60,7 @@ public class MultiStepFlexiSuperTrendStrategy : Strategy
 	/// <summary>
 	/// Allowed trading direction.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// First take profit level (fraction).
@@ -117,9 +117,8 @@ public class MultiStepFlexiSuperTrendStrategy : Strategy
 			.SetDisplay("SMA Length", "Length of deviation smoothing", "Oscillator")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 20, 5);
-
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-			.SetDisplay("Trade Direction", "Allowed trading direction", "Strategy");
+	 _direction = Param(nameof(Direction), null)
+	        .SetDisplay("Trade Direction", "Allowed trading direction", "Strategy");
 
 		_takeProfitLevel1 = Param(nameof(TakeProfitLevel1), 0.02m)
 			.SetRange(0m, 1m)
@@ -185,9 +184,8 @@ public class MultiStepFlexiSuperTrendStrategy : Strategy
 
 		var osc = smaResult.Value;
 		var direction = candle.ClosePrice > superTrendValue ? -1 : 1;
-
-		var allowLong = Direction == TradeDirection.Both || Direction == TradeDirection.Long;
-		var allowShort = Direction == TradeDirection.Both || Direction == TradeDirection.Short;
+	 var allowLong = Direction is null || Direction == Sides.Buy;
+	var allowShort = Direction is null || Direction == Sides.Sell;
 
 		if (allowLong && direction < 0 && osc > 0 && Position <= 0)
 		{

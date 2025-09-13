@@ -23,7 +23,7 @@ public class StrategicMultiStepSupertrendStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitAmount3;
 	private readonly StrategyParam<decimal> _takeProfitAmount4;
 	private readonly StrategyParam<int> _numberOfSteps;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<int> _atrPeriod1;
 	private readonly StrategyParam<decimal> _factor1;
 	private readonly StrategyParam<int> _atrPeriod2;
@@ -46,7 +46,7 @@ public class StrategicMultiStepSupertrendStrategy : Strategy
 	public decimal TakeProfitAmount3 { get => _takeProfitAmount3.Value; set => _takeProfitAmount3.Value = value; }
 	public decimal TakeProfitAmount4 { get => _takeProfitAmount4.Value; set => _takeProfitAmount4.Value = value; }
 	public int NumberOfSteps { get => _numberOfSteps.Value; set => _numberOfSteps.Value = value; }
-	public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public int AtrPeriod1 { get => _atrPeriod1.Value; set => _atrPeriod1.Value = value; }
 	public decimal Factor1 { get => _factor1.Value; set => _factor1.Value = value; }
 	public int AtrPeriod2 { get => _atrPeriod2.Value; set => _atrPeriod2.Value = value; }
@@ -88,8 +88,8 @@ public class StrategicMultiStepSupertrendStrategy : Strategy
 		.SetDisplay("Number of Steps", "Number of take profit steps", "Take Profit Settings")
 		.SetCanOptimize(true);
 		
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-		.SetDisplay("Trade Direction", "Trade direction (Long/Short/Both)", "Trade Direction");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Trade direction (Long/Short/Both)", "Trade Direction");
 		
 		_atrPeriod1 = Param(nameof(AtrPeriod1), 10)
 		.SetGreaterThanZero()
@@ -157,11 +157,13 @@ public class StrategicMultiStepSupertrendStrategy : Strategy
 		var direction1 = GetDirection(candle, atr1Value, Factor1, ref _prevSupertrend1, ref _prevAbove1);
 		var direction2 = GetDirection(candle, atr2Value, Factor2, ref _prevSupertrend2, ref _prevAbove2);
 		
-		var longCondition = direction1 < 0 && direction2 < 0 && (TradeDirection == "Long" || TradeDirection == "Both");
-		var shortCondition = direction1 > 0 && direction2 > 0 && (TradeDirection == "Short" || TradeDirection == "Both");
-		
-		var longExitCondition = direction1 > 0 && direction2 > 0 && (TradeDirection == "Long" || TradeDirection == "Both");
-		var shortExitCondition = direction1 < 0 && direction2 < 0 && (TradeDirection == "Short" || TradeDirection == "Both");
+var allowLong = Direction is null or Sides.Buy;
+var allowShort = Direction is null or Sides.Sell;
+var longCondition = direction1 < 0 && direction2 < 0 && allowLong;
+var shortCondition = direction1 > 0 && direction2 > 0 && allowShort;
+
+var longExitCondition = direction1 > 0 && direction2 > 0 && allowLong;
+var shortExitCondition = direction1 < 0 && direction2 < 0 && allowShort;
 		
 		if (longCondition && Position <= 0)
 		{

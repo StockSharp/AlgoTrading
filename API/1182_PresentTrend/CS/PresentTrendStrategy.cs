@@ -16,7 +16,7 @@ public class PresentTrendStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<bool> _useRsi;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _direction;
 
 	private AverageTrueRange _atr;
 	private RelativeStrengthIndex _rsi;
@@ -45,15 +45,15 @@ public class PresentTrendStrategy : Strategy
 		_useRsi = Param(nameof(UseRsi), false)
 			.SetDisplay("Use RSI", "Use RSI instead of MFI.", "PresentTrend");
 
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-			.SetDisplay("Trade Direction", "Allowed trade direction (Long/Short/Both).", "PresentTrend");
+_direction = Param(nameof(Direction), (Sides?)null)
+.SetDisplay("Trade Direction", "Allowed trade direction (Long/Short/Both).", "PresentTrend");
 	}
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 	public int Length { get => _length.Value; set => _length.Value = value; }
 	public decimal Multiplier { get => _multiplier.Value; set => _multiplier.Value = value; }
 	public bool UseRsi { get => _useRsi.Value; set => _useRsi.Value = value; }
-	public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
@@ -110,20 +110,20 @@ public class PresentTrendStrategy : Strategy
 		if (shortSignal)
 			_lastShortIndex = _barIndex;
 
-		if (_trendDirection == 1 && (TradeDirection == "Long" || TradeDirection == "Both"))
+if (_trendDirection == 1 && (Direction is null or Sides.Buy))
 		{
 			if (Position <= 0)
 				BuyMarket();
 		}
-		else if (_trendDirection == -1 && (TradeDirection == "Short" || TradeDirection == "Both"))
+else if (_trendDirection == -1 && (Direction is null or Sides.Sell))
 		{
 			if (Position >= 0)
 				SellMarket();
 		}
 
-		if (TradeDirection == "Long" && _trendDirection == -1 && Position > 0)
+if (Direction == Sides.Buy && _trendDirection == -1 && Position > 0)
 			ClosePosition();
-		else if (TradeDirection == "Short" && _trendDirection == 1 && Position < 0)
+else if (Direction == Sides.Sell && _trendDirection == 1 && Position < 0)
 			ClosePosition();
 
 		_presentTrendPrev = prev;
