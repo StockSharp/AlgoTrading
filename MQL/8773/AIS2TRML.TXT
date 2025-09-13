@@ -1,0 +1,122 @@
+AIS2 Trading Robot
+
+
+Modification List
+
+
+Modification: 20005
+Release Date: 2009.03.25
+
+
+History
+5. AIS20004 2009.03.25
+4. AIS20004 2009.03.22
+3. AIS20003 2009.03.19
+2. AIS20002 2009.03.17
+1. AIS20001 2009.03.17
+0. AIS20000 2009.03.15
+
+
+< AIS20005 Trading Robot >********************************************************************************************
+
+Modification number 5: AIS20005
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20005"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.25"                                                          //<   8>
+
+Modification number 4: AIS20004
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20004"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.22"                                                          //<   8>
+
+
+Content
+1. Capital indication extension
+2. Equity indication extension
+3. Margin indication addition
+4. System message indication change
+
+< AIS20005 Trading Robot >********************************************************************************************
+
+
+< AIS20004 Trading Robot >********************************************************************************************
+
+Modification number 4: AIS20004
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20004"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.22"                                                          //<   8>
+
+Modification number 3: AIS20003
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20003"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.19"                                                          //<   8>
+
+
+Content
+1. Equity control correction
+2. Order profit indication correction
+
+< AIS20004 Trading Robot >********************************************************************************************
+
+
+< AIS20003 Trading Robot >********************************************************************************************
+
+Modification number 3: AIS20003
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20003"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.19"                                                          //<   8>
+
+Modification number 2: AIS20002
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20002"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.17"                                                          //<   8>
+
+
+Content
+1. Timeframe control change
+2. Capital gain indication addition
+3. Equity  gain indication addition
+4. Leverage/Contract cluster addition
+
+< AIS20003 Trading Robot >********************************************************************************************
+
+
+< AIS20002 Trading Robot >********************************************************************************************
+
+Modification number 2: AIS20002
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20002"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.17"                                                          //<   8>
+
+Modification number 1: AIS20001
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20001"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.17"                                                          //<   8>
+
+
+Content
+1. Risk management preset control addition
+
+< AIS20002 Trading Robot >********************************************************************************************
+
+
+< AIS20001 Trading Robot >********************************************************************************************
+
+Modification number 1: AIS20001
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20001"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.17"                                                          //<   8>
+
+First release: AIS20000
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "20000"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.15"                                                          //<   8>
+
+
+Content
+1. Trade attempts count addition
+2. Trail attempts count addition
+3. Order lifetime indication addition
+4. Peak equity lifetime indication addition
+
+< AIS20001 Trading Robot >********************************************************************************************

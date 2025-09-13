@@ -1,0 +1,296 @@
+AIS5 Trade Machine
+
+
+Modification: 50003
+Release Date: 2010.03.31
+
+
+Instructions
+
+
+Content
+
+1. Introduction
+2. Properties
+3. Installation, Part 1
+4. Installation, Part 2
+5. Preparations
+6. Control
+7. Conclusion
+
+
+1. Introduction
+
+1.1. AIS5 Trade Machine is an MQL4 program for MetaTrader 4 client terminal.
+1.2. Basic properties AIS5 Trade Machine:
+     1.2.1. plotting on the chart "market profiles" of tick volumes;
+     1.2.2. real-time processing of incoming tick packets.
+1.3. The main goals of AIS5 Trade Machine are:
+     1.3.1. identification of "strong" and "weak" price levels;
+     1.3.2. identification of entry points.
+1.4. Basic assumptions:
+     1.4.1. price levels with the large ticks volumes are "strong" levels;
+     1.4.2. price levels with the small ticks volumes are "weak" levels;
+     1.4.3. "strong" levels are more stable, "weak" levels are less stable;
+     1.4.4. large packets of incoming ticks may reflect the large amounts of current transactions and may indicate the entry points.
+1.5. Correct work of AIS5 Trade Machine in the general case is achieved in the following conditions:
+     1.5.1. in the terminal works only one instance of AIS5 Trade Machine;
+     1.5.2. all other programs must work correctly with global variables;
+     1.5.3. all indicators on the chart must work correctly with graphical objects.
+1.6. AIS5 Trade Machine is made from AIS4 Trade Machine.
+1.7. AIS5 Trade Machine has the following common with AIS4 Trade Machine properties:
+     1.7.1. built-in trading functions with automatic risk management;
+     1.7.2. the first monitoring panel, located in the left side of the chart.
+1.8. All these properties are described in the Instructions to AIS4 Trade Machine.
+1.9. AIS5 Trade Machine has the following differences from AIS4 Trade Machine:
+     1.9.1. additional data processing unit;
+     1.9.2. market profiles plotter;
+     1.9.3. second monitoring panel, located on the right side of the chart;
+     1.9.4. AIS5 Trade Machine uses an external file, prepared in advance by the separate program;
+     1.9.5. work in the strategy tester is limited.
+1.10. The following describes the properties of only AIS5 Trade Machine.
+
+
+2. Properties
+
+2.1. Designations and agreements:
+     2.1.1. "M1" = frames of minute period PERIOD_M1;
+     2.1.2. "frame", "frame data" = bar;
+     2.1.3. zero frame = frame number "0", the current forming frame;
+     2.1.4. "frame number 1" = the latest complete frame;
+     2.1.5. "volume" = tick volume;
+     2.1.6. "profile" = distribution of tick volume for the full range of prices for a given interval of time;
+     2.1.7. in general, indicators are listed from left to right and top to bottom.
+2.2. Additional data processing unit works only with frames M1, so the "frame" means the M1 frame.
+2.3. Additional data processing unit:
+     2.3.1. when restarting, reads data prepared by the program A Tool: Market Profile Generator;
+     2.3.2. calculates 3 market profiles P1, P2, P3 in 3 different time intervals:
+            2.3.2.1. P1 is calculated once from the oldest frame to the date of A Tool: Market Profile Generator;
+            2.3.2.2. P2 is calculated once from the date of A Tool: Market Profile Generator to frame number 1;
+            2.3.2.3. P3 recalculated from the date zero-frame when restarting the program to the current time;
+     2.3.3. splits market profiles with the step "ZoneStepPoints" and the initial shift "ZoneBasePoints";
+     2.3.4. computes 2 zone arrays Z1 and Z0, are displayed by plotter in the chart;
+     2.3.5. calculates the volumes of the current zone, and 4 zones top and 4 zones down from the current;
+     2.3.6. calculates data on the last 9 received tick packets;
+     2.3.7. calculates the distribution of volume of all incoming packets ticks by the size of these packages.
+2.4. Zone array Z1 is divided into uniform pricing intervals sum of profiles P1 and P2.
+2.5. Zone array Z1 represented on the chart by left histogram.
+2.6. Zone array Z0 is divided into the same uniform price intervals profile P2.
+2.7. Zone array Z0 represented on the chart by right histogram.
+2.8. Current profile P3 can be included in the profile P2 by the command "ProfileReset".
+2.9. In this case profile P2 will be recalculated, and the frame number 1 will be the ending frame of profile P2.
+2.10. Profile P3 will be reset, and the frame number 0 will be the beginning frame of profile P3.
+2.11. Profile P1 remains unchanged.
+2.12. Zone arrays Z1 and Z0, exactly their step and shift, can be simultaneously changed by the command "ZoneReset".
+2.13. Profiles P1, P2, P3 in this case remain unchanged.
+2.14. The second monitoring panel displays on the chart the data of additional data processing unit.
+2.15. The second monitoring panel consists of the following:
+      2.15.1. header;
+      2.15.2. 4 data clusters:
+              2.15.2.1. cluster of market profiles registers;
+              2.15.2.2. cluster of streaming lines;
+              2.15.2.3. cluster of tick volume distribution of profile P3 by sizes of tick packets;
+              2.15.2.4. cluster of tick volume distribution of zone arrays Z1 and Z0 by nearest price zones.
+2.16. The header contains two components:
+      2.16.1. runtime of additional data processing unit, in milliseconds;
+      2.16.2. runtime of monitoring module, that is the sum of runtime for the following units, in milliseconds:
+              2.16.2.1. market profiles plotter;
+              2.16.2.2. first monitoring panel;
+              2.16.2.3. second monitoring panel.
+2.17. Cluster of market profiles registers consists of 4 parts:
+      2.17.1. register of profile P1 with the following 4 components:
+              2.17.1.1. number of frames used to compute the profile P1;
+              2.17.1.2. total tick volume of profile P1;
+              2.17.1.3. opening time of the beginning frame of profile P1;
+              2.17.1.4. opening time of the ending frame of profile P1;
+      2.17.2. register of profile P2 with the following 4 components:
+              2.17.2.1. number of frames used to compute the profile P2;
+              2.17.2.2. total tick volume of profile P2;
+              2.17.2.3. opening time of the beginning frame of profile P2;
+              2.17.2.4. opening time of the ending frame of profile P2;
+      2.17.3. register of profile P3 with the following 7 components, from top to bottom:
+              2.17.3.1. in the left - number of frames used to compute the profile P3;
+              2.17.3.2. in the left - total tick volume of profile P3;
+              2.17.3.3. opening time of the beginning frame of profile P3;
+              2.17.3.4. opening time of the ending frame of profile P3;
+              2.17.3.5. in the right - check for number of frames of profile P3;
+              2.17.3.6. in the right - check for total tick volume of profile P3;
+              2.17.3.7. in the center - number of nearest frame totally below "+" / above "-" of the current price.
+      2.17.4. summary profiles metric of the 3 components and zero frame metrics of the 3 components:
+              2.17.4.1. highest price of profiles in points;
+              2.17.4.2. price range of profiles in points;
+              2.17.4.3. lowest price of profiles in points;
+              2.17.4.4. lenght of zero frame in seconds;
+              2.17.4.5. lenght of M1 frame in second, always 60;
+              2.17.4.6. lenght of zero frame as a percentage of lenght of M1 frame.
+2.18. Cluster of streaming lines consists of 2 parts:
+      2.18.1. 2 monitoring lines of the zero frame:
+              2.18.1.1. the first line contains 4 groups of 3 volatility measures in points per frame:
+                        2.18.1.1.1. first number in each group is a price range of zero frame;
+                        2.18.1.1.2. second - highest price range of frame in profiles P1, P2, P3, and in frame number 1;
+                        2.18.1.1.3. third - ratio of the first number to the second in percents;
+              2.18.1.2. the second line contains 4 groups of 3 volume measures in ticks per frame:
+                        2.18.1.2.1. first number in each group is a tick volume of zero frame;
+                        2.18.1.2.2. second - largest tick volume of frame in profiles P1, P2, P3, and in frame number 1;
+                        2.18.1.2.3. third - the ratio of the first number to the second in percents;
+      2.18.2. 6 running lines of 9 columns, each column contains the measures of the single tick packet:
+              2.18.2.1. first line - volume of the packet in ticks;
+              2.18.2.2. second - time interval between packets in seconds;
+              2.18.2.3. third - price fluctuation of "Bid" price in points;
+              2.18.2.4. fourth - the same as the third, on an accrual basis;
+              2.18.2.5. fifth - the same as the second, on an accrual basis;
+              2.18.2.6. sixth - the same as the first, an accrual basis.
+2.19. Cluster of tick volume distribution of profile P3 by sizes of tick packets consists of 2 parts:
+      2.19.1. header of 5 components:
+              2.19.1.1. total tick volume of profile P3 plus volume of zero frame;
+              2.19.1.2. tick volume of packets with positive fluctuation of "Bid" price;
+              2.19.1.3. tick volume of packets with negative fluctuation of "Bid" price;
+              2.19.1.4. tick volume of packets with zero fluctuation of "Bid" price;
+              2.19.1.5. tick volume of "lost" packets;
+      2.19.2. table of 11 rows by 5 columns:
+              2.19.2.1. first column indicates tick volume of packet;
+              2.19.2.2. second - total tick volume of packets with this volume in P3;
+              2.19.2.3. third - latency of last packet of this volume in seconds;
+              2.19.2.4. fourth - time interval between arrival of last packet with this volume and current time;
+              2.19.2.5. fifth - time of arrival of last packet with this volume.
+2.20. cluster of tick volume distribution of zone arrays Z1 and Z0 by nearest price zones consist of 2 parts:
+      2.20.1. header of 5 components:
+              2.20.1.1. largest volume of zone in array Z1;
+              2.20.1.2. average volume of zone in array Z1;
+              2.20.1.3. total volume of array Z1;
+              2.20.1.4. average volume of zone in visible part of array Z0;
+              2.20.1.5. total volume of array Z0;
+      2.20.2. table of 9 rows and 7 columns:
+              2.20.2.1. first column indicates the zone number from zero zone, that contains current "Bid" price;
+              2.20.2.2. second -  nearest bound of zone, nearest to the zero zone;
+              2.20.2.3. third - zone volume of array Z1 as a percentage of the largest volume of zone in the array Z1;
+              2.20.2.4. fourth - zone volume of array Z1 in ticks;
+              2.20.2.5. fifth - the same with cumulative sum of volumes from zero zone of array Z1;
+              2.20.2.6. sixth - zone volume of array Z0 in ticks;
+              2.20.2.7. seventh - the same with cumulative sum of volumes from zero zone of array Z0.
+2.21. Zero zone of fifth column contains difference between sum of volumes 4 top and 4 bottom zones of array Z1.
+2.22. Zero zone of seventh column contains difference between sum of volumes 4 top and 4 bottom zones of array Z0.
+2.23. The vertical solid line on the chart between the histograms is the line of zero volume for both histograms.
+2.24. Farthest from the zero line dotted lines are the lines of largest zone volume of arrays Z1 and Z0.
+2.25. Dotted lines between zero line and lines of the largest volumes are the lines of average zone volumes.
+
+
+3. Installation, Part 1
+
+3.1. AIS5 Trade Machine is:
+     3.1.1. "AIS5TM.MQ4" file with MQL4 source code;
+     3.1.2. "AIS5TM.EX4" executable file.
+3.2. Download the file "AIS5TM.MQ4".
+3.3. Find location of MetaTrader 4 terminal, hereinafter referred to as "%MT4%".
+3.4. In most cases, MetaTrader 4 is located in the folder "C:/Program Files/MetaTrader 4".
+3.5. Move the file "AIS5TM.MQ4" in the folder "%MT4%/experts".
+3.6. Run MetaTrader 4, hereinafter referred to as "MetaTrader".
+3.7. Press <F4> to run MetaEditor.
+3.8. Press <Ctrl-O> to open the window "Open".
+3.9. Open the file "AIS5TM.MQ4" in the folder "%MT4%/experts".
+3.10. Check the modification in line 7.
+3.11. Check the release date in line 8.
+3.12. Check the working symbol "EURUSD" in line 106 and if necessary, change it.
+3.13. Press <F5> to compile the program.
+3.14. Press <F4> to return to MetaTrader.
+3.15. In MetaTrader press <Ctrl-O> to call the dialog box "Options".
+3.16. In the tab "Options/Expert Advisors":
+      3.16.1. check "Enable Expert Advisors "="+";
+      3.16.2. leave unchanged "Disable experts when the account has been changed";
+      3.16.3. leave unchanged "Disable experts when the profile has been changed";
+      3.16.4. check "Allow live trading "="+";
+      3.16.5. uncheck "Ask manual confirmation";
+      3.16.6. leave the other settings unchanged.
+3.17. Push the button [OK] to accept changes.
+3.18. Press <Ctrl-N> to open the "Navigator" window.
+3.19. Go to the tab "Common" of window "Navigator".
+3.20. Open the list "Expert Advisors".
+3.21. Find "AIS5TM".
+3.22. "AIS5TM" is the abbreviated name of the executable file "AIS5TM.EX4".
+3.23. The first part of the installation completed.
+
+
+4. Installation, Part 2
+
+4.1. Before run AIS5 Trade Machine is required to prepare an auxiliary file containing the profile P1.
+4.2. This file will be created by the script "A Tool: Market Profile Generator".
+4.3. "A Tool: Market Profile Generator" is:
+     4.3.1. "AT5.MQ4" file with MQL4 source code;
+     4.3.2. "AT5.EX4" the executable file.
+4.4. Download the file "AT5.MQ4".
+4.5. Move the file "AT5.MQ4" in the folder "%MT4%/experts/scripts".
+4.6. Press <F4> to run MetaEditor.
+4.7. Press <Ctrl-O> to open the window "Open".
+4.8. Open the file "AT5.MQ4" in the folder "%MT4%/experts/scripts".
+4.9. Check the modification in line 7.
+4.10. Check the release date in line 8.
+4.11. Press <F5> to compile the program.
+4.12. Press <F4> to return to MetaTrader.
+4.13. Press <Ctrl-N> to open the window "Navigator".
+4.14. Go to the tab "Common" of the window "Navigator".
+4.15. Open the list "Scripts".
+4.16. Find "AT5".
+4.17. "AT5" is the abbreviated name of the executable file "AT5.EX4".
+4.18. The second part of the installation completed.
+
+
+5. Preparations
+
+5.1. In the "Tools/Options/Charts":
+     5.1.1. set value "Max bars in history" greater the maximal expected size of the profile P1, for example, 10000000;
+     5.1.2. set the same value in "Max bars in chart".
+5.2. Close and restart the terminal.
+5.3. Download the history of the desired commercial character through the menu "Tools / Quotes archive.
+5.4. Open the schedule with the required trading symbol.
+5.5. Open the file "AT5.MQ4" in the folder "% MT4% / experts / scripts".
+5.6. In line 37, set the ending time of compressed history, for example "# define aci.DateEnd D'2010 .01.01 00:00 '.
+5.7. Nearest frame with the opening time before this time will be the ending frame of the profile P1.
+5.8. Nearest frame with the opening time immediately after this time will be the beginning frame of the profile P2.
+5.9. Press <F5> to compile the program.
+5.10. Press <F4> to return to MetaTrader.
+5.11. Run the script "AT5.MQ4".
+5.12. AT5 will create an auxiliary file "XXXXXX.CSV", where "XXXXXX" is the name of the trading symbol.
+5.13. This file will contain the profile P1  and will be located in the folder "%MT4%/experts/files".
+5.14. In the "Tools/Options/Charts":
+      5.14.1. set value "Max bars in history" greater the maximal expected size of the profile P2, for example, 500000;
+      5.14.2. set the same value in "Max bars in chart".
+5.15. Close and restart the terminal.
+5.16. Put the "AIS5TM" on the chart.
+5.17. Will appear the window "AIS5TM" with the tabs "Common" and "Inputs".
+5.18. In the tab "Common" of the window "AIS5TM":
+      5.18.1. under the heading "Common":
+              5.18.1.1. select "position" = "Long & Short",
+              5.18.1.1. leave all other settings unchanged;
+      5.18.2. under the heading "Live trading":
+              5.18.2.1. check "Allow live trading" = "+",
+              5.18.2.2. uncheck "Ask manual confirmation";
+      5.18.3. under the heading "Safety" leave everything unchanged.
+5.19. In the tab "Inputs" of the window "AIS5TM":
+      5.19.1. check that the variable "aes.Symbol" coincides with the symbol of the chart;
+      5.19.2. check the values of other variables.
+5.20. Push the button [OK] of the window "AIS5TM".
+5.21. In the upper right corner of the chart will appear the smiling icon "AIS5TM".
+5.22. AIS5 Trade Machine is working now.
+5.23. To view the profiles of the market, in the window "Properties" of the chart set "Chart shift = On".
+5.24. The visible width of market profiles depends on the size of the shift.
+5.25. Preparations completed.
+
+
+6. Control
+
+6.1. Press <F3> to open window "Global Variables".
+6.2. In the window there will be lot of controls with the prefix "AIS50003.Setup.".
+6.3. Values "AIS50003.Setup.5.3.PlotTimeBorders" = "+1 / -1" allow / prohibit the plotting of time borders of profiles.
+6.4. Values "AIS50003.Setup.5.4.PlotZoneLevels" = "+1 / -1" allow / prohibit the plotting of borders of zones.
+6.5. Values "AIS50003.Setup.5.5.PlotProfiles" = "+1 / -1" allow / prohibit the plotting of market profiles.
+6.6. To reset the market profiles, set "AIS50003.Setup.6.1.ProfileReset" = "1".
+6.7. To change the shift from zero and step of  zone:
+     6.7.1. set the desired value of "AIS50003.Setup.7.1.ZoneBasePoints", in points, to change the initial shift of zones;
+     6.7.2. set the desired value of "AIS50003.Setup.7.2.ZoneStepPoints", in points, to change the step of zone.
+     6.7.3. set the value "AIS50003.Setup.6.2.ZoneReset" = "1" to accept changes.
+
+
+7. Conclusion
+
+7.1. Always check that you are using the latest modification of AIS5 Trade Machine.
+7.2. The latest modification is stored in http://codebase.mql4.com/6161.

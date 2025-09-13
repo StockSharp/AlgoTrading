@@ -1,0 +1,9 @@
+Website to find the Universal EA
+
+https://www.dropbox.com/s/ccenu6btrod1330/Universal%20EA.mq4
+https://www.dropbox.com/s/qm3ic169a28ji2o/Universal%20EA.ex4
+
+Copy and paste Universal EA files to:
+
+C:\Program Files (x86)\FXDD - MetaTrader\experts
+

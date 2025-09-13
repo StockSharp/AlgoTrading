@@ -1,0 +1,5 @@
+// Variants for Arbitrage.
+// Examples:
+// 1 / EURUSD && 1 / (GBPUSD * EURGBP)
+// EURUSD * USDJPY && EURGBP * GBPJPY
+// GBPUSD && GBPJPY / USDJPY

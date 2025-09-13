@@ -1,0 +1,440 @@
+AIS3 Trading Robot Template
+
+
+Release number: 30001
+Release date:   2009.03.26
+
+
+Instruction
+
+
+Content
+
+1. Introduction
+2. Installation
+3. Control
+4. Properties
+5. Conclusion
+Addendum 1
+Addendum 2
+
+
+1. Introduction
+
+1.1. AIS3 Trading Robot Template is MQL4 program for MetaTrader 4 Client Terminal.
+1.2. Features:
+     1.2.1. 100% ready for trading strategy integration;
+     1.2.2. automatic risk management;
+     1.2.3. fast on-the-fly preset change;
+     1.2.4. monitoring function.
+1.3. Requirements:
+     1.3.1. for each terminal only one copy of AIS3 Trading Robot Template is allowed;
+     1.3.2. in the same terminal MQL programs with incorrect global variables control are disallowed;
+     1.3.3. in the same chart MQL indicators with incorrect graphical objects control are disallowed.
+1.4. AIS3 Trading Robot Template is used in AIS2 Trading Robot development.
+
+
+2. Installation
+
+2.1. AIS3 Trading Robot Template has following filenames:
+     2.1.1. "AIS3TR.MQ4" is name of MQL4 code file;
+     2.1.2. "AIS3TR.EX4" is name of executable file.
+2.2. Download "AIS3TR.MQ4" file.
+2.3. Find MetaTrader 4 Client Terminal directory that thereafter is denoted "%MT4%".
+2.4. In most cases MetaTrader 4 Client Terminal directory is "C:/Program Files/MetaTrader 4".
+2.5. Copy "AIS3TR.MQ4" file to "%MT4%/experts" directory.
+2.6. Run MetaTrader 4 Client Terminal that thereafter is denoted "MetaTrader".
+2.7. Press <F4> to run MetaEditor.
+2.8. In MetaEditor press <Ctrl-O> to view "Open" dialog box.
+2.9. Open "AIS102.MQ4" file in "%MT4%/experts" directory.
+2.10. Inspect modification in line 7.
+2.11. Inspect release date in line 8.
+2.12. Press <F5> to compile code.
+2.13. Press <F4> to return in MetaTrader.
+2.14. In MetaTrader press <Ctrl-O> to view "Options" window.
+2.15. In "Expert Advisors" tab of "Options" window:
+      2.15.1. set "Enable Expert Advisors"="On";
+      2.15.2. let "Disable experts when the account has been chanhed" be as is;
+      2.15.3. let "Disable experts when the profile has been chanhed" be as is;
+      2.15.4. set "Allow live trading"="On";
+      2.15.5. set "Ask manual confirmation"="Off";
+      2.15.6. let all other options be as is.
+2.16. Push [OK] button of "Options" window.
+2.17. Press <Ctrl-N> to view "Navigator" window.
+2.18. Select "Common" tab of "Navigator" window.
+2.19. Open "Expert Advisors" list.
+2.20. Find "AIS3TR" item.
+2.21. "AIS3TR" is short name of "AIS3TR.EX4" executable file.
+2.22. Drag-and-drop "AIS3TR" on the "EURUSD" chart.
+2.23. "AIS3TR" window with "Common" and "Inputs" tabs will appear.
+2.24. In "Common" tab of "AIS3TR" window:
+      2.24.1. in "Common" group:
+              2.24.1.1. set "positions"="Long & Short",
+              2.24.1.1. let alerts options be as is;
+      2.24.2. in "Live Trading" group:
+              2.24.2.1. set "Allow live trading"="On",
+              2.24.2.2. set "Ask manual confirmation"="Off";
+      2.24.3. in "Safety" group let all options be as is.
+2.25. In "Inputs" tab of "AIS3TR" window:
+      2.25.1. check that value of "aes.Symbol" variable matches to the symbol of the chart;
+      2.25.2. check values of other variables.
+2.26. Push [OK] button of "AIS3TR" window.
+2.27. Smiling face with "AIS3TR" sign will appear at the top of the chart.
+2.28. AIS3 Trading Robot Template is running.
+2.29. Installation has been completed.
+
+
+3. Control
+
+3.1. In MetaTrader press <F3> to view "Global Variables" window.
+3.2. There are 15 items:
+     3.2.1. "AIS30001.Setup.1.1.AccountReserve" controls deposit reserve size;
+     3.2.2. "AIS30001.Setup.1.2.OrderReserve" controls order reserve size;
+     3.2.3. "AIS30001.Setup.2.1.Trading" controls automatic trading:
+             3.2.3.1. value "1" enables automatic trading,
+             3.2.3.2. value "0" disables automatic trading;
+     3.2.4. "AIS30001.Setup.2.2.Timeframe.1" controls trading strategy parameter "Timeframe.1";
+     3.2.5. "AIS30001.Setup.2.3.Timeframe.2" controls trading strategy parameter "Timeframe.2";
+     3.2.6. "AIS30001.Setup.2.4.Parameter.1" controls trading strategy parameter "Parameter.1";
+     3.2.7. "AIS30001.Setup.2.5.Parameter.2" controls trading strategy parameter "Parameter.2;
+     3.2.8. "AIS30001.Setup.2.6.Parameter.3" controls trading strategy parameter "Parameter.3";
+     3.2.9. "AIS30001.Setup.3.1.Monitor" controls monitoring function;
+             3.2.9.1. value "1" enables monitoring function,
+             3.2.9.2. value "1" enables monitoring function;
+     3.2.10. "AIS30001.Setup.3.2.FontSize" controls font size of monitoring panel;
+     3.2.11. "AIS30001.Setup.3.3.FontColor" controls font color of monitoring panel;
+     3.2.12. "AIS30001.Setup.3.4.LineSpace" controls line space of monitoring panel;
+     3.2.13. "AIS30001.Setup.3.5.PositionX" controls horizontal position of monitoring panel;
+     3.2.14. "AIS30001.Setup.3.6.PositionY" controls vertical position of monitoring panel.
+     3.2.15. "AIS30001.Setup.4.1.OrderSelect" controls order selection for indication in monitoring panel:
+             3.2.15.1. value "0" sets selection by "magic" number "30001",
+             3.2.15.2. any other value sets selection by number in open order list.
+
+
+4. Properties
+
+4.1. Automatic trading:
+     4.1.1. automatic trading is possible with only one predefined trading symbol;
+     4.1.2. working trading symbol is defined in "Inputs" tab of "AIS3TR" window;
+     4.1.3. AIS3 Trading Robot Template works with only one order at the time;
+     4.1.4. order ID is modification number of AIS3 Trading Robot Template;
+     4.1.5. orders with different ID in the same account are allowed.
+4.2. Automatic risk management:
+     4.2.1. automatic risk management prevents capital from eventual losses;
+     4.2.2. risk management adjustment consists in setting of two following variables values:
+            4.2.2.1. "aed.AccountReserve" - deposit reserve size, line 36 of "AIS3TR.MQ4" file;
+            4.2.2.1. "aed.OrderReserve"   - order reserve size, line 37 of "AIS3TR.MQ4" file;
+     4.2.3. there are 3 methods of risk management preset change:
+            4.2.3.1. in "Inputs" tab of "AIS3TR" window at the start of AIS3 Trading Robot Template,
+            4.2.3.2. in the same tab on <F7> pressing with reinitialization,
+            4.2.3.3. in "Global Variables" window without reinitialization;
+     4.2.4. variable "aed.AccountReserve" means deposit reserve;
+     4.2.5. variable "aed.AccountReserve" determines limit of deposit relative drawdon;
+     4.2.6. deposit reserve defends capital from market risk;
+     4.2.7. variable "aed.OrderReserve" means order reserve;
+     4.2.8. variable "aed.OrderReserve" limits market risk for each trade operation;
+     4.2.9. order reserve defends deposit reserve from market risk;
+     4.2.10. usage and size setting rules of the reserves are explained in the Addendum 1;
+     4.2.11. standard risk management settings are:
+             4.2.11.1. deposit reserve 20%,
+             4.2.11.2. order reserve 4%.
+4.3. Trading strategy preset change:
+     4.3.1. there are 5 parameters for adjusting and control:
+            4.3.1.1. "aåi.Timeframe.1" - defines period of main timeframes,
+            4.3.1.1. "aåi.Timeframe.2" - defines period of auxiliary timeframes,
+            4.3.1.1. "aed.Parameter.1" - parameter 1,
+            4.3.1.1. "aed.Parameter.2" - parameter 2,
+            4.3.1.1. "aed.Parameter.3" - parameter 3;
+     4.3.2. there are 3 methods of trading strategy preset change:
+            4.3.2.1. in "Inputs" tab of "AIS3TR" window at the start of AIS3 Trading Robot Template,
+            4.3.2.2. in the same tab on <F7> pressing with reinitialization,
+            4.3.2.3. in "Global Variables" window without reinitialization;
+     4.3.3. values of "aåi.Timeframe.1" and "aåi.Timeframe.2" define following timeframe periods:
+            4.3.3.1. 1,
+            4.3.3.2. 5,
+            4.3.3.3. 15,
+            4.3.3.4. 30,
+            4.3.3.5. 60,
+            4.3.3.6. 240,
+            4.3.3.7. 1440,
+            4.3.3.8. 10080,
+            4.3.3.9. 43200;
+     4.3.4. trading strategy integration description is in Addendum 2.
+4.4. Monitoring function:
+     4.4.1. monitoring functions displays AIS3 Trading Robot Template's data;
+     4.4.2. monitoring panel consists of following parts:
+            4.4.2.1. header with modification number;
+            4.4.2.2. message line in the header line;
+            4.4.2.3. 5 data clusters:
+                     4.4.2.3.1. "Client-Server",
+                     4.4.2.3.2. "Balance",
+                     4.4.2.3.3. "Open Position",
+                     4.4.2.3.4. "Trading Strategy Rules",
+                     4.4.2.3.5. reserved;
+     4.4.3. data of "Client-Server" cluster:
+            4.4.3.1. "Client Time":
+                     4.4.3.1.1. local time,
+                     4.4.3.1.2. AIS3 Trading Robot Template's lifetime from last initialization,
+                     4.4.3.1.3. number of successful attempts to open position in format"Buy+Sell=Total",
+                     4.4.3.1.4. number of successful attempts to trail stop;
+            4.4.3.2. "Client Name" - account owner name;
+            4.4.3.3. "Server Name" - server nave;
+            4.4.3.4. "Server Time":
+                     4.4.3.4.1. server time,
+                     4.4.3.4.2. last tick time interval,
+                     4.4.3.4.3. number of AIS3 Trading Robot Template's main program runs,
+                     4.4.3.4.4. number of order send attempts,
+                     4.4.3.4.5. number of trail attempts;
+     4.4.4. data of "Balance" cluster:
+            4.4.4.1. "Capital":
+                     4.4.4.1.1. capital value in account currency,
+                     4.4.4.1.2. capital value in percents of deposit peak value,
+                     4.4.4.1.3. absolute capital gain for period from last initialization,
+                     4.4.4.1.4. relative capital gain for period from last initialization;
+            4.4.4.2. "Reserve" - deposit reserve value:
+                     4.4.4.2.1. in account currency,
+                     4.4.4.2.2. in percents of deposit reserve peak value;
+            4.4.4.3. "Peak Equity" - deposit peak value:
+                     4.4.4.3.1. in account currency,
+                     4.4.4.3.2. always is 100%,
+                     4.4.4.3.3. lifetime of deposit peak value;
+            4.4.4.4. "Drawdown" - drawdown from deposit reserve peak value:
+                     4.4.4.4.1. in account currency,
+                     4.4.4.4.2. in percents of deposit peak value;
+            4.4.4.5. "Account Equity" - current deposit value:
+                     4.4.4.5.1. in account currency,
+                     4.4.4.5.2. in percents of deposit peak value,
+                     4.4.4.5.3. absolute equity gain for period from last initialization,
+                     4.4.4.5.4. relative equity gain for period from last initialization;
+            4.4.4.6. "Free margin" - information about free margin:
+                     4.4.4.6.1. current free margin value,
+                     4.4.4.6.2. current free margin level,
+                     4.4.4.6.3. "Stop Out" level in account currency units,
+                     4.4.4.6.4. "Stop Out" level in percents of account equity;
+     4.4.5. data of "Open Position" cluster:
+            4.4.5.1. "Order" - open position data:
+                     4.4.5.1.1. order ID "magic number",
+                     4.4.5.1.2. ticket number,
+                     4.4.5.1.3. order type,
+                     4.4.5.1.4. open position size in lots,
+                     4.4.5.1.5. standard lot size,
+                     4.4.5.1.6. margin size in points,
+                     4.4.5.1.7. point value;
+            4.4.5.2. "Profit":
+                     4.4.5.2.1. order profit in account currency,
+                     4.4.5.2.2. order profit in points,
+                     4.4.5.2.3. order lifetime,
+                     4.4.5.2.4. order open price;
+            4.4.5.3. "Target":
+                     4.4.5.3.1. distance from order open price to TakeProfit price in account currency,
+                     4.4.5.3.2. distance from order open price to TakeProfit price in points,
+                     4.4.5.3.3. "Take Profit" price;
+            4.4.5.4. "VAR":
+                     4.4.5.4.1. distance from order open price to StopLoss price in account currency,
+                     4.4.5.4.2. distance from order open price to StopLoss price in points,
+                     4.4.5.4.3. "Stop Loss" price;
+            4.4.5.5. "Limit"  - current value of order reserve:
+                     4.4.5.5.1. in account currency,
+                     4.4.5.5.2. in percents of deposit peak value;
+     4.4.6. data of "Leverage/Contract" cluster:
+            4.4.6.1. first line "Leverage":
+                     4.4.6.1.1. account leverage,
+                     4.4.6.1.2. standard lot margin,
+                     4.4.6.1.3. margin size in points,
+                     4.4.6.1.4. point value of standard lot;
+            4.4.6.2. second line "Contract":
+                     4.4.6.2.1. standard lot size,
+                     4.4.6.2.2. minimal contract size in lots,
+                     4.4.6.2.3. stepping of contract size in lots,
+                     4.4.6.2.4. maximal contract size in lots;
+     4.4.7. reserved cluster is intended for data of trading strategy which is to be integrated.
+
+
+5. Conclusion
+
+5.1. Always check that you are using latest modification of AIS3 Trading Robot Template.
+5.2. Latest modification is stored in http://codebase.mql4.com/5445.
+
+
+
+
+Addendum 1. Account manager and investor negotiation sample
+
+1. AM. There are two trading systems A1 and A2. There are descriptions and statements of those systems.
+2. I. Studied. I select À1.
+3. AM. Select now: 1) deposit reserve size; 2) order reserve size.
+4. I. More information, please.
+5. AM.
+   5.1. Size of reserve is measured in percents of deposit value.
+   5.2. Let your initial deposit is $100000.
+   5.3. Let you set deposit reserve size to 20%.
+   5.4. It means that your capital is equal to $80000, deposit reserve is equal to $20000.
+   5.5. Let trading position has opened.
+   5.6. Let your deposit has grown to $110000.
+   5.7. In this case your capital is equal to $88000, deposit reserve is equal to $22000.
+   5.8. Let your deposit has lowered to $105000.
+   5.9. In this case your capital is equal to $88000, deposit reserve is equal to $17000.
+   5.10. Let your deposit has grown to $200000.
+   5.11. In this case your capital is equal to $160000, deposit reserve is equal to $40000.
+   5.12. Let then your deposit has only lowered.
+   5.13. At deposit value $180000 your capital is equal to $160000, deposit reserve is equal to $20000.
+   5.14. At deposit value $170000 your capital is equal to $160000, deposit reserve is equal to $10000.
+   5.15. At deposit value $160000 your capital is equal to $160000, deposit reserve is exhausted, system stop.
+   5.16. If trading is stopped by your command then deposit reserve will be restored.
+   5.17. Deposit value at the trading stop is your capital.
+   5.18. Let trading was stopped at the deposit value equal to $170000, then your capital is equal to $170000.
+   5.19. Thus deposit reserve defends your capital value from possible losses.
+   5.20. All our systems have automatic reserve control feature.
+6. I. I see.
+7. AM.
+   7.1. Order reserve defends deposit reserve in above explained manner.
+   7.2. Expected deposit reserve life time depends on order reserve size.
+   7.3. Let order reserve size will be equal to 10% and deposit reserve size will be equal to 20%.
+   7.4. Then system A1 can survive in approximately 2 losses consequence.
+   7.5. A1 statements demonstrate that longer consequences arise approximately 4 times for one year of trading.
+   7.6. Let order reserve size will be equal to 5% and deposit reserve size will be equal to 20%.
+   7.7. Then system A1 can survive in approximately 4 losses consequence.
+   7.8. A1 statements demonstrate that longer consequences arise approximately 1 times for one year of trading.
+   7.9. On other hand, order reserve determines orders size, that is affecting to system profitability.
+   7.10. Order size calculation is in lines 192-216 of system A1 code.
+8. I. I see. Let deposit reserve size will be equal to 20% and order reserve size will be equal to 4%.
+9. AM. For that order reserve size required deposit value is $50000 or more.
+10. I. Server *******, login *******, password *******, deposit $100000, I have accepted account management agreement.
+11. AM. Your master password will be changed, your read only password is À1234.
+
+
+
+
+Addendum 2. Trading strategy integration
+
+1. AIS3 Trading Robot Template has 4 trading strategy insertion points:
+   1.1. lines 165-166 are for input data definitions insertion;
+   1.2. lines 394-395 are for input data computing insertion;
+   1.3. line 1186 of "afr.TrailingStrategy ()" function is for replacement with trailing-stop logic;
+   1.4. lines 1193-1196 of "afr.TradingStrategy ()" function are for replacement with trading logic.
+2. Attempt of order modification is made in case of "avd.Stop" value change inside "afr.TrailingStrategy ()" function.
+3. Attempt of order send is made if:
+   3.1. "avi.Command = OP_BUY" or "avi.Command = OP_SELL" assignment has been made;
+   3.2. correct value assignment of following varaibles has been made;
+        3.2.1. "avd.Price" - order open price,
+        3.2.2. "avd.Stop"  - stop-loss price,
+        3.2.3. "avd.Take"  - take-profit price.
+4. Trading strategy integration example:
+   4.1. replace lines 165-166 with following code:
+"
+//< 4.7. Trading Strategy Data 15 >```````````````````````````````````````````````````````````````````````````//<    >
+                                                                                                              //<    >
+int           avi.Period.1                                                                                  ; //<    >
+int           avi.Period.2                                                                                  ; //<    >
+                                                                                                              //<    >
+double        avd.Low.1                                                                                     ; //<    >
+double        avd.High.1                                                                                    ; //<    >
+double        avd.Close.1                                                                                   ; //<    >
+                                                                                                              //<    >
+double        avd.Low.2                                                                                     ; //<    >
+double        avd.High.2                                                                                    ; //<    >
+double        avd.Close.2                                                                                   ; //<    >
+                                                                                                              //<    >
+double        avd.Average.1                                                                                 ; //<    >
+                                                                                                              //<    >
+double        avd.Range.1                                                                                   ; //<    >
+double        avd.Range.2                                                                                   ; //<    >
+                                                                                                              //<    >
+double        avd.QuoteTake                                                                                 ; //<    >
+double        avd.QuoteStop                                                                                 ; //<    >
+double        avd.QuoteTrail                                                                                ; //<    >
+                                                                                                              //<    >
+double        avd.TrailStep                                                                                 ; //<    >
+                                                                                                              //<    >
+//</4.7. Trading Strategy Data 15 >```````````````````````````````````````````````````````````````````````````//<    >
+";
+   4.2. replace lines 394-395 with following code:
+"
+//< 7.4.2. Trading Strategy Data 15 >                                                                         //<    >
+       avi.Period.1      = aei.Timeframe.1                                                                  ; //<    >
+       avi.Period.2      = aei.Timeframe.2                                                                  ; //<    >
+                                                                                                              //<    >
+       avd.Low.1         = iLow       ( aes.Symbol , avi.Period.1 , 1    )                                  ; //<    >
+       avd.High.1        = iHigh      ( aes.Symbol , avi.Period.1 , 1    )                                  ; //<    >
+       avd.Close.1       = iClose     ( aes.Symbol , avi.Period.1 , 1    )                                  ; //<    >
+                                                                                                              //<    >
+       avd.Low.2         = iLow       ( aes.Symbol , avi.Period.2 , 1    )                                  ; //<    >
+       avd.High.2        = iHigh      ( aes.Symbol , avi.Period.2 , 1    )                                  ; //<    >
+       avd.Close.2       = iClose     ( aes.Symbol , avi.Period.2 , 1    )                                  ; //<    >
+                                                                                                              //<    >
+       avd.Average.1     =            ( avd.High.1 + avd.Low.1           ) / 2                              ; //<    >
+                                                                                                              //<    >
+       avd.Range.1       =              avd.High.1 - avd.Low.1                                              ; //<    >
+       avd.Range.2       =              avd.High.2 - avd.Low.2                                              ; //<    >
+                                                                                                              //<    >
+       avd.QuoteTake     = avd.Range.1             * aed.Parameter.1                                        ; //<    >
+       avd.QuoteStop     = avd.Range.1             * aed.Parameter.2                                        ; //<    >
+       avd.QuoteTrail    = avd.Range.2             * aed.Parameter.3                                        ; //<    >
+                                                                                                              //<    >
+       avd.TrailStep     = avd.QuoteSpread         * acd.TrailStepping                                      ; //<    >
+//</7.4.2. Trading Strategy Data 15 >                                                                         //<    >
+";
+   4.3. replace line 1186 with following code:
+"
+         //<  Buy Orders Trailing Rules >                                                                     //<    >
+         if ( OrderType       () == OP_BUY                                                                  ) //<    >
+         if ( OrderProfit     ()  > 0                                                                       ) //<    >
+         if ( NormalizeDouble ( avd.QuoteTrail     - avd.QuoteStops                      , avi.Digits ) > 0 ) //<    >
+         if ( NormalizeDouble ( avd.QuoteTrail     - avd.QuoteFreeze                     , avi.Digits ) > 0 ) //<    >
+         if ( NormalizeDouble ( OrderTakeProfit () - avd.QuoteBid       - avd.QuoteStops                      //<    >
+                                                                                         , avi.Digits ) > 0 ) //<    >
+         if ( NormalizeDouble ( avd.QuoteBid       - OrderStopLoss ()   - avd.TrailStep  - avd.QuoteTrail     //<    >
+                                                                                         , avi.Digits ) > 0 ) //<    >
+              avd.Stop        = NormalizeDouble (    avd.QuoteBid       - avd.QuoteTrail , avi.Digits     ) ; //<    >
+         //</ Buy Orders Trailing Rules >                                                                     //<    >
+                                                                                                              //<    >
+         //<  Sell Orders Trailing Rules >                                                                    //<    >
+         if ( OrderType       () == OP_SELL                                                                 ) //<    >
+         if ( OrderProfit     ()  > 0                                                                       ) //<    >
+         if ( NormalizeDouble ( avd.QuoteTrail     - avd.QuoteStops                      , avi.Digits ) > 0 ) //<    >
+         if ( NormalizeDouble ( avd.QuoteTrail     - avd.QuoteFreeze                     , avi.Digits ) > 0 ) //<    >
+         if ( NormalizeDouble ( avd.QuoteAsk       - OrderTakeProfit () - avd.QuoteStops                      //<    >
+                                                                                         , avi.Digits ) > 0 ) //<    >
+         if ( NormalizeDouble ( OrderStopLoss   () - avd.QuoteAsk       - avd.TrailStep  - avd.QuoteTrail     //<    >
+                                                                                         , avi.Digits ) > 0 ) //<    >
+              avd.Stop        = NormalizeDouble (    avd.QuoteAsk       + avd.QuoteTrail , avi.Digits     ) ; //<    >
+         //</ Sell Orders Trailing Rules >                                                                    //<    >
+";
+   4.4. replace lines 1193-1196 with following code:
+"
+//< Buy Rules 2 >                                                                                             //<    >
+     if ( NormalizeDouble  ( avd.Close.1   -   avd.Average.1                             , avi.Digits ) > 0 ) //<    >
+     if ( NormalizeDouble  ( avd.QuoteAsk  - ( avd.High.1 + avd.QuoteSpread )            , avi.Digits ) > 0 ) //<    >
+//</Buy Rules 2 >                                                                                             //<    >
+                                                                                                              //<    >
+//< Trading Strategy Interface Set for Buy 8 >                                                                //<    >
+        { avd.Price        = NormalizeDouble ( avd.QuoteAsk                                  , avi.Digits ) ; //<    >
+          avd.Stop         = NormalizeDouble ( avd.High.1 + avd.QuoteSpread  - avd.QuoteStop , avi.Digits ) ; //<    >
+          avd.Take         = NormalizeDouble ( avd.QuoteAsk                  + avd.QuoteTake , avi.Digits ) ; //<    >
+                                                                                                              //<    >
+          if               ( NormalizeDouble (                                                                //<    >
+                           ( avd.Take  - avd.Price                    ) - avd.QuoteStops , avi.Digits ) > 0 ) //<    >
+          if               ( NormalizeDouble (                                                                //<    >
+                           ( avd.Price - avd.QuoteSpread - avd.Stop   ) - avd.QuoteStops , avi.Digits ) > 0 ) //<    >
+               avi.Command = OP_BUY                                                                       ; } //<    >
+//</Trading Strategy Interface Set for Buy 8 >                                                                //<    >
+                                                                                                              //<    >
+//< Sell Rules 2 >                                                                                            //<    >
+     if ( NormalizeDouble  ( avd.Close.1     - avd.Average.1                             , avi.Digits ) < 0 ) //<    >
+     if ( NormalizeDouble  ( avd.QuoteBid    - avd.Low.1                                 , avi.Digits ) < 0 ) //<    >
+//</Sell Rules 2 >                                                                                            //<    >
+                                                                                                              //<    >
+//< Trading Strategy Interface Set for Sell 8 >                                                               //<    >
+        { avd.Price        = NormalizeDouble ( avd.QuoteBid                                  , avi.Digits ) ; //<    >
+          avd.Stop         = NormalizeDouble ( avd.Low.1                + avd.QuoteStop      , avi.Digits ) ; //<    >
+          avd.Take         = NormalizeDouble ( avd.QuoteBid             - avd.QuoteTake      , avi.Digits ) ; //<    >
+                                                                                                              //<    >
+          if               ( NormalizeDouble (                                                                //<    >
+                           ( avd.Price - avd.Take                     ) - avd.QuoteStops , avi.Digits ) > 0 ) //<    >
+          if               ( NormalizeDouble (                                                                //<    >
+                           ( avd.Stop  - avd.Price - avd.QuoteSpread  ) - avd.QuoteStops , avi.Digits ) > 0 ) //<    >
+               avi.Command = OP_SELL                                                                      ; } //<    >
+//</Trading Strategy Interface Set for Sell 8 >                                                               //<    >
+";
+   4.5. compile code;
+   4.6. robot with AIS2 Trading Robot's trading logic is ready for test.

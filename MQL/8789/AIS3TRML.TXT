@@ -1,0 +1,32 @@
+AIS3 Trading Robot Template
+
+
+Modification List
+
+
+Modification: 30001
+Release Date: 2009.03.26
+
+
+History
+1. AIS30001 2009.03.26
+0. AIS30000 2009.03.25
+
+
+< AIS30001 Trading Robot Template >***********************************************************************************
+
+Modification number 1: AIS30001
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "30001"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.26"                                                          //<   8>
+
+First release: AIS30000
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "30000"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.25"                                                          //<   8>
+
+Content
+1. Order price level indication addition
+2. Order selection control addition
+
+</AIS30001 Trading Robot Template >***********************************************************************************

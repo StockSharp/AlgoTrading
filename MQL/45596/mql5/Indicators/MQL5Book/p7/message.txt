@@ -1,0 +1,1 @@
+This indicator is not intended to run, it holds a bitmap resource

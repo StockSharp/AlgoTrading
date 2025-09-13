@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Subscriber Service</title>
+  <link rel="stylesheet" href="common.css">
+  </head>
+  <body>
+    <div>
+      <h1>Subscriber Service:<span id="user"></span></h1>
+      <p><label>Subscriber: <input id="sub_id" name="sub_id" placeholder="Enter your subscriber id"></label></p>
+      <p><label>Publisher: <input id="pub_id" name="pub_id" placeholder="Enter a desired publisher id"></label></p>
+      <p><label>Access Key: <input id="sub_key" name="sub_key" placeholder="Enter a key received from the publisher"></label></p>
+      <p style="text-align:center;"><button>Connect</button> <button disabled>Close</button></p>
+      <p><label><span id="origin">Server</span>: <input id="echo" name="echo" placeholder="Text from server"></label></p>
+    </div>
+  </body>
+  <script src="wssubscriber_client.js"></script>
+</html>

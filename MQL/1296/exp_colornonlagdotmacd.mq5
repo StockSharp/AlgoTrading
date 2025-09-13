@@ -1,0 +1,237 @@
+//+------------------------------------------------------------------+
+//|                                       Exp_ColorNonLagDotMACD.mq5 |
+//|                             Copyright © 2012,   Nikolay Kositsin | 
+//|                              Khabarovsk,   farria@mail.redcom.ru | 
+//+------------------------------------------------------------------+
+#property copyright "Copyright © 2012, Nikolay Kositsin"
+#property link      "farria@mail.redcom.ru"
+#property version   "1.00"
+//+----------------------------------------------+
+//|  declaration of enumerations                 |
+//+----------------------------------------------+
+enum AlgMode
+  {
+   breakdown,  //breakthrough of zero
+   MACDtwist,  //changing the MACD direction
+   SIGNALtwist,//changing the direction of signal line
+   MACDdisposition //breakthrough of signal line by the MACD histogram
+  };
+//+----------------------------------------------+
+//| Expert Advisor input parameters              |
+//+----------------------------------------------+
+input double  MM=-0.1;             //Share of a deposit in a deal, negative values - lot size
+input int     StopLoss_=1000;      //Stop Loss in points
+input int     TakeProfit_=2000;    //Take Profit in points
+input int     Deviation_=10;       //max. price deviation in points
+input bool    BuyPosOpen=true;     //Permission to buy
+input bool    SellPosOpen=true;    //Permission to sell
+input bool    BuyPosClose=true;    //Permission to exit long positions
+input bool    SellPosClose=true;   //Permission to exit short positionsâ
+input AlgMode Mode=MACDdisposition;//algorithm to enter in the market
+//+----------------------------------------------+
+//| Indicator input parameters                   |
+//+----------------------------------------------+
+input ENUM_TIMEFRAMES InpInd_Timeframe=PERIOD_H4; //indicator time frame
+//----
+input ENUM_APPLIED_PRICE Price=PRICE_CLOSE;   // Applied price
+input int                Filter= 0;
+input double             Deviation=0;         // Deviation
+//----
+input ENUM_MA_METHOD     Fast_Type=MODE_SMA;  // Smoothing method
+input uint               Fast_Length_=12;     // fast moving average period
+//----
+input ENUM_MA_METHOD     Slow_Type=MODE_SMA;  // Smoothing method
+input uint               Slow_Length_=26;     // slow moving average period
+//----
+input uint               Signal_MA=9; //signal line period 
+input ENUM_MA_METHOD     Signal_Method_=MODE_EMA; //indicator smoothing method
+//----
+input uint SignalBar=1;//bar index for getting an entry signal
+//+----------------------------------------------+
+//---- Declaration of integer variables for storing a chart period in seconds 
+int TimeShiftSec;
+//---- Declaration of integer variables for the indicator handles
+int InpInd_Handle;
+//---- declaration of the integer variables for the start of data calculation
+int min_rates_total;
+//+------------------------------------------------------------------+
+//  Trading algorithms                                               | 
+//+------------------------------------------------------------------+
+#include <TradeAlgorithms.mqh>
+//+------------------------------------------------------------------+
+//| Expert initialization function                                   |
+//+------------------------------------------------------------------+
+int OnInit()
+  {
+//---- getting the ColorNonLagDotMACD indicator handle
+   InpInd_Handle=iCustom(Symbol(),InpInd_Timeframe,"ColorNonLagDotMACD",
+                         Price,Filter,Deviation,Fast_Type,Fast_Length_,Slow_Type,Slow_Length_,Signal_MA,Signal_Method_);
+   if(InpInd_Handle==INVALID_HANDLE) Print(" Failed to get handle of ColorNonLagDotMACD indicator");
+
+//---- initialization of a variable for storing a chart period in seconds  
+   TimeShiftSec=PeriodSeconds(InpInd_Timeframe);
+
+//---- Initialization of variables of the start of data calculation
+   min_rates_total=int(6*MathMax(Fast_Length_,Slow_Length_));
+   min_rates_total+=int(Signal_MA+1);
+   min_rates_total+=int(min_rates_total+3+SignalBar);
+//----
+   return(0);
+  }
+//+------------------------------------------------------------------+
+//| Expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+void OnDeinit(const int reason)
+  {
+//----
+   GlobalVariableDel_(Symbol());
+//----
+  }
+//+------------------------------------------------------------------+
+//| Expert tick function                                             |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+//---- checking the number of bars to be enough for calculation
+   if(BarsCalculated(InpInd_Handle)<min_rates_total) return;
+
+//---- uploading history for IsNewBar() and SeriesInfoInteger() functions normal operation  
+   LoadHistory(TimeCurrent()-PeriodSeconds(InpInd_Timeframe)-1,Symbol(),InpInd_Timeframe);
+
+//---- Declaration of static variables
+   static bool Recount=true;
+   static bool BUY_Open=false,BUY_Close=false;
+   static bool SELL_Open=false,SELL_Close=false;
+   static datetime UpSignalTime,DnSignalTime;
+   static CIsNewBar NB;
+
+//+----------------------------------------------+
+//| Detecting market entry signals               |
+//+----------------------------------------------+
+   if(!SignalBar || NB.IsNewBar(Symbol(),InpInd_Timeframe) || Recount) // checking for a new bar
+     {
+      //---- zeroing out trading signals
+      BUY_Open=false;
+      SELL_Open=false;
+      BUY_Close=false;
+      SELL_Close=false;
+      Recount=false;
+
+      switch(Mode)
+        {
+         case breakdown:
+           {
+            double Value[2];
+            //---- copy newly appeared data into the arrays
+            if(CopyBuffer(InpInd_Handle,0,SignalBar,2,Value)<=0) {Recount=true; return;}
+
+            //---- Getting buy signals
+            if(Value[1]>0)
+              {
+               if(BuyPosOpen && Value[0]<=0) BUY_Open=true;
+               if(SellPosClose) SELL_Close=true;
+               UpSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+
+            //---- Getting sell signals
+            if(Value[1]<0)
+              {
+               if(SellPosOpen && Value[0]>=0) SELL_Open=true;
+               if(BuyPosClose) BUY_Close=true;
+               DnSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+           }
+         break;
+
+         case MACDtwist:
+           {
+            double Value[3];
+            //---- copy newly appeared data into the arrays
+            if(CopyBuffer(InpInd_Handle,0,SignalBar,3,Value)<=0) {Recount=true; return;}
+
+            //---- Getting buy signals
+            if(Value[1]<Value[2])
+              {
+               if(BuyPosOpen && Value[0]>Value[1]) BUY_Open=true;
+               if(SellPosClose) SELL_Close=true;
+               UpSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+
+            //---- Getting sell signals
+            if(Value[1]>Value[2])
+              {
+               if(SellPosOpen && Value[0]<Value[1]) SELL_Open=true;
+               if(BuyPosClose) BUY_Close=true;
+               DnSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+           }
+         break;
+
+         case SIGNALtwist:
+           {
+            double Value[3];
+            //---- copy newly appeared data into the arrays
+            if(CopyBuffer(InpInd_Handle,2,SignalBar,3,Value)<=0) {Recount=true; return;}
+
+            //---- Getting buy signals
+            if(Value[1]<Value[2])
+              {
+               if(BuyPosOpen && Value[0]>Value[1]) BUY_Open=true;
+               if(SellPosClose) SELL_Close=true;
+               UpSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+
+            //---- Getting sell signals
+            if(Value[1]>Value[2])
+              {
+               if(SellPosOpen && Value[0]<Value[1]) SELL_Open=true;
+               if(BuyPosClose) BUY_Close=true;
+               DnSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+           }
+         break;
+         
+         case MACDdisposition:
+           {
+            double MACD[2],Signal[2];
+            //---- copy newly appeared data into the arrays
+            if(CopyBuffer(InpInd_Handle,0,SignalBar,2,MACD)<=0) {Recount=true; return;}
+            if(CopyBuffer(InpInd_Handle,2,SignalBar,2,Signal)<=0) {Recount=true; return;}
+
+            //---- Getting buy signals
+            if(MACD[1]>Signal[1])
+              {
+               if(BuyPosOpen && MACD[0]<=Signal[0]) BUY_Open=true;
+               if(SellPosClose) SELL_Close=true;
+               UpSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+
+            //---- Getting sell signals
+            if(MACD[1]<Signal[1])
+              {
+               if(SellPosOpen && MACD[0]>=Signal[0]) SELL_Open=true;
+               if(BuyPosClose) BUY_Close=true;
+               DnSignalTime=datetime(SeriesInfoInteger(Symbol(),InpInd_Timeframe,SERIES_LASTBAR_DATE))+TimeShiftSec;
+              }
+           }
+         break;
+        }
+     }
+
+//+----------------------------------------------+
+//| Performing deals                             |
+//+----------------------------------------------+
+//---- Closing a long position
+   BuyPositionClose(BUY_Close,Symbol(),Deviation_);
+
+//---- Closing a short position   
+   SellPositionClose(SELL_Close,Symbol(),Deviation_);
+
+//---- Buying
+   BuyPositionOpen(BUY_Open,Symbol(),UpSignalTime,MM,0,Deviation_,StopLoss_,TakeProfit_);
+
+//---- Selling
+   SellPositionOpen(SELL_Open,Symbol(),DnSignalTime,MM,0,Deviation_,StopLoss_,TakeProfit_);
+//----
+  }
+//+------------------------------------------------------------------+

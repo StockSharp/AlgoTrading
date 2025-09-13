@@ -1,0 +1,35 @@
+<!DOCTYPE html><html><head><title>Optimization Report</title>
+<style>
+*{font: 9pt "Segoe UI";}
+div {cursor: pointer; width: fit-content; float: left; height: %MINIHEIGHT%px; margin: 3px;}
+iframe {overflow-x: hidden; overflow-y: auto; pointer-events: none;}
+span {display: block; width: %MINIWIDTH%px; margin: 0 auto;}
+.preset {background: aliceblue; border: solid 1px; position: absolute; display: none; box-shadow: 10px 10px 10px grey;} // white-space:pre-line; - not survive while copiing to clipboard
+</style></head><body>
+~
+</body>
+<script>
+function ShowPreset(event, element)
+{
+   event.stopPropagation();
+   var x = document.querySelector('#' + element.id + 'content');
+   if(x.style.display == '' || x.style.display == 'none') x.style.display = 'block'; else x.style.display = 'none';
+}
+
+function Copy2Clipboard(event, element)
+{
+   event.stopPropagation();
+   //navigator.clipboard.writeText(element.innerText); - won't work on local files
+   var textArea = document.createElement("textarea");
+   textArea.innerHTML = element.innerText;
+   textArea.style.position = "fixed";
+   document.body.appendChild(textArea);
+   textArea.focus();
+   textArea.select();
+   try { document.execCommand('copy'); } catch (err) { }
+   document.body.removeChild(textArea);
+   element.style.display = 'none';
+   alert("Preset copied to clipboard");
+}
+</script>
+</html>

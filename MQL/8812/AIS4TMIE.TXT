@@ -1,0 +1,358 @@
+AIS4 Trade Machine
+
+
+Release number: 40000
+Release date:   2009.04.07
+
+
+Instruction
+
+
+Content
+
+1. Introduction
+2. Installation
+3. Control
+4. Properties
+5. Conclusion
+Addendum 1
+
+
+1. Introduction
+
+1.1. AIS4 Trade Machine is MQL4 program for MetaTrader 4 Client Terminal.
+1.2. Features:
+     1.2.1. manual trading in real time with automatic risk management;
+     1.2.2. manual trading in Tester of MetaTrader 4 Client Terminal.
+1.3. Requirements:
+     1.3.1. for each terminal only one copy of AIS4 Trade Machine is allowed;
+     1.3.2. in the same terminal MQL programs with incorrect global variables control are disallowed;
+     1.3.3. in the same chart MQL indicators with incorrect graphical objects control are disallowed.
+1.4. AIS4 Trade Machine is based on AIS3 Trading Robot Template.
+
+
+2. Installation
+
+2.1. AIS4 Trade Machine has following filenames:
+     2.1.1. "AIS4TM.MQ4" is name of MQL4 code file;
+     2.1.2. "AIS4TM.EX4" is name of executable file.
+2.2. Download "AIS4TM.MQ4" file.
+2.3. Find MetaTrader 4 Client Terminal directory that thereafter is denoted "%MT4%".
+2.4. In most cases MetaTrader 4 Client Terminal directory is "C:/Program Files/MetaTrader 4".
+2.5. Copy "AIS4TM.MQ4" file to "%MT4%/experts" directory.
+2.6. Run MetaTrader 4 Client Terminal that thereafter is denoted "MetaTrader".
+2.7. Press <F4> to run MetaEditor.
+2.8. In MetaEditor press <Ctrl-O> to view "Open" dialog box.
+2.9. Open "AIS4TM.MQ4" file in "%MT4%/experts" directory.
+2.10. Inspect modification in line 7.
+2.11. Inspect release date in line 8.
+2.12. Press <F5> to compile code.
+2.13. Press <F4> to return in MetaTrader.
+2.14. In MetaTrader press <Ctrl-O> to view "Options" window.
+2.15. In "Expert Advisors" tab of "Options" window:
+      2.15.1. set "Enable Expert Advisors"="On";
+      2.15.2. let "Disable experts when the account has been chanhed" be as is;
+      2.15.3. let "Disable experts when the profile has been chanhed" be as is;
+      2.15.4. set "Allow live trading"="On";
+      2.15.5. set "Ask manual confirmation"="Off";
+      2.15.6. let all other options be as is.
+2.16. Push [OK] button of "Options" window.
+2.17. Press <Ctrl-N> to view "Navigator" window.
+2.18. Select "Common" tab of "Navigator" window.
+2.19. Open "Expert Advisors" list.
+2.20. Find "AIS4TM" item.
+2.21. "AIS4TM" is short name of "AIS4TM.EX4" executable file.
+2.22. Drag-and-drop "AIS4TM" on the "EURUSD" chart.
+2.23. "AIS4TM" window with "Common" and "Inputs" tabs will appear.
+2.24. In "Common" tab of "AIS4TM" window:
+      2.24.1. in "Common" group:
+              2.24.1.1. set "positions"="Long & Short",
+              2.24.1.1. let alerts options be as is;
+      2.24.2. in "Live Trading" group:
+              2.24.2.1. set "Allow live trading"="On",
+              2.24.2.2. set "Ask manual confirmation"="Off";
+      2.24.3. in "Safety" group let all options be as is.
+2.25. In "Inputs" tab of "AIS4TM" window:
+      2.25.1. check that value of "aes.Symbol" variable matches to the symbol of the chart;
+      2.25.2. check values of other variables.
+2.26. Push [OK] button of "AIS4TM" window.
+2.27. Smiling face with "AIS4TM" sign will appear at the top of the chart.
+2.28. AIS4 Trade Machine is running.
+2.29. Installation has been completed.
+
+
+3. Control
+
+3.1. In MetaTrader press <F3> to view "Global Variables" window.
+3.2. There are 18 items:
+     3.2.1. "AIS40000.Setup.1.1.AccountReserve" controls deposit reserve size;
+     3.2.2. "AIS40000.Setup.1.2.OrderReserve" controls order reserve size;
+     3.2.3. "AIS40000.Setup.2.1.Trading" controls trading functions:
+             3.2.3.1. value "1" enables trading functions,
+             3.2.3.2. value "0" disables trading functions;
+     3.2.4. "AIS40000.Setup.2.2.Timeframe.1" reserved;
+     3.2.5. "AIS40000.Setup.2.3.Timeframe.2" reserved;
+     3.2.6. "AIS40000.Setup.2.4.Parameter.1" reserved;
+     3.2.7. "AIS40000.Setup.2.5.Parameter.2" reserved;
+     3.2.8. "AIS40000.Setup.2.6.Parameter.3" reserved;
+     3.2.9. "AIS40000.Setup.3.1.Monitor" controls monitoring function;
+             3.2.9.1. value "1" enables monitoring function,
+             3.2.9.2. value "1" enables monitoring function;
+     3.2.10. "AIS40000.Setup.3.2.FontSize" controls font size of monitoring panel;
+     3.2.11. "AIS40000.Setup.3.3.FontColor" controls font color of monitoring panel;
+     3.2.12. "AIS40000.Setup.3.4.LineSpace" controls line space of monitoring panel;
+     3.2.13. "AIS40000.Setup.3.5.PositionX" controls horizontal position of monitoring panel;
+     3.2.14. "AIS40000.Setup.3.6.PositionY" controls vertical position of monitoring panel.
+     3.2.15. "AIS40000.Setup.4.1.OrderSelect" controls order selection for indication in monitoring panel:
+             3.2.15.1. value "0" sets selection by "magic" number "aei.OrderID = 40000",
+             3.2.15.2. any other value sets selection by number in open order list;
+     3.2.16. "AIS40000.Setup.5.1.Command" controls trading functions:
+             3.2.16.1. value "0" is "Buy" command,
+             3.2.16.2. value "1" is "Sell" command,
+             3.2.16.3. value "6" is "Modify" command,
+             3.2.16.4. value "7" is "Close" command,
+             3.2.16.5. value "-1" is "Wait" command,
+             3.2.16.6. any command execution resets value "-1";
+     3.2.17. "AIS40000.Setup.5.2.Take" controls "Take Profit" price level:
+             3.2.17.1. positive values are used in order opening and modification,
+             3.2.17.2. value "-1" in modification let "Take Profit" price level be unchanged;
+     3.2.18. "AIS40000.Setup.5.3.Stop" controls "Stop Loss" price level:
+             3.2.18.1. positive values are used in order opening and modification,
+             3.2.18.2. value "-1" in modification let "Stop Loss" price level be unchanged.
+
+
+4. Properties
+
+4.1. Trading:
+     4.1.1. trading is possible with only one predefined trading symbol;
+     4.1.2. working trading symbol is defined in "Inputs" tab of "AIS4TM" window;
+     4.1.3. AIS4 Trade Machine works with only one order at the time;
+     4.1.4. order ID is modification number of AIS4 Trade Machine;
+     4.1.5. order ID "aei.OrderID" can be changed in "Inputs" tab of "AIS4TM" window;
+     4.1.6. orders with different ID in the same account are allowed;
+     4.1.7. commands "Buy" and "Sell":
+            4.1.7.1. press <F3> to open "Global Variables" window with control menu;
+            4.1.7.2. press <End> to move cursor in the end of menu;
+            4.1.7.3. press <Up> to move cursor in line "AIS40000.Setup.5.3.Stop";
+            4.1.7.4. press <F3> to begin input "AIS40000.Setup.5.3.Stop";
+            4.1.7.5. input "Stop Loss" price;
+            4.1.7.6. press <Enter> to end input "AIS40000.Setup.5.3.Stop"
+            4.1.7.7. press <Up> to move cursor in line "AIS40000.Setup.5.2.Take";
+            4.1.7.8. press <F3> to begin input "AIS40000.Setup.5.2.Take;
+            4.1.7.9. input "Take Profit price;
+            4.1.7.10. press <Enter> to end input "AIS40000.Setup.5.2.Take";
+            4.1.7.11. press <Up> to move cursor in line "AIS40000.Setup.5.1.Command;
+            4.1.7.12. press <F3> to begin input "AIS40000.Setup.5.1.Command";
+            4.1.7.13. input "0" for "Buy" command or "1" for "Sell" command;
+            4.1.8.14. press <Enter> to end input "AIS40000.Setup.5.1.Command";
+            4.1.7.15. attempt to send order will be made;
+            4.1.7.16. message with order send details will appear:
+                      4.1.7.16.1. in header line of AIS4 Trade Machine,
+                      4.1.7.16.2. in "Alert" window,
+                      4.1.7.16.3. in "Journal" tabs of Termilal or Tester;
+            4.1.7.17. order size is computed automatically according to:
+                      4.1.7.17.1. order reserve size,
+                      4.1.7.17.2. distance between order open price and "Stop Loss" price;
+     4.1.8. command "Modify":
+            4.1.8.1. press <F3> to open "Global Variables" window with control menu;
+            4.1.8.2. press <End> to move cursor in the end of menu;
+            4.1.8.3. press <Up> to move cursor in line "AIS40000.Setup.5.3.Stop";
+            4.1.8.4. press <F3> to begin input "AIS40000.Setup.5.3.Stop";
+            4.1.8.5. input "Stop Loss" price;
+            4.1.8.6. press <Enter> to end input "AIS40000.Setup.5.3.Stop"
+            4.1.8.7. press <Up> to move cursor in line "AIS40000.Setup.5.2.Take";
+            4.1.8.8. press <F3> to begin input "AIS40000.Setup.5.2.Take;
+            4.1.8.9. input "Take Profit price;
+            4.1.8.10. press <Enter> to end input "AIS40000.Setup.5.2.Take";
+            4.1.8.11. press <Up> to move cursor in line "AIS40000.Setup.5.1.Command;
+            4.1.8.12. press <F3> to begin input "AIS40000.Setup.5.1.Command";
+            4.1.8.13. input "6" for "Modify" command;
+            4.1.8.14. press <Enter> to end input "AIS40000.Setup.5.1.Command";
+            4.1.7.15. attempt to modify order will be made;
+            4.1.8.16. message with order modification details will appear according to p.4.1.7.16;
+            4.1.8.17. note that values "-1" for "Stop Loss" and "Take Profit" let the price levels be unchanged;
+     4.1.9. command "Close":
+            4.1.9.1. press <F3> to open "Global Variables" window with control menu;
+            4.1.9.2. go to line "AIS40000.Setup.5.1.Command;
+            4.1.9.3. press <F3> to begin input "AIS40000.Setup.5.1.Command";
+            4.1.9.4. input "7" for "Close" command;
+            4.1.9.5. press <Enter> to end input "AIS40000.Setup.5.1.Command";
+            4.1.9.6. attempt to close order will be made;
+            4.1.9.7. message with order close details will appear according to p.4.1.7.16.
+4.2. Automatic risk management:
+     4.2.1. automatic risk management prevents capital from eventual losses;
+     4.2.2. risk management adjustment consists in setting of two following variables values:
+            4.2.2.1. "aed.AccountReserve" - deposit reserve size, line 36 of "AIS4TM.MQ4" file;
+            4.2.2.1. "aed.OrderReserve"   - order reserve size, line 37 of "AIS4TM.MQ4" file;
+     4.2.3. there are 3 methods of risk management preset change:
+            4.2.3.1. in "Inputs" tab of "AIS4TM" window at the start of AIS4 Trade Machine,
+            4.2.3.2. in the same tab on <F7> pressing with reinitialization,
+            4.2.3.3. in "Global Variables" window without reinitialization;
+     4.2.4. variable "aed.AccountReserve" means deposit reserve;
+     4.2.5. variable "aed.AccountReserve" determines limit of deposit relative drawdon;
+     4.2.6. deposit reserve defends capital from market risk;
+     4.2.7. variable "aed.OrderReserve" means order reserve;
+     4.2.8. variable "aed.OrderReserve" limits market risk for each trade operation;
+     4.2.9. order reserve defends deposit reserve from market risk;
+     4.2.10. usage and size setting rules of the reserves are explained in the Addendum 1;
+     4.2.11. standard risk management settings are:
+             4.2.11.1. deposit reserve 20%,
+             4.2.11.2. order reserve 4%.
+4.3. "SuperTrainer" mode:
+     4.3.1. save window with required indicators as template "AIS4TM.TPL";
+     4.3.2. press <Ctrl-R> to open Tester;
+     4.3.3. in line "Expert Advisers" select "AIS4TM";
+     4.3.4. set "Visual mode";
+     4.3.5. set required dates;
+     4.3.6. set preferred timeframe size;
+     4.3.7. in window "Expert properties" set required tester settings;
+     4.3.8. in "Inputs" tab of "Expert properties" window set input values of AIS4 Trade Machine;
+     4.3.9. check that working symbol of Tester matches to the AIS4 Trade Machine's one;
+     4.3.10. check that history of the working symbol is loaded;
+     4.3.11. push "Start" button of Tester;
+     4.3.12. trade in Tester just like in real time.
+4.4. Monitoring function:
+     4.4.1. monitoring functions displays AIS4 Trade Machine's data;
+     4.4.2. monitoring panel consists of following parts:
+            4.4.2.1. header with modification number;
+            4.4.2.2. message line in the header line;
+            4.4.2.3. 5 data clusters:
+                     4.4.2.3.1. "Client-Server",
+                     4.4.2.3.2. "Balance",
+                     4.4.2.3.3. "Open Position",
+                     4.4.2.3.4. "Trading Strategy Rules",
+                     4.4.2.3.5. reserved;
+     4.4.3. data of "Client-Server" cluster:
+            4.4.3.1. "Client Time":
+                     4.4.3.1.1. local time,
+                     4.4.3.1.2. AIS4 Trade Machine's lifetime from last initialization,
+                     4.4.3.1.3. number of successful attempts to open position in format"Buy+Sell=Total",
+                     4.4.3.1.4. number of successful attempts to trail stop;
+            4.4.3.2. "Client Name" - account owner name;
+            4.4.3.3. "Server Name" - server nave;
+            4.4.3.4. "Server Time":
+                     4.4.3.4.1. server time,
+                     4.4.3.4.2. last tick time interval,
+                     4.4.3.4.3. number of AIS4 Trade Machine's main program runs,
+                     4.4.3.4.4. number of order send attempts,
+                     4.4.3.4.5. number of trail attempts;
+     4.4.4. data of "Balance" cluster:
+            4.4.4.1. "Capital":
+                     4.4.4.1.1. capital value in account currency,
+                     4.4.4.1.2. capital value in percents of deposit peak value,
+                     4.4.4.1.3. absolute capital gain for period from last initialization,
+                     4.4.4.1.4. relative capital gain for period from last initialization;
+            4.4.4.2. "Reserve" - deposit reserve value:
+                     4.4.4.2.1. in account currency,
+                     4.4.4.2.2. in percents of deposit reserve peak value;
+            4.4.4.3. "Peak Equity" - deposit peak value:
+                     4.4.4.3.1. in account currency,
+                     4.4.4.3.2. always is 100%,
+                     4.4.4.3.3. lifetime of deposit peak value;
+            4.4.4.4. "Drawdown" - drawdown from deposit reserve peak value:
+                     4.4.4.4.1. in account currency,
+                     4.4.4.4.2. in percents of deposit peak value;
+            4.4.4.5. "Account Equity" - current deposit value:
+                     4.4.4.5.1. in account currency,
+                     4.4.4.5.2. in percents of deposit peak value,
+                     4.4.4.5.3. absolute equity gain for period from last initialization,
+                     4.4.4.5.4. relative equity gain for period from last initialization;
+            4.4.4.6. "Free margin" - information about free margin:
+                     4.4.4.6.1. current free margin value,
+                     4.4.4.6.2. current free margin level,
+                     4.4.4.6.3. "Stop Out" level in account currency units,
+                     4.4.4.6.4. "Stop Out" level in percents of account equity;
+     4.4.5. data of "Open Position" cluster:
+            4.4.5.1. first line contains open position data:
+                     4.4.5.1.1. order ID "magic number",
+                     4.4.5.1.2. ticket number,
+                     4.4.5.1.3. order type,
+                     4.4.5.1.4. open position size in lots,
+                     4.4.5.1.5. standard lot size,
+                     4.4.5.1.6. margin size in points,
+                     4.4.5.1.7. point value,
+                     4.4.5.1.8. order lifetime;
+            4.4.5.2. "Profit" - order profit:
+                     4.4.5.2.1. in account currency,
+                     4.4.5.2.2. in points,
+                     4.4.5.2.3. in percents of account equity,
+                     4.4.5.2.4. order open price;
+            4.4.5.3. "Target" - distance from order open price to TakeProfit price:
+                     4.4.5.3.1. in account currency,
+                     4.4.5.3.2. in points,
+                     4.4.5.3.3. in percents of account equity,
+                     4.4.5.3.4. "Take Profit" price;
+            4.4.5.4. "VAR"- distance from order open price to StopLoss price:
+                     4.4.5.4.1. in account currency,
+                     4.4.5.4.2. in points,
+                     4.4.5.4.3. in percents of account equity,
+                     4.4.5.4.4. "Stop Loss" price;
+            4.4.5.5. "Limit" - current value of order reserve limit:
+                     4.4.5.5.1. in account currency,
+                     4.4.5.2.2. in points,
+                     4.4.5.5.3. in percents of account equity;
+     4.4.6. data of "Leverage/Contract" cluster:
+            4.4.6.1. first line "Leverage":
+                     4.4.6.1.1. account leverage,
+                     4.4.6.1.2. standard lot margin,
+                     4.4.6.1.3. margin size in points,
+                     4.4.6.1.4. point value of standard lot;
+            4.4.6.2. second line "Contract":
+                     4.4.6.2.1. standard lot size,
+                     4.4.6.2.2. minimal contract size in lots,
+                     4.4.6.2.3. stepping of contract size in lots,
+                     4.4.6.2.4. maximal contract size in lots;
+     4.4.7. reserved cluster is intended for data of trading strategy which is to be integrated.
+
+
+5. Conclusion
+
+5.1. Always check that you are using latest modification of AIS4 Trade Machine.
+5.2. Latest modification is stored in http://codebase.mql4.com/5478.
+
+
+
+
+Addendum 1. Account manager and investor negotiation sample
+
+1. AM. There are two trading systems A1 and A2. There are descriptions and statements of those systems.
+2. I. Studied. I select À1.
+3. AM. Select now: 1) deposit reserve size; 2) order reserve size.
+4. I. More information, please.
+5. AM.
+   5.1. Size of reserve is measured in percents of deposit value.
+   5.2. Let your initial deposit is $100000.
+   5.3. Let you set deposit reserve size to 20%.
+   5.4. It means that your capital is equal to $80000, deposit reserve is equal to $20000.
+   5.5. Let trading position has opened.
+   5.6. Let your deposit has grown to $110000.
+   5.7. In this case your capital is equal to $88000, deposit reserve is equal to $22000.
+   5.8. Let your deposit has lowered to $105000.
+   5.9. In this case your capital is equal to $88000, deposit reserve is equal to $17000.
+   5.10. Let your deposit has grown to $200000.
+   5.11. In this case your capital is equal to $160000, deposit reserve is equal to $40000.
+   5.12. Let then your deposit has only lowered.
+   5.13. At deposit value $180000 your capital is equal to $160000, deposit reserve is equal to $20000.
+   5.14. At deposit value $170000 your capital is equal to $160000, deposit reserve is equal to $10000.
+   5.15. At deposit value $160000 your capital is equal to $160000, deposit reserve is exhausted, system stop.
+   5.16. If trading is stopped by your command then deposit reserve will be restored.
+   5.17. Deposit value at the trading stop is your capital.
+   5.18. Let trading was stopped at the deposit value equal to $170000, then your capital is equal to $170000.
+   5.19. Thus deposit reserve defends your capital value from possible losses.
+   5.20. All our systems have automatic reserve control feature.
+6. I. I see.
+7. AM.
+   7.1. Order reserve defends deposit reserve in above explained manner.
+   7.2. Expected deposit reserve life time depends on order reserve size.
+   7.3. Let order reserve size will be equal to 10% and deposit reserve size will be equal to 20%.
+   7.4. Then system A1 can survive in approximately 2 losses consequence.
+   7.5. A1 statements demonstrate that longer consequences arise approximately 4 times for one year of trading.
+   7.6. Let order reserve size will be equal to 5% and deposit reserve size will be equal to 20%.
+   7.7. Then system A1 can survive in approximately 4 losses consequence.
+   7.8. A1 statements demonstrate that longer consequences arise approximately 1 times for one year of trading.
+   7.9. On other hand, order reserve determines orders size, that is affecting to system profitability.
+   7.10. Order size calculation is in lines 192-216 of system A1 code.
+8. I. I see. Let deposit reserve size will be equal to 20% and order reserve size will be equal to 4%.
+9. AM. For that order reserve size required deposit value is $50000 or more.
+10. I. Server *******, login *******, password *******, deposit $100000, I have accepted account management agreement.
+11. AM. Your master password will be changed, your read only password is À1234.

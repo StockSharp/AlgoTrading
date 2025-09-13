@@ -1,0 +1,41 @@
+Back-testing/Forward-testing details:
+
+Period where EA is successful
+
+
+1. Jan 01, 2010 to Aug 31, 2010. Currency: EURUSD only. Periodicity: H1. Expert Properties: Minimum deposit: $50, Position: Short only, Lotsize: Auto. Draw-down (max): $603.00 or 76.83%. Draw-down (relative): 76.83% or $603.00. Positions won: 57. Positons Loss: 0.
+
+Result for the period above:
+ROI: 1824% (e.g. $50 became 912.37 from jan/01/2010 to aug/31/2010)
+
+
+
+2. Dec 01, 2010 to March 08, 2011. Currency: EURUSD only. Periodicity: H1. Expert Properties: Minimum deposit: $50, Position: Long only, Lotsize: Auto. Draw-down (max): $328.00 or 29.55%. Draw-down (relative): 47.18% or $119.24. Positions won: 25. Positons Loss: 0.
+
+Result for the period above:
+ROI: 2382% (e.g. $50 became 1191.19 from dec/01/2010 to mar/08/2011)
+
+
+This EA (GoodG@bi) has potential of making it to the top 5 most profitable all-time expert advisors in history. I have come to understand the following:
+
+1. That from Jan 01, 2010 to aug 31, 2010, the price was trending downward (bearish), that is why 'short only' position was ideal for trade and no loss was incured by the EA.
+
+2. That from sep 01, 2010 to nov 01, 2010, the price has not decided whether to continue downward or reverse upward, that is why the chances of 'zero loss' was slim. Therefore, NO TRADE because result will be full of + and -.
+
+3. That from dec 01, 2010 till mar 08, 2011, the price action decided for an upward trend (bullish), that is why 'long only' position was ideal for trade and EA had ZERO LOSS.
+
+
+Therefore, if there is some kind of way by which we can (from the previous 6 months period) predict if the trend was bullish, bearish, or neutral, then we can have a 'perfect' expert advisor that trades safely and without LOSS.
+
+If you are a programmer, I will want you to contribute to this project in the following ways (and other ways which I may not anticipate)
+
+1. 1. Add 'lines' that will make the EA detech trend over a wide period past (6 months or more).
+
+2. Add 'lines' that will switch EA from 'short only' trading mode to 'long only' trading mode and vice versa, depending on the prevailing long term trend.
+
+3. Add 'lines' that can carefully detect 'flat trend' and set EA to 'no trade'.
+
+4. Add 'lines' that are hitherto not inluded, and that will make the EA better and safer (having in mind the ZERO LOSS campaign)
+
+
+Here is the EA and Good luck!

@@ -1,0 +1,406 @@
+AIS2 Trading Robot
+
+
+Release number: 20005
+Release date:   2009.03.25
+
+
+Instruction
+
+
+Content
+
+1. Introduction
+2. Installation
+3. Control
+4. Properties
+5. Conclusion
+Addendum 1
+Addendum 2
+Addendum 3
+
+
+1. Introduction
+
+1.1. AIS2 Trading Robot is MQL4 program for MetaTrader 4 Client Terminal.
+1.2. Features:
+     1.2.1. automatic trading;
+     1.2.2. automatic risk management;
+     1.2.3. fast on-the-fly preset change;
+     1.2.4. monitoring function.
+1.3. Requirements:
+     1.3.1. for each terminal only one copy of AIS2 Trading Robot is allowed;
+     1.3.2. in the same terminal MQL programs with incorrect global variables control are disallowed;
+     1.3.3. in the same chart MQL indicators with incorrect graphical objects control are disallowed.
+1.4. AIS2 Trading Robot and AIS1 Trading Robot use the same trading strategy.
+1.5. AIS2 Trading Robot is tuned for intraday trading and requires continuous preset optimization.
+
+
+2. Installation
+
+2.1. AIS2 Trading Robot has following filenames:
+     2.1.1. "AIS2TR.MQ4" is name of MQL4 code file;
+     2.1.2. "AIS2TR.EX4" is name of executable file.
+2.2. Download "AIS2TR.MQ4" file.
+2.3. Find MetaTrader 4 Client Terminal directory that thereafter is denoted "%MT4%".
+2.4. In most cases MetaTrader 4 Client Terminal directory is "C:/Program Files/MetaTrader 4".
+2.5. Copy "AIS2TR.MQ4" file to "%MT4%/experts" directory.
+2.6. Run MetaTrader 4 Client Terminal that thereafter is denoted "MetaTrader".
+2.7. Press <F4> to run MetaEditor.
+2.8. In MetaEditor press <Ctrl-O> to view "Open" dialog box.
+2.9. Open "AIS2TR.MQ4" file in "%MT4%/experts" directory.
+2.10. Inspect modification in line 7.
+2.11. Inspect release date in line 8.
+2.12. Press <F5> to compile code.
+2.13. Press <F4> to return in MetaTrader.
+2.14. In MetaTrader press <Ctrl-O> to view "Options" window.
+2.15. In "Expert Advisors" tab of "Options" window:
+      2.15.1. set "Enable Expert Advisors"="On";
+      2.15.2. let "Disable experts when the account has been chanhed" be as is;
+      2.15.3. let "Disable experts when the profile has been chanhed" be as is;
+      2.15.4. set "Allow live trading"="On";
+      2.15.5. set "Ask manual confirmation"="Off";
+      2.15.6. let all other options be as is.
+2.16. Push [OK] button of "Options" window.
+2.17. Press <Ctrl-N> to view "Navigator" window.
+2.18. Select "Common" tab of "Navigator" window.
+2.19. Open "Expert Advisors" list.
+2.20. Find "AIS2TR" item.
+2.21. "AIS2TR" is short name of "AIS2TR.EX4" executable file.
+2.22. Drag-and-drop "AIS2TR" on the "EURUSD" chart.
+2.23. "AIS2TR" window with "Common" and "Inputs" tabs will appear.
+2.24. In "Common" tab of "AIS2TR" window:
+      2.24.1. in "Common" group:
+              2.24.1.1. set "positions"="Long & Short",
+              2.24.1.1. let alerts options be as is;
+      2.24.2. in "Live Trading" group:
+              2.24.2.1. set "Allow live trading"="On",
+              2.24.2.2. set "Ask manual confirmation"="Off";
+      2.24.3. in "Safety" group let all options be as is.
+2.25. In "Inputs" tab of "AIS2TR" window:
+      2.25.1. check that value of "aes.Symbol" variable matches to the symbol of the chart;
+      2.25.2. check values of other variables.
+2.26. Push [OK] button of "AIS2TR" window.
+2.27. Smiling face with "AIS2TR" sign will appear at the top of the chart.
+2.28. AIS2 Trading Robot is running.
+2.29. Installation has been completed.
+
+
+3. Control
+
+3.1. In MetaTrader press <F3> to view "Global Variables" window.
+3.2. There are 14 items:
+     3.2.1. "AIS20005.Setup.1.1.AccountReserve" controls deposit reserve size;
+     3.2.2. "AIS20005.Setup.1.2.OrderReserve" controls order reserve size;
+     3.2.3. "AIS20005.Setup.2.1.Trading" controls automatic trading:
+             3.2.3.1. value "1" enables automatic trading,
+             3.2.3.2. value "0" disables automatic trading;
+     3.2.4. "AIS20005.Setup.2.2.Timeframe.1" controls trading strategy parameter "Timeframe.1";
+     3.2.5. "AIS20005.Setup.2.3.Timeframe.2" controls trading strategy parameter "Timeframe.2";
+     3.2.6. "AIS20005.Setup.2.4.TakeFactor" controls trading strategy parameter "TakeFactor";
+     3.2.7. "AIS20005.Setup.2.5.StopFactor" controls trading strategy parameter "StopFactor;
+     3.2.8. "AIS20005.Setup.2.6.TrailFactor" controls trading strategy parameter "TrailFactor";
+     3.2.9. "AIS20005.Setup.3.1.Monitor" controls monitoring function;
+             3.2.9.1. value "1" enables monitoring function,
+             3.2.9.2. value "1" enables monitoring function;
+     3.2.10. "AIS20005.Setup.3.2.FontSize" controls font size of monitoring panel;
+     3.2.11. "AIS20005.Setup.3.3.FontColor" controls font color of monitoring panel;
+     3.2.12. "AIS20005.Setup.3.4.LineSpace" controls line space of monitoring panel;
+     3.2.13. "AIS20005.Setup.3.5.PositionX" controls horizontal position of monitoring panel;
+     3.2.14. "AIS20005.Setup.3.6.PositionY" controls vertical position of monitoring panel.
+
+
+4. Properties
+
+4.1. Automatic trading:
+     4.1.1. automatic trading is possible with only one predefined trading symbol;
+     4.1.2. working trading symbol is defined in "Inputs" tab of "AIS2TR" window;
+     4.1.3. AIS2 Trading Robot works with only one order;
+     4.1.4. order ID is modification number of AIS2 Trading Robot;
+     4.1.5. orders with different ID in the same account are allowed.
+4.2. Automatic risk management:
+     4.2.1. automatic risk management prevents capital from eventual losses;
+     4.2.2. risk management adjustment consists in setting of two following variables values:
+            4.2.2.1. "aed.AccountReserve" - deposit reserve size, line 36 of "AIS2TR.MQ4" file;
+            4.2.2.1. "aed.OrderReserve"   - order reserve size, line 37 of "AIS2TR.MQ4" file;
+     4.2.3. there are 3 methods of risk management preset change:
+            4.2.3.1. in "Inputs" tab of "AIS2TR" window at the start of AIS2 Trading Robot,
+            4.2.3.2. in the same tab on <F7> pressing with reinitialization,
+            4.2.3.3. in "Global Variables" window without reinitialization;
+     4.2.4. variable "aed.AccountReserve" means deposit reserve;
+     4.2.5. variable "aed.AccountReserve" determines limit of deposit relative drawdon;
+     4.2.6. deposit reserve defends capital from market risk;
+     4.2.7. variable "aed.OrderReserve" means order reserve;
+     4.2.8. variable "aed.OrderReserve" limits market risk for each trade operation;
+     4.2.9. order reserve defends deposit reserve from market risk;
+     4.2.10. usage and size setting rules of the reserves are explained in the Addendum 1;
+     4.2.11. standard risk management settings are:
+             4.2.11.1. deposit reserve 20%,
+             4.2.11.2. order reserve 4%.
+4.3. Trading strategy preset change:
+     4.3.1. there are 5 parameters for adjusting and control:
+            4.3.1.1. "aåi.Timeframe.1" - defines period of main timeframes,
+            4.3.1.1. "aåi.Timeframe.2" - defines period of auxiliary timeframes,
+            4.3.1.1. "aed.TakeFactor"  - TakeProfit distance calculation coefficient,
+            4.3.1.1. "aed.StopFactor"  - StopLoss distance calculation coefficient,
+            4.3.1.1. "aed.TrailFactor" - trailing-stop distance calculation coefficient;
+     4.3.2. there are 3 methods of trading strategy preset change:
+            4.3.2.1. in "Inputs" tab of "AIS2TR" window at the start of AIS2 Trading Robot,
+            4.3.2.2. in the same tab on <F7> pressing with reinitialization,
+            4.3.2.3. in "Global Variables" window without reinitialization;
+     4.3.3. values of "aåi.Timeframe.1" and "aåi.Timeframe.2" define following timeframe periods:
+            4.3.3.1. 1,
+            4.3.3.2. 5,
+            4.3.3.3. 15,
+            4.3.3.4. 30,
+            4.3.3.5. 60,
+            4.3.3.6. 240,
+            4.3.3.7. 1440,
+            4.3.3.8. 10080,
+            4.3.3.9. 43200;
+     4.3.4. trading strategy description is in Addendum 2;
+     4.3.5. trading strategy adjustment sample is in Addendum 3.
+4.4. Monitoring function:
+     4.4.1. monitoring functions displays AIS2 Trading Robot's data;
+     4.4.2. monitoring panel consists of following parts:
+            4.4.2.1. header with modification number;
+            4.4.2.2. message line in the header line;
+            4.4.2.3. 6 data clusters:
+                     4.4.2.3.1. "Client-Server",
+                     4.4.2.3.2. "Balance",
+                     4.4.2.3.3. "Open Position",
+                     4.4.2.3.4. "Trading Strategy Rules",
+                     4.4.2.3.5. "Trading Strategy Preset",
+                     4.4.2.3.6. "Leverage/Contract";
+     4.4.3. data of "Client-Server" cluster:
+            4.4.3.1. "Client Time":
+                     4.4.3.1.1. local time,
+                     4.4.3.1.2. AIS2 Trading Robot's lifetime from last initialization,
+                     4.4.3.1.3. number of successful attempts to open position in format"Buy+Sell=Total",
+                     4.4.3.1.4. number of successful attempts to trail stop;
+            4.4.3.2. "Client Name" - account owner name;
+            4.4.3.3. "Server Name" - server nave;
+            4.4.3.4. "Server Time":
+                     4.4.3.4.1. server time,
+                     4.4.3.4.2. last tick time interval,
+                     4.4.3.4.3. number of AIS2 Trading Robot's main program runs,
+                     4.4.3.4.4. number of order send attempts,
+                     4.4.3.4.5. number of trail attempts;
+     4.4.4. data of "Balance" cluster:
+            4.4.4.1. "Capital":
+                     4.4.4.1.1. capital value in account currency,
+                     4.4.4.1.2. capital value in percents of deposit peak value,
+                     4.4.4.1.3. absolute capital gain for period from last initialization,
+                     4.4.4.1.4. relative capital gain for period from last initialization;
+            4.4.4.2. "Reserve" - deposit reserve value:
+                     4.4.4.2.1. in account currency,
+                     4.4.4.2.2. in percents of deposit reserve peak value;
+            4.4.4.3. "Peak Equity" - deposit peak value:
+                     4.4.4.3.1. in account currency,
+                     4.4.4.3.2. always is 100%,
+                     4.4.4.3.3. lifetime of deposit peak value;
+            4.4.4.4. "Drawdown" - drawdown from deposit reserve peak value:
+                     4.4.4.4.1. in account currency,
+                     4.4.4.4.2. in percents of deposit peak value;
+            4.4.4.5. "Account Equity" - current deposit value:
+                     4.4.4.5.1. in account currency,
+                     4.4.4.5.2. in percents of deposit peak value,
+                     4.4.4.5.3. absolute equity gain for period from last initialization,
+                     4.4.4.5.4. relative equity gain for period from last initialization;
+            4.4.4.6. "Free margin" - information about free margin:
+                     4.4.4.6.1. current free margin value,
+                     4.4.4.6.2. current free margin level,
+                     4.4.4.6.3. "Stop Out" level in account currency units,
+                     4.4.4.6.4. "Stop Out" level in percents of account equity;
+     4.4.5. data of "Open Position" cluster:
+            4.4.5.1. "Order" - open position data:
+                     4.4.5.1.1. order ID "magic number",
+                     4.4.5.1.2. ticket number,
+                     4.4.5.1.3. order type,
+                     4.4.5.1.4. open position size in lots,
+                     4.4.5.1.5. standard lot size,
+                     4.4.5.1.6. margin size in points,
+                     4.4.5.1.7. point value;
+            4.4.5.2. "Profit":
+                     4.4.5.2.1. order profit in account currency/points,
+                     4.4.5.2.2. order lifetime;
+            4.4.5.3. "Target" - distance from order open price to TakeProfit price in account currency/points;
+            4.4.5.4. "VAR"    - distance from order open price to StopLoss price in account currency/points;
+            4.4.5.5. "Limit"  - current value of order reserve:
+                     4.4.5.5.1. in account currency,
+                     4.4.5.5.2. in percents of deposit peak value;
+     4.4.6. data of "Leverage/Contract" cluster:
+            4.4.6.1. first line "Leverage":
+                     4.4.6.1.1. account leverage,
+                     4.4.6.1.2. standard lot margin,
+                     4.4.6.1.3. margin size in points,
+                     4.4.6.1.4. point value of standard lot;
+            4.4.6.2. second line "Contract":
+                     4.4.6.2.1. standard lot size,
+                     4.4.6.2.2. minimal contract size in lots,
+                     4.4.6.2.3. stepping of contract size in lots,
+                     4.4.6.2.4. maximal contract size in lots;
+     4.4.7. data of "Trading Strategy Rules" cluster, see Addendum 2:
+            4.4.7.1. line "Buy":
+                     4.4.7.1.1. price "Ask",
+                     4.4.7.1.2. price "ald.High.1 + avd.QuoteSpread",
+                     4.4.7.1.3. price "ald.Close.1 + avd.QuoteSpread",
+                     4.4.7.1.4. price "ald.Average.1 + avd.QuoteSpread";
+            4.4.7.2. line "Sell":
+                     4.4.7.2.1. price "Bid",
+                     4.4.7.2.2. price "ald.Low.1",
+                     4.4.7.2.3. price "ald.Close.1,
+                     4.4.7.2.4. price "ald.Average.1";
+     4.4.8. data of "Trading Strategy Preset" cluster:
+            4.4.8.1. first line of values:
+                     4.4.8.1.1. "Index.1" value,
+                     4.4.8.1.2. trading strategy main timeframe period,
+                     4.4.8.1.3. value of "aed.TakeFactor" parameter,
+                     4.4.8.1.4. value of "aed.StopFactor" parameter,
+                     4.4.8.1.5. "ald.High.1 - ald.Low.1" value,
+                     4.4.8.1.6. computed TakeProfit distance,
+                     4.4.8.1.7. computed StopLoss distance;
+            4.4.8.2. second line of values:
+                     4.4.8.2.1. "Index.2" value,
+                     4.4.8.2.2. trading strategy auxiliary timeframe period,
+                     4.4.8.2.3. value of "aed.TrailFactor" parameter,
+                     4.4.8.2.4. minimal trailing-stop step in spreads,
+                     4.4.8.2.5. "ald.High.2 - ald.Low.2" value,
+                     4.4.8.2.6. computed trailing-stop step,
+                     4.4.8.2.7. minimal trailing-stop step in quote units.
+
+
+5. Conclusion
+
+5.1. Always check that you are using latest modification of AIS2 Trading Robot.
+5.2. Latest modification is stored in http://codebase.mql4.com/5420.
+
+
+
+
+Addendum 1. Account manager and investor negotiation sample
+
+1. AM. There are two trading systems A1 and A2. There are descriptions and statements of those systems.
+2. I. Studied. I select À1.
+3. AM. Select now: 1) deposit reserve size; 2) order reserve size.
+4. I. More information, please.
+5. AM.
+   5.1. Size of reserve is measured in percents of deposit value.
+   5.2. Let your initial deposit is $100000.
+   5.3. Let you set deposit reserve size to 20%.
+   5.4. It means that your capital is equal to $80000, deposit reserve is equal to $20000.
+   5.5. Let trading position has opened.
+   5.6. Let your deposit has grown to $110000.
+   5.7. In this case your capital is equal to $88000, deposit reserve is equal to $22000.
+   5.8. Let your deposit has lowered to $105000.
+   5.9. In this case your capital is equal to $88000, deposit reserve is equal to $17000.
+   5.10. Let your deposit has grown to $200000.
+   5.11. In this case your capital is equal to $160000, deposit reserve is equal to $40000.
+   5.12. Let then your deposit has only lowered.
+   5.13. At deposit value $180000 your capital is equal to $160000, deposit reserve is equal to $20000.
+   5.14. At deposit value $170000 your capital is equal to $160000, deposit reserve is equal to $10000.
+   5.15. At deposit value $160000 your capital is equal to $160000, deposit reserve is exhausted, system stop.
+   5.16. If trading is stopped by your command then deposit reserve will be restored.
+   5.17. Deposit value at the trading stop is your capital.
+   5.18. Let trading was stopped at the deposit value equal to $170000, then your capital is equal to $170000.
+   5.19. Thus deposit reserve defends your capital value from possible losses.
+   5.20. All our systems have automatic reserve control feature.
+6. I. I see.
+7. AM.
+   7.1. Order reserve defends deposit reserve in above explained manner.
+   7.2. Expected deposit reserve life time depends on order reserve size.
+   7.3. Let order reserve size will be equal to 10% and deposit reserve size will be equal to 20%.
+   7.4. Then system A1 can survive in approximately 2 losses consequence.
+   7.5. A1 statements demonstrate that longer consequences arise approximately 4 times for one year of trading.
+   7.6. Let order reserve size will be equal to 5% and deposit reserve size will be equal to 20%.
+   7.7. Then system A1 can survive in approximately 4 losses consequence.
+   7.8. A1 statements demonstrate that longer consequences arise approximately 1 times for one year of trading.
+   7.9. On other hand, order reserve determines orders size, that is affecting to system profitability.
+   7.10. Order size calculation is in lines 192-216 of system A1 code.
+8. I. I see. Let deposit reserve size will be equal to 20% and order reserve size will be equal to 4%.
+9. AM. For that order reserve size required deposit value is $50000 or more.
+10. I. Server *******, login *******, password *******, deposit $100000, I have accepted account management agreement.
+11. AM. Your master password will be changed, your read only password is À1234.
+
+
+
+
+Addendum 2. Trading strategy
+
+1. AIS2 Trading Robot's trading strategy consists of two parts:
+   1.1. position opening block;
+   1.2. position managenent block.
+2. Position opening block uses 14 variables:
+   2.1. input - 10 variables:
+        2.1.1. "ald.QuoteAsk"    - Ask price;
+        2.1.2. "ald.QuoteBid"    - Bid price;
+        2.1.3. "avd.QuoteSpread" - spread;
+        2.1.4. "ald.Low.1"       - Low   price of timeframe number 1 with "Timeframe.1" period;
+        2.1.5. "ald.High.1"      - High  price of timeframe number 1 with "Timeframe.1" period;
+        2.1.6. "ald.Close.1"     - Close price of timeframe number 1 with "Timeframe.1" period;
+        2.1.7. "ald.Average.1"   - average price of timeframe number 1 with "Timeframe.1" period;
+        2.1.8. "ald.Range.1"     - price range of timeframe number 1 with "Timeframe.1" period;
+        2.1.9. "ald.QuoteTake"   - distance from current price to TakeProfit price level;
+        2.1.10. "ald.QuoteStop"  - distance from current price to StopLoss   price level;
+   2.2. output - 4 variables:
+        2.2.1. "ali.Command" - operation type;
+        2.2.2. "ald.Price"   - operation price;
+        2.2.3. "ald.Stop"    - StopLoss   price level;
+        2.2.4. "ald.Take"    - TakeProfit price level.
+3. Buy rules:
+   3.1. Close price "ald.Close.1"  higher than average price "ald.Average.1";
+   3.2. Ask   price "ald.QuoteAsk" higher than High    price "ald.High.1 + avd.QuoteSpread";
+   3.3. if both of the conditions are true then output variables will be calculated.
+4. Sell rules:
+   4.1. Close price "ald.Close.1"  lower  than average price "ald.Average.1";
+   4.2. Bid   price "ald.QuoteBid" lower  than Low     price "ald.Low.1";
+   4.3. if both of the conditions are true then output variables will be calculated.
+5. Position managenent block uses 11 variables:
+   5.1. input - 10 variables:
+        5.1.1. "OrderType       ()" - ordet type for the currently managed position;
+        5.1.2. "OrderProfit     ()" - net profit value for the currently managed position;
+        5.1.3. "OrderTakeProfit ()" - TakeProfit price level for the currently managed position;
+        5.1.4. "OrderStopLoss   ()" - StopLoss   price level for the currently managed position;
+        5.1.5. "ald.QuoteAsk"       - Ask price;
+        5.1.6. "ald.QuoteBid"       - Bid price;
+        5.1.7. "ald.QuoteStops"     - minimal allowed distance for the stop levels;
+        5.1.8. "ald.Range.2"        - price range of timeframe number 1 with "Timeframe.2" period;
+        5.1.9. "ald.QuoteTrail"     - distance from current price to new StopLoss price level;
+        5.1.10. "ald.TrailStep"     - minimal allowed step of trailing-stop;
+   5.2. output - 1 variable:
+        5.2.1. "ald.Stop"           - new StopLoss price level.
+6. Trailing-stop rules:
+   6.1. for Buy order are in lines 420-430 of "AIS2TR.MQ4" file;
+   6.2. for Sell order are in lines 432-442 of "AIS2TR.MQ4" file.
+7. Essentials of AIS2 Trading Robot's trailing rules are:
+   7.1. "avd.Range.2" variable is computed as a range of bar number 1 of timeframe with size equal to "Timeframe.2";
+   7.2. "avd.QuoteTrail" is computed as "avd.QuoteTrail = avd.Range.2 * aed.TrailFactor";
+   7.3. order profit is compared with "avd.QuoteTrail".
+8. Attempt to trail is made in case of "ald.Stop" value assignment.
+
+
+
+
+Addendum 3. Trading strategy adjustment
+
+1. Trading strategy parameters are adjusted for each "Timeframe.1" and "Timeframe.2" pair.
+2. Trading strategy adjustment consist in selection of "best" value set of three following variables:
+   2.1. "aed.TakeFactor"  - TakeProfit    distance calculation coefficient;
+   2.2. "aed.StopFactor"  - StopLoss      distance calculation coefficient;
+   2.3. "aed.TrailFactor" - Trailing Stop distance calculation coefficient.
+3. Sense of notion "best" depends on adjustment goals and appraisement measure system.
+4. The following trading strategy adjustment order is one of possible ones.
+5. Trading strategy adjustment order:
+   5.1. set "Initial deposit = 100000 USD" in dialog box "Expert Properties/Testing" of strategy tester;
+   5.2. increase deposit reserve size by "double aed.AccountReserve = 0.99 ;" in line 36 of "AIS2TR.MQ4" file;
+   5.3. turn off trailing stop by "double aed.TrailFactor = 0.0 ;" in line 49;
+   5.4. compile code;
+   5.5. run optimization of "aed.TakeFactor" and "aed.StopFactor" values simultaneously;
+   5.6. assign selected "best" values to "aed.TakeFactor" and "aed.StopFactor" variables;
+   5.7. compile code;
+   5.8. run optimization of "aed.TrailFactor" value;
+   5.9. assign selected "best" value to "aed.TrailFactor" variable;
+   5.10. restore previous deposit reserve size "double aed.AccountReserve = 0.20 ;" in line 36;
+   5.11. compile code.
+6. Always remember to reset settings in "Inputs" tab of strategy tester after each extern parameter value change.
+7. Trading strategy adjustment is completed.

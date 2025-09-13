@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Publisher Service</title>
+  <link rel="stylesheet" href="common.css">
+  </head>
+  <body>
+    <div>
+      <h1>Publisher Service:<span id="user"></span></h1>
+      <p><label>Publisher: <input id="pub_id" name="pub_id" placeholder="Enter your publisher id"></label></p>
+      <p><label>Private Key: <input id="pub_key" name="pub_key" placeholder="Enter your private key"></label></p>
+      <p><label>Message: <input id="message" name="message" placeholder="Enter a text for subscribers"></label></p>
+      <p style="text-align:center;"><button>Connect</button> <button disabled>Close</button></p>
+      <p><label><span id="origin">Server</span>: <input id="echo" name="echo" placeholder="Text from server"></label></p>
+    </div>
+  </body>
+  <script src="wspublisher_client.js"></script>
+</html>

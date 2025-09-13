@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><title>Trade Report</title>
+<style>
+*{font: 9pt "Segoe UI";}
+.center{width:fit-content;margin:0 auto;}
+.header{font-weight:bold;}
+.left {text-align:left;}
+.right {text-align:right;}
+.middle {text-align:center;}
+body {margin:0;}
+h1 {font-size:large;font-weight:bold;text-align:center;}
+h2 {font-size:large;text-align:center;}
+table {margin:0 auto;}
+td {padding:0px 3px 0px 3px;}
+</style>
+</head><body>
+<div class="center"><h1>Trade Report</h1>
+~
+</div></body>
+<script>
+(function()
+{
+   var index = window.location.href.indexOf('?');
+   if(index > 0)
+   {
+      var query = window.location.href.slice(index + 1);
+      document.querySelector('#params').innerText=query.replace(/&/g, " ");
+   }
+})();
+</script>
+</html>

@@ -1,0 +1,339 @@
+#property strict                                              //I had to comment out lines 15 to 20 because of validation problems. I don't know how to fix it to pass validation. Yet. I'm working on it.
+                                                              //You guys can uncomment lines 15 to 20 and see the martingale part like that.
+static bool BuyIsActive = False;                                 
+static bool SellIsActive = False;                                             
+static double Price = Bid;
+extern double Lots = 0.2;
+
+void OnTick()
+{
+   string Signal = GetSignal();
+
+   Comment(" Orders: ", OrdersTotal() ,"    ", " Balance: ", DoubleToStr(AccountBalance(),2), "    ", " Equity: ", DoubleToStr(AccountEquity(),2), "    " , " Signal: " ,Signal);
+   
+   if(OrdersTotal() == 0 && Signal == "S"){int s0 = OrderSend(_Symbol,OP_SELL,Lots,NormalizeDouble(Bid,Digits),3,0,0,NULL,0,clrRed);SellIsActive = True;Price = Bid;}
+   if(OrdersTotal() == 0 && Signal == "B"){int b0 = OrderSend(_Symbol,OP_BUY ,Lots,NormalizeDouble(Ask,Digits),3,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Ask;} 
+   //if(OrdersTotal() == 1 && SellIsActive == True && Bid-Price > 500*_Point){int s1 = OrderSend(_Symbol,OP_SELL,Lots*1.4,NormalizeDouble(Bid,Digits),3,0,0,NULL,0,clrRed);SellIsActive = True;Price = Bid;}
+   //if(OrdersTotal() == 1 && BuyIsActive == True && Price-Ask > 500*_Point){int b1 = OrderSend(_Symbol,OP_BUY ,Lots*1.4,NormalizeDouble(Ask,Digits),3,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Ask;}   
+   //if(OrdersTotal() == 2 && SellIsActive == True && Bid-Price > 200*_Point){int s2 = OrderSend(_Symbol,OP_SELL,Lots*2.8,NormalizeDouble(Bid,Digits),3,0,0,NULL,0,clrRed);SellIsActive = True;Price = Bid;}
+   //if(OrdersTotal() == 2 && BuyIsActive == True && Price-Ask > 200*_Point){int b2 = OrderSend(_Symbol,OP_BUY ,Lots*2.8,NormalizeDouble(Ask,Digits),3,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Ask;}    
+   //if(OrdersTotal() == 3 && SellIsActive == True && Bid-Price > 200*_Point){int s3 = OrderSend(_Symbol,OP_SELL,Lots*4.2,NormalizeDouble(Bid,Digits),3,0,0,NULL,0,clrRed);SellIsActive = True;Price = Bid;}
+   //if(OrdersTotal() == 3 && BuyIsActive == True && Price-Ask > 200*_Point){int b3 = OrderSend(_Symbol,OP_BUY ,Lots*4.2,NormalizeDouble(Ask,Digits),3,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Ask;}    
+   
+   if(Signal == "E" && AccountEquity() > AccountBalance()){CloseTrades();SellIsActive = False;BuyIsActive = False;} 
+}  
+
+void CloseTrades()
+{
+   for(int i = OrdersTotal()-1; i >= 0 ; i--)
+   {
+      if(OrderSelect(i,SELECT_BY_POS)==True)
+      {
+         bool result = OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),0,clrRed);
+      }
+   }
+}
+
+
+string GetSignal()
+{  
+   static string Signal = "N";
+   double U = iEnvelopes(_Symbol,_Period,50,MODE_EMA,0,PRICE_CLOSE,0.52,MODE_UPPER,0);
+   double L = iEnvelopes(_Symbol,_Period,50,MODE_EMA,0,PRICE_CLOSE,0.52,MODE_LOWER,0);
+   if(BuyIsActive == False && Bid < L){Signal = "B";}
+   if(SellIsActive == False && Bid > U){Signal = "S";}
+   if(Bid < L && SellIsActive == True){Signal = "E";}
+   if(Bid > U && BuyIsActive == True){Signal = "E";}
+   return(Signal);   
+}
+
+
+
+
+
+
+
+
+
+//double TP2 = 1.003;
+//double TP3 = 1.005;
+//double TP4 = 1.008;
+
+
+   //if(Close[1]<Open[1] && Close[1]-Low[1] > 30*_Point && Bid < L && L-Bid < 5800*_Point){Signal = "S";}
+   //if(Bid > U + 500*_Point){Signal = "S";}
+   //if(L-Bid > 5000*_Point){Signal = "B";}
+   //if(SellIsActive == True && AccountEquity() > AccountBalance()*1.5){Signal = "E";}
+
+
+//   if (OrdersTotal() == 1 && SellIsActive == True && Bid-Price > Step1*_Point){int s1 = OrderSend(_Symbol,OP_SELL,Lots*2,Bid,0,0,0,NULL,0,clrRed);SellIsActive = True; Price = Bid;}
+//   if (OrdersTotal() == 1 && BuyIsActive == True && Price-Bid > Step1*_Point){int b1 = OrderSend(_Symbol,OP_BUY ,Lots*2,Ask,0,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Bid;} 
+//   if (OrdersTotal() == 2 && SellIsActive == True && Bid-Price > Step2*_Point){int s2 = OrderSend(_Symbol,OP_SELL,Lots*3,Bid,0,0,0,NULL,0,clrRed);SellIsActive = True; Price = Bid;}
+//   if (OrdersTotal() == 2 && BuyIsActive == True && Price-Bid > Step2*_Point){int b2 = OrderSend(_Symbol,OP_BUY ,Lots*3,Ask,0,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Bid;} 
+//   if (OrdersTotal() == 3 && SellIsActive == True && Bid-Price > Step3*_Point){int s3 = OrderSend(_Symbol,OP_SELL,Lots*4,Bid,0,0,0,NULL,0,clrRed);SellIsActive = True; Price = Bid;}
+//   if (OrdersTotal() == 3 && BuyIsActive == True && Price-Bid > Step3*_Point){int b3 = OrderSend(_Symbol,OP_BUY,Lots*4,Ask,0,0,0,NULL,0,clrGreen);BuyIsActive = True;Price = Bid;}
+//         
+//   if(BuyIsActive == True && OrdersTotal() == 1 && AccountEquity() > AccountBalance() * TP1){CloseTrades();BuyIsActive = False;} 
+//   if(SellIsActive == True && OrdersTotal() == 1 && AccountEquity() > AccountBalance() * TP1){CloseTrades();SellIsActive = False;}
+//   if(BuyIsActive == True && OrdersTotal() == 2 && AccountEquity() > AccountBalance() * TP2){CloseTrades();BuyIsActive = False;} 
+//   if(SellIsActive == True && OrdersTotal() == 2 && AccountEquity() > AccountBalance() * TP2){CloseTrades();SellIsActive = False;}
+//   if(BuyIsActive == True && OrdersTotal() == 3 && AccountEquity() > AccountBalance() * TP3){CloseTrades();BuyIsActive = False;} 
+//   if(SellIsActive == True && OrdersTotal() == 3 && AccountEquity() > AccountBalance() * TP3){CloseTrades();SellIsActive = False;}
+//   if(BuyIsActive == True && OrdersTotal() == 4 && AccountEquity() > AccountBalance() * TP4){CloseTrades();BuyIsActive = False;} 
+//   if(SellIsActive == True && OrdersTotal() == 4 && AccountEquity() > AccountBalance() * TP4){CloseTrades();SellIsActive = False;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//double SetLot()
+//{ 
+//   double MinLot = MarketInfo(Symbol(),MODE_MINLOT);
+//   double MaxLot = MarketInfo(Symbol(),MODE_MAXLOT);
+//   double Lot = NormalizeDouble((AccountBalance() * 0.01) / 100,Digits);
+//   if (Lot>=MaxLot){Lot = MaxLot;}
+//   if (Lot<MinLot){Lot = MinLot;}
+//   return(Lot);
+//}   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//string GetSignal()
+//{  
+//   string Signal = "";
+//   double avg0 = iMA(_Symbol,_Period,9,0,MODE_EMA,PRICE_CLOSE,0);
+//   double avg1 = iMA(_Symbol,_Period,6,0,MODE_EMA,PRICE_CLOSE,0);
+//   double avg2 = iMA(_Symbol,_Period,3,0,MODE_EMA,PRICE_CLOSE,0);
+//   
+//   if (Ask>Open[0] && avg2>avg1 && avg1>avg0){Signal = "B";}
+//   if (Bid<Open[0] && avg2<avg1 && avg1<avg0){Signal = "S";}
+//   return(Signal);   
+//}
+
+
+
+
+
+
+
+
+
+
+
+//   if (SellIsActive == True && OrdersTotal() == 1 && AccountEquity() < AccountBalance() - (AccountBalance() * 0.03)){int s1 = OrderSend(_Symbol,OP_SELL,Lots*3,Bid,0,0,0,NULL,0,clrIndigo);SellIsActive = True;}
+//   if (BuyIsActive == True && OrdersTotal() == 1 && AccountEquity() < AccountBalance() - (AccountBalance() * 0.03)){int b1 = OrderSend(_Symbol,OP_BUY ,Lots*3,Ask,0,0,0,NULL,0,clrIndigo);BuyIsActive = True;}
+//  
+   
+
+
+
+   //double avg0 = iMA(_Symbol,_Period,3,0,MODE_EMA,PRICE_CLOSE,0);
+   //double avg1 = iMA(_Symbol,_Period,2,0,MODE_EMA,PRICE_CLOSE,0);
+   //double avg2 = iMA(_Symbol,_Period,1,0,MODE_EMA,PRICE_CLOSE,0);
+   //double  rsi = iRSI(_Symbol,_Period,5,PRICE_CLOSE,0);
+   //double macd = iMACD(_Symbol,_Period,12,26,9,PRICE_CLOSE,MODE_EMA,0);
+
+
+
+
+
+   //if(BuyIsActive == True && rsi > 80 && Bid - Open[0] > 4000*_Point){CloseTrades(); BuyIsActive = False; Trend = "S";}
+   //if(SellIsActive == True && rsi < 20 && Open[0] - Bid > 4000*_Point){CloseTrades(); SellIsActive = False; Trend = "B";}  
+
+
+
+
+
+
+
+
+
+//   if(rsi > 80 && BuyIsActive == True && Bid - avg0 > 1300*_Point){CloseTrades();BuyIsActive = False;};   
+//   if(rsi < 20 && SellIsActive == True && avg0 - Bid > 1300*_Point){CloseTrades();SellIsActive = False;};
+
+
+
+
+   //if (OrdersTotal() == 0 && AccountBalance() == AccountEquity() && rsi < 30)
+   //{ 
+   //   int b0 = OrderSend(_Symbol,OP_BUY,Lots,Ask,0,0,0,0,0,0,clrIndigo);
+   //   BuyIsActive = True;
+   //}
+
+
+
+//
+//   if (OrdersTotal() == 0 && AccountBalance() == AccountEquity() && Bid - Low[0] > D20 *_Point && Bid > Low[0] && rsi > 70)
+//   { 
+//      int s1 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//      SellIsActive = True;
+//   }
+//   
+//   if (OrdersTotal() == 1 && SellIsActive == True && Bid - Low[25] > 1800*_Point && Bid > Low[0] && rsi > 70)
+//   { 
+//      int s2 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//      SellIsActive = True;
+//   }
+//   
+//   if (OrdersTotal() == 2 && SellIsActive == True && Bid - Low[13] > 3000*_Point && Bid > Low[0] && rsi > 70)
+//   { 
+//      int s3 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//      SellIsActive = True;
+//   }
+//   
+//   if (OrdersTotal() == 3 && SellIsActive == True && Bid - Low[20] > 3000*_Point && Bid > Low[0] && rsi > 70)
+//   { 
+//      int s4 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//      SellIsActive = True;
+//   }
+//   
+//   if (OrdersTotal() == 4 && SellIsActive == True && Bid - Low[1] > 1600*_Point && Bid > Low[0] && rsi > 70)
+//   { 
+//      int s5 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//      SellIsActive = True;
+//   }
+//   
+//   
+//   if (OrdersTotal() == 0 && Bid - Low[20] > 3200*_Point && Bid > Low[0] && rsi > 70)
+//   { 
+//      int s6 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//      SellIsActive = True;
+//   }   
+
+
+
+
+
+
+
+
+
+
+
+//   if(Trend == 2 && AccountEquity() > AccountBalance()){Trend = 0;}      
+      
+      
+      //for(int i = 0; i < OrdersTotal(); i++)
+      //{
+      //   if(OrderSelect(i, SELECT_BY_POS)==True)
+      //   {
+      //      bool result = OrderClose(OrderTicket(),OrderLots(),OrderClosePrice(),10,clrAquamarine);
+      //   }
+      //}
+
+
+   //if (OrdersTotal() < MaxTradePositions && avg0 > Low[0] && High[0] - Low[0] > 6000*_Point && Trend == 1)
+   //{
+   //   int b0 = OrderSend(_Symbol,OP_BUY,TradeSize,Ask,Slippage,0,avg0,0,0,0,clrIndigo);
+   //}
+   
+   //if (OrdersTotal() < MaxTradePositions && Close[1] < Open[1] && Open[1]-Close[1] < 20 *_Point && Close[1] < avg0 && Trend == 0)
+   //{
+   //   int s0 = OrderSend(_Symbol,OP_SELL,TradeSize,Bid,Slippage,0,avg0-10000*_Point,0,0,0,clrIndigo);
+   //}
+   
+   
+   
+   
+//   
+//   if (OrdersTotal() == 0 && Bid < Open[0] && Trend == 0)
+//   {
+//      int s0 = OrderSend(_Symbol,OP_SELL,TradeSize,Bid,Slippage,0,0,0,0,0,clrIndigo);
+//   }
+//   
+//   if (OrdersTotal() == 0 && Trend == 1)
+//   {
+//      int b0 = OrderSend(_Symbol,OP_BUY,TradeSize,Ask,Slippage,0,0,0,0,0,clrIndigo);
+//   }   
+//   
+//   
+//   if(avg0 - Bid > 10000*_Point && Trend == 0)
+//   {
+//      Trend = 1;
+//      CloseAllTrades();
+//   }
+//   
+//   if(Ask > avg0 && Trend == 1)
+//   {
+//      CloseAllTrades();
+//      Trend = 0;
+//   }       
+//   
+   
+
+
+//   if(High[0] < High[1] && High[1] < High[2] && High[2] < High[3] && High[3] < High[4] && High[4] < High[5] && Bid < Low[1]){Trend = 1; TP = 400;}
+//   if(High[1] - Low[30] > 900 *_Point){Trend = 0;}
+//   if(Low[1] - Low[30] > 3000 *_Point){Trend = 1; TP = 3000;}   
+//   
+//   if(AccountEquity() > AccountBalance() - (AccountBalance() * 0.30)){ Trend = 0;}
+//   if(AccountEquity() < AccountBalance() - (AccountBalance() * 0.20)){ Trend = 2;}
+      
+   //if(avg2 > avg1 && avg1 > avg0 && avg2 - avg0 > Range *_Point){Trend = 1;}
+
+
+
+
+
+
+
+
+//   if (OrdersTotal() == 0 && AccountBalance() == AccountEquity() && Bid - avg0 > 1400*_Point)
+//   { 
+//      int s0 = OrderSend(_Symbol,OP_SELL,Lots,Bid,0,0,0,0,0,0,clrIndigo);
+//   }
+//   
+//   if (OrdersTotal() == 1 && AccountEquity() < AccountBalance()-(AccountBalance() * 0.02))
+//   { 
+//      int s1 = OrderSend(_Symbol,OP_SELL,Lots*3,Bid,0,0,0,0,0,0,clrIndigo);
+//   }
+//      
+//   if (OrdersTotal() == 2 && AccountEquity() < AccountBalance()-(AccountBalance() * 0.03))
+//   { 
+//      int s2 = OrderSend(_Symbol,OP_SELL,Lots*6,Bid,0,0,0,0,0,0,clrIndigo);
+//   }
+//         
+//   if (OrdersTotal() == 3 && AccountEquity() < AccountBalance()-(AccountBalance() * 0.04))
+//   { 
+//      int s3 = OrderSend(_Symbol,OP_SELL,Lots*10,Bid,0,0,0,0,0,0,clrIndigo);
+//   }
+//         
+//   if (OrdersTotal() == 0 && Bid - Low[0] > 800 *_Point)
+//   { 
+//      int s4 = OrderSend(_Symbol,OP_SELL,Lots*20,Bid,0,0,0,0,0,0,clrIndigo);
+//   }
+//   
+//   if(AccountEquity() > AccountBalance() * 1.7)
+//   {
+//      CloseTrades();
+//   } 

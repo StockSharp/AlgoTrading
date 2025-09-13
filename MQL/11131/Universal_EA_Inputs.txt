@@ -1,0 +1,108 @@
+"Order Setup";
+
+MaxLotSize = 500;
+MinLotSize = 0.01;
+MaxOrders = 1;
+OrderExpirationTimer = 720;
+AcountBalanceUsedPercent = 10;
+OrderOpenLevel = 10;
+Slippage = 3;
+TakeProfit = 150;
+StopLoss = 300;
+
+
+"Option to place sell order when buying";
+
+Hedging = false;
+
+HedgingMultiplier = "The option to change lot size of hedge order";
+
+HedgingLotSizeMultiplier= 1;
+
+
+"Minimum for an order to be closed";
+
+MinimumStopLossMultiplier = 10;
+MinimumTakeProfitMultiplier = 10;
+
+
+"Following section for different order close options";
+"Sets a trailing stop and step ammount that follows the stop";
+
+TrailingStopLoss = false;
+TrailingStop = 25;
+TrailingStep = 25;
+
+"Sets a percentage to close an order based on Account Equity";
+
+PercentageStopLoss = false;
+AccountPercentageStopLoss = 10;
+PercentageTakeProfit = false;
+AccountPercentageTakeProfit = 10;
+
+"Closes a trade after a specified amount of seconds";
+
+StopLossTimer = false;
+TimedStopLoss = 3600;
+TakeProfitTimer = false;
+TimedTakeProfit = 3600;
+
+"Closes order after Kperiod crosses Dperiod";
+
+StochasticTakeProfit = false;
+KperiodTakeProfit = 20;
+DperiodTakeProfit = 5;
+SlowingTakeProfit = 3;
+StochasticStopLoss = false;
+KperiodStopLoss = 20;
+DperiodStopLoss = 5;
+SlowingStopLoss = 3;
+
+
+"The following modify an order to minimize loss potential";
+"Checks if a certain percentage change has occured"; 
+
+StochasticPercentChange = false;
+StochasticPercentChangeLevel = 1;
+
+"Prevents orders two bars above stochastic crossing";
+
+StochasticTradeLimiter = false;
+KperiodLimiter = 20;
+DperiodLimiter = 5;
+SlowingLimiter = 3;
+
+
+"Choose which indicators and parameters to use";
+
+StochasticBuy = true;
+StocOverSoldLevel = 20;
+Kperiod = 20;
+Dperiod = 5;
+Slowing = 3;
+
+"Moving average crossing buy signal";
+
+MACrossBuy = false;
+SlowMAperiod = 20;
+FastMAperiod = 10;
+
+"Buy signal when signal line goes below MACD level";
+
+MACDBuy = false;
+FastEMA = 5;
+SlowEMA = 15;
+SMA = 2;
+
+"Buy signal of two increasing volumes and minimum volume level required for buy signal";
+ 
+VolumeBuy = false;
+VolumeMinimumLevel = 200;
+
+"Buy when fast RSI crosses above slow RSI";
+
+RSIBuy = false;
+FastRSI = 13;
+SlowRSI = 26;
+
+MagicNumber = 1;

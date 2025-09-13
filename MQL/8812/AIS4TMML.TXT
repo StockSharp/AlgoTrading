@@ -1,0 +1,247 @@
+AIS4 Trade Machine
+
+
+Modification List
+
+
+Modification: 40000
+Release Date: 2009.04.07
+
+
+History
+0. AIS40000 2009.04.07
+
+
+< AIS40000 Trade Machine >********************************************************************************************
+
+First release: AIS40000
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "40000"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.04.07"                                                          //<   8>
+
+Template     : AIS30001
+#define       A.System.Series           "AIS"                                                                 //<   6>
+#define       A.System.Modification     "30001"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.26"                                                          //<   8>
+
+
+Content
+1. Release information change
+2. Constant "aei.OrderID" by extern variable "aei.OrderID" replacement
+3. "Open Position" indication cluster change
+4. Trading strategy entry point change
+5. Function "afr.TradingStrategy" change
+
+
+1. Release information change
+1.1. Module: 1. Property
+1.2. Lines:  7-9
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+#define       A.System.Modification     "40000"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.04.06"                                                          //<   8>
+#define       A.System.Program          "Trade Machine"                                                       //<   9>
+</AIS40000 >
+
+< AIS30001 >
+#define       A.System.Modification     "30001"                                                               //<   7>
+#define       A.System.ReleaseDate      "2009.03.26"                                                          //<   8>
+#define       A.System.Program          "Trading Robot Template"                                              //<   9>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+2. Constant "aei.OrderID" by extern variable "aei.OrderID" replacement
+2.1. Change 1:
+     2.1.1 Modules: 2. Constants, 3. Presets
+     2.1.1 Lines:  14-54
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+//< 2. Constants 4 >==========================================================================================//<  14>
+                                                                                                              //<  15>
+#define       acd.TrailStepping         1.0                                                                   //<  16>
+                                                                                                              //<  17>
+#define       aci.TradingPause          5                                                                     //<  18>
+                                                                                                              //<  19>
+string        acs.Operation     []  = { "Buy" , "Sell"                                                    } ; //<  20>
+                                                                                                              //<  21>
+#define       aci.SetupSeparator        1000000000                                                            //<  22>
+                                                                                                              //<  23>
+//</2. Constants 4 >==========================================================================================//<  24>
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////<  25>
+//< 3. Presets 9 >============================================================================================//<  26>
+                                                                                                              //<  27>
+//< 3.1. Order Identification Number Preset 1 >```````````````````````````````````````````````````````````````//<  28>
+                                                                                                              //<  29>
+extern int    aei.OrderID             = 0                                                                   ; //<  30>
+                                                                                                              //<  31>
+//</3.1. Order Identification Number Preset 1 >```````````````````````````````````````````````````````````````//<  32>
+                                                                                                              //<  33>
+//< 3.2. Risk Management Preset 2 >```````````````````````````````````````````````````````````````````````````//<  34>
+                                                                                                              //<  35>
+extern double aed.AccountReserve      = 0.20                                                                ; //<  36>
+extern double aed.OrderReserve        = 0.04                                                                ; //<  37>
+                                                                                                              //<  38>
+//</3.2. Risk Management Preset 2 >```````````````````````````````````````````````````````````````````````````//<  39>
+                                                                                                              //<  40>
+//< 3.3. Trading Strategy Preset 6 >``````````````````````````````````````````````````````````````````````````//<  41>
+                                                                                                              //<  42>
+extern string aes.Symbol              = "EURUSD"                                                            ; //<  43>
+                                                                                                              //<  44>
+extern int    aei.Timeframe.1         = 15                                                                  ; //<  45>
+extern int    aei.Timeframe.2         = 1                                                                   ; //<  46>
+                                                                                                              //<  47>
+extern double aed.Parameter.1         = 1.0                                                                 ; //<  48>
+extern double aed.Parameter.2         = 2.0                                                                 ; //<  49>
+extern double aed.Parameter.3         = 3.0                                                                 ; //<  50>
+                                                                                                              //<  51>
+//</3.3. Trading Strategy Preset 9 >``````````````````````````````````````````````````````````````````````````//<  52>
+                                                                                                              //<  53>
+//</3. Presets 8 >============================================================================================//<  54>
+</AIS40000 >
+
+< AIS30001 >
+//< 2. Constants 5 >==========================================================================================//<  14>
+                                                                                                              //<  15>
+#define       aci.OrderID               30001                                                                 //<  16>
+                                                                                                              //<  17>
+#define       acd.TrailStepping         1.0                                                                   //<  18>
+                                                                                                              //<  19>
+#define       aci.TradingPause          5                                                                     //<  20>
+                                                                                                              //<  21>
+string        acs.Operation     []  = { "Buy" , "Sell"                                                    } ; //<  22>
+                                                                                                              //<  23>
+#define       aci.SetupSeparator        1000000000                                                            //<  24>
+                                                                                                              //<  25>
+//</2. Constants 5 >==========================================================================================//<  26>
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////<  27>
+//< 3. Presets 8 >============================================================================================//<  28>
+                                                                                                              //<  29>
+//< 3.1. Risk Management Preset 2 >```````````````````````````````````````````````````````````````````````````//<  30>
+                                                                                                              //<  31>
+extern double aed.AccountReserve      = 0.20                                                                ; //<  32>
+extern double aed.OrderReserve        = 0.04                                                                ; //<  33>
+                                                                                                              //<  34>
+//</3.1. Risk Management Preset 2 >```````````````````````````````````````````````````````````````````````````//<  35>
+                                                                                                              //<  36>
+//< 3.2. Trading Strategy Preset 6 >``````````````````````````````````````````````````````````````````````````//<  37>
+                                                                                                              //<  38>
+extern string aes.Symbol              = "EURUSD"                                                            ; //<  39>
+                                                                                                              //<  40>
+extern int    aei.Timeframe.1         = 15                                                                  ; //<  41>
+extern int    aei.Timeframe.2         = 1                                                                   ; //<  42>
+                                                                                                              //<  43>
+extern double aed.Parameter.1         = 1.0                                                                 ; //<  44>
+extern double aed.Parameter.2         = 2.0                                                                 ; //<  45>
+extern double aed.Parameter.3         = 3.0                                                                 ; //<  46>
+                                                                                                              //<  47>
+//</3.2. Trading Strategy Preset 6 >``````````````````````````````````````````````````````````````````````````//<  48>
+                                                                                                              //<  49>
+//</3. Presets 8 >============================================================================================//<  50>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+2.2. Change 2:
+     2.2.1 Module: 7.6.1. Position Management Module Entry Point
+     2.2.1 Line:   421
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+         if ( OrderMagicNumber    () != aei.OrderID                        )                       continue ; //< 421>
+</AIS40000 >
+
+< AIS30001 >
+         if ( OrderMagicNumber    () != aci.OrderID                        )                       continue ; //< 417>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+2.3. Change 2:
+     2.3.1 Module: 7.8.4. Order Send Trading Function
+     2.3.1 Lines:  563-565
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+              int ali.Ticket          = OrderSend          ( aes.Symbol    , avi.Command  , ald.Size      ,   //< 563>
+                                        avd.Price   ,  0   , avd.Stop      , avd.Take     , ""            ,   //< 564>
+                                        aei.OrderID ,  0   , 0                                            ) ; //< 565>
+</AIS40000 >
+
+< AIS30001 >
+              int ali.Ticket          = OrderSend          ( aes.Symbol    , avi.Command  , ald.Size      ,   //< 559>
+                                        avd.Price   ,  0   , avd.Stop      , avd.Take     , ""            ,   //< 560>
+                                        aci.OrderID ,  0   , 0                                            ) ; //< 561>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+2.4. Change 4:
+     2.4.1 Module: 11.5. Third Cluster: Position Management Report
+     2.4.1 Line:   1028
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+                { if ( OrderMagicNumber ()  != aei.OrderID )                                     continue ; } //<1028>
+</AIS40000 >
+
+< AIS30001 >
+                { if ( OrderMagicNumber ()  != aci.OrderID )                                     continue ; } //<1024>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+
+3. "Open Position" indication cluster change
+3.1 Module: 11.5. Third Cluster: Position Management Report 
+3.1 Lines:  985-1113
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+...
+</AIS40000 >
+
+< AIS30001 >
+...
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+
+4. Trading strategy entry point change
+4.1 Module: 7.7.1. Trading Strategy Entry Point
+4.1 Lines:  487-490
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+//< 7.7.1. Trading Strategy Entry Point 2 >                                                                   //< 487>
+if ( avi.SystemFlag == avi.SystemFlag )                                                                       //< 488>
+   {                                                                                                          //< 489>
+//</7.7.1. Trading Strategy Entry Point 2 >                                                                   //< 490>
+</AIS40000 >
+
+< AIS30001 >
+//< 7.7.1. Trading Strategy Entry Point 2 >                                                                   //< 483>
+if ( avi.SystemFlag  == 1             )                                                                       //< 484>
+   {                                                                                                          //< 485>
+//</7.7.1. Trading Strategy Entry Point 2 >                                                                   //< 486>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+
+5. Function "afr.TradingStrategy" change
+5.1 Module: Function 17
+5.1 Lines:  1197-1783
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+< AIS40000 >
+//< A.System.Extra: Function 17 >-----------------------------------------------------------------------------//<1206>
+int    afr.TradingStrategy           ()                                                               //  422 //<1207>
+{                                                                                                             //<1208>
+...
+}                                                                                                             //<1832>
+//</A.System.Extra: Function 17 >-----------------------------------------------------------------------------//<1833>
+</AIS40000 >
+
+< AIS30001 >
+//< A.System.Extra: Function 17 >`````````````````````````````````````````````````````````````````````````````//<1221>
+int    afr.TradingStrategy           ()                                                               //    4 //<1222>
+{                                                                                                             //<1223>
+avi.Command  = EMPTY                                                                                        ; //<1224>
+avd.Price    = EMPTY                                                                                        ; //<1225>
+avd.Stop     = EMPTY                                                                                        ; //<1226>
+avd.Take     = EMPTY                                                                                        ; //<1227>
+}                                                                                                             //<1228>
+//</A.System.Extra: Function 17 >`````````````````````````````````````````````````````````````````````````````//<1229>
+</AIS30001 >
+" ````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
+
+</AIS40000 Trade Machine >********************************************************************************************
