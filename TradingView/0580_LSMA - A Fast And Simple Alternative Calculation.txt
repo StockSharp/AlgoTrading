@@ -1,9 +1,0 @@
-// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © alexgrover
-
-//@version=4
-study("LSMA",overlay=true)
-length = input(25),src = input(close)
-//----
-a = 3*wma(src,length) - 2*sma(src,length)
-plot(a,"LSMA",#ff9800,2,transp=0)

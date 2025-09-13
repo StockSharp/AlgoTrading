@@ -1,8 +1,0 @@
-// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
-// © LonesomeTheBlue
-
-//@version=4
-strategy("NO LONGER PUBLIC", overlay = false)
-
-strategy.entry("Long", true, when=rsi(close,14)>30, alert_message="")
-strategy.close("Long",when=rsi(close,14)>70)
