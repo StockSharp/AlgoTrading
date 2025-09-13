@@ -20,7 +20,7 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 	private readonly StrategyParam<int> _rsiSmaPeriod;
 	private readonly StrategyParam<decimal> _boughtLevel;
 	private readonly StrategyParam<decimal> _soldLevel;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private BollingerBands _bollinger;
@@ -69,7 +69,7 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 	/// <summary>
 	/// Trade direction.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Candle type.
@@ -114,8 +114,8 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 		.SetDisplay("Sold Range Level", "Lower threshold for RSI SMA", "Strategy")
 		.SetCanOptimize(true);
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-		.SetDisplay("Trade Direction", "Choose long, short or both", "General");
+		_direction = Param(nameof(Direction), (Sides?)null)
+			.SetDisplay("Trade Direction", "Choose long, short or both", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");
@@ -184,8 +184,8 @@ public class VolatilityCaptureRsiBollingerStrategy : Strategy
 
 		var priceSource = (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m;
 
-		var allowLong = Direction == TradeDirection.Long || Direction == TradeDirection.Both;
-		var allowShort = Direction == TradeDirection.Short || Direction == TradeDirection.Both;
+		var allowLong = Direction != Sides.Sell;
+		var allowShort = Direction != Sides.Buy;
 
 		var longSignal1 = _prevPriceSource is decimal prevPrice1 && prevPrice1 <= _prevBand && priceSource > _prevBand;
 		var shortSignal1 = _prevPriceSource is decimal prevPrice2 && prevPrice2 >= _prevBand && priceSource < _prevBand;

@@ -14,20 +14,20 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VegasSuperTrendEnhancedStrategy : Strategy
 {
-private readonly StrategyParam<DataType> _candleType;
-private readonly StrategyParam<int> _atrPeriod;
-private readonly StrategyParam<int> _vegasWindow;
-private readonly StrategyParam<decimal> _superTrendMultiplier;
-private readonly StrategyParam<decimal> _volatilityAdjustment;
-private readonly StrategyParam<string> _tradeDirection;
+	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _atrPeriod;
+	private readonly StrategyParam<int> _vegasWindow;
+	private readonly StrategyParam<decimal> _superTrendMultiplier;
+	private readonly StrategyParam<decimal> _volatilityAdjustment;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 
-private SimpleMovingAverage _vegasMa = null!;
-private StandardDeviation _vegasStd = null!;
-private AverageTrueRange _atr = null!;
+	private SimpleMovingAverage _vegasMa = null!;
+	private StandardDeviation _vegasStd = null!;
+	private AverageTrueRange _atr = null!;
 
-private decimal? _prevUpper;
-private decimal? _prevLower;
-private int _trend = 1;
+	private decimal? _prevUpper;
+	private decimal? _prevLower;
+	private int _trend = 1;
 
 /// <summary>
 /// Candle type to process.
@@ -77,47 +77,47 @@ set => _volatilityAdjustment.Value = value;
 /// <summary>
 /// Allowed trade direction (Long, Short, Both).
 /// </summary>
-public string TradeDirection
-{
-get => _tradeDirection.Value;
-set => _tradeDirection.Value = value;
-}
+	public Sides? TradeDirection
+	{
+	    get => _tradeDirection.Value;
+	    set => _tradeDirection.Value = value;
+	}
 
 /// <summary>
 /// Initializes a new instance of <see cref="VegasSuperTrendEnhancedStrategy"/>.
 /// </summary>
 public VegasSuperTrendEnhancedStrategy()
 {
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-.SetDisplay("Candle Type", "Timeframe", "General");
+	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
+	        .SetDisplay("Candle Type", "Timeframe", "General");
 
-_atrPeriod = Param(nameof(AtrPeriod), 10)
-.SetGreaterThanZero()
-.SetDisplay("ATR Period", "ATR length", "General")
-.SetCanOptimize(true);
+	    _atrPeriod = Param(nameof(AtrPeriod), 10)
+	        .SetGreaterThanZero()
+	        .SetDisplay("ATR Period", "ATR length", "General")
+	        .SetCanOptimize(true);
 
-_vegasWindow = Param(nameof(VegasWindow), 100)
-.SetGreaterThanZero()
-.SetDisplay("Vegas Window", "Vegas moving average length", "General")
-.SetCanOptimize(true);
+	    _vegasWindow = Param(nameof(VegasWindow), 100)
+	        .SetGreaterThanZero()
+	        .SetDisplay("Vegas Window", "Vegas moving average length", "General")
+	        .SetCanOptimize(true);
 
-_superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 5m)
-.SetGreaterThanZero()
-.SetDisplay("Base Multiplier", "SuperTrend base multiplier", "General")
-.SetCanOptimize(true);
+	    _superTrendMultiplier = Param(nameof(SuperTrendMultiplier), 5m)
+	        .SetGreaterThanZero()
+	        .SetDisplay("Base Multiplier", "SuperTrend base multiplier", "General")
+	        .SetCanOptimize(true);
 
-_volatilityAdjustment = Param(nameof(VolatilityAdjustment), 5m)
-.SetDisplay("Volatility Adjustment", "Multiplier adjustment factor", "General")
-.SetCanOptimize(true);
+	    _volatilityAdjustment = Param(nameof(VolatilityAdjustment), 5m)
+	        .SetDisplay("Volatility Adjustment", "Multiplier adjustment factor", "General")
+	        .SetCanOptimize(true);
 
-_tradeDirection = Param(nameof(TradeDirection), "Both")
-.SetDisplay("Direction", "Trade direction", "General");
+	    _tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
+	        .SetDisplay("Direction", "Trade direction", "General");
 }
 
 /// <inheritdoc />
 public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 {
-return [(Security, CandleType)];
+	    return [(Security, CandleType)];
 }
 
 /// <inheritdoc />
@@ -181,8 +181,8 @@ _prevLower = lower;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
-var allowLong = TradeDirection != "Short";
-var allowShort = TradeDirection != "Long";
+		var allowLong = TradeDirection != Sides.Sell;
+		var allowShort = TradeDirection != Sides.Buy;
 
 var longSignal = _trend == 1 && prevTrend != 1;
 var shortSignal = _trend == -1 && prevTrend != -1;

@@ -18,7 +18,7 @@ public class YuriGarciaSmartMoneyStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<int> _zoneLookback;
 	private readonly StrategyParam<decimal> _zoneBuffer;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _tradeDirection;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ATR _atr = null!;
@@ -37,7 +37,7 @@ public class YuriGarciaSmartMoneyStrategy : Strategy
 	public decimal RiskReward { get => _riskReward.Value; set => _riskReward.Value = value; }
 	public int ZoneLookback { get => _zoneLookback.Value; set => _zoneLookback.Value = value; }
 	public decimal ZoneBuffer { get => _zoneBuffer.Value; set => _zoneBuffer.Value = value; }
-	public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public Sides? TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public YuriGarciaSmartMoneyStrategy()
@@ -62,8 +62,8 @@ public class YuriGarciaSmartMoneyStrategy : Strategy
 	        .SetGreaterThanZero()
 	        .SetDisplay("Zone Buffer", "Buffer percent", "General");
 
-	    _tradeDirection = Param(nameof(TradeDirection), "Both")
-	        .SetDisplay("Trade Direction", "Both / Buy Only / Sell Only", "General");
+		_tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
+			.SetDisplay("Trade Direction", "Both / Buy Only / Sell Only", "General");
 
 	    _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	        .SetDisplay("Candle Type", "Type of candles", "General");
@@ -86,8 +86,8 @@ public class YuriGarciaSmartMoneyStrategy : Strategy
 	    subscription.Bind(ProcessCandle).Start();
 	}
 
-	private bool CanBuy => TradeDirection != "Sell Only";
-	private bool CanSell => TradeDirection != "Buy Only";
+	private bool CanBuy => TradeDirection != Sides.Sell;
+	private bool CanSell => TradeDirection != Sides.Buy;
 
 	private void ProcessCandle(ICandleMessage candle)
 	{

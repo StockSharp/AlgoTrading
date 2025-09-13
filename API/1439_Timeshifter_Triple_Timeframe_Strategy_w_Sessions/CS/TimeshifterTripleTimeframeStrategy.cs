@@ -21,7 +21,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 	private readonly StrategyParam<bool> _useAdx;
 	private readonly StrategyParam<int> _adxLength;
 	private readonly StrategyParam<int> _adxThreshold;
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 	private readonly StrategyParam<bool> _useLondon;
 	private readonly StrategyParam<bool> _useNewYork;
 	private readonly StrategyParam<bool> _useTokyo;
@@ -44,7 +44,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 	public bool UseAdx { get => _useAdx.Value; set => _useAdx.Value = value; }
 	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
 	public int AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public TradeDirection Direction { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public Sides? Direction { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
 	public bool UseLondon { get => _useLondon.Value; set => _useLondon.Value = value; }
 	public bool UseNewYork { get => _useNewYork.Value; set => _useNewYork.Value = value; }
 	public bool UseTokyo { get => _useTokyo.Value; set => _useTokyo.Value = value; }
@@ -79,7 +79,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 		_adxThreshold = Param(nameof(AdxThreshold), 25)
 			.SetDisplay("ADX Threshold", "Minimum ADX for entries", "Filters");
 
-		_tradeDirection = Param(nameof(Direction), TradeDirection.Both)
+		_tradeDirection = Param(nameof(Direction), (Sides?)null)
 			.SetDisplay("Trade Direction", "Direction of trades", "General");
 
 		_useLondon = Param(nameof(UseLondon), true)
@@ -185,7 +185,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 		if (!inSession)
 			return;
 
-		if ((Direction == TradeDirection.Long || Direction == TradeDirection.Both) && higherUptrend)
+		if (Direction != Sides.Sell && higherUptrend)
 		{
 			if (entryLong && adxCondition && Position <= 0)
 				BuyMarket();
@@ -193,7 +193,7 @@ public class TimeshifterTripleTimeframeStrategy : Strategy
 				ClosePosition();
 		}
 
-		if ((Direction == TradeDirection.Short || Direction == TradeDirection.Both) && higherDowntrend)
+		if (Direction != Sides.Buy && higherDowntrend)
 		{
 			if (entryShort && adxCondition && Position >= 0)
 				SellMarket();
