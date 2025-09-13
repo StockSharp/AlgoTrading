@@ -14,7 +14,7 @@ public class Hsi1First30mCandleStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 
 	private decimal? _firstHigh;
 	private decimal? _firstLow;
@@ -37,11 +37,11 @@ public class Hsi1First30mCandleStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public TradeDirection Direction
-	{
+	public Sides? Direction
+{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
-	}
+}
 
 	public Hsi1First30mCandleStrategy()
 	{
@@ -52,7 +52,7 @@ public class Hsi1First30mCandleStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_tradeDirection = Param(nameof(Direction), TradeDirection.Both)
+		_tradeDirection = Param(nameof(Direction), (Sides?)null)
 			.SetDisplay("Trade Direction", "Allowed direction", "Parameters");
 	}
 
@@ -128,14 +128,14 @@ public class Hsi1First30mCandleStrategy : Strategy
 		{
 			var range = _firstHigh.Value - _firstLow.Value;
 
-			if (candle.HighPrice >= _firstHigh && Direction != TradeDirection.SellOnly)
+		if (candle.HighPrice >= _firstHigh && Direction != Sides.Sell)
 			{
 				BuyMarket(Volume);
 				_stopPrice = _firstLow.Value;
 				_takePrice = _firstHigh.Value + range * RiskReward;
 				_tradedToday = true;
 			}
-			else if (candle.LowPrice <= _firstLow && Direction != TradeDirection.BuyOnly)
+		else if (candle.LowPrice <= _firstLow && Direction != Sides.Buy)
 			{
 				SellMarket(Volume);
 				_stopPrice = _firstHigh.Value;

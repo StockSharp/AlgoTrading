@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StreakBasedTradingStrategy : Strategy
 {
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 	private readonly StrategyParam<int> _streakThreshold;
 	private readonly StrategyParam<int> _holdDuration;
 	private readonly StrategyParam<decimal> _dojiThreshold;
@@ -25,11 +25,11 @@ public class StreakBasedTradingStrategy : Strategy
 	private int _lossStreak;
 	private int _holdCounter;
 
-	public TradeDirection TradeDirection
-	{
+	public Sides? TradeDirection
+{
 		get => _tradeDirection.Value;
 		set => _tradeDirection.Value = value;
-	}
+}
 
 	public int StreakThreshold
 	{
@@ -55,9 +55,9 @@ public class StreakBasedTradingStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public StreakBasedTradingStrategy()
-	{
-		_tradeDirection = Param(nameof(TradeDirection), Strategies.TradeDirection.Long)
+public StreakBasedTradingStrategy()
+{
+		_tradeDirection = Param(nameof(TradeDirection), Sides.Buy)
 			.SetDisplay("Trade Direction", "Choose Long or Short", "General");
 
 		_streakThreshold = Param(nameof(StreakThreshold), 8)
@@ -149,12 +149,12 @@ public class StreakBasedTradingStrategy : Strategy
 				}
 			}
 
-			if (TradeDirection == Strategies.TradeDirection.Long && _lossStreak >= StreakThreshold)
+		if (TradeDirection != Sides.Sell && _lossStreak >= StreakThreshold)
 			{
 				BuyMarket();
 				_holdCounter = HoldDuration;
 			}
-			else if (TradeDirection == Strategies.TradeDirection.Short && _winStreak >= StreakThreshold)
+		else if (TradeDirection != Sides.Buy && _winStreak >= StreakThreshold)
 			{
 				SellMarket();
 				_holdCounter = HoldDuration;

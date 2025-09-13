@@ -14,7 +14,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TrendGuardFlagFinderStrategy : Strategy
 {
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<int> _supertrendPeriod;
 	private readonly StrategyParam<decimal> _supertrendFactor;
 	private readonly StrategyParam<decimal> _maxDepth;
@@ -46,11 +46,11 @@ public class TrendGuardFlagFinderStrategy : Strategy
 	/// <summary>
 	/// Trading direction.
 	/// </summary>
-	public TradeDirection TradingDirection
-	{
+	public Sides? TradingDirection
+{
 		get => _direction.Value;
 		set => _direction.Value = value;
-	}
+}
 
 	/// <summary>
 	/// Candle type.
@@ -63,8 +63,8 @@ public class TrendGuardFlagFinderStrategy : Strategy
 
 	public TrendGuardFlagFinderStrategy()
 	{
-		_direction = Param(nameof(TradingDirection), TradeDirection.Both)
-		.SetDisplay("Direction", "Trading direction", "General");
+		_direction = Param(nameof(TradingDirection), (Sides?)null)
+			.SetDisplay("Direction", "Trading direction", "General");
 
 		_supertrendPeriod = Param(nameof(_supertrendPeriod), 10)
 		.SetDisplay("SuperTrend Length", "ATR period", "SuperTrend")
@@ -195,8 +195,8 @@ public class TrendGuardFlagFinderStrategy : Strategy
 			{
 				_flagActive = false;
 			}
-			else if (_flagLength >= _minFlagLength.Value && candle.ClosePrice > _baseHigh && isUptrend &&
-			(TradingDirection == TradeDirection.Both || TradingDirection == TradeDirection.Long) && IsFormedAndOnlineAndAllowTrading() && Position <= 0)
+		else if (_flagLength >= _minFlagLength.Value && candle.ClosePrice > _baseHigh && isUptrend &&
+			(TradingDirection != Sides.Sell) && IsFormedAndOnlineAndAllowTrading() && Position <= 0)
 			{
 				BuyMarket(Volume + Math.Abs(Position));
 				_flagActive = false;
@@ -225,8 +225,8 @@ public class TrendGuardFlagFinderStrategy : Strategy
 			{
 				_flagActiveBear = false;
 			}
-			else if (_flagLengthBear >= _minFlagLengthBear.Value && candle.ClosePrice < _baseLowBear && !isUptrend &&
-			(TradingDirection == TradeDirection.Both || TradingDirection == TradeDirection.Short) && IsFormedAndOnlineAndAllowTrading() && Position >= 0)
+		else if (_flagLengthBear >= _minFlagLengthBear.Value && candle.ClosePrice < _baseLowBear && !isUptrend &&
+			(TradingDirection != Sides.Buy) && IsFormedAndOnlineAndAllowTrading() && Position >= 0)
 			{
 				SellMarket(Volume + Math.Abs(Position));
 				_flagActiveBear = false;

@@ -31,7 +31,7 @@ public class SupertrendAdvancePullbackStrategy : Strategy
 	private readonly StrategyParam<decimal> _cciBuyLevel;
 	private readonly StrategyParam<decimal> _cciSellLevel;
 	private readonly StrategyParam<string> _mode;
-	private readonly StrategyParam<string> _tradeDirection;
+private readonly StrategyParam<Sides?> _tradeDirection;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageTrueRange _atr;
@@ -133,7 +133,7 @@ public class SupertrendAdvancePullbackStrategy : Strategy
 	/// <summary>
 	/// Allowed trade direction.
 	/// </summary>
-	public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public Sides? TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
 
 	/// <summary>
 	/// Candle type to process.
@@ -217,9 +217,8 @@ public class SupertrendAdvancePullbackStrategy : Strategy
 			.SetDisplay("Mode", "Entry mode", "General")
 			.SetOptions("Pullback", "Simple");
 
-		_tradeDirection = Param(nameof(TradeDirection), "Both")
-			.SetDisplay("Trade Direction", "Allowed trade sides", "General")
-			.SetOptions("Long", "Short", "Both");
+		_tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
+			.SetDisplay("Trade Direction", "Allowed trade sides", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -336,8 +335,8 @@ public class SupertrendAdvancePullbackStrategy : Strategy
 		var cciBuy = !UseCciFilter || cci > CciBuyLevel;
 		var cciSell = !UseCciFilter || cci < CciSellLevel;
 
-		var longOk = TradeDirection == "Long" || TradeDirection == "Both";
-		var shortOk = TradeDirection == "Short" || TradeDirection == "Both";
+		var longOk = TradeDirection != Sides.Sell;
+		var shortOk = TradeDirection != Sides.Buy;
 
 		if (buySignal && longOk && emaBuy && rsiBuy && macdBuy && cciBuy && Position <= 0)
 		{

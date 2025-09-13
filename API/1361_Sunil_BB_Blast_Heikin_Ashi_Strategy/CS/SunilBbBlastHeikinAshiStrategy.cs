@@ -17,7 +17,7 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerMultiplier;
 	private readonly StrategyParam<decimal> _riskReward;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TradeDirection> _direction;
+	private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<TimeSpan> _sessionBegin;
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
 
@@ -51,7 +51,7 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 	/// <summary>
 	/// Trade direction filter.
 	/// </summary>
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 
 	/// <summary>
 	/// Trading window start time.
@@ -86,7 +86,7 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_direction = Param(nameof(Direction), TradeDirection.Both)
+		_direction = Param(nameof(Direction), (Sides?)null)
 			.SetDisplay("Trade Direction", "Allowed trade direction", "General");
 
 		_sessionBegin = Param(nameof(SessionBegin), new TimeSpan(9, 20, 0))
@@ -180,8 +180,8 @@ public class SunilBbBlastHeikinAshiStrategy : Strategy
 		if (prevHaOpen is null || prevHaClose is null || prevOpen is null || prevClose is null)
 			return;
 
-		var allowLong = Direction != TradeDirection.ShortOnly;
-		var allowShort = Direction != TradeDirection.LongOnly;
+		var allowLong = Direction != Sides.Sell;
+		var allowShort = Direction != Sides.Buy;
 
 		if (Position <= 0 && allowLong && prevHaClose > prevHaOpen && prevClose > prevOpen && candle.ClosePrice > upperBand)
 		{

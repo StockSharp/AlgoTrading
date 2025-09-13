@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class VidyaProTrendMultiTierProfitStrategy : Strategy
 {
-private readonly StrategyParam<string> _tradeDirection;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 private readonly StrategyParam<int> _fastVidyaLength;
 private readonly StrategyParam<int> _slowVidyaLength;
 private readonly StrategyParam<decimal> _minSlopeThreshold;
@@ -49,14 +49,14 @@ private decimal _entryPrice;
 private bool _tpLongPlaced;
 private bool _tpShortPlaced;
 
-public string TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public Sides? TradeDirection { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
 public int FastVidyaLength { get => _fastVidyaLength.Value; set => _fastVidyaLength.Value = value; }
 public int SlowVidyaLength { get => _slowVidyaLength.Value; set => _slowVidyaLength.Value = value; }
 public decimal MinSlopeThreshold { get => _minSlopeThreshold.Value; set => _minSlopeThreshold.Value = value; }
 public int BbLength { get => _bbLength.Value; set => _bbLength.Value = value; }
 public decimal BbMultiplier { get => _bbMultiplier.Value; set => _bbMultiplier.Value = value; }
 public bool UseMultiStepTp { get => _useMultiStepTp.Value; set => _useMultiStepTp.Value = value; }
-public string TpDirection { get => _tpDirection.Value; set => _tpDirection.Value = value; }
+	public string TpDirection { get => _tpDirection.Value; set => _tpDirection.Value = value; }
 public int AtrLengthTp { get => _atrLengthTp.Value; set => _atrLengthTp.Value = value; }
 public decimal AtrMultiplierTp1 { get => _atrMultiplierTp1.Value; set => _atrMultiplierTp1.Value = value; }
 public decimal AtrMultiplierTp2 { get => _atrMultiplierTp2.Value; set => _atrMultiplierTp2.Value = value; }
@@ -75,8 +75,8 @@ public DataType CandleType { get => _candleType.Value; set => _candleType.Value 
 
 public VidyaProTrendMultiTierProfitStrategy()
 {
-_tradeDirection = Param(nameof(TradeDirection), "Both")
-.SetDisplay("Trading Direction", "Allowed directions", "General");
+	_tradeDirection = Param(nameof(TradeDirection), (Sides?)null)
+	.SetDisplay("Trading Direction", "Allowed directions", "General");
 
 _fastVidyaLength = Param(nameof(FastVidyaLength), 10)
 .SetGreaterThanZero()
@@ -214,8 +214,8 @@ candle.ClosePrice < lower;
 var exitLongCondition = fastSlope < -MinSlopeThreshold && slowSlope < -MinSlopeThreshold / 2m;
 var exitShortCondition = fastSlope > MinSlopeThreshold && slowSlope > MinSlopeThreshold / 2m;
 
-var allowLong = TradeDirection.Equals("Long", StringComparison.OrdinalIgnoreCase) || TradeDirection.Equals("Both", StringComparison.OrdinalIgnoreCase);
-var allowShort = TradeDirection.Equals("Short", StringComparison.OrdinalIgnoreCase) || TradeDirection.Equals("Both", StringComparison.OrdinalIgnoreCase);
+	var allowLong = TradeDirection != Sides.Sell;
+	var allowShort = TradeDirection != Sides.Buy;
 
 if (allowLong && longCondition && Position <= 0)
 {

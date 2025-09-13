@@ -16,7 +16,7 @@ public class TrendSyncProSmcStrategy : Strategy
 	private readonly StrategyParam<int> _trendPeriod;
 	private readonly StrategyParam<decimal> _slPercent;
 	private readonly StrategyParam<decimal> _tpPercent;
-	private readonly StrategyParam<TradeDirection> _tradeDirection;
+	private readonly StrategyParam<Sides?> _tradeDirection;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _higherCandleType;
 
@@ -50,7 +50,7 @@ public class TrendSyncProSmcStrategy : Strategy
 	/// <summary>
 	/// Trade direction filter.
 	/// </summary>
-	public TradeDirection TradeDir { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
+	public Sides? TradeDir { get => _tradeDirection.Value; set => _tradeDirection.Value = value; }
 
 	/// <summary>
 	/// Base candle type.
@@ -76,8 +76,8 @@ public class TrendSyncProSmcStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Take Profit %", "Percent take profit", "Risk")
 		.SetCanOptimize(true);
-		_tradeDirection = Param(nameof(TradeDir), TradeDirection.Both)
-		.SetDisplay("Trade Direction", "Allowed direction", "General");
+		_tradeDirection = Param(nameof(TradeDir), (Sides?)null)
+			.SetDisplay("Trade Direction", "Allowed direction", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Base timeframe", "General");
 		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(1).TimeFrame())
@@ -162,8 +162,8 @@ public class TrendSyncProSmcStrategy : Strategy
 		var crossUp = _prevClose <= _trendValue && candle.ClosePrice > _trendValue;
 		var crossDown = _prevClose >= _trendValue && candle.ClosePrice < _trendValue;
 
-		var takeLong = TradeDir != TradeDirection.BearishOnly && crossUp && htfUp && _trendDirectionUp;
-		var takeShort = TradeDir != TradeDirection.BullishOnly && crossDown && htfDown && !_trendDirectionUp;
+		var takeLong = TradeDir != Sides.Sell && crossUp && htfUp && _trendDirectionUp;
+		var takeShort = TradeDir != Sides.Buy && crossDown && htfDown && !_trendDirectionUp;
 
 		if (Position == 0)
 		{
@@ -200,13 +200,4 @@ public class TrendSyncProSmcStrategy : Strategy
 		_prevClose = candle.ClosePrice;
 	}
 
-	/// <summary>
-	/// Trade direction options.
-	/// </summary>
-	public enum TradeDirection
-	{
-		Both,
-		BullishOnly,
-		BearishOnly
-	}
 }

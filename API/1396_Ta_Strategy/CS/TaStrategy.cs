@@ -29,7 +29,7 @@ public class TaStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortTp2;
 	private readonly StrategyParam<decimal> _shortSl;
 	private readonly StrategyParam<bool> _inverse;
-	private readonly StrategyParam<TradeDirection> _direction;
+private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
@@ -53,7 +53,7 @@ public class TaStrategy : Strategy
 	public decimal ShortTp2Percent { get => _shortTp2.Value; set => _shortTp2.Value = value; }
 	public decimal ShortSlPercent { get => _shortSl.Value; set => _shortSl.Value = value; }
 	public bool Inverse { get => _inverse.Value; set => _inverse.Value = value; }
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public TaStrategy()
@@ -92,8 +92,8 @@ public class TaStrategy : Strategy
 		.SetDisplay("Short SL %", "Short stop percent", "Exits");
 		_inverse = Param(nameof(Inverse), false)
 		.SetDisplay("Inverse", "Inverse signals", "General");
-		_direction = Param(nameof(Direction), TradeDirection.Both)
-		.SetDisplay("Direction", "Allowed direction", "General");
+		_direction = Param(nameof(Direction), (Sides?)null)
+			.SetDisplay("Direction", "Allowed direction", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
@@ -190,8 +190,8 @@ public class TaStrategy : Strategy
 			(longCond, shortCond) = (shortCond, longCond);
 		}
 
-		var allowLong = Direction != TradeDirection.Short;
-		var allowShort = Direction != TradeDirection.Long;
+		var allowLong = Direction != Sides.Sell;
+		var allowShort = Direction != Sides.Buy;
 
 		if (longCond && allowLong && Position <= 0)
 		{

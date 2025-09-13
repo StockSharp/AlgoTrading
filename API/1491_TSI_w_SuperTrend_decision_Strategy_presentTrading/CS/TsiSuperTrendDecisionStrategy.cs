@@ -18,7 +18,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	private readonly StrategyParam<int> _stLength;
 	private readonly StrategyParam<decimal> _stMultiplier;
 	private readonly StrategyParam<decimal> _threshold;
-	private readonly StrategyParam<TradeDirection> _direction;
+	private readonly StrategyParam<Sides?> _direction;
 	private readonly StrategyParam<ProtectionType> _tpsl;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -57,7 +57,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 	public int StLength { get => _stLength.Value; set => _stLength.Value = value; }
 	public decimal StMultiplier { get => _stMultiplier.Value; set => _stMultiplier.Value = value; }
 	public decimal Threshold { get => _threshold.Value; set => _threshold.Value = value; }
-	public TradeDirection Direction { get => _direction.Value; set => _direction.Value = value; }
+	public Sides? Direction { get => _direction.Value; set => _direction.Value = value; }
 	public ProtectionType Tpsl { get => _tpsl.Value; set => _tpsl.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
@@ -74,7 +74,7 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 		.SetDisplay("ST Mult", "SuperTrend factor", "Indicators");
 		_threshold = Param(nameof(Threshold), 0.241m)
 		.SetDisplay("TSI Threshold", "Entry threshold", "Trading");
-		_direction = Param(nameof(Direction), TradeDirection.Both)
+		_direction = Param(nameof(Direction), (Sides?)null)
 		.SetDisplay("Direction", "Trade direction", "Trading");
 		_tpsl = Param(nameof(Tpsl), ProtectionType.None)
 		.SetDisplay("TPSL", "Protection type", "Risk");
@@ -140,9 +140,9 @@ public class TsiSuperTrendDecisionStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		if ((Direction == TradeDirection.Both || Direction == TradeDirection.Long) && isUp && tsi > -Threshold && Position <= 0)
+		if ((Direction == null || Direction == Sides.Buy) && isUp && tsi > -Threshold && Position <= 0)
 			BuyMarket(Volume + Math.Abs(Position));
-		else if ((Direction == TradeDirection.Both || Direction == TradeDirection.Short) && !isUp && tsi < Threshold && Position >= 0)
+		else if ((Direction == null || Direction == Sides.Sell) && !isUp && tsi < Threshold && Position >= 0)
 			SellMarket(Volume + Math.Abs(Position));
 
 		if (Position > 0 && (!isUp || tsi < Threshold))
