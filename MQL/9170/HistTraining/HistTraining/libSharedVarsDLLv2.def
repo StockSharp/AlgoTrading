@@ -1,0 +1,6 @@
+EXPORTS
+    GetFloat@4 @1
+    GetInt@4 @2
+    Init@0 @3
+    SetFloat@12 @4
+    SetInt@8 @5

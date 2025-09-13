@@ -1,0 +1,2 @@
+24543234: MetaTrader - Alpari - Демо Счет - [GBPUSD,M1]
+1000725602: MetaTrader 4 - Демо Счет - [GBPUSD,M1]

@@ -1,0 +1,1040 @@
+<expert>
+  type=EXPERT_ADVISOR
+</expert>
+#header#
+#property copyright "#copyright#"
+#property link      "#link#"
+
+#extern_variables#
+
+// константа "вне рынка"
+#define OP_BALANCE 6
+
+
+// настройки дня торговли
+extern int  TradeDay                   = 0; 
+extern bool ReversDay                  = false;
+
+// переворот торговой системы
+extern bool ReversTradeSignal          = false;
+
+//  настройки частоты торговли
+extern bool TradeSignalEveryTick       = false;
+extern int  TradeSignalBarPeriod       = 0;
+
+//  настройки модификации ордеров
+extern bool ModifyMarketOrderEveryTick = false;
+extern bool ModifyPendingEveryTick     = false;
+extern int  ModifyMarketBarPeriod      = 0;
+extern int  ModifyPendingBarPeriod     = 0;
+
+// 
+extern int  Slippage                   = 3; // проскальзывание
+extern int  ExpertMagicNumber          = 0; // указать нужное число  
+
+
+double Tickets[100][9];// массив для хранения информации о "своих" ордерах:
+// Tickets[][0] - номер тикета
+// Tickets[][1] - тип ордера
+// Tickets[][2] - lots
+// Tickets[][3] - open price
+// Tickets[][4] - Stop Loss
+// Tickets[][5] - TakeProfit
+// Tickets[][6] - MagicNumber
+// Tickets[][7] - expiration time
+// Tickets[][8] - open time
+// 
+
+double newSL_and_TP[100][5];// массив для хранения новых значений SL и TP
+// newSL_and_TP[][0] - номер тикета для контроля
+// newSL_and_TP[][1] - новое значение SL
+// newSL_and_TP[][2] - новое значение TP
+// newSL_and_TP[][3] - новый цена открытия (для отложенных ордеров)
+// newSL_and_TP[][4] - 0 для открытых и 1 для отложенных ордеров)
+
+string CommentsTicket[100][2]; //массив символов и комментариев к ордерам, 100 строк нам хватит
+// CommentsTicket[][0] - имя символа
+// CommentsTicket[][1] - комментарий к ордеру
+
+int OurTicketsCounter;   // счетчик наших ордеров , указывает ограничение для массивов Tickets[100][9],CommentsTicket[100][2]
+int SL_TP_Counter;       // счетчик ордеров, которые нужно модифицировать: для массива newSL_and_TP[100][5]
+int OrdersToCloseCounter;// счетчик ордеров для закрытия: для массивов ticketsToClose[100][2] и lotsToClose[100] 
+int OrdersToDeleteCounter;// счетчик ордеров для закрытия: для массивов ticketsToDelete[100]
+
+//+------------------------------------------------------------------+
+//| сбросим все счетчики служебных массивов                          |
+//+------------------------------------------------------------------+
+void InitCounters()
+   {
+//----
+   OurTicketsCounter = 0;
+   SL_TP_Counter = 0;
+   OrdersToCloseCounter = 0;
+   OrdersToDeleteCounter = 0;
+//----
+   return;   
+   }
+//+------------------------------------------------------------------+
+//|  если период указан не корректно, то возвращет текущий период    |
+//+------------------------------------------------------------------+
+int getCorrectTimeFrame(int period)
+   {
+   int res=period;
+//----
+   switch (period)
+      {
+      case PERIOD_D1:  break;  // допустимый период, ничего не делаем
+      case PERIOD_H4:  break;  // допустимый период, ничего не делаем
+      case PERIOD_H1:  break;  // допустимый период, ничего не делаем
+      case PERIOD_M30: break;  // допустимый период, ничего не делаем
+      case PERIOD_M15: break;  // допустимый период, ничего не делаем
+      case PERIOD_M5:  break;  // допустимый период, ничего не делаем
+      case PERIOD_M1:  break;  // допустимый период, ничего не делаем
+      default: res=Period();   // период не верный, ставим по умолчанию
+      }
+//----
+   return(res);      
+   }
+//+------------------------------------------------------------------+
+//| выдает сообщение о настройках советника                          |
+//+------------------------------------------------------------------+
+void StartMessage()
+   {
+   int i=0;
+   string currString="";
+   string array[3];
+//----
+   array[0]=StringConcatenate("Эксперт ",WindowExpertName()," имеет следующие настройки:");
+
+   if (TradeSignalEveryTick)
+      array[1]="1)торговые сигналы снимаются каждый тик; ";
+   else       
+      array[1]=StringConcatenate("1)торговые сигналы снимаются на каждом баре с периодом ",TradeSignalBarPeriod," минут;");
+
+   if (TradeDay==0)   // день торговли не указан
+      array[2]="2)торговля разрешена каждый день; ";
+   else 
+      {
+      if (ReversDay) //  в указанный день нельзя торговать
+         array[2]=StringConcatenate("2)торговля разрешена все дни, кроме дня номер ",TradeDay);
+      else           //  только в указанный день можно торговать
+         array[2]=StringConcatenate("2)торговля разрешена только в день номер ",TradeDay);
+      }
+   for ( i=0;i<3;i++) currString=StringConcatenate(currString,"\n",array[i]);
+   Comment(currString);
+
+   for (i=2;i>=0;i--) Print(array[i]);
+   
+//----
+   }
+//+------------------------------------------------------------------+
+//| expert initialization function                                   |
+//+------------------------------------------------------------------+
+int init()
+  {
+//----
+   TradeSignalBarPeriod=getCorrectTimeFrame(TradeSignalBarPeriod);   
+   if(!IsOptimization()) StartMessage(); // напомним настройки советника
+//----
+   return(0);
+  }
+//+------------------------------------------------------------------+
+//| expert deinitialization function                                 |
+//+------------------------------------------------------------------+
+int deinit()
+  {
+//----
+//----
+   return(0);
+  }
+  
+//+------------------------------------------------------------------+
+//|  функция выдачи торговых сиглналов                               |
+//+------------------------------------------------------------------+
+int yourFunction(int workPeriod)
+   {
+   int res=OP_BALANCE;
+//----
+//  здесь должен быть код выдачи торговых сигналов с учетом таймфрейма workPeriod)
+//----
+   return (res);   
+   }  
+  
+//+------------------------------------------------------------------+
+//| получить торговый сигнал                                         |
+//+------------------------------------------------------------------+
+// tradeDay - день недели, в который мы торгуем, если равно нулю - торгуем все дни
+//
+// useReversTradeDay - если равно true, то дни торговли становятся не торговыми днями
+//
+// everyTick  - если равно true, то функция вычисляет сигнал на каждый тик
+//
+// period - если everyTick==false, то вычисляется при появлении нового бара с этим периодом
+int getTradeSignal(int tradeDay,          // обычно равно 0
+                   bool useReversTradeDay,// обычно равно false
+                   bool everyTick,        // сигнал вычисляется каждый тик
+                    int period            // рабочий период для индикаторов и сигналов
+                   )
+   {
+   int signal=OP_BALANCE;
+//----
+   if (tradeDay!=0)  // будем учитывать дни недели
+      {
+      // день, в который мы не торгуем
+      if (useReversTradeDay && tradeDay==DayOfWeek()) return(signal);
+      
+      // торгуем все дни, кроме дня равного tradeDay 
+      if (!useReversTradeDay && tradeDay!=DayOfWeek()) return(signal);
+
+      }
+
+   if (!everyTick) // если торговые сигналы снимаем не каждый тик
+      { // и у нас нет нового бара на таймфрейме period минут
+      if (!isNewBar(period)) return(signal); // то выходим с пустым сигналом
+      }
+
+// Наполните функцию yourFunction() своим кодом/алгоритмом
+   signal=yourFunction(period);
+   
+//----
+   return(signal);   
+   }
+//+------------------------------------------------------------------+
+//|  возвращает признак появления нового бара для указанного периода |
+//+------------------------------------------------------------------+
+bool isNewBar(int timeFrame)
+   {
+   bool res=false;
+   
+   // массив содержит время открытия текущего (нулевого) бара
+   // по 7 (семь) таймфреймам
+   static datetime _sTime[7];  
+   int i=6;
+
+   switch (timeFrame) 
+      {
+      case 1  : i=0; break;
+      case 5  : i=2; break;
+      case 15 : i=3; break;
+      case 30 : i=4; break;
+      case 60 : i=5; break;
+      case 240: break;
+      case 1440:break;
+      default:  timeFrame = 1440;
+      }
+//----
+   if (_sTime[i]==0)
+      {
+      _sTime[i] = iTime(Symbol(),timeFrame,0);
+      return(false);
+      }
+   if (_sTime[i]!=iTime(Symbol(),timeFrame,0))
+      {
+      _sTime[i] = iTime(Symbol(),timeFrame,0);
+      return(true);
+      }
+
+           
+//----
+   return(res);   
+   }
+
+//+------------------------------------------------------------------+
+//| возвращает true, если есть Глобальная переменная с  таким тикетом|
+//+------------------------------------------------------------------+
+bool isOurOrder(int ticket)
+   {
+   bool res=false;
+   
+   // в режиме тестирования глобальные переменные не используем!
+   if (IsTesting()) return(true);// сразу возвращаем положительный результат
+
+   int temp;
+//----
+   for (int i=0;i<5;i++)
+      {
+      if (GlobalVariableCheck(WindowExpertName()+"_ticket_"+i))
+         {// есть такая глобальная переменная
+            temp=GlobalVariableGet(WindowExpertName()+"_ticket_"+i);
+            if (temp==ticket)
+               { // нашли гл.пер. со значением равным ticket
+               return(true);  // значит наш ордер
+               //break;
+               }
+         }
+      }
+//----
+   return(res);   
+   }
+//+------------------------------------------------------------------+
+//| подготавливает масссив наших ордеров                             |
+//+------------------------------------------------------------------+
+void PrepareTickets(double & arrayTickets[][9], string & comm[][2],int MN)
+   {
+   int count=0;   // счетчик заполнения
+   
+//----
+   int total=OrdersTotal();
+   for (int i=0;i<total;i++)
+      {
+      bool ourTicket=false;
+      if (OrderSelect(i,SELECT_BY_POS))
+         {
+         if (!isOurOrder(OrderTicket()))
+            {// если специальная функция не опознала ордер
+            // то устроим обычные проверки
+
+            // проверка на Symbol
+            if (OrderSymbol()!= Symbol()) continue;
+         
+            //  еще проверки...
+            // ....
+         
+            // последняя проверка MagicNumber
+            if (OrderMagicNumber()!=ExpertMagicNumber) continue;
+         
+            }
+         // нас нигде не остановили, значит это наш ордер
+         //  заполняем массив
+         arrayTickets[count][0] = OrderTicket();
+         arrayTickets[count][1] = OrderType();
+         arrayTickets[count][2] = OrderLots();
+         arrayTickets[count][3] = OrderOpenPrice();
+         arrayTickets[count][4] = OrderStopLoss();
+         arrayTickets[count][5] = OrderTakeProfit();
+         arrayTickets[count][6] = OrderMagicNumber();
+         arrayTickets[count][7] = OrderExpiration();
+         arrayTickets[count][8] = OrderOpenTime();
+
+         comm[count][0] = OrderSymbol();
+         comm[count][1] = OrderComment();
+         // увеличим счетчик наших заполненных ордеров
+         count++;
+         }
+      }
+   
+   OurTicketsCounter = count;
+//----
+   return;   
+   }
+
+//+------------------------------------------------------------------+
+//|  вычисляет уровень Stop Loss                                     |
+//+------------------------------------------------------------------+
+double getNewSL(int    type,      // тип ордера, для которого вычисляем
+                double lots,      // объем, может понадобиться
+                double openPrice, // цена открытия
+                double stopLoss,  // текущий уровень Stop Loss
+                double takeProfit // текущий уровень Take Profit
+                )
+   {
+   double res=-1;
+//----
+//  здесь код вычисления Stop Loss
+//----
+   return(res);   
+   }
+
+//+------------------------------------------------------------------+
+//|  вычисляет уровень  Take Profit                                  |
+//+------------------------------------------------------------------+
+double getNewTP(int    type,      // тип ордера, для которого вычисляем
+                double lots,      // объем, может понадобиться
+                double openPrice, // цена открытия
+                double stopLoss,  // текущий уровень Stop Loss
+                double takeProfit // текущий уровень Take Profit
+                )
+   {
+   double res=-1;
+//----
+//  здесь код вычисления Take Profit
+//----
+   return(res);   
+   }
+
+//+------------------------------------------------------------------+
+//|  вычисляет новый уровень открытия для отложенного ордера         |
+//+------------------------------------------------------------------+
+double getNewOpenPricePending(int    type,      // тип ордера, для которого вычисляем
+                              double lots,      // объем, может понадобиться
+                              double openPrice, // цена открытия
+                              double stopLoss,  // текущий уровень Stop Loss
+                              double takeProfit // текущий уровень Take Profit
+                              )
+   {
+   double res=-1;
+//----
+//  здесь код вычисления цены открытия 
+
+//----
+   return(res);   
+   }
+
+//+------------------------------------------------------------------+
+//|  создает массив с новыми значеними уровней SL и TP               |
+//+------------------------------------------------------------------+
+void CalculateSL_and_TP(bool ReversTrade,       // переворот системы 
+                      double arrayTickets[][9], // массив "своих" ордеров
+                      double & arraySL_TP[][5]  // новые значения SL, TP и openPrice
+                      )
+   {
+//----
+   int    i,size=OurTicketsCounter;
+   int    sizeSL_TP=0;
+   double lots, openPrice, SL,TP;
+   double newSL,newTP, newOpen;
+   double oldOpenPrice, oldSL,oldTP;    
+
+   int type,ticket,oldType;
+   for (i=0;i<size;i++)
+      {
+      ticket    = arrayTickets[i][0]; //номер тикета
+      type      = arrayTickets[i][1]; //тип ордера
+      lots      = arrayTickets[i][2]; //объем ордера
+      openPrice = arrayTickets[i][3]; //уровень открытия ордера
+      SL        = arrayTickets[i][4]; //Stop Loss
+      TP        = arrayTickets[i][5]; //Take Profit
+      
+      if (ReversTrade) //  переворачиваем все уровни с учетом спреда
+         {
+         switch (type)
+            {
+            case OP_BUY      : oldType = OP_SELL     ; break;
+            case OP_SELL     : oldType = OP_BUY      ; break;
+            case OP_BUYLIMIT : oldType = OP_SELLSTOP ; break;
+            case OP_SELLLIMIT: oldType = OP_BUYSTOP  ; break;
+            case OP_BUYSTOP  : oldType = OP_SELLLIMIT; break;
+            case OP_SELLSTOP : oldType = OP_BUYLIMIT ; break;
+            default: Print("Неверный тип ордера Type=",type," в функции CalculateSL_and_TP()!!!");                           
+            }
+
+         double temp;
+         int spread = MarketInfo(Symbol(),MODE_SPREAD);
+         int digits = MarketInfo(Symbol(),MODE_DIGITS);
+         if (type==OP_BUY || type==OP_BUYSTOP || type==OP_BUYLIMIT)  
+            {
+            temp = SL;
+            if (TP!=0) oldSL = NormalizeDouble(TP+Point*spread,digits);
+               else oldSL=0;
+               
+            if (SL!=0) oldTP = NormalizeDouble(temp+Point*spread,digits);
+               else oldTP=0;
+               
+            oldOpenPrice = NormalizeDouble(openPrice - Point*spread,digits);
+            }
+         if (type==OP_SELL) 
+            {
+            temp = SL;
+            if (TP!=0) oldSL = NormalizeDouble(TP-Point*spread,digits);
+               else oldSL=0;
+            
+            if (SL!=0) oldTP = NormalizeDouble(temp-Point*spread,digits);
+               else oldTP=0;
+            
+            oldOpenPrice = NormalizeDouble(openPrice + Point*spread,digits);
+            }
+         }
+      else   // переворота системы нет
+         {
+         oldOpenPrice = openPrice;
+         oldSL = SL;
+         oldTP = TP;
+         }
+      
+      newSL  = getNewSL(oldType,lots,oldOpenPrice,oldSL,oldTP);
+      newTP  = getNewTP(oldType,lots,oldOpenPrice,oldSL,oldTP);
+      
+      // если отложенный ордер - получим новую цену открытия
+      if (type>OP_SELL) newOpen=getNewOpenPricePending(type,lots,openPrice,oldSL,oldTP);
+      
+      if (newSL>0 || newTP>0 || newOpen>0)
+         {
+         sizeSL_TP=SL_TP_Counter;
+         arraySL_TP[sizeSL_TP][0] = arrayTickets[i][0]; // тикет  
+         if (newSL>0) arraySL_TP[sizeSL_TP][1] = newSL; // уровень нового SL
+            else      arraySL_TP[sizeSL_TP][1] = arrayTickets[i][4];
+            
+         if (newTP>0) arraySL_TP[sizeSL_TP][2] = newTP; // уровень нового TP
+            else      arraySL_TP[sizeSL_TP][2] = arrayTickets[i][5];
+         if (newOpen>0)arraySL_TP[sizeSL_TP][3] = newOpen; // новая цена открытия
+            else       arraySL_TP[sizeSL_TP][3] = arrayTickets[i][3];
+         if (type>OP_SELL) arraySL_TP[sizeSL_TP][4]=1; // рыночный ордер
+            else           arraySL_TP[sizeSL_TP][4]=0; // рыночный ордер
+         
+         SL_TP_Counter++;   
+         }
+      }         
+//----
+   return;
+   }
+
+//+------------------------------------------------------------------+
+//|  вычисляет реквизиты для открытия нового ордера                  |
+//+------------------------------------------------------------------+
+void CalculateNewMarketValues(int    trSignal,
+                              int    & marketType,
+                              double & marketLots, 
+                              double & marketSL,
+                              double & marketTP,
+                              string & marketcomment
+                              )
+   {
+
+   marketType    =-1; // это значит, что открывать не будем
+   marketLots    = 0;
+   marketSL      = 0;
+   marketTP      = 0;
+   marketcomment = "";
+
+
+//----
+   //  вставить свой код для вычисления всех параметров
+//----
+   return;   
+   }  
+
+//+------------------------------------------------------------------+
+//|  вычисляет реквизиты для выставления отложенного ордера          |
+//+------------------------------------------------------------------+
+void CalculateNewPendingValues(int    trSignal, 
+                               int    & pendingType, 
+                               double & pendingOpenPrice, 
+                               double & pendingLots, 
+                               double & pendingSL, 
+                               double & pendingTP, 
+                               string & pendingComment)
+   {
+
+   pendingType      = -1; 
+   pendingOpenPrice = 0; 
+   pendingLots      = 0; 
+   pendingSL        = 0; 
+   pendingTP        = 0; 
+   pendingComment   = 0;
+//----
+   //вставить свой код для вычисления всех параметров
+//----
+   return;
+   } 
+
+//+------------------------------------------------------------------+
+//|  модификация рыночных ордеров                                    |
+//+------------------------------------------------------------------+
+void  ModifyMarkets(bool Revers,
+                    bool ModifyEveryTick,
+                    int  ModifyBarPeriod,
+                    double newSL_and_TP[][])
+   {
+   int i,type,ticket,size=SL_TP_Counter;
+
+   bool res;
+//----
+   if (!ModifyEveryTick )// если запрещена модификация на каждый тик
+      {   
+      if (!isNewBar(ModifyBarPeriod)) return;   // новый бар не появился
+      }
+
+   if (!Revers) // прямой порядок работы
+      {
+      for (i=0;i<size;i++)
+         {
+         type=newSL_and_TP[i][4];
+         if (type!=0) continue; // ордер не рыночный - пропускаем 
+         ticket=newSL_and_TP[i][0];
+         res=OrderModify(ticket,newSL_and_TP[i][3],newSL_and_TP[i][1],newSL_and_TP[i][2],0);
+         if (!res)// не удалось модифицировать
+            {
+            Print("Ордер #",ticket," модифицировать не удалось. Ошибка ",GetLastError());
+            // дальнейшая обработка ситуации
+            }
+         }
+       }  
+   else  // торговая система перевернута, меняем местами SL и TP 
+      {
+      for (i=0;i<size;i++)
+         {
+         type=newSL_and_TP[i][4];
+         if (type!=0) continue; // ордер не рыночный - пропускаем 
+         ticket=newSL_and_TP[i][0];
+         res=OrderModify(ticket,newSL_and_TP[i][3],newSL_and_TP[i][2],newSL_and_TP[i][1],0);
+         if (!res)// не удалось модифицировать
+            {
+            Print("Ордер #",ticket," модифицировать не удалось. Ошибка ",GetLastError());
+            // дальнейшая обработка ситуации
+            }
+         }
+      }         
+
+//----
+   return;   
+   }
+   
+//+------------------------------------------------------------------+
+//|  модификация рыночных ордеров                                    |
+//+------------------------------------------------------------------+
+void  ModifyPendings(bool Revers,
+                    bool ModifyEveryTick,
+                    int  ModifyBarPeriod,
+                    double newSL_and_TP[][])
+   {
+   int i,type,ticket,size=SL_TP_Counter;
+
+   bool res;
+//----
+   if (!ModifyEveryTick )// если запрещена модификация на каждый тик
+      {   
+      if (!isNewBar(ModifyBarPeriod)) return;   // новый бар не появился
+      }
+
+   if (!Revers) // прямой порядок работы
+      {
+      for (i=0;i<size;i++)
+         {
+         type=newSL_and_TP[i][4];
+         if (type==0) continue; // ордер не является отложенным - пропускаем 
+         ticket=newSL_and_TP[i][0];
+         res=OrderModify(ticket,newSL_and_TP[i][3],newSL_and_TP[i][1],newSL_and_TP[i][2],0);
+         if (!res)// не удалось модифицировать
+            {
+            Print("Ордер #",ticket," модифицировать не удалось. Ошибка ",GetLastError());
+            // дальнейшая обработка ситуации
+            }
+         }
+       }  
+   else  // торговая система перевернута, меняем местами SL и TP 
+      {
+      for (i=0;i<size;i++)
+         {
+         type=newSL_and_TP[i][4];
+         if (type==0) continue; // ордер не является отложенным - пропускаем 
+         ticket=newSL_and_TP[i][0];
+         res=OrderModify(ticket,newSL_and_TP[i][3],newSL_and_TP[i][2],newSL_and_TP[i][1],0);
+         if (!res)// не удалось модифицировать
+            {
+            Print("Ордер #",ticket," модифицировать не удалось. Ошибка ",GetLastError());
+            // дальнейшая обработка ситуации
+            }
+         }
+      }         
+
+//----
+   return;   
+   }
+   
+//+------------------------------------------------------------------+
+//|  подготовить массив тикетов для закрытия                         |
+//+------------------------------------------------------------------+
+void PrepareTicketsToClose(int signal, bool Revers, int & ticketsClose[][2], double & lots[],double arrayTickets[][9])
+   {
+   int size=OurTicketsCounter;
+//----
+
+   int i,type,ticket,closeSize;
+   for (i=0;i<size;i++)
+      {
+      type=arrayTickets[i][1];
+      // если тип ордера не рыночный, то пропускаем
+      if (type>OP_SELL) continue;
+      
+      if (Revers) // перевернем тип рыночного ордера
+         {
+         if (type==OP_BUY) type=OP_SELL; else type=OP_BUY;
+         }
+
+      // тут решаем для каждого открытого ордера его судьбу
+      //  оставить в рынке или добавить в массив на закрытие
+      if (type==OP_BUY)
+         {
+         //  
+         // код разрешающий оставить покупку
+         
+         // как пример
+         if (signal==OP_BUY) continue;
+         }
+      
+      if (type==OP_SELL)
+         {
+         //  
+         // код разрешающий оставить продажу
+         
+         // как пример
+         if (signal==OP_SELL) continue;
+         }
+
+      closeSize=OrdersToCloseCounter;
+      ticketsClose[closeSize][0] = arrayTickets[i][0]; // # тикета
+      ticketsClose[closeSize][1] = arrayTickets[i][1]; // тип ордера
+      OrdersToCloseCounter++;
+      
+      // здесь укажем сколько лотов нужно закрыть
+      lots[closeSize] = arrayTickets[i][2]; // закрываемый объем
+      // можно закрывать частично, тогда нужно переписать строку сверху
+      }
+//----
+   return;   
+   }
+
+//+------------------------------------------------------------------+
+//|  подготовить массив тикетов для удаления отложенных ордеров      |
+//+------------------------------------------------------------------+
+void PrepareTicketsToDelete(int signal, bool Revers, int & ticketsDelete[],double arrayTickets[][9])
+   {
+   int size=OurTicketsCounter;
+//----
+
+   int i,type,ticket,deleteSize;
+   for (i=0;i<size;i++)
+      {
+      type=arrayTickets[i][1];
+      // если тип ордера не отложенный, то пропускаем
+      if (type<=OP_SELL) continue;
+            
+      if (Revers) // перевернем тип рыночного ордера
+         {
+         switch (type)
+            {
+            case OP_BUYLIMIT : type = OP_SELLSTOP ; break;
+            case OP_SELLLIMIT: type = OP_BUYSTOP  ; break;
+            case OP_BUYSTOP  : type = OP_SELLLIMIT; break;
+            case OP_SELLSTOP : type = OP_BUYLIMIT ; break;
+            }
+         }
+
+      // тут решаем для каждого отложенного ордера его судьбу
+      //  оставить или добавить в массив на удаление
+      //  здесь приведен пример, когда сигнал на покупку оставляет 
+      // отложенные ордера OP_BUYLIMIT и OP_BUYSTOP
+      // для сигнала на продажу аналогично
+      if (type==OP_BUYLIMIT || OP_BUYSTOP)
+         {
+         //  
+         // код разрешающий оставить покупку
+         // как пример
+         if (signal==OP_BUY) continue;
+         }
+      
+      if (type==OP_SELLLIMIT || OP_SELLSTOP)
+         {
+         //  
+         // код разрешающий оставить продажу
+         // как пример
+         if (signal==OP_SELL) continue;
+         }
+
+      
+      deleteSize=OrdersToDeleteCounter;
+      ticketsDelete[deleteSize] = arrayTickets[i][0];
+      OrdersToDeleteCounter++;
+      }
+//----
+   return;   
+   }
+//+------------------------------------------------------------------+
+//|  Закрывает ордера с указанными тикетами                          |
+//+------------------------------------------------------------------+
+void CloseMarketOrders(int ticketsArray[][2], double lotsArray[])
+   {  
+//----
+   int i,size=OrdersToCloseCounter;
+   
+   int ticket,type;
+   double lots;
+   bool res;
+   
+   int total=OrdersTotal(); 
+   
+   for (i=0;i<size;i++)
+      {
+      ticket = ticketsArray[i][0];
+      type   = ticketsArray[i][1];
+      lots   = lotsArray[i];
+      RefreshRates(); // на всякий случай обновим сведения о рыночном окружении
+
+      // блок закрытия покупок
+      if (type==OP_BUY)
+         {
+         res = OrderClose(ticket,lots,Bid,Slippage,Orange);
+         if (!res)
+            {
+            Print("Не удалось закрыть ордер в покупку #",ticket,"!  Ошибка №",GetLastError());
+            //  дальнейшая обработка ошибки, написать самостоятельно
+            }
+         }
+
+      //  блок закрытия продаж
+      if (type==OP_SELL)
+         {
+         res = OrderClose(ticket,lots,Ask,Slippage,Orange);
+         if (!res)
+            {
+            Print("Не удалось закрыть ордер в продажу #",ticket,"!  Ошибка №",GetLastError());
+            //  дальнейшая обработка ошибки, написать самостоятельно
+            }
+         }
+
+      } 
+//----
+   return;
+   }
+
+//+------------------------------------------------------------------+
+//|  Удаляет отложенные ордера с указанными тикетами                 |
+//+------------------------------------------------------------------+
+void DeletePendingOrders(int ticketsArray[])
+   {  
+//----
+   int i,size=OrdersToDeleteCounter;
+   
+   int ticket;
+   bool res;
+
+   // блок удаления отложенных ордеров
+   for (i=0;i<size;i++)
+      {
+      ticket = ticketsArray[i];
+      res = OrderDelete(ticket);
+      if (!res)
+         {
+         Print("Не удалось удалить отложенный ордер#",ticket,"!  Ошибка №",GetLastError());
+         //  дальнейшая обработка ошибки, написать самостоятельно
+         }
+      } 
+//----
+   return;
+   }
+
+//+------------------------------------------------------------------+
+//|  открывает  позицию по рынку                                     |
+//+------------------------------------------------------------------+
+void OpenMarketOrder(bool   reversTrade,// признак переворота системы
+                     int    Type,       // тип ордера - OP_BUY или OP_SELL
+                     double lots,       // объем открываемой позиции
+                     double SL,         // уровень Stop Loss
+                     double TP,         // уровень TakeProfit
+                     string comment)    // комментарий к ордеру
+   {
+   int openType;
+   
+   if (reversTrade)                       // разворачиваем сигналы
+      {
+      double temp;
+      int spread = MarketInfo(Symbol(),MODE_SPREAD);
+      int digits = MarketInfo(Symbol(),MODE_DIGITS);
+      if (Type==OP_BUY)  
+         {
+         openType = OP_SELL; // покупка станет продажей
+         temp = SL;
+         if (TP!=0) SL = NormalizeDouble(TP+Point*spread,digits);
+            else SL=0;
+         if (temp!=0) TP = NormalizeDouble(temp+Point*spread,digits);
+            else TP=0;
+         }
+      if (Type==OP_SELL) 
+         {
+         openType = OP_BUY;  // продажа станет покупкой
+         temp = SL;
+         if (TP!=0) SL = NormalizeDouble(TP-Point*spread,digits);
+            else SL=0;
+         if (temp!=0) TP = NormalizeDouble(temp-Point*spread,digits);
+            else TP=0;
+         }
+      }
+   else
+      {
+      openType=Type;
+      }   
+//----
+
+   if (lots==0) return;
+   
+   RefreshRates();
+   double price;
+   color Color;
+   if (openType==OP_BUY) 
+      {
+      price = Ask;
+      Color = Blue; 
+      }
+   if (openType==OP_SELL) 
+      {
+      price=Bid;
+      Color = Red; 
+      }
+   bool ticket = OrderSend(Symbol(),openType,lots,price,Slippage,SL,TP,comment,ExpertMagicNumber,0,Color); 
+   if (ticket<0)
+      {
+      Print("Не удалось открыть позицию по рынку");
+      Print("Type=",openType,"  lots=",lots,"  SL=",SL,"  TP=",TP," comment=",comment,"  ExpertMagicNumber=",ExpertMagicNumber);
+      //  дальнейшая обработка ситуации, написать самостоятельно
+      }
+//----
+   return;
+   }
+
+//+------------------------------------------------------------------+
+//|  выставляет отложенный ордер                                     |
+//+------------------------------------------------------------------+
+void SendPendingOrder(bool   reversTrade,// признак переворота системы
+                      int    Type,
+                      double OpenPrice, 
+                      double Lots, 
+                      double SL, 
+                      double TP,
+                      string comment)
+   {
+   if (Type==-1) return; 
+   
+   if (reversTrade)                       // разворачиваем сигналы
+      {
+      double temp;
+      int spread = MarketInfo(Symbol(),MODE_SPREAD);
+      int digits = MarketInfo(Symbol(),MODE_DIGITS);
+
+      if (Type==OP_BUYLIMIT || Type==OP_BUYSTOP)
+         {
+         OpenPrice = NormalizeDouble(OpenPrice - spread*Point,digits);
+         temp=SL;
+         SL = NormalizeDouble(TP+Point*spread,digits);
+         TP = NormalizeDouble(temp+Point*spread,digits);
+         }
+      if (Type==OP_SELLLIMIT || Type==OP_SELLSTOP)
+         {
+         OpenPrice = NormalizeDouble(OpenPrice + spread*Point,digits);
+         temp=SL;
+         SL = NormalizeDouble(TP - Point*spread,digits);
+         TP = NormalizeDouble(temp - Point*spread,digits);
+         }
+
+      switch (Type)
+         {
+         case OP_BUYLIMIT:  Type = OP_SELLSTOP ; break;
+         case OP_SELLLIMIT: Type = OP_BUYSTOP  ; break;
+         case OP_BUYSTOP:   Type = OP_SELLLIMIT; break;
+         case OP_SELLSTOP:  Type = OP_BUYLIMIT;  break;
+         default: Print("Неверный тип ордера Type=",Type," в функции SendPendingOrder()!!!");                           
+         
+         }
+      }
+   color Color;
+   if (Type==OP_SELLLIMIT || Type==OP_SELLSTOP) Color = Red;
+   if (Type==OP_BUYLIMIT || Type==OP_BUYSTOP)   Color = Blue;
+
+   bool res = OrderSend(Symbol(),Type,Lots,OpenPrice,Slippage,SL,TP,comment,ExpertMagicNumber,0,Color); 
+   if (!res)
+      {
+      Print("Не удалось выставить отложенный ордер");
+      //  дальнейшая обработка ситуации, написать самостоятельно
+      }
+
+
+//----
+
+//----
+   return;
+   }
+//+------------------------------------------------------------------+
+//| expert start function                                            |
+//+------------------------------------------------------------------+
+int start()
+  {
+   // всегда обнуляем размер массива перед первым использованием
+   InitCounters();
+   
+   // получим массивы наших ордеров
+   PrepareTickets(Tickets,CommentsTicket,ExpertMagicNumber);
+   
+//----
+
+/**
+      1. Trade Signals . Получение торговых сигналов
+      a) Каждый тик                       (TradeSignalEveryTick=true)
+      б) Каждый бар заданного периода     (TradeSignalBarPeriod=...)
+      OP_BUY      - в покупку
+      OP_SELL     - в продажу
+      OP_BALANCE  - нет сигнала
+*/
+
+
+   int trSignal=getTradeSignal(TradeDay,ReversDay,
+                       TradeSignalEveryTick,TradeSignalBarPeriod);
+                       
+/**
+      2. 
+        а) Вычислить SL и TP для каждого открытого ордера
+        б) Вычислить OpenPrice, SL, TP, и Lots для нового ордера
+        в) Вычислить OpenPrice, SL и TP для каждого отложенного ордера
+*/
+
+   if(OurTicketsCounter>0) CalculateSL_and_TP(ReversTradeSignal,Tickets,newSL_and_TP);
+
+
+   double marketLots,marketSL,marketTP;
+   int marketType, pendingType;
+   string marketComment, pendingComment;
+   double pendingOpenPrice, pendingLots, pendingSL, pendingTP;
+
+   CalculateNewMarketValues(trSignal, marketType, marketLots,marketSL,marketTP,marketComment);
+   CalculateNewPendingValues(trSignal, pendingType, pendingOpenPrice, pendingLots, pendingSL, pendingTP, pendingComment);
+
+/**
+      3. 
+        а) Модификация каждого открытого ордера на каждый тик (SL и TP)        
+               (ModifyMarketOrderEveryTick = true)
+               
+        б) Модификация каждого отложенного ордера на каждый тик (OpenPrice, SL и TP)
+               (ModifyPendingEveryTick = true)
+        
+        в) Модификация каждого открытого ордера на каждом новом баре выбранного периода (SL и TP)
+               (ModifyMarketBarPeriod = ...)
+        
+        г) Модификация каждого отложенного ордера на каждом новом баре выбранного периода (OpenPrice, SL и TP)
+               (ModifyPendingBarPeriod = ...)
+        
+*/
+
+   if(SL_TP_Counter>0) ModifyMarkets(ReversTradeSignal,ModifyMarketOrderEveryTick,ModifyMarketBarPeriod,newSL_and_TP);
+   if(SL_TP_Counter>0) ModifyPendings(ReversTradeSignal,ModifyPendingEveryTick,ModifyPendingBarPeriod,newSL_and_TP);
+
+/**
+      4. 
+        а) Закрыть открытый ордер по времени
+        б) Закрыть открытый ордер по сигналу
+*/
+   // тикеты ордеров, которые нужно закрыть
+   int ticketsToClose[100][2];
+   double lotsToClose[100]; 
+   
+   
+   // приготовим массив тикетов для закрытия
+   if (trSignal!=OP_BALANCE) PrepareTicketsToClose(trSignal,ReversTradeSignal,ticketsToClose,lotsToClose,Tickets);
+   
+   // закроем указанные ордера
+   if (OrdersToCloseCounter>0) CloseMarketOrders(ticketsToClose,lotsToClose);
+
+/**
+      5. 
+        а) Удалить отложенный ордер по времени
+        б) Удалить отложенный ордер по условию
+*/
+   // тикеты ордеров, которые нужно удалить
+   int ticketsToDelete[100];
+
+   // приготовим массив тикетов для удаления
+   if (trSignal!=OP_BALANCE) PrepareTicketsToDelete(trSignal,ReversTradeSignal,ticketsToDelete,Tickets);
+
+   // удалим указанные ордера
+   if (OrdersToDeleteCounter>0) DeletePendingOrders(ticketsToDelete);
+
+/**
+      6. 
+        а) Открыть ордер по рынку
+        б) Выставить отложенный ордер без ограничения времени
+        в) Выставить отложенный ордер с истечением по времени
+*/
+
+   if (trSignal!=OP_BALANCE) OpenMarketOrder(ReversTradeSignal,marketType,marketLots,marketSL,marketTP,marketComment);
+   if (trSignal!=OP_BALANCE) SendPendingOrder(ReversTradeSignal,pendingType,pendingOpenPrice, pendingLots, pendingSL, pendingTP,pendingComment);
+//----
+   return(0);
+  }
+//+------------------------------------------------------------------+

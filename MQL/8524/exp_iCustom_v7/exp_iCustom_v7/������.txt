@@ -1,0 +1,2 @@
+Файл настроек nrtr_nk.set - пример использования индикатора NRTR_NK (http://codebase.mql4.com/ru/545).
+Файл настроек ma in color_wappliedprice.set - пример использования индикатора MA in Color_wAppliedPrice (http://codebase.mql4.com/ru/1571).

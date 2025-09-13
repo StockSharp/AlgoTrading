@@ -1,0 +1,5 @@
+wskaüniki skopiuj do folderu:
+
+C:\Program Files\X-Trader 4 XTB PLN\experts\indicators
+
+natomiast plik Trend Follower - 5min Template.tpl skopiuj do C:\Program Files\X-Trader 4 XTB PLN\templates

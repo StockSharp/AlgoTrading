@@ -1,0 +1,241 @@
+#property copyright "Fracture"
+#property link "Fracture"
+#define MAGIC 20130706
+extern string TOOLS = ".............................................................................................................";
+extern bool CloseAll = false;
+extern bool ContinueTrading = true;
+extern string RISK = ".............................................................................................................";
+extern double BaseLotSize = 0.01;
+extern double RangeUsage = 0.05;
+extern double TrendUsage = 0.1;
+extern string TRADING = ".............................................................................................................";
+extern int MaxTrades = 9;
+extern double Aggressive = 10; 
+extern double TradeSpace = 1.1;
+extern double DynamicSlippage = 0.5;
+extern string PROFITS = ".............................................................................................................";
+extern int QueryHistory = 22; 
+extern double BasketProfit = 3;
+extern double OpenProfit = 0.85;
+extern double MinProfit = 1;  
+extern string INDICATOR_ATR = ".............................................................................................................";
+extern int ATRTimeFrame = 0;
+extern int ATRPeriod = 14;
+extern int ATRShift = 0;
+extern string INDICATOR_MA = ".............................................................................................................";
+extern int MATimeFrame = 0;
+extern int MA1Period = 5;
+extern int MA2Period = 9;
+extern int MA3Period = 18;
+extern int MMAShift = 0;
+extern int MAShift = 0;
+extern string INDICATOR_ADX = ".............................................................................................................";
+extern double ADXLine = 45;
+extern int ADXTimeFrame = 0;
+extern int ADXPeriod = 14;
+extern int ADXShift = 0;
+extern string INDICATOR_FRACTAL = ".............................................................................................................";
+extern int FractalTimeFrame = 0;
+extern int FractalShift = 1;
+extern int FractalBars = 5;
+ 
+double slippage, marginRequirement, lotSize, recentProfit, lastProfit, totalHistoryProfit, totalProfit, totalLoss, symbolHistory,buyLots,sellLots,
+eATR, eATRPrev, eADX, MA1Cur, MA2Cur, MA3Cur, MA1Prev, MA2Prev, MA3Prev ;
+
+int digits, totalTrades;
+
+int totalHistory = 100;
+double pipPoints = 0.00010;
+double fractalUpPrice = 0 ;
+double fractalDownPrice = 0;
+double fractalHighPrice = 0 ;
+double fractalLowPrice = 0;  
+double trendStrength = 0;
+double drawdown = 0; 
+bool nearLongPosition = false;
+bool nearShortPosition = false;
+bool longTrendUp = false;
+bool longTrendDown = false;
+bool shortTrendUp = false;
+bool shortTrendDown = false;
+bool rangingMarket = false;
+string display = "\n"; 
+
+int init(){ 
+   prepare() ; 
+   return( 0 );
+}
+
+double marginCalculate( string symbol, double volume ){ 
+   return ( MarketInfo( symbol, MODE_MARGINREQUIRED ) * volume ) ; 
+} 
+
+void lotSize(){ 
+   slippage = NormalizeDouble( ( eATR / pipPoints ) * DynamicSlippage, 1 );
+   marginRequirement = marginCalculate( Symbol(), BaseLotSize ); 
+   trendStrength = MathAbs( MA1Cur - MA3Cur ) / MathAbs( MA2Cur - MA3Cur );
+   drawdown = 1 - AccountEquity() / AccountBalance();
+   if( rangingMarket ) lotSize = NormalizeDouble( ( AccountFreeMargin() * RangeUsage / marginRequirement ) * BaseLotSize , 2 ) ;
+   else lotSize = NormalizeDouble( ( AccountFreeMargin() * TrendUsage / marginRequirement ) * BaseLotSize, 2 ) ; 
+   if( lotSize < 0.01 ) lotSize = 0.01; 
+} 
+
+void setPipPoint(){
+   digits = MarketInfo( Symbol(), MODE_DIGITS );
+   if( digits == 3 ) pipPoints = 0.010;
+   else if( digits == 5 ) pipPoints = 0.00010;
+} 
+
+void closeAll( string type = "none" ){
+   for( int i = 0; i < OrdersTotal(); i++ ) {
+   if( OrderSelect( i, SELECT_BY_POS, MODE_TRADES ) == false ) break;
+      if( OrderSymbol() == Symbol() ){ 
+         RefreshRates();
+         if( ( OrderStopLoss() == 0 && OrderProfit() > 0 && type == "profits" ) || type == "none" ){
+            if( OrderType() == OP_BUY ) OrderClose( OrderTicket(), OrderLots(), Bid, slippage );
+            if( OrderType() == OP_SELL ) OrderClose( OrderTicket(), OrderLots(), Ask, slippage );
+         }
+      }
+   }
+}
+
+void prepareFractals(){
+   fractalUpPrice = 0;
+   fractalDownPrice = 0;
+   for( int i = 0; i < FractalBars; i++ ){ 
+      double ifractalUp = iFractals( NULL, 0, MODE_UPPER, i );
+      double ifractalDown = iFractals( NULL, 0, MODE_LOWER, i );
+      if( ifractalUp > 0 && Open[i] > Open[0] ){
+         fractalHighPrice = High[i];
+         if( Open[i] > Close[i] ) {
+            fractalUpPrice = Open[i]; 
+         } else {
+            fractalUpPrice = Close[i]; 
+         }
+      } 
+      if( ifractalDown > 0 && Open[i] < Open[0] ){ 
+         fractalLowPrice = Low[i];
+         if( Open[i] < Close[i] ) {
+            fractalDownPrice = Open[i]; 
+         } else {
+            fractalDownPrice = Close[i];
+         }
+      }
+   }
+}
+
+
+
+void prepareHistory(){
+   symbolHistory = 0;
+   totalHistoryProfit = 0;
+   for( int iPos = OrdersHistoryTotal() - 1 ; iPos > ( OrdersHistoryTotal() - 1 ) - totalHistory; iPos-- ){
+      OrderSelect( iPos, SELECT_BY_POS, MODE_HISTORY ) ;
+      double QueryHistoryDouble = ( double ) QueryHistory;
+      if( symbolHistory >= QueryHistoryDouble ) break;
+      if( OrderSymbol() == Symbol() ){
+         totalHistoryProfit = totalHistoryProfit + OrderProfit() ;
+         symbolHistory = symbolHistory + 1 ;
+      }
+   }
+}
+
+void preparePositions() {
+   nearLongPosition = false;
+   nearShortPosition = false;
+   totalTrades = 0;
+   totalProfit = 0;
+   totalLoss = 0;
+   buyLots = 0;
+   sellLots = 0;
+   for( int i = 0 ; i < OrdersTotal() ; i++ ) {
+      if( OrderSelect( i, SELECT_BY_POS, MODE_TRADES ) == false ) break; 
+      if(OrderSymbol() == Symbol()){totalTrades = totalTrades + 1;}
+      if( OrderSymbol() == Symbol() && OrderStopLoss() == 0 ) {
+         if( eADX < ADXLine ){
+            if( OrderType() == OP_BUY && MathAbs( OrderOpenPrice() - Ask ) < eATR * TradeSpace ) nearLongPosition = true ;
+            if( OrderType() == OP_SELL && MathAbs( OrderOpenPrice() - Bid ) < eATR * TradeSpace ) nearShortPosition = true ;
+         } else {
+            if( OrderType() == OP_BUY && MathAbs( OrderOpenPrice() - Ask ) < eATR * TradeSpace / Aggressive ) nearLongPosition = true ;
+            if( OrderType() == OP_SELL && MathAbs( OrderOpenPrice() - Bid ) < eATR * TradeSpace / Aggressive ) nearShortPosition = true ;
+         }
+         if( OrderType() == OP_BUY ) buyLots = buyLots + OrderLots();
+         if( OrderType() == OP_SELL ) sellLots = sellLots + OrderLots(); 
+         if( OrderProfit() > 0 ) totalProfit = totalProfit + OrderProfit();
+         else totalLoss = totalLoss + OrderProfit(); 
+      }
+   }
+}
+ 
+void prepareIndicators(){
+   eATR = iATR( NULL, ATRTimeFrame, ATRPeriod, ATRShift );
+   eATRPrev = iATR( NULL, ATRTimeFrame, ATRPeriod, ATRShift + 1 );
+   eADX = iADX( NULL, ADXTimeFrame, MA1Period, PRICE_MEDIAN, MODE_MAIN, ADXShift );
+   MA1Cur = iMA( NULL, MATimeFrame, MA1Period, MMAShift, MODE_SMMA, PRICE_MEDIAN, MAShift );
+   MA2Cur = iMA( NULL, MATimeFrame, MA2Period, MMAShift, MODE_SMMA, PRICE_MEDIAN, MAShift );
+   MA3Cur = iMA( NULL, MATimeFrame, MA3Period, MMAShift, MODE_SMMA, PRICE_MEDIAN, MAShift );
+   MA1Prev = iMA( NULL, MATimeFrame, MA1Period, MMAShift, MODE_SMMA, PRICE_MEDIAN, MAShift + 1 );
+   MA2Prev = iMA( NULL, MATimeFrame, MA2Period, MMAShift, MODE_SMMA, PRICE_MEDIAN, MAShift + 1 );
+   MA3Prev = iMA( NULL, MATimeFrame, MA3Period, MMAShift, MODE_SMMA, PRICE_MEDIAN, MAShift + 1 );   
+}
+
+void prepare(){
+   prepareIndicators();
+   prepareFractals();
+   setPipPoint(); 
+   prepareHistory();
+   preparePositions(); 
+   lotSize();   
+   update() ;
+} 
+
+ 
+ 
+void managePositions(){ 
+   if( ( totalHistoryProfit < 0 || totalTrades == 1 ) && MathAbs( totalHistoryProfit ) < totalProfit * BasketProfit  ) closeAll( "profits" );
+   else if( totalTrades > 1 && totalProfit > MathAbs( totalLoss ) * OpenProfit ) closeAll();
+}
+
+void openPosition(){ 
+   int type = -1;   
+   if( eADX < ADXLine ){ 
+      RefreshRates();
+      if( Close[0] >= fractalUpPrice && Close[0] <= MA2Cur ) type = OP_SELL;
+      else if( Close[0] <= fractalDownPrice && Close[0] >= MA2Cur ) type = OP_BUY;  
+      if( !nearLongPosition && type == OP_BUY ) OrderSend( Symbol(), type , lotSize, Ask, slippage, 0, 0, "default", MAGIC ) ;
+      if( !nearShortPosition && type == OP_SELL ) OrderSend( Symbol(), type , lotSize, Bid, slippage, 0, 0, "default", MAGIC ) ;
+   }  
+}
+
+void update(){
+   display = "";
+   display = display + " Trade Space: " + DoubleToStr( TradeSpace * eATR / pipPoints, 1 ) + "pips";  
+   display = display + " Lot Size: " + DoubleToStr( lotSize, 2 ); 
+   display = display + "\n\n Trend Strength: " + DoubleToStr( trendStrength, 2 ); 
+   display = display + " Ranging: " + DoubleToStr( rangingMarket, 0 );
+   display = display + "\n Bull: " + DoubleToStr( longTrendUp, 0 ); 
+   display = display + " Bullish: " + DoubleToStr( shortTrendUp, 0 ) ;
+   display = display + " Bearish: " + DoubleToStr( shortTrendDown, 0 );
+   display = display + " Bear: " + DoubleToStr( longTrendDown, 0 ); 
+   display = display + "\n\n Draw Down: " + DoubleToStr( drawdown, 2 );
+   display = display + " Open Trades: " + DoubleToStr( totalTrades, 0 ) + " (" + DoubleToStr( MaxTrades, 0 ) + ")";  
+   display = display + "\n Profit: " + DoubleToStr( totalProfit, 2 );
+   display = display + " Loss: " + DoubleToStr( totalLoss, 2 );
+   display = display + " History: " + DoubleToStr( totalHistoryProfit, 2 );
+   display = display + "\n fractalUpPrice: " + DoubleToStr( fractalUpPrice, 5 );
+   display = display + " fractalDownPrice: " + DoubleToStr( fractalUpPrice, 5 );
+   display = display + "\n fractalHighPrice: " + DoubleToStr( fractalHighPrice, 5 );
+   display = display + " fractalLowPrice: " + DoubleToStr( fractalLowPrice, 5 );
+   Comment( display );
+}
+
+int start() { 
+   prepare() ;  
+   if( CloseAll ) closeAll() ;
+   else {
+      if( ( ContinueTrading || ( !ContinueTrading && totalTrades > 0 ) ) && ( totalTrades < MaxTrades || MaxTrades == 0 ) ) openPosition() ; 
+      managePositions() ;
+      
+   }
+   return( 0 ) ;
+}
