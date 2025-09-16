@@ -40,3 +40,4 @@ For more information about StockSharp, visit the official [StockSharp website](h
 ## Strategies
 
 - [2031](2031/README.md) - Dig Variation Strategy.
+- [3110](3110/README.md) - Bitex One Market Maker Strategy.
