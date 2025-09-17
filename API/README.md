@@ -42,3 +42,5 @@ For more information about StockSharp, visit the official [StockSharp website](h
 - [2031](2031/README.md) - Dig Variation Strategy.
 
 - [4061](4061_Parabolic_SAR_Fibo_Limits/README.md) - Parabolic SAR Fibonacci pending strategy.
+
+- [3191](3191_Stochastic_Momentum_Filter/README.md) - Stochastic momentum filter strategy.
