@@ -42,3 +42,5 @@ For more information about StockSharp, visit the official [StockSharp website](h
 - [2031](2031/README.md) - Dig Variation Strategy.
 
 - [4061](4061_Parabolic_SAR_Fibo_Limits/README.md) - Parabolic SAR Fibonacci pending strategy.
+
+- [2956_Exp_XWAMI_MMRec](2956_Exp_XWAMI_MMRec/README.md) - XWAMI momentum crossover with adaptive money management.
