@@ -37,10 +37,3 @@ Each strategy file should include comments or documentation explaining its logic
 Feel free to contribute by submitting your own strategies or improving existing ones. Please follow the standard pull request process if you wish to add to this repository.
 
 For more information about StockSharp, visit the official [StockSharp website](https://stocksharp.com/).
-## Strategies
-
-- [2031](2031/README.md) - Dig Variation Strategy.
-
-- [4061](4061_Parabolic_SAR_Fibo_Limits/README.md) - Parabolic SAR Fibonacci pending strategy.
-
-- [3048](3048_Ichimoku_Retracement/README.md) - Ichimoku retracement pullback strategy.
