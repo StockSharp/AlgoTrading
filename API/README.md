@@ -41,4 +41,6 @@ For more information about StockSharp, visit the official [StockSharp website](h
 
 - [2031](2031/README.md) - Dig Variation Strategy.
 
+- [3168](3168_Three_Neural_Networks/README.md) - Three neural networks multi-timeframe trend strategy.
+
 - [4061](4061_Parabolic_SAR_Fibo_Limits/README.md) - Parabolic SAR Fibonacci pending strategy.
