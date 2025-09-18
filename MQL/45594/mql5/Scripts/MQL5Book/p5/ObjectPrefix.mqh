@@ -1,1 +1,0 @@
-const string ObjNamePrefix = "ObjShow-";
