@@ -1,51 +1,50 @@
-# Auto RXD V1.67 策略（C#）
+# Auto RXD v1.67 策略
 
-本文件夹包含 MetaTrader4 智能交易系统 **Auto_RXD_V1.67** 的 StockSharp C# 版本。原始 EA 使用三层线性加权均线感知器，并辅以多种经典指标过滤。本移植保留自适应感知器结构、ATR 风险模板以及主要过滤器，使策略在 StockSharp 高级 API 中重现原策略的逻辑。
+## 概述
+Auto RXD v1.67 为同名 MetaTrader 智能交易系统的 StockSharp 版本。策略由三个线性感知机组成：监督感知机负责判定多空方向，另外两个分别寻找做多或做空机会。所有感知机都依赖线性加权移动平均（LWMA），该平均值根据 K 线收盘价以及 Robbie Ruan 提出的加权价格（高 + 低 + 2 × 收）计算。移植版本仅处理已经完成的 K 线，并使用高阶 `BindEx` 数据流确保指标与交易逻辑保持同步。
 
-## 核心思路
+## 市场数据与指标
+- **K 线** – 默认时间框架为 30 分钟，可通过 `CandleType` 参数修改。
+- **平均真实波幅（ATR）** – 在 `UseAtrTargets` 为真时，为止盈和止损提供自适应距离，周期由 `AtrPeriod` 控制。
+- **相对强弱指标（RSI）** – 可选过滤器。启用 `UseRsiFilter` 后，多头要求 RSI > 50，空头要求 RSI < 50。
+- **商品通道指数（CCI）** – 可选趋势过滤器。在 `UseCciFilter` 为真时，多头需 CCI > +100，空头需 CCI < -100。
+- **移动平均收敛散度（MACD）** – 可选动量过滤器。启用 `UseMacdFilter` 后，多头需要 MACD 线高于信号线，空头需要 MACD 线低于信号线。
+- **平均趋向指标（ADX）** – 可选趋势强度过滤器。启用 `UseAdxFilter` 时需满足 ADX > `AdxThreshold`，同时 +DI / -DI 的方向与拟议交易一致。
 
-* 三个基于线性加权均线（LWMA）的“神经”感知器输出方向：
-  * **Supervisor 感知器** 在 `Mode = AiFilter` 时为多空信号做总控。
-  * **Long 感知器** 在 `Mode = AiLong` 时评估多头动能。
-  * **Short 感知器** 在 `Mode = AiShort` 时评估空头动能。
-* 可选的 **指标管理器** 使用 ADX、MACD（可要求金叉）、OsMA、抛物线 SAR、RSI、CCI、Awesome Oscillator 与 Accelerator Oscillator 过滤信号。
-* 止盈止损既可设为固定点差，也可通过 ATR 倍数自适应计算。
+## 交易逻辑
+1. **感知机输入更新** – 每根 K 线都会把最新收盘价和加权价格写入缓存。缓存用于生成 LWMA 快照，并按照 `Step` 参数创建四个滞后特征，分别提供给多空感知机及监督感知机。
+2. **监督判定** – 监督感知机依据 `SupervisorX1…X4` 权重和 `SupervisorThreshold` 偏置计算得分。得分 > 0 时启用做多感知机，得分 < 0 时启用做空感知机。若数据不足或得分为 0，则跳过该 K 线。
+3. **方向感知机** – 被激活的感知机使用对应的权重（`LongX*` 或 `ShortX*`）再次评估。仅当得分为正时才进入下一步验证。
+4. **指标过滤** – 当 `UseIndicatorFilters` 为假时，交易只由感知机信号驱动；为真时，每个启用的过滤器（RSI、CCI、MACD、ADX）都必须与信号方向一致，否则取消交易。
+5. **下单** – 策略确保没有活跃委托，并平掉反向仓位。随后按 `OrderVolume` 下市价单，价格优先使用最佳报价，否则使用 K 线收盘价。
 
-## 交易模式
+## 风险控制
+- **防护委托** – 成交后立即调用 `CalculateProtectiveDistances` 计算止盈与止损距离。若 `UseAtrTargets` 启用，则距离等于 ATR × (`AtrTakeProfitFactor` 或 `AtrStopLossFactor`) × 原始点数。若关闭 ATR，则把固定点数转换为最小价位步长距离。
+- **委托管理** – `SetProtectiveOrders` 将距离换算成价位步数并在入场价附近挂出止损与止盈，同时通过 `HasActiveOrders()` 避免重复下单。
+- **StartProtection** – 在 `OnStarted` 中调用 `StartProtection()` 一次，利用框架自动在持仓出现时维护保护性委托。
 
-| 模式 | 说明 |
-|------|------|
-| `Indicator` | 仅依靠指标管理器给出方向。 |
-| `Grid` | 在移植版本中关闭，仅保留枚举值。 |
-| `AiShort` | 由空头感知器生成入场。 |
-| `AiLong` | 由多头感知器生成入场。 |
-| `AiFilter` | Supervisor 感知器需与多头/空头感知器同向才入场。 |
+## 参数
+该实现完整继承 MQL 版本的参数，并根据用途进行分组，方便优化。
 
-## 主要参数
+### 交易
+- `OrderVolume` – 新建头寸的手数。
+- `CandleType` – 绑定使用的 K 线类型。
 
-* **General**：K 线类型、下单手数、交易时间窗口、是否允许新订单。
-* **Risk**：是否使用 ATR、ATR 周期、长短方向的固定止盈止损点数。
-* **Perceptrons**：Supervisor/Long/Short 三个感知器的 LWMA 周期、位移、四个权重与阈值。
-* **Filters**：ADX、MACD、OsMA、SAR、RSI、CCI、AO、AC 的开关与细节参数。
+### 风险
+- `UseAtrTargets` – 切换 ATR 自适应或固定点数目标。
+- `AtrPeriod`, `AtrTakeProfitFactor`, `AtrStopLossFactor` – ATR 相关设置。
+- `LongTakeProfitPoints`, `LongStopLossPoints`, `ShortTakeProfitPoints`, `ShortStopLossPoints` – 原始止盈止损点数。
 
-## 交易流程
+### 指标过滤器
+- `UseIndicatorFilters` – 过滤器总开关。
+- `UseAdxFilter`, `AdxPeriod`, `AdxThreshold` – ADX 设置。
+- `UseMacdFilter`, `MacdFast`, `MacdSlow`, `MacdSignal` – MACD 设置。
+- `UseRsiFilter`, `RsiPeriod` – RSI 设置。
+- `UseCciFilter`, `CciPeriod` – CCI 设置。
 
-1. 订阅所选周期的 K 线。
-2. 绑定 LWMA、ATR、MACD、ADX、SAR、RSI、CCI、AO、AC 指标。
-3. 当全部指标形成后，根据模式计算感知器得分与过滤条件。
-4. 信号成立时先平掉反向仓位，再按设定手数市价开仓，同时通过 `SetStopLoss` 与 `SetTakeProfit` 设置保护单。
-5. 如启用订单管理器，当 SAR 反转时即时平仓。
+### 感知机
+- `ShortMaPeriod`, `ShortStep`, `ShortX1…ShortX4`, `ShortThreshold` – 做空感知机设置。
+- `LongMaPeriod`, `LongStep`, `LongX1…LongX4`, `LongThreshold` – 做多感知机设置。
+- `SupervisorMaPeriod`, `SupervisorStep`, `SupervisorX1…SupervisorX4`, `SupervisorThreshold` – 监督感知机设置。
 
-## 使用说明
-
-1. 在 StockSharp Designer 中加载解决方案。
-2. 将 **AutoRxdV167Strategy** 拖入方案，绑定交易品种与时间框架。
-3. 根据需要调整感知器权重、过滤器以及风险参数。
-4. 运行回测或实盘，图表区域会显示 LWMA、MACD、ADX 与成交记录。
-
-## 文件结构
-
-* `CS/AutoRxdV167Strategy.cs` – 策略源码。
-* `README.md` – 英文说明。
-* `README_cn.md` – 中文说明。
-* `README_ru.md` – 俄文说明。
+所有参数默认值与原始 EA 保持一致，从而在 StockSharp 中重现相同的交易行为，并可借助 `StrategyParam` 系统进行批量优化。
