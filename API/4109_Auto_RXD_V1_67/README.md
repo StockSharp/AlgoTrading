@@ -1,59 +1,50 @@
-# Auto RXD V1.67 Strategy (C#)
+# Auto RXD v1.67 Strategy
 
-This folder contains the StockSharp C# port of the MetaTrader 4 expert advisor **Auto_RXD_V1.67**. The original MQL robot combines three moving-average perceptrons with a rich confirmation block made of classical indicators. The conversion keeps the adaptive perceptron logic, the ATR driven risk template, and the main indicator filters so that the behaviour matches the legacy implementation while fitting naturally into the StockSharp high-level API.
+## Overview
+Auto RXD v1.67 is a rule-based strategy that emulates the MetaTrader expert advisor of the same name. The approach uses three linear perceptrons: a supervisor that decides whether to look for bullish or bearish signals, plus a dedicated perceptron for each direction. Every perceptron operates on linear weighted moving averages (LWMAs) calculated from candle close and Robbie Ruan's "weighted price" (high + low + 2 × close) inputs. The StockSharp port executes on completed candles only and uses the high-level `BindEx` data flow to keep the indicator calculations synchronized with the trading loop.
 
-## Core idea
+## Market Data and Indicators
+- **Candles** – Default timeframe is 30-minute candles. The timeframe can be changed through the `CandleType` parameter.
+- **Average True Range (ATR)** – Provides both adaptive take profit and stop loss distances when `UseAtrTargets` is enabled. ATR period is controlled by `AtrPeriod`.
+- **Relative Strength Index (RSI)** – Optional filter enforcing long trades above the neutral 50 level and shorts below 50 when `UseRsiFilter` is true.
+- **Commodity Channel Index (CCI)** – Optional trend filter that requires readings above +100 for longs and below -100 for shorts when `UseCciFilter` is active.
+- **Moving Average Convergence Divergence (MACD)** – Optional momentum confirmation. Long entries require the MACD line above the signal line, while shorts need the MACD line below the signal line when `UseMacdFilter` is true.
+- **Average Directional Index (ADX)** – Optional strength filter that checks ADX is above the configured threshold and that +DI versus -DI aligns with the desired direction when `UseAdxFilter` is enabled.
 
-* Three neural-style perceptrons built on linear weighted moving averages (LWMA) generate directional signals:
-  * **Supervisor perceptron** gates both directions when `Mode = AiFilter`.
-  * **Long perceptron** evaluates bullish momentum when `Mode = AiLong`.
-  * **Short perceptron** evaluates bearish momentum when `Mode = AiShort`.
-* An optional **indicator manager** confirms entries with ADX, MACD (with optional crossover rule), OsMA histogram, Parabolic SAR, RSI, CCI, Awesome Oscillator and Accelerator Oscillator.
-* Protective exits can be static (distance expressed in points) or dynamically derived from ATR multiples.
+## Trading Logic
+1. **Perceptron Data Preparation** – For each candle the strategy updates buffers with the latest close and weighted prices. The buffers feed LWMA snapshots, generating four lagged features separated by the configured `Step` values for short, long, and supervisor perceptrons.
+2. **Supervisor Decision** – The supervisor perceptron evaluates the lagged deltas using the weight parameters `SupervisorX1…X4` and `SupervisorThreshold`. A positive score unlocks the long perceptron; a negative score unlocks the short perceptron. If the supervisor score is zero or unavailable (not enough data), the candle is skipped.
+3. **Directional Specialists** – The matching perceptron (long or short) validates its own score using the same LWMA feature set and direction-specific weights (`LongX*` or `ShortX*`). A positive value triggers the next validation stage.
+4. **Indicator Filters** – When `UseIndicatorFilters` is false the strategy trades solely on the perceptron signal. When true, each enabled filter (RSI, CCI, MACD, ADX) must agree with the proposed direction. Missing indicator data or failing conditions cancel the signal.
+5. **Order Execution** – The strategy ensures there are no active orders, flattens any opposite exposure, and enters using market orders sized by `OrderVolume`. Entry prices default to the best quote when available, otherwise the candle close.
 
-## Trading modes
-
-| Mode | Description |
-|------|-------------|
-| `Indicator` | Only the indicator manager generates entries. |
-| `Grid` | Disabled in the port (kept for compatibility, no orders are placed). |
-| `AiShort` | Uses the short perceptron to trigger short trades. |
-| `AiLong` | Uses the long perceptron to trigger long trades. |
-| `AiFilter` | Requires the supervisor perceptron to agree with the long/short perceptrons. |
+## Risk Management
+- **Protective Orders** – After filling an entry the strategy immediately computes take profit and stop loss distances through `CalculateProtectiveDistances`. When `UseAtrTargets` is true the distances scale ATR by the configured multipliers (`AtrTakeProfitFactor`, `AtrStopLossFactor`) and by the original MQL point-based TP/SL magnitudes. If ATR targeting is disabled, fixed point distances are converted to price steps.
+- **Order Management** – The helper `SetProtectiveOrders` translates raw distances into price-step counts and registers stop-loss and take-profit orders relative to the entry price. The strategy avoids duplicate orders by checking `HasActiveOrders()` before submitting new trades.
+- **Start Protection** – `StartProtection()` is called once in `OnStarted`, enabling the framework’s built-in protection handling whenever the position becomes non-zero.
 
 ## Parameters
+The StockSharp implementation exposes the full MQL parameter set grouped for optimization and UI clarity. Key parameters include:
 
-All parameters are exposed through the `Param` API and support optimisation in the Designer. Key parameter groups:
+### Trading
+- `OrderVolume` – Lot size for new positions.
+- `CandleType` – Candle data type used for binding.
 
-* **General** – candle type, base order volume, trading window and master switch for new orders.
-* **Risk** – ATR usage, ATR length, static TP/SL distances for long and short positions.
-* **Perceptrons** – LWMA length, shift and four weights plus activation threshold for supervisor/long/short blocks.
-* **Filters** – toggles and settings for ADX, MACD, OsMA, Parabolic SAR, RSI, CCI, Awesome Oscillator and Accelerator Oscillator confirmations.
+### Risk
+- `UseAtrTargets` – Toggle between ATR-based and fixed-point protective distances.
+- `AtrPeriod`, `AtrTakeProfitFactor`, `AtrStopLossFactor` – ATR configuration for adaptive targets.
+- `LongTakeProfitPoints`, `LongStopLossPoints`, `ShortTakeProfitPoints`, `ShortStopLossPoints` – Point-based TP/SL references reused by both ATR and fixed modes.
 
-## Trading logic
+### Indicator Filters
+- `UseIndicatorFilters` – Master switch for all filters.
+- `UseAdxFilter`, `AdxPeriod`, `AdxThreshold` – ADX confirmation settings.
+- `UseMacdFilter`, `MacdFast`, `MacdSlow`, `MacdSignal` – MACD confirmation settings.
+- `UseRsiFilter`, `RsiPeriod` – RSI confirmation settings.
+- `UseCciFilter`, `CciPeriod` – CCI confirmation settings.
 
-1. Subscribe to the selected timeframe via the high-level candle API.
-2. Bind LWMA indicators for each perceptron, ATR, MACD, ADX, SAR, RSI, CCI, AO and AC.
-3. As soon as all indicator histories are formed, evaluate the perceptron scores and indicator filters according to the current mode.
-4. When a direction is approved, flatten opposite exposure, open a new market order, then assign stop-loss and take-profit distances via the helper functions `SetStopLoss` and `SetTakeProfit`.
-5. Optionally close open trades when Parabolic SAR flips against the position.
+### Perceptron Specialists
+- `ShortMaPeriod`, `ShortStep`, `ShortX1…ShortX4`, `ShortThreshold` – Short perceptron configuration.
+- `LongMaPeriod`, `LongStep`, `LongX1…LongX4`, `LongThreshold` – Long perceptron configuration.
+- `SupervisorMaPeriod`, `SupervisorStep`, `SupervisorX1…SupervisorX4`, `SupervisorThreshold` – Supervisor perceptron configuration.
 
-## Notes
-
-* The grid money management module from the original EA is intentionally disabled. All other core trading conditions and risk handling rules are preserved.
-* Hourly trading windows handle wrap-around ranges (e.g., 22:00 → 06:00).
-* Indicator filters can be mixed freely; when all are disabled the perceptrons work standalone.
-
-## Usage
-
-1. Open the solution in StockSharp Designer.
-2. Add **AutoRxdV167Strategy** to a scheme and link it to the desired instrument and timeframe.
-3. Configure perceptron weights, confirmation filters and risk parameters.
-4. Run backtests or live trading as usual. The chart area shows the main LWMA curves, MACD, ADX and performed trades.
-
-## Files
-
-* `CS/AutoRxdV167Strategy.cs` – implementation of the strategy.
-* `README.md` – English documentation.
-* `README_cn.md` – Simplified Chinese overview.
-* `README_ru.md` – Russian overview.
+All numeric parameters mirror the MQL defaults, enabling a like-for-like behavior between the original expert advisor and this StockSharp port while exposing the configuration through the `StrategyParam` system for optimization campaigns.
