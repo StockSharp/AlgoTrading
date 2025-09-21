@@ -33,54 +33,54 @@ public class SpreaderStrategy : Strategy
 
 	private bool _contractsMatch = true;
 
-@TAB/// <summary>
-@TAB/// Secondary security that forms the hedge leg of the spread.
-@TAB/// </summary>
+	/// <summary>
+	/// Secondary security that forms the hedge leg of the spread.
+	/// </summary>
 	public Security? SecondSecurity
 	{
 		get => _secondSecurityParam.Value;
 		set => _secondSecurityParam.Value = value;
 	}
 
-@TAB/// <summary>
-@TAB/// Base order volume for the primary security.
-@TAB/// </summary>
+	/// <summary>
+	/// Base order volume for the primary security.
+	/// </summary>
 	public decimal PrimaryVolume
 	{
 		get => _primaryVolumeParam.Value;
 		set => _primaryVolumeParam.Value = value;
 	}
 
-@TAB/// <summary>
-@TAB/// Desired absolute profit for the combined position.
-@TAB/// </summary>
+	/// <summary>
+	/// Desired absolute profit for the combined position.
+	/// </summary>
 	public decimal TargetProfit
 	{
 		get => _targetProfitParam.Value;
 		set => _targetProfitParam.Value = value;
 	}
 
-@TAB/// <summary>
-@TAB/// Number of bars between comparison points used to estimate short-term swings.
-@TAB/// </summary>
+	/// <summary>
+	/// Number of bars between comparison points used to estimate short-term swings.
+	/// </summary>
 	public int ShiftLength
 	{
 		get => _shiftParam.Value;
 		set => _shiftParam.Value = value;
 	}
 
-@TAB/// <summary>
-@TAB/// Candle type that defines the timeframe for spread calculations.
-@TAB/// </summary>
+	/// <summary>
+	/// Candle type that defines the timeframe for spread calculations.
+	/// </summary>
 	public DataType CandleType
 	{
 		get => _candleTypeParam.Value;
 		set => _candleTypeParam.Value = value;
 	}
 
-@TAB/// <summary>
-@TAB/// Initializes a new instance of the <see cref="SpreaderStrategy"/> class.
-@TAB/// </summary>
+	/// <summary>
+	/// Initializes a new instance of the <see cref="SpreaderStrategy"/> class.
+	/// </summary>
 	public SpreaderStrategy()
 	{
 		_secondSecurityParam = Param<Security>(nameof(SecondSecurity))
@@ -109,14 +109,14 @@ public class SpreaderStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe used for spread calculations", "General");
 	}
 
-@TAB/// <inheritdoc />
+	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		yield return (Security, CandleType);
 		yield return (SecondSecurity, CandleType);
 	}
 
-@TAB/// <inheritdoc />
+	/// <inheritdoc />
 	protected override void OnReseted()
 	{
 		base.OnReseted();
@@ -133,7 +133,7 @@ public class SpreaderStrategy : Strategy
 		_contractsMatch = true;
 	}
 
-@TAB/// <inheritdoc />
+	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
 		base.OnStarted(time);
