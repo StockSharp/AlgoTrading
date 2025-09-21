@@ -169,13 +169,13 @@ public class PrototypeIxStrategy : Strategy
 		.SetOptimize(0.3m, 1.0m, 0.1m);
 
 		_zeroBarDelay = Param(nameof(ZeroBarDelay), 8)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Zero Bar", "Bars before activating ATR trailing", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(2, 12, 2);
 
 		_minTargetInSpread = Param(nameof(MinTargetInSpread), 5m)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Min Target Spread", "Minimum target measured in spread multiples", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(1m, 10m, 1m);
@@ -197,7 +197,7 @@ public class PrototypeIxStrategy : Strategy
 		.SetDisplay("Max Order Size", "Upper bound for calculated order volume", "Risk Management");
 
 		_riskDelta = Param(nameof(RiskDelta), 5.0m)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Risk %", "Risk percentage used for position sizing", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(1.0m, 10.0m, 1.0m);

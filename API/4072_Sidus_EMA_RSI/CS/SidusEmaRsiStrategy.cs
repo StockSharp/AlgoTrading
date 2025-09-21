@@ -146,7 +146,7 @@ public class SidusEmaRsiStrategy : Strategy
 			.SetOptimize(14, 28, 2);
 
 		_signalShift = Param(nameof(SignalShift), 1)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Number of closed candles used for signal evaluation", "Signals");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

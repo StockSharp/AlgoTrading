@@ -142,7 +142,7 @@ public class AdaptiveOscillatorThresholdStrategy : Strategy
 			.SetOptimize(10, 50, 5);
 
 		_dollarStopLoss = Param(nameof(DollarStopLoss), 1600m)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Dollar Stop-Loss", "Maximum dollar loss", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(500m, 2000m, 100m);

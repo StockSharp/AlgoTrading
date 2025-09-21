@@ -109,13 +109,13 @@ public class ZigZagEvgeTrofi1Strategy : Strategy
 			.SetOptimize(1m, 20m, 1m);
 
 		_backstep = Param(nameof(Backstep), 5)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Backstep", "Bars to wait before switching pivots", "ZigZag")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);
 
 		_urgency = Param(nameof(Urgency), 2)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Urgency", "Maximum bars to trade the latest pivot", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);

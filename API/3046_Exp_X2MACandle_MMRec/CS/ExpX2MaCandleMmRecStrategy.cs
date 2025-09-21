@@ -224,11 +224,11 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 		.SetDisplay("Secondary Phase", "Phase for Jurik based smoothing", "Indicator");
 
 		_gapPoints = Param(nameof(GapPoints), 10)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Gap Points", "Absolute gap (in price steps) to flatten candle bodies", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bar shift used when reading indicator colors", "Indicator");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -252,11 +252,11 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 		.SetDisplay("Reduced Volume", "Lower volume used after losses", "Money Management");
 
 		_historyDepth = Param(nameof(HistoryDepth), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("History Depth", "Number of closed trades inspected for losses", "Money Management");
 
 		_lossTrigger = Param(nameof(LossTrigger), 2)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Loss Trigger", "Loss count required to switch to the reduced volume", "Money Management");
 	}
 

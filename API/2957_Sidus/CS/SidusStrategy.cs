@@ -198,19 +198,19 @@ public class SidusStrategy : Strategy
 		.SetDisplay("Volume", "Trade volume", "Trading");
 
 		_offsetPips = Param(nameof(OffsetPips), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Offset", "Stop loss offset in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 75)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 15)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum move before trailing advances", "Risk");
 
 		_delta = Param(nameof(Delta), 0.00003m)
@@ -225,7 +225,7 @@ public class SidusStrategy : Strategy
 		.SetDisplay("Jaw Period", "Alligator jaw period", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Alligator jaw forward shift", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
@@ -233,7 +233,7 @@ public class SidusStrategy : Strategy
 		.SetDisplay("Teeth Period", "Alligator teeth period", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Alligator teeth forward shift", "Alligator");
 
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
@@ -241,7 +241,7 @@ public class SidusStrategy : Strategy
 		.SetDisplay("Lips Period", "Alligator lips period", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Alligator lips forward shift", "Alligator");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)

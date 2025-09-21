@@ -215,19 +215,19 @@ public class BarsAlligatorStrategy : Strategy
 		.SetDisplay("Volume", "Fixed trade volume when MoneyMode is FixedVolume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 150)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance expressed in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance expressed in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Extra distance before the trailing stop moves", "Risk");
 
 		_moneyMode = Param(nameof(MoneyMode), MoneyManagementMode.FixedVolume)
@@ -246,7 +246,7 @@ public class BarsAlligatorStrategy : Strategy
 		.SetDisplay("Jaw Period", "Alligator jaw moving average length", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Forward shift of the jaw line", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
@@ -254,7 +254,7 @@ public class BarsAlligatorStrategy : Strategy
 		.SetDisplay("Teeth Period", "Alligator teeth moving average length", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Forward shift of the teeth line", "Alligator");
 
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
@@ -262,7 +262,7 @@ public class BarsAlligatorStrategy : Strategy
 		.SetDisplay("Lips Period", "Alligator lips moving average length", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Forward shift of the lips line", "Alligator");
 
 		_maType = Param(nameof(MaType), MovingAverageType.Smoothed)

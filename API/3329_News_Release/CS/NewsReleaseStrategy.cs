@@ -214,11 +214,11 @@ public class NewsReleaseStrategy : Strategy
 
 		_preNewsMinutes = Param(nameof(PreNewsMinutes), 5)
 		.SetDisplay("Pre News Minutes", "Minutes before news to place orders", "Timing")
-		.SetGreaterThanOrEqual(0);
+		.SetNotNegative();
 
 		_postNewsMinutes = Param(nameof(PostNewsMinutes), 5)
 		.SetDisplay("Post News Minutes", "Minutes after news to keep orders", "Timing")
-		.SetGreaterThanOrEqual(0);
+		.SetNotNegative();
 
 		_orderPairs = Param(nameof(OrderPairs), 1)
 		.SetDisplay("Order Pairs", "Number of buy/sell stop pairs", "Orders")

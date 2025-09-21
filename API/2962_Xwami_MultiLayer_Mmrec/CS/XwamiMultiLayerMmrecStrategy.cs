@@ -244,7 +244,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 			.SetDisplay($"{displayName} Candle", $"Candle type for {displayName}", displayName);
 
 			Period = strategy.Param($"Layer{key}Period", 1)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay($"{displayName} Period", $"Momentum lookback for {displayName}", displayName);
 
 			Method1 = strategy.Param($"Layer{key}Method1", XwamiSmoothMethod.T3)
@@ -283,7 +283,7 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 			.SetDisplay($"{displayName} Price", $"Applied price for {displayName}", displayName);
 
 			SignalBar = strategy.Param($"Layer{key}SignalBar", 1)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay($"{displayName} Signal Bar", $"Shift for signal extraction in {displayName}", displayName);
 
 			AllowBuyOpen = strategy.Param($"Layer{key}AllowBuyOpen", true)
@@ -306,21 +306,21 @@ public class XwamiMultiLayerMmrecStrategy : Strategy
 			.SetGreaterThanOrEqual(1)
 			.SetDisplay($"{displayName} Buy Total Trigger", $"Number of historical buy trades evaluated for {displayName}", displayName);
 			BuyLossTrigger = strategy.Param($"Layer{key}BuyLossTrigger", buyLossTrigger)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay($"{displayName} Buy Loss Trigger", $"Loss threshold that activates reduced volume for {displayName}", displayName);
 
 			SellTotalTrigger = strategy.Param($"Layer{key}SellTotalTrigger", sellTotalTrigger)
 			.SetGreaterThanOrEqual(1)
 			.SetDisplay($"{displayName} Sell Total Trigger", $"Number of historical sell trades evaluated for {displayName}", displayName);
 			SellLossTrigger = strategy.Param($"Layer{key}SellLossTrigger", sellLossTrigger)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay($"{displayName} Sell Loss Trigger", $"Loss threshold that activates reduced volume for {displayName}", displayName);
 
 			StopLossPoints = strategy.Param($"Layer{key}StopLossPoints", stopLossPoints)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay($"{displayName} Stop Loss", $"Stop loss in points for {displayName}", displayName);
 			TakeProfitPoints = strategy.Param($"Layer{key}TakeProfitPoints", takeProfitPoints)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay($"{displayName} Take Profit", $"Take profit in points for {displayName}", displayName);
 		}
 

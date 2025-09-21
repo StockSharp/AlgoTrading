@@ -181,7 +181,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		.SetOptimize(1m, 10m, 1m);
 
 		_maxOrdersPerBar = Param(nameof(MaxOrdersPerBar), 1)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Orders per Bar", "Maximum number of pending orders allowed per candle.", "Orders");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

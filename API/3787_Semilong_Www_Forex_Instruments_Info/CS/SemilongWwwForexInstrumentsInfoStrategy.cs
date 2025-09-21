@@ -48,30 +48,30 @@ public class SemilongWwwForexInstrumentsInfoStrategy : Strategy
 		.SetDisplay("Stop Loss (points)", "Distance in points for the protective stop", "Risk");
 
 		_shiftOne = Param(nameof(ShiftOne), 100)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Primary Shift", "Number of bars between the current close and the comparison close", "Signals");
 
 		_moveOnePoints = Param(nameof(MoveOnePoints), 60)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Primary Move (points)", "Minimum deviation in points from the primary shifted close", "Signals");
 
 		_shiftTwo = Param(nameof(ShiftTwo), 10)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Secondary Shift", "Additional bars added on top of the primary shift", "Signals");
 
 		_moveTwoPoints = Param(nameof(MoveTwoPoints), 30)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Secondary Move (points)", "Minimum distance between the two shifted closes", "Signals");
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 14)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Decrease Factor", "Divisor applied when shrinking the auto lot after losses", "Money Management");
 
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
 		.SetDisplay("Fixed Volume", "Base volume used when auto lot is disabled", "Money Management");
 
 		_trailingPoints = Param(nameof(TrailingPoints), 0)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing stop distance in points", "Risk");
 
 		_useAutoLot = Param(nameof(UseAutoLot), true)

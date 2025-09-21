@@ -54,15 +54,15 @@ public class BlauErgodicMdiStrategy : Strategy
 			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Maximum slippage in points", "Risk");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)
@@ -114,7 +114,7 @@ public class BlauErgodicMdiStrategy : Strategy
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
 		_signalBarShift = Param(nameof(SignalBarShift), 1)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Shift of the bar used for signals", "Strategy");
 
 		_phase = Param(nameof(Phase), 15)

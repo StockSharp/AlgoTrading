@@ -84,13 +84,13 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 200, 10);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 150, 10);
@@ -99,13 +99,13 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		.SetDisplay("Use Trailing", "Enable trailing stop logic", "Risk");
 
 		_trailingStartSteps = Param(nameof(TrailingStartSteps), 40)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trail Activation", "Profit in price steps before trailing starts", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 200, 10);
 
 		_trailingStepSize = Param(nameof(TrailingStepSize), 40)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trail Step", "Distance between current extreme and trailing stop in steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 200, 10);
@@ -114,13 +114,13 @@ public class MicroTrendBreakoutsStrategy : Strategy
 		.SetDisplay("Use Breakeven", "Move stop to breakeven when profit threshold is reached", "Risk");
 
 		_breakEvenTriggerSteps = Param(nameof(BreakEvenTriggerSteps), 30)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Breakeven Trigger", "Profit in steps that activates breakeven", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 200, 10);
 
 		_breakEvenPaddingSteps = Param(nameof(BreakEvenPaddingSteps), 30)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Breakeven Padding", "Extra steps added when moving stop to breakeven", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 100, 5);

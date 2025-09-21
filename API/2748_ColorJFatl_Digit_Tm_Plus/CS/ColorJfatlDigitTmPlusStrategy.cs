@@ -228,11 +228,11 @@ public class ColorJfatlDigitTmPlusStrategy : Strategy
 		.SetDisplay("Applied Price", "Price source for the filter", "Indicator");
 
 		_roundingDigits = Param(nameof(RoundingDigits), 2)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Rounding Digits", "Digits for rounding the filter", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Number of finished bars used for signals", "Indicator");
 	}
 

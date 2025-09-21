@@ -49,13 +49,13 @@ public class Surfing30Strategy : Strategy
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 80)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Distance to the take profit in instrument points.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Distance to the stop loss in instrument points.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 150, 10);

@@ -154,11 +154,11 @@ public class AlligatorCandleCrossStrategy : Strategy
 		.SetDisplay("Volume", "Trade size in lots or contracts", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk");
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
@@ -166,7 +166,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 		.SetDisplay("Jaw Period", "Alligator jaw moving average length", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Forward shift for the jaw line", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
@@ -174,7 +174,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 		.SetDisplay("Teeth Period", "Alligator teeth moving average length", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Forward shift for the teeth line", "Alligator");
 
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
@@ -182,7 +182,7 @@ public class AlligatorCandleCrossStrategy : Strategy
 		.SetDisplay("Lips Period", "Alligator lips moving average length", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Forward shift for the lips line", "Alligator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

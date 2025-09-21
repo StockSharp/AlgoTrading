@@ -74,11 +74,11 @@ public class WprsiSignalStrategy : Strategy
 			.SetDisplay("Period", "Period for WPR and RSI", "Parameters");
 
 		_filterUp = Param(nameof(FilterUp), 10)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Filter Up", "Bars to confirm buy", "Parameters");
 
 		_filterDown = Param(nameof(FilterDown), 10)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Filter Down", "Bars to confirm sell", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

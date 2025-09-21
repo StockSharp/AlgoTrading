@@ -214,13 +214,13 @@ public class ThePuncherStrategy : Strategy
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1)
 		.SetDisplay("Trailing Step (pips)", "Minimum move before trailing", "Risk")
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(0, 500, 10);
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 0)
 		.SetDisplay("Break-Even (pips)", "Profit required to move stop to entry", "Risk")
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(0, 1000, 50);
 

@@ -168,3 +168,7 @@ pub/
 !Net.HPSocket/**/Dependent/**/x64/
 
 __pycache__/
+
+MQL/
+TradingView/
+TradingView_indicators/

@@ -159,25 +159,25 @@ public class MacdEaStrategy : Strategy
 			.SetOptimize(10, 150, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 80)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 200, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 800, 20);
 
 		_partialProfitPips = Param(nameof(PartialProfitPips), 70)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Partial Profit", "Pips to close half the position", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 200, 10);
 
 		_breakevenPips = Param(nameof(BreakevenPips), 0)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Breakeven", "Distance to activate breakeven", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 200, 10);

@@ -174,36 +174,36 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	public FirebirdChannelAveragingStrategy()
 	{
 		_volume = Param(nameof(Volume), 0.1m)
-			SetGreaterThanZero()
-			SetDisplay("Volume", "Order volume in lots", "Trading");
+			.SetGreaterThanZero()
+			.SetDisplay("Volume", "Order volume in lots", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			SetGreaterThanZero()
-			SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			SetCanOptimize(true)
-			SetOptimize(20, 150, 10);
+			.SetGreaterThanZero()
+			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
+			.SetCanOptimize(true)
+			.SetOptimize(20, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
-			SetGreaterThanZero()
-			SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			SetCanOptimize(true)
-			SetOptimize(50, 300, 10);
+			.SetGreaterThanZero()
+			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
+			.SetCanOptimize(true)
+			.SetOptimize(50, 300, 10);
 
 		_maPeriod = Param(nameof(MaPeriod), 10)
-			SetGreaterThanZero()
-			SetDisplay("MA Period", "Moving average length", "Indicator")
-			SetCanOptimize(true)
-			SetOptimize(5, 30, 1);
+			.SetGreaterThanZero()
+			.SetDisplay("MA Period", "Moving average length", "Indicator")
+			.SetCanOptimize(true)
+			.SetOptimize(5, 30, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-			SetNotNegative()
-			SetDisplay("MA Shift", "Forward shift for moving average", "Indicator");
+			.SetNotNegative()
+			.SetDisplay("MA Shift", "Forward shift for moving average", "Indicator");
 
 		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Exponential)
-			SetDisplay("MA Type", "Moving average calculation mode", "Indicator");
+			.SetDisplay("MA Type", "Moving average calculation mode", "Indicator");
 
 		_priceSource = Param(nameof(PriceSource), CandlePrice.Close)
-			SetDisplay("Price Source", "Candle price used for signals", "Data");
+			.SetDisplay("Price Source", "Candle price used for signals", "Data");
 
 		_pricePercent = Param(nameof(PricePercent), 0.3m)
 			SetGreaterThanZero()
@@ -212,22 +212,22 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			SetOptimize(0.1m, 1m, 0.1m);
 
 		_tradeOnFriday = Param(nameof(TradeOnFriday), true)
-			SetDisplay("Trade Friday", "Allow trading on Fridays", "Risk");
+			.SetDisplay("Trade Friday", "Allow trading on Fridays", "Risk");
 
 		_stepPips = Param(nameof(StepPips), 30)
-			SetGreaterThanZero()
-			SetDisplay("Step (pips)", "Distance between averaged entries", "Grid")
-			SetCanOptimize(true)
-			SetOptimize(10, 60, 5);
+			.SetGreaterThanZero()
+			.SetDisplay("Step (pips)", "Distance between averaged entries", "Grid")
+			.SetCanOptimize(true)
+			.SetOptimize(10, 60, 5);
 
 		_stepExponent = Param(nameof(StepExponent), 0m)
-			SetNotNegative()
-			SetDisplay("Step Exponent", "Power growth for step size", "Grid")
-			SetCanOptimize(true)
-			SetOptimize(0m, 2m, 0.5m);
+			.SetNotNegative()
+			.SetDisplay("Step Exponent", "Power growth for step size", "Grid")
+			.SetCanOptimize(true)
+			.SetOptimize(0m, 2m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
-			SetDisplay("Candle Type", "Working timeframe", "Data");
+			.SetDisplay("Candle Type", "Working timeframe", "Data");
 	}
 
 	/// <inheritdoc />

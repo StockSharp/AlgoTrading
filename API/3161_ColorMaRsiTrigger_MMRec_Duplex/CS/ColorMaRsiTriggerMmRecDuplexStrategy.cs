@@ -85,15 +85,15 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetDisplay("Allow Long Exit", "Enable closing long positions", "Long Block");
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Protective stop for long trades in price steps", "Long Block");
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit", "Profit target for long trades in price steps", "Long Block");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Shift used when sampling the indicator", "Long Block");
 
 		_longRsiPeriod = Param(nameof(LongRsiPeriod), 3)
@@ -156,15 +156,15 @@ public class ColorMaRsiTriggerMmRecDuplexStrategy : Strategy
 			.SetDisplay("Allow Short Exit", "Enable closing short positions", "Short Block");
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Protective stop for short trades in price steps", "Short Block");
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit", "Profit target for short trades in price steps", "Short Block");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Shift used when sampling the indicator", "Short Block");
 
 		_shortRsiPeriod = Param(nameof(ShortRsiPeriod), 3)

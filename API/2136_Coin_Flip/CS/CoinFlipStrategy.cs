@@ -130,11 +130,11 @@ public class CoinFlipStrategy : Strategy
 		.SetDisplay("Stop Loss", "Loss limit in steps", "Risk");
 		
 		_trailingStart = Param(nameof(TrailingStart), 14)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Start", "Steps to activate trailing", "Risk");
 		
 		_trailingStop = Param(nameof(TrailingStop), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing distance in steps", "Risk");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

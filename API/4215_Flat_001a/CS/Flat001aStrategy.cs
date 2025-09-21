@@ -114,15 +114,15 @@ public class Flat001aStrategy : Strategy
 	public Flat001aStrategy()
 	{
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 6)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing distance in points", "Risk");
 
 		_diffMinPoints = Param(nameof(DiffMinPoints), 18)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Range Min (points)", "Minimum three-candle range", "Range Filter");
 
 		_diffMaxPoints = Param(nameof(DiffMaxPoints), 28)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Range Max (points)", "Maximum three-candle range", "Range Filter");
 
 		_enableTimeFilter = Param(nameof(EnableTimeFilter), true)
@@ -132,7 +132,7 @@ public class Flat001aStrategy : Strategy
 		.SetDisplay("Opening Hour", "Starting hour (0-23)", "Trading Window");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 8)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Take-profit distance", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

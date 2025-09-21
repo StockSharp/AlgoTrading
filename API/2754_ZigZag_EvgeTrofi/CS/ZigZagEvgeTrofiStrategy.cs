@@ -124,7 +124,7 @@ public class ZigZagEvgeTrofiStrategy : Strategy
 			.SetOptimize(1, 15, 1);
 
 		_urgency = Param(nameof(Urgency), 2)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Urgency", "Maximum bars to use the latest signal", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);

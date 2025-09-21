@@ -83,19 +83,19 @@ public class TurboScalerGridStrategy : Strategy
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
 			.SetDisplay("Stop Loss Points", "Initial stop loss distance in points", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_breakevenTriggerPoints = Param(nameof(BreakevenTriggerPoints), 130)
 			.SetDisplay("Break-even Trigger", "Distance in points that activates break-even", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_breakevenOffsetPoints = Param(nameof(BreakevenOffsetPoints), 30)
 			.SetDisplay("Break-even Offset", "Offset in points added to the entry price", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_trailPoints = Param(nameof(TrailPoints), 250)
 			.SetDisplay("Trail Points", "Trailing distance in points", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_trailMultiplier = Param(nameof(TrailMultiplier), 1.1m)
 			.SetDisplay("Trail Multiplier", "Multiplier applied before trailing is updated", "Risk")
@@ -123,11 +123,11 @@ public class TurboScalerGridStrategy : Strategy
 
 		_pendingQuantity = Param(nameof(PendingQuantity), 3)
 			.SetDisplay("Pending Quantity", "Number of pending orders in the grid", "Orders")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_pendingStepPoints = Param(nameof(PendingStepPoints), 15)
 			.SetDisplay("Pending Step", "Distance between pending orders in points", "Orders")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_triggerCandleType = Param(nameof(TriggerCandleType), TimeSpan.FromMinutes(10).TimeFrame())
 			.SetDisplay("Trigger Candle", "Candle series used for price based triggers", "Market Data");

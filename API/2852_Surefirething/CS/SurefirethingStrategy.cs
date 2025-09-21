@@ -95,19 +95,19 @@ public class SurefirethingStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1)
 			.SetDisplay("Trailing Step (pips)", "Extra move before trailing stop is moved", "Risk")
-			.SetGreaterThanOrEqual(0);
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used to calculate grid levels", "General");
@@ -132,7 +132,7 @@ public class SurefirethingStrategy : Strategy
 		base.OnStarted(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
-			throw new InvalidOperationException("Trailing is not possible: the parameter "Trailing Step" is zero!");
+			throw new InvalidOperationException("Trailing is not possible: the parameter 'Trailing Step' is zero!");
 
 		_pipSize = CalculatePipSize();
 

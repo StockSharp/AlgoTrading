@@ -322,7 +322,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Jaw Length", "SMMA length for the jaw", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Forward shift of the jaw", "Alligator");
 
 		_teethLength = Param(nameof(TeethLength), 8)
@@ -330,7 +330,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Teeth Length", "SMMA length for the teeth", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Forward shift of the teeth", "Alligator");
 
 		_lipsLength = Param(nameof(LipsLength), 5)
@@ -338,7 +338,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Lips Length", "SMMA length for the lips", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Forward shift of the lips", "Alligator");
 
 		_entrySpread = Param(nameof(EntrySpread), 0.0005m)
@@ -391,7 +391,7 @@ public class AlligatorFractalMartingaleStrategy : Strategy
 		.SetDisplay("Fractal Buffer", "Extra distance to validate fractals", "Fractals");
 
 		_martingaleSteps = Param(nameof(MartingaleSteps), 10)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Martingale Steps", "Number of averaging levels", "Martingale");
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.3m)

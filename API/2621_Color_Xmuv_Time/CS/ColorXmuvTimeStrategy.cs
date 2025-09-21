@@ -249,11 +249,11 @@ public class ColorXmuvTimeStrategy : Strategy
 		.SetDisplay("Signal Bar", "Number of completed bars to delay signals", "Indicator");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pts)", "Stop loss distance in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetGreaterThanOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Take profit distance in points", "Risk");
 	}
 

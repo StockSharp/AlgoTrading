@@ -118,7 +118,7 @@ public class BabySharkVwapStrategy : Strategy
 			.SetDisplay("RSI Lower Level", "Oversold level", "Parameters");
 
 		_cooldown = Param(nameof(Cooldown), 10)
-			.SetGreaterThanOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Cooldown", "Bars to wait after trade", "Parameters");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.6m)
