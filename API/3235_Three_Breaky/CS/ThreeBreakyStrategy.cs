@@ -319,8 +319,6 @@ public class ThreeBreakyStrategy : Strategy
 			}
 		}
 
-	}
-
 UpdateState:
 		if (_bodyHistory.Count == 20)
 			_bodyHistory.Dequeue();
