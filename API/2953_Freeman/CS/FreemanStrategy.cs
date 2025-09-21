@@ -352,38 +352,38 @@ public class FreemanStrategy : Strategy
 			.SetDisplay("Use Trend Filter", "Confirm entries with higher timeframe MA", "Signals");
 
 		_stopLossAtrFactor = Param(nameof(StopLossAtrFactor), 14m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("SL ATR Factor", "Stop-loss multiplier over ATR", "Risk");
 
 		_takeProfitAtrFactor = Param(nameof(TakeProfitAtrFactor), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("TP ATR Factor", "Take-profit multiplier over ATR", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Distance for trailing stop", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum move before trailing update", "Risk");
 
 		_positionsMaximum = Param(nameof(PositionsMaximum), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Positions Maximum", "Maximum simultaneous entries", "Money Management");
 
 		_distancePips = Param(nameof(DistancePips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Distance (pips)", "Minimum distance between entries", "Money Management");
 
 		_tradeOnFriday = Param(nameof(TradeOnFriday), true)
 			.SetDisplay("Trade On Friday", "Allow signals on Fridays", "Trading Hours");
 
 		_startHour = Param(nameof(StartHour), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Start Hour", "Trading start hour", "Trading Hours");
 
 		_endHour = Param(nameof(EndHour), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("End Hour", "Trading end hour", "Trading Hours");
 
 		_lockCoefficient = Param(nameof(LockCoefficient), 1.61m)
@@ -391,7 +391,7 @@ public class FreemanStrategy : Strategy
 			.SetDisplay("Lock Coefficient", "Multiplier after losing exits", "Money Management");
 
 		_signalShift = Param(nameof(SignalShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Indicator shift used for signals", "Indicators");
 	}
 

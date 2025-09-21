@@ -54,15 +54,15 @@ public class FitFul13Strategy : Strategy
 
 		_indentPips = Param(nameof(IndentPips), 3m)
 			.SetDisplay("Indent (pips)", "Offset applied to pivot levels when computing stops and targets.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 150m)
 			.SetDisplay("Trailing stop (pips)", "Distance between price and trailing stop.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing step (pips)", "Minimum price progress before tightening the trailing stop.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <summary>

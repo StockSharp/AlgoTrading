@@ -87,48 +87,48 @@ public class CryptoAnalysisStrategy : Strategy
 			.SetDisplay("Use money take profit", "Close positions when unrealized profit reaches MoneyTakeProfit.", "Risk");
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Money take profit", "Unrealized profit (in portfolio currency) that triggers an exit.", "Risk");
 
 		_usePercentTakeProfit = Param(nameof(UsePercentTakeProfit), false)
 			.SetDisplay("Use percent take profit", "Close positions once profit reaches PercentTakeProfit percent of the initial equity.", "Risk");
 
 		_percentTakeProfit = Param(nameof(PercentTakeProfit), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Percent take profit", "Profit target expressed as a percentage of the initial portfolio value.", "Risk");
 
 		_enableMoneyTrailing = Param(nameof(EnableMoneyTrailing), true)
 			.SetDisplay("Enable money trailing", "Protect accumulated profit using MoneyTrailTarget and MoneyTrailStop.", "Risk");
 
 		_moneyTrailTarget = Param(nameof(MoneyTrailTarget), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Money trail target", "Profit level where the money-based trailing stop activates.", "Risk");
 
 		_moneyTrailStop = Param(nameof(MoneyTrailStop), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Money trail stop", "Allowed profit giveback once the money trail is active.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (pips)", "Protective stop distance in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (pips)", "Fixed take profit distance in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Pip distance of the trailing stop once activated.", "Risk");
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 			.SetDisplay("Use break-even", "Automatically move the stop to break-even after BreakEvenTriggerPips.", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even trigger (pips)", "Profit in pips required before break-even protection starts.", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even offset (pips)", "Extra pips added beyond the entry price when locking in break-even.", "Risk");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
@@ -144,11 +144,11 @@ public class CryptoAnalysisStrategy : Strategy
 			.SetDisplay("Momentum period", "Length of the momentum indicator used for confirmation.", "Indicators");
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum buy threshold", "Absolute deviation from 100 required for long signals.", "Indicators");
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum sell threshold", "Absolute deviation from 100 required for short signals.", "Indicators");
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
@@ -167,7 +167,7 @@ public class CryptoAnalysisStrategy : Strategy
 			.SetDisplay("Use equity stop", "Enable portfolio level drawdown protection.", "Risk");
 
 		_equityRiskPercent = Param(nameof(EquityRiskPercent), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Equity risk (%)", "Maximum portfolio drawdown tolerated before closing the position.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

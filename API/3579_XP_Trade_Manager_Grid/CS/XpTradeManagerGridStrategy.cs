@@ -59,75 +59,75 @@ private decimal _closingSellVolume;
 public XpTradeManagerGridStrategy()
 {
 _addNewTradeAfter = Param(nameof(AddNewTradeAfter), 50)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Grid Step", "Distance in points before adding the next averaging order.", "Grid");
 
 _takeProfit1Total = Param(nameof(TakeProfit1Total), 150)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP1 Total", "Total profit target in points collected by the first order.", "Targets");
 
 _takeProfit1Partitive = Param(nameof(TakeProfit1Partitive), 10)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP1 Partial", "Partial take profit distance (points) assigned to the first order.", "Targets");
 
 _takeProfit1Offset = Param(nameof(TakeProfit1Offset), 3)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP1 Offset", "Minimum distance from the last TP before a new first order is allowed.", "Targets");
 
 _takeProfit2 = Param(nameof(TakeProfit2), 40)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP2", "Take profit distance for the second averaging order.", "Targets");
 
 _takeProfit3 = Param(nameof(TakeProfit3), 50)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP3", "Take profit distance for the third averaging order.", "Targets");
 
 _takeProfit4Total = Param(nameof(TakeProfit4Total), 60)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP4 Total", "Total profit (points) required when four orders are open.", "Targets");
 
 _takeProfit5Total = Param(nameof(TakeProfit5Total), 70)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP5 Total", "Total profit (points) required when five orders are open.", "Targets");
 
 _takeProfit6Total = Param(nameof(TakeProfit6Total), 80)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP6 Total", "Total profit (points) required when six orders are open.", "Targets");
 
 _takeProfit7Total = Param(nameof(TakeProfit7Total), 90)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP7 Total", "Total profit (points) required when seven orders are open.", "Targets");
 
 _takeProfit8Total = Param(nameof(TakeProfit8Total), 100)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP8 Total", "Total profit (points) required when eight orders are open.", "Targets");
 
 _takeProfit9Total = Param(nameof(TakeProfit9Total), 120)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP9 Total", "Total profit (points) required when nine orders are open.", "Targets");
 
 _takeProfit10Total = Param(nameof(TakeProfit10Total), 150)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP10 Total", "Total profit (points) required when ten orders are open.", "Targets");
 
 _takeProfit11Total = Param(nameof(TakeProfit11Total), 180)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP11 Total", "Total profit (points) required when eleven orders are open.", "Targets");
 
 _takeProfit12Total = Param(nameof(TakeProfit12Total), 200)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP12 Total", "Total profit (points) required when twelve orders are open.", "Targets");
 
 _takeProfit13Total = Param(nameof(TakeProfit13Total), 220)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP13 Total", "Total profit (points) required when thirteen orders are open.", "Targets");
 
 _takeProfit14Total = Param(nameof(TakeProfit14Total), 250)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP14 Total", "Total profit (points) required when fourteen orders are open.", "Targets");
 
 _takeProfit15Total = Param(nameof(TakeProfit15Total), 300)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("TP15 Total", "Total profit (points) required when fifteen orders are open.", "Targets");
 
 _maxOrders = Param(nameof(MaxOrders), 15)
@@ -135,11 +135,11 @@ _maxOrders = Param(nameof(MaxOrders), 15)
 .SetDisplay("Max Orders", "Maximum number of averaging orders per direction.", "Risk");
 
 _riskPercent = Param(nameof(RiskPercent), 100m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Risk %", "Maximum open loss in percent of the account value.", "Risk");
 
 _orderVolume = Param(nameof(OrderVolume), 0.01m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Order Volume", "Volume used for every averaging trade.", "Trading");
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

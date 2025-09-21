@@ -164,7 +164,7 @@ public class SessionBreakoutStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_breakoutBufferPips = Param(nameof(BreakoutBufferPips), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Breakout buffer (pips)", "Additional buffer above or below the range", "Filters")
 		.SetCanOptimize(true);
 

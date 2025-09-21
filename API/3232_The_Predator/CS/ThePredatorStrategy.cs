@@ -90,15 +90,15 @@ public class ThePredatorStrategy : Strategy
 			.SetDisplay("Momentum Period", "Momentum lookback", "Indicators");
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Buy Threshold", "Minimum distance from 100 required for long trades", "Filters");
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Sell Threshold", "Minimum distance from 100 required for short trades", "Filters");
 
 		_adxThreshold = Param(nameof(AdxThreshold), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("ADX Threshold", "Trend strength filter", "Filters");
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 20)
@@ -122,11 +122,11 @@ public class ThePredatorStrategy : Strategy
 			.SetDisplay("Stochastic Smooth", "D period of the stochastic oscillator", "Indicators");
 
 		_stochasticUpper = Param(nameof(StochasticUpper), 70m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stochastic Upper", "Overbought threshold used by Strategy 2", "Filters");
 
 		_stochasticLower = Param(nameof(StochasticLower), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stochastic Lower", "Oversold threshold used by Strategy 2", "Filters");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -134,15 +134,15 @@ public class ThePredatorStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial take profit in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance in pips", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

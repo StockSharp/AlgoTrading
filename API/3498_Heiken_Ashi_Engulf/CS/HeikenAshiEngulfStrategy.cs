@@ -103,11 +103,11 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Buy Volume", "Position size for bullish signals (lots).", "Trading");
 
 		_buyStopLossPips = Param(nameof(BuyStopLossPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Stop Loss (pips)", "Protective stop distance for long trades.", "Risk");
 
 		_buyTakeProfitPips = Param(nameof(BuyTakeProfitPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Take Profit (pips)", "Profit target distance for long trades.", "Risk");
 
 		_buyBaselinePeriod = Param(nameof(BuyBaselinePeriod), 20)
@@ -136,7 +136,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Buy Primary RSI Period", "Length of the first RSI window that must stay inside the limits.", "Filters");
 
 		_buyPrimaryShift = Param(nameof(BuyPrimaryRsiShift), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Primary RSI Shift", "Base shift applied before counting the checked candles.", "Filters");
 
 		_buyPrimaryWindow = Param(nameof(BuyPrimaryRsiWindow), 2)
@@ -144,7 +144,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Buy Primary RSI Window", "Number of candles checked by the primary RSI filter.", "Filters");
 
 		_buyPrimaryExceptions = Param(nameof(BuyPrimaryRsiExceptions), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Primary RSI Exceptions", "How many candles are allowed to violate the limits.", "Filters");
 
 		_buyPrimaryUpper = Param(nameof(BuyPrimaryRsiUpper), 100m)
@@ -158,7 +158,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Buy Secondary RSI Period", "Length of the second RSI window that must stay inside the limits.", "Filters");
 
 		_buySecondaryShift = Param(nameof(BuySecondaryRsiShift), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Secondary RSI Shift", "Base shift applied before counting the checked candles for the second RSI.", "Filters");
 
 		_buySecondaryWindow = Param(nameof(BuySecondaryRsiWindow), 3)
@@ -166,7 +166,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Buy Secondary RSI Window", "Number of candles checked by the secondary RSI filter.", "Filters");
 
 		_buySecondaryExceptions = Param(nameof(BuySecondaryRsiExceptions), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Secondary RSI Exceptions", "How many candles may fall outside the secondary RSI bounds.", "Filters");
 
 		_buySecondaryUpper = Param(nameof(BuySecondaryRsiUpper), 100m)
@@ -180,11 +180,11 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Sell Volume", "Position size for bearish signals (lots).", "Trading");
 
 		_sellStopLossPips = Param(nameof(SellStopLossPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Stop Loss (pips)", "Protective stop distance for short trades.", "Risk");
 
 		_sellTakeProfitPips = Param(nameof(SellTakeProfitPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Take Profit (pips)", "Profit target distance for short trades.", "Risk");
 
 		_sellBaselinePeriod = Param(nameof(SellBaselinePeriod), 20)
@@ -213,7 +213,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Sell Primary RSI Period", "Length of the first RSI window used by the bearish setup.", "Filters");
 
 		_sellPrimaryShift = Param(nameof(SellPrimaryRsiShift), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Primary RSI Shift", "Base shift applied before counting the checked candles for the first RSI.", "Filters");
 
 		_sellPrimaryWindow = Param(nameof(SellPrimaryRsiWindow), 2)
@@ -221,7 +221,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Sell Primary RSI Window", "Number of candles checked by the primary bearish RSI filter.", "Filters");
 
 		_sellPrimaryExceptions = Param(nameof(SellPrimaryRsiExceptions), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Primary RSI Exceptions", "Allowed violations inside the primary bearish RSI window.", "Filters");
 
 		_sellPrimaryUpper = Param(nameof(SellPrimaryRsiUpper), 100m)
@@ -235,7 +235,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Sell Secondary RSI Period", "Length of the second RSI window used by the bearish setup.", "Filters");
 
 		_sellSecondaryShift = Param(nameof(SellSecondaryRsiShift), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Secondary RSI Shift", "Base shift applied before counting the checked candles for the second RSI.", "Filters");
 
 		_sellSecondaryWindow = Param(nameof(SellSecondaryRsiWindow), 3)
@@ -243,7 +243,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		.SetDisplay("Sell Secondary RSI Window", "Number of candles checked by the secondary bearish RSI filter.", "Filters");
 
 		_sellSecondaryExceptions = Param(nameof(SellSecondaryRsiExceptions), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Secondary RSI Exceptions", "Allowed violations inside the secondary bearish RSI window.", "Filters");
 
 		_sellSecondaryUpper = Param(nameof(SellSecondaryRsiUpper), 100m)

@@ -111,19 +111,19 @@ public class Russian20MomentumMaStrategy : Strategy
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50m)
 		.SetDisplay("Stop Loss Buy (pips)", "Stop loss distance for long positions", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 50m)
 		.SetDisplay("Take Profit Buy (pips)", "Take profit distance for long positions", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_stopLossSellPips = Param(nameof(StopLossSellPips), 50m)
 		.SetDisplay("Stop Loss Sell (pips)", "Stop loss distance for short positions", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 50m)
 		.SetDisplay("Take Profit Sell (pips)", "Take profit distance for short positions", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	/// <inheritdoc />

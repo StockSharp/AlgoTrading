@@ -41,7 +41,7 @@ public class MovingAverageWithFramesStrategy : Strategy
 			.SetOptimize(5, 60, 1);
 
 		_movingShift = Param(nameof(MovingShift), 6)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Moving Shift", "Number of completed candles used to offset the moving average.", "Indicators");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

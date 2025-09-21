@@ -164,37 +164,37 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		.SetDisplay("Trailing Mode", "Frequency of trailing calculations.", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Distance to stop-loss in MetaTrader points.", "Protection")
 		.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Distance to take-profit in MetaTrader points.", "Protection")
 		.SetCanOptimize(true);
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Activate (points)", "Profit in points required before trailing begins.", "Trailing")
 		.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (points)", "Trailing stop distance in points.", "Trailing")
 		.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (points)", "Minimum improvement in points before moving the stop again.", "Trailing")
 		.SetCanOptimize(true);
 
 		_targetProfit = Param(nameof(TargetProfit), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target Profit", "Profit level that closes all positions.", "Targets")
 		.SetCanOptimize(true);
 
 		_freezeCoefficient = Param(nameof(FreezeCoefficient), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Freeze Coefficient", "Multiplier for exchange freeze/stop distances.", "Execution");
 
 		_detailedLogging = Param(nameof(DetailedLogging), true)

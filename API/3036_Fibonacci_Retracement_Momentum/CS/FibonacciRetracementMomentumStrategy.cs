@@ -167,15 +167,15 @@ public class FibonacciRetracementMomentumStrategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetDisplay("Momentum Threshold", "Minimum |Momentum-100| value", "Filters")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20m)
 			.SetDisplay("Stop Loss (steps)", "Stop-loss distance in price steps", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 			.SetDisplay("Take Profit (steps)", "Take-profit distance in price steps", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 			.SetDisplay("MACD Fast", "Fast EMA length for MACD filter", "Indicators")

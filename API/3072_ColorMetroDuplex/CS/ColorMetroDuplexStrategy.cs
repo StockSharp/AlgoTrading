@@ -219,7 +219,7 @@ public class ColorMetroDuplexStrategy : Strategy
 
 			_signalBar = strategy.Param(key + "_SignalBar", defaultSignalBar)
 				.SetDisplay(key + " Signal Bar", "Shift used when evaluating indicator buffers", key)
-				.SetGreaterOrEqualZero();
+				.SetNotNegative();
 
 			_volume = strategy.Param(key + "_Volume", defaultVolume)
 				.SetDisplay(key + " Volume", "Position size for new entries", key);
@@ -229,15 +229,15 @@ public class ColorMetroDuplexStrategy : Strategy
 
 			_stopLossTicks = strategy.Param(key + "_StopLoss", defaultStopLossTicks)
 				.SetDisplay(key + " Stop Loss", "Reserved stop loss distance in price ticks", key)
-				.SetGreaterOrEqualZero();
+				.SetNotNegative();
 
 			_takeProfitTicks = strategy.Param(key + "_TakeProfit", defaultTakeProfitTicks)
 				.SetDisplay(key + " Take Profit", "Reserved take profit distance in price ticks", key)
-				.SetGreaterOrEqualZero();
+				.SetNotNegative();
 
 			_deviationTicks = strategy.Param(key + "_Deviation", defaultDeviationTicks)
 				.SetDisplay(key + " Deviation", "Maximum allowed slippage (compatibility parameter)", key)
-				.SetGreaterOrEqualZero();
+				.SetNotNegative();
 
 			_openAllowed = strategy.Param(key + "_OpenAllowed", openAllowed)
 				.SetDisplay(key + " Open Allowed", "Allow this module to open positions", key);

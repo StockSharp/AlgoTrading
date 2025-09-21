@@ -34,7 +34,7 @@ public class MaMirrorStrategy : Strategy
 			.SetDisplay("Moving period", "Length of the SMA calculated on open and close prices.", "Indicator");
 
 		_movingShift = Param(nameof(MovingShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Moving shift", "Number of completed candles used to shift the SMA backwards.", "Indicator");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

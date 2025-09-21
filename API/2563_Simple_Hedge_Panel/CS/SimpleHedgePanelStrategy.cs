@@ -41,7 +41,7 @@ public class SimpleHedgePanelStrategy : Strategy
 
 			_slotVolumes[i] = Param($"Slot{slotNumber}Volume", 0m)
 				.SetDisplay($"Slot {slotNumber} Volume", "Order volume for the slot", group)
-				.SetGreaterOrEqualZero();
+				.SetNotNegative();
 
 			_slotIsBuy[i] = Param($"Slot{slotNumber}IsBuy", true)
 				.SetDisplay($"Slot {slotNumber} Buy", "True to buy, false to sell", group);

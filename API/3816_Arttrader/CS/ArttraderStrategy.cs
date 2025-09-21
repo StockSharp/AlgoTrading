@@ -62,59 +62,59 @@ public class ArttraderStrategy : Strategy
 			.SetDisplay("EMA Period", "Length of the open-price EMA filter.", "Filters");
 
 		_bigJumpPips = Param(nameof(BigJumpPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Big Jump (pips)", "Maximum single-bar open gap before signals are blocked.", "Filters");
 
 		_doubleJumpPips = Param(nameof(DoubleJumpPips), 55m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Double Jump (pips)", "Maximum two-bar open gap before signals are blocked.", "Filters");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Smart Stop (pips)", "Distance in pips used by the timed stop logic.", "Risk");
 
 		_emergencyLossPips = Param(nameof(EmergencyLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Emergency Stop (pips)", "Hard protective stop submitted together with the entry.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 25m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Fixed profit target placed after entries.", "Risk");
 
 		_slopeSmallPips = Param(nameof(SlopeSmallPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slope Min (pips)", "Minimum EMA advance to enable entries.", "Filters");
 
 		_slopeLargePips = Param(nameof(SlopeLargePips), 8m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slope Max (pips)", "Maximum EMA advance to avoid overextended moves.", "Filters");
 
 		_minutesBegin = Param(nameof(MinutesBegin), 25m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Delay (min)", "Minutes that must elapse inside the bar before entries are allowed.", "Timing");
 
 		_minutesEnd = Param(nameof(MinutesEnd), 25m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Exit Delay (min)", "Minutes that must elapse inside the bar before timed exits trigger.", "Timing");
 
 		_slipBeginPips = Param(nameof(SlipBeginPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Slip (pips)", "Allowance between the close and the extreme for entries.", "Filters");
 
 		_slipEndPips = Param(nameof(SlipEndPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Exit Slip (pips)", "Allowance between the close and the extreme for exits.", "Filters");
 
 		_minVolume = Param(nameof(MinVolume), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Volume", "If the previous candle volume is not above this value the trade is closed.", "Filters");
 
 		_spreadAdjustPips = Param(nameof(SpreadAdjustPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Spread Adjust (pips)", "Imaginary spread compensation applied to the synthetic entry price.", "Trading");
 
 		_slippagePips = Param(nameof(SlippagePips), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage (pips)", "Broker slippage used only for reference, kept for compatibility.", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

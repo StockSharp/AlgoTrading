@@ -147,25 +147,25 @@ public class ErrorEaStrategy : Strategy
 			.SetDisplay("Enable Risk Control", "Adjust volume by portfolio value similar to the MQL version", "Risk");
 
 		_maxVolume = Param(nameof(MaxVolume), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Volume", "Upper limit for market orders", "Risk");
 
 		_minVolume = Param(nameof(MinVolume), 0.01m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Volume", "Lower limit for market orders", "Risk");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Base Volume", "Base lot used before applying risk control", "Risk")
 			.SetCanOptimize(true);
 
 		_riskDivider = Param(nameof(RiskDivider), 10000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk Divider", "Portfolio divider used to scale volume when risk control is enabled", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop distance converted to price steps", "Protection")
 			.SetCanOptimize(true);
 
@@ -173,7 +173,7 @@ public class ErrorEaStrategy : Strategy
 			.SetDisplay("Enable Take Profit", "Activate the small scalping take profit from the EA", "Protection");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Take-profit distance converted to price steps", "Protection")
 			.SetCanOptimize(true);
 

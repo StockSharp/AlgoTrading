@@ -70,7 +70,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_risk1 = Param(nameof(Risk1), 3)
 		.SetDisplay("SilverTrend Risk #1", "Risk parameter for the first SilverTrend filter", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_laguerre1Period = Param(nameof(Laguerre1Period), 14)
 		.SetDisplay("Laguerre Period #1", "ADX period for the first Laguerre filter", "Indicators")
@@ -88,15 +88,15 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_tp1 = Param(nameof(TakeProfit1), 100)
 		.SetDisplay("Take Profit #1", "Take profit in points for the first perceptron", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_sl1 = Param(nameof(StopLoss1), 50)
 		.SetDisplay("Stop Loss #1", "Stop loss in points for the first perceptron", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_risk2 = Param(nameof(Risk2), 9)
 		.SetDisplay("SilverTrend Risk #2", "Risk parameter for the second SilverTrend filter", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_laguerre2Period = Param(nameof(Laguerre2Period), 14)
 		.SetDisplay("Laguerre Period #2", "ADX period for the second Laguerre filter", "Indicators")
@@ -114,11 +114,11 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_tp2 = Param(nameof(TakeProfit2), 100)
 		.SetDisplay("Take Profit #2", "Take profit in points for the second perceptron", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_sl2 = Param(nameof(StopLoss2), 50)
 		.SetDisplay("Stop Loss #2", "Stop loss in points for the second perceptron", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_laguerre3Period = Param(nameof(Laguerre3Period), 14)
 		.SetDisplay("Laguerre Period #3", "ADX period for the third Laguerre filter", "Indicators")
@@ -144,7 +144,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_pass = Param(nameof(Pass), 3)
 		.SetDisplay("Pass", "Determines which perceptrons participate in the decision", "Logic")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	public DataType CandleType

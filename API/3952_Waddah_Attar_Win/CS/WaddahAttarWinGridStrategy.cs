@@ -82,7 +82,7 @@ public class WaddahAttarWinGridStrategy : Strategy
 		.SetDisplay("Increment Volume", "Additional volume added when stacking new orders", "Trading");
 
 		_minProfit = Param(nameof(MinProfit), 450m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min Profit", "Floating profit target in account currency", "Risk");
 	}
 

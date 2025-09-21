@@ -63,37 +63,37 @@ public class GlamTraderStrategy : Strategy
 		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Stop Loss (pips)", "Protective stop distance for long trades", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 150m, 5m);
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Take Profit (pips)", "Profit target distance for long trades", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 5m);
 
 		_stopLossSellPips = Param(nameof(StopLossSellPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Stop Loss (pips)", "Protective stop distance for short trades", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 150m, 5m);
 
 		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Take Profit (pips)", "Profit target distance for short trades", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance applied after profits accumulate", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 50m, 1m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 15m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Extra movement required before adjusting the trailing stop", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(5m, 100m, 1m);
@@ -105,7 +105,7 @@ public class GlamTraderStrategy : Strategy
 		.SetOptimize(5, 60, 1);
 
 		_maShift = Param(nameof(MaShift), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MA Shift", "Bars of displacement applied to the moving average", "Indicators")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);

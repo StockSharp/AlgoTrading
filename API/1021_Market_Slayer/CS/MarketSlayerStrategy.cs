@@ -136,7 +136,7 @@ public class MarketSlayerStrategy : Strategy
 								 .SetDisplay("Enable Take Profit");
 
 		_takeProfitValue = Param(nameof(TakeProfitValue), 20m)
-							   .SetGreaterOrEqualZero()
+							   .SetNotNegative()
 							   .SetDisplay("Take Profit")
 							   .SetCanOptimize(true);
 
@@ -144,7 +144,7 @@ public class MarketSlayerStrategy : Strategy
 							   .SetDisplay("Enable Stop Loss");
 
 		_stopLossValue = Param(nameof(StopLossValue), 50m)
-							 .SetGreaterOrEqualZero()
+							 .SetNotNegative()
 							 .SetDisplay("Stop Loss")
 							 .SetCanOptimize(true);
 

@@ -38,7 +38,7 @@ public class AutoTpManagerStrategy : Strategy
 	public AutoTpManagerStrategy()
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 25m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance to the take-profit target expressed in pips.", "Risk Management")
 		.SetCanOptimize(true);
 
@@ -46,7 +46,7 @@ public class AutoTpManagerStrategy : Strategy
 		.SetDisplay("Use Stop Loss", "Enable stop-loss placement for manual positions.", "Risk Management");
 
 		_stopLossPips = Param(nameof(StopLossPips), 12m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance to the protective stop in pips.", "Risk Management")
 		.SetCanOptimize(true);
 
@@ -54,7 +54,7 @@ public class AutoTpManagerStrategy : Strategy
 		.SetDisplay("Use Trailing Stop", "Activate stop adjustments when the trade moves into profit.", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained once the position is profitable.", "Risk Management")
 		.SetCanOptimize(true);
 
@@ -62,11 +62,11 @@ public class AutoTpManagerStrategy : Strategy
 		.SetDisplay("Use Equity Protection", "Close all exposure when account equity drops below a threshold.", "Risk Management");
 
 		_minEquityPercent = Param(nameof(MinEquityPercent), 20m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min Equity (%)", "Minimum equity as a percentage of the starting balance.", "Risk Management");
 
 		_slippage = Param(nameof(Slippage), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Slippage", "Reserved for compatibility with the original EA; no direct effect.", "Misc");
 	}
 

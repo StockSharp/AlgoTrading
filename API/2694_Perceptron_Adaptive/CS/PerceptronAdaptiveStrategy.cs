@@ -209,13 +209,13 @@ public class PerceptronAdaptiveStrategy : Strategy
 	public PerceptronAdaptiveStrategy()
 	{
 		_stopLossOffset = Param(nameof(StopLossOffset), 0.001m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Offset", "Stop-loss distance in absolute price units", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0.0004m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Offset", "Take-profit distance in absolute price units", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0.0004m, 0.006m, 0.0004m);

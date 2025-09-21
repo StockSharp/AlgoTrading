@@ -32,11 +32,11 @@ public class BacktestingTradeAssistantPanelStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume used when manual entries are triggered.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to the stop loss expressed in MetaTrader points.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance to the take profit expressed in MetaTrader points.", "Risk");
 
 		_magicNumber = Param(nameof(MagicNumber), 99)

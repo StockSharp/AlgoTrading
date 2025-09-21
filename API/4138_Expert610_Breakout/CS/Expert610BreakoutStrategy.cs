@@ -35,11 +35,11 @@ public class Expert610BreakoutStrategy : Strategy
 	public Expert610BreakoutStrategy()
 	{
 		_roundingDigits = Param(nameof(RoundingDigits), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Rounding Digits", "Number of decimal places used when rounding risk calculations.", "Risk");
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk Percent", "Portion of free capital allocated to a single trade.", "Risk")
 			.SetCanOptimize(true);
 
@@ -48,22 +48,22 @@ public class Expert610BreakoutStrategy : Strategy
 			.SetDisplay("Minimum Volume", "Absolute lower bound for any pending order volume.", "Orders");
 
 		_thresholdPips = Param(nameof(ThresholdPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Volatility Threshold (pips)", "Minimum distance between last close and the previous candle extremes.", "Setup")
 			.SetCanOptimize(true);
 
 		_breakoutOffsetPips = Param(nameof(BreakoutOffsetPips), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakout Offset (pips)", "Additional buffer added to the previous candle high/low when placing stops.", "Setup")
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective distance applied after a pending order is triggered.", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance applied after execution.", "Risk")
 			.SetCanOptimize(true);
 

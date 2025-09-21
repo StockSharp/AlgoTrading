@@ -94,7 +94,7 @@ public class MultiTimeFrameTraderStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_shift = Param(nameof(Shift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Shift", "Bars to shift regression evaluation", "Regression");
 
 		_useTrading = Param(nameof(UseTrading), true)

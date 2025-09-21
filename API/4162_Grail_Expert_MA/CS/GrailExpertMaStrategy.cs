@@ -58,11 +58,11 @@ public class GrailExpertMaStrategy : Strategy
 			.SetDisplay("Order Volume", "Trade volume expressed in lots or contracts.", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance to the profit target in pips.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop in pips.", "Risk");
 
 		_highLowPeriod = Param(nameof(HighLowPeriod), 6)
@@ -74,11 +74,11 @@ public class GrailExpertMaStrategy : Strategy
 			.SetDisplay("EMA Period", "Length of the typical price EMA filter.", "Filters");
 
 		_maSlopePips = Param(nameof(MaSlopePips), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("EMA Slope (pips)", "Minimum EMA advance in pips to confirm the trend.", "Filters");
 
 		_targetThresholdPips = Param(nameof(TargetThresholdPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakout Buffer (pips)", "Extra distance beyond the extreme before arming entries.", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

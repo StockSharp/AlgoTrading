@@ -67,11 +67,11 @@ public class CdcPlMfiStrategy : Strategy
 			.SetDisplay("Exit Upper Level", "MFI level used to close long positions", "Exit");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Protective target distance in pips", "Risk");
 	}
 

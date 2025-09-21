@@ -100,62 +100,62 @@ public class TenPipsStrategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetDisplay("Momentum Threshold", "Minimum distance from 100 required for momentum", "Trading Rules")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit (pips)", "Protective take profit distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break Even", "Move the stop to break even once profit target is reached", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetDisplay("Break Even Trigger", "Profit in pips required to lock the trade", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 		.SetDisplay("Break Even Offset", "Additional pips applied when locking", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useMoneyTakeProfit = Param(nameof(UseMoneyTakeProfit), false)
 		.SetDisplay("Money Take Profit", "Close all trades after reaching the money target", "Risk");
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 10m)
 		.SetDisplay("Money Target", "Profit target expressed in account currency", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_usePercentTakeProfit = Param(nameof(UsePercentTakeProfit), false)
 		.SetDisplay("Percent Take Profit", "Close all trades after reaching the percentage target", "Risk");
 
 		_percentTakeProfit = Param(nameof(PercentTakeProfit), 10m)
 		.SetDisplay("Percent Target", "Profit target expressed as account percent", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_enableMoneyTrail = Param(nameof(EnableMoneyTrailing), true)
 		.SetDisplay("Money Trailing", "Enable balance based trailing stop", "Risk");
 
 		_moneyTrailTarget = Param(nameof(MoneyTrailTarget), 40m)
 		.SetDisplay("Money Trail Target", "Profit required to arm the money trail", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_moneyTrailStop = Param(nameof(MoneyTrailStop), 10m)
 		.SetDisplay("Money Trail Stop", "Give-back in currency allowed after arming", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useEquityStop = Param(nameof(UseEquityStop), true)
 		.SetDisplay("Use Equity Stop", "Enable account level equity protection", "Risk");
 
 		_equityRiskPercent = Param(nameof(EquityRiskPercent), 1m)
 		.SetDisplay("Equity Risk %", "Maximum drawdown from the equity peak", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useMacdExit = Param(nameof(UseMacdExit), false)
 		.SetDisplay("MACD Exit", "Close positions on opposite MACD signal", "Trading Rules");

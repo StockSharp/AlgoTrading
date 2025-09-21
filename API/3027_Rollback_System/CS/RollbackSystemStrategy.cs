@@ -46,23 +46,23 @@ public class RollbackSystemStrategy : Strategy
 
 	_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 	_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 	_rollbackPips = Param(nameof(RollbackPips), 20m)
 		.SetDisplay("Rollback", "Minimum pullback size", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 	_channelOpenClosePips = Param(nameof(ChannelOpenClosePips), 18m)
 		.SetDisplay("Channel Open-Close", "Required day change", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 	_channelRollbackPips = Param(nameof(ChannelRollbackPips), 3m)
 		.SetDisplay("Channel Rollback", "Rollback tolerance", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working timeframe", "General");

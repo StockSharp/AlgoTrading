@@ -47,7 +47,7 @@ public class AgMacdDualStrategy : Strategy
 			.SetDisplay("Signal SMA", "Signal smoothing length for both MACD calculations", "Indicators");
 
 		_maxOpenOrders = Param(nameof(MaxOpenOrders), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Open Orders", "Maximum number of simultaneous orders and positions (0 disables the limit)", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

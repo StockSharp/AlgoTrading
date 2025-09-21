@@ -63,7 +63,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	public ExpUltraFatlDuplexStrategy()
 	{
 		_longVolume = Param(nameof(LongVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Volume", "Order volume for long entries.", "Long");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)
@@ -107,19 +107,19 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetDisplay("Long Counter Phase", "Phase parameter for the counter smoother.", "Long");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Closed-bar offset used when evaluating long signals.", "Long");
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop (pts)", "Protective stop distance in price steps for long trades.", "Long");
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Target (pts)", "Take-profit distance in price steps for long trades.", "Long");
 
 		_shortVolume = Param(nameof(ShortVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Volume", "Order volume for short entries.", "Short");
 
 		_allowShortEntries = Param(nameof(AllowShortEntries), true)
@@ -163,15 +163,15 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			.SetDisplay("Short Counter Phase", "Phase parameter for the short counter smoother.", "Short");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Closed-bar offset used when evaluating short signals.", "Short");
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop (pts)", "Protective stop distance in price steps for short trades.", "Short");
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Target (pts)", "Take-profit distance in price steps for short trades.", "Short");
 	}
 

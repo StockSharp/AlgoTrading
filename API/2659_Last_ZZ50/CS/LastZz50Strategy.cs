@@ -145,11 +145,11 @@ public class LastZz50Strategy : Strategy
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 			.SetDisplay("Trailing Stop (pips)", "Distance of the trailing stop in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Minimal advance before the stop is moved", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_startDay = Param(nameof(StartDay), DayOfWeek.Monday)
 			.SetDisplay("Start Day", "First weekday that allows trading", "Session");

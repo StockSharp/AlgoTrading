@@ -163,15 +163,15 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss (points)", "Distance from entry to stop loss expressed in points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (points)", "Distance from entry to take profit expressed in points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10m)
 			.SetDisplay("Allowed Deviation", "Maximum acceptable price deviation for entries", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_allowBuyOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");
@@ -190,15 +190,15 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 
 		_holdingMinutes = Param(nameof(HoldingMinutes), 720)
 			.SetDisplay("Holding Minutes", "Maximum position lifetime in minutes", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_offsetPoints = Param(nameof(OffsetPoints), 200m)
 			.SetDisplay("Offset (points)", "Distance from session open that defines the pivot zones", "Indicator")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Number of bars to delay the signal evaluation", "Indicator")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "Indicator");

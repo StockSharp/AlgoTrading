@@ -44,7 +44,7 @@ public class EmaCrossTrailingStrategy : Strategy
 			.SetOptimize(10m, 300m, 10m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Trailing distance in pips. Zero disables the trailing behaviour.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 200m, 10m);

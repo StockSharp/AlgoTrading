@@ -43,21 +43,21 @@ public class TrainingSimulatorStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance in MetaTrader points applied above the entry price.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance in MetaTrader points applied below the entry price.", "Risk")
 			.SetCanOptimize(true);
 
 		_upperStopPrice = Param(nameof(UpperStopPrice), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Upper Breakpoint", "Price level that pauses the strategy when crossed upward.", "Controls");
 
 		_lowerStopPrice = Param(nameof(LowerStopPrice), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lower Breakpoint", "Price level that pauses the strategy when crossed downward.", "Controls");
 
 		_pauseOnBreakpoint = Param(nameof(PauseOnBreakpoint), true)

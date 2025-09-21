@@ -134,7 +134,7 @@ public class CloseAgentStrategy : Strategy
 
 		_closeAllTarget = Param(nameof(CloseAllTarget), 0m)
 		.SetDisplay("Close All Target", "Profit level that closes every monitored position", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_enableAlerts = Param(nameof(EnableAlerts), true)
 		.SetDisplay("Enable Alerts", "Log a message whenever a position is closed", "Notifications");

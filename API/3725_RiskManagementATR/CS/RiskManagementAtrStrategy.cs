@@ -42,7 +42,7 @@ public class RiskManagementAtrStrategy : Strategy
 			.SetDisplay("ATR multiplier", "Distance multiplier applied to the ATR for stop-loss placement.", "Risk");
 
 		_riskPercentage = Param(nameof(RiskPercentage), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk %", "Percentage of portfolio value risked on every trade.", "Risk");
 
 		_useAtrStopLoss = Param(nameof(UseAtrStopLoss), true)

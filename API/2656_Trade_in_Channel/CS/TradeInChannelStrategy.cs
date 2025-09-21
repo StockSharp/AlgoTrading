@@ -104,7 +104,7 @@ public class TradeInChannelStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in price steps", "Risk")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signals", "General");

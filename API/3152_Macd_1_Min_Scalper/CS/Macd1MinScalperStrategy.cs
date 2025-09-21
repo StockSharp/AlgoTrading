@@ -98,15 +98,15 @@ public class Macd1MinScalperStrategy : Strategy
 			.SetDisplay("Momentum Period", "Length of the momentum filter timeframe.", "Indicators");
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimal deviation from 100 required to confirm strength.", "Filters");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips.", "Risk");
 	}
 

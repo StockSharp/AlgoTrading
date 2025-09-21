@@ -101,15 +101,15 @@ public class EKeyboardTraderStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume submitted when manual market requests are executed.", "Manual Controls");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop loss distance expressed in MetaTrader points.", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Protective take profit distance expressed in MetaTrader points.", "Risk");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage (points)", "Maximum tolerated slippage used for informational logging.", "Manual Controls")
 			.SetCanOptimize(false);
 

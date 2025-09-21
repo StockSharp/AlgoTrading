@@ -236,39 +236,39 @@ public class AtRandomFullStrategy : Strategy
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Positions", "Maximum number of averaged entries per direction (0 = unlimited)", "Risk")
 			.SetCanOptimize(true)
 			.SetRange(0, 10);
 
 		_minStepPoints = Param(nameof(MinStepPoints), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Step (pts)", "Minimal spacing between consecutive entries", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 300, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Protective stop distance in points", "Protection")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 600, 10);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Profit target distance in points", "Protection")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 800, 10);
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Activate (pts)", "Profit needed before the trailing stop engages", "Protection");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pts)", "Distance maintained by the trailing stop", "Protection");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pts)", "Minimal price improvement before trailing adjusts", "Protection");
 
 		_onlyOnePosition = Param(nameof(OnlyOnePosition), false)

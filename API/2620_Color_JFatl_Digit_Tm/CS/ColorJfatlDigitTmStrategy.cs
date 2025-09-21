@@ -277,11 +277,11 @@ public class ColorJfatlDigitTmStrategy : Strategy
 			.SetDisplay("End Minute", "Session end minute", "Session");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take profit in points", "Risk");
 
 		_buyOpen = Param(nameof(BuyOpenEnabled), true)
@@ -312,7 +312,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 			.SetDisplay("Applied Price", "Price source for calculations", "Indicator");
 
 		_digitRounding = Param(nameof(DigitRounding), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Digit Rounding", "Rounding precision multiplier", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)

@@ -29,12 +29,12 @@ public class NevalyashkaStrategy : Strategy
 	public NevalyashkaStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips applied to every trade.", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips applied to every trade.", "Risk")
 			.SetCanOptimize(true);
 

@@ -87,11 +87,11 @@ public class PendingLimitGridStrategy : Strategy
 	{
 		_profitTargetCurrency = Param(nameof(ProfitTargetCurrency), 500m)
 		.SetDisplay("Profit Target", "Net profit (currency units) before the grid is reset", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_maxDrawdownCurrency = Param(nameof(MaxDrawdownCurrency), 150m)
 		.SetDisplay("Max Drawdown", "Maximum floating loss (currency units) tolerated", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_gridStepPoints = Param(nameof(GridStepPoints), 30m)
 		.SetDisplay("Grid Step (points)", "Distance in broker points between pending limits", "Grid")

@@ -72,11 +72,11 @@ _zigZagDepth = Param(nameof(ZigZagDepth), 12)
 
 _zigZagDeviation = Param(nameof(ZigZagDeviation), 5m)
 .SetDisplay("ZigZag Deviation", "Minimum deviation in points to confirm a swing", "ZigZag")
-.SetGreaterOrEqualZero();
+.SetNotNegative();
 
 _zigZagBackstep = Param(nameof(ZigZagBackstep), 3)
 .SetDisplay("ZigZag Backstep", "Bars required between opposite pivots", "ZigZag")
-.SetGreaterOrEqualZero();
+.SetNotNegative();
 
 _waitBars = Param(nameof(WaitBarsAfterSignal), 12)
 .SetDisplay("Wait Bars", "Candles to keep the pending order before cancelling", "Trading")

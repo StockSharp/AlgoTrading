@@ -160,7 +160,7 @@ public class DeepDrawdownMaStrategy : Strategy
 
 		_fastMaShift = Param(nameof(FastMaShift), 3)
 			.SetDisplay("Fast MA Shift", "Shift applied to the fast moving average", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_fastPriceType = Param(nameof(FastPriceType), PriceSource.Close)
 			.SetDisplay("Fast Price", "Price source for the fast moving average", "Indicators");
@@ -173,7 +173,7 @@ public class DeepDrawdownMaStrategy : Strategy
 
 		_slowMaShift = Param(nameof(SlowMaShift), 0)
 			.SetDisplay("Slow MA Shift", "Shift applied to the slow moving average", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_slowPriceType = Param(nameof(SlowPriceType), PriceSource.Close)
 			.SetDisplay("Slow Price", "Price source for the slow moving average", "Indicators");

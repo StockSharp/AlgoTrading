@@ -67,11 +67,11 @@ public class AmstellSlStrategy : Strategy
 	public AmstellSlStrategy()
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in points", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk");
 
 		_volume = Param(nameof(Volume), 0.01m)
@@ -79,7 +79,7 @@ public class AmstellSlStrategy : Strategy
 			.SetDisplay("Volume", "Lot size for each order", "Trading");
 
 		_reentryPoints = Param(nameof(ReentryPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Reentry Step", "Adverse move needed to add orders", "Trading");
 	}
 

@@ -40,7 +40,7 @@ public class SmartForexSystemStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_percentThreshold = Param(nameof(PercentThreshold), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimum relative price change (in pips) required for the signal", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 5m, 0.5m);

@@ -23,7 +23,7 @@ public class SymbolSyncStrategy : Strategy
 	public SymbolSyncStrategy()
 	{
 		_chartLimit = Param(nameof(ChartLimit), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Chart limit", "Maximum number of linked strategies that can be synchronized.", "General")
 			.SetCanOptimize(false);
 

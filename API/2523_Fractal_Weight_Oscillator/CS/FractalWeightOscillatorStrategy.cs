@@ -256,7 +256,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		.SetDisplay("Trend Mode", "Follow trend or counter-trend", "Trading");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Offset for signal evaluation", "Trading");
 
 		_period = Param(nameof(Period), 30)
@@ -314,11 +314,11 @@ public class FractalWeightOscillatorStrategy : Strategy
 		.SetDisplay("Close Short", "Allow short exit on signals", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pts)", "Stop-loss distance in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Take-profit distance in points", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(6).TimeFrame())

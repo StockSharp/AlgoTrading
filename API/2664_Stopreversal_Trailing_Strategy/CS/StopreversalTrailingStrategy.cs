@@ -52,12 +52,12 @@ public class StopreversalTrailingStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Steps", "Stop loss distance in price steps", "Risk")
 		.SetCanOptimize(true);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Steps", "Take profit distance in price steps", "Risk")
 		.SetCanOptimize(true);
 
@@ -82,7 +82,7 @@ public class StopreversalTrailingStrategy : Strategy
 		.SetDisplay("Applied Price", "Price source used by the trailing stop", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bar delay before acting on a signal", "Indicator")
 		.SetCanOptimize(true);
 	}

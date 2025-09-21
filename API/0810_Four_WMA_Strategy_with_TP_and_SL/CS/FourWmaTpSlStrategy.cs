@@ -140,11 +140,11 @@ _enableTpSl = Param(nameof(EnableTpSl), true)
 .SetDisplay("Enable TP/SL", "Use take profit and stop loss", "Risk");
 
 _takeProfitPercent = Param(nameof(TakeProfitPercent), 1m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Take Profit %", "Take profit percentage", "Risk");
 
 _stopLossPercent = Param(nameof(StopLossPercent), 1m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop Loss %", "Stop loss percentage", "Risk");
 
 _direction = Param(nameof(Direction), (Sides?)null)

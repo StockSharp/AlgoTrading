@@ -119,11 +119,11 @@ public class RabbitM3Strategy : Strategy
 		.SetDisplay("Max Open Positions", "Maximum simultaneous trades (net position based)", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 360m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Fixed profit target distance from entry", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance from entry", "Risk");
 
 		_entryVolume = Param(nameof(EntryVolume), 0.01m)
@@ -131,11 +131,11 @@ public class RabbitM3Strategy : Strategy
 		.SetDisplay("Entry Volume", "Initial position size for each trade", "Money Management");
 
 		_bigWinThreshold = Param(nameof(BigWinThreshold), 4m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Big Win Threshold", "Profit required to increase volume; doubles after each trigger", "Money Management");
 
 		_volumeIncrement = Param(nameof(VolumeIncrement), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Volume Increment", "Increment added to volume after beating Big Win Threshold", "Money Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

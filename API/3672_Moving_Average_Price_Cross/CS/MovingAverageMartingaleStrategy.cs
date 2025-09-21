@@ -58,12 +58,12 @@ public class MovingAverageMartingaleStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Initial profit target distance expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Initial stop-loss distance expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true);
 

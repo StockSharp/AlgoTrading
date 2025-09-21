@@ -46,11 +46,11 @@ public class DarkCloudPiercingCciStrategy : Strategy
 			.SetDisplay("Body Average Period", "Number of candles used to determine long bodies", "Indicators");
 
 		_entryConfirmationLevel = Param(nameof(EntryConfirmationLevel), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("CCI Entry Level", "Absolute CCI level required to confirm entries", "Trading Rules");
 
 		_exitLevel = Param(nameof(ExitLevel), 80m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("CCI Exit Level", "Absolute CCI level used for position exits", "Trading Rules");
 	}
 

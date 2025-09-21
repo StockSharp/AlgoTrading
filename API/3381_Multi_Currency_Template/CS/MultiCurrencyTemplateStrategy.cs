@@ -76,23 +76,23 @@ public class MultiCurrencyTemplateStrategy : Strategy
 			.SetOptimize(0.01m, 0.10m, 0.01m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(20, 100, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial profit target distance in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(50, 200, 25);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pts)", "Activation distance for the trailing stop expressed in MetaTrader points.", "Risk");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pts)", "Minimal improvement required before updating the trailing stop.", "Risk");
 
 		_enableMartingale = Param(nameof(EnableMartingale), true)
@@ -105,7 +105,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 			.SetOptimize(1.1m, 2.0m, 0.1m);
 
 		_martingaleStepPoints = Param(nameof(MartingaleStepPoints), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Step (pts)", "Distance in MetaTrader points before placing the next averaging order.", "Martingale")
 			.SetCanOptimize(true)
 			.SetOptimize(50, 250, 25);
@@ -114,7 +114,7 @@ public class MultiCurrencyTemplateStrategy : Strategy
 			.SetDisplay("Average Take Profit", "Average the take-profit using the weighted position price when multiple trades are open.", "Martingale");
 
 		_takeProfitAveragePoints = Param(nameof(TakeProfitAveragePoints), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Average TP Offset (pts)", "Offset used for the averaged take-profit target in MetaTrader points.", "Martingale");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())

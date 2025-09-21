@@ -238,13 +238,13 @@ public class MultiStochasticStrategy : Strategy
 			.SetDisplay("Overbought Level", "Threshold for short entries", "Signals");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 100m, 5m);

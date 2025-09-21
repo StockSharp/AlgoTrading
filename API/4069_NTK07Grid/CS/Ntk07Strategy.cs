@@ -102,17 +102,17 @@ public class Ntk07Strategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 115)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
 		.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 75)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_multiplier = Param(nameof(Multiplier), 1.7m)
@@ -141,18 +141,18 @@ public class Ntk07Strategy : Strategy
 		.SetCanOptimize(true);
 
 		_percentRisk = Param(nameof(PercentRisk), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Percent Risk", "Percent of balance used to size the grid (mode BalanceBased)", "Money Management");
 
 		_minCapital = Param(nameof(MinCapital), 5000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Minimum Capital", "Minimum free capital required before trading", "Risk");
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
 		.SetDisplay("Use BreakEven", "Move stop to break-even after a configurable profit", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("BreakEven Offset (pips)", "Distance required before moving to break-even", "Risk");
 
 		_useMovingAverage = Param(nameof(UseMovingAverageFilter), false)
@@ -163,7 +163,7 @@ public class Ntk07Strategy : Strategy
 		.SetDisplay("MA Length", "Moving average length for trailing adjustments", "Filters");
 
 		_movingAverageShift = Param(nameof(MovingAverageShift), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MA Shift", "Number of completed candles used as a shift", "Filters");
 
 		_startHour = Param(nameof(StartHour), 0)
@@ -175,7 +175,7 @@ public class Ntk07Strategy : Strategy
 		.SetDisplay("End Hour", "Latest trading hour (inclusive)", "Schedule");
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Channel Period", "Number of candles used to confirm breakouts", "Entries");
 
 		_useChannelCenter = Param(nameof(UseChannelCenter), false)

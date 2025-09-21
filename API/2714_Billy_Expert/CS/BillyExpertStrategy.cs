@@ -128,11 +128,11 @@ public class BillyExpertStrategy : Strategy
 		.SetDisplay("Trade Volume", "Order size for each entry", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 32)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 6)

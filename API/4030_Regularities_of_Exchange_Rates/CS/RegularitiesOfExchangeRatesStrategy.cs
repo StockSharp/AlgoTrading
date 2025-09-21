@@ -109,7 +109,7 @@ public class RegularitiesOfExchangeRatesStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20m)
 			.SetDisplay("Take Profit (points)", "Profit target distance measured in broker points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance attached to filled trades", "Risk")

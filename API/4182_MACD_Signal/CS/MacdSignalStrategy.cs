@@ -120,7 +120,7 @@ public class MacdSignalStrategy : Strategy
 	public MacdSignalStrategy()
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance for the fixed take-profit target in price steps.", "Risk")
 			.SetCanOptimize(true);
 
@@ -129,7 +129,7 @@ public class MacdSignalStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order size used for every market entry.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 25)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing distance in price steps. Set to 0 to disable trailing.", "Risk")
 			.SetCanOptimize(true);
 
@@ -149,7 +149,7 @@ public class MacdSignalStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_thresholdMultiplier = Param(nameof(ThresholdMultiplier), 0.004m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("ATR Multiplier", "Multiplier applied to ATR to form the breakout threshold.", "Indicators")
 			.SetCanOptimize(true);
 

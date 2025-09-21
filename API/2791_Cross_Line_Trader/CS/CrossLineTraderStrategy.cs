@@ -195,11 +195,11 @@ public class CrossLineTraderStrategy : Strategy
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
 			.SetDisplay("Stop Loss Offset", "Price distance for protective exit", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
 			.SetDisplay("Take Profit Offset", "Price distance for profit taking", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

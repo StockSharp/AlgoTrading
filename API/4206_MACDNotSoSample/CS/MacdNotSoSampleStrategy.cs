@@ -72,7 +72,7 @@ public class MacdNotSoSampleStrategy : Strategy
 			.SetDisplay("Take profit", "Take-profit distance expressed in pips.", "Risk management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 19m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop", "Trailing stop distance expressed in pips.", "Risk management");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

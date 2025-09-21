@@ -153,7 +153,7 @@ public class ColorJjrsxTrendStrategy : Strategy
 		.SetOptimize(2, 20, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bar index used for signals", "Indicator");
 
 		_enableBuy = Param(nameof(EnableBuy), true)
@@ -173,11 +173,11 @@ public class ColorJjrsxTrendStrategy : Strategy
 		.SetDisplay("Order Volume", "Volume for new entries", "Trading Rules");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

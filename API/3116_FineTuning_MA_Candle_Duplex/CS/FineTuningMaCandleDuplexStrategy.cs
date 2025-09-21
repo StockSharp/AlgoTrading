@@ -321,26 +321,26 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		.SetDisplay("Long Rank3", "Third shaping exponent for long weights", "Long stream");
 
 		_longShift1 = Param(nameof(LongShift1), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetLessOrEquals(1m)
 		.SetDisplay("Long Shift1", "First shift coefficient for long weights", "Long stream");
 
 		_longShift2 = Param(nameof(LongShift2), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetLessOrEquals(1m)
 		.SetDisplay("Long Shift2", "Second shift coefficient for long weights", "Long stream");
 
 		_longShift3 = Param(nameof(LongShift3), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetLessOrEquals(1m)
 		.SetDisplay("Long Shift3", "Third shift coefficient for long weights", "Long stream");
 
 		_longGap = Param(nameof(LongGap), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Gap", "Maximum real candle body that keeps the synthetic open flat", "Long stream");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Signal Bar", "Lookback offset used for long entries", "Long stream");
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -371,26 +371,26 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		.SetDisplay("Short Rank3", "Third shaping exponent for short weights", "Short stream");
 
 		_shortShift1 = Param(nameof(ShortShift1), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetLessOrEquals(1m)
 		.SetDisplay("Short Shift1", "First shift coefficient for short weights", "Short stream");
 
 		_shortShift2 = Param(nameof(ShortShift2), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetLessOrEquals(1m)
 		.SetDisplay("Short Shift2", "Second shift coefficient for short weights", "Short stream");
 
 		_shortShift3 = Param(nameof(ShortShift3), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetLessOrEquals(1m)
 		.SetDisplay("Short Shift3", "Third shift coefficient for short weights", "Short stream");
 
 		_shortGap = Param(nameof(ShortGap), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Gap", "Maximum real candle body that keeps the synthetic open flat", "Short stream");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Signal Bar", "Lookback offset used for short entries", "Short stream");
 
 		_enableShortEntries = Param(nameof(EnableShortEntries), true)
@@ -404,11 +404,11 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		.SetDisplay("Order Volume", "Base volume for opening positions", "Trading");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in price points", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in price points", "Trading");
 	}
 

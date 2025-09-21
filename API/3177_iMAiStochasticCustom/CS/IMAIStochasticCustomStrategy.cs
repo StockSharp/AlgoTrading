@@ -47,25 +47,25 @@ public class IMAIStochasticCustomStrategy : Strategy
 		.SetDisplay("Candle Type", "Timeframe used to evaluate signals.", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Distance that activates the trailing stop.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 150, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimum price improvement before moving the trailing stop.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 50, 5);
@@ -84,7 +84,7 @@ public class IMAIStochasticCustomStrategy : Strategy
 		.SetOptimize(5, 60, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MA Shift", "Number of completed bars used to shift the moving average.", "Indicators");
 
 		_maMethod = Param(nameof(MaMethod), MaMethod.Smoothed)

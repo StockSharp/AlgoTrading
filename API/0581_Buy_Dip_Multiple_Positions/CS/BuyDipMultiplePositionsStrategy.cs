@@ -82,7 +82,7 @@ public class BuyDipMultiplePositionsStrategy : Strategy
 			.SetDisplay("Max Positions", "Maximum simultaneous trades", "General");
 
 		_trailRatePercent = Param(nameof(TrailRatePercent), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trail Rate %", "Trailing stop increase per bar", "Risk");
 
 		_initialStopPercent = Param(nameof(InitialStopPercent), 85m)

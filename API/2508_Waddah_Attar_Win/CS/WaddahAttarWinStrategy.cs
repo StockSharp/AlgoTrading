@@ -80,7 +80,7 @@ public class WaddahAttarWinStrategy : Strategy
 			.SetDisplay("Increment Volume", "Additional volume applied to subsequent grid orders", "General");
 
 		_minProfit = Param(nameof(MinProfit), 910m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Profit", "Required equity increase to close all trades", "Risk");
 	}
 

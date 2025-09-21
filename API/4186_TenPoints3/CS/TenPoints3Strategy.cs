@@ -67,19 +67,19 @@ public class TenPoints3Strategy : Strategy
 			.SetDisplay("Base Volume", "Initial order volume before money management adjustments.", "Trading");
 
 		_gridSpacingPoints = Param(nameof(GridSpacingPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Grid Spacing", "Minimum distance in points before adding a new order to the grid.", "Trading");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Distance in points used for the fixed take profit target.", "Risk");
 
 		_initialStopPoints = Param(nameof(InitialStopPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Initial Stop", "Distance in points for the initial protective stop.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Distance in points kept when the trailing stop activates.", "Risk");
 
 		_maxTrades = Param(nameof(MaxTrades), 9)
@@ -87,11 +87,11 @@ public class TenPoints3Strategy : Strategy
 			.SetDisplay("Max Trades", "Maximum number of simultaneous grid entries per direction.", "Trading");
 
 		_ordersToProtect = Param(nameof(OrdersToProtect), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Orders To Protect", "Number of open trades required before equity protection can trigger.", "Risk");
 
 		_secureProfit = Param(nameof(SecureProfit), 8m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Secure Profit", "Unrealized profit in points*volume required to close all trades.", "Risk");
 
 		_accountProtectionEnabled = Param(nameof(AccountProtectionEnabled), true)
@@ -104,14 +104,14 @@ public class TenPoints3Strategy : Strategy
 			.SetDisplay("Money Management", "Recalculate the base volume from portfolio value and risk.", "Money management");
 
 		_riskPerTenThousand = Param(nameof(RiskPerTenThousand), 12m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk (1/10000)", "Risk amount per 10,000 units of balance when money management is enabled.", "Money management");
 
 		_isStandardAccount = Param(nameof(IsStandardAccount), true)
 			.SetDisplay("Standard Account", "Controls lot rounding when money management is active.", "Money management");
 
 		_maxVolumeCap = Param(nameof(MaxVolumeCap), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Volume", "Safety cap for the calculated position size.", "Trading");
 	}
 

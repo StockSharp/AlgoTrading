@@ -122,7 +122,7 @@ public class DynamicRsCStrategy : Strategy
 			.SetDisplay("Length", "Lookback depth of DynamicRS_C", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Finished candles back for signals", "Indicator");
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)

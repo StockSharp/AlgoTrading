@@ -133,42 +133,42 @@ public class ExpertNewsStrategy : Strategy
 	public ExpertNewsStrategy()
 	{
 		_stopLossTicks = Param(nameof(StopLossTicks), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk Management");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Risk Management");
 
 		_trailingStopTicks = Param(nameof(TrailingStopTicks), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Ticks", "Trailing stop distance in ticks", "Risk Management");
 
 		_trailingStartTicks = Param(nameof(TrailingStartTicks), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Start Ticks", "Profit needed before trailing activates", "Risk Management");
 
 		_trailingStepTicks = Param(nameof(TrailingStepTicks), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step Ticks", "Minimum improvement for trailing updates", "Risk Management");
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
 			.SetDisplay("Use Break Even", "Enable break-even stop adjustment", "Risk Management");
 
 		_breakEvenProfitTicks = Param(nameof(BreakEvenProfitTicks), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break Even Profit Ticks", "Profit buffer when moving stop to break-even", "Risk Management");
 
 		_entryOffsetTicks = Param(nameof(EntryOffsetTicks), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Offset Ticks", "Distance from price for new stop orders", "Entries");
 
 		_orderRefreshSeconds = Param(nameof(OrderRefreshSeconds), 300)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Order Refresh Seconds", "Delay before refreshing pending orders", "Entries");
 
 		_minimumStopTicks = Param(nameof(MinimumStopTicks), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum Stop Ticks", "Minimum distance allowed for stops", "Risk Management");
 
 		Volume = 0.1m;

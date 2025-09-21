@@ -199,7 +199,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		.SetDisplay("Enable Time Exit", "Use maximum position lifetime filter", "Risk");
 
 		_maxPositionMinutes = Param(nameof(MaxPositionMinutes), 1920)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Position Minutes", "Maximum holding time in minutes", "Risk")
 		.SetCanOptimize(true);
 
@@ -209,7 +209,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_upTrailShift = Param(nameof(UpTrailShift), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Upper Shift", "Offset for upper channel evaluation", "Channels")
 		.SetCanOptimize(true);
 
@@ -219,21 +219,21 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_downTrailShift = Param(nameof(DownTrailShift), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Lower Shift", "Offset for lower channel evaluation", "Channels")
 		.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Index of the bar used for entries", "Signals")
 		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Stop loss distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Take profit distance in price steps", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())

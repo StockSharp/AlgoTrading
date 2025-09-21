@@ -140,7 +140,7 @@ public class TrueSort1001Strategy : Strategy
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Trailing stop distance in price steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(20, 200, 20);

@@ -44,17 +44,17 @@ public class AdxSystemStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Target distance expressed in price points.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Protective stop distance expressed in price points.", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (points)", "Trailing stop distance expressed in price points.", "Risk")
 			.SetCanOptimize(true);
 	}

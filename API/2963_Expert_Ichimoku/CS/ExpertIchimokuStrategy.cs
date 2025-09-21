@@ -160,19 +160,19 @@ public class ExpertIchimokuStrategy : Strategy
 			.SetOptimize(40, 70, 2);
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Offset", "Absolute stop-loss distance", "Risk Management");
 
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Offset", "Absolute take-profit distance", "Risk Management");
 
 		_trailingStopOffset = Param(nameof(TrailingStopOffset), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Offset", "Base trailing stop distance", "Risk Management");
 
 		_trailingStep = Param(nameof(TrailingStep), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Minimum move to tighten trailing stop", "Risk Management");
 
 		_maxPositions = Param(nameof(MaxPositions), 5)

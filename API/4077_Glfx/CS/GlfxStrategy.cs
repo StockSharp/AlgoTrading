@@ -88,11 +88,11 @@ public class GlfxStrategy : Strategy
 			.SetDisplay("Signals Reset", "Reset counters whenever momentum weakens.", "Signals");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 308m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Static take-profit distance in pips.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 290m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Static stop-loss distance in pips.", "Risk");
 
 		_volume = Param(nameof(Volume), 0.1m)

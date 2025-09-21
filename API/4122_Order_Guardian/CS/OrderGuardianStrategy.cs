@@ -96,11 +96,11 @@ public class OrderGuardianStrategy : Strategy
 			.SetDisplay("SL Deviation %", "Envelope deviation applied to the stop-loss moving average.", "Stop Loss");
 
 		_takeProfitShift = Param(nameof(TakeProfitShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("TP Shift", "Number of completed candles used as shift for the take-profit MA.", "Take Profit");
 
 		_stopLossShift = Param(nameof(StopLossShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("SL Shift", "Number of completed candles used as shift for the stop-loss MA or SAR.", "Stop Loss");
 
 		_manualTakeProfitLong = Param(nameof(ManualTakeProfitLong), 0m)

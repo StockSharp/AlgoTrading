@@ -148,22 +148,22 @@ public class BullsBearsEyesEaStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal advance before trailing", "Risk")
 			.SetCanOptimize(true);
 

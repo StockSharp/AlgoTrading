@@ -100,12 +100,12 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		.SetDisplay("Time Frame", "Primary candle time frame processed by the strategy.", "Data");
 
 		_daysBackForHigh = Param(nameof(DaysBackForHigh), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Days Back (High)", "Daily candle index that provides the swing high for Fibonacci levels.", "Fibonacci")
 		.SetCanOptimize(true);
 
 		_daysBackForLow = Param(nameof(DaysBackForLow), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Days Back (Low)", "Daily candle index that provides the swing low for Fibonacci levels.", "Fibonacci")
 		.SetCanOptimize(true);
 

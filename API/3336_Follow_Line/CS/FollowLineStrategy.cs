@@ -101,7 +101,7 @@ public class FollowLineStrategy : Strategy
 			.SetDisplay("Arrow Mode", "Signal confirmation type", "Indicator");
 
 		_indicatorShift = Param(nameof(IndicatorsShift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Indicator Shift", "Bars delay before execution", "Indicator");
 
 		_closeInSignal = Param(nameof(CloseInSignal), false)
@@ -179,11 +179,11 @@ public class FollowLineStrategy : Strategy
 			.SetDisplay("End Hour", "Trading window end hour", "Time");
 
 		_maxSpread = Param(nameof(MaxSpread), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Spread", "Maximum allowed spread in steps", "Filters");
 
 		_maxOrders = Param(nameof(MaxOrders), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Orders", "Maximum simultaneous volume", "Filters");
 	}
 

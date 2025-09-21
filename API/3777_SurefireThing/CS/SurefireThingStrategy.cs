@@ -36,12 +36,12 @@ public class SurefireThingStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-Profit Points", "Distance in price steps used for take-profit orders.", "Risk Management")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss Points", "Distance in price steps used for stop-loss orders.", "Risk Management")
 			.SetCanOptimize(true);
 

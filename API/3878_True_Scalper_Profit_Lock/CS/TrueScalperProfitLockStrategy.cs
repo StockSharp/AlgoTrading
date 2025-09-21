@@ -56,11 +56,11 @@ public class TrueScalperProfitLockStrategy : Strategy
 		.SetDisplay("Fixed volume", "Base order size used when money management is disabled.", "Trading");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 44)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take profit", "Distance to the profit target expressed in price steps.", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 90)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop loss", "Distance to the protective stop expressed in price steps.", "Risk");
 
 		_useRsiMethodA = Param(nameof(UseRsiMethodA), false)
@@ -79,14 +79,14 @@ public class TrueScalperProfitLockStrategy : Strategy
 		.SetDisplay("Abandon method B", "Close the trade after the timeout without reversing.", "Trade management");
 
 		_abandonBars = Param(nameof(AbandonBars), 101)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Abandon bars", "Number of completed candles before the abandon logic triggers.", "Trade management");
 
 		_useMoneyManagement = Param(nameof(UseMoneyManagement), true)
 		.SetDisplay("Use money management", "Recalculate volume from balance and risk settings.", "Trading");
 
 		_riskPercent = Param(nameof(RiskPercent), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Risk percent", "Risk percentage used by the money management formula.", "Trading");
 
 		_accountIsMini = Param(nameof(AccountIsMini), false)
@@ -99,14 +99,14 @@ public class TrueScalperProfitLockStrategy : Strategy
 		.SetDisplay("Use profit lock", "Move the stop to break-even after a defined profit.", "Risk");
 
 		_breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 25m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-even trigger", "Profit distance that activates the break-even move.", "Risk");
 
 		_breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 3m)
 		.SetDisplay("Break-even offset", "Additional distance added when moving the stop to break-even.", "Risk");
 
 		_maxOpenTrades = Param(nameof(MaxOpenTrades), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max trades", "Maximum number of simultaneous open trades.", "Trading");
 	}
 

@@ -41,12 +41,12 @@ public class XpTradeManagerStrategy : Strategy
 	public XpTradeManagerStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial take-profit distance in pips", "Targets")
 			.SetCanOptimize(true);
 
@@ -54,12 +54,12 @@ public class XpTradeManagerStrategy : Strategy
 			.SetDisplay("Use Break-Even", "Move the stop-loss to break-even after configurable profit", "Break-Even");
 
 		_breakEvenActivationPips = Param(nameof(BreakEvenActivationPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-Even Activation (pips)", "Profit required before the break-even stop is applied", "Break-Even")
 			.SetCanOptimize(true);
 
 		_breakEvenLockPips = Param(nameof(BreakEvenLockPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-Even Lock (pips)", "Offset kept as profit when moving to break-even", "Break-Even")
 			.SetCanOptimize(true);
 
@@ -67,17 +67,17 @@ public class XpTradeManagerStrategy : Strategy
 			.SetDisplay("Use Trailing Stop", "Enable the progressive trailing stop controller", "Trailing");
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Start (pips)", "Profit required before trailing becomes active", "Trailing")
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Profit increment that advances the trailing stop", "Trailing")
 			.SetCanOptimize(true);
 
 		_trailingDistancePips = Param(nameof(TrailingDistancePips), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Distance (pips)", "Distance maintained behind price when trailing", "Trailing")
 			.SetCanOptimize(true);
 

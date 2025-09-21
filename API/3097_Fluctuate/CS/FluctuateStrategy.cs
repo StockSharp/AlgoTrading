@@ -68,23 +68,23 @@ public class FluctuateStrategy : Strategy
 		.SetDisplay("Candle type", "Primary timeframe used for signals.", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Additional move required before the trailing stop advances.", "Risk");
 
 		_stepPips = Param(nameof(StepPips), 30)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Grid step (pips)", "Distance between opposite pending orders.", "Trade");
 
 		_lotCoefficient = Param(nameof(LotCoefficient), 2m)
@@ -103,22 +103,22 @@ public class FluctuateStrategy : Strategy
 		.SetDisplay("Max total volume", "Upper limit for the sum of open exposure and pending volume.", "Risk");
 
 		_profitTarget = Param(nameof(ProfitTarget), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Profit target", "Closes every position when unrealized profit reaches this amount.", "Risk");
 
 		_minEquityPercent = Param(nameof(MinEquityPercent), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min equity %", "Trading pauses when equity falls below this percentage of the initial balance.", "Risk");
 
 		_closeAllAtStart = Param(nameof(CloseAllAtStart), false)
 		.SetDisplay("Close on start", "Close all positions and cancel orders when the strategy starts.", "General");
 
 		_startHour = Param(nameof(StartHour), 10)
-		.SetInclusiveRange(0, 23)
+		.SetRange(0, 23)
 		.SetDisplay("Start hour", "Hour when trading becomes active (inclusive).", "Schedule");
 
 		_endHour = Param(nameof(EndHour), 20)
-		.SetInclusiveRange(0, 23)
+		.SetRange(0, 23)
 		.SetDisplay("End hour", "Hour when trading stops accepting new signals (exclusive).", "Schedule");
 
 		_lotMode = Param(nameof(PositionSizingMode), LotMode.FixedVolume)

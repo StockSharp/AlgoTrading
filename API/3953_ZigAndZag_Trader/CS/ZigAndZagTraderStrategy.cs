@@ -134,11 +134,11 @@ public class ZigAndZagTraderStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
 			.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

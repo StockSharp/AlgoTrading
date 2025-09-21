@@ -329,7 +329,7 @@ public class DonchianChannelsStrategy : Strategy
 		.SetDisplay("Slow MA", "Length of the slow LWMA", "Indicators");
 
 		_maDistance = Param(nameof(MaDistance), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MA Distance", "Allowed deviation between fast and slow MA", "Filters");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -337,34 +337,34 @@ public class DonchianChannelsStrategy : Strategy
 		.SetDisplay("Momentum Period", "Momentum lookback on higher timeframe", "Indicators");
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Momentum Buy", "Required momentum deviation for longs", "Filters");
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Momentum Sell", "Required momentum deviation for shorts", "Filters");
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in steps", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in steps", "Risk");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 		.SetDisplay("Use Trailing", "Enable trailing stop", "Risk");
 
 		_trailingTrigger = Param(nameof(TrailingTrigger), 40m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Trigger", "Activation distance for trailing", "Risk");
 
 		_trailingStep = Param(nameof(TrailingStep), 40m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Step used when updating trailing stop", "Risk");
 
 		_trailingPadding = Param(nameof(TrailingPadding), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Padding", "Padding for candle-based trailing", "Risk");
 
 		_useCandleTrail = Param(nameof(UseCandleTrail), true)
@@ -378,18 +378,18 @@ public class DonchianChannelsStrategy : Strategy
 		.SetDisplay("Use BreakEven", "Enable break-even logic", "Risk");
 
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("BreakEven Trigger", "Distance before break-even activates", "Risk");
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("BreakEven Offset", "Offset applied when moving to break-even", "Risk");
 
 		_useEquityStop = Param(nameof(UseEquityStop), true)
 		.SetDisplay("Use Equity Stop", "Enable drawdown protection", "Risk");
 
 		_equityRisk = Param(nameof(TotalEquityRisk), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Equity Risk", "Maximum tolerated drawdown", "Risk");
 
 		_maxTrades = Param(nameof(MaxTrades), 10)

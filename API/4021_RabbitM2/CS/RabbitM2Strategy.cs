@@ -100,12 +100,12 @@ public class RabbitM2Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance from entry price to the take profit", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance from entry price to the stop loss", "Risk")
 			.SetCanOptimize(true);
 

@@ -126,7 +126,7 @@ public class Russian20TimeFilterMomentumStrategy : Strategy
 			.SetDisplay("Momentum Threshold", "Neutral momentum level for signals", "Indicators");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), false)

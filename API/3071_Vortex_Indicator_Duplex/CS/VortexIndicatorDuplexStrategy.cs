@@ -71,11 +71,11 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			.SetOptimize(7, 42, 7);
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Closed bar shift used for long evaluations.", "Signals");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Closed bar shift used for short evaluations.", "Signals");
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)
 			.SetDisplay("Allow Long Entries", "Enable opening long positions when VI+ crosses above VI-.", "Trading");
@@ -90,19 +90,19 @@ public class VortexIndicatorDuplexStrategy : Strategy
 			.SetDisplay("Allow Short Exits", "Enable closing short positions when VI+ recovers above VI-.", "Trading");
 
 		_longStopLossSteps = Param(nameof(LongStopLossSteps), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss Steps", "Protective distance below the long entry price in price steps (0 disables).", "Risk");
 
 		_longTakeProfitSteps = Param(nameof(LongTakeProfitSteps), 2000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit Steps", "Target distance above the long entry price in price steps (0 disables).", "Risk");
 
 		_shortStopLossSteps = Param(nameof(ShortStopLossSteps), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss Steps", "Protective distance above the short entry price in price steps (0 disables).", "Risk");
 
 		_shortTakeProfitSteps = Param(nameof(ShortTakeProfitSteps), 2000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit Steps", "Target distance below the short entry price in price steps (0 disables).", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

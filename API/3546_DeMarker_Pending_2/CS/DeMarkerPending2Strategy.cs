@@ -65,23 +65,23 @@ public class DeMarkerPending2Strategy : Strategy
 		.SetDisplay("Order Volume", "Default volume for pending orders", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pts)", "Initial stop-loss distance measured in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Initial take-profit distance measured in price steps", "Risk");
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Activate (pts)", "Profit in points required before trailing starts", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pts)", "Distance between price and trailing stop", "Risk");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pts)", "Additional gain required to move the trailing stop", "Risk");
 
 		_trailingOnCloseOnly = Param(nameof(TrailingOnCloseOnly), false)
@@ -92,7 +92,7 @@ public class DeMarkerPending2Strategy : Strategy
 		.SetDisplay("Max Positions", "Maximum number of simultaneous positions and pending orders", "Trading");
 
 		_minDistancePoints = Param(nameof(MinDistancePoints), 150m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min Distance (pts)", "Minimum distance between new entries and the current position", "Trading");
 
 		_useStopOrders = Param(nameof(UseStopOrders), true)
@@ -105,11 +105,11 @@ public class DeMarkerPending2Strategy : Strategy
 		.SetDisplay("Replace Pendings", "Cancel previous pending orders before queuing a new one", "Trading");
 
 		_pendingIndentPoints = Param(nameof(PendingIndentPoints), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Pending Offset (pts)", "Indent for new pending orders in price steps", "Trading");
 
 		_pendingMaxSpreadPoints = Param(nameof(PendingMaxSpreadPoints), 12m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Spread (pts)", "Maximum spread allowed when placing pending orders", "Filters");
 
 		_useTimeControl = Param(nameof(UseTimeControl), false)

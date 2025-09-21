@@ -76,23 +76,23 @@ public class VirtualTrailingStopStrategy : Strategy
 	public VirtualTrailingStopStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-loss (pips)", "Distance for stop-loss in pip units", "Risk Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-profit (pips)", "Distance for take-profit in pip units", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Trailing stop distance in pip units", "Trailing");
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing start (pips)", "Activation distance before trailing engages", "Trailing");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing step (pips)", "Minimal movement required to move the trail", "Trailing");
 	}
 

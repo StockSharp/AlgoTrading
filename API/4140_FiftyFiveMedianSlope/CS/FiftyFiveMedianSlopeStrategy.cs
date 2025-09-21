@@ -36,7 +36,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 1m)
 			.SetDisplay("Fixed volume", "Lot size used when greater than zero.", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_riskPercentage = Param(nameof(RiskPercentage), 0m)
 			.SetDisplay("Risk percentage", "Risk-based position sizing when fixed volume equals zero.", "Risk")
@@ -44,11 +44,11 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
 			.SetDisplay("Take profit (points)", "Distance of the optional take-profit in price steps.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0)
 			.SetDisplay("Stop loss (points)", "Distance of the optional protective stop in price steps.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maPeriod = Param(nameof(MaPeriod), 55)
 			.SetDisplay("MA period", "Length of the median moving average.", "Indicators")
@@ -56,7 +56,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 
 		_maShift = Param(nameof(MaShift), 13)
 			.SetDisplay("MA shift", "Bars between the recent and historical moving average snapshots.", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageKind.Exponential)
 			.SetDisplay("MA method", "Calculation method used for the moving average.", "Indicators");
@@ -71,7 +71,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
 			.SetDisplay("Max orders", "Maximum number of simultaneous positions per direction (0 = unlimited).", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe used for signal evaluation.", "Data");

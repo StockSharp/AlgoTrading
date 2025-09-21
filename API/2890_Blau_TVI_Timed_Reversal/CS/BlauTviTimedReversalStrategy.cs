@@ -234,7 +234,7 @@ public class BlauTviTimedReversalStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Offset from the current candle", "Signals");
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
@@ -265,11 +265,11 @@ public class BlauTviTimedReversalStrategy : Strategy
 		.SetDisplay("End Minute", "Trading window end minute", "Timing");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Protective stop in price points", "Protection");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Profit target in price points", "Protection");
 	}
 

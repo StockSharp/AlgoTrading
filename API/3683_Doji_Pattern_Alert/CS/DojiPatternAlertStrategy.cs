@@ -61,7 +61,7 @@ public class DojiPatternAlertStrategy : Strategy
 
 		_bodyDifferencePoints = Param(nameof(BodyDifferencePoints), 3m)
 			.SetDisplay("Body Difference (points)", "Maximum difference between open and close in price steps to classify a candle as a doji", "Pattern")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

@@ -56,15 +56,15 @@ public class ChangeTpslByPercentageStrategy : Strategy
 	public ChangeTpslByPercentageStrategy()
 	{
 		_percentageProfit = Param(nameof(PercentageProfit), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Profit Percentage", "Target profit as percentage of account balance", "Risk Management");
 
 		_percentageStopLoss = Param(nameof(PercentageStopLoss), 90m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-loss Percentage", "Allowed loss as percentage of account balance", "Risk Management");
 
 		_symbolLeverage = Param(nameof(SymbolLeverage), 0.5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Symbol Leverage", "Leverage factor (e.g. 1:200 => 0.5)", "Risk Management");
 	}
 

@@ -76,27 +76,27 @@ public class PuriaMethodStrategy : Strategy
 	public PuriaMethodStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 45m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Minimum advance before trailing moves", "Risk");
 
 		_minProfitStepPips = Param(nameof(MinProfitStepPips), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Profit Step", "Distance in pips before partial exit", "Risk");
 
 		_minProfitFraction = Param(nameof(MinProfitFraction), 0.5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Partial Exit Ratio", "Fraction of position to reduce on profit", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -107,7 +107,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetDisplay("MA 0 Period", "First MA period", "Indicators");
 
 		_ma0Shift = Param(nameof(Ma0Shift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA 0 Shift", "Bars to shift the first MA", "Indicators");
 
 		_ma0Method = Param(nameof(Ma0Method), MaMethod.Smoothed)
@@ -121,7 +121,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetDisplay("MA 1 Period", "Second MA period", "Indicators");
 
 		_ma1Shift = Param(nameof(Ma1Shift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA 1 Shift", "Bars to shift the second MA", "Indicators");
 
 		_ma1Method = Param(nameof(Ma1Method), MaMethod.Smoothed)
@@ -135,7 +135,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetDisplay("MA 2 Period", "Third MA period", "Indicators");
 
 		_ma2Shift = Param(nameof(Ma2Shift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA 2 Shift", "Bars to shift the third MA", "Indicators");
 
 		_ma2Method = Param(nameof(Ma2Method), MaMethod.Exponential)
@@ -157,7 +157,7 @@ public class PuriaMethodStrategy : Strategy
 			.SetDisplay("MACD Signal", "Signal smoothing period", "Indicators");
 
 		_macdTrendBars = Param(nameof(MacdTrendBars), 8)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MACD Trend Bars", "Number of bars for MACD trend check", "Indicators");
 
 		_macdPrice = Param(nameof(MacdPrice), CandlePrice.Open)

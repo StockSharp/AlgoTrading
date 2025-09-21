@@ -114,18 +114,18 @@ public class ColibriGridManagerStrategy : Strategy
 			.SetDisplay("Stop Loss Price", "Absolute protective stop price (0 uses distance)", "Risk");
 
 		_stopDistancePoints = Param(nameof(StopDistancePoints), 80m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Distance (points)", "Distance from entry to stop when StopLossPrice is zero", "Risk");
 
 		_takeProfitDistancePoints = Param(nameof(TakeProfitDistancePoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Distance (points)", "Distance from entry to profit target (0 uses spacing)", "Risk");
 
 		_useRiskSizing = Param(nameof(UseRiskSizing), true)
 			.SetDisplay("Use Risk Sizing", "Adjust volume using RiskPercent and stop distance", "Risk");
 
 		_riskPercent = Param(nameof(RiskPercent), 0.02m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk Percent", "Fraction of equity risked per grid direction", "Risk");
 
 		_fixedOrderVolume = Param(nameof(FixedOrderVolume), 0.1m)
@@ -133,11 +133,11 @@ public class ColibriGridManagerStrategy : Strategy
 			.SetDisplay("Fixed Volume", "Fallback order volume when risk sizing is disabled", "Trading");
 
 		_expirationHours = Param(nameof(ExpirationHours), 48)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Expiration (hours)", "Lifetime of pending orders (0 keeps them indefinitely)", "Trading");
 
 		_dailyLossLimitPercent = Param(nameof(DailyLossLimitPercent), 0.06m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Daily Loss Limit", "Stop trading when daily loss exceeds this equity fraction", "Risk");
 
 		_closeAllPositions = Param(nameof(CloseAllPositions), false)

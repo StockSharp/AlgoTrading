@@ -87,11 +87,11 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetDisplay("Use Breakeven", "Enable breakeven stop", "Risk Management");
 
 		_moveToBreakevenTrigger = Param(nameof(MoveToBreakevenTrigger), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakeven Trigger", "Steps to move stop", "Risk Management");
 
 		_breakevenOffset = Param(nameof(BreakevenOffset), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakeven Offset", "Offset from entry", "Risk Management");
 
 		_multiply = Param(nameof(Multiply), 2m)
@@ -106,19 +106,19 @@ public class MartingaleBoneCrusherStrategy : Strategy
 			.SetDisplay("Double Volume", "Multiply volume after loss", "Position Sizing");
 
 		_lotSizeIncrement = Param(nameof(LotSizeIncrement), 0.01m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lot Increment", "Volume increment after loss", "Position Sizing");
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Steps", "Trailing distance in steps", "Price Targets");
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Steps", "Stop-loss distance in steps", "Price Targets");
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Steps", "Take-profit distance in steps", "Price Targets");
 
 		_fastPeriod = Param(nameof(FastPeriod), 1)

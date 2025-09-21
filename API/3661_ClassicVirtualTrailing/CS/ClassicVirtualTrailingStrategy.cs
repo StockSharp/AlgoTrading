@@ -72,12 +72,12 @@ public class ClassicVirtualTrailingStrategy : Strategy
 		.SetDisplay("Trailing Mode", "Classic updates stop orders, Virtual closes at the trail", "Risk Management");
 
 		_trailingStartPips = Param(nameof(TrailingStartPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Start (pips)", "Profit in pips required before trailing activates", "Risk Management")
 		.SetCanOptimize(true);
 
 		_trailingGapPips = Param(nameof(TrailingGapPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Gap (pips)", "Distance between price and the trailing level", "Risk Management")
 		.SetCanOptimize(true);
 	}

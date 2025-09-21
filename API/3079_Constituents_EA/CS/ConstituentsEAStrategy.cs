@@ -66,23 +66,23 @@ public class ConstituentsEaStrategy : Strategy
 			.SetDisplay("Order Type", "Pending order style (limit or stop)", "Setup");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk");
 
 		_pointValue = Param(nameof(PointValue), 0.0001m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Point Value", "Price value of one pip (0 = auto from security)", "Risk");
 
 		_minOrderDistancePips = Param(nameof(MinOrderDistancePips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Order Distance", "Minimum distance (in pips) between price and pending orders", "Risk");
 
 		_minStopDistancePips = Param(nameof(MinStopDistancePips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Stop Distance", "Minimal distance (in pips) required for stop/take placement", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

@@ -124,11 +124,11 @@ public class EnhancedBollingerBandsStrategy : Strategy
 			.SetDisplay("Pip Value", "Value of one pip", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Pips", "Stop loss distance", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Pips", "Take profit distance", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

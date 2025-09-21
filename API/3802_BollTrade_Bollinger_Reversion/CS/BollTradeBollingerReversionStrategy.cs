@@ -109,17 +109,17 @@ public class BollTradeBollingerReversionStrategy : Strategy
 	public BollTradeBollingerReversionStrategy()
 	{
 		_takeProfit = Param(nameof(TakeProfit), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit expressed in pip units.", "Orders")
 			.SetCanOptimize(true, 1m, 20m, 1m);
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss expressed in pip units.", "Orders")
 			.SetCanOptimize(true, 5m, 100m, 5m);
 
 		_bandOffset = Param(nameof(BollingerDistance), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Band Offset", "Extra pip offset beyond Bollinger Bands.", "Signals")
 			.SetCanOptimize(true, 0m, 10m, 1m);
 

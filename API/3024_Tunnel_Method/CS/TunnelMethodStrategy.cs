@@ -61,19 +61,19 @@ public class TunnelMethodStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 		.SetDisplay("Trailing Step (pips)", "Minimal distance before trailing adjustment", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_firstMaPeriod = Param(nameof(FirstMaPeriod), 160)
 		.SetDisplay("First MA Period", "Length of the slow moving average", "Indicators")
@@ -81,7 +81,7 @@ public class TunnelMethodStrategy : Strategy
 
 		_firstMaShift = Param(nameof(FirstMaShift), 0)
 		.SetDisplay("First MA Shift", "Forward shift for the slow moving average", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_secondMaPeriod = Param(nameof(SecondMaPeriod), 80)
 		.SetDisplay("Second MA Period", "Length of the middle moving average", "Indicators")
@@ -89,7 +89,7 @@ public class TunnelMethodStrategy : Strategy
 
 		_secondMaShift = Param(nameof(SecondMaShift), 1)
 		.SetDisplay("Second MA Shift", "Forward shift for the middle moving average", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_thirdMaPeriod = Param(nameof(ThirdMaPeriod), 20)
 		.SetDisplay("Third MA Period", "Length of the fast moving average", "Indicators")
@@ -97,15 +97,15 @@ public class TunnelMethodStrategy : Strategy
 
 		_thirdMaShift = Param(nameof(ThirdMaShift), 2)
 		.SetDisplay("Third MA Shift", "Forward shift for the fast moving average", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_indentPips = Param(nameof(IndentPips), 1m)
 		.SetDisplay("Indentation (pips)", "Minimum spacing between averages to confirm signals", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_pauseSeconds = Param(nameof(PauseSeconds), 45)
 		.SetDisplay("Pause (seconds)", "Minimal pause between entry signal checks", "General")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle series for indicators", "Data");

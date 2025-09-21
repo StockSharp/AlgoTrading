@@ -49,27 +49,27 @@ public class MacdStochasticTrailingStrategy : Strategy
 	public MacdStochasticTrailingStrategy()
 	{
 		_longStopLoss = Param(nameof(LongStopLoss), 17m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Distance for the long stop loss in points", "Risk")
 			.SetCanOptimize(true);
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Distance for the short stop loss in points", "Risk")
 			.SetCanOptimize(true);
 
 		_longTrailingStop = Param(nameof(LongTrailingStop), 88m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Trailing", "Trailing distance for long positions in points", "Risk")
 			.SetCanOptimize(true);
 
 		_shortTrailingStop = Param(nameof(ShortTrailingStop), 76m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Trailing", "Trailing distance for short positions in points", "Risk")
 			.SetCanOptimize(true);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Order Volume", "Base volume used when opening positions", "Trading")
 			.SetCanOptimize(true);
 

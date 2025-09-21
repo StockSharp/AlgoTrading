@@ -120,7 +120,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		.SetDisplay("Risk %", "Portfolio percentage risked per trade", "Risk");
 
 		_maxOpenPositions = Param(nameof(MaxOpenPositions), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Open Positions", "Maximum simultaneous position count", "Risk");
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
@@ -148,7 +148,7 @@ public class FxNodeSafeTunnelStrategy : Strategy
 		.SetDisplay("ZigZag Deviation", "Minimum distance between pivots in pips", "Indicators");
 
 		_zigZagBackstep = Param(nameof(ZigZagBackstep), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("ZigZag Backstep", "Bars between consecutive pivots", "Indicators");
 
 		_zigZagHistory = Param(nameof(ZigZagHistory), 10)

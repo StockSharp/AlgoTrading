@@ -179,7 +179,7 @@ public class BwWiseman1Strategy : Strategy
 			.SetDisplay("Counter-Trend Mode", "Swap buy and sell signals", "Signals");
 
 		_back = Param(nameof(Back), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakout Depth", "Number of previous bars checked for highs or lows", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);
@@ -191,7 +191,7 @@ public class BwWiseman1Strategy : Strategy
 			.SetOptimize(8, 21, 1);
 
 		_jawShift = Param(nameof(JawShift), 8)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Forward displacement of the jaw line", "Alligator")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);
@@ -203,7 +203,7 @@ public class BwWiseman1Strategy : Strategy
 			.SetOptimize(5, 15, 1);
 
 		_teethShift = Param(nameof(TeethShift), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Teeth Shift", "Forward displacement of the teeth line", "Alligator")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 8, 1);
@@ -215,13 +215,13 @@ public class BwWiseman1Strategy : Strategy
 			.SetOptimize(3, 10, 1);
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Forward displacement of the lips line", "Alligator")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 6, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of completed bars to wait before acting", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 3, 1);

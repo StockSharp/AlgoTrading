@@ -141,11 +141,11 @@ public class EmaCrossoverSignalStrategy : Strategy
 		.SetDisplay("Allow Sell Close", "Close short on upward crossover", "Trading");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Risk");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

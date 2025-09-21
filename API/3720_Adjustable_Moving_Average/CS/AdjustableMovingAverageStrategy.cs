@@ -65,21 +65,21 @@ public class AdjustableMovingAverageStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_minGapPoints = Param(nameof(MinGapPoints), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum gap (points)", "Required distance between fast and slow MAs before signalling", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 20m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Protective stop distance in price points", "Risk management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Profit target distance in price points", "Risk management");
 
 		_trailingPoints = Param(nameof(TrailStopPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (points)", "Trailing stop distance in price points", "Risk management");
 
 		_entryMode = Param(nameof(Mode), EntryMode.Both)
@@ -109,7 +109,7 @@ public class AdjustableMovingAverageStrategy : Strategy
 			.SetDisplay("Lots per 10k", "Lots per 10,000 of account value when auto lot is enabled", "Money management");
 
 		_maxSlippage = Param(nameof(MaxSlippage), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max slippage", "Placeholder parameter retained from the MQL version", "Trading");
 
 		_tradeComment = Param(nameof(TradeComment), "AdjustableMovingAverageEA")

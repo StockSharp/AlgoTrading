@@ -40,23 +40,23 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop loss (pips)", "Initial protective stop distance expressed in MetaTrader pips.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 			.SetDisplay("Take profit (pips)", "Initial take-profit target expressed in MetaTrader pips.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetDisplay("Trailing stop (points)", "Trailing distance applied when only one ticket is open.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetDisplay("Trailing step (points)", "Minimum progress required before the trailing stop is moved again.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_slippagePoints = Param(nameof(SlippagePoints), 100)
 			.SetDisplay("Slippage (points)", "Reserved for analytics to mimic the MetaTrader slippage setting.", "Execution")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_newBarTrade = Param(nameof(NewBarTrade), true)
 			.SetDisplay("Trade on new bar", "When enabled, entries are allowed only after a fresh bar is formed.", "Timing");
@@ -89,7 +89,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 
 		_takeProfitOffsetPoints = Param(nameof(TakeProfitOffsetPoints), 75m)
 			.SetDisplay("TP offset (points)", "Additional distance added above the break-even price when TP averaging is active.", "Scaling")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Signal timeframe", "Slow timeframe used to evaluate the candlestick pattern entry filter.", "Timing");

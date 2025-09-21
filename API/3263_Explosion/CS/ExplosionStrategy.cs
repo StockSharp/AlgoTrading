@@ -171,17 +171,17 @@ public class ExplosionStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_pauseSeconds = Param(nameof(PauseSeconds), 36000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Pause (sec)", "Minimum time in seconds between entries", "Risk Management")
 			.SetCanOptimize(true);
 
 		_startHour = Param(nameof(StartHour), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Start Hour", "Hour when trading becomes allowed", "Schedule")
 			.SetCanOptimize(true);
 
 		_endHour = Param(nameof(EndHour), 23)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("End Hour", "Hour when trading is no longer allowed", "Schedule")
 			.SetCanOptimize(true);
 
@@ -190,22 +190,22 @@ public class ExplosionStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance expressed in price steps", "Protection")
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance expressed in price steps", "Protection")
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price steps", "Protection")
 			.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Extra price movement required before trailing updates", "Protection")
 			.SetCanOptimize(true);
 	}

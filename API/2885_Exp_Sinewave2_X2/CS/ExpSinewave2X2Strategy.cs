@@ -56,11 +56,11 @@ public class ExpSinewave2X2Strategy : Strategy
 		.SetCanOptimize(true);
 
 		_signalBarHigh = Param(nameof(SignalBarHigh), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Higher Signal Bar", "Bar shift used to evaluate higher timeframe trend", "Higher TF");
 
 		_signalBarLow = Param(nameof(SignalBarLow), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Lower Signal Bar", "Bar shift used to read lower timeframe signals", "Lower TF");
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
@@ -82,11 +82,11 @@ public class ExpSinewave2X2Strategy : Strategy
 		.SetDisplay("Close Shorts On Lower TF", "Close shorts when lower timeframe line crosses up", "Exits");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Protective stop in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Target profit in price steps", "Risk");
 
 		_higherCandleType = Param(nameof(HigherCandleType), TimeSpan.FromHours(6).TimeFrame())

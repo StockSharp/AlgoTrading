@@ -103,31 +103,31 @@ public class Fortrader10PipsStrategy : Strategy
 	public Fortrader10PipsStrategy()
 	{
 		_takeProfitBuy = Param(nameof(TakeProfitBuy), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Buy", "Take profit distance for long positions (points)", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossBuy = Param(nameof(StopLossBuy), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Buy", "Stop loss distance for long positions (points)", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopBuy = Param(nameof(TrailingStopBuy), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Buy", "Trailing stop distance for long positions (points)", "Risk");
 
 		_takeProfitSell = Param(nameof(TakeProfitSell), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Sell", "Take profit distance for short positions (points)", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossSell = Param(nameof(StopLossSell), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Sell", "Stop loss distance for short positions (points)", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopSell = Param(nameof(TrailingStopSell), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Sell", "Trailing stop distance for short positions (points)", "Risk");
 
 		_volume = Param(nameof(Volume), 0.1m)

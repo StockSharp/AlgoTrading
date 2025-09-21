@@ -99,19 +99,19 @@ public class NextBarMomentumStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume for each market order", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra profit before trailing", "Risk");
 
 		_signalBar = Param(nameof(SignalBar), 2)
@@ -119,11 +119,11 @@ public class NextBarMomentumStrategy : Strategy
 			.SetDisplay("Signal Bar", "Bars between reference closes", "Signal");
 
 		_minDistancePips = Param(nameof(MinDistancePips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Distance (pips)", "Minimum distance between closes", "Signal");
 
 		_lifetimeBars = Param(nameof(LifetimeBars), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lifetime Bars", "Maximum bars to hold a trade", "Risk");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)

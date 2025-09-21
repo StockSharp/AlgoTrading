@@ -255,19 +255,19 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			.SetDisplay("Previous Candle", "Timeframe used for the slower moving average", "Data");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop-loss percentage from the entry price", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 10m, 1m);
 
 		_trailingStopPercent = Param(nameof(TrailingStopPercent), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop %", "Trailing stop percentage applied to the best price", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 10m, 1m);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit %", "Take-profit percentage from the entry price", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 20m, 1m);
@@ -288,7 +288,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			.SetDisplay("Close on Equity Guard", "Close positions when equity drops below the threshold", "Risk");
 
 		_minimumEquityPercent = Param(nameof(MinimumEquityPercent), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum Equity %", "Minimum equity percentage relative to the initial value", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 5m);

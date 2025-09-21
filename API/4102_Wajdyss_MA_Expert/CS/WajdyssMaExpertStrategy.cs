@@ -57,7 +57,7 @@ public class WajdyssMaExpertStrategy : Strategy
 		.SetDisplay("Fast MA Period", "Length of the fast moving average.", "Indicators");
 
 		_fastShift = Param(nameof(FastShift), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Fast MA Shift", "Shift applied to the fast moving average.", "Indicators");
 
 		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Ema)
@@ -71,7 +71,7 @@ public class WajdyssMaExpertStrategy : Strategy
 		.SetDisplay("Slow MA Period", "Length of the slow moving average.", "Indicators");
 
 		_slowShift = Param(nameof(SlowShift), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Slow MA Shift", "Shift applied to the slow moving average.", "Indicators");
 
 		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Ema)
@@ -81,15 +81,15 @@ public class WajdyssMaExpertStrategy : Strategy
 		.SetDisplay("Slow Price", "Price source fed into the slow moving average.", "Indicators");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance to the profit target in pips (0 disables).", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance to the protective stop in pips (0 disables).", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips (0 disables).", "Risk");
 
 		_autoCloseOpposite = Param(nameof(AutoCloseOpposite), true)

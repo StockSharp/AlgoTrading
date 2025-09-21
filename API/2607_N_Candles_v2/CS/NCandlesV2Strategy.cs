@@ -81,19 +81,19 @@ public class NCandlesV2Strategy : Strategy
 			.SetDisplay("Lot Size", "Position size used for entries", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in price steps", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in price steps", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in price steps", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional move required to tighten trailing stop", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

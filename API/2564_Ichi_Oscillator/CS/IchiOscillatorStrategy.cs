@@ -60,7 +60,7 @@ public class IchiOscillatorStrategy : Strategy
 			.SetDisplay("Smoothing Phase", "Additional phase parameter for selected smoothing", "Oscillator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Bar shift used for signal confirmation", "Logic");
 
 		_buyEntriesEnabled = Param(nameof(BuyEntriesEnabled), true)
@@ -76,13 +76,13 @@ public class IchiOscillatorStrategy : Strategy
 			.SetDisplay("Enable Sell Exits", "Allow closing short positions", "Logic");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(200, 2000, 200);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Protective take-profit distance in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(200, 4000, 200);

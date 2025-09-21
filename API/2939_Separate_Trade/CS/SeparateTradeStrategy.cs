@@ -79,27 +79,27 @@ public class SeparateTradeStrategy : Strategy
 		.SetDisplay("Applied Price", "Price input for moving averages and deviation", "Indicators");
 
 		_stopLossBuyPips = Param(nameof(StopLossBuyPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Buy (pips)", "Stop-loss distance for long trades", "Risk");
 
 		_stopLossSellPips = Param(nameof(StopLossSellPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Sell (pips)", "Stop-loss distance for short trades", "Risk");
 
 		_takeProfitBuyPips = Param(nameof(TakeProfitBuyPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Buy (pips)", "Take-profit distance for long trades", "Risk");
 
 		_takeProfitSellPips = Param(nameof(TakeProfitSellPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Sell (pips)", "Take-profit distance for short trades", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Distance of the trailing stop", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimum advance required before moving the trailing stop", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
@@ -107,11 +107,11 @@ public class SeparateTradeStrategy : Strategy
 		.SetDisplay("Max Positions", "Maximum simultaneous net positions", "Risk");
 
 		_deltaBuyPips = Param(nameof(DeltaBuyPips), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MA Delta Buy (pips)", "Maximum fast-slow MA distance for long entries", "Filters");
 
 		_deltaSellPips = Param(nameof(DeltaSellPips), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MA Delta Sell (pips)", "Maximum fast-slow MA distance for short entries", "Filters");
 
 		_atrPeriodBuy = Param(nameof(AtrPeriodBuy), 26)

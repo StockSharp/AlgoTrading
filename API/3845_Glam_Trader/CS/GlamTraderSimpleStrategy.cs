@@ -68,27 +68,27 @@ public class GlamTraderSimpleStrategy : Strategy
 			.SetOptimize(0.4m, 0.9m, 0.05m);
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss (points)", "Protective distance for long positions", "Risk");
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss (points)", "Protective distance for short positions", "Risk");
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit (points)", "Target distance for long positions", "Risk");
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit (points)", "Target distance for short positions", "Risk");
 
 		_longTrailingPoints = Param(nameof(LongTrailingPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Trailing (points)", "Trailing stop distance for long positions", "Risk");
 
 		_shortTrailingPoints = Param(nameof(ShortTrailingPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Trailing (points)", "Trailing stop distance for short positions", "Risk");
 	}
 

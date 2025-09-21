@@ -103,21 +103,21 @@ public class T3MaDirectionChangeStrategy : Strategy
 			.SetOptimize(2, 20, 2);
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("EMA Shift", "Shift applied to the smoothed EMA when evaluating slope changes", "Indicator");
 
 		_signalBarOffset = Param(nameof(SignalBarOffset), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Delay", "How many completed candles to wait before acting on a signal", "Trading rules");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance expressed in price steps", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 60m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 125m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 200m, 25m);

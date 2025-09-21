@@ -173,7 +173,7 @@ public class IlanImaStrategy : Strategy
 			.SetOptimize(5, 60, 5);
 
 		_maShift = Param(nameof(MaShift), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift of the moving average", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);
@@ -185,19 +185,19 @@ public class IlanImaStrategy : Strategy
 			.SetDisplay("Applied Price", "Candle price used by the moving average", "Indicators");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Profit required to start trailing", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Extra distance before moving the trailing stop", "Risk");
 
 		_startVolume = Param(nameof(StartVolume), 1m)
@@ -219,7 +219,7 @@ public class IlanImaStrategy : Strategy
 			.SetOptimize(1.1m, 2.5m, 0.1m);
 
 		_profitMinimum = Param(nameof(ProfitMinimum), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Profit Minimum", "Profit target used when both baskets were open", "Trading");
 
 		_lotMaximum = Param(nameof(LotMaximum), 15m)

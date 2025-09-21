@@ -207,17 +207,17 @@ public class ForexProfitStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 74m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance (points)", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimal trailing step (points)", "Risk")
 		.SetCanOptimize(true);
 
 		_profitThreshold = Param(nameof(ProfitThreshold), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Profit Threshold", "Profit required for EMA exit", "Risk")
 		.SetCanOptimize(true);
 

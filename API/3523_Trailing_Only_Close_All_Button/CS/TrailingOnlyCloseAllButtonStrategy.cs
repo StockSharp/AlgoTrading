@@ -154,19 +154,19 @@ public class TrailingOnlyCloseAllButtonStrategy : Strategy
 	public TrailingOnlyCloseAllButtonStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in MetaTrader pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in MetaTrader pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in MetaTrader pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Additional profit in MetaTrader pips before moving the stop", "Risk");
 
 		_closeMode = Param(nameof(ManualCloseMode), CloseMode.Positions)

@@ -49,11 +49,11 @@ public class ForexSkyStrategy : Strategy
 			.SetDisplay("MACD Signal Period", "Signal EMA length used by the MACD indicator.", "MACD");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance to the take-profit target expressed in instrument points.", "Risk management");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 3000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance to the stop-loss order expressed in instrument points.", "Risk management");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)

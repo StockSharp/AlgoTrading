@@ -146,11 +146,11 @@ public class EaVishalEurgbpH4Strategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 0)
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 22)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 			.SetDisplay("Use Trailing Stop", "Enable virtual trailing stop management", "Risk");
@@ -173,7 +173,7 @@ public class EaVishalEurgbpH4Strategy : Strategy
 
 		_envelopeDeviationPercent = Param(nameof(EnvelopeDeviationPercent), 0.3m)
 			.SetDisplay("Envelope Deviation %", "Envelope deviation in percent", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Primary candle type", "General");

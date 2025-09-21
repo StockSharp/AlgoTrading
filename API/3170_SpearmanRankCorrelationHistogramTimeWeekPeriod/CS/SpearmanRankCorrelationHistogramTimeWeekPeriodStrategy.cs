@@ -222,15 +222,15 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetDisplay("Stop Loss", "Protective stop distance in price points.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetDisplay("Take Profit", "Profit target distance in price points.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10m)
 		.SetDisplay("Deviation", "Expected slippage in points (informational).", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_buyOpen = Param(nameof(BuyOpen), true)
 		.SetDisplay("Allow Long Entries", "Enable opening long positions.", "Trading");
@@ -296,7 +296,7 @@ public class SpearmanRankCorrelationHistogramTimeWeekPeriodStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of closed bars to look back for the color signals.", "Indicator")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

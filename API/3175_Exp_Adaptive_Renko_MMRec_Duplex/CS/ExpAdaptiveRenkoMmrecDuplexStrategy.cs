@@ -130,35 +130,35 @@ public class ExpAdaptiveRenkoMmrecDuplexStrategy : Strategy
 			.SetDisplay("Enable Short Exits", "Allow short-side exits triggered by Renko", "Short Side");
 
 		_longTotalTrigger = Param(nameof(LongTotalTrigger), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Total Trigger", "Number of recent long trades inspected by the MMRec module", "MMRec");
 
 		_shortTotalTrigger = Param(nameof(ShortTotalTrigger), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Total Trigger", "Number of recent short trades inspected by the MMRec module", "MMRec");
 
 		_longLossTrigger = Param(nameof(LongLossTrigger), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Loss Trigger", "Losing trades required to switch long volume to the reduced value", "MMRec");
 
 		_shortLossTrigger = Param(nameof(ShortLossTrigger), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Loss Trigger", "Losing trades required to switch short volume to the reduced value", "MMRec");
 
 		_longSmallMoneyManagement = Param(nameof(LongSmallMoneyManagement), 0.01m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Reduced MM", "Money-management value used after long losing streaks", "MMRec");
 
 		_shortSmallMoneyManagement = Param(nameof(ShortSmallMoneyManagement), 0.01m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Reduced MM", "Money-management value used after short losing streaks", "MMRec");
 
 		_longMoneyManagement = Param(nameof(LongMoneyManagement), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Base MM", "Default money-management value for long entries", "MMRec");
 
 		_shortMoneyManagement = Param(nameof(ShortMoneyManagement), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Base MM", "Default money-management value for short entries", "MMRec");
 
 		_longMarginMode = Param(nameof(LongMarginMode), MarginModeOption.Lot)
@@ -184,11 +184,11 @@ public class ExpAdaptiveRenkoMmrecDuplexStrategy : Strategy
 			.SetDisplay("Short Take Profit", "Profit target distance in points for short trades", "Risk");
 
 		_longDeviationSteps = Param(nameof(LongDeviationSteps), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Deviation", "Expected slippage for informational purposes (price steps)", "Trading");
 
 		_shortDeviationSteps = Param(nameof(ShortDeviationSteps), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Deviation", "Expected slippage for informational purposes (price steps)", "Trading");
 	}
 

@@ -95,11 +95,11 @@ public class CryptoScalperMomentumStrategy : Strategy
 		.SetDisplay("MFI Period", "Money Flow Index period", "Indicators");
 
 		_mfiOversold = Param(nameof(MfiOversold), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MFI Oversold", "Oversold threshold for MFI", "Indicators");
 
 		_mfiOverbought = Param(nameof(MfiOverbought), 70m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MFI Overbought", "Overbought threshold for MFI", "Indicators");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -107,7 +107,7 @@ public class CryptoScalperMomentumStrategy : Strategy
 		.SetDisplay("Momentum Period", "Momentum length on the higher timeframe", "Indicators");
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Momentum Threshold", "Minimum deviation from the 100 level", "Indicators");
 
 		_momentumReference = Param(nameof(MomentumReference), 100m)
@@ -142,7 +142,7 @@ public class CryptoScalperMomentumStrategy : Strategy
 		.SetDisplay("Trade Volume", "Volume used for each market order", "Trading");
 
 		_maxTrades = Param(nameof(MaxTrades), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Trades", "Maximum simultaneous trades per direction", "Trading");
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -152,11 +152,11 @@ public class CryptoScalperMomentumStrategy : Strategy
 		.SetDisplay("Use Target", "Enable the protective take-profit", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance to the protective stop", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance to the protective target", "Risk");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
@@ -166,62 +166,62 @@ public class CryptoScalperMomentumStrategy : Strategy
 		.SetDisplay("Use Candle Trail", "Trail stops with recent candle extremes", "Risk");
 
 		_trailTriggerPips = Param(nameof(TrailTriggerPips), 40)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trail Trigger", "Profit in pips before trailing activates", "Risk");
 
 		_trailAmountPips = Param(nameof(TrailAmountPips), 40)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trail Amount", "Distance maintained by the trailing stop", "Risk");
 
 		_candleTrailLength = Param(nameof(CandleTrailLength), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Candle Trail Length", "Number of candles used for trailing extremes", "Risk");
 
 		_candleTrailBufferPips = Param(nameof(CandleTrailBufferPips), 3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trail Buffer", "Extra pips added beyond the extreme", "Risk");
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 		.SetDisplay("Use Break-Even", "Move stop once price travels in favor", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-Even Trigger", "Distance before break-even is armed", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-Even Offset", "Pips locked in once break-even triggers", "Risk");
 
 		_useMoneyTakeProfit = Param(nameof(UseMoneyTakeProfit), false)
 		.SetDisplay("Use Money TP", "Close all trades at fixed profit in currency", "Risk");
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 40m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Money Take Profit", "Currency profit target for the basket", "Risk");
 
 		_usePercentTakeProfit = Param(nameof(UsePercentTakeProfit), false)
 		.SetDisplay("Use Percent TP", "Close all trades at fixed percent of balance", "Risk");
 
 		_percentTakeProfit = Param(nameof(PercentTakeProfit), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Percent Take Profit", "Percentage gain that triggers liquidation", "Risk");
 
 		_enableMoneyTrailing = Param(nameof(EnableMoneyTrailing), false)
 		.SetDisplay("Enable Money Trailing", "Trail floating profit in account currency", "Risk");
 
 		_moneyTrailTarget = Param(nameof(MoneyTrailTarget), 40m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Money Trail Target", "Profit level that arms the trailing logic", "Risk");
 
 		_moneyTrailStop = Param(nameof(MoneyTrailStop), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Money Trail Stop", "Maximum allowed pullback in currency", "Risk");
 
 		_useEquityStop = Param(nameof(UseEquityStop), true)
 		.SetDisplay("Use Equity Stop", "Close positions on deep equity drawdown", "Risk");
 
 		_equityRiskPercent = Param(nameof(EquityRiskPercent), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Equity Risk Percent", "Maximum drawdown percentage from peak", "Risk");
 
 		_forceExit = Param(nameof(ForceExit), false)

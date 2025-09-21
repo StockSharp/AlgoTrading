@@ -238,11 +238,11 @@ public class TokyoSessionStrategy : Strategy
 
 		_minDistance = Param(nameof(MinDistanceOfLevel), 0m)
 		.SetDisplay("Minimum Distance", "Minimal distance from the reference level in pips", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_maxDistance = Param(nameof(MaxDistanceOfLevel), 46m)
 		.SetDisplay("Maximum Distance", "Maximum distance from the reference level in pips", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_recheckPrices = Param(nameof(ReCheckPrices), true)
 		.SetDisplay("Recheck Prices", "Enable additional validation at the recheck hour", "Signals");
@@ -261,36 +261,36 @@ public class TokyoSessionStrategy : Strategy
 
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 		.SetDisplay("Take Profit", "Take profit distance in pips", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
 		.SetDisplay("Use Stop Loss", "Enable protective stop loss", "Risk Management");
 
 		_stopLoss = Param(nameof(StopLoss), 26m)
 		.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing Stop", "Enable trailing stop management", "Risk Management");
 
 		_trailingStop = Param(nameof(TrailingStop), 5m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStep = Param(nameof(TrailingStep), 1m)
 		.SetDisplay("Trailing Step", "Trailing step in pips", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
 		.SetDisplay("Use Break Even", "Enable automatic break-even", "Risk Management");
 
 		_breakEven = Param(nameof(BreakEven), 2.5m)
 		.SetDisplay("Break Even", "Distance to move stop loss to break-even (pips)", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_breakEvenAfter = Param(nameof(BreakEvenAfter), 0m)
 		.SetDisplay("Break Even Activation", "Profit required before moving stop (pips)", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_volume = Param(nameof(Volume), 1m)
 		.SetDisplay("Volume", "Order volume", "Trading")
@@ -298,7 +298,7 @@ public class TokyoSessionStrategy : Strategy
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
 		.SetDisplay("Maximum Orders", "Maximum number of position multiples to hold", "Trading")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

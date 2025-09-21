@@ -58,7 +58,7 @@ public class XFatlXSatlCloudStrategy : Strategy
 			.SetDisplay("Slow Phase", "Phase parameter for Jurik smoothing", "Indicators");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Index of the bar used for signals", "Logic");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -78,11 +78,11 @@ public class XFatlXSatlCloudStrategy : Strategy
 			.SetDisplay("Allow Short Exit", "Allow indicator to close short trades", "Logic");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Ticks", "Distance to take profit in price steps", "Risk");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Ticks", "Distance to stop loss in price steps", "Risk");
 	}
 

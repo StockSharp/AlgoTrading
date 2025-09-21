@@ -91,7 +91,7 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 		.SetDisplay("Risk", "Risk input that shifts the SilverTrend channel", "SilverTrend");
 
 		_silverSignalBar = Param(nameof(SilverSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bar shift used for SilverTrend signals", "SilverTrend");
 
 		_silverAllowLong = Param(nameof(SilverAllowLong), true)
@@ -111,11 +111,11 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 		.SetDisplay("Silver Volume", "Order volume used by the SilverTrend block", "SilverTrend");
 
 		_silverStopLossPoints = Param(nameof(SilverStopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Silver SL", "Stop-loss distance in points for SilverTrend", "SilverTrend");
 
 		_silverTakeProfitPoints = Param(nameof(SilverTakeProfitPoints), 2500)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Silver TP", "Take-profit distance in points for SilverTrend", "SilverTrend");
 
 		_colorCandleType = Param(nameof(ColorCandleType), TimeSpan.FromHours(6).TimeFrame())
@@ -132,11 +132,11 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 		.SetDisplay("Applied Price", "Source price used for FATL", "ColorJFatl");
 
 		_colorDigit = Param(nameof(ColorDigit), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Digits", "Number of decimal digits for FATL rounding", "ColorJFatl");
 
 		_colorSignalBar = Param(nameof(ColorSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Color Signal Bar", "Bar shift used for ColorJFatl signals", "ColorJFatl");
 
 		_colorAllowLong = Param(nameof(ColorAllowLong), true)
@@ -156,11 +156,11 @@ public class SilverTrendColorJfatlDigitMmrecStrategy : Strategy
 		.SetDisplay("Color Volume", "Order volume used by the ColorJFatl block", "ColorJFatl");
 
 		_colorStopLossPoints = Param(nameof(ColorStopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Color SL", "Stop-loss distance in points for ColorJFatl", "ColorJFatl");
 
 		_colorTakeProfitPoints = Param(nameof(ColorTakeProfitPoints), 2500)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Color TP", "Take-profit distance in points for ColorJFatl", "ColorJFatl");
 	}
 

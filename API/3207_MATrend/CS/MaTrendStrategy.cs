@@ -51,19 +51,19 @@ public class MaTrendStrategy : Strategy
 			.SetDisplay("Order Volume", "Position size in lots or contracts.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Base trailing-stop distance in pips.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra pip move required before tightening the trailing stop.", "Risk");
 
 		_maPeriod = Param(nameof(MaPeriod), 12)
@@ -71,7 +71,7 @@ public class MaTrendStrategy : Strategy
 			.SetDisplay("MA Period", "Length of the moving average.", "Indicator");
 
 		_maShift = Param(nameof(MaShift), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift (in bars) applied to the moving average.", "Indicator");
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageKind.Weighted)

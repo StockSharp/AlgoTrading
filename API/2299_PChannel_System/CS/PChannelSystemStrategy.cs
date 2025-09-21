@@ -84,19 +84,19 @@ public class PChannelSystemStrategy : Strategy
 		.SetOptimize(10, 40, 5);
 
 		_shift = Param(nameof(Shift), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Shift", "Bars shift for channel", "Indicator")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in price", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(100m, 2000m, 100m);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in price", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(200m, 4000m, 200m);

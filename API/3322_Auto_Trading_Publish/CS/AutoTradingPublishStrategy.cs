@@ -28,12 +28,12 @@ public class AutoTradingPublishStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe used to monitor the trading clock.", "General");
 
 		_startHour = Param(nameof(StartHour), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetLessOrEqual(23)
 			.SetDisplay("Start Hour", "Hour of day (0-23) when auto trading becomes enabled.", "Schedule");
 
 		_stopHour = Param(nameof(StopHour), 8)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetLessOrEqual(23)
 			.SetDisplay("Stop Hour", "Hour of day (0-23) when auto trading becomes disabled.", "Schedule");
 	}

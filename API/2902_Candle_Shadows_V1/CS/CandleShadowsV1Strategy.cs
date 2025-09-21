@@ -183,15 +183,15 @@ public class CandleShadowsV1Strategy : Strategy
 			.SetDisplay("Pip Value", "Value of one pip", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Pips", "Stop loss distance", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Pips", "Take profit distance", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Pips", "Trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
@@ -199,11 +199,11 @@ public class CandleShadowsV1Strategy : Strategy
 			.SetDisplay("Trailing Step Pips", "Minimum step for trailing", "Risk");
 
 		_positionLivesBars = Param(nameof(PositionLivesBars), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Position Lives Bars", "Maximum bars to keep position", "Risk");
 
 		_closeProfitsOnBar = Param(nameof(CloseProfitsOnBar), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Close Profits Bars", "Close profitable trades after bars", "Risk");
 
 		_openWithinMinutes = Param(nameof(OpenWithinMinutes), 7)
@@ -211,11 +211,11 @@ public class CandleShadowsV1Strategy : Strategy
 			.SetDisplay("Open Within Minutes", "Allow entries within N minutes", "General");
 
 		_candleSizeMinPips = Param(nameof(CandleSizeMinPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Candle Size Min", "Minimum shadow length", "Price Action");
 
 		_oppositeShadowMaxPips = Param(nameof(OppositeShadowMaxPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Opposite Shadow Max", "Maximum opposite shadow", "Price Action");
 
 		_startHour = Param(nameof(StartHour), 6)

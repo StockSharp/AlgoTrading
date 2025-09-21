@@ -58,7 +58,7 @@ public class AllanmaugTradeCopierStrategy : Strategy
 		.SetDisplay("Interval", "How often the strategy reads or writes the file", "Timing");
 
 		_volumeTolerance = Param(nameof(VolumeTolerance), 0.0001m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Volume Tolerance", "Minimum difference required before rebalancing", "Trading");
 	}
 

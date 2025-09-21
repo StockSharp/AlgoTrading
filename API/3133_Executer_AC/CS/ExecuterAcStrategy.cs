@@ -45,19 +45,19 @@ public class ExecuterAcStrategy : Strategy
 			.SetDisplay("Trade Volume", "Base order volume", "Orders");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal profit before trailing moves", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

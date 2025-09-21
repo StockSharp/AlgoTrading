@@ -67,13 +67,13 @@ public class Mare51Strategy : Strategy
 			.SetOptimize(0, 10, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 80m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 200m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 110m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 250m, 10m);

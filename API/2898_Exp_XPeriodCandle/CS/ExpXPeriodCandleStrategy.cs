@@ -84,15 +84,15 @@
 				.SetDisplay("Close Shorts On Opposite", "Close short positions on opposite signals", "Trading");
 
 			_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-				.SetGreaterOrEqualZero()
+				.SetNotNegative()
 				.SetDisplay("Stop Loss (pts)", "Protective stop loss in price points", "Risk");
 
 			_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-				.SetGreaterOrEqualZero()
+				.SetNotNegative()
 				.SetDisplay("Take Profit (pts)", "Protective take profit in price points", "Risk");
 
 			_slippagePoints = Param(nameof(SlippagePoints), 10)
-				.SetGreaterOrEqualZero()
+				.SetNotNegative()
 				.SetDisplay("Slippage (pts)", "Allowed slippage in price points", "Trading");
 		}
 

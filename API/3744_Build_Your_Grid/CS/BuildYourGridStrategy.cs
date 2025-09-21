@@ -200,12 +200,12 @@ public class BuildYourGridStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_pipsCloseInProfit = Param(nameof(PipsCloseInProfit), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target Pips", "Total unrealized pips required to close the grid.", "Risk management")
 		.SetCanOptimize(true);
 
 		_currencyCloseInProfit = Param(nameof(CurrencyCloseInProfit), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target Currency", "Unrealized profit that triggers a full close.", "Risk management")
 		.SetCanOptimize(true);
 
@@ -214,7 +214,7 @@ public class BuildYourGridStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_pipsForCloseInLoss = Param(nameof(PipsForCloseInLoss), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Loss Threshold (pips)", "Negative pips that activate loss handling.", "Risk management")
 		.SetCanOptimize(true);
 
@@ -222,18 +222,18 @@ public class BuildYourGridStrategy : Strategy
 		.SetDisplay("Use Hedge", "Enable balancing hedge orders when drawdown grows.", "Risk management");
 
 		_levelLossForHedge = Param(nameof(LevelLossForHedge), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Hedge Loss Level (%)", "Drawdown percentage of balance before hedge balancing starts.", "Risk management");
 
 		_hedgeLotMultiplier = Param(nameof(MuliplierHedgeLot), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Hedge Multiplier", "Multiplier applied to the volume difference when hedging.", "Risk management");
 
 		_autoLotSize = Param(nameof(AutoLotSize), false)
 		.SetDisplay("Auto Lot", "Recalculate the base lot size from account balance and risk factor.", "Money management");
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Risk Factor", "Risk percentage used for automatic lot sizing.", "Money management");
 
 		_manualLotSize = Param(nameof(ManualLotSize), 0.01m)
@@ -245,15 +245,15 @@ public class BuildYourGridStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_maxMultiplierLot = Param(nameof(MaxMultiplierLot), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Lot Multiplier", "Safety cap applied to the first lot size.", "Money management");
 
 		_maxOrders = Param(nameof(MaxOrders), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Orders", "Maximum simultaneous grid trades (0 = unlimited).", "Trading");
 
 		_maxSpread = Param(nameof(MaxSpread), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Spread", "Maximum accepted bid/ask spread in pips (0 = ignore).", "Filters");
 	}
 

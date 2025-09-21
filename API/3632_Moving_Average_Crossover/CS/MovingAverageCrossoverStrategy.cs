@@ -104,13 +104,13 @@ public class MovingAverageCrossoverStrategy : Strategy
 			.SetOptimize(20, 200, 2);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 5);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Spread", "Maximum allowed spread in points", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)

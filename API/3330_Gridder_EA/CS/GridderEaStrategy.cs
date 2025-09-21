@@ -69,15 +69,15 @@ public class GridderEaStrategy : Strategy
 		.SetOptimize(1m, 2m, 0.1m);
 
 		_targetProfitPerLot = Param(nameof(TargetProfitPerLot), 15m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target Profit / Lot", "Money profit per lot that closes all trades", "Risk");
 
 		_targetLossPerLot = Param(nameof(TargetLossPerLot), 60m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target Loss / Lot", "Money loss per lot that liquidates the basket", "Risk");
 
 		_maxOrdersPerSide = Param(nameof(MaxOrdersPerSide), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Orders Per Side", "Maximum averaging trades on each side", "Risk");
 
 		_allowLong = Param(nameof(AllowLong), true)
@@ -96,11 +96,11 @@ public class GridderEaStrategy : Strategy
 		.SetDisplay("Use Emergency Mode", "Enable hedge protection when too many orders accumulate", "Protection");
 
 		_emergencyOrdersTrigger = Param(nameof(EmergencyOrdersTrigger), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Emergency Trigger", "Orders per side that activate the hedge", "Protection");
 
 		_hedgeVolumeFactor = Param(nameof(HedgeVolumeFactor), 0.5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Hedge Volume Factor", "Fraction of total volume hedged in emergency mode", "Protection");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

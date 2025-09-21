@@ -194,7 +194,7 @@ public class ExpXFisherOrgV1Strategy : Strategy
 			.SetDisplay("Allow Short Exits", "Enable closing existing short positions", "Trading");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Lookback shift for the signal candle", "Parameters");
 
 		_length = Param(nameof(Length), 7)

@@ -180,15 +180,15 @@ public class ColorXDerivativeStrategy : Strategy
 		.SetDisplay("Smoothing Length", "Period of the smoothing filter", "Indicator");
 
 		_signalShift = Param(nameof(SignalShift), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Shift", "Bars back used for signal evaluation", "Indicator");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (ticks)", "Protective stop in price steps", "Risk Management");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (ticks)", "Profit target in price steps", "Risk Management");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)

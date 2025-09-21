@@ -82,7 +82,7 @@ public class StopHunterStrategy : Strategy
 			.SetDisplay("Enable short side", "Allow the strategy to place sell-stop orders", "Trading");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk percent", "Percentage of capital converted into volume: volume = balance / 100000 * percent", "Money management")
 			.SetCanOptimize(true)
 			.SetOptimize(1m, 15m, 1m);

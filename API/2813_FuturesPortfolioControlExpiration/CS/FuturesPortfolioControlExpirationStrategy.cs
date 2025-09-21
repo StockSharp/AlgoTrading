@@ -134,7 +134,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 			.SetDisplay("Lot 3", "Target position size for the third futures contract", "Portfolio");
 
 		_hoursBeforeExpiration = Param(nameof(HoursBeforeExpiration), 25)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Hours Before Expiration", "When to roll before contract expiration", "Roll Settings");
 
 		_monitoringCandleType = Param(nameof(MonitoringCandleType), TimeSpan.FromHours(1).TimeFrame())

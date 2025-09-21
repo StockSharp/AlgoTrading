@@ -102,12 +102,12 @@ public class PendingStopGridStrategy : Strategy
 	public PendingStopGridStrategy()
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance for each order", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance for each order", "Risk")
 			.SetCanOptimize(true);
 

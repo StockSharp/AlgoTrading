@@ -93,17 +93,17 @@ public class MeanReversionStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Momentum Threshold", "Absolute deviation from 100 required for confirmation.", "Signal")
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips.", "Risk")
 		.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Target distance expressed in pips.", "Risk")
 		.SetCanOptimize(true);
 
@@ -111,12 +111,12 @@ public class MeanReversionStrategy : Strategy
 		.SetDisplay("Use Break-Even", "Enable stop relocation to the entry price after profits.", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-Even Trigger", "Profit in pips required before moving the stop to entry.", "Risk")
 		.SetCanOptimize(true);
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Break-Even Offset", "Additional pips added when relocating the stop.", "Risk")
 		.SetCanOptimize(true);
 
@@ -124,12 +124,12 @@ public class MeanReversionStrategy : Strategy
 		.SetDisplay("Enable Trailing", "Activate trailing stop management once in profit.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Distance", "Minimum profit in pips required before trailing.", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 40m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Offset in pips used when updating the trailing stop.", "Risk")
 		.SetCanOptimize(true);
 	}

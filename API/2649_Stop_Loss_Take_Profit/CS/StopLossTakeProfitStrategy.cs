@@ -84,11 +84,11 @@ public class StopLossTakeProfitStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe for evaluating entries", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_initialVolume = Param(nameof(InitialVolume), 0.01m)
@@ -96,7 +96,7 @@ public class StopLossTakeProfitStrategy : Strategy
 			.SetDisplay("Initial Volume", "Starting order volume", "Risk");
 
 		_pipSizeOverride = Param(nameof(PipSize), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Custom Pip Size", "Override pip size (0 = auto)", "Risk");
 	}
 

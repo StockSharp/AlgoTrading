@@ -93,19 +93,19 @@ public class AmaTraderV21Strategy : Strategy
 
 		_partialClosePercent = Param(nameof(PartialClosePercent), 70m)
 		.SetDisplay("Partial Close (%)", "Percentage of the current position to close on RSI extremes.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 50)
 		.SetDisplay("Stop Loss (steps)", "Protective stop size expressed in price steps.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 100)
 		.SetDisplay("Take Profit (steps)", "Target size expressed in price steps.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingSteps = Param(nameof(TrailingSteps), 30)
 		.SetDisplay("Trailing Stop (steps)", "Trailing distance in price steps.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	/// <summary>

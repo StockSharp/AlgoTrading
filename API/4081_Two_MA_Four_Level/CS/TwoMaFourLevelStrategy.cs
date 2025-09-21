@@ -44,13 +44,13 @@ public class TwoMaFourLevelStrategy : Strategy
 	public TwoMaFourLevelStrategy()
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 130)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-profit (pips)", "Distance in pips for the take-profit order.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(50, 300, 50);
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-loss (pips)", "Distance in pips for the protective stop.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(200, 1500, 100);
@@ -60,7 +60,7 @@ public class TwoMaFourLevelStrategy : Strategy
 			.SetDisplay("Trade volume", "Base lot size for new positions.", "Execution");
 
 		_calculationBar = Param(nameof(CalculationBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Calculation bar", "Shift used when evaluating the moving averages.", "Indicators");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
@@ -88,25 +88,25 @@ public class TwoMaFourLevelStrategy : Strategy
 			.SetDisplay("Slow MA price", "Applied price used by the slow moving average.", "Indicators");
 
 		_upperLevel1 = Param(nameof(UpperLevel1), 500)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Upper level #1", "Positive offset (in pips) added to the slow MA.", "Levels")
 			.SetCanOptimize(true)
 			.SetOptimize(100, 800, 100);
 
 		_upperLevel2 = Param(nameof(UpperLevel2), 250)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Upper level #2", "Secondary positive offset added to the slow MA.", "Levels")
 			.SetCanOptimize(true)
 			.SetOptimize(50, 500, 50);
 
 		_lowerLevel1 = Param(nameof(LowerLevel1), 500)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lower level #1", "Negative offset (in pips) subtracted from the slow MA.", "Levels")
 			.SetCanOptimize(true)
 			.SetOptimize(100, 800, 100);
 
 		_lowerLevel2 = Param(nameof(LowerLevel2), 250)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lower level #2", "Secondary negative offset subtracted from the slow MA.", "Levels")
 			.SetCanOptimize(true)
 			.SetOptimize(50, 500, 50);

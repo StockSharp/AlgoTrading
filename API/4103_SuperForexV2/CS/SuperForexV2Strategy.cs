@@ -55,15 +55,15 @@ public class SuperForexV2Strategy : Strategy
 			.SetDisplay("RSI Lower", "Oversold threshold used for longs and short exits", "Indicators");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 109m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the take-profit order", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 9m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 6m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied once price moves in favor", "Risk");
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)

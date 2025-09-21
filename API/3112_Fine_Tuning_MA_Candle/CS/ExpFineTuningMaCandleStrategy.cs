@@ -168,7 +168,7 @@ public class ExpFineTuningMaCandleStrategy : Strategy
 
 		_gapPoints = Param(nameof(GapPoints), 10m)
 			.SetDisplay("Gap Points", "Maximum gap that is replaced by the previous close", "Indicator")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "How many closed candles to skip before generating a signal", "Trading")
@@ -188,11 +188,11 @@ public class ExpFineTuningMaCandleStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss", "Protective stop distance expressed in points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit", "Profit target distance expressed in points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_priceShiftPoints = Param(nameof(PriceShiftPoints), 0m)
 			.SetDisplay("Price Shift", "Vertical displacement of the synthetic candle", "Indicator");

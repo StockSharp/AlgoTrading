@@ -52,17 +52,17 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 45m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Initial protective stop distance expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Profit target distance expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing distance maintained once the trade moves into profit.", "Risk")
 			.SetCanOptimize(true);
 

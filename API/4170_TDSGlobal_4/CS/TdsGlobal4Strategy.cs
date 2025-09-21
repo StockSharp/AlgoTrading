@@ -258,19 +258,19 @@ public class TdsGlobal4Strategy : Strategy
 		.SetDisplay("Williams Sell Level", "Lower threshold to allow shorts", "Filters");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 999m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_entryBufferPips = Param(nameof(EntryBufferPips), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Entry Buffer (pips)", "Offset added beyond the previous extreme", "Entries");
 
 		_minDistancePips = Param(nameof(MinDistancePips), 16m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min Distance (pips)", "Minimum distance from current price", "Entries");
 
 		_dailyCandleType = Param(nameof(DailyCandleType), TimeSpan.FromDays(1).TimeFrame())

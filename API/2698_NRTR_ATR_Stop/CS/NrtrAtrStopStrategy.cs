@@ -214,11 +214,11 @@ public class NrtrAtrStopStrategy : Strategy
 		.SetOptimize(1m, 5m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Stop-loss distance measured in price steps", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Take-profit distance measured in price steps", "Risk Management");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
@@ -268,7 +268,7 @@ public class NrtrAtrStopStrategy : Strategy
 		.SetOptimize(1m, 4m, 0.5m);
 
 		_signalBarDelay = Param(nameof(SignalBarDelay), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Number of closed bars to wait before acting", "Indicator")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1);

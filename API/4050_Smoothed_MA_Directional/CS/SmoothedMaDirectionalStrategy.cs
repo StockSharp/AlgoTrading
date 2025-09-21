@@ -52,13 +52,13 @@ public class SmoothedMaDirectionalStrategy : Strategy
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
 			.SetDisplay("Stop Loss Points", "Protective stop distance in price steps", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 300m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
 			.SetDisplay("Take Profit Points", "Profit target distance in price steps", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 300m, 10m);
 

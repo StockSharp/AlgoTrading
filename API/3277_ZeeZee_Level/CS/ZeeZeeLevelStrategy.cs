@@ -72,19 +72,19 @@ public class ZeeZeeLevelStrategy : Strategy
 			.SetCanOptimize(false);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 5m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 150m, 5m);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 60m, 5m);

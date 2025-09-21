@@ -55,27 +55,27 @@ public class MartingaleEa5LevelsStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_level1DistancePips = Param(nameof(Level1DistancePips), 300m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 1 Distance", "Adverse movement (pips) triggering the first addition", "Distances")
 			.SetCanOptimize(true);
 
 		_level2DistancePips = Param(nameof(Level2DistancePips), 400m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 2 Distance", "Extra movement (pips) before the second addition", "Distances")
 			.SetCanOptimize(true);
 
 		_level3DistancePips = Param(nameof(Level3DistancePips), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 3 Distance", "Extra movement (pips) before the third addition", "Distances")
 			.SetCanOptimize(true);
 
 		_level4DistancePips = Param(nameof(Level4DistancePips), 600m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 4 Distance", "Extra movement (pips) before the fourth addition", "Distances")
 			.SetCanOptimize(true);
 
 		_level5DistancePips = Param(nameof(Level5DistancePips), 700m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 5 Distance", "Extra movement (pips) before the fifth addition", "Distances")
 			.SetCanOptimize(true);
 

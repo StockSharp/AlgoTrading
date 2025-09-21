@@ -201,11 +201,11 @@ public class GandalfProStrategy : Strategy
 			.SetOptimize(0.05m, 0.5m, 0.01m);
 
 		_buyStopLoss = Param(nameof(BuyStopLoss), 62)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Buy Stop Loss", "Stop distance for longs in price steps", "Risk");
 
 		_buyRiskMultiplier = Param(nameof(BuyRiskMultiplier), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Buy Risk Multiplier", "Volume multiplier for longs (0 = use base volume)", "Risk");
 
 		_enableSell = Param(nameof(EnableSell), true)
@@ -230,11 +230,11 @@ public class GandalfProStrategy : Strategy
 			.SetOptimize(0.05m, 0.5m, 0.01m);
 
 		_sellStopLoss = Param(nameof(SellStopLoss), 62)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Sell Stop Loss", "Stop distance for shorts in price steps", "Risk");
 
 		_sellRiskMultiplier = Param(nameof(SellRiskMultiplier), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Sell Risk Multiplier", "Volume multiplier for shorts (0 = use base volume)", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

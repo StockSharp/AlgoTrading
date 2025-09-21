@@ -86,19 +86,19 @@ public class Breadandbutter2Strategy : Strategy
 			.SetDisplay("Volume", "Order volume in lots", "Trading");
 
 		_takeProfit = Param(nameof(TakeProfit), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Profit target in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 200, 5);
 
 		_stopLoss = Param(nameof(StopLoss), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Loss limit in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 200, 5);
 
 		_interval = Param(nameof(Interval), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Interval", "Bars between additional entries", "Trading logic")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);

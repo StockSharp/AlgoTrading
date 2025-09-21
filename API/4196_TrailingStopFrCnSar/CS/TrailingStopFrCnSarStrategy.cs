@@ -57,15 +57,15 @@ public class TrailingStopFrCnSarStrategy : Strategy
 			.SetDisplay("Candle type", "Primary timeframe processed by the trailing stop manager.", "General");
 
 		_deltaPoints = Param(nameof(DeltaPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Offset (points)", "Extra distance added to fractal, candle or SAR stop levels.", "Trailing");
 
 		_stepPoints = Param(nameof(StepPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Step (points)", "Minimum improvement required to update an existing stop.", "Trailing");
 
 		_fixedDistancePoints = Param(nameof(FixedDistancePoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fixed distance", "Trailing distance in points when fixed mode is enabled.", "Trailing");
 
 		_trailOnlyProfit = Param(nameof(TrailOnlyProfit), true)

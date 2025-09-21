@@ -55,19 +55,19 @@ public class ExtremeEaStrategy : Strategy
 	public ExtremeEaStrategy()
 	{
 		_maximumRisk = Param(nameof(MaximumRisk), 0.05m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Maximum risk", "Risk allocated per trade as a fraction of portfolio equity.", "Money management");
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 6m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Decrease factor", "Reduction factor applied after consecutive losses.", "Money management");
 
 		_historyDays = Param(nameof(HistoryDays), 60)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("History days", "Number of days kept when tracking the loss streak.", "Money management");
 
 		_maxPositions = Param(nameof(MaxPositions), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max positions", "Maximum number of simultaneous entries per direction.", "Risk");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 15)

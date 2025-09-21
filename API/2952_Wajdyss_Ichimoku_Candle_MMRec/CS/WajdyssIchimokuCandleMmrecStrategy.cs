@@ -117,7 +117,7 @@ public class WajdyssIchimokuCandleMmrecStrategy : Strategy
 		.SetDisplay("Kijun Length", "Lookback for the Ichimoku base line", "Indicator");
 
 		_signalBarShift = Param(nameof(SignalBarShift), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Shift applied to candle colors", "Indicator");
 
 		_buyOpenEnabled = Param(nameof(BuyPosOpen), true)
@@ -141,15 +141,15 @@ public class WajdyssIchimokuCandleMmrecStrategy : Strategy
 		.SetDisplay("Reduced Volume", "Order size after losses", "Risk");
 
 		_lossTriggerCount = Param(nameof(LossTriggerCount), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Loss Trigger", "Number of losses before reducing size", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Protective stop distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Target distance in price steps", "Risk");
 	}
 

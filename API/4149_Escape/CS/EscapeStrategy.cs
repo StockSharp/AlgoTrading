@@ -46,22 +46,22 @@ public class EscapeStrategy : Strategy
 	{
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 10m)
 			.SetDisplay("Long Take Profit (points)", "Take-profit distance for long positions expressed in MetaTrader points.", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 10m)
 			.SetDisplay("Short Take Profit (points)", "Take-profit distance for short positions expressed in MetaTrader points.", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000m)
 			.SetDisplay("Long Stop Loss (points)", "Stop-loss distance for long positions expressed in MetaTrader points.", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000m)
 			.SetDisplay("Short Stop Loss (points)", "Stop-loss distance for short positions expressed in MetaTrader points.", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.2m)
@@ -71,7 +71,7 @@ public class EscapeStrategy : Strategy
 
 		_minimumMarginPerLot = Param(nameof(MinimumMarginPerLot), 500m)
 			.SetDisplay("Minimum Margin Per Lot", "Approximate capital requirement per lot before opening a trade.", "Risk Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for indicator calculations.", "General");

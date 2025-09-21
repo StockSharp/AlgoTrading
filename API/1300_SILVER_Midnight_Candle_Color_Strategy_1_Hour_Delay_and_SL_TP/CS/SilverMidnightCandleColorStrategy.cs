@@ -76,15 +76,15 @@ public class SilverMidnightCandleColorStrategy : Strategy
 	public SilverMidnightCandleColorStrategy()
 	{
 		_longTakeProfitTicks = Param(nameof(LongTakeProfitTicks), 57)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long TP Ticks", "Take profit ticks for long entries", "Risk");
 
 		_shortTakeProfitTicks = Param(nameof(ShortTakeProfitTicks), 48)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short TP Ticks", "Take profit ticks for short entries", "Risk");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 200)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk");
 
 		_timezoneOffset = Param(nameof(TimezoneOffset), -5)

@@ -37,25 +37,25 @@ public class VirtualSlTpV1Strategy : Strategy
 	public VirtualSlTpV1Strategy()
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Virtual stop-loss distance expressed in MetaTrader points.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 200, 5);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Virtual take-profit distance expressed in MetaTrader points.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 400, 10);
 
 		_spreadThreshold = Param(nameof(SpreadThreshold), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Spread Threshold (points)", "Additional spread (in MetaTrader points) that forces virtual levels to shift.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 10m, 0.5m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance from the trigger price used to place the pending buy stop order.", "Orders")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 200, 5);

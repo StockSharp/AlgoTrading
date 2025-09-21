@@ -92,7 +92,7 @@ public class IvidyaSimpleStrategy : Strategy
 
 		_maShift = Param(nameof(MaShift), 1)
 			.SetDisplay("MA Shift", "Number of completed candles for VIDYA shift", "Indicator")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)

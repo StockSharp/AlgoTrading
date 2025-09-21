@@ -114,11 +114,11 @@ public class OpenClose2AmpnStochasticStrategy : Strategy
 		.SetDisplay("Base Volume", "Fallback order volume when risk sizing is unavailable", "Money Management");
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Maximum Risk", "Fraction of equity used for sizing and the drawdown guard", "Money Management");
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Decrease Factor", "Divisor applied after losing trades to shrink the next position", "Money Management");
 
 		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)

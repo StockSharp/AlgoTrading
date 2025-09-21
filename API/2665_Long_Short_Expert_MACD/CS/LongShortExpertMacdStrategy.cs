@@ -77,13 +77,13 @@ public class LongShortExpertMacdStrategy : Strategy
 			.SetOptimize(5, 15, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 150, 10);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 100, 10);

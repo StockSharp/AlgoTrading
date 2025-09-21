@@ -86,11 +86,11 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		.SetOptimize(7, 42, 7);
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Signal Bar", "Closed-bar offset used to evaluate long signals.", "Signals");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Signal Bar", "Closed-bar offset used to evaluate short signals.", "Signals");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)
@@ -106,35 +106,35 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		.SetDisplay("Allow Short Exits", "Enable closing short trades when VI+ recovers above VI-.", "Trading");
 
 		_longTotalTrigger = Param(nameof(LongTotalTrigger), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Total Trigger", "Number of recent long trades inspected by the recovery logic.", "Risk");
 
 		_shortTotalTrigger = Param(nameof(ShortTotalTrigger), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Total Trigger", "Number of recent short trades inspected by the recovery logic.", "Risk");
 
 		_longLossTrigger = Param(nameof(LongLossTrigger), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Loss Trigger", "Losing trades required to switch to the reduced long volume.", "Risk");
 
 		_shortLossTrigger = Param(nameof(ShortLossTrigger), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Loss Trigger", "Losing trades required to switch to the reduced short volume.", "Risk");
 
 		_longSmallMoneyManagement = Param(nameof(LongSmallMoneyManagement), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Reduced MM", "Money-management value used after a long losing streak.", "Risk");
 
 		_shortSmallMoneyManagement = Param(nameof(ShortSmallMoneyManagement), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Reduced MM", "Money-management value used after a short losing streak.", "Risk");
 
 		_longMoneyManagement = Param(nameof(LongMoneyManagement), 0.1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Base MM", "Default money-management setting for long trades.", "Risk");
 
 		_shortMoneyManagement = Param(nameof(ShortMoneyManagement), 0.1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Base MM", "Default money-management setting for short trades.", "Risk");
 
 		_longMarginMode = Param(nameof(LongMarginMode), MarginModeOption.Lot)
@@ -144,27 +144,27 @@ public class VortexIndicatorMmrecDuplexStrategy : Strategy
 		.SetDisplay("Short Margin Mode", "Interpretation of the short money-management value.", "Risk");
 
 		_longStopLossSteps = Param(nameof(LongStopLossSteps), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Stop Loss", "Protective distance below the long entry expressed in price steps.", "Risk");
 
 		_shortStopLossSteps = Param(nameof(ShortStopLossSteps), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Stop Loss", "Protective distance above the short entry expressed in price steps.", "Risk");
 
 		_longTakeProfitSteps = Param(nameof(LongTakeProfitSteps), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Take Profit", "Profit target above the long entry expressed in price steps.", "Risk");
 
 		_shortTakeProfitSteps = Param(nameof(ShortTakeProfitSteps), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Take Profit", "Profit target below the short entry expressed in price steps.", "Risk");
 
 		_longSlippageSteps = Param(nameof(LongSlippageSteps), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Long Slippage", "Expected slippage for long trades in price steps (informational).", "Trading");
 
 		_shortSlippageSteps = Param(nameof(ShortSlippageSteps), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Short Slippage", "Expected slippage for short trades in price steps (informational).", "Trading");
 	}
 

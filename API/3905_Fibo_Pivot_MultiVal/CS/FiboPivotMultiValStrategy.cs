@@ -58,7 +58,7 @@ public class FiboPivotMultiValStrategy : Strategy
 			.SetDisplay("Candle type", "Timeframe used to compute pivot statistics and detect signals.", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Order volume", "Volume used for each pending order registered by the strategy.", "Trading");
 
 		_startTime = Param(nameof(StartTime), TimeSpan.FromMinutes(1))
@@ -74,11 +74,11 @@ public class FiboPivotMultiValStrategy : Strategy
 			.SetDisplay("Use reversal targets", "When true take-profit levels stay inside the Fibonacci zone; otherwise breakout and pivot targets are used.", "Execution");
 
 		_limitPointIn = Param(nameof(LimitPointIn), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Limit points in", "Range threshold (in points) that activates mean reversion targets.", "Execution");
 
 		_limitPointOut = Param(nameof(LimitPointOut), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Limit points out", "Range threshold (in points) that activates breakout targets.", "Execution");
 
 		_levelPf1 = Param(nameof(LevelPf1), 33m)
@@ -97,19 +97,19 @@ public class FiboPivotMultiValStrategy : Strategy
 			.SetDisplay("Mid-zone order mode", "Allowed directions for trades inside the R1-R2 and S1-S2 ranges (b=buy, s=sell, bs=both).", "Execution");
 
 		_dailyProfitTarget = Param(nameof(DailyProfitTarget), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Daily profit target", "Global profit target in points after which trading pauses for the rest of the day.", "Risk");
 
 		_dailyTradeTarget = Param(nameof(DailyTradeTarget), 35)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Daily trade limit", "Maximum number of completed trades per day before pausing entries.", "Risk");
 
 		_symbolProfitTarget = Param(nameof(SymbolProfitTarget), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Symbol profit target", "Per-symbol profit target in points.", "Risk");
 
 		_symbolTradeTarget = Param(nameof(SymbolTradeTarget), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Symbol trade limit", "Per-symbol trade count limit.", "Risk");
 	}
 

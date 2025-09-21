@@ -152,11 +152,11 @@ public class EaCloseStrategy : Strategy
 			.SetDisplay("Volume", "Order volume for entries.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance measured in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 75)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance measured in pips.", "Risk");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)

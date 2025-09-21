@@ -37,7 +37,7 @@ public class TheEnchantressStrategy : Strategy
 	public TheEnchantressStrategy()
 	{
 		_lotSize = Param(nameof(LotSize), 0.01m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lot Size")
 			.SetCanOptimize(true);
 
@@ -45,27 +45,27 @@ public class TheEnchantressStrategy : Strategy
 			.SetDisplay("Use Risk Money Management");
 
 		_riskPercent = Param(nameof(RiskPercent), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk Percent")
 			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 60m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)")
 			.SetCanOptimize(true);
 
 		_virtualStopLoss = Param(nameof(VirtualStopLoss), 55m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Virtual Stop Loss (pips)")
 			.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 19m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)")
 			.SetCanOptimize(true);
 
 		_virtualTakeProfit = Param(nameof(VirtualTakeProfit), 25m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Virtual Take Profit (pips)")
 			.SetCanOptimize(true);
 

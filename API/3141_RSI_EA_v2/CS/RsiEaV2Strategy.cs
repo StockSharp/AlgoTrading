@@ -216,19 +216,19 @@ public class RsiEaV2Strategy : Strategy
 			.SetDisplay("Close By Signal", "Exit when RSI crosses the opposite threshold", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra move before trailing stop advances", "Risk");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
@@ -254,7 +254,7 @@ public class RsiEaV2Strategy : Strategy
 			.SetDisplay("Fixed Volume", "Default trade volume", "Money Management");
 
 		_riskPercent = Param(nameof(RiskPercent), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk Percent", "Equity percentage risked when sizing trades", "Money Management");
 
 		_useTimeControl = Param(nameof(UseTimeControl), true)

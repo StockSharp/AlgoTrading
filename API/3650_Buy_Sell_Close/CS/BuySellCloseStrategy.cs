@@ -52,19 +52,19 @@ public class BuySellCloseStrategy : Strategy
 			.SetDisplay("Automatic Money Management", "Recalculate order size from balance and risk setting", "Risk");
 
 		_riskPerTenThousand = Param(nameof(RiskPerTenThousand), 0.2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk (1/10000)", "Risk allocation expressed in ten-thousandth fractions of the balance", "Risk");
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.01m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fixed Volume", "Manual volume used when automatic money management is disabled", "Execution");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 250m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss Points", "Distance in MetaTrader points used for protective stops", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-Profit Points", "Distance in MetaTrader points used for protective targets", "Risk");
 
 		_requestBuy = Param(nameof(OpenBuy), false)

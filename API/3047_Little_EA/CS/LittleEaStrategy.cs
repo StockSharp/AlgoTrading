@@ -30,11 +30,11 @@ public class LittleEaStrategy : Strategy
 			.SetDisplay("Candle type", "Primary timeframe used for signals.", "General");
 
 		_ohlcBarIndex = Param(nameof(OhlcBarIndex), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("OHLC bar index", "Historical bar index used for MA crossover detection.", "Signals");
 
 		_maxPositionsPerSide = Param(nameof(MaxPositionsPerSide), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max positions", "Maximum cumulative positions per direction.", "Risk");
 
 		_maPeriod = Param(nameof(MaPeriod), 64)
@@ -42,7 +42,7 @@ public class LittleEaStrategy : Strategy
 			.SetDisplay("MA period", "Moving average length.", "Indicator");
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA shift", "Number of bars to shift the moving average.", "Indicator");
 
 		_maType = Param(nameof(MaType), MovingAverageType.Smoothed)

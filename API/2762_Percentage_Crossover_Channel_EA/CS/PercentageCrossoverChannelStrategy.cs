@@ -79,11 +79,11 @@ public class PercentageCrossoverChannelStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance in points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
 			.SetDisplay("Take Profit (points)", "Target profit distance in points", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Base volume for market entries", "Trading")

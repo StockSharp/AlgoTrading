@@ -37,19 +37,19 @@ public class SimpleEngulfingStrategy : Strategy
 			.SetDisplay("Volume", "Order volume replicated from the MetaTrader expert advisor.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance between entry price and stop loss in pips.", "Risk Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance between entry price and take profit in pips.", "Risk Management");
 
 		_minBodyPips = Param(nameof(MinBodyPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Body (pips)", "Minimum candle body size required by the pattern.", "Pattern");
 
 		_maxBodyPips = Param(nameof(MaxBodyPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Body (pips)", "Maximum candle body size accepted by the pattern. Set to zero to disable the filter.", "Pattern");
 
 		_direction = Param(nameof(Direction), EngulfingTradeDirection.BuyOnly)

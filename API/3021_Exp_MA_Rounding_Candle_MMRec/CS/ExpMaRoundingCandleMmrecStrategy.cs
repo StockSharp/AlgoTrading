@@ -53,15 +53,15 @@ public class ExpMaRoundingCandleMmrecStrategy : Strategy
 		.SetDisplay("MA length", "Number of periods for the moving average.", "Indicator");
 
 		_roundingFactorParam = Param(nameof(RoundingFactor), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Rounding factor", "Multiplier for price step rounding threshold.", "Indicator");
 
 		_gapParam = Param(nameof(GapSize), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Gap filter", "Gap in price steps that keeps the synthetic open anchored to the previous close.", "Indicator");
 
 		_signalBarParam = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal bar", "Index of the bar used for signals (0=current, 1=previous, ...).", "Signals");
 
 		_tradeVolumeParam = Param(nameof(TradeVolume), 1m)

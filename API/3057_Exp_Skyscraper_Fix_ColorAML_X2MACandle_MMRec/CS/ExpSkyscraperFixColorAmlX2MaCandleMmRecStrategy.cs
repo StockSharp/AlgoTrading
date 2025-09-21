@@ -97,7 +97,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 		_skyscraperMode = Param(nameof(SkyscraperMode), SkyscraperCalculationMode.HighLow)
 		.SetDisplay("Skyscraper Mode", "Price source used for envelopes", "Skyscraper");
 		_skyscraperSignalBar = Param(nameof(SkyscraperSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Skyscraper Signal Bar", "Delay in closed candles", "Skyscraper");
 		_skyscraperEnableLongEntry = Param(nameof(SkyscraperEnableLongEntry), true)
 		.SetDisplay("Skyscraper Buy", "Allow long entries", "Skyscraper");
@@ -111,13 +111,13 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Skyscraper Normal Volume", "Default order volume", "Skyscraper");
 		_skyscraperReducedVolume = Param(nameof(SkyscraperReducedVolume), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Skyscraper Reduced Volume", "Fallback volume after losses", "Skyscraper");
 		_skyscraperBuyLossTrigger = Param(nameof(SkyscraperBuyLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Skyscraper Buy Loss Trigger", "Losing trades before reducing long volume", "Skyscraper");
 		_skyscraperSellLossTrigger = Param(nameof(SkyscraperSellLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Skyscraper Sell Loss Trigger", "Losing trades before reducing short volume", "Skyscraper");
 
 		_colorAmlCandleType = Param(nameof(ColorAmlCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -129,7 +129,7 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("ColorAML Lag", "Adaptive smoothing lag", "ColorAML");
 		_colorAmlSignalBar = Param(nameof(ColorAmlSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("ColorAML Signal Bar", "Bar offset for colour evaluation", "ColorAML");
 		_colorAmlEnableLongEntry = Param(nameof(ColorAmlEnableLongEntry), true)
 		.SetDisplay("ColorAML Buy", "Allow ColorAML long entries", "ColorAML");
@@ -143,13 +143,13 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("ColorAML Normal Volume", "Default ColorAML volume", "ColorAML");
 		_colorAmlReducedVolume = Param(nameof(ColorAmlReducedVolume), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("ColorAML Reduced Volume", "Reduced ColorAML volume", "ColorAML");
 		_colorAmlBuyLossTrigger = Param(nameof(ColorAmlBuyLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("ColorAML Buy Loss Trigger", "Losses required to reduce long volume", "ColorAML");
 		_colorAmlSellLossTrigger = Param(nameof(ColorAmlSellLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("ColorAML Sell Loss Trigger", "Losses required to reduce short volume", "ColorAML");
 
 		_x2MaCandleType = Param(nameof(X2MaCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -169,10 +169,10 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 		_x2MaSecondPhase = Param(nameof(X2MaSecondPhase), 15)
 		.SetDisplay("Second Phase", "Compatibility phase for the second stage", "X2MA");
 		_x2MaGapPoints = Param(nameof(X2MaGapPoints), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Gap Points", "Gap threshold in price steps", "X2MA");
 		_x2MaSignalBar = Param(nameof(X2MaSignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("X2MA Signal Bar", "Bar offset before acting on colour", "X2MA");
 		_x2MaEnableLongEntry = Param(nameof(X2MaEnableLongEntry), true)
 		.SetDisplay("X2MA Buy", "Allow X2MA long entries", "X2MA");
@@ -186,13 +186,13 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("X2MA Normal Volume", "Default X2MA order volume", "X2MA");
 		_x2MaReducedVolume = Param(nameof(X2MaReducedVolume), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("X2MA Reduced Volume", "Reduced X2MA order volume", "X2MA");
 		_x2MaBuyLossTrigger = Param(nameof(X2MaBuyLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("X2MA Buy Loss Trigger", "Losses required to reduce long volume", "X2MA");
 		_x2MaSellLossTrigger = Param(nameof(X2MaSellLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("X2MA Sell Loss Trigger", "Losses required to reduce short volume", "X2MA");
 	}
 

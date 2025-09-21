@@ -243,27 +243,27 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetDisplay("Order Volume", "Base trade size", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Take Profit (pips)", "Profit target distance", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop offset", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Trailing Step (pips)", "Additional move before trailing stop updates", "Risk");
 
 		_stepLossingPips = Param(nameof(StepLossingPips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Averaging Step (pips)", "Loss in pips that triggers averaging", "Risk");
 
@@ -273,7 +273,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetDisplay("Lot Coefficient", "Multiplier for averaging trades", "Risk");
 
 		_signalBar = Param(nameof(SignalBar), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of completed bars to look back", "Signals");
 
 		_maPeriod = Param(nameof(MaPeriod), 15)
@@ -282,7 +282,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetDisplay("MA Period", "Moving average length", "Indicators");
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift of the moving average", "Indicators");
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Weighted)
@@ -292,7 +292,7 @@ public class MaMacdPositionAveragingStrategy : Strategy
 			.SetDisplay("MA Price", "Applied price for the moving average", "Indicators");
 
 		_indentPips = Param(nameof(IndentPips), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("MA Indent (pips)", "Minimum gap between price and MA", "Signals");
 

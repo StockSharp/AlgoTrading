@@ -42,7 +42,7 @@ public class BreakoutStrategyStrategy : Strategy
 			.SetOptimize(10, 40, 5);
 
 		_entryShift = Param(nameof(EntryShift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Shift", "Bars to delay the Donchian breakout levels", "Entry")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 3, 1);
@@ -54,7 +54,7 @@ public class BreakoutStrategyStrategy : Strategy
 			.SetOptimize(10, 40, 5);
 
 		_exitShift = Param(nameof(ExitShift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Exit Shift", "Bars to delay the trailing channel", "Exit")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 3, 1);

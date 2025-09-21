@@ -59,7 +59,7 @@ public class MomentumM15Strategy : Strategy
 			.SetOptimize(10, 60, 5);
 
 		_maShiftParam = Param(nameof(MaShift), 8)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift applied to moving average", "Indicators");
 
 		_maMethodParam = Param(nameof(MaMethod), MovingAverageMethod.Smoothed)
@@ -84,23 +84,23 @@ public class MomentumM15Strategy : Strategy
 			.SetDisplay("Momentum Shift", "Shift applied to momentum threshold", "Trading Rules");
 
 		_momentumOpenLengthParam = Param(nameof(MomentumOpenLength), 6)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Open Length", "Bars required for monotonic momentum on entries", "Trading Rules");
 
 		_momentumCloseLengthParam = Param(nameof(MomentumCloseLength), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Close Length", "Bars required for monotonic momentum on exits", "Trading Rules");
 
 		_gapLevelParam = Param(nameof(GapLevel), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Gap Level", "Minimum gap in price steps to pause trading", "Risk Management");
 
 		_gapTimeoutParam = Param(nameof(GapTimeout), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Gap Timeout", "Number of bars to skip after a large gap", "Risk Management");
 
 		_trailingStopParam = Param(nameof(TrailingStop), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in price steps", "Risk Management");
 	}
 

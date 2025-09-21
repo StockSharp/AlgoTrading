@@ -85,7 +85,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	.SetOptimize(0.3m, 1.5m, 0.1m);
 
 	_skyscraperPercentage = Param(nameof(SkyscraperPercentage), 0m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Percentage Offset", "Optional percentage displacement of the middle line", "Skyscraper");
 
 	_skyscraperMode = Param(nameof(SkyscraperMode), SkyscraperMethod.HighLow)
@@ -100,11 +100,11 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	.SetDisplay("Skyscraper Volume", "Order volume for Skyscraper Fix entries", "Skyscraper");
 
 	_skyscraperStopLoss = Param(nameof(SkyscraperStopLoss), 1000m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Skyscraper Stop Loss (pts)", "Protective stop distance in price steps", "Skyscraper");
 
 	_skyscraperTakeProfit = Param(nameof(SkyscraperTakeProfit), 2000m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Skyscraper Take Profit (pts)", "Profit target distance in price steps", "Skyscraper");
 
 	_colorAmlCandleType = Param(nameof(ColorAmlCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -143,11 +143,11 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	.SetDisplay("ColorAML Volume", "Order volume for ColorAML entries", "ColorAML");
 
 	_colorAmlStopLoss = Param(nameof(ColorAmlStopLoss), 1000m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("ColorAML Stop Loss (pts)", "Protective stop distance in price steps", "ColorAML");
 
 	_colorAmlTakeProfit = Param(nameof(ColorAmlTakeProfit), 2000m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("ColorAML Take Profit (pts)", "Profit target distance in price steps", "ColorAML");
 	}
 

@@ -50,29 +50,29 @@ public class XPTradeManagerStrategy : Strategy
 	public XPTradeManagerStrategy()
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance in price points used for the protective stop", "Stops");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance in price points used for the profit target", "Stops");
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 			.SetDisplay("Use Breakeven", "Move the stop-loss to breakeven after a configurable gain", "Breakeven");
 
 		_breakevenActivationPoints = Param(nameof(BreakevenActivationPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakeven Activation (points)", "Profit in price points required before moving to breakeven", "Breakeven");
 
 		_breakevenLevelPoints = Param(nameof(BreakevenLevelPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakeven Level (points)", "Offset in points used once breakeven is triggered", "Breakeven");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 			.SetDisplay("Use Trailing Stop", "Enable the incremental trailing stop engine", "Trailing");
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Start (points)", "Profit in points required before the trailing stop activates", "Trailing");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10m)
@@ -80,7 +80,7 @@ public class XPTradeManagerStrategy : Strategy
 			.SetDisplay("Trailing Step (points)", "Profit increment in points required to move the stop again", "Trailing");
 
 		_trailingDistancePoints = Param(nameof(TrailingDistancePoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Distance (points)", "Distance between price and trailing stop once active", "Trailing");
 
 		_trailingEndAtBreakeven = Param(nameof(TrailingEndAtBreakeven), false)

@@ -46,12 +46,12 @@ public class FtCciMaStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
 			.SetCanOptimize(true);
 

@@ -50,12 +50,12 @@ public class RonzAutoSltpStrategy : Strategy
 		.SetDisplay("Manage All Securities", "Track every open position in the portfolio instead of only the attached symbol.", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 550)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance in MetaTrader pips used for the take-profit target.", "Risk")
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 350)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Distance in MetaTrader pips used for the protective stop-loss.", "Risk")
 		.SetCanOptimize(true);
 
@@ -66,12 +66,12 @@ public class RonzAutoSltpStrategy : Strategy
 		.SetDisplay("Enable Profit Lock", "Raise the stop to a positive level after the lock threshold is reached.", "Trailing");
 
 		_lockProfitAfterPips = Param(nameof(LockProfitAfterPips), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Lock After (pips)", "Profit in pips required before the stop-lock engages.", "Trailing")
 		.SetCanOptimize(true);
 
 		_profitLockPips = Param(nameof(ProfitLockPips), 60)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Locked Profit (pips)", "Profit preserved once the lock is active.", "Trailing")
 		.SetCanOptimize(true);
 
@@ -79,12 +79,12 @@ public class RonzAutoSltpStrategy : Strategy
 		.SetDisplay("Trailing Mode", "Style of the trailing stop used after the lock threshold.", "Trailing");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Distance (pips)", "Distance maintained by the trailing stop when active.", "Trailing")
 		.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Increment applied by step-based trailing modes.", "Trailing")
 		.SetCanOptimize(true);
 

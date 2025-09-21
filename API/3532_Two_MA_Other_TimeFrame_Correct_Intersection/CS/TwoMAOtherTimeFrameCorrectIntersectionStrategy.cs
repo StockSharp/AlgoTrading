@@ -61,7 +61,7 @@ _fastLength = Param(nameof(FastLength), 12)
 
 _fastShift = Param(nameof(FastShift), 0)
 .SetDisplay("Fast MA Shift", "Horizontal shift applied to the fast moving average", "Indicators")
-.SetGreaterOrEqualZero();
+.SetNotNegative();
 
 _fastMethod = Param(nameof(FastMethod), MovingAverageKind.Simple)
 .SetDisplay("Fast MA Method", "Smoothing method for the fast moving average", "Indicators");
@@ -75,7 +75,7 @@ _slowLength = Param(nameof(SlowLength), 12)
 
 _slowShift = Param(nameof(SlowShift), 0)
 .SetDisplay("Slow MA Shift", "Horizontal shift applied to the slow moving average", "Indicators")
-.SetGreaterOrEqualZero();
+.SetNotNegative();
 
 _slowMethod = Param(nameof(SlowMethod), MovingAverageKind.Simple)
 .SetDisplay("Slow MA Method", "Smoothing method for the slow moving average", "Indicators");

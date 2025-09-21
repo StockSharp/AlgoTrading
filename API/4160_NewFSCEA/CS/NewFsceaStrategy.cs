@@ -138,7 +138,7 @@ public class NewFsceaStrategy : Strategy
 
 		_trendShift = Param(nameof(TrendShift), 2)
 			.SetDisplay("EMA Shift", "Horizontal shift applied to the EMA (bars)", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Volume", "Base order volume", "Trading")

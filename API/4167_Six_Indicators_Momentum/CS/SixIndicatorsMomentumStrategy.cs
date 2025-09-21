@@ -271,39 +271,39 @@ private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 		.SetDisplay("Close On Reverse", "Close profitable trades when the signal flips", "Trading Rules");
 
 		_firstSource = Param(nameof(FirstSourceIndex), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Source A", "Slot A selection (0=AC[1], 1=AC[10], 2=AC[20], 3=AO momentum, 4=AC diff #1, 5=AC diff #2)", "Signal Mixer");
 
 		_secondSource = Param(nameof(SecondSourceIndex), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Source B", "Slot B selection", "Signal Mixer");
 
 		_thirdSource = Param(nameof(ThirdSourceIndex), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Source C", "Slot C selection", "Signal Mixer");
 
 		_fourthSource = Param(nameof(FourthSourceIndex), 4)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Source D", "Slot D selection", "Signal Mixer");
 
 		_fifthSource = Param(nameof(FifthSourceIndex), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Source E", "Slot E selection", "Signal Mixer");
 
 		_sixthSource = Param(nameof(SixthSourceIndex), 4)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Source F", "Slot F selection", "Signal Mixer");
 
 		_aoShift = Param(nameof(AoMomentumShift), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("AO Shift", "Bars between current AO and comparison value", "Signal Mixer");
 
 		_acPrimaryShift = Param(nameof(AcPrimaryShift), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("AC Shift #1", "Bars between current AC and the first comparison", "Signal Mixer");
 
 		_acSecondaryShift = Param(nameof(AcSecondaryShift), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("AC Shift #2", "Bars between current AC and the second comparison", "Signal Mixer");
 
 		_sensitivityMultiplier = Param(nameof(SensitivityMultiplier), 1m)
@@ -311,25 +311,25 @@ private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 		.SetDisplay("Sensitivity", "Threshold multiplier applied to AC checks", "Signal Mixer");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk Management");
 
 		_stopLossPips = Param(nameof(StopLossPips), 300m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk Management");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing", "Enable trailing stop logic", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 300m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management");
 
 		_requireProfitForTrailing = Param(nameof(RequireProfitForTrailing), false)
 		.SetDisplay("Use Profit Lock", "Require price to move beyond lock distance before trailing", "Risk Management");
 
 		_lockProfitPips = Param(nameof(LockProfitPips), 300m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Lock Profit (pips)", "Additional profit before trailing activates", "Risk Management");
 
 		_volume = Param(nameof(Volume), 0.1m)

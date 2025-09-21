@@ -71,7 +71,7 @@ public class CoeffofLineTrueStrategy : Strategy
 			.SetDisplay("Slope Period", "Linear regression length", "Parameters");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Historical bar index for signal", "Parameters");
 
 		_buyOpen = Param(nameof(BuyPosOpen), true)

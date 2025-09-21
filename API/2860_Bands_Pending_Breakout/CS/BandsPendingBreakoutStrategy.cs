@@ -256,23 +256,23 @@ public class BandsPendingBreakoutStrategy : Strategy
 
 		_firstTakeProfitPips = Param(nameof(FirstTakeProfitPips), 21m)
 			.SetDisplay("First TP", "Take profit for the first order in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_secondTakeProfitPips = Param(nameof(SecondTakeProfitPips), 34m)
 			.SetDisplay("Second TP", "Take profit for the second order in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_thirdTakeProfitPips = Param(nameof(ThirdTakeProfitPips), 55m)
 			.SetDisplay("Third TP", "Take profit for the third order in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step", "Additional distance required before trailing", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stepPips = Param(nameof(StepPips), 15m)
 			.SetDisplay("Grid Step", "Distance between pending orders in pips", "Orders")
@@ -284,7 +284,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 
 		_maShift = Param(nameof(MaShift), 3)
 			.SetDisplay("MA Shift", "Forward shift for the moving average", "Moving Average")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
 			.SetDisplay("MA Method", "Moving average calculation method", "Moving Average");
@@ -298,7 +298,7 @@ public class BandsPendingBreakoutStrategy : Strategy
 
 		_bandsShift = Param(nameof(BandsShift), 0)
 			.SetDisplay("Bands Shift", "Forward shift for the Bollinger bands", "Bollinger Bands")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_bandsDeviation = Param(nameof(BandsDeviation), 2m)
 			.SetDisplay("Bands Deviation", "Standard deviation multiplier", "Bollinger Bands")

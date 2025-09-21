@@ -86,29 +86,29 @@ public class YtgAdxLevelCrossStrategy : Strategy
 			.SetOptimize(10, 40, 2);
 
 		_levelPlus = Param(nameof(LevelPlus), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("+DI Level", "Threshold that the +DI line must break", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 40, 5);
 
 		_levelMinus = Param(nameof(LevelMinus), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("-DI Level", "Threshold that the -DI line must break", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(5, 40, 5);
 
 		_shift = Param(nameof(Shift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Number of closed candles to look back", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 3, 1);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance to take profit in price points", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance to stop loss in price points", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)

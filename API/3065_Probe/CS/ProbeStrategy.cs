@@ -57,22 +57,22 @@ public class ProbeStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_indentPips = Param(nameof(IndentPips), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Indent (pips)", "Distance from the market price to the stop order", "Risk")
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop loss distance expressed in pips", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Minimum profit required before trailing activates", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Additional profit required before the stop is moved again", "Risk")
 		.SetCanOptimize(true);
 	}

@@ -123,7 +123,7 @@ public class BssTripleEmaSeparationStrategy : Strategy
 			.SetDisplay("Minimum Distance", "Minimum price gap between moving averages", "Signals");
 
 		_minimumPauseSeconds = Param(nameof(MinimumPauseSeconds), 600)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum Pause (sec)", "Pause between new entries in seconds", "Risk");
 
 		_firstMaPeriod = Param(nameof(FirstMaPeriod), 5)

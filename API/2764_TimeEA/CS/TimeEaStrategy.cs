@@ -119,15 +119,15 @@ public class TimeEaStrategy : Strategy
 			.SetDisplay("Order Volume", "Quantity for market orders", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance in price steps", "Risk");
 
 		_minSpreadMultiplier = Param(nameof(MinSpreadMultiplier), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum Distance Multiplier", "Minimal offset applied to stops", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

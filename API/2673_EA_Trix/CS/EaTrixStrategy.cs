@@ -136,27 +136,27 @@ public class EaTrixStrategy : Strategy
 	public EaTrixStrategy()
 	{
 		_stopLoss = Param(nameof(StopLoss), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStop = Param(nameof(TrailingStop), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStep = Param(nameof(TrailingStep), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Minimal trailing step", "Risk")
 			.SetCanOptimize(true);
 
 		_breakEven = Param(nameof(BreakEven), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break Even", "Break-even trigger distance", "Risk")
 			.SetCanOptimize(true);
 

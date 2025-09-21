@@ -64,11 +64,11 @@ public class FitFul13TimeGatedStrategy : Strategy
 
 		_offsetPoints = Param(nameof(OffsetPoints), 15.5m)
 			.SetDisplay("Offset (points)", "Distance from pivot levels used for stops and targets.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
 			.SetDisplay("Trailing stop (points)", "Trailing stop distance expressed in price points.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_closeAfter = Param(nameof(CloseAfter), TimeSpan.FromHours(48))
 			.SetDisplay("Close after", "Maximum holding duration for profitable trades.", "Risk");

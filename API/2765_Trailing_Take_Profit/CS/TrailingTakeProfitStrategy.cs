@@ -121,7 +121,7 @@ public class TrailingTakeProfitStrategy : Strategy
 		.SetDisplay("Trail In Loss Zone", "Allow take profit to trail into loss area", "Trailing");
 
 		_breakevenPoints = Param(nameof(BreakevenPoints), 6m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Breakeven Points", "Minimal profit preserved by trailing", "Risk Management");
 
 		_spreadMultiplier = Param(nameof(SpreadMultiplier), 2)

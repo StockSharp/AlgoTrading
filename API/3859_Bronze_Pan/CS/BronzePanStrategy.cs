@@ -54,19 +54,19 @@ public class BronzePanStrategy : Strategy
 
 		_longStopLossPips = Param(nameof(LongStopLossPips), 0)
 			.SetDisplay("Long Stop Loss", "Protective stop for long positions expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_shortStopLossPips = Param(nameof(ShortStopLossPips), 0)
 			.SetDisplay("Short Stop Loss", "Protective stop for short positions expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_longTakeProfitPips = Param(nameof(LongTakeProfitPips), 0)
 			.SetDisplay("Long Take Profit", "Profit target for long positions expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_shortTakeProfitPips = Param(nameof(ShortTakeProfitPips), 0)
 			.SetDisplay("Short Take Profit", "Profit target for short positions expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_indicatorPeriod = Param(nameof(IndicatorPeriod), 14)
 			.SetDisplay("Indicator Period", "Length applied to DayImpuls, Williams %R and CCI", "Indicators")

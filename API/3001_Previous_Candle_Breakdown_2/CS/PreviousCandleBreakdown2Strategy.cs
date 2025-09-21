@@ -206,46 +206,46 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	public PreviousCandleBreakdown2Strategy()
 	{
 		_indentPips = Param(nameof(IndentPips), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Indent (pips)", "Price offset beyond the previous candle", "Entry");
 
 		_fastPeriod = Param(nameof(FastPeriod), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Fast MA", "Fast moving average period", "Filters");
 
 		_fastShift = Param(nameof(FastShift), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Fast Shift", "Shift for fast MA", "Filters");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 30)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Slow MA", "Slow moving average period", "Filters");
 
 		_slowShift = Param(nameof(SlowShift), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Slow Shift", "Shift for slow MA", "Filters");
 
 		_maMethod = Param(nameof(MaMethod), MaMethod.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Filters");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss size in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit size in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum move before trailing adjusts", "Risk");
 
 		_profitClose = Param(nameof(ProfitClose), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Profit Close", "Close all positions when profit reached", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
@@ -253,11 +253,11 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 		.SetDisplay("Max Position", "Maximum absolute position per direction", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Order Volume", "Fixed order volume", "Risk");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Risk %", "Risk percent when using stop-loss", "Risk");
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(9, 9, 0))

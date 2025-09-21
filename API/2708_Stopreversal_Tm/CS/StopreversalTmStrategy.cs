@@ -97,7 +97,7 @@ public class StopreversalTmStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar Delay", "Number of completed bars to wait before acting", "Indicator")
 			.SetCanOptimize(true);
 

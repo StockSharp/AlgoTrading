@@ -65,12 +65,12 @@ public class StochasticAcceleratorStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 70m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true);
 
@@ -105,7 +105,7 @@ public class StochasticAcceleratorStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_entryLevel = Param(nameof(EntryLevel), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Level", "Lower threshold confirming bullish momentum; the bearish threshold uses 100 - level.", "Stochastic #2")
 			.SetCanOptimize(true);
 
@@ -125,17 +125,17 @@ public class StochasticAcceleratorStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_filterLevel = Param(nameof(FilterLevel), 75m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Filter Level", "Upper threshold limiting bullish setups; the bearish threshold uses 100 - level.", "Stochastic #3")
 			.SetCanOptimize(true);
 
 		_acceleratorLevel = Param(nameof(AcceleratorLevel), 0.0002m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Accelerator Level", "Minimum Accelerator Oscillator amplitude required for entries.", "Momentum")
 			.SetCanOptimize(true);
 
 		_awesomeLevel = Param(nameof(AwesomeLevel), 0.0013m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Awesome Level", "Threshold used to close positions when the Awesome Oscillator reverts.", "Momentum")
 			.SetCanOptimize(true);
 

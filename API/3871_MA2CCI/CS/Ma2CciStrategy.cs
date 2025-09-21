@@ -76,7 +76,7 @@ public class Ma2CciStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_maxRiskPerThousand = Param(nameof(MaxRiskPerThousand), 0.02m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk fraction", "Fraction of free capital allocated per trade expressed per 1000 units.", "Risk")
 			.SetCanOptimize(true);
 

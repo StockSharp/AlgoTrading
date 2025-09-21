@@ -98,12 +98,12 @@ public class GapDMStrategy : Strategy
 			.SetDisplay("Order Volume", "Trading volume in lots", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Stop Loss (pips)", "Protective stop measured in pips. Set 0 to disable.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Take Profit (pips)", "Profit target measured in pips. Set 0 to disable.", "Risk");
 

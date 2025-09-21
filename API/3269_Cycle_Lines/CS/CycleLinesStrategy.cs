@@ -63,23 +63,23 @@ public class CycleLinesStrategy : Strategy
 			.SetCanOptimize(true, 6, 18, 1);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss", "Absolute stop loss distance", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit", "Absolute take profit distance", "Risk");
 
 		_trailingOffset = Param(nameof(TrailingOffset), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing offset", "Distance between peak and trailing stop", "Risk");
 
 		_breakEvenTrigger = Param(nameof(BreakEvenTrigger), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even trigger", "Profit required to arm break-even", "Risk");
 
 		_breakEvenOffset = Param(nameof(BreakEvenOffset), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even offset", "Offset applied when moving stop to break-even", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

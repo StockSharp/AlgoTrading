@@ -43,7 +43,7 @@ public class BlauSmStochasticStrategy : Strategy
 			.SetDisplay("Mode", "Signal generation mode", "Parameters");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar Shift", "Number of bars to shift indicator values", "Parameters");
 
 		_lookbackLength = Param(nameof(LookbackLength), 5)
@@ -98,13 +98,13 @@ public class BlauSmStochasticStrategy : Strategy
 			.SetDisplay("Enable Short Exit", "Allow closing existing short positions", "Trading");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in instrument points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 4000, 500);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in instrument points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 4000, 500);

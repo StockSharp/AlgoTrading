@@ -111,27 +111,27 @@ public class AlligatorVolatilityStrategy : Strategy
 			.SetDisplay("Minimum Volume", "Fallback volume when equity is unavailable.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 80)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss (pips)", "Distance to initial protective stop.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 80)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-Profit (pips)", "Distance to initial profit target.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance when enabled.", "Risk");
 
 		_trailingActivationPips = Param(nameof(TrailingActivationPips), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Activation (pips)", "Minimum profit before trailing adjusts.", "Risk");
 
 		_entryGap = Param(nameof(EntryGap), 0.0005m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Gap", "Minimum distance between Lips and Jaw for entries.", "Alligator");
 
 		_exitGap = Param(nameof(ExitGap), 0.0001m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Exit Gap", "Minimum distance between lines to keep the position.", "Alligator");
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
@@ -139,7 +139,7 @@ public class AlligatorVolatilityStrategy : Strategy
 			.SetDisplay("Jaw Period", "Alligator jaw smoothing length.", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Jaw line shift in bars.", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
@@ -147,7 +147,7 @@ public class AlligatorVolatilityStrategy : Strategy
 			.SetDisplay("Teeth Period", "Alligator teeth smoothing length.", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Teeth Shift", "Teeth line shift in bars.", "Alligator");
 
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
@@ -155,19 +155,19 @@ public class AlligatorVolatilityStrategy : Strategy
 			.SetDisplay("Lips Period", "Alligator lips smoothing length.", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Lips line shift in bars.", "Alligator");
 
 		_fractalBars = Param(nameof(FractalBars), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fractal Bars", "Number of completed candles to scan for fractals.", "Fractals");
 
 		_fractalDistancePips = Param(nameof(FractalDistancePips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fractal Distance (pips)", "Minimum distance between price and fractal.", "Fractals");
 
 		_martingaleDepth = Param(nameof(MartingaleDepth), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Martingale Depth", "Number of averaging limit orders.", "Martingale");
 
 		_martingaleMultiplier = Param(nameof(MartingaleMultiplier), 1.3m)
@@ -175,7 +175,7 @@ public class AlligatorVolatilityStrategy : Strategy
 			.SetDisplay("Martingale Multiplier", "Additional multiplier applied to double-up volumes.", "Martingale");
 
 		_gridSpreadPips = Param(nameof(GridSpreadPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Grid Spread (pips)", "Offset applied to martingale limit orders.", "Martingale");
 	}
 

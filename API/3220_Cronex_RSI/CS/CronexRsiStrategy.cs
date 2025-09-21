@@ -162,7 +162,7 @@ public class CronexRsiStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_signalShift = Param(nameof(SignalShift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Number of completed bars used for confirmation", "Trading");
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), CronexSmoothingMethod.Simple)
@@ -175,7 +175,7 @@ public class CronexRsiStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe for indicator calculations", "General");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trade Volume", "Volume used for new entries", "Risk")
 			.SetCanOptimize(true);
 

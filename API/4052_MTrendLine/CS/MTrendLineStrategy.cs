@@ -89,7 +89,7 @@ public class MTrendLineStrategy : Strategy
 			.SetOptimize(12, 48, 12);
 
 		_pointValue = Param(nameof(PointValue), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Point Value", "Monetary value of one MetaTrader point (0 = use security price step).", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -97,15 +97,15 @@ public class MTrendLineStrategy : Strategy
 			.SetDisplay("Trade Volume", "Default volume used for each pending order.", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Distance of the protective stop relative to the order price.", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Distance of the profit target relative to the order price.", "Risk");
 
 		_minDistancePoints = Param(nameof(MinDistancePoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Distance (pts)", "Minimal distance to best bid/ask before adjusting orders.", "Risk");
 
 		_slot1Enabled = Param(nameof(PendingOrder1Enabled), true)

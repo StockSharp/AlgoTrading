@@ -207,25 +207,25 @@ public class DayTradingPamxaStrategy : Strategy
 	public DayTradingPamxaStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 150, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in pips", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 100, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Additional pips required before trailing adjusts", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(1, 50, 1);

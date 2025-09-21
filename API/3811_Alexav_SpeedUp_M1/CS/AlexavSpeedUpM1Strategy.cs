@@ -89,23 +89,23 @@ public class AlexavSpeedUpM1Strategy : Strategy
 	{
 		_lotSize = Param(nameof(LotSize), 1m)
 		.SetDisplay("Lot Size", "Base trading volume in lots", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 26m)
 		.SetDisplay("Take Profit (points)", "Distance from entry to the take-profit price", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_initialStopPoints = Param(nameof(InitialStopPoints), 23m)
 		.SetDisplay("Initial Stop (points)", "Initial stop-loss distance from the entry price", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 23m)
 		.SetDisplay("Trailing Stop (points)", "Trailing stop distance maintained after price advances", "Risk Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_openCloseDifference = Param(nameof(OpenCloseDifference), 0.001m)
 		.SetDisplay("Body Threshold", "Minimum candle body size required to open a trade", "Signal")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used to analyse candle bodies", "Data");

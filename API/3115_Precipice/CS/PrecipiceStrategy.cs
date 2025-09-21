@@ -28,7 +28,7 @@ public class PrecipiceStrategy : Strategy
 
 		_stopLossTakeProfitPips = Param(nameof(StopLossTakeProfitPips), 100)
 			.SetDisplay("TP/SL distance (pips)", "Distance between the entry price and protective orders expressed in MetaTrader pips.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useBuy = Param(nameof(UseBuy), true)
 			.SetDisplay("Enable buy", "Allow the strategy to open long positions.", "Signals");

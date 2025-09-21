@@ -60,7 +60,7 @@ public class GapsStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_gapVolume = Param(nameof(GapVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Gap Volume", "Order volume for gap entries", "Trading Rules")
 			.SetCanOptimize(true);
 

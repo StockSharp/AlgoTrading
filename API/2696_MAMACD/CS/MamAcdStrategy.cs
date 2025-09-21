@@ -136,11 +136,11 @@ public class MamAcdStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 15)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

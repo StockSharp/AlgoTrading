@@ -182,7 +182,7 @@ public class AlliheikTraderStrategy : Strategy
 		.SetDisplay("Jaw Period", "Length of the Alligator jaw moving average.", "Alligator");
 
 		_jawsShift = Param(nameof(JawsShift), 8)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Forward shift applied to the jaw moving average.", "Alligator");
 
 		_jawsMethod = Param(nameof(JawsMethod), MovingAverageType.Simple)
@@ -206,15 +206,15 @@ public class AlliheikTraderStrategy : Strategy
 		.SetDisplay("Post-smooth Period", "Length used by the final smoothers.", "Heiken Ashi");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pts)", "Fixed protective stop in points.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pts)", "Trailing distance applied once price clears the jaw.", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 225)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Fixed take-profit distance in points.", "Risk");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)

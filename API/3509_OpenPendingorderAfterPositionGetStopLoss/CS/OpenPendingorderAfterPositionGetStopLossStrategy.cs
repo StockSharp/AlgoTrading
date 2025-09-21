@@ -148,15 +148,15 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		.SetDisplay("Order Volume", "Trade volume for each pending stop order", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Stop-loss distance in instrument points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Take-profit distance in instrument points", "Risk");
 
 		_minStopDistancePoints = Param(nameof(MinStopDistancePoints), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min Distance (points)", "Minimal offset between price and a pending order", "Trading");
 
 		_maxPositions = Param(nameof(MaxPositions), 1)

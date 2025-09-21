@@ -55,7 +55,7 @@ public class TwoPerBarStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance to the take profit expressed in instrument points.", "Risk")
 			.SetCanOptimize(true);
 	}

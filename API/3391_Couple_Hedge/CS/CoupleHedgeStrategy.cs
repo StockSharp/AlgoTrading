@@ -338,11 +338,11 @@ public class CoupleHedgeStrategy : Strategy
 		.SetDisplay("Step Progression", "How the step grows when adding baskets", "Risk Management");
 
 		_minutesBetweenOrders = Param(nameof(MinutesBetweenOrders), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Minutes Between Orders", "Minimum waiting time before averaging", "Risk Management");
 
 		_maximumGroups = Param(nameof(MaximumGroups), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Maximum Groups", "Limit the number of simultaneously trading groups", "General");
 
 		_closeProfitMode = Param(nameof(CloseProfitMode), CloseProfitMode.BothSides)
@@ -354,7 +354,7 @@ public class CoupleHedgeStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_delayCloseProfit = Param(nameof(DelayCloseProfit), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Profit Delay", "Seconds to wait before closing in profit", "Exits");
 
 		_closeLossMode = Param(nameof(CloseLossMode), CloseLossMode.NotCloseInLoss)
@@ -365,7 +365,7 @@ public class CoupleHedgeStrategy : Strategy
 		.SetDisplay("Loss Limit", "Group loss that triggers a forced exit", "Exits");
 
 		_delayCloseLoss = Param(nameof(DelayCloseLoss), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Loss Delay", "Seconds to wait before closing in loss", "Exits");
 
 		_autoLot = Param(nameof(AutoLot), false)
@@ -396,30 +396,30 @@ public class CoupleHedgeStrategy : Strategy
 		.SetDisplay("Fair Lot", "Balance lot size using tick value ratio", "Position Sizing");
 
 		_maximumLotSize = Param(nameof(MaximumLotSize), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Maximum Lot", "Upper limit for trade volume", "Position Sizing");
 
 		_controlSession = Param(nameof(ControlSession), true)
 		.SetDisplay("Control Session", "Enable trading session filter", "Session");
 
 		_waitAfterOpen = Param(nameof(WaitAfterOpen), 120)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Wait After Open", "Minutes to wait after Monday open", "Session");
 
 		_stopBeforeClose = Param(nameof(StopBeforeClose), 60)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Before Close", "Minutes to stop before Friday close", "Session");
 
 		_maxSpread = Param(nameof(MaxSpread), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Spread", "Maximum accepted spread in points", "Risk Management");
 
 		_maximumOrders = Param(nameof(MaximumOrders), 0L)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Maximum Orders", "Global limit for open positions", "Risk Management");
 
 		_maxSlippage = Param(nameof(MaxSlippage), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Slippage", "Slippage tolerance (informational)", "Execution");
 
 		_orderTag = Param(nameof(OrderTag), "CoupleHedgeEA")

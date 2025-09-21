@@ -72,19 +72,19 @@ public class TrailingStopManagerStrategy : Strategy
 			.SetOptimize(500m, 2000m, 100m);
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing activation", "Profit distance in price steps required to enable trailing.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(500m, 3000m, 100m);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing step", "Minimum improvement in price steps before moving the stop again.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(100m, 500m, 50m);
 
 		_priceDeviationPoints = Param(nameof(PriceDeviationPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Price deviation", "Reserved parameter preserved for compatibility with the source expert.", "Execution")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 50m, 5m);

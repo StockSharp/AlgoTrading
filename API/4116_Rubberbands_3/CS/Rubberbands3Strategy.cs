@@ -68,7 +68,7 @@ public class Rubberbands3Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_backStep = Param(nameof(BackStep), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Back Step", "Retracement in points that triggers an exit.", "Bands")
 			.SetCanOptimize(true);
 
@@ -88,7 +88,7 @@ public class Rubberbands3Strategy : Strategy
 			.SetDisplay("Use Session Take-Profit", "Enable cumulative profit target.", "Session");
 
 		_sessionTakeProfit = Param(nameof(SessionTakeProfit), 2000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Session Take-Profit", "Profit target in account currency per lot.", "Session")
 			.SetCanOptimize(true);
 
@@ -96,7 +96,7 @@ public class Rubberbands3Strategy : Strategy
 			.SetDisplay("Use Session Stop-Loss", "Enable loss cap while reversing.", "Session");
 
 		_sessionStopLoss = Param(nameof(SessionStopLoss), 4000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Session Stop-Loss", "Loss limit in account currency per lot.", "Session")
 			.SetCanOptimize(true);
 

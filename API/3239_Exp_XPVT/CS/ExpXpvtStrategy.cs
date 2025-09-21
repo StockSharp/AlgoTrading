@@ -48,11 +48,11 @@ public class ExpXpvtStrategy : Strategy
 
                 _stopLossPoints = Param(nameof(StopLossPoints), 1000m)
                         .SetDisplay("Stop Loss", "Protective stop distance in price steps", "Risk")
-                        .SetGreaterOrEqualZero();
+                        .SetNotNegative();
 
                 _takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
                         .SetDisplay("Take Profit", "Profit target distance in price steps", "Risk")
-                        .SetGreaterOrEqualZero();
+                        .SetNotNegative();
 
                 _allowBuyOpen = Param(nameof(AllowBuyOpen), true)
                         .SetDisplay("Allow Buy Entry", "Enable opening long positions", "Trading");
@@ -87,7 +87,7 @@ public class ExpXpvtStrategy : Strategy
 
                 _signalBar = Param(nameof(SignalBar), 1)
                         .SetDisplay("Signal Bar", "Historical shift used when reading signals", "Indicator")
-                        .SetGreaterOrEqualZero();
+                        .SetNotNegative();
         }
 
         /// <summary>

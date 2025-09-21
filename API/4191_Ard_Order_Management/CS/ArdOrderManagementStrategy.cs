@@ -160,19 +160,19 @@ public class ArdOrderManagementStrategy : Strategy
 	public ArdOrderManagementStrategy()
 	{
 		_slippageSteps = Param(nameof(SlippageSteps), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage (steps)", "Accepted execution slippage expressed in price steps.", "Order management");
 
 		_lotDecimals = Param(nameof(LotDecimals), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lot decimals", "Number of decimal places used to round the calculated volume.", "Order management");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Initial stop-loss distance from the entry price, measured in price points.", "Protection");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Initial take-profit distance from the entry price, measured in price points.", "Protection");
 
 		_lotSizeDivisor = Param(nameof(LotSizeDivisor), 5m)
@@ -180,11 +180,11 @@ public class ArdOrderManagementStrategy : Strategy
 			.SetDisplay("Lot size divisor", "Divides free margin before converting the value into lots.", "Money management");
 
 		_modifyStopLossPoints = Param(nameof(ModifyStopLossPoints), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Modify stop loss (points)", "New stop-loss distance applied by the modify command.", "Protection");
 
 		_modifyTakeProfitPoints = Param(nameof(ModifyTakeProfitPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Modify take profit (points)", "New take-profit distance applied by the modify command.", "Protection");
 
 		_minimumVolume = Param(nameof(MinimumVolume), 0.1m)

@@ -45,11 +45,11 @@ public class RouletteGameStrategy : Strategy
 			.SetDisplay("Max multiplier", "Ceiling for the stake multiplier to limit risk.", "Money management");
 
 		_roundCooldown = Param(nameof(RoundCooldown), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Round cooldown", "Number of finished candles to wait before opening the next bet.", "Timing");
 
 		_maxLosingStreak = Param(nameof(MaxLosingStreak), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max losing streak", "Number of consecutive losing rounds allowed before a reset.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

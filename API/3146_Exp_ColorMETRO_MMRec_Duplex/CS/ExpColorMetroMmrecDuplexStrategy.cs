@@ -593,22 +593,22 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 
 			_signalBar = strategy.Param(key + "_SignalBar", defaultSignalBar)
 			.SetDisplay(key + " Signal Bar", "Historical shift for signal evaluation", key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_magic = strategy.Param(key + "_Magic", defaultMagic)
 			.SetDisplay(key + " Magic", "Original MT5 magic number (for reference)", key);
 
 			_stopLossTicks = strategy.Param(key + "_StopLoss", defaultStopLoss)
 			.SetDisplay(key + " Stop Loss", "Reserved stop-loss distance in ticks", key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_takeProfitTicks = strategy.Param(key + "_TakeProfit", defaultTakeProfit)
 			.SetDisplay(key + " Take Profit", "Reserved take-profit distance in ticks", key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_deviationTicks = strategy.Param(key + "_Deviation", defaultDeviation)
 			.SetDisplay(key + " Deviation", "Maximum allowed slippage", key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_marginMode = strategy.Param(key + "_MMMode", defaultMarginMode)
 			.SetDisplay(key + " MM Mode", "Money management mode (informational)", key);

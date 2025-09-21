@@ -221,7 +221,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			SetOptimize(10, 60, 5);
 
 		_stepExponent = Param(nameof(StepExponent), 0m)
-			SetGreaterOrEqualZero()
+			SetNotNegative()
 			SetDisplay("Step Exponent", "Power growth for step size", "Grid")
 			SetCanOptimize(true)
 			SetOptimize(0m, 2m, 0.5m);

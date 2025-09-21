@@ -50,7 +50,7 @@ public class EnvelopeMaShortStrategy : Strategy
 			.SetDisplay("Envelope period", "EMA length used as the envelope base.", "Indicator");
 
 		_envelopeDeviation = Param(nameof(EnvelopeDeviation), 0.08m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Envelope deviation", "Width of the envelope expressed in percent.", "Indicator");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
@@ -62,11 +62,11 @@ public class EnvelopeMaShortStrategy : Strategy
 			.SetDisplay("Slow EMA period", "Length of the slow EMA used with a one-bar delay.", "Indicator");
 
 		_stopLossPips = Param(nameof(StopLossPips), 25)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-loss (pips)", "Distance from entry to the protective stop in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 25)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-profit (pips)", "Distance from entry to the profit target in pips.", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

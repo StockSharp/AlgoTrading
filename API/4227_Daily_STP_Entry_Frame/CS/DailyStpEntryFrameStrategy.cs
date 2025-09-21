@@ -230,30 +230,30 @@ public class DailyStpEntryFrameStrategy : Strategy
 			.SetDisplay("Candle Type", "Time-frame used to monitor the previous session range", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 8m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss (points)", "Stop-loss distance in base points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20.5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-Profit (points)", "Take-profit distance in base points", "Risk");
 
 		_trailingSlope = Param(nameof(TrailingSlope), 0.8m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Slope", "Portion of profit retained when trailing is active", "Risk");
 
 		_sideFilter = Param(nameof(SideFilter), (int)EntrySide.Short)
 			.SetDisplay("Side Filter", "Allowed entry direction (-1 short, 0 both, 1 long)", "Signal");
 
 		_thresholdPoints = Param(nameof(ThresholdPoints), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Threshold (points)", "Minimum distance from the previous extreme before arming", "Signal");
 
 		_spreadPoints = Param(nameof(SpreadPoints), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Spread (points)", "Entry offset that compensates for the spread", "Signal");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage Buffer", "Additional safety distance for stop validation", "Signal");
 
 		_noNewOrdersHour = Param(nameof(NoNewOrdersHour), 19)
@@ -269,11 +269,11 @@ public class DailyStpEntryFrameStrategy : Strategy
 			.SetDisplay("Day Filter", "6 for all days, or 0-5 to target Sunday-Friday", "Timing");
 
 		_closeAfterSeconds = Param(nameof(CloseAfterSeconds), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Close After (s)", "Optional position lifetime in seconds", "Risk");
 
 		_percentOfProfit = Param(nameof(PercentOfProfit), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Percent Of Profit", "Portion of accumulated profit used for sizing", "Money Management");
 
 		_minVolume = Param(nameof(MinVolume), 0.1m)
@@ -285,7 +285,7 @@ public class DailyStpEntryFrameStrategy : Strategy
 			.SetDisplay("Maximum Volume", "Upper bound for order size", "Money Management");
 
 		_maximumDrawdownPercent = Param(nameof(MaximumDrawdownPercent), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Drawdown (%)", "Disable new orders after this drawdown", "Money Management");
 	}
 

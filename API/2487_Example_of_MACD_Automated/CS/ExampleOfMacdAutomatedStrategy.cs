@@ -48,12 +48,12 @@ public class ExampleOfMacdAutomatedStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop-loss distance in price steps", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take-profit distance in price steps", "Risk")
 			.SetCanOptimize(true);
 

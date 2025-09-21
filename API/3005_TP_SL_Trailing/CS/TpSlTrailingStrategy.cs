@@ -92,19 +92,19 @@ public class TpSlTrailingStrategy : Strategy
 		.SetDisplay("Candle Type", "Timeframe used to monitor price movement", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance in pips", "Risk Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Initial take-profit distance in pips", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Extra pips needed before the trailing stop moves", "Risk Management");
 
 		_onlyZeroValues = Param(nameof(OnlyZeroValues), true)

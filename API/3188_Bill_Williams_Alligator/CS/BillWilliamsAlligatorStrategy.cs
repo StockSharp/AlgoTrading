@@ -65,19 +65,19 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		.SetDisplay("Order Volume", "Trade size in lots or contracts.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance converted with price step.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Optional take-profit distance in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance once enabled.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Additional progress required before trailing moves.", "Risk");
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)
@@ -85,7 +85,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		.SetDisplay("Jaw Period", "Smoothed moving average length for the jaw line.", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Jaw Shift", "Forward shift (in bars) applied to the jaw.", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
@@ -93,7 +93,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		.SetDisplay("Teeth Period", "Smoothed moving average length for the teeth line.", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Teeth Shift", "Forward shift (in bars) applied to the teeth.", "Alligator");
 
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
@@ -101,7 +101,7 @@ public class BillWilliamsAlligatorStrategy : Strategy
 		.SetDisplay("Lips Period", "Smoothed moving average length for the lips line.", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Lips Shift", "Forward shift (in bars) applied to the lips.", "Alligator");
 
 		_fractalsLookback = Param(nameof(FractalsLookback), 100)

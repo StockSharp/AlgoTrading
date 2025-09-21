@@ -187,57 +187,57 @@ public class MasterExitPlanStrategy : Strategy
 		.SetDisplay("Enable Target Equity", "Close all trades once equity reaches the configured percentage gain.", "Equity management");
 
 		_targetEquityPercent = Param(nameof(TargetEquityPercent), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target Equity %", "Percentage gain over balance required before closing every position.", "Equity management");
 
 		_enableStopLoss = Param(nameof(EnableStopLoss), false)
 		.SetDisplay("Enable Stop-Loss", "Activate the broker-side style stop-loss logic.", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop-Loss Points", "Static stop distance in MetaTrader points.", "Risk");
 
 		_enableDynamicStopLoss = Param(nameof(EnableDynamicStopLoss), false)
 		.SetDisplay("Enable Dynamic Stop-Loss", "Re-anchor the stop to the latest minute candle open.", "Risk");
 
 		_dynamicStopLossPoints = Param(nameof(DynamicStopLossPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Dynamic Stop Points", "Dynamic stop distance in MetaTrader points.", "Risk");
 
 		_enableHiddenStopLoss = Param(nameof(EnableHiddenStopLoss), false)
 		.SetDisplay("Enable Hidden Stop", "Close positions internally when the hidden static level is breached.", "Risk");
 
 		_hiddenStopLossPoints = Param(nameof(HiddenStopLossPoints), 800m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Hidden Stop Points", "Hidden static stop distance in MetaTrader points.", "Risk");
 
 		_enableHiddenDynamicStopLoss = Param(nameof(EnableHiddenDynamicStopLoss), false)
 		.SetDisplay("Enable Hidden Dynamic Stop", "Close positions internally when the minute-based dynamic level is breached.", "Risk");
 
 		_hiddenDynamicStopLossPoints = Param(nameof(HiddenDynamicStopLossPoints), 800m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Hidden Dynamic Stop Points", "Hidden dynamic stop distance in MetaTrader points.", "Risk");
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), false)
 		.SetDisplay("Enable Trailing Stop", "Track profits once the configured percentage gain is reached.", "Trailing");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop Points", "Trailing distance maintained behind the market.", "Trailing");
 
 		_trailingTargetPercent = Param(nameof(TrailingTargetPercent), 0.2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Target %", "Minimum percentage gain (of balance) required to activate the trailing stop.", "Trailing");
 
 		_sureProfitPoints = Param(nameof(SureProfitPoints), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sure Profit Points", "Additional cushion that must be accumulated before moving the stop.", "Trailing");
 
 		_enableTrailPendingOrders = Param(nameof(EnableTrailPendingOrders), false)
 		.SetDisplay("Enable Pending Order Trailing", "Allow the strategy to re-place pending stop orders closer to the market.", "Pending orders");
 
 		_trailPendingOrderPoints = Param(nameof(TrailPendingOrderPoints), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Pending Trailing Points", "Distance in points between the market price and pending stop orders.", "Pending orders");
 	}
 

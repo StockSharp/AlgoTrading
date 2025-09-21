@@ -73,15 +73,15 @@ public class GraalFractalChannelStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 500m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance applied through portfolio protection.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance applied through portfolio protection.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_offsetPips = Param(nameof(OffsetPips), 5m)
 			.SetDisplay("Counter Stop Offset (pips)", "Distance for hedging stop orders relative to fractal levels.", "Orders")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 14)
 			.SetDisplay("Channel Period", "Number of candles considered when building the close-price channel.", "Filters")
@@ -92,21 +92,21 @@ public class GraalFractalChannelStrategy : Strategy
 
 		_depthPercent = Param(nameof(DepthPercent), 25m)
 			.SetDisplay("Fractal Channel Depth (%)", "Percentage width inside the fractal channel that must hold before trading.", "Filters")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useHighLowChannel = Param(nameof(UseHighLowChannel), false)
 			.SetDisplay("Use HL Channel", "Validate entries against a channel built from recent closes.", "Filters");
 
 		_orientationPercent = Param(nameof(OrientationPercent), 20m)
 			.SetDisplay("HL Orientation (%)", "Allowed penetration inside the HL channel before signals stay valid.", "Filters")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_allowFlatTrading = Param(nameof(AllowFlatTrading), true)
 			.SetDisplay("Allow Flat Trading", "Permit trades when the close channel width is below the threshold.", "Filters");
 
 		_flatThresholdPips = Param(nameof(FlatThresholdPips), 20m)
 			.SetDisplay("Flat Threshold (pips)", "Minimum channel width required when flat trading is disabled.", "Filters")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useWilliamsExit = Param(nameof(UseWilliamsExit), false)
 			.SetDisplay("Use Williams Exit", "Close positions when Williams %R reaches extreme levels.", "Filters");
@@ -117,7 +117,7 @@ public class GraalFractalChannelStrategy : Strategy
 
 		_williamsThreshold = Param(nameof(WilliamsThreshold), 30m)
 			.SetDisplay("Williams Threshold", "Sensitivity of the Williams %R exit trigger (in percentage points).", "Filters")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useCounterOrders = Param(nameof(UseCounterOrders), false)
 			.SetDisplay("Use Counter Orders", "Stage opposite stop orders after entering a position.", "Orders");

@@ -319,7 +319,7 @@ public class EarlyTopProrateV1Strategy : Strategy
 		.SetDisplay("Money Management Mode", "Selects how the order volume is calculated", "Money Management");
 
 		_mmFactor = Param(nameof(MoneyManagementFactor), 3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MM Factor", "Multiplier used by the square root balance model", "Money Management");
 
 		_mmRiskPercent = Param(nameof(MoneyManagementRiskPercent), 50)

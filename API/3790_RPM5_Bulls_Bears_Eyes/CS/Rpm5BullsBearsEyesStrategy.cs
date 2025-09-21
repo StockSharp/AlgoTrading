@@ -75,12 +75,12 @@ public class Rpm5BullsBearsEyesStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 25m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective distance measured in pips.", "Risk")
 		.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target distance measured in pips.", "Risk")
 		.SetCanOptimize(true);
 

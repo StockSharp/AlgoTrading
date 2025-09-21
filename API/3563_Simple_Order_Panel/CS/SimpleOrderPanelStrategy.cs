@@ -91,12 +91,12 @@ public class SimpleOrderPanelStrategy : Strategy
 		.SetCanOptimize(false);
 
 		_stopLossValue = Param(nameof(StopLossValue), 300m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Absolute price or MetaTrader points depending on the stop/take mode.", "Risk")
 		.SetCanOptimize(false);
 
 		_takeProfitValue = Param(nameof(TakeProfitValue), 300m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Absolute price or MetaTrader points depending on the stop/take mode.", "Risk")
 		.SetCanOptimize(false);
 
@@ -150,7 +150,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		.SetCanOptimize(false);
 
 		_pendingPrice = Param(nameof(PendingPrice), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Pending Price", "Trigger price used for pending entries.", "Pending")
 		.SetCanOptimize(false);
 

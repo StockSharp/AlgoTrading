@@ -38,27 +38,27 @@ public class BreakdownCatcherStrategy : Strategy
 	public BreakdownCatcherStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance for breakout positions", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 90)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance for breakout positions", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance that protects gains", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional progress required before shifting the trailing stop", "Risk");
 
 		_indentPips = Param(nameof(IndentPips), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Indent (pips)", "Extra offset added to breakout levels", "Strategy");
 
 		_allowedSpreadPoints = Param(nameof(AllowedSpreadPoints), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Allowed Spread (points)", "Maximum bid-ask spread measured in points", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

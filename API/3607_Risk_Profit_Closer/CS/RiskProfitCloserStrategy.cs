@@ -54,11 +54,11 @@ public class RiskProfitCloserStrategy : Strategy
         public RiskProfitCloserStrategy()
         {
                 _riskPercentage = Param(nameof(RiskPercentage), 1m)
-                        .SetGreaterOrEqualZero()
+                        .SetNotNegative()
                         .SetDisplay("Risk %", "Maximum tolerated loss as percentage of equity", "Risk");
 
                 _profitPercentage = Param(nameof(ProfitPercentage), 2m)
-                        .SetGreaterOrEqualZero()
+                        .SetNotNegative()
                         .SetDisplay("Profit %", "Desired profit as percentage of equity", "Risk");
 
                 _timerInterval = Param(nameof(TimerInterval), TimeSpan.FromSeconds(1))

@@ -71,7 +71,7 @@ public class RiskRewardRatioStrategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetDisplay("Momentum Threshold", "Minimum momentum deviation from 100 to allow trades", "Indicators")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_rewardRatio = Param(nameof(RewardRatio), 2m)
 		.SetDisplay("Reward Ratio", "Take-profit to stop-loss ratio", "Risk")
@@ -90,18 +90,18 @@ public class RiskRewardRatioStrategy : Strategy
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 		.SetDisplay("Trailing Stop (pips)", "Distance maintained by the trailing stop", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
 		.SetDisplay("Enable Break Even", "Moves stop-loss to break-even after a positive move", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetDisplay("Break Even Trigger", "Required profit in pips before moving stop to break-even", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 		.SetDisplay("Break Even Offset", "Extra pips added when moving the stop to break-even", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_exitSwitch = Param(nameof(ExitSwitch), false)
 		.SetDisplay("Exit Switch", "If enabled the strategy closes all positions", "Risk");

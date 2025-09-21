@@ -150,11 +150,11 @@ public class EmaRsiVaCrossStrategy : Strategy
 		.SetDisplay("Volume", "Base market order volume", "Trading");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Optional take-profit distance in points", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Optional stop-loss distance in points", "Risk");
 
 		_useBalanceMultiplier = Param(nameof(UseBalanceMultiplier), false)

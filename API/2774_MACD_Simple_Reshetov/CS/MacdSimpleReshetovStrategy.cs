@@ -34,11 +34,11 @@ public class MacdSimpleReshetovStrategy : Strategy
 			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_df = Param(nameof(Df), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("DF", "Offset for the fast EMA", "Indicators");
 
 		_ds = Param(nameof(Ds), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("DS", "Offset for the slow EMA", "Indicators");
 
 		_signalPeriod = Param(nameof(SignalPeriod), 10)

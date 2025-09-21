@@ -190,7 +190,7 @@ public class CyberiaTraderAiStrategy : Strategy
 		.SetDisplay("Segments Per Period", "Number of historical segments processed for every period candidate", "Model");
 
 		_spreadThreshold = Param(nameof(SpreadThreshold), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetDisplay("Spread Threshold", "Minimal absolute move to count a probability as successful", "Model");
 
@@ -234,11 +234,11 @@ public class CyberiaTraderAiStrategy : Strategy
 		.SetDisplay("Candle Type", "Primary timeframe processed by the model", "General");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit %", "Optional take profit distance expressed in percent", "Risk");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss %", "Optional stop loss distance expressed in percent", "Risk");
 
 		Volume = 1m;

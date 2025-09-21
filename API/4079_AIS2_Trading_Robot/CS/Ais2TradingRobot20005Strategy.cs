@@ -90,11 +90,11 @@ public class Ais2TradingRobot20005Strategy : Strategy
 
 		_stopBufferTicks = Param(nameof(StopBufferTicks), 0m)
 		.SetDisplay("Stop Buffer", "Extra ticks added to stop distance checks", "Execution")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_freezeBufferTicks = Param(nameof(FreezeBufferTicks), 0m)
 		.SetDisplay("Freeze Buffer", "Extra ticks protecting stop re-placements", "Execution")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailStepMultiplier = Param(nameof(TrailStepMultiplier), 1m)
 		.SetDisplay("Trail Step Mult", "Spread multiplier limiting trailing frequency", "Execution")

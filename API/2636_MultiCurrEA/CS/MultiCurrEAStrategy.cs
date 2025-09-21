@@ -44,7 +44,7 @@ public class MultiCurrEAStrategy : Strategy
 			.SetCanOptimize(true);
 
 			BollingerShiftParam = owner.Param($"Symbol{index}BollingerShift", 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay(shiftLabel, "Number of completed bars to offset indicator values", _groupName);
 
 			BollingerDeviationParam = owner.Param($"Symbol{index}BollingerDeviation", defaultDeviation)

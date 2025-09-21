@@ -163,19 +163,19 @@ public class TrailingCloseManagerStrategy : Strategy
 	public TrailingCloseManagerStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 500m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Initial stop loss distance expressed in pips", "Risk Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Initial take profit distance expressed in pips", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 200m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Distance used by the trailing stop", "Risk Management");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimum additional profit before the trail moves", "Risk Management");
 
 		_closeProfitThreshold = Param(nameof(CloseProfitThreshold), 500m)
@@ -185,7 +185,7 @@ public class TrailingCloseManagerStrategy : Strategy
 		.SetDisplay("Close Loss Threshold", "Close everything once floating loss reaches this negative value", "Close Buttons");
 
 		_retryCount = Param(nameof(RetryCount), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Retry Count", "How many times the close routines retry", "Close Buttons");
 
 		_retryDelay = Param(nameof(RetryDelay), TimeSpan.FromMilliseconds(500))

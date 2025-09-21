@@ -107,11 +107,11 @@ public class HeikinAshiTraderStrategy : Strategy
 			.SetDisplay("Momentum Period", "Length of the momentum indicator", "Indicators");
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Buy", "Minimum |momentum-100| required for longs", "Signals");
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Sell", "Minimum |momentum-100| required for shorts", "Signals");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
@@ -130,7 +130,7 @@ public class HeikinAshiTraderStrategy : Strategy
 			.SetDisplay("Close Opposite", "Close opposite exposure before entering", "Trading");
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Positions", "Maximum net positions per side (0 = unlimited)", "Trading");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
@@ -138,11 +138,11 @@ public class HeikinAshiTraderStrategy : Strategy
 			.SetDisplay("Trade Volume", "Volume used for each new order", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Target distance in pips", "Risk");
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
@@ -155,18 +155,18 @@ public class HeikinAshiTraderStrategy : Strategy
 			.SetDisplay("Use Trailing", "Enable trailing stop adjustments", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing (pips)", "Trailing stop distance in pips", "Risk");
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 			.SetDisplay("Use Break-Even", "Move stop to break-even after a favorable move", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-Even Trigger", "Distance in pips before stop moves to breakeven", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-Even Offset", "Extra pips added when locking in break-even", "Risk");
 
 		_forceExit = Param(nameof(ForceExit), false)

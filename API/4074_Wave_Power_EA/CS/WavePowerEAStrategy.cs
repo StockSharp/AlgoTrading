@@ -134,11 +134,11 @@ public class WavePowerEAStrategy : Strategy
 			.SetDisplay("Max Orders", "Maximum number of simultaneously open orders", "Money Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 32m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance for shared profit target", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance for defensive stop loss", "Risk");
 
 		_multiplier = Param(nameof(Multiplier), 2m)
@@ -149,22 +149,22 @@ public class WavePowerEAStrategy : Strategy
 			.SetDisplay("Secure Profit", "Close all orders after reaching rebound profit", "Protection");
 
 		_ordersToProtect = Param(nameof(OrdersToProtect), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Orders To Protect", "Enable rebound protection after this amount of orders", "Protection");
 
 		_reboundProfitPrimary = Param(nameof(ReboundProfitPrimary), 28m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Rebound Profit 1", "Profit threshold (in pips) for the first protection stage", "Protection");
 
 		_reboundProfitSecondary = Param(nameof(ReboundProfitSecondary), 18m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Rebound Profit 2", "Profit threshold (in pips) after exceeding protected orders", "Protection");
 
 		_lossProtection = Param(nameof(LossProtection), false)
 			.SetDisplay("Loss Protection", "Close the basket if floating loss breaches the threshold", "Protection");
 
 		_lossThreshold = Param(nameof(LossThreshold), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Loss Threshold (pips)", "Loss per lot that triggers the protective close", "Protection");
 
 		_reverseCondition = Param(nameof(ReverseCondition), false)
@@ -174,11 +174,11 @@ public class WavePowerEAStrategy : Strategy
 			.SetDisplay("Trade On Friday", "Allow opening new orders on Fridays", "General");
 
 		_ordersTimeAliveSeconds = Param(nameof(OrdersTimeAliveSeconds), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Orders Lifetime (s)", "Close basket if last entry is older than the limit", "Protection");
 
 		_trendSlopeThreshold = Param(nameof(TrendSlopeThreshold), 0.0001m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trend Slope", "Minimal SMA slope difference required for trend entries", "Signals");
 	}
 

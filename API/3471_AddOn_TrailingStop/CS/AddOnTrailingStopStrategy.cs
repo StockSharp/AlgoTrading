@@ -76,7 +76,7 @@ public class AddOnTrailingStopStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra profit in pips required before moving the stop again.", "Trailing")
 			.SetCanOptimize(true);
 

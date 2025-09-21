@@ -47,11 +47,11 @@ public class RobotAdxTwoMaStrategy : Strategy
 			.SetDisplay("Candle Type", "Primary timeframe processed by the strategy.", "General");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 4700)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Distance to the take profit measured in price steps.", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 2400)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Distance to the stop loss measured in price steps.", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
@@ -59,7 +59,7 @@ public class RobotAdxTwoMaStrategy : Strategy
 			.SetDisplay("Trade Volume", "Default volume for every market order.", "Trading");
 
 		_differenceThreshold = Param(nameof(DifferenceThreshold), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("EMA Difference", "Minimum distance between the fast and slow EMA expressed in price steps.", "Indicator");
 	}
 

@@ -62,19 +62,19 @@ public class OneHourEurUsdStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 150)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
 			.SetDisplay("Take Profit (pips)", "Take profit distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Step before trailing moves", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_lookbackPeriod = Param(nameof(LookbackPeriod), 10)
 			.SetDisplay("Lookback", "Reserved lookback (matches original script)", "General")
@@ -86,7 +86,7 @@ public class OneHourEurUsdStrategy : Strategy
 
 		_fastMaShift = Param(nameof(FastMaShift), 0)
 			.SetDisplay("Fast MA Shift", "Shift for fast MA", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_fastMaType = Param(nameof(FastMaType), MovingAverageKind.Simple)
 			.SetDisplay("Fast MA Type", "Type of fast MA", "Indicators");
@@ -97,7 +97,7 @@ public class OneHourEurUsdStrategy : Strategy
 
 		_slowMaShift = Param(nameof(SlowMaShift), 0)
 			.SetDisplay("Slow MA Shift", "Shift for slow MA", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_slowMaType = Param(nameof(SlowMaType), MovingAverageKind.Simple)
 			.SetDisplay("Slow MA Type", "Type of slow MA", "Indicators");

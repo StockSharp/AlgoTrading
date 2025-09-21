@@ -210,7 +210,7 @@ public class JfatlCandleMmRecStrategy : Strategy
 		.SetDisplay("Buy Total Trigger", "Trades inspected for long MM", "Money Management");
 
 		_buyLossTrigger = Param(nameof(BuyLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy Loss Trigger", "Losses that enable reduced long volume", "Money Management");
 
 		_sellTotalTrigger = Param(nameof(SellTotalTrigger), 3)
@@ -218,7 +218,7 @@ public class JfatlCandleMmRecStrategy : Strategy
 		.SetDisplay("Sell Total Trigger", "Trades inspected for short MM", "Money Management");
 
 		_sellLossTrigger = Param(nameof(SellLossTrigger), 2)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell Loss Trigger", "Losses that enable reduced short volume", "Money Management");
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
@@ -234,11 +234,11 @@ public class JfatlCandleMmRecStrategy : Strategy
 		.SetDisplay("Enable Short Exits", "Allow closing shorts on opposite signals", "Permissions");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Points", "Protective stop measured in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Points", "Profit target measured in price steps", "Risk");
 	}
 

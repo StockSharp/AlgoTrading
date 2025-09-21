@@ -47,19 +47,19 @@ public class WeTrustChannelStrategy : Strategy
 			.SetDisplay("Order volume", "Base volume for market entries.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (pips)", "Initial stop-loss distance in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (pips)", "Take-profit distance in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Trailing stop distance measured in pips.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing step (pips)", "Step between trailing adjustments in pips.", "Risk");
 
 		_maPeriod = Param(nameof(MaPeriod), 60)
@@ -67,7 +67,7 @@ public class WeTrustChannelStrategy : Strategy
 			.SetDisplay("MA period", "Length of the linear weighted moving average.", "Indicators");
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA shift", "Bars to shift the moving average when evaluating signals.", "Indicators");
 
 		_stdDevPeriod = Param(nameof(StdDevPeriod), 50)
@@ -75,15 +75,15 @@ public class WeTrustChannelStrategy : Strategy
 			.SetDisplay("StdDev period", "Length of the standard deviation window.", "Indicators");
 
 		_stdDevShift = Param(nameof(StdDevShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("StdDev shift", "Bars to shift the deviation value when evaluating signals.", "Indicators");
 
 		_signalBarOffset = Param(nameof(SignalBarOffset), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal bar offset", "Number of completed bars to look back for the channel check.", "Trading");
 
 		_channelIndentPips = Param(nameof(ChannelIndentPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Channel indent (pips)", "Extra buffer added outside the deviation bands.", "Trading");
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)

@@ -104,13 +104,13 @@ public class PriceImpulseStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
 			.SetDisplay("Stop Loss Points", "Stop loss distance expressed in price points", "Risk")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(50, 300, 50);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50)
 			.SetDisplay("Take Profit Points", "Take profit distance expressed in price points", "Risk")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
@@ -122,19 +122,19 @@ public class PriceImpulseStrategy : Strategy
 
 		_historyGap = Param(nameof(HistoryGap), 15)
 			.SetDisplay("Gap Ticks", "Number of Level1 updates between comparison points", "Signals")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(5, 40, 5);
 
 		_extraHistory = Param(nameof(ExtraHistory), 15)
 			.SetDisplay("Extra History", "Additional Level1 samples kept to absorb bursts", "Signals")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0, 30, 5);
 
 		_cooldownSeconds = Param(nameof(CooldownSeconds), 100)
 			.SetDisplay("Cooldown Seconds", "Minimum number of seconds between trades", "Risk")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0, 300, 20);
 	}

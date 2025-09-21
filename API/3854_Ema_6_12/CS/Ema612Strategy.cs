@@ -56,13 +56,13 @@ public class Ema612Strategy : Strategy
 			.SetDisplay("Use Close Signals", "Close the current position on opposite EMA cross.", "Trading Rules");
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop distance expressed in price steps.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 200m, 10m);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance expressed in price steps.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 2000m, 50m);

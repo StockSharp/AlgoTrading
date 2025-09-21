@@ -54,27 +54,27 @@ public class UsdChfNewStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_entryIndentPips = Param(nameof(EntryIndentPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Entry Indent (pips)", "Distance between market price and pending stop", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 95m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_cancelDistancePips = Param(nameof(CancelDistancePips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Cancel Distance (pips)", "Maximum gap before pending stop is cancelled", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 110m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained after activation", "Risk")
 			.SetCanOptimize(true);
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 60m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break Even (pips)", "Profit needed before stop is moved to entry", "Risk")
 			.SetCanOptimize(true);
 	}

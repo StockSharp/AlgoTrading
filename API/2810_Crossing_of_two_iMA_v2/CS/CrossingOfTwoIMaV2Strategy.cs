@@ -264,7 +264,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetCanOptimize(true);
 
 		_firstShift = Param(nameof(FirstShift), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("First MA Shift", "Shift (in bars) applied to the first moving average", "First Moving Average")
 		.SetCanOptimize(true);
 
@@ -281,7 +281,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetCanOptimize(true);
 
 		_secondShift = Param(nameof(SecondShift), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Second MA Shift", "Shift (in bars) applied to the second moving average", "Second Moving Average")
 		.SetCanOptimize(true);
 
@@ -301,7 +301,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetCanOptimize(true);
 
 		_thirdShift = Param(nameof(ThirdShift), 8)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Third MA Shift", "Shift (in bars) applied to the third moving average filter", "Filter")
 		.SetCanOptimize(true);
 
@@ -329,19 +329,19 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		.SetDisplay("Pip Value", "Monetary value of one pip for a single lot", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in pips", "Protection");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in pips", "Protection");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Protection");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 4)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Minimum trailing stop adjustment in pips", "Protection");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

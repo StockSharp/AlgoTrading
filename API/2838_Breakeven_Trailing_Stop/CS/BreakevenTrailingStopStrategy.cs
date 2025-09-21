@@ -57,13 +57,13 @@ public class BreakevenTrailingStopStrategy : Strategy
 	public BreakevenTrailingStopStrategy()
 	{
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Trailing")
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 30m, 5m);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Additional pips required before stop moves again", "Trailing")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 5m, 0.5m);

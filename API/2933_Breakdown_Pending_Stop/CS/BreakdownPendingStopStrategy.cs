@@ -113,23 +113,23 @@ public class BreakdownPendingStopStrategy : Strategy
 			.SetDisplay("Working Candles", "Intraday candles for trailing logic", "General");
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (ticks)", "Initial protective stop in ticks", "Risk");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (ticks)", "Initial take profit in ticks", "Risk");
 
 		_trailingStopTicks = Param(nameof(TrailingStopTicks), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (ticks)", "Trailing stop distance in ticks", "Risk");
 
 		_trailingStepTicks = Param(nameof(TrailingStepTicks), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (ticks)", "Extra profit before trailing stop adjustment", "Risk");
 
 		_minDistanceTicks = Param(nameof(MinDistanceTicks), 25m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Distance (ticks)", "Offset added to previous day levels", "Entry");
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)

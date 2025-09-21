@@ -261,19 +261,19 @@ public class UniversalMaCrossV4Strategy : Strategy
 			.SetDisplay("Slow MA Price", "Price source injected into the slow moving average", "Indicators");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance in price steps", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in price steps", "Risk");
 
 		_minCrossDistancePoints = Param(nameof(MinCrossDistancePoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Min Cross Distance (points)", "Minimum separation between the moving averages", "Filters");
 
 		_reverseCondition = Param(nameof(ReverseCondition), false)

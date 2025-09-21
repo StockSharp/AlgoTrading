@@ -41,7 +41,7 @@ public class PipsoStrategy : Strategy
 	{
 		_sessionStartHour = Param(nameof(SessionStartHour), 21)
 			.SetDisplay("Session Start Hour", "Hour of the day when the breakout window starts", "Schedule")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_sessionLengthHours = Param(nameof(SessionLengthHours), 9)
 			.SetDisplay("Session Length (hours)", "Number of hours after the start when trading remains enabled", "Schedule")
@@ -59,7 +59,7 @@ public class PipsoStrategy : Strategy
 
 		_minStopDistance = Param(nameof(MinStopDistance), 0m)
 			.SetDisplay("Minimum Stop Distance", "Absolute minimum distance between entry and stop in price units", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 			.SetDisplay("Order Volume", "Position size used for every breakout order", "General")

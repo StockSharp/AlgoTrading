@@ -112,7 +112,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			.SetDisplay("RSI take profit short", "RSI value that triggers a partial exit for short positions.", "Trading");
 
 		_distanceThresholdPoints = Param(nameof(DistanceThresholdPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Distance threshold", "Maximum distance in points between price and the trend EMA before delaying the entry.", "Trading");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -130,7 +130,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			.SetDisplay("Use trend stop loss", "Whether the trend EMA defines the protective stop price.", "Risk");
 
 		_stopOffsetPoints = Param(nameof(StopOffsetPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop offset", "Additional point offset added to the protective stop.", "Risk");
 
 		_useSarTakeProfit = Param(nameof(UseSarTakeProfit), true)
@@ -140,7 +140,7 @@ public class NatusekoProtrader4HStrategy : Strategy
 			.SetDisplay("Use RSI take profit", "Enable partial exits driven by RSI thresholds.", "Risk");
 
 		_minimumProfitPoints = Param(nameof(MinimumProfitPoints), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum profit", "Minimum profit in points required before take-profit rules activate.", "Risk");
 	}
 

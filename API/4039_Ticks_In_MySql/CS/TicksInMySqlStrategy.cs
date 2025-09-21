@@ -59,7 +59,7 @@ public class TicksInMySqlStrategy : Strategy
 			.SetDisplay("Auto Create Table", "Create table when it does not exist", "Connection");
 
 		_pricePrecision = Param(nameof(PricePrecision), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Price Precision", "Number of decimal places for bid/ask", "Formatting");
 	}
 

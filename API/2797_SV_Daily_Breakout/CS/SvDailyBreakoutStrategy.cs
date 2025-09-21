@@ -248,19 +248,19 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetDisplay("Risk %", "Risk percentage of account equity", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Trailing step increment in pips", "Risk");
 
 		_startHour = Param(nameof(StartHour), 19)
@@ -270,7 +270,7 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetDisplay("Start Minute", "Minute when trading may begin", "Trading Window");
 
 		_shift = Param(nameof(Shift), 6)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Shift", "Number of newest bars excluded from range analysis", "Logic");
 
 		_interval = Param(nameof(Interval), 27)
@@ -282,7 +282,7 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetDisplay("Fast MA Period", "Fast moving average length", "Indicators");
 
 		_fastMaShift = Param(nameof(FastMaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fast MA Shift", "Horizontal shift for the fast moving average", "Indicators");
 
 		_fastMaMethod = Param(nameof(FastMaMethod), MovingAverageMethod.Smma)
@@ -296,7 +296,7 @@ public class SvDailyBreakoutStrategy : Strategy
 			.SetDisplay("Slow MA Period", "Slow moving average length", "Indicators");
 
 		_slowMaShift = Param(nameof(SlowMaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slow MA Shift", "Horizontal shift for the slow moving average", "Indicators");
 
 		_slowMaMethod = Param(nameof(SlowMaMethod), MovingAverageMethod.Smma)

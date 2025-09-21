@@ -49,7 +49,7 @@ public class XdRangeSwitchStrategy : Strategy
 		.SetDisplay("Peaks", "Number of extremes tracked by the indicator", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "How many completed bars back to read the indicator buffers", "Indicator");
 
 		_tradeDirection = Param(nameof(TradeDirection), XdRangeSwitchTradeDirection.AgainstSignal)

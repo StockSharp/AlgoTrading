@@ -79,11 +79,11 @@ public class TwoMaOneRsiStrategy : Strategy
 	.SetDisplay("Slow MA Multiplier", "Slow MA period = Fast period * multiplier", "Indicators");
 
 	_fastMaShift = Param(nameof(FastMaShift), 3)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Fast MA Shift", "Horizontal shift applied to the fast MA", "Indicators");
 
 	_slowMaShift = Param(nameof(SlowMaShift), 0)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Slow MA Shift", "Horizontal shift applied to the slow MA", "Indicators");
 
 	_rsiPeriod = Param(nameof(RsiPeriod), 10)
@@ -117,27 +117,27 @@ public class TwoMaOneRsiStrategy : Strategy
 	.SetDisplay("Sell RSI <", "Require RSI below the lower level", "Signals");
 
 	_stopLossPips = Param(nameof(StopLossPips), 50)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Stop Loss (pips)", "Distance of the stop-loss in pips", "Risk");
 
 	_takeProfitPips = Param(nameof(TakeProfitPips), 150)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Take Profit (pips)", "Distance of the take-profit in pips", "Risk");
 
 	_trailingStopPips = Param(nameof(TrailingStopPips), 15)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 	_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Trailing Step (pips)", "Minimum improvement before trailing moves", "Risk");
 
 	_maxPositions = Param(nameof(MaxPositions), 10)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Max Positions", "Maximum simultaneous entries per side (0 = unlimited)", "Risk");
 
 	_profitClose = Param(nameof(ProfitClose), 100m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Profit Close", "Close all positions when floating profit (in currency) reaches this level", "Risk");
 
 	_closeOppositePositions = Param(nameof(CloseOppositePositions), false)

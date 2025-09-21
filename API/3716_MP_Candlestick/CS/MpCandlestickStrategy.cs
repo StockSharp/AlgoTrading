@@ -88,7 +88,7 @@ set => _candleType.Value = value;
 public MpCandlestickStrategy()
 {
 _riskPercent = Param(nameof(RiskPercent), 1m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Risk Percent", "Percentage of portfolio equity risked per trade", "Risk")
 .SetCanOptimize(true)
 .SetOptimize(0.5m, 10m, 0.5m);
@@ -100,7 +100,7 @@ _riskRewardRatio = Param(nameof(RiskRewardRatio), 1.5m)
 .SetOptimize(1m, 4m, 0.25m);
 
 _maxMarginUsage = Param(nameof(MaxMarginUsage), 30m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Max Margin Usage", "Upper bound for margin consumption as percent of equity", "Risk");
 
 _stopLossPips = Param(nameof(StopLossPips), 50)

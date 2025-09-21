@@ -73,30 +73,30 @@ public class DealersTradeMacdMql4Strategy : Strategy
 
 		_spacingPips = Param(nameof(SpacingPips), 4)
 			.SetDisplay("Spacing (pips)", "Minimum price movement before adding", "Money Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_ordersToProtect = Param(nameof(OrdersToProtect), 3)
 			.SetDisplay("Orders To Protect", "Number of trades kept when protection triggers", "Money Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_accountProtection = Param(nameof(AccountProtection), true)
 			.SetDisplay("Account Protection", "Close last trade once secure profit is reached", "Money Management");
 
 		_secureProfit = Param(nameof(SecureProfit), 50m)
 			.SetDisplay("Secure Profit", "Currency profit required to lock gains", "Money Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30)
 			.SetDisplay("Take Profit (pips)", "Take profit distance from entry", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 90)
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied after activation", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_reverseCondition = Param(nameof(ReverseCondition), false)
 			.SetDisplay("Reverse Condition", "Invert MACD slope interpretation", "General");

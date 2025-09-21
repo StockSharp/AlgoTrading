@@ -86,12 +86,12 @@ public class MacdDiverAndRsiStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_longStopLossPips = Param(nameof(LongStopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss (pips)", "Distance of the protective stop for long trades", "Long")
 			.SetCanOptimize(true);
 
 		_longTakeProfitPips = Param(nameof(LongTakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit (pips)", "Distance of the profit target for long trades", "Long")
 			.SetCanOptimize(true);
 
@@ -125,12 +125,12 @@ public class MacdDiverAndRsiStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_shortStopLossPips = Param(nameof(ShortStopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss (pips)", "Distance of the protective stop for short trades", "Short")
 			.SetCanOptimize(true);
 
 		_shortTakeProfitPips = Param(nameof(ShortTakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit (pips)", "Distance of the profit target for short trades", "Short")
 			.SetCanOptimize(true);
 	}

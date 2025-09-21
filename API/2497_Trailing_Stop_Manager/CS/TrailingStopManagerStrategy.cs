@@ -70,7 +70,7 @@ public class TrailingStopManagerStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal move before adjusting stop", "Risk Management")
 			.SetCanOptimize(true);
 

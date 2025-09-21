@@ -50,7 +50,7 @@ public class TrailingStopLossAllOrdersStrategy : Strategy
 	public TrailingStopLossAllOrdersStrategy()
 	{
 		_trailStartPips = Param(nameof(TrailStartPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trail Start (pips)", "Profit required before trailing activates.", "Risk management")
 			.SetCanOptimize(true);
 

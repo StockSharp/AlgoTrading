@@ -35,7 +35,7 @@ public class RedkCompoundRatioMaStrategy : Strategy
 		.SetOptimize(5, 60, 1);
 
 		_ratioMultiplier = Param(nameof(RatioMultiplier), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Comp Ratio Mult", "Multiplier for compound ratio", "Parameters")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 5m, 0.1m);

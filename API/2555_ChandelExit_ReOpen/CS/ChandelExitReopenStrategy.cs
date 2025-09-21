@@ -61,7 +61,7 @@ public class ChandelExitReopenStrategy : Strategy
 
 		_shift = Param(nameof(Shift), 1)
 			.SetDisplay("Shift", "Bars to skip from the most recent data", "Indicator")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
@@ -76,7 +76,7 @@ public class ChandelExitReopenStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "How many bars back to read signals", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
 			.SetDisplay("Re-entry Distance", "Minimum favorable move in price steps before adding", "Position Management")
@@ -85,15 +85,15 @@ public class ChandelExitReopenStrategy : Strategy
 
 		_maxAdditions = Param(nameof(MaxAdditions), 10)
 			.SetDisplay("Max Additions", "Maximum number of re-entries after the initial position", "Position Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss Points", "Stop-loss distance in price steps", "Risk Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take Profit Points", "Take-profit distance in price steps", "Risk Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_enableBuyEntries = Param(nameof(EnableBuyEntries), true)
 			.SetDisplay("Enable Long Entries", "Allow opening long positions on up signals", "Trading");

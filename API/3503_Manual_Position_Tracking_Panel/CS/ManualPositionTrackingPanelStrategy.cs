@@ -47,7 +47,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 	public ManualPositionTrackingPanelStrategy()
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit distance (pips)", "MetaTrader pips added to the entry price when creating a take-profit.", "Risk")
 			.SetCanOptimize(true);
 
@@ -58,7 +58,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 			.SetDisplay("Enable break-even", "Move the take-profit level to the average entry when profit reaches the trigger.", "Automation");
 
 		_breakEvenActivationPoints = Param(nameof(BreakEvenActivationPoints), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even trigger (pips)", "Minimum favorable distance in MetaTrader pips before moving to break-even.", "Automation")
 			.SetCanOptimize(true);
 
@@ -75,7 +75,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 			.SetDisplay("Log management actions", "Write informational messages whenever the protection is changed.", "Diagnostics");
 
 		_freezeDistanceMultiplier = Param(nameof(FreezeDistanceMultiplier), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Freeze distance multiplier", "Fallback multiplier applied to the current spread when broker levels are unknown.", "Risk");
 	}
 

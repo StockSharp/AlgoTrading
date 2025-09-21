@@ -142,7 +142,7 @@ public class CandleShadowPercentStrategy : Strategy
 			.SetCanOptimize(true);
 		
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk")
 			.SetCanOptimize(true);
 		
@@ -160,7 +160,7 @@ public class CandleShadowPercentStrategy : Strategy
 			.SetDisplay("Use Top Shadow", "Enable sell signals from upper wicks", "Pattern");
 		
 		_topShadowPercent = Param(nameof(TopShadowPercent), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Top Shadow %", "Upper wick percentage threshold", "Pattern")
 			.SetCanOptimize(true);
 		
@@ -171,7 +171,7 @@ public class CandleShadowPercentStrategy : Strategy
 			.SetDisplay("Use Lower Shadow", "Enable buy signals from lower wicks", "Pattern");
 		
 		_lowerShadowPercent = Param(nameof(LowerShadowPercent), 80m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lower Shadow %", "Lower wick percentage threshold", "Pattern")
 			.SetCanOptimize(true);
 		

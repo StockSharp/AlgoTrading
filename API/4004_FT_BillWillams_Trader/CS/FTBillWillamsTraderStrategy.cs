@@ -340,11 +340,11 @@ public class FTBillWillamsTraderStrategy : Strategy
 		.SetDisplay("Slope SMA", "Period of the slope comparison SMA", "Risk Management");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in points", "Risk Management");
 
 		_jawPeriod = Param(nameof(JawPeriod), 13)

@@ -141,7 +141,7 @@ public class MaximusVXLiteStrategy : Strategy
 	public MaximusVXLiteStrategy()
 	{
 		_delayOpen = Param(nameof(DelayOpen), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Delay Open", "How many timeframe periods allow averaging in the same direction", "Trading Rules");
 
 		_distancePoints = Param(nameof(DistancePoints), 850)
@@ -168,7 +168,7 @@ public class MaximusVXLiteStrategy : Strategy
 			.SetDisplay("Risk Percent", "Portfolio percent risked per trade", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk");
 
 		_minProfitPercent = Param(nameof(MinProfitPercent), 1m)

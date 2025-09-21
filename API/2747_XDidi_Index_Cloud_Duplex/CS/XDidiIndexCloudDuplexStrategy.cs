@@ -97,7 +97,7 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
 			.SetDisplay("Long Signal Bar", "Bar shift used for long signals", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Short Candle Type", "Timeframe used for the short XDidi calculation", "General");
@@ -137,15 +137,15 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
 			.SetDisplay("Short Signal Bar", "Bar shift used for short signals", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss Points", "Protective stop in price steps applied to both directions", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit Points", "Protective target in price steps applied to both directions", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <summary>

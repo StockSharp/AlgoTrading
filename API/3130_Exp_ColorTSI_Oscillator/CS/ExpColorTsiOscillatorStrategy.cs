@@ -91,11 +91,11 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Offset of the bar used for decision making", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_triggerShift = Param(nameof(TriggerShift), 1)
 		.SetDisplay("Trigger Shift", "Delay applied to the trigger line", "Signals")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
 		.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");
@@ -111,11 +111,11 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 		.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 /// <summary>

@@ -45,18 +45,18 @@ public class XBugStrategy : Strategy
 			.SetDisplay("Order volume", "Base volume for each market entry.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 70m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (pips)", "Distance of the protective stop in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 5000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (pips)", "Distance of the profit target in pips.", "Risk");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 			.SetDisplay("Use trailing", "Enable trailing stop management.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 90m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Trailing distance applied after a position moves into profit.", "Risk");
 
 		_fastPeriod = Param(nameof(FastPeriod), 1)
@@ -64,7 +64,7 @@ public class XBugStrategy : Strategy
 			.SetDisplay("Fast MA period", "Length of the fast moving average.", "Indicators");
 
 		_fastShift = Param(nameof(FastShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fast MA shift", "Bars to shift the fast average when evaluating signals.", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowPeriod), 14)
@@ -72,7 +72,7 @@ public class XBugStrategy : Strategy
 			.SetDisplay("Slow MA period", "Length of the slow moving average.", "Indicators");
 
 		_slowShift = Param(nameof(SlowShift), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slow MA shift", "Bars to shift the slow average when evaluating signals.", "Indicators");
 
 		_closeOnSignal = Param(nameof(CloseOnSignal), true)

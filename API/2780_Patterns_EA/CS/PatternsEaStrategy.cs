@@ -37,7 +37,7 @@ public class PatternsEaStrategy : Strategy
 			.SetDisplay("Opened Mode", "Position handling mode", "Trading");
 
 		_equalityPips = Param(nameof(EqualityPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Equality Pips", "Maximum pip distance to treat prices as equal", "Detection");
 
 		_enableGroup1 = Param(nameof(EnableOneBarPatterns), true)

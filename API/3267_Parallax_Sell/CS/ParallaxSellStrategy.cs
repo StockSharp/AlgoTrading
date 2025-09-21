@@ -336,15 +336,15 @@ public class ParallaxSellStrategy : Strategy
 		.SetDisplay("MACD Threshold", "Required MACD main line value", "Signals");
 
 		_singleTradeTargetPips = Param(nameof(SingleTradeTargetPips), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Single Trade Target", "Pips required to exit a lone short", "Risk Management");
 
 		_multiTradeTargetPips = Param(nameof(MultiTradeTargetPips), 15m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Basket Target", "Pips required to exit a stacked basket", "Risk Management");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Distance for the protective take profit", "Risk Management");
 
 		_initialVolume = Param(nameof(InitialVolume), 0.01m)

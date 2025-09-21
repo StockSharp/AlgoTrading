@@ -160,27 +160,27 @@ public class IStochasticTradingStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume of the first entry in lots", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance to take profit in pips", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal advance before trailing adjustment", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Positions", "Maximum simultaneous martingale positions", "Trading");
 
 		_gapPips = Param(nameof(GapPips), 7m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Gap (pips)", "Required adverse move before doubling", "Trading");
 
 		_kPeriod = Param(nameof(KPeriod), 5)

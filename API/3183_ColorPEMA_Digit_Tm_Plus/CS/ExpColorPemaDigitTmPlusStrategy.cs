@@ -62,17 +62,17 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss (points)", "Distance between entry price and stop loss expressed in price points.", "Risk")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (points)", "Distance between entry price and take profit expressed in price points.", "Risk")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10)
 			.SetDisplay("Allowed Deviation", "Maximum price deviation tolerated by the MetaTrader order logic.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_allowBuyOpen = Param(nameof(BuyPosOpen), true)
 			.SetDisplay("Allow Long Entries", "Enable opening long positions when the indicator turns bullish.", "Trading");
@@ -91,7 +91,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 
 		_holdingMinutes = Param(nameof(HoldingMinutes), 960)
 			.SetDisplay("Holding Minutes", "Maximum lifetime of an open position in minutes.", "Risk")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -107,11 +107,11 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 
 		_digitPrecision = Param(nameof(DigitPrecision), 2)
 			.SetDisplay("Rounding Digits", "Number of decimal digits used to round the Pentuple EMA output.", "Indicator")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Number of completed candles to wait before reacting to an indicator color change.", "Indicator")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true);
 	}
 

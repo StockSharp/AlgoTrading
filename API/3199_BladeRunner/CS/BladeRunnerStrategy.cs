@@ -84,7 +84,7 @@ public class BladeRunnerStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Threshold", "Minimum absolute deviation from 100 required for entries.", "Momentum")
 			.SetCanOptimize(true);
 
@@ -98,16 +98,16 @@ public class BladeRunnerStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_orderVolume = Param(nameof(OrderVolume), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Order Volume", "Base volume used for each market order.", "Trading");
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Protective take-profit distance expressed in price steps.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Protective stop-loss distance expressed in price steps.", "Risk")
 			.SetCanOptimize(true);
 	}

@@ -76,7 +76,7 @@ public class AmaTrader2Strategy : Strategy
 
 		_stepLength = Param(nameof(StepLength), 3)
 			.SetDisplay("Step Length", "How many recent RSI readings must confirm a signal (0 = latest only).", "RSI")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_rsiLevelUp = Param(nameof(RsiLevelUp), 70m)
 			.SetDisplay("RSI Upper Level", "Overbought threshold that allows short setups.", "RSI");
@@ -98,31 +98,31 @@ public class AmaTrader2Strategy : Strategy
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Protective stop distance in price units (0 disables).", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 			.SetDisplay("Take Profit", "Profit target distance in price units (0 disables).", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingActivation = Param(nameof(TrailingActivation), 0m)
 			.SetDisplay("Trailing Activation", "Minimum profit required before the trailing stop is armed.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingDistance = Param(nameof(TrailingDistance), 0m)
 			.SetDisplay("Trailing Distance", "Distance between price and trailing stop once activated.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStep = Param(nameof(TrailingStep), 0m)
 			.SetDisplay("Trailing Step", "Minimum improvement required before the trailing stop is tightened.", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maxPositions = Param(nameof(MaxPositions), 5)
 			.SetDisplay("Max Positions", "Maximum averaging entries allowed per direction (0 disables).", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_minStep = Param(nameof(MinStep), 0m)
 			.SetDisplay("Min Step", "Minimum price distance between consecutive entries (0 disables).", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_closeOpposite = Param(nameof(CloseOpposite), false)
 			.SetDisplay("Close Opposite", "Whether to flatten opposite exposure before opening a new trade.", "Trading");

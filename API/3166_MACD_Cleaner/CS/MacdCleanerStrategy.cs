@@ -51,19 +51,19 @@ public class MacdCleanerStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 35m)
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 			.SetDisplay("Take Profit (pips)", "Distance to the profit target", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetDisplay("Trailing Step (pips)", "Additional distance required before trailing moves", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 15)
 			.SetDisplay("MACD Fast", "Fast EMA length", "Indicators")

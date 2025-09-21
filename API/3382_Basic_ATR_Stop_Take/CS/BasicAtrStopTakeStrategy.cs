@@ -123,13 +123,13 @@ public class BasicAtrStopTakeStrategy : Strategy
 			.SetOptimize(7, 28, 1);
 
 		_stopLossFactor = Param(nameof(StopLossFactor), 1.5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Factor", "ATR multiplier applied to the stop-loss", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 3.0m, 0.5m);
 
 		_takeProfitFactor = Param(nameof(TakeProfitFactor), 2.0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Factor", "ATR multiplier applied to the take-profit", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 4.0m, 0.5m);

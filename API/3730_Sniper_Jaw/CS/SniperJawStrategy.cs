@@ -65,11 +65,11 @@ public class SniperJawStrategy : Strategy
 			.SetDisplay("Use Entry To Exit", "Close opposite exposure before opening a new trade", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance converted with the price step", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Optional profit target distance; zero disables it", "Risk");
 
 		_minimumBars = Param(nameof(MinimumBars), 60)
@@ -81,7 +81,7 @@ public class SniperJawStrategy : Strategy
 			.SetDisplay("Jaw Period", "Smoothed moving average length for the jaw line", "Alligator");
 
 		_jawShift = Param(nameof(JawShift), 8)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Forward shift applied to jaw readings", "Alligator");
 
 		_teethPeriod = Param(nameof(TeethPeriod), 8)
@@ -89,7 +89,7 @@ public class SniperJawStrategy : Strategy
 			.SetDisplay("Teeth Period", "Smoothed moving average length for the teeth line", "Alligator");
 
 		_teethShift = Param(nameof(TeethShift), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Teeth Shift", "Forward shift applied to teeth readings", "Alligator");
 
 		_lipsPeriod = Param(nameof(LipsPeriod), 5)
@@ -97,7 +97,7 @@ public class SniperJawStrategy : Strategy
 			.SetDisplay("Lips Period", "Smoothed moving average length for the lips line", "Alligator");
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Forward shift applied to lips readings", "Alligator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

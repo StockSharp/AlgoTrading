@@ -63,13 +63,13 @@ public class CryptocurrencyFibonacciMasStrategy : Strategy
 		.SetOptimize(20m, 120m, 10m);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Momentum Buy Threshold", "Minimal absolute momentum distance from 100 for buys", "Filters")
 		.SetCanOptimize(true)
 		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Momentum Sell Threshold", "Minimal absolute momentum distance from 100 for sells", "Filters")
 		.SetCanOptimize(true)
 		.SetOptimize(0.1m, 1m, 0.1m);

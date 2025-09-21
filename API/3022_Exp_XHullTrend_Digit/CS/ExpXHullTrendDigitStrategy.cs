@@ -178,11 +178,11 @@ public class ExpXHullTrendDigitStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume used for entries", "Trading");
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk");
 
 		_enableBuyEntry = Param(nameof(EnableBuyEntry), true)
@@ -218,11 +218,11 @@ public class ExpXHullTrendDigitStrategy : Strategy
 			.SetDisplay("Phase", "Compatibility phase parameter", "Indicator");
 
 		_roundDigits = Param(nameof(RoundingDigits), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Rounding Digits", "Digits used to round indicator outputs", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Shift used for crossover detection", "Signals");
 	}
 

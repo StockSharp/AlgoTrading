@@ -161,15 +161,15 @@ public class RiskManagerInfoPanelStrategy : Strategy
 			.SetDisplay("Entry Price", "Reference entry price used for calculations", "General");
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss %", "Stop loss distance as percent of entry", "Risk");
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 0.5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit %", "Take profit distance as percent of entry", "Risk");
 
 		_maxDailyRiskPercent = Param(nameof(MaxDailyRiskPercent), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Daily Risk %", "Maximum drawdown allowed for the day", "Risk");
 
 		_updateIntervalSeconds = Param(nameof(UpdateIntervalSeconds), 10)

@@ -110,7 +110,7 @@ public class ExpXwamiMmRecStrategy : Strategy
 		.SetDisplay("Applied Price", "Price source forwarded into the filter", "Indicator");
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Index of the bar used for signal detection", "Indicator")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
 		.SetDisplay("Allow Long Entries", "Enable bullish position openings", "Trading");
@@ -126,27 +126,27 @@ public class ExpXwamiMmRecStrategy : Strategy
 		.SetGreaterThanZero();
 		_reducedVolume = Param(nameof(ReducedVolume), 0.01m)
 		.SetDisplay("Reduced Volume", "Size used after consecutive losses", "Money Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_buyTotalTrigger = Param(nameof(BuyTotalTrigger), 5)
 		.SetDisplay("Buy Total Trigger", "Number of recent buy trades to evaluate", "Money Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_buyLossTrigger = Param(nameof(BuyLossTrigger), 3)
 		.SetDisplay("Buy Loss Trigger", "Losses inside the evaluated window before volume reduction", "Money Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_sellTotalTrigger = Param(nameof(SellTotalTrigger), 5)
 		.SetDisplay("Sell Total Trigger", "Number of recent sell trades to evaluate", "Money Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_sellLossTrigger = Param(nameof(SellLossTrigger), 3)
 		.SetDisplay("Sell Loss Trigger", "Losses inside the evaluated window before volume reduction", "Money Management")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetDisplay("Stop Loss (points)", "Protective distance measured in points", "Protection")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 		.SetDisplay("Take Profit (points)", "Profit target distance measured in points", "Protection")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	/// <summary>

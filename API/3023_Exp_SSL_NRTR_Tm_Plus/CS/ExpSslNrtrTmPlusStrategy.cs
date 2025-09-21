@@ -175,15 +175,15 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 			.SetDisplay("Margin Mode", "Mode used to convert money management into volume", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in price points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Expected slippage in points (informational)", "Risk");
 
 		_buyOpen = Param(nameof(BuyOpen), true)
@@ -202,7 +202,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 			.SetDisplay("Use Time Exit", "Enable position exit after a holding period", "Risk");
 
 		_timeExitMinutes = Param(nameof(TimeExitMinutes), 1920)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Exit Minutes", "Minutes to hold a trade before a time exit", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -219,7 +219,7 @@ public class ExpSslNrtrTmPlusStrategy : Strategy
 			.SetDisplay("Phase", "Auxiliary parameter used by adaptive averages", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of closed bars to look back for signals", "Indicator");
 	}
 

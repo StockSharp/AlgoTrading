@@ -197,15 +197,15 @@ public class XoSignalReopenStrategy : Strategy
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
 			.SetDisplay("Take Profit", "Take profit in ticks", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_priceStepTicks = Param(nameof(PriceStepTicks), 300)
 			.SetDisplay("Re-entry Step", "Ticks to add position", "Trading")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maxPyramidingPositions = Param(nameof(MaxPyramidingPositions), 10)
 			.SetDisplay("Max Layers", "Maximum layered entries", "Trading")
@@ -235,7 +235,7 @@ public class XoSignalReopenStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Shift", "Bars to delay signals", "Indicator")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

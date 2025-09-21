@@ -63,7 +63,7 @@ _awesomeLongPeriod = Param(nameof(AwesomeLongPeriod), 34)
 
 _breakoutBufferPoints = Param(nameof(BreakoutBufferPoints), 2m)
 .SetDisplay("Breakout Buffer", "Additional buffer in price steps added to previous highs and lows", "Trading")
-.SetGreaterThanOrEquals(0m);
+.SetNotNegative();
 
 _maxStages = Param(nameof(MaxStages), 5)
 .SetDisplay("Max Stages", "Maximum number of pyramid entries", "Risk")

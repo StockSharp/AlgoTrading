@@ -102,15 +102,15 @@ public class LineOrderStrategy : Strategy
 		
 		_stopLoss = Param(nameof(StopLoss), 0m)
 		.SetDisplay("Stop Loss", "Stop loss distance in price units", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		
 		_takeProfit = Param(nameof(TakeProfit), 0m)
 		.SetDisplay("Take Profit", "Take profit distance in price units", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		
 		_trailingStop = Param(nameof(TrailingStop), 0m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance in price units", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		
 		_volume = Param(nameof(Volume), 1m)
 		.SetDisplay("Volume", "Order volume", "General")

@@ -117,13 +117,13 @@ public class DivergenceTraderStrategy : Strategy
 			.SetOptimize(0.001m, 0.02m, 0.001m);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss in price units", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 1000m, 50m);
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit in price units", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 1000m, 50m);

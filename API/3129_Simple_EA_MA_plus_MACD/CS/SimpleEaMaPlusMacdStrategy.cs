@@ -66,22 +66,22 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance from entry to the profit target in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance from entry to the protective stop in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance maintained once the trade is in profit", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional progress required before trailing stop is advanced", "Risk")
 			.SetCanOptimize(true);
 
@@ -92,7 +92,7 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 			.SetOptimize(20, 200, 10);
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Forward shift applied to the moving average", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);

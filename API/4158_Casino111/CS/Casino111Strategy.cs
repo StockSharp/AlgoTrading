@@ -56,13 +56,13 @@ public class Casino111Strategy : Strategy
 
 		_upperOffsetPoints = Param(nameof(UpperOffsetPoints), 97m)
 			.SetDisplay("Upper Offset", "Points added to the previous daily high to define the sell trigger.", "Logic")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 5m);
 
 		_lowerOffsetPoints = Param(nameof(LowerOffsetPoints), 77m)
 			.SetDisplay("Lower Offset", "Points subtracted from the previous daily low to define the buy trigger.", "Logic")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 5m);
 

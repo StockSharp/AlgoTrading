@@ -99,7 +99,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 
 		_skyscraperSignalBar = Param(nameof(SkyscraperSignalBar), 1)
 			.SetDisplay("Signal Delay", "Number of closed candles to delay Skyscraper signals", "Skyscraper Fix")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_skyscraperEnableLongEntry = Param(nameof(SkyscraperEnableLongEntry), true)
 			.SetDisplay("Allow Long Entries", "Open long trades when the channel turns bullish", "Skyscraper Fix");
@@ -115,11 +115,11 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 
 		_skyscraperBuyLossTrigger = Param(nameof(SkyscraperBuyLossTrigger), 2)
 			.SetDisplay("Long Loss Trigger", "Consecutive long losses before reducing volume", "Skyscraper Fix")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_skyscraperSellLossTrigger = Param(nameof(SkyscraperSellLossTrigger), 2)
 			.SetDisplay("Short Loss Trigger", "Consecutive short losses before reducing volume", "Skyscraper Fix")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_skyscraperSmallMm = Param(nameof(SkyscraperSmallMm), 0.01m)
 			.SetDisplay("Reduced Volume", "Volume applied after hitting the long/short loss trigger", "Skyscraper Fix")
@@ -134,11 +134,11 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 
 		_skyscraperStopLossTicks = Param(nameof(SkyscraperStopLossTicks), 1000)
 			.SetDisplay("Stop Loss (ticks)", "Protective stop for Skyscraper trades in price steps", "Skyscraper Fix")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_skyscraperTakeProfitTicks = Param(nameof(SkyscraperTakeProfitTicks), 2000)
 			.SetDisplay("Take Profit (ticks)", "Profit target for Skyscraper trades in price steps", "Skyscraper Fix")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_colorAmlCandleType = Param(nameof(ColorAmlCandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Color AML Candle", "Timeframe used by the Color AML indicator", "Color AML");
@@ -153,7 +153,7 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 
 		_colorAmlSignalBar = Param(nameof(ColorAmlSignalBar), 1)
 			.SetDisplay("Signal Delay", "Number of closed candles to delay Color AML signals", "Color AML")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_colorAmlEnableLongEntry = Param(nameof(ColorAmlEnableLongEntry), true)
 			.SetDisplay("Allow Long Entries", "Open long trades on bullish Color AML", "Color AML");
@@ -169,11 +169,11 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 
 		_colorAmlBuyLossTrigger = Param(nameof(ColorAmlBuyLossTrigger), 2)
 			.SetDisplay("Long Loss Trigger", "Consecutive long losses before reducing volume", "Color AML")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_colorAmlSellLossTrigger = Param(nameof(ColorAmlSellLossTrigger), 2)
 			.SetDisplay("Short Loss Trigger", "Consecutive short losses before reducing volume", "Color AML")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_colorAmlSmallMm = Param(nameof(ColorAmlSmallMm), 0.01m)
 			.SetDisplay("Reduced Volume", "Volume applied after hitting the loss trigger", "Color AML")
@@ -188,11 +188,11 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 
 		_colorAmlStopLossTicks = Param(nameof(ColorAmlStopLossTicks), 1000)
 			.SetDisplay("Stop Loss (ticks)", "Protective stop for Color AML trades in price steps", "Color AML")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_colorAmlTakeProfitTicks = Param(nameof(ColorAmlTakeProfitTicks), 2000)
 			.SetDisplay("Take Profit (ticks)", "Profit target for Color AML trades in price steps", "Color AML")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <summary>

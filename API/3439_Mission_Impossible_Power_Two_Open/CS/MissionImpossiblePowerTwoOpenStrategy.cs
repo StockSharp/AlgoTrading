@@ -147,41 +147,41 @@ public class MissionImpossiblePowerTwoOpenStrategy : Strategy
 	public MissionImpossiblePowerTwoOpenStrategy()
 	{
 		_baseVolume = Param(nameof(BaseVolume), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Base Volume", "Initial market order size", "Trading")
 		.SetCanOptimize(true);
 
 		_maxVolumeParam = Param(nameof(MaxVolume), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Volume", "Upper cap for any market order", "Trading");
 
 		_power = Param(nameof(Power), 13m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Power", "Multiplier applied to unrealized loss when scaling volume", "Risk")
 		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 400)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop distance in price steps", "Protection")
 		.SetCanOptimize(true);
 
 		_takeProfitFirstPips = Param(nameof(TakeProfitFirstPips), 15)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("First Take Profit", "Take-profit for the first grid entry", "Protection")
 		.SetCanOptimize(true);
 
 		_takeProfitNextPips = Param(nameof(TakeProfitNextPips), 7)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Grid Take Profit", "Take-profit applied to the averaged basket", "Protection")
 		.SetCanOptimize(true);
 
 		_gridStepPips = Param(nameof(GridStepPips), 21)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Grid Step", "Minimum adverse move before adding a new entry", "Trading")
 		.SetCanOptimize(true);
 
 		_maxTrades = Param(nameof(MaxTrades), 16)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Trades", "Maximum number of averaging entries", "Risk")
 		.SetCanOptimize(true);
 

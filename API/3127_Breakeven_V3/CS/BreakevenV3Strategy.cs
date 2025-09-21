@@ -31,7 +31,7 @@ public class BreakevenV3Strategy : Strategy
 	public BreakevenV3Strategy()
 	{
 		_deltaPoints = Param(nameof(DeltaPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Delta (points)", "Offset in MetaTrader points applied around the break-even price.", "General")
 		.SetCanOptimize(true)
 		.SetOptimize(10, 300, 10);

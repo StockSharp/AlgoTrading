@@ -38,7 +38,7 @@ public class MondayTypicalBreakoutStrategy : Strategy
 	public MondayTypicalBreakoutStrategy()
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Fixed Volume", "Lot size used for entries (set to 0 to enable equity scaling)", "Risk");
 
 		_openHour = Param(nameof(OpenHour), 9)
@@ -46,11 +46,11 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		.SetDisplay("Open Hour", "Hour of the session to evaluate Monday breakout entries", "Session");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Profit target distance expressed in price points", "Risk");
 
 		_initialEquity = Param(nameof(InitialEquity), 600m)
@@ -66,7 +66,7 @@ public class MondayTypicalBreakoutStrategy : Strategy
 		.SetDisplay("Initial Step Volume", "Lot size used once the equity threshold is met", "Money Management");
 
 		_volumeStep = Param(nameof(VolumeStep), 0.2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Volume Step", "Additional lot size added for each equity step", "Money Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

@@ -70,15 +70,15 @@ public class Up3x1KrohaborDStrategy : Strategy
 						.SetDisplay("Loss Reduction Factor", "Divisor applied when reducing the volume after consecutive losses", "Risk");
 
 				_stopLossPoints = Param(nameof(StopLossPoints), 110m)
-						.SetGreaterOrEqualZero()
+						.SetNotNegative()
 						.SetDisplay("Stop Loss (points)", "Initial protective stop distance expressed in price steps", "Risk");
 
 				_takeProfitPoints = Param(nameof(TakeProfitPoints), 5m)
-						.SetGreaterOrEqualZero()
+						.SetNotNegative()
 						.SetDisplay("Take Profit (points)", "Initial take-profit distance expressed in price steps", "Risk");
 
 				_trailingPoints = Param(nameof(TrailingPoints), 10m)
-						.SetGreaterOrEqualZero()
+						.SetNotNegative()
 						.SetDisplay("Trailing (points)", "Trailing distance activated once the position is in profit", "Risk");
 
 				_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

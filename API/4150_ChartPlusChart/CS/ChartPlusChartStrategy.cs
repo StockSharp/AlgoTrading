@@ -21,7 +21,7 @@ public class ChartPlusChartStrategy : Strategy
 			.SetDisplay("Candle type", "Primary timeframe processed by the strategy.", "General");
 
 		_channelIndex = Param(nameof(ChannelIndex), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Channel index", "Base slot used when publishing shared values.", "General")
 			.SetCanOptimize(false);
 	}

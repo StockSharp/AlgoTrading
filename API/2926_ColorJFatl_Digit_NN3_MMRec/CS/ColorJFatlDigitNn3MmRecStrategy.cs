@@ -65,7 +65,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		_jmaPhaseA = Param(nameof(JmaPhaseA), -100)
 		.SetDisplay("A JMA Phase", "Phase parameter from the original script (not used by StockSharp JMA)", "Module A");
 		_signalBarA = Param(nameof(SignalBarA), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("A Signal Bar", "Delay in bars before acting on module A signals", "Module A");
 		_appliedPriceA = Param(nameof(AppliedPriceA), AppliedPrice.Close)
 		.SetDisplay("A Applied Price", "Price source used by module A", "Module A");
@@ -89,7 +89,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		_jmaPhaseB = Param(nameof(JmaPhaseB), -100)
 		.SetDisplay("B JMA Phase", "Phase parameter from the original script (not used by StockSharp JMA)", "Module B");
 		_signalBarB = Param(nameof(SignalBarB), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("B Signal Bar", "Delay in bars before acting on module B signals", "Module B");
 		_appliedPriceB = Param(nameof(AppliedPriceB), AppliedPrice.Close)
 		.SetDisplay("B Applied Price", "Price source used by module B", "Module B");
@@ -113,7 +113,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		_jmaPhaseC = Param(nameof(JmaPhaseC), -100)
 		.SetDisplay("C JMA Phase", "Phase parameter from the original script (not used by StockSharp JMA)", "Module C");
 		_signalBarC = Param(nameof(SignalBarC), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("C Signal Bar", "Delay in bars before acting on module C signals", "Module C");
 		_appliedPriceC = Param(nameof(AppliedPriceC), AppliedPrice.Close)
 		.SetDisplay("C Applied Price", "Price source used by module C", "Module C");

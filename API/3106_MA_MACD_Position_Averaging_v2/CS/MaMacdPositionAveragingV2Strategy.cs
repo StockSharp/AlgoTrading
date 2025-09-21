@@ -80,25 +80,25 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop in pips", "Risk Management")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target in pips", "Risk Management")
 			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk Management");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional move required before trailing adjusts", "Risk Management");
 
 		_stepLossPips = Param(nameof(StepLossPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Averaging Step (pips)", "Minimal adverse move before adding to the position", "Averaging")
 			.SetCanOptimize(true);
 
@@ -131,7 +131,7 @@ public class MaMacdPositionAveragingV2Strategy : Strategy
 			.SetDisplay("MA Price", "Applied price used for the moving average", "Moving Average");
 
 		_maIndentPips = Param(nameof(MaIndentPips), 4m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Indent (pips)", "Minimal distance between price and MA before entering", "Moving Average");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)

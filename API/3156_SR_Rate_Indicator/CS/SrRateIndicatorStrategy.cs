@@ -172,26 +172,26 @@ public class SrRateIndicatorStrategy : Strategy
 		.SetDisplay("Enable Short Exits", "Close short trades on opposite signals", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in price points", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(200, 2000, 200);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in price points", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(400, 4000, 200);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Slippage", "Maximum slippage accepted when closing positions", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame for SR Rate calculations", "Data");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "How many closed bars to offset the signal", "Logic")
 		.SetCanOptimize(true)
 		.SetOptimize(1, 3, 1);

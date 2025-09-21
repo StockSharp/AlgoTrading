@@ -149,13 +149,13 @@ public class PedroModStrategy : Strategy
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLoss = Param(nameof(StopLoss), 30)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 100, 10);
 
 		_takeProfit = Param(nameof(TakeProfit), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 150, 10);
@@ -173,7 +173,7 @@ public class PedroModStrategy : Strategy
 			.SetOptimize(1, 15, 1);
 
 		_reEntryGap = Param(nameof(ReEntryGap), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Re-entry Gap (pips)", "Distance between averaging trades in MetaTrader pips.", "Trading")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 10, 1);

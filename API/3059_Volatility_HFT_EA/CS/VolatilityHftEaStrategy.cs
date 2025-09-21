@@ -45,7 +45,7 @@ public class VolatilityHftEaStrategy : Strategy
 			.SetDisplay("Fast MA Length", "Period of the fast simple moving average", "Signal");
 
 		_stopLossPips = Param(nameof(StopLossPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk");
 
 		_maDifferencePips = Param(nameof(MaDifferencePips), 15m)

@@ -63,7 +63,7 @@ public class Ak47ScalperStrategy : Strategy
                         .SetDisplay("Use risk percent", "Calculate volume from the configured risk percentage.", "Money Management");
 
                 _riskPercent = Param(nameof(RiskPercent), 3m)
-                        .SetGreaterOrEqualZero()
+                        .SetNotNegative()
                         .SetDisplay("Risk percent", "Percentage of free capital converted to trade volume.", "Money Management");
 
                 _fixedVolume = Param(nameof(FixedVolume), 0.01m)
@@ -71,15 +71,15 @@ public class Ak47ScalperStrategy : Strategy
                         .SetDisplay("Fixed volume", "Base lot size used when risk percent is disabled.", "Money Management");
 
                 _stopLossPips = Param(nameof(StopLossPips), 3.5m)
-                        .SetGreaterOrEqualZero()
+                        .SetNotNegative()
                         .SetDisplay("Stop loss (pips)", "Protective stop distance measured in pips.", "Risk");
 
                 _takeProfitPips = Param(nameof(TakeProfitPips), 7m)
-                        .SetGreaterOrEqualZero()
+                        .SetNotNegative()
                         .SetDisplay("Take profit (pips)", "Profit target distance measured in pips.", "Risk");
 
                 _maxSpreadPoints = Param(nameof(MaxSpreadPoints), 5m)
-                        .SetGreaterOrEqualZero()
+                        .SetNotNegative()
                         .SetDisplay("Max spread (points)", "Maximum allowed spread expressed in price points.", "Filters");
 
                 _useTimeFilter = Param(nameof(UseTimeFilter), true)

@@ -110,30 +110,30 @@ public class FourHourSwingStrategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetDisplay("Momentum Threshold", "Minimum distance from 100 required for momentum", "Trading Rules")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Protective take profit distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useBreakEven = Param(nameof(UseBreakEven), true)
 			.SetDisplay("Use Break Even", "Move the stop to break even once profit target is reached", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 			.SetDisplay("Break Even Trigger", "Profit in pips required to lock the trade", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 			.SetDisplay("Break Even Offset", "Additional pips applied when locking", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useMacdExit = Param(nameof(UseMacdExit), false)
 			.SetDisplay("MACD Exit", "Close positions on an opposite MACD signal", "Trading Rules");

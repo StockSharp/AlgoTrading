@@ -71,11 +71,11 @@ public class ExpDigitalMacdStrategy : Strategy
 		.SetDisplay("Order Volume", "Volume for market entries", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pts)", "Protective stop distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pts)", "Protective target distance in price steps", "Risk");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)

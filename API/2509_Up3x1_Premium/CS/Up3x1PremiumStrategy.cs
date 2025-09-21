@@ -65,32 +65,32 @@ public class Up3x1PremiumStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.015m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Absolute take profit distance", "Risk")
 		.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 0.01m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Absolute stop loss distance", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStop = Param(nameof(TrailingStop), 0.001m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Distance for trailing stop updates", "Risk")
 		.SetCanOptimize(true);
 
 		_rangeThreshold = Param(nameof(RangeThreshold), 0.006m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Range Threshold", "Minimum candle range to qualify as wide", "Filters")
 		.SetCanOptimize(true);
 
 		_bodyThreshold = Param(nameof(BodyThreshold), 0.005m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Body Threshold", "Minimum candle body for momentum", "Filters")
 		.SetCanOptimize(true);
 
 		_dailyReversalThreshold = Param(nameof(DailyReversalThreshold), 0.006m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Daily Reversal Threshold", "Minimum prior day reversal size", "Filters")
 		.SetCanOptimize(true);
 

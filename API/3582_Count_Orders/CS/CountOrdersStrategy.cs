@@ -90,11 +90,11 @@ public class CountOrdersStrategy : Strategy
 			.SetDisplay("Magic Number", "Value copied into Order.UserOrderId for sample trades", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss Points", "Protective stop distance expressed in MetaTrader points", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 400)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-Profit Points", "Profit target distance expressed in MetaTrader points", "Risk Management");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
@@ -102,11 +102,11 @@ public class CountOrdersStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order volume submitted by the sample trades", "General");
 
 		_slippage = Param(nameof(Slippage), 7)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Legacy MetaTrader slippage input (informational only)", "General");
 
 		_waitMilliseconds = Param(nameof(WaitMilliseconds), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Wait Time (ms)", "Delay between the three sample orders", "General");
 	}
 

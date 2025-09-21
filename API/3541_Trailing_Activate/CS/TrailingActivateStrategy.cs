@@ -45,15 +45,15 @@ public class TrailingActivateStrategy : Strategy
 			.SetDisplay("Trailing Mode", "Choose between per-tick or per-bar trailing updates", "General");
 
 		_trailingActivatePoints = Param(nameof(TrailingActivatePoints), 70m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Activate (points)", "Profit in points required before trailing starts", "Trailing");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 250m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Distance between price and trailing stop in points", "Trailing");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Minimum favorable move before shifting the trailing stop", "Trailing");
 	}
 

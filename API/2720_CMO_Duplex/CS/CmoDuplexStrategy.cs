@@ -132,7 +132,7 @@ public class CmoDuplexStrategy : Strategy
 			.SetDisplay("Long CMO Period", "CMO period for the long leg", "Long Leg");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Offset in bars for long signals", "Long Leg");
 
 		_enableLongEntries = Param(nameof(EnableLongEntries), true)
@@ -142,11 +142,11 @@ public class CmoDuplexStrategy : Strategy
 			.SetDisplay("Enable Long Exits", "Allow closing long trades on signals", "Long Leg");
 
 		_longStopLossPoints = Param(nameof(LongStopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Stop loss in price steps for longs", "Risk Management");
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit", "Take profit in price steps for longs", "Risk Management");
 
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -157,7 +157,7 @@ public class CmoDuplexStrategy : Strategy
 			.SetDisplay("Short CMO Period", "CMO period for the short leg", "Short Leg");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Offset in bars for short signals", "Short Leg");
 
 		_enableShortEntries = Param(nameof(EnableShortEntries), true)
@@ -167,11 +167,11 @@ public class CmoDuplexStrategy : Strategy
 			.SetDisplay("Enable Short Exits", "Allow closing short trades on signals", "Short Leg");
 
 		_shortStopLossPoints = Param(nameof(ShortStopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Stop loss in price steps for shorts", "Risk Management");
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit", "Take profit in price steps for shorts", "Risk Management");
 	}
 

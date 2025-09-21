@@ -50,27 +50,27 @@ public class AutotraderMomentumStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetDisplay("Trailing Stop (pips)", "Distance maintained by the trailing stop in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimum progress before the trailing stop advances", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_currentBarIndex = Param(nameof(CurrentBarIndex), 0)
 			.SetDisplay("Current Bar Index", "Index of the candle used as the signal source", "Logic")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_comparableBarIndex = Param(nameof(ComparableBarIndex), 15)
 			.SetDisplay("Comparable Bar Index", "Historical candle index used for momentum comparison", "Logic")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <summary>

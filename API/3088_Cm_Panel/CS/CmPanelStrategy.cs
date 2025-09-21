@@ -53,27 +53,27 @@ public class CmPanelStrategy : Strategy
 		.SetDisplay("Sell volume", "Volume for sell stop entries", "Trading");
 
 		_buyStopOffsetPoints = Param(nameof(BuyStopOffsetPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy offset", "Distance above the ask where the buy stop is placed (points)", "Distances");
 
 		_sellStopOffsetPoints = Param(nameof(SellStopOffsetPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell offset", "Distance below the bid where the sell stop is placed (points)", "Distances");
 
 		_buyStopLossPoints = Param(nameof(BuyStopLossPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy stop-loss", "Protective stop distance for long trades (points)", "Risk");
 
 		_sellStopLossPoints = Param(nameof(SellStopLossPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell stop-loss", "Protective stop distance for short trades (points)", "Risk");
 
 		_buyTakeProfitPoints = Param(nameof(BuyTakeProfitPoints), 150)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Buy take-profit", "Profit target distance for long trades (points)", "Risk");
 
 		_sellTakeProfitPoints = Param(nameof(SellTakeProfitPoints), 150)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Sell take-profit", "Profit target distance for short trades (points)", "Risk");
 
 		_placeBuyStop = Param(nameof(PlaceBuyStop), false)

@@ -192,21 +192,21 @@ public class HeikenAshiSmoothedMtfStrategy : Strategy
 	public HeikenAshiSmoothedMtfStrategy()
 	{
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trade Volume", "Base order volume used for entries", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 20)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (steps)", "Take-profit distance expressed in price steps", "Risk")
 		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (steps)", "Stop-loss distance expressed in price steps", "Risk")
 		.SetCanOptimize(true);
 
 		_extraStopLossPoints = Param(nameof(ExtraStopLossPoints), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Extra Stop Loss", "Additional stop-loss steps applied after a losing trade", "Risk");
 
 		_firstMaPeriod = Param(nameof(FirstMaPeriod), 6)

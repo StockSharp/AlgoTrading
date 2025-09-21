@@ -91,7 +91,7 @@ public class ButtonCloseBuySellStrategy : Strategy
 	public ButtonCloseBuySellStrategy()
 	{
 		_slippage = Param(nameof(Slippage), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Maximum acceptable slippage in price steps", "General");
 
 		_closeBuyParam = Param(nameof(CloseBuyPositions), false)

@@ -61,7 +61,7 @@ public class BounceNumberStrategy : Strategy
 	public BounceNumberStrategy()
 	{
 		_maxHistoryCandles = Param(nameof(MaxHistoryCandles), 10000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max History Candles", "Maximum number of candles inspected inside a single channel cycle", "General")
 			.SetCanOptimize(true);
 

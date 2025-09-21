@@ -83,7 +83,7 @@ public class TrendManagerTmPlusStrategy : Strategy
 			.SetOptimize(0.0001m, 0.01m, 0.0001m);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Bars ago used to confirm a new signal", "Indicator");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)

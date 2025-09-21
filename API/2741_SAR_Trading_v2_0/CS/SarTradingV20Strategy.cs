@@ -128,7 +128,7 @@ public class SarTradingV20Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_maShift = Param(nameof(MaShift), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Bars to shift the close comparison against the SMA.", "Indicators");
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
@@ -142,19 +142,19 @@ public class SarTradingV20Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Fixed stop-loss distance expressed in pips.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Fixed take-profit distance expressed in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional profit before trailing stop moves.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

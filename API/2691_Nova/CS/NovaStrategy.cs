@@ -111,7 +111,7 @@ public class NovaStrategy : Strategy
 		.SetOptimize(5, 30, 5);
 
 		_stepPips = Param(nameof(StepPips), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Step (pips)", "Price offset in pips for breakout check", "Signals")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);
@@ -123,13 +123,13 @@ public class NovaStrategy : Strategy
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop-loss (pips)", "Stop-loss distance in pips", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take-profit (pips)", "Take-profit distance in pips", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 5, 1);

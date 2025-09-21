@@ -107,12 +107,12 @@ public class LockStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_excessBalanceOverEquity = Param(nameof(ExcessBalanceOverEquity), 3000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Balance - Equity Threshold", "Maximum allowed floating loss before locking profit", "Risk")
 			.SetCanOptimize(true);
 
 		_minProfit = Param(nameof(MinProfit), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Minimum Profit", "Required equity gain before harvesting profits", "Risk")
 			.SetCanOptimize(true);
 

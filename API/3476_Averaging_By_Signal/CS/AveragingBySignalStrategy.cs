@@ -137,7 +137,7 @@ _slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Smoothed)
 
 _takeProfitPips = Param(nameof(TakeProfitPips), 15)
 .SetDisplay("Take Profit (pips)", "Shared profit target attached to the basket.", "Risk")
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetCanOptimize(true);
 
 _averagingBySignal = Param(nameof(AveragingBySignal), true)
@@ -158,12 +158,12 @@ _enableTrailing = Param(nameof(EnableTrailing), false)
 
 _trailingStartPips = Param(nameof(TrailingStartPips), 10m)
 .SetDisplay("Trailing Start (pips)", "Profit distance that activates the trailing stop.", "Protection")
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetCanOptimize(true);
 
 _trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 .SetDisplay("Trailing Step (pips)", "Minimal improvement required to raise the stop.", "Protection")
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetCanOptimize(true);
 }
 

@@ -153,23 +153,23 @@ public class BhsSystemStrategy : Strategy
 			.SetDisplay("Order Volume", "Lot size used for entry orders", "Trading");
 
 		_stopLossBuyPoints = Param(nameof(StopLossBuyPoints), 300)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Buy (points)", "Distance in points for long stop loss", "Risk");
 
 		_stopLossSellPoints = Param(nameof(StopLossSellPoints), 300)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Sell (points)", "Distance in points for short stop loss", "Risk");
 
 		_trailingStopBuyPoints = Param(nameof(TrailingStopBuyPoints), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Buy (points)", "Trailing distance in points for long positions", "Risk");
 
 		_trailingStopSellPoints = Param(nameof(TrailingStopSellPoints), 100)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Sell (points)", "Trailing distance in points for short positions", "Risk");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (points)", "Minimum step in points between trailing updates", "Risk");
 
 		_roundStepPoints = Param(nameof(RoundStepPoints), 500)
@@ -177,7 +177,7 @@ public class BhsSystemStrategy : Strategy
 			.SetDisplay("Round Step (points)", "Number of points used to build round price levels", "Execution");
 
 		_expirationHours = Param(nameof(ExpirationHours), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Order Expiration (hours)", "Lifetime of pending entry orders in hours", "Execution");
 
 		_amaLength = Param(nameof(AmaLength), 15)

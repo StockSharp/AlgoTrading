@@ -21,7 +21,7 @@ public class OnePriceSlTpStrategy : Strategy
 	public OnePriceSlTpStrategy()
 	{
 		_zenPrice = Param(nameof(ZenPrice), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Target price", "Absolute price level applied to stop loss or take profit depending on the current market side.", "Execution")
 		.SetCanOptimize(true);
 	}

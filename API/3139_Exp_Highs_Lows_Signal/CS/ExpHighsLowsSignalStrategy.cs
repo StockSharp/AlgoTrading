@@ -53,13 +53,13 @@ public class ExpHighsLowsSignalStrategy : Strategy
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 		.SetDisplay("Stop Loss (ticks)", "Protective stop distance expressed in price steps", "Risk")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3000, 250);
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 2000)
 		.SetDisplay("Take Profit (ticks)", "Profit target distance expressed in price steps", "Risk")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(0, 4000, 250);
 
@@ -71,7 +71,7 @@ public class ExpHighsLowsSignalStrategy : Strategy
 
 		_signalBarDelay = Param(nameof(SignalBarDelay), 1)
 		.SetDisplay("Signal Delay", "Number of completed bars to wait before acting", "Indicator")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1);
 

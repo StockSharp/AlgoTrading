@@ -40,7 +40,7 @@ public class BrandyV12Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_longShift = Param(nameof(LongShift), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long SMA Shift", "Backward shift applied to the longer SMA.", "Indicators")
 			.SetCanOptimize(true);
 
@@ -50,17 +50,17 @@ public class BrandyV12Strategy : Strategy
 			.SetCanOptimize(true);
 
 		_shortShift = Param(nameof(ShortShift), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short SMA Shift", "Backward shift applied to the shorter SMA.", "Indicators")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Initial stop-loss distance expressed in price steps.", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in price steps. Activates when >= 100.", "Risk")
 			.SetCanOptimize(true);
 

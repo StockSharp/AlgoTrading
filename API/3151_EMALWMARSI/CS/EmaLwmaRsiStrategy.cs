@@ -42,13 +42,13 @@ public class EmaLwmaRsiStrategy : Strategy
 	public EmaLwmaRsiStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips. Zero disables the stop.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 300, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Target distance in pips. Zero disables the target.", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10, 300, 10);
@@ -66,7 +66,7 @@ public class EmaLwmaRsiStrategy : Strategy
 			.SetOptimize(3, 50, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA shift", "Forward shift applied to both moving averages (bars).", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);

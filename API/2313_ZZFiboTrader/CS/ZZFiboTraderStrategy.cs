@@ -69,11 +69,11 @@ public class ZZFiboTraderStrategy : Strategy
 	{
 		_breakout = Param(nameof(Breakout), 5m)
 			.SetDisplay("Breakout", "Minimum distance beyond level to confirm breakout", "General")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
 			.SetDisplay("Stop Loss", "Absolute stop loss distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_zigZagDepth = Param(nameof(ZigZagDepth), 12)
 			.SetDisplay("ZigZag Depth", "Number of bars to search for pivots", "ZigZag")

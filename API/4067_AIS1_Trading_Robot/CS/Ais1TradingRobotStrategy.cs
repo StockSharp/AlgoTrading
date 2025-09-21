@@ -161,7 +161,7 @@ public class Ais1TradingRobotStrategy : Strategy
 
 		_stopBufferTicks = Param(nameof(StopBufferTicks), 0m)
 			.SetDisplay("Stop Buffer Ticks", "Additional ticks separating levels", "Execution")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

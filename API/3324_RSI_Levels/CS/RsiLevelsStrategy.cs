@@ -61,11 +61,11 @@ public class RsiLevelsStrategy : Strategy
 		.SetDisplay("Risk %", "Risk per trade expressed as equity percentage", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop size in symbol points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Target size in symbol points", "Risk");
 	}
 

@@ -68,27 +68,27 @@ public class DojiArrowsStrategy : Strategy
 	public DojiArrowsStrategy()
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price steps.", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 90m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Take profit distance in price steps.", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Points", "Trailing distance in price steps.", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step Points", "Minimum profit before the trailing stop moves.", "Risk")
 			.SetCanOptimize(true);
 
 		_dojiBodyPoints = Param(nameof(DojiBodyPoints), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Doji Body Points", "Maximum difference between open and close to treat the candle as a doji.", "Pattern")
 			.SetCanOptimize(true);
 

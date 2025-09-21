@@ -65,7 +65,7 @@ public class Ilan14Strategy : Strategy
 			.SetOptimize(0.01m, 1m, 0.01m);
 
 		_volumeDigits = Param(nameof(VolumeDigits), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Volume digits", "Number of decimal places used to round trade volume.", "Trading");
 
 		_moneyManagementMode = Param(nameof(MoneyManagementMode), MoneyManagementMode.Geometric)
@@ -96,18 +96,18 @@ public class Ilan14Strategy : Strategy
 			.SetOptimize(5m, 50m, 5m);
 
 		_stopLoss = Param(nameof(StopLoss), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss", "Maximum adverse distance from the average price before the basket is closed.", "Risk");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 			.SetDisplay("Use trailing stop", "Enable dynamic trailing of profits once the basket gains enough points.", "Risk");
 
 		_trailStart = Param(nameof(TrailStart), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trail start", "Profit distance in points required before the trailing stop activates.", "Risk");
 
 		_trailStop = Param(nameof(TrailStop), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trail distance", "Gap between current price and trailing stop when it is active.", "Risk");
 
 		_maxTrades = Param(nameof(MaxTrades), 10)
@@ -120,14 +120,14 @@ public class Ilan14Strategy : Strategy
 			.SetDisplay("Use equity stop", "Close the basket if floating loss exceeds a share of the equity peak.", "Risk");
 
 		_equityRiskPercent = Param(nameof(EquityRiskPercent), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Equity risk %", "Percentage of the recorded equity peak tolerated as floating loss.", "Risk");
 
 		_useTimeOut = Param(nameof(UseTimeOut), false)
 			.SetDisplay("Use timeout", "Close all trades once the basket has been open for too long.", "Risk");
 
 		_maxTradeOpenHours = Param(nameof(MaxTradeOpenHours), 48m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max open hours", "Maximum lifetime of the basket before it is forcefully closed.", "Risk");
 	}
 

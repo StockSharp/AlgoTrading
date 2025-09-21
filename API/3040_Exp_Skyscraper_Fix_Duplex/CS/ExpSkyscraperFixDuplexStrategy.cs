@@ -158,7 +158,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 			.SetDisplay("Long Mode", "Price source for the long indicator", "Long");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Long Signal Bar", "Delay long signals by closed candles", "Long");
 
 		_enableShortEntries = Param(nameof(EnableShortEntries), true)
@@ -185,7 +185,7 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 			.SetDisplay("Short Mode", "Price source for the short indicator", "Short");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Short Signal Bar", "Delay short signals by closed candles", "Short");
 	}
 

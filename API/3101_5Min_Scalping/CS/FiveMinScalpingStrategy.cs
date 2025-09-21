@@ -98,27 +98,27 @@ public class FiveMinScalpingStrategy : Strategy
 			.SetOptimize(10, 30, 2);
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Buy Threshold", "Minimum |Momentum-100| required for long trades", "Filters")
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Momentum Sell Threshold", "Minimum |Momentum-100| required for short trades", "Filters")
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance to the take-profit target in price steps", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance to the protective stop in price steps", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Distance used for the trailing stop logic", "Risk");
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
@@ -128,11 +128,11 @@ public class FiveMinScalpingStrategy : Strategy
 			.SetDisplay("Enable Break Even", "Moves the stop to break-even once profit threshold is reached", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break Even Trigger", "Profit in pips required to arm break-even", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break Even Offset", "Extra pips added above/below entry when break-even is armed", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)

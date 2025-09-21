@@ -181,11 +181,11 @@ public class Ais3TradingRobotTemplateStrategy : Strategy
 
 		_stopBufferTicks = Param(nameof(StopBufferTicks), 0m)
 		.SetDisplay("Stop Buffer Ticks", "Extra ticks added on top of broker stop limits", "Execution")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_freezeBufferTicks = Param(nameof(FreezeBufferTicks), 0m)
 		.SetDisplay("Freeze Buffer Ticks", "Extra ticks preventing frequent stop updates", "Execution")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailStepMultiplier = Param(nameof(TrailStepMultiplier), 1m)
 		.SetDisplay("Trail Step Mult", "Spread multiplier for minimal trailing step", "Execution")

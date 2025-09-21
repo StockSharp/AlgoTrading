@@ -118,7 +118,7 @@ public class Xroc2VgTmStrategy : Strategy
 			.SetDisplay("ROC Mode", "Calculation used for rate of change", "Indicator");
 
 		_signalShift = Param(nameof(SignalShift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Bars back to read the signals", "Logic");
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
@@ -147,11 +147,11 @@ public class Xroc2VgTmStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume for new positions", "Trading");
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Protective stop distance in price units", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Target distance in price units", "Risk");
 	}
 

@@ -108,27 +108,27 @@ _enableBuyLimit = Param(nameof(EnableBuyLimit), false)
 .SetDisplay("Enable buy limit", "Maintain a buy limit pending order", "Pending Orders");
 
 _maxMarketOrders = Param(nameof(MaxMarketOrders), 2)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Maximum market entries", "Maximum number of concurrent market lots per direction", "Execution")
 .SetCanOptimize(true);
 
 _marketTakeProfitPoints = Param(nameof(MarketTakeProfitPoints), 200m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Market take profit", "Take profit distance for market positions in points", "Risk Management")
 .SetCanOptimize(true);
 
 _marketStopLossPoints = Param(nameof(MarketStopLossPoints), 100m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Market stop loss", "Stop loss distance for market positions in points", "Risk Management")
 .SetCanOptimize(true);
 
 _marketTrailingOffsetPoints = Param(nameof(MarketTrailingOffsetPoints), 100m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Market trailing offset", "Offset in points used for trailing market positions", "Risk Management")
 .SetCanOptimize(true);
 
 _marketTrailingStepPoints = Param(nameof(MarketTrailingStepPoints), 10m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Market trailing step", "Minimal improvement in points before moving the trailing stop", "Risk Management")
 .SetCanOptimize(true);
 
@@ -141,22 +141,22 @@ _stopStepPoints = Param(nameof(StopStepPoints), 50m)
 .SetCanOptimize(true);
 
 _stopTakeProfitPoints = Param(nameof(StopTakeProfitPoints), 200m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop order take profit", "Take profit distance for triggered stop orders in points", "Pending Orders")
 .SetCanOptimize(true);
 
 _stopStopLossPoints = Param(nameof(StopStopLossPoints), 100m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop order stop loss", "Stop loss distance for triggered stop orders in points", "Pending Orders")
 .SetCanOptimize(true);
 
 _stopTrailingOffsetPoints = Param(nameof(StopTrailingOffsetPoints), 0m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop order trailing offset", "Offset in points used when trailing stop orders", "Pending Orders")
 .SetCanOptimize(true);
 
 _stopTrailingStepPoints = Param(nameof(StopTrailingStepPoints), 3m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Stop order trailing step", "Minimal movement in points required before trailing stop orders", "Pending Orders")
 .SetCanOptimize(true);
 
@@ -166,22 +166,22 @@ _limitStepPoints = Param(nameof(LimitStepPoints), 50m)
 .SetCanOptimize(true);
 
 _limitTakeProfitPoints = Param(nameof(LimitTakeProfitPoints), 200m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Limit order take profit", "Take profit distance for triggered limit orders in points", "Pending Orders")
 .SetCanOptimize(true);
 
 _limitStopLossPoints = Param(nameof(LimitStopLossPoints), 100m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Limit order stop loss", "Stop loss distance for triggered limit orders in points", "Pending Orders")
 .SetCanOptimize(true);
 
 _limitTrailingOffsetPoints = Param(nameof(LimitTrailingOffsetPoints), 0m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Limit order trailing offset", "Offset in points used when trailing limit orders", "Pending Orders")
 .SetCanOptimize(true);
 
 _limitTrailingStepPoints = Param(nameof(LimitTrailingStepPoints), 3m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Limit order trailing step", "Minimal movement in points required before trailing limit orders", "Pending Orders")
 .SetCanOptimize(true);
 
@@ -215,12 +215,12 @@ _timeBuyLimitSignal = Param(nameof(TimeBuyLimitSignal), false)
 .SetDisplay("Trigger buy limit", "Activate buy limit order on scheduled time", "Time Management");
 
 _exitProfitPoints = Param(nameof(ExitProfitPoints), 0m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Pips profit", "Close positions once specified profit in points is reached", "Risk Management")
 .SetCanOptimize(true);
 
 _slippagePoints = Param(nameof(SlippagePoints), 3m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Slippage reserve", "Reserved parameter for compatibility with original expert", "Execution")
 .SetCanOptimize(true);
 
@@ -228,12 +228,12 @@ _useGlobalLevels = Param(nameof(UseGlobalLevels), true)
 .SetDisplay("Use global levels", "Monitor account level profit and loss thresholds", "Account Monitoring");
 
 _globalTakeProfitPercent = Param(nameof(GlobalTakeProfitPercent), 2m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Global take profit", "Equity gain percentage that triggers an informational alert", "Account Monitoring")
 .SetCanOptimize(true);
 
 _globalStopLossPercent = Param(nameof(GlobalStopLossPercent), 2m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Global stop loss", "Equity drawdown percentage that triggers an informational alert", "Account Monitoring")
 .SetCanOptimize(true);
 }

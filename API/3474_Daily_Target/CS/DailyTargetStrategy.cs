@@ -32,7 +32,7 @@ public class DailyTargetStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_dailyMaxLoss = Param(nameof(DailyMaxLoss), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Daily Max Loss", "Maximum drawdown tolerated before trading is halted", "Risk Management")
 			.SetCanOptimize(true);
 

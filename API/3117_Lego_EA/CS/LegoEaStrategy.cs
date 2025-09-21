@@ -76,11 +76,11 @@ public class LegoEaStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 200)
 			.SetDisplay("Stop Loss (pips)", "Distance to stop loss measured in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200)
 			.SetDisplay("Take Profit (pips)", "Distance to take profit measured in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_useCciForEntry = Param(nameof(UseCciForEntry), false)
 			.SetDisplay("Use CCI for Entries", "Enable Commodity Channel Index filter for entries", "Filters");
@@ -132,7 +132,7 @@ public class LegoEaStrategy : Strategy
 
 		_maShift = Param(nameof(MaShift), 1)
 			.SetDisplay("MA Shift", "Number of completed bars used to offset moving averages", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maMethod = Param(nameof(MaMethod), MaMethodOption.Simple)
 			.SetDisplay("MA Method", "Smoothing method for moving averages", "Indicators");

@@ -62,7 +62,7 @@ public class TwoPerBarRonStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_profitTargetPoints = Param(nameof(ProfitTargetPoints), 19m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Profit Target (points)", "Monetary target converted using instrument point size.", "Risk")
 			.SetCanOptimize(true);
 	}

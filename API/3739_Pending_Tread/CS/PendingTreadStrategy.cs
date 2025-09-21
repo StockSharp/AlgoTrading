@@ -189,11 +189,11 @@ public class PendingTreadStrategy : Strategy
 		.SetDisplay("Pip Step", "Distance between layered orders in MetaTrader pips.", "Grid");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 75m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Optional take-profit distance for pending orders.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Optional stop-loss distance for pending orders.", "Risk");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.10m)
@@ -220,14 +220,14 @@ public class PendingTreadStrategy : Strategy
 		.SetDisplay("Use Stop Loss", "Attaches stop-loss prices to pending orders when enabled.", "Risk");
 
 		_minimumEquity = Param(nameof(MinimumEquity), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Minimum Equity", "Minimum equity required to submit new pending orders.", "Protection");
 
 		_enableEquityGuard = Param(nameof(EnableEquityLossProtection), true)
 		.SetDisplay("Enable Equity Guard", "Cancels all activity if portfolio equity drops below the threshold.", "Protection");
 
 		_maxLossPercent = Param(nameof(MaxLossPercent), 20m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Max Loss Percent", "Drawdown percentage that triggers the equity guard.", "Protection");
 	}
 

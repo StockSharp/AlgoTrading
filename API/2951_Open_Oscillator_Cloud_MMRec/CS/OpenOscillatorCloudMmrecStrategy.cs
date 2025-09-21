@@ -72,7 +72,7 @@ public class OpenOscillatorCloudMmrecStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Number of fully closed bars to delay the signal", "Indicator")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
 		.SetDisplay("Enable Long Entries", "Allow opening long positions on bullish cross", "Trading");

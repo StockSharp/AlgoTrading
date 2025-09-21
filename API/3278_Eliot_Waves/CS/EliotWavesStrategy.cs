@@ -79,33 +79,33 @@ public class EliotWavesStrategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 			.SetDisplay("Momentum Threshold", "Minimum deviation from 100 required to trade", "Indicators")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 			.SetDisplay("Enable Trailing", "Activates trailing stop management", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 			.SetDisplay("Trailing Stop (pips)", "Distance maintained by the trailing stop", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
 			.SetDisplay("Enable Break Even", "Move stop-loss to break-even after a positive move", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 			.SetDisplay("Break Even Trigger (pips)", "Required profit in pips before moving stop to break-even", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 			.SetDisplay("Break Even Offset (pips)", "Additional buffer applied when moving the stop", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_maxPositions = Param(nameof(MaxPositions), 10)
 			.SetDisplay("Max Positions", "Maximum number of volume steps allowed", "Risk")

@@ -111,13 +111,13 @@ public class TradingPanelStrategy : Strategy
 		.SetOptimize(1, 5, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 10m, 1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 20m, 2m);

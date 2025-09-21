@@ -137,17 +137,17 @@ public class MomoTradesStrategy : Strategy
 	public MomoTradesStrategy()
 	{
 		_smaPeriod = Param(nameof(SmaPeriod), 22).SetGreaterThanZero().SetDisplay("SMA Period", "Period of the moving average", "Indicators");
-		_maBarShift = Param(nameof(MaBarShift), 6).SetGreaterOrEqualZero().SetDisplay("MA Bar Shift", "Bar shift used for SMA comparison", "Indicators");
+		_maBarShift = Param(nameof(MaBarShift), 6).SetNotNegative().SetDisplay("MA Bar Shift", "Bar shift used for SMA comparison", "Indicators");
 		_macdFast = Param(nameof(MacdFast), 12).SetGreaterThanZero().SetDisplay("MACD Fast", "Fast EMA period for MACD", "Indicators");
 		_macdSlow = Param(nameof(MacdSlow), 26).SetGreaterThanZero().SetDisplay("MACD Slow", "Slow EMA period for MACD", "Indicators");
 		_macdSignal = Param(nameof(MacdSignal), 9).SetGreaterThanZero().SetDisplay("MACD Signal", "Signal SMA period for MACD", "Indicators");
-		_macdBarShift = Param(nameof(MacdBarShift), 2).SetGreaterOrEqualZero().SetDisplay("MACD Bar Shift", "Offset applied to MACD values", "Indicators");
-		_stopLossPips = Param(nameof(StopLossPips), 25m).SetGreaterOrEqualZero().SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk");
-		_takeProfitPips = Param(nameof(TakeProfitPips), 0m).SetGreaterOrEqualZero().SetDisplay("Take Profit", "Take profit distance in pips", "Risk");
-		_trailingStopPips = Param(nameof(TrailingStopPips), 0m).SetGreaterOrEqualZero().SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
-		_trailingStepPips = Param(nameof(TrailingStepPips), 5m).SetGreaterOrEqualZero().SetDisplay("Trailing Step", "Trailing step distance in pips", "Risk");
-		_breakevenPips = Param(nameof(BreakevenPips), 10m).SetGreaterOrEqualZero().SetDisplay("Breakeven", "Distance to move stop to breakeven", "Risk");
-		_priceShiftPips = Param(nameof(PriceShiftPips), 5m).SetGreaterOrEqualZero().SetDisplay("Price Shift", "Required price distance from SMA", "Filters");
+		_macdBarShift = Param(nameof(MacdBarShift), 2).SetNotNegative().SetDisplay("MACD Bar Shift", "Offset applied to MACD values", "Indicators");
+		_stopLossPips = Param(nameof(StopLossPips), 25m).SetNotNegative().SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk");
+		_takeProfitPips = Param(nameof(TakeProfitPips), 0m).SetNotNegative().SetDisplay("Take Profit", "Take profit distance in pips", "Risk");
+		_trailingStopPips = Param(nameof(TrailingStopPips), 0m).SetNotNegative().SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
+		_trailingStepPips = Param(nameof(TrailingStepPips), 5m).SetNotNegative().SetDisplay("Trailing Step", "Trailing step distance in pips", "Risk");
+		_breakevenPips = Param(nameof(BreakevenPips), 10m).SetNotNegative().SetDisplay("Breakeven", "Distance to move stop to breakeven", "Risk");
+		_priceShiftPips = Param(nameof(PriceShiftPips), 5m).SetNotNegative().SetDisplay("Price Shift", "Required price distance from SMA", "Filters");
 		_closeEndDay = Param(nameof(CloseEndDay), true).SetDisplay("Close End Of Day", "Close positions near session end", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame()).SetDisplay("Candle Type", "Source candles for calculations", "General");
 

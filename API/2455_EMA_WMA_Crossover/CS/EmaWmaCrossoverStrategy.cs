@@ -74,11 +74,11 @@ public class EmaWmaCrossoverStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Risk");
 
 		_riskPercent = Param(nameof(RiskPercent), 10m)

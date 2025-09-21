@@ -60,7 +60,7 @@ public class TicksInMySqlRecorderStrategy : Strategy
 			.SetDisplay("Ensure Table Exists", "Create the table when it does not exist", "Connection");
 
 		_pricePrecision = Param(nameof(PricePrecision), 4)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Price Precision", "Digits stored for bid/ask", "Formatting");
 
 		_stopOnInsertError = Param(nameof(StopOnInsertError), false)

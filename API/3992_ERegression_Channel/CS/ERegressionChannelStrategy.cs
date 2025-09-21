@@ -73,23 +73,23 @@ public class ERegressionChannelStrategy : Strategy
 			.SetDisplay("Enable Trailing", "Enable trailing stop management", "Risk Management");
 
 		_trailingActivationPoints = Param(nameof(TrailingActivationPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Activation", "Points of profit required before trailing starts", "Risk Management");
 
 		_trailingDistancePoints = Param(nameof(TrailingDistancePoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Distance", "Distance in points maintained by trailing", "Risk Management");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Protective stop in points (0 disables)", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Protective target in points (0 disables)", "Risk Management");
 
 		_dailyRangePoints = Param(nameof(DailyRangePoints), 150m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Daily Range Filter", "Maximum previous day range in points", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())

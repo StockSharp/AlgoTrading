@@ -145,25 +145,25 @@ public class ArdOrderManagementStrategy : Strategy
 			.SetOptimize(0.1m, 5m, 0.1m);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial profit target distance", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 300m, 10m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial protective stop distance", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
 
 		_modifyTakeProfitPips = Param(nameof(ModifyTakeProfitPips), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Take Profit (pips)", "Distance maintained when refreshing profit targets", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 300m, 10m);
 
 		_modifyStopLossPips = Param(nameof(ModifyStopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Distance maintained when refreshing stop levels", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 200m, 10m);

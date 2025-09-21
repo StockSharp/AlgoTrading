@@ -171,7 +171,7 @@ public class MaOnMomentumMinProfitStrategy : Strategy
 			.SetDisplay("Stop Loss $", "Maximum permitted drawdown in account currency", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 460m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Distance from entry to close trades in profit", "Risk");
 
 		_momentumReference = Param(nameof(MomentumReference), 100m)

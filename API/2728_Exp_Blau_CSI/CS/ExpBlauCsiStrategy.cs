@@ -83,15 +83,15 @@ public class ExpBlauCsiStrategy : Strategy
 			.SetDisplay("Reference Price", "Price constant for the lagging value", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Offset in bars used to confirm a signal", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Stop loss distance measured in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Take profit distance measured in price steps", "Risk");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)

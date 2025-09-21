@@ -72,11 +72,11 @@ public class HammerEmaTickSlTpStrategy : Strategy
 			.SetOptimize(20, 100, 10);
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Ticks", "Stop loss distance in ticks", "Risk");
 
 		_takeProfitTicks = Param(nameof(TakeProfitTicks), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Ticks", "Take profit distance in ticks", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

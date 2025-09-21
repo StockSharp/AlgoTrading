@@ -134,11 +134,11 @@ public class T3MaMtc9Strategy : Strategy
 			.SetOptimize(2, 30, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("EMA Shift", "Shift applied to the smoothed series when evaluating slope direction", "Indicator");
 
 		_calculationBarOffset = Param(nameof(CalculationBarOffset), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Delay", "How many finished candles to wait before acting on a signal", "Trading rules");
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
@@ -149,7 +149,7 @@ public class T3MaMtc9Strategy : Strategy
 			.SetDisplay("Use Stop Loss", "Attach a stop loss when opening new positions", "Risk management");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 120m, 10m);
@@ -158,7 +158,7 @@ public class T3MaMtc9Strategy : Strategy
 			.SetDisplay("Use Take Profit", "Attach a take profit when opening new positions", "Risk management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 11m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 5m);

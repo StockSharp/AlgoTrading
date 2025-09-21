@@ -89,22 +89,22 @@ public class RsiExpertStrategy : Strategy
 			.SetDisplay("Candle Type", "Primary timeframe for generating signals", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop in pips", "Risk Management")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target in pips", "Risk Management")
 			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied after activation", "Risk Management")
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional pips required before trailing moves again", "Risk Management")
 			.SetCanOptimize(true);
 

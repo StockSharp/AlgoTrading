@@ -104,7 +104,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 			.SetOptimize(10m, 150m, 10m);
 
 		_pkPips = Param(nameof(PkPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Zone Offset (pips)", "Additional offset applied when checking zone boundaries.", "Trading");
 
 		_initialVolume = Param(nameof(InitialVolume), 0.1m)

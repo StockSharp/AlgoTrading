@@ -176,7 +176,7 @@ public class ColorFisherM11Strategy : Strategy
 			.SetDisplay("Low Level", "Lower level for bearish color", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Bars to delay signal execution", "Trading");
 
 		_enableBuyEntry = Param(nameof(EnableBuyEntry), true)
@@ -192,11 +192,11 @@ public class ColorFisherM11Strategy : Strategy
 			.SetDisplay("Enable Sell Exit", "Allow closing short positions", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Protective stop distance in price steps", "Protection");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Target distance in price steps", "Protection");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())

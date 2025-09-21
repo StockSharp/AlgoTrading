@@ -64,11 +64,11 @@ public class MaCrossMethodPriceModeStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_firstShift = Param(nameof(FirstShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fast MA Shift", "Horizontal shift (in bars) applied to the first moving average.", "Indicators");
 
 		_secondShift = Param(nameof(SecondShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slow MA Shift", "Horizontal shift (in bars) applied to the second moving average.", "Indicators");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)

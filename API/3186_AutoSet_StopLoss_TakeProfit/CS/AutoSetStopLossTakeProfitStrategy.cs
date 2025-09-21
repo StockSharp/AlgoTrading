@@ -36,12 +36,12 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 	public AutoSetStopLossTakeProfitStrategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (pips)", "Distance from price to the protective stop in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (pips)", "Distance from price to the protective take profit in MetaTrader pips.", "Risk")
 			.SetCanOptimize(true);
 

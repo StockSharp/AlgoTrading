@@ -172,11 +172,11 @@ public class The20sBreakoutStrategy : Strategy
 		.SetOptimize(1m, 5m, 1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop distance in points", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Target distance in points", "Risk Management");
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
@@ -192,11 +192,11 @@ public class The20sBreakoutStrategy : Strategy
 		.SetDisplay("Allow Short Exit", "Permit closing short trades", "Trading Permissions");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bars to wait before acting on a signal", "Indicator");
 
 		_levelPoints = Param(nameof(LevelPoints), 100)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Level Points", "Breakout threshold in points", "Indicator");
 
 		_ratio = Param(nameof(Ratio), 0.2m)

@@ -182,31 +182,31 @@ public class PuncherStrategy : Strategy
 			.SetOptimize(60m, 90m, 5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop-loss", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 60, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 120, 10);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 40, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum improvement before trailing stop updates", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 20, 2);
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 21)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-Even (pips)", "Profit needed to move the stop to entry", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 40, 2);

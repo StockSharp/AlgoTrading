@@ -104,23 +104,23 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("Allow shorts", "Enable short side trading.", "Trading");
 
 		_baseTakeProfitFactorLong = Param(nameof(BaseTakeProfitFactorLong), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Base TP factor (long)", "Multiplier applied to the long base stop-loss when calculating the take-profit.", "Risk");
 
 		_baseStopLossPointsLong = Param(nameof(BaseStopLossPointsLong), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Base SL (long)", "Stop-loss distance in points for the base long signal.", "Risk");
 
 		_baseTakeProfitFactorShort = Param(nameof(BaseTakeProfitFactorShort), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Base TP factor (short)", "Multiplier applied to the short base stop-loss when calculating the take-profit.", "Risk");
 
 		_baseStopLossPointsShort = Param(nameof(BaseStopLossPointsShort), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Base SL (short)", "Stop-loss distance in points for the base short signal.", "Risk");
 
 		_perceptronPeriodX = Param(nameof(PerceptronPeriodX), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("BTS X period", "Shift used for the first Awesome Oscillator perceptron (buy filter).", "Perceptron");
 
 		_perceptronWeightX1 = Param(nameof(PerceptronWeightX1), 0)
@@ -136,11 +136,11 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("BTS X weight 4", "Fourth weight of the base long perceptron.", "Perceptron");
 
 		_perceptronThresholdX = Param(nameof(PerceptronThresholdX), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("BTS X threshold", "Minimum absolute value required for the base long perceptron.", "Perceptron");
 
 		_perceptronPeriodY = Param(nameof(PerceptronPeriodY), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("BTS Y period", "Shift used for the base short perceptron.", "Perceptron");
 
 		_perceptronWeightY1 = Param(nameof(PerceptronWeightY1), 0)
@@ -156,11 +156,11 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("BTS Y weight 4", "Fourth weight of the base short perceptron.", "Perceptron");
 
 		_perceptronThresholdY = Param(nameof(PerceptronThresholdY), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("BTS Y threshold", "Minimum absolute value required for the base short perceptron.", "Perceptron");
 
 		_pricePatternPeriod = Param(nameof(PricePatternPeriod), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Price period", "Number of M1 candles used in the price perceptron.", "Price filter");
 
 		_priceWeight1 = Param(nameof(PriceWeight1), 0)
@@ -182,23 +182,23 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("Neuro mode", "Controls how the advanced perceptrons interact before falling back to the base logic.", "Trading");
 
 		_neuroTakeProfitFactorLong = Param(nameof(NeuroTakeProfitFactorLong), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro TP factor (long)", "Multiplier for the advanced long take-profit.", "Neuro");
 
 		_neuroStopLossPointsLong = Param(nameof(NeuroStopLossPointsLong), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro SL (long)", "Stop-loss distance in points for advanced long signals.", "Neuro");
 
 		_neuroTakeProfitFactorShort = Param(nameof(NeuroTakeProfitFactorShort), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro TP factor (short)", "Multiplier for the advanced short take-profit.", "Neuro");
 
 		_neuroStopLossPointsShort = Param(nameof(NeuroStopLossPointsShort), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro SL (short)", "Stop-loss distance in points for advanced short signals.", "Neuro");
 
 		_neuroPeriodX = Param(nameof(NeuroPeriodX), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro X period", "Shift used for the advanced long perceptron.", "Neuro");
 
 		_neuroWeightX1 = Param(nameof(NeuroWeightX1), 0)
@@ -214,11 +214,11 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("Neuro X weight 4", "Fourth weight of the advanced long perceptron.", "Neuro");
 
 		_neuroThresholdX = Param(nameof(NeuroThresholdX), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro X threshold", "Minimum absolute value required for the advanced long perceptron.", "Neuro");
 
 		_neuroPeriodY = Param(nameof(NeuroPeriodY), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro Y period", "Shift used for the advanced short perceptron.", "Neuro");
 
 		_neuroWeightY1 = Param(nameof(NeuroWeightY1), 0)
@@ -234,11 +234,11 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("Neuro Y weight 4", "Fourth weight of the advanced short perceptron.", "Neuro");
 
 		_neuroThresholdY = Param(nameof(NeuroThresholdY), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro Y threshold", "Minimum absolute value required for the advanced short perceptron.", "Neuro");
 
 		_neuroPeriodZ = Param(nameof(NeuroPeriodZ), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro Z period", "Shift used for the gating perceptron.", "Neuro");
 
 		_neuroWeightZ1 = Param(nameof(NeuroWeightZ1), 0)
@@ -254,7 +254,7 @@ public class N7SAo772012Strategy : Strategy
 			.SetDisplay("Neuro Z weight 4", "Fourth weight of the gating perceptron.", "Neuro");
 
 		_neuroThresholdZ = Param(nameof(NeuroThresholdZ), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Neuro Z threshold", "Minimum absolute value required for the gating perceptron.", "Neuro");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

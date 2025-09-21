@@ -74,11 +74,11 @@ public class SimpleStrategy : Strategy
 
 		_stopLossMoney = Param(nameof(StopLossMoney), 0m)
 			.SetDisplay("Stop Loss (Money)", "Protective amount in account currency per entry block", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitMoney = Param(nameof(TakeProfitMoney), 0m)
 			.SetDisplay("Take Profit (Money)", "Target amount in account currency per entry block", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_trendMargin = Param(nameof(TrendMargin), 10)
 			.SetDisplay("Trend Margin", "Number of bars used to evaluate the slow-trend reference", "Analysis")

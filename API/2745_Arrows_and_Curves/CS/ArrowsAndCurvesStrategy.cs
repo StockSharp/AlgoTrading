@@ -51,27 +51,27 @@ public class ArrowsAndCurvesStrategy : Strategy
 	public ArrowsAndCurvesStrategy()
 	{
 		_volume = Param(nameof(VolumeValue), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Volume", "Order volume", "Trading");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Risk %", "Risk percent for dynamic sizing when volume is zero", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimum movement before trailing updates", "Risk");
 
 		_sspPeriod = Param(nameof(SspPeriod), 20)
@@ -79,15 +79,15 @@ public class ArrowsAndCurvesStrategy : Strategy
 		.SetDisplay("SSP", "Lookback period of the custom channel", "Indicator");
 
 		_channelPercent = Param(nameof(ChannelPercent), 0)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Channel %", "Outer channel percentage", "Indicator");
 
 		_channelStopPercent = Param(nameof(ChannelStopPercent), 30)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Channel Stop %", "Inner channel percentage", "Indicator");
 
 		_relayShift = Param(nameof(RelayShift), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Relay", "Shift used by the indicator", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

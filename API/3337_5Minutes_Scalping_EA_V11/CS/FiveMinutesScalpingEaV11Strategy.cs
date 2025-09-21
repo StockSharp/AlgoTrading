@@ -81,7 +81,7 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 		.SetDisplay("Indicator Shift", "Number of completed candles used for confirmation", "General")
 		.SetCanOptimize(true)
 		.SetOptimize(0, 3, 1)
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_signalMode = Param(nameof(SignalMode), SignalMode.Normal)
 		.SetDisplay("Signal Direction", "Switches between normal and reversed signal interpretation", "General");
@@ -132,47 +132,47 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 0)
 		.SetDisplay("Start Hour", "Trading window start hour (0-23)", "Filters")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_endHour = Param(nameof(EndHour), 0)
 		.SetDisplay("End Hour", "Trading window end hour (0-23)", "Filters")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), true)
 		.SetDisplay("Use Take Profit", "Enable take profit management", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 		.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useStopLoss = Param(nameof(UseStopLoss), true)
 		.SetDisplay("Use Stop Loss", "Enable stop loss management", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use Trailing Stop", "Enable ATR-style trailing stop", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 1m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
 		.SetDisplay("Trailing Step (pips)", "Minimum move before updating the trailing stop", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
 		.SetDisplay("Use Break-Even", "Move stop to break-even once the trade is in profit", "Risk");
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 4m)
 		.SetDisplay("Break-Even Offset (pips)", "Offset applied when the stop is moved to break-even", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_breakEvenAfterPips = Param(nameof(BreakEvenAfterPips), 2m)
 		.SetDisplay("Break-Even Trigger (pips)", "Additional profit required before break-even is armed", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 		.SetDisplay("Trade Volume", "Order volume used for entries", "General")

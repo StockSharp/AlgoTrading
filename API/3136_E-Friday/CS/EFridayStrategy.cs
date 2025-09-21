@@ -50,22 +50,22 @@ public class EFridayStrategy : Strategy
 
 		_stopLossPipsParam = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Distance for the protective stop in pips", "Risk")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true);
 
 		_takeProfitPipsParam = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit (pips)", "Distance for the profit target in pips", "Risk")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true);
 
 		_trailingStopPipsParam = Param(nameof(TrailingStopPips), 5m)
 		.SetDisplay("Trailing Stop (pips)", "Initial trailing stop distance in pips", "Risk")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true);
 
 		_trailingStepPipsParam = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step (pips)", "Minimal advance required to tighten the trailing stop", "Risk")
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetCanOptimize(true);
 
 		_startHourParam = Param(nameof(StartHour), 5)

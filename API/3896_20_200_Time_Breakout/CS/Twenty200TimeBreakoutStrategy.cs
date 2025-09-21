@@ -41,23 +41,23 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 	public Twenty200TimeBreakoutStrategy()
 	{
 		_takeProfitLong = Param(nameof(TakeProfitLong), 39m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit", "Target distance for long trades expressed in pips", "Risk");
 
 		_stopLossLong = Param(nameof(StopLossLong), 147m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Stop loss distance for long trades expressed in pips", "Risk");
 
 		_takeProfitShort = Param(nameof(TakeProfitShort), 32m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit", "Target distance for short trades expressed in pips", "Risk");
 
 		_stopLossShort = Param(nameof(StopLossShort), 267m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Stop loss distance for short trades expressed in pips", "Risk");
 
 		_tradeHour = Param(nameof(TradeHour), 18)
-			.SetInclusiveRange(0, 23)
+			.SetRange(0, 23)
 			.SetDisplay("Trade Hour", "Hour of the day (exchange time) when the strategy can enter a position", "Timing");
 
 		_lookbackFar = Param(nameof(LookbackFar), 6)
@@ -69,11 +69,11 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 			.SetDisplay("Near Lookback", "Number of bars for the closer open price (Open[t2])", "Signals");
 
 		_longDelta = Param(nameof(LongDelta), 6m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Delta", "Required pip difference Open[t2] - Open[t1] to enter a long trade", "Signals");
 
 		_shortDelta = Param(nameof(ShortDelta), 21m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Delta", "Required pip difference Open[t1] - Open[t2] to enter a short trade", "Signals");
 
 		_maxOpenHours = Param(nameof(MaxOpenHours), 504)
@@ -88,7 +88,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 			.SetDisplay("Use Auto Lot", "Enable adaptive lot sizing based on portfolio value", "Money Management");
 
 		_autoLotFactor = Param(nameof(AutoLotFactor), 0.000038m)
-			.SetGreaterThanOrEquals(0m)
+			.SetNotNegative()
 			.SetDisplay("Auto Lot Factor", "Multiplier applied to portfolio value to emulate the MT4 lot table", "Money Management");
 
 		_bigLotMultiplier = Param(nameof(BigLotMultiplier), 6m)
@@ -276,7 +276,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 		if (MaxOpenHours <= 0 || _positionEntryTime is null || _closeRequested)
 			return;
 
-		var now = candle.CloseTime ?? candle.OpenTime;
+		var now = candle.OpenTime;
 		var lifetime = now - _positionEntryTime.Value;
 		var limit = TimeSpan.FromHours(MaxOpenHours);
 

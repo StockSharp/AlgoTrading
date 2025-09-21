@@ -48,27 +48,27 @@ public class TimeZonePivotsOpenSystemStrategy : Strategy
 			.SetDisplay("Candle type", "Timeframe that feeds the Time Zone Pivots logic.", "General");
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Order volume", "Volume used when opening a new position.", "Trading");
 
 		_startHour = Param(nameof(StartHour), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Start hour", "Hour (0-23) whose opening price anchors the bands.", "Indicator");
 
 		_offsetPoints = Param(nameof(OffsetPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Offset (points)", "Distance from the anchor price expressed in price steps.", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal bar", "Shift of the confirmation candle used to trigger trades.", "Signals");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Protective stop distance in price steps.", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Profit target distance in price steps.", "Risk");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)

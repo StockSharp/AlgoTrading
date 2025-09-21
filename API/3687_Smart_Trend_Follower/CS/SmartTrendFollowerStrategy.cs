@@ -164,11 +164,11 @@ public class SmartTrendFollowerStrategy : Strategy
 		.SetDisplay("Initial Volume", "Starting order volume in lots", "Money Management");
 
 		_multiplier = Param(nameof(Multiplier), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Volume Multiplier", "Martingale multiplier applied to additional entries", "Money Management");
 
 		_layerDistancePips = Param(nameof(LayerDistancePips), 200m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Layer Distance", "Pip distance before adding another order", "Money Management");
 
 		_fastPeriod = Param(nameof(FastPeriod), 14)
@@ -194,11 +194,11 @@ public class SmartTrendFollowerStrategy : Strategy
 		.SetDisplay("Stochastic Slowing", "Extra smoothing for %K", "Indicators");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 500m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Target distance in pips", "Risk Management");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective distance in pips", "Risk Management");
 	}
 

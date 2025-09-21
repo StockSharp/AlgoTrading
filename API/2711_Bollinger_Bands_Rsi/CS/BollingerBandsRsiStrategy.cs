@@ -265,11 +265,11 @@ public class BollingerBandsRsiStrategy : Strategy
 			.SetDisplay("Pip Value", "Monetary value of one pip", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit distance in pips", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

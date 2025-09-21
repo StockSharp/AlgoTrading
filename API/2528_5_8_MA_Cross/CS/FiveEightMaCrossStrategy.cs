@@ -109,19 +109,19 @@ public class FiveEightMaCrossStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
 			.SetDisplay("Take Profit (points)", "Take profit distance expressed in price points", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 100m, 10m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetDisplay("Stop Loss (points)", "Stop loss distance expressed in price points", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 10m);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance expressed in price points", "Risk Management")
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 10m);
 

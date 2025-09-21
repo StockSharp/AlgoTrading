@@ -261,7 +261,7 @@ public class MultiStrategyComboStrategy : Strategy
 		.SetGreaterThanZero();
 		_adxLevel = Param(nameof(AdxLevel), 20m)
 		.SetDisplay("ADX Threshold", "Trend strength threshold", "Trend")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromMinutes(60).TimeFrame())
 		.SetDisplay("Trend Candle Type", "Candle type for ADX trend", "Trend");
 
@@ -278,7 +278,7 @@ public class MultiStrategyComboStrategy : Strategy
 		.SetGreaterThanZero();
 		_rangeParameter = Param(nameof(RangeParameter), 6)
 		.SetDisplay("RSI Range Lookback", "RSI samples to confirm Bollinger bounce", "Bollinger")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_bollingerCandleType = Param(nameof(BollingerCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Bollinger Candle Type", "Candle type for Bollinger bands", "Bollinger");
 
@@ -289,7 +289,7 @@ public class MultiStrategyComboStrategy : Strategy
 		.SetGreaterThanZero();
 		_noiseThreshold = Param(nameof(NoiseThreshold), 0.0005m)
 		.SetDisplay("Noise Threshold", "ATR threshold below which trading stops", "Noise")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_noiseCandleType = Param(nameof(NoiseCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Noise Candle Type", "Candle type for ATR noise filter", "Noise");
 
@@ -299,10 +299,10 @@ public class MultiStrategyComboStrategy : Strategy
 		.SetDisplay("Allow Immediate Opposite", "Allow opposite entry on the same bar", "Risk");
 		_stopLossOffset = Param(nameof(StopLossOffset), 0m)
 		.SetDisplay("Stop Loss Offset", "Absolute price offset for stop loss", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0m)
 		.SetDisplay("Take Profit Offset", "Absolute price offset for take profit", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 		_useTrailingStop = Param(nameof(UseTrailingStop), true)
 		.SetDisplay("Use Trailing Stop", "Enable trailing stop on protection", "Risk");
 	}

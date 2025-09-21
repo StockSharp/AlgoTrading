@@ -175,15 +175,15 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		.SetOptimize(7, 50, 1);
 
 		_shift = Param(nameof(Shift), 3)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Channel Shift", "Forward shift of the channel lines in bars", "Channel");
 
 		_priceShiftPoints = Param(nameof(PriceShiftPoints), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Price Shift", "Offset applied to the channel in price points", "Channel");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Number of bars back used for breakout detection", "Signals");
 
 		_enableBuyEntry = Param(nameof(EnableBuyEntry), true)
@@ -202,17 +202,17 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		.SetDisplay("Use Holding Limit", "Enable time based position closing", "Risk");
 
 		_holdingMinutes = Param(nameof(HoldingMinutes), 1920)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Holding Minutes", "Maximum holding time in minutes", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in price points", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(100m, 3000m, 100m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in price points", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(200m, 4000m, 100m);

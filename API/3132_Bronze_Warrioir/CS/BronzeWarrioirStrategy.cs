@@ -50,11 +50,11 @@ public class BronzeWarrioirStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Protective stop in pips converted to price distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Profit target in pips converted to price distance", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_indicatorPeriod = Param(nameof(IndicatorPeriod), 14)
 			.SetDisplay("Indicator Period", "Length applied to CCI, Williams %R and DayImpuls", "Indicators")

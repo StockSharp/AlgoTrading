@@ -85,7 +85,7 @@ public class ExpRsiomaV2Strategy : Strategy
 		.SetDisplay("Lower Threshold", "Level that marks an oversold trend", "Levels");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Number of closed bars to inspect", "Logic");
 	}
 

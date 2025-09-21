@@ -97,7 +97,7 @@ public class RsiAutomatedStrategy : Strategy
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk");
 
 	_trailingStopPoints = Param(nameof(TrailingStopPoints), 25m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing", "Trailing stop distance in points", "Risk");
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

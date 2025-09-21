@@ -168,34 +168,34 @@ public class RrsRandomnessStrategy : Strategy
 			.SetDisplay("Max Volume", "Maximum volume for a market order.", "Lot Settings");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take-profit distance in price steps.", "Protection");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in price steps.", "Protection");
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Start", "Profit distance that enables the trailing stop.", "Protection");
 
 		_trailingGapPoints = Param(nameof(TrailingGapPoints), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Gap", "Offset between current price and trailing stop.", "Protection");
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Spread", "Maximum spread allowed for new trades (price steps).", "Filters");
 
 		_slippagePoints = Param(nameof(SlippagePoints), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Expected slippage in price steps. Used for reference only.", "Filters");
 
 		_riskMode = Param(nameof(MoneyRiskMode), RiskMode.BalancePercentage)
 			.SetDisplay("Risk Mode", "Choose whether risk is fixed or percentage based.", "Risk Management");
 
 		_riskValue = Param(nameof(RiskValue), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Risk Value", "Risk amount in currency or percent.", "Risk Management");
 
 		_tradeComment = Param(nameof(TradeComment), "RRS")

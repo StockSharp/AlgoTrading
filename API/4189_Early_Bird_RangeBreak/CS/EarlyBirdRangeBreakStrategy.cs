@@ -275,7 +275,7 @@ public class EarlyBirdRangeBreakStrategy : Strategy
 		.SetDisplay("Trailing Risk Multiplier", "Current range must exceed ATR * multiplier to trail", "Exits");
 
 		_entryBufferPoints = Param(nameof(EntryBufferPoints), 2m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Entry Buffer (pts)", "Buffer added around the range breakout levels", "Entries");
 
 		_rangeStartHour = Param(nameof(RangeStartHour), 3)

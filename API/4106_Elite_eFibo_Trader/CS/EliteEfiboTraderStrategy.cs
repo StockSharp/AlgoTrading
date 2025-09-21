@@ -72,7 +72,7 @@ public class EliteEfiboTraderStrategy : Strategy
 		.SetOptimize(5, 60, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in pips applied after an adverse MA crossover.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(5, 60, 5);
@@ -102,19 +102,19 @@ public class EliteEfiboTraderStrategy : Strategy
 		.SetDisplay("Trade After Profit", "Resume trading after the money take-profit is reached.", "Risk");
 
 		_levelDistancePips = Param(nameof(LevelDistancePips), 20)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Level Distance", "Distance between consecutive pending levels in pips.", "Execution")
 		.SetCanOptimize(true)
 		.SetOptimize(5, 80, 5);
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Initial stop-loss distance in pips for each level.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(5, 80, 5);
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 2000m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Money Take Profit", "Cash profit target for the active basket.", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(200m, 5000m, 200m);
@@ -128,7 +128,7 @@ public class EliteEfiboTraderStrategy : Strategy
 		{
 			var index = i + 1;
 			_levelVolumeParams[i] = Param($"Level{index}Volume", defaults[i])
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay($"Level {index} Volume", $"Volume used for ladder level {index}.", "Position Sizing");
 		}
 	}

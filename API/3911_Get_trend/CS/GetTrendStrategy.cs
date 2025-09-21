@@ -46,7 +46,7 @@ public class GetTrendStrategy : Strategy
 			.SetDisplay("H1 Candle Type", "Higher timeframe used for confirmation", "Data");
 
 		_thresholdPoints = Param(nameof(ThresholdPoints), 50)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Threshold (points)", "Maximum distance between price and the slow MA", "Signals");
 
 		_m15MaPeriod = Param(nameof(M15MaPeriod), 200)
@@ -66,15 +66,15 @@ public class GetTrendStrategy : Strategy
 			.SetDisplay("Fast Stochastic Period", "%K length used for the main stochastic", "Indicators");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 570m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance expressed in price steps", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance expressed in price steps", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 200m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing distance applied after the trade is in profit", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)

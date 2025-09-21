@@ -54,11 +54,11 @@ public class CenterOfGravityCandleStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 1000)
 		.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Protection")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 2000)
 		.SetDisplay("Take Profit", "Take profit distance in price steps", "Protection")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
 		.SetDisplay("Open Long", "Allow opening long positions", "Signals");
@@ -92,7 +92,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Shift of the synthetic candle used for signals", "Indicator")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	/// <summary>

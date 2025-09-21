@@ -52,11 +52,11 @@ public class CenterOfGravityMeanReversionStrategy : Strategy
 			.SetDisplay("Std Multiplier", "Multiplier applied to close price standard deviation", "Channel");
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Distance", "Optional stop loss distance in price units", "Risk");
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Distance", "Optional take profit distance in price units", "Risk");
 	}
 

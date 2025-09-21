@@ -122,7 +122,7 @@ public class TripleSmaSpreadStrategy : Strategy
 			.SetDisplay("Fast SMA Period", "Length of the fast moving average", "Indicators");
 
 		_fastShift = Param(nameof(FastMaShift), 0)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Fast SMA Shift", "Bars to shift the fast SMA", "Indicators");
 
 		_middlePeriod = Param(nameof(MiddleMaPeriod), 14)
@@ -130,7 +130,7 @@ public class TripleSmaSpreadStrategy : Strategy
 			.SetDisplay("Middle SMA Period", "Length of the middle moving average", "Indicators");
 
 		_middleShift = Param(nameof(MiddleMaShift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Middle SMA Shift", "Bars to shift the middle SMA", "Indicators");
 
 		_slowPeriod = Param(nameof(SlowMaPeriod), 29)
@@ -138,11 +138,11 @@ public class TripleSmaSpreadStrategy : Strategy
 			.SetDisplay("Slow SMA Period", "Length of the slow moving average", "Indicators");
 
 		_slowShift = Param(nameof(SlowMaShift), 2)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slow SMA Shift", "Bars to shift the slow SMA", "Indicators");
 
 		_maSpreadPips = Param(nameof(MaSpreadPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA Spread (pips)", "Minimal distance between consecutive SMAs", "Trading logic");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

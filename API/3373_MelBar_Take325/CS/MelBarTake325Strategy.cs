@@ -119,11 +119,11 @@ public class MelBarTake325Strategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 16)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45)
 			.SetDisplay("Take Profit (pips)", "Target distance expressed in pips", "Risk Management")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_volumeThreshold = Param(nameof(VolumeThreshold), 1000)
 			.SetDisplay("Volume Threshold", "Minimum tick volume required for breakout detection", "Indicators")

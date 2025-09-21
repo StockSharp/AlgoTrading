@@ -86,13 +86,13 @@ public class ETurboFxStrategy : Strategy
 			.SetOptimize(2, 6, 1);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 120m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps (ticks)", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(60m, 180m, 20m);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 70m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (steps)", "Stop loss distance in price steps (ticks)", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(40m, 120m, 10m);

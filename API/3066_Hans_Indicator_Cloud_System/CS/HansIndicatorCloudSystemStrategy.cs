@@ -33,7 +33,7 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 			.SetDisplay("Candle type", "Primary timeframe analysed by the strategy.", "General");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Signal bar", "Historical bar index inspected for colour changes.", "Signals");
 
 		_localTimeZone = Param(nameof(LocalTimeZone), 0)
@@ -43,7 +43,7 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 			.SetDisplay("Destination timezone", "Target timezone for Hans ranges (hours).", "Time zones");
 
 		_pipsForEntry = Param(nameof(PipsForEntry), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Breakout buffer", "Extra price steps added above/below the session ranges.", "Indicator");
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)

@@ -92,19 +92,19 @@ public class MacdNoSampleStrategy : Strategy
 		.SetDisplay("Volume", "Trade volume used for market orders.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips. Zero disables the level.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit (pips)", "Fixed take-profit distance in pips. Zero disables the level.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 25m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Distance in pips for trailing stop activation.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Minimal pip improvement required before moving the trailing stop.", "Risk");
 
 		_sizingMode = Param(nameof(SizingMode), PositionSizingMode.FixedVolume)
@@ -140,7 +140,7 @@ public class MacdNoSampleStrategy : Strategy
 		.SetDisplay("MACD Price", "Candle price type fed into MACD.", "Indicator");
 
 		_macdLevelPips = Param(nameof(MacdLevelPips), 1m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("MACD Level (pips)", "Minimal absolute MACD distance from zero expressed in pips.", "Indicator");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

@@ -43,11 +43,11 @@ public class SpeedMAStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_shift = Param(nameof(Shift), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("MA shift", "Number of completed bars used as the moving average offset.", "Indicator");
 
 		_slopeThresholdPoints = Param(nameof(SlopeThresholdPoints), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Slope threshold (points)", "Minimum difference between shifted MA values required to trigger a signal.", "Logic")
 			.SetCanOptimize(true);
 
@@ -55,12 +55,12 @@ public class SpeedMAStrategy : Strategy
 			.SetDisplay("Reverse signals", "Invert generated buy and sell directions.", "Logic");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Distance to the profit target expressed in points.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 490m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Distance to the protective stop expressed in points.", "Risk")
 			.SetCanOptimize(true);
 

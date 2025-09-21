@@ -41,7 +41,7 @@ public class TradeCopierStrategy : Strategy
 	public TradeCopierStrategy()
 	{
 		_slippage = Param(nameof(Slippage), 3m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Slippage", "Allowed price deviation in ticks", "General");
 
 		_multiplier = Param(nameof(Multiplier), 1m)

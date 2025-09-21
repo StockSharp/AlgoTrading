@@ -84,11 +84,11 @@ public class CGOscillatorX2Strategy : Strategy
 			.SetDisplay("Close Short On Pullback", "Exit short positions when the oscillator confirms a bullish hook", "Trading");
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Distance", "Absolute stop-loss distance in price units", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit Distance", "Absolute take-profit distance in price units", "Risk");
 	}
 

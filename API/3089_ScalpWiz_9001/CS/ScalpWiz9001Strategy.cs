@@ -65,58 +65,58 @@ public class ScalpWiz9001Strategy : Strategy
 			.SetDisplay("Bands Deviation", "Bollinger Bands deviation multiplier", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra move required before trailing stop adjustment", "Risk");
 
 		_expirationMinutes = Param(nameof(ExpirationMinutes), 15)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Expiration (minutes)", "Lifetime of pending stop orders", "Orders");
 
 		_volumeMode = Param(nameof(ManagementMode), VolumeMode.RiskPercent)
 			.SetDisplay("Management Mode", "Interpretation of level values (fixed lot or risk percent)", "Money Management");
 
 		_levelValues[0] = Param(nameof(Level0Value), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 0 Value", "Volume or risk percent for the first layer", "Money Management");
 
 		_levelValues[1] = Param(nameof(Level1Value), 2m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 1 Value", "Volume or risk percent for the second layer", "Money Management");
 
 		_levelValues[2] = Param(nameof(Level2Value), 3m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 2 Value", "Volume or risk percent for the third layer", "Money Management");
 
 		_levelValues[3] = Param(nameof(Level3Value), 4m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 3 Value", "Volume or risk percent for the farthest layer", "Money Management");
 
 		_levelPips[0] = Param(nameof(Level0Pips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 0 Pips", "Entry offset for the first pending order", "Entries");
 
 		_levelPips[1] = Param(nameof(Level1Pips), 12m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 1 Pips", "Entry offset for the second pending order", "Entries");
 
 		_levelPips[2] = Param(nameof(Level2Pips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 2 Pips", "Entry offset for the third pending order", "Entries");
 
 		_levelPips[3] = Param(nameof(Level3Pips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level 3 Pips", "Entry offset for the fourth pending order", "Entries");
 	}
 

@@ -181,7 +181,7 @@ public TakeProfitBreakoutStrategy()
 	.SetDisplay("Stop Loss", "Initial stop distance in price steps", "Risk Management");
 
 	_profitTarget = Param(nameof(ProfitTarget), 1m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Profit Target", "Profit target applied to account equity", "Risk Management");
 
 	_fixedVolume = Param(nameof(FixedVolume), 1m)

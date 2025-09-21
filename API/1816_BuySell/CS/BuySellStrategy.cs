@@ -94,12 +94,12 @@ public class BuySellStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 1000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 2000)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in points", "Risk")
 			.SetCanOptimize(true);
 

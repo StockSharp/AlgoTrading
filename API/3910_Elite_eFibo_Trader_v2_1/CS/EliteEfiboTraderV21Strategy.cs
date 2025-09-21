@@ -47,15 +47,15 @@ public class EliteEfiboTraderV21Strategy : Strategy
 			.SetDisplay("Trade After Profit", "Resume trading after the basket hits the money take-profit.", "Risk");
 
 		_levelDistancePips = Param(nameof(LevelDistancePips), 20)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Level Distance", "Distance between consecutive pending levels in pips.", "Execution");
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Initial stop-loss distance for every level in pips.", "Risk");
 
 		_moneyTakeProfit = Param(nameof(MoneyTakeProfit), 2000m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Money Take Profit", "Cash target that closes the entire basket.", "Risk");
 
 		var defaults = new decimal[] { 1m, 1m, 2m, 3m, 5m, 8m, 13m, 21m, 34m, 55m, 89m, 144m, 233m, 377m };
@@ -65,7 +65,7 @@ public class EliteEfiboTraderV21Strategy : Strategy
 		{
 			var index = i + 1;
 			_levelVolumeParams[i] = Param($"Level{index}Volume", defaults[i])
-				.SetGreaterOrEqualZero()
+				.SetNotNegative()
 				.SetDisplay($"Level {index} Volume", $"Volume multiplier used for Fibonacci level {index}.", "Position Sizing");
 		}
 	}

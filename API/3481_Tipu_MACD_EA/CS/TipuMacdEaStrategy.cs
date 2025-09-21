@@ -147,7 +147,7 @@ _trailingPips = Param(nameof(TrailingPips), 10m)
 .SetDisplay("Trailing Distance (pips)", "Distance kept when trailing", "Risk");
 
 _trailingCushionPips = Param(nameof(TrailingCushionPips), 5m)
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetDisplay("Trailing Cushion (pips)", "Extra buffer required before trailing", "Risk");
 
 _useRiskFree = Param(nameof(UseRiskFree), true)

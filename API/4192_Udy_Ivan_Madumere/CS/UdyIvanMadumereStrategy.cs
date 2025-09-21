@@ -51,39 +51,39 @@ public class UdyIvanMadumereStrategy : Strategy
 	.SetOptimize(0, 23, 1);
 
 	_firstLookback = Param(nameof(FirstLookback), 6)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("First lookback", "Number of completed candles referenced as Open[FirstLookback].", "Signal");
 
 	_secondLookback = Param(nameof(SecondLookback), 2)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Second lookback", "Number of completed candles referenced as Open[SecondLookback].", "Signal");
 
 	_longDeltaPoints = Param(nameof(LongDeltaPoints), 6m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Long delta (points)", "Minimum bullish open-price distance expressed in MetaTrader points.", "Signal");
 
 	_shortDeltaPoints = Param(nameof(ShortDeltaPoints), 21m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Short delta (points)", "Minimum bearish open-price distance expressed in MetaTrader points.", "Signal");
 
 	_takeProfitLongPoints = Param(nameof(TakeProfitLongPoints), 39m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Long take profit (points)", "Take-profit distance for long positions in MetaTrader points.", "Risk");
 
 	_stopLossLongPoints = Param(nameof(StopLossLongPoints), 147m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Long stop loss (points)", "Stop-loss distance for long positions in MetaTrader points.", "Risk");
 
 	_takeProfitShortPoints = Param(nameof(TakeProfitShortPoints), 200m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Short take profit (points)", "Take-profit distance for short positions in MetaTrader points.", "Risk");
 
 	_stopLossShortPoints = Param(nameof(StopLossShortPoints), 267m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Short stop loss (points)", "Stop-loss distance for short positions in MetaTrader points.", "Risk");
 
 	_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Short trailing stop (points)", "Trailing stop applied to short positions once they are in profit.", "Risk");
 
 	_baseVolume = Param(nameof(BaseVolume), 0.01m)
@@ -94,11 +94,11 @@ public class UdyIvanMadumereStrategy : Strategy
 	.SetDisplay("Use auto volume", "Enable the MetaTrader-style balance ladder for adjusting the base lot size.", "Trading");
 
 	_bigLotMultiplier = Param(nameof(BigLotMultiplier), 1m)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Big lot multiplier", "Multiplier applied when the balance dropped below the previous snapshot.", "Trading");
 
 	_maxHoldingHours = Param(nameof(MaxHoldingHours), 504)
-	.SetGreaterOrEqualZero()
+	.SetNotNegative()
 	.SetDisplay("Max holding (hours)", "Maximum time a position may remain open before being closed.", "Risk");
 	}
 

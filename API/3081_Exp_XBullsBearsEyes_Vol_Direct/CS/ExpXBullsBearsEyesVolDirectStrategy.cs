@@ -208,7 +208,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		.SetDisplay("Smoothing Phase", "Phase parameter used by Jurik averaging", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Shift applied when evaluating direction", "Trading");
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
@@ -228,11 +228,11 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		.SetDisplay("Order Volume", "Default market order size", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Protective target in price steps", "Risk");
 	}
 

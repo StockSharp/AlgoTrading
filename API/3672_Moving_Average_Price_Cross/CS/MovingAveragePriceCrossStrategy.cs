@@ -44,12 +44,12 @@ public class MovingAveragePriceCrossStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (points)", "Distance to the profit target expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (points)", "Distance to the protective stop expressed in MetaTrader points.", "Risk")
 			.SetCanOptimize(true);
 

@@ -31,15 +31,15 @@ public class SampleTrailingstopMt5Strategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 900m)
 		.SetDisplay("Take profit (points)", "Distance in points for the protective take-profit. Zero disables it.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
 		.SetDisplay("Stop loss (points)", "Distance in points for the protective stop-loss.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 200m)
 		.SetDisplay("Trailing stop (points)", "Trailing distance maintained once the position is profitable. Zero disables trailing.", "Risk")
-		.SetGreaterOrEqualZero();
+		.SetNotNegative();
 	}
 
 	public decimal TradeVolume

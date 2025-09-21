@@ -46,11 +46,11 @@ public class SwettenStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150)
 			.SetDisplay("Take Profit", "Distance to the profit target in price steps", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 40)
 			.SetDisplay("Stop Loss", "Distance to the protective stop in price steps", "Risk")
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 	}
 
 	/// <summary>

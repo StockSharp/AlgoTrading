@@ -41,12 +41,12 @@ public class CurrencyStopLossTakeProfitStrategy : Strategy
 	public CurrencyStopLossTakeProfitStrategy()
 	{
 		_takeProfitCurrency = Param(nameof(TakeProfitCurrency), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take profit (currency)", "Profit target measured in account currency for each position.", "Risk")
 			.SetCanOptimize(true);
 
 		_stopLossCurrency = Param(nameof(StopLossCurrency), 8m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop loss (currency)", "Maximum tolerable loss in account currency for each position.", "Risk")
 			.SetCanOptimize(true);
 	}

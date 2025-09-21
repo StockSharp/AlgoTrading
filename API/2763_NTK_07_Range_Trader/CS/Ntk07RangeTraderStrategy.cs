@@ -194,7 +194,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		.SetDisplay("Entry Volume", "Base volume for each entry order", "Risk");
 
 		_totalVolumeLimit = Param(nameof(TotalVolumeLimit), 7m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Total Volume Limit", "Maximum aggregated volume (0 disables the limit)", "Risk");
 
 		_netStepPoints = Param(nameof(NetStepPoints), 5m)
@@ -202,11 +202,11 @@ public class Ntk07RangeTraderStrategy : Strategy
 		.SetDisplay("Net Step", "Offset for stop entries measured in price steps", "Entries");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 11m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Initial stop distance measured in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance measured in price steps", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 8m)

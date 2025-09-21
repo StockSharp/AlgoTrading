@@ -135,11 +135,11 @@ public class PendingOrderGridStrategy : Strategy
 			.SetDisplay("Starting Volume", "Initial order volume", "Grid");
 
 		_volumeIncreasePercent = Param(nameof(VolumeIncreasePercent), 0.1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Volume Increase %", "Percent increase applied per grid level", "Grid");
 
 		_distanceFromPrice = Param(nameof(DistanceFromPrice), 0.001m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Distance", "Absolute distance from price to first order", "Grid");
 
 		_spaceBetweenTrades = Param(nameof(SpaceBetweenTrades), 150)
@@ -151,15 +151,15 @@ public class PendingOrderGridStrategy : Strategy
 			.SetDisplay("Orders per side", "Maximum grid orders for each direction", "Grid");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 200)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (ticks)", "Take profit distance in price steps", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 9999)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (ticks)", "Stop loss distance in price steps", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 150)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (ticks)", "Trailing distance in price steps", "Risk");
 
 		_tradeLong = Param(nameof(TradeLong), true)

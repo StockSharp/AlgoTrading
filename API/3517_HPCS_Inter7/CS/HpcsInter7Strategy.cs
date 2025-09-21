@@ -44,7 +44,7 @@ public class HpcsInter7Strategy : Strategy
 		.SetDisplay("Candle Type", "Time frame used for Bollinger Bands", "General");
 		
 		_protectionDistancePoints = Param(nameof(ProtectionDistancePoints), 10m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Protection Distance (pts)", "Distance for stop loss and take profit expressed in price steps", "Risk")
 		.SetCanOptimize(true);
 	}

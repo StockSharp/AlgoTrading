@@ -937,11 +937,11 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 
 			_digit = strategy.Param(key + "_Digit", digit)
 			.SetDisplay(key + " Digit", "Rounding precision", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_signalBar = strategy.Param(key + "_SignalBar", signalBar)
 			.SetDisplay(key + " Signal Bar", "Shift for the signal candle", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_buyMagic = strategy.Param(key + "_BuyMagic", buyMagic)
 			.SetDisplay(key + " Buy Magic", "Identifier for long trades", "Module " + key);
@@ -951,42 +951,42 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 
 			_buyTotalTrigger = strategy.Param(key + "_BuyTotalTrigger", buyTotalTrigger)
 			.SetDisplay(key + " Buy Total Trigger", "Number of last trades to check", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_buyLossTrigger = strategy.Param(key + "_BuyLossTrigger", buyLossTrigger)
 			.SetDisplay(key + " Buy Loss Trigger", "Losses before reducing position size", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_sellTotalTrigger = strategy.Param(key + "_SellTotalTrigger", sellTotalTrigger)
 			.SetDisplay(key + " Sell Total Trigger", "Number of last short trades to check", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_sellLossTrigger = strategy.Param(key + "_SellLossTrigger", sellLossTrigger)
 			.SetDisplay(key + " Sell Loss Trigger", "Losses before reducing short size", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_smallMoneyManagement = strategy.Param(key + "_SmallMM", smallMoneyManagement)
 			.SetDisplay(key + " Small MM", "Reduced position size", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_normalMoneyManagement = strategy.Param(key + "_NormalMM", normalMoneyManagement)
 			.SetDisplay(key + " Normal MM", "Standard position size", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_marginMode = strategy.Param(key + "_MarginMode", marginMode)
 			.SetDisplay(key + " Margin Mode", "Reserved for compatibility", "Module " + key);
 
 			_stopLossTicks = strategy.Param(key + "_StopLoss", stopLossTicks)
 			.SetDisplay(key + " Stop Loss", "Stop loss distance in price steps", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_takeProfitTicks = strategy.Param(key + "_TakeProfit", takeProfitTicks)
 			.SetDisplay(key + " Take Profit", "Take profit distance in price steps", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_deviationTicks = strategy.Param(key + "_Deviation", deviationTicks)
 			.SetDisplay(key + " Deviation", "Maximum slippage (reserved)", "Module " + key)
-			.SetGreaterOrEqualZero();
+			.SetNotNegative();
 
 			_buyOpenAllowed = strategy.Param(key + "_BuyOpen", buyOpenAllowed)
 			.SetDisplay(key + " Buy Open", "Allow opening long positions", "Module " + key);

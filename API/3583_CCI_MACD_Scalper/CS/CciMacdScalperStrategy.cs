@@ -73,14 +73,14 @@ public class CciMacdScalperStrategy : Strategy
 		.SetDisplay("End hour", "Hour until which trading is allowed (inclusive).", "Session");
 
 		_minimalStopLossPoints = Param(nameof(MinimalStopLossPoints), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Min SL points", "Minimal distance between entry and stop loss expressed in points.", "Risk");
 
 		_useTrailingStop = Param(nameof(UseTrailingStop), false)
 		.SetDisplay("Use trailing", "Enable dynamic stop loss trailing.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 100m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing points", "Distance in points used when trailing a protective stop.", "Risk");
 	}
 

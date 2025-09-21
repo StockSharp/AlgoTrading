@@ -82,11 +82,11 @@ public class MacdDivergenceRsiStrategy : Strategy
 			.SetDisplay("Bullish Volume", "Trade volume used when a bullish divergence signal appears.", "Trading");
 
 		_bullishStopLossPips = Param(nameof(BullishStopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Bullish Stop Loss (pips)", "Protective stop distance in pips for long entries.", "Risk");
 
 		_bullishTakeProfitPips = Param(nameof(BullishTakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Bullish Take Profit (pips)", "Target distance in pips for long entries.", "Risk");
 
 		_upperRsiPeriod = Param(nameof(UpperRsiPeriod), 14)
@@ -118,11 +118,11 @@ public class MacdDivergenceRsiStrategy : Strategy
 			.SetDisplay("Bearish Volume", "Trade volume used when a bearish divergence signal appears.", "Trading");
 
 		_bearishStopLossPips = Param(nameof(BearishStopLossPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Bearish Stop Loss (pips)", "Protective stop distance in pips for short entries.", "Risk");
 
 		_bearishTakeProfitPips = Param(nameof(BearishTakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Bearish Take Profit (pips)", "Target distance in pips for short entries.", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

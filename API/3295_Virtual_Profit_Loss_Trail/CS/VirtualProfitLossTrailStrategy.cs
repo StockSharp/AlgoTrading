@@ -76,23 +76,23 @@ public class VirtualProfitLossTrailStrategy : Strategy
 	public VirtualProfitLossTrailStrategy()
 	{
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-profit (pips)", "Distance for the take-profit level.", "Risk Management");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-loss (pips)", "Distance for the stop-loss level.", "Risk Management");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing stop (pips)", "Distance between price and the trailing stop.", "Trailing");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing step (pips)", "Extra profit required before the trail moves again.", "Trailing");
 
 		_trailingActivationPips = Param(nameof(TrailingActivationPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing activation (pips)", "Profit that must be locked before trailing starts.", "Trailing");
 	}
 

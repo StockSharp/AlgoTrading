@@ -104,7 +104,7 @@ public class TradeChannelStrategy : Strategy
 		.SetOptimize(2, 20, 2);
 
 		_trailingPoints = Param(nameof(TrailingPoints), 30m)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Trailing (points)", "Trailing stop distance in price steps", "Risk")
 		.SetCanOptimize(true)
 		.SetOptimize(0m, 100m, 10m);

@@ -217,19 +217,19 @@ public class GreenTradeStrategy : Strategy
 			.SetDisplay("Trade Volume", "Volume used for each new order", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 300m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Initial stop-loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 300m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Initial take-profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 12m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step", "Required progress before trailing adjusts", "Risk");
 
 		_maxPositions = Param(nameof(MaxPositions), 7)

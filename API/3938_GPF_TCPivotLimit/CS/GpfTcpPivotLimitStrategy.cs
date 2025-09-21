@@ -82,7 +82,7 @@ _useDynamicVolume = Param(nameof(UseDynamicVolume), false)
 
 _riskPercentage = Param(nameof(RiskPercentage), 0.02m)
 .SetDisplay("Risk Percentage", "Reference risk per trade used to scale the base volume.", "Risk")
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetCanOptimize(true);
 
 _drawdownFactor = Param(nameof(DrawdownFactor), 3m)
@@ -96,7 +96,7 @@ _targetMode = Param(nameof(TargetMode), 1)
 
 _trailingPoints = Param(nameof(TrailingPoints), 30)
 .SetDisplay("Trailing Points", "Trailing stop distance expressed in instrument points (0 disables).", "Risk")
-.SetGreaterOrEqualZero()
+.SetNotNegative()
 .SetCanOptimize(true);
 
 _closeAtSessionEnd = Param(nameof(CloseAtSessionEnd), false)

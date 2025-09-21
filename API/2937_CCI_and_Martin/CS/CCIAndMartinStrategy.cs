@@ -82,19 +82,19 @@ public class CCIAndMartinStrategy : Strategy
 			.SetDisplay("Initial Volume", "Starting trade volume", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimal price improvement before trailing updates", "Risk");
 
 		_enableMartingale = Param(nameof(EnableMartingale), true)
@@ -105,11 +105,11 @@ public class CCIAndMartinStrategy : Strategy
 			.SetDisplay("Martingale Coefficient", "Multiplier applied after qualifying losses", "Volume Management");
 
 		_martingaleTriggerLosses = Param(nameof(MartingaleTriggerLosses), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Martingale Trigger", "Losses required before scaling volume", "Volume Management");
 
 		_martingaleMaxSteps = Param(nameof(MartingaleMaxSteps), 3)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Martingale Steps", "Maximum martingale multiplications", "Volume Management");
 
 		_enableStepAdjustments = Param(nameof(EnableStepAdjustments), false)

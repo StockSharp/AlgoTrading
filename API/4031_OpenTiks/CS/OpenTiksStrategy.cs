@@ -53,15 +53,15 @@ public class OpenTiksStrategy : Strategy
 			.SetDisplay("Order Volume", "Volume of each market entry in lots.", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points.", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing distance expressed in price points.", "Risk");
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Max Orders", "Maximum number of simultaneously open entries. Zero disables the limit.", "Trading");
 
 		_usePartialClose = Param(nameof(UsePartialClose), true)

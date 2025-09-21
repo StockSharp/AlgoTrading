@@ -149,7 +149,7 @@ public class SilverTrendCrazyChartStrategy : Strategy
 		.SetDisplay("K Max", "Upper band multiplier", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqualZero()
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bars back used for signals", "Indicator");
 
 		_allowBuyEntry = Param(nameof(AllowBuyEntry), true)

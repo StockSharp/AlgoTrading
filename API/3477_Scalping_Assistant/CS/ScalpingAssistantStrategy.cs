@@ -69,25 +69,25 @@ public class ScalpingAssistantStrategy : Strategy
 	public ScalpingAssistantStrategy()
 	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Stop-loss (points)", "Initial stop-loss distance in price steps.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 100m, 10m);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 100m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Take-profit (points)", "Initial take-profit distance in price steps.", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(20m, 200m, 20m);
 
 		_breakEvenTriggerPoints = Param(nameof(BreakEvenTriggerPoints), 15m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even trigger (points)", "Profit in price steps required to move the stop to break-even.", "Break-even")
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 50m, 5m);
 
 		_breakEvenOffsetPoints = Param(nameof(BreakEvenOffsetPoints), 5m)
-			.SetGreaterOrEqualZero()
+			.SetNotNegative()
 			.SetDisplay("Break-even offset (points)", "Extra distance added when the stop is shifted to break-even.", "Break-even")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 20m, 1m);
