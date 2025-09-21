@@ -48,42 +48,42 @@ public class ExecutorAoStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Fixed order size", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_aoShortPeriod = Param(nameof(AoShortPeriod), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Short Period", "Fast period for Awesome Oscillator", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_aoLongPeriod = Param(nameof(AoLongPeriod), 34)
 			.SetGreaterThanZero()
 			.SetDisplay("AO Long Period", "Slow period for Awesome Oscillator", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_minimumAoIndent = Param(nameof(MinimumAoIndent), 0.001m)
 			.SetNotNegative()
 			.SetDisplay("Minimum AO Indent", "Minimum distance from zero before signals are valid", "Logic")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Target distance expressed in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum move before trailing adjusts", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for analysis", "General");

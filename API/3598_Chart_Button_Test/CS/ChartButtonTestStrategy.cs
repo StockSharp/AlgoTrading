@@ -31,16 +31,16 @@ public class ChartButtonTestStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of data to analyse", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_pricePadding = Param(nameof(PricePadding), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Price Padding", "Distance from the centre price to the zone boundaries", "Parameters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_selectionLength = Param(nameof(SelectionLength), TimeSpan.FromHours(1))
 			.SetDisplay("Selection Length", "Duration covered by the virtual button", "Parameters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_lockTime = Param(nameof(LockTime), false)
 			.SetDisplay("Lock Time", "Keep the time window fixed when price updates", "Parameters");

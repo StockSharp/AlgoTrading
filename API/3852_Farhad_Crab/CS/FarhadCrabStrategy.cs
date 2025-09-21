@@ -45,32 +45,32 @@ public class FarhadCrabStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order volume used for market entries", "Trading")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_longTakeProfitPips = Param(nameof(LongTakeProfitPips), 10m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Long TP (pips)", "Distance to long take-profit target", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_shortTakeProfitPips = Param(nameof(ShortTakeProfitPips), 10m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Short TP (pips)", "Distance to short take-profit target", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_longTrailingStopPips = Param(nameof(LongTrailingStopPips), 8m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Long Trail (pips)", "Trailing distance for long trades", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_shortTrailingStopPips = Param(nameof(ShortTrailingStopPips), 8m)
 		.SetRange(0m, 500m)
 		.SetDisplay("Short Trail (pips)", "Trailing distance for short trades", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_dailyMaPeriod = Param(nameof(DailyMaPeriod), 55)
 		.SetRange(2, 200)
 		.SetDisplay("Daily MA", "Length of the daily smoothed moving average", "Trend")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for trading", "General");

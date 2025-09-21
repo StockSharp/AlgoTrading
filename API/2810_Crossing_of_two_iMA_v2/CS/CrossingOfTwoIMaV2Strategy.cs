@@ -261,16 +261,16 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_firstPeriod = Param(nameof(FirstPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("First MA Period", "Period of the first moving average", "First Moving Average")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_firstShift = Param(nameof(FirstShift), 3)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("First MA Shift", "Shift (in bars) applied to the first moving average", "First Moving Average")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_firstMethod = Param(nameof(FirstMethod), MaMethod.Smoothed)
 		.SetDisplay("First MA Method", "Smoothing method for the first moving average", "First Moving Average")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_firstPrice = Param(nameof(FirstAppliedPrice), AppliedPriceType.Close)
 		.SetDisplay("First MA Price", "Price source for the first moving average", "First Moving Average");
@@ -278,16 +278,16 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_secondPeriod = Param(nameof(SecondPeriod), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Second MA Period", "Period of the second moving average", "Second Moving Average")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_secondShift = Param(nameof(SecondShift), 5)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Second MA Shift", "Shift (in bars) applied to the second moving average", "Second Moving Average")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_secondMethod = Param(nameof(SecondMethod), MaMethod.Smoothed)
 		.SetDisplay("Second MA Method", "Smoothing method for the second moving average", "Second Moving Average")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_secondPrice = Param(nameof(SecondAppliedPrice), AppliedPriceType.Close)
 		.SetDisplay("Second MA Price", "Price source for the second moving average", "Second Moving Average");
@@ -298,16 +298,16 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_thirdPeriod = Param(nameof(ThirdPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("Third MA Period", "Period of the third moving average filter", "Filter")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_thirdShift = Param(nameof(ThirdShift), 8)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Third MA Shift", "Shift (in bars) applied to the third moving average filter", "Filter")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_thirdMethod = Param(nameof(ThirdMethod), MaMethod.Smoothed)
 		.SetDisplay("Third MA Method", "Smoothing method for the third moving average filter", "Filter")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_thirdPrice = Param(nameof(ThirdAppliedPrice), AppliedPriceType.Close)
 		.SetDisplay("Third MA Price", "Price source for the third moving average filter", "Filter");
@@ -322,7 +322,7 @@ public class CrossingOfTwoIMaV2Strategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Percent", "Percentage of equity risked per trade", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_pipValue = Param(nameof(PipValue), 1m)
 		.SetGreaterThanZero()

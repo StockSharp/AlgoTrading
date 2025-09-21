@@ -81,7 +81,7 @@ public class ColorZeroLagMaStrategy : Strategy
 	/// </summary>
 	public ColorZeroLagMaStrategy()
 	{
-		_length = Param(nameof(Length), 12).SetDisplay("Length", "Zero lag length", "Indicators").SetCanOptimize();
+		_length = Param(nameof(Length), 12).SetDisplay("Length", "Zero lag length", "Indicators").SetCanOptimize(true);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame()).SetDisplay("Candle Type", "Candle timeframe", "General");
 		_buyOpen = Param(nameof(BuyOpen), true).SetDisplay("Open Buy", "Allow opening long", "Trading");
 		_sellOpen = Param(nameof(SellOpen), true).SetDisplay("Open Sell", "Allow opening short", "Trading");

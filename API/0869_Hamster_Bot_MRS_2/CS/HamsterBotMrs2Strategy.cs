@@ -19,8 +19,8 @@ public class HamsterBotMrs2Strategy : Strategy
 	
 	public HamsterBotMrs2Strategy()
 	{
-	_length = Param(nameof(Length), 3).SetDisplay("MA Length").SetCanOptimize();
-	_shift = Param(nameof(Shift), 1m).SetDisplay("Shift").SetCanOptimize();
+	_length = Param(nameof(Length), 3).SetDisplay("MA Length").SetCanOptimize(true);
+	_shift = Param(nameof(Shift), 1m).SetDisplay("Shift").SetCanOptimize(true);
 	}
 	
 	/// <inheritdoc />

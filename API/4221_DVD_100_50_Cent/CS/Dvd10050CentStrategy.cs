@@ -80,62 +80,62 @@ public class Dvd10050CentStrategy : Strategy
 		_tradeSizePercent = Param(nameof(TradeSizePercent), 10m)
 		.SetDisplay("Risk Percent", "Percent of equity allocated per trade", "Risk")
 		.SetRange(0m, 100m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.01m)
 		.SetDisplay("Fixed Volume", "Volume used when money management is disabled", "Risk")
 		.SetRange(0.01m, 100m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_maxVolume = Param(nameof(MaxVolume), 4m)
 		.SetDisplay("Max Volume", "Ceiling for calculated trade volume", "Risk")
 		.SetRange(0.01m, 100m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 210m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Orders")
 		.SetRange(0m, 1000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 18m)
 		.SetDisplay("Take Profit (pips)", "Initial profit target distance", "Orders")
 		.SetRange(0m, 500m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_pointFromLevelGoPips = Param(nameof(PointFromLevelGoPips), 50m)
 		.SetDisplay("Base Offset (0.1 pips)", "Offset used to build the 100 level grid", "Filters")
 		.SetRange(0m, 1000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_riseFilterPips = Param(nameof(RiseFilterPips), 700m)
 		.SetDisplay("Rise Filter (0.1 pips)", "Distance for hourly spike confirmation", "Filters")
 		.SetRange(0m, 5000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_highLevelPips = Param(nameof(HighLevelPips), 600m)
 		.SetDisplay("High Level (0.1 pips)", "One-minute spike rejection threshold", "Filters")
 		.SetRange(0m, 5000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_lowLevelPips = Param(nameof(LowLevelPips), 250m)
 		.SetDisplay("Low Level (0.1 pips)", "Half-hour consolidation ceiling", "Filters")
 		.SetRange(0m, 5000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_lowLevel2Pips = Param(nameof(LowLevel2Pips), 450m)
 		.SetDisplay("Low Level 2 (0.1 pips)", "Hourly breakout confirmation threshold", "Filters")
 		.SetRange(0m, 5000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_marginCutoff = Param(nameof(MarginCutoff), 300m)
 		.SetDisplay("Margin Cutoff", "Stop trading when equity falls below this level", "Risk")
 		.SetRange(0m, 1_000_000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_orderExpiryMinutes = Param(nameof(OrderExpiryMinutes), 20)
 		.SetDisplay("Order Expiry (minutes)", "Lifetime of pending limit orders", "Orders")
 		.SetRange(1, 240)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	}
 
 	/// <summary>

@@ -54,22 +54,22 @@ public class VeryBlondieSystemStrategy : Strategy
 		_limitPoints = Param(nameof(LimitPoints), 1000m)
 		.SetDisplay("Deviation Threshold", "Distance in points between price and range extreme", "General")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_gridPoints = Param(nameof(GridPoints), 1500m)
 		.SetDisplay("Grid Step", "Distance in points between consecutive limit orders", "Orders")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_profitTarget = Param(nameof(ProfitTarget), 40m)
 		.SetDisplay("Profit Target", "Floating profit target in account currency", "Risk")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_lockDownPoints = Param(nameof(LockDownPoints), 0m)
 		.SetDisplay("Lockdown Points", "Distance in points before activating break-even protection", "Risk")
 		.SetRange(0m, 100_000m)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_pointValue = Param(nameof(PointValue), 0m)
 		.SetDisplay("Point Value", "Price change produced by one MT4 point (0 = auto from security)", "General")

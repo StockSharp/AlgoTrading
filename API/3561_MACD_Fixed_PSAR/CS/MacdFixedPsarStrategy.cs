@@ -184,11 +184,11 @@ public class MacdFixedPsarStrategy : Strategy
 		.SetDisplay("Volume", "Trading volume used for orders", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
-		.SetCanOptimize()
+		.SetCanOptimize(true)
 		.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in pips", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-		.SetCanOptimize()
+		.SetCanOptimize(true)
 		.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in pips", "Risk");
 
 		_trailingMode = Param(nameof(TrailMode), TrailingMode.FixedPsar)

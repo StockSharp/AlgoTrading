@@ -106,33 +106,33 @@ public MilestoneTrendStrategy()
 {
 _slowMaPeriod = Param(nameof(SlowMaPeriod), 120)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Slow MA Period");
 
 _fastMaPeriod = Param(nameof(FastMaPeriod), 30)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Fast MA Period");
 
 _atrPeriod = Param(nameof(AtrPeriod), 14)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("ATR Period");
 
 _minTrend = Param(nameof(MinTrend), 10m)
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Minimum Trend");
 
 _maxTrend = Param(nameof(MaxTrend), 100m)
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Maximum Trend");
 
 _minRange = Param(nameof(MinRange), 5m)
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Minimum ATR");
 
 _candleSpike = Param(nameof(CandleSpike), 10m)
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Maximum Candle Body");
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

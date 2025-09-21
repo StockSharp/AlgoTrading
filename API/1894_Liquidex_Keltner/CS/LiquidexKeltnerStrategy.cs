@@ -133,7 +133,7 @@ public class LiquidexKeltnerStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetRange(1, 100)
 			.SetDisplay("RSI Period", "RSI period", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_entryHourFrom = Param(nameof(EntryHourFrom), 2)
 			.SetRange(0, 23)

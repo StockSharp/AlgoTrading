@@ -88,12 +88,12 @@ public class HardProfitStrategy : Strategy
 	{
 		_breakoutPeriod = Param(nameof(BreakoutPeriod), 1)
 			.SetRange(1, 200)
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Breakout Period", "Number of finished candles used to compute the breakout range", "Signals");
 
 		_trendPeriod = Param(nameof(TrendPeriod), 3)
 			.SetRange(1, 200)
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Trend Period", "Length of the smoothed moving average applied to median price", "Signals");
 
 		_onlyShort = Param(nameof(OnlyShort), false)
@@ -108,12 +108,12 @@ public class HardProfitStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 40m)
 			.SetRange(0m, 5000m)
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk");
 
 		_breakEvenPips = Param(nameof(BreakEvenPips), 30m)
 			.SetRange(0m, 5000m)
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Break-even (pips)", "Profit distance that arms the break-even stop", "Risk");
 
 		_trailingActivationPips = Param(nameof(TrailingActivationPips), 330m)

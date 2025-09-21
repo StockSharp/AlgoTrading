@@ -34,17 +34,17 @@ public class PolynomialRegressionBandsChannelStrategy : Strategy
 		_length = Param(nameof(Length), 100)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Lookback period for regression", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_degree = Param(nameof(Degree), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Degree", "Polynomial degree", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_multiplier = Param(nameof(StdDevMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Dev Multiplier", "Band width multiplier", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

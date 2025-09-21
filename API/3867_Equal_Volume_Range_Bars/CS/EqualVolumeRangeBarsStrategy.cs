@@ -78,7 +78,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 
 		_ticksInBar = Param(nameof(TicksInBar), 100)
 			.SetDisplay("Ticks In Bar", "Tick count or point range per synthetic candle", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fromMinuteHistory = Param(nameof(FromMinuteHistory), true)
 			.SetDisplay("Use Minute History", "Seed the builder with historical M1 candles", "General");

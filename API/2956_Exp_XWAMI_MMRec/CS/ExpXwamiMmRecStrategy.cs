@@ -68,11 +68,11 @@ public class ExpXwamiMmRecStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Source timeframe for the indicator", "General")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_period = Param(nameof(Period), 1)
 		.SetDisplay("Momentum Shift", "Distance between the compared prices", "Indicator")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_method1 = Param(nameof(Method1), XwamiSmoothingMethod.T3)
 		.SetDisplay("Smoothing 1", "First smoothing method", "Indicator");

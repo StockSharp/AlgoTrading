@@ -47,52 +47,52 @@ public class Up3x1PremiumStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume for each trade", "Trading")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_fastEmaLength = Param(nameof(FastEmaLength), 12)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast EMA Length", "Length of the fast EMA", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_slowEmaLength = Param(nameof(SlowEmaLength), 26)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow EMA Length", "Length of the slow EMA", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_dailyEmaLength = Param(nameof(DailyEmaLength), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Daily EMA Length", "EMA length for the daily trend filter", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 0.015m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Take Profit", "Absolute take profit distance", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 0.01m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Stop Loss", "Absolute stop loss distance", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_trailingStop = Param(nameof(TrailingStop), 0.001m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Trailing Stop", "Distance for trailing stop updates", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_rangeThreshold = Param(nameof(RangeThreshold), 0.006m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Range Threshold", "Minimum candle range to qualify as wide", "Filters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_bodyThreshold = Param(nameof(BodyThreshold), 0.005m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Body Threshold", "Minimum candle body for momentum", "Filters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_dailyReversalThreshold = Param(nameof(DailyReversalThreshold), 0.006m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Daily Reversal Threshold", "Minimum prior day reversal size", "Filters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary working timeframe", "General");

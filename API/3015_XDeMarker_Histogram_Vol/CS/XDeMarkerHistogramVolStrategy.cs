@@ -50,23 +50,23 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 		_deMarkerPeriod = Param(nameof(DeMarkerPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("DeMarker Period", "Smoothing period used by the DeMarker calculation", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_highLevel1 = Param(nameof(HighLevel1), 15m)
 			.SetDisplay("High Level 1", "Upper alert level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_highLevel2 = Param(nameof(HighLevel2), 20m)
 			.SetDisplay("High Level 2", "Extreme upper level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_lowLevel1 = Param(nameof(LowLevel1), -15m)
 			.SetDisplay("Low Level 1", "Lower alert level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_lowLevel2 = Param(nameof(LowLevel2), -20m)
 			.SetDisplay("Low Level 2", "Extreme lower level multiplied by smoothed volume", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_smoothingMethod = Param(nameof(Smoothing), SmoothingMethod.Simple)
 			.SetDisplay("Smoothing", "Moving average type applied to the histogram and volume", "Indicator");
@@ -74,12 +74,12 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 		_smoothingLength = Param(nameof(SmoothingLength), 12)
 			.SetGreaterThanZero()
 			.SetDisplay("Smoothing Length", "Length of the moving averages", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Signal Bar", "Number of closed bars used for signal detection", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_volumeSource = Param(nameof(VolumeType), VolumeSource.Tick)
 			.SetDisplay("Volume Type", "Source of volume data used in weighting", "Indicator");

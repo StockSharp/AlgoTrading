@@ -70,17 +70,17 @@ public class BurgExtrapolatorStrategy : Strategy
 		_takeProfit = Param(nameof(TakeProfit), 0)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Optional fixed take profit in points", "Protection")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 180)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Optional fixed stop loss in points", "Protection")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStop = Param(nameof(TrailingStop), 10)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop", "Trailing distance in points (requires stop loss)", "Protection")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_pastBars = Param(nameof(PastBars), 200)
 			.SetGreaterThanZero()

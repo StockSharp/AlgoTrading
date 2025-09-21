@@ -44,31 +44,31 @@ public class MartinForSmallDepositsStrategy : Strategy
 	{
 		_initialVolume = Param(nameof(InitialVolume), 0.01m)
 			.SetDisplay("Initial Volume", "Base lot size for the first order", "Position Sizing")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 65)
 			.SetDisplay("Take Profit (pips)", "Take profit distance from the latest entry", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stepPips = Param(nameof(StepPips), 15)
 			.SetDisplay("Step (pips)", "Adverse price move required to add a new trade", "Position Sizing")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_barsToSkip = Param(nameof(BarsToSkip), 45)
 			.SetDisplay("Bars To Skip", "Number of finished candles to wait before averaging", "Timing")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_increaseFactor = Param(nameof(IncreaseFactor), 1.7m)
 			.SetDisplay("Increase Factor", "Multiplier applied to the volume of each new order", "Position Sizing")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maxVolume = Param(nameof(MaxVolume), 6m)
 			.SetDisplay("Max Volume", "Maximum allowed aggregated volume", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_minProfit = Param(nameof(MinProfit), 10m)
 			.SetDisplay("Min Profit", "Net profit threshold to close all positions", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for signal generation", "General");

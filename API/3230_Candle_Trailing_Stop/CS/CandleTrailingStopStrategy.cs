@@ -90,27 +90,27 @@ public CandleTrailingStopStrategy()
 {
 _volume = Param(nameof(Volume), 1m)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Volume", "Default order volume", "Trading");
 
 _maxTrades = Param(nameof(MaxTrades), 10)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Max trades", "Maximum aggregated position expressed in trade count", "Trading");
 
 _fastHigherLength = Param(nameof(FastHigherLength), 9)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Higher fast LWMA", "Length of the fast LWMA calculated on the higher timeframe", "Indicators");
 
 _middleHigherLength = Param(nameof(MiddleHigherLength), 20)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Higher middle LWMA", "Length of the middle LWMA calculated on the higher timeframe", "Indicators");
 
 _slowHigherLength = Param(nameof(SlowHigherLength), 52)
 .SetGreaterThanZero()
-.SetCanOptimize()
+.SetCanOptimize(true)
 .SetDisplay("Higher slow LWMA", "Length of the slow LWMA calculated on the higher timeframe", "Indicators");
 
 _fastCurrentLength = Param(nameof(FastCurrentLength), 9)

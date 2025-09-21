@@ -81,17 +81,17 @@ public class MultiTimeFrameTraderStrategy : Strategy
 		_degree = Param(nameof(Degree), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Polynomial Degree", "Degree for regression channel", "Regression")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stdMultiplier = Param(nameof(StdMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Multiplier", "Standard deviation multiplier", "Regression")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_bars = Param(nameof(Bars), 250)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Bars", "Bars for regression and slope", "Regression")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_shift = Param(nameof(Shift), 0)
 			.SetGreaterOrEqualZero()

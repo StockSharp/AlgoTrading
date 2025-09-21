@@ -159,24 +159,24 @@ public class FlySystemScalpStrategy : Strategy
 		_pendingDistance = Param(nameof(PendingDistance), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Pending Distance", "Distance in pips used to place stop orders away from the market.", "Orders")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossDistance = Param(nameof(StopLossDistance), 0.4m)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Protective stop distance in pips.", "Orders")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitDistance = Param(nameof(TakeProfitDistance), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit", "Take profit distance in pips when it is enabled.", "Orders")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useTakeProfit = Param(nameof(UseTakeProfit), false)
 			.SetDisplay("Use Take Profit", "Attach take profit orders to new positions.", "Orders");
 
 		_maxSpread = Param(nameof(MaxSpread), 1m)
 			.SetDisplay("Max Spread", "Maximum allowed spread in pips (0 disables the filter).", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_commissionInPips = Param(nameof(CommissionInPips), 0m)
 			.SetDisplay("Commission (pips)", "Commission in pips that is added to the spread filter.", "Risk");
@@ -187,7 +187,7 @@ public class FlySystemScalpStrategy : Strategy
 		_riskFactor = Param(nameof(RiskFactor), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Risk Factor", "Risk percentage used when auto lot sizing is enabled.", "Sizing")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_manualVolume = Param(nameof(ManualVolume), 0.1m)
 			.SetGreaterThanZero()

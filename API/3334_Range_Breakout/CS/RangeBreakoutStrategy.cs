@@ -86,12 +86,12 @@ public class RangeBreakoutStrategy : Strategy
 		_rangePeriod = Param(nameof(RangePeriod), 10)
 			.SetDisplay("Range Period", "Number of candles forming the range", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maxRangePoints = Param(nameof(MaxRangePoints), 300m)
 			.SetDisplay("Max Range", "Upper bound for the range size in points", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for breakout detection", "General");

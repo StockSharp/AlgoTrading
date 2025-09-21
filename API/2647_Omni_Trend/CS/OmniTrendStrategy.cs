@@ -45,39 +45,39 @@ public class OmniTrendStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to build Omni Trend signals", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maLength = Param(nameof(MaLength), 13)
 			.SetDisplay("MA Length", "Moving average period", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maType = Param(nameof(MaType), MovingAverageMethod.Exponential)
 			.SetDisplay("MA Type", "Moving average calculation method", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_appliedPrice = Param(nameof(AppliedPrice), AppliedPriceType.Close)
 			.SetDisplay("Applied Price", "Price field used by the moving average", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_atrLength = Param(nameof(AtrLength), 11)
 			.SetDisplay("ATR Length", "ATR period for volatility bands", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_volatilityFactor = Param(nameof(VolatilityFactor), 1.3m)
 			.SetDisplay("Volatility Factor", "Multiplier applied to ATR", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_moneyRisk = Param(nameof(MoneyRisk), 0.15m)
 			.SetDisplay("Money Risk", "Offset factor used to position trend bands", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Delay in bars before acting on a signal", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_enableBuyOpen = Param(nameof(EnableBuyOpen), true)
 			.SetDisplay("Enable Long Entries", "Allow opening long positions", "Trading");

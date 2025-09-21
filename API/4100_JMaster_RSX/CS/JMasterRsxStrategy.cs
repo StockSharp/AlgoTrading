@@ -42,17 +42,17 @@ public class JMasterRsxStrategy : Strategy
 		_rsxLength = Param(nameof(RsxLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("RSX Length", "Lookback period used by both RSX indicators", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 75m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Overbought", "RSX threshold triggering short entries", "Signals")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 25m)
 			.SetRange(0m, 100m)
 			.SetDisplay("Oversold", "RSX threshold triggering long entries", "Signals")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_midlineLevel = Param(nameof(MidlineLevel), 50m)
 			.SetRange(0m, 100m)

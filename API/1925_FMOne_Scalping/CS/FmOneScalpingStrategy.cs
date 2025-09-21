@@ -96,27 +96,27 @@ public class FmOneScalpingStrategy : Strategy
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 12)
 			.SetRange(1, 100)
 			.SetDisplay("Fast EMA Period", "Period for fast EMA", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 26)
 			.SetRange(1, 200)
 			.SetDisplay("Slow EMA Period", "Period for slow EMA", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 9)
 			.SetRange(1, 50)
 			.SetDisplay("MACD Signal Period", "Signal line period for MACD", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 1m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Stop Loss %", "Stop loss as percent of entry price", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPercent = Param(nameof(TakeProfitPercent), 2m)
 			.SetRange(0.1m, 5m)
 			.SetDisplay("Take Profit %", "Take profit as percent of entry price", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_enableTrailingStop = Param(nameof(EnableTrailingStop), true)
 			.SetDisplay("Trailing Stop", "Enable trailing stop", "Risk");

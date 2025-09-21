@@ -58,27 +58,27 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_maxPositions = Param(nameof(MaxPositions), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Maximum number of simultaneously open positions", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_distancePips = Param(nameof(DistancePips), 5m)
 		.SetGreaterOrEqual(0m)
 		.SetDisplay("Distance Between Entries (pips)", "Minimum price distance between layered entries", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "ATR length used for stop loss and take profit", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_atrStopLossMultiplier = Param(nameof(AtrStopLossMultiplier), 3m)
 		.SetGreaterOrEqual(0m)
 		.SetDisplay("ATR Stop Multiplier", "ATR multiplier that defines the protective stop", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_atrTakeProfitMultiplier = Param(nameof(AtrTakeProfitMultiplier), 2m)
 		.SetGreaterOrEqual(0m)
 		.SetDisplay("ATR Target Multiplier", "ATR multiplier that defines the profit target", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_useTrendFilter = Param(nameof(UseTrendFilter), true)
 		.SetDisplay("Use MA Trend Filter", "Enable the moving average slope filter", "Filters");
@@ -86,17 +86,17 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_distanceFromMaPips = Param(nameof(DistanceFromMaPips), 5m)
 		.SetGreaterOrEqual(0m)
 		.SetDisplay("Distance From MA (pips)", "Minimum distance between price and MA to validate entries", "Filters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_maPeriod = Param(nameof(MaPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average lookback period", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_maShift = Param(nameof(MaShift), 1)
 		.SetGreaterOrEqual(0)
 		.SetDisplay("MA Shift", "Horizontal shift applied when reading MA values", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
 		.SetDisplay("MA Method", "Moving average calculation method", "Indicators");
@@ -109,16 +109,16 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 
 		_rsiLevelUp = Param(nameof(RsiLevelUp), 65m)
 		.SetDisplay("RSI Upper Level", "Upper RSI threshold that favours shorts", "Filters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_rsiLevelDown = Param(nameof(RsiLevelDown), 25m)
 		.SetDisplay("RSI Lower Level", "Lower RSI threshold that favours longs", "Filters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 25)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Number of bars for RSI calculation", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_rsiPriceType = Param(nameof(RsiPriceType), AppliedPrice.Median)
 		.SetDisplay("RSI Price", "Price source used by RSI", "Indicators");
@@ -126,17 +126,17 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
 		.SetGreaterOrEqual(0m)
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance measured in pips", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
 		.SetGreaterOrEqual(0m)
 		.SetDisplay("Trailing Step (pips)", "Additional move required before trail adjustment", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_currentBarOffset = Param(nameof(CurrentBarOffset), 0)
 		.SetGreaterOrEqual(0)
 		.SetDisplay("Indicator Bar Offset", "Bar shift used when reading indicator values", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	}
 
 	/// <summary>

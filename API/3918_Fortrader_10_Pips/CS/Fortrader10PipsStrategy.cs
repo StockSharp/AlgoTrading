@@ -105,12 +105,12 @@ public class Fortrader10PipsStrategy : Strategy
 		_takeProfitBuy = Param(nameof(TakeProfitBuy), 10m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Take Profit Buy", "Take profit distance for long positions (points)", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossBuy = Param(nameof(StopLossBuy), 50m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Stop Loss Buy", "Stop loss distance for long positions (points)", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStopBuy = Param(nameof(TrailingStopBuy), 50m)
 			.SetGreaterOrEqualZero()
@@ -119,12 +119,12 @@ public class Fortrader10PipsStrategy : Strategy
 		_takeProfitSell = Param(nameof(TakeProfitSell), 10m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Take Profit Sell", "Take profit distance for short positions (points)", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossSell = Param(nameof(StopLossSell), 50m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Stop Loss Sell", "Stop loss distance for short positions (points)", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStopSell = Param(nameof(TrailingStopSell), 50m)
 			.SetGreaterOrEqualZero()

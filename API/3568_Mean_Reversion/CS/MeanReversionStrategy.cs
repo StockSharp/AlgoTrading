@@ -67,7 +67,7 @@ public class MeanReversionStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Volume used when sending market orders.", "General")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Primary Timeframe", "Candle series used to generate entries.", "General");
@@ -75,37 +75,37 @@ public class MeanReversionStrategy : Strategy
 		_barsToCount = Param(nameof(BarsToCount), 10)
 		.SetGreaterThanZero()
 		.SetDisplay("Bars To Count", "Number of previous closes compared when detecting exhaustion.", "Signal")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_fastMaLength = Param(nameof(FastMaLength), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast LWMA", "Length of the fast linear weighted moving average.", "Signal")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 85)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow LWMA", "Length of the slow linear weighted moving average.", "Signal")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_momentumLength = Param(nameof(MomentumLength), 14)
 		.SetGreaterThanZero()
 		.SetDisplay("Momentum Period", "Period of the momentum indicator on the higher timeframe.", "Signal")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Momentum Threshold", "Absolute deviation from 100 required for confirmation.", "Signal")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Take Profit (pips)", "Target distance expressed in pips.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_useBreakEven = Param(nameof(UseBreakEven), false)
 		.SetDisplay("Use Break-Even", "Enable stop relocation to the entry price after profits.", "Risk");
@@ -113,12 +113,12 @@ public class MeanReversionStrategy : Strategy
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 30m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Break-Even Trigger", "Profit in pips required before moving the stop to entry.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 30m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Break-Even Offset", "Additional pips added when relocating the stop.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_enableTrailing = Param(nameof(EnableTrailing), true)
 		.SetDisplay("Enable Trailing", "Activate trailing stop management once in profit.", "Risk");
@@ -126,12 +126,12 @@ public class MeanReversionStrategy : Strategy
 		_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Trailing Distance", "Minimum profit in pips required before trailing.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 40m)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Trailing Step", "Offset in pips used when updating the trailing stop.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	}
 
 	/// <summary>

@@ -218,12 +218,12 @@ public class BollingerBandsRsiStrategy : Strategy
 		_bandsPeriod = Param(nameof(BandsPeriod), 140)
 			.SetGreaterThanZero()
 			.SetDisplay("Bands Period", "Length of all Bollinger bands", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_deviation = Param(nameof(Deviation), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Deviation", "Standard deviation for yellow band", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useRsiFilter = Param(nameof(UseRsiFilter), false)
 			.SetDisplay("Use RSI Filter", "Enable RSI confirmation", "Filters");
@@ -231,11 +231,11 @@ public class BollingerBandsRsiStrategy : Strategy
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Period", "Length of RSI filter", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_rsiLowerLevel = Param(nameof(RsiLowerLevel), 70m)
 			.SetDisplay("RSI Lower", "Short threshold (long uses 100-threshold)", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useStochasticFilter = Param(nameof(UseStochasticFilter), true)
 			.SetDisplay("Use Stochastic Filter", "Enable Stochastic confirmation", "Filters");
@@ -243,11 +243,11 @@ public class BollingerBandsRsiStrategy : Strategy
 		_stochasticPeriod = Param(nameof(StochasticPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Period", "Main %K period", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 95m)
 			.SetDisplay("Stochastic Lower", "Overbought threshold (long uses mirror)", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_barShift = Param(nameof(BarShift), 1)
 			.SetGreaterThanZero()

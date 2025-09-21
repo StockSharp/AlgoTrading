@@ -67,11 +67,11 @@ public class NarrowRangeStrategy : Strategy
 		_length = Param(nameof(Length), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Length", "Narrow range length", "Narrow Range")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPercent = Param(nameof(StopLossPercent), 0.35m)
 			.SetDisplay("Stop Loss Percent", "Stop loss percent of range", "Narrow Range")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

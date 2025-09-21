@@ -27,16 +27,16 @@ public class DirectedMovementCandleStrategy : Strategy
 	{
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetDisplay("RSI Period", "RSI period", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_highLevel = Param(nameof(HighLevel), 70m)
 			.SetDisplay("High Level", "Upper threshold", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_middleLevel = Param(nameof(MiddleLevel), 50m)
 			.SetDisplay("Middle Level", "Middle threshold", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_lowLevel = Param(nameof(LowLevel), 30m)
 			.SetDisplay("Low Level", "Lower threshold", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 			.SetDisplay("Candle Type", "Candle type", "Data");
 	}

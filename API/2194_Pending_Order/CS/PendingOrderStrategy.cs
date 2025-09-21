@@ -32,23 +32,23 @@ public class PendingOrderStrategy : Strategy
 	{
 		_startHour = Param(nameof(StartHour), 6)
 			.SetDisplay("Start Hour", "Hour to start placing pending orders", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_endHour = Param(nameof(EndHour), 20)
 			.SetDisplay("End Hour", "Hour to stop placing pending orders", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 20)
 			.SetDisplay("Take Profit", "Take profit in ticks", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 100)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_distance = Param(nameof(Distance), 15)
 			.SetDisplay("Distance", "Distance from market price to place orders", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for time tracking", "General");

@@ -22,12 +22,12 @@ public class AutostopCyriacStrategy : Strategy
 	{
 		_takeProfit = Param(nameof(TakeProfit), 15m)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Take Profit", "Take profit in price units", "Protection");
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Protection");
 	}
 

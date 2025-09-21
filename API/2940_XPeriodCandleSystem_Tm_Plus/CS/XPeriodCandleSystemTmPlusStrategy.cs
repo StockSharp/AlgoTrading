@@ -145,7 +145,7 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Base order size", "Trading")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_buyPosOpen = Param(nameof(BuyPosOpen), true)
 		.SetDisplay("Allow Buy Open", "Enable long entries", "Trading");
@@ -165,26 +165,26 @@ public class XPeriodCandleSystemTmPlusStrategy : Strategy
 		_holdingMinutes = Param(nameof(HoldingMinutes), 960)
 		.SetRange(1, 2000)
 		.SetDisplay("Holding Minutes", "Maximum holding time in minutes", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for signal detection", "Market")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_period = Param(nameof(Period), 5)
 		.SetRange(2, 100)
 		.SetDisplay("Smoothing Length", "Length for candle smoothing", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_bollingerLength = Param(nameof(BollingerLength), 20)
 		.SetRange(2, 200)
 		.SetDisplay("Bollinger Length", "Number of bars for Bollinger Bands", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_bandsDeviation = Param(nameof(BandsDeviation), 1.001m)
 		.SetGreaterThanZero()
 		.SetDisplay("Bands Deviation", "Multiplier for Bollinger Bands width", "Indicators")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_appliedPrice = Param(nameof(AppliedPriceMode), AppliedPrice.Close)
 		.SetDisplay("Applied Price", "Price source for the band calculation", "Indicators");

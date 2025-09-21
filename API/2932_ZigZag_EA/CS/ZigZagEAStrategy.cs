@@ -183,49 +183,49 @@ public class ZigZagEAStrategy : Strategy
 		_zigZagDepth = Param(nameof(ZigZagDepth), 12)
 			.SetDisplay("ZigZag Depth", "Lookback used to define pivots", "ZigZag")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_entryOffsetPips = Param(nameof(EntryOffsetPips), 5)
 			.SetDisplay("Entry Offset", "Distance above/below swings in pips", "Orders")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_minCorridorPips = Param(nameof(MinCorridorPips), 20)
 			.SetDisplay("Min Corridor", "Lower bound for swing range", "Orders")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_maxCorridorPips = Param(nameof(MaxCorridorPips), 100)
 			.SetDisplay("Max Corridor", "Upper bound for swing range", "Orders")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_fiboStopLoss = Param(nameof(FiboStopLoss), FiboLevel.Level61_8)
 			.SetDisplay("Stop Loss Fibo", "Fibonacci ratio for stop distance", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_fiboTakeProfit = Param(nameof(FiboTakeProfit), FiboLevel.Level161_8)
 			.SetDisplay("Take Profit Fibo", "Fibonacci ratio for target", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Trading session start hour", "Time Filter")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_startMinute = Param(nameof(StartMinute), 1)
 			.SetDisplay("Start Minute", "Trading session start minute", "Time Filter")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_stopHour = Param(nameof(StopHour), 23)
 			.SetDisplay("Stop Hour", "Trading session end hour", "Time Filter")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_stopMinute = Param(nameof(StopMinute), 59)
 			.SetDisplay("Stop Minute", "Trading session end minute", "Time Filter")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5)
 			.SetDisplay("Trailing Stop", "Trailing stop distance in pips", "Risk")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step", "Increment required to move trailing", "Risk")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_drawCorridorLevels = Param(nameof(DrawCorridorLevels), false)
 			.SetDisplay("Draw Corridor", "Plot swing corridor on chart", "Visuals");
 	}

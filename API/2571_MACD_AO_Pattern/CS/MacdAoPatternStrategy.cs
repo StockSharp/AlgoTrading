@@ -149,12 +149,12 @@ public class MacdAoPatternStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 60)
 			.SetGreaterThanZero()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 70)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()

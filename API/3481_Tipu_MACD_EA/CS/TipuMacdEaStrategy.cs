@@ -97,17 +97,17 @@ _zone2EndHour = Param(nameof(Zone2EndHour), 6)
 _fastPeriod = Param(nameof(FastPeriod), 12)
 .SetGreaterThanZero()
 .SetDisplay("Fast EMA", "Fast EMA length for MACD", "Indicators")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _slowPeriod = Param(nameof(SlowPeriod), 26)
 .SetGreaterThanZero()
 .SetDisplay("Slow EMA", "Slow EMA length for MACD", "Indicators")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _signalPeriod = Param(nameof(SignalPeriod), 9)
 .SetGreaterThanZero()
 .SetDisplay("Signal SMA", "Signal smoothing length", "Indicators")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _macdShift = Param(nameof(MacdShift), 1)
 .SetMinMax(0, 1)

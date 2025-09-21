@@ -48,17 +48,17 @@ public class CoensioTrader1V06Strategy : Strategy
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 30)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Period", "Length of Bollinger Bands", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_bollingerDeviation = Param(nameof(BollingerDeviation), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Bollinger Deviation", "Standard deviation multiplier", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_demaPeriod = Param(nameof(DemaPeriod), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("DEMA Period", "Length of double exponential moving average", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossDistance = Param(nameof(StopLossDistance), new Unit(0m, UnitTypes.Absolute))
 			.SetDisplay("Stop Loss", "Absolute stop loss offset from entry", "Risk");

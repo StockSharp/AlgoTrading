@@ -63,11 +63,11 @@ public class OrderBlockFinderStrategy : Strategy
 		_periods = Param(nameof(Periods), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Relevant Periods", "Number of consecutive candles", "Parameters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_threshold = Param(nameof(Threshold), 0m)
 			.SetDisplay("Min Percent Move", "Minimum percent move", "Parameters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useWholeRange = Param(nameof(UseWholeRange), false)
 			.SetDisplay("Use Whole Range", "Use High/Low instead of Open range", "Parameters");

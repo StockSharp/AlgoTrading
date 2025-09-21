@@ -106,12 +106,12 @@ public class TrendScalperStrategy : Strategy
 	{
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Fixed Volume", "Lots used when money management is disabled", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Stop Loss (points)", "Distance from entry to stop loss in price points", "Risk");
 
 		_moneyManagementMode = Param(nameof(MoneyManagementMode), 0)
@@ -119,7 +119,7 @@ public class TrendScalperStrategy : Strategy
 
 		_moneyManagementRisk = Param(nameof(MoneyManagementRisk), 40m)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Risk Factor", "Risk multiplier used in the lot calculation", "Risk");
 
 		_fastLength = Param(nameof(FastLength), 6)

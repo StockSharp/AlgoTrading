@@ -57,17 +57,17 @@ public class ERegressionChannelStrategy : Strategy
 		_regressionLength = Param(nameof(RegressionLength), 250)
 			.SetGreaterThanZero()
 			.SetDisplay("Regression Length", "Number of bars used for regression", "Regression")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_degree = Param(nameof(Degree), 3)
 			.SetRange(1, 6)
 			.SetDisplay("Degree", "Polynomial degree for the regression", "Regression")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stdMultiplier = Param(nameof(StdDevMultiplier), 1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Std Dev Multiplier", "Width multiplier for the regression bands", "Regression")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_enableTrailing = Param(nameof(EnableTrailing), false)
 			.SetDisplay("Enable Trailing", "Enable trailing stop management", "Risk Management");

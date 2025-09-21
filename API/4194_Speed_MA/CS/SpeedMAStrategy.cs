@@ -40,7 +40,7 @@ public class SpeedMAStrategy : Strategy
 		_movingAveragePeriod = Param(nameof(MovingAveragePeriod), 13)
 			.SetGreaterThanZero()
 			.SetDisplay("MA period", "Length of the simple moving average.", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_shift = Param(nameof(Shift), 1)
 			.SetGreaterOrEqualZero()
@@ -49,7 +49,7 @@ public class SpeedMAStrategy : Strategy
 		_slopeThresholdPoints = Param(nameof(SlopeThresholdPoints), 10m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Slope threshold (points)", "Minimum difference between shifted MA values required to trigger a signal.", "Logic")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_reverseSignals = Param(nameof(ReverseSignals), false)
 			.SetDisplay("Reverse signals", "Invert generated buy and sell directions.", "Logic");
@@ -57,12 +57,12 @@ public class SpeedMAStrategy : Strategy
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Take profit (points)", "Distance to the profit target expressed in points.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 490m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Stop loss (points)", "Distance to the protective stop expressed in points.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle type", "Primary timeframe used for signal generation.", "General");

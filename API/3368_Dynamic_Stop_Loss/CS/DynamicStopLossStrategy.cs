@@ -25,7 +25,7 @@ public class DynamicStopLossStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 800m)
 			.SetRange(0m, 5000m)
 			.SetDisplay("Stop Loss Points", "Distance between the market price and the protective stop expressed in instrument points.", "Protection")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles used to detect bar completions.", "General");

@@ -109,11 +109,11 @@ _orderDistancePoints = Param(nameof(OrderDistancePoints), 20m)
 
 _profitThreshold = Param(nameof(ProfitThreshold), -2m)
 .SetDisplay("Profit threshold", "Minimum profit before stabilization exits", "Risk")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _absoluteFixation = Param(nameof(AbsoluteFixation), 30m)
 .SetDisplay("Absolute fixation", "Profit level that always closes the trade", "Risk")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _stabilizationPoints = Param(nameof(StabilizationPoints), 25m)
 .SetGreaterThanZero()
@@ -121,11 +121,11 @@ _stabilizationPoints = Param(nameof(StabilizationPoints), 25m)
 
 _expirationMinutes = Param(nameof(ExpirationMinutes), 20)
 .SetDisplay("Expiration", "Lifetime of pending orders in minutes", "Trading")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(5)))
 .SetDisplay("Candle type", "Timeframe used to evaluate stabilization", "Data")
-.SetCanOptimize();
+.SetCanOptimize(true);
 }
 
 /// <inheritdoc />

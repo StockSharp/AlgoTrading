@@ -41,7 +41,7 @@ public class AutoTrailingStopStrategy : Strategy
 		
 		_trailingStop = Param(nameof(TrailingStop), 6m)
 		.SetDisplay("Trailing Stop", "Trailing stop distance.", "Protection")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		
 		_trailingStopStep = Param(nameof(TrailingStopStep), 1m)
 		.SetDisplay("Trailing Stop Step", "Step to move trailing stop.", "Protection");
@@ -51,14 +51,14 @@ public class AutoTrailingStopStrategy : Strategy
 		
 		_takeProfit = Param(nameof(TakeProfit), 35m)
 		.SetDisplay("Take Profit", "Take profit distance.", "Protection")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		
 		_automaticStopLoss = Param(nameof(AutomaticStopLoss), true)
 		.SetDisplay("Automatic Stop Loss", "Place automatic stop loss.", "Protection");
 		
 		_stopLoss = Param(nameof(StopLoss), 114m)
 		.SetDisplay("Stop Loss", "Stop loss distance.", "Protection")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Candle type for price updates.", "General");

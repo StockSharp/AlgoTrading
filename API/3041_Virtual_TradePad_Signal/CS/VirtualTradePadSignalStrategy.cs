@@ -256,12 +256,12 @@ public class VirtualTradePadSignalStrategy : Strategy
 		_fastMaLength = Param(nameof(FastMaLength), 8)
 		.SetGreaterThanZero()
 		.SetDisplay("Fast MA", "Length of the fast moving average", "Trend")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 16)
 		.SetGreaterThanZero()
 		.SetDisplay("Slow MA", "Length of the slow moving average", "Trend")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetGreaterThanZero()

@@ -50,18 +50,18 @@ public class BlauCMomentumStrategy : Strategy
 	{
 		_moneyManagement = Param(nameof(MoneyManagement), 0.1m)
 			.SetDisplay("Money Management", "Fraction of capital used to size positions (negative value = fixed volume)", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_marginMode = Param(nameof(MarginMode), MarginMode.FreeMarginShare)
 			.SetDisplay("Margin Mode", "Interpretation of money management parameter", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss", "Stop loss distance in price steps", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take Profit", "Take profit distance in price steps", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
 			.SetDisplay("Max Slippage", "Maximum slippage allowed in points", "Trading");
@@ -86,27 +86,27 @@ public class BlauCMomentumStrategy : Strategy
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothMethod.Exponential)
 			.SetDisplay("Smoothing Method", "Smoothing method applied to the momentum", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_momentumLength = Param(nameof(MomentumLength), 1)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Length", "Depth of raw momentum calculation", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_firstSmoothLength = Param(nameof(FirstSmoothLength), 20)
 			.SetGreaterThanZero()
 			.SetDisplay("First Smooth", "Length of the first smoothing stage", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_secondSmoothLength = Param(nameof(SecondSmoothLength), 5)
 			.SetGreaterThanZero()
 			.SetDisplay("Second Smooth", "Length of the second smoothing stage", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_thirdSmoothLength = Param(nameof(ThirdSmoothLength), 3)
 			.SetGreaterThanZero()
 			.SetDisplay("Third Smooth", "Length of the third smoothing stage", "Indicator")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_phase = Param(nameof(Phase), 15)
 			.SetDisplay("Phase", "Phase parameter used by Jurik-style moving averages", "Indicator");
@@ -119,7 +119,7 @@ public class BlauCMomentumStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Bar index used for generating entry signals", "Logic")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 	}
 
 	/// <summary>

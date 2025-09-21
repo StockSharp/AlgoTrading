@@ -96,12 +96,12 @@ public class MultiConditionsCurveFittingStrategy : Strategy
 	/// </summary>
 	public MultiConditionsCurveFittingStrategy()
 	{
-		_fastEmaLength = Param(nameof(FastEmaLength), 10).SetCanOptimize();
-		_slowEmaLength = Param(nameof(SlowEmaLength), 25).SetCanOptimize();
-		_rsiLength = Param(nameof(RsiLength), 14).SetCanOptimize();
-		_rsiOverbought = Param(nameof(RsiOverbought), 80m).SetCanOptimize();
-		_rsiOversold = Param(nameof(RsiOversold), 20m).SetCanOptimize();
-		_stochLength = Param(nameof(StochLength), 14).SetCanOptimize();
+		_fastEmaLength = Param(nameof(FastEmaLength), 10).SetCanOptimize(true);
+		_slowEmaLength = Param(nameof(SlowEmaLength), 25).SetCanOptimize(true);
+		_rsiLength = Param(nameof(RsiLength), 14).SetCanOptimize(true);
+		_rsiOverbought = Param(nameof(RsiOverbought), 80m).SetCanOptimize(true);
+		_rsiOversold = Param(nameof(RsiOversold), 20m).SetCanOptimize(true);
+		_stochLength = Param(nameof(StochLength), 14).SetCanOptimize(true);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame());
 	}
 

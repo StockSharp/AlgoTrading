@@ -140,12 +140,12 @@ public class MacdPatternTraderV01Strategy : Strategy
 		_stopLossBars = Param(nameof(StopLossBars), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("Stop-Loss Bars", "Bars used to determine the stop-loss swing", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_takeProfitBars = Param(nameof(TakeProfitBars), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Take-Profit Bars", "Bars per block for the recursive take-profit", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_offsetPoints = Param(nameof(OffsetPoints), 10)
 		.SetGreaterThanZero()

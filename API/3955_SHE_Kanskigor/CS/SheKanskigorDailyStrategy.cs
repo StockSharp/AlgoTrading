@@ -84,18 +84,18 @@ public class SheKanskigorDailyStrategy : Strategy
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 35m)
 			.SetDisplay("Take Profit", "Profit target in steps", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 55m)
 			.SetDisplay("Stop Loss", "Loss limit in steps", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startTime = Param(nameof(StartTime), new TimeSpan(0, 5, 0))
 			.SetDisplay("Start Time", "Time of day to evaluate entries", "Schedule");
 
 		_tradeWindowMinutes = Param(nameof(TradeWindowMinutes), 5)
 			.SetDisplay("Window (min)", "Trading window duration in minutes", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_intradayCandleType = Param(nameof(IntradayCandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Intraday Candle", "Candle type for intraday checks", "Data");

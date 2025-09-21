@@ -21,31 +21,31 @@ public class HarmonySignalFlowByArunStrategy : Strategy {
 		_rsiPeriod =
 			Param(nameof(RsiPeriod), 5)
 				.SetDisplay("RSI Period", "RSI period length", "Parameters")
-				.SetCanOptimize();
+				.SetCanOptimize(true);
 		_lThr = Param(nameof(LowerThreshold), 30m)
 					.SetDisplay("Lower Threshold", "RSI lower threshold",
 								"Parameters")
-					.SetCanOptimize();
+					.SetCanOptimize(true);
 		_uThr = Param(nameof(UpperThreshold), 70m)
 					.SetDisplay("Upper Threshold", "RSI upper threshold",
 								"Parameters")
-					.SetCanOptimize();
+					.SetCanOptimize(true);
 		_bSl = Param(nameof(BuyStopLoss), 100m)
 				   .SetDisplay("Buy Stop-Loss", "Stop-loss for long positions",
 							   "Risk")
-				   .SetCanOptimize();
+				   .SetCanOptimize(true);
 		_bTg =
 			Param(nameof(BuyTarget), 150m)
 				.SetDisplay("Buy Target", "Target for long positions", "Risk")
-				.SetCanOptimize();
+				.SetCanOptimize(true);
 		_sSl = Param(nameof(SellStopLoss), 100m)
 				   .SetDisplay("Sell Stop-Loss",
 							   "Stop-loss for short positions", "Risk")
-				   .SetCanOptimize();
+				   .SetCanOptimize(true);
 		_sTg =
 			Param(nameof(SellTarget), 150m)
 				.SetDisplay("Sell Target", "Target for short positions", "Risk")
-				.SetCanOptimize();
+				.SetCanOptimize(true);
 		_candleType =
 			Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 				.SetDisplay("Candle Type",

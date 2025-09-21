@@ -178,79 +178,79 @@ public class ProperBotStrategy : Strategy
 		_fastPeriod = Param(nameof(FastMaPeriod), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast EMA", "Period of the fast EMA filter", "Signals")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_midPeriod = Param(nameof(MidMaPeriod), 25)
 			.SetDisplay("Mid EMA", "Optional middle EMA period", "Signals")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowPeriod = Param(nameof(SlowMaPeriod), 50)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow EMA", "Period of the slow EMA filter", "Signals")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_disableMaFilter = Param(nameof(DisableMaFilter), true)
 			.SetDisplay("Disable EMA Filter", "Use previous candle direction instead of EMAs", "Signals")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_volumePeriod = Param(nameof(VolumePeriod), 1)
 			.SetDisplay("Volume Period", "Number of candles for the volume filter", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_volumeMinimum = Param(nameof(VolumeMinimum), 69m)
 			.SetDisplay("Volume Minimum", "Minimal average volume to allow entries", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_highLevel = Param(nameof(HighLevel), 1.50001m)
 			.SetDisplay("High Level", "Do not buy above this price", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_lowLevel = Param(nameof(LowLevel), 1.40001m)
 			.SetDisplay("Low Level", "Do not sell below this price", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_firstVolume = Param(nameof(FirstVolume), 0.08m)
 			.SetDisplay("First Order Volume", "Volume for the first order in a grid cycle", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_gridMap = Param(nameof(GridMap), "120/0.1 120/0.11 120/0.12 120/0.13 120/0.14 120/0.15 120/0.16 120/0.17 120/0.18 120/0.19")
 			.SetDisplay("Grid Map", "Distance/volume pairs separated by spaces", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10000)
 			.SetDisplay("Take Profit Points", "Profit distance in price steps", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 30000)
 			.SetDisplay("Stop Loss Points", "Loss distance in price steps", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailStartPoints = Param(nameof(TrailStartPoints), 52)
 			.SetDisplay("Trail Start Points", "Minimal profit to arm the trailing exit", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailDistancePoints = Param(nameof(TrailDistancePoints), 52)
 			.SetDisplay("Trail Distance Points", "Profit distance required to enable trailing", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailStepPoints = Param(nameof(TrailStepPoints), 2)
 			.SetDisplay("Trail Step Points", "Allowed profit retracement before exit", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startHour = Param(nameof(StartHour), 6)
 			.SetDisplay("Start Hour", "Trading session start hour", "Session")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startMinute = Param(nameof(StartMinute), 0)
 			.SetDisplay("Start Minute", "Trading session start minute", "Session")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_finishHour = Param(nameof(FinishHour), 21)
 			.SetDisplay("Finish Hour", "Trading session end hour", "Session")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_finishMinute = Param(nameof(FinishMinute), 0)
 			.SetDisplay("Finish Minute", "Trading session end minute", "Session")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");

@@ -77,20 +77,20 @@ public class TradingPanelStrategy : Strategy
 	{
 		_tradeCount = Param(nameof(TradeCount), 1)
 			.SetDisplay("Trades", "Number of market orders per action", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 2m)
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetDisplay("Take Profit (pips)", "Protective target distance", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_volumePerTrade = Param(nameof(VolumePerTrade), 0.01m)
 			.SetDisplay("Volume", "Volume for each submitted order", "Execution")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_targetSecurity = Param<Security>(nameof(TargetSecurity))
 			.SetDisplay("Panel Security", "Security used for panel actions", "Execution");

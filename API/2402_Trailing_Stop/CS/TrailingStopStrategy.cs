@@ -45,7 +45,7 @@ public class TrailingStopStrategy : Strategy
 	{
 		_trailingStop = Param(nameof(TrailingStop), 500m)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Trailing Stop", "Distance from price to stop in points", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

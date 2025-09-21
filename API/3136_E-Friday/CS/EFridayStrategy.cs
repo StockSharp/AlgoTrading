@@ -46,32 +46,32 @@ public class EFridayStrategy : Strategy
 		_volumeParam = Param(nameof(TradeVolume), 1m)
 		.SetDisplay("Trade Volume", "Order volume expressed in lots", "Trading")
 		.SetGreaterThanZero()
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_stopLossPipsParam = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Distance for the protective stop in pips", "Risk")
 		.SetGreaterOrEqualZero()
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_takeProfitPipsParam = Param(nameof(TakeProfitPips), 50m)
 		.SetDisplay("Take Profit (pips)", "Distance for the profit target in pips", "Risk")
 		.SetGreaterOrEqualZero()
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_trailingStopPipsParam = Param(nameof(TrailingStopPips), 5m)
 		.SetDisplay("Trailing Stop (pips)", "Initial trailing stop distance in pips", "Risk")
 		.SetGreaterOrEqualZero()
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_trailingStepPipsParam = Param(nameof(TrailingStepPips), 5m)
 		.SetDisplay("Trailing Step (pips)", "Minimal advance required to tighten the trailing stop", "Risk")
 		.SetGreaterOrEqualZero()
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_startHourParam = Param(nameof(StartHour), 5)
 		.SetDisplay("Start Hour", "Hour (exchange time) when trading becomes allowed", "Sessions")
 		.SetMinMax(0, 23)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_useCloseHourParam = Param(nameof(UseCloseHour), true)
 		.SetDisplay("Use Close Hour", "Enable forced position closing after the configured hour", "Sessions");
@@ -79,7 +79,7 @@ public class EFridayStrategy : Strategy
 		_endHourParam = Param(nameof(EndHour), 10)
 		.SetDisplay("End Hour", "Hour (exchange time) when positions are closed", "Sessions")
 		.SetMinMax(0, 23)
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	}
 
 	public DataType CandleType

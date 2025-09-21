@@ -104,27 +104,27 @@ public class PendingStopGridStrategy : Strategy
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Take Profit (pips)", "Take profit distance for each order", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 10m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance for each order", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base Volume", "Volume of the first pending order", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_numberOfTrades = Param(nameof(NumberOfTrades), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("Orders Per Side", "How many buy stop and sell stop orders to keep", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_distancePips = Param(nameof(DistancePips), 10m)
 			.SetGreaterThanZero()
 			.SetDisplay("Distance (pips)", "Offset of each pending order from the market price", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 	}
 
 	/// <inheritdoc />

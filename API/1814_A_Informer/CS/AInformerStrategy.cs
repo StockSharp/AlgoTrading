@@ -37,11 +37,11 @@ public class AInformerStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 300m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfit = Param(nameof(TakeProfit), 1000m)
 			.SetDisplay("Take Profit", "Take profit distance in points", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 	}
 
 	/// <inheritdoc />

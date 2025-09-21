@@ -67,7 +67,7 @@ public class CryptosStrategy : Strategy
 		_takeProfitRatio = Param(nameof(TakeProfitRatio), 30m)
 		.SetGreaterThanZero()
 		.SetDisplay("Take-Profit Ratio", "Multiplier applied to the range for crypto symbols", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_alternativeTakeProfitRatio = Param(nameof(AlternativeTakeProfitRatio), 3m)
 		.SetGreaterThanZero()
@@ -76,7 +76,7 @@ public class CryptosStrategy : Strategy
 		_riskPerTrade = Param(nameof(RiskPerTrade), 250m)
 		.SetGreaterThanZero()
 		.SetDisplay("Risk Per Trade", "Capital risked in quote currency", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_valueIndex = Param(nameof(ValueIndex), 1m)
 		.SetGreaterThanZero()

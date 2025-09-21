@@ -105,7 +105,7 @@ public class TrendReversalStrategy : Strategy
 
 		_maxPositions = Param(nameof(MaxPositions), 1)
 			.SetDisplay("Max Positions", "Maximum number of net position units to hold", "Execution")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 	}
 
 	/// <summary>

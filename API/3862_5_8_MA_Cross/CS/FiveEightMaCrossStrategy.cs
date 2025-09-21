@@ -56,28 +56,28 @@ public class FiveEightMaCrossStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)
 			.SetDisplay("Trade Volume", "Order volume for new positions", "Trading")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 0m)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0m)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fastPeriod = Param(nameof(FastPeriod), 5)
 			.SetDisplay("Fast Period", "Period of the fast moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fastShift = Param(nameof(FastShift), -1)
 			.SetDisplay("Fast Shift", "Bars to offset the fast moving average", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fastMethod = Param(nameof(FastMethod), MovingAverageMethod.Exponential)
 			.SetDisplay("Fast Method", "Smoothing method for the fast moving average", "Indicators");
@@ -88,11 +88,11 @@ public class FiveEightMaCrossStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 8)
 			.SetDisplay("Slow Period", "Period of the slow moving average", "Indicators")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowShift = Param(nameof(SlowShift), 0)
 			.SetDisplay("Slow Shift", "Bars to offset the slow moving average", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowMethod = Param(nameof(SlowMethod), MovingAverageMethod.Exponential)
 			.SetDisplay("Slow Method", "Smoothing method for the slow moving average", "Indicators");

@@ -22,12 +22,12 @@ public class Strategy1Strategy : Strategy
 		_length = Param(nameof(Length), 20)
 			.SetDisplay("Length", "Period for Bollinger Bands", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_bufferFactor = Param(nameof(BufferFactor), 0.2m)
 			.SetDisplay("Buffer Factor", "Stop-loss buffer factor", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for candles", "General");

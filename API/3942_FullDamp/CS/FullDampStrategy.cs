@@ -123,22 +123,22 @@ public class FullDampStrategy : Strategy
 		
 		_bollingerPeriod1 = Param(nameof(BollingerPeriod1), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Bollinger Period (Width 1)", "Period for the narrow bands", "Indicators");
 		
 		_bollingerPeriod2 = Param(nameof(BollingerPeriod2), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Bollinger Period (Width 2)", "Period for the medium bands", "Indicators");
 		
 		_bollingerPeriod3 = Param(nameof(BollingerPeriod3), 20)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Bollinger Period (Width 3)", "Period for the wide bands", "Indicators");
 		
 		_rsiPeriod = Param(nameof(RsiPeriod), 14)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("RSI Period", "Period for the RSI filter", "Indicators");
 		
 		_lookbackBars = Param(nameof(LookbackBars), 6)

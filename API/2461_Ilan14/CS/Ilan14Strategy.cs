@@ -57,14 +57,14 @@ public class Ilan14Strategy : Strategy {
 		.SetGreaterThanZero()
 		.SetDisplay("Pip Step", "Distance in pips to add position",
 				"General")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	_lotExponent =
 		Param(nameof(LotExponent), 1.667m)
 		.SetGreaterThanZero()
 		.SetDisplay("Lot Exponent",
 				"Volume multiplier for each additional order",
 				"General")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	_maxTrades = Param(nameof(MaxTrades), 10)
 			 .SetGreaterThanZero()
 			 .SetDisplay("Max Trades",
@@ -76,12 +76,12 @@ public class Ilan14Strategy : Strategy {
 		.SetDisplay("Take Profit",
 				"Target profit in pips from average price",
 				"General")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	_initialVolume = Param(nameof(InitialVolume), 0.1m)
 				 .SetGreaterThanZero()
 				 .SetDisplay("Initial Volume",
 					 "Volume of first order", "General")
-				 .SetCanOptimize();
+				 .SetCanOptimize(true);
 	_candleType =
 		Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");

@@ -41,11 +41,11 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 30)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Take profit distance expressed in pips.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startHour = Param(nameof(StartHour), 8)
 			.SetDisplay("Start Hour", "Hour (inclusive) when trading window opens.", "Session");
@@ -55,7 +55,7 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 
 		_differenceThreshold = Param(nameof(DifferenceThreshold), 0.0001m)
 			.SetDisplay("MA Difference", "Required difference between MA values.", "Logic")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_barA = Param(nameof(BarA), 0)
 			.SetDisplay("Bar A", "Index of the first bar for MA comparison.", "Logic");

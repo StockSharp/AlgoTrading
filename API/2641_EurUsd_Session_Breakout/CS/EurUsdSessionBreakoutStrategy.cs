@@ -53,34 +53,34 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	{
 		_startHourEuSession = Param(nameof(StartHourEuSession), 5)
 			.SetDisplay("EU Session Start", "Start hour of the EU session", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startHourUsSession = Param(nameof(StartHourUsSession), 2)
 			.SetDisplay("US Session Start", "Start hour of the US session", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_endHourUsSession = Param(nameof(EndHourUsSession), 16)
 			.SetDisplay("US Session End", "End hour of the US session", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_smallSessionPips = Param(nameof(SmallSessionPips), 72m)
 			.SetDisplay("Small EU Session (pips)", "Maximum EU session range to trade", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_tradeOnMonday = Param(nameof(TradeOnMonday), false)
 			.SetDisplay("Trade On Monday", "Allow trading on Mondays", "Schedule");
 
 		_stopLossPips = Param(nameof(StopLossPips), 12m)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15m)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_breakoutBufferPoints = Param(nameof(BreakoutBufferPoints), 3m)
 			.SetDisplay("Breakout Buffer (points)", "Extra points added to the breakout trigger", "Entries")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");

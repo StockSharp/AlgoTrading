@@ -38,19 +38,19 @@ public class DskyzDafeAdaptiveRegimeQuantMachineProStrategy : Strategy
 	{
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetDisplay("ATR Period", "ATR period", "ATR")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fastMaLength = Param(nameof(FastMaLength), 20)
 			.SetDisplay("Fast MA Length", "Fast moving average length", "MA")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowMaLength = Param(nameof(SlowMaLength), 50)
 			.SetDisplay("Slow MA Length", "Slow moving average length", "MA")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maStrengthThreshold = Param(nameof(MaStrengthThreshold), 0.5m)
 			.SetDisplay("MA Strength Threshold", "Trend threshold", "MA")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

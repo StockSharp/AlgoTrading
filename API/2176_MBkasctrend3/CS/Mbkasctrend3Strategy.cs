@@ -39,9 +39,9 @@ public class Mbkasctrend3Strategy : Strategy
 	
 	public Mbkasctrend3Strategy()
 	{
-		_wpr1 = Param(nameof(WprLength1),9).SetGreaterThanZero().SetCanOptimize().SetDisplay("WPR Length 1","Period for the first WPR","Indicator");
-		_wpr2 = Param(nameof(WprLength2),33).SetGreaterThanZero().SetCanOptimize().SetDisplay("WPR Length 2","Period for the second WPR","Indicator");
-		_wpr3 = Param(nameof(WprLength3),77).SetGreaterThanZero().SetCanOptimize().SetDisplay("WPR Length 3","Period for the third WPR","Indicator");
+		_wpr1 = Param(nameof(WprLength1),9).SetGreaterThanZero().SetCanOptimize(true).SetDisplay("WPR Length 1","Period for the first WPR","Indicator");
+		_wpr2 = Param(nameof(WprLength2),33).SetGreaterThanZero().SetCanOptimize(true).SetDisplay("WPR Length 2","Period for the second WPR","Indicator");
+		_wpr3 = Param(nameof(WprLength3),77).SetGreaterThanZero().SetCanOptimize(true).SetDisplay("WPR Length 3","Period for the third WPR","Indicator");
 		_swing = Param(nameof(Swing),3).SetDisplay("Swing","Swing adjustment","Indicator");
 		_avgSwing = Param(nameof(AverageSwing),-5).SetDisplay("Average Swing","Average swing adjustment","Indicator");
 		_w1 = Param(nameof(Weight1),1m).SetDisplay("Weight 1","Weight for WPR1","Indicator");

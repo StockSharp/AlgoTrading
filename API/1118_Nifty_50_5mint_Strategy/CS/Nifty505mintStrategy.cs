@@ -24,11 +24,11 @@ public class Nifty505mintStrategy : Strategy
 
 	public Nifty505mintStrategy()
 	{
-		_demaPeriod = Param(nameof(DemaPeriod), 6).SetDisplay("DEMA Period").SetCanOptimize();
-		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("Bollinger Length").SetCanOptimize();
-		_bollingerStdDev = Param(nameof(BollingerStdDev), 2m).SetDisplay("Bollinger StdDev").SetCanOptimize();
-		_lookbackPeriod = Param(nameof(LookbackPeriod), 5).SetDisplay("Lookback Period").SetCanOptimize();
-		_stopLossPoints = Param(nameof(StopLossPoints), 25m).SetDisplay("Stop Loss Points").SetCanOptimize();
+		_demaPeriod = Param(nameof(DemaPeriod), 6).SetDisplay("DEMA Period").SetCanOptimize(true);
+		_bollingerLength = Param(nameof(BollingerLength), 20).SetDisplay("Bollinger Length").SetCanOptimize(true);
+		_bollingerStdDev = Param(nameof(BollingerStdDev), 2m).SetDisplay("Bollinger StdDev").SetCanOptimize(true);
+		_lookbackPeriod = Param(nameof(LookbackPeriod), 5).SetDisplay("Lookback Period").SetCanOptimize(true);
+		_stopLossPoints = Param(nameof(StopLossPoints), 25m).SetDisplay("Stop Loss Points").SetCanOptimize(true);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame()).SetDisplay("Candle Type");
 	}
 

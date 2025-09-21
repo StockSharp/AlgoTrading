@@ -120,22 +120,22 @@ public class TrafficLightStrategy : Strategy
 		_redMaPeriod = Param(nameof(RedMaPeriod), 120)
 						   .SetGreaterThanZero()
 						   .SetDisplay("Red MA", "SMA period representing the slow trend", "Parameters")
-						   .SetCanOptimize();
+						   .SetCanOptimize(true);
 
 		_yellowMaPeriod = Param(nameof(YellowMaPeriod), 55)
 							  .SetGreaterThanZero()
 							  .SetDisplay("Yellow MA", "SMA period representing the medium trend", "Parameters")
-							  .SetCanOptimize();
+							  .SetCanOptimize(true);
 
 		_greenMaPeriod = Param(nameof(GreenMaPeriod), 5)
 							 .SetGreaterThanZero()
 							 .SetDisplay("Green MA", "EMA period representing the fast trend", "Parameters")
-							 .SetCanOptimize();
+							 .SetCanOptimize(true);
 
 		_blueMaPeriod = Param(nameof(BlueMaPeriod), 24)
 							.SetGreaterThanZero()
 							.SetDisplay("Blue MA", "EMA period for channel boundaries", "Parameters")
-							.SetCanOptimize();
+							.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 						  .SetDisplay("Candle Type", "Timeframe for calculations", "General");

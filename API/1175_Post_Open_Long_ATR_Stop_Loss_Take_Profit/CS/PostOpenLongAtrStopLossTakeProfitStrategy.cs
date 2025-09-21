@@ -60,55 +60,55 @@ public class PostOpenLongAtrStopLossTakeProfitStrategy : Strategy
 		_bbLength = Param(nameof(BbLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Length", "Bollinger Bands length", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_bbMult = Param(nameof(BbMult), 1.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("BB Mult", "Bollinger Bands multiplier", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_emaLength = Param(nameof(EmaLength), 10)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Length", "Short EMA length", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_emaLongLength = Param(nameof(EmaLongLength), 200)
 			.SetGreaterThanZero()
 			.SetDisplay("EMA Long Length", "Long EMA length", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_rsiLength = Param(nameof(RsiLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("RSI Length", "RSI period", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_rsiThreshold = Param(nameof(RsiThreshold), 30m)
 			.SetDisplay("RSI Threshold", "RSI minimum value", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_adxLength = Param(nameof(AdxLength), 7)
 			.SetGreaterThanZero()
 			.SetDisplay("ADX Length", "ADX period", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_adxThreshold = Param(nameof(AdxThreshold), 10m)
 			.SetDisplay("ADX Threshold", "ADX minimum value", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_atrLength = Param(nameof(AtrLength), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR Length", "ATR period", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_atrStopLossMultiplier = Param(nameof(AtrStopLossMultiplier), 2m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR SL Mult", "ATR stop-loss multiplier", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_atrTakeProfitMultiplier = Param(nameof(AtrTakeProfitMultiplier), 4m)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR TP Mult", "ATR take-profit multiplier", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

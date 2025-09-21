@@ -236,67 +236,67 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 6)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Fast EMA", "Fast EMA length", "MACD")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_macdSlowPeriod = Param(nameof(MacdSlowPeriod), 13)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Slow EMA", "Slow EMA length", "MACD")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_macdSignalPeriod = Param(nameof(MacdSignalPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Signal", "Signal smoothing length", "MACD")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_macdThreshold = Param(nameof(MacdThreshold), 0.0003m)
 		.SetRange(0m, 1m)
 		.SetDisplay("MACD Threshold", "Minimum histogram improvement", "MACD")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_dailyFastPeriod = Param(nameof(DailyFastPeriod), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Daily Fast EMA", "Fast EMA period on daily candles", "Trend")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_dailySlowPeriod = Param(nameof(DailySlowPeriod), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Daily Slow EMA", "Slow EMA period on daily candles", "Trend")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_stochasticKPeriod = Param(nameof(StochasticKPeriod), 30)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %K", "Base %K length on hourly candles", "Stochastic")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_stochasticDPeriod = Param(nameof(StochasticDPeriod), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic %D", "Signal smoothing length", "Stochastic")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_stochasticSlowing = Param(nameof(StochasticSlowing), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Stochastic Slowing", "Smoothing applied to %K", "Stochastic")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_stochasticUpperBound = Param(nameof(StochasticUpperBound), 40m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Stochastic Upper", "Maximum %K level for entries", "Stochastic")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_stochasticLowerBound = Param(nameof(StochasticLowerBound), 0m)
 		.SetRange(0m, 100m)
 		.SetDisplay("Stochastic Lower", "Minimum %K level for entries", "Stochastic")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_rsiPeriod = Param(nameof(RsiPeriod), 7)
 		.SetGreaterThanZero()
 		.SetDisplay("RSI Period", "Length of the exit RSI", "RSI")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_rsiExitLevel = Param(nameof(RsiExitLevel), 77m)
 		.SetRange(0m, 100m)
 		.SetDisplay("RSI Exit", "RSI threshold used to close longs", "RSI")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_volume = Param(nameof(TradeVolume), 0.01m)
 		.SetGreaterThanZero()
 		.SetDisplay("Volume", "Order size for entries", "Trading")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
 		.SetRange(0m, 1000m)
 		.SetDisplay("Stop Loss (pips)", "Distance to the protective stop", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
 		.SetRange(0m, 1000m)
 		.SetDisplay("Take Profit (pips)", "Distance to the profit target", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	}
 
 	/// <inheritdoc />

@@ -42,7 +42,7 @@ public class CalcProfitLossOnLinePriceStrategy : Strategy
 	{
 		_linePrice = Param(nameof(LinePrice), 0m)
 			.SetDisplay("Line Price", "Price level to evaluate PnL", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for strategy", "General");

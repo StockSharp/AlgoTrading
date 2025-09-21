@@ -65,20 +65,20 @@ public class ERp250Strategy : Strategy
 	{
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 15m)
 			.SetDisplay("Take Profit Points", "Take profit distance in price points", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 999m)
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price points", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 			.SetDisplay("Trailing Stop Points", "Trailing stop distance in price points", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_reversePoint = Param(nameof(ReversePoint), 250)
 			.SetDisplay("Reverse Point Length", "Candles used to confirm reversal points", "Signals")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyse", "General");

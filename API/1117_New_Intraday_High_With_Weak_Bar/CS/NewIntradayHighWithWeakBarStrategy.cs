@@ -43,12 +43,12 @@ public class NewIntradayHighWithWeakBarStrategy : Strategy
 		_highestLength = Param(nameof(HighestLength), 10)
 			.SetDisplay("Highest Length", "Bars to look back for high", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_weakRatio = Param(nameof(WeakRatio), 0.15m)
 			.SetDisplay("Weak Bar Ratio", "Close-low to range ratio", "General")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");

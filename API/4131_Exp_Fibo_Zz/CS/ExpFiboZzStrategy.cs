@@ -68,62 +68,62 @@ public class ExpFiboZzStrategy : Strategy
 		_zigZagDepth = Param(nameof(ZigZagDepth), 12)
 			.SetDisplay("ZigZag Depth", "Number of candles required between swing points.", "ZigZag")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_zigZagDeviationPips = Param(nameof(ZigZagDeviationPips), 5m)
 			.SetDisplay("ZigZag Deviation", "Minimum price deviation in pips before accepting a new swing.", "ZigZag")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_zigZagBackstep = Param(nameof(ZigZagBackstep), 3)
 			.SetDisplay("ZigZag Backstep", "Minimum bars before switching swing direction.", "ZigZag")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_entryOffsetPips = Param(nameof(EntryOffsetPips), 5)
 			.SetDisplay("Entry Offset", "Distance from the corridor in pips used for stop orders.", "Orders")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_minCorridorPips = Param(nameof(MinCorridorPips), 20)
 			.SetDisplay("Min Corridor", "Minimum corridor height in pips required for trading.", "Orders")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maxCorridorPips = Param(nameof(MaxCorridorPips), 100)
 			.SetDisplay("Max Corridor", "Maximum corridor height in pips allowed for trading.", "Orders")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fiboStopLoss = Param(nameof(FiboStopLoss), 61.8m)
 			.SetDisplay("Stop Loss %", "Fibonacci percentage applied to the corridor for the stop distance.", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fiboTakeProfit = Param(nameof(FiboTakeProfit), 161.8m)
 			.SetDisplay("Take Profit %", "Fibonacci percentage applied to the corridor for the take-profit target.", "Risk")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Start Hour", "Trading window start hour.", "Trading Window")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startMinute = Param(nameof(StartMinute), 1)
 			.SetDisplay("Start Minute", "Trading window start minute.", "Trading Window")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopHour = Param(nameof(StopHour), 23)
 			.SetDisplay("Stop Hour", "Trading window end hour.", "Trading Window")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopMinute = Param(nameof(StopMinute), 59)
 			.SetDisplay("Stop Minute", "Trading window end minute.", "Trading Window")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useBalanceForRisk = Param(nameof(UseBalanceForRisk), true)
 			.SetDisplay("Use Balance", "When true use equity, otherwise rely on available cash for risk sizing.", "Money Management");
@@ -131,12 +131,12 @@ public class ExpFiboZzStrategy : Strategy
 		_riskPercent = Param(nameof(RiskPercent), 1m)
 			.SetDisplay("Risk %", "Risk percentage applied to the selected capital source.", "Money Management")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
 			.SetDisplay("Fixed Volume", "Fallback lot size when risk based sizing is disabled or unavailable.", "Money Management")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), true)
 			.SetDisplay("Enable BreakEven", "Move the stop to break-even after sufficient profit.", "Risk");
@@ -144,12 +144,12 @@ public class ExpFiboZzStrategy : Strategy
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 13)
 			.SetDisplay("BreakEven Trigger", "Profit in pips required before stop adjustment.", "Risk")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 2)
 			.SetDisplay("BreakEven Offset", "Offset in pips added beyond the entry when moving the stop.", "Risk")
 			.SetGreaterOrEqualZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_drawCorridorLevels = Param(nameof(DrawCorridorLevels), false)
 			.SetDisplay("Draw Corridor", "Render the current ZigZag corridor on the chart.", "Visuals");

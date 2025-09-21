@@ -39,10 +39,10 @@ public class SmoothingAverageStrategy : Strategy
 	{
 		_maPeriod = Param(nameof(MaPeriod), 200)
 			.SetDisplay("MA Period", "Moving average period", "MA")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_smoothing = Param(nameof(Smoothing), 1400m)
 			.SetDisplay("Smoothing", "Price offset from moving average", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
 	}

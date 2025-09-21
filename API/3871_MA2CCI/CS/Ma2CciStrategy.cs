@@ -48,42 +48,42 @@ public class Ma2CciStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Primary timeframe", "Candle series used for signal calculations.", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
 			.SetDisplay("Base volume", "Fallback volume used when risk based sizing is not available.", "Trading")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("Fast SMA", "Length of the fast simple moving average.", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowMaPeriod = Param(nameof(SlowMaPeriod), 8)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow SMA", "Length of the slow simple moving average.", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_cciPeriod = Param(nameof(CciPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("CCI period", "Number of bars used by the commodity channel index filter.", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
 			.SetGreaterThanZero()
 			.SetDisplay("ATR period", "Length of the ATR used for protective stop placement.", "Indicators")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maxRiskPerThousand = Param(nameof(MaxRiskPerThousand), 0.02m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Risk fraction", "Fraction of free capital allocated per trade expressed per 1000 units.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 3m)
 			.SetGreaterThanZero()
 			.SetDisplay("Decrease factor", "Divisor applied to reduce size after consecutive losses.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 	}
 
 	/// <summary>

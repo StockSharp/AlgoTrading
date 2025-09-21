@@ -45,51 +45,51 @@ public class Ak47ScalperStrategy : Strategy
 	{
 		_useVolumePercent = Param(nameof(UseVolumePercent), true)
 			.SetDisplay("Use Risk Percent", "Size orders using account percent instead of fixed lot", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_riskPercent = Param(nameof(RiskPercent), 3m)
 			.SetDisplay("Risk Percent", "Risk percentage applied to account equity when sizing orders", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_userLot = Param(nameof(UserLot), 0.01m)
 			.SetDisplay("Base Lot", "Minimal lot used when sizing and as fallback volume", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 3.5m)
 			.SetDisplay("Stop Loss (pips)", "Distance of the protective stop", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 7m)
 			.SetDisplay("Take Profit (pips)", "Distance of the profit target (0 disables)", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_maxSpreadPoints = Param(nameof(MaxSpreadPoints), 5m)
 			.SetDisplay("Max Spread (points)", "Maximum allowed spread expressed in MetaTrader points", "Filters")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useTimeFilter = Param(nameof(UseTimeFilter), true)
 			.SetDisplay("Use Time Filter", "Restrict trading to the configured time window", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startHour = Param(nameof(StartHour), 2)
 			.SetRange(0, 23)
 			.SetDisplay("Start Hour", "Hour when trading becomes active", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startMinute = Param(nameof(StartMinute), 30)
 			.SetRange(0, 59)
 			.SetDisplay("Start Minute", "Minute when trading becomes active", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_endHour = Param(nameof(EndHour), 21)
 			.SetRange(0, 23)
 			.SetDisplay("End Hour", "Hour when trading stops", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_endMinute = Param(nameof(EndMinute), 0)
 			.SetRange(0, 59)
 			.SetDisplay("End Minute", "Minute when trading stops", "Schedule")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for timing and price updates", "General");

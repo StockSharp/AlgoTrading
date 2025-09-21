@@ -40,7 +40,7 @@ public class CsvExporterStrategy : Strategy
 
 		_candleCount = Param(nameof(CandleCount), 133)
 			.SetGreaterThanZero()
-			.SetCanOptimize()
+			.SetCanOptimize(true)
 			.SetDisplay("Candle Count", "Number of finished candles exported to the CSV file.", "Export");
 
 		_updateInterval = Param(nameof(UpdateInterval), TimeSpan.FromMinutes(15))

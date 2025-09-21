@@ -72,7 +72,7 @@ public class ExpGStopStrategy : Strategy
 	{
 		_mode = Param(nameof(Mode), StopMode.Percent)
 			.SetDisplay("Mode", "Stop mode", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 20m)
 			.SetGreaterThanZero()

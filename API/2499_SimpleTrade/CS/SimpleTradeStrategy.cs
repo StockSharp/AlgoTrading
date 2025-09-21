@@ -60,7 +60,7 @@ public class SimpleTradeStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 120)
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss (pips)", "Fixed protective distance in pips", "Risk Management")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_tradeVolume = Param(nameof(TradeVolume), 1m)
 			.SetGreaterThanZero()

@@ -36,11 +36,11 @@ private readonly StrategyParam<Sides?> _direction;
 
 		_length = Param(nameof(Length), 14)
 			.SetDisplay("Length", "ATR and oscillator period.", "PresentTrend")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_multiplier = Param(nameof(Multiplier), 1.618m)
 			.SetDisplay("Multiplier", "ATR multiplier.", "PresentTrend")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_useRsi = Param(nameof(UseRsi), false)
 			.SetDisplay("Use RSI", "Use RSI instead of MFI.", "PresentTrend");

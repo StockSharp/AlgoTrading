@@ -77,7 +77,7 @@ public class HeadAndShouldersStrategy : Strategy
 
 		_momentumThreshold = Param(nameof(MomentumThreshold), 0.3m)
 		.SetDisplay("Momentum Threshold", "Absolute momentum required for confirmations.", "Momentum")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_macdFastLength = Param(nameof(MacdFastLength), 12)
 		.SetDisplay("MACD Fast", "Fast period for the MACD filter.", "Momentum");
@@ -90,23 +90,23 @@ public class HeadAndShouldersStrategy : Strategy
 
 		_shoulderTolerancePercent = Param(nameof(ShoulderTolerancePercent), 5m)
 		.SetDisplay("Shoulder Symmetry %", "Maximum percent deviation between shoulders.", "Pattern")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_headDominancePercent = Param(nameof(HeadDominancePercent), 2m)
 		.SetDisplay("Head Dominance %", "Minimum percent the head must exceed each shoulder.", "Pattern")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 100m)
 		.SetDisplay("Stop-Loss (steps)", "Protective stop size measured in price steps.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 200m)
 		.SetDisplay("Take-Profit (steps)", "Profit target size measured in price steps.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 0m)
 		.SetDisplay("Trailing Stop (steps)", "Trailing stop size in price steps. Zero disables trailing.", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 	}
 
 	/// <summary>Primary candle type.</summary>

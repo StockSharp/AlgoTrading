@@ -39,7 +39,7 @@ public class IinMaSignalStrategy : Strategy
 		_fastPeriod = Param(nameof(FastPeriod), 10)
 			.SetDisplay("Fast MA Period", "Length of the fast moving average.", "Moving averages")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_fastMaType = Param(nameof(FastMaType), MaType.Ema)
 			.SetDisplay("Fast MA Type", "Moving average type for the fast line (SMA, EMA, SMMA, LWMA).", "Moving averages");
@@ -47,7 +47,7 @@ public class IinMaSignalStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 22)
 			.SetDisplay("Slow MA Period", "Length of the slow moving average.", "Moving averages")
 			.SetGreaterThanZero()
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_slowMaType = Param(nameof(SlowMaType), MaType.Sma)
 			.SetDisplay("Slow MA Type", "Moving average type for the slow line (SMA, EMA, SMMA, LWMA).", "Moving averages");
@@ -69,11 +69,11 @@ public class IinMaSignalStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 			.SetDisplay("Stop Loss Points", "Absolute distance for the protective stop loss (0 disables).", "Risk management")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit Points", "Absolute distance for the protective take profit (0 disables).", "Risk management")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 	}
 
 	public DataType CandleType

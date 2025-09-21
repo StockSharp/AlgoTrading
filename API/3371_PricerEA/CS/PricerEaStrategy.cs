@@ -105,7 +105,7 @@ public class PricerEaStrategy : Strategy
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
 			.SetDisplay("Risk Factor", "Multiplier applied when automatic sizing is enabled", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_manualVolume = Param(nameof(ManualVolume), 0.01m)
 			.SetDisplay("Manual Volume", "Fixed order volume when manual sizing is active", "Risk")

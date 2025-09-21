@@ -50,22 +50,22 @@ public class LockerStrategy : Strategy
 		_profitTargetPercent = Param(nameof(ProfitTargetPercent), 0.001m)
 			.SetGreaterThanZero()
 			.SetDisplay("Profit %", "Target profit percent of balance", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_startVolume = Param(nameof(StartVolume), 0.5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Start Volume", "Initial trade volume", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stepVolume = Param(nameof(StepVolume), 0.2m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Volume", "Volume for subsequent trades", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_stepPoints = Param(nameof(StepPoints), 5m)
 			.SetGreaterThanZero()
 			.SetDisplay("Step Points", "Number of price steps between new trades", "General")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_enableAutomation = Param(nameof(EnableAutomation), true)
 			.SetDisplay("Enable Automation", "Allow the strategy to place trades", "General");

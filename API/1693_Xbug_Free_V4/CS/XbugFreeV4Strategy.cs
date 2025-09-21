@@ -69,7 +69,7 @@ public class XbugFreeV4Strategy : Strategy
 		_maPeriod = Param(nameof(MaPeriod), 19)
 		.SetGreaterThanZero()
 		.SetDisplay("MA Period", "Moving average length", "Parameters")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 		
 		_stopPoints = Param(nameof(StopPoints), 270)
 		.SetDisplay("Stop Points", "Distance for take profit and stop loss", "Risk");

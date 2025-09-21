@@ -70,27 +70,27 @@ public class DojiArrowsStrategy : Strategy
 		_stopLossPoints = Param(nameof(StopLossPoints), 30m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Stop Loss Points", "Stop loss distance in price steps.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 90m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Take Profit Points", "Take profit distance in price steps.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 15m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Trailing Stop Points", "Trailing distance in price steps.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Trailing Step Points", "Minimum profit before the trailing stop moves.", "Risk")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_dojiBodyPoints = Param(nameof(DojiBodyPoints), 1m)
 			.SetGreaterOrEqualZero()
 			.SetDisplay("Doji Body Points", "Maximum difference between open and close to treat the candle as a doji.", "Pattern")
-			.SetCanOptimize();
+			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame used for signal generation.", "General");

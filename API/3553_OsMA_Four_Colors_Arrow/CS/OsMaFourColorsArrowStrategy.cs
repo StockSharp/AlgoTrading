@@ -84,15 +84,15 @@ _takeProfitPips = Param(nameof(TakeProfitPips), 460)
 
 _trailingActivatePips = Param(nameof(TrailingActivatePips), 70)
 .SetDisplay("Trailing Activate", "Profit in pips required before trailing starts", "Risk Management")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _trailingStopPips = Param(nameof(TrailingStopPips), 250)
 .SetDisplay("Trailing Stop (pips)", "Trailing stop distance expressed in pips", "Risk Management")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _trailingStepPips = Param(nameof(TrailingStepPips), 50)
 .SetDisplay("Trailing Step (pips)", "Minimal profit increase before the stop is tightened", "Risk Management")
-.SetCanOptimize();
+.SetCanOptimize(true);
 
 _maxPositions = Param(nameof(MaxPositions), 5)
 .SetDisplay("Max Positions", "Maximum number of aggregated position units", "Trading")

@@ -181,7 +181,7 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		_orderVolume = Param(nameof(OrderVolume), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Order Volume", "Size of each executed order", "General")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
 		.SetDisplay("Enable Long", "Allow long entries", "Signals");
@@ -201,32 +201,32 @@ public class CandleStopSystemTmPlusStrategy : Strategy
 		_maxPositionMinutes = Param(nameof(MaxPositionMinutes), 1920)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Max Position Minutes", "Maximum holding time in minutes", "Risk")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_upTrailPeriods = Param(nameof(UpTrailPeriods), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Upper Lookback", "Bars for upper CandleStop channel", "Channels")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_upTrailShift = Param(nameof(UpTrailShift), 5)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Upper Shift", "Offset for upper channel evaluation", "Channels")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_downTrailPeriods = Param(nameof(DownTrailPeriods), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Lower Lookback", "Bars for lower CandleStop channel", "Channels")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_downTrailShift = Param(nameof(DownTrailShift), 5)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Lower Shift", "Offset for lower channel evaluation", "Channels")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetGreaterOrEqualZero()
 		.SetDisplay("Signal Bar", "Index of the bar used for entries", "Signals")
-		.SetCanOptimize();
+		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetGreaterOrEqualZero()
