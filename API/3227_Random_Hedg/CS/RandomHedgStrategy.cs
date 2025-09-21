@@ -307,11 +307,11 @@ public class RandomHedgStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			ProcessBuyTrade(volume, price);
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			ProcessSellTrade(volume, price);
 		}

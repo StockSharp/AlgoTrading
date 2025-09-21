@@ -655,7 +655,7 @@ public class AdvancedEaPanelStrategy : Strategy
 			return;
 		}
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 
 		if (_entryPrice is null && ((Position > 0m && direction == Sides.Buy) || (Position < 0m && direction == Sides.Sell)))
 		{

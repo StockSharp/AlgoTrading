@@ -275,7 +275,7 @@ public class MacdFourColors2MartingaleStrategy : Strategy
 		if (trade.Order.Security != Security)
 			return;
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 		var volume = trade.Trade.Volume;
 
 		if (_pendingEntryDirection != null && direction == _pendingEntryDirection && volume > 0m)

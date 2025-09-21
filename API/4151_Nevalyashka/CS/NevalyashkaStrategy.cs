@@ -155,7 +155,7 @@ public class NevalyashkaStrategy : Strategy
 	{
 		base.OnOrderRegisterFailed(fail);
 
-		if (_pendingDirection is { } pending && fail.Order.Direction == pending)
+		if (_pendingDirection is { } pending && fail.Order.Side == pending)
 		{
 			// Registration failed; release the pending direction so it can be retried later.
 			_pendingDirection = null;

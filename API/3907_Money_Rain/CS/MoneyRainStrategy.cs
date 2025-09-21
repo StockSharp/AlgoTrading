@@ -338,7 +338,7 @@ public class MoneyRainStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 		var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume;
 		if (tradeVolume is null || tradeVolume <= 0m)
 			return;

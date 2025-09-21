@@ -171,11 +171,11 @@ public class TradeProtectorStrategy : Strategy
 		if (price == null)
 		return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			_lastBuyPrice = price.Value;
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			_lastSellPrice = price.Value;
 		}

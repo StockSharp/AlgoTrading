@@ -333,13 +333,13 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		{
 			_longStopLossOrder = null;
 			CancelOrderIfActive(ref _longTakeProfitOrder);
-			TryReopenLong(trade.Trade.Time);
+			TryReopenLong(trade.Trade.ServerTime);
 		}
 		else if (order == _shortStopLossOrder)
 		{
 			_shortStopLossOrder = null;
 			CancelOrderIfActive(ref _shortTakeProfitOrder);
-			TryReopenShort(trade.Trade.Time);
+			TryReopenShort(trade.Trade.ServerTime);
 		}
 		// Take-profit orders remove the paired protective stop.
 		else if (order == _longTakeProfitOrder)

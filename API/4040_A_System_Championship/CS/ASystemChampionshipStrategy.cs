@@ -749,7 +749,7 @@ public class ASystemChampionshipStrategy : Strategy
 			return;
 
 		_lastTradePrice = trade.Trade.Price;
-		_lastTradeSide = trade.Order.Direction;
+		_lastTradeSide = trade.Order.Side;
 	}
 
 	/// <inheritdoc />

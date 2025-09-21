@@ -361,12 +361,12 @@ public class SupportResistanceBreakoutStrategy : Strategy
 		if (tradeVolume <= 0m)
 		return;
 
-		var delta = trade.Order.Direction == Sides.Buy ? tradeVolume : -tradeVolume;
+		var delta = trade.Order.Side == Sides.Buy ? tradeVolume : -tradeVolume;
 		var previousPosition = Position - delta;
 
 		if (Position > 0)
 		{
-			if (trade.Order.Direction == Sides.Buy)
+			if (trade.Order.Side == Sides.Buy)
 			{
 				if (previousPosition <= 0m)
 				{
@@ -389,7 +389,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 		}
 		else if (Position < 0)
 		{
-			if (trade.Order.Direction == Sides.Sell)
+			if (trade.Order.Side == Sides.Sell)
 			{
 				if (previousPosition >= 0m)
 				{

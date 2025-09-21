@@ -108,14 +108,14 @@ public class TenPipsStrategy : Strategy
 			return;
 		}
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			_hasLong = true;
 			_longEntryPrice = trade.Trade.Price;
 			_longStop = SellStop(Volume, _longEntryPrice - StopLossBuy);
 			_longTake = SellLimit(Volume, _longEntryPrice + TakeProfitBuy);
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			_hasShort = true;
 			_shortEntryPrice = trade.Trade.Price;

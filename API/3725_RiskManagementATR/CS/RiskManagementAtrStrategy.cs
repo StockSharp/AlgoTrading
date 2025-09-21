@@ -285,7 +285,7 @@ public class RiskManagementAtrStrategy : Strategy
 		if (Position <= 0m)
 			CancelStopLossOrder();
 
-		if (trade.Order.Direction != Sides.Buy)
+		if (trade.Order.Side != Sides.Buy)
 			return; // The expert only opens long trades; sell trades come from stop-loss execution
 
 		var atrValue = _lastAtrValue ?? 0m;

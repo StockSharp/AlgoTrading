@@ -400,7 +400,7 @@ public class RandomTraderStrategy : Strategy
 		return;
 
 		// Capture the executed entry price to derive protective levels aligned with the fill.
-		if (_pendingSide.HasValue && trade.Order.Direction == _pendingSide.Value)
+		if (_pendingSide.HasValue && trade.Order.Side == _pendingSide.Value)
 		{
 			var price = trade.Trade.Price;
 			_entryPrice = price;

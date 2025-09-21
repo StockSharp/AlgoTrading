@@ -220,7 +220,7 @@ public class NSecondsNPointsStrategy : Strategy
 
 		var tradePrice = trade.Trade.Price;
 		var tradeVolume = trade.Trade.Volume;
-		var tradeTime = trade.Trade.Time;
+		var tradeTime = trade.Trade.ServerTime;
 		var isBuy = trade.Order.Side == Sides.Buy;
 		var signedVolume = isBuy ? tradeVolume : -tradeVolume;
 		var prevVolume = _positionVolume;

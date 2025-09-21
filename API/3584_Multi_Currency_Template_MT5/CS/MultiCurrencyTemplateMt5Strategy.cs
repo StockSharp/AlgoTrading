@@ -288,7 +288,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 		if (trade.Trade == null)
 			return;
 
-		RegisterFill(context, trade.Order.Direction, trade.Trade.Volume, trade.Trade.Price);
+		RegisterFill(context, trade.Order.Side, trade.Trade.Volume, trade.Trade.Price);
 	}
 
 	private void ProcessSignalCandle(SymbolContext context, ICandleMessage candle)

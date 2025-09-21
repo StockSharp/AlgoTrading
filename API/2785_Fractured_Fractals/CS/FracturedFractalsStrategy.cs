@@ -490,7 +490,7 @@ public class FracturedFractalsStrategy : Strategy
 		var tradeSide = trade.Order.Side;
 		var tradeVolume = trade.Trade.Volume;
 		var tradePrice = trade.Trade.Price;
-		var tradeTime = trade.Trade.Time;
+		var tradeTime = trade.Trade.ServerTime;
 
 		if (_openSide == null)
 		{

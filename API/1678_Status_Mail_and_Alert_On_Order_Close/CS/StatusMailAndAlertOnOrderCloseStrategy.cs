@@ -138,7 +138,7 @@ public class StatusMailAndAlertOnOrderCloseStrategy : Strategy
 		if (!SendClosedEmail)
 			return;
 
-		var time = trade.Trade.Time;
+		var time = trade.Trade.ServerTime;
 
 		if (time <= _lastCloseTime)
 			return;

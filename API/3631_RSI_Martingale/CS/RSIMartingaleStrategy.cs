@@ -501,7 +501,7 @@ public class RSIMartingaleStrategy : Strategy
 
 		var price = trade.Trade.Price;
 		var volume = trade.Trade.Volume;
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 
 		if (direction == Sides.Buy)
 		{

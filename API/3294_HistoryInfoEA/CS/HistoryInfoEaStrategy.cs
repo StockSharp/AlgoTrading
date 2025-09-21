@@ -160,7 +160,7 @@ public class HistoryInfoEaStrategy : Strategy
 
 	private void UpdateStatistics(MyTrade trade)
 	{
-		var tradeTime = trade.Trade.Time;
+		var tradeTime = trade.Trade.ServerTime;
 
 		if (_firstTradeTime == null || tradeTime < _firstTradeTime)
 		_firstTradeTime = tradeTime;

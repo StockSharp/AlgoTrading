@@ -197,11 +197,11 @@ public class VectorStrategy : Strategy
 		{
 			context.EntryPrice = trade.Trade.Price;
 		}
-		else if (position > 0m && trade.Order.Direction == Sides.Buy)
+		else if (position > 0m && trade.Order.Side == Sides.Buy)
 		{
 			UpdateAverageEntry(context, previousPosition, position, tradeVolume, trade.Trade.Price);
 		}
-		else if (position < 0m && trade.Order.Direction == Sides.Sell)
+		else if (position < 0m && trade.Order.Side == Sides.Sell)
 		{
 			UpdateAverageEntry(context, Math.Abs(previousPosition), Math.Abs(position), tradeVolume, trade.Trade.Price);
 		}

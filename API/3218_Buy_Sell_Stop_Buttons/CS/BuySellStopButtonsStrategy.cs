@@ -346,7 +346,7 @@ protected override void OnNewMyTrade(MyTrade trade)
 		return;
 	}
 
-	var tradeDirection = trade.Order.Direction == Sides.Buy ? 1m : -1m;
+	var tradeDirection = trade.Order.Side == Sides.Buy ? 1m : -1m;
 	var tradeVolume = trade.Trade.Volume;
 	var tradePrice = trade.Trade.Price;
 

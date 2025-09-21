@@ -881,7 +881,7 @@ public class BuildYourGridStrategy : Strategy
 
 		var price = trade.Trade.Price;
 		var volume = trade.Trade.Volume;
-		var side = trade.Order.Direction;
+		var side = trade.Order.Side;
 
 		if (volume <= 0m)
 		return;

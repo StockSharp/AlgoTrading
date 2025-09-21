@@ -225,7 +225,7 @@ public class RiskManagerInfoPanelStrategy : Strategy
 		if (trade?.Trade == null)
 			return;
 
-		var tradeDay = trade.Trade.Time.Date;
+		var tradeDay = trade.Trade.ServerTime.Date;
 
 		if (_currentDay == default || tradeDay != _currentDay)
 		{
@@ -235,7 +235,7 @@ public class RiskManagerInfoPanelStrategy : Strategy
 
 		_dailyRealizedPnL += trade.PnL ?? 0m;
 
-		UpdateRiskSnapshot(trade.Trade.Time);
+		UpdateRiskSnapshot(trade.Trade.ServerTime);
 	}
 
 	private void RestartTimer()

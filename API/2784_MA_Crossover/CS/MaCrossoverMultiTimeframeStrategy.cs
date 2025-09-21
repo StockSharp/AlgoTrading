@@ -690,7 +690,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			_lowestPrice = trade.Trade.Price;
 		}
 
-		if (currentPosition > 0m && trade.Order.Direction == Sides.Buy)
+		if (currentPosition > 0m && trade.Order.Side == Sides.Buy)
 		{
 			var totalVolume = Math.Abs(currentPosition);
 			var previousVolume = Math.Abs(_previousPosition > 0m ? _previousPosition : 0m);
@@ -704,7 +704,7 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			if (trade.Trade.Price > _highestPrice)
 				_highestPrice = trade.Trade.Price;
 		}
-		else if (currentPosition < 0m && trade.Order.Direction == Sides.Sell)
+		else if (currentPosition < 0m && trade.Order.Side == Sides.Sell)
 		{
 			var totalVolume = Math.Abs(currentPosition);
 			var previousVolume = Math.Abs(_previousPosition < 0m ? _previousPosition : 0m);

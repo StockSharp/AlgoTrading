@@ -429,13 +429,13 @@ public class SynchronizedHourBreakoutStrategy : Strategy
 		if (trade.Order?.Direction == null)
 			return;
 
-		if (Position > 0 && trade.Order.Direction == Sides.Buy)
+		if (Position > 0 && trade.Order.Side == Sides.Buy)
 		{
 			_entryPrice = trade.Trade.Price;
 			_highestPrice = trade.Trade.Price;
 			_lowestPrice = 0m;
 		}
-		else if (Position < 0 && trade.Order.Direction == Sides.Sell)
+		else if (Position < 0 && trade.Order.Side == Sides.Sell)
 		{
 			_entryPrice = trade.Trade.Price;
 			_lowestPrice = trade.Trade.Price;

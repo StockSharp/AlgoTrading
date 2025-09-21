@@ -208,7 +208,7 @@ public class ThreeLevelGridStrategy : Strategy
 		
 		var volume = trade.Order.Volume;
 		
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		SellLimit(volume, target);
 		else
 		BuyLimit(volume, target);

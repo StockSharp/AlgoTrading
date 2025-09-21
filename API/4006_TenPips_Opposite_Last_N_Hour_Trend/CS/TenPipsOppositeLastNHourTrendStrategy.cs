@@ -374,7 +374,7 @@ public class TenPipsOppositeLastNHourTrendStrategy : Strategy
 
 		var price = trade.Trade.Price;
 		var volume = trade.Trade.Volume;
-		var time = trade.Trade.Time;
+		var time = trade.Trade.ServerTime;
 
 		if (volume <= 0m || price <= 0m)
 		return;

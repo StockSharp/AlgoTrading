@@ -115,11 +115,11 @@ public class IndicateOrdersStrategy : Strategy
 		if (trade.Trade is null || trade.Trade.Volume <= 0m)
 			return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			ProcessBuyTrade(trade);
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			ProcessSellTrade(trade);
 		}
@@ -157,7 +157,7 @@ public class IndicateOrdersStrategy : Strategy
 			OrderId = trade.Order.Id,
 			Volume = remaining,
 			Price = trade.Trade.Price,
-			Time = trade.Trade.Time,
+			Time = trade.Trade.ServerTime,
 		};
 
 		_openBuyTrades.Add(openTrade);
@@ -193,7 +193,7 @@ public class IndicateOrdersStrategy : Strategy
 			OrderId = trade.Order.Id,
 			Volume = remaining,
 			Price = trade.Trade.Price,
-			Time = trade.Trade.Time,
+			Time = trade.Trade.ServerTime,
 		};
 
 		_openSellTrades.Add(openTrade);

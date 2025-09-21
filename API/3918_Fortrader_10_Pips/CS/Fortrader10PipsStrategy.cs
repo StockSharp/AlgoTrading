@@ -239,7 +239,7 @@ public class Fortrader10PipsStrategy : Strategy
 			return;
 		}
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			// Capture the latest entry price and create protective orders for the long leg.
 			_hasLongPosition = true;
@@ -256,7 +256,7 @@ public class Fortrader10PipsStrategy : Strategy
 			return;
 		}
 
-		if (trade.Order.Direction == Sides.Sell)
+		if (trade.Order.Side == Sides.Sell)
 		{
 			// Capture the latest entry price and create protective orders for the short leg.
 			_hasShortPosition = true;

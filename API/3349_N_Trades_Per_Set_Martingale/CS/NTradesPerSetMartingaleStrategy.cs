@@ -139,12 +139,12 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 		if (trade.Order?.Direction == null)
 			return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			RegisterEntry(trade);
 			AttachProtection(trade);
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			RegisterExit(trade);
 		}

@@ -539,7 +539,7 @@ public class StochSellStrategy : Strategy
 		if (tradeVolume <= 0m)
 			return;
 
-		if (trade.Order.Direction == Sides.Sell)
+		if (trade.Order.Side == Sides.Sell)
 		{
 			var total = _shortVolume + tradeVolume;
 			if (total > 0m)
@@ -547,7 +547,7 @@ public class StochSellStrategy : Strategy
 
 			_shortVolume = total;
 		}
-		else if (trade.Order.Direction == Sides.Buy)
+		else if (trade.Order.Side == Sides.Buy)
 		{
 			_shortVolume -= tradeVolume;
 			if (_shortVolume <= 0m)

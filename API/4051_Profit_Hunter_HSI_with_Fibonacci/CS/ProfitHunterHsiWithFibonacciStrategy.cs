@@ -213,7 +213,7 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	{
 		base.OnOrderRegisterFailed(fail);
 
-		if (_pendingEntrySide != null && fail.Order.Direction == _pendingEntrySide)
+		if (_pendingEntrySide != null && fail.Order.Side == _pendingEntrySide)
 		{
 			_pendingEntrySide = null;
 			_pendingStopLossPrice = null;

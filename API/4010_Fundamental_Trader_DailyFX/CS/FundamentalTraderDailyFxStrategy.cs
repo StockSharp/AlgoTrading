@@ -409,7 +409,7 @@ public class FundamentalTraderDailyFxStrategy : Strategy
 
 		state.IsActive = true;
 		state.ExitPending = false;
-		state.OpenTime = trade.Trade.Time != default ? trade.Trade.Time : CurrentTime;
+		state.OpenTime = trade.Trade.ServerTime != default ? trade.Trade.ServerTime : CurrentTime;
 	}
 
 	private void RebuildCurrencyMapping()

@@ -217,14 +217,14 @@ public class CycleLinesStrategy : Strategy
 			return;
 
 		// Capture the fill price when a fresh position is opened.
-		if (Position > 0m && trade.Order.Direction == Sides.Buy)
+		if (Position > 0m && trade.Order.Side == Sides.Buy)
 		{
 			_entryPrice = trade.Trade.Price;
 			_maxPrice = trade.Trade.Price;
 			_minPrice = trade.Trade.Price;
 			_breakEvenLevel = null;
 		}
-		else if (Position < 0m && trade.Order.Direction == Sides.Sell)
+		else if (Position < 0m && trade.Order.Side == Sides.Sell)
 		{
 			_entryPrice = trade.Trade.Price;
 			_maxPrice = trade.Trade.Price;

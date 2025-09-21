@@ -549,7 +549,7 @@ public class ExtremeEaStrategy : Strategy
 				if (_lastClosedTradeTime is DateTimeOffset lastTime)
 				{
 					var limit = TimeSpan.FromDays(Math.Max(HistoryDays, 0));
-					if (limit > TimeSpan.Zero && trade.Trade.Time - lastTime > limit)
+					if (limit > TimeSpan.Zero && trade.Trade.ServerTime - lastTime > limit)
 						_consecutiveLosses = 0;
 				}
 
@@ -565,7 +565,7 @@ public class ExtremeEaStrategy : Strategy
 
 			_lastEntrySide = null;
 			_lastEntryPrice = 0m;
-			_lastClosedTradeTime = trade.Trade.Time;
+			_lastClosedTradeTime = trade.Trade.ServerTime;
 		}
 	}
 }

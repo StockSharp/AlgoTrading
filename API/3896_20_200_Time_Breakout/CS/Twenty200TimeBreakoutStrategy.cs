@@ -172,7 +172,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 		if (tradeVolume <= 0m)
 			return;
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 		var signedVolume = direction == Sides.Buy ? tradeVolume : -tradeVolume;
 		var previousPosition = Position - signedVolume;
 
@@ -229,7 +229,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 		{
 			_entryPrice = price;
 			_isLongPosition = isLong;
-			_positionEntryTime = trade.Trade.Time;
+			_positionEntryTime = trade.Trade.ServerTime;
 			UpdateRiskTargets();
 			_closeRequested = false;
 			return;
@@ -241,7 +241,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 		var newAverage = (existing * previousAbs + price * volume) / currentPosition;
 		_entryPrice = newAverage;
 		_isLongPosition = isLong;
-		_positionEntryTime = trade.Trade.Time;
+		_positionEntryTime = trade.Trade.ServerTime;
 		UpdateRiskTargets();
 		_closeRequested = false;
 	}

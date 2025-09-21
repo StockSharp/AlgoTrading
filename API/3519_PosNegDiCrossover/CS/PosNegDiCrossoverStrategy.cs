@@ -423,7 +423,7 @@ public class PosNegDiCrossoverStrategy : Strategy
 			return;
 		}
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 		if ((side == Sides.Buy && direction != Sides.Buy) || (side == Sides.Sell && direction != Sides.Sell))
 		{
 			return;

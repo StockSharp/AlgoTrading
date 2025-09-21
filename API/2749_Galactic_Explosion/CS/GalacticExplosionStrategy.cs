@@ -374,11 +374,11 @@ public class GalacticExplosionStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			HandleBuyTrade(volume, price);
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			HandleSellTrade(volume, price);
 		}

@@ -412,7 +412,7 @@ public class PriceActionStrategy : Strategy
 			_highestSinceEntry = _entryPrice ?? 0m;
 			_lowestSinceEntry = _entryPrice ?? 0m;
 		}
-		else if (currentPosition > 0m && trade.Order.Direction == Sides.Buy)
+		else if (currentPosition > 0m && trade.Order.Side == Sides.Buy)
 		{
 			// Added to an existing long position, update the average entry price.
 			var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume ?? 0m;
@@ -430,7 +430,7 @@ public class PriceActionStrategy : Strategy
 			_highestSinceEntry = Math.Max(_highestSinceEntry, trade.Trade.Price);
 			_lowestSinceEntry = Math.Min(_lowestSinceEntry, trade.Trade.Price);
 		}
-		else if (currentPosition < 0m && trade.Order.Direction == Sides.Sell)
+		else if (currentPosition < 0m && trade.Order.Side == Sides.Sell)
 		{
 			// Added to an existing short position, update the average entry price.
 			var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume ?? 0m;

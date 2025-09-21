@@ -319,7 +319,7 @@ public class EFridayStrategy : Strategy
 		if (trade.Order == null)
 		return;
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 		if (Position > 0 && direction == Sides.Buy)
 		{
 			_entryPrice = trade.Trade.Price;

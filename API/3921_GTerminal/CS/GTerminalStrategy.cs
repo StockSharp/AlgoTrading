@@ -363,13 +363,13 @@ public class GTerminalStrategy : Strategy
 		if (trade.Order.Security != Security)
 			return;
 
-		if (Position > 0 && trade.Order.Direction == Sides.Buy)
+		if (Position > 0 && trade.Order.Side == Sides.Buy)
 		{
 			_longEntryPrice = trade.Trade.Price;
 			_longStopLevel = UseInitialProtection ? InitialLongStopLevel : 0m;
 			_longTakeProfitLevel = UseInitialProtection ? InitialLongTakeProfitLevel : 0m;
 		}
-		else if (Position < 0 && trade.Order.Direction == Sides.Sell)
+		else if (Position < 0 && trade.Order.Side == Sides.Sell)
 		{
 			_shortEntryPrice = trade.Trade.Price;
 			_shortStopLevel = UseInitialProtection ? InitialShortStopLevel : 0m;
@@ -377,13 +377,13 @@ public class GTerminalStrategy : Strategy
 		}
 		else if (Position == 0)
 		{
-			if (trade.Order.Direction == Sides.Sell)
+			if (trade.Order.Side == Sides.Sell)
 			{
 				_longEntryPrice = 0m;
 				_longStopLevel = 0m;
 				_longTakeProfitLevel = 0m;
 			}
-			else if (trade.Order.Direction == Sides.Buy)
+			else if (trade.Order.Side == Sides.Buy)
 			{
 				_shortEntryPrice = 0m;
 				_shortStopLevel = 0m;

@@ -148,7 +148,7 @@ public class LimitsMartinStrategy : Strategy
 			return;
 		}
 
-		var pnl = trade.Order.Direction == Sides.Buy ? trade.Order.Price - _entryPrice : _entryPrice - trade.Order.Price;
+		var pnl = trade.Order.Side == Sides.Buy ? trade.Order.Price - _entryPrice : _entryPrice - trade.Order.Price;
 		AdjustVolume(pnl); // adapt volume after trade
 		_entryPrice = 0;
 	}

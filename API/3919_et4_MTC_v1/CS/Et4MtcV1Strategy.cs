@@ -267,7 +267,7 @@ public class Et4MtcV1Strategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		UpdateLastTradeTime(trade.Trade.Time);
+		UpdateLastTradeTime(trade.Trade.ServerTime);
 	}
 
 	private void UpdateLastTradeTime(DateTimeOffset time)

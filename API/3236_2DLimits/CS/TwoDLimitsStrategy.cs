@@ -231,12 +231,12 @@ public class TwoDLimitsStrategy : Strategy
 
 		if (_buyEntryOrder != null && trade.Order == _buyEntryOrder)
 		{
-			_lastTradeDay = _activeEntryDay ?? trade.Trade.Time.Date;
+			_lastTradeDay = _activeEntryDay ?? trade.Trade.ServerTime.Date;
 			CancelOrder(ref _sellEntryOrder);
 		}
 		else if (_sellEntryOrder != null && trade.Order == _sellEntryOrder)
 		{
-			_lastTradeDay = _activeEntryDay ?? trade.Trade.Time.Date;
+			_lastTradeDay = _activeEntryDay ?? trade.Trade.ServerTime.Date;
 			CancelOrder(ref _buyEntryOrder);
 		}
 	}

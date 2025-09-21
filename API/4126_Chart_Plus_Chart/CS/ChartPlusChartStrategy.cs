@@ -136,7 +136,7 @@ public class ChartPlusChartStrategy : Strategy
 		_lastTradeProfit = currentPnl - _lastKnownPnl;
 		_lastKnownPnl = currentPnl;
 
-		RefreshSnapshot(trade.Trade.Time, null);
+		RefreshSnapshot(trade.Trade.ServerTime, null);
 	}
 
 	private void RefreshSnapshot(DateTimeOffset time, decimal? closePrice)

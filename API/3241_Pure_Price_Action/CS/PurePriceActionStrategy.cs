@@ -451,7 +451,7 @@ public class PurePriceActionStrategy : Strategy
 			_breakEvenActivated = false;
 			_breakEvenLevel = 0m;
 		}
-		else if (currentPosition > 0m && trade.Order.Direction == Sides.Buy)
+		else if (currentPosition > 0m && trade.Order.Side == Sides.Buy)
 		{
 			// Adding to a long position, update the weighted entry price.
 			var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume ?? 0m;
@@ -469,7 +469,7 @@ public class PurePriceActionStrategy : Strategy
 			_highestSinceEntry = Math.Max(_highestSinceEntry, trade.Trade.Price);
 			_lowestSinceEntry = Math.Min(_lowestSinceEntry, trade.Trade.Price);
 		}
-		else if (currentPosition < 0m && trade.Order.Direction == Sides.Sell)
+		else if (currentPosition < 0m && trade.Order.Side == Sides.Sell)
 		{
 			// Adding to a short position, update the weighted entry price.
 			var tradeVolume = trade.Trade.Volume ?? trade.Order.Volume ?? 0m;

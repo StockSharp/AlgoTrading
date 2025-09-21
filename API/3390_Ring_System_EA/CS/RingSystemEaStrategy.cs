@@ -506,7 +506,7 @@ public class RingSystemEaStrategy : Strategy
 			else
 			{
 				IncreasePosition(pair, true, volume, price);
-				context.Group.Plus.LastOpenTime = trade.Trade.Time;
+				context.Group.Plus.LastOpenTime = trade.Trade.ServerTime;
 				context.Group.Plus.Orders++;
 			}
 		}
@@ -519,7 +519,7 @@ public class RingSystemEaStrategy : Strategy
 			else
 			{
 				IncreasePosition(pair, false, volume, price);
-				context.Group.Minus.LastOpenTime = trade.Trade.Time;
+				context.Group.Minus.LastOpenTime = trade.Trade.ServerTime;
 				context.Group.Minus.Orders++;
 			}
 		}

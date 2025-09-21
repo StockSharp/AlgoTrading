@@ -500,7 +500,7 @@ public class EnvelopeMaShortStrategy : Strategy
 		{
 			var entryPrice = trade.Trade.Price;
 			_shortEntryPrice = entryPrice;
-			_shortEntryTime = trade.Trade.Time;
+			_shortEntryTime = trade.Trade.ServerTime;
 			_lowestHighSinceEntry = trade.Trade.Price;
 
 			var stopDistance = ConvertPipsToPrice(StopLossPips);

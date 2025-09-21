@@ -846,7 +846,7 @@ public class WavePowerEAStrategy : Strategy
 		if (myTrade.Order.Security != Security)
 			return;
 
-		var orderDirection = myTrade.Order.Direction;
+		var orderDirection = myTrade.Order.Side;
 		var trade = myTrade.Trade;
 		if (trade == null)
 			return;

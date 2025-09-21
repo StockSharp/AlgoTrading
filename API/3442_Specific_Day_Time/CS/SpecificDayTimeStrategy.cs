@@ -467,7 +467,7 @@ public class SpecificDayTimeStrategy : Strategy
 		if (PendingExpireMinutes > 0)
 		expiration = CurrentTime + TimeSpan.FromMinutes(PendingExpireMinutes);
 
-		if (OpenBuyOrders && !_buyPlaced && !_pendingOrders.Any(p => p.Order.Direction == Sides.Buy))
+		if (OpenBuyOrders && !_buyPlaced && !_pendingOrders.Any(p => p.Order.Side == Sides.Buy))
 		{
 			var price = isStop
 			? ask + distance
@@ -481,7 +481,7 @@ public class SpecificDayTimeStrategy : Strategy
 			}
 		}
 
-		if (OpenSellOrders && !_sellPlaced && !_pendingOrders.Any(p => p.Order.Direction == Sides.Sell))
+		if (OpenSellOrders && !_sellPlaced && !_pendingOrders.Any(p => p.Order.Side == Sides.Sell))
 		{
 			var price = isStop
 			? bid - distance

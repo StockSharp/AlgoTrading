@@ -449,7 +449,7 @@ public class GlamTraderSimpleStrategy : Strategy
 		if (trade?.Order == null)
 			return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			if (Position > 0)
 			{
@@ -466,7 +466,7 @@ public class GlamTraderSimpleStrategy : Strategy
 				ResetShortState();
 			}
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			if (Position < 0)
 			{

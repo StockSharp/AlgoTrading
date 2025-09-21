@@ -230,12 +230,12 @@ public class EasiestRsiStrategy : Strategy
 		if (trade?.Order == null)
 		return;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 		_longOrderPending = false;
 		_lastLongEntryPrice = trade.Trade.Price;
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 		_shortOrderPending = false;
 		_lastShortEntryPrice = trade.Trade.Price;

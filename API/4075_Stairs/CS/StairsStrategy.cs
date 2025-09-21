@@ -386,7 +386,7 @@ public class StairsStrategy : Strategy
 	if (trade.Order == null)
 	return;
 
-	var direction = trade.Order.Direction;
+	var direction = trade.Order.Side;
 	var price = trade.Trade.Price;
 	var volume = trade.Trade.Volume;
 

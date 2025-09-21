@@ -300,7 +300,7 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 		var tolerance = Security.PriceStep ?? 0.0001m;
 		var volume = trade.Trade.Volume;
 		
-		if (trade.Order.Direction == slot.EntrySide)
+		if (trade.Order.Side == slot.EntrySide)
 		{
 			if (IsNear(trade.Order.Price, slot.EntryPrice, tolerance))
 			{

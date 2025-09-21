@@ -309,7 +309,7 @@ public class ProperBotStrategy : Strategy
 		if (trade == null)
 			return;
 
-		var direction = trade.Order.Direction;
+		var direction = trade.Order.Side;
 		var volume = trade.Trade.Volume;
 
 		if (volume <= 0m)

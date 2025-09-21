@@ -934,7 +934,7 @@ public class TengriStrategy : Strategy
 	return;
 
 	var price = trade.Trade.Price;
-	var delta = trade.Order.Direction == Sides.Buy ? volume : -volume;
+	var delta = trade.Order.Side == Sides.Buy ? volume : -volume;
 	var prevNet = _netVolume;
 	_netVolume += delta;
 

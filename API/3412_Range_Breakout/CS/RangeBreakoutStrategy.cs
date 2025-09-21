@@ -270,12 +270,12 @@ public class RangeBreakoutStrategy : Strategy
 		if (_entryDirection == null)
 			return;
 
-		if (_entryOrderPending && trade.Order.Direction == _entryDirection)
+		if (_entryOrderPending && trade.Order.Side == _entryDirection)
 		{
 			_entryOrderPending = false;
 		}
 
-		if (_exitOrderPending && trade.Order.Direction != _entryDirection)
+		if (_exitOrderPending && trade.Order.Side != _entryDirection)
 		{
 			_exitOrderPending = false;
 		}

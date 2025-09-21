@@ -338,7 +338,7 @@ public class DreamBotStrategy : Strategy
 		var tradePrice = trade.Trade.Price;
 		var tradeVolume = trade.Trade.Volume;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			if (Position > 0m)
 			{
@@ -355,7 +355,7 @@ public class DreamBotStrategy : Strategy
 				_shortTrailingLevel = null;
 			}
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			if (Position < 0m)
 			{

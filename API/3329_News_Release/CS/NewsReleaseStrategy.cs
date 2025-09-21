@@ -497,13 +497,13 @@ public class NewsReleaseStrategy : Strategy
 
 		var price = trade.Trade.Price;
 
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			_longEntryPrice = price;
 			_highest = price;
 			_breakEvenArmed = false;
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			_shortEntryPrice = price;
 			_lowest = price;

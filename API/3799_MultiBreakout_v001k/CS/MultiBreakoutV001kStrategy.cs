@@ -652,7 +652,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 		return;
 
 		var volume = trade.Trade.Volume;
-		if (trade.Order.Direction == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		{
 			_longEntryPrice = trade.Trade.Price;
 			if (_longStopDistance is decimal stopDistance)
@@ -667,7 +667,7 @@ public class MultiBreakoutV001kStrategy : Strategy
 
 			_longEntryOrders.Remove(trade.Order);
 		}
-		else if (trade.Order.Direction == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		{
 			_shortEntryPrice = trade.Trade.Price;
 			if (_shortStopDistance is decimal stopDistance)

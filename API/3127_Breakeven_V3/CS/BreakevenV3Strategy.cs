@@ -117,7 +117,7 @@ public class BreakevenV3Strategy : Strategy
 
 		var commission = trade.Commission ?? 0m;
 
-		ProcessExecution(trade.Order.Direction, volume, price, commission);
+		ProcessExecution(trade.Order.Side, volume, price, commission);
 
 		UpdateProtectionOrders();
 	}

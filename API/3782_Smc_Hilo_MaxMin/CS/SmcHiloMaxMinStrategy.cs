@@ -506,15 +506,15 @@ public class SmcHiloMaxMinStrategy : Strategy
 		if (tradeVolume <= 0m)
 		return;
 
-		var signedDelta = trade.Order.Direction == Sides.Buy ? tradeVolume : -tradeVolume;
+		var signedDelta = trade.Order.Side == Sides.Buy ? tradeVolume : -tradeVolume;
 		var currentPosition = Position;
 		var previousPosition = currentPosition - signedDelta;
 
-		if (currentPosition > 0m && trade.Order.Direction == Sides.Buy)
+		if (currentPosition > 0m && trade.Order.Side == Sides.Buy)
 		{
 			UpdateLongEntry(previousPosition, trade.Trade.Price, tradeVolume);
 		}
-		else if (currentPosition < 0m && trade.Order.Direction == Sides.Sell)
+		else if (currentPosition < 0m && trade.Order.Side == Sides.Sell)
 		{
 			UpdateShortEntry(previousPosition, trade.Trade.Price, tradeVolume);
 		}

@@ -177,14 +177,14 @@ public class OpenClose23090Strategy : Strategy
 				var direction = _entrySide == Sides.Buy ? 1m : -1m;
 				var profit = (exitPrice - averageEntryPrice) * _entryVolume * direction;
 
-				_closedResults.Add(new TradeResult(trade.Trade.Time, profit));
+				_closedResults.Add(new TradeResult(trade.Trade.ServerTime, profit));
 			}
 
 			_entrySide = null;
 			_entryVolume = 0m;
 			_entryCost = 0m;
 
-			CleanupHistory(trade.Trade.Time);
+			CleanupHistory(trade.Trade.ServerTime);
 		}
 	}
 

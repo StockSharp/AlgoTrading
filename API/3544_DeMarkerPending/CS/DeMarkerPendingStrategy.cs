@@ -537,7 +537,7 @@ public class DeMarkerPendingStrategy : Strategy
 
                 if (_pendingOrder != null && trade.Order == _pendingOrder)
                 {
-                        InitializeProtection(_pendingIsBuy, trade.Trade.Price, trade.Trade.Time);
+                        InitializeProtection(_pendingIsBuy, trade.Trade.Price, trade.Trade.ServerTime);
                         _pendingOrder = null;
                 }
         }

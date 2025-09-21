@@ -229,7 +229,7 @@ public class ProfitLabelsStrategy : Strategy
 			var exitPrice = trade.Trade.Price;
 			var profit = CalculateProfit(_entrySide.Value, _entryPrice.Value, exitPrice, _positionVolume);
 
-			DrawProfitLabel(profit, trade.Trade.Time, exitPrice);
+			DrawProfitLabel(profit, trade.Trade.ServerTime, exitPrice);
 
 			_entrySide = null;
 			_entryPrice = null;
