@@ -78,7 +78,7 @@ public class FramaCandleTrendStrategy : Strategy
 		.SetDisplay("FrAMA Period", "Length of the Fractal Adaptive Moving Average", "Indicator");
 		
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Offset of bar used for signal detection", "Indicator");
 		
 		_buyOpen = Param(nameof(BuyOpen), true)

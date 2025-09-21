@@ -304,19 +304,19 @@ public class SprutPendingOrderGridStrategy : Strategy
 		.SetDisplay("First Sell Limit", "Manual price for the first sell limit (0 uses automatic offset)", "Orders");
 
 		_deltaFirstBuyStop = Param(nameof(DeltaFirstBuyStop), 15m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Delta Buy Stop", "Offset in pips added to the best ask when placing the first buy stop", "Orders");
 
 		_deltaFirstBuyLimit = Param(nameof(DeltaFirstBuyLimit), 15m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Delta Buy Limit", "Offset in pips subtracted from the best bid when placing the first buy limit", "Orders");
 
 		_deltaFirstSellStop = Param(nameof(DeltaFirstSellStop), 15m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Delta Sell Stop", "Offset in pips subtracted from the best bid when placing the first sell stop", "Orders");
 
 		_deltaFirstSellLimit = Param(nameof(DeltaFirstSellLimit), 15m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Delta Sell Limit", "Offset in pips added to the best ask when placing the first sell limit", "Orders");
 
 		_useBuyStop = Param(nameof(UseBuyStop), false)
@@ -332,11 +332,11 @@ public class SprutPendingOrderGridStrategy : Strategy
 		.SetDisplay("Use Sell Limit", "Enable sell limit grid", "Orders");
 
 		_stepStop = Param(nameof(StepStop), 50m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Step", "Distance in pips between sequential stop orders", "Orders");
 
 		_stepLimit = Param(nameof(StepLimit), 50m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Limit Step", "Distance in pips between sequential limit orders", "Orders");
 
 		_volumeStop = Param(nameof(VolumeStop), 0.01m)
@@ -362,15 +362,15 @@ public class SprutPendingOrderGridStrategy : Strategy
 		.SetDisplay("Loss Close", "Close all positions when total profit drops below this value", "Risk");
 
 		_expirationMinutes = Param(nameof(ExpirationMinutes), 60)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Expiration", "Lifetime of pending orders in minutes", "Orders");
 
 		_stopLoss = Param(nameof(StopLoss), 50m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Distance in pips for protective stop orders (0 disables)", "Risk");
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Distance in pips for protective take profit orders (0 disables)", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

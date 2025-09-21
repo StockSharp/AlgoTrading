@@ -80,7 +80,7 @@ public class ChandelExitReopenStrategy : Strategy
 
 		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
 			.SetDisplay("Re-entry Distance", "Minimum favorable move in price steps before adding", "Position Management")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_maxAdditions = Param(nameof(MaxAdditions), 10)

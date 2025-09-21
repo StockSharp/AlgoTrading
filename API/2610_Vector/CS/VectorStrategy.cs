@@ -161,19 +161,19 @@ public class VectorStrategy : Strategy
 				.SetOptimize(5, 25, 1);
 
 		_maShift = Param(nameof(MaShift), 8)
-				.SetGreaterOrEqual(0)
+				.SetNotNegative()
 				.SetDisplay("MA Shift", "Additional warm-up bars before signals", "Indicators")
 				.SetCanOptimize(true)
 				.SetOptimize(0, 20, 1);
 
 		_profitPercent = Param(nameof(ProfitPercent), 0.5m)
-				.SetGreaterOrEqual(0)
+				.SetNotNegative()
 				.SetDisplay("Equity Take Profit %", "Close all trades when floating profit reaches this percent", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(0.2m, 2m, 0.2m);
 
 		_lossPercent = Param(nameof(LossPercent), 30m)
-				.SetGreaterOrEqual(0)
+				.SetNotNegative()
 				.SetDisplay("Equity Stop Loss %", "Close all trades when floating loss reaches this percent", "Risk Management")
 				.SetCanOptimize(true)
 				.SetOptimize(5m, 50m, 5m);

@@ -113,19 +113,19 @@ public class PinballMachineStrategy : Strategy
 			.SetDisplay("Random Max Value", "Upper bound (inclusive) for random draws", "Randomization");
 
 		_minStopLossPoints = Param(nameof(MinStopLossPoints), 100)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Min Stop Loss (points)", "Minimum distance for stop-loss in price steps", "Risk");
 
 		_maxStopLossPoints = Param(nameof(MaxStopLossPoints), 1000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Max Stop Loss (points)", "Maximum distance for stop-loss in price steps", "Risk");
 
 		_minTakeProfitPoints = Param(nameof(MinTakeProfitPoints), 100)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Min Take Profit (points)", "Minimum distance for take-profit in price steps", "Risk");
 
 		_maxTakeProfitPoints = Param(nameof(MaxTakeProfitPoints), 1000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Max Take Profit (points)", "Maximum distance for take-profit in price steps", "Risk");
 
 		_randomSeed = Param(nameof(RandomSeed), 0)

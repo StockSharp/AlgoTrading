@@ -185,7 +185,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		.SetDisplay("BrainTrend ATR", "ATR length for BrainTrend2", "BrainTrend2");
 
 		_brainTrendSignalBar = Param(nameof(BrainTrendSignalBar), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("BrainTrend Signal Bar", "Shift for BrainTrend2 signals", "BrainTrend2");
 
 		_brainTrendBuyAllowed = Param(nameof(BrainTrendBuyAllowed), true)
@@ -206,7 +206,7 @@ public class BrainTrend2AbsolutelyNoLagLwmaStrategy : Strategy
 		.SetDisplay("LWMA Length", "Length of AbsolutelyNoLagLWMA", "LWMA");
 
 		_lwmaSignalBar = Param(nameof(LwmaSignalBar), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("LWMA Signal Bar", "Shift for LWMA signals", "LWMA");
 
 		_lwmaAppliedPrice = Param(nameof(LwmaAppliedPrice), AppliedPriceMode.Close)

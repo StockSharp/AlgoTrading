@@ -129,12 +129,12 @@ public class Ais1TradingRobotStrategy : Strategy
 	{
 		_accountReserve = Param(nameof(AccountReserve), 0.20m)
 			.SetDisplay("Account Reserve", "Fraction of equity kept untouched", "Risk")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetLessOrEquals(0.95m);
 
 		_orderReserve = Param(nameof(OrderReserve), 0.04m)
 			.SetDisplay("Order Reserve", "Fraction of equity per trade", "Risk")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetLessOrEquals(0.50m);
 
 		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromDays(1).TimeFrame())

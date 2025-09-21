@@ -167,32 +167,32 @@ public class CoupleHedgeStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_targetCloseProfit = Param(nameof(TargetCloseProfit), 50m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Target Profit", "Profit per lot required to close", "Risk Management")
 		.SetCanOptimize(true);
 
 		_delayCloseProfit = Param(nameof(DelayCloseProfit), 3)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Profit Delay", "Number of candles to wait before closing in profit", "Risk Management");
 
 		_targetCloseLoss = Param(nameof(TargetCloseLoss), 1000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Target Loss", "Loss per lot that triggers protective exit", "Risk Management")
 		.SetCanOptimize(true);
 
 		_delayCloseLoss = Param(nameof(DelayCloseLoss), 3)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Loss Delay", "Number of candles to wait before closing in loss", "Risk Management");
 
 		_maximumOrders = Param(nameof(MaximumOrders), 0)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Maximum Orders", "Maximum number of layers per pair (0 = unlimited)", "Grid");
 
 		_autoLotSize = Param(nameof(AutoLotSize), false)
 		.SetDisplay("Auto Lot", "Enable balance-based position sizing", "Money Management");
 
 		_riskFactor = Param(nameof(RiskFactor), 0.1m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Risk Factor", "Risk factor used for automatic sizing", "Money Management");
 
 		_manualLotSize = Param(nameof(ManualLotSize), 0.01m)
@@ -208,7 +208,7 @@ public class CoupleHedgeStrategy : Strategy
 		.SetDisplay("ATR Period", "Period for the ATR indicator", "Indicators");
 
 		_signalThreshold = Param(nameof(SignalThreshold), 0.3m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Signal Threshold", "Minimum ATR-normalized deviation required for entry", "Indicators")
 		.SetCanOptimize(true);
 

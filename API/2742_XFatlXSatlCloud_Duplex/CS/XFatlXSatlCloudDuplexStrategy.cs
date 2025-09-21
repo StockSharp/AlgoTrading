@@ -75,11 +75,11 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 			.SetDisplay("Enable Short Exits", "Allow closing short positions", "Trading");
 
 		_longSignalBar = Param(nameof(LongSignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Long Signal Shift", "Bars to look back for long signals", "Signals");
 
 		_shortSignalBar = Param(nameof(ShortSignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Short Signal Shift", "Bars to look back for short signals", "Signals");
 
 		_longCandleType = Param(nameof(LongCandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -135,19 +135,19 @@ public class XFatlXSatlCloudDuplexStrategy : Strategy
 			.SetDisplay("Short Applied Price", "Price type used for the short indicator", "Indicators");
 
 		_longStopLoss = Param(nameof(LongStopLoss), 0m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Stop Loss", "Price distance for long stop loss (0 disables)", "Risk");
 
 		_longTakeProfit = Param(nameof(LongTakeProfit), 0m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Long Take Profit", "Price distance for long take profit (0 disables)", "Risk");
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 0m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Stop Loss", "Price distance for short stop loss (0 disables)", "Risk");
 
 		_shortTakeProfit = Param(nameof(ShortTakeProfit), 0m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Short Take Profit", "Price distance for short take profit (0 disables)", "Risk");
 	}
 

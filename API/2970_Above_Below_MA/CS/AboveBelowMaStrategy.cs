@@ -105,7 +105,7 @@ public class AboveBelowMaStrategy : Strategy
 			.SetOptimize(3, 60, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Number of bars to shift the MA forward", "Moving Average");
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Exponential)
@@ -115,7 +115,7 @@ public class AboveBelowMaStrategy : Strategy
 			.SetDisplay("Applied Price", "Price type passed to the moving average", "Moving Average");
 
 		_minimumDistancePips = Param(nameof(MinimumDistancePips), 5)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Minimum Distance (pips)", "Required distance between price and the MA", "Filters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

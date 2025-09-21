@@ -155,19 +155,19 @@ public class ForexFrausM1Strategy : Strategy
 			.SetDisplay("Order Volume", "Base order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 150m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 1m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Base trailing stop distance", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Minimum move before trailing stop updates", "Risk");
 
 		_useTimeControl = Param(nameof(UseTimeControl), true)
@@ -175,7 +175,7 @@ public class ForexFrausM1Strategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 7)
 			.SetDisplay("Start Hour", "Trading session start hour", "Session")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetLessOrEqual(23);
 
 		_endHour = Param(nameof(EndHour), 17)

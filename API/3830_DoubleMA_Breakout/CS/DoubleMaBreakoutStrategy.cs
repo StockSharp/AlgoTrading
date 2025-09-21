@@ -217,7 +217,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 			.SetDisplay("Slow Price", "Applied price for the slow MA", "Moving Averages");
 
 		_signalShift = Param(nameof(SignalShift), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Number of completed candles to look back", "Trading Rules");
 
 		_breakoutDistancePoints = Param(nameof(BreakoutDistancePoints), 45m)

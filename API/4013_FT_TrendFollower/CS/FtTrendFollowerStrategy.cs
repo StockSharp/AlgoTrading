@@ -284,14 +284,14 @@ public class FtTrendFollowerStrategy : Strategy
 			.SetDisplay("Swing Stop", "Enable stop under/above prior candle extremum", "Risk");
 
 		_swingStopPips = Param(nameof(SwingStopPips), 5m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Swing Stop Points", "Swing stop distance expressed in points", "Risk");
 
 		_useFixedStop = Param(nameof(UseFixedStop), false)
 			.SetDisplay("Fixed Stop", "Enable fixed-distance stop", "Risk");
 
 		_fixedStopPips = Param(nameof(FixedStopPips), 25m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Fixed Stop Points", "Fixed stop distance expressed in points", "Risk");
 
 		_enablePivotExit = Param(nameof(EnablePivotExit), true)

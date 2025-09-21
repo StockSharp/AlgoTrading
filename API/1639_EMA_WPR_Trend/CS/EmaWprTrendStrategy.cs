@@ -138,7 +138,7 @@ public class EmaWprTrendStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_wprRetracement = Param(nameof(WprRetracement), 30m)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("WPR Retracement", "Retracement for next trade", "Signals")
 			.SetCanOptimize(true);
 

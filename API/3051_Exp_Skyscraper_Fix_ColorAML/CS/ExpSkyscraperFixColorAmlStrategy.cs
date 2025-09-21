@@ -79,7 +79,7 @@ public class ExpSkyscraperFixColorAmlStrategy : Strategy
 	.SetOptimize(5, 20, 1);
 
 	_skyscraperMultiplier = Param(nameof(SkyscraperMultiplier), 0.9m)
-	.SetGreaterOrEqual(0m)
+	.SetNotNegative()
 	.SetDisplay("Step Multiplier", "Coefficient applied to the ATR based step", "Skyscraper")
 	.SetCanOptimize(true)
 	.SetOptimize(0.3m, 1.5m, 0.1m);

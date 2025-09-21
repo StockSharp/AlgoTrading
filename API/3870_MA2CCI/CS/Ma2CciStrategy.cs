@@ -58,7 +58,7 @@ public class Ma2CciStrategy : Strategy
 		.SetDisplay("ATR Period", "Length of the Average True Range stop filter", "Risk");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("ATR Multiplier", "Multiplier applied to the ATR stop distance", "Risk");
 
 		_baseVolume = Param(nameof(BaseVolume), 0.1m)
@@ -66,11 +66,11 @@ public class Ma2CciStrategy : Strategy
 		.SetDisplay("Base Volume", "Minimum trade size before risk adjustment", "Position Sizing");
 
 		_riskFraction = Param(nameof(RiskFraction), 0.02m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Risk Fraction", "Fraction of portfolio equity risked per trade", "Position Sizing");
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 3m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Decrease Factor", "Divisor for reducing size after consecutive losses", "Position Sizing");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

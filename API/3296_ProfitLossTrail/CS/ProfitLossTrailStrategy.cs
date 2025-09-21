@@ -187,7 +187,7 @@ public class ProfitLossTrailStrategy : Strategy
 			.SetDisplay("Enable Take Profit", "Control take-profit exits automatically.", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take-profit distance in pips.", "Risk")
 			.SetCanOptimize(true);
 
@@ -195,7 +195,7 @@ public class ProfitLossTrailStrategy : Strategy
 			.SetDisplay("Enable Stop Loss", "Control stop-loss exits automatically.", "Risk");
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance in pips.", "Risk")
 			.SetCanOptimize(true);
 
@@ -203,27 +203,27 @@ public class ProfitLossTrailStrategy : Strategy
 			.SetDisplay("Enable Trailing Stop", "Activate trailing stop management.", "Risk");
 
 		_activateTrailingAfterPips = Param(nameof(ActivateTrailingAfterPips), 0m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Activation (pips)", "Profit required before trailing starts.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance applied after activation.", "Risk")
 			.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 1m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Extra profit needed before tightening the trailing stop.", "Risk");
 
 		_enableBreakEven = Param(nameof(EnableBreakEven), false)
 			.SetDisplay("Enable Break-Even", "Protect the trade once a specified profit is reached.", "Risk");
 
 		_breakEvenTriggerPips = Param(nameof(BreakEvenTriggerPips), 10m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Break-Even Trigger (pips)", "Profit distance required to activate break-even.", "Risk");
 
 		_breakEvenOffsetPips = Param(nameof(BreakEvenOffsetPips), 5m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Break-Even Offset (pips)", "Offset added to the entry price when moving the stop to break-even.", "Risk");
 
 		_removeTakeProfit = Param(nameof(RemoveTakeProfit), false)

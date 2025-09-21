@@ -181,19 +181,19 @@ public class MaTrend2Strategy : Strategy
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 140)
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 15)
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimal improvement before adjusting the trailing stop", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_lotMode = Param(nameof(LotMode), LotManagementMode.RiskPercent)
 			.SetDisplay("Lot Mode", "Fixed lot or percent risk sizing", "Risk");
@@ -208,7 +208,7 @@ public class MaTrend2Strategy : Strategy
 
 		_maShift = Param(nameof(MaShift), 3)
 			.SetDisplay("MA Shift", "Bars between the current candle and the MA sample", "Indicators")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.LinearWeighted)
 			.SetDisplay("MA Method", "Moving average smoothing method", "Indicators");

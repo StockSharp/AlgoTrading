@@ -217,7 +217,7 @@ public class FractalsAlligatorStrategy : Strategy
 			.SetOptimize(10, 20, 1);
 
 		_jawShift = Param(nameof(JawShift), 8)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Jaw Shift", "Forward shift for the jaw line", "Alligator")
 			.SetCanOptimize(false);
 
@@ -228,7 +228,7 @@ public class FractalsAlligatorStrategy : Strategy
 			.SetOptimize(5, 15, 1);
 
 		_teethShift = Param(nameof(TeethShift), 5)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Teeth Shift", "Forward shift for the teeth line", "Alligator");
 
 		_lipsLength = Param(nameof(LipsLength), 5)
@@ -238,7 +238,7 @@ public class FractalsAlligatorStrategy : Strategy
 			.SetOptimize(3, 10, 1);
 
 		_lipsShift = Param(nameof(LipsShift), 3)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Lips Shift", "Forward shift for the lips line", "Alligator");
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
@@ -246,11 +246,11 @@ public class FractalsAlligatorStrategy : Strategy
 			.SetDisplay("Momentum Period", "Lookback for the momentum calculation", "Momentum");
 
 		_momentumBuyThreshold = Param(nameof(MomentumBuyThreshold), 0.3m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Momentum Buy Threshold", "Minimum percentage change for long trades", "Momentum");
 
 		_momentumSellThreshold = Param(nameof(MomentumSellThreshold), 0.3m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Momentum Sell Threshold", "Minimum percentage change for short trades", "Momentum");
 
 		_rangeLookback = Param(nameof(RangeLookback), 10)
@@ -261,23 +261,23 @@ public class FractalsAlligatorStrategy : Strategy
 			.SetDisplay("Use ATR Filter", "Use ATR instead of fixed box size", "Filters");
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("ATR Multiplier", "ATR multiplier for the range filter", "Filters");
 
 		_rangeBoxSteps = Param(nameof(RangeBoxSteps), 20m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Range Box Steps", "Fixed box size in price steps", "Filters");
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit Steps", "Take-profit distance in steps", "Risk Management");
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 20m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Steps", "Stop-loss distance in steps", "Risk Management");
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 40m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop Steps", "Trailing stop distance in steps", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

@@ -94,7 +94,7 @@ public class MaBreakStrategy : Strategy
 		_quietBarsMinRange = Param(nameof(QuietBarsMinRange), 0m)
 			.SetDisplay("Quiet Range (pips)", "Minimal range in pips required across the quiet candles", "Impulse")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_impulseStrength = Param(nameof(ImpulseStrength), 1.1m)
 			.SetDisplay("Impulse Multiplier", "Breakout candle size multiplier relative to the quiet range", "Impulse")
@@ -104,32 +104,32 @@ public class MaBreakStrategy : Strategy
 		_bullUpperWickPercent = Param(nameof(BullUpperWickPercent), 100m)
 			.SetDisplay("Bull Upper Wick %", "Maximum upper wick of the bullish impulse candle in percent of the range", "Pattern")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_bullLowerWickPercent = Param(nameof(BullLowerWickPercent), 0m)
 			.SetDisplay("Bull Lower Wick %", "Minimum lower wick of the bullish impulse candle in percent of the range", "Pattern")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_bearUpperWickPercent = Param(nameof(BearUpperWickPercent), 0m)
 			.SetDisplay("Bear Upper Wick %", "Minimum upper wick of the bearish impulse candle in percent of the range", "Pattern")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_bearLowerWickPercent = Param(nameof(BearLowerWickPercent), 100m)
 			.SetDisplay("Bear Lower Wick %", "Maximum lower wick of the bearish impulse candle in percent of the range", "Pattern")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_candleMinSize = Param(nameof(CandleMinSize), 0m)
 			.SetDisplay("Min Candle Size (pips)", "Minimal total range in pips required for the impulse candle", "Pattern")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_candleMaxSize = Param(nameof(CandleMaxSize), 100m)
 			.SetDisplay("Max Candle Size (pips)", "Maximum total range in pips allowed for the impulse candle", "Pattern")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_volume = Param(nameof(Volume), 0.01m)
 			.SetDisplay("Volume", "Order volume in lots", "Orders")
@@ -139,12 +139,12 @@ public class MaBreakStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop-Loss (pips)", "Protective stop distance in pips", "Orders")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 20m)
 			.SetDisplay("Take-Profit (pips)", "Profit target distance in pips", "Orders")
 			.SetCanOptimize(true)
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_enableLong = Param(nameof(EnableLong), true)
 			.SetDisplay("Enable Long", "Allow bullish breakout trades", "General");

@@ -155,7 +155,7 @@ public class SimpleTradingSystemStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_maShift = Param(nameof(MaShift), 4)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Shift for comparisons", "Parameters")
 			.SetCanOptimize(true);
 

@@ -80,7 +80,7 @@ _zigZagBackstep = Param(nameof(ZigZagBackstep), 3)
 
 _waitBars = Param(nameof(WaitBarsAfterSignal), 12)
 .SetDisplay("Wait Bars", "Candles to keep the pending order before cancelling", "Trading")
-.SetGreaterOrEqual(0);
+.SetNotNegative();
 
 _fastEmaPeriod = Param(nameof(FastEmaPeriod), 9)
 .SetDisplay("Fast EMA", "Period of the fast EMA filter", "Trend")

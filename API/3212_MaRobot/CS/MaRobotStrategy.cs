@@ -57,23 +57,23 @@ public class MaRobotStrategy : Strategy
 
 		_adxThresholdParam = Param(nameof(AdxThreshold), 30m)
 			.SetDisplay("ADX Threshold", "Maximum allowed daily ADX value", "Filters")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_rsiThresholdParam = Param(nameof(RsiThreshold), 38m)
 			.SetDisplay("RSI Threshold", "Daily RSI level for longs; mirrored for shorts", "Filters")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_takeProfitRatioParam = Param(nameof(TakeProfitRatio), 0.038m)
 			.SetDisplay("Take Profit Ratio", "Fractional profit target relative to entry price", "Risk")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_stopLossPointsParam = Param(nameof(StopLossPoints), 10)
 			.SetDisplay("Protective Stop Points", "Distance for the protective stop in price points", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_protectThresholdParam = Param(nameof(ProtectThreshold), 0.001m)
 			.SetDisplay("Protect Threshold", "Minimum profit ratio before arming the protective stop", "Risk")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_backCloseParam = Param(nameof(BackClose), 12)
 			.SetDisplay("Swing Lookback", "Number of candles for swing high/low stop selection", "Risk")

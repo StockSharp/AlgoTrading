@@ -83,7 +83,7 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			.SetCanOptimize(true);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Shift used to read colors", "Logic")
 			.SetCanOptimize(true);
 
@@ -108,27 +108,27 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 			.SetDisplay("Reduced Volume", "Volume used after a loss streak", "Money Management");
 
 		_buyTotalTrigger = Param(nameof(BuyTotalTrigger), 5)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Buy Total Trigger", "Number of recent buys checked", "Money Management");
 
 		_buyLossTrigger = Param(nameof(BuyLossTrigger), 3)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Buy Loss Trigger", "Loss count switching to reduced volume", "Money Management");
 
 		_sellTotalTrigger = Param(nameof(SellTotalTrigger), 5)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Sell Total Trigger", "Number of recent sells checked", "Money Management");
 
 		_sellLossTrigger = Param(nameof(SellLossTrigger), 3)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Sell Loss Trigger", "Loss count switching to reduced volume", "Money Management");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss Points", "Protective stop distance in points", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit Points", "Protective take profit distance in points", "Risk Management");
 	}
 

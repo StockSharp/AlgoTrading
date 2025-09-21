@@ -234,15 +234,15 @@ public class ButterflyPatternStrategy : Strategy
 		.SetDisplay("Adjust Lots", "Normalize take-profit allocations to match total volume", "Risk");
 
 		_tp1Percent = Param(nameof(Tp1Percent), 50m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("TP1 %", "Share of volume closed at the first take-profit", "Targets");
 
 		_tp2Percent = Param(nameof(Tp2Percent), 30m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("TP2 %", "Share of volume closed at the second take-profit", "Targets");
 
 		_tp3Percent = Param(nameof(Tp3Percent), 20m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("TP3 %", "Share of volume closed at the third take-profit", "Targets");
 
 		_minPatternQuality = Param(nameof(MinPatternQuality), 0.1m)

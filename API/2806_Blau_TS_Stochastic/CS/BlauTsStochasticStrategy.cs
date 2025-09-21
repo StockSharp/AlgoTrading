@@ -234,16 +234,16 @@ public class BlauTsStochasticStrategy : Strategy
 		.SetOptimize(2, 15, 1);
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Shift used for signal evaluation", "Signals")
 		.SetCanOptimize(false);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Stop size in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Target size in price steps", "Risk");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)

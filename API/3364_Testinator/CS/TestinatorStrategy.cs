@@ -291,7 +291,7 @@ public class TestinatorStrategy : Strategy
 		.SetOptimize(1, 6, 1);
 
 		_stepPips = Param(nameof(StepPips), 15)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Step (pips)", "Minimum spacing between sequential buys", "Risk");
 
 		_tradeStartHour = Param(nameof(TradeStartHour), 16)

@@ -99,40 +99,40 @@ public class SpecificDayTimeStrategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 10m)
 		.SetDisplay("Take Profit", "Take-profit distance in points (0 disables).", "Protection")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 10m)
 		.SetDisplay("Stop Loss", "Stop-loss distance in points (0 disables).", "Protection")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_trailingEnabled = Param(nameof(TrailingStopEnabled), false)
 		.SetDisplay("Trailing Stop", "Enable trailing stop adjustments.", "Protection");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 1m)
 		.SetDisplay("Trailing Step", "Extra points required to move the stop.", "Protection")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_breakEvenEnabled = Param(nameof(BreakEvenEnabled), false)
 		.SetDisplay("Break Even", "Shift the stop to break-even after profit.", "Protection");
 
 		_breakEvenAfterPoints = Param(nameof(BreakEvenAfterPoints), 10m)
 		.SetDisplay("Break Even Trigger", "Profit points required before break-even.", "Protection")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_orderDistancePoints = Param(nameof(OrderDistancePoints), 10m)
 		.SetDisplay("Pending Distance", "Distance in points for pending orders.", "Trading")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_pendingExpireMinutes = Param(nameof(PendingExpireMinutes), 60)
 		.SetDisplay("Pending Expiry", "Minutes until pending orders expire (0 keeps them).", "Trading")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_lotSizing = Param(nameof(LotSizing), LotSizingMode.Manual)
 		.SetDisplay("Lot Sizing", "Manual size or automatic risk factor.", "Risk");
 
 		_riskFactor = Param(nameof(RiskFactor), 1m)
 		.SetDisplay("Risk Factor", "Risk multiplier for automatic volume.", "Risk")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_manualVolume = Param(nameof(ManualVolume), 0.01m)
 		.SetDisplay("Manual Volume", "Fixed order volume when manual sizing is selected.", "Risk")

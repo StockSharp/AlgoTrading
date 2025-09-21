@@ -52,7 +52,7 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 			.SetDisplay("Donchian Period", "Lookback window for the candle range", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Number of bars to delay signal evaluation", "Indicator");
 
 		_smoothingMethod = Param(nameof(SmoothingMethod), SmoothingMethod.Jjma)
@@ -85,11 +85,11 @@ public class CaudateXPeriodCandleTmPlusStrategy : Strategy
 			.SetDisplay("Time Exit (minutes)", "Holding time before a forced exit", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Protective profit target distance in price steps", "Risk");
 	}
 

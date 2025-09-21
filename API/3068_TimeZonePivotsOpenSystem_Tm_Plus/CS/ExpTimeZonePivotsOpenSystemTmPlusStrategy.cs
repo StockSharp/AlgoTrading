@@ -205,7 +205,7 @@ public class ExpTimeZonePivotsOpenSystemTmPlusStrategy : Strategy
 
 		_startHour = Param(nameof(StartHour), 0)
 			.SetDisplay("Session Start Hour", "Hour of day used to anchor the session open price", "Indicator")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetLessOrEqual(23);
 	}
 

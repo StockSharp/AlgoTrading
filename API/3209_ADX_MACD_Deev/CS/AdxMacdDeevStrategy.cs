@@ -216,11 +216,11 @@ public class AdxMacdDeevStrategy : Strategy
 
 		_adxBarsInterval = Param(nameof(AdxBarsInterval), 2)
 			.SetDisplay("ADX Bars Interval", "Consecutive ADX bars to check", "Indicators")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_adxMinimum = Param(nameof(AdxMinimum), 20)
 			.SetDisplay("ADX Minimum", "Minimum ADX strength", "Indicators")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10, 40, 2);
 
@@ -238,11 +238,11 @@ public class AdxMacdDeevStrategy : Strategy
 
 		_macdBarsInterval = Param(nameof(MacdBarsInterval), 4)
 			.SetDisplay("MACD Bars Interval", "Consecutive MACD bars to confirm trend", "Indicators")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_macdMinimumPips = Param(nameof(MacdMinimumPips), 30)
 			.SetDisplay("MACD Minimum (pips)", "Minimum MACD magnitude in pips", "Indicators")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10, 80, 5);
 

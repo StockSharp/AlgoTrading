@@ -196,7 +196,7 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			SetOptimize(5, 30, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-			SetGreaterOrEqual(0)
+			SetNotNegative()
 			SetDisplay("MA Shift", "Forward shift for moving average", "Indicator");
 
 		_maType = Param(nameof(MaType), MovingAverageTypeEnum.Exponential)

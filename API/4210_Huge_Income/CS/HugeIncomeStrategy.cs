@@ -37,21 +37,21 @@ public class HugeIncomeStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order size used for entries", "General");
 
 		_minimumRangePips = Param(nameof(MinimumRangePips), 15m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Minimum Range (pips)", "Minimum daily distance from the open before trading", "Filters");
 
 		_buyCutoffHour = Param(nameof(BuyCutoffHour), 22)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetLessOrEqual(23)
 			.SetDisplay("Buy Cutoff Hour", "Latest hour when new long trades are allowed", "Timing");
 
 		_sellCutoffHour = Param(nameof(SellCutoffHour), 16)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetLessOrEqual(23)
 			.SetDisplay("Sell Cutoff Hour", "Latest hour when new short trades are allowed", "Timing");
 
 		_marketCloseHour = Param(nameof(MarketCloseHour), 23)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetLessOrEqual(23)
 			.SetDisplay("Market Close Hour", "Hour when all open positions must be closed", "Timing");
 

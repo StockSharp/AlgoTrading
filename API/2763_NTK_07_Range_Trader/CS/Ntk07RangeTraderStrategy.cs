@@ -230,7 +230,7 @@ public class Ntk07RangeTraderStrategy : Strategy
 		.SetDisplay("Trading End Hour", "Trading window closing hour", "Sessions");
 
 		_rangeBars = Param(nameof(RangeBars), 0)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Range Bars", "Number of completed candles used for the range", "Entries");
 
 		_tradeMode = Param(nameof(TradeMode), TradeModeOption.EdgesOfRange)

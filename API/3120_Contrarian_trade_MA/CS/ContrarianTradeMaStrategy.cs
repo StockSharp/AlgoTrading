@@ -122,7 +122,7 @@ public class ContrarianTradeMaStrategy : Strategy
 			.SetOptimize(3, 12, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 300)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop-loss distance expressed in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(100, 600, 50);
@@ -134,7 +134,7 @@ public class ContrarianTradeMaStrategy : Strategy
 			.SetOptimize(3, 20, 1);
 
 		_maShift = Param(nameof(MaShift), 0)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("MA Shift", "Horizontal shift applied to the moving average", "Moving Average");
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.LinearWeighted)

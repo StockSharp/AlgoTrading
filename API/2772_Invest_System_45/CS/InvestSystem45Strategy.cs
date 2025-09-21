@@ -105,13 +105,13 @@ public class InvestSystem45Strategy : Strategy
 	public InvestSystem45Strategy()
 	{
 		_stopLossPips = Param(nameof(StopLossPips), 240)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(120, 360, 20);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 40)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(20, 80, 10);

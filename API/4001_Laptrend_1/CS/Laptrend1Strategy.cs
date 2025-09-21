@@ -176,15 +176,15 @@ public class Laptrend1Strategy : Strategy
 		.SetDisplay("ADX Delta", "Maximum spread between ADX and DI before flat exit", "Filters");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk Management");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 40m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take profit distance in points", "Risk Management");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 100m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk Management");
 
 		_signalCandleType = Param(nameof(SignalCandleType), TimeSpan.FromMinutes(15).TimeFrame())

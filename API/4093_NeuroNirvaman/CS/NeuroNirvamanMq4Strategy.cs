@@ -83,7 +83,7 @@ public class NeuroNirvamanMq4Strategy : Strategy
 
 		_laguerre1Distance = Param(nameof(Laguerre1Distance), 0m)
 			.SetDisplay("Laguerre Distance #1", "Neutral zone width around 0.5 for the first Laguerre stream (percent)", "Laguerre #1")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_x11 = Param(nameof(X11), 100m)
 			.SetDisplay("Weight X11", "Weight applied to the first Laguerre activation", "Perceptron #1");
@@ -93,11 +93,11 @@ public class NeuroNirvamanMq4Strategy : Strategy
 
 		_takeProfit1 = Param(nameof(TakeProfit1), 100m)
 			.SetDisplay("Take Profit #1", "Take-profit distance in points for perceptron #1", "Risk #1")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_stopLoss1 = Param(nameof(StopLoss1), 50m)
 			.SetDisplay("Stop Loss #1", "Stop-loss distance in points for perceptron #1", "Risk #1")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_silverTrend2Length = Param(nameof(SilverTrend2Length), 7)
 			.SetDisplay("SilverTrend Length #2", "Lookback for the second SilverTrend filter", "SilverTrend #2")
@@ -109,7 +109,7 @@ public class NeuroNirvamanMq4Strategy : Strategy
 
 		_laguerre2Distance = Param(nameof(Laguerre2Distance), 0m)
 			.SetDisplay("Laguerre Distance #2", "Neutral zone width around 0.5 for the second Laguerre stream (percent)", "Laguerre #2")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_x21 = Param(nameof(X21), 100m)
 			.SetDisplay("Weight X21", "Weight applied to the second Laguerre activation", "Perceptron #2");
@@ -119,11 +119,11 @@ public class NeuroNirvamanMq4Strategy : Strategy
 
 		_takeProfit2 = Param(nameof(TakeProfit2), 100m)
 			.SetDisplay("Take Profit #2", "Take-profit distance in points for perceptron #2", "Risk #2")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_stopLoss2 = Param(nameof(StopLoss2), 50m)
 			.SetDisplay("Stop Loss #2", "Stop-loss distance in points for perceptron #2", "Risk #2")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_laguerre3Period = Param(nameof(Laguerre3Period), 14)
 			.SetDisplay("Laguerre Period #3", "ADX period for the third Laguerre stream", "Laguerre #3")
@@ -131,7 +131,7 @@ public class NeuroNirvamanMq4Strategy : Strategy
 
 		_laguerre3Distance = Param(nameof(Laguerre3Distance), 0m)
 			.SetDisplay("Laguerre Distance #3", "Neutral zone width around 0.5 for the third Laguerre stream (percent)", "Laguerre #3")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_laguerre4Period = Param(nameof(Laguerre4Period), 14)
 			.SetDisplay("Laguerre Period #4", "ADX period for the fourth Laguerre stream", "Laguerre #4")
@@ -139,7 +139,7 @@ public class NeuroNirvamanMq4Strategy : Strategy
 
 		_laguerre4Distance = Param(nameof(Laguerre4Distance), 0m)
 			.SetDisplay("Laguerre Distance #4", "Neutral zone width around 0.5 for the fourth Laguerre stream (percent)", "Laguerre #4")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_x31 = Param(nameof(X31), 100m)
 			.SetDisplay("Weight X31", "Weight applied to the third Laguerre activation", "Perceptron #3");

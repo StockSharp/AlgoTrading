@@ -149,12 +149,12 @@ public class Ais3TradingRobotTemplateStrategy : Strategy
 	{
 		_accountReserve = Param(nameof(AccountReserve), 0.20m)
 		.SetDisplay("Account Reserve", "Fraction of equity kept as reserve", "Risk")
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetLessOrEquals(0.95m);
 
 		_orderReserve = Param(nameof(OrderReserve), 0.04m)
 		.SetDisplay("Order Reserve", "Fraction of equity allocated per trade", "Risk")
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetLessOrEquals(0.50m);
 
 		_primaryCandleType = Param(nameof(PrimaryCandleType), TimeSpan.FromMinutes(15).TimeFrame())

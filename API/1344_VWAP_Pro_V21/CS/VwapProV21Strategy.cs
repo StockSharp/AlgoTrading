@@ -96,11 +96,11 @@ public class VwapProV21Strategy : Strategy
 			.SetDisplay("ATR Length", "ATR period", "Indicators");
 
 		_tpMultiplier = Param(nameof(TakeProfitAtrMultiplier), 0.7m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("TP ATR Multiplier", "ATR multiplier for take profit", "Risk Management");
 
 		_slMultiplier = Param(nameof(StopLossAtrMultiplier), 1.4m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("SL ATR Multiplier", "ATR multiplier for stop loss", "Risk Management");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

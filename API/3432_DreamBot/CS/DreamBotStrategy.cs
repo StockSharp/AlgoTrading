@@ -65,13 +65,13 @@ public class DreamBotStrategy : Strategy
 		.SetDisplay("Enable Trailing", "Enable DreamBot style trailing stop management.", "Trailing");
 
 		_trailingStartPoints = Param(nameof(TrailingStartPoints), 290)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Distance (points)", "Distance maintained between price and trailing stop.", "Trailing")
 		.SetCanOptimize(true)
 		.SetOptimize(100, 400, 10);
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 120)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Trigger (points)", "Minimum profit before the trailing stop activates.", "Trailing")
 		.SetCanOptimize(true)
 		.SetOptimize(60, 300, 10);

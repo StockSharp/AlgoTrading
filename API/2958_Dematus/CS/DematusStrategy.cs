@@ -172,31 +172,31 @@ public class DematusStrategy : Strategy
 		.SetOptimize(5, 40, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 999m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips.", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips.", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Extra profit required to tighten trailing stop.", "Risk");
 
 		_distancePips = Param(nameof(DistancePips), 50m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Re-entry Distance (pips)", "Minimum distance before scaling the position.", "Trading");
 
 		_trailingEquity = Param(nameof(TrailingEquity), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Equity Trailing Offset", "Offset between equity peak and liquidation threshold.", "Risk");
 
 		_virtualStopEquity = Param(nameof(VirtualStopEquity), 99999m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Virtual Stop Equity", "Initial buffer below balance before closing all positions.", "Risk");
 
 		_trailingStartEquity = Param(nameof(TrailingStartEquity), 20m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Equity Trailing Trigger", "Gain above balance needed to activate equity trailing.", "Risk");
 
 		_volumeMultiplier = Param(nameof(VolumeMultiplier), 2m)

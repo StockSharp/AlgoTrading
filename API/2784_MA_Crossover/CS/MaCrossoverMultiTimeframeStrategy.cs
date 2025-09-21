@@ -235,17 +235,17 @@ public class MaCrossoverMultiTimeframeStrategy : Strategy
 			.SetOptimize(10, 120, 5);
 
 		_previousPeriodAdd = Param(nameof(PreviousPeriodAddition), 10)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Previous MA Extra Length", "Additional length added to the slower moving average", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 50, 5);
 
 		_currentShift = Param(nameof(CurrentShift), 0)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Current MA Shift", "Number of bars to shift the faster moving average", "Indicators");
 
 		_previousShift = Param(nameof(PreviousShift), 2)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Previous MA Shift", "Number of bars to shift the slower moving average", "Indicators");
 
 		_currentCandleType = Param(nameof(CurrentCandleType), TimeSpan.FromDays(1).TimeFrame())

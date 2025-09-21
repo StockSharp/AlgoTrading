@@ -175,7 +175,7 @@ public class BandOsMaStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance in MetaTrader points", "Risk")
 		.SetCanOptimize(true);
 

@@ -160,12 +160,12 @@ public class ColorFisherM11Strategy : Strategy
 			.SetDisplay("Range Periods", "Lookback window for highs and lows", "Indicator");
 
 		_priceSmoothing = Param(nameof(PriceSmoothing), 0.3m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetLessOrEqual(0.99m)
 			.SetDisplay("Price Smoothing", "Smoothing factor applied before Fisher transform", "Indicator");
 
 		_indexSmoothing = Param(nameof(IndexSmoothing), 0.3m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetLessOrEqual(0.99m)
 			.SetDisplay("Index Smoothing", "Smoothing factor applied after Fisher transform", "Indicator");
 

@@ -96,7 +96,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetDisplay("Trend Smooth", "Range smoothing period", "Trend");
 
 		_trendSignalBar = Param(nameof(TrendSignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Trend Shift", "Shift used to read indicator", "Trend");
 
 		_allowLongEntries = Param(nameof(AllowLongEntries), true)
@@ -148,7 +148,7 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetDisplay("Signal Smooth", "Range smoothing period", "Signal");
 
 		_signalSignalBar = Param(nameof(SignalSignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Shift", "Shift used to read indicator", "Signal");
 
 		_closeLongOnSignalCross = Param(nameof(CloseLongOnSignalCross), false)
@@ -158,11 +158,11 @@ public class IbsRsiCciV4X2Strategy : Strategy
 			.SetDisplay("Close Short Signal", "Close shorts on bullish cross", "Signal");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Protection");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit", "Take profit in points", "Protection");
 	}
 

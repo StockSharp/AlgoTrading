@@ -47,7 +47,7 @@ public class VrSetkaP2Strategy : Strategy
 			.SetDisplay("Use Martingale", "Increase volume after loss", "General");
 
 		_slippage = Param(nameof(Slippage), 2)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Allowed slippage", "General");
 
 		_correlation = Param(nameof(Correlation), 50)

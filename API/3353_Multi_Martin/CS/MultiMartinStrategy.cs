@@ -71,12 +71,12 @@ public class MultiMartinStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in price points", "Risk")
 		.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 500)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Target profit distance expressed in price points", "Risk")
 		.SetCanOptimize(true);
 

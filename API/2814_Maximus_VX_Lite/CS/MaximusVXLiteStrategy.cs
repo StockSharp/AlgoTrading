@@ -164,7 +164,7 @@ public class MaximusVXLiteStrategy : Strategy
 			.SetDisplay("Candle Type", "Primary timeframe used by the strategy", "General");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Risk Percent", "Portfolio percent risked per trade", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
@@ -172,7 +172,7 @@ public class MaximusVXLiteStrategy : Strategy
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk");
 
 		_minProfitPercent = Param(nameof(MinProfitPercent), 1m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Min Profit Percent", "Floating profit percent required to close all positions", "Risk");
 	}
 

@@ -69,7 +69,7 @@ public class RandomTStrategy : Strategy
 			.SetDisplay("Stop Level", "Trailing stop distance in points", "Risk");
 
 		_minProfit = Param(nameof(MinProfit), 0.4m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Min Profit", "Floating profit required before trailing activates", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

@@ -50,31 +50,31 @@ public class HoopMasterStrategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 25)
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss in pips", "Protection")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(5, 80, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetDisplay("Take Profit (pips)", "Initial take profit in pips", "Protection")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(10, 120, 5);
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 0)
 			.SetDisplay("Trailing Stop (pips)", "Trailing distance in pips", "Protection")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0, 120, 5);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5)
 			.SetDisplay("Trailing Step (pips)", "Minimal step to move trailing stop", "Protection")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(1, 40, 1);
 
 		_indentPips = Param(nameof(IndentPips), 15)
 			.SetDisplay("Indent (pips)", "Distance for pending stops", "Trading")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(1, 50, 1);
 	}

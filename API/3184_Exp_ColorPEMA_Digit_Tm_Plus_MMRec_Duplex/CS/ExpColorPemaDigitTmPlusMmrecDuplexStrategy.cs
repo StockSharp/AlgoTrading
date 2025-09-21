@@ -122,11 +122,11 @@ _tradeVolume = Param(nameof(TradeVolume), 1m)
 .SetOptimize(0.5m, 5m, 0.5m);
 
 _stopLossSteps = Param(nameof(StopLossSteps), 1000m)
-.SetGreaterOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Stop Loss (steps)", "Protective stop in price steps", "Risk");
 
 _takeProfitSteps = Param(nameof(TakeProfitSteps), 2000m)
-.SetGreaterOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Take Profit (steps)", "Profit target in price steps", "Risk");
 }
 

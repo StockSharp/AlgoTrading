@@ -113,13 +113,13 @@ public class KdjExpertAdvisorStrategy : Strategy
 			.SetOptimize(1, 15, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 25)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 100, 5);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 150, 5);

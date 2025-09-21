@@ -236,11 +236,11 @@ public class FractalsMartingaleStrategy : Strategy
                         .SetDisplay("Multiplier", "Volume multiplier applied after a losing trade", "Risk Management");
 
                 _stopLossPips = Param(nameof(StopLossPips), 100)
-                        .SetGreaterOrEqual(0)
+                        .SetNotNegative()
                         .SetDisplay("Stop Loss (pips)", "Protective stop distance in pips", "Risk Management");
 
                 _takeProfitPips = Param(nameof(TakeProfitPips), 50)
-                        .SetGreaterOrEqual(0)
+                        .SetNotNegative()
                         .SetDisplay("Take Profit (pips)", "Target distance in pips", "Risk Management");
 
                 _fractalDepth = Param(nameof(FractalDepth), 2)
@@ -258,11 +258,11 @@ public class FractalsMartingaleStrategy : Strategy
                         .SetDisplay("End Hour", "Trading window end hour (exclusive)", "Session");
 
                 _maxConsecutiveLosses = Param(nameof(MaxConsecutiveLosses), 3)
-                        .SetGreaterOrEqual(0)
+                        .SetNotNegative()
                         .SetDisplay("Max Losses", "Consecutive losses before triggering a pause", "Risk Management");
 
                 _pauseMinutes = Param(nameof(PauseMinutes), 180)
-                        .SetGreaterOrEqual(0)
+                        .SetNotNegative()
                         .SetDisplay("Pause Minutes", "Duration of the cool-down after too many losses", "Risk Management");
 
                 _tenkanPeriod = Param(nameof(TenkanPeriod), 9)

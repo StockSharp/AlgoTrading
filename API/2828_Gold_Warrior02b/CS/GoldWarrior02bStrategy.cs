@@ -176,19 +176,19 @@ public class GoldWarrior02bStrategy : Strategy
 		.SetDisplay("Volume", "Base trade size", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 150m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Take-profit distance in points", "Risk");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points", "Risk");
 
 		_trailingStepPoints = Param(nameof(TrailingStepPoints), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step", "Extra distance before trailing activates", "Risk");
 
 		_impulsePeriod = Param(nameof(ImpulsePeriod), 21)
@@ -208,7 +208,7 @@ public class GoldWarrior02bStrategy : Strategy
 		.SetDisplay("ZigZag Backstep", "Bars before confirming a new swing", "Indicators");
 
 		_profitTarget = Param(nameof(ProfitTarget), 300m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Profit Target", "Close all profit in account currency", "Risk");
 
 		_impulseSellThreshold = Param(nameof(ImpulseSellThreshold), -30m)

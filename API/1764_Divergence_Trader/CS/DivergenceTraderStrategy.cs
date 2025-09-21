@@ -105,13 +105,13 @@ public class DivergenceTraderStrategy : Strategy
 			.SetOptimize(50, 120, 5);
 
 		_dvBuySell = Param(nameof(DvBuySell), 0.0011m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("DV Buy/Sell", "Minimum divergence for entry", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(0.0005m, 0.005m, 0.0005m);
 
 		_dvStayOut = Param(nameof(DvStayOut), 0.0079m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("DV Stay Out", "Maximum divergence for entry", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(0.001m, 0.02m, 0.001m);

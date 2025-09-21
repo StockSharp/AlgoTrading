@@ -110,7 +110,7 @@ public class AverageChangeCandleStrategy : Strategy
 		.SetDisplay("Power", "Exponent applied to price ratios", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Signal Bar", "Bar offset used for signals", "Trading");
 
 		_buyOpen = Param(nameof(BuyOpenEnabled), true)

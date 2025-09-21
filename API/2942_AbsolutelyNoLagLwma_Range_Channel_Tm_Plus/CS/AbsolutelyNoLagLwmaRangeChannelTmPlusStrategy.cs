@@ -47,7 +47,7 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 			.SetDisplay("Channel Length", "Length used by both LWMA smoothing passes", "Indicator");
 
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Bar Shift", "Index of the bar evaluated for signals", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
@@ -59,12 +59,12 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 			.SetDisplay("Order Volume", "Contracts or lots used for entries", "Risk");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance in price steps", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetDisplay("Take Profit (points)", "Profit target distance in price steps", "Risk");
 

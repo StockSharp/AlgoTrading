@@ -174,11 +174,11 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 
 		_buyLossTrigger = Param(nameof(BuyLossTrigger), 2)
 			.SetDisplay("Buy Loss Trigger", "Losing long trades before volume reduction.", "Money Management")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_sellLossTrigger = Param(nameof(SellLossTrigger), 2)
 			.SetDisplay("Sell Loss Trigger", "Losing short trades before volume reduction.", "Money Management")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_smallVolume = Param(nameof(SmallVolume), 0.01m)
 			.SetDisplay("Small Volume", "Volume after reaching the loss trigger.", "Money Management")
@@ -190,11 +190,11 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
 			.SetDisplay("Stop Loss Steps", "Stop loss distance in price steps.", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 2000)
 			.SetDisplay("Take Profit Steps", "Take profit distance in price steps.", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

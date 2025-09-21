@@ -79,19 +79,19 @@ public class HpcsInter4Strategy : Strategy
 
 		_stopLossPips = Param(nameof(StopLossPips), 10)
 			.SetDisplay("Stop Loss (pips)", "Base stop-loss distance expressed in MetaTrader pips.", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_extraStopPips = Param(nameof(ExtraStopPips), 10)
 			.SetDisplay("Extra Stop Buffer", "Additional MetaTrader pips subtracted from the stop after entry.", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 10)
 			.SetDisplay("Take Profit (pips)", "Take-profit distance expressed in MetaTrader pips.", "Risk")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_closeDelaySeconds = Param(nameof(CloseDelaySeconds), 30)
 			.SetDisplay("Close Delay (seconds)", "Holding time before the position is closed by the timer.", "Execution")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

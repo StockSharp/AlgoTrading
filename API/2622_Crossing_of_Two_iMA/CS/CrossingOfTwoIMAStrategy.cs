@@ -111,7 +111,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetOptimize(2, 30, 1);
 
 		_firstShift = Param(nameof(FirstMaShift), 3)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("First MA Shift", "Shift applied to the first moving average", "First Moving Average");
 
 		_firstMethod = Param(nameof(FirstMaMethod), MovingAverageMethod.Smoothed)
@@ -124,7 +124,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetOptimize(3, 60, 1);
 
 		_secondShift = Param(nameof(SecondMaShift), 5)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Second MA Shift", "Shift applied to the second moving average", "Second Moving Average");
 
 		_secondMethod = Param(nameof(SecondMaMethod), MovingAverageMethod.Smoothed)
@@ -138,7 +138,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetDisplay("Third MA Period", "Period of the third moving average", "Third Moving Average");
 
 		_thirdShift = Param(nameof(ThirdMaShift), 8)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Third MA Shift", "Shift applied to the third moving average", "Third Moving Average");
 
 		_thirdMethod = Param(nameof(ThirdMaMethod), MovingAverageMethod.Smoothed)
@@ -148,26 +148,26 @@ public class CrossingOfTwoIMAStrategy : Strategy
 			.SetDisplay("Use Fixed Volume", "Use the strategy volume directly instead of risk based sizing", "Money Management");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Risk %", "Risk percentage of portfolio value per trade when position sizing is dynamic", "Money Management");
 
 		_priceLevelPips = Param(nameof(PriceLevelPips), 0)
 			.SetDisplay("Price Level (pips)", "Offset in pips for simulated pending orders (negative for stop, positive for limit)", "Orders");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Initial stop loss distance in pips", "Risk");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Take profit distance in pips", "Risk");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 10)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (pips)", "Trailing stop distance in pips", "Risk");
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 4)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Trailing Step (pips)", "Additional progress in pips required before the trailing stop is advanced", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

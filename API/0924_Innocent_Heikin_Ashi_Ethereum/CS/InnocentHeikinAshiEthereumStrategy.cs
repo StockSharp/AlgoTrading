@@ -50,7 +50,7 @@ public class InnocentHeikinAshiEthereumStrategy : Strategy {
 
 	_confirmationLevel =
 	    Param(nameof(ConfirmationLevel), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay(
 		    "Confirmation Level",
 		    "Number of red candles below EMA50 required before entry",

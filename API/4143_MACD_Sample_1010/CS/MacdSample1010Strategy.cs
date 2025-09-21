@@ -117,15 +117,15 @@ public class MacdSample1010Strategy : Strategy
 	{
 		_profitTargetPips = Param(nameof(ProfitTargetPips), 3m)
 		.SetDisplay("Profit Target (pips)", "Number of pips required to close a profitable trade.", "Risk Management")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_lossLimitPips = Param(nameof(LossLimitPips), 20m)
 		.SetDisplay("Loss Limit (pips)", "Maximum adverse movement in pips before closing the trade.", "Risk Management")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_bandDistancePips = Param(nameof(BandDistancePips), 3m)
 		.SetDisplay("Band Distance (pips)", "Additional distance added to the Bollinger Band breakout threshold.", "Signal")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_bollingerPeriod = Param(nameof(BollingerPeriod), 4)
 		.SetDisplay("Bollinger Period", "Number of candles used by the Bollinger Bands.", "Signal")
@@ -137,7 +137,7 @@ public class MacdSample1010Strategy : Strategy
 
 		_baseVolume = Param(nameof(BaseVolume), 1m)
 		.SetDisplay("Base Volume", "Initial trade size in lots before scaling is applied.", "Money Management")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_lotIncrease = Param(nameof(LotIncrease), true)
 		.SetDisplay("Lot Increase", "Scale trade size proportionally to the portfolio balance.", "Money Management");

@@ -297,7 +297,7 @@ public class EuroSurgeSimplifiedStrategy : Strategy
 		.SetDisplay("Stop Loss (pts)", "Distance in price steps for stop-loss", "Risk Management");
 
 		_minTradeIntervalMinutes = Param(nameof(MinTradeIntervalMinutes), 60)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Min Trade Interval", "Minimum minutes between entries", "Execution");
 
 		_maPeriod = Param(nameof(MaPeriod), 52)

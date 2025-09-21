@@ -111,7 +111,7 @@ _pivotLength = Param(nameof(PivotLength), 5)
 .SetDisplay("Pivot Length", "Strength of pivot for support/resistance", "General");
 
 _touchBufferPercent = Param(nameof(TouchBufferPercent), 1m)
-.SetGreaterOrEqual(0m)
+.SetNotNegative()
 .SetDisplay("Touch Buffer %", "Buffer for support/resistance touch", "General");
 
 _stopLossAtrMult = Param(nameof(StopLossAtrMult), 1m)
@@ -123,7 +123,7 @@ _takeProfitAtrMult = Param(nameof(TakeProfitAtrMult), 2.2m)
 .SetDisplay("Take Profit ATR Mult", "ATR multiplier for take profit", "Risk Management");
 
 _cooldownBars = Param(nameof(CooldownBars), 2)
-.SetGreaterOrEqual(0)
+.SetNotNegative()
 .SetDisplay("Cooldown Bars", "Bars to wait between trades", "Trading");
 
 _maxTradesPerDay = Param(nameof(MaxTradesPerDay), 2)

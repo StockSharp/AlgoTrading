@@ -101,7 +101,7 @@ public class ChannelEa2Strategy : Strategy
 
 		_stopBufferMultiplier = Param(nameof(StopBufferMultiplier), 2m)
 			.SetDisplay("Stop Buffer", "Price step multiplier for safety offsets", "Risk")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

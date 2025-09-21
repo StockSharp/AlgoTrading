@@ -216,7 +216,7 @@ public class ExpBlauHlmStrategy : Strategy
 			.SetDisplay("Phase", "Phase parameter for Jurik-like filters", "Indicator");
 	
 		_signalBar = Param(nameof(SignalBar), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Signal Bar", "Offset applied to historical values", "Trading");
 	
 		_mode = Param(nameof(EntryMode), Mode.Twist)

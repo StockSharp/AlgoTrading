@@ -58,23 +58,23 @@ public class Tdi2ReOpenStrategy : Strategy
 		.SetOptimize(1, 10, 1);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in instrument points", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(100, 2000, 100);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit (points)", "Take profit distance expressed in instrument points", "Risk Management")
 		.SetCanOptimize(true)
 		.SetOptimize(200, 3000, 100);
 
 		_slippagePoints = Param(nameof(SlippagePoints), 10)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Slippage (points)", "Maximum acceptable slippage when submitting market orders", "Trading");
 
 		_priceStepPoints = Param(nameof(PriceStepPoints), 300m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Re-entry Step (points)", "Minimum favorable price movement (in points) before adding to an open position", "Trading")
 		.SetCanOptimize(true)
 		.SetOptimize(50m, 500m, 50m);

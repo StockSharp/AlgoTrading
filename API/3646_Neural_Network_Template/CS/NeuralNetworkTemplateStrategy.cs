@@ -129,7 +129,7 @@ public class NeuralNetworkTemplateStrategy : Strategy
 			.SetDisplay("Stop-Loss", "Stop-loss distance in points", "Risk");
 
 		_profitMultiply = Param(nameof(ProfitMultiply), 0.8m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Profit Mult", "Take-profit multiplier", "Model");
 
 		_tradeLevel = Param(nameof(TradeLevel), 0.9m)

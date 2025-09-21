@@ -86,13 +86,13 @@ public class NrtrTrailingStopStrategy : Strategy
 			.SetDisplay("Digits Shift", "Adjustment for price digits", "Indicator");
 
 		_takeProfit = Param(nameof(TakeProfit), 2000m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pts)", "Take profit level in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(500m, 3000m, 500m);
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pts)", "Stop loss level in points", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(500m, 3000m, 500m);

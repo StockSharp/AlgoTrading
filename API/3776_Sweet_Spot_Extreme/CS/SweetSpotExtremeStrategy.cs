@@ -175,15 +175,15 @@ public class SweetSpotExtremeStrategy : Strategy
 		.SetDisplay("Fixed Lots", "Fallback volume when equity data is unavailable", "Risk");
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.05m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Maximum Risk", "Fraction of equity risked per trade", "Risk");
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 6m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Decrease Factor", "Volume reduction after loss streaks", "Risk");
 
 		_stopPoints = Param(nameof(StopPoints), 10m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Profit Target", "Take-profit distance in points", "Exits");
 
 		_maPeriod = Param(nameof(MaPeriod), 85)

@@ -96,7 +96,7 @@ public class AwoHolidaysStrategy : Strategy
 	public AwoHolidaysStrategy()
 	{
 		_historyDepth = Param(nameof(HistoryDepth), 3)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("History Depth", "Number of previous days to display in the status panel.", "Visualization");
 
 		_clearOnStop = Param(nameof(ClearOnStop), true)

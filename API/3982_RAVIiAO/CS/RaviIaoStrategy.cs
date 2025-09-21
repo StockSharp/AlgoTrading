@@ -120,11 +120,11 @@ public class RaviIaoStrategy : Strategy
 			.SetDisplay("RAVI Threshold", "Minimum absolute RAVI value to confirm the trend", "Signals");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 50m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (points)", "Stop-loss distance in price points", "Risk");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 50m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (points)", "Take-profit distance in price points", "Risk");
 
 		_tradeVolume = Param(nameof(TradeVolume), 0.1m)

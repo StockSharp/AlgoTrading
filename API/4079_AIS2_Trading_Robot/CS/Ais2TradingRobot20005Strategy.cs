@@ -53,13 +53,13 @@ public class Ais2TradingRobot20005Strategy : Strategy
 	{
 		_accountReserve = Param(nameof(AccountReserve), 0.20m)
 		.SetDisplay("Account Reserve", "Fraction of equity locked as capital reserve", "Risk")
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetLessOrEquals(0.95m)
 		.SetCanOptimize(true);
 
 		_orderReserve = Param(nameof(OrderReserve), 0.04m)
 		.SetDisplay("Order Reserve", "Fraction of equity committed per trade", "Risk")
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetLessOrEquals(0.5m)
 		.SetCanOptimize(true);
 
@@ -102,7 +102,7 @@ public class Ais2TradingRobot20005Strategy : Strategy
 
 		_tradingPauseSeconds = Param(nameof(TradingPauseSeconds), 5)
 		.SetDisplay("Trading Pause", "Cooldown between consecutive trades in seconds", "Execution")
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetCanOptimize(true);
 	}
 

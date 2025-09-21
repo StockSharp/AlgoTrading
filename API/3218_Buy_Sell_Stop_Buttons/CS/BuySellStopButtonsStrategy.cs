@@ -110,15 +110,15 @@ public BuySellStopButtonsStrategy()
 
 	_stopLossPips = Param(nameof(StopLossPips), 20m)
 	.SetDisplay("Stop-loss (pips)", "Initial protective stop distance measured in pips.", "Exits")
-	.SetGreaterOrEqual(0m);
+	.SetNotNegative();
 
 	_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 	.SetDisplay("Take-profit (pips)", "Initial target distance measured in pips.", "Exits")
-	.SetGreaterOrEqual(0m);
+	.SetNotNegative();
 
 	_trailingStopPips = Param(nameof(TrailingStopPips), 40m)
 	.SetDisplay("Trailing stop (pips)", "Distance used by the ticket based trailing stop block.", "Exits")
-	.SetGreaterOrEqual(0m);
+	.SetNotNegative();
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 	.SetDisplay("Candle type", "Heartbeat candles used to evaluate the management rules.", "Data")

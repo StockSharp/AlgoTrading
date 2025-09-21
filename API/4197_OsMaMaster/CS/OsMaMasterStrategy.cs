@@ -173,12 +173,12 @@ public class OsMaMasterStrategy : Strategy
 			.SetDisplay("Shift 4", "Fourth OsMA shift parameter", "Logic");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance expressed in pips", "Risk")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Profit target distance expressed in pips", "Risk")
 			.SetCanOptimize(true);
 

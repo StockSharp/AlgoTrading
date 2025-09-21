@@ -68,7 +68,7 @@ public class BollingerRsiMaStrategy : Strategy
 			.SetDisplay("EMA Period", "Length of the higher timeframe EMA filter.", "EMA");
 
 		_stopLossOffset = Param(nameof(StopLossOffset), 0.0238m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop Offset", "Extra price distance applied beyond the Bollinger Band for the stop-loss.", "Risk");
 
 		_useAutoLot = Param(nameof(UseAutoLot), true)

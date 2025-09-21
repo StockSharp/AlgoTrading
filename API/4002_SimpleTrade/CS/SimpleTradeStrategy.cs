@@ -31,7 +31,7 @@ public class SimpleTradeStrategy : Strategy
 			.SetDisplay("Trade Volume", "Order size in lots", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 120m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Stop-Loss Points", "Protective stop distance expressed in instrument points", "Risk");
 
 		_lookbackBars = Param(nameof(LookbackBars), 3)

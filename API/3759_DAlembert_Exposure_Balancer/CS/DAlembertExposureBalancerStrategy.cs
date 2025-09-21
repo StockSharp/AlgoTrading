@@ -86,7 +86,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 			.SetDisplay("Loss %", "Maximum adverse excursion before forcing an exit", "Trading");
 
 		_cooldownSecondsParam = Param(nameof(CooldownSeconds), 9)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Cooldown", "Seconds between subsequent decisions", "Trading");
 	}
 

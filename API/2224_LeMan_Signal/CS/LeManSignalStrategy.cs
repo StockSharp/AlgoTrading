@@ -61,7 +61,7 @@ public class LeManSignalStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Offset for confirmed signal", "Indicator")
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetCanOptimize(true)
 			.SetOptimize(0, 2, 1);
 

@@ -119,17 +119,17 @@ public class DailyRangeStrategy : Strategy
 
 		_stopLossCoefficient = Param(nameof(StopLossCoefficient), 0.03m)
 			.SetDisplay("Stop Loss Coeff.", "Stop-loss multiplier applied to the daily range", "Risk Management")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_takeProfitCoefficient = Param(nameof(TakeProfitCoefficient), 0.05m)
 			.SetDisplay("Take Profit Coeff.", "Take-profit multiplier applied to the daily range", "Risk Management")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_offsetCoefficient = Param(nameof(OffsetCoefficient), 0.01m)
 			.SetDisplay("Offset Coeff.", "Additional offset applied to breakout levels", "General")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetCanOptimize(true);
 
 		_maxPositionsPerDay = Param(nameof(MaxPositionsPerDay), 3)

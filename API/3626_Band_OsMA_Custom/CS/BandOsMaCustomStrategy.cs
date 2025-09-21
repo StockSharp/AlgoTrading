@@ -215,7 +215,7 @@ public class BandOsMaCustomStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss (points)", "Stop distance expressed in price steps", "Risk")
 		.SetCanOptimize(true);
 

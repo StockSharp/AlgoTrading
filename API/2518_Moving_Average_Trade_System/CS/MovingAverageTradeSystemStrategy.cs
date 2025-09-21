@@ -154,13 +154,13 @@ public class MovingAverageTradeSystemStrategy : Strategy
 			.SetOptimize(10m, 200m, 10m);
 
 		_trailingStopSteps = Param(nameof(TrailingStopSteps), 11m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Trailing Stop (steps)", "Trailing stop offset in price steps", "Risk Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 100m, 5m);
 
 		_slopeThresholdSteps = Param(nameof(SlopeThresholdSteps), 1m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Slope Threshold", "Minimum SMA40 vs SMA60 distance in steps", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 10m, 1m);

@@ -167,13 +167,13 @@ public class AutoKdjStrategy : Strategy
 			.SetOptimize(1, 15, 1);
 
 		_stopLossPips = Param(nameof(StopLossPips), 100)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 300, 10);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Protective target distance", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 400, 10);
@@ -189,13 +189,13 @@ public class AutoKdjStrategy : Strategy
 			.SetDisplay("Base Volume", "Minimum order volume", "Trading");
 
 		_maximumRisk = Param(nameof(MaximumRisk), 0.4m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Maximum Risk", "Fraction of equity allocated per trade", "Money Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 1m, 0.1m);
 
 		_decreaseFactor = Param(nameof(DecreaseFactor), 0.3m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Decrease Factor", "Volume reduction after losses", "Money Management")
 			.SetCanOptimize(true)
 			.SetOptimize(0m, 5m, 0.5m);

@@ -135,7 +135,7 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 0m)
 			.SetDisplay("Stop Loss Multiplier", "Multiplier applied to the threshold for stop calculation", "Risk")
-			.SetGreaterOrEqual(0m);
+			.SetNotNegative();
 
 		_drawSwingLines = Param(nameof(DrawSwingLines), true)
 			.SetDisplay("Draw Swing Lines", "Draw lines connecting the latest bullish and bearish pivots", "Visualization");

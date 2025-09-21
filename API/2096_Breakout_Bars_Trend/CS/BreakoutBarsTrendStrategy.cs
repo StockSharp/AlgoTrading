@@ -110,7 +110,7 @@ public class BreakoutBarsTrendStrategy : Strategy
 			.SetOptimize(0.5m, 3m, 0.5m);
 
 		_negatives = Param(nameof(Negatives), 1)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Negative Signals", "Number of negative reversals before entry", "General")
 			.SetCanOptimize(true)
 			.SetOptimize(0, 5, 1);

@@ -408,7 +408,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		.SetDisplay("Long Total Trigger", "History length for long money management", "Long");
 
 		_longLossTrigger = Param(nameof(LongLossTrigger), 3)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Long Loss Trigger", "Losses required to shrink long size", "Long")
 		.SetCanOptimize(true)
 		.SetOptimize(1, 5, 1);
@@ -424,11 +424,11 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_longStopLoss = Param(nameof(LongStopLoss), 1000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Long Stop Loss", "Stop-loss distance in price steps", "Long");
 
 		_longTakeProfit = Param(nameof(LongTakeProfit), 2000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Long Take Profit", "Take-profit distance in price steps", "Long");
 
 		_shortCandleType = Param(nameof(ShortCandleType), TimeSpan.FromHours(8).TimeFrame())
@@ -482,7 +482,7 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		.SetDisplay("Short Total Trigger", "History length for short money management", "Short");
 
 		_shortLossTrigger = Param(nameof(ShortLossTrigger), 3)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Short Loss Trigger", "Losses required to shrink short size", "Short")
 		.SetCanOptimize(true)
 		.SetOptimize(1, 5, 1);
@@ -498,11 +498,11 @@ public class ColorSchaffJccxTrendCycleMmrecDuplexStrategy : Strategy
 		.SetOptimize(0.05m, 0.5m, 0.05m);
 
 		_shortStopLoss = Param(nameof(ShortStopLoss), 1000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Short Stop Loss", "Stop-loss distance in price steps", "Short");
 
 		_shortTakeProfit = Param(nameof(ShortTakeProfit), 2000m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Short Take Profit", "Take-profit distance in price steps", "Short");
 	}
 

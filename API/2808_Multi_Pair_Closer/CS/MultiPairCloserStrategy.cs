@@ -94,19 +94,19 @@ public class MultiPairCloserStrategy : Strategy
 			.SetDisplay("Watched Symbols", "Comma separated list of securities to monitor", "General");
 
 		_profitTarget = Param(nameof(ProfitTarget), 60m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Profit Target", "Net profit required to close every watched position", "Risk Management");
 
 		_maxLoss = Param(nameof(MaxLoss), 60m)
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetDisplay("Maximum Loss", "Maximum drawdown tolerated before closing positions", "Risk Management");
 
 		_slippage = Param(nameof(Slippage), 10)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Slippage", "Accepted slippage (price steps) when liquidating positions", "Execution");
 
 		_minAgeSeconds = Param(nameof(MinAgeSeconds), 60)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Minimum Age (s)", "Minimal holding time before forced exit is allowed", "Execution");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

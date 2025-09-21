@@ -67,12 +67,12 @@ public class WilliamsAoAcStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_bollingerSpreadLower = Param(nameof(BollingerSpreadLower), 40m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("BB Spread Min", "Minimum band width in points required to trade", "Bollinger Bands")
 		.SetCanOptimize(true);
 
 		_bollingerSpreadUpper = Param(nameof(BollingerSpreadUpper), 210m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("BB Spread Max", "Maximum band width in points allowed to trade", "Bollinger Bands")
 		.SetCanOptimize(true);
 
@@ -104,7 +104,7 @@ public class WilliamsAoAcStrategy : Strategy
 		.SetRange(0, 23);
 
 		_tradingWindowHours = Param(nameof(TradingWindowHours), 20)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trading Hours", "Number of consecutive hours allowed for trading", "Session")
 		.SetCanOptimize(true);
 
@@ -114,17 +114,17 @@ public class WilliamsAoAcStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Stop Loss", "Protective stop distance expressed in points", "Risk")
 		.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 90)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Take Profit", "Profit target distance expressed in points", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 30)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop", "Trailing stop distance in points applied after profits", "Risk")
 		.SetCanOptimize(true);
 	}

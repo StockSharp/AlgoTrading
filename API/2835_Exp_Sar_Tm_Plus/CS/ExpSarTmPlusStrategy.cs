@@ -204,17 +204,17 @@ public class ExpSarTmPlusStrategy : Strategy
 			.SetDisplay("Stop Loss (points)", "Stop loss distance measured in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(100, 3000, 100)
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 			.SetDisplay("Take Profit (points)", "Take profit distance measured in price steps", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(100, 5000, 100)
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10)
 			.SetDisplay("Execution Deviation", "Maximum allowed deviation in points", "Orders")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_allowLongEntry = Param(nameof(AllowLongEntry), true)
 			.SetDisplay("Enable Long Entries", "Allow opening long positions", "Execution");
@@ -235,7 +235,7 @@ public class ExpSarTmPlusStrategy : Strategy
 			.SetDisplay("Holding Minutes", "Maximum position holding time in minutes", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(60, 720, 60)
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Parabolic SAR", "Data");
@@ -254,7 +254,7 @@ public class ExpSarTmPlusStrategy : Strategy
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar Offset", "Number of closed candles used for signal confirmation", "Data")
-			.SetGreaterOrEqual(0);
+			.SetNotNegative();
 	}
 
 	/// <inheritdoc />

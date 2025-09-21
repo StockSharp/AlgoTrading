@@ -123,7 +123,7 @@ public class SpasmStrategy : Strategy
 
 		_stopLossFraction = Param(nameof(StopLossFraction), 0.5m)
 			.SetDisplay("Stop Loss Fraction", "Fraction of volatility used to derive protective stop distance", "Risk")
-			.SetGreaterOrEqual(0m)
+			.SetNotNegative()
 			.SetLessOrEqual(1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())

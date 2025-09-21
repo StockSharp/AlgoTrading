@@ -61,7 +61,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_distancePips = Param(nameof(DistancePips), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Distance Between Entries (pips)", "Minimum price distance between layered entries", "Risk")
 		.SetCanOptimize(true);
 
@@ -71,12 +71,12 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_atrStopLossMultiplier = Param(nameof(AtrStopLossMultiplier), 3m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("ATR Stop Multiplier", "ATR multiplier that defines the protective stop", "Risk")
 		.SetCanOptimize(true);
 
 		_atrTakeProfitMultiplier = Param(nameof(AtrTakeProfitMultiplier), 2m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("ATR Target Multiplier", "ATR multiplier that defines the profit target", "Risk")
 		.SetCanOptimize(true);
 
@@ -84,7 +84,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetDisplay("Use MA Trend Filter", "Enable the moving average slope filter", "Filters");
 
 		_distanceFromMaPips = Param(nameof(DistanceFromMaPips), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Distance From MA (pips)", "Minimum distance between price and MA to validate entries", "Filters")
 		.SetCanOptimize(true);
 
@@ -94,7 +94,7 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetCanOptimize(true);
 
 		_maShift = Param(nameof(MaShift), 1)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("MA Shift", "Horizontal shift applied when reading MA values", "Indicators")
 		.SetCanOptimize(true);
 
@@ -124,17 +124,17 @@ public class FreemanAtrMaRsiGridStrategy : Strategy
 		.SetDisplay("RSI Price", "Price source used by RSI", "Indicators");
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Stop (pips)", "Trailing stop distance measured in pips", "Risk")
 		.SetCanOptimize(true);
 
 		_trailingStepPips = Param(nameof(TrailingStepPips), 5m)
-		.SetGreaterOrEqual(0m)
+		.SetNotNegative()
 		.SetDisplay("Trailing Step (pips)", "Additional move required before trail adjustment", "Risk")
 		.SetCanOptimize(true);
 
 		_currentBarOffset = Param(nameof(CurrentBarOffset), 0)
-		.SetGreaterOrEqual(0)
+		.SetNotNegative()
 		.SetDisplay("Indicator Bar Offset", "Bar shift used when reading indicator values", "Indicators")
 		.SetCanOptimize(true);
 	}

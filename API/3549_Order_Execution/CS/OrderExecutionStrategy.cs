@@ -195,7 +195,7 @@ public OrderExecutionStrategy()
 	.SetDisplay("Ignore Trade Id", "Close all positions even if identifiers do not match", "Risk");
 
 	_maxPositions = Param(nameof(MaxPositions), 1)
-	.SetGreaterOrEqual(0)
+	.SetNotNegative()
 	.SetDisplay("Max Positions", "Maximum absolute position size", "Risk");
 
 	_removeOrdersFile = Param(nameof(RemoveOrdersFile), true)

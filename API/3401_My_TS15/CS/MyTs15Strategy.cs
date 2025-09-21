@@ -43,7 +43,7 @@ public class MyTs15Strategy : Strategy
 
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Additional bar shift applied when requesting MA values.", "Moving Average")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.LinearWeighted)
 		.SetDisplay("MA Method", "Moving average smoothing method.", "Moving Average");
@@ -53,30 +53,30 @@ public class MyTs15Strategy : Strategy
 
 		_maBarsTrail = Param(nameof(MaBarsTrail), 1)
 		.SetDisplay("MA Bars Trail", "Number of completed bars between the current candle and the MA sample.", "Trailing")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_trailBehindMaPoints = Param(nameof(TrailBehindMaPoints), 5m)
 		.SetDisplay("Trail Behind MA", "Distance in points kept between stop loss and MA.", "Trailing")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_trailBehindPricePoints = Param(nameof(TrailBehindPricePoints), 30m)
 		.SetDisplay("Trail Behind Price", "Distance in points kept behind the price when in profit.", "Trailing")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_trailBehindNegativePoints = Param(nameof(TrailBehindNegativePoints), 60m)
 		.SetDisplay("Trail Behind Negative", "Distance in points kept behind the price when in loss.", "Trailing")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_trailStepPoints = Param(nameof(TrailStepPoints), 0m)
 		.SetDisplay("Trail Step", "Minimum improvement in points required to move the stop.", "Trailing")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_enforceMaxStopLoss = Param(nameof(EnforceMaxStopLoss), false)
 		.SetDisplay("Enforce Max Stop", "Close or clamp positions exceeding the maximum stop distance.", "Protection");
 
 		_maxStopLossPoints = Param(nameof(MaxStopLossPoints), 100m)
 		.SetDisplay("Max Stop Loss", "Maximum allowed loss distance in points.", "Protection")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_showIndicator = Param(nameof(ShowIndicator), true)
 		.SetDisplay("Show Indicator", "Draw the moving average on the chart area if available.", "Visualization");

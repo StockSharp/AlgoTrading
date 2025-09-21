@@ -211,15 +211,15 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 		.SetDisplay("Stop Loss (points)", "Distance to the protective stop in points", "Risk")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000)
 		.SetDisplay("Take Profit (points)", "Distance to the profit target in points", "Risk")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_deviationPoints = Param(nameof(DeviationPoints), 10)
 		.SetDisplay("Execution Deviation", "Maximum acceptable slippage in points", "Orders")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_allowBuyEntries = Param(nameof(AllowBuyEntries), true)
 		.SetDisplay("Enable Long Entries", "Allow opening long positions", "Signals");
@@ -238,15 +238,15 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 
 		_holdingMinutes = Param(nameof(HoldingMinutes), 1500)
 		.SetDisplay("Holding Minutes", "Maximum position lifetime in minutes", "Risk")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_pipsForEntry = Param(nameof(PipsForEntry), 100)
 		.SetDisplay("Pips For Entry", "Offset added above/below the breakout range", "Indicator")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetDisplay("Signal Bar", "Closed candle offset used for signals", "Indicator")
-		.SetGreaterOrEqual(0);
+		.SetNotNegative();
 
 		_localTimeZone = Param(nameof(LocalTimeZone), 0)
 		.SetDisplay("Local Time Zone", "Broker/server time zone", "Indicator");

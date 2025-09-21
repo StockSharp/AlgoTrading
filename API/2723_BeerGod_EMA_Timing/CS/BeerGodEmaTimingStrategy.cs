@@ -81,7 +81,7 @@ public class BeerGodEmaTimingStrategy : Strategy
 			.SetOptimize(20, 120, 10);
 
 		_triggerMinutes = Param(nameof(TriggerMinutesFromOpen), 3)
-			.SetGreaterOrEqual(0)
+			.SetNotNegative()
 			.SetDisplay("Trigger Minutes", "Minutes after open to check signals", "Timing")
 			.SetCanOptimize(true)
 			.SetOptimize(1, 10, 1);

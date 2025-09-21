@@ -78,7 +78,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_laguerre1Distance = Param(nameof(Laguerre1Distance), 0m)
 		.SetDisplay("Laguerre Distance #1", "Trigger distance for the first Laguerre filter", "Indicators")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_x11 = Param(nameof(X11), 100m)
 		.SetDisplay("Weight X11", "Weight applied to the first Laguerre tension", "Perceptrons");
@@ -104,7 +104,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_laguerre2Distance = Param(nameof(Laguerre2Distance), 0m)
 		.SetDisplay("Laguerre Distance #2", "Trigger distance for the second Laguerre filter", "Indicators")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_x21 = Param(nameof(X21), 100m)
 		.SetDisplay("Weight X21", "Weight applied to the second Laguerre tension", "Perceptrons");
@@ -126,7 +126,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_laguerre3Distance = Param(nameof(Laguerre3Distance), 0m)
 		.SetDisplay("Laguerre Distance #3", "Trigger distance for the third Laguerre filter", "Indicators")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_laguerre4Period = Param(nameof(Laguerre4Period), 14)
 		.SetDisplay("Laguerre Period #4", "ADX period for the fourth Laguerre filter", "Indicators")
@@ -134,7 +134,7 @@ public class NeuroNirvamanStrategy : Strategy
 
 		_laguerre4Distance = Param(nameof(Laguerre4Distance), 0m)
 		.SetDisplay("Laguerre Distance #4", "Trigger distance for the fourth Laguerre filter", "Indicators")
-		.SetGreaterOrEqual(0m);
+		.SetNotNegative();
 
 		_x31 = Param(nameof(X31), 100m)
 		.SetDisplay("Weight X31", "Weight applied to the third Laguerre activation", "Perceptrons");
