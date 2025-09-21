@@ -92,7 +92,7 @@ public class SignalsDemoStrategy : Strategy
 		subscription.WhenNew(ProcessCandle).Start();
 
 		// Log configured signal parameters.
-		AddInfoLog($"Equity limit: {EquityLimit}, Slippage: {Slippage}, Deposit percent: {DepositPercent}");
+		LogInfo($"Equity limit: {EquityLimit}, Slippage: {Slippage}, Deposit percent: {DepositPercent}");
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -101,6 +101,6 @@ public class SignalsDemoStrategy : Strategy
 			return;
 
 		// Print basic information about the finished candle.
-		AddInfoLog($"Candle {candle.OpenTime:yyyy-MM-dd HH:mm} Close {candle.ClosePrice}");
+		LogInfo($"Candle {candle.OpenTime:yyyy-MM-dd HH:mm} Close {candle.ClosePrice}");
 	}
 }

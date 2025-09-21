@@ -454,7 +454,7 @@ public class WilliamsAoAcStrategy : Strategy
 		var volume = TradeVolume;
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skip long entry because trade volume is non-positive. Volume={0:0.####}", volume);
+			LogWarning("Skip long entry because trade volume is non-positive. Volume={0:0.####}", volume);
 			return;
 		}
 
@@ -483,7 +483,7 @@ public class WilliamsAoAcStrategy : Strategy
 		var volume = TradeVolume;
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skip short entry because trade volume is non-positive. Volume={0:0.####}", volume);
+			LogWarning("Skip short entry because trade volume is non-positive. Volume={0:0.####}", volume);
 			return;
 		}
 

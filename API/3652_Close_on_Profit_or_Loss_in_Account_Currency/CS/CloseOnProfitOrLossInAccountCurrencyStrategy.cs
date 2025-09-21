@@ -122,7 +122,7 @@ public class CloseOnProfitOrLossInAccountCurrencyStrategy : Strategy
 
 		_closeRequested = true;
 
-		AddInfoLog(reason);
+		LogInfo(reason);
 
 		// Cancel any pending orders to avoid unexpected executions during liquidation.
 		CancelActiveOrders();

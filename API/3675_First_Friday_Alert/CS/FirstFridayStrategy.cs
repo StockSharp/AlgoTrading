@@ -74,7 +74,7 @@ public class FirstFridayStrategy : Strategy
 		if (!IsFirstFriday(candle.OpenTime))
 			return;
 
-		AddInfoLog("Detected the first Friday daily candle for {0:D}.", candle.OpenTime.Date);
+		LogInfo("Detected the first Friday daily candle for {0:D}.", candle.OpenTime.Date);
 	}
 
 	private static bool IsFirstFriday(DateTimeOffset candleTime)

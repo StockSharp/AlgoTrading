@@ -146,7 +146,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 
 		if (Volume <= 0m)
 		{
-			AddWarningLog("Volume parameter must be positive to open the initial trade.");
+			LogWarning("Volume parameter must be positive to open the initial trade.");
 			return;
 		}
 
@@ -171,7 +171,7 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 		var drawdown = (_maxBalance - currentBalance) / _maxBalance * 100m;
 		_lastDrawdown = drawdown > 0m ? drawdown : 0m;
 
-		AddInfoLog($"Current drawdown: {_lastDrawdown:F2}%.");
+		LogInfo($"Current drawdown: {_lastDrawdown:F2}%.");
 	}
 
 	private decimal CalculateUnrealizedPnL(decimal price)

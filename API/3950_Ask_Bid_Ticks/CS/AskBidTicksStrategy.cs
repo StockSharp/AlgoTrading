@@ -146,7 +146,7 @@ public class AskBidTicksStrategy : Strategy
 		_writer.WriteLine(line);
 		_writer.Flush();
 
-		AddInfoLog("{0}	{1}	ask:{2}	bid:{3}", stamp, symbol, askText, bidText);
+		LogInfo("{0}	{1}	ask:{2}	bid:{3}", stamp, symbol, askText, bidText);
 	}
 
 	private string FormatTimestamp()

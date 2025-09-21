@@ -148,7 +148,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 		foreach (var pair in _trackedIndicators)
 		{
 			var report = BuildParametersReport(pair.Key, pair.Value);
-			AddInfoLog(report);
+			LogInfo(report);
 		}
 	}
 
@@ -160,7 +160,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 		if (!LogIndicatorValues)
 		return;
 
-		AddInfoLog($"[{candle.CloseTime:O}] SMA value: {FormatParameterValue(smaValue)}");
+		LogInfo($"[{candle.CloseTime:O}] SMA value: {FormatParameterValue(smaValue)}");
 	}
 
 	private void OnEmaUpdated(ICandleMessage candle, decimal emaValue)
@@ -171,7 +171,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 		if (!LogIndicatorValues)
 		return;
 
-		AddInfoLog($"[{candle.CloseTime:O}] EMA value: {FormatParameterValue(emaValue)}");
+		LogInfo($"[{candle.CloseTime:O}] EMA value: {FormatParameterValue(emaValue)}");
 	}
 
 	private void OnRsiUpdated(ICandleMessage candle, decimal rsiValue)
@@ -182,7 +182,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 		if (!LogIndicatorValues)
 		return;
 
-		AddInfoLog($"[{candle.CloseTime:O}] RSI value: {FormatParameterValue(rsiValue)}");
+		LogInfo($"[{candle.CloseTime:O}] RSI value: {FormatParameterValue(rsiValue)}");
 	}
 
 	private void TrackIndicator(IIndicator indicator, string alias)
@@ -199,8 +199,8 @@ public class IndicatorParametersDemoStrategy : Strategy
 		.Append(indicator.GetType().Name)
 		.ToString();
 
-		AddInfoLog(message);
-		AddInfoLog(BuildParametersReport(indicator, alias));
+		LogInfo(message);
+		LogInfo(BuildParametersReport(indicator, alias));
 	}
 
 	private void ClearTrackedIndicators()
@@ -225,7 +225,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 		.Append(indicator.GetType().Name)
 		.ToString();
 
-		AddInfoLog(message);
+		LogInfo(message);
 	}
 
 	private string BuildParametersReport(IIndicator indicator, string alias)

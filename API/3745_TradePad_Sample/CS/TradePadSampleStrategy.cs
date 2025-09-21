@@ -224,7 +224,7 @@ result.Add(security);
 continue;
 }
 
-AddWarningLog("Security '{0}' was not found in the provider and will be skipped.", id);
+LogWarning("Security '{0}' was not found in the provider and will be skipped.", id);
 }
 
 return result;
@@ -281,7 +281,7 @@ _lastUpdateTime[symbolId] = now;
 if (!_trendStates.TryGetValue(symbolId, out var stored) || stored != currentState)
 {
 _trendStates[symbolId] = currentState;
-AddInfoLog("{0}: {1} (K={2:0.##})", symbolId, currentState, kValue);
+LogInfo("{0}: {1} (K={2:0.##})", symbolId, currentState, kValue);
 }
 }
 

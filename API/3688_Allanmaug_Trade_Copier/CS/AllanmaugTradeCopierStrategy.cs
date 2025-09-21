@@ -177,7 +177,7 @@ public class AllanmaugTradeCopierStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddWarningLog($"Trade copier cycle failed: {ex.Message}");
+			this.LogWarning($"Trade copier cycle failed: {ex.Message}");
 		}
 	}
 
@@ -217,7 +217,7 @@ public class AllanmaugTradeCopierStrategy : Strategy
 			var slaveSecurity = LookupSecurity(entry.SlaveSymbol);
 			if (slaveSecurity == null)
 			{
-				this.AddWarningLog($"Unknown slave security '{entry.SlaveSymbol}'.");
+				this.LogWarning($"Unknown slave security '{entry.SlaveSymbol}'.");
 				continue;
 			}
 
@@ -258,7 +258,7 @@ public class AllanmaugTradeCopierStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddWarningLog($"Failed to write snapshot: {ex.Message}");
+			this.LogWarning($"Failed to write snapshot: {ex.Message}");
 		}
 	}
 
@@ -288,7 +288,7 @@ public class AllanmaugTradeCopierStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddWarningLog($"Failed to read snapshot: {ex.Message}");
+			this.LogWarning($"Failed to read snapshot: {ex.Message}");
 		}
 
 		return result;

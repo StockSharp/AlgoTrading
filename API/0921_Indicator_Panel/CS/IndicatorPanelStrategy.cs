@@ -311,7 +311,7 @@ public class IndicatorPanelStrategy : Strategy
 		var ma1 = ma1Value.ToDecimal();
 		var ma2 = ma2Value.ToDecimal();
 		
-		AddInfoLog(
+		LogInfo(
 		"RSI={0:F2}, MACD={1:F4}, Signal={2:F4}, Hist={3:F4}, +DI={4:F2}, -DI={5:F2}, ADX={6:F2}, CCI={7:F2}, MFI={8:F2}, Momentum={9:F2}, MA1={10:F2}, MA2={11:F2}",
 		rsi,
 		macdTyped.Macd,

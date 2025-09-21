@@ -169,11 +169,11 @@ public class MonitorStrategy : Strategy
 			}
 
 			if (builder.Length > 0)
-				this.AddInfoLog(builder.ToString());
+				this.LogInfo(builder.ToString());
 		}
 		catch (Exception ex)
 		{
-			this.AddErrorLog(ex);
+			this.LogError(ex);
 		}
 	}
 
@@ -297,7 +297,7 @@ public class MonitorStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddErrorLog(ex);
+			this.LogError(ex);
 			_accessor = null;
 		}
 	}
@@ -321,7 +321,7 @@ public class MonitorStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddErrorLog(ex);
+			this.LogError(ex);
 		}
 		finally
 		{

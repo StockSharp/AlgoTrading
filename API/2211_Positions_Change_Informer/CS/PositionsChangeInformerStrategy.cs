@@ -140,7 +140,7 @@ public class PositionsChangeInformerStrategy : Strategy
 	private void Notify(string message)
 	{
 		// Sound and email alerts can be implemented externally.
-		AddInfoLog(message);
+		LogInfo(message);
 	}
 
 	private string GetSideName(Sides side)

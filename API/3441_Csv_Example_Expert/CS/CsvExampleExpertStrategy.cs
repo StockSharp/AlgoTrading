@@ -238,7 +238,7 @@ public class CsvExampleExpertStrategy : Strategy
 
 		if (volume <= 0m)
 		{
-			AddWarningLog("Trade volume must be positive to place orders.");
+			LogWarning("Trade volume must be positive to place orders.");
 			return;
 		}
 
@@ -344,7 +344,7 @@ public class CsvExampleExpertStrategy : Strategy
 
 		if (string.IsNullOrWhiteSpace(name))
 		{
-			AddWarningLog("FileName parameter is empty. Closed trade logging is disabled.");
+			LogWarning("FileName parameter is empty. Closed trade logging is disabled.");
 			_resolvedFilePath = null;
 			return;
 		}
@@ -367,7 +367,7 @@ public class CsvExampleExpertStrategy : Strategy
 		}
 		catch (Exception error)
 		{
-			AddErrorLog("Failed to prepare CSV file {0}. Error: {1}", filePath, error.Message);
+			LogError("Failed to prepare CSV file {0}. Error: {1}", filePath, error.Message);
 			_resolvedFilePath = null;
 		}
 	}
@@ -392,7 +392,7 @@ public class CsvExampleExpertStrategy : Strategy
 		}
 		catch (Exception error)
 		{
-			AddErrorLog("Failed to write trade information to {0}. Error: {1}", _resolvedFilePath, error.Message);
+			LogError("Failed to write trade information to {0}. Error: {1}", _resolvedFilePath, error.Message);
 		}
 	}
 }

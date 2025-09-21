@@ -125,7 +125,7 @@ public class PainelStrategy : Strategy
 		var securityId = Security?.Id ?? string.Empty;
 		var accountName = Portfolio?.Name ?? string.Empty;
 
-		AddInfoLog(
+		LogInfo(
 			$"Symbol: {securityId}; " +
 			$"Last: {_lastPrice.ToString("0.#####", CultureInfo.InvariantCulture)}; " +
 			$"High: {_sessionHigh.ToString("0.#####", CultureInfo.InvariantCulture)}; " +

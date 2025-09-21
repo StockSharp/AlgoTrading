@@ -230,6 +230,6 @@ _greaterThanFifth = 0;
 private void PrintYearSummary(int year)
 {
 // Report the accumulated spread statistics to the strategy log.
-AddInfoLog($"Year={year} Spread<={FirstBucketPoints}pts={_lessThanFirst} Spread_{FirstBucketPoints}_{SecondBucketPoints}pts={_betweenFirstSecond} Spread_{SecondBucketPoints}_{ThirdBucketPoints}pts={_betweenSecondThird} Spread_{ThirdBucketPoints}_{FourthBucketPoints}pts={_betweenThirdFourth} Spread_{FourthBucketPoints}_{FifthBucketPoints}pts={_betweenFourthFifth} Spread>{FifthBucketPoints}pts={_greaterThanFifth}");
+LogInfo($"Year={year} Spread<={FirstBucketPoints}pts={_lessThanFirst} Spread_{FirstBucketPoints}_{SecondBucketPoints}pts={_betweenFirstSecond} Spread_{SecondBucketPoints}_{ThirdBucketPoints}pts={_betweenSecondThird} Spread_{ThirdBucketPoints}_{FourthBucketPoints}pts={_betweenThirdFourth} Spread_{FourthBucketPoints}_{FifthBucketPoints}pts={_betweenFourthFifth} Spread>{FifthBucketPoints}pts={_greaterThanFifth}");
 }
 }

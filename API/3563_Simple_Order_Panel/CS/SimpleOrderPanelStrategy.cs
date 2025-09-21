@@ -550,7 +550,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (Position != 0m && Math.Sign(Position) == (direction == Sides.Buy ? 1 : -1))
 		{
-			AddInfoLog("Position already opened in the requested direction.");
+			LogInfo("Position already opened in the requested direction.");
 			return;
 		}
 
@@ -559,7 +559,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (volume <= 0m)
 		{
-			AddWarningLog("Calculated volume is not tradable. Check risk settings and stop-loss distance.");
+			LogWarning("Calculated volume is not tradable. Check risk settings and stop-loss distance.");
 			return;
 		}
 
@@ -578,7 +578,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (position == 0m)
 		{
-			AddInfoLog("No position to close partially.");
+			LogInfo("No position to close partially.");
 			return;
 		}
 
@@ -586,7 +586,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (volume <= 0m)
 		{
-			AddWarningLog("Partial close volume is not valid.");
+			LogWarning("Partial close volume is not valid.");
 			return;
 		}
 
@@ -606,12 +606,12 @@ public class SimpleOrderPanelStrategy : Strategy
 	{
 		if (_entryPrice is not decimal entry)
 		{
-			AddInfoLog("Cannot apply break-even without an entry price.");
+			LogInfo("Cannot apply break-even without an entry price.");
 			return;
 		}
 
 		_stopLossPrice = entry;
-		AddInfoLog($"Stop-loss moved to break-even at {entry:F5}.");
+		LogInfo($"Stop-loss moved to break-even at {entry:F5}.");
 	}
 
 	private void ApplyStopLoss()
@@ -622,7 +622,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		_stopLossPrice = CalculateStopPrice(Position > 0m ? Sides.Buy : Sides.Sell, entry);
 
 		if (_stopLossPrice is decimal price && price > 0m)
-		AddInfoLog($"Stop-loss updated to {price:F5}.");
+		LogInfo($"Stop-loss updated to {price:F5}.");
 	}
 
 	private void ApplyTakeProfit()
@@ -633,7 +633,7 @@ public class SimpleOrderPanelStrategy : Strategy
 		_takeProfitPrice = CalculateTakePrice(Position > 0m ? Sides.Buy : Sides.Sell, entry);
 
 		if (_takeProfitPrice is decimal price && price > 0m)
-		AddInfoLog($"Take-profit updated to {price:F5}.");
+		LogInfo($"Take-profit updated to {price:F5}.");
 	}
 
 	private void ArmPendingOrder(Sides direction)
@@ -645,7 +645,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (price <= 0m)
 		{
-			AddWarningLog("Pending price must be greater than zero.");
+			LogWarning("Pending price must be greater than zero.");
 			return;
 		}
 
@@ -653,7 +653,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (referencePrice <= 0m)
 		{
-			AddWarningLog("No market data to arm pending order.");
+			LogWarning("No market data to arm pending order.");
 			return;
 		}
 
@@ -661,7 +661,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (volume <= 0m)
 		{
-			AddWarningLog("Calculated pending volume is not tradable.");
+			LogWarning("Calculated pending volume is not tradable.");
 			return;
 		}
 
@@ -670,14 +670,14 @@ public class SimpleOrderPanelStrategy : Strategy
 			_pendingBuyPrice = price;
 			_pendingBuyVolume = volume;
 			_pendingBuyIsStop = price > referencePrice;
-			AddInfoLog($"Armed pending buy {( _pendingBuyIsStop ? "stop" : "limit" )} at {price:F5} with volume {volume}.");
+			LogInfo($"Armed pending buy {( _pendingBuyIsStop ? "stop" : "limit" )} at {price:F5} with volume {volume}.");
 		}
 		else
 		{
 			_pendingSellPrice = price;
 			_pendingSellVolume = volume;
 			_pendingSellIsStop = price < referencePrice;
-			AddInfoLog($"Armed pending sell {( _pendingSellIsStop ? "stop" : "limit" )} at {price:F5} with volume {volume}.");
+			LogInfo($"Armed pending sell {( _pendingSellIsStop ? "stop" : "limit" )} at {price:F5} with volume {volume}.");
 		}
 	}
 
@@ -685,12 +685,12 @@ public class SimpleOrderPanelStrategy : Strategy
 	{
 		if (_pendingBuyPrice is decimal buyPrice)
 		{
-			AddInfoLog($"Cancelled pending buy at {buyPrice:F5}.");
+			LogInfo($"Cancelled pending buy at {buyPrice:F5}.");
 		}
 
 		if (_pendingSellPrice is decimal sellPrice)
 		{
-			AddInfoLog($"Cancelled pending sell at {sellPrice:F5}.");
+			LogInfo($"Cancelled pending sell at {sellPrice:F5}.");
 		}
 
 		_pendingBuyPrice = null;
@@ -711,7 +711,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 		if (entry <= 0m)
 		{
-			AddWarningLog("Unable to determine entry price for protective orders.");
+			LogWarning("Unable to determine entry price for protective orders.");
 			return;
 		}
 
@@ -903,7 +903,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 			if (conditionMet)
 			{
-				AddInfoLog($"Pending buy filled at {buyPrice:F5}.");
+				LogInfo($"Pending buy filled at {buyPrice:F5}.");
 				BuyMarket(_pendingBuyVolume);
 				_pendingBuyPrice = null;
 				_pendingBuyVolume = 0m;
@@ -917,7 +917,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 			if (conditionMet)
 			{
-				AddInfoLog($"Pending sell filled at {sellPrice:F5}.");
+				LogInfo($"Pending sell filled at {sellPrice:F5}.");
 				SellMarket(_pendingSellVolume);
 				_pendingSellPrice = null;
 				_pendingSellVolume = 0m;
@@ -946,7 +946,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 			if (stopHit)
 			{
-				AddInfoLog("Stop-loss condition met. Closing position.");
+				LogInfo("Stop-loss condition met. Closing position.");
 				ClosePosition();
 				return;
 			}
@@ -958,7 +958,7 @@ public class SimpleOrderPanelStrategy : Strategy
 
 			if (takeHit)
 			{
-				AddInfoLog("Take-profit condition met. Closing position.");
+				LogInfo("Take-profit condition met. Closing position.");
 				ClosePosition();
 			}
 		}

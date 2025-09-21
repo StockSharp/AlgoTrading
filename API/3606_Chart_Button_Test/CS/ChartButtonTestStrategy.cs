@@ -160,7 +160,7 @@ public class ChartButtonTestStrategy : Strategy
 
 			_initialized = true;
 
-			AddInfoLog($"Button created at {FormatPrice(_bottomPrice)} (time {_rightTime:O}).");
+			LogInfo($"Button created at {FormatPrice(_bottomPrice)} (time {_rightTime:O}).");
 		}
 		else
 		{
@@ -178,7 +178,7 @@ public class ChartButtonTestStrategy : Strategy
 		{
 			_lastLoggedPrice = _bottomPrice;
 			_lastLoggedTime = _rightTime;
-			AddInfoLog($"Button moved to {FormatPrice(_bottomPrice)} at {_rightTime:O}.");
+			LogInfo($"Button moved to {FormatPrice(_bottomPrice)} at {_rightTime:O}.");
 		}
 	}
 

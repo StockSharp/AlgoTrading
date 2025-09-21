@@ -191,13 +191,13 @@ public class MacdAlertStrategy : Strategy
 		// Emit a bullish alert once the MACD exceeds the positive threshold.
 		if (macdValue >= upper)
 		{
-			AddInfoLog($"MACD main line {macdValue:F5} exceeded the upper threshold {upper:F5} at {time:yyyy-MM-dd HH:mm:ss}.");
+			LogInfo($"MACD main line {macdValue:F5} exceeded the upper threshold {upper:F5} at {time:yyyy-MM-dd HH:mm:ss}.");
 		}
 
 		// Emit a bearish alert once the MACD drops below the negative threshold.
 		if (macdValue <= lower)
 		{
-			AddInfoLog($"MACD main line {macdValue:F5} fell below the lower threshold {lower:F5} at {time:yyyy-MM-dd HH:mm:ss}.");
+			LogInfo($"MACD main line {macdValue:F5} fell below the lower threshold {lower:F5} at {time:yyyy-MM-dd HH:mm:ss}.");
 		}
 	}
 }

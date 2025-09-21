@@ -86,12 +86,12 @@ public class ScreenshotStrategy : Strategy
 			try
 			{
 				if (!_keyListenerTask.Wait(TimeSpan.FromSeconds(1)))
-					AddWarningLog("Keyboard listener is still running after timeout.");
+					LogWarning("Keyboard listener is still running after timeout.");
 			}
 			catch (AggregateException ex)
 			{
 				var message = ex.InnerException?.Message ?? ex.Message;
-				AddWarningLog($"Keyboard listener stopped with error: {message}");
+				LogWarning($"Keyboard listener stopped with error: {message}");
 			}
 		}
 
@@ -154,7 +154,7 @@ public class ScreenshotStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog(ex);
+			LogError(ex);
 		}
 	}
 
@@ -186,11 +186,11 @@ public class ScreenshotStrategy : Strategy
 
 			bitmap.Save(fullPath, ImageFormat.Png);
 
-			AddInfoLog($"Saved the screenshot {fullPath}.");
+			LogInfo($"Saved the screenshot {fullPath}.");
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog(ex);
+			LogError(ex);
 		}
 	}
 
@@ -226,6 +226,6 @@ public class ScreenshotStrategy : Strategy
 			return;
 
 		_inputUnavailableNotified = true;
-		AddWarningLog("Console input is not available. Keyboard shortcuts are disabled.");
+		LogWarning("Console input is not available. Keyboard shortcuts are disabled.");
 	}
 }

@@ -129,7 +129,7 @@ public class CountOrdersStrategy : Strategy
 		var normalizedVolume = NormalizeVolume(TradeVolume);
 		if (normalizedVolume <= 0m)
 		{
-			AddWarningLog("Sample trades were skipped because the normalized volume is non-positive.");
+			LogWarning("Sample trades were skipped because the normalized volume is non-positive.");
 			return;
 		}
 
@@ -188,7 +188,7 @@ public class CountOrdersStrategy : Strategy
 	private void PublishOrderSummary()
 	{
 		var total = _activeBuyOrders.Count + _activeSellOrders.Count;
-		AddInfoLog($"Orders total now: {total}. Buys: {_activeBuyOrders.Count}. Sells: {_activeSellOrders.Count}.");
+		LogInfo($"Orders total now: {total}. Buys: {_activeBuyOrders.Count}. Sells: {_activeSellOrders.Count}.");
 	}
 
 	private decimal NormalizeVolume(decimal requestedVolume)
@@ -212,14 +212,14 @@ public class CountOrdersStrategy : Strategy
 		var minVolume = security.VolumeMin ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
 		{
-			AddWarningLog($"Requested volume {requestedVolume} is below the minimum {minVolume}. Using the minimum instead.");
+			LogWarning($"Requested volume {requestedVolume} is below the minimum {minVolume}. Using the minimum instead.");
 			volume = minVolume;
 		}
 
 		var maxVolume = security.VolumeMax ?? 0m;
 		if (maxVolume > 0m && volume > maxVolume)
 		{
-			AddWarningLog($"Requested volume {requestedVolume} exceeds the maximum {maxVolume}. Using the maximum instead.");
+			LogWarning($"Requested volume {requestedVolume} exceeds the maximum {maxVolume}. Using the maximum instead.");
 			volume = maxVolume;
 		}
 
@@ -274,7 +274,7 @@ public class CountOrdersStrategy : Strategy
 		var price = GetReferencePrice(side);
 		if (price <= 0m)
 		{
-			AddWarningLog("Protective orders were skipped because no reference price is available yet.");
+			LogWarning("Protective orders were skipped because no reference price is available yet.");
 			return;
 		}
 

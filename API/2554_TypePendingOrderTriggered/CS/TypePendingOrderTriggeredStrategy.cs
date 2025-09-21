@@ -33,7 +33,7 @@ public class TypePendingOrderTriggeredStrategy : Strategy
 
 		if (order is null)
 		{
-			AddWarningLog("Received trade {0} without order reference.", trade.Trade?.Id);
+			LogWarning("Received trade {0} without order reference.", trade.Trade?.Id);
 			return;
 		}
 
@@ -51,7 +51,7 @@ public class TypePendingOrderTriggeredStrategy : Strategy
 				_ => "Limit"
 			};
 
-			AddInfoLog("The pending order {0} is found! Type of order is {1}.", orderId, typeName);
+			LogInfo("The pending order {0} is found! Type of order is {1}.", orderId, typeName);
 			return;
 		}
 
@@ -64,11 +64,11 @@ public class TypePendingOrderTriggeredStrategy : Strategy
 				_ => "Conditional"
 			};
 
-			AddInfoLog("The pending order {0} is found! Type of order is {1}.", orderId, typeName);
+			LogInfo("The pending order {0} is found! Type of order is {1}.", orderId, typeName);
 			return;
 		}
 
-		AddWarningLog("The order {0} is not pending. Type: {1}.", orderId, order.Type);
+		LogWarning("The order {0} is not pending. Type: {1}.", orderId, order.Type);
 	}
 
 	private static long GetOrderKey(Order order)

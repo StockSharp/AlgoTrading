@@ -141,26 +141,26 @@ public class BuySellOnYourPriceStrategy : Strategy
 		var mode = Mode;
 		if (mode == OrderMode.None)
 		{
-			AddInfoLog("Order mode is set to None. No orders will be sent.");
+			LogInfo("Order mode is set to None. No orders will be sent.");
 			return;
 		}
 
 		var volume = OrderVolume;
 		if (volume <= 0m)
 		{
-			AddInfoLog("Order volume must be greater than zero.");
+			LogInfo("Order volume must be greater than zero.");
 			return;
 		}
 
 		if (Position != 0)
 		{
-			AddInfoLog($"Existing position {Position} detected. New orders are not submitted.");
+			LogInfo($"Existing position {Position} detected. New orders are not submitted.");
 			return;
 		}
 
 		if (HasActiveOrders())
 		{
-			AddInfoLog("Active orders detected. The expert sends only one order when none are open.");
+			LogInfo("Active orders detected. The expert sends only one order when none are open.");
 			return;
 		}
 
@@ -178,32 +178,32 @@ public class BuySellOnYourPriceStrategy : Strategy
 		{
 			case OrderMode.Buy:
 				BuyMarket(volume);
-				AddInfoLog($"Market buy order sent. Volume={volume}.");
+				LogInfo($"Market buy order sent. Volume={volume}.");
 				break;
 
 			case OrderMode.Sell:
 				SellMarket(volume);
-				AddInfoLog($"Market sell order sent. Volume={volume}.");
+				LogInfo($"Market sell order sent. Volume={volume}.");
 				break;
 
 			case OrderMode.BuyLimit:
 				BuyLimit(volume, entryPrice);
-				AddInfoLog($"Buy limit order placed at {entryPrice}. Volume={volume}.");
+				LogInfo($"Buy limit order placed at {entryPrice}. Volume={volume}.");
 				break;
 
 			case OrderMode.SellLimit:
 				SellLimit(volume, entryPrice);
-				AddInfoLog($"Sell limit order placed at {entryPrice}. Volume={volume}.");
+				LogInfo($"Sell limit order placed at {entryPrice}. Volume={volume}.");
 				break;
 
 			case OrderMode.BuyStop:
 				BuyStop(volume, entryPrice);
-				AddInfoLog($"Buy stop order placed at {entryPrice}. Volume={volume}.");
+				LogInfo($"Buy stop order placed at {entryPrice}. Volume={volume}.");
 				break;
 
 			case OrderMode.SellStop:
 				SellStop(volume, entryPrice);
-				AddInfoLog($"Sell stop order placed at {entryPrice}. Volume={volume}.");
+				LogInfo($"Sell stop order placed at {entryPrice}. Volume={volume}.");
 				break;
 		}
 	}
@@ -248,7 +248,7 @@ public class BuySellOnYourPriceStrategy : Strategy
 		{
 			if (entryPrice <= 0m)
 			{
-				AddInfoLog("Market price is not available yet. Order submission will be postponed.");
+				LogInfo("Market price is not available yet. Order submission will be postponed.");
 				return false;
 			}
 
@@ -257,7 +257,7 @@ public class BuySellOnYourPriceStrategy : Strategy
 
 		if (entryPrice <= 0m)
 		{
-			AddInfoLog("Entry price must be greater than zero for pending orders.");
+			LogInfo("Entry price must be greater than zero for pending orders.");
 			return false;
 		}
 

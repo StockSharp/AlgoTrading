@@ -130,7 +130,7 @@ public class SpaceXDeleteStopLossTakeProfitButtonStrategy : Strategy
 		var securities = CollectTargetSecurities();
 		if (securities.Count == 0)
 		{
-			AddInfoLog("No open positions were found for the configured scope.");
+			LogInfo("No open positions were found for the configured scope.");
 			return;
 		}
 
@@ -143,11 +143,11 @@ public class SpaceXDeleteStopLossTakeProfitButtonStrategy : Strategy
 
 		if (cancelled == 0)
 		{
-			AddInfoLog("No protective orders were active for the targeted positions.");
+			LogInfo("No protective orders were active for the targeted positions.");
 		}
 		else
 		{
-			AddInfoLog($"Cancelled {cancelled} protective order(s).");
+			LogInfo($"Cancelled {cancelled} protective order(s).");
 		}
 	}
 

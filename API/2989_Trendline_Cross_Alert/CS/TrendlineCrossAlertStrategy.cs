@@ -195,13 +195,13 @@ public class TrendlineCrossAlertStrategy : Strategy
 		var message = $"Price crossed {type} '{name}' {direction} at {linePrice:0.#####} on {time:yyyy-MM-dd HH:mm:ss}. Close price {closePrice:0.#####}. Marking line as {CrossedColor}.";
 
 		if (EnableAlerts)
-			AddInfoLog(message);
+			LogInfo(message);
 
 		if (EnableNotifications)
-			AddInfoLog($"Push notification: {message}");
+			LogInfo($"Push notification: {message}");
 
 		if (EnableEmails)
-			AddInfoLog($"Email notification: {message}");
+			LogInfo($"Email notification: {message}");
 	}
 
 	private static bool TryGetCrossDirection(decimal open, decimal close, decimal target, out string direction)

@@ -102,7 +102,7 @@ public class AutoTradingPublishStrategy : Strategy
 			DrawCandles(area, subscription);
 		}
 
-		AddInfoLog("Auto trading scheduler initialized. Start={0:00}, Stop={1:00}.", StartHour, StopHour);
+		LogInfo("Auto trading scheduler initialized. Start={0:00}, Stop={1:00}.", StartHour, StopHour);
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -146,11 +146,11 @@ public class AutoTradingPublishStrategy : Strategy
 
 		if (enable)
 		{
-			AddInfoLog("Auto trading enabled at {0:O}.", time);
+			LogInfo("Auto trading enabled at {0:O}.", time);
 		}
 		else
 		{
-			AddInfoLog("Auto trading disabled at {0:O}.", time);
+			LogInfo("Auto trading disabled at {0:O}.", time);
 		}
 	}
 }

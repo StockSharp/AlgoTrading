@@ -188,7 +188,7 @@ public class CsvExporterStrategy : Strategy
 		}
 
 		_lastExportStatus = $"Exported {orderedValues.Length} closes to {path} at {time:O}.";
-		this.AddInfoLog(_lastExportStatus);
+		this.LogInfo(_lastExportStatus);
 	}
 
 	private void EnsureBufferSize()

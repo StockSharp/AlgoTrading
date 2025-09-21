@@ -369,7 +369,7 @@ public class DeMarkerPendingStrategy : Strategy
 
                 if (TargetProfit > 0m && !_targetReached && PnL >= TargetProfit)
                 {
-                        AddInfoLog("Target profit reached. Closing all positions and cancelling pending orders.");
+                        LogInfo("Target profit reached. Closing all positions and cancelling pending orders.");
                         CloseAllPositions();
                         CancelPendingOrder();
                         _targetReached = true;
@@ -395,7 +395,7 @@ public class DeMarkerPendingStrategy : Strategy
 
                 if (TargetProfit > 0m && !_targetReached && PnL >= TargetProfit)
                 {
-                        AddInfoLog("Target profit reached on candle. Closing all positions and cancelling pending orders.");
+                        LogInfo("Target profit reached on candle. Closing all positions and cancelling pending orders.");
                         CloseAllPositions();
                         CancelPendingOrder();
                         _targetReached = true;
@@ -412,7 +412,7 @@ public class DeMarkerPendingStrategy : Strategy
                 var maxSpread = PendingMaxSpreadPoints * _priceStep;
                 if (maxSpread > 0m && spread > maxSpread)
                 {
-                        AddInfoLog($"Skip signal because spread {spread:F5} exceeds limit {maxSpread:F5}.");
+                        LogInfo($"Skip signal because spread {spread:F5} exceeds limit {maxSpread:F5}.");
                         return;
                 }
 
@@ -560,9 +560,9 @@ public class DeMarkerPendingStrategy : Strategy
                         : null;
 
                 if (isLong)
-                        AddInfoLog($"Entered long position at {entryPrice:F5} on {tradeTime:u}.");
+                        LogInfo($"Entered long position at {entryPrice:F5} on {tradeTime:u}.");
                 else
-                        AddInfoLog($"Entered short position at {entryPrice:F5} on {tradeTime:u}.");
+                        LogInfo($"Entered short position at {entryPrice:F5} on {tradeTime:u}.");
         }
 
         private void ManageOpenPosition()

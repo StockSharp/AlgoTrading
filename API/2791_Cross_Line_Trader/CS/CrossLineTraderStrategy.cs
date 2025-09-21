@@ -348,7 +348,7 @@ public class CrossLineTraderStrategy : Strategy
 
 			BuyMarket(TradeVolume);
 			_entryPrice = candle.OpenPrice;
-			AddInfoLog($"Line '{line.Name}' triggered BUY at {candle.OpenPrice:0.#####}.");
+			LogInfo($"Line '{line.Name}' triggered BUY at {candle.OpenPrice:0.#####}.");
 		}
 		else
 		{
@@ -357,7 +357,7 @@ public class CrossLineTraderStrategy : Strategy
 
 			SellMarket(TradeVolume);
 			_entryPrice = candle.OpenPrice;
-			AddInfoLog($"Line '{line.Name}' triggered SELL at {candle.OpenPrice:0.#####}.");
+			LogInfo($"Line '{line.Name}' triggered SELL at {candle.OpenPrice:0.#####}.");
 		}
 
 		return true;

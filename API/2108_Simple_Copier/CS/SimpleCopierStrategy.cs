@@ -112,7 +112,7 @@ public class SimpleCopierStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddWarningLog($"Master mode error: {ex.Message}");
+			this.LogWarning($"Master mode error: {ex.Message}");
 		}
 	}
 
@@ -167,7 +167,7 @@ public class SimpleCopierStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			this.AddWarningLog($"Slave mode error: {ex.Message}");
+			this.LogWarning($"Slave mode error: {ex.Message}");
 		}
 	}
 }

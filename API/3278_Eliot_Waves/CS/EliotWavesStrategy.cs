@@ -636,7 +636,7 @@ public class EliotWavesStrategy : Strategy
 
 		if (!_pipWarningIssued)
 		{
-			AddWarningLog("Unable to determine pip size from security settings. Using price step as a fallback.");
+			LogWarning("Unable to determine pip size from security settings. Using price step as a fallback.");
 			_pipWarningIssued = true;
 		}
 

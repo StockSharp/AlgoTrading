@@ -91,15 +91,15 @@ public class Acb7Strategy : Strategy
 				LogMatrix(_matrix1);
 			}
 
-			this.AddInfoLog($"Success: {Runs} runs in {stopwatch.ElapsedMilliseconds} ms.");
+			this.LogInfo($"Success: {Runs} runs in {stopwatch.ElapsedMilliseconds} ms.");
 		}
 		else
 		{
-			this.AddInfoLog("Failure");
+			this.LogInfo("Failure");
 		}
 
 		// Preserve the trailing blank alert emitted by the script for faithful logging.
-		this.AddInfoLog(string.Empty);
+		this.LogInfo(string.Empty);
 
 		Stop();
 	}
@@ -136,7 +136,7 @@ public class Acb7Strategy : Strategy
 	{
 		if (matrix.Rows == 0 || matrix.Columns == 0)
 		{
-			this.AddInfoLog($"Matrix ID: {matrix.Id} Rows={matrix.Rows} Columns={matrix.Columns}");
+			this.LogInfo($"Matrix ID: {matrix.Id} Rows={matrix.Rows} Columns={matrix.Columns}");
 			return;
 		}
 
@@ -155,10 +155,10 @@ public class Acb7Strategy : Strategy
 				builder.Append(';');
 			}
 
-			this.AddInfoLog(builder.ToString());
+			this.LogInfo(builder.ToString());
 		}
 
-		this.AddInfoLog($"Matrix ID: {matrix.Id} Rows={matrix.Rows} Columns={matrix.Columns}");
+		this.LogInfo($"Matrix ID: {matrix.Id} Rows={matrix.Rows} Columns={matrix.Columns}");
 	}
 
 	// Lightweight matrix container that keeps the same access pattern as the script helper routines.

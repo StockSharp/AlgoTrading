@@ -103,7 +103,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 		if (!isClosingLong && !isClosingShort)
 			return;
 
-		AddInfoLog($"Play sound: {GetSoundFileName(Sound)}");
+		LogInfo($"Play sound: {GetSoundFileName(Sound)}");
 
 		if (!NotificationEnabled)
 			return;
@@ -114,7 +114,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 		var profit = _previousPnL - pnlBeforeTrade;
 		var directionText = orderDirection == Sides.Buy ? "buy" : "sell";
 
-		AddInfoLog($"Deal #{tradeId?.ToString() ?? "N/A"} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
+		LogInfo($"Deal #{tradeId?.ToString() ?? "N/A"} {directionText} {tradeVolume:F2} {symbol}, profit: {profit:F2}");
 	}
 
 	private static string GetSoundFileName(NotificationSound sound)

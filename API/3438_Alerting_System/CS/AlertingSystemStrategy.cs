@@ -96,7 +96,7 @@ public class AlertingSystemStrategy : Strategy
 		{
 			if (!_upperAlertActive)
 			{
-				AddInfoLog("Upper alert triggered. Best bid={0:F5}, level={1:F5}", bid, level);
+				LogInfo("Upper alert triggered. Best bid={0:F5}, level={1:F5}", bid, level);
 				_upperAlertActive = true;
 			}
 		}
@@ -122,7 +122,7 @@ public class AlertingSystemStrategy : Strategy
 		{
 			if (!_lowerAlertActive)
 			{
-				AddInfoLog("Lower alert triggered. Best ask={0:F5}, level={1:F5}", ask, level);
+				LogInfo("Lower alert triggered. Best ask={0:F5}, level={1:F5}", ask, level);
 				_lowerAlertActive = true;
 			}
 		}

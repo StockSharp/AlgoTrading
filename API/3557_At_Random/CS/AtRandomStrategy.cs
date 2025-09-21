@@ -152,7 +152,7 @@ public class AtRandomStrategy : Strategy
 		var side = _random.Next(0, 2) == 0 ? Sides.Buy : Sides.Sell;
 
 		if (LogSignals)
-			this.AddInfoLog($"Random signal: {side} at {candle.ClosePrice}.");
+			this.LogInfo($"Random signal: {side} at {candle.ClosePrice}.");
 
 		if (side == Sides.Buy)
 			BuyMarket(TradeVolume);

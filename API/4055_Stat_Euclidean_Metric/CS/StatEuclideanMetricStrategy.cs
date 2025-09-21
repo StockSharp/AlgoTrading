@@ -562,7 +562,7 @@ public class StatEuclideanMetricStrategy : Strategy
 
 		if (!File.Exists(fullPath))
 		{
-			AddInfoLog($"{name} dataset file '{fullPath}' not found. Classifier will use empty data set.");
+			LogInfo($"{name} dataset file '{fullPath}' not found. Classifier will use empty data set.");
 			return Array.Empty<decimal[]>();
 		}
 
@@ -583,12 +583,12 @@ public class StatEuclideanMetricStrategy : Strategy
 				records.Add(values);
 			}
 
-			AddInfoLog($"{name} dataset loaded with {records.Count} vectors from '{fullPath}'.");
+			LogInfo($"{name} dataset loaded with {records.Count} vectors from '{fullPath}'.");
 			return records.ToArray();
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog($"Failed to load {name} dataset from '{fullPath}': {ex.Message}");
+			LogError($"Failed to load {name} dataset from '{fullPath}': {ex.Message}");
 			return Array.Empty<decimal[]>();
 		}
 	}

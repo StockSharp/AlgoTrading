@@ -389,7 +389,7 @@ public class BandsStrategy : Strategy
 
 		if (ssTotal == 0m)
 		{
-			AddInfoLog("Equity R-squared: 1.0000");
+			LogInfo("Equity R-squared: 1.0000");
 			return;
 		}
 
@@ -399,6 +399,6 @@ public class BandsStrategy : Strategy
 		if (slope < 0m)
 			rSquared = -rSquared;
 
-		AddInfoLog($"Equity R-squared: {rSquared:F4}");
+		LogInfo($"Equity R-squared: {rSquared:F4}");
 	}
 }

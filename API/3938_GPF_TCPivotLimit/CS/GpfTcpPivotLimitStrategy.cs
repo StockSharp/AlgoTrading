@@ -275,7 +275,7 @@ _levelsDay = candleDay;
 
 if (LogSignals)
 {
-AddInfoLog($"Pivot levels for {candleDay:yyyy-MM-dd}: P={levels.Pivot:F5}, R1={levels.R1:F5}, R2={levels.R2:F5}, R3={levels.R3:F5}, S1={levels.S1:F5}, S2={levels.S2:F5}, S3={levels.S3:F5}");
+LogInfo($"Pivot levels for {candleDay:yyyy-MM-dd}: P={levels.Pivot:F5}, R1={levels.R1:F5}, R2={levels.R2:F5}, R3={levels.R3:F5}, S1={levels.S1:F5}, S2={levels.S2:F5}, S3={levels.S3:F5}");
 }
 }
 
@@ -323,7 +323,7 @@ _longTake = plan.BuyTake;
 _shortStop = null;
 _shortTake = null;
 if (LogSignals)
-AddInfoLog($"BUY triggered at {trigger:F5} using TargetMode {TargetMode}.");
+LogInfo($"BUY triggered at {trigger:F5} using TargetMode {TargetMode}.");
 }
 }
 }
@@ -341,7 +341,7 @@ _shortTake = plan.SellTake;
 _longStop = null;
 _longTake = null;
 if (LogSignals)
-AddInfoLog($"SELL triggered at {trigger:F5} using TargetMode {TargetMode}.");
+LogInfo($"SELL triggered at {trigger:F5} using TargetMode {TargetMode}.");
 }
 }
 }
@@ -418,7 +418,7 @@ if (_longStop is decimal stop && candle.LowPrice <= stop)
 {
 SellMarket(Math.Abs(Position));
 if (LogSignals)
-AddInfoLog($"Long stop triggered at {stop:F5}.");
+LogInfo($"Long stop triggered at {stop:F5}.");
 _longStop = null;
 _longTake = null;
 return;
@@ -428,7 +428,7 @@ if (_longTake is decimal take && candle.HighPrice >= take)
 {
 SellMarket(Math.Abs(Position));
 if (LogSignals)
-AddInfoLog($"Long target reached at {take:F5}.");
+LogInfo($"Long target reached at {take:F5}.");
 _longStop = null;
 _longTake = null;
 return;
@@ -440,7 +440,7 @@ if (_shortStop is decimal stop && candle.HighPrice >= stop)
 {
 BuyMarket(Math.Abs(Position));
 if (LogSignals)
-AddInfoLog($"Short stop triggered at {stop:F5}.");
+LogInfo($"Short stop triggered at {stop:F5}.");
 _shortStop = null;
 _shortTake = null;
 return;
@@ -450,7 +450,7 @@ if (_shortTake is decimal take && candle.LowPrice <= take)
 {
 BuyMarket(Math.Abs(Position));
 if (LogSignals)
-AddInfoLog($"Short target reached at {take:F5}.");
+LogInfo($"Short target reached at {take:F5}.");
 _shortStop = null;
 _shortTake = null;
 return;
@@ -474,7 +474,7 @@ BuyMarket(Math.Abs(Position));
 _longStop = _longTake = _shortStop = _shortTake = null;
 
 if (LogSignals)
-AddInfoLog("Position closed at session end.");
+LogInfo("Position closed at session end.");
 }
 }
 }
@@ -493,7 +493,7 @@ if (candle.ClosePrice - entryPrice > trailingDistance && (_longStop == null || c
 {
 _longStop = candidate;
 if (LogSignals)
-AddInfoLog($"Trailing stop for long moved to {candidate:F5}.");
+LogInfo($"Trailing stop for long moved to {candidate:F5}.");
 }
 }
 else if (Position < 0m)
@@ -504,7 +504,7 @@ if (entryPrice - candle.ClosePrice > trailingDistance && (_shortStop == null || 
 {
 _shortStop = candidate;
 if (LogSignals)
-AddInfoLog($"Trailing stop for short moved to {candidate:F5}.");
+LogInfo($"Trailing stop for short moved to {candidate:F5}.");
 }
 }
 }

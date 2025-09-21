@@ -89,6 +89,6 @@ public class CalcProfitLossOnLinePriceStrategy : Strategy
 		var diff = LinePrice - PositionPrice;
 		var pnl = diff / priceStep * stepPrice * Position;
 
-		AddInfoLog($"Profit/Loss at {LinePrice} = {pnl:0.##} {Portfolio?.Currency}");
+		LogInfo($"Profit/Loss at {LinePrice} = {pnl:0.##} {Portfolio?.Currency}");
 	}
 }

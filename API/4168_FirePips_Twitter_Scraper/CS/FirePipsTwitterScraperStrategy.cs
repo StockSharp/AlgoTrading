@@ -94,7 +94,7 @@ public class FirePipsTwitterScraperStrategy : Strategy
 				Timeout = TimeSpan.FromMilliseconds(RequestTimeout)
 			};
 
-			AddInfoLog("Requesting {0}.", RequestUrl);
+			LogInfo("Requesting {0}.", RequestUrl);
 
 			using var response = await httpClient.GetAsync(RequestUrl).ConfigureAwait(false);
 			response.EnsureSuccessStatusCode();
@@ -103,17 +103,17 @@ public class FirePipsTwitterScraperStrategy : Strategy
 
 			if (string.IsNullOrEmpty(content))
 			{
-				AddWarningLog("Received empty response from {0}.", RequestUrl);
+				LogWarning("Received empty response from {0}.", RequestUrl);
 				return;
 			}
 
-			AddInfoLog("Downloaded {0} characters from {1}.", content.Length, RequestUrl);
+			LogInfo("Downloaded {0} characters from {1}.", content.Length, RequestUrl);
 
 			ProcessContent(content);
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog("HTTP download failed. {0}", ex);
+			LogError("HTTP download failed. {0}", ex);
 		}
 		finally
 		{
@@ -127,34 +127,34 @@ public class FirePipsTwitterScraperStrategy : Strategy
 
 		if (occurrences.Count == 0)
 		{
-			AddInfoLog("The search text "{0}" was not found in the response.", SearchText);
+			LogInfo("The search text {0} was not found in the response.", SearchText);
 		}
 		else
 		{
 			foreach (var index in occurrences)
 			{
-				AddInfoLog("Found "{0}" at character index {1}.", SearchText, index);
+				LogInfo("Found {0} at character index {1}.", SearchText, index);
 			}
 		}
 
 		var filePath = Path.GetFullPath(OutputFileName);
 		File.WriteAllText(filePath, content, Encoding.UTF8);
 
-		AddInfoLog("Saved downloaded content to {0}.", filePath);
+		LogInfo("Saved downloaded content to {0}.", filePath);
 
 		var firstToken = ExtractFirstToken(content);
 
 		if (int.TryParse(firstToken, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue))
 		{
-			AddInfoLog("Parsed integer value {0} from the beginning of the file.", parsedValue);
+			LogInfo("Parsed integer value {0} from the beginning of the file.", parsedValue);
 		}
 		else if (!string.IsNullOrWhiteSpace(firstToken))
 		{
-			AddInfoLog("The beginning of the file contains non-numeric data: "{0}".", firstToken);
+			LogInfo("The beginning of the file contains non-numeric data: {0}.", firstToken);
 		}
 		else
 		{
-			AddInfoLog("No token could be extracted from the beginning of the downloaded content.");
+			LogInfo("No token could be extracted from the beginning of the downloaded content.");
 		}
 	}
 
@@ -207,6 +207,6 @@ public class FirePipsTwitterScraperStrategy : Strategy
 	{
 		base.OnStopped();
 
-		AddInfoLog("FirePips Twitter scraper completed.");
+		LogInfo("FirePips Twitter scraper completed.");
 	}
 }

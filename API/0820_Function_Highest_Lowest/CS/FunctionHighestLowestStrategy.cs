@@ -111,6 +111,6 @@ public class FunctionHighestLowestStrategy : Strategy
 		var alternatingHigh = candle.ClosePrice > candle.OpenPrice ? highA : highB;
 		var alternatingLow = candle.ClosePrice > candle.OpenPrice ? lowA : lowB;
 
-		this.AddInfoLog($"AltHigh={alternatingHigh}, AltLow={alternatingLow}");
+		this.LogInfo($"AltHigh={alternatingHigh}, AltLow={alternatingLow}");
 	}
 }

@@ -30,7 +30,7 @@ public class PixelArtStrategy : Strategy
 
 		if (!_pixels.TryGetValue(Logo, out var colors))
 		{
-			AddErrorLog($"Unknown logo '{Logo}'.");
+			LogError($"Unknown logo '{Logo}'.");
 			return;
 		}
 
@@ -38,7 +38,7 @@ public class PixelArtStrategy : Strategy
 		for (var r = 0; r < width; r++)
 		{
 			var row = string.Join(" ", colors.Skip(r * width).Take(width));
-			AddInfoLog(row);
+			LogInfo(row);
 		}
 	}
 

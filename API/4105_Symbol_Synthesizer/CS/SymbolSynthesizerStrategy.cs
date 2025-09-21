@@ -162,7 +162,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		.Bind(message => ProcessLevel1(_secondLeg, message))
 		.Start();
 
-		AddInfoLog($"Symbol synthesizer initialized with {_combination?.SyntheticSymbol} = {_combination?.FirstLeg} {_combination?.SecondLeg} ({(_combination?.IsProduct == true ? "product" : "ratio")}).");
+		LogInfo($"Symbol synthesizer initialized with {_combination?.SyntheticSymbol} = {_combination?.FirstLeg} {_combination?.SecondLeg} ({(_combination?.IsProduct == true ? "product" : "ratio")}).");
 	}
 
 	private void EnsureCombinationInitialized(bool throwOnError)
@@ -178,7 +178,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		if (throwOnError)
 		throw new InvalidOperationException(message);
 
-		AddWarningLog(message);
+		LogWarning(message);
 		return;
 		}
 
@@ -198,7 +198,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		if (throwOnError)
 		throw new InvalidOperationException(message);
 
-		AddWarningLog(message);
+		LogWarning(message);
 		return;
 		}
 
@@ -275,7 +275,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		{
 		_lastLoggedBid = newBid;
 		_lastLoggedAsk = newAsk;
-		AddInfoLog($"Synthetic {_combination.SyntheticSymbol} quote updated. Bid={newBid}, Ask={newAsk}.");
+		LogInfo($"Synthetic {_combination.SyntheticSymbol} quote updated. Bid={newBid}, Ask={newAsk}.");
 		}
 
 		TryExecuteManualAction();
@@ -301,7 +301,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-		AddErrorLog($"Failed to execute synthetic {action}. {ex.Message}");
+		LogError($"Failed to execute synthetic {action}. {ex.Message}");
 		TradeAction = SyntheticTradeAction.None;
 		}
 		finally
@@ -362,7 +362,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		PlaceOrder(_firstLeg, firstSide, firstVolume, firstPrice);
 		PlaceOrder(_secondLeg, secondSide, secondVolume, secondPrice);
 
-		AddInfoLog($"Placed synthetic {action} orders: {firstSide} {firstVolume} {_firstLeg.Id}, {secondSide} {secondVolume} {_secondLeg.Id}.");
+		LogInfo($"Placed synthetic {action} orders: {firstSide} {firstVolume} {_firstLeg.Id}, {secondSide} {secondVolume} {_secondLeg.Id}.");
 	}
 
 	private decimal NormalizeVolume(decimal volume, Security security)

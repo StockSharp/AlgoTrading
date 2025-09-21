@@ -114,11 +114,11 @@ public class HpcsFifthMt4EaV01WeStrategy : Strategy
 			? "New candle detected"
 			: AlertMessage;
 
-		AddInfoLog($"{message}. Time: {candle.OpenTime:O}.");
+		LogInfo($"{message}. Time: {candle.OpenTime:O}.");
 
 		if (PlaySound && !string.IsNullOrWhiteSpace(SoundFile))
 		{
-			AddInfoLog($"Sound notification requested: {SoundFile}.");
+			LogInfo($"Sound notification requested: {SoundFile}.");
 		}
 	}
 }

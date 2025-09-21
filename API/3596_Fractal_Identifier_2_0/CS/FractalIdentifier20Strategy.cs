@@ -121,6 +121,6 @@ public class FractalIdentifier20Strategy : Strategy
 		_lastFractalHigh = newestFractal;
 
 		// Log the detected level to replicate the original indicator comment output.
-		AddInfoLog("Most recent fractal high: {0}", newestFractal.Value);
+		LogInfo("Most recent fractal high: {0}", newestFractal.Value);
 	}
 }

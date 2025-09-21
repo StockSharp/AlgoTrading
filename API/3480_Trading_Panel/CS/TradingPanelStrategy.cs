@@ -180,7 +180,7 @@ public class TradingPanelStrategy : Strategy
 
 		if (security == null)
 		{
-			AddWarningLog(LocalizedStrings.Str1392Params.Put(nameof(Security)));
+			LogWarning(LocalizedStrings.Str1392Params.Put(nameof(Security)));
 			return;
 		}
 
@@ -207,7 +207,7 @@ public class TradingPanelStrategy : Strategy
 		LastFinishedCandle = candle;
 
 		// Log the change to imitate visual feedback of the original panel.
-		AddInfoLog($"{candle.SecurityId} {TimeFrameName} close: {candle.ClosePrice}");
+		LogInfo($"{candle.SecurityId} {TimeFrameName} close: {candle.ClosePrice}");
 	}
 
 	private Security? ResolveSecurity()

@@ -138,7 +138,7 @@ public class SymbolSwapPanelStrategy : Strategy
 		_appliedSecurityId = security.Id;
 		_activeSecurity = security;
 
-		AddInfoLog($"Monitoring security '{security.Id}' using candle type {CandleType}.");
+		LogInfo($"Monitoring security '{security.Id}' using candle type {CandleType}.");
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
@@ -153,7 +153,7 @@ public class SymbolSwapPanelStrategy : Strategy
 
 		_lastSpread = spread;
 
-		AddInfoLog(
+		LogInfo(
 			$"Time: {candle.CloseTime:O}, Symbol: {_activeSecurity?.Id ?? "N/A"}, " +
 			$"Open: {candle.OpenPrice}, High: {candle.HighPrice}, Low: {candle.LowPrice}, Close: {candle.ClosePrice}, " +
 			$"Volume: {totalVolume}, Spread: {(spread.HasValue ? spread.Value.ToString() : "n/a")}."
@@ -183,7 +183,7 @@ public class SymbolSwapPanelStrategy : Strategy
 
 		if (string.IsNullOrEmpty(target))
 		{
-			AddWarningLog("Swap requested but the target security ID is empty.");
+			LogWarning("Swap requested but the target security ID is empty.");
 
 			SwapRequested = false;
 			return;
@@ -193,7 +193,7 @@ public class SymbolSwapPanelStrategy : Strategy
 
 		if (security == null)
 		{
-			AddWarningLog($"Security '{target}' cannot be resolved.");
+			LogWarning($"Security '{target}' cannot be resolved.");
 
 			SwapRequested = false;
 			return;
@@ -201,13 +201,13 @@ public class SymbolSwapPanelStrategy : Strategy
 
 		if (_appliedSecurityId != null && string.Equals(_appliedSecurityId, security.Id, StringComparison.InvariantCultureIgnoreCase))
 		{
-			AddInfoLog($"Security '{security.Id}' is already active; swap request was ignored.");
+			LogInfo($"Security '{security.Id}' is already active; swap request was ignored.");
 			SwapRequested = false;
 			return;
 		}
 
 		SubscribeToSecurity(security);
-		AddInfoLog($"Switched to '{security.Id}' due to {reason}.");
+		LogInfo($"Switched to '{security.Id}' due to {reason}.");
 
 		SwapRequested = false;
 	}

@@ -267,7 +267,7 @@ public class PositionSizeCalculatorStrategy : Strategy
 
 		Volume = volume;
 
-		AddInfoLog(
+		LogInfo(
 			"Position size updated. Dir={0}, Entry={1:0.#####}, Stop={2:0.#####}, Volume={3:0.####}, Risk={4:0.##}, Risk%={5:0.##}, Margin={6:0.##}",
 			TradeDirection,
 			entryPrice,

@@ -40,7 +40,7 @@ public class ThreeBreakyStrategy : Strategy
 	private ParabolicSar _parabolic = null!;
 	private Ichimoku _ichimoku = null!;
 
-	private readonly Queue<decimal> _bodyHistory = new();
+	private readonly Queue<decimal> _bodyHistory = [];
 
 	private ICandleMessage _previousCandle;
 	private ICandleMessage _secondPreviousCandle;

@@ -258,7 +258,7 @@ public class MacdZeroFilterTakeProfitStrategy : Strategy
 		if (currentValue.Value >= requiredCapital)
 			return true;
 
-		this.AddInfoLog($"Insufficient capital: available {currentValue.Value:F2}, required {requiredCapital:F2}.");
+		this.LogInfo($"Insufficient capital: available {currentValue.Value:F2}, required {requiredCapital:F2}.");
 		return false;
 	}
 }

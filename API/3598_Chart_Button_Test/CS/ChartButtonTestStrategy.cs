@@ -158,11 +158,11 @@ public class ChartButtonTestStrategy : Strategy
 
 		if (isInside)
 		{
-			AddInfoLog($"Price {closePrice:F4} entered the tracked zone between {_bottomPrice:F4} and {_topPrice:F4}.");
+			LogInfo($"Price {closePrice:F4} entered the tracked zone between {_bottomPrice:F4} and {_topPrice:F4}.");
 		}
 		else
 		{
-			AddInfoLog($"Price {closePrice:F4} left the tracked zone between {_bottomPrice:F4} and {_topPrice:F4}.");
+			LogInfo($"Price {closePrice:F4} left the tracked zone between {_bottomPrice:F4} and {_topPrice:F4}.");
 		}
 	}
 
@@ -175,7 +175,7 @@ public class ChartButtonTestStrategy : Strategy
 		_startTime = openTime;
 		_endTime = openTime + SelectionLength;
 
-		AddInfoLog($"Virtual button created at price {price:F4} with padding {PricePadding:F4}. Time window {_startTime:u} - {_endTime:u}.");
+		LogInfo($"Virtual button created at price {price:F4} with padding {PricePadding:F4}. Time window {_startTime:u} - {_endTime:u}.");
 	}
 
 	private void UpdateTimeWindow(DateTimeOffset openTime, bool forceLog)
@@ -185,7 +185,7 @@ public class ChartButtonTestStrategy : Strategy
 
 		if (forceLog)
 		{
-			AddInfoLog($"Time window adjusted to {_startTime:u} - {_endTime:u}.");
+			LogInfo($"Time window adjusted to {_startTime:u} - {_endTime:u}.");
 		}
 	}
 
@@ -202,6 +202,6 @@ public class ChartButtonTestStrategy : Strategy
 		_bottomPrice = price - PricePadding;
 
 		var action = priceChanged ? "moved" : "resized";
-		AddInfoLog($"Virtual button {action} to price {_centerPrice:F4}. Range [{_bottomPrice:F4}; {_topPrice:F4}].");
+		LogInfo($"Virtual button {action} to price {_centerPrice:F4}. Range [{_bottomPrice:F4}; {_topPrice:F4}].");
 	}
 }

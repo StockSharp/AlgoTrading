@@ -395,7 +395,7 @@ public class TrainingSimulatorStrategy : Strategy
 			return;
 
 		_closeInProgress = true;
-		AddInfoLog(reason);
+		LogInfo(reason);
 		ClosePosition();
 	}
 
@@ -420,7 +420,7 @@ public class TrainingSimulatorStrategy : Strategy
 			return;
 
 		_breakpointTriggered = true;
-		AddInfoLog(message);
+		LogInfo(message);
 
 		if (PauseOnBreakpoint)
 			Stop();

@@ -80,7 +80,7 @@ public class InformativeDashboardStrategy : Strategy
 		}
 		else if (Security == null)
 		{
-			AddWarningLog("Security is not assigned. Timer-based refresh is disabled.");
+			LogWarning("Security is not assigned. Timer-based refresh is disabled.");
 		}
 
 		UpdateDashboard();

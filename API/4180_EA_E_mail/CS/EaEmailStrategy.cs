@@ -54,13 +54,13 @@ public class EaEmailStrategy : Strategy
 
 		if (TimeIntervalMinutes <= 0)
 		{
-			AddWarningLog("Report interval must be greater than zero. Periodic reports are disabled.");
+			LogWarning("Report interval must be greater than zero. Periodic reports are disabled.");
 			return;
 		}
 
 		if (Security == null)
 		{
-			AddWarningLog("Security is not assigned. Only the initial report will be produced.");
+			LogWarning("Security is not assigned. Only the initial report will be produced.");
 			return;
 		}
 
@@ -100,8 +100,8 @@ public class EaEmailStrategy : Strategy
 		var body = BuildReportBody();
 
 		// MetaTrader used SendMail; here we mimic it with informational log entries.
-		AddInfoLog($"[Email] Subject: {subject}");
-		AddInfoLog($"[Email] Body:{Environment.NewLine}{body}");
+		LogInfo($"[Email] Subject: {subject}");
+		LogInfo($"[Email] Body:{Environment.NewLine}{body}");
 	}
 
 	private string BuildReportBody()

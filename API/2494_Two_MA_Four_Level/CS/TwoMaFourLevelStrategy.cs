@@ -101,21 +101,21 @@ public class TwoMaFourLevelStrategy : Strategy
 
 		if (FastPeriod >= SlowPeriod)
 		{
-			this.AddErrorLog("FastPeriod must be less than SlowPeriod.");
+			this.LogError("FastPeriod must be less than SlowPeriod.");
 			Stop();
 			return;
 		}
 
 		if (MostTopLevel <= TopLevel)
 		{
-			this.AddErrorLog("MostTopLevel must be greater than TopLevel.");
+			this.LogError("MostTopLevel must be greater than TopLevel.");
 			Stop();
 			return;
 		}
 
 		if (LowerLevel >= LowermostLevel)
 		{
-			this.AddErrorLog("LowerLevel must be less than LowermostLevel.");
+			this.LogError("LowerLevel must be less than LowermostLevel.");
 			Stop();
 			return;
 		}

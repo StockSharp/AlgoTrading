@@ -226,8 +226,8 @@ public class MatrixMachineLearningStrategy : Strategy
 
 		if (EnableDebugLog)
 		{
-			AddInfoLog(FormattableString.Invariant($"Online pattern: {FormatVector(pattern)}"));
-			AddInfoLog(FormattableString.Invariant($"Forecast: {FormatVector(forecast)}"));
+			LogInfo(FormattableString.Invariant($"Online pattern: {FormatVector(pattern)}"));
+			LogInfo(FormattableString.Invariant($"Forecast: {FormatVector(forecast)}"));
 		}
 
 		return forecast;
@@ -348,14 +348,14 @@ public class MatrixMachineLearningStrategy : Strategy
 
 			if (EnableDebugLog)
 			{
-				AddInfoLog(FormattableString.Invariant($"Sample {index}: forecast={FormatVector(forecast)} target={FormatVector(target)} match={match:0.###}"));
+				LogInfo(FormattableString.Invariant($"Sample {index}: forecast={FormatVector(forecast)} target={FormatVector(target)} match={match:0.###}"));
 			}
 		}
 
 		var average = sum / count;
 		var accuracy = (average + response) / (2.0 * response) * 100.0;
 
-		AddInfoLog(FormattableString.Invariant($"{title}: count={count} positive={positive} negative={negative} accuracy={accuracy:0.##}%"));
+		LogInfo(FormattableString.Invariant($"{title}: count={count} positive={positive} negative={negative} accuracy={accuracy:0.##}%"));
 	}
 
 	private static double[] RunWeights(double[,] weights, double[] input)

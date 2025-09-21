@@ -403,7 +403,7 @@ public class TurnGridStrategy : Strategy
 			return 0m;
 
 		_totalFee += _lastPrice * volume * FeeRate;
-		AddInfoLog($"Total Fee = {_totalFee:F2}; Grid = {_buyCount + _sellCount} / {GridShares} ({_buyCount}, {_sellCount})");
+		LogInfo($"Total Fee = {_totalFee:F2}; Grid = {_buyCount + _sellCount} / {GridShares} ({_buyCount}, {_sellCount})");
 
 		return volume;
 	}

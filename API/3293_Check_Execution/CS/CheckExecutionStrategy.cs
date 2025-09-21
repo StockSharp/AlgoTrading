@@ -325,7 +325,7 @@ public class CheckExecutionStrategy : Strategy
 		var spreadText = _averageSpread?.ToString("0.####") ?? "n/a";
 		var executionText = _averageExecution?.ToString("0.##") ?? "n/a";
 
-		AddInfoLog($"Check completed. Average spread: {spreadText} steps. Average execution: {executionText} ms. Iterations: {_completedIterations}.");
+		LogInfo($"Check completed. Average spread: {spreadText} steps. Average execution: {executionText} ms. Iterations: {_completedIterations}.");
 	}
 
 	private decimal NormalizePrice(decimal price)

@@ -181,11 +181,11 @@ public class TenKijunCrossStrategy : Strategy
 
 		if (bullishCross)
 		{
-			AddInfoLog($"Ichimoku Tenkan crossed above Kijun at {candle.CloseTime:yyyy-MM-dd HH:mm}. Close price: {candle.ClosePrice:0.#####}.");
+			LogInfo($"Ichimoku Tenkan crossed above Kijun at {candle.CloseTime:yyyy-MM-dd HH:mm}. Close price: {candle.ClosePrice:0.#####}.");
 		}
 		else if (bearishCross)
 		{
-			AddInfoLog($"Ichimoku Tenkan crossed below Kijun at {candle.CloseTime:yyyy-MM-dd HH:mm}. Close price: {candle.ClosePrice:0.#####}.");
+			LogInfo($"Ichimoku Tenkan crossed below Kijun at {candle.CloseTime:yyyy-MM-dd HH:mm}. Close price: {candle.ClosePrice:0.#####}.");
 		}
 
 		_prevTenkan = tenkan;

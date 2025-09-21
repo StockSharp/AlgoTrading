@@ -417,7 +417,7 @@ public class MoneyRainStrategy : Strategy
 		if (!isProfit && LossesLimit > 0 && _consecutiveLosses >= LossesLimit)
 		{
 			_lossLimitReached = true;
-			AddWarningLog("Loss limit reached. Entries are paused after {0} consecutive losses.", _consecutiveLosses);
+			LogWarning("Loss limit reached. Entries are paused after {0} consecutive losses.", _consecutiveLosses);
 		}
 
 		if (isProfit)

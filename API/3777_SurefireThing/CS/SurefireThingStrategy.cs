@@ -221,7 +221,7 @@ public class SurefireThingStrategy : Strategy
 
 		_lastPreparedDay = newDay;
 
-		AddInfoLog($"New day detected. BuyLimit={buyPrice:0.#####}, SellLimit={sellPrice:0.#####}, Range={range:0.#####}.");
+		LogInfo($"New day detected. BuyLimit={buyPrice:0.#####}, SellLimit={sellPrice:0.#####}, Range={range:0.#####}.");
 	}
 
 	private decimal NormalizePrice(decimal price)

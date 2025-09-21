@@ -80,8 +80,8 @@ public class SchnickDemoStrategy : Strategy
 		classifierWithErrors.Train(inputsWithErrors, outputsWithErrors, InputCount);
 		var accuracy2 = TestClassifier(classifierWithErrors, TestPoints);
 		
-		this.AddInfoLog("The classifier accuracy is {0:F2}% (using inputs without errors)", accuracy1);
-		this.AddInfoLog("The classifier accuracy is {0:F2}% (using inputs with errors)", accuracy2);
+		this.LogInfo("The classifier accuracy is {0:F2}% (using inputs without errors)", accuracy1);
+		this.LogInfo("The classifier accuracy is {0:F2}% (using inputs with errors)", accuracy2);
 		
 		Stop();
 	}

@@ -139,7 +139,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 		_parsedLevels = ParseLevels(Levels);
 
 		if (_parsedLevels.Length == 0)
-			AddWarningLog("No valid price levels were provided. The strategy will not trigger alerts until levels are specified.");
+			LogWarning("No valid price levels were provided. The strategy will not trigger alerts until levels are specified.");
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription.Bind(ProcessCandle).Start();
@@ -170,7 +170,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 	{
 		if (SignalMode == BreakoutNotificationMode.Sound && string.IsNullOrWhiteSpace(SoundName))
 		{
-			AddErrorLog("Sound mode requires a non-empty sound file name.");
+			LogError("Sound mode requires a non-empty sound file name.");
 			return false;
 		}
 
@@ -200,7 +200,7 @@ public class ExpBreakoutSignalsStrategy : Strategy
 			}
 			else
 			{
-				AddWarningLog("Unable to parse price level '{0}'.", part);
+				LogWarning("Unable to parse price level '{0}'.", part);
 			}
 		}
 
@@ -260,19 +260,19 @@ public class ExpBreakoutSignalsStrategy : Strategy
 		switch (SignalMode)
 		{
 			case BreakoutNotificationMode.Sound:
-				AddInfoLog("{0}. Play sound '{1}'.", message, SoundName);
+				LogInfo("{0}. Play sound '{1}'.", message, SoundName);
 				break;
 			case BreakoutNotificationMode.Alert:
-				AddWarningLog("{0}. Alert notification triggered.", message);
+				LogWarning("{0}. Alert notification triggered.", message);
 				break;
 			case BreakoutNotificationMode.Push:
-				AddInfoLog("{0}. Push notification requested.", message);
+				LogInfo("{0}. Push notification requested.", message);
 				break;
 			case BreakoutNotificationMode.Mail:
-				AddInfoLog("{0}. Email notification requested.", message);
+				LogInfo("{0}. Email notification requested.", message);
 				break;
 			default:
-				AddWarningLog("{0}. Unknown notification mode.", message);
+				LogWarning("{0}. Unknown notification mode.", message);
 				break;
 		}
 	}

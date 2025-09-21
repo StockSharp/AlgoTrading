@@ -151,13 +151,13 @@ public class HighAndLowLast24HoursStrategy : Strategy
 		if (_trackedHigh != windowHigh)
 		{
 			_trackedHigh = windowHigh;
-			this.AddInfoLog($"Highest price in window ({startText} - {endText}): {windowHigh.ToString("0.#####", CultureInfo.InvariantCulture)}");
+			this.LogInfo($"Highest price in window ({startText} - {endText}): {windowHigh.ToString("0.#####", CultureInfo.InvariantCulture)}");
 		}
 
 		if (_trackedLow != windowLow)
 		{
 			_trackedLow = windowLow;
-			this.AddInfoLog($"Lowest price in window ({startText} - {endText}): {windowLow.ToString("0.#####", CultureInfo.InvariantCulture)}");
+			this.LogInfo($"Lowest price in window ({startText} - {endText}): {windowLow.ToString("0.#####", CultureInfo.InvariantCulture)}");
 		}
 
 		// Draw horizontal levels for the tracked high and low.

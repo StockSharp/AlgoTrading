@@ -220,28 +220,28 @@ public class OcoPendingOrdersStrategy : Strategy
 		{
 			if (BuyLimitPrice > 0m && ask <= BuyLimitPrice)
 			{
-				AddInfoLog($"Buy limit triggered at ask {ask} (threshold {BuyLimitPrice}).");
+				LogInfo($"Buy limit triggered at ask {ask} (threshold {BuyLimitPrice}).");
 				BuyMarket(OrderVolume);
 				BuyLimitPrice = 0m;
 
 				if (UseOcoLink)
 				{
 					ResetAllOrders();
-					AddInfoLog("OCO link cleared remaining pending orders after buy limit execution.");
+					LogInfo("OCO link cleared remaining pending orders after buy limit execution.");
 					return;
 				}
 			}
 
 			if (BuyStopPrice > 0m && ask >= BuyStopPrice)
 			{
-				AddInfoLog($"Buy stop triggered at ask {ask} (threshold {BuyStopPrice}).");
+				LogInfo($"Buy stop triggered at ask {ask} (threshold {BuyStopPrice}).");
 				BuyMarket(OrderVolume);
 				BuyStopPrice = 0m;
 
 				if (UseOcoLink)
 				{
 					ResetAllOrders();
-					AddInfoLog("OCO link cleared remaining pending orders after buy stop execution.");
+					LogInfo("OCO link cleared remaining pending orders after buy stop execution.");
 					return;
 				}
 			}
@@ -251,28 +251,28 @@ public class OcoPendingOrdersStrategy : Strategy
 		{
 			if (SellLimitPrice > 0m && bidPrice >= SellLimitPrice)
 			{
-				AddInfoLog($"Sell limit triggered at bid {bidPrice} (threshold {SellLimitPrice}).");
+				LogInfo($"Sell limit triggered at bid {bidPrice} (threshold {SellLimitPrice}).");
 				SellMarket(OrderVolume);
 				SellLimitPrice = 0m;
 
 				if (UseOcoLink)
 				{
 					ResetAllOrders();
-					AddInfoLog("OCO link cleared remaining pending orders after sell limit execution.");
+					LogInfo("OCO link cleared remaining pending orders after sell limit execution.");
 					return;
 				}
 			}
 
 			if (SellStopPrice > 0m && bidPrice <= SellStopPrice)
 			{
-				AddInfoLog($"Sell stop triggered at bid {bidPrice} (threshold {SellStopPrice}).");
+				LogInfo($"Sell stop triggered at bid {bidPrice} (threshold {SellStopPrice}).");
 				SellMarket(OrderVolume);
 				SellStopPrice = 0m;
 
 				if (UseOcoLink)
 				{
 					ResetAllOrders();
-					AddInfoLog("OCO link cleared remaining pending orders after sell stop execution.");
+					LogInfo("OCO link cleared remaining pending orders after sell stop execution.");
 					return;
 				}
 			}

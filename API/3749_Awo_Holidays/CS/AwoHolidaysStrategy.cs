@@ -280,7 +280,7 @@ public class AwoHolidaysStrategy : Strategy
 		var filePath = ResolveFilePath(FileName);
 		if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
 		{
-			this.AddWarningLog($"Holiday file '{FileName}' was not found. No external holidays will be displayed.");
+			this.LogWarning($"Holiday file '{FileName}' was not found. No external holidays will be displayed.");
 			return;
 		}
 
@@ -310,7 +310,7 @@ public class AwoHolidaysStrategy : Strategy
 			_holidayEntries.Add(new HolidayEntry(date, symbols, description));
 		}
 
-		AddInfoLog($"Loaded {_holidayEntries.Count} holiday entries from '{filePath}'.");
+		LogInfo($"Loaded {_holidayEntries.Count} holiday entries from '{filePath}'.");
 	}
 
 	private static bool TryParseDate(string text, out DateTime date)

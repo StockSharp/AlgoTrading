@@ -46,7 +46,7 @@ public class AutoMagiCalStrategy : Strategy
 
 		if (string.IsNullOrEmpty(symbol))
 		{
-			AddErrorLog("Security is not assigned. Unable to generate magic number.");
+			LogError("Security is not assigned. Unable to generate magic number.");
 			return;
 		}
 
@@ -60,13 +60,13 @@ public class AutoMagiCalStrategy : Strategy
 
 		if (digits.Length == 0)
 		{
-			AddErrorLog($"Symbol '{symbol}' is too short to extract digits for the magic number.");
+			LogError($"Symbol '{symbol}' is too short to extract digits for the magic number.");
 			return;
 		}
 
 		if (!decimal.TryParse(digits.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
 		{
-			AddErrorLog($"Failed to parse intermediate number '{digits}'.");
+			LogError($"Failed to parse intermediate number '{digits}'.");
 			return;
 		}
 
@@ -83,6 +83,6 @@ public class AutoMagiCalStrategy : Strategy
 		var magic = (int)Math.Round(value, MidpointRounding.AwayFromZero);
 		_magicNumber = magic;
 
-		AddInfoLog($"Magic No. = {magic}");
+		LogInfo($"Magic No. = {magic}");
 	}
 }

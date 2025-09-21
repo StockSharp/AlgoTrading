@@ -76,7 +76,7 @@ public class GetValueFromNYearsAgoStrategy : Strategy
 		return;
 
 		var t = _times[idx];
-		this.AddInfoLog($"Year={t.Year}, Month={t.Month}, Day={t.Day}, Hour={t.Hour}, Minute={t.Minute}");
+		this.LogInfo($"Year={t.Year}, Month={t.Month}, Day={t.Day}, Hour={t.Hour}, Minute={t.Minute}");
 	}
 
 	private int BinarySearch(DateTimeOffset time)

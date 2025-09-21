@@ -337,7 +337,7 @@ public class MaTrend2Strategy : Strategy
 		var volume = CalculateOrderVolume(entryPrice, true);
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skip long entry because calculated volume is non-positive. Volume={0:0.####}", volume);
+			LogWarning("Skip long entry because calculated volume is non-positive. Volume={0:0.####}", volume);
 			return;
 		}
 
@@ -352,7 +352,7 @@ public class MaTrend2Strategy : Strategy
 		var order = BuyMarket(orderVolume);
 		if (order != null)
 		{
-			AddInfoLog("Enter long at {0:0.#####} with volume {1:0.####}", entryPrice, orderVolume);
+			LogInfo("Enter long at {0:0.#####} with volume {1:0.####}", entryPrice, orderVolume);
 		}
 	}
 
@@ -367,7 +367,7 @@ public class MaTrend2Strategy : Strategy
 		var volume = CalculateOrderVolume(entryPrice, false);
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skip short entry because calculated volume is non-positive. Volume={0:0.####}", volume);
+			LogWarning("Skip short entry because calculated volume is non-positive. Volume={0:0.####}", volume);
 			return;
 		}
 
@@ -382,7 +382,7 @@ public class MaTrend2Strategy : Strategy
 		var order = SellMarket(orderVolume);
 		if (order != null)
 		{
-			AddInfoLog("Enter short at {0:0.#####} with volume {1:0.####}", entryPrice, orderVolume);
+			LogInfo("Enter short at {0:0.#####} with volume {1:0.####}", entryPrice, orderVolume);
 		}
 	}
 

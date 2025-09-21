@@ -155,7 +155,7 @@ public class SMADirectionalMatrixLuxAlgoStrategy : Strategy
 		_builder.Append('｜').Append(per).Append(" : ").Append(sym).Append(space);
 
 		if (_processed == _momentums.Count)
-			AddInfoLog(_builder.ToString());
+			LogInfo(_builder.ToString());
 	}
 
 	private static string Pad(int value, int max)

@@ -178,7 +178,7 @@ public class ReadNewsByWebRequestStrategy : Strategy
 		_pointValue = CalculatePointValue();
 		if (_pointValue <= 0m)
 		{
-			AddWarningLog("Price step is unknown. Pending orders will not be placed.");
+			LogWarning("Price step is unknown. Pending orders will not be placed.");
 		}
 
 		var stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * _pointValue, UnitTypes.Absolute) : null;
@@ -219,7 +219,7 @@ public class ReadNewsByWebRequestStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			AddWarningLog("Failed to download news data: {0}", ex.Message);
+			LogWarning("Failed to download news data: {0}", ex.Message);
 		}
 	}
 
@@ -292,7 +292,7 @@ public class ReadNewsByWebRequestStrategy : Strategy
 		var volume = RoundVolume(Volume);
 		if (volume <= 0m)
 		{
-			AddWarningLog("Volume is below the minimum allowed.");
+			LogWarning("Volume is below the minimum allowed.");
 			return;
 		}
 
@@ -421,7 +421,7 @@ public class ReadNewsByWebRequestStrategy : Strategy
 
 		if (ShowNewsLog)
 		{
-			AddInfoLog("{0} high-impact events scheduled.", _newsEvents.Count);
+			LogInfo("{0} high-impact events scheduled.", _newsEvents.Count);
 		}
 	}
 

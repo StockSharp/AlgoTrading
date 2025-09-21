@@ -594,7 +594,7 @@ public class OrderGuardianStrategy : Strategy
 		_lastStatusMessage = take == null && stop == null ? null : message;
 
 		if (_lastStatusMessage != null)
-			AddInfoLog(_lastStatusMessage);
+			LogInfo(_lastStatusMessage);
 	}
 
 	private static IIndicator CreateMovingAverage(MovingAverageMethodOption method, int period)

@@ -25,7 +25,7 @@ public class MathSpecialFunctionsConvolve1DStrategy : Strategy
 		}
 
 		var result = Convolve(signal, filter);
-		this.AddInfoLog(string.Join(", ", result));
+		this.LogInfo(string.Join(", ", result));
 	}
 
 	private static decimal[] Convolve(decimal[] signal, decimal[] filter)

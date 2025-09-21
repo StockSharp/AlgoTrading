@@ -453,7 +453,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (volume > 0m)
 			{
 				BuyMarket(volume);
-				AddInfoLog($"Long entry: close {candle.ClosePrice:0.#####} above channel upper {upper:0.#####}.");
+				LogInfo($"Long entry: close {candle.ClosePrice:0.#####} above channel upper {upper:0.#####}.");
 			}
 		}
 		else if (canOpenShort && fast < slow && recentMomentumOk && macdLine <= macdSignal && channelSlopeDown && candle.ClosePrice <= lower)
@@ -462,7 +462,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (volume > 0m)
 			{
 				SellMarket(volume);
-				AddInfoLog($"Short entry: close {candle.ClosePrice:0.#####} below channel lower {lower:0.#####}.");
+				LogInfo($"Short entry: close {candle.ClosePrice:0.#####} below channel lower {lower:0.#####}.");
 			}
 		}
 
@@ -485,7 +485,7 @@ public class StandardDeviationChannelStrategy : Strategy
 				var offset = GetPriceOffset(BreakEvenOffsetPips);
 				_longStop = entry + offset;
 				_longBreakEvenArmed = true;
-				AddInfoLog("Long break-even armed.");
+				LogInfo("Long break-even armed.");
 			}
 
 			var trailingStart = GetPriceOffset(TrailingStartPips);
@@ -500,7 +500,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_longTrailing is decimal trailing && candle.LowPrice <= trailing)
 			{
 				ClosePosition();
-				AddInfoLog("Long trailing stop hit.");
+				LogInfo("Long trailing stop hit.");
 				ResetPositionState();
 				return;
 			}
@@ -508,7 +508,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_longStop is decimal stop && candle.LowPrice <= stop)
 			{
 				ClosePosition();
-				AddInfoLog("Long stop-loss triggered.");
+				LogInfo("Long stop-loss triggered.");
 				ResetPositionState();
 				return;
 			}
@@ -516,7 +516,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_longTarget is decimal target && candle.HighPrice >= target)
 			{
 				ClosePosition();
-				AddInfoLog("Long take-profit reached.");
+				LogInfo("Long take-profit reached.");
 				ResetPositionState();
 				return;
 			}
@@ -524,7 +524,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_previousChannelBasis is decimal prevBasis && candle.ClosePrice < prevBasis && upper <= (_previousUpperChannel ?? upper))
 			{
 				ClosePosition();
-				AddInfoLog("Long exit: price fell back inside channel.");
+				LogInfo("Long exit: price fell back inside channel.");
 				ResetPositionState();
 			}
 		}
@@ -542,7 +542,7 @@ public class StandardDeviationChannelStrategy : Strategy
 				var offset = GetPriceOffset(BreakEvenOffsetPips);
 				_shortStop = entry - offset;
 				_shortBreakEvenArmed = true;
-				AddInfoLog("Short break-even armed.");
+				LogInfo("Short break-even armed.");
 			}
 
 			var trailingStart = GetPriceOffset(TrailingStartPips);
@@ -557,7 +557,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_shortTrailing is decimal trailing && candle.HighPrice >= trailing)
 			{
 				ClosePosition();
-				AddInfoLog("Short trailing stop hit.");
+				LogInfo("Short trailing stop hit.");
 				ResetPositionState();
 				return;
 			}
@@ -565,7 +565,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_shortStop is decimal stop && candle.HighPrice >= stop)
 			{
 				ClosePosition();
-				AddInfoLog("Short stop-loss triggered.");
+				LogInfo("Short stop-loss triggered.");
 				ResetPositionState();
 				return;
 			}
@@ -573,7 +573,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_shortTarget is decimal target && candle.LowPrice <= target)
 			{
 				ClosePosition();
-				AddInfoLog("Short take-profit reached.");
+				LogInfo("Short take-profit reached.");
 				ResetPositionState();
 				return;
 			}
@@ -581,7 +581,7 @@ public class StandardDeviationChannelStrategy : Strategy
 			if (_previousChannelBasis is decimal prevBasis && candle.ClosePrice > prevBasis && lower >= (_previousLowerChannel ?? lower))
 			{
 				ClosePosition();
-				AddInfoLog("Short exit: price rejected channel breakout.");
+				LogInfo("Short exit: price rejected channel breakout.");
 				ResetPositionState();
 			}
 		}

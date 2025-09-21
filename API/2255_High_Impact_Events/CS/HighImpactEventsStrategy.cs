@@ -71,7 +71,7 @@ public class HighImpactEventsStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog(ex.Message);
+			LogError(ex.Message);
 		}
 	}
 
@@ -118,7 +118,7 @@ public class HighImpactEventsStrategy : Strategy
 			if (now >= ev.Time - TimeSpan.FromMinutes(AlertBeforeMinutes) && now < ev.Time)
 			{
 				ev.Displayed = true;
-				AddInfoLog($"{ev.Title} ({ev.Currency}) in {AlertBeforeMinutes} minutes.");
+				LogInfo($"{ev.Title} ({ev.Currency}) in {AlertBeforeMinutes} minutes.");
 			}
 		}
 	}

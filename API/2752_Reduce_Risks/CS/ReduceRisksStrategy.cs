@@ -322,7 +322,7 @@ private void ProcessM1(ICandleMessage candle)
 	{
 		if (_riskExceededCounter < 15)
 		{
-			AddWarningLog("Entry blocked. Risk limit of {0}% reached (equity={1:0.##}).", RiskPercent, equity);
+			LogWarning("Entry blocked. Risk limit of {0}% reached (equity={1:0.##}).", RiskPercent, equity);
 			_riskExceededCounter++;
 		}
 	}
@@ -464,7 +464,7 @@ decimal sma24H1)
 	return false;
 
 	BuyMarket();
-	AddInfoLog("Opened long position.");
+	LogInfo("Opened long position.");
 	return true;
 }
 
@@ -553,7 +553,7 @@ decimal sma24H1)
 	return;
 
 	SellMarket();
-	AddInfoLog("Opened short position.");
+	LogInfo("Opened short position.");
 }
 
 private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
@@ -592,7 +592,7 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 		if (collapseM1 || collapsePrev || profitZone || trailing || stopLossHit || riskExceeded)
 		{
 			ClosePosition();
-			AddInfoLog("Closed long position by risk control.");
+			LogInfo("Closed long position by risk control.");
 		}
 	}
 	else if (Position < 0)
@@ -629,7 +629,7 @@ private void HandleActivePosition(ICandleMessage candle, bool riskExceeded)
 		if (collapseM1 || collapsePrev || profitZone || trailing || stopLossHit || riskExceeded)
 		{
 			ClosePosition();
-			AddInfoLog("Closed short position by risk control.");
+			LogInfo("Closed short position by risk control.");
 		}
 	}
 }

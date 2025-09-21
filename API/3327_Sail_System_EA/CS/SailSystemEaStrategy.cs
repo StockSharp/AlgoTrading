@@ -351,7 +351,7 @@ public class SailSystemEaStrategy : Strategy
 		if (accepted < minimalDistance)
 		{
 			_stopLevelTooHigh = true;
-			this.AddWarningLog("Stop level {0} is below broker minimum {1}. Strategy will stay idle.", accepted, minimalDistance);
+			this.LogWarning("Stop level {0} is below broker minimum {1}. Strategy will stay idle.", accepted, minimalDistance);
 		}
 	}
 
@@ -771,13 +771,13 @@ public class SailSystemEaStrategy : Strategy
 				_shortModifyCounter = 0;
 			}
 
-			this.AddInfoLog("{0} entry filled at {1} for {2}", position.Side, averagePrice, info.FilledVolume);
+			this.LogInfo("{0} entry filled at {1} for {2}", position.Side, averagePrice, info.FilledVolume);
 
 			CancelOppositePending(position.Side);
 		}
 		else
 		{
-			this.AddInfoLog("{0} exit filled at {1} for {2} ({3})", position.Side, averagePrice, info.FilledVolume, info.CloseReason);
+			this.LogInfo("{0} exit filled at {1} for {2} ({3})", position.Side, averagePrice, info.FilledVolume, info.CloseReason);
 			ReleasePosition(position);
 		}
 	}

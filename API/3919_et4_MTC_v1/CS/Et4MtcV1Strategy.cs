@@ -173,7 +173,7 @@ public class Et4MtcV1Strategy : Strategy
 		if (IsCooldownActive(eventTime))
 		{
 			if (EnableLogging)
-				this.AddInfoLog("Cooldown active until {0:O}.", _lastTradeTime!.Value + TradeCooldown);
+				this.LogInfo("Cooldown active until {0:O}.", _lastTradeTime!.Value + TradeCooldown);
 
 			return;
 		}

@@ -252,7 +252,7 @@ public class LbsStrategy : Strategy
 
 		if (ask <= 0m || bid <= 0m)
 		{
-			AddWarningLog("Skip breakout placement because bid/ask are unavailable. Close price={0}", candle.ClosePrice);
+			LogWarning("Skip breakout placement because bid/ask are unavailable. Close price={0}", candle.ClosePrice);
 			return;
 		}
 
@@ -268,7 +268,7 @@ public class LbsStrategy : Strategy
 
 		if (buyPrice <= 0m && sellPrice <= 0m)
 		{
-			AddWarningLog("Both breakout prices are invalid. Buy={0}, Sell={1}", buyPrice, sellPrice);
+			LogWarning("Both breakout prices are invalid. Buy={0}, Sell={1}", buyPrice, sellPrice);
 			return;
 		}
 

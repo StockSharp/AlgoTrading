@@ -335,7 +335,7 @@ public class CrossMaAtrNotificationStrategy : Strategy
 		if (!EnableNotifications)
 		return;
 
-		AddInfoLog(message);
+		LogInfo(message);
 	}
 
 	/// <inheritdoc />

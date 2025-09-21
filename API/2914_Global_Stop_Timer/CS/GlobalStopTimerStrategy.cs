@@ -202,12 +202,12 @@ public class GlobalStopTimerStrategy : Strategy
 					if (profitPercent <= -StopLoss)
 					{
 						_isStopped = true;
-						this.AddInfoLog($"Global loss limit reached at {profitPercent:F2}%.");
+						this.LogInfo($"Global loss limit reached at {profitPercent:F2}%.");
 					}
 					else if (profitPercent >= TakeProfit)
 					{
 						_isStopped = true;
-						this.AddInfoLog($"Global profit target reached at {profitPercent:F2}%.");
+						this.LogInfo($"Global profit target reached at {profitPercent:F2}%.");
 					}
 
 					break;
@@ -217,12 +217,12 @@ public class GlobalStopTimerStrategy : Strategy
 					if (profit <= -StopLoss)
 					{
 						_isStopped = true;
-						this.AddInfoLog($"Global loss limit reached at {profit:F2}.");
+						this.LogInfo($"Global loss limit reached at {profit:F2}.");
 					}
 					else if (profit >= TakeProfit)
 					{
 						_isStopped = true;
-						this.AddInfoLog($"Global profit target reached at {profit:F2}.");
+						this.LogInfo($"Global profit target reached at {profit:F2}.");
 					}
 
 					break;

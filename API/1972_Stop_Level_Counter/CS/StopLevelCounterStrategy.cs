@@ -88,6 +88,6 @@ public class StopLevelCounterStrategy : Strategy
 		var buyProfit = (Level - ask) / step * stepPrice * Volume;
 		var sellProfit = (bid - Level) / step * stepPrice * Volume;
 
-		AddInfoLog($"Level {Level:F2} Buy {buyProfit:F2} {Security.Currency} Sell {sellProfit:F2} {Security.Currency}");
+		LogInfo($"Level {Level:F2} Buy {buyProfit:F2} {Security.Currency} Sell {sellProfit:F2} {Security.Currency}");
 	}
 }

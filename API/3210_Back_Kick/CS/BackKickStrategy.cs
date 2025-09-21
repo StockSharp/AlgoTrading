@@ -540,7 +540,7 @@ public class BackKickStrategy : Strategy
 	{
 		if (LogDiagnostics)
 		{
-			AddInfoLog(message);
+			LogInfo(message);
 		}
 	}
 

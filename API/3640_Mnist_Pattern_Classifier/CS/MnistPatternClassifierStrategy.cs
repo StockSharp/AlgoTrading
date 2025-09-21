@@ -190,7 +190,7 @@ public class MnistPatternClassifierStrategy : Strategy
 			if (Position <= 0)
 			{
 				BuyMarket(Volume);
-				AddInfoLog($"Pattern {TargetClass} bullish with confidence {_lastConfidence:F2}. Open long.");
+				LogInfo($"Pattern {TargetClass} bullish with confidence {_lastConfidence:F2}. Open long.");
 			}
 
 			break;
@@ -201,7 +201,7 @@ public class MnistPatternClassifierStrategy : Strategy
 			if (Position >= 0)
 			{
 				SellMarket(Volume);
-				AddInfoLog($"Pattern {TargetClass} bearish with confidence {_lastConfidence:F2}. Open short.");
+				LogInfo($"Pattern {TargetClass} bearish with confidence {_lastConfidence:F2}. Open short.");
 			}
 
 			break;
@@ -216,12 +216,12 @@ public class MnistPatternClassifierStrategy : Strategy
 		if (Position > 0)
 		{
 			SellMarket(Position);
-			AddInfoLog($"Pattern {_lastClass} confidence {_lastConfidence:F2}. Exit long.");
+			LogInfo($"Pattern {_lastClass} confidence {_lastConfidence:F2}. Exit long.");
 		}
 		else if (Position < 0)
 		{
 			BuyMarket(-Position);
-			AddInfoLog($"Pattern {_lastClass} confidence {_lastConfidence:F2}. Exit short.");
+			LogInfo($"Pattern {_lastClass} confidence {_lastConfidence:F2}. Exit short.");
 		}
 	}
 

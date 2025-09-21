@@ -213,7 +213,7 @@ public class NewsFilterStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog($"Timer failure: {ex.Message}");
+			LogError($"Timer failure: {ex.Message}");
 		}
 	}
 
@@ -243,7 +243,7 @@ public class NewsFilterStrategy : Strategy
 		}
 		catch (Exception ex)
 		{
-			AddErrorLog($"Failed to load news: {ex.Message}");
+			LogError($"Failed to load news: {ex.Message}");
 		}
 	}
 

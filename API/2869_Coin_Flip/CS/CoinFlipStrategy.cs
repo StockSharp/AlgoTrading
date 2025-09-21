@@ -344,7 +344,7 @@ public class CoinFlipStrategy : Strategy
 
 		if (volume > MaxVolume)
 		{
-			AddWarningLog($"Planned volume {volume} exceeds MaxVolume {MaxVolume}. Trade skipped.");
+			LogWarning($"Planned volume {volume} exceeds MaxVolume {MaxVolume}. Trade skipped.");
 			return 0m;
 		}
 

@@ -351,7 +351,7 @@ public class TwoEmaIntradayFilterStrategy : Strategy
 	{
 		if (Volume <= 0)
 		{
-			this.AddWarningLog("Volume must be greater than zero to place orders.");
+			this.LogWarning("Volume must be greater than zero to place orders.");
 			return;
 		}
 
@@ -379,7 +379,7 @@ public class TwoEmaIntradayFilterStrategy : Strategy
 	{
 		if (Volume <= 0)
 		{
-			this.AddWarningLog("Volume must be greater than zero to place orders.");
+			this.LogWarning("Volume must be greater than zero to place orders.");
 			return;
 		}
 

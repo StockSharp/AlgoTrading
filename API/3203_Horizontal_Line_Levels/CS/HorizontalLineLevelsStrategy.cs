@@ -140,10 +140,10 @@ public class HorizontalLineLevelsStrategy : Strategy
 		var bid = _bestBid;
 
 		if (ask >= _upperLevel && _upperLevel > 0m)
-			AddInfoLog($"Ask {ask:0.#####} traded above the upper level {_upperLevel:0.#####}.");
+			LogInfo($"Ask {ask:0.#####} traded above the upper level {_upperLevel:0.#####}.");
 
 		if (_lowerLevel > 0m && bid <= _lowerLevel)
-			AddInfoLog($"Bid {bid:0.#####} traded below the lower level {_lowerLevel:0.#####}.");
+			LogInfo($"Bid {bid:0.#####} traded below the lower level {_lowerLevel:0.#####}.");
 	}
 
 	private void RecalculateLevels(bool logCreation)
@@ -160,7 +160,7 @@ public class HorizontalLineLevelsStrategy : Strategy
 		_lowerLevel = _bestBid - offset;
 
 		if (logCreation)
-			AddInfoLog($"Horizontal levels updated. Upper: {_upperLevel:0.#####}, Lower: {_lowerLevel:0.#####}.");
+			LogInfo($"Horizontal levels updated. Upper: {_upperLevel:0.#####}, Lower: {_lowerLevel:0.#####}.");
 	}
 
 	private decimal EnsurePointSize()

@@ -579,7 +579,7 @@ public class FiboPivotMultiValStrategy : Strategy
 	_limitInDistance = ConvertPoints(LimitPointIn);
 	_limitOutDistance = ConvertPoints(LimitPointOut);
 	ResetSessionState();
-	AddInfoLog(FormattableString.Invariant($"Pivot levels for {candleDate:yyyy-MM-dd}: P={FormatPrice(_activeLevels.Pivot)}, R1={FormatPrice(_activeLevels.R1)}, R2={FormatPrice(_activeLevels.R2)}, R3={FormatPrice(_activeLevels.R3)}, S1={FormatPrice(_activeLevels.S1)}, S2={FormatPrice(_activeLevels.S2)}, S3={FormatPrice(_activeLevels.S3)}"));
+	LogInfo(FormattableString.Invariant($"Pivot levels for {candleDate:yyyy-MM-dd}: P={FormatPrice(_activeLevels.Pivot)}, R1={FormatPrice(_activeLevels.R1)}, R2={FormatPrice(_activeLevels.R2)}, R3={FormatPrice(_activeLevels.R3)}, S1={FormatPrice(_activeLevels.S1)}, S2={FormatPrice(_activeLevels.S2)}, S3={FormatPrice(_activeLevels.S3)}"));
 	}
 	}
 

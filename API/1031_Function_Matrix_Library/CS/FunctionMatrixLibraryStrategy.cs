@@ -124,7 +124,7 @@ public class FunctionMatrixLibraryStrategy : Strategy
 		
 		var coeffs = CalculateCoefficients(_yValues, _x1Values, _x2Values);
 		var estimate = coeffs[0] + coeffs[1] * sma1Value + coeffs[2] * sma2Value;
-		this.AddInfoLog($"Estimate={estimate}");
+		this.LogInfo($"Estimate={estimate}");
 	}
 	
 	private void AddToBuffer(List<decimal> buffer, decimal value)

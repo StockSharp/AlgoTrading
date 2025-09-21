@@ -129,14 +129,14 @@ public class MoneyFixedMarginStrategy : Strategy
 
 		if (entryPrice <= 0m)
 		{
-			AddWarningLog("Skip trade because entry price is not positive. Close={0}", entryPrice);
+			LogWarning("Skip trade because entry price is not positive. Close={0}", entryPrice);
 			return;
 		}
 
 		var riskAmount = CalculateRiskAmount();
 		if (riskAmount <= 0m)
 		{
-			AddWarningLog("Skip trade because risk amount is not positive. Portfolio value={0}", riskAmount);
+			LogWarning("Skip trade because risk amount is not positive. Portfolio value={0}", riskAmount);
 			return;
 		}
 
@@ -146,7 +146,7 @@ public class MoneyFixedMarginStrategy : Strategy
 		var volumeWithoutStop = CalculateFixedMarginVolume(entryPrice, 0m, riskAmount);
 		var volumeWithStop = CalculateFixedMarginVolume(entryPrice, stopPrice, riskAmount);
 
-		this.AddInfoLog(
+		this.LogInfo(
 			"StopLoss=0 -> volume {0:0.####}; StopLoss={1:0.#####} -> volume {2:0.####}; Portfolio={3:0.##}",
 			volumeWithoutStop,
 			stopPrice,
@@ -163,7 +163,7 @@ public class MoneyFixedMarginStrategy : Strategy
 
 		if (order is null)
 		{
-			AddWarningLog("Buy order was not sent by the broker model.");
+			LogWarning("Buy order was not sent by the broker model.");
 			return;
 		}
 

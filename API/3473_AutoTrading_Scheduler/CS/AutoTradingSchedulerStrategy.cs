@@ -193,7 +193,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 			}
 			catch (Exception ex)
 			{
-				AddErrorLog("Scheduler timer error: {0}", ex.Message);
+				LogError("Scheduler timer error: {0}", ex.Message);
 			}
 		}
 	}
@@ -240,7 +240,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 			var bounds = range.Split('-', StringSplitOptions.RemoveEmptyEntries);
 			if (bounds.Length != 2)
 			{
-				AddWarningLog("{0}: invalid range '{1}'.", day, range);
+				LogWarning("{0}: invalid range '{1}'.", day, range);
 				continue;
 			}
 
@@ -249,7 +249,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 
 			if (start == null || end == null)
 			{
-				AddWarningLog("{0}: failed to parse '{1}'.", day, range);
+				LogWarning("{0}: failed to parse '{1}'.", day, range);
 				continue;
 			}
 
@@ -321,7 +321,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 	private void SetAutoTradingState(bool enable, string reason)
 	{
 		_autoTradingEnabled = enable;
-		AddInfoLog("AutoTrading {0}: {1}.", enable ? "enabled" : "disabled", reason);
+		LogInfo("AutoTrading {0}: {1}.", enable ? "enabled" : "disabled", reason);
 
 		if (!enable && ClosePositionsBeforeDisable)
 		{

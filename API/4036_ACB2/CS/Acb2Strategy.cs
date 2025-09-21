@@ -162,7 +162,7 @@ public class Acb2Strategy : Strategy
 		if (!_startupLogged)
 		{
 			_startupLogged = true;
-			AddInfoLog("Start");
+			LogInfo("Start");
 			return;
 		}
 
@@ -195,7 +195,7 @@ public class Acb2Strategy : Strategy
 			if (_currentReportedVolume < _currentTickCount)
 			_currentReportedVolume = _currentTickCount;
 
-			AddInfoLog(
+			LogInfo(
 			"Frame 0 closed: Open {0} Count: {1} Report: {2}",
 			FormatTime(previousOpen),
 			previousCount,
@@ -211,7 +211,7 @@ public class Acb2Strategy : Strategy
 
 		var symbol = Security?.Id ?? string.Empty;
 
-		AddInfoLog(
+		LogInfo(
 		"{0} {1}: Frame 0: Open: {2} Seconds: {3} Count: {4} Report: {5} // Frame 1: Open: {6} Count: {7} Report: {8}",
 		symbol,
 		_timeframeName,

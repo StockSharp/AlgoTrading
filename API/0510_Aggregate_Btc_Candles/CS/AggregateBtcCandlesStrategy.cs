@@ -224,6 +224,6 @@ public class AggregateBtcCandlesStrategy : Strategy
 		var low = lowSum / count;
 		var close = closeSum / count;
 
-		AddInfoLog($"Aggregated O:{open} H:{high} L:{low} C:{close}");
+		LogInfo($"Aggregated O:{open} H:{high} L:{low} C:{close}");
 	}
 }

@@ -186,7 +186,7 @@ public class PendingTreadStrategy : Strategy
 		_minStopOffset = MinStopDistancePoints > 0m ? MinStopDistancePoints * _pointValue : 0m;
 		_throttleInterval = TimeSpan.FromSeconds((double)ThrottleSeconds);
 
-		this.AddInfoLog($"Pending_tread grid initialized. Pip size={_pipSize}, point={_pointValue}, throttle={_throttleInterval}.");
+		this.LogInfo($"Pending_tread grid initialized. Pip size={_pipSize}, point={_pointValue}, throttle={_throttleInterval}.");
 
 		SubscribeLevel1()
 			.Bind(ProcessLevel1)
@@ -272,7 +272,7 @@ public class PendingTreadStrategy : Strategy
 			var anchorPrice = aboveMarket ? (side == Sides.Buy ? bestAsk.Value : bestBid.Value) : (side == Sides.Buy ? bestAsk.Value : bestBid.Value);
 			if (_minStopOffset > 0m && Math.Abs(orderPrice - anchorPrice) < _minStopOffset)
 			{
-				this.AddWarningLog($"Skipping order too close to market. Side={side}, price={orderPrice}, anchor={anchorPrice}.");
+				this.LogWarning($"Skipping order too close to market. Side={side}, price={orderPrice}, anchor={anchorPrice}.");
 				continue;
 			}
 
@@ -282,7 +282,7 @@ public class PendingTreadStrategy : Strategy
 			var order = PlacePendingOrder(aboveMarket, side, volume, normalizedPrice, takeProfit);
 			if (order != null)
 			{
-				this.AddInfoLog($"Pending order placed -> Side={side}, Type={order.Type}, Price={normalizedPrice}, TP={(takeProfit.HasValue ? takeProfit.Value.ToString() : "none")}");
+				this.LogInfo($"Pending order placed -> Side={side}, Type={order.Type}, Price={normalizedPrice}, TP={(takeProfit.HasValue ? takeProfit.Value.ToString() : "none")}");
 			}
 		}
 	}

@@ -79,7 +79,7 @@ public class BinaryOptionSymbolScannerStrategy : Strategy
 			// Fallback to the main strategy security if no list is provided.
 			if (Security is null)
 			{
-				AddWarningLog("No symbols supplied and main Security is not set.");
+				LogWarning("No symbols supplied and main Security is not set.");
 				return;
 			}
 
@@ -92,7 +92,7 @@ public class BinaryOptionSymbolScannerStrategy : Strategy
 			var security = SecurityProvider.LookupById(securityId);
 			if (security is null)
 			{
-				AddWarningLog("Security '{0}' not found in provider.", securityId);
+				LogWarning("Security '{0}' not found in provider.", securityId);
 				continue;
 			}
 
@@ -129,7 +129,7 @@ public class BinaryOptionSymbolScannerStrategy : Strategy
 		if (profitCalcMode != ProfitCalcMode || stopLevel != StopLevel)
 			return;
 
-		AddInfoLog("Binary option symbol detected: {0}. ProfitCalcMode={1}, StopLevel={2}", security.Id, profitCalcMode, stopLevel);
+		LogInfo("Binary option symbol detected: {0}. ProfitCalcMode={1}, StopLevel={2}", security.Id, profitCalcMode, stopLevel);
 	}
 
 	private static bool TryGetDecimal(Security security, string key, out decimal value)

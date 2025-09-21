@@ -132,7 +132,7 @@ var avgValue = _averageRelativeClose.Process(relativeClose);
 if (avgValue.IsFinal && avgValue.TryGetValue(out var avg))
 {
 var scaled = avg * AverageZoomFactor;
-AddInfoLog($"RelO={relativeOpen:F2} RelH={relativeHigh:F2} RelL={relativeLow:F2} RelC={relativeClose:F2} AvgRelC={scaled:F2}");
+LogInfo($"RelO={relativeOpen:F2} RelH={relativeHigh:F2} RelL={relativeLow:F2} RelC={relativeClose:F2} AvgRelC={scaled:F2}");
 }
 
 _prevClose = candle.ClosePrice;

@@ -158,7 +158,7 @@ public class AutoRiskStrategy : Strategy
 
 		_recommendedVolume = adjustedVolume;
 
-		AddInfoLog($"Recommended volume: {_recommendedVolume:0.####}");
+		LogInfo($"Recommended volume: {_recommendedVolume:0.####}");
 	}
 
 	private decimal AdjustVolume(decimal volume)

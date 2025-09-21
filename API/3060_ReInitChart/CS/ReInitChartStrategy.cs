@@ -202,7 +202,7 @@ public class ReInitChartStrategy : Strategy
 		{
 			_sma.Length = SmaLength;
 			_sma.Reset();
-			this.AddInfoLog($"[{RefreshCommandName}] SMA length changed to {SmaLength}. Indicator state reset.");
+			this.LogInfo($"[{RefreshCommandName}] SMA length changed to {SmaLength}. Indicator state reset.");
 			return;
 		}
 
@@ -282,6 +282,6 @@ public class ReInitChartStrategy : Strategy
 		// Reset the moving average so that future candles rebuild the indicator state.
 		_sma.Reset();
 
-		this.AddInfoLog($"[{RefreshCommandName}] {RefreshCommandText} triggered by {reason} at {time:O}. TextColor={TextColorName}, BackgroundColor={BackgroundColorName}.");
+		this.LogInfo($"[{RefreshCommandName}] {RefreshCommandText} triggered by {reason} at {time:O}. TextColor={TextColorName}, BackgroundColor={BackgroundColorName}.");
 	}
 }

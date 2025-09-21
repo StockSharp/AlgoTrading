@@ -182,7 +182,7 @@ public class SensitiveMacdTrailingStrategy : Strategy
 
 		if (TrailingStopPips > 0 && TrailingStepPips <= 0)
 		{
-			AddErrorLog("Trailing step must be greater than zero when the trailing stop is enabled.");
+			LogError("Trailing step must be greater than zero when the trailing stop is enabled.");
 			Stop();
 			return;
 		}

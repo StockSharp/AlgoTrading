@@ -183,7 +183,7 @@ public class EFridayStrategy : Strategy
 		{
 			if (!_timeFrameWarningIssued)
 			{
-				this.AddWarningLog("The original expert advisor only works on H1 or lower periods. Entries are disabled.");
+				this.LogWarning("The original expert advisor only works on H1 or lower periods. Entries are disabled.");
 				_timeFrameWarningIssued = true;
 			}
 
@@ -307,7 +307,7 @@ public class EFridayStrategy : Strategy
 		{
 			if (!_fridayMessageShown)
 			{
-				this.AddInfoLog("Trading on Friday is disabled by design.");
+				this.LogInfo("Trading on Friday is disabled by design.");
 				_fridayMessageShown = true;
 			}
 
@@ -322,7 +322,7 @@ public class EFridayStrategy : Strategy
 		{
 			if (!_beforeStartMessageShown)
 			{
-				this.AddInfoLog($"Trading window starts at {StartHour:00}:00. Current hour: {hour:00}.");
+				this.LogInfo($"Trading window starts at {StartHour:00}:00. Current hour: {hour:00}.");
 				_beforeStartMessageShown = true;
 			}
 
@@ -335,7 +335,7 @@ public class EFridayStrategy : Strategy
 		{
 			if (!_afterEndMessageShown)
 			{
-				this.AddInfoLog($"Trading window ended at {EndHour:00}:00. Current hour: {hour:00}. Closing open positions.");
+				this.LogInfo($"Trading window ended at {EndHour:00}:00. Current hour: {hour:00}. Closing open positions.");
 				_afterEndMessageShown = true;
 			}
 

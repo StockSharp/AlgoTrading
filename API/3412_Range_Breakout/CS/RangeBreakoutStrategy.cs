@@ -236,7 +236,7 @@ public class RangeBreakoutStrategy : Strategy
 		_effectiveTradingDay = ResolveTradingDay(TradingDay);
 		if (_effectiveTradingDay != TradingDay)
 		{
-			this.AddInfoLog("Weekend day selected. Switching to Monday by default.");
+			this.LogInfo("Weekend day selected. Switching to Monday by default.");
 		}
 
 		_atrIndicator = new AverageTrueRange

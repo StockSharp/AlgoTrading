@@ -159,9 +159,9 @@ public class XAlert3Strategy : Strategy
 		if (_prevDiff1 is not null && _prevDiff2 is not null)
 		{
 			if (diff > 0 && _prevDiff1 > 0 && _prevDiff2 < 0)
-				AddInfoLog("MA1 crossed above MA2");
+				LogInfo("MA1 crossed above MA2");
 			else if (diff < 0 && _prevDiff1 < 0 && _prevDiff2 > 0)
-				AddInfoLog("MA1 crossed below MA2");
+				LogInfo("MA1 crossed below MA2");
 		}
 
 		_prevDiff2 = _prevDiff1;

@@ -373,7 +373,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 			BuyMarket(Volume);
 			SetProtectiveLevels(candle.ClosePrice, true);
-			AddInfoLog($"Entered long position. Base strength={baseStrength:F2}, Quote strength={quoteStrength:F2}");
+			LogInfo($"Entered long position. Base strength={baseStrength:F2}, Quote strength={quoteStrength:F2}");
 		}
 		else if (isShortSignal && Position >= 0)
 		{
@@ -382,7 +382,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 			SellMarket(Volume);
 			SetProtectiveLevels(candle.ClosePrice, false);
-			AddInfoLog($"Entered short position. Base strength={baseStrength:F2}, Quote strength={quoteStrength:F2}");
+			LogInfo($"Entered short position. Base strength={baseStrength:F2}, Quote strength={quoteStrength:F2}");
 		}
 	}
 
@@ -457,7 +457,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 			var security = this.GetSecurity(pair.Symbol);
 			if (security == null)
 			{
-				AddWarningLog($"Security '{pair.Symbol}' was not found.");
+				LogWarning($"Security '{pair.Symbol}' was not found.");
 				continue;
 			}
 
@@ -549,14 +549,14 @@ public class CurrencyStrengthEaStrategy : Strategy
 				SellMarket(Math.Abs(Position));
 				_longStopPrice = null;
 				_longTakeProfit = null;
-				AddInfoLog("Long stop loss triggered.");
+				LogInfo("Long stop loss triggered.");
 			}
 			else if (_longTakeProfit is decimal target && candle.HighPrice >= target)
 			{
 				SellMarket(Math.Abs(Position));
 				_longStopPrice = null;
 				_longTakeProfit = null;
-				AddInfoLog("Long take profit triggered.");
+				LogInfo("Long take profit triggered.");
 			}
 		}
 		else if (Position < 0)
@@ -566,14 +566,14 @@ public class CurrencyStrengthEaStrategy : Strategy
 				BuyMarket(Math.Abs(Position));
 				_shortStopPrice = null;
 				_shortTakeProfit = null;
-				AddInfoLog("Short stop loss triggered.");
+				LogInfo("Short stop loss triggered.");
 			}
 			else if (_shortTakeProfit is decimal target && candle.LowPrice <= target)
 			{
 				BuyMarket(Math.Abs(Position));
 				_shortStopPrice = null;
 				_shortTakeProfit = null;
-				AddInfoLog("Short take profit triggered.");
+				LogInfo("Short take profit triggered.");
 			}
 		}
 	}
@@ -592,7 +592,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 			if (newStop - stop >= trailingStep)
 			{
 				_longStopPrice = newStop;
-				AddInfoLog($"Trailing stop moved to {_longStopPrice:F5}.");
+				LogInfo($"Trailing stop moved to {_longStopPrice:F5}.");
 			}
 		}
 		else if (Position < 0 && _shortStopPrice is decimal stop)
@@ -601,7 +601,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 			if (stop - newStop >= trailingStep)
 			{
 				_shortStopPrice = newStop;
-				AddInfoLog($"Trailing stop moved to {_shortStopPrice:F5}.");
+				LogInfo($"Trailing stop moved to {_shortStopPrice:F5}.");
 			}
 		}
 	}

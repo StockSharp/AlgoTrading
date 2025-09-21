@@ -182,7 +182,7 @@ public class ParabolicSarAlertStrategy : Strategy
 		var directionText = signal == Sides.Buy ? "bullish" : "bearish";
 
 		// Inform the user about the detected Parabolic SAR flip.
-		AddInfoLog("Parabolic SAR flip detected ({0}) on {1:O}. Close={2}, SAR={3}.", directionText, candle.OpenTime, candle.ClosePrice, sarValue);
+		LogInfo("Parabolic SAR flip detected ({0}) on {1:O}. Close={2}, SAR={3}.", directionText, candle.OpenTime, candle.ClosePrice, sarValue);
 
 		if (!EnableAutoTrading)
 			return; // Alerts without auto execution reproduce the original expert advisor behavior.

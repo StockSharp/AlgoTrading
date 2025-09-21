@@ -179,7 +179,7 @@ public class McmControlPanelStrategy : Strategy
 				.Start();
 		}
 
-		AddInfoLog("MCM control panel monitor started.");
+		LogInfo("MCM control panel monitor started.");
 	}
 
 	private void ProcessPrimaryCandle(ICandleMessage candle)
@@ -206,7 +206,7 @@ public class McmControlPanelStrategy : Strategy
 		_lastTickEvent = eventTime;
 
 		var symbol = Security?.Id ?? string.Empty;
-		AddInfoLog($"[{symbol}] Tick price={trade.Price} volume={trade.Volume} time={eventTime:O}");
+		LogInfo($"[{symbol}] Tick price={trade.Price} volume={trade.Volume} time={eventTime:O}");
 	}
 
 	private void LogCandleEvent(ICandleMessage candle, DataType candleType, ref DateTimeOffset? lastEvent)
@@ -226,7 +226,7 @@ public class McmControlPanelStrategy : Strategy
 		var price = candle.ClosePrice;
 		var volume = candle.TotalVolume;
 
-		AddInfoLog($"[{symbol}] {period} {status} price={price} volume={volume} time={eventTime:O}");
+		LogInfo($"[{symbol}] {period} {status} price={price} volume={volume} time={eventTime:O}");
 	}
 
 	private static string DescribeDataType(DataType dataType)

@@ -58,7 +58,7 @@ public class LotFractionAdjusterStrategy : Strategy
 
 		if (!TryCalculateAdjustment(out var adjustedVolume))
 		{
-			AddWarningLog("Volume step is not available; lot size adjustment skipped.");
+			LogWarning("Volume step is not available; lot size adjustment skipped.");
 			return;
 		}
 
@@ -69,7 +69,7 @@ public class LotFractionAdjusterStrategy : Strategy
 			Volume = adjustedVolume; // Synchronise helper order methods with the adjusted lot size.
 		}
 
-		this.AddInfoLog($"AdjustedLotSize={_adjustedLotSize}, StepsOutput={_stepsOutput}, StepsRounded={_stepsRounded}, StepsInput={_stepsInput}, LotStep={_lotStep}, Fractions={Fractions}, InputLotSize={InputLotSize}");
+		this.LogInfo($"AdjustedLotSize={_adjustedLotSize}, StepsOutput={_stepsOutput}, StepsRounded={_stepsRounded}, StepsInput={_stepsInput}, LotStep={_lotStep}, Fractions={Fractions}, InputLotSize={InputLotSize}");
 	}
 
 	private bool TryCalculateAdjustment(out decimal adjustedVolume)

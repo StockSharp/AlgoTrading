@@ -78,12 +78,12 @@ public class NovaBarraStrategy : Strategy
 
 	private void OnFirstBar(DateTimeOffset currentTime, ICandleMessage candle)
 	{
-		AddInfoLog($"Initial bar detected at {currentTime:O}, {candle.SecurityId} has already progressed.");
+		LogInfo($"Initial bar detected at {currentTime:O}, {candle.SecurityId} has already progressed.");
 	}
 
 	private void OnRegularBar(DateTimeOffset currentTime, ICandleMessage candle)
 	{
-		AddInfoLog($"New bar started at {currentTime:O} with open {candle.OpenPrice}.");
+		LogInfo($"New bar started at {currentTime:O} with open {candle.OpenPrice}.");
 	}
 
 	private void OnNewBarCommonWork(ICandleMessage candle)

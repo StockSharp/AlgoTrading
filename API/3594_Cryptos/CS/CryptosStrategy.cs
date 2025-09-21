@@ -275,7 +275,7 @@ public class CryptosStrategy : Strategy
 
 		if (!_isTradingAllowed)
 		{
-			AddWarningLog("Balance {0} is below the recommended minimum {1}.", balance, RiskPerTrade * 3m);
+			LogWarning("Balance {0} is below the recommended minimum {1}.", balance, RiskPerTrade * 3m);
 		}
 
 		var security = Security;
@@ -431,7 +431,7 @@ public class CryptosStrategy : Strategy
 		var stopLoss = lowestBoundary - spreadPoints * priceStep;
 
 		BuyMarket(volume);
-		AddInfoLog("Opened long position: volume={0} price={1} tp={2} sl={3}", volume, askPrice, takeProfit, stopLoss);
+		LogInfo("Opened long position: volume={0} price={1} tp={2} sl={3}", volume, askPrice, takeProfit, stopLoss);
 
 		_longStop = stopLoss;
 		_longTake = takeProfit;
@@ -455,7 +455,7 @@ public class CryptosStrategy : Strategy
 		var stopLoss = highestBoundary + spreadPoints * priceStep;
 
 		SellMarket(volume);
-		AddInfoLog("Opened short position: volume={0} price={1} tp={2} sl={3}", volume, bidPrice, takeProfit, stopLoss);
+		LogInfo("Opened short position: volume={0} price={1} tp={2} sl={3}", volume, bidPrice, takeProfit, stopLoss);
 
 		_shortStop = stopLoss;
 		_shortTake = takeProfit;
@@ -472,7 +472,7 @@ public class CryptosStrategy : Strategy
 			return;
 
 		SellMarket(volume);
-		AddInfoLog("Closed long position: volume={0}", volume);
+		LogInfo("Closed long position: volume={0}", volume);
 
 		_longStop = null;
 		_longTake = null;
@@ -485,7 +485,7 @@ public class CryptosStrategy : Strategy
 			return;
 
 		BuyMarket(volume);
-		AddInfoLog("Closed short position: volume={0}", volume);
+		LogInfo("Closed short position: volume={0}", volume);
 
 		_shortStop = null;
 		_shortTake = null;

@@ -643,7 +643,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 			return;
 
 		// Provide a textual dashboard similar to the OrderBalans indicator from MetaTrader.
-		this.AddInfoLog(summary);
+		this.LogInfo(summary);
 		_lastSummary = summary;
 	}
 

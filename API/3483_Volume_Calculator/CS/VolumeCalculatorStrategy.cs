@@ -110,7 +110,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 		if (portfolioValue <= 0m)
 		{
-			AddWarningLog("Unable to calculate volume: portfolio value is not available.");
+			LogWarning("Unable to calculate volume: portfolio value is not available.");
 			return;
 		}
 
@@ -119,13 +119,13 @@ public class VolumeCalculatorStrategy : Strategy
 
 		if (priceStep == null || priceStep <= 0m)
 		{
-			AddWarningLog("Unable to calculate volume: security price step is not defined.");
+			LogWarning("Unable to calculate volume: security price step is not defined.");
 			return;
 		}
 
 		if (stepPrice == null || stepPrice <= 0m)
 		{
-			AddWarningLog("Unable to calculate volume: security step price is not defined.");
+			LogWarning("Unable to calculate volume: security step price is not defined.");
 			return;
 		}
 
@@ -133,7 +133,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 		if (currentPrice == null)
 		{
-			AddWarningLog("Unable to calculate volume: current price is not available.");
+			LogWarning("Unable to calculate volume: current price is not available.");
 			return;
 		}
 
@@ -143,7 +143,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 		if (stopLossDistance <= 0m)
 		{
-			AddWarningLog("Invalid stop loss configuration: price distance must be positive.");
+			LogWarning("Invalid stop loss configuration: price distance must be positive.");
 			return;
 		}
 
@@ -153,7 +153,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 		if (takeProfitDistance <= 0m)
 		{
-			AddWarningLog("Invalid take profit configuration: price distance must be positive.");
+			LogWarning("Invalid take profit configuration: price distance must be positive.");
 			return;
 		}
 
@@ -162,7 +162,7 @@ public class VolumeCalculatorStrategy : Strategy
 
 		if (_stopLossSteps <= 0m)
 		{
-			AddWarningLog("Invalid stop loss configuration: calculated steps are zero.");
+			LogWarning("Invalid stop loss configuration: calculated steps are zero.");
 			return;
 		}
 
@@ -176,18 +176,18 @@ public class VolumeCalculatorStrategy : Strategy
 
 		_riskRewardRatio = _stopLossSteps == 0m ? null : _takeProfitSteps / _stopLossSteps;
 
-		AddInfoLog("-------------- New Calculations for New Position --------------");
-		AddInfoLog("Stop Loss steps = {0}", _stopLossSteps);
-		AddInfoLog("Take Profit steps = {0}", _takeProfitSteps);
-		AddInfoLog("Max Possible Loss Value = {0:F2}", _maxLossValue);
-		AddInfoLog("Take Profit Value = {0:F2}", _takeProfitValue);
-		AddInfoLog("Risk to Reward Ratio = {0:F2}", _riskRewardRatio);
-		AddInfoLog("Allowed Volume = {0:F4}", _suggestedVolume);
+		LogInfo("-------------- New Calculations for New Position --------------");
+		LogInfo("Stop Loss steps = {0}", _stopLossSteps);
+		LogInfo("Take Profit steps = {0}", _takeProfitSteps);
+		LogInfo("Max Possible Loss Value = {0:F2}", _maxLossValue);
+		LogInfo("Take Profit Value = {0:F2}", _takeProfitValue);
+		LogInfo("Risk to Reward Ratio = {0:F2}", _riskRewardRatio);
+		LogInfo("Allowed Volume = {0:F4}", _suggestedVolume);
 
 		if (_riskRewardRatio >= 3m)
-			AddInfoLog("You can trade.");
+			LogInfo("You can trade.");
 		else
-			AddWarningLog("High risk position, do not trade.");
+			LogWarning("High risk position, do not trade.");
 	}
 
 	private decimal? GetReferencePrice()

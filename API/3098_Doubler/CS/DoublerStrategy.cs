@@ -539,7 +539,7 @@ public class DoublerStrategy : Strategy
 	private void LogTrade(string message)
 	{
 		if (LogTradeDetails)
-			AddInfoLog(message);
+			LogInfo(message);
 	}
 
 	private enum CloseReason

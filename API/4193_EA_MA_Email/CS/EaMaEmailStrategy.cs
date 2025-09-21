@@ -281,7 +281,7 @@ public class EaMaEmailStrategy : Strategy
 		var body = $"Date and Time: {candle.CloseTime:yyyy-MM-dd HH:mm:ss}; Instrument: {securityId}; Close: {candle.ClosePrice:0.#####}";
 
 		// Write to the log to emulate the email alert from the original expert advisor.
-		AddInfoLog($"Email alert -> Subject: '{subject}'. Body: '{body}'.");
+		LogInfo($"Email alert -> Subject: '{subject}'. Body: '{body}'.");
 	}
 
 	private string DescribeCandlePeriod()

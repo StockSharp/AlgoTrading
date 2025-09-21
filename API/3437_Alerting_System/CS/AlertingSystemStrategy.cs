@@ -108,7 +108,7 @@ public class AlertingSystemStrategy : Strategy
 		{
 			if (!_upperAlertTriggered)
 			{
-				AddInfoLog($"Bid {bid:0.#####} crossed the upper alert level {level:0.#####}.");
+				LogInfo($"Bid {bid:0.#####} crossed the upper alert level {level:0.#####}.");
 				_upperAlertTriggered = true;
 			}
 		}
@@ -132,7 +132,7 @@ public class AlertingSystemStrategy : Strategy
 		{
 			if (!_lowerAlertTriggered)
 			{
-				AddInfoLog($"Ask {ask:0.#####} crossed the lower alert level {level:0.#####}.");
+				LogInfo($"Ask {ask:0.#####} crossed the lower alert level {level:0.#####}.");
 				_lowerAlertTriggered = true;
 			}
 		}
@@ -149,13 +149,13 @@ public class AlertingSystemStrategy : Strategy
 		var lower = LowerPrice;
 
 		if (upper > 0m)
-			AddInfoLog($"Upper alert level configured at {upper:0.#####}.");
+			LogInfo($"Upper alert level configured at {upper:0.#####}.");
 		else
-			AddInfoLog("Upper alert level disabled (value is 0).");
+			LogInfo("Upper alert level disabled (value is 0).");
 
 		if (lower > 0m)
-			AddInfoLog($"Lower alert level configured at {lower:0.#####}.");
+			LogInfo($"Lower alert level configured at {lower:0.#####}.");
 		else
-			AddInfoLog("Lower alert level disabled (value is 0).");
+			LogInfo("Lower alert level disabled (value is 0).");
 	}
 }

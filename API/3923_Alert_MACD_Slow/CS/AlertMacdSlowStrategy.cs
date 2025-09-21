@@ -201,11 +201,11 @@ public class AlertMacdSlowStrategy : Strategy
 
 			if (bullishSetup)
 			{
-				AddInfoLog($"SET UP LONG | MACD: [{macd1:F5}, {macd2:F5}, {macd3:F5}, {macd4:F5}] Close={candle.ClosePrice:F5} HighBreak={high1:F5}/{high2:F5}");
+				LogInfo($"SET UP LONG | MACD: [{macd1:F5}, {macd2:F5}, {macd3:F5}, {macd4:F5}] Close={candle.ClosePrice:F5} HighBreak={high1:F5}/{high2:F5}");
 			}
 			else if (bearishSetup)
 			{
-				AddInfoLog($"SET UP SHORT_VALUE | MACD: [{macd1:F5}, {macd2:F5}, {macd3:F5}, {macd4:F5}] Close={candle.ClosePrice:F5} LowBreak={low1:F5}/{low2:F5}");
+				LogInfo($"SET UP SHORT_VALUE | MACD: [{macd1:F5}, {macd2:F5}, {macd3:F5}, {macd4:F5}] Close={candle.ClosePrice:F5} LowBreak={low1:F5}/{low2:F5}");
 			}
 		}
 

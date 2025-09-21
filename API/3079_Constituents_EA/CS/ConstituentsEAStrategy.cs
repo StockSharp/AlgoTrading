@@ -262,7 +262,7 @@ public class ConstituentsEaStrategy : Strategy
 
 		if (!stopValid || !takeValid)
 		{
-			AddWarningLog("Stop or take profit distance is below the configured minimum. Pending orders skipped.");
+			LogWarning("Stop or take profit distance is below the configured minimum. Pending orders skipped.");
 			return;
 		}
 

@@ -49,8 +49,8 @@ public class SessionInputParserStrategy : Strategy
 		var simple = ParseSession(SessionSimple);
 		var withWeekdays = ParseSession(SessionWithWeekdays);
 
-		this.AddInfoLog($"Simple: start {simple.hStart:D2}:{simple.mStart:D2}, end {simple.hEnd:D2}:{simple.mEnd:D2}, weekdays [{string.Join(',', simple.weekdays)}]");
-		this.AddInfoLog($"With weekdays: start {withWeekdays.hStart:D2}:{withWeekdays.mStart:D2}, end {withWeekdays.hEnd:D2}:{withWeekdays.mEnd:D2}, weekdays [{string.Join(',', withWeekdays.weekdays)}]");
+		this.LogInfo($"Simple: start {simple.hStart:D2}:{simple.mStart:D2}, end {simple.hEnd:D2}:{simple.mEnd:D2}, weekdays [{string.Join(',', simple.weekdays)}]");
+		this.LogInfo($"With weekdays: start {withWeekdays.hStart:D2}:{withWeekdays.mStart:D2}, end {withWeekdays.hEnd:D2}:{withWeekdays.mEnd:D2}, weekdays [{string.Join(',', withWeekdays.weekdays)}]");
 	}
 
 	private (int hStart, int mStart, int hEnd, int mEnd, int[] weekdays) ParseSession(string session)

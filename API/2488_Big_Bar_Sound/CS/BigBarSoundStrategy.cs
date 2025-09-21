@@ -164,7 +164,7 @@ public class BigBarSoundStrategy : Strategy
 		if (ShowAlert)
 		{
 			// Emit an additional alert style log message to mimic the MetaTrader alert window.
-			AddInfoLog($"Alert: large candle detected on {Security?.Id ?? "unknown"} at {candle.CloseTime:O}.");
+			LogInfo($"Alert: large candle detected on {Security?.Id ?? "unknown"} at {candle.CloseTime:O}.");
 		}
 	}
 }

@@ -519,7 +519,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		ApplyProtection(true, candle.ClosePrice, volume);
 
 		if (SendNotification)
-		AddInfoLog($"{AlertTitle}: buy {volume} at {candle.ClosePrice:0.#####}");
+		LogInfo($"{AlertTitle}: buy {volume} at {candle.ClosePrice:0.#####}");
 
 		return true;
 	}
@@ -596,7 +596,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		ApplyProtection(false, candle.ClosePrice, volume);
 
 		if (SendNotification)
-		AddInfoLog($"{AlertTitle}: sell {volume} at {candle.ClosePrice:0.#####}");
+		LogInfo($"{AlertTitle}: sell {volume} at {candle.ClosePrice:0.#####}");
 
 		return true;
 	}

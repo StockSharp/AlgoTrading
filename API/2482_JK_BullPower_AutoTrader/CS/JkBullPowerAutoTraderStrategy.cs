@@ -143,7 +143,7 @@ public class JkBullPowerAutoTraderStrategy : Strategy
 
 		if (TrailingStopPoints > 0m && TrailingStopPoints <= TrailingStepPoints)
 		{
-			AddErrorLog("Trailing stop must be greater than trailing step.");
+			LogError("Trailing stop must be greater than trailing step.");
 			Stop();
 			return;
 		}

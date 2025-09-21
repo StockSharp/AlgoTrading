@@ -168,7 +168,7 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 		}
 
 		// Mirror the original expert by logging tick-based averages continuously.
-		AddInfoLog($"Average pip movement per tick: {pipAverage:0.#####} | Average spread per tick: {spreadAverage:0.#####}");
+		LogInfo($"Average pip movement per tick: {pipAverage:0.#####} | Average spread per tick: {spreadAverage:0.#####}");
 	}
 
 	private void TryReport(DateTimeOffset time)
@@ -192,6 +192,6 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 		_lastReportTime = time;
 
 		// Produce a detailed summary similar to the chart comment in the MQL version.
-		AddInfoLog($"Interval report ({CheckIntervalSeconds}s) -> Avg pip movement: {pipAverage:0.#####}, Avg spread: {spreadAverage:0.#####}");
+		LogInfo($"Interval report ({CheckIntervalSeconds}s) -> Avg pip movement: {pipAverage:0.#####}, Avg spread: {spreadAverage:0.#####}");
 	}
 }

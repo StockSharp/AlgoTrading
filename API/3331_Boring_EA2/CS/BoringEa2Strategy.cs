@@ -167,7 +167,7 @@ public class BoringEa2Strategy : Strategy
 		var symbol = Security?.Id ?? "Unknown";
 		var message = $"Alert!!! - {symbol} - {timeframe} - {text}";
 
-		AddInfoLog(message);
+		LogInfo(message);
 	}
 
 	private string GetTimeFrameName()

@@ -197,7 +197,7 @@ public class TwoPerBarRonStrategy : Strategy
 
 		if (nextVolume <= 0m)
 		{
-			AddWarningLog("Calculated volume is not tradable. Skipping this bar.");
+			LogWarning("Calculated volume is not tradable. Skipping this bar.");
 			return;
 		}
 

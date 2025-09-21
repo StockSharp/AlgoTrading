@@ -147,7 +147,7 @@ public class TrainingStrategy : Strategy
 		// The timer mirrors the MQL Control() loop that polled label positions.
 		Timer.Start(TimeSpan.FromMilliseconds(250), ProcessRequests);
 
-		AddInfoLog("Training strategy started. Toggle the manual parameters to send orders.");
+		LogInfo("Training strategy started. Toggle the manual parameters to send orders.");
 	}
 
 	private void ProcessRequests()
@@ -198,7 +198,7 @@ public class TrainingStrategy : Strategy
 
 		_entryOrder = order;
 
-		AddInfoLog($"Submitted market buy for {totalVolume} contracts.");
+		LogInfo($"Submitted market buy for {totalVolume} contracts.");
 		return true;
 	}
 
@@ -217,7 +217,7 @@ public class TrainingStrategy : Strategy
 
 		_entryOrder = order;
 
-		AddInfoLog($"Submitted market sell for {totalVolume} contracts.");
+		LogInfo($"Submitted market sell for {totalVolume} contracts.");
 		return true;
 	}
 
@@ -233,7 +233,7 @@ public class TrainingStrategy : Strategy
 		if (order == null)
 			return false;
 
-		AddInfoLog($"Closing long position with market sell of {volume} contracts.");
+		LogInfo($"Closing long position with market sell of {volume} contracts.");
 		return true;
 	}
 
@@ -249,7 +249,7 @@ public class TrainingStrategy : Strategy
 		if (order == null)
 			return false;
 
-		AddInfoLog($"Closing short position with market buy of {volume} contracts.");
+		LogInfo($"Closing short position with market buy of {volume} contracts.");
 		return true;
 	}
 
@@ -276,13 +276,13 @@ public class TrainingStrategy : Strategy
 		{
 			_stopLossOrder = null;
 			CancelOrderSafe(ref _takeProfitOrder);
-			AddInfoLog("Stop-loss filled, clearing take-profit.");
+			LogInfo("Stop-loss filled, clearing take-profit.");
 		}
 		else if (order == _takeProfitOrder)
 		{
 			_takeProfitOrder = null;
 			CancelOrderSafe(ref _stopLossOrder);
-			AddInfoLog("Take-profit filled, clearing stop-loss.");
+			LogInfo("Take-profit filled, clearing stop-loss.");
 		}
 
 		UpdateStatus();
@@ -302,7 +302,7 @@ public class TrainingStrategy : Strategy
 	{
 		if (Security?.PriceStep == null)
 		{
-			AddWarningLog("Price step is not defined; protection orders cannot be created.");
+			LogWarning("Price step is not defined; protection orders cannot be created.");
 			return;
 		}
 
@@ -357,7 +357,7 @@ public class TrainingStrategy : Strategy
 			}
 		}
 
-		AddInfoLog($"Protection updated. Stop={(stopPrice ?? 0m):0.#####}; Take={(takePrice ?? 0m):0.#####}.");
+		LogInfo($"Protection updated. Stop={(stopPrice ?? 0m):0.#####}; Take={(takePrice ?? 0m):0.#####}.");
 	}
 
 	private void CancelProtectionOrders()
@@ -385,7 +385,7 @@ public class TrainingStrategy : Strategy
 
 		var balance = Portfolio?.CurrentValue ?? 0m;
 		var realized = PnL;
-		AddInfoLog($"Balance={balance:0.##}; PnL={realized:0.##}; Position={Position:0.##}.");
+		LogInfo($"Balance={balance:0.##}; PnL={realized:0.##}; Position={Position:0.##}.");
 
 		_lastStatusUpdate = now;
 	}

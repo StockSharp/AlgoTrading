@@ -95,7 +95,7 @@ public class GuageStrategy : Strategy
 		else if (ratio < LowerThreshold && Position >= 0)
 			SellMarket();
 
-		AddInfoLog($"Gauge ratio: {ratio:P2}");
+		LogInfo($"Gauge ratio: {ratio:P2}");
 	}
 
 	/// <inheritdoc />

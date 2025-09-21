@@ -576,7 +576,7 @@ public class TraderToolEaStrategy : Strategy
 			var sellPlaced = TryPlaceStopOrders(Sides.Sell);
 
 			if (!buyPlaced && !sellPlaced)
-			AddWarningLog("Stop grid request skipped because both sides failed to place.");
+			LogWarning("Stop grid request skipped because both sides failed to place.");
 
 			PlaceStopGridRequest = false;
 		}
@@ -599,7 +599,7 @@ public class TraderToolEaStrategy : Strategy
 			var sellPlaced = TryPlaceLimitOrders(Sides.Sell);
 
 			if (!buyPlaced && !sellPlaced)
-			AddWarningLog("Limit grid request skipped because both sides failed to place.");
+			LogWarning("Limit grid request skipped because both sides failed to place.");
 
 			PlaceLimitGridRequest = false;
 		}
@@ -683,7 +683,7 @@ public class TraderToolEaStrategy : Strategy
 		var volume = CalculateOrderVolume();
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skipped market order because calculated volume is non-positive.");
+			LogWarning("Skipped market order because calculated volume is non-positive.");
 			return false;
 		}
 
@@ -700,7 +700,7 @@ public class TraderToolEaStrategy : Strategy
 		var reference = side == Sides.Buy ? _bestAsk : _bestBid;
 		if (reference is not decimal price || price <= 0m)
 		{
-			AddWarningLog("Skip stop placement because best price is unavailable.");
+			LogWarning("Skip stop placement because best price is unavailable.");
 			return false;
 		}
 
@@ -711,7 +711,7 @@ public class TraderToolEaStrategy : Strategy
 		var volume = CalculateOrderVolume();
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skip stop placement because volume is non-positive.");
+			LogWarning("Skip stop placement because volume is non-positive.");
 			return false;
 		}
 
@@ -740,7 +740,7 @@ public class TraderToolEaStrategy : Strategy
 		var reference = side == Sides.Buy ? _bestBid : _bestAsk;
 		if (reference is not decimal price || price <= 0m)
 		{
-			AddWarningLog("Skip limit placement because best price is unavailable.");
+			LogWarning("Skip limit placement because best price is unavailable.");
 			return false;
 		}
 
@@ -751,7 +751,7 @@ public class TraderToolEaStrategy : Strategy
 		var volume = CalculateOrderVolume();
 		if (volume <= 0m)
 		{
-			AddWarningLog("Skip limit placement because volume is non-positive.");
+			LogWarning("Skip limit placement because volume is non-positive.");
 			return false;
 		}
 

@@ -285,7 +285,7 @@ public class PivotsStrategy : Strategy
 
 		if (LogPivotUpdates)
 		{
-			AddInfoLog(FormattableString.Invariant($"Pivot levels for {applyDate:yyyy-MM-dd}: " +
+			LogInfo(FormattableString.Invariant($"Pivot levels for {applyDate:yyyy-MM-dd}: " +
 				$"P={FormatPrice(levels.Pivot)}, R1={FormatPrice(levels.R1)}, R2={FormatPrice(levels.R2)}, R3={FormatPrice(levels.R3)}, " +
 				$"S1={FormatPrice(levels.S1)}, S2={FormatPrice(levels.S2)}, S3={FormatPrice(levels.S3)}"));
 		}

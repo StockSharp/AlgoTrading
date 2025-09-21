@@ -768,13 +768,13 @@ var profitPercent = (equity - balance) / balance * 100m;
 
 if (!_globalTakeTriggered && GlobalTakeProfitPercent > 0m && profitPercent >= GlobalTakeProfitPercent)
 {
-AddInfoLog($"Global take profit reached: {profitPercent:F2}% (threshold {GlobalTakeProfitPercent:F2}%).");
+LogInfo($"Global take profit reached: {profitPercent:F2}% (threshold {GlobalTakeProfitPercent:F2}%).");
 _globalTakeTriggered = true;
 _globalStopTriggered = false;
 }
 else if (!_globalStopTriggered && GlobalStopLossPercent > 0m && -profitPercent >= GlobalStopLossPercent)
 {
-AddWarningLog($"Global stop loss reached: {profitPercent:F2}% (threshold -{GlobalStopLossPercent:F2}%).");
+LogWarning($"Global stop loss reached: {profitPercent:F2}% (threshold -{GlobalStopLossPercent:F2}%).");
 _globalStopTriggered = true;
 _globalTakeTriggered = false;
 }

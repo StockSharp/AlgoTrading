@@ -376,7 +376,7 @@ public class GbpChfCorrelationStrategy : Strategy
 		if (throwOnError)
 			throw new InvalidOperationException(message);
 
-		AddWarningLog(message);
+		LogWarning(message);
 		return null;
 	}
 }

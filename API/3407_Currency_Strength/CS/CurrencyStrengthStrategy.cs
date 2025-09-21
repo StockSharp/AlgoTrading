@@ -261,7 +261,7 @@ public class CurrencyStrengthStrategy : Strategy
 			var security = this.GetSecurity(pairCode);
 			if (security == null)
 			{
-				AddWarningLog($"Security '{pairCode}' is not available for strength calculation.");
+				LogWarning($"Security '{pairCode}' is not available for strength calculation.");
 				continue;
 			}
 
@@ -333,7 +333,7 @@ public class CurrencyStrengthStrategy : Strategy
 			if (Position <= 0)
 			{
 				BuyMarket();
-				AddInfoLog($"Opened long position. Strongest={strongest} Weakest={weakest} Momentum={momentum:F2} MACD={macdLine:F4}");
+				LogInfo($"Opened long position. Strongest={strongest} Weakest={weakest} Momentum={momentum:F2} MACD={macdLine:F4}");
 			}
 		}
 		else if (shortBias && fastMa < slowMa && macdBearish && momentumReady)
@@ -344,7 +344,7 @@ public class CurrencyStrengthStrategy : Strategy
 			if (Position >= 0)
 			{
 				SellMarket();
-				AddInfoLog($"Opened short position. Strongest={strongest} Weakest={weakest} Momentum={momentum:F2} MACD={macdLine:F4}");
+				LogInfo($"Opened short position. Strongest={strongest} Weakest={weakest} Momentum={momentum:F2} MACD={macdLine:F4}");
 			}
 		}
 		else
@@ -352,12 +352,12 @@ public class CurrencyStrengthStrategy : Strategy
 			if (Position > 0 && (!longBias || fastMa <= slowMa || !macdBullish))
 			{
 				ClosePosition();
-				AddInfoLog("Closed long position because bullish conditions were lost.");
+				LogInfo("Closed long position because bullish conditions were lost.");
 			}
 			else if (Position < 0 && (!shortBias || fastMa >= slowMa || !macdBearish))
 			{
 				ClosePosition();
-				AddInfoLog("Closed short position because bearish conditions were lost.");
+				LogInfo("Closed short position because bearish conditions were lost.");
 			}
 		}
 
@@ -410,7 +410,7 @@ public class CurrencyStrengthStrategy : Strategy
 			.Select(p => string.Format(CultureInfo.InvariantCulture, "{0}:{1:F2}", p.Key, p.Value))
 			.Join(" | ");
 
-		AddInfoLog($"Currency strengths => {ordered}");
+		LogInfo($"Currency strengths => {ordered}");
 	}
 
 	private static (string Base, string Quote) SplitCurrencyPair(string? code)

@@ -134,13 +134,13 @@ public class BounceNumberStrategy : Strategy
 		{
 			_bounceCount++;
 			_lastTouchDirection = -1;
-			AddInfoLog($"Lower band touch detected. Bounce count increased to {_bounceCount}.");
+			LogInfo($"Lower band touch detected. Bounce count increased to {_bounceCount}.");
 		}
 		else if (touchedUpper && _lastTouchDirection <= 0)
 		{
 			_bounceCount++;
 			_lastTouchDirection = 1;
-			AddInfoLog($"Upper band touch detected. Bounce count increased to {_bounceCount}.");
+			LogInfo($"Upper band touch detected. Bounce count increased to {_bounceCount}.");
 		}
 	}
 
@@ -151,7 +151,7 @@ public class BounceNumberStrategy : Strategy
 
 		_bounceDistribution[_bounceCount] = occurrences + 1;
 
-		AddInfoLog($"Channel cycle finished with {_bounceCount} bounce(s). Total occurrences for this count: {_bounceDistribution[_bounceCount]}.");
+		LogInfo($"Channel cycle finished with {_bounceCount} bounce(s). Total occurrences for this count: {_bounceDistribution[_bounceCount]}.");
 	}
 
 	private void ResetChannel(decimal center, decimal channelHalf)
@@ -161,7 +161,7 @@ public class BounceNumberStrategy : Strategy
 		_lastTouchDirection = 0;
 		_candlesInCycle = 0;
 
-		AddInfoLog($"Channel reset around price {center} with half-width {channelHalf}.");
+		LogInfo($"Channel reset around price {center} with half-width {channelHalf}.");
 	}
 
 	private decimal GetChannelHalfWidth()

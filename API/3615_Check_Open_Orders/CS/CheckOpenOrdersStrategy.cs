@@ -263,7 +263,7 @@ public class CheckOpenOrdersStrategy : Strategy
 		return;
 
 		_lastStatusMessage = message;
-		AddInfoLog(message);
+		LogInfo(message);
 	}
 
 	private bool HasOpenOrders()
@@ -285,14 +285,14 @@ public class CheckOpenOrdersStrategy : Strategy
 
 			if (security == null || portfolio == null)
 			{
-				AddWarningLog("Security or portfolio is not assigned. Sample orders will not be sent.");
+				LogWarning("Security or portfolio is not assigned. Sample orders will not be sent.");
 				return;
 			}
 
 			var volume = Volume;
 			if (volume <= 0m)
 			{
-				AddWarningLog("Trade volume is not positive. Sample orders will not be sent.");
+				LogWarning("Trade volume is not positive. Sample orders will not be sent.");
 				return;
 			}
 
@@ -322,7 +322,7 @@ public class CheckOpenOrdersStrategy : Strategy
 		}
 		catch (Exception error)
 		{
-			AddWarningLog("Sample order task failed: {0}", error.Message);
+			LogWarning("Sample order task failed: {0}", error.Message);
 		}
 	}
 
@@ -332,7 +332,7 @@ public class CheckOpenOrdersStrategy : Strategy
 		return;
 
 		var action = side == Sides.Buy ? "buy" : "sell";
-		AddInfoLog("Sending sample {0} order with volume {1:0.#####}.", action, volume);
+		LogInfo("Sending sample {0} order with volume {1:0.#####}.", action, volume);
 
 		if (side == Sides.Buy)
 		BuyMarket(volume);
@@ -342,7 +342,7 @@ public class CheckOpenOrdersStrategy : Strategy
 		var referencePrice = GetReferencePrice(side);
 		if (referencePrice <= 0m)
 		{
-			AddWarningLog("Reference price for protective orders is unavailable.");
+			LogWarning("Reference price for protective orders is unavailable.");
 			return;
 		}
 

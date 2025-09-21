@@ -222,7 +222,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		}
 		catch (Exception ex) when (ex is JsonException or InvalidOperationException)
 		{
-			AddErrorLog($"Failed to parse configuration: {ex.Message}");
+			LogError($"Failed to parse configuration: {ex.Message}");
 			throw;
 		}
 	}
@@ -636,7 +636,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 					if (strategy.Position <= 0)
 					{
 						strategy.BuyMarket(volume);
-						strategy.AddInfoLog($"Rule '{ruleName}' executed Buy at {candle.ClosePrice}.");
+						strategy.LogInfo($"Rule '{ruleName}' executed Buy at {candle.ClosePrice}.");
 					}
 
 					break;
@@ -646,7 +646,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 					if (strategy.Position >= 0)
 					{
 						strategy.SellMarket(volume);
-						strategy.AddInfoLog($"Rule '{ruleName}' executed SellShort at {candle.ClosePrice}.");
+						strategy.LogInfo($"Rule '{ruleName}' executed SellShort at {candle.ClosePrice}.");
 					}
 
 					break;
@@ -656,7 +656,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 					if (strategy.Position != 0)
 					{
 						strategy.ClosePosition();
-						strategy.AddInfoLog($"Rule '{ruleName}' closed position at {candle.ClosePrice}.");
+						strategy.LogInfo($"Rule '{ruleName}' closed position at {candle.ClosePrice}.");
 					}
 
 					break;

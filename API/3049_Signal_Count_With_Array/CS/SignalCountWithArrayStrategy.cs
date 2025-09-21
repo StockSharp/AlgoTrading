@@ -262,7 +262,7 @@ public class SignalCountWithArrayStrategy : Strategy
 	private void LogCounters(DateTimeOffset time)
 	{
 		var summary = BuildSummary(time);
-		AddInfoLog(summary);
+		LogInfo(summary);
 	}
 
 	private string BuildSummary(DateTimeOffset time)

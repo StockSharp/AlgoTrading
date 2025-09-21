@@ -303,7 +303,7 @@ public class RrsNonDirectionalStrategy : Strategy
 	private void InitializeAutoSwap()
 	{
 		TradingMode = RrsTradingMode.HedgeStyle;
-		AddInfoLog("AutoSwap mode falls back to HedgeStyle because swap rates are not available through Level1 data.");
+		LogInfo("AutoSwap mode falls back to HedgeStyle because swap rates are not available through Level1 data.");
 	}
 
 	private void ProcessLevel1(Level1ChangeMessage change)
