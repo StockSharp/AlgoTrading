@@ -119,41 +119,41 @@ public class TradesToCsvStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"TradesToCsvStrategy\"/>.
+	/// Initializes a new instance of <see cref="TradesToCsvStrategy"/>.
 	/// </summary>
 	public TradesToCsvStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Type of candles to use\", \"General\");
+			.SetDisplay("Candle Type", "Type of candles to use", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 50m)
-			.SetDisplay(\"Take Profit\", \"Profit threshold for closing\", \"Risk\");
+			.SetDisplay("Take Profit", "Profit threshold for closing", "Risk");
 
 		_stopLoss = Param(nameof(StopLoss), 50m)
-			.SetDisplay(\"Stop Loss\", \"Loss threshold for closing\", \"Risk\");
+			.SetDisplay("Stop Loss", "Loss threshold for closing", "Risk");
 
 		_volume = Param(nameof(Volume), 0.1m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Volume\", \"Order volume\", \"Trading\");
+			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay(\"CCI Period\", \"CCI calculation period\", \"Indicators\");
+			.SetDisplay("CCI Period", "CCI calculation period", "Indicators");
 
 		_macdFast = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
-			.SetDisplay(\"MACD Fast\", \"Fast EMA period\", \"Indicators\");
+			.SetDisplay("MACD Fast", "Fast EMA period", "Indicators");
 
 		_macdSlow = Param(nameof(MacdSlowPeriod), 26)
 			.SetGreaterThanZero()
-			.SetDisplay(\"MACD Slow\", \"Slow EMA period\", \"Indicators\");
+			.SetDisplay("MACD Slow", "Slow EMA period", "Indicators");
 
 		_macdSignal = Param(nameof(MacdSignalPeriod), 9)
 			.SetGreaterThanZero()
-			.SetDisplay(\"MACD Signal\", \"Signal EMA period\", \"Indicators\");
+			.SetDisplay("MACD Signal", "Signal EMA period", "Indicators");
 
-		_fileName = Param(nameof(FileName), \"myfilename.csv\")
-			.SetDisplay(\"File Name\", \"CSV file name\", \"General\");
+		_fileName = Param(nameof(FileName), "myfilename.csv")
+			.SetDisplay("File Name", "CSV file name", "General");
 	}
 
 	/// <inheritdoc />
@@ -180,7 +180,7 @@ public class TradesToCsvStrategy : Strategy
 
 		if (!File.Exists(FileName))
 		{
-			File.WriteAllText(FileName, \"Order,Profit/Loss,Ticket Number,Open Price,Close Price,Open Time,Close Time,Symbol,Lots\\n\");
+			File.WriteAllText(FileName, "Order,Profit/Loss,Ticket Number,Open Price,Close Price,Open Time,Close Time,Symbol,Lots\\n");
 		}
 
 		_cci = new CommodityChannelIndex { Length = CciPeriod };
@@ -257,14 +257,14 @@ public class TradesToCsvStrategy : Strategy
 		{
 			_closePrice = currentPrice;
 			_closeTime = candle.CloseTime;
-			_closeOrderType = \"Buy Order Closed\";
+			_closeOrderType = "Buy Order Closed";
 			RegisterOrder(CreateOrder(Sides.Sell, currentPrice, Math.Abs(Position)));
 		}
 		else if (Position < 0 && (longSignal || profit > TakeProfit || profit < -StopLoss))
 		{
 			_closePrice = currentPrice;
 			_closeTime = candle.CloseTime;
-			_closeOrderType = \"Sell Order Closed\";
+			_closeOrderType = "Sell Order Closed";
 			RegisterOrder(CreateOrder(Sides.Buy, currentPrice, Math.Abs(Position)));
 		}
 	}
@@ -277,7 +277,7 @@ public class TradesToCsvStrategy : Strategy
 		if (Position != 0 || _closeOrderType == string.Empty)
 			return;
 
-		var profit = _closeOrderType == \"Buy Order Closed\"
+		var profit = _closeOrderType == "Buy Order Closed"
 			? (_closePrice - _entryPrice) * Volume
 			: (_entryPrice - _closePrice) * Volume;
 
@@ -299,8 +299,8 @@ public class TradesToCsvStrategy : Strategy
 		ticket.ToString(CultureInfo.InvariantCulture),
 		openPrice.ToString(CultureInfo.InvariantCulture),
 		closePrice.ToString(CultureInfo.InvariantCulture),
-		openTime.ToString(\"o\", CultureInfo.InvariantCulture),
-		closeTime.ToString(\"o\", CultureInfo.InvariantCulture),
+		openTime.ToString("o", CultureInfo.InvariantCulture),
+		closeTime.ToString("o", CultureInfo.InvariantCulture),
 		Security.Id,
 		lots.ToString(CultureInfo.InvariantCulture));
 

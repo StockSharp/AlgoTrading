@@ -10,7 +10,7 @@ namespace StockSharp.Samples.Strategies;
 
 /// <summary>
 /// Multi-timeframe stochastic oscillator strategy with ATR-based stop-loss and take-profit management.
-/// Emulates the logic of the \"EA RM Stochastic Band\" MetaTrader expert advisor.
+/// Emulates the logic of the "EA RM Stochastic Band" MetaTrader expert advisor.
 /// </summary>
 public class RmStochasticBandStrategy : Strategy
 {
@@ -180,74 +180,74 @@ public class RmStochasticBandStrategy : Strategy
 	{
 		_orderVolume = Param(nameof(OrderVolume), 0.1m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Order Volume\", \"Volume of each market order\", \"Trading\");
+			.SetDisplay("Order Volume", "Volume of each market order", "Trading");
 
 		_stochasticLength = Param(nameof(StochasticLength), 5)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Stochastic Length\", \"%K lookback period\", \"Indicators\")
+			.SetDisplay("Stochastic Length", "%K lookback period", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(3, 15, 1);
 
 		_stochasticSmoothing = Param(nameof(StochasticSmoothing), 3)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Stochastic Smoothing\", \"Smoothing period applied to %K\", \"Indicators\")
+			.SetDisplay("Stochastic Smoothing", "Smoothing period applied to %K", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(1, 7, 1);
 
 		_stochasticSignalLength = Param(nameof(StochasticSignalLength), 3)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Stochastic Signal\", \"%D moving average length\", \"Indicators\")
+			.SetDisplay("Stochastic Signal", "%D moving average length", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(1, 10, 1);
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay(\"ATR Period\", \"Lookback for ATR volatility filter\", \"Indicators\")
+			.SetDisplay("ATR Period", "Lookback for ATR volatility filter", "Indicators")
 			.SetCanOptimize(true)
 			.SetOptimize(7, 30, 1);
 
 		_stopLossMultiplier = Param(nameof(StopLossMultiplier), 1.5m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"SL Multiplier\", \"ATR multiplier for stop-loss\", \"Risk\")
+			.SetDisplay("SL Multiplier", "ATR multiplier for stop-loss", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(0.5m, 3m, 0.25m);
 
 		_takeProfitMultiplier = Param(nameof(TakeProfitMultiplier), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"TP Multiplier\", \"ATR multiplier for take-profit\", \"Risk\")
+			.SetDisplay("TP Multiplier", "ATR multiplier for take-profit", "Risk")
 			.SetCanOptimize(true)
 			.SetOptimize(1m, 6m, 0.5m);
 
 		_minMargin = Param(nameof(MinMargin), 100m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Minimum Margin\", \"Required portfolio value before trading\", \"Risk\");
+			.SetDisplay("Minimum Margin", "Required portfolio value before trading", "Risk");
 
 		_maxSpreadStandard = Param(nameof(MaxSpreadStandard), 3m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Max Spread Standard\", \"Maximum spread allowed for standard accounts\", \"Filters\");
+			.SetDisplay("Max Spread Standard", "Maximum spread allowed for standard accounts", "Filters");
 
 		_maxSpreadCent = Param(nameof(MaxSpreadCent), 10m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Max Spread Cent\", \"Maximum spread allowed for cent accounts\", \"Filters\");
+			.SetDisplay("Max Spread Cent", "Maximum spread allowed for cent accounts", "Filters");
 
 		_oversoldLevel = Param(nameof(OversoldLevel), 20m)
-			.SetDisplay(\"Oversold Level\", \"Threshold that defines oversold conditions\", \"Signals\")
+			.SetDisplay("Oversold Level", "Threshold that defines oversold conditions", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 40m, 5m);
 
 		_overboughtLevel = Param(nameof(OverboughtLevel), 80m)
-			.SetDisplay(\"Overbought Level\", \"Threshold that defines overbought conditions\", \"Signals\")
+			.SetDisplay("Overbought Level", "Threshold that defines overbought conditions", "Signals")
 			.SetCanOptimize(true)
 			.SetOptimize(60m, 95m, 5m);
 
 		_baseCandleType = Param(nameof(BaseCandleType), TimeSpan.FromMinutes(1).TimeFrame())
-			.SetDisplay(\"Base Timeframe\", \"Primary execution timeframe\", \"General\");
+			.SetDisplay("Base Timeframe", "Primary execution timeframe", "General");
 
 		_midCandleType = Param(nameof(MidCandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay(\"Mid Timeframe\", \"Secondary confirmation timeframe\", \"General\");
+			.SetDisplay("Mid Timeframe", "Secondary confirmation timeframe", "General");
 
 		_highCandleType = Param(nameof(HighCandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay(\"High Timeframe\", \"Higher confirmation timeframe\", \"General\");
+			.SetDisplay("High Timeframe", "Higher confirmation timeframe", "General");
 	}
 
 	/// <inheritdoc />

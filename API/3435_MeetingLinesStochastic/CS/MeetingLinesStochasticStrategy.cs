@@ -12,7 +12,7 @@ using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 /// <summary>
-/// Strategy that replicates the MetaTrader \"Expert_AML_Stoch\" logic using the StockSharp high-level API.
+/// Strategy that replicates the MetaTrader "Expert_AML_Stoch" logic using the StockSharp high-level API.
 /// </summary>
 public class MeetingLinesStochasticStrategy : Strategy
 {
@@ -36,43 +36,43 @@ public class MeetingLinesStochasticStrategy : Strategy
 	private decimal? _secondPreviousSignal;
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"MeetingLinesStochasticStrategy\"/>.
+	/// Initializes a new instance of the <see cref="MeetingLinesStochasticStrategy"/>.
 	/// </summary>
 	public MeetingLinesStochasticStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Primary candle type used for analysis.\", \"General\");
+			.SetDisplay("Candle Type", "Primary candle type used for analysis.", "General");
 
 		_stochasticLength = Param(nameof(StochasticLength), 3)
-			.SetDisplay(\"%K Length\", \"Lookback period for the raw %K calculation.\", \"Stochastic\")
+			.SetDisplay("%K Length", "Lookback period for the raw %K calculation.", "Stochastic")
 			.SetCanOptimize(true);
 
 		_stochasticSmoothing = Param(nameof(StochasticSmoothing), 25)
-			.SetDisplay(\"%K Smoothing\", \"Smoothing period applied to %K (MetaTrader slowing).\", \"Stochastic\")
+			.SetDisplay("%K Smoothing", "Smoothing period applied to %K (MetaTrader slowing).", "Stochastic")
 			.SetCanOptimize(true);
 
 		_stochasticSignal = Param(nameof(StochasticSignal), 36)
-			.SetDisplay(\"%D Period\", \"Smoothing period for the %D signal line.\", \"Stochastic\")
+			.SetDisplay("%D Period", "Smoothing period for the %D signal line.", "Stochastic")
 			.SetCanOptimize(true);
 
 		_bodyAveragePeriod = Param(nameof(BodyAveragePeriod), 3)
-			.SetDisplay(\"Body Average Period\", \"Number of candles used to average body size.\", \"Pattern\")
+			.SetDisplay("Body Average Period", "Number of candles used to average body size.", "Pattern")
 			.SetCanOptimize(true);
 
 		_longEntryLevel = Param(nameof(LongEntryLevel), 30m)
-			.SetDisplay(\"Bullish Confirmation\", \"Maximum %D level allowed for bullish entries.\", \"Trading Rules\")
+			.SetDisplay("Bullish Confirmation", "Maximum %D level allowed for bullish entries.", "Trading Rules")
 			.SetCanOptimize(true);
 
 		_shortEntryLevel = Param(nameof(ShortEntryLevel), 70m)
-			.SetDisplay(\"Bearish Confirmation\", \"Minimum %D level required for bearish entries.\", \"Trading Rules\")
+			.SetDisplay("Bearish Confirmation", "Minimum %D level required for bearish entries.", "Trading Rules")
 			.SetCanOptimize(true);
 
 		_exitLowerLevel = Param(nameof(ExitLowerLevel), 20m)
-			.SetDisplay(\"Lower Exit Level\", \"Threshold used for upward crosses that close shorts.\", \"Trading Rules\")
+			.SetDisplay("Lower Exit Level", "Threshold used for upward crosses that close shorts.", "Trading Rules")
 			.SetCanOptimize(true);
 
 		_exitUpperLevel = Param(nameof(ExitUpperLevel), 80m)
-			.SetDisplay(\"Upper Exit Level\", \"Threshold used for downward crosses that close longs.\", \"Trading Rules\")
+			.SetDisplay("Upper Exit Level", "Threshold used for downward crosses that close longs.", "Trading Rules")
 			.SetCanOptimize(true);
 	}
 
@@ -181,16 +181,16 @@ public class MeetingLinesStochasticStrategy : Strategy
 		base.OnStarted(time);
 
 		if (StochasticLength <= 0)
-			throw new InvalidOperationException(\"StochasticLength must be greater than zero.\");
+			throw new InvalidOperationException("StochasticLength must be greater than zero.");
 
 		if (StochasticSmoothing <= 0)
-			throw new InvalidOperationException(\"StochasticSmoothing must be greater than zero.\");
+			throw new InvalidOperationException("StochasticSmoothing must be greater than zero.");
 
 		if (StochasticSignal <= 0)
-			throw new InvalidOperationException(\"StochasticSignal must be greater than zero.\");
+			throw new InvalidOperationException("StochasticSignal must be greater than zero.");
 
 		if (BodyAveragePeriod <= 0)
-			throw new InvalidOperationException(\"BodyAveragePeriod must be greater than zero.\");
+			throw new InvalidOperationException("BodyAveragePeriod must be greater than zero.");
 
 		_stochastic = new StochasticOscillator
 		{

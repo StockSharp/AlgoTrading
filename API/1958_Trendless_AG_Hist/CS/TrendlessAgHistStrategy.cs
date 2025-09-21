@@ -55,7 +55,7 @@ public class TrendlessAgHistStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"TrendlessAgHistStrategy\"/>.
+	/// Initializes a new instance of <see cref="TrendlessAgHistStrategy"/>.
 	/// </summary>
 	public TrendlessAgHistStrategy()
 	{

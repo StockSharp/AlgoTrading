@@ -76,7 +76,7 @@ public class AeronJjnStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"AeronJjnStrategy\"/> class.
+	/// Initializes a new instance of the <see cref="AeronJjnStrategy"/> class.
 	/// </summary>
 	public AeronJjnStrategy()
 	{

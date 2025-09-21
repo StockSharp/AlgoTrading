@@ -69,7 +69,7 @@ public int EndHour { get => _endHour.Value; set => _endHour.Value = value; }
 public int KillDay { get => _killDay.Value; set => _killDay.Value = value; }
 
 /// <summary>
-/// Hour to force closing on <see cref=\"KillDay\"/>.
+/// Hour to force closing on <see cref="KillDay"/>.
 /// </summary>
 public int KillHour { get => _killHour.Value; set => _killHour.Value = value; }
 
@@ -79,7 +79,7 @@ public int KillHour { get => _killHour.Value; set => _killHour.Value = value; }
 public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 /// <summary>
-/// Initialize <see cref=\"ZeroLagMacdStrategy\"/>.
+/// Initialize <see cref="ZeroLagMacdStrategy"/>.
 /// </summary>
 public ZeroLagMacdStrategy()
 {
@@ -87,20 +87,20 @@ _fastEmaLength = Param(nameof(FastEmaLength), 2).SetGreaterThanZero();
 _slowEmaLength = Param(nameof(SlowEmaLength), 34).SetGreaterThanZero();
 _signalEmaLength = Param(nameof(SignalEmaLength), 2).SetGreaterThanZero();
 _useFreshSignal = Param(nameof(UseFreshSignal), true)
-.SetDisplay(\"Use Fresh Signal\", \"Require MACD crossover\", \"General\");
+.SetDisplay("Use Fresh Signal", "Require MACD crossover", "General");
 _volume = Param(nameof(Volume), 2m)
 .SetGreaterThanZero()
-.SetDisplay(\"Volume\", \"Order volume\", \"Trading\");
+.SetDisplay("Volume", "Order volume", "Trading");
 _startHour = Param(nameof(StartHour), 9)
-.SetDisplay(\"Start Hour\", \"Trading start hour\", \"Time Filter\");
+.SetDisplay("Start Hour", "Trading start hour", "Time Filter");
 _endHour = Param(nameof(EndHour), 15)
-.SetDisplay(\"End Hour\", \"Trading end hour\", \"Time Filter\");
+.SetDisplay("End Hour", "Trading end hour", "Time Filter");
 _killDay = Param(nameof(KillDay), 5)
-.SetDisplay(\"Kill Day\", \"Day to close trades (0=Sunday)\", \"Time Filter\");
+.SetDisplay("Kill Day", "Day to close trades (0=Sunday)", "Time Filter");
 _killHour = Param(nameof(KillHour), 21)
-.SetDisplay(\"Kill Hour\", \"Hour to close on kill day\", \"Time Filter\");
+.SetDisplay("Kill Hour", "Hour to close on kill day", "Time Filter");
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay(\"Candle Type\", \"Source candles\", \"General\");
+.SetDisplay("Candle Type", "Source candles", "General");
 }
 
 /// <inheritdoc />

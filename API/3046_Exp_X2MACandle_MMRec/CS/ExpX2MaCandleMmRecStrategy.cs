@@ -196,7 +196,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"ExpX2MaCandleMmRecStrategy\"/>.
+	/// Initializes a new instance of <see cref="ExpX2MaCandleMmRecStrategy"/>.
 	/// </summary>
 	public ExpX2MaCandleMmRecStrategy()
 	{

@@ -127,13 +127,13 @@ public class FirePipsTwitterScraperStrategy : Strategy
 
 		if (occurrences.Count == 0)
 		{
-			AddInfoLog("The search text \"{0}\" was not found in the response.", SearchText);
+			AddInfoLog("The search text "{0}" was not found in the response.", SearchText);
 		}
 		else
 		{
 			foreach (var index in occurrences)
 			{
-				AddInfoLog("Found \"{0}\" at character index {1}.", SearchText, index);
+				AddInfoLog("Found "{0}" at character index {1}.", SearchText, index);
 			}
 		}
 
@@ -150,7 +150,7 @@ public class FirePipsTwitterScraperStrategy : Strategy
 		}
 		else if (!string.IsNullOrWhiteSpace(firstToken))
 		{
-			AddInfoLog("The beginning of the file contains non-numeric data: \"{0}\".", firstToken);
+			AddInfoLog("The beginning of the file contains non-numeric data: "{0}".", firstToken);
 		}
 		else
 		{

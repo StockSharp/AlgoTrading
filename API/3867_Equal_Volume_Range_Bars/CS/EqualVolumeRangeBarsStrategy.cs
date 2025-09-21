@@ -130,7 +130,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 
 		_rangeThreshold = _tickSize * TicksInBar;
 		_seriesName = BuildSeriesName();
-		LogInfo($"{_seriesName}: starting in {WorkMode} mode with threshold {TicksInBar} {(WorkMode == EqualVolumeBarsMode.EqualVolumeBars ? \"ticks\" : \"points\")}");
+		LogInfo($"{_seriesName}: starting in {WorkMode} mode with threshold {TicksInBar} {(WorkMode == EqualVolumeBarsMode.EqualVolumeBars ? "ticks" : "points")}");
 
 		if (FromMinuteHistory)
 		{

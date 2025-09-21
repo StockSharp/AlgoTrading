@@ -127,13 +127,13 @@ public class PainelStrategy : Strategy
 
 		AddInfoLog(
 			$"Symbol: {securityId}; " +
-			$"Last: {_lastPrice.ToString(\"0.#####\", CultureInfo.InvariantCulture)}; " +
-			$"High: {_sessionHigh.ToString(\"0.#####\", CultureInfo.InvariantCulture)}; " +
-			$"Low: {_sessionLow.ToString(\"0.#####\", CultureInfo.InvariantCulture)}; " +
+			$"Last: {_lastPrice.ToString("0.#####", CultureInfo.InvariantCulture)}; " +
+			$"High: {_sessionHigh.ToString("0.#####", CultureInfo.InvariantCulture)}; " +
+			$"Low: {_sessionLow.ToString("0.#####", CultureInfo.InvariantCulture)}; " +
 			$"Position: {_positionLabel}; " +
 			$"User: {accountName}; " +
-			$"Profit: {_profit.ToString(\"0.##\", CultureInfo.InvariantCulture)}; " +
-			$"Balance: {_balance.ToString(\"0.##\", CultureInfo.InvariantCulture)}
+			$"Profit: {_profit.ToString("0.##", CultureInfo.InvariantCulture)}; " +
+			$"Balance: {_balance.ToString("0.##", CultureInfo.InvariantCulture)}
 		);
 	}
 }

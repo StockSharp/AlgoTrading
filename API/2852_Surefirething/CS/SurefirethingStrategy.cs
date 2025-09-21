@@ -132,7 +132,7 @@ public class SurefirethingStrategy : Strategy
 		base.OnStarted(time);
 
 		if (TrailingStopPips > 0 && TrailingStepPips == 0)
-			throw new InvalidOperationException("Trailing is not possible: the parameter \"Trailing Step\" is zero!");
+			throw new InvalidOperationException("Trailing is not possible: the parameter "Trailing Step" is zero!");
 
 		_pipSize = CalculatePipSize();
 

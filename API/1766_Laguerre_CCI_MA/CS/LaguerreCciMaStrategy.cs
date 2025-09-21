@@ -90,39 +90,39 @@ public class LaguerreCciMaStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"LaguerreCciMaStrategy\"/>.
+	/// Initializes a new instance of <see cref="LaguerreCciMaStrategy"/>.
 	/// </summary>
 	public LaguerreCciMaStrategy()
 	{
 		_lagGamma = Param(nameof(LagGamma), 0.7m)
 			.SetRange(0.1m, 0.9m)
-			.SetDisplay(\"Laguerre Gamma\", \"Gamma parameter for Laguerre filter\", \"Indicators\")
+			.SetDisplay("Laguerre Gamma", "Gamma parameter for Laguerre filter", "Indicators")
 			.SetCanOptimize(true);
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()
-			.SetDisplay(\"CCI Period\", \"Period for CCI indicator\", \"Indicators\")
+			.SetDisplay("CCI Period", "Period for CCI indicator", "Indicators")
 			.SetCanOptimize(true);
 
 		_cciLevel = Param(nameof(CciLevel), 5m)
 			.SetGreaterThanZero()
-			.SetDisplay(\"CCI Level\", \"Threshold for CCI\", \"Indicators\")
+			.SetDisplay("CCI Level", "Threshold for CCI", "Indicators")
 			.SetCanOptimize(true);
 
 		_maPeriod = Param(nameof(MaPeriod), 5)
 			.SetGreaterThanZero()
-			.SetDisplay(\"MA Period\", \"Period for moving average\", \"Indicators\")
+			.SetDisplay("MA Period", "Period for moving average", "Indicators")
 			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Type of candles\", \"General\");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 0m)
-			.SetDisplay(\"Take Profit\", \"Take profit in absolute price\", \"Risk Management\")
+			.SetDisplay("Take Profit", "Take profit in absolute price", "Risk Management")
 			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 0m)
-			.SetDisplay(\"Stop Loss\", \"Stop loss in absolute price\", \"Risk Management\")
+			.SetDisplay("Stop Loss", "Stop loss in absolute price", "Risk Management")
 			.SetCanOptimize(true);
 	}
 

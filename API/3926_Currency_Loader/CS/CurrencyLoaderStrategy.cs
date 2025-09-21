@@ -474,7 +474,7 @@ public class CurrencyLoaderStrategy : Strategy
 		Directory.CreateDirectory(Path.GetDirectoryName(export.FilePath)!);
 
 		using var writer = new StreamWriter(export.FilePath, false, new UTF8Encoding(false));
-		writer.WriteLine("\"Date\" \"Time\" \"Open\" \"High\" \"Low\" \"Close\" \"Volume\"");
+		writer.WriteLine(""Date" "Time" "Open" "High" "Low" "Close" "Volume"");
 
 		foreach (var candle in export.History)
 		{

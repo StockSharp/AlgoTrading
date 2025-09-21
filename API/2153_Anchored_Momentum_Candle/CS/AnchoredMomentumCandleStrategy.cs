@@ -50,24 +50,24 @@ public class AnchoredMomentumCandleStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"AnchoredMomentumCandleStrategy\"/>.
+	/// Initializes a new instance of <see cref="AnchoredMomentumCandleStrategy"/>.
 	/// </summary>
 	public AnchoredMomentumCandleStrategy()
 	{
 		_momPeriod = Param(nameof(MomPeriod), 8)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Momentum Period\", \"SMA length\", \"Parameters\")
+			.SetDisplay("Momentum Period", "SMA length", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(2, 20, 1);
 
 		_smoothPeriod = Param(nameof(SmoothPeriod), 6)
 			.SetGreaterThanZero()
-			.SetDisplay(\"Smooth Period\", \"EMA length\", \"Parameters\")
+			.SetDisplay("Smooth Period", "EMA length", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(2, 20, 1);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Working timeframe\", \"General\");
+			.SetDisplay("Candle Type", "Working timeframe", "General");
 	}
 
 	/// <inheritdoc />

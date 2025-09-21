@@ -74,42 +74,42 @@ public class UniversalTrailingStopHedgeStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"UniversalTrailingStopHedgeStrategy\"/>.
+	/// Initializes a new instance of <see cref="UniversalTrailingStopHedgeStrategy"/>.
 	/// </summary>
 	public UniversalTrailingStopHedgeStrategy()
 	{
 		_mode = Param(nameof(Mode), TrailingMode.Atr)
-			.SetDisplay(\"Trailing Mode\", \"Algorithm to move stop loss\", \"General\");
+			.SetDisplay("Trailing Mode", "Algorithm to move stop loss", "General");
 
 		_delta = Param(nameof(Delta), 10)
-			.SetDisplay(\"Delta\", \"Offset in ticks\", \"Risk\");
+			.SetDisplay("Delta", "Offset in ticks", "Risk");
 
 		_atrPeriod = Param(nameof(AtrPeriod), 14)
-			.SetDisplay(\"ATR Period\", \"ATR calculation period\", \"Indicators\")
+			.SetDisplay("ATR Period", "ATR calculation period", "Indicators")
 			.SetCanOptimize(true);
 
 		_atrMultiplier = Param(nameof(AtrMultiplier), 1m)
-			.SetDisplay(\"ATR Multiplier\", \"ATR multiplier for stop distance\", \"Indicators\")
+			.SetDisplay("ATR Multiplier", "ATR multiplier for stop distance", "Indicators")
 			.SetGreaterThanZero();
 
 		_sarStep = Param(nameof(SarStep), 0.02m)
-			.SetDisplay(\"SAR Step\", \"Parabolic SAR acceleration\", \"Indicators\")
+			.SetDisplay("SAR Step", "Parabolic SAR acceleration", "Indicators")
 			.SetGreaterThanZero();
 
 		_sarMax = Param(nameof(SarMax), 0.2m)
-			.SetDisplay(\"SAR Maximum\", \"Parabolic SAR maximum acceleration\", \"Indicators\")
+			.SetDisplay("SAR Maximum", "Parabolic SAR maximum acceleration", "Indicators")
 			.SetGreaterThanZero();
 
 		_maPeriod = Param(nameof(MaPeriod), 34)
-			.SetDisplay(\"MA Period\", \"Moving average period\", \"Indicators\")
+			.SetDisplay("MA Period", "Moving average period", "Indicators")
 			.SetCanOptimize(true);
 
 		_percentProfit = Param(nameof(PercentProfit), 50m)
-			.SetDisplay(\"Percent Profit\", \"Percent of profit to trail\", \"Risk\")
+			.SetDisplay("Percent Profit", "Percent of profit to trail", "Risk")
 			.SetGreaterThanZero();
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
-			.SetDisplay(\"Candle Type\", \"Timeframe for calculations\", \"General\");
+			.SetDisplay("Candle Type", "Timeframe for calculations", "General");
 	}
 
 	/// <inheritdoc />

@@ -65,24 +65,24 @@ public class PersonalAssistantStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"PersonalAssistantStrategy\"/>.
+	/// Initializes a new instance of <see cref="PersonalAssistantStrategy"/>.
 	/// </summary>
 	public PersonalAssistantStrategy()
 	{
 		_id = Param(nameof(Id), 3900)
-		.SetDisplay(\"ID\", \"Magic number of the strategy\", \"General\");
+		.SetDisplay("ID", "Magic number of the strategy", "General");
 
 		_displayLegend = Param(nameof(DisplayLegend), true)
-		.SetDisplay(\"Display Legend\", \"Show informational lines in log\", \"General\");
+		.SetDisplay("Display Legend", "Show informational lines in log", "General");
 
 		_lotVolume = Param(nameof(LotVolume), 0.01m)
-		.SetDisplay(\"Lot Size\", \"Volume for manual orders\", \"Trading\");
+		.SetDisplay("Lot Size", "Volume for manual orders", "Trading");
 
 		_slippage = Param(nameof(Slippage), 2)
-		.SetDisplay(\"Slippage\", \"Maximum allowed slippage in ticks\", \"Trading\");
+		.SetDisplay("Slippage", "Maximum allowed slippage in ticks", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-		.SetDisplay(\"Candle Type\", \"Type of candles to subscribe\", \"Data\");
+		.SetDisplay("Candle Type", "Type of candles to subscribe", "Data");
 	}
 
 	/// <inheritdoc />
@@ -122,7 +122,7 @@ public class PersonalAssistantStrategy : Strategy
 		var tickValue = Security?.StepPrice * LotVolume ?? 0m;
 		var openPositionCounter = Position != 0 ? 1 : 0;
 
-		return $\"ID={Id}; Symbol={Security?.Id}; OpenPositions={openPositionCounter}; Profit={PnL}; Volume={LotVolume}; TickValue={tickValue}; Spread={spread}\";
+		return $"ID={Id}; Symbol={Security?.Id}; OpenPositions={openPositionCounter}; Profit={PnL}; Volume={LotVolume}; TickValue={tickValue}; Spread={spread}";
 	}
 
 	/// <summary>

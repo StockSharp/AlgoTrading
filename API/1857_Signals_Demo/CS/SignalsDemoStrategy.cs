@@ -55,7 +55,7 @@ public class SignalsDemoStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"SignalsDemoStrategy\"/>.
+	/// Initializes a new instance of <see cref="SignalsDemoStrategy"/>.
 	/// </summary>
 	public SignalsDemoStrategy()
 	{

@@ -221,7 +221,7 @@ public class StarterV6ModEStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"StarterV6ModEStrategy\"/>.
+	/// Initializes a new instance of <see cref="StarterV6ModEStrategy"/>.
 	/// </summary>
 	public StarterV6ModEStrategy()
 	{

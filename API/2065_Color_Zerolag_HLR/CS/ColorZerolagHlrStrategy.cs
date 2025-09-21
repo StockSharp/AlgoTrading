@@ -127,7 +127,7 @@ public class ColorZerolagHlrStrategy : Strategy
 	public bool SellPosClose { get => _sellClose.Value; set => _sellClose.Value = value; }
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref=\"ColorZerolagHlrStrategy\"/> class.
+	/// Initializes a new instance of the <see cref="ColorZerolagHlrStrategy"/> class.
 	/// </summary>
 	public ColorZerolagHlrStrategy()
 	{

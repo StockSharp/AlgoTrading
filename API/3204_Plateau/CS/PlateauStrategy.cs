@@ -161,7 +161,7 @@ public class PlateauStrategy : Strategy
 \t}
 
 \t/// <summary>
-\t/// Fixed lot size or risk percentage depending on <see cref=\"MoneyMode\"/>.
+\t/// Fixed lot size or risk percentage depending on <see cref="MoneyMode"/>.
 \t/// </summary>
 \tpublic decimal MoneyValue
 \t{

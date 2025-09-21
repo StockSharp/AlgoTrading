@@ -63,7 +63,7 @@ public class Color3rdGenXmaStrategy : Strategy
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	/// <summary>
-	/// Initializes a new instance of <see cref=\"Color3rdGenXmaStrategy\"/>.
+	/// Initializes a new instance of <see cref="Color3rdGenXmaStrategy"/>.
 	/// </summary>
 	public Color3rdGenXmaStrategy()
 	{
