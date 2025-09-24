@@ -693,67 +693,6 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 }
 
 /// <summary>
-/// Price types supported by the ColorSchaffJjrsxTrendCycleIndicator.
-/// </summary>
-public enum AppliedPrice
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Typical price (high + low + close) / 3.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted close (high + low + close + close) / 4.
-	/// </summary>
-	Weighted,
-
-	/// <summary>
-	/// Simple average of open and close.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Trend-following variant one ((high + low + close + close) / 4).
-	/// </summary>
-	TrendFollow0,
-
-	/// <summary>
-	/// Trend-following variant two ((open + high + low + close) / 4).
-	/// </summary>
-	TrendFollow1,
-
-	/// <summary>
-	/// DeMark price (close + high + low + low) / 4.
-	/// </summary>
-	DeMark
-}
-
-/// <summary>
 /// Simplified approximation of the ColorSchaffJJRSXTrendCycle oscillator.
 /// Combines RSI-style momentum with Schaff Trend Cycle normalization.
 /// </summary>

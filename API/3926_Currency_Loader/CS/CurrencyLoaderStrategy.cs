@@ -474,7 +474,7 @@ public class CurrencyLoaderStrategy : Strategy
 		Directory.CreateDirectory(Path.GetDirectoryName(export.FilePath)!);
 
 		using var writer = new StreamWriter(export.FilePath, false, new UTF8Encoding(false));
-		writer.WriteLine(""Date" "Time" "Open" "High" "Low" "Close" "Volume"");
+		writer.WriteLine("'Date' 'Time' 'Open' 'High' 'Low' 'Close' 'Volume'");
 
 		foreach (var candle in export.History)
 		{
@@ -540,7 +540,7 @@ public class CurrencyLoaderStrategy : Strategy
 			var timestamp = CurrentTime.LocalDateTime;
 			var fileName = $"LOG{ExpertName}_{timestamp:yyyy.MM.dd}.log";
 			var path = Path.Combine(_baseDirectory, fileName);
-			var line = $"{timestamp:yyyy.MM.dd HH:mm:ss} {message}{Environment.NewLine}";
+			var line = $"{timestamp:yyyy.MM.dd HH:mm:ss} {message}\n";
 			File.AppendAllText(path, line, new UTF8Encoding(false));
 		}
 		catch (Exception ex)

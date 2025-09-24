@@ -16,20 +16,20 @@ public class LocoStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _length;
-	private readonly StrategyParam<LocoIndicator.AppliedPrice> _priceType;
+	private readonly StrategyParam<AppliedPrice> _priceType;
 	
 	public LocoStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
-		.SetDisplay("Candle Type", "Type of candles", "General");
+			.SetDisplay("Candle Type", "Type of candles", "General");
 		
 		_length = Param(nameof(Length), 1)
-		.SetDisplay("Length", "Lookback length", "Indicator")
-		.SetCanOptimize(true)
-		.SetOptimize(1, 10, 1);
+			.SetDisplay("Length", "Lookback length", "Indicator")
+			.SetCanOptimize(true)
+			.SetOptimize(1, 10, 1);
 		
-		_priceType = Param(nameof(PriceType), LocoIndicator.AppliedPrice.Close)
-		.SetDisplay("Price Type", "Price used for calculations", "Indicator");
+		_priceType = Param(nameof(PriceType), AppliedPrice.Close)
+			.SetDisplay("Price Type", "Price used for calculations", "Indicator");
 	}
 	
 	public DataType CandleType
@@ -44,7 +44,7 @@ public class LocoStrategy : Strategy
 		set => _length.Value = value;
 	}
 	
-	public LocoIndicator.AppliedPrice PriceType
+	public AppliedPrice PriceType
 	{
 		get => _priceType.Value;
 		set => _priceType.Value = value;
@@ -78,14 +78,14 @@ public class LocoStrategy : Strategy
 		
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-		.Bind(loco, ProcessCandle)
-		.Start();
+			.Bind(loco, ProcessCandle)
+			.Start();
 	}
 	
 	private void ProcessCandle(ICandleMessage candle, decimal color)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 		
 		var current = (int)color;
 		
@@ -100,27 +100,26 @@ public class LocoStrategy : Strategy
 			if (current == 1)
 			{
 				if (Position < 0)
-				ClosePosition();
+					ClosePosition();
 				
 				if (Position <= 0)
-				BuyMarket();
+					BuyMarket();
 			}
 			else
 			{
 				if (Position > 0)
-				ClosePosition();
+					ClosePosition();
 				
 				if (Position >= 0)
-				SellMarket();
+					SellMarket();
 			}
 		}
 		
 		_prevColor = current;
 	}
 	
-	private class LocoIndicator : Indicator<ICandleMessage>
+	private class LocoIndicator : LengthIndicator<ICandleMessage>
 	{
-		public int Length { get; set; } = 1;
 		public AppliedPrice PriceType { get; set; } = AppliedPrice.Close;
 		
 		private readonly Queue<decimal> _prices = new();
@@ -186,6 +185,18 @@ public class LocoStrategy : Strategy
 			_prev = null;
 		}
 		
+		private static decimal CalculateDeMarkPrice(decimal o, decimal h, decimal l, decimal c)
+		{
+			var res = h + l + c;
+			if (c < o)
+				res = (res + l) / 2m;
+			else if (c > o)
+				res = (res + h) / 2m;
+			else
+				res = (res + c) / 2m;
+			return ((res - l) + (res - h)) / 2m;
+		}
+		
 		private decimal GetPrice(ICandleMessage candle)
 		{
 			var o = candle.OpenPrice;
@@ -206,35 +217,9 @@ public class LocoStrategy : Strategy
 				AppliedPrice.Quarter => (o + c + h + l) / 4m,
 				AppliedPrice.TrendFollow0 => c > o ? h : c < o ? l : c,
 				AppliedPrice.TrendFollow1 => c > o ? (h + c) / 2m : c < o ? (l + c) / 2m : c,
-				AppliedPrice.Demark =>
-				{
-					var res = h + l + c;
-					if (c < o)
-					res = (res + l) / 2m;
-					else if (c > o)
-					res = (res + h) / 2m;
-					else
-					res = (res + c) / 2m;
-					return ((res - l) + (res - h)) / 2m;
-				},
+				AppliedPrice.DeMark => CalculateDeMarkPrice(o, h, l, c),
 				_ => c
 			};
-		}
-		
-		public enum AppliedPrice
-		{
-			Close = 1,
-			Open,
-			High,
-			Low,
-			Median,
-			Typical,
-			Weighted,
-			Simple,
-			Quarter,
-			TrendFollow0,
-			TrendFollow1,
-			Demark
 		}
 	}
 }

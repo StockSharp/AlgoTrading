@@ -771,22 +771,3 @@ public enum StopLossMode
 	/// </summary>
 	None
 }
-
-public enum MovingAverageMethod
-{
-	Simple,
-	Exponential,
-	Smoothed,
-	LinearWeighted
-}
-
-public enum AppliedPrice
-{
-	Close,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted
-}

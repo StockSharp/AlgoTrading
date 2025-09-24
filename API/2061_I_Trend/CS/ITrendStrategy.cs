@@ -140,8 +140,8 @@ public class ITrendStrategy : Strategy
 		var subscription = SubscribeCandles(CandleType);
 		
 		subscription
-		.Bind(ma, bb, ProcessCandle)
-		.Start();
+			.Bind(ma, bb, ProcessCandle)
+			.Start();
 		
 		var area = CreateChartArea();
 		if (area != null)
@@ -213,45 +213,28 @@ public class ITrendStrategy : Strategy
 			AppliedPrice.PriceMedian => (candle.HighPrice + candle.LowPrice) / 2m,
 			AppliedPrice.PriceTypical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
 			AppliedPrice.PriceWeighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-			AppliedPrice.PriceSimpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrice.PriceSimple => (candle.OpenPrice + candle.ClosePrice) / 2m,
 			AppliedPrice.PriceQuarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
 			AppliedPrice.PriceTrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice :
 			candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
 			AppliedPrice.PriceTrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m :
 			candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-			AppliedPrice.PriceDemark =>
-			{
-				var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-				if (candle.ClosePrice < candle.OpenPrice)
-				res = (res + candle.LowPrice) / 2m;
-				else if (candle.ClosePrice > candle.OpenPrice)
-				res = (res + candle.HighPrice) / 2m;
-				else
-				res = (res + candle.ClosePrice) / 2m;
-				return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
-			},
+			AppliedPrice.PriceDeMark => CalculateDeMarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
 	}
-}
 
-/// <summary>
-/// Types of price used for calculations.
-/// </summary>
-public enum AppliedPrice
-{
-	PriceClose,
-	PriceOpen,
-	PriceHigh,
-	PriceLow,
-	PriceMedian,
-	PriceTypical,
-	PriceWeighted,
-	PriceSimpl,
-	PriceQuarter,
-	PriceTrendFollow0,
-	PriceTrendFollow1,
-	PriceDemark
+	private static decimal CalculateDeMarkPrice(ICandleMessage candle)
+	{
+		var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+		if (candle.ClosePrice < candle.OpenPrice)
+			res = (res + candle.LowPrice) / 2m;
+		else if (candle.ClosePrice > candle.OpenPrice)
+			res = (res + candle.HighPrice) / 2m;
+		else
+			res = (res + candle.ClosePrice) / 2m;
+		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
+	}
 }
 
 /// <summary>

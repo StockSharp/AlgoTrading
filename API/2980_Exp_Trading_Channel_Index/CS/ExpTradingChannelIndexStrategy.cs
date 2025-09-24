@@ -486,69 +486,6 @@ public class ExpTradingChannelIndexStrategy : Strategy
 }
 
 /// <summary>
-/// Smoothing method selection matching the options of the original MQL5 indicator.
-/// </summary>
-public enum SmoothMethod
-{
-	/// <summary>Simple moving average.</summary>
-	Simple,
-
-	/// <summary>Exponential moving average.</summary>
-	Exponential,
-
-	/// <summary>Smoothed (RMA) moving average.</summary>
-	Smoothed,
-
-	/// <summary>Linear weighted moving average.</summary>
-	Weighted,
-
-	/// <summary>Jurik moving average.</summary>
-	Jurik
-}
-
-/// <summary>
-/// Applied price options supported by the indicator.
-/// </summary>
-public enum AppliedPrice
-{
-	/// <summary>Close price.</summary>
-	Close,
-
-	/// <summary>Open price.</summary>
-	Open,
-
-	/// <summary>High price.</summary>
-	High,
-
-	/// <summary>Low price.</summary>
-	Low,
-
-	/// <summary>Median price (H+L)/2.</summary>
-	Median,
-
-	/// <summary>Typical price (H+L+C)/3.</summary>
-	Typical,
-
-	/// <summary>Weighted close (2*C+H+L)/4.</summary>
-	Weighted,
-
-	/// <summary>Simplified price (O+C)/2.</summary>
-	Simple,
-
-	/// <summary>Quarter price (O+C+H+L)/4.</summary>
-	Quarter,
-
-	/// <summary>Trend-follow price: close and range driven.</summary>
-	TrendFollow,
-
-	/// <summary>Trend-follow average price.</summary>
-	TrendFollowAverage,
-
-	/// <summary>Demark price.</summary>
-	Demark
-}
-
-/// <summary>
 /// Indicator computing the Trading Channel Index values and color codes.
 /// </summary>
 public class TradingChannelIndexIndicator : BaseIndicator<decimal>

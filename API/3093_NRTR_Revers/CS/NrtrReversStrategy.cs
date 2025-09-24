@@ -297,7 +297,7 @@ public class NrtrReversStrategy : Strategy
 
 			if (shouldReverse)
 			{
-				LogInfo("Change the trend. Now "SELL".");
+				LogInfo("Change the trend. Now 'SELL'.");
 				_currentTrend = TradeDirection.Short;
 				_desiredTrend = TradeDirection.Short;
 
@@ -332,7 +332,7 @@ public class NrtrReversStrategy : Strategy
 
 			if (shouldReverse)
 			{
-				LogInfo("Change the trend. Now "BUY".");
+				LogInfo("Change the trend. Now 'BUY'.");
 				_currentTrend = TradeDirection.Long;
 				_desiredTrend = TradeDirection.Long;
 

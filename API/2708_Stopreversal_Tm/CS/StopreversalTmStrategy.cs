@@ -147,16 +147,16 @@ public class StopreversalTmStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var price = GetAppliedPrice(candle);
 
 		if (_previousAppliedPrice is null || _previousStopLevel is null)
 		{
-		_previousAppliedPrice = price;
-		_previousStopLevel = price;
-		EnqueueSignal(new SignalInfo(false, false, false, false), candle.CloseTime);
-		return;
+			_previousAppliedPrice = price;
+			_previousStopLevel = price;
+			EnqueueSignal(new SignalInfo(false, false, false, false), candle.CloseTime);
+			return;
 		}
 
 		var prevPrice = _previousAppliedPrice.Value;
@@ -186,8 +186,8 @@ public class StopreversalTmStrategy : Strategy
 
 		while (_signalQueue.Count > SignalBar)
 		{
-		var action = _signalQueue.Dequeue();
-		HandleSignal(action, currentTime);
+			var action = _signalQueue.Dequeue();
+			HandleSignal(action, currentTime);
 		}
 	}
 
@@ -196,21 +196,21 @@ public class StopreversalTmStrategy : Strategy
 		var inWindow = !UseTimeFilter || IsWithinTradingWindow(currentTime);
 
 		if (UseTimeFilter && !inWindow && Position != 0)
-		ClosePosition();
+			ClosePosition();
 
 		if (signal.CloseLong && Position > 0)
-		SellMarket();
+			SellMarket();
 
 		if (signal.CloseShort && Position < 0)
-		BuyMarket();
+			BuyMarket();
 
 		if (!UseTimeFilter || inWindow)
 		{
-		if (signal.OpenLong && Position <= 0)
-		BuyMarket();
+			if (signal.OpenLong && Position <= 0)
+				BuyMarket();
 
-		if (signal.OpenShort && Position >= 0)
-		SellMarket();
+			if (signal.OpenShort && Position >= 0)
+				SellMarket();
 		}
 	}
 
@@ -219,57 +219,59 @@ public class StopreversalTmStrategy : Strategy
 		var shift = Npips;
 
 		if (price == prevStop)
-		return prevStop;
+			return prevStop;
 
 		if (prevPrice < prevStop && price < prevStop)
-		return Math.Min(prevStop, price * (1 + shift));
+			return Math.Min(prevStop, price * (1 + shift));
 
 		if (prevPrice > prevStop && price > prevStop)
-		return Math.Max(prevStop, price * (1 - shift));
+			return Math.Max(prevStop, price * (1 - shift));
 
 		return price > prevStop
-		? price * (1 - shift)
-		: price * (1 + shift);
+			? price * (1 - shift)
+			: price * (1 + shift);
 	}
 
 	private decimal GetAppliedPrice(ICandleMessage candle)
 	{
 		return AppliedPrice switch
 		{
-		StopreversalAppliedPrice.Close => candle.ClosePrice,
-		StopreversalAppliedPrice.Open => candle.OpenPrice,
-		StopreversalAppliedPrice.High => candle.HighPrice,
-		StopreversalAppliedPrice.Low => candle.LowPrice,
-		StopreversalAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-		StopreversalAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-		StopreversalAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-		StopreversalAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-		StopreversalAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-		StopreversalAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
-		? candle.HighPrice
-		: candle.ClosePrice < candle.OpenPrice
-		? candle.LowPrice
-		: candle.ClosePrice,
-		StopreversalAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
-		? (candle.HighPrice + candle.ClosePrice) / 2m
-		: candle.ClosePrice < candle.OpenPrice
-		? (candle.LowPrice + candle.ClosePrice) / 2m
-		: candle.ClosePrice,
-		StopreversalAppliedPrice.Demark =>
-		{
+			StopreversalAppliedPrice.Close => candle.ClosePrice,
+			StopreversalAppliedPrice.Open => candle.OpenPrice,
+			StopreversalAppliedPrice.High => candle.HighPrice,
+			StopreversalAppliedPrice.Low => candle.LowPrice,
+			StopreversalAppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			StopreversalAppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			StopreversalAppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			StopreversalAppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			StopreversalAppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			StopreversalAppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+				? candle.HighPrice
+				: candle.ClosePrice < candle.OpenPrice
+					? candle.LowPrice
+					: candle.ClosePrice,
+			StopreversalAppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+				? (candle.HighPrice + candle.ClosePrice) / 2m
+				: candle.ClosePrice < candle.OpenPrice
+					? (candle.LowPrice + candle.ClosePrice) / 2m
+					: candle.ClosePrice,
+			StopreversalAppliedPrice.Demark => CalculateDemarkPrice(candle),
+			_ => candle.ClosePrice
+		};
+	}
+
+	private static decimal CalculateDemarkPrice(ICandleMessage candle)
+	{
 		var result = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
 
 		if (candle.ClosePrice < candle.OpenPrice)
-		result = (result + candle.LowPrice) / 2m;
+			result = (result + candle.LowPrice) / 2m;
 		else if (candle.ClosePrice > candle.OpenPrice)
-		result = (result + candle.HighPrice) / 2m;
+			result = (result + candle.HighPrice) / 2m;
 		else
-		result = (result + candle.ClosePrice) / 2m;
+			result = (result + candle.ClosePrice) / 2m;
 
 		return ((result - candle.LowPrice) + (result - candle.HighPrice)) / 2m;
-		},
-		_ => candle.ClosePrice
-		};
 	}
 
 	private bool IsWithinTradingWindow(DateTimeOffset time)
@@ -279,10 +281,10 @@ public class StopreversalTmStrategy : Strategy
 		var current = time.TimeOfDay;
 
 		if (start == end)
-		return false;
+			return false;
 
 		if (start < end)
-		return current >= start && current < end;
+			return current >= start && current < end;
 
 		return current >= start || current < end;
 	}
@@ -291,10 +293,10 @@ public class StopreversalTmStrategy : Strategy
 	{
 		public SignalInfo(bool openLong, bool openShort, bool closeLong, bool closeShort)
 		{
-		OpenLong = openLong;
-		OpenShort = openShort;
-		CloseLong = closeLong;
-		CloseShort = closeShort;
+			OpenLong = openLong;
+			OpenShort = openShort;
+			CloseLong = closeLong;
+			CloseShort = closeShort;
 		}
 
 		public bool OpenLong { get; }

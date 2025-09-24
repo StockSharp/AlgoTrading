@@ -387,32 +387,32 @@ public class ColorPemaEnvelopesDigitSystemStrategy : Strategy
 
 		return AppliedPrice switch
 		{
-			AppliedPrice.Close => close,
-			AppliedPrice.Open => open,
-			AppliedPrice.High => high,
-			AppliedPrice.Low => low,
-			AppliedPrice.Median => (high + low) / 2m,
-			AppliedPrice.Typical => (close + high + low) / 3m,
-			AppliedPrice.Weighted => (2m * close + high + low) / 4m,
-			AppliedPrice.Simple => (open + close) / 2m,
-			AppliedPrice.Quarter => (open + close + high + low) / 4m,
-			AppliedPrice.TrendFollow0 => close > open ? high : close < open ? low : close,
-			AppliedPrice.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
-			AppliedPrice.Demark =>
-			{
-				var res = high + low + close;
-
-				if (close < open)
-				res = (res + low) / 2m;
-				else if (close > open)
-				res = (res + high) / 2m;
-				else
-				res = (res + close) / 2m;
-
-				return ((res - low) + (res - high)) / 2m;
-			},
+			Strategies.AppliedPrice.Close => close,
+			Strategies.AppliedPrice.Open => open,
+			Strategies.AppliedPrice.High => high,
+			Strategies.AppliedPrice.Low => low,
+			Strategies.AppliedPrice.Median => (high + low) / 2m,
+			Strategies.AppliedPrice.Typical => (close + high + low) / 3m,
+			Strategies.AppliedPrice.Weighted => (2m * close + high + low) / 4m,
+			Strategies.AppliedPrice.Simple => (open + close) / 2m,
+			Strategies.AppliedPrice.Quarter => (open + close + high + low) / 4m,
+			Strategies.AppliedPrice.TrendFollow0 => close > open ? high : close < open ? low : close,
+			Strategies.AppliedPrice.TrendFollow1 => close > open ? (high + close) / 2m : close < open ? (low + close) / 2m : close,
+			Strategies.AppliedPrice.Demark => CalculateDemarkPrice(open, high, low, close),
 			_ => close,
 		};
+	}
+
+	private static decimal CalculateDemarkPrice(decimal open, decimal high, decimal low, decimal close)
+	{
+		var res = high + low + close;
+		if (close < open)
+			res = (res + low) / 2m;
+		else if (close > open)
+			res = (res + high) / 2m;
+		else
+			res = (res + close) / 2m;
+		return ((res - low) + (res - high)) / 2m;
 	}
 
 	private static int CalculateColor(ICandleMessage candle, decimal? upper, decimal? lower)

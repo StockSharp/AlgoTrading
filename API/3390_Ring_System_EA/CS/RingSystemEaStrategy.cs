@@ -1036,8 +1036,7 @@ public class RingSystemEaStrategy : Strategy
 
 	private List<string> ParseCurrencies()
 	{
-		var tokens = CurrenciesTrade.Split(new[] { '/', ',', ';', ' ', '	', '', '
-' }, StringSplitOptions.RemoveEmptyEntries);
+		var tokens = CurrenciesTrade.Split(new[] { '/', ',', ';', ' ' }, StringSplitOptions.RemoveEmptyEntries);
 		return tokens.Select(t => t.Trim().ToUpperInvariant()).Where(t => t.Length == 3).Distinct().ToList();
 	}
 
@@ -1047,8 +1046,7 @@ public class RingSystemEaStrategy : Strategy
 		if (string.IsNullOrWhiteSpace(NoOfGroupToSkip))
 			return result;
 
-		var tokens = NoOfGroupToSkip.Split(new[] { ',', ';', ' ', '	', '', '
-' }, StringSplitOptions.RemoveEmptyEntries);
+		var tokens = NoOfGroupToSkip.Split(new[] { ',', ';', ' ', '	' }, StringSplitOptions.RemoveEmptyEntries);
 		foreach (var token in tokens)
 		{
 			if (int.TryParse(token, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))

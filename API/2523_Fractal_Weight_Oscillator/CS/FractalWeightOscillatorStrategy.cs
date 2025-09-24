@@ -356,10 +356,10 @@ public class FractalWeightOscillatorStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-	_rsi = new RelativeStrengthIndex { Length = Period };
-	_williams = new WilliamsR { Length = Period };
-	_deMaxSma = new SimpleMovingAverage { Length = Period };
-	_deMinSma = new SimpleMovingAverage { Length = Period };
+		_rsi = new RelativeStrengthIndex { Length = Period };
+		_williams = new WilliamsR { Length = Period };
+		_deMaxSma = new SimpleMovingAverage { Length = Period };
+		_deMinSma = new SimpleMovingAverage { Length = Period };
 		_smoother = CreateSmoother(SmoothingMethod, SmoothingLength);
 
 		var subscription = SubscribeCandles(CandleType);
@@ -369,10 +369,10 @@ public class FractalWeightOscillatorStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		var rsiInput = GetPrice(candle, RsiPrice);
 		var rsiValue = _rsi.Process(new CandleIndicatorValue(candle, rsiInput));
@@ -380,15 +380,15 @@ public class FractalWeightOscillatorStrategy : Strategy
 		var wprValue = _williams.Process(new CandleIndicatorValue(candle, candle.ClosePrice));
 
 		if (!rsiValue.IsFinal || !wprValue.IsFinal)
-		return;
+			return;
 
 		var mfi = CalculateMfi(candle, mfiInput);
 		if (mfi is null)
-		return;
+			return;
 
 		var deMarker = CalculateDeMarker(candle);
 		if (deMarker is null)
-		return;
+			return;
 
 		var rsi = rsiValue.GetValue<decimal>();
 		var mfiValue = mfi.Value;
@@ -396,26 +396,26 @@ public class FractalWeightOscillatorStrategy : Strategy
 		var totalWeight = RsiWeight + MfiWeight + WprWeight + DeMarkerWeight;
 
 		if (totalWeight <= 0m)
-		return;
+			return;
 
 		var weighted = (RsiWeight * rsi
-		+ MfiWeight * mfiValue
-		+ WprWeight * (100m + wpr)
-		+ DeMarkerWeight * (deMarker.Value * 100m)) / totalWeight;
+			+ MfiWeight * mfiValue
+			+ WprWeight * (100m + wpr)
+			+ DeMarkerWeight * (deMarker.Value * 100m)) / totalWeight;
 
 		var smoothed = ApplySmoothing(weighted);
 		if (smoothed is null)
-		return;
+			return;
 
 		_oscillatorHistory.Add(smoothed.Value);
 		TrimHistory();
 
 		if (_oscillatorHistory.Count < SignalBar + 2)
-		return;
+			return;
 
 		var currentIndex = _oscillatorHistory.Count - 1 - SignalBar;
 		if (currentIndex <= 0)
-		return;
+			return;
 
 		var current = _oscillatorHistory[currentIndex];
 		var previous = _oscillatorHistory[currentIndex - 1];
@@ -488,7 +488,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	private decimal? ApplySmoothing(decimal value)
 	{
 		if (_smoother is null)
-		return value;
+			return value;
 
 		var smoothed = _smoother.Process(new DecimalIndicatorValue(_smoother, value));
 		return smoothed.IsFinal ? smoothed.GetValue<decimal>() : null;
@@ -514,14 +514,14 @@ public class FractalWeightOscillatorStrategy : Strategy
 		var deMinValue = _deMinSma.Process(new DecimalIndicatorValue(_deMinSma, deMin));
 
 		if (!deMaxValue.IsFinal || !deMinValue.IsFinal)
-		return null;
+			return null;
 
 		var maxAvg = deMaxValue.GetValue<decimal>();
 		var minAvg = deMinValue.GetValue<decimal>();
 		var denom = maxAvg + minAvg;
 
 		if (denom == 0m)
-		return 0.5m;
+			return 0.5m;
 
 		return maxAvg / denom;
 	}
@@ -559,10 +559,10 @@ public class FractalWeightOscillatorStrategy : Strategy
 		}
 
 		if (_positiveFlow.Count < Period)
-		return null;
+			return null;
 
 		if (_negativeSum == 0m)
-		return 100m;
+			return 100m;
 
 		var ratio = _positiveSum / _negativeSum;
 		return 100m - 100m / (1m + ratio);
@@ -572,7 +572,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 	{
 		var maxSize = SignalBar + Math.Max(Period, SmoothingLength) + 5;
 		if (_oscillatorHistory.Count <= maxSize)
-		return;
+			return;
 
 		var remove = _oscillatorHistory.Count - maxSize;
 		_oscillatorHistory.RemoveRange(0, remove);
@@ -625,16 +625,16 @@ public class FractalWeightOscillatorStrategy : Strategy
 		}
 
 		_stopPrice = StopLossPoints > 0
-		? side == Sides.Buy
-		? _entryPrice - step * StopLossPoints
-		: _entryPrice + step * StopLossPoints
-		: null;
+			? side == Sides.Buy
+				? _entryPrice - step * StopLossPoints
+				: _entryPrice + step * StopLossPoints
+			: null;
 
 		_takePrice = TakeProfitPoints > 0
-		? side == Sides.Buy
-		? _entryPrice + step * TakeProfitPoints
-		: _entryPrice - step * TakeProfitPoints
-		: null;
+			? side == Sides.Buy
+				? _entryPrice + step * TakeProfitPoints
+				: _entryPrice - step * TakeProfitPoints
+			: null;
 	}
 
 	private void ResetRisk()
@@ -654,30 +654,31 @@ public class FractalWeightOscillatorStrategy : Strategy
 			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
 			AppliedPrice.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
 			AppliedPrice.Weighted => (candle.HighPrice + candle.LowPrice + 2m * candle.ClosePrice) / 4m,
-			AppliedPrice.Simpl => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
 			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
 			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice
-			: candle.ClosePrice < candle.OpenPrice ? candle.LowPrice
-			: candle.ClosePrice,
+				: candle.ClosePrice < candle.OpenPrice ? candle.LowPrice
+				: candle.ClosePrice,
 			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
-			? (candle.HighPrice + candle.ClosePrice) / 2m
-			: candle.ClosePrice < candle.OpenPrice
-			? (candle.LowPrice + candle.ClosePrice) / 2m
-			: candle.ClosePrice,
-			AppliedPrice.Demark =>
-			{
-				var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
-				if (candle.ClosePrice < candle.OpenPrice)
-				res = (res + candle.LowPrice) / 2m;
-				else if (candle.ClosePrice > candle.OpenPrice)
-				res = (res + candle.HighPrice) / 2m;
-				else
-				res = (res + candle.ClosePrice) / 2m;
-
-				return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
-			},
+				? (candle.HighPrice + candle.ClosePrice) / 2m
+				: candle.ClosePrice < candle.OpenPrice
+					? (candle.LowPrice + candle.ClosePrice) / 2m
+					: candle.ClosePrice,
+			AppliedPrice.DeMark => CalculateDeMarkPrice(candle),
 			_ => candle.ClosePrice,
 		};
+	}
+
+	private static decimal CalculateDeMarkPrice(ICandleMessage candle)
+	{
+		var res = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+		if (candle.ClosePrice < candle.OpenPrice)
+			res = (res + candle.LowPrice) / 2m;
+		else if (candle.ClosePrice > candle.OpenPrice)
+			res = (res + candle.HighPrice) / 2m;
+		else
+			res = (res + candle.ClosePrice) / 2m;
+		return ((res - candle.LowPrice) + (res - candle.HighPrice)) / 2m;
 	}
 
 	private decimal GetVolume(ICandleMessage candle)
@@ -690,110 +691,13 @@ public class FractalWeightOscillatorStrategy : Strategy
 		return method switch
 		{
 			SmoothingMethod.None => null,
-		SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-		SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-		SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-		SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
-		_ => new SmoothedMovingAverage { Length = length }
+			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
+			_ => new SmoothedMovingAverage { Length = length }
 		};
 	}
-}
-
-/// <summary>
-/// Trend handling mode.
-/// </summary>
-public enum TrendMode
-{
-	/// <summary>
-	/// Follow oscillator direction.
-	/// </summary>
-	Direct,
-	/// <summary>
-	/// Trade against oscillator direction.
-	/// </summary>
-	Counter
-}
-
-/// <summary>
-/// Moving average method used for smoothing.
-/// </summary>
-public enum SmoothingMethod
-{
-	/// <summary>
-	/// No smoothing.
-	/// </summary>
-	None,
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Sma,
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Ema,
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smma,
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	Lwma
-}
-
-/// <summary>
-/// Applied price options.
-/// </summary>
-public enum AppliedPrice
-{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close,
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
-	/// <summary>
-	/// Median price (HL/2).
-	/// </summary>
-	Median,
-	/// <summary>
-	/// Typical price (HLC/3).
-	/// </summary>
-	Typical,
-	/// <summary>
-	/// Weighted close (HLCC/4).
-	/// </summary>
-	Weighted,
-	/// <summary>
-	/// Simple average of open and close.
-	/// </summary>
-	Simpl,
-	/// <summary>
-	/// Quarter price (OHLC/4).
-	/// </summary>
-	Quarter,
-	/// <summary>
-	/// Trend-following price variant.
-	/// </summary>
-	TrendFollow0,
-	/// <summary>
-	/// Alternate trend-following price.
-	/// </summary>
-	TrendFollow1,
-	/// <summary>
-	/// DeMarker price.
-	/// </summary>
-	Demark
 }
 
 /// <summary>

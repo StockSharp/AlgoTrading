@@ -230,7 +230,7 @@ public class FiveEightMaCrossStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
@@ -278,32 +278,32 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		if (candle.State != CandleStates.Finished)
 		{
-		return;
+			return;
 		}
 
 		if (_fastMa is null || _slowMa is null)
 		{
-		return;
+			return;
 		}
 
 		if (!_fastMa.IsFormed || !_slowMa.IsFormed)
 		{
-		return;
+			return;
 		}
 
 		if (!TryGetShiftedPair(_fastValues, fastValue, FastShift, out var fastPrevious, out var fastCurrent))
 		{
-		return;
+			return;
 		}
 
 		if (!TryGetShiftedPair(_slowValues, slowValue, SlowShift, out var slowPrevious, out var slowCurrent))
 		{
-		return;
+			return;
 		}
 
 		if (TryHandleRiskManagement(candle))
 		{
-		return;
+			return;
 		}
 
 		var crossedUp = fastPrevious <= slowPrevious && fastCurrent > slowCurrent;
@@ -311,21 +311,21 @@ public class FiveEightMaCrossStrategy : Strategy
 
 		if (crossedUp && Position <= 0m)
 		{
-		var volume = CalculateEntryVolume(true);
-		if (volume > 0m)
-		{
-		BuyMarket(volume);
-		InitializeLongState(candle.ClosePrice);
-		}
+			var volume = CalculateEntryVolume(true);
+			if (volume > 0m)
+			{
+				BuyMarket(volume);
+				InitializeLongState(candle.ClosePrice);
+			}
 		}
 		else if (crossedDown && Position >= 0m)
 		{
-		var volume = CalculateEntryVolume(false);
-		if (volume > 0m)
-		{
-		SellMarket(volume);
-		InitializeShortState(candle.ClosePrice);
-		}
+			var volume = CalculateEntryVolume(false);
+			if (volume > 0m)
+			{
+				SellMarket(volume);
+				InitializeShortState(candle.ClosePrice);
+			}
 		}
 	}
 
@@ -333,12 +333,12 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		if (Position > 0m)
 		{
-		return CheckLongExit(candle);
+			return CheckLongExit(candle);
 		}
 
 		if (Position < 0m)
 		{
-		return CheckShortExit(candle);
+			return CheckShortExit(candle);
 		}
 
 		return false;
@@ -349,30 +349,30 @@ public class FiveEightMaCrossStrategy : Strategy
 		var exitVolume = Math.Abs(Position);
 		if (exitVolume <= 0m)
 		{
-		return false;
+			return false;
 		}
 
 		if (_longTakeProfit is decimal takeProfit && candle.HighPrice >= takeProfit)
 		{
-		SellMarket(exitVolume);
-		ResetLongState();
-		return true;
+			SellMarket(exitVolume);
+			ResetLongState();
+			return true;
 		}
 
 		if (_longStopLoss is decimal stopLoss && candle.LowPrice <= stopLoss)
 		{
-		SellMarket(exitVolume);
-		ResetLongState();
-		return true;
+			SellMarket(exitVolume);
+			ResetLongState();
+			return true;
 		}
 
 		UpdateLongTrailing(candle);
 
 		if (_longTrailingStop is decimal trailing && candle.LowPrice <= trailing)
 		{
-		SellMarket(exitVolume);
-		ResetLongState();
-		return true;
+			SellMarket(exitVolume);
+			ResetLongState();
+			return true;
 		}
 
 		return false;
@@ -383,30 +383,30 @@ public class FiveEightMaCrossStrategy : Strategy
 		var exitVolume = Math.Abs(Position);
 		if (exitVolume <= 0m)
 		{
-		return false;
+			return false;
 		}
 
 		if (_shortTakeProfit is decimal takeProfit && candle.LowPrice <= takeProfit)
 		{
-		BuyMarket(exitVolume);
-		ResetShortState();
-		return true;
+			BuyMarket(exitVolume);
+			ResetShortState();
+			return true;
 		}
 
 		if (_shortStopLoss is decimal stopLoss && candle.HighPrice >= stopLoss)
 		{
-		BuyMarket(exitVolume);
-		ResetShortState();
-		return true;
+			BuyMarket(exitVolume);
+			ResetShortState();
+			return true;
 		}
 
 		UpdateShortTrailing(candle);
 
 		if (_shortTrailingStop is decimal trailing && candle.HighPrice >= trailing)
 		{
-		BuyMarket(exitVolume);
-		ResetShortState();
-		return true;
+			BuyMarket(exitVolume);
+			ResetShortState();
+			return true;
 		}
 
 		return false;
@@ -417,17 +417,17 @@ public class FiveEightMaCrossStrategy : Strategy
 		var baseVolume = Volume;
 		if (baseVolume <= 0m)
 		{
-		return 0m;
+			return 0m;
 		}
 
 		if (openLong && Position < 0m)
 		{
-		return baseVolume + Math.Abs(Position);
+			return baseVolume + Math.Abs(Position);
 		}
 
 		if (!openLong && Position > 0m)
 		{
-		return baseVolume + Math.Abs(Position);
+			return baseVolume + Math.Abs(Position);
 		}
 
 		return baseVolume;
@@ -473,14 +473,14 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		if (_trailingDistance <= 0m || _longEntryPrice is null)
 		{
-		return;
+			return;
 		}
 
 		var candidate = candle.ClosePrice - _trailingDistance;
 
 		if (_longTrailingStop is null || candidate > _longTrailingStop)
 		{
-		_longTrailingStop = candidate;
+			_longTrailingStop = candidate;
 		}
 	}
 
@@ -488,14 +488,14 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		if (_trailingDistance <= 0m || _shortEntryPrice is null)
 		{
-		return;
+			return;
 		}
 
 		var candidate = candle.ClosePrice + _trailingDistance;
 
 		if (_shortTrailingStop is null || candidate < _shortTrailingStop)
 		{
-		_shortTrailingStop = candidate;
+			_shortTrailingStop = candidate;
 		}
 	}
 
@@ -508,14 +508,14 @@ public class FiveEightMaCrossStrategy : Strategy
 
 		while (buffer.Count > required)
 		{
-		buffer.Dequeue();
+			buffer.Dequeue();
 		}
 
 		if (buffer.Count < required)
 		{
-		previous = 0m;
-		current = 0m;
-		return false;
+			previous = 0m;
+			current = 0m;
+			return false;
 		}
 
 		var items = buffer.ToArray();
@@ -524,9 +524,9 @@ public class FiveEightMaCrossStrategy : Strategy
 
 		if (currentIndex < 0 || previousIndex < 0)
 		{
-		previous = 0m;
-		current = 0m;
-		return false;
+			previous = 0m;
+			current = 0m;
+			return false;
 		}
 
 		current = items[currentIndex];
@@ -544,12 +544,12 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		if (pips <= 0m)
 		{
-		return 0m;
+			return 0m;
 		}
 
 		if (_pipSize <= 0m)
 		{
-		return 0m;
+			return 0m;
 		}
 
 		return pips * _pipSize;
@@ -559,11 +559,11 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		var indicator = method switch
 		{
-		MovingAverageMethod.Simple => new SimpleMovingAverage(),
-		MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
-		MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
-		MovingAverageMethod.LinearWeighted => new WeightedMovingAverage(),
-		_ => new SimpleMovingAverage(),
+			MovingAverageMethod.Simple => new SimpleMovingAverage(),
+			MovingAverageMethod.Exponential => new ExponentialMovingAverage(),
+			MovingAverageMethod.Smoothed => new SmoothedMovingAverage(),
+			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage(),
+			_ => new SimpleMovingAverage(),
 		};
 
 		indicator.Length = Math.Max(1, period);
@@ -576,80 +576,13 @@ public class FiveEightMaCrossStrategy : Strategy
 	{
 		return price switch
 		{
-		AppliedPrice.Open => CandlePrice.Open,
-		AppliedPrice.High => CandlePrice.High,
-		AppliedPrice.Low => CandlePrice.Low,
-		AppliedPrice.Median => CandlePrice.Median,
-		AppliedPrice.Typical => CandlePrice.Typical,
-		AppliedPrice.Weighted => CandlePrice.Weighted,
-		_ => CandlePrice.Close,
+			AppliedPrice.Open => CandlePrice.Open,
+			AppliedPrice.High => CandlePrice.High,
+			AppliedPrice.Low => CandlePrice.Low,
+			AppliedPrice.Median => CandlePrice.Median,
+			AppliedPrice.Typical => CandlePrice.Typical,
+			AppliedPrice.Weighted => CandlePrice.Weighted,
+			_ => CandlePrice.Close,
 		};
 	}
-}
-
-/// <summary>
-/// Supported moving average calculation methods.
-/// </summary>
-public enum MovingAverageMethod
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
-
-	/// <summary>
-	/// Smoothed moving average.
-	/// </summary>
-	Smoothed,
-
-	/// <summary>
-	/// Linear weighted moving average.
-	/// </summary>
-	LinearWeighted,
-}
-
-/// <summary>
-/// Applied price options available for moving averages.
-/// </summary>
-public enum AppliedPrice
-{
-	/// <summary>
-	/// Closing price of the candle.
-	/// </summary>
-	Close,
-
-	/// <summary>
-	/// Opening price of the candle.
-	/// </summary>
-	Open,
-
-	/// <summary>
-	/// Highest price of the candle.
-	/// </summary>
-	High,
-
-	/// <summary>
-	/// Lowest price of the candle.
-	/// </summary>
-	Low,
-
-	/// <summary>
-	/// Average of high and low prices.
-	/// </summary>
-	Median,
-
-	/// <summary>
-	/// Average of high, low and close prices.
-	/// </summary>
-	Typical,
-
-	/// <summary>
-	/// Weighted average of high, low and close prices.
-	/// </summary>
-	Weighted,
 }

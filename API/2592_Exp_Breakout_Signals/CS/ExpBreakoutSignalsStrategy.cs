@@ -25,8 +25,7 @@ public enum BreakoutNotificationMode
 public class ExpBreakoutSignalsStrategy : Strategy
 {
 	// Separators used to split the price level string.
-	private static readonly char[] LevelSeparators = new[] { ';', ',', '
-', '', '	', ' ' };
+	private static readonly char[] LevelSeparators = new[] { ';', ',' };
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<string> _prefix;
