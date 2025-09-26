@@ -17,7 +17,6 @@ public class Up3x1KrohaborDStrategy : Strategy
 		private readonly StrategyParam<int> _mediumPeriod;
 		private readonly StrategyParam<int> _slowPeriod;
 		private readonly StrategyParam<int> _maShift;
-		private readonly StrategyParam<decimal> _volume;
 		private readonly StrategyParam<decimal> _minVolume;
 		private readonly StrategyParam<decimal> _lossReductionFactor;
 		private readonly StrategyParam<decimal> _stopLossPoints;
@@ -57,9 +56,6 @@ public class Up3x1KrohaborDStrategy : Strategy
 						.SetRange(0, 100)
 						.SetDisplay("Indicator Shift", "Number of completed bars used to shift all moving averages", "Indicator");
 
-				_volume = Param(nameof(Volume), 1m)
-						.SetGreaterThanZero()
-						.SetDisplay("Volume", "Base trade volume for new entries", "Trading");
 
 				_minVolume = Param(nameof(MinVolume), 0.1m)
 						.SetGreaterThanZero()
@@ -89,7 +85,6 @@ public class Up3x1KrohaborDStrategy : Strategy
 		public int MediumPeriod { get => _mediumPeriod.Value; set => _mediumPeriod.Value = value; }
 		public int SlowPeriod { get => _slowPeriod.Value; set => _slowPeriod.Value = value; }
 		public int MaShift { get => _maShift.Value; set => _maShift.Value = value; }
-		public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 		public decimal MinVolume { get => _minVolume.Value; set => _minVolume.Value = value; }
 		public decimal LossReductionFactor { get => _lossReductionFactor.Value; set => _lossReductionFactor.Value = value; }
 		public decimal StopLossPoints { get => _stopLossPoints.Value; set => _stopLossPoints.Value = value; }

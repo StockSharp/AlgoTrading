@@ -16,7 +16,6 @@ public class AmstellSlStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _reentryPoints;
 
 	private readonly List<(decimal price, decimal volume)> _buyPositions = new();
@@ -43,14 +42,6 @@ public class AmstellSlStrategy : Strategy
 		set => _stopLossPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume for each newly opened position.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Distance that price must move against the last trade to add another order.
@@ -74,9 +65,6 @@ public class AmstellSlStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop-loss distance in points", "Risk");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Lot size for each order", "Trading");
 
 		_reentryPoints = Param(nameof(ReentryPoints), 10m)
 			.SetNotNegative()

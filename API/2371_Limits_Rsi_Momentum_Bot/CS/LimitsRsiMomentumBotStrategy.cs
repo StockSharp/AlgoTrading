@@ -17,7 +17,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LimitsRsiMomentumBotStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _limitOrderDistance;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
@@ -34,14 +33,6 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 	private Order _buyOrder;
 	private Order _sellOrder;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Distance from candle open to place limit orders in price steps.
@@ -156,9 +147,6 @@ public class LimitsRsiMomentumBotStrategy : Strategy
 	/// </summary>
 	public LimitsRsiMomentumBotStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_limitOrderDistance = Param(nameof(LimitOrderDistance), 5)
 			.SetGreaterThanZero()

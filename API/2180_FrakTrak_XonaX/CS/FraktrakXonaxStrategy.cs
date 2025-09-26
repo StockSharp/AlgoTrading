@@ -15,7 +15,6 @@ public class FraktrakXonaxStrategy : Strategy
 {
 	private const int FractalOffset = 15;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _trailingStop;
 	private readonly StrategyParam<int> _trailingCorrection;
@@ -31,14 +30,6 @@ public class FraktrakXonaxStrategy : Strategy
 	private decimal? _takePrice;
 	private decimal _tickSize;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take profit in points.
@@ -81,9 +72,6 @@ public class FraktrakXonaxStrategy : Strategy
 	/// </summary>
 	public FraktrakXonaxStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_takeProfit = Param(nameof(TakeProfit), 1000)
 			.SetGreaterThanZero()

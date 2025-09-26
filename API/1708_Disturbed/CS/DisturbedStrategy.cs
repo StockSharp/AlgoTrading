@@ -10,7 +10,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DisturbedStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _gainMultiplier;
 
 	private bool _ordersOpened;
@@ -21,14 +20,10 @@ public class DisturbedStrategy : Strategy
 	private decimal _eqV;
 	private decimal _eqVF;
 
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public decimal GainMultiplier { get => _gainMultiplier.Value; set => _gainMultiplier.Value = value; }
 
 	public DisturbedStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Trade volume", "General")
-			.SetCanOptimize(true);
 
 		_gainMultiplier = Param(nameof(GainMultiplier), 2m)
 			.SetDisplay("Gain Multiplier", "Spread multiplier for profit target", "General")

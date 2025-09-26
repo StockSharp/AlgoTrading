@@ -15,7 +15,6 @@ public class VortexOscillatorSystemStrategy : Strategy
 {
 	private readonly StrategyParam<int> _vortexLength;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _buyThreshold;
 	private readonly StrategyParam<bool> _useBuyStopLoss;
 	private readonly StrategyParam<decimal> _buyStopLossLevel;
@@ -49,14 +48,6 @@ public class VortexOscillatorSystemStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Base order volume used for new positions.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Oscillator level that enables long setups.
@@ -161,10 +152,6 @@ public class VortexOscillatorSystemStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for Vortex oscillator calculations.", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order volume for entries.", "Trading")
-			.SetCanOptimize(true);
 
 		_buyThreshold = Param(nameof(BuyThreshold), -0.75m)
 			.SetDisplay("Buy Threshold", "Oscillator value that enables long setups.", "Oscillator")

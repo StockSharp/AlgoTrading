@@ -18,7 +18,6 @@ public class Binario31Strategy : Strategy
 	private readonly StrategyParam<decimal> _pipDifference;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _trailingStop;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private ExponentialMovingAverage _emaHigh;
@@ -54,10 +53,6 @@ public class Binario31Strategy : Strategy
 	/// </summary>
 	public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Type of candles to process.
@@ -93,9 +88,6 @@ public class Binario31Strategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(100m, 1000m, 100m);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

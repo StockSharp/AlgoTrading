@@ -18,7 +18,6 @@ public class TenPipsStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitSell;
 	private readonly StrategyParam<decimal> _stopLossSell;
 	private readonly StrategyParam<decimal> _trailingStopSell;
-	private readonly StrategyParam<decimal> _volume;
 
 	private Order _longStop, _longTake;
 	private decimal _longEntryPrice;
@@ -34,7 +33,6 @@ public class TenPipsStrategy : Strategy
 	public decimal TakeProfitSell { get => _takeProfitSell.Value; set => _takeProfitSell.Value = value; }
 	public decimal StopLossSell { get => _stopLossSell.Value; set => _stopLossSell.Value = value; }
 	public decimal TrailingStopSell { get => _trailingStopSell.Value; set => _trailingStopSell.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
@@ -47,7 +45,6 @@ public class TenPipsStrategy : Strategy
 		_takeProfitSell = Param(nameof(TakeProfitSell), 10m).SetDisplay("Take Profit Sell");
 		_stopLossSell = Param(nameof(StopLossSell), 50m).SetDisplay("Stop Loss Sell");
 		_trailingStopSell = Param(nameof(TrailingStopSell), 50m).SetDisplay("Trailing Stop Sell");
-		_volume = Param(nameof(Volume), 1m).SetDisplay("Volume");
 	}
 
 	/// <inheritdoc />

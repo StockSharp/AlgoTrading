@@ -17,7 +17,6 @@ public class TripleRviStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType1;
 	private readonly StrategyParam<DataType> _candleType2;
 	private readonly StrategyParam<DataType> _candleType3;
-	private readonly StrategyParam<decimal> _volume;
 
 	private RelativeVigorIndex _rvi1;
 	private RelativeVigorIndex _rvi2;
@@ -69,14 +68,6 @@ public class TripleRviStrategy : Strategy
 		set => _candleType3.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="TripleRviStrategy"/>.
@@ -97,9 +88,6 @@ public class TripleRviStrategy : Strategy
 		_candleType3 = Param(nameof(CandleType3), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Timeframe 3", "Trading timeframe", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

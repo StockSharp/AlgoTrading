@@ -29,7 +29,6 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiShift;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _indentFromHighLow;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _rsi;
@@ -104,14 +103,6 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		set => _indentFromHighLow.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Time-based candle type used for RSI and breakout calculations.
@@ -157,9 +148,6 @@ public class RenkoLineBreakVsRsiStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(10m, 200m, 10m);
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Trading volume for orders", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for RSI and breakouts", "General");

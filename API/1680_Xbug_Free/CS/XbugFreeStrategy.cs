@@ -16,7 +16,6 @@ public class XbugFreeStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<int> _stopPoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma = null!;
@@ -41,10 +40,6 @@ public class XbugFreeStrategy : Strategy
 	/// </summary>
 	public int StopPoints { get => _stopPoints.Value; set => _stopPoints.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Candle type to process.
@@ -69,9 +64,6 @@ public class XbugFreeStrategy : Strategy
 			.SetDisplay("Stop Points", "Distance for stop-loss and take-profit in points", "Risk")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

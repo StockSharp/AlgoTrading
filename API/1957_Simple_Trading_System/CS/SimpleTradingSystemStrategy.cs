@@ -26,7 +26,6 @@ public class SimpleTradingSystemStrategy : Strategy
 	private readonly StrategyParam<bool> _sellClose;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _volume;
 
 	private IIndicator _ma;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
@@ -132,14 +131,6 @@ public class SimpleTradingSystemStrategy : Strategy
 		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="SimpleTradingSystemStrategy"/>.
@@ -183,9 +174,6 @@ public class SimpleTradingSystemStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss in price units", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

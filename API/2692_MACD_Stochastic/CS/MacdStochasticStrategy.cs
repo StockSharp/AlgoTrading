@@ -21,7 +21,6 @@ public class MacdStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _stochasticLength;
 	private readonly StrategyParam<int> _stochasticKPeriod;
 	private readonly StrategyParam<int> _stochasticDPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
@@ -121,14 +120,6 @@ public class MacdStochasticStrategy : Strategy
 		set => _stochasticDPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips.
@@ -303,9 +294,6 @@ public class MacdStochasticStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 5, 1);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Order Volume", "Trading volume per position", "Trading")
-			.SetGreaterThanZero();
 
 		_stopLossPips = Param(nameof(StopLossPips), 100)
 			.SetDisplay("Stop Loss (pips)", "Initial stop-loss distance", "Risk")

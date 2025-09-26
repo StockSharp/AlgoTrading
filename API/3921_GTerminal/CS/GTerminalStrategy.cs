@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GTerminalStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _crossMethod;
 	private readonly StrategyParam<int> _startShift;
 	private readonly StrategyParam<bool> _pauseTrading;
@@ -45,14 +44,6 @@ public class GTerminalStrategy : Strategy
 	private decimal _shortStopLevel;
 	private decimal _shortTakeProfitLevel;
 
-	/// <summary>
-	/// Trading volume for new entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Crossing method: 0 requires the close to cross the level, 1 triggers on current price being beyond the level.
@@ -248,10 +239,6 @@ public class GTerminalStrategy : Strategy
 	/// </summary>
 	public GTerminalStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume for new entries", "General")
-			.SetCanOptimize(true)
-			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_crossMethod = Param(nameof(CrossMethod), 1)
 			.SetDisplay("Cross Method", "0 = strict crossing, 1 = instant trigger", "General")

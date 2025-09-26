@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 public class RenkoStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _boxSize;
-	private readonly StrategyParam<decimal> _volume;
 	private DataType _renkoType;
 
 	private decimal _prevOpen;
@@ -30,14 +29,6 @@ public class RenkoStrategy : Strategy
 		set => _boxSize.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="RenkoStrategy"/>.
@@ -50,9 +41,6 @@ public class RenkoStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5m, 20m, 1m);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

@@ -16,7 +16,6 @@ public class HedgerStrategy : Strategy
 	private readonly StrategyParam<decimal> _entryPrice;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _spread;
 	private readonly StrategyParam<bool> _isLong;
 	private readonly StrategyParam<bool> _useRiskHedge;
@@ -47,9 +46,6 @@ public class HedgerStrategy : Strategy
 		.SetDisplay("Take Profit", "Target profit price", "Trading")
 		.SetCanOptimize(true);
 		
-		_volume = Param(nameof(Volume), 1m)
-		.SetDisplay("Volume", "Order volume", "Trading")
-		.SetCanOptimize(true);
 		
 		_spread = Param(nameof(Spread), 0m)
 		.SetDisplay("Spread", "Price offset for hedge", "Trading")
@@ -79,7 +75,6 @@ public class HedgerStrategy : Strategy
 	public decimal EntryPrice { get => _entryPrice.Value; set => _entryPrice.Value = value; }
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public decimal Spread { get => _spread.Value; set => _spread.Value = value; }
 	public bool IsLong { get => _isLong.Value; set => _isLong.Value = value; }
 	public bool UseRiskHedge { get => _useRiskHedge.Value; set => _useRiskHedge.Value = value; }

@@ -19,7 +19,6 @@ public class PendingOrdersByTime2Strategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitTicks;
 	private readonly StrategyParam<decimal> _trailingStopTicks;
 	private readonly StrategyParam<decimal> _trailingStepTicks;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DateTime _currentDate;
@@ -104,14 +103,6 @@ public class PendingOrdersByTime2Strategy : Strategy
 		set => _trailingStepTicks.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume for pending entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used to control the trading session.
@@ -151,9 +142,6 @@ public class PendingOrdersByTime2Strategy : Strategy
 		_trailingStepTicks = Param(nameof(TrailingStepTicks), 5m)
 			.SetDisplay("Trailing Step (ticks)", "Increment for trailing stop updates", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for pending entries", "Orders");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for session control", "General");

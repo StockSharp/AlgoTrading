@@ -15,7 +15,6 @@ public class NewsTradingEaStrategy : Strategy
 	private readonly StrategyParam<DateTime> _startDateTime;
 	private readonly StrategyParam<int> _startStraddle;
 	private readonly StrategyParam<int> _stopStraddle;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _distance;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
@@ -46,10 +45,6 @@ public class NewsTradingEaStrategy : Strategy
 	/// </summary>
 	public int StopStraddle { get => _stopStraddle.Value; set => _stopStraddle.Value = value; }
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Distance from current price in points.
@@ -90,9 +85,6 @@ public class NewsTradingEaStrategy : Strategy
 		_stopStraddle = Param(nameof(StopStraddle), 15)
 			.SetDisplay("Stop Straddle", "Duration in minutes for straddle", "General");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "General");
 
 		_distance = Param(nameof(Distance), 55m)
 			.SetGreaterThanZero()

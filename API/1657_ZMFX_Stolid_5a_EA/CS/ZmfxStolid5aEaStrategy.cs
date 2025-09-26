@@ -11,7 +11,6 @@ using StockSharp.Messages;
 /// </summary>
 public class ZmfxStolid5aEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private RelativeStrengthIndex _rsi;
@@ -31,14 +30,6 @@ public class ZmfxStolid5aEaStrategy : Strategy
 	private bool _hasPrevCandle;
 	private DateTimeOffset _lastSignalTime;
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Base candle type for main calculations.
@@ -54,9 +45,6 @@ public class ZmfxStolid5aEaStrategy : Strategy
 	/// </summary>
 	public ZmfxStolid5aEaStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Base candle timeframe", "Common");

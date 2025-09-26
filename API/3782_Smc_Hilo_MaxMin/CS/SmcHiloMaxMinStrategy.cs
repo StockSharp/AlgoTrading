@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SmcHiloMaxMinStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _setHour;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
@@ -49,14 +48,6 @@ public class SmcHiloMaxMinStrategy : Strategy
 	private decimal _pipSize;
 	private bool _isClosing;
 
-	/// <summary>
-	/// Trading volume for entry orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Terminal hour when the breakout straddle is placed.
@@ -117,9 +108,6 @@ public class SmcHiloMaxMinStrategy : Strategy
 	/// </summary>
 	public SmcHiloMaxMinStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for entries", "General");
 
 		_setHour = Param(nameof(SetHour), 15)
 		.SetDisplay("Trigger Hour", "Terminal hour when pending orders are created", "Timing");

@@ -21,7 +21,6 @@ public class LiquidPulseStrategy : Strategy
 	private readonly StrategyParam<VolumeSensitivityLevel> _volumeSensitivity;
 	private readonly StrategyParam<MacdSpeedOption> _macdSpeed;
 	private readonly StrategyParam<int> _dailyTradeLimit;
-	private readonly StrategyParam<int> _volume;
 	private readonly StrategyParam<int> _adxTrendThreshold;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _candleType;
@@ -38,7 +37,6 @@ public class LiquidPulseStrategy : Strategy
 	public VolumeSensitivityLevel VolumeSensitivity { get => _volumeSensitivity.Value; set => _volumeSensitivity.Value = value; }
 	public MacdSpeedOption MacdSpeed { get => _macdSpeed.Value; set => _macdSpeed.Value = value; }
 	public int DailyTradeLimit { get => _dailyTradeLimit.Value; set => _dailyTradeLimit.Value = value; }
-	public int Volume { get => _volume.Value; set => _volume.Value = value; }
 	public int AdxTrendThreshold { get => _adxTrendThreshold.Value; set => _adxTrendThreshold.Value = value; }
 	public int AtrPeriod { get => _atrPeriod.Value; set => _atrPeriod.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
@@ -51,9 +49,6 @@ public class LiquidPulseStrategy : Strategy
 		.SetDisplay("MACD Speed", "MACD speed", "General");
 		_dailyTradeLimit = Param(nameof(DailyTradeLimit), 20)
 		.SetDisplay("Daily Trade Limit", "Max trades per day", "Risk");
-		_volume = Param(nameof(Volume), 1)
-		.SetDisplay("Volume", "Order volume", "General")
-		.SetGreaterThanZero();
 		_adxTrendThreshold = Param(nameof(AdxTrendThreshold), 41)
 		.SetDisplay("ADX Trend Threshold", "Trend threshold", "Indicators");
 		_atrPeriod = Param(nameof(AtrPeriod), 9)

@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _maxVolume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<int> _tradingHour;
@@ -40,11 +39,6 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 		set => _maxPositions.Value = value;
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public decimal MaxVolume
 	{
@@ -112,9 +106,6 @@ public class TwentyPipsOppositeLastNHourTrendStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum trades per day", "Trading");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order volume", "Trading");
 
 		_maxVolume = Param(nameof(MaxVolume), 5m)
 			.SetGreaterThanZero()

@@ -12,21 +12,12 @@ using StockSharp.Messages;
 /// </summary>
 public class VirtualStopManagerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _trailingStop;
 	private readonly StrategyParam<int> _breakeven;
 	private readonly StrategyParam<DataType> _candleType;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Virtual take profit in points.
@@ -84,9 +75,6 @@ public class VirtualStopManagerStrategy : Strategy
 	/// </summary>
 	public VirtualStopManagerStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 500)
 			.SetGreaterThanZero()

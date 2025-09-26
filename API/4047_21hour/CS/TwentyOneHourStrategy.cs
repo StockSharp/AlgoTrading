@@ -11,7 +11,6 @@ using StockSharp.Messages;
 public class TwentyOneHourStrategy : Strategy
 {
 	// Parameter that controls the order volume in lots.
-	private readonly StrategyParam<decimal> _volume;
 
 	// Parameter defining the hour when pending orders are created.
 	private readonly StrategyParam<int> _startHour;
@@ -51,9 +50,6 @@ public class TwentyOneHourStrategy : Strategy
 
 	public TwentyOneHourStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "Trading");
 
 		_startHour = Param(nameof(StartHour), 10)
 			.SetRange(0, 23)
@@ -74,11 +70,6 @@ public class TwentyOneHourStrategy : Strategy
 			.SetDisplay("Candle Type", "Candles used for time tracking", "General");
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public int StartHour
 	{

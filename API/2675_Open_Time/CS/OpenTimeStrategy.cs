@@ -24,7 +24,6 @@ public class OpenTimeStrategy : Strategy
 	private readonly StrategyParam<int> _durationSeconds;
 	private readonly StrategyParam<bool> _enableSell;
 	private readonly StrategyParam<bool> _enableBuy;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 
@@ -70,9 +69,6 @@ public class OpenTimeStrategy : Strategy
 			.SetDisplay("Enable Sell", "Allow short entries", "Trading");
 		_enableBuy = Param(nameof(EnableBuy), false)
 			.SetDisplay("Enable Buy", "Allow long entries", "Trading");
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 		_stopLossPips = Param(nameof(StopLossPips), 0)
 			.SetDisplay("Stop Loss", "Initial stop loss in pips", "Risk");
 		_takeProfitPips = Param(nameof(TakeProfitPips), 0)
@@ -187,14 +183,6 @@ public class OpenTimeStrategy : Strategy
 		set => _enableBuy.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initial stop loss distance in pips.

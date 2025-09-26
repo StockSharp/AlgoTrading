@@ -36,7 +36,6 @@ public class SixIndicatorsMomentumStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<bool> _requireProfitForTrailing;
 	private readonly StrategyParam<decimal> _lockProfitPips;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -229,14 +228,6 @@ private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 		set => _lockProfitPips.Value = value;
 	}
 
-	/// <summary>
-	/// Base order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Enable martingale lot sizing.
@@ -332,9 +323,6 @@ private readonly SimpleMovingAverage _acAverage = new() { Length = 5 };
 		.SetNotNegative()
 		.SetDisplay("Lock Profit (pips)", "Additional profit before trailing activates", "Risk Management");
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Order Volume", "Base order size", "Trading Rules");
 
 		_useMartingale = Param(nameof(UseMartingale), false)
 		.SetDisplay("Use Martingale", "Multiply volume after losing trades", "Trading Rules");

@@ -20,7 +20,6 @@ public class Color3rdGenXmaStrategy : Strategy
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _startMinute;
 	private readonly StrategyParam<int> _holdMinutes;
-	private readonly StrategyParam<int> _volume;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<bool> _useLongEntries;
@@ -45,8 +44,6 @@ public class Color3rdGenXmaStrategy : Strategy
 	public int StartMinute { get => _startMinute.Value; set => _startMinute.Value = value; }
 	/// <summary>Maximum time to keep an open position.</summary>
 	public int HoldMinutes { get => _holdMinutes.Value; set => _holdMinutes.Value = value; }
-	/// <summary>Order volume.</summary>
-	public int Volume { get => _volume.Value; set => _volume.Value = value; }
 	/// <summary>Stop-loss distance in points.</summary>
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	/// <summary>Take-profit distance in points.</summary>
@@ -81,9 +78,6 @@ public class Color3rdGenXmaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Hold Minutes", "Maximum holding time in minutes", "Risk");
 
-		_volume = Param(nameof(Volume), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");

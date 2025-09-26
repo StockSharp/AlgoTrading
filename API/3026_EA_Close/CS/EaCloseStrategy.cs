@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EaCloseStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _cciPeriod;
@@ -34,14 +33,6 @@ public class EaCloseStrategy : Strategy
 	private bool _hasPreviousValues;
 	private decimal _pipStep;
 
-	/// <summary>
-	/// Trade volume used for market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips.
@@ -147,9 +138,6 @@ public class EaCloseStrategy : Strategy
 	/// </summary>
 	public EaCloseStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 			.SetNotNegative()

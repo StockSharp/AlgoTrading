@@ -21,7 +21,6 @@ private readonly StrategyParam<bool> _enableLong;
 private readonly StrategyParam<bool> _enableShort;
 private readonly StrategyParam<bool> _closeLongOnSignal;
 private readonly StrategyParam<bool> _closeShortOnSignal;
-private readonly StrategyParam<decimal> _volume;
 
 private Ppo _ppo = null!;
 private decimal _prevPpo;
@@ -68,10 +67,6 @@ public bool CloseLongOnSignal { get => _closeLongOnSignal.Value; set => _closeLo
 /// </summary>
 public bool CloseShortOnSignal { get => _closeShortOnSignal.Value; set => _closeShortOnSignal.Value = value; }
 
-/// <summary>
-/// Order volume.
-/// </summary>
-public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 /// <summary>
 /// Initializes <see cref="PpoCloudStrategy"/>.
@@ -108,9 +103,6 @@ _closeLongOnSignal = Param(nameof(CloseLongOnSignal), true)
 _closeShortOnSignal = Param(nameof(CloseShortOnSignal), true)
 .SetDisplay("Close Short On Signal", "Close short on opposite crossover", "Trading");
 
-_volume = Param(nameof(Volume), 1m)
-.SetGreaterThanZero()
-.SetDisplay("Volume", "Order volume", "Trading");
 }
 
 /// <inheritdoc />

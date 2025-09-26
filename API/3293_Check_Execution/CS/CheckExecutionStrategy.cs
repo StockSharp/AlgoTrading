@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CheckExecutionStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _iterations;
 	private readonly StrategyParam<CheckExecutionOrderType> _orderMode;
 	private readonly StrategyParam<decimal> _pendingOffset;
@@ -31,9 +30,6 @@ public class CheckExecutionStrategy : Strategy
 
 	public CheckExecutionStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetDisplay("Volume", "Trading volume used for every request.", "General")
-		.SetCanOptimize(true);
 
 		_iterations = Param(nameof(Iterations), 30)
 		.SetDisplay("Iterations", "Number of modify attempts (1-500).", "General")
@@ -53,11 +49,6 @@ public class CheckExecutionStrategy : Strategy
 		UpdateIndicatorLength();
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public int Iterations
 	{

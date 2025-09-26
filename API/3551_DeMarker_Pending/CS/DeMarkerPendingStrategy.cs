@@ -31,7 +31,6 @@ public class DeMarkerPendingStrategy : Strategy
 		Limit
 	}
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _pendingIndentPoints;
@@ -61,10 +60,6 @@ public class DeMarkerPendingStrategy : Strategy
 	/// </summary>
 	public DeMarkerPendingStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume expressed in lots.", "Trading")
-		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 150m)
 		.SetDisplay("Stop Loss (points)", "Distance from entry price to stop loss in points.", "Risk")
@@ -117,14 +112,6 @@ public class DeMarkerPendingStrategy : Strategy
 		.SetDisplay("End Time", "Trading window end time (HH:mm).", "Schedule");
 	}
 
-	/// <summary>
-	/// Order volume expressed in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Distance from entry price to stop loss expressed in points.

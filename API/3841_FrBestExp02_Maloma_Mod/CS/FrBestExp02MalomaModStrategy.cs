@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FrBestExp02MalomaModStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _trailingStopPoints;
@@ -50,10 +49,6 @@ public class FrBestExp02MalomaModStrategy : Strategy
 	/// </summary>
 	public FrBestExp02MalomaModStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume used for new positions.", "Trading")
-			.SetCanOptimize(true)
-			.SetGreaterThanZero();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetDisplay("Stop Loss (points)", "Protective stop distance expressed in points.", "Risk")
@@ -108,14 +103,6 @@ public class FrBestExp02MalomaModStrategy : Strategy
 			.SetDisplay("Candle Type", "Primary timeframe used by the strategy.", "Data");
 	}
 
-	/// <summary>
-	/// Trading volume per order.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance in points.

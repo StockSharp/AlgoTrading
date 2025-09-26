@@ -16,7 +16,6 @@ using StockSharp.Messages;
 /// </summary>
 public class StarterV6ModEStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
@@ -58,14 +57,6 @@ public class StarterV6ModEStrategy : Strategy
 
 	private decimal _pipSize;
 
-	/// <summary>
-	/// Order volume used for market operations.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips.
@@ -225,11 +216,6 @@ public class StarterV6ModEStrategy : Strategy
 	/// </summary>
 	public StarterV6ModEStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for entries", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.1m, 5m, 0.1m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 		.SetDisplay("Stop Loss", "Protective stop distance in pips", "Risk")

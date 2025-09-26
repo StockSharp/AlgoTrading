@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 public class NCandlesStrategy : Strategy
 {
 	private readonly StrategyParam<int> _consecutiveCandles;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _currentDirection;
@@ -28,14 +27,6 @@ public class NCandlesStrategy : Strategy
 		set => _consecutiveCandles.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// The type of candles used for analysis.
@@ -57,9 +48,6 @@ public class NCandlesStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(2, 6, 1);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles to analyze", "General");

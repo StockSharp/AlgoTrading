@@ -25,7 +25,6 @@ public class ForexFraus4ForM1sStrategy : Strategy
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _stopHour;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _wasOversold;
@@ -133,14 +132,6 @@ public class ForexFraus4ForM1sStrategy : Strategy
 		set => _stopHour.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type to process.
@@ -185,7 +176,6 @@ public class ForexFraus4ForM1sStrategy : Strategy
 
 		_stopHour = Param(nameof(StopHour), 17).SetRange(0, 23).SetDisplay("Stop Hour", "Trading stop hour", "Time");
 
-		_volume = Param(nameof(Volume), 0.01m).SetGreaterThanZero().SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 						  .SetDisplay("Candle Type", "Type of candles", "General");

@@ -16,7 +16,6 @@ public class MTrainerStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPrice;
 	private readonly StrategyParam<decimal> _partialClosePrice;
 	private readonly StrategyParam<decimal> _partialClosePercent;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<TimeSpan> _timeFrame;
 
 	private bool _partialClosed;
@@ -66,14 +65,6 @@ public class MTrainerStrategy : Strategy
 		set => _partialClosePercent.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle time frame used for price monitoring.
@@ -104,9 +95,6 @@ public class MTrainerStrategy : Strategy
 		_partialClosePercent = Param(nameof(PartialClosePercent), 0m)
 			.SetDisplay("Partial Close %", "Percentage of position to close", "Trading");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_timeFrame = Param(nameof(TimeFrame), TimeSpan.FromMinutes(1))
 			.SetDisplay("Time Frame", "Candle time frame", "Data");

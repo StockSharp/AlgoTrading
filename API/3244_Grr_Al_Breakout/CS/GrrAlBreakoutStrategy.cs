@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GrrAlBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _riskFraction;
 	private readonly StrategyParam<int> _deltaPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -24,14 +23,6 @@ public class GrrAlBreakoutStrategy : Strategy
 	private decimal _anchorPrice;
 	private bool _hasTriggered;
 
-	/// <summary>
-	/// Base order volume used when <see cref="RiskFraction"/> is zero.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Fraction of the maximum available volume to risk per trade (0 disables risk-based sizing).
@@ -83,9 +74,6 @@ public class GrrAlBreakoutStrategy : Strategy
 	/// </summary>
 	public GrrAlBreakoutStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order volume", "Trading");
 
 		_riskFraction = Param(nameof(RiskFraction), 0m)
 		.SetGreaterOrEqualToZero()

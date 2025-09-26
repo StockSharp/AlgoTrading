@@ -16,7 +16,6 @@ public class TotalPowerIndicatorXStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _powerPeriod;
 	private readonly StrategyParam<int> _lookbackPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _enableLongEntry;
 	private readonly StrategyParam<bool> _enableShortEntry;
 	private readonly StrategyParam<bool> _enableLongExit;
@@ -63,14 +62,6 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		set => _lookbackPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Enable opening long positions.
@@ -189,9 +180,6 @@ public class TotalPowerIndicatorXStrategy : Strategy
 		.SetDisplay("Lookback", "Samples counted for bull/bear strength", "Indicator")
 		.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 
 		_enableLongEntry = Param(nameof(EnableLongEntry), true)
 		.SetDisplay("Enable Long Entry", "Allow buying when bulls dominate", "Trading");

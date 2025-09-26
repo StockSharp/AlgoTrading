@@ -24,7 +24,6 @@ public class ForexProfitStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _trailingStepPoints;
 	private readonly StrategyParam<decimal> _profitThreshold;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _sarAcceleration;
 	private readonly StrategyParam<decimal> _sarMaxAcceleration;
@@ -130,14 +129,6 @@ public class ForexProfitStrategy : Strategy
 		set => _profitThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -221,9 +212,6 @@ public class ForexProfitStrategy : Strategy
 		.SetDisplay("Profit Threshold", "Profit required for EMA exit", "Risk")
 		.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for calculations", "General");

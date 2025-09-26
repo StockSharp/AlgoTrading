@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MartingailExpertStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<decimal> _stepPips;
 	private readonly StrategyParam<decimal> _profitPips;
@@ -32,14 +31,6 @@ public class MartingailExpertStrategy : Strategy
 	private decimal? _prevK;
 	private decimal? _prevD;
 
-	/// <summary>
-	/// Initial order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Martingale multiplier for averaging orders.
@@ -127,9 +118,6 @@ public class MartingailExpertStrategy : Strategy
 	/// </summary>
 	public MartingailExpertStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.03m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order volume", "Trading");
 
 		_multiplier = Param(nameof(Multiplier), 1.6m)
 			.SetGreaterThanZero()

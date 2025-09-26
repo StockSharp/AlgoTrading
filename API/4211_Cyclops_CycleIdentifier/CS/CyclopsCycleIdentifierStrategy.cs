@@ -18,7 +18,6 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	private const int AverageRangeLength = 250;
 	private const int MinBarsBetweenSignals = 1;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _priceActionFilter;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _majorCycleStrength;
@@ -78,10 +77,6 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	/// </summary>
 	public CyclopsCycleIdentifierStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetCanOptimize(true)
-		.SetDisplay("Volume", "Order volume used for entries", "Trading");
 
 		_priceActionFilter = Param(nameof(PriceActionFilter), 1)
 		.SetRange(1, 100)
@@ -162,14 +157,6 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 		.SetDisplay("Candle Type", "Primary timeframe that feeds the strategy", "General");
 	}
 
-	/// <summary>
-	/// Trading volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Length of the smoothed moving average applied to closing prices.

@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdSimpleReshetovStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _df;
 	private readonly StrategyParam<int> _ds;
 	private readonly StrategyParam<int> _signalPeriod;
@@ -21,7 +20,6 @@ public class MacdSimpleReshetovStrategy : Strategy
 
 	private MACD _macd;
 
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public int Df { get => _df.Value; set => _df.Value = value; }
 	public int Ds { get => _ds.Value; set => _ds.Value = value; }
 	public int SignalPeriod { get => _signalPeriod.Value; set => _signalPeriod.Value = value; }
@@ -29,9 +27,6 @@ public class MacdSimpleReshetovStrategy : Strategy
 
 	public MacdSimpleReshetovStrategy()
 	{
-		_volume = Param(nameof(Volume), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_df = Param(nameof(Df), 1)
 			.SetNotNegative()

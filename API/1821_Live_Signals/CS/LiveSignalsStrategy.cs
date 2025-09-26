@@ -13,7 +13,6 @@ using StockSharp.Messages;
 /// </summary>
 public class LiveSignalsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<string> _filePath;
 
@@ -29,14 +28,6 @@ public class LiveSignalsStrategy : Strategy
 		public bool IsBuy { get; init; }
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used to check time.
@@ -61,9 +52,6 @@ public class LiveSignalsStrategy : Strategy
 	/// </summary>
 	public LiveSignalsStrategy()
 	{
-		_volume = Param(nameof(Volume), 5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Time frame for monitoring", "General");

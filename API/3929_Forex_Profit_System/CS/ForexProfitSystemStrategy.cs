@@ -20,7 +20,6 @@ public class ForexProfitSystemStrategy : Strategy
 	private readonly StrategyParam<int> _slowEmaLength;
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _longTakeProfitPoints;
 	private readonly StrategyParam<int> _shortTakeProfitPoints;
 	private readonly StrategyParam<int> _longStopLossPoints;
@@ -95,14 +94,6 @@ public class ForexProfitSystemStrategy : Strategy
 		set => _sarMax.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used when opening positions.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take-profit distance for long positions expressed in points.
@@ -204,9 +195,6 @@ public class ForexProfitSystemStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SAR Max", "Maximum acceleration factor for Parabolic SAR", "Indicators");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries", "Risk");
 
 		_longTakeProfitPoints = Param(nameof(LongTakeProfitPoints), 50)
 			.SetDisplay("Long TP", "Take-profit distance for long trades (points)", "Risk");

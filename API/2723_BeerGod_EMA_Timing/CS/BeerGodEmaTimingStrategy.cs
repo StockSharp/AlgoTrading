@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BeerGodEmaTimingStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _emaLength;
 	private readonly StrategyParam<int> _triggerMinutes;
 	private readonly StrategyParam<DataType> _candleType;
@@ -27,14 +26,6 @@ public class BeerGodEmaTimingStrategy : Strategy
 	private bool _hasPreviousBar;
 	private bool _signalProcessed;
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// EMA length used as the directional filter.
@@ -68,11 +59,6 @@ public class BeerGodEmaTimingStrategy : Strategy
 	/// </summary>
 	public BeerGodEmaTimingStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "Trading")
-			.SetCanOptimize(true)
-			.SetOptimize(0.5m, 2m, 0.5m);
 
 		_emaLength = Param(nameof(EmaLength), 60)
 			.SetGreaterThanZero()

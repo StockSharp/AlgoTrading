@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TradeChannelStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _channelLength;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _trailingPoints;
@@ -35,14 +34,6 @@ public class TradeChannelStrategy : Strategy
 
 	private bool _channelInitialized;
 
-	/// <summary>
-	/// Position volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Number of candles used to build the price channel.
@@ -85,11 +76,6 @@ public class TradeChannelStrategy : Strategy
 	/// </summary>
 	public TradeChannelStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.1m, 2m, 0.1m);
 
 		_channelLength = Param(nameof(ChannelLength), 20)
 		.SetGreaterThanZero()

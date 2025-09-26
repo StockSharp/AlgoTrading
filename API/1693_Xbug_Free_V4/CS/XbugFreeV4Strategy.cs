@@ -15,7 +15,6 @@ public class XbugFreeV4Strategy : Strategy
 {
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _stopPoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private decimal? _prevSma;
@@ -43,14 +42,6 @@ public class XbugFreeV4Strategy : Strategy
 		set => _stopPoints.Value = value;
 	}
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Candle type.
@@ -74,9 +65,6 @@ public class XbugFreeV4Strategy : Strategy
 		_stopPoints = Param(nameof(StopPoints), 270)
 		.SetDisplay("Stop Points", "Distance for take profit and stop loss", "Risk");
 		
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "General");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");

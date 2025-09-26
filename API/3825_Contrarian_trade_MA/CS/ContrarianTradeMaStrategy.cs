@@ -17,7 +17,6 @@ public class ContrarianTradeMaStrategy : Strategy
 	private readonly StrategyParam<int> _calcPeriod;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _stopLossPoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Highest _highest = null!;
@@ -58,14 +57,6 @@ public class ContrarianTradeMaStrategy : Strategy
 		set => _stopLossPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type for weekly calculations.
@@ -96,10 +87,6 @@ public class ContrarianTradeMaStrategy : Strategy
 		.SetRange(0m, decimal.MaxValue)
 		.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 0.5m)
-		.SetDisplay("Volume", "Trade volume expressed in lots", "General")
-		.SetRange(0.01m, decimal.MaxValue)
-		.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(7).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for the weekly logic", "General");

@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleMacdEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _macdLevel;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<int> _trailingIterationsLimit;
@@ -34,14 +33,6 @@ public class SimpleMacdEaStrategy : Strategy
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// EMA length used in MACD calculations.
@@ -93,9 +84,6 @@ public class SimpleMacdEaStrategy : Strategy
 	/// </summary>
 	public SimpleMacdEaStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_macdLevel = Param(nameof(MacdLevel), 500)
 			.SetGreaterThanZero()

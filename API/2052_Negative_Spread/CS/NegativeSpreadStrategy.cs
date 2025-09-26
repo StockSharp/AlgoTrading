@@ -13,21 +13,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NegativeSpreadStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _stopLossPips;
 
 	private bool _isOpening;
 	private bool _isClosing;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take profit distance in pips.
@@ -52,9 +43,6 @@ public class NegativeSpreadStrategy : Strategy
 	/// </summary>
 	public NegativeSpreadStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 5000)
 			.SetGreaterThanZero()

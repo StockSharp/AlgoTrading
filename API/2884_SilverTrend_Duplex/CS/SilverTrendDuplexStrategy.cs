@@ -28,7 +28,6 @@ public class SilverTrendDuplexStrategy : Strategy
 	private readonly StrategyParam<bool> _enableShortEntries;
 	private readonly StrategyParam<bool> _enableShortExits;
 
-	private readonly StrategyParam<decimal> _volume;
 
 	private SilverTrendIndicator _longIndicator;
 	private SilverTrendIndicator _shortIndicator;
@@ -144,14 +143,6 @@ public class SilverTrendDuplexStrategy : Strategy
 		set => _enableShortExits.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="SilverTrendDuplexStrategy"/>.
@@ -208,9 +199,6 @@ public class SilverTrendDuplexStrategy : Strategy
 		_enableShortExits = Param(nameof(EnableShortExits), true)
 			.SetDisplay("Enable Short Exits", "Allow closing short positions", "Short SilverTrend");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order volume", "Trading");
 	}
 
 	/// <inheritdoc />

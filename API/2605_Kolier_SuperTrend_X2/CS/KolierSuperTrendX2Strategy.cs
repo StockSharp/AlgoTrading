@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class KolierSuperTrendX2Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<DataType> _entryCandleType;
 	private readonly StrategyParam<int> _trendAtrPeriod;
@@ -50,9 +49,6 @@ public class KolierSuperTrendX2Strategy : Strategy
 	/// </summary>
 	public KolierSuperTrendX2Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_trendCandleType = Param(nameof(TrendCandleType), TimeSpan.FromHours(6).TimeFrame())
 			.SetDisplay("Trend Timeframe", "Timeframe for trend SuperTrend", "Data");
@@ -118,14 +114,6 @@ public class KolierSuperTrendX2Strategy : Strategy
 			.SetDisplay("Slippage", "Reserved parameter for slippage handling", "Trading");
 	}
 
-	/// <summary>
-	/// Trading volume used for new entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used for the trend filter.

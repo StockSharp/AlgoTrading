@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Hans123TraderV2Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -43,14 +42,6 @@ public class Hans123TraderV2Strategy : Strategy
 	private decimal _trailingStopDistance;
 	private decimal _trailingStepDistance;
 
-	/// <summary>
-	/// Volume used for breakout and protection orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance in pips. Set to zero to disable.
@@ -138,9 +129,6 @@ public class Hans123TraderV2Strategy : Strategy
 	/// </summary>
 	public Hans123TraderV2Strategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetNotNegative()

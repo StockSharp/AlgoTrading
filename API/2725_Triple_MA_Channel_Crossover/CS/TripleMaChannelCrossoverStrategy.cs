@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TripleMaChannelCrossoverStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
@@ -59,14 +58,6 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	private decimal _shortEntryPrice;
 	private bool _shortBreakEvenActivated;
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in pips.
@@ -244,9 +235,6 @@ public class TripleMaChannelCrossoverStrategy : Strategy
 	/// </summary>
 	public TripleMaChannelCrossoverStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 0)
 			.SetDisplay("Stop Loss (pips)", "Stop loss distance", "Risk");

@@ -23,7 +23,6 @@ public class ColorLemanTrendStrategy : Strategy
 	private readonly StrategyParam<bool> _allowSell;
 	private readonly StrategyParam<bool> _allowBuyClose;
 	private readonly StrategyParam<bool> _allowSellClose;
-	private readonly StrategyParam<decimal> _volume;
 
 	private ExponentialMovingAverage _bullsEma;
 	private ExponentialMovingAverage _bearsEma;
@@ -42,7 +41,6 @@ public class ColorLemanTrendStrategy : Strategy
 	public bool AllowSell { get => _allowSell.Value; set => _allowSell.Value = value; }
 	public bool AllowBuyClose { get => _allowBuyClose.Value; set => _allowBuyClose.Value = value; }
 	public bool AllowSellClose { get => _allowSellClose.Value; set => _allowSellClose.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="ColorLemanTrendStrategy"/>.
@@ -92,8 +90,6 @@ public class ColorLemanTrendStrategy : Strategy
 		_allowSellClose = Param(nameof(AllowSellClose), true)
 			.SetDisplay("Allow Sell Close", "Allow closing shorts", "Trading");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

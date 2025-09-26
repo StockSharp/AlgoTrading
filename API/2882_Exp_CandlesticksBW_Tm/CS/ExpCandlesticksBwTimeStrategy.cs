@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpCandlesticksBwTimeStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _signalBar;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -49,9 +48,6 @@ public class ExpCandlesticksBwTimeStrategy : Strategy
 	/// </summary>
 	public ExpCandlesticksBwTimeStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume for entries", "Risk")
-			.SetGreaterThanZero();
 
 		_signalBar = Param(nameof(SignalBar), 1)
 			.SetDisplay("Signal Bar", "Offset of the analysed candle", "Signals")
@@ -98,14 +94,6 @@ public class ExpCandlesticksBwTimeStrategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe for CandlesticksBW", "General");
 	}
 
-	/// <summary>
-	/// Trade volume for new orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Number of bars to offset when evaluating signals.

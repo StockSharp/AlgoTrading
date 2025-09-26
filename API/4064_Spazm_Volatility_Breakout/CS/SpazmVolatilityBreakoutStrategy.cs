@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SpazmVolatilityBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _volatilityMultiplier;
 	private readonly StrategyParam<int> _volatilityPeriod;
 	private readonly StrategyParam<bool> _useWeightedVolatility;
@@ -38,14 +37,6 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	private (DateTimeOffset time, decimal price)? _lastRecordedHigh;
 	private (DateTimeOffset time, decimal price)? _lastRecordedLow;
 
-	/// <summary>
-	/// Trade volume used for every market entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Multiplier applied to the averaged volatility to size the breakout threshold.
@@ -115,9 +106,6 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	/// </summary>
 	public SpazmVolatilityBreakoutStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume for market entries", "Trading")
-			.SetGreaterThanZero();
 
 		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 5m)
 			.SetDisplay("Volatility Multiplier", "Multiplier applied to the averaged range", "Trading")

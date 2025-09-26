@@ -14,7 +14,6 @@ public class FitFul13Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _confirmationCandleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<decimal> _indentPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -44,9 +43,6 @@ public class FitFul13Strategy : Strategy
 		_confirmationCandleType = Param(nameof(ConfirmationCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Confirmation timeframe", "Lower timeframe confirming pivot reactions.", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Order volume", "Net volume used for each market order.", "Trading")
-			.SetGreaterThanZero();
 
 		_maxPositions = Param(nameof(MaxPositions), 3)
 			.SetDisplay("Max positions", "Maximum net exposure measured in Volume multiples.", "Trading")
@@ -83,14 +79,6 @@ public class FitFul13Strategy : Strategy
 		set => _confirmationCandleType.Value = value;
 	}
 
-	/// <summary>
-	/// Net market order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Maximum net exposure expressed in <see cref="Volume"/> multiples.

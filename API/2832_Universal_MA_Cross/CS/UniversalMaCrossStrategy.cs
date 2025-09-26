@@ -34,7 +34,6 @@ public class UniversalMaCrossStrategy : Strategy
 	private readonly StrategyParam<bool> _useHourTrade;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private IIndicator _fastMa;
@@ -223,14 +222,6 @@ public class UniversalMaCrossStrategy : Strategy
 		set => _endHour.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type processed by the strategy.
@@ -309,9 +300,6 @@ public class UniversalMaCrossStrategy : Strategy
 		_endHour = Param(nameof(EndHour), 23)
 			.SetDisplay("End Hour", "Trading window end hour", "Session");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle subscription", "General");

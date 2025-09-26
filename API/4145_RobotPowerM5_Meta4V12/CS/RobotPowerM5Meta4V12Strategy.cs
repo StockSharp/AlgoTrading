@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 public class RobotPowerM5Meta4V12Strategy : Strategy
 {
 	private readonly StrategyParam<int> _bullBearPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
@@ -46,10 +45,6 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 			.SetDisplay("Bulls/Bears Period", "Number of bars used by the Bulls Power and Bears Power indicators.", "Indicators")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Lot size requested for every entry.", "Trading")
-			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 45m)
 			.SetNotNegative()
@@ -81,14 +76,6 @@ public class RobotPowerM5Meta4V12Strategy : Strategy
 		set => _bullBearPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Lot size used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initial stop-loss distance in MetaTrader points.

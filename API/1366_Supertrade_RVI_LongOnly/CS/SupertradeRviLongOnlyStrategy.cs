@@ -19,7 +19,6 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 	private readonly StrategyParam<decimal> _rviThreshold;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<decimal> _rewardRatio;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private StandardDeviation _stdDev;
@@ -76,14 +75,6 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 		set => _rewardRatio.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type to process.
@@ -124,9 +115,6 @@ public class SupertradeRviLongOnlyStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Reward Ratio", "Take profit = risk * ratio", "Protection");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candles", "General");

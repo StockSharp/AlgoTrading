@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SpasmStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _volatilityMultiplier;
 	private readonly StrategyParam<int> _volatilityPeriod;
 	private readonly StrategyParam<bool> _useWeightedVolatility;
@@ -35,14 +34,6 @@ public class SpasmStrategy : Strategy
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Multiplier applied to the average volatility to build breakout bands.
@@ -103,9 +94,6 @@ public class SpasmStrategy : Strategy
 	/// </summary>
 	public SpasmStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume for entries", "Trading")
-			.SetGreaterThanZero();
 
 		_volatilityMultiplier = Param(nameof(VolatilityMultiplier), 5m)
 			.SetDisplay("Volatility Multiplier", "Multiplier applied to average volatility", "Trading")

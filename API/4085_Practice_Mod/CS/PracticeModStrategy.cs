@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PracticeModStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -36,14 +35,6 @@ public class PracticeModStrategy : Strategy
 	private decimal? _shortStop;
 	private decimal? _shortTake;
 
-	/// <summary>
-	/// Order volume for market operations.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initial take-profit distance expressed in points.
@@ -122,9 +113,6 @@ public class PracticeModStrategy : Strategy
 	/// </summary>
 	public PracticeModStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Market order volume", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetGreaterThanZero()

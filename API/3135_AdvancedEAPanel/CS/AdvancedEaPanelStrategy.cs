@@ -30,7 +30,6 @@ public class AdvancedEaPanelStrategy : Strategy
 
 	private readonly TimeFrameState[] _timeFrameStates;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<int> _volatilityPeriod;
@@ -84,14 +83,6 @@ public class AdvancedEaPanelStrategy : Strategy
 		Sell
 	}
 
-	/// <summary>
-	/// Trading volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance expressed in price steps (pips).
@@ -176,11 +167,6 @@ public class AdvancedEaPanelStrategy : Strategy
 			_timeFrameStates[i] = new TimeFrameState();
 		}
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Trading volume in lots", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetGreaterThanOrEqual(0m)

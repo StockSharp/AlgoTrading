@@ -30,7 +30,6 @@ public class FatPanelVisualBuilderStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<string> _configuration;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
@@ -58,14 +57,6 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		set => _configuration.Value = value;
 	}
 
-	/// <summary>
-	/// Default order volume used when a rule does not override it.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance expressed in price steps.
@@ -96,9 +87,6 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		_configuration = Param(nameof(Configuration), DefaultConfiguration)
 			.SetDisplay("Configuration", "JSON definition of rules", "Logic");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Default order volume", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetDisplay("Stop Loss (pts)", "Stop loss distance in points", "Protection");

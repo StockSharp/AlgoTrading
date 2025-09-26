@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SeaDragon2Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _step;
 	private readonly StrategyParam<decimal> _maxStop;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -26,7 +25,6 @@ public class SeaDragon2Strategy : Strategy
 	
 	private static readonly int[] _sequence = { 1, 1, 2, 3, 6, 9, 14, 22, 33, 48, 82, 111, 122, 164, 185 };
 	
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public decimal Step { get => _step.Value; set => _step.Value = value; }
 	public decimal MaxStop { get => _maxStop.Value; set => _maxStop.Value = value; }
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
@@ -36,8 +34,6 @@ public class SeaDragon2Strategy : Strategy
 	
 	public SeaDragon2Strategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetDisplay("Volume", "Base order size", "Trading");
 		
 		_step = Param(nameof(Step), 10m)
 		.SetDisplay("Step", "Price step to add orders", "Trading");

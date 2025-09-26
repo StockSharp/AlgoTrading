@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DisasterStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -46,9 +45,6 @@ public class DisasterStrategy : Strategy
 	/// </summary>
 	public DisasterStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for stop entries", "Trading");
 
 		_maPeriod = Param(nameof(MaPeriod), 590)
 		.SetRange(1, 5000)
@@ -70,14 +66,6 @@ public class DisasterStrategy : Strategy
 		.SetDisplay("Candle Type", "Primary candle series used for the SMA", "Data");
 	}
 
-	/// <summary>
-	/// Trading volume used for new entry orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Moving average length applied to minute candles.

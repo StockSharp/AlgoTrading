@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class HybridEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _rviLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<decimal> _differenceThreshold;
@@ -25,14 +24,6 @@ public class HybridEaStrategy : Strategy
 	private SimpleMovingAverage _signal;
 	private decimal? _prevDiff;
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Length for RVI calculation.
@@ -93,10 +84,6 @@ public class HybridEaStrategy : Strategy
 	/// </summary>
 	public HybridEaStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trade volume", "General")
-			.SetCanOptimize(true);
 
 		_rviLength = Param(nameof(RviLength), 10)
 			.SetGreaterThanZero()

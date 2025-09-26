@@ -41,7 +41,6 @@ public class FirebirdChannelAveragingStrategy : Strategy
 		Weighted
 	}
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _maPeriod;
@@ -60,14 +59,6 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	private bool? _isLong;
 	private DateTimeOffset? _lastEntryTime;
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance expressed in pips.
@@ -173,9 +164,6 @@ public class FirebirdChannelAveragingStrategy : Strategy
 	/// </summary>
 	public FirebirdChannelAveragingStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50)
 			.SetGreaterThanZero()

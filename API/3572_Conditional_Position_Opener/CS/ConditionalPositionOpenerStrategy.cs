@@ -14,7 +14,6 @@ using StockSharp.Messages;
 /// </summary>
 public class ConditionalPositionOpenerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<bool> _enableBuy;
@@ -23,14 +22,6 @@ public class ConditionalPositionOpenerStrategy : Strategy
 
 	private decimal _priceStep;
 
-	/// <summary>
-	/// Trading volume for each entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips (price steps).
@@ -82,9 +73,6 @@ public class ConditionalPositionOpenerStrategy : Strategy
 	/// </summary>
 	public ConditionalPositionOpenerStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 100m)
 			.SetGreaterThanOrEqualZero()

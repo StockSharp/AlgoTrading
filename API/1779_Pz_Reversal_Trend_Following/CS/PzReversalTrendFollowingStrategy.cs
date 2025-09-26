@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 public class PzReversalTrendFollowingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _period;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _prevHighest;
@@ -31,14 +30,6 @@ public class PzReversalTrendFollowingStrategy : Strategy
 		set => _period.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume for each entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used for analysis.
@@ -59,10 +50,6 @@ public class PzReversalTrendFollowingStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(50, 150, 10);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Trade volume", "General")
-			.SetCanOptimize(true)
-			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

@@ -22,7 +22,6 @@ public class Q2maCrossStrategy : Strategy
 	private readonly StrategyParam<bool> _sellPosClose;
 	private readonly StrategyParam<bool> _invert;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 
 	private SimpleMovingAverage _closeMa = null!;
 	private SimpleMovingAverage _openMa = null!;
@@ -78,10 +77,6 @@ public class Q2maCrossStrategy : Strategy
 	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Initializes <see cref="Q2maCrossStrategy"/>.
@@ -121,9 +116,6 @@ public class Q2maCrossStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Indicator timeframe", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

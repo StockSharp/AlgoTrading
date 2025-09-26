@@ -14,7 +14,6 @@ using StockSharp.Messages;
 /// </summary>
 public class PeterPanelStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _entryLevel;
 	private readonly StrategyParam<decimal> _takeProfitLevel;
 	private readonly StrategyParam<decimal> _stopLossLevel;
@@ -49,9 +48,6 @@ public class PeterPanelStrategy : Strategy
 	/// </summary>
 	public PeterPanelStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.10m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trade volume used for every order", "Trading");
 
 		_entryLevel = Param(nameof(EntryLevel), 0m)
 			.SetDisplay("Entry price", "Price level used for pending orders (aqua line)", "Levels");
@@ -90,14 +86,6 @@ public class PeterPanelStrategy : Strategy
 			.SetDisplay("Reset lines", "Recalculate entry, stop-loss and take-profit levels around the mid price", "Actions");
 	}
 
-	/// <summary>
-	/// Gets or sets the trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Gets or sets the price used for pending orders.

@@ -22,7 +22,6 @@ public class TrailingStopAndTakeStrategy : Strategy
 	private const decimal Epsilon = 0.0000001m;
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<TrailingPositionType> _positionType;
 	private readonly StrategyParam<decimal> _initialStopLossPoints;
 	private readonly StrategyParam<decimal> _initialTakeProfitPoints;
@@ -49,10 +48,6 @@ public class TrailingStopAndTakeStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candle aggregation used for trailing decisions", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Default trade volume", "Trading")
-			.SetCanOptimize(true)
-			.SetGreaterThanZero();
 
 		_positionType = Param(nameof(PositionType), TrailingPositionType.All)
 			.SetDisplay("Position Filter", "Positions managed by the trailing engine", "Trading");
@@ -102,14 +97,6 @@ public class TrailingStopAndTakeStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Default order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Position filter managed by the trailing logic.

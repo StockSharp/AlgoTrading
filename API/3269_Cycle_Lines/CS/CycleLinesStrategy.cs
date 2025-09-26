@@ -17,7 +17,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CycleLinesStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
@@ -43,9 +42,6 @@ public class CycleLinesStrategy : Strategy
 	/// </summary>
 	public CycleLinesStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 			.SetGreaterThanZero()
@@ -86,14 +82,6 @@ public class CycleLinesStrategy : Strategy
 			.SetDisplay("Candle type", "Working candle series", "General");
 	}
 
-	/// <summary>
-	/// Trade volume per signal.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Fast EMA period used inside MACD.

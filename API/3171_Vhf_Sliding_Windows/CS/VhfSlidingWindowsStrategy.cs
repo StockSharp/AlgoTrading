@@ -19,7 +19,6 @@ public class VhfSlidingWindowsStrategy : Strategy
 	private readonly StrategyParam<int> _mainWindow;
 	private readonly StrategyParam<int> _workingWindow;
 	private readonly StrategyParam<int> _vhfPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _reverseSignals;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -55,14 +54,6 @@ public class VhfSlidingWindowsStrategy : Strategy
 		set => _vhfPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume expressed in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Inverts trading direction when enabled.
@@ -105,11 +96,6 @@ public class VhfSlidingWindowsStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(5, 40, 1);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for entries", "Trading")
-			.SetCanOptimize(true)
-			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_reverseSignals = Param(nameof(ReverseSignals), true)
 			.SetDisplay("Reverse", "Invert buy and sell signals", "Trading");

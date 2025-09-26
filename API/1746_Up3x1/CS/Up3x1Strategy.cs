@@ -11,7 +11,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Up3x1Strategy : Strategy
 {
-private readonly StrategyParam<decimal> _volume;
 private readonly StrategyParam<decimal> _takeProfit;
 private readonly StrategyParam<decimal> _stopLoss;
 private readonly StrategyParam<decimal> _trailingStop;
@@ -36,8 +35,7 @@ private decimal _currentStop;
 
 public Up3x1Strategy()
 {
-_volume = Param<decimal>(nameof(Volume), 0.1m)
-.SetDisplay("Volume");
+
 _takeProfit = Param<decimal>(nameof(TakeProfit), 150m)
 .SetDisplay("Take Profit")
 .SetCanOptimize(true);
@@ -64,7 +62,6 @@ _middleMa = new SimpleMovingAverage { Length = MiddlePeriod };
 _slowMa = new SimpleMovingAverage { Length = SlowPeriod };
 }
 
-public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 public decimal TrailingStop { get => _trailingStop.Value; set => _trailingStop.Value = value; }

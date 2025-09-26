@@ -16,7 +16,6 @@ public class BreakthroughBbStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _bandsPeriod;
 	private readonly StrategyParam<decimal> _deviation;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma;
@@ -59,14 +58,6 @@ public class BreakthroughBbStrategy : Strategy
 		set => _deviation.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type processed by the strategy.
@@ -97,10 +88,6 @@ public class BreakthroughBbStrategy : Strategy
 			.SetDisplay("Deviation", "Bollinger Bands width in deviations", "Parameters")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for each trade", "Trading")
-			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candle series processed by the strategy", "General");

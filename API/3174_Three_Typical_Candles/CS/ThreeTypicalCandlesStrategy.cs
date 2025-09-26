@@ -13,7 +13,6 @@ using StockSharp.Messages;
 /// </summary>
 public class ThreeTypicalCandlesStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _useTimeControl;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
@@ -22,11 +21,6 @@ public class ThreeTypicalCandlesStrategy : Strategy
 	private decimal? _previousTypical;
 	private decimal? _previousPreviousTypical;
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	public bool UseTimeControl
 	{
 		get => _useTimeControl.Value;
@@ -50,10 +44,6 @@ public class ThreeTypicalCandlesStrategy : Strategy
 
 	public ThreeTypicalCandlesStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-				.SetDisplay("Volume", "Default order volume", "Trading")
-				.SetGreaterThanZero()
-				.SetCanOptimize(true);
 
 		_useTimeControl = Param(nameof(UseTimeControl), true)
 				.SetDisplay("Use Time Control", "Enable trading hour filter", "Schedule");

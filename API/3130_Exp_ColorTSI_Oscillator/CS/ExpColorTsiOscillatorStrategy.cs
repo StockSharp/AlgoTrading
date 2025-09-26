@@ -18,7 +18,6 @@ using StockSharp.Messages;
 public class ExpColorTsiOscillatorStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<ColorTsiSmoothingMethod> _firstMethod;
 	private readonly StrategyParam<int> _firstLength;
 	private readonly StrategyParam<int> _firstPhase;
@@ -56,9 +55,6 @@ public class ExpColorTsiOscillatorStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for signal calculations", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetDisplay("Volume", "Order volume used for entries", "Trading")
-		.SetGreaterThanZero();
 
 		_firstMethod = Param(nameof(FirstMethod), ColorTsiSmoothingMethod.Sma)
 		.SetDisplay("Momentum Smoother", "Smoothing method applied to price momentum", "Indicator");
@@ -127,14 +123,6 @@ public DataType CandleType
 	set => _candleType.Value = value;
 }
 
-/// <summary>
-/// Order volume used when opening new positions.
-/// </summary>
-public decimal Volume
-{
-get => _volume.Value;
-set => _volume.Value = value;
-}
 
 /// <summary>
 /// Smoothing algorithm applied to raw momentum values.

@@ -18,7 +18,6 @@ public class MaSarAdxStrategy : Strategy
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<decimal> _sarMax;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	/// <summary>
@@ -57,14 +56,6 @@ public class MaSarAdxStrategy : Strategy
 		set => _sarMax.Value = value;
 	}
 
-	/// <summary>
-	/// Base order volume used for market entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Type of candles processed by the strategy.
@@ -102,11 +93,6 @@ public class MaSarAdxStrategy : Strategy
 		.SetDisplay("SAR Maximum", "Maximum acceleration for Parabolic SAR", "Indicators")
 		.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order size for new positions", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.5m, 5m, 0.5m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to request", "General");

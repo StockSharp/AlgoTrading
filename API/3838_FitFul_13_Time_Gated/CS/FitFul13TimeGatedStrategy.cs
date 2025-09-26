@@ -14,7 +14,6 @@ public class FitFul13TimeGatedStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _primaryCandleType;
 	private readonly StrategyParam<DataType> _confirmationCandleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _maxNetPositions;
 	private readonly StrategyParam<decimal> _offsetPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
@@ -54,9 +53,6 @@ public class FitFul13TimeGatedStrategy : Strategy
 		_confirmationCandleType = Param(nameof(ConfirmationCandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Confirmation timeframe", "Lower timeframe confirming level reactions.", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Net volume for market entries.", "Trading")
-			.SetGreaterThanZero();
 
 		_maxNetPositions = Param(nameof(MaxNetPositions), 2)
 			.SetDisplay("Max net positions", "Maximum number of net position multiples allowed.", "Trading")
@@ -119,14 +115,6 @@ public class FitFul13TimeGatedStrategy : Strategy
 		set => _confirmationCandleType.Value = value;
 	}
 
-	/// <summary>
-	/// Net volume used for each market order.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Maximum amount of net exposure measured in <see cref="Volume"/> multiples.

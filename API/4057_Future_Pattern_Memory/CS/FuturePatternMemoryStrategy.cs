@@ -32,7 +32,6 @@ public class FuturePatternMemoryStrategy : Strategy
 	private readonly StrategyParam<bool> _enableTrailingStop;
 	private readonly StrategyParam<bool> _manualMode;
 	private readonly StrategyParam<bool> _allowAddOn;
-	private readonly StrategyParam<decimal> _volume;
 
 	private SmoothedMovingAverage _fastSmma = null!;
 	private SmoothedMovingAverage _slowSmma = null!;
@@ -121,9 +120,6 @@ public class FuturePatternMemoryStrategy : Strategy
 		_allowAddOn = Param(nameof(AllowAddOn), true)
 		.SetDisplay("Allow Add-on", "Permit scaling in on repeated signals", "Execution");
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume in lots", "Execution");
 	}
 
 	/// <summary>
@@ -279,14 +275,6 @@ public class FuturePatternMemoryStrategy : Strategy
 		set => _allowAddOn.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class IfsFractalsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _iterationsPerCandle;
 	private readonly StrategyParam<decimal> _scale;
@@ -83,9 +82,6 @@ public class IfsFractalsStrategy : Strategy
 	/// </summary>
 	public IfsFractalsStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume used for entries", "Trading")
-			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles driving the fractal iteration", "General");
@@ -124,14 +120,6 @@ public class IfsFractalsStrategy : Strategy
 		_random = new Random();
 	}
 
-	/// <summary>
-	/// Trading volume used when opening new positions.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type that triggers fractal iterations.

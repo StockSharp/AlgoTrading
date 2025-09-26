@@ -18,7 +18,6 @@ public class VRSetka3Strategy : Strategy
 	private readonly StrategyParam<decimal> _stepDistance;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<decimal> _martingaleMultiplier;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private Order _buyOrder;
@@ -84,14 +83,6 @@ public class VRSetka3Strategy : Strategy
 		set => _martingaleMultiplier.Value = value;
 	}
 	
-	/// <summary>
-	/// Base order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Candle type.
@@ -127,9 +118,6 @@ public class VRSetka3Strategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Martingale Multiplier", "Volume multiplier for martingale", "Parameters");
 		
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order volume", "Trading");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles", "General");

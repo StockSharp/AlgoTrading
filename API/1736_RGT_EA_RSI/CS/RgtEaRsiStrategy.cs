@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RgtEaRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _rsiHigh;
 	private readonly StrategyParam<int> _rsiLow;
@@ -25,7 +24,6 @@ public class RgtEaRsiStrategy : Strategy
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public int RsiPeriod { get => _rsiPeriod.Value; set => _rsiPeriod.Value = value; }
 	public int RsiHigh { get => _rsiHigh.Value; set => _rsiHigh.Value = value; }
 	public int RsiLow { get => _rsiLow.Value; set => _rsiLow.Value = value; }
@@ -36,9 +34,6 @@ public class RgtEaRsiStrategy : Strategy
 
 	public RgtEaRsiStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 8)
 			.SetDisplay("RSI Period", "RSI calculation period", "Indicator")

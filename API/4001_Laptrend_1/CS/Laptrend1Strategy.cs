@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Laptrend1Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _fisherLength;
 	private readonly StrategyParam<int> _channelLength;
@@ -47,14 +46,6 @@ public class Laptrend1Strategy : Strategy
 	private decimal? _shortTrailingStop;
 	private int _lastPositionSign;
 
-	/// <summary>
-	/// Trading volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// ADX calculation period.
@@ -151,9 +142,6 @@ public class Laptrend1Strategy : Strategy
 	/// </summary>
 	public Laptrend1Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume in lots", "Trading");
 
 		_adxPeriod = Param(nameof(AdxPeriod), 14)
 		.SetGreaterThanZero()

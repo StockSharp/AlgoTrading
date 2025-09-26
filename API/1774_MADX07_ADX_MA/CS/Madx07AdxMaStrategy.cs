@@ -23,7 +23,6 @@ public class Madx07AdxMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxMinusLevel;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _closeProfit;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevAdx;
@@ -90,10 +89,6 @@ public class Madx07AdxMaStrategy : Strategy
 	/// </summary>
 	public decimal CloseProfit { get => _closeProfit.Value; set => _closeProfit.Value = value; }
 
-	/// <summary>
-	/// Trade volume in lots.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Candle type to process.
@@ -153,9 +148,6 @@ public class Madx07AdxMaStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Close Profit", "Early exit profit in points", "Risk");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trade volume in lots", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

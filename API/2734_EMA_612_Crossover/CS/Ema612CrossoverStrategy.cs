@@ -16,7 +16,6 @@ public class Ema612CrossoverStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitOffset;
 	private readonly StrategyParam<decimal> _trailingStopOffset;
 	private readonly StrategyParam<decimal> _trailingStepOffset;
@@ -58,14 +57,6 @@ public class Ema612CrossoverStrategy : Strategy
 		set => _slowPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take profit distance in absolute price units.
@@ -107,9 +98,6 @@ public class Ema612CrossoverStrategy : Strategy
 		_slowPeriod = Param(nameof(SlowPeriod), 54)
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow SMA length", "Moving Averages");
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 		_takeProfitOffset = Param(nameof(TakeProfitOffset), 0.001m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit", "Target distance in price units", "Risk");

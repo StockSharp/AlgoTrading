@@ -34,7 +34,6 @@ public class XoSignalReopenStrategy : Strategy
 
 	private const int AtrPeriod = 13;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossTicks;
 	private readonly StrategyParam<int> _takeProfitTicks;
 	private readonly StrategyParam<int> _priceStepTicks;
@@ -69,14 +68,6 @@ public class XoSignalReopenStrategy : Strategy
 	private decimal? _shortStopPrice;
 	private decimal? _shortTakePrice;
 
-	/// <summary>
-	/// Trade volume for each entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in ticks (0 disables it).
@@ -191,9 +182,6 @@ public class XoSignalReopenStrategy : Strategy
 	/// </summary>
 	public XoSignalReopenStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "Trading")
-			.SetGreaterThanZero();
 
 		_stopLossTicks = Param(nameof(StopLossTicks), 1000)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk")

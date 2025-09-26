@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class FtTrendFollowerStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _startGmmaPeriod;
 	private readonly StrategyParam<int> _endGmmaPeriod;
 	private readonly StrategyParam<int> _bandsPerGroup;
@@ -67,14 +66,6 @@ public class FtTrendFollowerStrategy : Strategy
 	private decimal _longEntryPrice;
 	private decimal _shortEntryPrice;
 
-	/// <summary>
-	/// Trading volume for each new position.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// First period in the Guppy MMA fan.
@@ -252,9 +243,6 @@ public class FtTrendFollowerStrategy : Strategy
 	/// </summary>
 	public FtTrendFollowerStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for entries", "Trading");
 
 		_startGmmaPeriod = Param(nameof(StartGmmaPeriod), 50)
 			.SetGreaterThanZero()

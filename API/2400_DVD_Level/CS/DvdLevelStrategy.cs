@@ -12,30 +12,18 @@ using StockSharp.Messages;
 /// </summary>
 public class DvdLevelStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 
 	private readonly ExponentialMovingAverage _emaFast = new() { Length = 2 };
 	private readonly ExponentialMovingAverage _emaSlow = new() { Length = 24 };
 	private decimal _prevRavi;
 	private bool _hasPrev;
 
-	/// <summary>
-	/// Order volume for operations.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="DvdLevelStrategy"/>.
 	/// </summary>
 	public DvdLevelStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

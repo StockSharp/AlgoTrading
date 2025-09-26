@@ -17,7 +17,6 @@ public class MacdTrendModeStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _signalLength;
 	private readonly StrategyParam<TrendMode> _trendMode;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevHist;
@@ -51,10 +50,6 @@ public class MacdTrendModeStrategy : Strategy
 	/// </summary>
 	public TrendMode TrendMode { get => _trendMode.Value; set => _trendMode.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -81,9 +76,6 @@ public class MacdTrendModeStrategy : Strategy
 	_trendMode = Param(nameof(TrendMode), TrendMode.Cloud)
 	.SetDisplay("Trend Mode", "Trend detection mode", "General");
 
-	_volume = Param(nameof(Volume), 1m)
-	.SetGreaterThanZero()
-	.SetDisplay("Volume", "Order volume", "Trading");
 
 	_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 	.SetDisplay("Candle Type", "Type of candles", "General");

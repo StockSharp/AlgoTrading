@@ -22,7 +22,6 @@ public class TrainYourselfStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<bool> _enableTrendTrade;
-	private readonly StrategyParam<decimal> _volume;
 
 	private DonchianChannels _channel = null!;
 	private decimal _priceStep;
@@ -68,10 +67,6 @@ public class TrainYourselfStrategy : Strategy
 		_enableTrendTrade = Param(nameof(EnableTrendTrade), true)
 			.SetDisplay("Enable Auto Breakout", "Allow automatic breakout orders", "Trading");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetCanOptimize(true)
-			.SetDisplay("Volume", "Order volume used for entries", "Trading");
 	}
 
 	/// <summary>
@@ -137,14 +132,6 @@ public class TrainYourselfStrategy : Strategy
 		set => _enableTrendTrade.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Last calculated upper boundary of the channel.

@@ -11,7 +11,6 @@ using StockSharp.Messages;
 /// </summary>
 public class TenPipsEurusdStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<bool> _useTrailing;
@@ -42,14 +41,6 @@ public class TenPipsEurusdStrategy : Strategy
 	private bool _shortTrailActive;
 	private decimal _shortTrailingStop;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in pips.
@@ -110,9 +101,6 @@ public class TenPipsEurusdStrategy : Strategy
 	/// </summary>
 	public TenPipsEurusdStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetGreaterThanZero()

@@ -25,7 +25,6 @@ public class SudokuUiStrategy : Strategy
 	private readonly StrategyParam<int> _smaPeriod;
 	private readonly StrategyParam<decimal> _thresholdRange;
 	private readonly StrategyParam<decimal> _neutralBand;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma = null!;
@@ -71,9 +70,6 @@ public class SudokuUiStrategy : Strategy
 		.SetRange(0m, 1m)
 		.SetDisplay("Neutral Band", "Neutral zone around the SMA that triggers flat position", "Trading");
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Volume used for market orders", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for SMA and grid evaluation", "General");
@@ -161,14 +157,6 @@ public class SudokuUiStrategy : Strategy
 		set => _neutralBand.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used for incoming data.

@@ -19,7 +19,6 @@ public class TradesToCsvStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _macdFast;
 	private readonly StrategyParam<int> _macdSlow;
@@ -64,14 +63,6 @@ public class TradesToCsvStrategy : Strategy
 		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// CCI calculation period.
@@ -132,9 +123,6 @@ public class TradesToCsvStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetDisplay("Stop Loss", "Loss threshold for closing", "Risk");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_cciPeriod = Param(nameof(CciPeriod), 14)
 			.SetGreaterThanZero()

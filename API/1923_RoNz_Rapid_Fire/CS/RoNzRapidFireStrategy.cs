@@ -19,7 +19,6 @@ public class RoNzRapidFireStrategy : Strategy
 		TrendClose
 	}
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _trailingStop;
@@ -36,14 +35,6 @@ public class RoNzRapidFireStrategy : Strategy
 	private decimal? _prevSar;
 	private decimal _tick;
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss in ticks.
@@ -131,9 +122,6 @@ public class RoNzRapidFireStrategy : Strategy
 	/// </summary>
 	public RoNzRapidFireStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trade volume", "General");
 
 		_stopLoss = Param(nameof(StopLoss), 150)
 			.SetDisplay("Stop Loss", "Stop loss in ticks", "Risk");

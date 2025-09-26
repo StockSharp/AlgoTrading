@@ -17,7 +17,6 @@ public class WellMartinStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerWidth;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<decimal> _adxLevel;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
@@ -69,14 +68,6 @@ public class WellMartinStrategy : Strategy
 		set => _adxLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take profit in price units.
@@ -116,9 +107,7 @@ public class WellMartinStrategy : Strategy
 		_adxLevel = Param<decimal>(nameof(AdxLevel), 45m)
 			.SetDisplay("ADX Level", "ADX threshold", "Parameters");
 
-		_volume = Param<decimal>(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trade volume", "Parameters");
+
 
 		_takeProfit = Param<decimal>(nameof(TakeProfit), 1200m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");

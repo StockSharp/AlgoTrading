@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ForMaxV2Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _buyTakeProfitPoints;
 	private readonly StrategyParam<int> _sellTakeProfitPoints;
 	private readonly StrategyParam<int> _gapPoints;
@@ -50,9 +49,6 @@ public class ForMaxV2Strategy : Strategy
 
 	public ForMaxV2Strategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume used for pending stop entries.", "General")
-			.SetCanOptimize(true);
 
 		_buyTakeProfitPoints = Param(nameof(BuyTakeProfitPoints), 100)
 			.SetDisplay("Buy Take Profit (points)", "Take-profit distance for long trades expressed in points.", "Entries")
@@ -102,14 +98,6 @@ public class ForMaxV2Strategy : Strategy
 			.SetDisplay("Candle Type", "Timeframe that drives the strategy calculations.", "General");
 	}
 
-	/// <summary>
-	/// Order volume used for pending stop entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take-profit distance for long trades expressed in points.

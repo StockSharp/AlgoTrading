@@ -22,7 +22,6 @@ public class CoinFlipStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStart;
 	private readonly StrategyParam<int> _trailingStop;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	
 	private readonly Random _random = new();
 	
@@ -32,14 +31,6 @@ public class CoinFlipStrategy : Strategy
 	private bool _isLong;
 	private bool _lastTradeLoss;
 	
-	/// <summary>
-	/// Base order size used for the first trade.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Multiplier applied to volume after a losing trade.
@@ -109,9 +100,6 @@ public class CoinFlipStrategy : Strategy
 	/// </summary>
 	public CoinFlipStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order size", "General");
 		
 		_martingale = Param(nameof(Martingale), 1.8m)
 		.SetGreaterThanZero()

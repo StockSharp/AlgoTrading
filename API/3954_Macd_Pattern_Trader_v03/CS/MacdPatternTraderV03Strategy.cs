@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdPatternTraderV03Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastEmaLength;
 	private readonly StrategyParam<int> _slowEmaLength;
@@ -59,8 +58,6 @@ public class MacdPatternTraderV03Strategy : Strategy
 	/// </summary>
 	public MacdPatternTraderV03Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetDisplay("Volume", "Trading volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Time frame used for calculations", "General");
@@ -99,14 +96,6 @@ public class MacdPatternTraderV03Strategy : Strategy
 		.SetDisplay("Profit Threshold", "Unrealized PnL required before scaling out", "Management");
 	}
 
-	/// <summary>
-	/// Trading volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used by the strategy.

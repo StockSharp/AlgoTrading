@@ -17,7 +17,6 @@ public class RangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _rangePeriod;
 	private readonly StrategyParam<decimal> _maxRangePoints;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
@@ -51,14 +50,6 @@ public class RangeBreakoutStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume for market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance expressed in points.
@@ -96,9 +87,6 @@ public class RangeBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for breakout detection", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order size for entries", "Trading")
-			.SetGreaterThanZero();
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 500m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk")

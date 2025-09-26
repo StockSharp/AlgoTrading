@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TuyulGapEndOfWeekStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _lookbackBars;
 	private readonly StrategyParam<int> _setupDayOfWeek;
@@ -40,9 +39,6 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 	/// </summary>
 	public TuyulGapEndOfWeekStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for breakout pending orders", "Trading");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 60)
 		.SetRange(0, 5000)
@@ -72,14 +68,6 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		.SetDisplay("Candle Type", "Timeframe used for the high/low scan and monitoring", "Data");
 	}
 
-	/// <summary>
-	/// Order volume for breakout pending orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Distance from entry used for protective stops, measured in instrument points.

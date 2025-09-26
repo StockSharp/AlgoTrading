@@ -15,7 +15,6 @@ public class CciAutomatedStrategy : Strategy
 {
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<int> _tradesDuplicator;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _trailingStop;
@@ -42,14 +41,6 @@ public class CciAutomatedStrategy : Strategy
 		set => _tradesDuplicator.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in price units.
@@ -102,10 +93,6 @@ public class CciAutomatedStrategy : Strategy
 			.SetDisplay("Trades Duplicator", "Maximum number of concurrent trades", "General")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 0.03m)
-			.SetRange(0.01m, 1m)
-			.SetDisplay("Volume", "Order volume", "General")
-			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 50m)
 			.SetRange(10m, 200m)

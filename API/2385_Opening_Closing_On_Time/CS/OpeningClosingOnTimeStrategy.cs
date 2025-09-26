@@ -14,7 +14,6 @@ public class OpeningClosingOnTimeStrategy : Strategy
 {
 	private readonly StrategyParam<TimeSpan> _openTime;
 	private readonly StrategyParam<TimeSpan> _closeTime;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _isBuy;
 	private readonly StrategyParam<DataType> _candleType;
 	
@@ -38,14 +37,6 @@ public class OpeningClosingOnTimeStrategy : Strategy
 		set => _closeTime.Value = value;
 	}
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Direction of the initial trade.
@@ -74,9 +65,6 @@ public class OpeningClosingOnTimeStrategy : Strategy
 		.SetDisplay("Open Time", "Time of day to open position", "General");
 		_closeTime = Param(nameof(CloseTime), new TimeSpan(13, 1, 0))
 		.SetDisplay("Close Time", "Time of day to close position", "General");
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "General");
 		_isBuy = Param(nameof(IsBuy), true)
 		.SetDisplay("Is Buy", "True for buy, false for sell", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())

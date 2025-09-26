@@ -18,7 +18,6 @@ public class FtTimeBigdogStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _orderBufferPoints;
 	private readonly StrategyParam<decimal> _pointMultiplier;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _priceStep;
@@ -73,10 +72,6 @@ public class FtTimeBigdogStrategy : Strategy
 			.SetDisplay("Point multiplier", "Multiplier applied to the instrument point size", "General")
 			.SetGreaterThanZero();
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume used for both stop entries", "General")
-			.SetGreaterThanZero()
-			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle type", "Timeframe used to evaluate the breakout window", "General");
@@ -136,14 +131,6 @@ public class FtTimeBigdogStrategy : Strategy
 		set => _pointMultiplier.Value = value;
 	}
 
-	/// <summary>
-	/// Volume used for both buy stop and sell stop orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle series used to measure the breakout window.

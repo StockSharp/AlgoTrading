@@ -26,7 +26,6 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 	private readonly StrategyParam<bool> _enableAutoTrading;
 	private readonly StrategyParam<bool> _enableHedging;
 	private readonly StrategyParam<int> _directionMode;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -89,9 +88,6 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		.SetDisplay("Trade Direction", "0 = both, 1 = long only, 2 = short only", "Trading")
 		.SetCanOptimize(false);
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetDisplay("Volume", "Order volume for breakouts", "Trading")
-		.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 25m)
 		.SetDisplay("Take Profit (pips)", "Maximum profit target distance", "Risk")
@@ -181,14 +177,6 @@ public class EarlyBirdRangeBreakoutStrategy : Strategy
 		set => _directionMode.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Maximum profit target distance expressed in pips.

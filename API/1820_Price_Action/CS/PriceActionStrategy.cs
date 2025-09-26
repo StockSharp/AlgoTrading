@@ -10,7 +10,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PriceActionStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _tp;
 	private readonly StrategyParam<decimal> _leverage;
 	private readonly StrategyParam<decimal> _trailingStop;
@@ -22,10 +21,6 @@ public class PriceActionStrategy : Strategy
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Stop loss distance in price units.
@@ -59,8 +54,6 @@ public class PriceActionStrategy : Strategy
 
 	public PriceActionStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Trade volume", "General");
 
 		_tp = Param(nameof(TP), 100m)
 			.SetDisplay("Stop Distance", "Initial stop distance", "Risk");

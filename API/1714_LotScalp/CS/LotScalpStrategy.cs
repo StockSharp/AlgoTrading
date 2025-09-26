@@ -22,7 +22,6 @@ public class LotScalpStrategy : Strategy
 	private readonly StrategyParam<decimal> _deltaLong;
 	private readonly StrategyParam<decimal> _deltaShort;
 	private readonly StrategyParam<int> _maxOpenTime;
-	private readonly StrategyParam<decimal> _volume;
 
 	private readonly Queue<decimal> _openPrices = new();
 	private bool _canTrade = true;
@@ -38,14 +37,6 @@ public class LotScalpStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take profit in points for long trades.
@@ -145,9 +136,6 @@ public class LotScalpStrategy : Strategy
 		_candleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
 			.SetDisplay("Candle Type", "Candle source", "General");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_takeProfitLong = Param(nameof(TakeProfitLong), 5m)
 			.SetDisplay("Long Take Profit", "Take profit in points for long trades", "Trading");
