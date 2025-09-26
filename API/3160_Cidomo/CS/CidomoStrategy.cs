@@ -34,8 +34,8 @@ public class CidomoStrategy : Strategy
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;

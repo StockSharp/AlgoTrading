@@ -26,8 +26,8 @@ public class ConstituentsEaStrategy : Strategy
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
-	private Order? _buyOrder;
-	private Order? _sellOrder;
+	private Order _buyOrder;
+	private Order _sellOrder;
 	private decimal _pointValueAbsolute;
 	private decimal _bestBid;
 	private decimal _bestAsk;

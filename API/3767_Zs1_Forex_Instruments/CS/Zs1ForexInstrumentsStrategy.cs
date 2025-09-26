@@ -496,7 +496,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		if (totalVolume <= 0m)
 			return;
 
-		Order? order;
+		Order order;
 
 		if (side == Sides.Buy)
 		{
@@ -517,7 +517,7 @@ public class Zs1ForexInstrumentsStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-	Order? order;
+	Order order;
 
 		if (side == Sides.Buy)
 		{

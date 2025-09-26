@@ -28,7 +28,7 @@ public class SimpleTradingSystemStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _volume;
 
-	private IIndicator? _ma;
+	private IIndicator _ma;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
 	private decimal[] _closeBuffer = Array.Empty<decimal>();
 	private int _sign;

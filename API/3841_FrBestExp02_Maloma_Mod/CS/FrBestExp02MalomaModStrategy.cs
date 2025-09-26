@@ -28,7 +28,7 @@ public class FrBestExp02MalomaModStrategy : Strategy
 
 	private MACD _macd = null!;
 
-	private readonly ICandleMessage?[] _history = new ICandleMessage?[6];
+	private readonly ICandleMessage[] _history = new ICandleMessage[6];
 	private int _historyCount;
 
 	private decimal[] _highWindow = Array.Empty<decimal>();

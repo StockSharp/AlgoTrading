@@ -27,23 +27,23 @@ public class BinarioStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 
-	private IIndicator? _highMa;
-	private IIndicator? _lowMa;
+	private IIndicator _highMa;
+	private IIndicator _lowMa;
 	private readonly List<decimal> _highMaHistory = new();
 	private readonly List<decimal> _lowMaHistory = new();
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private PendingSetup? _pendingLong;
 	private PendingSetup? _pendingShort;
 
-	private Order? _longStopOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _longStopOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
@@ -522,7 +522,7 @@ public class BinarioStrategy : Strategy
 		}
 	}
 
-	private void ReplaceOrder(ref Order? order, bool isBuyStop, decimal newPrice)
+	private void ReplaceOrder(ref Order order, bool isBuyStop, decimal newPrice)
 	{
 		var volume = Math.Abs(Position);
 
@@ -536,12 +536,12 @@ public class BinarioStrategy : Strategy
 			: SellStop(volume, newPrice);
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is not null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}
 
-	private void CancelActiveOrder(Order? order)
+	private void CancelActiveOrder(Order order)
 	{
 		if (order is not null && (order.State == OrderStates.Active || order.State == OrderStates.Pending))
 			CancelOrder(order);

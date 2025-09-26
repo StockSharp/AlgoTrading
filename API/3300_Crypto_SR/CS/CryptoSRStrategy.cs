@@ -64,7 +64,7 @@ public class CryptoSrStrategy : Strategy
 	private decimal? _shortLowestPrice;
 	private int _positionDirection;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CryptoSrStrategy"/> class.

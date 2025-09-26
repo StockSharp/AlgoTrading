@@ -33,10 +33,10 @@ public class Noah10Pips2006Strategy : Strategy
 	private readonly StrategyParam<decimal> _maximumRiskPercent;
 	private readonly StrategyParam<bool> _fixedVolume;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _protectiveStopOrder;
-	private Order? _protectiveTakeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _protectiveStopOrder;
+	private Order _protectiveTakeProfitOrder;
 
 	private DateTime? _currentSessionDate;
 	private DateTime? _previousSessionDate;
@@ -691,7 +691,7 @@ public class Noah10Pips2006Strategy : Strategy
 		return steps * step.Value;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is not null && order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 	}
@@ -701,7 +701,7 @@ public class Noah10Pips2006Strategy : Strategy
 		return IsOrderActive(_buyStopOrder) || IsOrderActive(_sellStopOrder);
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (!IsOrderActive(order))
 			{

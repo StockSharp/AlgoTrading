@@ -439,7 +439,7 @@ public class ExpertZzlwaStrategy : Strategy
 		/// <inheritdoc />
 		protected override void OnOwnTradeReceived(MyTrade trade)
 		{
-			if (trade?.Order?.Side == null)
+			if (trade?.Order.Side == null)
 			return;
 
 			var side = trade.Order.Side.Value;

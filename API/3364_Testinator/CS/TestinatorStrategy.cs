@@ -650,7 +650,7 @@ public class TestinatorStrategy : Strategy
 		list.RemoveRange(maxCount, list.Count - maxCount);
 	}
 
-	private ICandleMessage? GetCandleFromHistory(int index)
+	private ICandleMessage GetCandleFromHistory(int index)
 	{
 		return index < _recentCandles.Count ? _recentCandles[index] : null;
 	}
@@ -683,9 +683,9 @@ public class TestinatorStrategy : Strategy
 	IchimokuKinkoHyoValue ichimoku,
 	decimal rsiEntry,
 	decimal? previousRsiEntry,
-	ICandleMessage? previousCandle1,
-	ICandleMessage? previousCandle2,
-	ICandleMessage? previousCandle3,
+	ICandleMessage previousCandle1,
+	ICandleMessage previousCandle2,
+	ICandleMessage previousCandle3,
 	BollingerSnapshot? previousEntryBands)
 	{
 		if (sequence <= 0)
@@ -766,9 +766,9 @@ public class TestinatorStrategy : Strategy
 	MovingAverageConvergenceDivergenceValue macd,
 	IchimokuKinkoHyoValue ichimoku,
 	decimal rsiClose,
-	ICandleMessage? previousCandle1,
-	ICandleMessage? previousCandle2,
-	ICandleMessage? previousCandle3,
+	ICandleMessage previousCandle1,
+	ICandleMessage previousCandle2,
+	ICandleMessage previousCandle3,
 	BollingerSnapshot? previousCloseBands)
 	{
 		if (sequence <= 0)

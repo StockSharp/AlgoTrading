@@ -37,8 +37,8 @@ public class MostasHar15PivotStrategy : Strategy
 	private decimal? _prevPlusDi;
 	private decimal? _prevMinusDi;
 
-	private ICandleMessage? _previousDailyCandle;
-	private ICandleMessage? _lastDailyCandle;
+	private ICandleMessage _previousDailyCandle;
+	private ICandleMessage _lastDailyCandle;
 
 	private decimal? _pipSize;
 

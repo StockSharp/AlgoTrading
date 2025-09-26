@@ -247,7 +247,7 @@ public class CountOrdersStrategy : Strategy
 		if (token.IsCancellationRequested || volume <= 0m)
 			return;
 
-		Order? order;
+		Order order;
 		if (side == Sides.Buy)
 		{
 			order = BuyMarket(volume);
@@ -261,7 +261,7 @@ public class CountOrdersStrategy : Strategy
 		ApplyProtections(side, volume);
 	}
 
-	private void ApplyMetadata(Order? order)
+	private void ApplyMetadata(Order order)
 	{
 		if (order == null)
 			return;

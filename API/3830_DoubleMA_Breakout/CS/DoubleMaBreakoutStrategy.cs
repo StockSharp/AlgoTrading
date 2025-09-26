@@ -39,8 +39,8 @@ public class DoubleMaBreakoutStrategy : Strategy
 	private readonly Queue<decimal> _fastHistory = new();
 	private readonly Queue<decimal> _slowHistory = new();
 	private decimal _priceStep;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private bool _fridayTradingDisabled;
 
 	/// <summary>

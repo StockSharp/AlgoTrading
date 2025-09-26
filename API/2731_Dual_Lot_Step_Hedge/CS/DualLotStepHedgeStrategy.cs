@@ -579,7 +579,7 @@ public class DualLotStepHedgeStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		var volume = trade.Trade.Volume ?? 0m;

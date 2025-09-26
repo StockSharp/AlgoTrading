@@ -19,10 +19,10 @@ public class StochLevelsStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
-	private Order? _protectiveStopOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
+	private Order _protectiveStopOrder;
+	private Order _takeProfitOrder;
 	private DateTime? _lastProcessedDay;
 	private decimal? _buyStopLossPrice;
 	private decimal? _buyTakeProfitPrice;
@@ -281,7 +281,7 @@ public class StochLevelsStrategy : Strategy
 		_sellTakeProfitPrice = null;
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

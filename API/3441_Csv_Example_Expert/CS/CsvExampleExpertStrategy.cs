@@ -169,8 +169,8 @@ public class CsvExampleExpertStrategy : Strategy
 		}
 		else
 		{
-			_lastMyTradePrice = trade.Order?.Price ?? _lastMyTradePrice;
-			_lastMyTradeTime = trade.Order?.LastChangeTime ?? _lastMyTradeTime ?? CurrentTime;
+			_lastMyTradePrice = trade.Order.Price ?? _lastMyTradePrice;
+			_lastMyTradeTime = trade.Order.LastChangeTime ?? _lastMyTradeTime ?? CurrentTime;
 		}
 
 	}

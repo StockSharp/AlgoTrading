@@ -39,7 +39,7 @@ public class DeMarkerPendingStrategy : Strategy
         private decimal _priceStep;
         private decimal? _bestBid;
         private decimal? _bestAsk;
-        private Order? _pendingOrder;
+        private Order _pendingOrder;
         private bool _pendingIsBuy;
         private decimal? _entryPrice;
         private decimal? _stopPrice;
@@ -456,7 +456,7 @@ public class DeMarkerPendingStrategy : Strategy
                         ? (DateTimeOffset?) (candleTime + PendingExpiration)
                         : null;
 
-                Order? order = null;
+                Order order = null;
 
                 if (EntryMode == PendingEntryMode.Stop)
                         order = isBuy ? BuyStop(TradeVolume, price, expiration: expiration)

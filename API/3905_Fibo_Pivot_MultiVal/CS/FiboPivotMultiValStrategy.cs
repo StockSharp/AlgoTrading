@@ -733,7 +733,7 @@ public class FiboPivotMultiValStrategy : Strategy
 
 	private void CancelZoneOrders(string zoneId, ZoneState zone, bool cancelEntryOnly = false)
 	{
-	void Cancel(Order? order)
+	void Cancel(Order order)
 	{
 	if (order == null)
 	return;
@@ -773,7 +773,7 @@ public class FiboPivotMultiValStrategy : Strategy
 	return defaultTarget;
 	}
 
-	private void CancelOrderIfActive(Order? order)
+	private void CancelOrderIfActive(Order order)
 	{
 	if (order == null)
 	return;
@@ -783,7 +783,7 @@ public class FiboPivotMultiValStrategy : Strategy
 	CancelOrder(order);
 	}
 
-	private static bool IsOrderAlive(Order? order)
+	private static bool IsOrderAlive(Order order)
 	{
 	return order != null && order.State is OrderStates.Active or OrderStates.Pending;
 	}
@@ -864,9 +864,9 @@ public class FiboPivotMultiValStrategy : Strategy
 	private sealed class ZoneState
 	{
 	public Sides Side { get; set; }
-	public Order? EntryOrder { get; set; }
-	public Order? TargetOrder { get; set; }
-	public Order? StopOrder { get; set; }
+	public Order EntryOrder { get; set; }
+	public Order TargetOrder { get; set; }
+	public Order StopOrder { get; set; }
 	public decimal? TargetPrice { get; set; }
 	public decimal? StopPrice { get; set; }
 	public decimal? ActiveEntryPrice { get; set; }

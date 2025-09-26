@@ -31,8 +31,8 @@ public class FxfFastInFastOutStrategy : Strategy
 	private int _ordersPlacedThisBar;
 	private decimal _bestBid;
 	private decimal _bestAsk;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
 
@@ -518,7 +518,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		CancelManagedOrder(ref _sellStopOrder);
 	}
 
-	private void CancelManagedOrder(ref Order? order)
+	private void CancelManagedOrder(ref Order order)
 	{
 		if (order == null)
 		return;
@@ -536,7 +536,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		order = null;
 	}
 
-	private static void CleanupOrder(ref Order? order)
+	private static void CleanupOrder(ref Order order)
 	{
 		if (order == null)
 		return;
@@ -556,7 +556,7 @@ public class FxfFastInFastOutStrategy : Strategy
 		return IsOrderActive(_buyStopOrder) || IsOrderActive(_sellStopOrder);
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is { State: OrderStates.Active or OrderStates.Pending or OrderStates.Placed or OrderStates.InProcess or OrderStates.None };
 	}

@@ -33,7 +33,7 @@ public class EnvelopeMaShortStrategy : Strategy
 	private decimal? _shortStopLossPrice;
 	private decimal? _shortTakeProfitPrice;
 	private decimal? _lowestHighSinceEntry;
-	private Order? _sellStopOrder;
+	private Order _sellStopOrder;
 	private DateTimeOffset? _sellStopExpiration;
 
 	private decimal _pipSize;
@@ -370,7 +370,7 @@ public class EnvelopeMaShortStrategy : Strategy
 		_sellStopExpiration = null;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		if (order == null)
 			return false;
@@ -378,7 +378,7 @@ public class EnvelopeMaShortStrategy : Strategy
 		return order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

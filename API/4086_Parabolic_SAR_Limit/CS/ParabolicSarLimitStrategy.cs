@@ -20,8 +20,8 @@ public class ParabolicSarLimitStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;

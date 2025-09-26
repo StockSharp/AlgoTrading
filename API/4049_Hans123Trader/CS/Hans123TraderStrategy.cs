@@ -29,10 +29,10 @@ public class Hans123TraderStrategy : Strategy
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
 
-	private Order? _session1BuyStop;
-	private Order? _session1SellStop;
-	private Order? _session2BuyStop;
-	private Order? _session2SellStop;
+	private Order _session1BuyStop;
+	private Order _session1SellStop;
+	private Order _session2BuyStop;
+	private Order _session2SellStop;
 
 	private DateTime? _session1OrderDate;
 	private DateTime? _session2OrderDate;
@@ -345,8 +345,8 @@ public class Hans123TraderStrategy : Strategy
 
 	private void PlaceSessionOrders(SessionSlot slot, decimal highest, decimal lowest, DateTime date)
 	{
-		ref Order? buyOrder = ref slot == SessionSlot.First ? ref _session1BuyStop : ref _session2BuyStop;
-		ref Order? sellOrder = ref slot == SessionSlot.First ? ref _session1SellStop : ref _session2SellStop;
+		ref Order buyOrder = ref slot == SessionSlot.First ? ref _session1BuyStop : ref _session2BuyStop;
+		ref Order sellOrder = ref slot == SessionSlot.First ? ref _session1SellStop : ref _session2SellStop;
 		ref DateTime? placedDate = ref slot == SessionSlot.First ? ref _session1OrderDate : ref _session2OrderDate;
 
 		if (placedDate == date)
@@ -370,7 +370,7 @@ public class Hans123TraderStrategy : Strategy
 			placedDate = date;
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;
@@ -392,7 +392,7 @@ public class Hans123TraderStrategy : Strategy
 		ClearIfCompleted(ref _session2SellStop, order);
 	}
 
-	private static void ClearIfCompleted(ref Order? trackedOrder, Order changedOrder)
+	private static void ClearIfCompleted(ref Order trackedOrder, Order changedOrder)
 	{
 		if (trackedOrder == null || trackedOrder != changedOrder)
 			return;

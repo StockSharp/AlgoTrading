@@ -19,8 +19,8 @@ public class ScalpingAssistantStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenTriggerPoints;
 	private readonly StrategyParam<decimal> _breakEvenOffsetPoints;
 
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
 	private bool _longBreakEvenApplied;

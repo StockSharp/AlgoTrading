@@ -299,7 +299,7 @@ public class EliteEfiboTraderV21Strategy : Strategy
 			if (volume <= 0m)
 				continue;
 
-			Order? order;
+			Order order;
 			if (i == 0)
 			{
 				order = side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume);
@@ -343,7 +343,7 @@ public class EliteEfiboTraderV21Strategy : Strategy
 			if (level.ExitOrder != null && !IsFinalState(level.ExitOrder))
 				continue;
 
-			Order? order = level.Side == Sides.Buy
+			Order order = level.Side == Sides.Buy
 				? SellMarket(level.OpenVolume)
 				: BuyMarket(level.OpenVolume);
 
@@ -600,8 +600,8 @@ public class EliteEfiboTraderV21Strategy : Strategy
 		public Sides Side { get; }
 		public decimal PlannedVolume { get; }
 		public decimal StopOffset { get; }
-		public Order? EntryOrder { get; set; }
-		public Order? ExitOrder { get; set; }
+		public Order EntryOrder { get; set; }
+		public Order ExitOrder { get; set; }
 		public decimal ExecutedVolume { get; set; }
 		public decimal OpenVolume { get; set; }
 		public decimal? EntryPrice { get; set; }

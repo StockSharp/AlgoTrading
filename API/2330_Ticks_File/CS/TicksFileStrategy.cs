@@ -22,8 +22,8 @@ public class TicksFileStrategy : Strategy
 
 	private StreamWriter? _writer;
 	private int _count;
-	private ICandleMessage? _prevCandle;
-	private ICandleMessage? _currentCandle;
+	private ICandleMessage _prevCandle;
+	private ICandleMessage _currentCandle;
 	private DateTimeOffset? _lastLoggedTime;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;

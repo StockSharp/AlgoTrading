@@ -52,8 +52,8 @@ private DateTimeOffset? _lastProcessedTime;
 private DateTimeOffset? _stochasticTime;
 private DateTimeOffset? _macdTime;
 
-private ICandleMessage? _previousCandle;
-private ICandleMessage? _twoCandlesAgo;
+private ICandleMessage _previousCandle;
+private ICandleMessage _twoCandlesAgo;
 
 private decimal _pipSize;
 private decimal _priceStep;

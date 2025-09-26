@@ -20,7 +20,7 @@ public class EngulfingMfiConfirmationStrategy : Strategy
 	private readonly StrategyParam<decimal> _exitShortLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousMfi;
 
 	/// <summary>

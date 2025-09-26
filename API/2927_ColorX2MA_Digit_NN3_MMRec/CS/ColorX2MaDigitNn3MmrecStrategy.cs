@@ -432,8 +432,8 @@ internal sealed class ColorX2MaDigitIndicator : Indicator<ICandleMessage>
 	public int SlowLength { get; set; } = 5;
 	public int Digits { get; set; } = 2;
 
-	private IIndicator? _fastMa;
-	private IIndicator? _slowMa;
+	private IIndicator _fastMa;
+	private IIndicator _slowMa;
 	private decimal? _previousValue;
 	private TrendDirection _previousDirection = TrendDirection.None;
 

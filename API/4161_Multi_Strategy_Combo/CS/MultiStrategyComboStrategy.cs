@@ -127,7 +127,7 @@ public class MultiStrategyComboStrategy : Strategy
 	private decimal? _bollingerMediumLower;
 	private decimal? _bollingerWideUpper;
 	private decimal? _bollingerWideLower;
-	private ICandleMessage? _lastBollingerCandle;
+	private ICandleMessage _lastBollingerCandle;
 
 	private decimal? _noiseAtrValue;
 

@@ -136,7 +136,7 @@ public class NTradesPerSetMartingaleStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Direction == null)
+		if (trade.Order.Direction == null)
 			return;
 
 		if (trade.Order.Side == Sides.Buy)

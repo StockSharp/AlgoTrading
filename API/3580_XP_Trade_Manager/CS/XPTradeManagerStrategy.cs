@@ -37,12 +37,12 @@ public class XPTradeManagerStrategy : Strategy
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 
-	private Order? _longStopOrder;
-	private Order? _longTakeOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeOrder;
-	private Order? _longExitOrder;
-	private Order? _shortExitOrder;
+	private Order _longStopOrder;
+	private Order _longTakeOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeOrder;
+	private Order _longExitOrder;
+	private Order _shortExitOrder;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="XPTradeManagerStrategy"/> class.
@@ -513,7 +513,7 @@ public class XPTradeManagerStrategy : Strategy
 	: Math.Min(previous.Value, candidate.Value);
 	}
 
-	private void ReplaceOrder(ref Order? order, Func<Order> factory, decimal price, decimal volume)
+	private void ReplaceOrder(ref Order order, Func<Order> factory, decimal price, decimal volume)
 	{
 	if (order != null)
 	{
@@ -526,7 +526,7 @@ public class XPTradeManagerStrategy : Strategy
 	order = factory();
 	}
 
-	private void CancelAndClear(ref Order? order)
+	private void CancelAndClear(ref Order order)
 	{
 	if (order == null)
 	return;
@@ -537,7 +537,7 @@ public class XPTradeManagerStrategy : Strategy
 	order = null;
 	}
 
-	private static bool NeedsExitOrder(Order? order)
+	private static bool NeedsExitOrder(Order order)
 	{
 	return order == null || IsFinalState(order);
 	}

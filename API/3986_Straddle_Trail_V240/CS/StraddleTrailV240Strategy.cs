@@ -32,8 +32,8 @@ public class StraddleTrailV240Strategy : Strategy
 	private readonly StrategyParam<bool> _manageManualTrades;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;

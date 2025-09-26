@@ -585,7 +585,7 @@ public class ColibriGridManagerStrategy : Strategy
 		}
 	}
 
-	private Order? CreateEntryOrder(Sides side, decimal price, decimal volume)
+	private Order CreateEntryOrder(Sides side, decimal price, decimal volume)
 	{
 		return OrderType switch
 		{

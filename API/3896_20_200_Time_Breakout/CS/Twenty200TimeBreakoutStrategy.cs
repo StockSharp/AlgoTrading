@@ -165,7 +165,7 @@ public class Twenty200TimeBreakoutStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		var tradeVolume = trade.Trade.Volume;

@@ -26,7 +26,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _ma;
+	private IIndicator _ma;
 	private decimal?[] _maBuffer = Array.Empty<decimal?>();
 	private bool _allowBuy = true;
 	private bool _allowSell = true;

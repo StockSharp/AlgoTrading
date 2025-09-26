@@ -640,7 +640,7 @@ public class AdvancedEaPanelStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade?.Order?.Direction is null)
+		if (trade?.Order.Direction is null)
 		return;
 
 		if (Position == 0m)

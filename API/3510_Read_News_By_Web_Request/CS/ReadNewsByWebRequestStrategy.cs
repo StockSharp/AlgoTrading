@@ -567,7 +567,7 @@ public class ReadNewsByWebRequestStrategy : Strategy
 		public bool OrdersPlaced { get; set; }
 		public bool Completed { get; set; }
 		public DateTimeOffset? CancelTime { get; set; }
-		public Order? BuyOrder { get; set; }
-		public Order? SellOrder { get; set; }
+		public Order BuyOrder { get; set; }
+		public Order SellOrder { get; set; }
 	}
 }

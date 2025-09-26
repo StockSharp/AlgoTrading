@@ -43,7 +43,7 @@ private decimal _lastZigZagLow;
 private decimal? _previousFast;
 private decimal? _previousSlow;
 
-private Order? _pendingOrder;
+private Order _pendingOrder;
 private decimal? _plannedStop;
 private decimal? _plannedTake;
 private int _plannedDirection;
@@ -456,7 +456,7 @@ return;
 }
 }
 
-Order? order;
+Order order;
 if (direction == 1)
 order = BuyLimit(volume, fibPrice);
 else

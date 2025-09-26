@@ -396,7 +396,7 @@ public class RandomTraderStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		// Capture the executed entry price to derive protective levels aligned with the fill.

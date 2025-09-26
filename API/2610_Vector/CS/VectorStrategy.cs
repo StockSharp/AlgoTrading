@@ -292,7 +292,7 @@ public class VectorStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		var security = trade?.Order?.Security ?? trade?.Trade?.Security;
+		var security = trade?.Order.Security ?? trade?.Trade?.Security;
 		if (security == null)
 		return;
 

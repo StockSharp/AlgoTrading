@@ -279,7 +279,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security is not { } security)
+		if (trade.Order.Security is not { } security)
 			return;
 
 		if (!_contexts.TryGetValue(security, out var context))
@@ -721,7 +721,7 @@ public class MultiCurrencyTemplateMt5Strategy : Strategy
 		public decimal PointSize { get; }
 		public bool HasNewBar { get; set; }
 		public bool TradeStreamInitialized { get; set; }
-		public ICandleMessage? PreviousSignalCandle { get; set; }
+		public ICandleMessage PreviousSignalCandle { get; set; }
 		public decimal? LastClosePrice { get; set; }
 		public decimal? LongStopPrice { get; set; }
 		public decimal? ShortStopPrice { get; set; }

@@ -27,8 +27,8 @@ public class PendingLimitGridStrategy : Strategy
 	private bool _flattenRequested;
 	private bool _closePositionRequested;
 
-	private Order?[] _sellOrders = Array.Empty<Order?>();
-	private Order?[] _buyOrders = Array.Empty<Order?>();
+	private Order[] _sellOrders = Array.Empty<Order>();
+	private Order[] _buyOrders = Array.Empty<Order>();
 	private bool[] _sellLevelPlaced = Array.Empty<bool>();
 	private bool[] _buyLevelPlaced = Array.Empty<bool>();
 
@@ -118,8 +118,8 @@ public class PendingLimitGridStrategy : Strategy
 		_flattenRequested = false;
 		_closePositionRequested = false;
 
-		_sellOrders = Array.Empty<Order?>();
-		_buyOrders = Array.Empty<Order?>();
+		_sellOrders = Array.Empty<Order>();
+		_buyOrders = Array.Empty<Order>();
 		_sellLevelPlaced = Array.Empty<bool>();
 		_buyLevelPlaced = Array.Empty<bool>();
 
@@ -299,7 +299,7 @@ public class PendingLimitGridStrategy : Strategy
 		return false;
 	}
 
-	private void CancelOrderArray(Order?[] orders)
+	private void CancelOrderArray(Order[] orders)
 	{
 		for (var i = 0; i < orders.Length; i++)
 		{
@@ -313,13 +313,13 @@ public class PendingLimitGridStrategy : Strategy
 	{
 		if (_sellOrders.Length != LevelsPerSide)
 		{
-			_sellOrders = new Order?[LevelsPerSide];
+			_sellOrders = new Order[LevelsPerSide];
 			_sellLevelPlaced = new bool[LevelsPerSide];
 		}
 
 		if (_buyOrders.Length != LevelsPerSide)
 		{
-			_buyOrders = new Order?[LevelsPerSide];
+			_buyOrders = new Order[LevelsPerSide];
 			_buyLevelPlaced = new bool[LevelsPerSide];
 		}
 	}

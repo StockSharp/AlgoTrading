@@ -338,7 +338,7 @@ public class MaGridStrategy : Strategy
 		RegisterOrder(BuyMarket(volume), OrderIntent.CloseShort);
 	}
 
-	private void RegisterOrder(Order? order, OrderIntent intent)
+	private void RegisterOrder(Order order, OrderIntent intent)
 	{
 		if (order == null)
 		return;

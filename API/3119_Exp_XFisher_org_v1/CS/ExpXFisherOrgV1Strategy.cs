@@ -346,7 +346,7 @@ public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 	private readonly Highest _highest = new();
 	private readonly Lowest _lowest = new();
 
-	private IIndicator? _smoother;
+	private IIndicator _smoother;
 	private decimal _valuePrev;
 	private decimal _fishPrev;
 	private decimal? _previousSmoothed;

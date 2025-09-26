@@ -31,9 +31,9 @@ public class ProphetStrategy : Strategy
 	private readonly StrategyParam<int> _exitHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _lastCandle;
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _olderCandle;
+	private ICandleMessage _lastCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _olderCandle;
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 	private decimal? _longEntryPrice;

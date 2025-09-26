@@ -56,8 +56,8 @@ public class DailyStpEntryFrameStrategy : Strategy
 	private DateTime? _lastBuyOrderDay;
 	private DateTime? _lastSellOrderDay;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
@@ -688,7 +688,7 @@ public class DailyStpEntryFrameStrategy : Strategy
 		return true;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		if (order == null)
 			return false;
@@ -696,7 +696,7 @@ public class DailyStpEntryFrameStrategy : Strategy
 		return order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

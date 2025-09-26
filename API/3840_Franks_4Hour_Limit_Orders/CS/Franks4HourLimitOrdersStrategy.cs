@@ -27,8 +27,8 @@ public class Franks4HourLimitOrdersStrategy : Strategy
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private ForceIndex _forceIndex = null!;
 
-	private Order? _pendingBuyLimit;
-	private Order? _pendingSellLimit;
+	private Order _pendingBuyLimit;
+	private Order _pendingSellLimit;
 
 	private decimal? _prevOsma;
 	private decimal? _prevPrevOsma;
@@ -472,7 +472,7 @@ public class Franks4HourLimitOrdersStrategy : Strategy
 		return 0;
 	}
 
-	private void CancelOrder(ref Order? orderField)
+	private void CancelOrder(ref Order orderField)
 	{
 		var order = orderField;
 		if (order == null)

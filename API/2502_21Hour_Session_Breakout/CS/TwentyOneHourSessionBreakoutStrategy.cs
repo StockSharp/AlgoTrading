@@ -23,9 +23,9 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _takeProfitOrder;
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 
@@ -335,7 +335,7 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 		CancelEntryOrder(ref _sellStopOrder);
 	}
 
-	private void CancelEntryOrder(ref Order? order)
+	private void CancelEntryOrder(ref Order order)
 	{
 		if (order == null)
 			return;

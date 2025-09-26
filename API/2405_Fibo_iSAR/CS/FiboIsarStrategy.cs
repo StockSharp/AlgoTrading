@@ -35,7 +35,7 @@ public class FiboIsarStrategy : Strategy
 	private Lowest _lowest = null!;
 
 	// state
-	private Order? _pendingOrder;
+	private Order _pendingOrder;
 	private decimal _stopPrice;
 	private decimal _takeProfitPrice;
 	/// <summary>

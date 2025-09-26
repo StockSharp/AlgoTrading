@@ -19,7 +19,7 @@ public class TrailingStarPointStrategy : Strategy
 	private decimal? _bestAsk;
 	private decimal _pointValue;
 
-	private Order? _stopOrder;
+	private Order _stopOrder;
 
 	private decimal? _longEntryPrice;
 	private decimal _longVolume;

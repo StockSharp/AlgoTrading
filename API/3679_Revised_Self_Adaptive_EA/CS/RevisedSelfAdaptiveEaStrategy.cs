@@ -36,7 +36,7 @@ public class RevisedSelfAdaptiveEaStrategy : Strategy
 	private AverageTrueRange _atr = null!;
 	private SimpleMovingAverage _bodyAverage = null!;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	private decimal _lastAtrValue;
 	private decimal _averageBodyValue;

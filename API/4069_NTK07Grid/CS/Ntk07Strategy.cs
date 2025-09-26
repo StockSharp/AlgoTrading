@@ -67,14 +67,14 @@ public class Ntk07Strategy : Strategy
 	private readonly List<PositionLot> _longLots = new();
 	private readonly List<PositionLot> _shortLots = new();
 
-	private Order? _primaryBuyStop;
-	private Order? _primarySellStop;
-	private Order? _scalingBuyStop;
-	private Order? _scalingSellStop;
-	private Order? _longStopOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _primaryBuyStop;
+	private Order _primarySellStop;
+	private Order _scalingBuyStop;
+	private Order _scalingSellStop;
+	private Order _longStopOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal _pipSize;
 	private decimal _bestBid;
@@ -850,7 +850,7 @@ public class Ntk07Strategy : Strategy
 		}
 	}
 
-	private void EnsureScalingOrder(ref Order? order, bool isLong, decimal volume, decimal price)
+	private void EnsureScalingOrder(ref Order order, bool isLong, decimal volume, decimal price)
 	{
 		if (volume <= 0m)
 		{
@@ -949,7 +949,7 @@ public class Ntk07Strategy : Strategy
 		CleanupInactiveOrder(ref _shortTakeProfitOrder);
 	}
 
-	private void CleanupInactiveOrder(ref Order? order)
+	private void CleanupInactiveOrder(ref Order order)
 	{
 		if (order == null)
 		return;
@@ -958,7 +958,7 @@ public class Ntk07Strategy : Strategy
 		order = null;
 	}
 
-	private bool HasActiveOrder(Order? order)
+	private bool HasActiveOrder(Order order)
 	{
 		return order != null && order.State.IsActive();
 	}
@@ -1065,7 +1065,7 @@ public class Ntk07Strategy : Strategy
 		return totalValue / totalVolume;
 	}
 
-	private void CancelIfActive(Order? order)
+	private void CancelIfActive(Order order)
 	{
 		if (order != null && order.State.IsActive())
 		CancelOrder(order);

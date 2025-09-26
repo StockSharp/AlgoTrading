@@ -29,10 +29,10 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 	private readonly StrategyParam<decimal> _secondFiboPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ParabolicSar? _slowSar;
-	private ParabolicSar? _fastSar;
-	private Highest? _highestHigh;
-	private Lowest? _lowestLow;
+	private ParabolicSar _slowSar;
+	private ParabolicSar _fastSar;
+	private Highest _highestHigh;
+	private Lowest _lowestLow;
 
 	private decimal _priceStep;
 
@@ -42,8 +42,8 @@ public class ParabolicSarFiboLimitsStrategy : Strategy
 	private decimal? _previousHigh;
 	private decimal? _previousLow;
 
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;

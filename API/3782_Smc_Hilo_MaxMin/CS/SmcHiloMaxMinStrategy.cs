@@ -22,15 +22,15 @@ public class SmcHiloMaxMinStrategy : Strategy
 	private readonly StrategyParam<decimal> _minStopDistancePips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private DateTime? _lastSetupDate;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _longStopOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
@@ -499,7 +499,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		var tradeVolume = trade.Trade.Volume;
@@ -652,7 +652,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		CleanupOrder(ref _shortTakeProfitOrder);
 	}
 
-	private void CleanupOrder(ref Order? order)
+	private void CleanupOrder(ref Order order)
 	{
 		if (order == null)
 		return;
@@ -661,7 +661,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		order = null;
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 		return;
@@ -672,7 +672,7 @@ public class SmcHiloMaxMinStrategy : Strategy
 		order = null;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order != null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}

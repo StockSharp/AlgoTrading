@@ -371,10 +371,10 @@ public enum SmoothMethod
 /// </summary>
 public class XHullTrendDigitIndicator : BaseIndicator<decimal>
 {
-	private IIndicator? _shortMa;
-	private IIndicator? _longMa;
-	private IIndicator? _hullSmoother;
-	private IIndicator? _signalSmoother;
+	private IIndicator _shortMa;
+	private IIndicator _longMa;
+	private IIndicator _hullSmoother;
+	private IIndicator _signalSmoother;
 
 	public int BaseLength { get; set; } = 20;
 	public int SignalLength { get; set; } = 5;

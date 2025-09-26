@@ -24,12 +24,12 @@ public class CmPanelStrategy : Strategy
 	private readonly StrategyParam<bool> _placeSellStop;
 	private readonly StrategyParam<bool> _cancelPendingOrders;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopLossOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopLossOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _longStopLossOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopLossOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal? _pendingLongStopLoss;
 	private decimal? _pendingLongTakeProfit;
@@ -566,7 +566,7 @@ public class CmPanelStrategy : Strategy
 		return NormalizePrice(rawPrice);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 		return;

@@ -18,7 +18,7 @@ public class Up3x1InvestorStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _entryPrice;
 	private decimal _highestPrice;
 	private decimal _lowestPrice;

@@ -614,7 +614,7 @@ public class HeikenAshiEngulfStrategy : Strategy
 		SetTakeProfit(takeDistance, referencePrice, resultingPosition);
 	}
 
-	private static void ProcessIndicator(IIndicator? indicator, ICandleMessage candle, List<decimal?> storage)
+	private static void ProcessIndicator(IIndicator indicator, ICandleMessage candle, List<decimal?> storage)
 	{
 		if (indicator == null)
 		{

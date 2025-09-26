@@ -59,7 +59,7 @@ public class Dlmv1GridStrategy : Strategy
 	private decimal? _takeProfitPrice;
 	private decimal _initialEquity;
 	private decimal _martingaleBaseVolume;
-	private Order? _pendingLimitOrder;
+	private Order _pendingLimitOrder;
 	private decimal _lastFisher;
 	private decimal _lastSignal;
 

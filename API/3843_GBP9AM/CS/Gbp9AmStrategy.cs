@@ -27,8 +27,8 @@ public class Gbp9AmStrategy : Strategy
 	private decimal _pipSize;
 	private bool _canSendOrders = true;
 	private DateTime _currentDate;
-	private Order? _longOrder;
-	private Order? _shortOrder;
+	private Order _longOrder;
+	private Order _shortOrder;
 	private bool _longOrderActive;
 	private bool _shortOrderActive;
 	private decimal? _longStopLoss;

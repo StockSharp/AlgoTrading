@@ -573,7 +573,7 @@ public class ColorXpWmaDigitIndicator : BaseIndicator<decimal>
 	private int _weightsPeriod;
 	private decimal _lastPower;
 	private decimal _weightsSum;
-	private IIndicator? _smoother;
+	private IIndicator _smoother;
 	private SmoothMethod _lastMethod;
 	private int _lastLength;
 	private decimal? _previousLine;

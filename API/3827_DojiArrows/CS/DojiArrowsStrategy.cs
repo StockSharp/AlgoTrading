@@ -22,8 +22,8 @@ public class DojiArrowsStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitSteps;
 	private readonly StrategyParam<decimal> _trailingStopSteps;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _twoCandlesAgo;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _twoCandlesAgo;
 	private bool _wasLongSignal;
 	private bool _wasShortSignal;
 

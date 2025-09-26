@@ -24,7 +24,7 @@ public class AhHmRsiStrategy : Strategy
 	private readonly RelativeStrengthIndex _rsi = new();
 	private readonly SimpleMovingAverage _sma = new();
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousRsi;
 	private decimal? _previousSma;
 

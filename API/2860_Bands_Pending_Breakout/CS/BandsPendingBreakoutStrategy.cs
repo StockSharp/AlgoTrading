@@ -45,8 +45,8 @@ public class BandsPendingBreakoutStrategy : Strategy
 
 	private readonly List<EntryOrderInfo> _entryOrders = new();
 
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 	private decimal? _currentStopPrice;
 	private decimal? _currentTakePrice;
 	private bool _isLongPosition;

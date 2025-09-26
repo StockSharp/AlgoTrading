@@ -25,7 +25,7 @@ public class ErrorEaStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex? _adx;
+	private AverageDirectionalIndex _adx;
 	private int _longTrades;
 	private int _shortTrades;
 

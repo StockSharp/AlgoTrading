@@ -39,8 +39,8 @@ public class Simple2MaIStrategy : Strategy
 	private RateOfChange _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal _point;
@@ -48,8 +48,8 @@ public class Simple2MaIStrategy : Strategy
 	private decimal? _momentumCurrent;
 	private decimal? _momentumPrevious;
 	private decimal? _momentumEarlier;
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _earlierCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _earlierCandle;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Simple2MaIStrategy"/> class.

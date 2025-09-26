@@ -43,12 +43,12 @@ public class FlatChannelStrategy : Strategy
 	private decimal _lastClosedPnL;
 	private int _lossCount;
 
-	private Order? _buyStopEntryOrder;
-	private Order? _sellStopEntryOrder;
-	private Order? _longStopLossOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopLossOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyStopEntryOrder;
+	private Order _sellStopEntryOrder;
+	private Order _longStopLossOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopLossOrder;
+	private Order _shortTakeProfitOrder;
 
 	private DateTimeOffset? _buyEntryPlacedTime;
 	private DateTimeOffset? _sellEntryPlacedTime;
@@ -742,7 +742,7 @@ public class FlatChannelStrategy : Strategy
 		_plannedShortTake = 0m;
 	}
 
-	private void CancelOrderSafe(ref Order? order)
+	private void CancelOrderSafe(ref Order order)
 	{
 		if (order == null)
 		return;

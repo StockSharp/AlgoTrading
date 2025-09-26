@@ -27,9 +27,9 @@ public class LbsStrategy : Strategy
 	private decimal _pipSize;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopOrder;
 	private decimal? _stopPrice;
 	private bool _stopForLong;
 	private decimal? _pendingLongStopPrice;
@@ -544,7 +544,7 @@ public class LbsStrategy : Strategy
 		return false;
 	}
 
-	private void CancelOrderIfActive(Order? order)
+	private void CancelOrderIfActive(Order order)
 	{
 		if (order is null)
 		return;

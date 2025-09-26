@@ -33,10 +33,10 @@ public class VltTraderStrategy : Strategy
 	private decimal? _lastFinishedLow;
 	private DateTimeOffset? _lastProcessedOpenTime;
 
-	private Order? _buyBreakoutOrder;
-	private Order? _sellBreakoutOrder;
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyBreakoutOrder;
+	private Order _sellBreakoutOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="VltTraderStrategy"/> class.
@@ -306,7 +306,7 @@ public class VltTraderStrategy : Strategy
 		CancelOrderIfActive(ref _takeProfitOrder);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

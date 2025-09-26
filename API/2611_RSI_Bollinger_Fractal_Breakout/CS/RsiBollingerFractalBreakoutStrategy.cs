@@ -30,8 +30,8 @@ public class RsiBollingerFractalBreakoutStrategy : Strategy
 	private BollingerBands _bollinger = null!;
 	private ParabolicSar _parabolicSar = null!;
 	
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	
 	private decimal? _pendingLongEntry;
 	private decimal? _pendingLongStop;

@@ -506,7 +506,7 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		}
 	}
 
-	private void CancelOrderSafe(Order? order)
+	private void CancelOrderSafe(Order order)
 	{
 		if (order is null)
 			return;
@@ -645,8 +645,8 @@ public class SampleDetectEconomicCalendarStrategy : Strategy
 		public bool OrdersPlaced { get; set; }
 		public bool Completed { get; set; }
 		public DateTimeOffset? CancelAfter { get; set; }
-		public Order? BuyOrder { get; set; }
-		public Order? SellOrder { get; set; }
+		public Order BuyOrder { get; set; }
+		public Order SellOrder { get; set; }
 	}
 
 	private enum NewsImportance

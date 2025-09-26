@@ -30,9 +30,9 @@ public class ExpTrendIntensityIndexStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
-	private IIndicator? _priceMa;
-	private IIndicator? _positiveMa;
-	private IIndicator? _negativeMa;
+	private IIndicator _priceMa;
+	private IIndicator _positiveMa;
+	private IIndicator _negativeMa;
 
 	private readonly List<int> _colorHistory = new();
 

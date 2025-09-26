@@ -48,10 +48,10 @@ public class RubberBandsGridStrategy : Strategy
 	private decimal _shortAveragePrice;
 	private int _shortTrades;
 
-	private Order? _activeBuyOrder;
-	private Order? _activeSellOrder;
-	private Order? _closeBuyOrder;
-	private Order? _closeSellOrder;
+	private Order _activeBuyOrder;
+	private Order _activeSellOrder;
+	private Order _closeBuyOrder;
+	private Order _closeSellOrder;
 
 	/// <summary>
 	/// Volume sent with each market order.

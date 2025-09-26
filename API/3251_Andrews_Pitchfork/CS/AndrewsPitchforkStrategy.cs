@@ -45,10 +45,10 @@ public class AndrewsPitchforkStrategy : Strategy
 	private DateTimeOffset? _trendCandleTime;
 	private DateTimeOffset? _macdCandleTime;
 	private DateTimeOffset? _processedCandleTime;
-	private ICandleMessage? _lastCandle;
+	private ICandleMessage _lastCandle;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
 	private decimal? _entryPrice;

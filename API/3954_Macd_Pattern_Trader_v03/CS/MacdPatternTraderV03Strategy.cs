@@ -47,7 +47,7 @@ public class MacdPatternTraderV03Strategy : Strategy
 	private decimal? _smaValue;
 	private decimal? _emaFourValue;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	private int _longScaleStage;
 	private int _shortScaleStage;

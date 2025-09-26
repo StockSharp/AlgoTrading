@@ -79,9 +79,9 @@ public class AdxEaStrategy : Strategy
 	private decimal? _volumePrev2;
 	private decimal? _volumePrev3;
 
-	private ICandleMessage? _lastCandle;
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousCandle2;
+	private ICandleMessage _lastCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousCandle2;
 
 	private DateTimeOffset? _maUpdateTime;
 	private DateTimeOffset? _adxUpdateTime;

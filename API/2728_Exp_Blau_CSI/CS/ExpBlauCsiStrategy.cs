@@ -661,12 +661,12 @@ public enum BlauCsiSmoothMethod
 public class BlauCsiIndicator : BaseIndicator<decimal>
 {
 	private readonly Queue<ICandleMessage> _window = new();
-	private IIndicator? _momentumStage1;
-	private IIndicator? _momentumStage2;
-	private IIndicator? _momentumStage3;
-	private IIndicator? _rangeStage1;
-	private IIndicator? _rangeStage2;
-	private IIndicator? _rangeStage3;
+	private IIndicator _momentumStage1;
+	private IIndicator _momentumStage2;
+	private IIndicator _momentumStage3;
+	private IIndicator _rangeStage1;
+	private IIndicator _rangeStage2;
+	private IIndicator _rangeStage3;
 
 	/// <summary>
 	/// Selected smoothing method.

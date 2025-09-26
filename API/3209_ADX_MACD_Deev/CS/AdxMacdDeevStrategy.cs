@@ -308,13 +308,13 @@ public class AdxMacdDeevStrategy : Strategy
 		if (trade?.Trade == null)
 			return;
 
-		if (Position > 0 && trade.Order?.Direction == Sides.Buy)
+		if (Position > 0 && trade.Order.Direction == Sides.Buy)
 		{
 			_entryPrice = trade.Trade.Price;
 			_halfTaken = false;
 			SetupRiskLevels(true);
 		}
-		else if (Position < 0 && trade.Order?.Direction == Sides.Sell)
+		else if (Position < 0 && trade.Order.Direction == Sides.Sell)
 		{
 			_entryPrice = trade.Trade.Price;
 			_halfTaken = false;

@@ -354,7 +354,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		onReady(previous, current);
 	}
 
-	private void EvaluateCombinedSignal(ICandleMessage? candle)
+	private void EvaluateCombinedSignal(ICandleMessage candle)
 	{
 		if (_silverTrendSignal is null || _jmaSignal is null)
 		return;
@@ -409,7 +409,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		BuyMarket(volume);
 	}
 
-	private void OpenLong(ICandleMessage? candle)
+	private void OpenLong(ICandleMessage candle)
 	{
 		if (Volume <= 0m)
 		return;
@@ -427,7 +427,7 @@ public class SilverTrendColorJFatlDigitStrategy : Strategy
 		}
 	}
 
-	private void OpenShort(ICandleMessage? candle)
+	private void OpenShort(ICandleMessage candle)
 	{
 		if (Volume <= 0m)
 		return;

@@ -30,8 +30,8 @@ public class TdsGlobal4Strategy : Strategy
 	private readonly StrategyParam<DataType> _dailyCandleType;
 	private readonly StrategyParam<DataType> _triggerCandleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
@@ -669,12 +669,12 @@ public class TdsGlobal4Strategy : Strategy
 		return false;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is { State: OrderStates.None or OrderStates.Pending or OrderStates.Active };
 	}
 
-	private void CancelAndReset(ref Order? order)
+	private void CancelAndReset(ref Order order)
 	{
 		if (order == null)
 		return;

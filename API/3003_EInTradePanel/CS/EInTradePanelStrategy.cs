@@ -47,7 +47,7 @@ public class EInTradePanelStrategy : Strategy
 	private decimal? _lastAtr;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
-	private Order? _entryOrder;
+	private Order _entryOrder;
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 	private bool _stopLimitWaiting;

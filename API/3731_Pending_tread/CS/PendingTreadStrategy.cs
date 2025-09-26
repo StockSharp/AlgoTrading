@@ -315,7 +315,7 @@ public class PendingTreadStrategy : Strategy
 		return side == Sides.Buy ? orderPrice + offset : orderPrice - offset;
 	}
 
-	private Order? PlacePendingOrder(bool aboveMarket, Sides side, decimal volume, decimal price, decimal? takeProfit)
+	private Order PlacePendingOrder(bool aboveMarket, Sides side, decimal volume, decimal price, decimal? takeProfit)
 	{
 		if (aboveMarket)
 		{

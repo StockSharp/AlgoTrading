@@ -24,8 +24,8 @@ public class AmlRsiMeetingLinesStrategy : Strategy
 	private RelativeStrengthIndex? _rsi;
 	private SimpleMovingAverage? _bodyAverage;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _twoBarsAgo;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _twoBarsAgo;
 	private decimal? _previousAvgBody;
 	private decimal? _prevRsi;
 	private decimal? _prevPrevRsi;

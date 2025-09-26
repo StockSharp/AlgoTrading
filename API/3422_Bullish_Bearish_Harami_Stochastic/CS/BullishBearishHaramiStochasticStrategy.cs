@@ -28,8 +28,8 @@ public class BullishBearishHaramiStochasticStrategy : Strategy
 	private SimpleMovingAverage _closeAverage = null!;
 	private SimpleMovingAverage _bodyAverage = null!;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _twoCandlesAgo;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _twoCandlesAgo;
 	private decimal? _previousCloseAverage;
 	private decimal? _twoCandlesAgoCloseAverage;
 	private decimal? _previousBodyAverage;

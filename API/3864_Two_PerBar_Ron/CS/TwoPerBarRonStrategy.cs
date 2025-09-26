@@ -19,8 +19,8 @@ public class TwoPerBarRonStrategy : Strategy
 		public decimal TargetVolume;
 		public decimal ActiveVolume;
 		public decimal AveragePrice;
-		public Order? EntryOrder;
-		public Order? ExitOrder;
+		public Order EntryOrder;
+		public Order ExitOrder;
 	}
 
 	private readonly List<HedgeLeg> _legs = new();

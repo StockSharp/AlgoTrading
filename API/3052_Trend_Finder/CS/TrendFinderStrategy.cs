@@ -445,7 +445,7 @@ public class TrendFinderStrategy : Strategy
 			_baseCandles.RemoveAt(0);
 	}
 
-	private ICandleMessage? GetPreviousCandle(int shift)
+	private ICandleMessage GetPreviousCandle(int shift)
 	{
 		var index = _baseCandles.Count - 1 - shift;
 		if (index < 0)

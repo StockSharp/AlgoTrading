@@ -55,7 +55,7 @@ public class IiOutbreakStrategy : Strategy
 	private readonly decimal[] _typicalPrices = new decimal[120];
 	private int _typicalCount;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	/// <summary>
 	/// Commission used in the trailing start calculation (round lot cost in points).

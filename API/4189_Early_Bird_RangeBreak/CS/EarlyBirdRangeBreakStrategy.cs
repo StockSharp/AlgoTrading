@@ -37,8 +37,8 @@ public class EarlyBirdRangeBreakStrategy : Strategy
 	private readonly StrategyParam<int> _volatilityPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _rsi;
-	private AverageTrueRange? _atr;
+	private RelativeStrengthIndex _rsi;
+	private AverageTrueRange _atr;
 
 	private readonly DirectionState _longState = new(true);
 	private readonly DirectionState _shortState = new(false);

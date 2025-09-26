@@ -521,12 +521,12 @@ public class BlauTStochIndicatorStrategy : Strategy
 
 		private Highest? _highest;
 		private Lowest? _lowest;
-		private IIndicator? _stoch1;
-		private IIndicator? _stoch2;
-		private IIndicator? _stoch3;
-		private IIndicator? _range1;
-		private IIndicator? _range2;
-		private IIndicator? _range3;
+		private IIndicator _stoch1;
+		private IIndicator _stoch2;
+		private IIndicator _stoch3;
+		private IIndicator _range1;
+		private IIndicator _range2;
+		private IIndicator _range3;
 
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{

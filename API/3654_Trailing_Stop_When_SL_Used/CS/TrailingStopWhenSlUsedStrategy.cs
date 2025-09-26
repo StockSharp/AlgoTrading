@@ -14,8 +14,8 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _trailingStepPoints;
 
-	private Order? _longStopOrder;
-	private Order? _shortStopOrder;
+	private Order _longStopOrder;
+	private Order _shortStopOrder;
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 	private decimal _priceStep = 1m;

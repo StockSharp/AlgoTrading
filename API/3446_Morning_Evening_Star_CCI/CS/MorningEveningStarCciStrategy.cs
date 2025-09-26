@@ -22,9 +22,9 @@ public class MorningEveningStarCciStrategy : Strategy
 
 	private CommodityChannelIndex _cci = null!;
 	private SMA _bodyAverage = null!;
-	private ICandleMessage? _olderCandle;
-	private ICandleMessage? _middleCandle;
-	private ICandleMessage? _latestCandle;
+	private ICandleMessage _olderCandle;
+	private ICandleMessage _middleCandle;
+	private ICandleMessage _latestCandle;
 	private decimal? _previousCci;
 	private decimal? _averageBodySize;
 

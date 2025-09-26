@@ -40,8 +40,8 @@ public class UltraAbsolutelyNoLagLwmaStrategy : Strategy
 	private readonly List<int> _colorHistory = new();
 	private decimal? _previousSmoothedUp;
 	private decimal? _previousSmoothedDown;
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 
 	public DataType CandleType
 	{

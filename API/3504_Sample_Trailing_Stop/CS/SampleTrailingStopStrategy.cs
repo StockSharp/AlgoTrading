@@ -17,8 +17,8 @@ public class SampleTrailingStopStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLevelPoints;
 	private readonly StrategyParam<decimal> _freezeLevelPoints;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	private decimal? _currentStopPrice;
 	private decimal? _currentTakePrice;
@@ -458,7 +458,7 @@ public class SampleTrailingStopStrategy : Strategy
 		};
 	}
 
-	private void CancelProtectiveOrder(ref Order? order)
+	private void CancelProtectiveOrder(ref Order order)
 	{
 		if (order == null)
 			return;

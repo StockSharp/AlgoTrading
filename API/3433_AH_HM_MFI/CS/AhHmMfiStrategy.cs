@@ -23,7 +23,7 @@ public class AhHmMfiStrategy : Strategy
 
 	private decimal? _previousMfi;
 	private decimal? _previousSma;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="AhHmMfiStrategy"/> class.

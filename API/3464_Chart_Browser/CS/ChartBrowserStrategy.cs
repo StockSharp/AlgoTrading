@@ -28,7 +28,7 @@ public class ChartBrowserStrategy : Strategy
 	private MarketDataSubscription? _chartSubscription;
 	private MarketDataSubscription? _indicatorSubscription;
 
-	private ICandleMessage? _lastChartCandle;
+	private ICandleMessage _lastChartCandle;
 	private decimal? _lastIndicatorValue;
 	private DateTimeOffset? _lastIndicatorTime;
 	private DateTimeOffset? _lastSummaryTime;
@@ -206,7 +206,7 @@ public class ChartBrowserStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		_totalTrades++;

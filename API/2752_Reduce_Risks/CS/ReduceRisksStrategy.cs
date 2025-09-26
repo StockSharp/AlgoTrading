@@ -40,12 +40,12 @@ public class ReduceRisksStrategy : Strategy
 	private RollingValues _m15Sma8Values;
 	private RollingValues _h1Sma24Values;
 
-	private ICandleMessage? _m1Prev1;
-	private ICandleMessage? _m1Prev2;
-	private ICandleMessage? _m1Prev3;
-	private ICandleMessage? _m15Prev1;
-	private ICandleMessage? _m15Prev2;
-	private ICandleMessage? _m15Prev3;
+	private ICandleMessage _m1Prev1;
+	private ICandleMessage _m1Prev2;
+	private ICandleMessage _m1Prev3;
+	private ICandleMessage _m15Prev1;
+	private ICandleMessage _m15Prev2;
+	private ICandleMessage _m15Prev3;
 
 	private decimal _pipSize;
 	private decimal _priceStep;

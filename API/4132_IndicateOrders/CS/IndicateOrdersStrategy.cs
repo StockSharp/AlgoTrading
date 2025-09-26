@@ -106,7 +106,7 @@ public class IndicateOrdersStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security is null)
+		if (trade.Order.Security is null)
 			return;
 
 		if (Security is not null && trade.Order.Security != Security)

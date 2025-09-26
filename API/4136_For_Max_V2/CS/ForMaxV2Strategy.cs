@@ -960,8 +960,8 @@ public class ForMaxV2Strategy : Strategy
 
 	private sealed class PendingStraddle
 	{
-		public Order? BuyOrder;
-		public Order? SellOrder;
+		public Order BuyOrder;
+		public Order SellOrder;
 		public decimal? BuyStopLoss;
 		public decimal? BuyTakeProfit;
 		public decimal? SellStopLoss;

@@ -24,8 +24,8 @@ public class ProbeStrategy : Strategy
 	private CommodityChannelIndex _cci = null!;
 	private decimal? _previousCci;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingShortStop;

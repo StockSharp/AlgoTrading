@@ -153,8 +153,8 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		if (price <= 0m || volume <= 0m)
 		return;
 
-		var side = trade.Order?.Direction ?? Sides.Buy;
-		var symbol = trade.Order?.Security?.Id ?? string.Empty;
+		var side = trade.Order.Direction ?? Sides.Buy;
+		var symbol = trade.Order.Security?.Id ?? string.Empty;
 
 		_lastTrade = new TradeDetail
 		{
@@ -163,9 +163,9 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		Volume = volume,
 		Time = info.ServerTime,
 		Side = side,
-		OrderId = trade.Order?.Id,
+		OrderId = trade.Order.Id,
 		TradeId = info.TradeId,
-		Comment = trade.Order?.Comment,
+		Comment = trade.Order.Comment,
 		};
 
 		ProcessPositionChange(previousPosition, Position, side, volume);

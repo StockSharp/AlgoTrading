@@ -25,7 +25,7 @@ public class FiveMinsEnvelopesStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private WeightedMovingAverage _medianLwma = null!;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousUpper;
 	private decimal? _previousLower;
 	private decimal? _bestBid;

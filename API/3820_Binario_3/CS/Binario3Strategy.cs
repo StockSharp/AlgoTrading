@@ -25,8 +25,8 @@ public class Binario3Strategy : Strategy
 	private ExponentialMovingAverage? _emaHigh;
 	private ExponentialMovingAverage? _emaLow;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
@@ -361,7 +361,7 @@ public class Binario3Strategy : Strategy
 		}
 	}
 
-	private void UpdatePendingOrder(ref Order? order, decimal price, decimal volume, bool isBuy)
+	private void UpdatePendingOrder(ref Order order, decimal price, decimal volume, bool isBuy)
 	{
 		if (price <= 0m || volume <= 0m)
 		{
@@ -390,7 +390,7 @@ public class Binario3Strategy : Strategy
 		CancelOrderIfActive(ref _sellStopOrder);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

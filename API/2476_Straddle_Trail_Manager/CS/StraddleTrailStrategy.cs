@@ -31,8 +31,8 @@ public class StraddleTrailStrategy : Strategy
 	private readonly StrategyParam<bool> _placeStraddleImmediately;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;

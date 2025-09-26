@@ -486,7 +486,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 			_shortTrailingStop = null;
 			_shortTakeProfit = null;
 
-			if (trade.Order?.Direction == Sides.Buy)
+			if (trade.Order.Direction == Sides.Buy)
 			{
 				_lowestLongPrice = _lowestLongPrice.HasValue ? Math.Min(_lowestLongPrice.Value, price.Value) : price.Value;
 				UpdateLongTakeProfit();
@@ -503,7 +503,7 @@ public class MartingaleTradeSimulatorStrategy : Strategy
 			_longTrailingStop = null;
 			_longTakeProfit = null;
 
-			if (trade.Order?.Direction == Sides.Sell)
+			if (trade.Order.Direction == Sides.Sell)
 			{
 				_highestShortPrice = _highestShortPrice.HasValue ? Math.Max(_highestShortPrice.Value, price.Value) : price.Value;
 				UpdateShortTakeProfit();

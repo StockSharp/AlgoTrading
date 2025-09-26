@@ -672,7 +672,7 @@ protected override void OnNewMyTrade(MyTrade trade)
 {
 	base.OnNewMyTrade(trade);
 
-	if (trade.Order?.Security != Security)
+	if (trade.Order.Security != Security)
 	return;
 
 	if (Position == 0)
@@ -681,14 +681,14 @@ protected override void OnNewMyTrade(MyTrade trade)
 		return;
 	}
 
-	if (trade.Order?.Direction == Sides.Buy)
+	if (trade.Order.Direction == Sides.Buy)
 	{
 		_entryPrice = trade.Trade.Price;
 		_stopPrice = _entryPrice - StopLossDistance;
 		_takeProfitPrice = _entryPrice + TakeProfitDistance;
 		_breakEvenActivated = false;
 	}
-	else if (trade.Order?.Direction == Sides.Sell)
+	else if (trade.Order.Direction == Sides.Sell)
 	{
 		_entryPrice = trade.Trade.Price;
 		_stopPrice = _entryPrice + StopLossDistance;

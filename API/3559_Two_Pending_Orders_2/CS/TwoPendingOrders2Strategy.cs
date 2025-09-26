@@ -263,7 +263,7 @@ public class TwoPendingOrders2Strategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Direction is not Sides side)
+		if (trade.Order.Direction is not Sides side)
 		return;
 
 		var volume = trade.Trade?.Volume ?? 0m;

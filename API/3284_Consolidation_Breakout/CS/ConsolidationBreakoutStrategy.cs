@@ -25,8 +25,8 @@ public class ConsolidationBreakoutStrategy : Strategy
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousPreviousCandle;
 	private decimal? _macdLine;
 	private decimal? _signalLine;
 	private decimal? _stopLossPrice;

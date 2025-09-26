@@ -35,7 +35,7 @@ public class ManualPositionTrackingPanelStrategy : Strategy
 
 	private decimal _pointValue;
 	private decimal _priceStep;
-	private Order? _takeProfitOrder;
+	private Order _takeProfitOrder;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
 	private decimal? _stopLevel;

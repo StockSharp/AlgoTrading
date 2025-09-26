@@ -290,7 +290,7 @@ public class MultiMartinStrategy : Strategy
 		if (volume <= 0m)
 			return;
 
-		Order? order = _nextEntrySide == Sides.Buy
+		Order order = _nextEntrySide == Sides.Buy
 		? BuyMarket(volume)
 		: SellMarket(volume);
 

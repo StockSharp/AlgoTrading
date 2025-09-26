@@ -58,7 +58,7 @@ public class FluctuateStrategy : Strategy
 	private bool _scheduleBuyStop;
 	private bool _scheduleSellStop;
 
-	private Order? _pendingEntryOrder;
+	private Order _pendingEntryOrder;
 	private Sides? _pendingEntrySide;
 	private decimal _pendingEntryVolume;
 
@@ -706,7 +706,7 @@ public class FluctuateStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade?.Order?.Security != Security)
+		if (trade?.Order.Security != Security)
 			return;
 
 		var order = trade.Order;

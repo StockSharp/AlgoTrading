@@ -28,8 +28,8 @@ public class ASystemChampionshipStrategy : Strategy
 	private readonly StrategyParam<int> _lossesExpected;
 	private readonly StrategyParam<int> _tradesExpected;
 
-	private ICandleMessage? _primaryCandle;
-	private ICandleMessage? _secondaryCandle;
+	private ICandleMessage _primaryCandle;
+	private ICandleMessage _secondaryCandle;
 	private decimal _quoteTake;
 	private decimal _quoteTrail;
 
@@ -745,7 +745,7 @@ public class ASystemChampionshipStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		_lastTradePrice = trade.Trade.Price;

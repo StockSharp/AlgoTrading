@@ -78,8 +78,8 @@ public class FarhadHillVersion2Strategy : Strategy
 	private bool _firstLevelTriggered;
 	private bool _secondLevelTriggered;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes strategy parameters using defaults from the MQL implementation.

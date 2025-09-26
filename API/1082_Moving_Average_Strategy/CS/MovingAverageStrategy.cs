@@ -21,8 +21,8 @@ public class MovingAverageStrategy : Strategy
 	private readonly StrategyParam<PriceTypeEnum> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _fastMa;
-	private IIndicator? _slowMa;
+	private IIndicator _fastMa;
+	private IIndicator _slowMa;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private bool _isInitialized;

@@ -58,8 +58,8 @@ public class TrailingActivateCloseAllStrategy : Strategy
 	private decimal? _bestAsk;
 	private decimal? _stopLevel;
 	private decimal? _freezeLevel;
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private bool _isClosingAll;
 
 	/// <summary>
@@ -570,7 +570,7 @@ public class TrailingActivateCloseAllStrategy : Strategy
 		ReRegisterOrder(_takeProfitOrder, normalizedPrice, volume);
 	}
 
-	private void CancelProtectiveOrder(ref Order? order)
+	private void CancelProtectiveOrder(ref Order order)
 	{
 		var current = order;
 		if (current == null)

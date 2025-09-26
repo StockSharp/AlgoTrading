@@ -23,10 +23,10 @@ public class GoStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DateTimeOffset _lastTime;
-	private IIndicator? _openMa;
-	private IIndicator? _highMa;
-	private IIndicator? _lowMa;
-	private IIndicator? _closeMa;
+	private IIndicator _openMa;
+	private IIndicator _highMa;
+	private IIndicator _lowMa;
+	private IIndicator _closeMa;
 
 	/// <summary>
 	/// Risk percentage used to calculate trade volume.

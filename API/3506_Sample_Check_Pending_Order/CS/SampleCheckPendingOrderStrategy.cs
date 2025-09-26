@@ -29,8 +29,8 @@ public class SampleCheckPendingOrderStrategy : Strategy
 	private decimal _stopLossOffset;
 	private decimal _takeProfitOffset;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private DateTimeOffset? _buyOrderExpiry;
 	private DateTimeOffset? _sellOrderExpiry;
 
@@ -309,7 +309,7 @@ public class SampleCheckPendingOrderStrategy : Strategy
 		return Math.Round(price / _priceStep, MidpointRounding.AwayFromZero) * _priceStep;
 	}
 
-	private static void CleanupOrder(ref Order? order)
+	private static void CleanupOrder(ref Order order)
 	{
 		if (order is null)
 		return;
@@ -324,7 +324,7 @@ public class SampleCheckPendingOrderStrategy : Strategy
 		}
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		if (order is null)
 		return false;

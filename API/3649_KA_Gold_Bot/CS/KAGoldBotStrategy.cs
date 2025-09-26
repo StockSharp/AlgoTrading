@@ -59,8 +59,8 @@ public class KAGoldBotStrategy : Strategy
 	private bool _longTrailingArmed;
 	private bool _shortTrailingArmed;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Keltner channel length used for the midline EMA and range average.

@@ -351,7 +351,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 		return RoundVolume(desired);
 	}
 
-	private void ManageOrder(ref Order? order, Sides side, decimal price, decimal volume, decimal leadPrice)
+	private void ManageOrder(ref Order order, Sides side, decimal price, decimal volume, decimal leadPrice)
 	{
 		CleanupOrder(ref order);
 
@@ -452,7 +452,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 		return absVolume;
 	}
 
-	private static void CleanupOrder(ref Order? order)
+	private static void CleanupOrder(ref Order order)
 	{
 		if (order == null)
 			return;
@@ -467,7 +467,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 		}
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order != null && order.State is OrderStates.Active or OrderStates.Pending or OrderStates.Placed or OrderStates.Suspended;
 	}

@@ -22,10 +22,10 @@ public class AwesomeFxTraderStrategy : Strategy
 	private readonly StrategyParam<int> _trendSmoothingPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA? _fastEma;
-	private EMA? _slowEma;
-	private LinearWeightedMovingAverage? _trendLwma;
-	private SimpleMovingAverage? _trendSmoother;
+	private EMA _fastEma;
+	private EMA _slowEma;
+	private LinearWeightedMovingAverage _trendLwma;
+	private SimpleMovingAverage _trendSmoother;
 
 	private decimal _previousAo;
 	private bool _hasPreviousAo;

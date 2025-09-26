@@ -27,12 +27,12 @@ public class PivotsStrategy : Strategy
 	private DateTime? _activeDate;
 	private DateTime? _pendingDate;
 
-	private Order? _buyLimitOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopLossOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopLossOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyLimitOrder;
+	private Order _sellStopOrder;
+	private Order _longStopLossOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopLossOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal _longEntryPrice;
 	private decimal _shortEntryPrice;
@@ -375,7 +375,7 @@ public class PivotsStrategy : Strategy
 		}
 	}
 
-	private void ReplaceStopOrder(ref Order? target, Sides side, decimal price, decimal volume)
+	private void ReplaceStopOrder(ref Order target, Sides side, decimal price, decimal volume)
 	{
 		if (volume <= 0m)
 			return;
@@ -388,7 +388,7 @@ public class PivotsStrategy : Strategy
 			: BuyStop(volume, price);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;
@@ -399,7 +399,7 @@ public class PivotsStrategy : Strategy
 		order = null;
 	}
 
-	private static bool IsOrderAlive(Order? order)
+	private static bool IsOrderAlive(Order order)
 	{
 		return order != null && order.State is OrderStates.Active or OrderStates.Pending;
 	}

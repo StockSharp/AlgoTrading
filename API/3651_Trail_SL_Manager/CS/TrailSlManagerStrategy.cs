@@ -191,12 +191,12 @@ public class TrailSlManagerStrategy : Strategy
 			return;
 		}
 
-		if (trade.Order?.Direction == Sides.Buy && Position > 0)
+		if (trade.Order.Direction == Sides.Buy && Position > 0)
 		{
 			_longStop = InitialStopPoints > 0 ? PositionAvgPrice - InitialStopPoints * _priceStep : 0m;
 			_longBreakEvenActive = false;
 		}
-		else if (trade.Order?.Direction == Sides.Sell && Position < 0)
+		else if (trade.Order.Direction == Sides.Sell && Position < 0)
 		{
 			_shortStop = InitialStopPoints > 0 ? PositionAvgPrice + InitialStopPoints * _priceStep : 0m;
 			_shortBreakEvenActive = false;

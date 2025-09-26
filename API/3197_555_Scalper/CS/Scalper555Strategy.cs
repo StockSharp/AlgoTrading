@@ -47,8 +47,8 @@ public class Scalper555Strategy : Strategy
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousCandle2;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousCandle2;
 	private decimal? _momentumAbs1;
 	private decimal? _momentumAbs2;
 	private decimal? _momentumAbs3;

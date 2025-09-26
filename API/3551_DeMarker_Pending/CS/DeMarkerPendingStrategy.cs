@@ -49,8 +49,8 @@ public class DeMarkerPendingStrategy : Strategy
 
 	private DeMarker _deMarker = null!;
 	private decimal _priceStep;
-	private Order? _pendingBuy;
-	private Order? _pendingSell;
+	private Order _pendingBuy;
+	private Order _pendingSell;
 	private readonly Dictionary<long, DateTimeOffset> _pendingExpirations = new();
 	private decimal? _previousDeMarker;
 	private DateTimeOffset? _lastBuySignalTime;
@@ -366,7 +366,7 @@ public class DeMarkerPendingStrategy : Strategy
 		if (takeDistance > 0m)
 			takeProfit = direction == Sides.Buy ? price + takeDistance : price - takeDistance;
 
-		Order? order = direction == Sides.Buy
+		Order order = direction == Sides.Buy
 		? (Mode == PendingMode.Stop
 		? BuyStop(Volume, price, stopLoss: stopLoss, takeProfit: takeProfit)
 		: BuyLimit(Volume, price, stopLoss: stopLoss, takeProfit: takeProfit))

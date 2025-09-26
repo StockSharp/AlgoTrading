@@ -537,7 +537,7 @@ public class Ak47ScalperStrategy : Strategy
 			ReRegisterOrder(_takeProfitOrder, desiredPrice, volume);
 	}
 
-	private void CancelProtectiveOrder(ref Order? order)
+	private void CancelProtectiveOrder(ref Order order)
 	{
 		if (order == null)
 			return;

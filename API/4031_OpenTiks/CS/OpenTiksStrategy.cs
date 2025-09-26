@@ -181,7 +181,7 @@ public class OpenTiksStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		_lastTradePrice = trade.Trade?.Price ?? trade.Order?.Price;
+		_lastTradePrice = trade.Trade?.Price ?? trade.Order.Price;
 	}
 
 	/// <inheritdoc />

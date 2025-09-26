@@ -375,9 +375,9 @@ public class BollingerBandPendingStopsStrategy : Strategy
 	}
 
 	public bool IsLong { get; }
-	public Order? EntryOrder { get; set; }
-	public Order? StopOrder { get; set; }
-	public Order? TakeOrder { get; set; }
+	public Order EntryOrder { get; set; }
+	public Order StopOrder { get; set; }
+	public Order TakeOrder { get; set; }
 	public decimal PlannedEntryPrice { get; private set; }
 	public decimal PlannedStopPrice { get; private set; }
 	public decimal PlannedTakePrice { get; private set; }

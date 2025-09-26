@@ -725,7 +725,7 @@ public class MacdPatternTraderV02Strategy : Strategy
 		return result;
 	}
 
-	private ICandleMessage? GetCandle(int shift)
+	private ICandleMessage GetCandle(int shift)
 	{
 		var index = _history.Count - 1 - shift;
 		if (index < 0 || index >= _history.Count)

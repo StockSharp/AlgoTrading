@@ -18,8 +18,8 @@ public class TwoDirectionMartinStylizedStrategy : Strategy
 	private readonly StrategyParam<decimal> _percentSame;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
 
 	private decimal _currentBid;
 	private decimal _currentAsk;

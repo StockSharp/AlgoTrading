@@ -27,8 +27,8 @@ public class FtTimeBigdogStrategy : Strategy
 	private decimal? _sessionLow;
 	private bool _rangeCompleted;
 	private bool _ordersPlaced;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;
 	private decimal? _pendingShortStop;
@@ -397,7 +397,7 @@ public class FtTimeBigdogStrategy : Strategy
 		_activeTakePrice = null;
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

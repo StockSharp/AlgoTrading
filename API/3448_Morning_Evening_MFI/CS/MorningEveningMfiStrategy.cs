@@ -23,8 +23,8 @@ public class MorningEveningMfiStrategy : Strategy
 	private readonly StrategyParam<decimal> _upperExitLevel;
 	private readonly StrategyParam<decimal> _lowerExitLevel;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _secondPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _secondPreviousCandle;
 	private decimal? _previousMfi;
 	private decimal? _secondPreviousMfi;
 

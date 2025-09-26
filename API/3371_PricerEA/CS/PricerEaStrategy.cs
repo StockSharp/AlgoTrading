@@ -43,12 +43,12 @@ public class PricerEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskFactor;
 	private readonly StrategyParam<decimal> _manualVolume;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	private bool _stopProtectsLong;
 	private decimal _stopVolume;
@@ -634,7 +634,7 @@ public class PricerEaStrategy : Strategy
 		_takeVolume = 0m;
 	}
 
-	private void CancelOrderSafe(ref Order? order)
+	private void CancelOrderSafe(ref Order order)
 	{
 		if (order != null && order.State == OrderStates.Active)
 		{
@@ -644,7 +644,7 @@ public class PricerEaStrategy : Strategy
 		order = null;
 	}
 
-	private void TryExpireOrder(ref Order? order, ref DateTimeOffset? expiry, DateTimeOffset now)
+	private void TryExpireOrder(ref Order order, ref DateTimeOffset? expiry, DateTimeOffset now)
 	{
 		if (order == null || order.State != OrderStates.Active)
 		{

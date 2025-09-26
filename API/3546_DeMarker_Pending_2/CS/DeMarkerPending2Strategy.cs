@@ -513,7 +513,7 @@ public class DeMarkerPending2Strategy : Strategy
 		if (!CheckMinDistance(price))
 		return;
 
-		Order? order;
+		Order order;
 
 		if (side == Sides.Buy)
 		order = UseStopOrders ? BuyStop(OrderVolume, price) : BuyLimit(price, OrderVolume);
@@ -718,7 +718,7 @@ public class DeMarkerPending2Strategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		if (Position == 0m)

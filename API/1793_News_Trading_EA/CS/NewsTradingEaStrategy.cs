@@ -22,8 +22,8 @@ public class NewsTradingEaStrategy : Strategy
 	private readonly StrategyParam<int> _expiration;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private DateTimeOffset _straddleStart;
 	private DateTimeOffset _straddleEnd;
 	private DateTimeOffset _expirationTime;

@@ -25,8 +25,8 @@ public class XpTradeManagerStrategy : Strategy
 	private readonly StrategyParam<bool> _trailingEndsAtBreakEven;
 	private readonly StrategyParam<bool> _stealthMode;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private Sides? _currentSide;
 	private decimal? _currentBid;
 	private decimal? _currentAsk;

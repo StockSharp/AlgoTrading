@@ -35,8 +35,8 @@ public class NCandlesV3Strategy : Strategy
 	private decimal _longTrailingPrice;
 	private decimal _shortTrailingPrice;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Candle type used for analysis.

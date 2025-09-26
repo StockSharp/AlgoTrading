@@ -558,7 +558,7 @@ public class EliteEfiboTraderStrategy : Strategy
 			continue;
 
 			var levelIndex = i + 1;
-			Order? order;
+			Order order;
 
 			if (i == 0)
 			{
@@ -602,7 +602,7 @@ public class EliteEfiboTraderStrategy : Strategy
 			if (level.ExitOrder != null && !IsFinalState(level.ExitOrder))
 			continue;
 
-			Order? order;
+			Order order;
 			if (level.Side == Sides.Buy)
 			order = SellMarket(level.OpenVolume);
 			else
@@ -717,7 +717,7 @@ public class EliteEfiboTraderStrategy : Strategy
 		if (level.ExitOrder != null && !IsFinalState(level.ExitOrder))
 		return;
 
-		Order? order = level.Side == Sides.Buy
+		Order order = level.Side == Sides.Buy
 		? SellMarket(level.OpenVolume)
 		: BuyMarket(level.OpenVolume);
 
@@ -876,8 +876,8 @@ public class EliteEfiboTraderStrategy : Strategy
 		public Sides Side { get; }
 		public decimal PlannedVolume { get; }
 		public decimal StopOffset { get; }
-		public Order? EntryOrder { get; set; }
-		public Order? ExitOrder { get; set; }
+		public Order EntryOrder { get; set; }
+		public Order ExitOrder { get; set; }
 		public decimal ExecutedVolume { get; set; }
 		public decimal OpenVolume { get; set; }
 		public decimal? EntryPrice { get; set; }

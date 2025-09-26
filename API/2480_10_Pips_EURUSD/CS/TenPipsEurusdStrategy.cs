@@ -27,8 +27,8 @@ public class TenPipsEurusdStrategy : Strategy
 	private decimal _currentBid;
 	private decimal _currentAsk;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private bool _buyOrderActive;
 	private bool _sellOrderActive;
 

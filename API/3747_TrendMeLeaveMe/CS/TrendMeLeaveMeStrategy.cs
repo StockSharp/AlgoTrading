@@ -28,10 +28,10 @@ public class TrendMeLeaveMeStrategy : Strategy
 	private readonly StrategyParam<decimal> _buyVolume;
 	private readonly StrategyParam<decimal> _sellVolume;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes parameters.
@@ -433,7 +433,7 @@ public class TrendMeLeaveMeStrategy : Strategy
 		CancelOrderIfActive(ref _takeProfitOrder);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order is null)
 		return;

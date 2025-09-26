@@ -27,10 +27,10 @@ public class HoopMasterStrategy : Strategy
 	private decimal? _lastTradePrice;
 	private decimal? _lastClosePrice;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;
@@ -496,7 +496,7 @@ public class HoopMasterStrategy : Strategy
 		CancelOrderIfActive(ref _takeProfitOrder);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

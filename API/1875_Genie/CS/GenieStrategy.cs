@@ -104,7 +104,7 @@ public class GenieStrategy : Strategy
 		var prevSar = 0m;
 		var prevPdi = 0m;
 		var prevMdi = 0m;
-		ICandleMessage? prevCandle = null;
+		ICandleMessage prevCandle = null;
 		var isFirst = true;
 
 		subscription.BindEx(adx, sar, (candle, adxValue, sarValue) =>

@@ -20,13 +20,13 @@ public class Fortrader10PipsStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopSell;
 	private readonly StrategyParam<decimal> _volume;
 
-	private Order? _longStopOrder;
-	private Order? _longTakeProfitOrder;
+	private Order _longStopOrder;
+	private Order _longTakeProfitOrder;
 	private decimal _longEntryPrice;
 	private bool _hasLongPosition;
 
-	private Order? _shortStopOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeProfitOrder;
 	private decimal _shortEntryPrice;
 	private bool _hasShortPosition;
 
@@ -272,7 +272,7 @@ public class Fortrader10PipsStrategy : Strategy
 		}
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is not null && order.State is not OrderStates.Done and not OrderStates.Failed and not OrderStates.Canceled;
 	}

@@ -27,8 +27,8 @@ public class FXTticksCollectorStrategy : Strategy
 	private readonly object _sync = new();
 
 	private FileStream? _stream;
-	private BinaryWriter? _writer;
-	private BinaryReader? _reader;
+	private BinaryWriter _writer;
+	private BinaryReader _reader;
 	private string? _filePath;
 	private DateTimeOffset? _lastRecordedBar;
 	private int _recordedBars;
@@ -38,7 +38,7 @@ public class FXTticksCollectorStrategy : Strategy
 	private long _lastBarTimeOffset = -1;
 	private int _prefillRemaining;
 	private TimeSpan _timeFrame = TimeSpan.Zero;
-	private ICandleMessage? _currentCandle;
+	private ICandleMessage _currentCandle;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="FXTticksCollectorStrategy"/> class.

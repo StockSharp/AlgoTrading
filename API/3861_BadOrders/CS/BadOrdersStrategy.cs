@@ -10,7 +10,7 @@ public class BadOrdersStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _distancePoints;
 
-	private Order? _stopOrder;
+	private Order _stopOrder;
 	private decimal _bestBid;
 	private bool _hasBid;
 	private decimal _pointValue;

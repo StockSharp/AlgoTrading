@@ -34,10 +34,10 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 
 	private RollingWindow<decimal>? _fastWindow;
 	private RollingWindow<decimal>? _slowWindow;
-	private IIndicator? _fastIndicator;
-	private IIndicator? _slowIndicator;
+	private IIndicator _fastIndicator;
+	private IIndicator _slowIndicator;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private DateTimeOffset? _lastBuyReference;
 	private DateTimeOffset? _lastSellReference;
 	private decimal _stopPrice;

@@ -28,7 +28,7 @@ public class MaEnvelopesStrategy : Strategy
 	private readonly StrategyParam<decimal> _envelopeDeviation;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _maIndicator;
+	private IIndicator _maIndicator;
 	private readonly Queue<decimal> _maValues = new();
 	private decimal? _previousClose;
 	private decimal _firstOffset;
@@ -441,7 +441,7 @@ public class MaEnvelopesStrategy : Strategy
 		if (stopPrice <= 0m || takeProfitPrice <= 0m)
 			return false;
 
-		Order? order = direction == Sides.Buy
+		Order order = direction == Sides.Buy
 			? BuyLimit(volume, entryPrice)
 			: SellLimit(volume, entryPrice);
 
@@ -525,7 +525,7 @@ public class MaEnvelopesStrategy : Strategy
 		var stopPrice = NormalizePrice(slot.StopPrice);
 		var takeProfitPrice = NormalizePrice(slot.TakeProfitPrice);
 
-		Order? stopOrder = slot.Direction == Sides.Buy
+		Order stopOrder = slot.Direction == Sides.Buy
 			? SellStop(slot.PositionVolume, stopPrice)
 			: BuyStop(slot.PositionVolume, stopPrice);
 
@@ -535,7 +535,7 @@ public class MaEnvelopesStrategy : Strategy
 			_orderSlots[stopOrder] = slot;
 		}
 
-		Order? takeProfitOrder = slot.Direction == Sides.Buy
+		Order takeProfitOrder = slot.Direction == Sides.Buy
 			? SellLimit(slot.PositionVolume, takeProfitPrice)
 			: BuyLimit(slot.PositionVolume, takeProfitPrice);
 
@@ -798,9 +798,9 @@ public class MaEnvelopesStrategy : Strategy
 
 	private sealed class EntrySlot
 	{
-		public Order? EntryOrder;
-		public Order? StopOrder;
-		public Order? TakeProfitOrder;
+		public Order EntryOrder;
+		public Order StopOrder;
+		public Order TakeProfitOrder;
 		public decimal Volume;
 		public decimal RemainingEntryVolume;
 		public decimal FilledVolume;

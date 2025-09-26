@@ -501,7 +501,7 @@ public class EnvelopeLimitLadderStrategy : Strategy
 		}
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is not null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}
@@ -520,9 +520,9 @@ public class EnvelopeLimitLadderStrategy : Strategy
 			_isLong = isLong;
 		}
 
-		public Order? EntryOrder { get; private set; }
-		public Order? StopOrder { get; private set; }
-		public Order? TakeOrder { get; private set; }
+		public Order EntryOrder { get; private set; }
+		public Order StopOrder { get; private set; }
+		public Order TakeOrder { get; private set; }
 		public decimal EntryPrice { get; private set; }
 		public decimal StopPrice { get; private set; }
 		public decimal TakePrice { get; private set; }

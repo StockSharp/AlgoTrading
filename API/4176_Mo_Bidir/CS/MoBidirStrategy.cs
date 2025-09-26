@@ -17,7 +17,7 @@ public class MoBidirStrategy : Strategy
 	{
 		public bool IsLong;
 		public decimal TargetVolume;
-		public Order? EntryOrder;
+		public Order EntryOrder;
 		public decimal FilledVolume;
 		public decimal EntryCost;
 		public decimal EntryPrice;

@@ -404,7 +404,7 @@ public class CryptocurrencyDivergenceStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		if (trade.Order.Side == Sides.Buy)

@@ -57,7 +57,7 @@ public class VirtPoTestBedScalpStrategy : Strategy
 
 	private decimal? _prevStochastic;
 	private decimal? _lastStochastic;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	private bool _pendingBuyActive;
 	private bool _pendingSellActive;

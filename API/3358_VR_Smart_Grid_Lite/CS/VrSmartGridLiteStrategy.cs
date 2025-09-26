@@ -22,7 +22,7 @@ public class VrSmartGridLiteStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<GridEntry> _entries = new();
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal _pipSize;
 
 	/// <summary>

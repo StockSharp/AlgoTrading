@@ -33,12 +33,12 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 	private decimal _bestBid;
 	private decimal _bestAsk;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopLossOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopLossOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _longStopLossOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopLossOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal? _pendingLongStopPrice;
 	private decimal? _pendingLongTakePrice;
@@ -540,12 +540,12 @@ public class OpenPendingorderAfterPositionGetStopLossStrategy : Strategy
 		return IsOrderActive(_shortStopLossOrder) || IsOrderActive(_shortTakeProfitOrder);
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order != null && order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 		return;

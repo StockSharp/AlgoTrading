@@ -15,8 +15,8 @@ public class OnePriceSlTpStrategy : Strategy
 	private decimal? _bestAsk;
 	private decimal _priceStep;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	public OnePriceSlTpStrategy()
 	{
@@ -289,7 +289,7 @@ public class OnePriceSlTpStrategy : Strategy
 		return volume;
 	}
 
-	private void CancelProtectiveOrder(ref Order? order)
+	private void CancelProtectiveOrder(ref Order order)
 	{
 		if (order == null)
 		return;

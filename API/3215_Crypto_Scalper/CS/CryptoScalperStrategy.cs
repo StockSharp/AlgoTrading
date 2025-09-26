@@ -26,7 +26,7 @@ public class CryptoScalperStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousMa;
 	private decimal? _higherFastValue;
 	private decimal? _higherSlowValue;

@@ -41,23 +41,23 @@ public class GraalFractalChannelStrategy : Strategy
 
 	private WilliamsPercentRange _williams = null!;
 
-	private ICandleMessage? _c1;
-	private ICandleMessage? _c2;
-	private ICandleMessage? _c3;
-	private ICandleMessage? _c4;
-	private ICandleMessage? _c5;
+	private ICandleMessage _c1;
+	private ICandleMessage _c2;
+	private ICandleMessage _c3;
+	private ICandleMessage _c4;
+	private ICandleMessage _c5;
 
 	private decimal? _lastUpperFractalPrice;
 	private decimal? _lastLowerFractalPrice;
-	private ICandleMessage? _lastUpperFractalCandle;
-	private ICandleMessage? _lastLowerFractalCandle;
+	private ICandleMessage _lastUpperFractalCandle;
+	private ICandleMessage _lastLowerFractalCandle;
 	private int _upperFractalAge = int.MaxValue;
 	private int _lowerFractalAge = int.MaxValue;
 	private bool _pendingLongSignal;
 	private bool _pendingShortSignal;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal _pipSize;
 	private decimal? _lastWilliamsValue;

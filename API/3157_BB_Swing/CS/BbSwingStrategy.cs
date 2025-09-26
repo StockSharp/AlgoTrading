@@ -47,10 +47,10 @@ public class BbSwingStrategy : Strategy
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 
-	private ICandleMessage? _bar1;
-	private ICandleMessage? _bar2;
-	private ICandleMessage? _bar3;
-	private ICandleMessage? _bar4;
+	private ICandleMessage _bar1;
+	private ICandleMessage _bar2;
+	private ICandleMessage _bar3;
+	private ICandleMessage _bar4;
 
 	private decimal? _momentum1;
 	private decimal? _momentum2;

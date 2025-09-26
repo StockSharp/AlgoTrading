@@ -21,8 +21,8 @@ public class AlexavSpeedUpM1Strategy : Strategy
 	private readonly StrategyParam<decimal> _openCloseDifference;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _protectiveStopOrder;
-	private Order? _takeProfitOrder;
+	private Order _protectiveStopOrder;
+	private Order _takeProfitOrder;
 
 	private decimal? _entryPrice;
 	private decimal? _bestBid;
@@ -353,7 +353,7 @@ public class AlexavSpeedUpM1Strategy : Strategy
 		CancelIfActive(ref _takeProfitOrder);
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 		return;

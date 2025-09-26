@@ -19,10 +19,10 @@ public class TradingPanelStrategy : Strategy
 	private readonly StrategyParam<decimal> _volumePerTrade;
 	private readonly StrategyParam<Security> _targetSecurity;
 
-	private Order? _longStopOrder;
-	private Order? _longTargetOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTargetOrder;
+	private Order _longStopOrder;
+	private Order _longTargetOrder;
+	private Order _shortStopOrder;
+	private Order _shortTargetOrder;
 
 	/// <summary>
 	/// Number of market orders sent whenever a panel action is executed.
@@ -267,7 +267,7 @@ public class TradingPanelStrategy : Strategy
 		CancelOrderSafe(ref _shortTargetOrder);
 	}
 
-	private void CancelOrderSafe(ref Order? order)
+	private void CancelOrderSafe(ref Order order)
 	{
 		if (order != null && order.State.IsActive())
 			CancelOrder(order);

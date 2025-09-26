@@ -70,8 +70,8 @@ public class TurboScalerGridStrategy : Strategy
 
 	private decimal? _equityLockLevel;
 
-	private Order? _longStopOrder;
-	private Order? _shortStopOrder;
+	private Order _longStopOrder;
+	private Order _shortStopOrder;
 
 	private readonly List<Order> _buyStopOrders = new();
 	private readonly List<Order> _sellStopOrders = new();
@@ -851,7 +851,7 @@ public class TurboScalerGridStrategy : Strategy
 		orders.Clear();
 	}
 
-	private void UpdateOrRegisterOrder(ref Order? order, Sides side, OrderTypes type, decimal price, decimal volume)
+	private void UpdateOrRegisterOrder(ref Order order, Sides side, OrderTypes type, decimal price, decimal volume)
 	{
 		if (price <= 0m || volume <= 0m)
 		{
@@ -874,7 +874,7 @@ public class TurboScalerGridStrategy : Strategy
 		};
 	}
 
-	private void CancelOrder(ref Order? order)
+	private void CancelOrder(ref Order order)
 	{
 		if (order != null && order.State == OrderStates.Active)
 			CancelOrder(order);

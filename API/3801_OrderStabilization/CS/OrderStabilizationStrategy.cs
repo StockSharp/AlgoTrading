@@ -20,8 +20,8 @@ public class OrderStabilizationStrategy : Strategy
 	private readonly StrategyParam<int> _expirationMinutes;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private DateTimeOffset? _buyExpiry;
 	private DateTimeOffset? _sellExpiry;
 
@@ -259,7 +259,7 @@ if (exitByProfit || exitByTwoSmallCandles || exitByAbsoluteProfit)
 }
 }
 
-private void CancelStrategyOrder(ref Order? order, ref DateTimeOffset? expiry)
+private void CancelStrategyOrder(ref Order order, ref DateTimeOffset? expiry)
 {
 if (order == null)
 {
@@ -274,7 +274,7 @@ order = null;
 expiry = null;
 }
 
-private void CleanupInactiveOrder(ref Order? order, ref DateTimeOffset? expiry)
+private void CleanupInactiveOrder(ref Order order, ref DateTimeOffset? expiry)
 {
 if (order != null && order.State != OrderStates.Active)
 {

@@ -27,7 +27,7 @@ public class SmartForexSystemStrategy : Strategy
 	private readonly List<GridEntry> _buyEntries = new();
 	private readonly List<GridEntry> _sellEntries = new();
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _referenceClose;
 
 	/// <summary>

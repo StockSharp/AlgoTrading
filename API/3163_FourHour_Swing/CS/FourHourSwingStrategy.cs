@@ -49,7 +49,7 @@ public class FourHourSwingStrategy : Strategy
 	private decimal? _momentumDistance3;
 	private decimal? _macdMain;
 	private decimal? _macdSignal;
-	private ICandleMessage? _previousBaseCandle;
+	private ICandleMessage _previousBaseCandle;
 
 	private decimal _tickSize;
 	private decimal _pipSize;

@@ -24,7 +24,7 @@ public class LbsV12Strategy : Strategy
 	private AverageTrueRange _atr = null!;
 	private Subscription? _subscription;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private DateTime? _currentDate;
 	private DateTime? _lastTriggerDate;
 	private bool _ordersPlaced;
@@ -34,8 +34,8 @@ public class LbsV12Strategy : Strategy
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;
@@ -332,7 +332,7 @@ public class LbsV12Strategy : Strategy
 		_shortEntryPrice = null;
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

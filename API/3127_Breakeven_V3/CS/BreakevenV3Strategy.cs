@@ -19,8 +19,8 @@ public class BreakevenV3Strategy : Strategy
 
 	private readonly List<PositionLot> _openLots = new();
 
-	private Order? _longExitOrder;
-	private Order? _shortExitOrder;
+	private Order _longExitOrder;
+	private Order _shortExitOrder;
 	private decimal _pointValue;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
@@ -97,7 +97,7 @@ public class BreakevenV3Strategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade?.Order?.Security != Security)
+		if (trade?.Order.Security != Security)
 		{
 			return;
 		}
@@ -383,7 +383,7 @@ public class BreakevenV3Strategy : Strategy
 		CancelOrder(ref _shortExitOrder);
 	}
 
-	private void CancelOrder(ref Order? order)
+	private void CancelOrder(ref Order order)
 	{
 		if (order != null && order.State == OrderStates.Active)
 		{
@@ -393,7 +393,7 @@ public class BreakevenV3Strategy : Strategy
 		order = null;
 	}
 
-	private void UpdateOrRegisterOrder(ref Order? order, Sides side, OrderTypes type, decimal price, decimal volume)
+	private void UpdateOrRegisterOrder(ref Order order, Sides side, OrderTypes type, decimal price, decimal volume)
 	{
 		if (price <= 0m || volume <= 0m)
 		{

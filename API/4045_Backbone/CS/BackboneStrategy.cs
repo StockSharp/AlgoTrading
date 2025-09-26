@@ -37,8 +37,8 @@ public class BackboneStrategy : Strategy
 	private int _tradeCount;
 	private decimal? _entryPrice;
 
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 	private decimal? _currentStopPrice;
 	private decimal? _currentTakePrice;
 

@@ -46,8 +46,8 @@ public class ChannelsStrategy : Strategy
 	private decimal _slowAlpha;
 	private int _samples;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ChannelsStrategy"/> class.

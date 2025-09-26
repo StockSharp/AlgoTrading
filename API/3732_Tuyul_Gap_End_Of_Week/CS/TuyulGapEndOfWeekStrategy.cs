@@ -26,9 +26,9 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 	private Highest _highestHigh = null!;
 	private Lowest _lowestLow = null!;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _protectiveStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _protectiveStopOrder;
 
 	private bool _ordersPlacedForSession;
 	private DateTime? _lastPlacementDate;
@@ -300,7 +300,7 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		CancelIfActive(ref _sellStopOrder);
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 		return;
@@ -311,7 +311,7 @@ public class TuyulGapEndOfWeekStrategy : Strategy
 		order = null;
 	}
 
-	private bool IsActive(Order? order)
+	private bool IsActive(Order order)
 	{
 		return order != null && order.State == OrderStates.Active;
 	}

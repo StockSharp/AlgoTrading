@@ -21,9 +21,9 @@ public class SurefireThingStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DateTime? _lastPreparedDay;
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
-	private ICandleMessage? _previousCandle;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
+	private ICandleMessage _previousCandle;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SurefireThingStrategy"/> class.
@@ -229,7 +229,7 @@ public class SurefireThingStrategy : Strategy
 		return Security?.ShrinkPrice(price) ?? price;
 	}
 
-	private void CancelPendingOrder(ref Order? order)
+	private void CancelPendingOrder(ref Order order)
 	{
 		if (order == null)
 			return;

@@ -19,7 +19,7 @@ public class TrailingStarPriceStrategy : Strategy
 	private decimal? _bestAsk;
 	private decimal _pointValue;
 
-	private Order? _stopOrder;
+	private Order _stopOrder;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="TrailingStarPriceStrategy"/> class.

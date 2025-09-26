@@ -530,7 +530,7 @@ public class StochSellStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		var tradePrice = trade.Trade?.Price ?? trade.Order.Price ?? 0m;

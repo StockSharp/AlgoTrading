@@ -44,8 +44,8 @@ public class AngZadCTimeMMRecoveryStrategy : Strategy
 	private int _sellLossCount;
 	private decimal _lastRealizedPnL;
 
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 
 	/// <summary>
 	/// Candle type used for calculations.

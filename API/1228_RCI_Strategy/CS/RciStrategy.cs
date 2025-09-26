@@ -117,7 +117,7 @@ public class RciStrategy : Strategy
 
 		var rci = new RankCorrelationIndex { Length = RciLength };
 
-		IIndicator? rciMa = MaType switch
+		IIndicator rciMa = MaType switch
 		{
 			"SMA" => new SMA { Length = MaLength },
 			"EMA" => new EMA { Length = MaLength },

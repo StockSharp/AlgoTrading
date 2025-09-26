@@ -49,8 +49,8 @@ public class FlatChannelStrategy : Strategy
 	private bool _allowBuyStop;
 	private bool _allowSellStop;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal? _plannedLongStop;
 	private decimal? _plannedLongTake;
 	private decimal? _plannedShortStop;
@@ -748,7 +748,7 @@ public class FlatChannelStrategy : Strategy
 		return 0.0001m;
 	}
 
-	private void CancelPendingOrder(ref Order? order)
+	private void CancelPendingOrder(ref Order order)
 	{
 		if (order == null)
 			return;

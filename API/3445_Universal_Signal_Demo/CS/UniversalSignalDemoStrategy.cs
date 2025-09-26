@@ -40,8 +40,8 @@ public class UniversalSignalDemoStrategy : Strategy
 	private SimpleMovingAverage _volumeSma = null!;
 
 	private decimal _previousClose;
-	private Order? _pendingBuyOrder;
-	private Order? _pendingSellOrder;
+	private Order _pendingBuyOrder;
+	private Order _pendingSellOrder;
 	private DateTimeOffset? _buyOrderExpiry;
 	private DateTimeOffset? _sellOrderExpiry;
 
@@ -485,7 +485,7 @@ public class UniversalSignalDemoStrategy : Strategy
 	}
 	}
 
-	private void CancelPendingOrder(ref Order? order, ref DateTimeOffset? expiry)
+	private void CancelPendingOrder(ref Order order, ref DateTimeOffset? expiry)
 	{
 	if (order == null)
 	{

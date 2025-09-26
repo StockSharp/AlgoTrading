@@ -29,7 +29,7 @@ public class BandOsMaStrategy : Strategy
 
 	private MovingAverageConvergenceDivergenceSignal? _macd;
 	private BollingerBands? _bollinger;
-	private IIndicator? _osmaAverage;
+	private IIndicator _osmaAverage;
 
 	private readonly List<decimal> _osmaHistory = new();
 	private readonly List<decimal> _upperBandHistory = new();

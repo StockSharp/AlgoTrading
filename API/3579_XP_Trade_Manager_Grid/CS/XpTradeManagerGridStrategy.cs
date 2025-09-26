@@ -733,7 +733,7 @@ base.OnOrderCancelled(order);
 ReleasePendingStage(order);
 }
 
-private void ReleasePendingStage(Order? order)
+private void ReleasePendingStage(Order order)
 {
 if (order?.Comment == null)
 return;

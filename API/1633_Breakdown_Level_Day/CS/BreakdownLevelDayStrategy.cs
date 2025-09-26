@@ -25,10 +25,10 @@ public class BreakdownLevelDayStrategy : Strategy
 	private decimal _dayLow;
 	private DateTime _currentDay;
 	private bool _ordersPlaced;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopOrder;
-	private Order? _profitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopOrder;
+	private Order _profitOrder;
 	private decimal _entryPrice;
 	private bool _isLong;
 	private decimal _stopPrice;

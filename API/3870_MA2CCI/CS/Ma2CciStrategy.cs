@@ -33,7 +33,7 @@ public class Ma2CciStrategy : Strategy
 	private Sides? _lastEntrySide;
 	private decimal? _lastEntryPrice;
 	private decimal? _pendingStopPrice;
-	private Order? _activeStopOrder;
+	private Order _activeStopOrder;
 	private int _consecutiveLosses;
 
 	/// <summary>

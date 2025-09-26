@@ -51,7 +51,7 @@ public class ReversalsWithPinBarsStrategy : Strategy
 
 	private decimal _pipSize;
 
-	private ICandleMessage? _previousPrimaryCandle;
+	private ICandleMessage _previousPrimaryCandle;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakeProfit;

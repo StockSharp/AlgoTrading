@@ -21,7 +21,7 @@ public class GridStrategy : Strategy
 
 	private Sides _nextCycleSide;
 	private Sides? _activeCycleSide;
-	private Order? _pendingOrder;
+	private Order _pendingOrder;
 	private decimal _lastOrderVolume;
 	private decimal _gridStep;
 	private decimal _targetDistance;
@@ -160,7 +160,7 @@ public class GridStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade?.Order?.Security != Security)
+		if (trade?.Order.Security != Security)
 		return;
 
 		var order = trade.Order;

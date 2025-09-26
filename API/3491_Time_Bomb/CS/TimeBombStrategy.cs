@@ -459,22 +459,22 @@ public class TimeBombStrategy : Strategy
 
 		_orderInFlight = false;
 
-		if (_pendingShortEntry && trade.Order?.Direction == Sides.Sell)
+		if (_pendingShortEntry && trade.Order.Direction == Sides.Sell)
 		{
 			_pendingShortEntry = false;
 			UpdateShortTargets(Position.AveragePrice ?? trade.Trade.Price ?? _bestBid);
 		}
-		else if (_pendingLongEntry && trade.Order?.Direction == Sides.Buy)
+		else if (_pendingLongEntry && trade.Order.Direction == Sides.Buy)
 		{
 			_pendingLongEntry = false;
 			UpdateLongTargets(Position.AveragePrice ?? trade.Trade.Price ?? _bestAsk);
 		}
-		else if (_closingShortPosition && trade.Order?.Direction == Sides.Buy)
+		else if (_closingShortPosition && trade.Order.Direction == Sides.Buy)
 		{
 			_closingShortPosition = false;
 			ResetShortTargets();
 		}
-		else if (_closingLongPosition && trade.Order?.Direction == Sides.Sell)
+		else if (_closingLongPosition && trade.Order.Direction == Sides.Sell)
 		{
 			_closingLongPosition = false;
 			ResetLongTargets();

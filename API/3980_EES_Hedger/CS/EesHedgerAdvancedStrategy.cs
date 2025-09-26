@@ -26,8 +26,8 @@ public class EesHedgerAdvancedStrategy : Strategy
 	private readonly HashSet<long> _processedTradeIds = new();
 	private readonly HashSet<long> _ownOrderTransactions = new();
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private decimal? _currentStopPrice;
 	private decimal? _currentTakeProfitPrice;
 	private decimal _pipSize;
@@ -198,7 +198,7 @@ public class EesHedgerAdvancedStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		if (trade.Order.TransactionId != 0)
@@ -210,7 +210,7 @@ public class EesHedgerAdvancedStrategy : Strategy
 
 	private void OnConnectorNewMyTrade(MyTrade trade)
 	{
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		if (trade.Order.TransactionId != 0 && _ownOrderTransactions.Contains(trade.Order.TransactionId))
@@ -417,7 +417,7 @@ public class EesHedgerAdvancedStrategy : Strategy
 		_currentStopPrice = price;
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 		return;

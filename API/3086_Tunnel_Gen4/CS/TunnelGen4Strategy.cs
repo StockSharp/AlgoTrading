@@ -28,7 +28,7 @@ public class TunnelGen4Strategy : Strategy
 	private decimal _firstEntryPrice;
 	private decimal _secondEntryPrice;
 	private bool _waitingForSecondEntry;
-	private Order? _secondEntryOrder;
+	private Order _secondEntryOrder;
 	private decimal _bestBid;
 	private decimal _bestAsk;
 	private bool _hasBestBid;
@@ -260,7 +260,7 @@ public class TunnelGen4Strategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		Order? order = side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume);
+		Order order = side == Sides.Buy ? BuyMarket(volume) : SellMarket(volume);
 		RegisterOrder(order, side == Sides.Buy ? OrderIntent.OpenLong : OrderIntent.OpenShort, true);
 
 		if (order != null)
@@ -288,7 +288,7 @@ public class TunnelGen4Strategy : Strategy
 		ResetCycle();
 	}
 
-	private void RegisterOrder(Order? order, OrderIntent intent, bool isEntry)
+	private void RegisterOrder(Order order, OrderIntent intent, bool isEntry)
 	{
 		if (order == null)
 		return;

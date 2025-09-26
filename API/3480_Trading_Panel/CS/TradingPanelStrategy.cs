@@ -100,7 +100,7 @@ public class TradingPanelStrategy : Strategy
 	/// <summary>
 	/// Stores the latest finished candle for visualization or diagnostics.
 	/// </summary>
-	public ICandleMessage? LastFinishedCandle { get; private set; }
+	public ICandleMessage LastFinishedCandle { get; private set; }
 
 	/// <summary>
 	/// Initializes strategy parameters.

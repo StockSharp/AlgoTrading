@@ -50,7 +50,7 @@ public class CryptoAnalysisStrategy : Strategy
 	private Momentum _momentumIndicator = null!;
 	private MovingAverageConvergenceDivergence _macdIndicator = null!;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousLowerBand;
 	private decimal? _previousUpperBand;
 

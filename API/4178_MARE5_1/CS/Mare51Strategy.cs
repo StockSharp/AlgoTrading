@@ -34,7 +34,7 @@ public class Mare51Strategy : Strategy
 	private Shift? _slowShift2;
 	private Shift? _slowShift5;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal _pointSize;
 
 	/// <summary>

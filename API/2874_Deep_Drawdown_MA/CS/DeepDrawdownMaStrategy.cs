@@ -25,8 +25,8 @@ public class DeepDrawdownMaStrategy : Strategy
 	private readonly StrategyParam<MovingAverageMethod> _maMethod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _fastMa;
-	private IIndicator? _slowMa;
+	private IIndicator _fastMa;
+	private IIndicator _slowMa;
 	private readonly Queue<decimal> _fastValues = new();
 	private readonly Queue<decimal> _slowValues = new();
 	private PositionDirection _lastEntryDirection = PositionDirection.None;
@@ -422,7 +422,7 @@ public class DeepDrawdownMaStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		var direction = trade.Order?.Direction;
+		var direction = trade.Order.Direction;
 		if (direction == null)
 			return;
 

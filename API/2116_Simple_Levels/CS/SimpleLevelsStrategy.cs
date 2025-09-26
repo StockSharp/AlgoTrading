@@ -19,7 +19,7 @@ public class SimpleLevelsStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<TrendLine> _lines = new();
-	private ICandleMessage? _prevCandle;
+	private ICandleMessage _prevCandle;
 	private decimal _entryPrice;
 	private decimal _stopPrice;
 	private decimal _takePrice;

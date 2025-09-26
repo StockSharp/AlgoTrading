@@ -405,7 +405,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 	private sealed class SignalContext
 	{
 		private readonly FatPanelSignalDefinition _definition;
-		private readonly IIndicator? _indicator;
+		private readonly IIndicator _indicator;
 
 		public decimal? Current { get; private set; }
 		public decimal? Previous { get; private set; }

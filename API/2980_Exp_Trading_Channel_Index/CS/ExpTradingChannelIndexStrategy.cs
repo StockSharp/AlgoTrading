@@ -490,9 +490,9 @@ public class ExpTradingChannelIndexStrategy : Strategy
 /// </summary>
 public class TradingChannelIndexIndicator : BaseIndicator<decimal>
 {
-	private IIndicator? _primaryMa;
-	private IIndicator? _volatilityMa;
-	private IIndicator? _signalMa;
+	private IIndicator _primaryMa;
+	private IIndicator _volatilityMa;
+	private IIndicator _signalMa;
 
 	/// <summary>
 	/// Primary smoothing method.

@@ -20,12 +20,12 @@ public class HoopMasterStrategy : Strategy
 	private readonly StrategyParam<decimal> _lossMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _longStopOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;
@@ -442,7 +442,7 @@ public class HoopMasterStrategy : Strategy
 		}
 	}
 
-	private void ReplaceOrder(ref Order? order, bool isBuyStop, decimal price)
+	private void ReplaceOrder(ref Order order, bool isBuyStop, decimal price)
 	{
 		var volume = Math.Abs(Position);
 		if (volume <= 0m)
@@ -487,12 +487,12 @@ public class HoopMasterStrategy : Strategy
 		return decimals == 3 || decimals == 5 ? step * 10m : step;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is not null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}
 
-	private void CancelActiveOrder(Order? order)
+	private void CancelActiveOrder(Order order)
 	{
 		if (order is not null && (order.State == OrderStates.Active || order.State == OrderStates.Pending))
 			CancelOrder(order);

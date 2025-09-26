@@ -26,7 +26,7 @@ public class CdcPlMfiStrategy : Strategy
 	private SimpleMovingAverage _bodyAverage = null!;
 	private SimpleMovingAverage _closeAverage = null!;
 
-	private ICandleMessage? _previous;
+	private ICandleMessage _previous;
 	private decimal? _prevMfi;
 	private decimal? _bodyAvgPrev;
 	private decimal? _closeAvgPrev;

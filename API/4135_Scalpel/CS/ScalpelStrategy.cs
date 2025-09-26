@@ -36,16 +36,16 @@ public class ScalpelStrategy : Strategy
 
 	private readonly Queue<(decimal Up, decimal Down)> _volatilityHistory = new();
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousSecondCandle;
-	private ICandleMessage? _previousThirdCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousSecondCandle;
+	private ICandleMessage _previousThirdCandle;
 
-	private ICandleMessage? _hour1Previous;
-	private ICandleMessage? _hour1Current;
-	private ICandleMessage? _hour4Previous;
-	private ICandleMessage? _hour4Current;
-	private ICandleMessage? _minute30Previous;
-	private ICandleMessage? _minute30Current;
+	private ICandleMessage _hour1Previous;
+	private ICandleMessage _hour1Current;
+	private ICandleMessage _hour4Previous;
+	private ICandleMessage _hour4Current;
+	private ICandleMessage _minute30Previous;
+	private ICandleMessage _minute30Current;
 
 	private decimal _volatilityCurrentUp;
 	private decimal _volatilityCurrentDown;

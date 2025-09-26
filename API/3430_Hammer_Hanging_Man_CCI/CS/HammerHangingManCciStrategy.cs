@@ -24,8 +24,8 @@ public class HammerHangingManCciStrategy : Strategy
 	private CommodityChannelIndex _cci = null!;
 	private SimpleMovingAverage _closeSma = null!;
 
-	private ICandleMessage? _prevCandle;
-	private ICandleMessage? _prevPrevCandle;
+	private ICandleMessage _prevCandle;
+	private ICandleMessage _prevPrevCandle;
 
 	private decimal? _prevCci;
 	private decimal? _prevPrevCci;

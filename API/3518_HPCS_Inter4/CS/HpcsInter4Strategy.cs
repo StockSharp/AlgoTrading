@@ -151,7 +151,7 @@ public class HpcsInter4Strategy : Strategy
 			return;
 
 		// Capture the entry time after the first filled buy trade.
-		if (!_entryTime.HasValue && trade.Order?.Direction == Sides.Buy && Position > 0m)
+		if (!_entryTime.HasValue && trade.Order.Direction == Sides.Buy && Position > 0m)
 		{
 			_entryTime = trade.Trade.ServerTime;
 			_exitRequested = false;

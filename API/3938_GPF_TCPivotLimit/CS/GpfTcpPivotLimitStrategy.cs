@@ -31,8 +31,8 @@ private decimal _dayClose;
 private PivotLevels? _activeLevels;
 private DateTime? _levelsDay;
 
-private ICandleMessage? _previousCandle;
-private ICandleMessage? _twoAgoCandle;
+private ICandleMessage _previousCandle;
+private ICandleMessage _twoAgoCandle;
 
 private decimal? _longStop;
 private decimal? _longTake;

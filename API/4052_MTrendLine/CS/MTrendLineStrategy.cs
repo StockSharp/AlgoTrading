@@ -73,7 +73,7 @@ public class MTrendLineStrategy : Strategy
 
 	private sealed class PendingOrderState
 	{
-		public Order? ActiveOrder;
+		public Order ActiveOrder;
 		public decimal? LastPrice;
 	}
 
@@ -462,7 +462,7 @@ public class MTrendLineStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		Order? newOrder = (side, orderType) switch
+		Order newOrder = (side, orderType) switch
 		{
 			(Sides.Buy, OrderTypes.Limit) => BuyLimit(actualVolume, targetPrice, stopLoss: stopLossPrice, takeProfit: takeProfitPrice),
 			(Sides.Buy, OrderTypes.Stop) => BuyStop(actualVolume, targetPrice, stopLoss: stopLossPrice, takeProfit: takeProfitPrice),

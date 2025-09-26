@@ -36,8 +36,8 @@ public class UniversalMaCrossV4Strategy : Strategy
 	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _fastMa;
-	private IIndicator? _slowMa;
+	private IIndicator _fastMa;
+	private IIndicator _slowMa;
 
 	private decimal? _fastPrev;
 	private decimal? _fastPrevPrev;

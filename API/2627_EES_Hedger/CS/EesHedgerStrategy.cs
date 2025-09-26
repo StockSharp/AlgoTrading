@@ -25,8 +25,8 @@ public class EesHedgerStrategy : Strategy
 	private readonly HashSet<long> _processedTradeIds = new();
 	private readonly HashSet<long> _ownOrderTransactions = new();
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private decimal? _currentStopPrice;
 	private decimal? _currentTakeProfitPrice;
 	private decimal _pipSize;
@@ -187,7 +187,7 @@ public class EesHedgerStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		if (trade.Order.TransactionId != 0)
@@ -354,7 +354,7 @@ public class EesHedgerStrategy : Strategy
 		_currentStopPrice = price;
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 		return;

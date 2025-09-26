@@ -325,9 +325,9 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		var price = trade.Trade?.Price ?? trade.Order?.Price ?? 0m;
+		var price = trade.Trade?.Price ?? trade.Order.Price ?? 0m;
 
-		if (trade.Order?.Direction == Sides.Buy)
+		if (trade.Order.Direction == Sides.Buy)
 		{
 			if (Position > 0m)
 				_longEntryPrice = price;
@@ -335,7 +335,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 			if (Position >= 0m)
 				_shortEntryPrice = Position == 0m ? null : _shortEntryPrice;
 		}
-		else if (trade.Order?.Direction == Sides.Sell)
+		else if (trade.Order.Direction == Sides.Sell)
 		{
 			if (Position < 0m)
 				_shortEntryPrice = price;

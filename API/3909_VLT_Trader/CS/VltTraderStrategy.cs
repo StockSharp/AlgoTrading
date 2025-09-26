@@ -24,8 +24,8 @@ public class VltTraderStrategy : Strategy
 	private decimal? _previousRange;
 	private decimal? _previousHigh;
 	private decimal? _previousLow;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="VltTraderStrategy"/>.
@@ -244,7 +244,7 @@ public class VltTraderStrategy : Strategy
 		return Position < 0m || IsOrderActive(_sellStopOrder);
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order != null && order.State.IsActive();
 	}

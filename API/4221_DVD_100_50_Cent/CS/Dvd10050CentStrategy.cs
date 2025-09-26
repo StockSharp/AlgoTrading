@@ -40,7 +40,7 @@ public class Dvd10050CentStrategy : Strategy
 	private readonly List<ICandleMessage> _m1History = new();
 	private readonly List<ICandleMessage> _m30History = new();
 	private readonly List<ICandleMessage> _h1Finished = new();
-	private ICandleMessage? _h1Current;
+	private ICandleMessage _h1Current;
 
 	private decimal? _raviH1;
 	private decimal? _raviD1Current;
@@ -781,13 +781,13 @@ public class Dvd10050CentStrategy : Strategy
 		return true;
 	}
 
-	private ICandleMessage? GetM1Candle(int shift)
+	private ICandleMessage GetM1Candle(int shift)
 	{
 		var index = _m1History.Count - 1 - shift;
 		return index >= 0 && index < _m1History.Count ? _m1History[index] : null;
 	}
 
-	private ICandleMessage? GetM30Candle(int shift)
+	private ICandleMessage GetM30Candle(int shift)
 	{
 		var index = _m30History.Count - 1 - shift;
 		return index >= 0 && index < _m30History.Count ? _m30History[index] : null;

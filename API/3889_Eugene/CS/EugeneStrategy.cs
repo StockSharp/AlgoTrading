@@ -16,8 +16,8 @@ public class EugeneStrategy : Strategy
 	private int _counterSell;
 	private DateTimeOffset? _lastProcessedCandleTime;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _prePreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _prePreviousCandle;
 
 	public decimal TradeVolume
 	{

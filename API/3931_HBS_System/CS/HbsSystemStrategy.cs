@@ -43,8 +43,8 @@ private decimal? _lastSellLevel;
 private readonly Dictionary<Order, PendingOrderInfo> _pendingOrders = new();
 private readonly HashSet<Order> _takeProfitOrders = new();
 
-private Order? _longStopOrder;
-private Order? _shortStopOrder;
+private Order _longStopOrder;
+private Order _shortStopOrder;
 private decimal? _longStopPrice;
 private decimal? _shortStopPrice;
 
@@ -649,7 +649,7 @@ EnsureStopOrder(false);
 }
 }
 
-private Order? RegisterTakeProfit(bool isLong, decimal price, decimal volume)
+private Order RegisterTakeProfit(bool isLong, decimal price, decimal volume)
 {
 var normalizedPrice = NormalizePrice(price);
 if (normalizedPrice <= 0m || volume <= 0m)
@@ -660,7 +660,7 @@ return isLong
 : BuyLimit(volume, normalizedPrice);
 }
 
-private void CancelOrderIfActive(ref Order? order)
+private void CancelOrderIfActive(ref Order order)
 {
 if (order == null)
 return;
@@ -677,7 +677,7 @@ if (IsOrderActive(order))
 CancelOrder(order);
 }
 
-private static bool IsOrderActive(Order? order)
+private static bool IsOrderActive(Order order)
 {
 return order != null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 }

@@ -382,7 +382,7 @@ public class FtBillWilliamsAoStrategy : Strategy
 		base.OnNewMyTrade(trade);
 
 		var price = trade.Trade?.Price;
-		var direction = trade.Order?.Direction;
+		var direction = trade.Order.Direction;
 
 		if (price is null || direction is null)
 			return;

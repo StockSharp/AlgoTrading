@@ -381,7 +381,7 @@ public class PendingTreadStrategy : Strategy
 			var stopLoss = CalculateStopLoss(direction, price);
 			var takeProfit = CalculateTakeProfit(direction, price);
 
-			Order? order = (side, orderType) switch
+			Order order = (side, orderType) switch
 			{
 			(Sides.Buy, OrderTypes.Limit) => BuyLimit(volume, price, stopLoss: stopLoss, takeProfit: takeProfit),
 			(Sides.Buy, OrderTypes.Stop) => BuyStop(volume, price, stopLoss: stopLoss, takeProfit: takeProfit),

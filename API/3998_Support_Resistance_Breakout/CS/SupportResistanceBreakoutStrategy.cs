@@ -27,7 +27,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	private TrendDirection _trend;
 
 	private decimal _point;
-	private Order? _stopOrder;
+	private Order _stopOrder;
 	private decimal? _stopPrice;
 	private decimal? _entryPrice;
 	private int _trailingStage;
@@ -354,7 +354,7 @@ public class SupportResistanceBreakoutStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 		return;
 
 		var tradeVolume = trade.Trade.Volume;

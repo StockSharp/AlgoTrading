@@ -24,9 +24,9 @@ public class ExecutorCandlesStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _trendCandleType;
 
-	private ICandleMessage? _prev1;
-	private ICandleMessage? _prev2;
-	private ICandleMessage? _prev3;
+	private ICandleMessage _prev1;
+	private ICandleMessage _prev2;
+	private ICandleMessage _prev3;
 
 	private decimal? _entryPrice;
 	private decimal? _stopLevel;

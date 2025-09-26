@@ -465,7 +465,7 @@ public class CycleMarketOrderStrategy : Strategy
 		if (slot.PendingExitVolume > 0m || slot.OpenVolume <= 0m)
 			return;
 
-		Order? order;
+		Order order;
 		if (slot.Direction == Sides.Buy)
 		{
 			order = SellMarket(slot.OpenVolume);

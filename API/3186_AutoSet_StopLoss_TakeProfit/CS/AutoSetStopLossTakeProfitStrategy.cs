@@ -30,8 +30,8 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 	private decimal _pointValue;
 	private decimal _priceStep;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	public AutoSetStopLossTakeProfitStrategy()
 	{
@@ -370,7 +370,7 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 		return volume;
 	}
 
-	private void CancelProtectiveOrder(ref Order? order)
+	private void CancelProtectiveOrder(ref Order order)
 	{
 		if (order == null)
 			return;

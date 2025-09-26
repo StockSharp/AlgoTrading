@@ -182,7 +182,7 @@ public class CommissionCalculatorStrategy : Strategy
 		if (tradeInfo == null)
 			return;
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		var price = tradeInfo.Price;
@@ -246,7 +246,7 @@ public class CommissionCalculatorStrategy : Strategy
 			return;
 		}
 
-		Order? order = Mode switch
+		Order order = Mode switch
 		{
 			OrderMode.MarketBuy => BuyMarket(volume),
 			OrderMode.MarketSell => SellMarket(volume),

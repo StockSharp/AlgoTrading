@@ -29,8 +29,8 @@ public class TraylerStrategy : Strategy
 	private readonly List<(int Index, decimal Price)> _lowerFractals = new();
 	private readonly List<Order> _ordersBuffer = new();
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private int _lastIndex;
 	private decimal _priceStep;
 	private decimal _pipSize;
@@ -460,7 +460,7 @@ public class TraylerStrategy : Strategy
 		CancelProtectiveOrder(ref _takeProfitOrder);
 	}
 
-	private void CancelProtectiveOrder(ref Order? order)
+	private void CancelProtectiveOrder(ref Order order)
 	{
 		if (order == null)
 			return;

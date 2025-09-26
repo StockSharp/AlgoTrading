@@ -263,7 +263,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 			_lastTradePrice = trade.Trade.Price;
 		}
 
-		_lastTradeSide = trade.Order?.Direction;
+		_lastTradeSide = trade.Order.Direction;
 	}
 
 	/// <inheritdoc />

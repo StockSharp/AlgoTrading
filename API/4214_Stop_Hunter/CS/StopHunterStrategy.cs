@@ -25,9 +25,9 @@ public class StopHunterStrategy : Strategy
 
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _exitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _exitOrder;
 	private decimal? _buyRoundLevel;
 	private decimal? _sellRoundLevel;
 	private bool _secondTrade;
@@ -508,7 +508,7 @@ public class StopHunterStrategy : Strategy
 		return total;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		if (order == null)
 			return false;
@@ -516,7 +516,7 @@ public class StopHunterStrategy : Strategy
 		return order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

@@ -19,7 +19,7 @@ public class MovingAverageStrategy : Strategy
 
 	private readonly Queue<decimal> _smaHistory = new();
 	private decimal? _latestSmaValue;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	/// <summary>
 	/// Candle type used for calculations.

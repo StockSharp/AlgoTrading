@@ -29,8 +29,8 @@ public class PendulumStrategy : Strategy
 
 	private decimal _pipSize;
 	private decimal _currentStep;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private int _longLevel;
 	private int _shortLevel;
 	private decimal _initialEquity;
@@ -366,7 +366,7 @@ public class PendulumStrategy : Strategy
 		_sellStopOrder = PlaceOrUpdateStop(_sellStopOrder, Sides.Sell, sellPrice, sellVolume);
 	}
 
-	private Order? PlaceOrUpdateStop(Order? existing, Sides side, decimal price, decimal volume)
+	private Order PlaceOrUpdateStop(Order existing, Sides side, decimal price, decimal volume)
 	{
 		if (volume <= 0m)
 		{
@@ -484,7 +484,7 @@ public class PendulumStrategy : Strategy
 		CancelStrategyOrder(ref _sellStopOrder);
 	}
 
-	private void CancelStrategyOrder(ref Order? order)
+	private void CancelStrategyOrder(ref Order order)
 	{
 		if (order == null)
 			return;

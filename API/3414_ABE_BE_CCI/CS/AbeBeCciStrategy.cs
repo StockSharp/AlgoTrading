@@ -27,7 +27,7 @@ public class AbeBeCciStrategy : Strategy
 	private decimal? _currentBodyAverage;
 	private decimal? _lastCloseAverage;
 	private decimal? _previousCloseAverage;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousCci;
 
 	/// <summary>

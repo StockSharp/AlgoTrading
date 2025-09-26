@@ -34,8 +34,8 @@ public class OrderGuardianStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMaximum;
 	private readonly StrategyParam<bool> _showLines;
 
-	private IIndicator? _takeProfitMaIndicator;
-	private IIndicator? _stopLossMaIndicator;
+	private IIndicator _takeProfitMaIndicator;
+	private IIndicator _stopLossMaIndicator;
 	private ParabolicSar? _sarIndicator;
 
 	private decimal[] _takeProfitBuffer = Array.Empty<decimal>();

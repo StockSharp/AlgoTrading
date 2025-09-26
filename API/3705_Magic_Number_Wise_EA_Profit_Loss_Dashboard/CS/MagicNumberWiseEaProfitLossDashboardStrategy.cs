@@ -295,7 +295,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		_symbolMap[symbol] = summary;
 	}
 
-	private string GetIdentifier(Order? order)
+	private string GetIdentifier(Order order)
 	{
 		if (order == null)
 			return "Unspecified";

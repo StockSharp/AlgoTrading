@@ -31,7 +31,7 @@ public class ResonanceHunterStrategy : Strategy
 		public DateTimeOffset? LastTime { get; set; }
 		public decimal? LastK { get; set; }
 		public decimal? LastD { get; set; }
-		public ICandleMessage? LastCandle { get; set; }
+		public ICandleMessage LastCandle { get; set; }
 
 		public void Reset()
 		{

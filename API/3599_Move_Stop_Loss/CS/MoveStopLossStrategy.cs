@@ -23,7 +23,7 @@ public class MoveStopLossStrategy : Strategy
 
 	private AverageTrueRange _atr = null!;
 	private Highest _atrHighest = null!;
-	private Order? _stopOrder;
+	private Order _stopOrder;
 	private decimal _stopPrice;
 	private decimal _entryPrice;
 	private int _lastPosition;

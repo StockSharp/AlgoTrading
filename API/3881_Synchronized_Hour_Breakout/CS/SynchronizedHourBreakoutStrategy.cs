@@ -426,7 +426,7 @@ public class SynchronizedHourBreakoutStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Direction == null)
+		if (trade.Order.Direction == null)
 			return;
 
 		if (Position > 0 && trade.Order.Side == Sides.Buy)

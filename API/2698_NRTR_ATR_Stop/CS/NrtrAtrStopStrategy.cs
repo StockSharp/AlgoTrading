@@ -35,7 +35,7 @@ public class NrtrAtrStopStrategy : Strategy
 	private decimal? _previousUpLine;
 	private decimal? _previousDownLine;
 	private int _previousTrend;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _longStop;
 	private decimal? _longTarget;
 	private decimal? _shortStop;

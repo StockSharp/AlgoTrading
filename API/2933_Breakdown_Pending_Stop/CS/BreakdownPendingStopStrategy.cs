@@ -29,8 +29,8 @@ public class BreakdownPendingStopStrategy : Strategy
 	private bool _hasDailyLevels;
 	private bool _entryOrdersSubmitted;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	private decimal? _longStopPrice;
 	private decimal? _longTakeProfit;

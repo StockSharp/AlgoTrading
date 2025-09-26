@@ -26,10 +26,10 @@ public class HistTrainingStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
 
 	private decimal? _previousClose;
 
@@ -411,7 +411,7 @@ public class HistTrainingStrategy : Strategy
 		_shortTakePrice = null;
 	}
 
-	private void EnsureOrder(ref Order? order, bool shouldExist, decimal price, Func<decimal, Order> register)
+	private void EnsureOrder(ref Order order, bool shouldExist, decimal price, Func<decimal, Order> register)
 	{
 		if (!shouldExist)
 		{
@@ -446,7 +446,7 @@ public class HistTrainingStrategy : Strategy
 		CancelTrackedOrder(ref _sellLimitOrder);
 	}
 
-	private void CancelTrackedOrder(ref Order? order)
+	private void CancelTrackedOrder(ref Order order)
 	{
 		if (order == null)
 			return;
@@ -457,7 +457,7 @@ public class HistTrainingStrategy : Strategy
 		order = null;
 	}
 
-	private void NormalizeOrderReference(ref Order? order)
+	private void NormalizeOrderReference(ref Order order)
 	{
 		if (order != null && !IsOrderActive(order))
 			order = null;

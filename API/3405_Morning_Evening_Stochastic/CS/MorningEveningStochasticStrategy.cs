@@ -27,8 +27,8 @@ public class MorningEveningStochasticStrategy : Strategy
 	private StochasticOscillator? _stochastic;
 	private SimpleMovingAverage? _bodyAverage;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousPreviousCandle;
 	private decimal? _previousStochSignal;
 
 	/// <summary>

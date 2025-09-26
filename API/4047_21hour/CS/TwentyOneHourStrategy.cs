@@ -35,10 +35,10 @@ public class TwentyOneHourStrategy : Strategy
 	private decimal? _bestAsk;
 
 	// Reference to the currently active buy stop order.
-	private Order? _buyStopOrder;
+	private Order _buyStopOrder;
 
 	// Reference to the currently active sell stop order.
-	private Order? _sellStopOrder;
+	private Order _sellStopOrder;
 
 	// Cached price step that converts point distances to absolute prices.
 	private decimal _priceStep;

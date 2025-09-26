@@ -36,8 +36,8 @@ public class MicroTrendBreakoutsStrategy : Strategy
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergence _macd = null!;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _twoCandlesAgo;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _twoCandlesAgo;
 	private decimal? _previousMomentum;
 	private decimal? _twoMomentumsAgo;
 

@@ -24,7 +24,7 @@ public class TrailingStopFrCnStrategy : Strategy
 	private readonly List<decimal> _fractalLows = new();
 	private readonly List<decimal> _fractalHighs = new();
 
-	private Order? _stopOrder;
+	private Order _stopOrder;
 	private decimal? _currentStopPrice;
 
 	private decimal _pipSize;

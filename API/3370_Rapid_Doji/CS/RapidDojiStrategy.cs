@@ -22,9 +22,9 @@ public class RapidDojiStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingDistancePoints;
 
 	private AverageTrueRange _atr = null!;
-	private Order? _longEntryOrder;
-	private Order? _shortEntryOrder;
-	private Order? _protectiveStopOrder;
+	private Order _longEntryOrder;
+	private Order _shortEntryOrder;
+	private Order _protectiveStopOrder;
 
 	private decimal? _plannedLongStop;
 	private decimal? _plannedShortStop;
@@ -231,7 +231,7 @@ public class RapidDojiStrategy : Strategy
 		CancelOrderIfActive(ref _shortEntryOrder);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

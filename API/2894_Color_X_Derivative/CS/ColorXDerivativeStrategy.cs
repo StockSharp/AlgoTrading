@@ -395,7 +395,7 @@ public class ColorXDerivativeStrategy : Strategy
 	{
 		private readonly Queue<decimal> _priceBuffer = new();
 		private readonly List<int> _colors = new();
-		private IIndicator? _smoothingIndicator;
+		private IIndicator _smoothingIndicator;
 		private SmoothingMethodOption _cachedMethod;
 		private int _cachedLength;
 		private decimal? _previousValue;

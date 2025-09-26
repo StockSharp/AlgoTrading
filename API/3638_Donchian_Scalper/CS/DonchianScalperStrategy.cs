@@ -33,9 +33,9 @@ public class DonchianScalperStrategy : Strategy
 
 	private readonly List<Snapshot> _history = new(8);
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingShortStop;
@@ -614,7 +614,7 @@ public class DonchianScalperStrategy : Strategy
 		return alignedSteps * _pointSize;
 	}
 
-	private void CancelOrderIfActive(Order? order)
+	private void CancelOrderIfActive(Order order)
 	{
 		if (order == null)
 		return;

@@ -27,7 +27,7 @@ public class AbeBeStochStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 
 	private StochasticOscillator? _stochastic;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal? _previousSignal;
 
 	/// <summary>
@@ -290,7 +290,7 @@ public class AbeBeStochStrategy : Strategy
 		_previousCandle = candle;
 	}
 
-	private static bool IsBullishEngulfing(ICandleMessage? previous, ICandleMessage current)
+	private static bool IsBullishEngulfing(ICandleMessage previous, ICandleMessage current)
 	{
 		if (previous == null)
 			return false;
@@ -304,7 +304,7 @@ public class AbeBeStochStrategy : Strategy
 		return bodyEngulfed;
 	}
 
-	private static bool IsBearishEngulfing(ICandleMessage? previous, ICandleMessage current)
+	private static bool IsBearishEngulfing(ICandleMessage previous, ICandleMessage current)
 	{
 		if (previous == null)
 			return false;

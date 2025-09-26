@@ -31,8 +31,8 @@ public class AscPlusPlusStrategy : Strategy
 	private decimal? _lastBuyStopPrice;
 	private decimal? _lastSellStopPrice;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	public AscPlusPlusStrategy()
 	{

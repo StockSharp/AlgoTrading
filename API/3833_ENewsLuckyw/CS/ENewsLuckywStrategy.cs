@@ -27,12 +27,12 @@ public class ENewsLuckywStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _pipSize;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopOrder;
-	private Order? _shortStopOrder;
-	private Order? _longTakeOrder;
-	private Order? _shortTakeOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _longStopOrder;
+	private Order _shortStopOrder;
+	private Order _longTakeOrder;
+	private Order _shortTakeOrder;
 	private decimal? _plannedLongStop;
 	private decimal? _plannedLongTarget;
 	private decimal? _plannedShortStop;
@@ -500,7 +500,7 @@ public class ENewsLuckywStrategy : Strategy
 	_shortTakeOrder = BuyLimit(volume, price);
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 	if (order == null)
 	return;

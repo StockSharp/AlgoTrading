@@ -22,8 +22,8 @@ public class AutotradePendingStopsStrategy : Strategy
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private DateTimeOffset? _buyExpiry;
 	private DateTimeOffset? _sellExpiry;
 
@@ -298,7 +298,7 @@ public class AutotradePendingStopsStrategy : Strategy
 		}
 	}
 
-	private void CancelStrategyOrder(ref Order? order, ref DateTimeOffset? expiry)
+	private void CancelStrategyOrder(ref Order order, ref DateTimeOffset? expiry)
 	{
 		if (order == null)
 		{

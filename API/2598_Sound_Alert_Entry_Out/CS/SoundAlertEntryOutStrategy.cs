@@ -92,7 +92,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 		if (positionBeforeTrade == 0m)
 			return;
 
-		var orderDirection = trade.Order?.Direction;
+		var orderDirection = trade.Order.Direction;
 
 		if (orderDirection is null)
 			return;
@@ -109,7 +109,7 @@ public class SoundAlertEntryOutStrategy : Strategy
 			return;
 
 		var tradeId = trade.Trade?.Id;
-		var tradeVolume = trade.Trade?.Volume ?? trade.Order?.Volume ?? 0m;
+		var tradeVolume = trade.Trade?.Volume ?? trade.Order.Volume ?? 0m;
 		var symbol = trade.Trade?.Security?.Id ?? Security?.Id.ToString() ?? "UNKNOWN";
 		var profit = _previousPnL - pnlBeforeTrade;
 		var directionText = orderDirection == Sides.Buy ? "buy" : "sell";

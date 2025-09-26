@@ -19,12 +19,12 @@ public class TwoDLimitsStrategy : Strategy
 
 	private readonly Queue<ICandleMessage> _recentDailyCandles = new(2);
 
-	private Order? _buyEntryOrder;
-	private Order? _sellEntryOrder;
-	private Order? _longStopOrder;
-	private Order? _longTakeOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeOrder;
+	private Order _buyEntryOrder;
+	private Order _sellEntryOrder;
+	private Order _longStopOrder;
+	private Order _longTakeOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeOrder;
 
 	private decimal? _nextLongStopPrice;
 	private decimal? _nextLongTakePrice;
@@ -373,7 +373,7 @@ public class TwoDLimitsStrategy : Strategy
 		_activeEntryDay = null;
 	}
 
-	private void CancelOrder(ref Order? order)
+	private void CancelOrder(ref Order order)
 	{
 		if (order == null)
 			return;
@@ -384,7 +384,7 @@ public class TwoDLimitsStrategy : Strategy
 		order = null;
 	}
 
-	private void ReplaceOrder(ref Order? target, Order? newOrder)
+	private void ReplaceOrder(ref Order target, Order newOrder)
 	{
 		if (target != null && target != newOrder)
 		{

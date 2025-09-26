@@ -35,8 +35,8 @@ public class TcpPivotLimitStrategy : Strategy
 	private decimal _previousDayLow;
 	private decimal _previousDayClose;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousPreviousCandle;
 
 	private PositionSide _positionSide = PositionSide.Flat;
 	private decimal? _currentStopPrice;

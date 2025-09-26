@@ -27,8 +27,8 @@ public class ExpertAmlMfiStrategy : Strategy
 	private readonly SimpleMovingAverage _bodySma = new();
 
 	private decimal? _previousBodyAverage;
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _secondPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _secondPreviousCandle;
 	private decimal? _previousMfi;
 	private decimal? _secondPreviousMfi;
 

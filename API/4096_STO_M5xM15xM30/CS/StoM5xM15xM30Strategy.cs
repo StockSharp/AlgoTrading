@@ -28,12 +28,12 @@ public class StoM5xM15xM30Strategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private StochasticOscillator? _fastStochastic;
-	private StochasticOscillator? _middleStochastic;
-	private StochasticOscillator? _slowStochastic;
-	private StochasticOscillator? _exitStochastic;
-	private StochasticShiftBuffer? _fastShiftBuffer;
-	private StochasticShiftBuffer? _exitShiftBuffer;
+	private StochasticOscillator _fastStochastic;
+	private StochasticOscillator _middleStochastic;
+	private StochasticOscillator _slowStochastic;
+	private StochasticOscillator _exitStochastic;
+	private StochasticShiftBuffer _fastShiftBuffer;
+	private StochasticShiftBuffer _exitShiftBuffer;
 
 	private decimal? _fastKCurrent;
 	private decimal? _fastDCurrent;

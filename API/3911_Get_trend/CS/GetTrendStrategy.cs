@@ -31,8 +31,8 @@ public class GetTrendStrategy : Strategy
 	private decimal? _prevFastStochastic;
 	private decimal? _entryPrice;
 
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="GetTrendStrategy"/>.
@@ -455,7 +455,7 @@ public class GetTrendStrategy : Strategy
 		CancelIfActive(ref _takeProfitOrder);
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

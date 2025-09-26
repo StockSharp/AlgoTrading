@@ -28,9 +28,9 @@ public class BhsSystemStrategy : Strategy
 
 	private decimal _previousAma;
 	private bool _hasPreviousAma;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _protectionOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _protectionOrder;
 	private DateTimeOffset? _buyOrderTime;
 	private DateTimeOffset? _sellOrderTime;
 	private decimal? _lastTrailingStopPrice;
@@ -512,7 +512,7 @@ public class BhsSystemStrategy : Strategy
 		}
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;
@@ -523,7 +523,7 @@ public class BhsSystemStrategy : Strategy
 		order = null;
 	}
 
-	private void CancelOrderIfActive(ref Order? order, ref DateTimeOffset? time)
+	private void CancelOrderIfActive(ref Order order, ref DateTimeOffset? time)
 	{
 		if (order == null)
 			return;
@@ -535,7 +535,7 @@ public class BhsSystemStrategy : Strategy
 		time = null;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order != null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}

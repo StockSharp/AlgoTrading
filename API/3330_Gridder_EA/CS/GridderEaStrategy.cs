@@ -488,9 +488,9 @@ public class GridderEaStrategy : Strategy
 	{
 		base.OnNewOrderFail(fail);
 
-		if (fail.Order?.Direction == Sides.Buy)
+		if (fail.Order.Direction == Sides.Buy)
 		_hasBuyReference = false;
-		else if (fail.Order?.Direction == Sides.Sell)
+		else if (fail.Order.Direction == Sides.Sell)
 		_hasSellReference = false;
 	}
 

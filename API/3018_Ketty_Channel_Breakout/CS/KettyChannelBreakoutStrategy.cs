@@ -40,12 +40,12 @@ public class KettyChannelBreakoutStrategy : Strategy
 	private decimal _buyEntryPrice;
 	private decimal _sellEntryPrice;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _longStopOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _longStopOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeProfitOrder;
 
 	private decimal? _pendingLongStop;
 	private decimal? _pendingLongTake;
@@ -500,7 +500,7 @@ public class KettyChannelBreakoutStrategy : Strategy
 		CancelIfActive(ref _shortTakeProfitOrder);
 	}
 
-	private void CancelIfActive(ref Order? order)
+	private void CancelIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

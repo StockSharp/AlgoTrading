@@ -36,10 +36,10 @@ public class BuySellCloseStrategy : Strategy
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 
-	private Order? _longStopOrder;
-	private Order? _longTakeOrder;
-	private Order? _shortStopOrder;
-	private Order? _shortTakeOrder;
+	private Order _longStopOrder;
+	private Order _longTakeOrder;
+	private Order _shortStopOrder;
+	private Order _shortTakeOrder;
 
 	private bool _isRunning;
 
@@ -646,7 +646,7 @@ public class BuySellCloseStrategy : Strategy
 		CancelOrder(ref _shortTakeOrder);
 	}
 
-	private void CancelOrder(ref Order? order)
+	private void CancelOrder(ref Order order)
 	{
 		if (order != null && order.State == OrderStates.Active)
 			CancelOrder(order);

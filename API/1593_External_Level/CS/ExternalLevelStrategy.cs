@@ -17,7 +17,7 @@ public class ExternalLevelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _prevCandle;
+	private ICandleMessage _prevCandle;
 	private decimal _prevSource;
 
 	/// <summary>

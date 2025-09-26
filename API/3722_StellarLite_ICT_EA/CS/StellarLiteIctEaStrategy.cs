@@ -46,7 +46,7 @@ public class StellarLiteIctEaStrategy : Strategy
 	private decimal _priceStep;
 	private decimal _volumeStep;
 
-	private readonly ICandleMessage?[] _history = new ICandleMessage?[20];
+	private readonly ICandleMessage[] _history = new ICandleMessage[20];
 	private int _historyCount;
 	private decimal _latestHighest;
 	private decimal _latestLowest;

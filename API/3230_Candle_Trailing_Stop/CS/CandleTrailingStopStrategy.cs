@@ -73,7 +73,7 @@ private decimal? _higherSlowValue;
 private decimal? _macdLineValue;
 private decimal? _macdSignalValue;
 
-private ICandleMessage? _previousCurrentCandle;
+private ICandleMessage _previousCurrentCandle;
 
 private decimal? _longStop;
 private decimal? _shortStop;
@@ -697,7 +697,7 @@ _macdSignalValue = signalLine;
 EvaluateEntries(_previousCurrentCandle);
 }
 
-private void EvaluateEntries(ICandleMessage? candle)
+private void EvaluateEntries(ICandleMessage candle)
 {
 if (candle is null || !IsFormedAndOnlineAndAllowTrading())
 return;

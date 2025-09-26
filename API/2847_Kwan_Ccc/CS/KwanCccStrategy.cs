@@ -38,7 +38,7 @@ public class KwanCccStrategy : Strategy
 	private Momentum _momentum = null!;
 	private IIndicator _fastMa = null!;
 	private IIndicator _slowMa = null!;
-	private IIndicator? _smoothingIndicator;
+	private IIndicator _smoothingIndicator;
 	private ChandeMomentumOscillator? _vidyaCmo;
 	private decimal? _vidyaValue;
 	private decimal? _previousSmoothed;
@@ -423,7 +423,7 @@ public class KwanCccStrategy : Strategy
 		}
 	}
 
-	private (IIndicator? indicator, ChandeMomentumOscillator? vidyaCmo, decimal? vidyaValue) CreateSmoother()
+	private (IIndicator indicator, ChandeMomentumOscillator? vidyaCmo, decimal? vidyaValue) CreateSmoother()
 	{
 		switch (SmoothingMethod)
 		{

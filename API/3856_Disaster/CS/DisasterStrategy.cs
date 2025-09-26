@@ -27,10 +27,10 @@ public class DisasterStrategy : Strategy
 	private decimal _pipSize;
 	private decimal _priceStep;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 
 	private decimal? _lastBid;
 	private decimal? _lastAsk;

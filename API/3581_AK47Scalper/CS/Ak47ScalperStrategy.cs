@@ -45,9 +45,9 @@ public class Ak47ScalperStrategy : Strategy
         private readonly StrategyParam<DataType> _candleType;
 
         private decimal _pipSize;
-        private Order? _pendingOrder;
-        private Order? _stopLossOrder;
-        private Order? _takeProfitOrder;
+        private Order _pendingOrder;
+        private Order _stopLossOrder;
+        private Order _takeProfitOrder;
         private decimal? _pendingStopLossPrice;
         private decimal? _pendingTakeProfitPrice;
         private decimal _entryPrice;

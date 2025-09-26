@@ -22,8 +22,8 @@ public class PendingOrdersByTimeStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _pipSize;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	public int OpeningHour
 	{

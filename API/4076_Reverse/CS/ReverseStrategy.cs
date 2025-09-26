@@ -276,7 +276,7 @@ public class ReverseStrategy : Strategy
 
 	private sealed class ProtectionOrders
 	{
-		public Order? StopOrder { get; set; }
-		public Order? TakeProfitOrder { get; set; }
+		public Order StopOrder { get; set; }
+		public Order TakeProfitOrder { get; set; }
 	}
 }

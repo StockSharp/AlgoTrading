@@ -21,7 +21,7 @@ public class WssTraderStrategy : Strategy
 	private readonly StrategyParam<int> _trailingPoints;
 	private readonly StrategyParam<decimal> _orderVolume;
 
-	private ICandleMessage? _previousDailyCandle;
+	private ICandleMessage _previousDailyCandle;
 	private decimal _priceStep;
 
 	private decimal _longEntryLevel;

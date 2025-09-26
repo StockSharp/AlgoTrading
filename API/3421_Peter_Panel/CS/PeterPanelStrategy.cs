@@ -33,16 +33,16 @@ public class PeterPanelStrategy : Strategy
 	private decimal _priceStep;
 	private bool _isRunning;
 
-	private Order? _buyMarketOrder;
-	private Order? _sellMarketOrder;
-	private Order? _buyStopOrder;
-	private Order? _buyLimitOrder;
-	private Order? _sellStopOrder;
-	private Order? _sellLimitOrder;
-	private Order? _longStopLossOrder;
-	private Order? _longTakeProfitOrder;
-	private Order? _shortStopLossOrder;
-	private Order? _shortTakeProfitOrder;
+	private Order _buyMarketOrder;
+	private Order _sellMarketOrder;
+	private Order _buyStopOrder;
+	private Order _buyLimitOrder;
+	private Order _sellStopOrder;
+	private Order _sellLimitOrder;
+	private Order _longStopLossOrder;
+	private Order _longTakeProfitOrder;
+	private Order _shortStopLossOrder;
+	private Order _shortTakeProfitOrder;
 
 	/// <summary>
 	/// Initializes PeterPanelStrategy.
@@ -778,7 +778,7 @@ public class PeterPanelStrategy : Strategy
 		ReplacePendingOrder(ref _sellLimitOrder, price, SellLimit);
 	}
 
-	private void ReplacePendingOrder(ref Order? order, decimal price, Func<decimal, decimal, Order> submit)
+	private void ReplacePendingOrder(ref Order order, decimal price, Func<decimal, decimal, Order> submit)
 	{
 		var existing = order;
 		if (existing == null)
@@ -853,7 +853,7 @@ public class PeterPanelStrategy : Strategy
 			_sellLimitOrder = null;
 	}
 
-	private void CancelOrderIfActive(ref Order? order)
+	private void CancelOrderIfActive(ref Order order)
 	{
 		if (order == null)
 			return;

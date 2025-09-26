@@ -21,8 +21,8 @@ public class XAlert3Strategy : Strategy
 	private readonly StrategyParam<PriceTypeEnum> _priceType;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _ma1;
-	private IIndicator? _ma2;
+	private IIndicator _ma1;
+	private IIndicator _ma2;
 	private decimal? _prevDiff1;
 	private decimal? _prevDiff2;
 

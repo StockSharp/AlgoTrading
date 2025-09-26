@@ -27,7 +27,7 @@ public class TakeProfitBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _maxOrders;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage?[] _recentCandles = Array.Empty<ICandleMessage?>();
+	private ICandleMessage[] _recentCandles = Array.Empty<ICandleMessage>();
 	private decimal _initialBalance;
 	private decimal _averageEntryPrice;
 	private decimal _currentPositionVolume;
@@ -217,7 +217,7 @@ protected override void OnReseted()
 {
 	base.OnReseted();
 
-	_recentCandles = Array.Empty<ICandleMessage?>();
+	_recentCandles = Array.Empty<ICandleMessage>();
 	_initialBalance = 0m;
 	_averageEntryPrice = 0m;
 	_currentPositionVolume = 0m;
@@ -240,7 +240,7 @@ protected override void OnStarted(DateTimeOffset time)
 	if (maxShift < 0)
 	maxShift = 0;
 
-	_recentCandles = new ICandleMessage?[maxShift + 1];
+	_recentCandles = new ICandleMessage[maxShift + 1];
 
 	var subscription = SubscribeCandles(CandleType);
 	subscription
@@ -580,7 +580,7 @@ protected override void OnNewMyTrade(MyTrade trade)
 {
 	base.OnNewMyTrade(trade);
 
-	if (trade.Order?.Security != Security)
+	if (trade.Order.Security != Security)
 	return;
 
 	var prevVolume = _currentPositionVolume;

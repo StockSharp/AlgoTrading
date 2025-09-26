@@ -28,7 +28,7 @@ public class PokerShowStrategy : Strategy
 	private readonly StrategyParam<bool> _reverseSignal;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private IIndicator? _ma;
+	private IIndicator _ma;
 	private readonly List<decimal> _maHistory = [];
 	private readonly Random _random = new();
 

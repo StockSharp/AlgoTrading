@@ -830,7 +830,7 @@ public class TraderToolEaStrategy : Strategy
 		return rounded;
 	}
 
-	private void TrackStopOrder(Order? order, Sides side)
+	private void TrackStopOrder(Order order, Sides side)
 	{
 		if (order is null)
 		return;
@@ -841,7 +841,7 @@ public class TraderToolEaStrategy : Strategy
 		_sellStopOrders.Add(order);
 	}
 
-	private void TrackLimitOrder(Order? order, Sides side)
+	private void TrackLimitOrder(Order order, Sides side)
 	{
 		if (order is null)
 		return;
@@ -1098,9 +1098,9 @@ public class TraderToolEaStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Side == Sides.Buy)
+		if (trade.Order.Side == Sides.Buy)
 		ResetLongProtection();
-		else if (trade.Order?.Side == Sides.Sell)
+		else if (trade.Order.Side == Sides.Sell)
 		ResetShortProtection();
 	}
 }

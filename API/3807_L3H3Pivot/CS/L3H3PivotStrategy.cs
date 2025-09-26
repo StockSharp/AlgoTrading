@@ -28,8 +28,8 @@ public class L3H3PivotStrategy : Strategy
 	private decimal? _yesterdayOpen;
 	private decimal? _pivotLevel;
 
-	private Order? _buyEntryOrder;
-	private Order? _sellEntryOrder;
+	private Order _buyEntryOrder;
+	private Order _sellEntryOrder;
 
 	private decimal _lastClosePrice;
 
@@ -236,7 +236,7 @@ public class L3H3PivotStrategy : Strategy
 		CancelOrder(ref _sellEntryOrder);
 	}
 
-	private void CancelOrder(ref Order? order)
+	private void CancelOrder(ref Order order)
 	{
 		if (order == null)
 			return;

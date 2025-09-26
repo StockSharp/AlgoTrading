@@ -36,12 +36,12 @@ public class LilithGoesToHollywoodStrategy : Strategy
 	private decimal _targetProfit;
 	private decimal _currentProfit;
 
-	private Order? _manualBuyStopOrder;
-	private Order? _manualBuyLimitOrder;
-	private Order? _manualSellStopOrder;
-	private Order? _manualSellLimitOrder;
-	private Order? _coreBuyStopOrder;
-	private Order? _coreSellStopOrder;
+	private Order _manualBuyStopOrder;
+	private Order _manualBuyLimitOrder;
+	private Order _manualSellStopOrder;
+	private Order _manualSellLimitOrder;
+	private Order _coreBuyStopOrder;
+	private Order _coreSellStopOrder;
 
 	public LilithGoesToHollywoodStrategy()
 	{
@@ -375,27 +375,27 @@ public class LilithGoesToHollywoodStrategy : Strategy
 			BuyMarket(_shortVolume);
 	}
 
-	private void SubmitBuyStop(ref Order? orderField, decimal price, decimal volume)
+	private void SubmitBuyStop(ref Order orderField, decimal price, decimal volume)
 	{
 		EnsureOrder(ref orderField, price, volume, (v, p) => BuyStop(v, p));
 	}
 
-	private void SubmitBuyLimit(ref Order? orderField, decimal price, decimal volume)
+	private void SubmitBuyLimit(ref Order orderField, decimal price, decimal volume)
 	{
 		EnsureOrder(ref orderField, price, volume, (v, p) => BuyLimit(v, p));
 	}
 
-	private void SubmitSellStop(ref Order? orderField, decimal price, decimal volume)
+	private void SubmitSellStop(ref Order orderField, decimal price, decimal volume)
 	{
 		EnsureOrder(ref orderField, price, volume, (v, p) => SellStop(v, p));
 	}
 
-	private void SubmitSellLimit(ref Order? orderField, decimal price, decimal volume)
+	private void SubmitSellLimit(ref Order orderField, decimal price, decimal volume)
 	{
 		EnsureOrder(ref orderField, price, volume, (v, p) => SellLimit(v, p));
 	}
 
-	private void EnsureOrder(ref Order? orderField, decimal price, decimal volume, Func<decimal, decimal, Order> factory)
+	private void EnsureOrder(ref Order orderField, decimal price, decimal volume, Func<decimal, decimal, Order> factory)
 	{
 		price = AlignPrice(price);
 		volume = AdjustVolume(volume);
@@ -418,7 +418,7 @@ public class LilithGoesToHollywoodStrategy : Strategy
 		orderField = factory(volume, price);
 	}
 
-	private void CancelOrder(ref Order? orderField)
+	private void CancelOrder(ref Order orderField)
 	{
 		var order = orderField;
 		if (order == null)

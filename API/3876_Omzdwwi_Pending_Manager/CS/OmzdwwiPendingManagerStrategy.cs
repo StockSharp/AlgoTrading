@@ -71,10 +71,10 @@ private bool _pendingTimeSellLimit;
 private bool _pendingTimeSellStop;
 private bool _pendingTimeBuyLimit;
 
-private Order? _buyStopOrder;
-private Order? _sellStopOrder;
-private Order? _buyLimitOrder;
-private Order? _sellLimitOrder;
+private Order _buyStopOrder;
+private Order _sellStopOrder;
+private Order _buyLimitOrder;
+private Order _sellLimitOrder;
 
 private decimal? _longStopPrice;
 private decimal? _longTakeProfitPrice;
@@ -863,7 +863,7 @@ _pendingTimeSellLimit = false;
 }
 }
 
-private void TryPlaceStopOrder(ref Order? orderField, Sides side, decimal targetPrice)
+private void TryPlaceStopOrder(ref Order orderField, Sides side, decimal targetPrice)
 {
 var price = NormalizePrice(targetPrice);
 if (price <= 0m)
@@ -881,7 +881,7 @@ ReRegisterOrder(orderField, price, orderField.Volume ?? OrderVolume);
 }
 }
 
-private void TryPlaceLimitOrder(ref Order? orderField, Sides side, decimal targetPrice)
+private void TryPlaceLimitOrder(ref Order orderField, Sides side, decimal targetPrice)
 {
 var price = NormalizePrice(targetPrice);
 if (price <= 0m)

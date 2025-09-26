@@ -841,7 +841,7 @@ public class ButterflyPatternStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		Order? order = _state.Side == Sides.Buy ? SellMarket(volume) : BuyMarket(volume);
+		Order order = _state.Side == Sides.Buy ? SellMarket(volume) : BuyMarket(volume);
 		if (order == null)
 		{
 		LogInfo($"Failed to exit partial position for TP{tpIndex}.");
@@ -875,7 +875,7 @@ public class ButterflyPatternStrategy : Strategy
 		}
 
 		var volume = _state.RemainingVolume;
-		Order? order = _state.Side == Sides.Buy ? SellMarket(volume) : BuyMarket(volume);
+		Order order = _state.Side == Sides.Buy ? SellMarket(volume) : BuyMarket(volume);
 		if (order == null)
 		{
 		LogInfo("Failed to close position at stop.");

@@ -33,14 +33,14 @@ public class ExpICustomStrategy : Strategy
 	private sealed class IndicatorState
 	{
 		private readonly List<decimal?[]> _history = new();
-		private readonly IIndicator? _indicator;
+		private readonly IIndicator _indicator;
 
-		public IndicatorState(IIndicator? indicator)
+		public IndicatorState(IIndicator indicator)
 		{
 			_indicator = indicator;
 		}
 
-		public IIndicator? Indicator => _indicator;
+		public IIndicator Indicator => _indicator;
 
 		public void Reset()
 		{
@@ -1353,7 +1353,7 @@ public class ExpICustomStrategy : Strategy
 		return results.ToArray();
 	}
 
-	private static IIndicator? CreateIndicator(string name, string parameters)
+	private static IIndicator CreateIndicator(string name, string parameters)
 	{
 		if (string.IsNullOrWhiteSpace(name))
 		return null;

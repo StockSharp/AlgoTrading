@@ -42,9 +42,9 @@ public class TemplateM5EnvelopesStrategy : Strategy
 	private decimal? _currentHigh;
 	private decimal? _currentLow;
 
-	private Order? _entryOrder;
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _entryOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	private decimal _lastPosition;
 	private decimal _entryPrice;

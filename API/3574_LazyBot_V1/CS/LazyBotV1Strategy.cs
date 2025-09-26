@@ -27,8 +27,8 @@ public class LazyBotV1Strategy : Strategy
 	private readonly StrategyParam<decimal> _fixedVolume;
 
 	private DateTime? _lastSignalDate;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal? _longStopPrice;
 	private decimal? _shortStopPrice;
 	private decimal _pipSize;
@@ -458,7 +458,7 @@ public class LazyBotV1Strategy : Strategy
 		return volume;
 	}
 
-	private void CancelPendingOrder(ref Order? order)
+	private void CancelPendingOrder(ref Order order)
 	{
 		if (order == null)
 		return;

@@ -24,7 +24,7 @@ public class TradeChannelStrategy : Strategy
 	private decimal? _previousChannelLow;
 	private decimal? _previousClose;
 	private decimal? _stopPrice;
-	private Order? _stopOrder;
+	private Order _stopOrder;
 	private decimal _point;
 
 	/// <summary>

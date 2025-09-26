@@ -37,8 +37,8 @@ public class MoStAsHaR15PivotLineStrategy : Strategy
 	private decimal? _previousPlusDi;
 	private decimal? _previousMinusDi;
 
-	private ICandleMessage? _previousDailyCandle;
-	private ICandleMessage? _lastDailyCandle;
+	private ICandleMessage _previousDailyCandle;
+	private ICandleMessage _lastDailyCandle;
 
 	private decimal? _pipSize;
 

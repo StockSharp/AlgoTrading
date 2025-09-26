@@ -336,7 +336,7 @@ public class AdaptiveGridMt4Strategy : Strategy
 	if (gridOrder.TakeProfitPrice.HasValue)
 	{
 	var tpPrice = NormalizePrice(gridOrder.TakeProfitPrice.Value);
-	Order? tpOrder;
+	Order tpOrder;
 	if (order.Direction == Sides.Buy)
 	tpOrder = SellLimit(volume, tpPrice);
 	else
@@ -349,7 +349,7 @@ public class AdaptiveGridMt4Strategy : Strategy
 	if (gridOrder.StopLossPrice.HasValue)
 	{
 	var slPrice = NormalizePrice(gridOrder.StopLossPrice.Value);
-	Order? slOrder;
+	Order slOrder;
 	if (order.Direction == Sides.Buy)
 	slOrder = SellStop(volume, slPrice);
 	else

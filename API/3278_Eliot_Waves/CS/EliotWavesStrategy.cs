@@ -38,8 +38,8 @@ public class EliotWavesStrategy : Strategy
 	private BollingerBands _bollinger = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousPreviousCandle;
 	private readonly Queue<decimal> _momentumHistory = new();
 
 	private decimal _pipSize;

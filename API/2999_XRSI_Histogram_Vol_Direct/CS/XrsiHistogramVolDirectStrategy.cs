@@ -35,8 +35,8 @@ public class XrsiHistogramVolDirectStrategy : Strategy
 	private readonly StrategyParam<bool> _allowSellClose;
 
 	private RSI? _rsi;
-	private IIndicator? _mainSmoother;
-	private IIndicator? _volumeSmoother;
+	private IIndicator _mainSmoother;
+	private IIndicator _volumeSmoother;
 	private decimal? _previousMainValue;
 	private int? _previousColor;
 	private int? _previousPreviousColor;

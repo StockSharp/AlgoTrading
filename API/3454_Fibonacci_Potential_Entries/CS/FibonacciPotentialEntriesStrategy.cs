@@ -26,12 +26,12 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	private decimal? _bestBid;
 	private bool _ordersPlaced;
 
-	private Order? _firstEntryOrder;
-	private Order? _secondEntryOrder;
-	private Order? _firstStopOrder;
-	private Order? _secondStopOrder;
-	private Order? _firstPartialCloseOrder;
-	private Order? _secondPartialCloseOrder;
+	private Order _firstEntryOrder;
+	private Order _secondEntryOrder;
+	private Order _firstStopOrder;
+	private Order _secondStopOrder;
+	private Order _firstPartialCloseOrder;
+	private Order _secondPartialCloseOrder;
 
 	private decimal _firstOpenVolume;
 	private decimal _secondOpenVolume;
@@ -280,7 +280,7 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 		}
 	}
 
-	private void TryStartPartialClose(int index, ref Order? partialOrder, ref bool completed, decimal openVolume, decimal? entryPrice)
+	private void TryStartPartialClose(int index, ref Order partialOrder, ref bool completed, decimal openVolume, decimal? entryPrice)
 	{
 		if (completed || partialOrder != null)
 			return;
@@ -315,7 +315,7 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		var volume = trade.Trade.Volume;
@@ -376,7 +376,7 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 		}
 	}
 
-	private void HandlePartialCloseCompletion(Order order, int index, ref Order? partialOrder, ref bool completed, ref decimal? pendingStopPrice, decimal openVolume)
+	private void HandlePartialCloseCompletion(Order order, int index, ref Order partialOrder, ref bool completed, ref decimal? pendingStopPrice, decimal openVolume)
 	{
 		if (order.State == OrderStates.Done)
 		{
@@ -474,7 +474,7 @@ public class FibonacciPotentialEntriesStrategy : Strategy
 			_secondStopOrder = stopOrder;
 	}
 
-	private void CancelStopOrder(ref Order? order)
+	private void CancelStopOrder(ref Order order)
 	{
 		if (order != null)
 		{

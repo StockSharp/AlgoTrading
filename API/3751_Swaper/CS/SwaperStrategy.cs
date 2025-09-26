@@ -28,7 +28,7 @@ public class SwaperStrategy : Strategy
 	private decimal _averagePrice;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="SwaperStrategy"/> class.

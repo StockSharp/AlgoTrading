@@ -80,8 +80,8 @@ public class AverageCandleCrossStrategy : Strategy
 
 	private decimal _actualPipSize;
 
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="AverageCandleCrossStrategy"/>.
@@ -586,7 +586,7 @@ public class AverageCandleCrossStrategy : Strategy
 		return Security?.ShrinkPrice(price) ?? price;
 	}
 
-	private void CancelProtection(ref Order? order)
+	private void CancelProtection(ref Order order)
 	{
 		if (order == null)
 		return;

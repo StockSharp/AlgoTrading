@@ -29,8 +29,8 @@ public class MeetingLinesStochasticStrategy : Strategy
 	private StochasticOscillator _stochastic = null!;
 	private SimpleMovingAverage _bodyAverage = null!;
 
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _secondPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _secondPreviousCandle;
 	private decimal? _previousBodyAverage;
 	private decimal? _previousSignal;
 	private decimal? _secondPreviousSignal;

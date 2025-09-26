@@ -29,9 +29,9 @@ public class PsarMultiTimeframeStrategy : Strategy
 	private readonly StrategyParam<decimal> _percentMoneyManagement;
 	private readonly StrategyParam<decimal> _fixedVolume;
 
-	private ParabolicSar? _fastSar;
-	private ParabolicSar? _mediumSar;
-	private ParabolicSar? _slowSar;
+	private ParabolicSar _fastSar;
+	private ParabolicSar _mediumSar;
+	private ParabolicSar _slowSar;
 
 	private decimal? _fastSarCurrent;
 	private decimal? _fastSarPrevious;
@@ -40,13 +40,13 @@ public class PsarMultiTimeframeStrategy : Strategy
 	private decimal? _slowSarCurrent;
 	private decimal? _slowSarPrevious;
 
-	private ICandleMessage? _fastCurrentCandle;
-	private ICandleMessage? _fastPreviousCandle;
-	private ICandleMessage? _mediumCurrentCandle;
-	private ICandleMessage? _mediumPreviousCandle;
-	private ICandleMessage? _slowCurrentCandle;
-	private ICandleMessage? _slowPreviousCandle;
-	private ICandleMessage? _previousBaseCandle;
+	private ICandleMessage _fastCurrentCandle;
+	private ICandleMessage _fastPreviousCandle;
+	private ICandleMessage _mediumCurrentCandle;
+	private ICandleMessage _mediumPreviousCandle;
+	private ICandleMessage _slowCurrentCandle;
+	private ICandleMessage _slowPreviousCandle;
+	private	ICandleMessage _previousBaseCandle;
 
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
@@ -324,7 +324,7 @@ public class PsarMultiTimeframeStrategy : Strategy
 		UpdateIndicatorState(ref _slowPreviousCandle, ref _slowCurrentCandle, ref _slowSarPrevious, ref _slowSarCurrent, candle, sarValue);
 	}
 
-	private void UpdateIndicatorState(ref ICandleMessage? previousCandle, ref ICandleMessage? currentCandle, ref decimal? previousSar, ref decimal? currentSar, ICandleMessage candle, decimal sarValue)
+	private void UpdateIndicatorState(ref ICandleMessage previousCandle, ref ICandleMessage currentCandle, ref decimal? previousSar, ref decimal? currentSar, ICandleMessage candle, decimal sarValue)
 	{
 		previousCandle = currentCandle;
 		currentCandle = candle;
@@ -458,7 +458,7 @@ public class PsarMultiTimeframeStrategy : Strategy
 		return condition1 || condition2 || condition3;
 	}
 
-	private void ManageOpenPosition(ICandleMessage candle, ICandleMessage? previousBaseCandle)
+	private void ManageOpenPosition(ICandleMessage candle, ICandleMessage previousBaseCandle)
 	{
 		if (Position == 0m)
 		return;

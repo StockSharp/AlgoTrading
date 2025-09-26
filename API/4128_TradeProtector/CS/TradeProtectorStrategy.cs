@@ -164,7 +164,7 @@ public class TradeProtectorStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade?.Order?.Direction == null)
+		if (trade?.Order.Direction == null)
 		return;
 
 		var price = trade.Trade?.Price;

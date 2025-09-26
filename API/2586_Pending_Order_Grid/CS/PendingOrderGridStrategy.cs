@@ -29,10 +29,10 @@ public class PendingOrderGridStrategy : Strategy
 	private decimal _tickSize;
 	private decimal _volumeStep;
 	private bool _gridInitialized;
-	private Order?[] _longGridOrders = Array.Empty<Order?>();
-	private Order?[] _shortGridOrders = Array.Empty<Order?>();
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order[] _longGridOrders = Array.Empty<Order>();
+	private Order[] _shortGridOrders = Array.Empty<Order>();
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 	private decimal? _currentStopPrice;
 
 	/// <summary>
@@ -180,8 +180,8 @@ public class PendingOrderGridStrategy : Strategy
 		_tickSize = 0m;
 		_volumeStep = 0m;
 		_gridInitialized = false;
-		_longGridOrders = Array.Empty<Order?>();
-		_shortGridOrders = Array.Empty<Order?>();
+		_longGridOrders = Array.Empty<Order>();
+		_shortGridOrders = Array.Empty<Order>();
 		_stopLossOrder = null;
 		_takeProfitOrder = null;
 		_currentStopPrice = null;
@@ -243,8 +243,8 @@ public class PendingOrderGridStrategy : Strategy
 		var spacing = _tickSize * SpaceBetweenTrades;
 		var distance = DistanceFromPrice;
 
-		var longOrders = TradeLong ? new Order?[NumberOfTrades] : Array.Empty<Order?>();
-		var shortOrders = TradeShort ? new Order?[NumberOfTrades] : Array.Empty<Order?>();
+		var longOrders = TradeLong ? new Order[NumberOfTrades] : Array.Empty<Order>();
+		var shortOrders = TradeShort ? new Order[NumberOfTrades] : Array.Empty<Order>();
 
 		for (var index = 1; index <= NumberOfTrades; index++)
 		{

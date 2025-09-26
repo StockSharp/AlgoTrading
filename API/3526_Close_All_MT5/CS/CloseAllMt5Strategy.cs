@@ -212,7 +212,7 @@ public class CloseAllMt5Strategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		var orderSecurity = trade.Order?.Security;
+		var orderSecurity = trade.Order.Security;
 		if (orderSecurity != null)
 		EnsureSubscription(orderSecurity);
 

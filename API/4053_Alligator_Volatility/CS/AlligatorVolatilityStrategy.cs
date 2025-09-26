@@ -655,7 +655,7 @@ public class AlligatorVolatilityStrategy : Strategy
 
 			price = RoundPrice(price);
 
-			Order? order = isLong
+			Order order = isLong
 				? BuyLimit(price, volume)
 				: SellLimit(price, volume);
 

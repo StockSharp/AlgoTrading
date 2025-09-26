@@ -26,8 +26,8 @@ public class TrendcaptureStrategy : Strategy
 	private decimal? _entryPrice;
 	private int _positionDirection;
 	private int _desiredDirection;
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 	private ParabolicSar? _sar;
 	private AverageDirectionalIndex? _adx;
 

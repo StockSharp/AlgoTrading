@@ -27,8 +27,8 @@ public class FlySystemScalpStrategy : Strategy
 	private readonly StrategyParam<decimal> _modifyThreshold;
 
 	private MarketDataSubscription? _level1Subscription;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
 	private decimal _pipSize;
@@ -397,7 +397,7 @@ public class FlySystemScalpStrategy : Strategy
 			_cycleReady = false;
 	}
 
-	private void UpdatePendingOrder(ref Order? order, bool isBuy, decimal volume, decimal price, decimal? stopLoss, decimal? takeProfit)
+	private void UpdatePendingOrder(ref Order order, bool isBuy, decimal volume, decimal price, decimal? stopLoss, decimal? takeProfit)
 	{
 		if (price <= 0m || volume <= 0m)
 			return;
@@ -429,7 +429,7 @@ public class FlySystemScalpStrategy : Strategy
 			_cycleReady = true;
 	}
 
-	private void CancelOrder(ref Order? order)
+	private void CancelOrder(ref Order order)
 	{
 		if (order == null)
 			return;

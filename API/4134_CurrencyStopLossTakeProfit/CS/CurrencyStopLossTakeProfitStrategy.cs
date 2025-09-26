@@ -302,7 +302,7 @@ public class CurrencyStopLossTakeProfitStrategy : Strategy
 		if (lot.Volume <= 0m)
 			return;
 
-		Order? order = closeSide == Sides.Sell
+		Order order = closeSide == Sides.Sell
 			? SellMarket(lot.Volume)
 			: BuyMarket(lot.Volume);
 

@@ -27,7 +27,7 @@ public class Ichimoku2005Strategy : Strategy
 	private readonly StrategyParam<int> _senkouBPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage?[] _candleHistory = Array.Empty<ICandleMessage?>();
+	private ICandleMessage[] _candleHistory = Array.Empty<ICandleMessage>();
 	private decimal?[] _senkouBHistory = Array.Empty<decimal?>();
 	private int _lastSignal;
 
@@ -191,7 +191,7 @@ public class Ichimoku2005Strategy : Strategy
 	{
 		base.OnReseted();
 
-		_candleHistory = Array.Empty<ICandleMessage?>();
+		_candleHistory = Array.Empty<ICandleMessage>();
 		_senkouBHistory = Array.Empty<decimal?>();
 		_lastSignal = 0;
 	}
@@ -215,7 +215,7 @@ public class Ichimoku2005Strategy : Strategy
 			.Start();
 
 		var historyLength = Math.Max(Shift + 2, 3);
-		_candleHistory = new ICandleMessage?[historyLength];
+		_candleHistory = new ICandleMessage[historyLength];
 		_senkouBHistory = new decimal?[historyLength];
 
 		var priceStep = Security?.PriceStep ?? 0m;
@@ -349,7 +349,7 @@ public class Ichimoku2005Strategy : Strategy
 		UpdateHistory(candle, currentSenkouB);
 	}
 
-	private bool TryGetCandle(ICandleMessage currentCandle, int offset, out ICandleMessage? candle)
+	private bool TryGetCandle(ICandleMessage currentCandle, int offset, out ICandleMessage candle)
 	{
 		if (offset == 0)
 		{

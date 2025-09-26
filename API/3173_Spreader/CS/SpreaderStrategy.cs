@@ -25,8 +25,8 @@ public class SpreaderStrategy : Strategy
 	private readonly List<decimal> _primaryCloses = new();
 	private readonly List<decimal> _secondaryCloses = new();
 
-	private ICandleMessage? _lastPrimaryCandle;
-	private ICandleMessage? _lastSecondaryCandle;
+	private ICandleMessage _lastPrimaryCandle;
+	private ICandleMessage _lastSecondaryCandle;
 
 	private decimal _primaryEntryPrice;
 	private decimal _secondaryEntryPrice;

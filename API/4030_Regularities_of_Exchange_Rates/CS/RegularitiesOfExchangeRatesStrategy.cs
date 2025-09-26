@@ -24,8 +24,8 @@ public class RegularitiesOfExchangeRatesStrategy : Strategy
 
 	private decimal _pointSize;
 	private DateTime? _lastEntryDate;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 
 	/// <summary>
 	/// Hour (0-23) when the pending stop orders are placed.

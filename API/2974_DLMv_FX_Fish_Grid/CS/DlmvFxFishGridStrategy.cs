@@ -40,8 +40,8 @@ public class DlmvFxFishGridStrategy : Strategy
 	private decimal _pipSize;
 	private decimal _lastEntryPrice;
 	private DateTimeOffset? _lastEntryTime;
-	private Order? _buyLimitOrder;
-	private Order? _sellLimitOrder;
+	private Order _buyLimitOrder;
+	private Order _sellLimitOrder;
 
 	/// <summary>
 	/// Order volume used for entries.
@@ -528,7 +528,7 @@ public class DlmvFxFishGridStrategy : Strategy
 		}
 	}
 
-	private void CancelLimitOrder(ref Order? order)
+	private void CancelLimitOrder(ref Order order)
 	{
 		if (order == null)
 		return;

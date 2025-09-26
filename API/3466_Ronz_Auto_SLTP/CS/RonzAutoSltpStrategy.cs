@@ -255,7 +255,7 @@ public class RonzAutoSltpStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		var security = trade?.Order?.Security ?? Security;
+		var security = trade?.Order.Security ?? Security;
 		if (security != null)
 		{
 			SubscribeToSecurity(security);
@@ -738,8 +738,8 @@ public class RonzAutoSltpStrategy : Strategy
 		public decimal VolumeStep { get; private set; }
 		public decimal? MinVolume { get; private set; }
 		public decimal? MaxVolume { get; private set; }
-		public Order? StopOrder { get; set; }
-		public Order? TakeProfitOrder { get; set; }
+		public Order StopOrder { get; set; }
+		public Order TakeProfitOrder { get; set; }
 		public decimal? VirtualLongStop { get; private set; }
 		public decimal? VirtualShortStop { get; private set; }
 		public decimal? VirtualLongTake { get; private set; }

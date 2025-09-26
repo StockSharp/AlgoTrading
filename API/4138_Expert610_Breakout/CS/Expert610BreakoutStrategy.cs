@@ -22,9 +22,9 @@ public class Expert610BreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _previousCandle;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private ICandleMessage _previousCandle;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
 	private decimal _pipSize;
@@ -420,7 +420,7 @@ public class Expert610BreakoutStrategy : Strategy
 		return pipSize > 0m ? pipSize * pips : pips;
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is not null && (order.State == OrderStates.Active || order.State == OrderStates.Pending);
 	}
@@ -430,7 +430,7 @@ public class Expert610BreakoutStrategy : Strategy
 		return order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled;
 	}
 
-	private void CancelOrderIfActive(Order? order)
+	private void CancelOrderIfActive(Order order)
 	{
 		if (order is not null && order.State == OrderStates.Active)
 			CancelOrder(order);

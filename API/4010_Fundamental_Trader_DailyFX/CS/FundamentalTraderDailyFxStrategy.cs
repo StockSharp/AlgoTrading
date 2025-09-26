@@ -383,7 +383,7 @@ public class FundamentalTraderDailyFxStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		var security = trade.Order?.Security;
+		var security = trade.Order.Security;
 		if (security == null)
 		return;
 

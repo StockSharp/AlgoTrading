@@ -23,8 +23,8 @@ public class PendingStopGridStrategy : Strategy
 	private decimal _bestBid;
 	private decimal _bestAsk;
 	private bool _volumeValidationFailed;
-	private Order?[] _buyStopOrders = Array.Empty<Order?>();
-	private Order?[] _sellStopOrders = Array.Empty<Order?>();
+	private Order[] _buyStopOrders = Array.Empty<Order>();
+	private Order[] _sellStopOrders = Array.Empty<Order>();
 
 	/// <summary>
 	/// Take profit distance in pips applied to every pending stop order.
@@ -145,8 +145,8 @@ public class PendingStopGridStrategy : Strategy
 		_bestBid = 0m;
 		_bestAsk = 0m;
 		_volumeValidationFailed = false;
-		_buyStopOrders = Array.Empty<Order?>();
-		_sellStopOrders = Array.Empty<Order?>();
+		_buyStopOrders = Array.Empty<Order>();
+		_sellStopOrders = Array.Empty<Order>();
 	}
 
 	/// <inheritdoc />
@@ -289,7 +289,7 @@ public class PendingStopGridStrategy : Strategy
 			Array.Resize(ref _sellStopOrders, size);
 	}
 
-	private static bool IsOrderActive(Order?[] orders, int slot)
+	private static bool IsOrderActive(Order[] orders, int slot)
 	{
 		if (orders.Length <= slot)
 			return false;
@@ -301,7 +301,7 @@ public class PendingStopGridStrategy : Strategy
 		return order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 	}
 
-	private void ClearOrderSlot(Order order, Order?[] orders)
+	private void ClearOrderSlot(Order order, Order[] orders)
 	{
 		for (var index = 0; index < orders.Length; index++)
 		{

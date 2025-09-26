@@ -17,8 +17,8 @@ public class PrecipiceStrategy : Strategy
 
 	private readonly Random _random = new(Environment.TickCount);
 	private decimal _pipSize;
-	private Order? _stopOrder;
-	private Order? _takeProfitOrder;
+	private Order _stopOrder;
+	private Order _takeProfitOrder;
 
 	public PrecipiceStrategy()
 	{

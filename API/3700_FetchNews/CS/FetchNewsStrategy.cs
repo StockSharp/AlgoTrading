@@ -34,8 +34,8 @@ public class FetchNewsStrategy : Strategy
 	private readonly HashSet<string> _instrumentCurrencies = new(StringComparer.OrdinalIgnoreCase);
 	private readonly List<string> _keywordList = new();
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
 	private DateTimeOffset? _pendingExpiration;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;

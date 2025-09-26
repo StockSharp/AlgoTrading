@@ -49,7 +49,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 	private decimal[] _hiddenOutputs = Array.Empty<decimal>();
 	private decimal _biasOutput;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal _bestBidPrice;
 	private decimal _bestAskPrice;
 	private bool _hasBestBid;

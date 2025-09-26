@@ -45,7 +45,7 @@ public class TenPipsStrategy : Strategy
 
 	private decimal? _fastMaValue;
 	private decimal? _slowMaValue;
-	private ICandleMessage? _previousBaseCandle;
+	private ICandleMessage _previousBaseCandle;
 
 	private decimal? _momentumDistance1;
 	private decimal? _momentumDistance2;

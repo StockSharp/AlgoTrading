@@ -35,7 +35,7 @@ public class BollingerBandsSessionReversalStrategy : Strategy
 	private BollingerBands _bollinger = null!;
 	private SMA _dailySma = null!;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private decimal _previousUpperBand;
 	private decimal _previousLowerBand;
 	private decimal _previousMiddleBand;

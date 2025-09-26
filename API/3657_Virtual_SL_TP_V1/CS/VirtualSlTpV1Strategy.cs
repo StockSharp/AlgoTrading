@@ -28,7 +28,7 @@ public class VirtualSlTpV1Strategy : Strategy
 	private decimal? _pendingOrderPrice;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
-	private Order? _pendingOrder;
+	private Order _pendingOrder;
 	private bool _closeRequested;
 
 	/// <summary>
@@ -333,7 +333,7 @@ public class VirtualSlTpV1Strategy : Strategy
 		return Math.Round(price, _priceDecimals, MidpointRounding.AwayFromZero);
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order is { State: OrderStates.Active };
 	}

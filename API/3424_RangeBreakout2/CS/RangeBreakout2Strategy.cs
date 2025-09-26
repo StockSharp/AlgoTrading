@@ -528,7 +528,7 @@ public class RangeBreakout2Strategy : Strategy
 			return;
 		}
 
-		Order? order;
+		Order order;
 		decimal referencePrice;
 
 		if (isUpper)
@@ -768,7 +768,7 @@ public class RangeBreakout2Strategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.State != OrderStates.Done)
+		if (trade.Order.State != OrderStates.Done)
 			return;
 
 		if (Position != 0m)

@@ -27,10 +27,10 @@ public class Hans123TraderStrategy : Strategy
 
 	private Highest _highest = null!;
 	private Lowest _lowest = null!;
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _protectionStopOrder;
-	private Order? _protectionTakeOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _protectionStopOrder;
+	private Order _protectionTakeOrder;
 	private decimal? _entryPrice;
 	private decimal _pipSize;
 
@@ -262,7 +262,7 @@ public class Hans123TraderStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		if (Position > 0)

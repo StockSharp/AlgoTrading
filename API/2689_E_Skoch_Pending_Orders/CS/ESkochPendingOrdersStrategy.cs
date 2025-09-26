@@ -32,10 +32,10 @@ public class ESkochPendingOrdersStrategy : Strategy
 	private decimal? _prevDailyLow1;
 	private decimal? _prevDailyLow2;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 
 	private decimal? _buyStopLossPrice;
 	private decimal? _buyTakeProfitPrice;
@@ -500,7 +500,7 @@ public class ESkochPendingOrdersStrategy : Strategy
 		|| IsOrderActive(_takeProfitOrder);
 	}
 
-	private static bool IsOrderActive(Order? order)
+	private static bool IsOrderActive(Order order)
 	{
 		return order != null && order.State == OrderStates.Active;
 	}

@@ -35,8 +35,8 @@ public class TdsGlobalStrategy : Strategy
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
 	private ForceIndex _forceIndex = null!;
 
-	private Order? _pendingBuyLimit;
-	private Order? _pendingSellLimit;
+	private Order _pendingBuyLimit;
+	private Order _pendingSellLimit;
 
 	private decimal? _prevMacd;
 	private decimal? _prevPrevMacd;
@@ -619,7 +619,7 @@ UpdateHistory:
 		return 0;
 	}
 
-	private void CancelOrder(ref Order? orderField)
+	private void CancelOrder(ref Order orderField)
 	{
 		var order = orderField;
 		if (order == null)

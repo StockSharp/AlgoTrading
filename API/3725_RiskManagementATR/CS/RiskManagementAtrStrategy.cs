@@ -25,7 +25,7 @@ public class RiskManagementAtrStrategy : Strategy
 	private SimpleMovingAverage? _slowMovingAverage;
 
 	private decimal? _lastAtrValue;
-	private Order? _stopLossOrder;
+	private Order _stopLossOrder;
 	private decimal _priceStep;
 
 	public RiskManagementAtrStrategy()
@@ -279,7 +279,7 @@ public class RiskManagementAtrStrategy : Strategy
 	{
 		base.OnOwnTradeReceived(trade);
 
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		if (Position <= 0m)

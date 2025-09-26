@@ -29,9 +29,9 @@ public class LastZz50Strategy : Strategy
 
 	private readonly List<(DateTimeOffset Time, decimal Price)> _pivots = new();
 
-	private Order? _orderAb;
-	private Order? _orderBc;
-	private Order? _stopOrder;
+	private Order _orderAb;
+	private Order _orderBc;
+	private Order _stopOrder;
 
 	private decimal? _orderAbPrice;
 	private decimal? _orderBcPrice;
@@ -444,7 +444,7 @@ public class LastZz50Strategy : Strategy
 		ResetStop();
 	}
 
-	private void CancelBeamOrder(ref Order? order, ref decimal? storedPrice, ref decimal? firstPivot, ref decimal? secondPivot)
+	private void CancelBeamOrder(ref Order order, ref decimal? storedPrice, ref decimal? firstPivot, ref decimal? secondPivot)
 	{
 		if (order != null)
 		{

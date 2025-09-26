@@ -23,9 +23,9 @@ public class RobotAdxTwoMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _differenceThreshold;
 
-	private ExponentialMovingAverage? _fastEma;
-	private ExponentialMovingAverage? _slowEma;
-	private AverageDirectionalIndex? _adx;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private AverageDirectionalIndex _adx;
 
 	private decimal? _previousFastEma;
 	private decimal? _previousSlowEma;

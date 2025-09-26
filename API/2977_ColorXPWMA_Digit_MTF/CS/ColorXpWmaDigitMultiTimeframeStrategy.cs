@@ -168,7 +168,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 	{
 		base.OnNewMyTrade(trade);
 
-		var comment = trade.Order?.Comment;
+		var comment = trade.Order.Comment;
 		if (string.IsNullOrEmpty(comment))
 		return;
 
@@ -473,7 +473,7 @@ public class ColorXpWmaDigitMultiTimeframeStrategy : Strategy
 
 			public void ProcessTrade(MyTrade trade, TradeAction action)
 			{
-				var volume = trade.Trade?.Volume ?? trade.Order?.Volume ?? 0m;
+				var volume = trade.Trade?.Volume ?? trade.Order.Volume ?? 0m;
 				if (volume <= 0m)
 				return;
 

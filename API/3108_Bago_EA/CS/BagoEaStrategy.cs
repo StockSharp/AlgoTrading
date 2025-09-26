@@ -83,8 +83,8 @@ public class BagoEaStrategy : Strategy
 	private bool _shortPartial1Done;
 	private bool _shortPartial2Done;
 
-	private Order? _longStopOrder;
-	private Order? _shortStopOrder;
+	private Order _longStopOrder;
+	private Order _shortStopOrder;
 	private decimal _longStopPrice;
 	private decimal _shortStopPrice;
 

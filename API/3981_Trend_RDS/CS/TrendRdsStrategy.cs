@@ -34,8 +34,8 @@ public class TrendRdsStrategy : Strategy
 	private decimal _pipSize;
 	private decimal _previousPosition;
 	private decimal? _entryPrice;
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 
 	/// <summary>
 	/// Trading volume for market entries.

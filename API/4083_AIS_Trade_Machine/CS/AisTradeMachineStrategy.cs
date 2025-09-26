@@ -22,8 +22,8 @@ public class AisTradeMachineStrategy : Strategy
 	private ManualCommand _lastCommand;
 	private bool _commandHandled;
 	private decimal _peakEquity;
-	private Order? _stopOrder;
-	private Order? _takeOrder;
+	private Order _stopOrder;
+	private Order _takeOrder;
 	private decimal _currentStopPrice;
 	private decimal _currentTakePrice;
 
@@ -518,7 +518,7 @@ private void CancelProtectionOrders(bool resetLevels = false)
 	}
 }
 
-private void CancelOrderIfActive(ref Order? order)
+private void CancelOrderIfActive(ref Order order)
 {
 	if (order == null)
 	return;

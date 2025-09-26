@@ -61,8 +61,8 @@ public class TimerEaStrategy : Strategy
 	private decimal? _entryPrice;
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
-	private Order? _buyPendingOrder;
-	private Order? _sellPendingOrder;
+	private Order _buyPendingOrder;
+	private Order _sellPendingOrder;
 	private DateTimeOffset? _buyExpiry;
 	private DateTimeOffset? _sellExpiry;
 
@@ -594,12 +594,12 @@ public class TimerEaStrategy : Strategy
 		if (Position == 0)
 			return;
 
-		if (Position > 0 && trade.Order?.Direction == Sides.Buy)
+		if (Position > 0 && trade.Order.Direction == Sides.Buy)
 		{
 			_entryPrice = PositionPrice ?? trade.Trade.Price;
 			SetupProtection(true);
 		}
-		else if (Position < 0 && trade.Order?.Direction == Sides.Sell)
+		else if (Position < 0 && trade.Order.Direction == Sides.Sell)
 		{
 			_entryPrice = PositionPrice ?? trade.Trade.Price;
 			SetupProtection(false);

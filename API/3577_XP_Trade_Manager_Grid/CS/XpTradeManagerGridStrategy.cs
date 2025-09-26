@@ -47,10 +47,10 @@ public class XpTradeManagerGridStrategy : Strategy
 	private decimal _pipPrice;
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
-	private Order? _activeBuyOrder;
-	private Order? _activeSellOrder;
-	private Order? _closingBuyOrder;
-	private Order? _closingSellOrder;
+	private Order _activeBuyOrder;
+	private Order _activeSellOrder;
+	private Order _closingBuyOrder;
+	private Order _closingSellOrder;
 	private int _lastOrdersCount;
 	private decimal? _pendingTargetPrice;
 	private Sides? _pendingTargetSide;
@@ -639,7 +639,7 @@ public class XpTradeManagerGridStrategy : Strategy
 		// Track executions to maintain the internal ladder state.
 	base.OnOwnTradeReceived(trade);
 
-	if (trade.Order?.Security != Security)
+	if (trade.Order.Security != Security)
 	return;
 
 	var volume = trade.Trade.Volume;

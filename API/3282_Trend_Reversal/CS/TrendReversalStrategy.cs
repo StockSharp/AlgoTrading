@@ -39,8 +39,8 @@ public class TrendReversalStrategy : Strategy
 	private decimal? _macdMain;
 	private decimal? _macdSignal;
 	private DateTimeOffset? _lastSignalTime;
-	private ICandleMessage? _previousCandle;
-	private ICandleMessage? _previousPreviousCandle;
+	private ICandleMessage _previousCandle;
+	private ICandleMessage _previousPreviousCandle;
 
 	/// <summary>
 	/// Initializes parameters of the strategy.

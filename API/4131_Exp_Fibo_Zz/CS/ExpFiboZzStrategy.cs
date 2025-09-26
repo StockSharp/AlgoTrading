@@ -52,10 +52,10 @@ public class ExpFiboZzStrategy : Strategy
 	private decimal _breakEvenOffset;
 	private decimal _stopLevelBuffer;
 
-	private Order? _buyStopOrder;
-	private Order? _sellStopOrder;
-	private Order? _stopLossOrder;
-	private Order? _takeProfitOrder;
+	private Order _buyStopOrder;
+	private Order _sellStopOrder;
+	private Order _stopLossOrder;
+	private Order _takeProfitOrder;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="ExpFiboZzStrategy"/> class.

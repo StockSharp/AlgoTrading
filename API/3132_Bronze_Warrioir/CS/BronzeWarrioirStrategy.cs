@@ -414,7 +414,7 @@ public class BronzeWarrioirStrategy : Strategy
 	/// <inheritdoc />
 	protected override void OnOwnTradeReceived(MyTrade trade)
 	{
-		if (trade.Order?.Security != Security)
+		if (trade.Order.Security != Security)
 			return;
 
 		var volume = trade.Trade.Volume;

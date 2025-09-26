@@ -28,7 +28,7 @@ public class MondayTypicalBreakoutStrategy : Strategy
 	private readonly StrategyParam<decimal> _volumeStep;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	private DateTimeOffset? _lastSignalTime;
 	private decimal _priceStep;
 

@@ -25,9 +25,9 @@ public class Up3x1Premium2VmStrategy : Strategy
 	private decimal _pointSize;
 	// Cached point size to convert point-based parameters into prices.
 
-	private ICandleMessage? _previousCandle;
+	private ICandleMessage _previousCandle;
 	// Rolling history of the last two finished primary candles.
-	private ICandleMessage? _secondPreviousCandle;
+	private ICandleMessage _secondPreviousCandle;
 
 	private decimal? _fastMaPrevious;
 	// Cached indicator values to emulate the iMA shift access from MQL.
@@ -35,7 +35,7 @@ public class Up3x1Premium2VmStrategy : Strategy
 	private decimal? _slowMaPrevious;
 	private decimal? _slowMaEarlier;
 
-	private ICandleMessage? _previousDailyCandle;
+	private ICandleMessage _previousDailyCandle;
 	// Latest finished daily candle required by the midnight breakout filter.
 	private decimal? _dailySma;
 

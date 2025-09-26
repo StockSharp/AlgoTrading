@@ -254,7 +254,7 @@ public class FrankUdMinimalStrategy : Strategy
 		RegisterOrder(order, OrderAction.CloseShort);
 	}
 
-	private void RegisterOrder(Order? order, OrderAction action)
+	private void RegisterOrder(Order order, OrderAction action)
 	{
 		if (order == null)
 		return;
