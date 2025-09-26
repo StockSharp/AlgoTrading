@@ -16,7 +16,6 @@ public class DaydreamStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<int> _channelPeriod;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -44,15 +43,6 @@ public class DaydreamStrategy : Strategy
 	{
 		get => _channelPeriod.Value;
 		set => _channelPeriod.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed slippage in points. Parameter is stored for completeness but not used with simulated market orders.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>
@@ -84,10 +74,6 @@ public class DaydreamStrategy : Strategy
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 25)
 			.SetDisplay("Channel Period", "Donchian channel lookback", "Indicators")
-			.SetCanOptimize(true);
-
-		_slippage = Param(nameof(Slippage), 3)
-			.SetDisplay("Slippage", "Allowed slippage in points", "Trading")
 			.SetCanOptimize(true);
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 15m)

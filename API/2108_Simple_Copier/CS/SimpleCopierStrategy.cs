@@ -19,7 +19,6 @@ namespace StockSharp.Samples.Strategies;
 public class SimpleCopierStrategy : Strategy
 {
 	private readonly StrategyParam<CopierMode> _mode;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<decimal> _multiplier;
 
 	private Timer _timer;
@@ -32,15 +31,6 @@ public class SimpleCopierStrategy : Strategy
 	{
 		get => _mode.Value;
 		set => _mode.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed price slippage in pips.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>
@@ -59,10 +49,6 @@ public class SimpleCopierStrategy : Strategy
 	{
 		_mode = Param(nameof(Mode), CopierMode.Master)
 			.SetDisplay("Mode", "Working mode of the copier", "General");
-
-		_slippage = Param(nameof(Slippage), 10)
-			.SetGreaterThanZero()
-			.SetDisplay("Slippage", "Allowed slippage in pips", "General");
 
 		_multiplier = Param(nameof(Multiplier), 1m)
 			.SetGreaterThanZero()

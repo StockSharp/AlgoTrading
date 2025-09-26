@@ -16,7 +16,6 @@ public class IiOutbreakStrategy : Strategy
 {
 	private const decimal _epsilon = 0.0000000001m;
 
-	private readonly StrategyParam<decimal> _commission;
 	private readonly StrategyParam<decimal> _spreadThreshold;
 	private readonly StrategyParam<decimal> _trailStopPoints;
 	private readonly StrategyParam<decimal> _totalEquityRisk;
@@ -56,15 +55,6 @@ public class IiOutbreakStrategy : Strategy
 	private int _typicalCount;
 
 	private ICandleMessage _previousCandle;
-
-	/// <summary>
-	/// Commission used in the trailing start calculation (round lot cost in points).
-	/// </summary>
-	public decimal Commission
-	{
-		get => _commission.Value;
-		set => _commission.Value = value;
-	}
 
 	/// <summary>
 	/// Maximum acceptable spread expressed in points.
@@ -247,7 +237,7 @@ public class IiOutbreakStrategy : Strategy
 		_point = Security.PriceStep ?? 0.0001m;
 		_trailStopDistance = TrailStopPoints * _point;
 		_initialStopDistance = _trailStopDistance * 2m;
-		_trailStartPoints = TrailStopPoints + Math.Truncate(Commission) + SpreadThreshold;
+		_trailStartPoints = TrailStopPoints + Math.Truncate(Commission ?? 0) + SpreadThreshold;
 		_pyramidingStepPoints = Math.Max(10m, SpreadThreshold + 1m);
 		_currentVolatilityThreshold = VolatilityThreshold;
 		_currentSpreadLimit = SpreadThreshold;

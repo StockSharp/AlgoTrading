@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleEaMaPlusMacdStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -61,10 +60,6 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 	/// </summary>
 	public SimpleEaMaPlusMacdStrategy()
 	{
-		_volumeParam = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume used for entries", "Trading")
-			.SetCanOptimize(true);
-
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Distance from entry to the profit target in pips", "Risk")
@@ -130,15 +125,6 @@ public class SimpleEaMaPlusMacdStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe used for calculations", "Data")
 			.SetCanOptimize(false);
-	}
-
-	/// <summary>
-	/// Order volume used for market entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volumeParam.Value;
-		set => _volumeParam.Value = value;
 	}
 
 	/// <summary>

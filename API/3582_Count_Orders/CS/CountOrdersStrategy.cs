@@ -19,7 +19,6 @@ public class CountOrdersStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _tradeVolume;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<int> _waitMilliseconds;
 
 	private readonly HashSet<Order> _activeBuyOrders = new();
@@ -64,15 +63,6 @@ public class CountOrdersStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slippage parameter from the original expert (kept for completeness).
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
-	}
-
-	/// <summary>
 	/// Delay between the sample orders in milliseconds.
 	/// </summary>
 	public int WaitMilliseconds
@@ -100,10 +90,6 @@ public class CountOrdersStrategy : Strategy
 		_tradeVolume = Param(nameof(TradeVolume), 0.01m)
 			.SetGreaterThanZero()
 			.SetDisplay("Trade Volume", "Order volume submitted by the sample trades", "General");
-
-		_slippage = Param(nameof(Slippage), 7)
-			.SetNotNegative()
-			.SetDisplay("Slippage", "Legacy MetaTrader slippage input (informational only)", "General");
 
 		_waitMilliseconds = Param(nameof(WaitMilliseconds), 2000)
 			.SetNotNegative()
@@ -158,11 +144,11 @@ public class CountOrdersStrategy : Strategy
 
 		var isActive = order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active;
 
-		if (order.Direction == Sides.Buy)
+		if (order.Side == Sides.Buy)
 		{
 			UpdateActiveOrders(_activeBuyOrders, order, isActive);
 		}
-		else if (order.Direction == Sides.Sell)
+		else if (order.Side == Sides.Sell)
 		{
 			UpdateActiveOrders(_activeSellOrders, order, isActive);
 		}

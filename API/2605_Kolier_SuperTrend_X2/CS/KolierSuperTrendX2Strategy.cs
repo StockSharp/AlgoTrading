@@ -32,7 +32,6 @@ public class KolierSuperTrendX2Strategy : Strategy
 	private readonly StrategyParam<bool> _closeSellOnEntryFlip;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
-	private readonly StrategyParam<decimal> _slippage;
 
 	private SuperTrend _trendSuperTrend = null!;
 	private SuperTrend _entrySuperTrend = null!;
@@ -109,9 +108,6 @@ public class KolierSuperTrendX2Strategy : Strategy
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 2000m)
 			.SetDisplay("Take Profit (steps)", "Take profit distance in price steps", "Risk");
-
-		_slippage = Param(nameof(Slippage), 10m)
-			.SetDisplay("Slippage", "Reserved parameter for slippage handling", "Trading");
 	}
 
 
@@ -275,15 +271,6 @@ public class KolierSuperTrendX2Strategy : Strategy
 	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Placeholder parameter for slippage configuration.
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <inheritdoc />

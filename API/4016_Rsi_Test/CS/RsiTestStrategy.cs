@@ -20,7 +20,6 @@ public class RsiTestStrategy : Strategy
 	private readonly StrategyParam<int> _trailingDistanceSteps;
 	private readonly StrategyParam<int> _maxOpenPositions;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _baseVolume;
 
 	private RelativeStrengthIndex _rsi;
 	private decimal? _previousRsi;
@@ -58,10 +57,6 @@ public class RsiTestStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for calculations", "Data");
-
-		_baseVolume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Base Volume", "Fallback volume when risk sizing is unavailable", "Risk");
 	}
 
 	public int RsiPeriod
@@ -104,12 +99,6 @@ public class RsiTestStrategy : Strategy
 	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
-	}
-
-	public decimal Volume
-	{
-		get => _baseVolume.Value;
-		set => _baseVolume.Value = value;
 	}
 
 	/// <inheritdoc />

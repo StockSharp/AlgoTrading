@@ -11,7 +11,6 @@ public class SignalsDemoStrategy : Strategy
 {
 	private readonly StrategyParam<long> _signalId;
 	private readonly StrategyParam<decimal> _equityLimit;
-	private readonly StrategyParam<decimal> _slippage;
 	private readonly StrategyParam<decimal> _depositPercent;
 
 	/// <summary>
@@ -33,15 +32,6 @@ public class SignalsDemoStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Allowed slippage when copying trades.
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
-	}
-
-	/// <summary>
 	/// Percentage of account equity to allocate.
 	/// </summary>
 	public decimal DepositPercent
@@ -60,9 +50,6 @@ public class SignalsDemoStrategy : Strategy
 
 		_equityLimit = Param(nameof(EquityLimit), 0m)
 			.SetDisplay("Equity Limit", "Maximum equity to use", "General");
-
-		_slippage = Param(nameof(Slippage), 2m)
-			.SetDisplay("Slippage", "Allowed slippage", "General");
 
 		_depositPercent = Param(nameof(DepositPercent), 5m)
 			.SetDisplay("Deposit %", "Percent of account equity to allocate", "General");

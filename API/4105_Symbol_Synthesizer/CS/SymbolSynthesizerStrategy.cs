@@ -34,8 +34,6 @@ public class SymbolSynthesizerStrategy : Strategy
 	};
 
 	private readonly StrategyParam<int> _combinationParam;
-	private readonly StrategyParam<decimal> _volumeParam;
-	private readonly StrategyParam<decimal> _slippageParam;
 	private readonly StrategyParam<SyntheticTradeAction> _tradeActionParam;
 
 	private SyntheticCombination _combination;
@@ -63,24 +61,6 @@ public class SymbolSynthesizerStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initial volume for the first leg (in lots or contracts depending on broker settings).
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _volumeParam.Value;
-		set => _volumeParam.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum slippage allowed in price steps when sending limit orders.
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippageParam.Value;
-		set => _slippageParam.Value = value;
-	}
-
-	/// <summary>
 	/// Manual action that emulates the Buy/Sell buttons from the original panel.
 	/// </summary>
 	public SyntheticTradeAction TradeAction
@@ -98,14 +78,6 @@ public class SymbolSynthesizerStrategy : Strategy
 		.SetDisplay("Combination Index", "Predefined synthetic pair index (0-12)", "Synthetic")
 		.SetNotNegative();
 
-		_volumeParam = Param(nameof(OrderVolume), 0.1m)
-		.SetDisplay("Order Volume", "Volume for the first leg", "Trading")
-		.SetGreaterThanZero();
-
-		_slippageParam = Param(nameof(Slippage), 30m)
-		.SetDisplay("Slippage", "Maximum slippage in price steps", "Trading")
-		.SetNotNegative();
-
 		_tradeActionParam = Param(nameof(TradeAction), SyntheticTradeAction.None)
 		.SetDisplay("Trade Action", "Set to Buy or Sell to place paired orders", "Manual")
 		.SetCanOptimize(false);
@@ -117,10 +89,10 @@ public class SymbolSynthesizerStrategy : Strategy
 		EnsureCombinationInitialized(false);
 
 		if (_firstLeg != null)
-		yield return (_firstLeg, DataType.Level1);
+			yield return (_firstLeg, DataType.Level1);
 
 		if (_secondLeg != null)
-		yield return (_secondLeg, DataType.Level1);
+			yield return (_secondLeg, DataType.Level1);
 	}
 
 	/// <inheritdoc />
@@ -152,7 +124,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		EnsureCombinationInitialized(true);
 
 		if (_firstLeg == null || _secondLeg == null)
-		return;
+			return;
 
 		SubscribeLevel1(_firstLeg)
 		.Bind(message => ProcessLevel1(_firstLeg, message))
@@ -168,18 +140,18 @@ public class SymbolSynthesizerStrategy : Strategy
 	private void EnsureCombinationInitialized(bool throwOnError)
 	{
 		if (_combination != null)
-		return;
+			return;
 
 		var index = CombinationIndex;
 
 		if (index < 0 || index >= _predefinedCombinations.Length)
 		{
-		var message = $"Combination index {index} is out of range (0..{_predefinedCombinations.Length - 1}).";
-		if (throwOnError)
-		throw new InvalidOperationException(message);
+			var message = $"Combination index {index} is out of range (0..{_predefinedCombinations.Length - 1}).";
+			if (throwOnError)
+				throw new InvalidOperationException(message);
 
-		LogWarning(message);
-		return;
+			LogWarning(message);
+			return;
 		}
 
 		_combination = _predefinedCombinations[index];
@@ -189,23 +161,23 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		if (_firstLeg == null || _secondLeg == null)
 		{
-		var missing = _firstLeg == null ? _combination.FirstLeg : _combination.SecondLeg;
-		var message = $"Security '{missing}' could not be resolved.";
-		_combination = null;
-		_firstLeg = null;
-		_secondLeg = null;
+			var missing = _firstLeg == null ? _combination.FirstLeg : _combination.SecondLeg;
+			var message = $"Security '{missing}' could not be resolved.";
+			_combination = null;
+			_firstLeg = null;
+			_secondLeg = null;
 
-		if (throwOnError)
-		throw new InvalidOperationException(message);
+			if (throwOnError)
+				throw new InvalidOperationException(message);
 
-		LogWarning(message);
-		return;
+			LogWarning(message);
+			return;
 		}
 
 		if (Security == null)
 		{
-		var synthetic = this.GetSecurity(_combination.SyntheticSymbol);
-		Security = synthetic ?? _firstLeg;
+			var synthetic = this.GetSecurity(_combination.SyntheticSymbol);
+			Security = synthetic ?? _firstLeg;
 		}
 	}
 
@@ -213,15 +185,15 @@ public class SymbolSynthesizerStrategy : Strategy
 	{
 		if (security == _firstLeg)
 		{
-		UpdateBidAsk(ref _firstBid, ref _firstAsk, message);
+			UpdateBidAsk(ref _firstBid, ref _firstAsk, message);
 		}
 		else if (security == _secondLeg)
 		{
-		UpdateBidAsk(ref _secondBid, ref _secondAsk, message);
+			UpdateBidAsk(ref _secondBid, ref _secondAsk, message);
 		}
 		else
 		{
-		return;
+			return;
 		}
 
 		UpdateSyntheticQuotes();
@@ -231,22 +203,22 @@ public class SymbolSynthesizerStrategy : Strategy
 	{
 		var bid = message.TryGetDecimal(Level1Fields.BidPrice);
 		if (bid is decimal bidPrice && bidPrice > 0m)
-		bidStorage = bidPrice;
+			bidStorage = bidPrice;
 
 		var ask = message.TryGetDecimal(Level1Fields.AskPrice);
 		if (ask is decimal askPrice && askPrice > 0m)
-		askStorage = askPrice;
+			askStorage = askPrice;
 	}
 
 	private void UpdateSyntheticQuotes()
 	{
 		if (_combination == null)
-		return;
+			return;
 
 		if (_firstBid is not decimal firstBid || _firstAsk is not decimal firstAsk ||
 			_secondBid is not decimal secondBid || _secondAsk is not decimal secondAsk)
 		{
-		return;
+			return;
 		}
 
 		decimal newBid;
@@ -254,78 +226,78 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		if (_combination.IsProduct)
 		{
-		newBid = firstBid * secondBid;
-		newAsk = firstAsk * secondAsk;
+			newBid = firstBid * secondBid;
+			newAsk = firstAsk * secondAsk;
 		}
 		else
 		{
-		if (firstBid <= 0m || firstAsk <= 0m)
-		return;
+			if (firstBid <= 0m || firstAsk <= 0m)
+				return;
 
-		newBid = secondBid / firstBid;
-		newAsk = secondAsk / firstAsk;
+			newBid = secondBid / firstBid;
+			newAsk = secondAsk / firstAsk;
 		}
 
 		if (_syntheticBid != newBid || _syntheticAsk != newAsk)
 		{
-		_syntheticBid = newBid;
-		_syntheticAsk = newAsk;
+			_syntheticBid = newBid;
+			_syntheticAsk = newAsk;
 
-		if (_lastLoggedBid != newBid || _lastLoggedAsk != newAsk)
-		{
-		_lastLoggedBid = newBid;
-		_lastLoggedAsk = newAsk;
-		LogInfo($"Synthetic {_combination.SyntheticSymbol} quote updated. Bid={newBid}, Ask={newAsk}.");
-		}
+			if (_lastLoggedBid != newBid || _lastLoggedAsk != newAsk)
+			{
+				_lastLoggedBid = newBid;
+				_lastLoggedAsk = newAsk;
+				LogInfo($"Synthetic {_combination.SyntheticSymbol} quote updated. Bid={newBid}, Ask={newAsk}.");
+			}
 
-		TryExecuteManualAction();
+			TryExecuteManualAction();
 		}
 	}
 
 	private void TryExecuteManualAction()
 	{
 		if (_isPlacingOrders)
-		return;
+			return;
 
 		var action = TradeAction;
 
 		if (action == SyntheticTradeAction.None)
-		return;
+			return;
 
-	_isPlacingOrders = true;
+		_isPlacingOrders = true;
 
 		try
 		{
-		ExecuteSyntheticTrade(action);
-		TradeAction = SyntheticTradeAction.None;
+			ExecuteSyntheticTrade(action);
+			TradeAction = SyntheticTradeAction.None;
 		}
 		catch (Exception ex)
 		{
-		LogError($"Failed to execute synthetic {action}. {ex.Message}");
-		TradeAction = SyntheticTradeAction.None;
+			LogError($"Failed to execute synthetic {action}. {ex.Message}");
+			TradeAction = SyntheticTradeAction.None;
 		}
 		finally
 		{
-		_isPlacingOrders = false;
+			_isPlacingOrders = false;
 		}
 	}
 
 	private void ExecuteSyntheticTrade(SyntheticTradeAction action)
 	{
 		if (_combination == null || _firstLeg == null || _secondLeg == null)
-		throw new InvalidOperationException("Strategy legs are not initialized.");
+			throw new InvalidOperationException("Strategy legs are not initialized.");
 
-		if (OrderVolume <= 0m)
-		throw new InvalidOperationException("OrderVolume must be greater than zero.");
+		if (Volume <= 0m)
+			throw new InvalidOperationException("Volume must be greater than zero.");
 
 		if (_firstBid is not decimal firstBid || _firstAsk is not decimal firstAsk ||
 			_secondBid is not decimal secondBid || _secondAsk is not decimal secondAsk)
 		{
-		throw new InvalidOperationException("Leg quotes are not ready yet.");
+			throw new InvalidOperationException("Leg quotes are not ready yet.");
 		}
 
 		if (_syntheticBid is not decimal synthBid || _syntheticAsk is not decimal synthAsk)
-		throw new InvalidOperationException("Synthetic quotes are not ready yet.");
+			throw new InvalidOperationException("Synthetic quotes are not ready yet.");
 
 		var firstSide = _combination.IsProduct
 		? (action == SyntheticTradeAction.Buy ? Sides.Buy : Sides.Sell)
@@ -337,9 +309,9 @@ public class SymbolSynthesizerStrategy : Strategy
 		var secondPrice = secondSide == Sides.Buy ? secondAsk : secondBid;
 
 		if (firstPrice <= 0m || secondPrice <= 0m)
-		throw new InvalidOperationException("Reference prices are not positive.");
+			throw new InvalidOperationException("Reference prices are not positive.");
 
-		var firstVolume = NormalizeVolume(OrderVolume, _firstLeg);
+		var firstVolume = NormalizeVolume(Volume, _firstLeg);
 
 		var firstTickValue = _firstLeg.StepPrice ?? 0m;
 		var secondTickValue = _secondLeg.StepPrice ?? 0m;
@@ -348,13 +320,13 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		if (firstTickValue <= 0m || secondTickValue <= 0m || firstPoint <= 0m || secondPoint <= 0m)
 		{
-		throw new InvalidOperationException("Tick value or price step metadata is missing.");
+			throw new InvalidOperationException("Tick value or price step metadata is missing.");
 		}
 
 		var syntheticPrice = action == SyntheticTradeAction.Buy ? synthAsk : synthBid;
 
 		if (syntheticPrice <= 0m)
-		throw new InvalidOperationException("Synthetic price must be positive.");
+			throw new InvalidOperationException("Synthetic price must be positive.");
 
 		var rawSecondVolume = firstVolume * syntheticPrice / firstTickValue / secondTickValue * (secondPoint / firstPoint);
 		var secondVolume = NormalizeVolume(rawSecondVolume, _secondLeg);
@@ -373,15 +345,15 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		if (step > 0m)
 		{
-		var steps = Math.Round(volume / step, 0, MidpointRounding.AwayFromZero);
-		volume = steps * step;
+			var steps = Math.Round(volume / step, 0, MidpointRounding.AwayFromZero);
+			volume = steps * step;
 		}
 
 		if (volume < minVolume)
-		volume = minVolume > 0m ? minVolume : step;
+			volume = minVolume > 0m ? minVolume : step;
 
 		if (maxVolume is decimal max && volume > max)
-		volume = max;
+			volume = max;
 
 		return volume;
 	}
@@ -393,19 +365,19 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		if (priceStep > 0m && Slippage > 0m)
 		{
-		var offset = Slippage * priceStep;
-		price = side == Sides.Buy ? referencePrice + offset : referencePrice - offset;
+			var offset = Slippage * priceStep;
+			price = side == Sides.Buy ? referencePrice + offset : referencePrice - offset;
 		}
 
 		price = security.ShrinkPrice(price);
 
 		if (side == Sides.Buy)
 		{
-		BuyLimit(volume, price, security);
+			BuyLimit(volume, price, security);
 		}
 		else
 		{
-		SellLimit(volume, price, security);
+			SellLimit(volume, price, security);
 		}
 	}
 }

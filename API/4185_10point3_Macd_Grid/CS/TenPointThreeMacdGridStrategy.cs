@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TenPointThreeMacdGridStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _initialStopPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -68,12 +67,6 @@ public class TenPointThreeMacdGridStrategy : Strategy
 	/// </summary>
 	public TenPointThreeMacdGridStrategy()
 	{
-		_baseVolume = Param(nameof(Volume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Base Volume", "Initial lot size before martingale scaling", "Money Management")
-		.SetCanOptimize(true)
-		.SetOptimize(0.01m, 0.5m, 0.01m);
-
 		_takeProfitPips = Param(nameof(TakeProfitPips), 45m)
 		.SetGreaterThanOrEqual(0m)
 		.SetDisplay("Take Profit (pips)", "Profit target for each position leg", "Risk")
@@ -169,15 +162,6 @@ public class TenPointThreeMacdGridStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
 		.SetDisplay("Candle Type", "Primary candle type for MACD calculations", "General");
-	}
-
-	/// <summary>
-	/// Base volume used for the first grid order.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _baseVolume.Value;
-		set => _baseVolume.Value = value;
 	}
 
 	/// <summary>

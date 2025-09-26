@@ -22,7 +22,6 @@ public class TradeCopierStrategy : Strategy
 		public decimal Price { get; set; }
 	}
 
-	private readonly StrategyParam<decimal> _slippage;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<TimeSpan> _maxOrderAge;
 	private readonly StrategyParam<string> _commentPrefix;
@@ -40,10 +39,6 @@ public class TradeCopierStrategy : Strategy
 	/// </summary>
 	public TradeCopierStrategy()
 	{
-		_slippage = Param(nameof(Slippage), 3m)
-		.SetNotNegative()
-		.SetDisplay("Slippage", "Allowed price deviation in ticks", "General");
-
 		_multiplier = Param(nameof(Multiplier), 1m)
 		.SetGreaterThanZero()
 		.SetDisplay("Multiplier", "Volume multiplier for copied trades", "General");
@@ -56,15 +51,6 @@ public class TradeCopierStrategy : Strategy
 
 		_checkInterval = Param(nameof(CheckInterval), TimeSpan.FromSeconds(1))
 		.SetDisplay("Check Interval", "Legacy timer interval from MQL script", "General");
-	}
-
-	/// <summary>
-	/// Maximum price deviation in ticks allowed for a copy order.
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>

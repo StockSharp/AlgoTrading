@@ -27,7 +27,6 @@ public class MultiPairCloserStrategy : Strategy
 	private readonly StrategyParam<string> _watchedSymbols;
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<decimal> _maxLoss;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<int> _minAgeSeconds;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -56,15 +55,6 @@ public class MultiPairCloserStrategy : Strategy
 	{
 		get => _maxLoss.Value;
 		set => _maxLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed slippage in price units used during emergency exits.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>
@@ -100,10 +90,6 @@ public class MultiPairCloserStrategy : Strategy
 		_maxLoss = Param(nameof(MaxLoss), 60m)
 			.SetNotNegative()
 			.SetDisplay("Maximum Loss", "Maximum drawdown tolerated before closing positions", "Risk Management");
-
-		_slippage = Param(nameof(Slippage), 10)
-			.SetNotNegative()
-			.SetDisplay("Slippage", "Accepted slippage (price steps) when liquidating positions", "Execution");
 
 		_minAgeSeconds = Param(nameof(MinAgeSeconds), 60)
 			.SetNotNegative()

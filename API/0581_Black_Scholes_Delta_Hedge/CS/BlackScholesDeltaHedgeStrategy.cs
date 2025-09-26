@@ -14,7 +14,6 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _strikePrice;
-	private readonly StrategyParam<decimal> _riskFreeRate;
 	private readonly StrategyParam<decimal> _volatility;
 	private readonly StrategyParam<int> _daysToExpiry;
 	private readonly StrategyParam<int> _hedgeInterval;
@@ -34,11 +33,6 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 	/// Option strike price.
 	/// </summary>
 	public decimal StrikePrice { get => _strikePrice.Value; set => _strikePrice.Value = value; }
-
-	/// <summary>
-	/// Risk free interest rate.
-	/// </summary>
-	public decimal RiskFreeRate { get => _riskFreeRate.Value; set => _riskFreeRate.Value = value; }
 
 	/// <summary>
 	/// Annual volatility.
@@ -80,9 +74,6 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 
 		_strikePrice = Param(nameof(StrikePrice), 50m)
 			.SetDisplay("Strike Price", "Option strike price", "Option Parameters");
-
-		_riskFreeRate = Param(nameof(RiskFreeRate), 0.01m)
-			.SetDisplay("Risk Free Rate", "Risk free interest rate", "Option Parameters");
 
 		_volatility = Param(nameof(Volatility), 0.2m)
 			.SetDisplay("Volatility", "Annual volatility", "Option Parameters");

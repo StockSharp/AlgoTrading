@@ -28,7 +28,7 @@ public class VirtualRobotStrategy : Strategy
 	private readonly StrategyParam<int> _realAverageThreshold;
 	private readonly StrategyParam<bool> _visualMode;
 
-	private CandleSeries _series;
+	private ISubscriptionHandler<ICandleMessage> _series;
 	private decimal _pointSize;
 	private decimal _pipDistance;
 	private decimal _stopDistance;

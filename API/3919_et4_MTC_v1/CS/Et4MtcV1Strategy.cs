@@ -16,7 +16,6 @@ public class Et4MtcV1Strategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _lots;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _slippage;
 	private readonly StrategyParam<bool> _enableLogging;
 	private readonly StrategyParam<TimeSpan> _tradeCooldown;
 	private readonly StrategyParam<DataType> _candleType;
@@ -46,10 +45,6 @@ public class Et4MtcV1Strategy : Strategy
 			.SetDisplay("Stop Loss", "Protective stop in points", "Parameters")
 			.SetCanOptimize(true)
 			.SetOptimize(10m, 200m, 10m);
-
-		_slippage = Param(nameof(Slippage), 3m)
-			.SetGreaterThanOrEqualZero()
-			.SetDisplay("Slippage", "Maximum allowed slippage in points", "Execution");
 
 		_enableLogging = Param(nameof(EnableLogging), false)
 			.SetDisplay("Enable Logging", "Enable informational logging for template events", "General");
@@ -86,15 +81,6 @@ public class Et4MtcV1Strategy : Strategy
 	{
 		get => _stopLoss.Value;
 		set => _stopLoss.Value = value;
-	}
-
-	/// <summary>
-	/// Maximum tolerated slippage in points.
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>

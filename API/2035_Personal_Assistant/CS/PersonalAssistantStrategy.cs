@@ -13,20 +13,9 @@ using StockSharp.Messages;
 /// </summary>
 public class PersonalAssistantStrategy : Strategy
 {
-	private readonly StrategyParam<int> _id;
 	private readonly StrategyParam<bool> _displayLegend;
 	private readonly StrategyParam<decimal> _lotVolume;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<DataType> _candleType;
-
-	/// <summary>
-	/// Unique identifier used as a magic number.
-	/// </summary>
-	public int Id
-	{
-		get => _id.Value;
-		set => _id.Value = value;
-	}
 
 	/// <summary>
 	/// Enables informational logging.
@@ -47,15 +36,6 @@ public class PersonalAssistantStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Maximum allowed slippage in ticks.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
-	}
-
-	/// <summary>
 	/// Type of candles used for updates.
 	/// </summary>
 	public DataType CandleType
@@ -69,17 +49,11 @@ public class PersonalAssistantStrategy : Strategy
 	/// </summary>
 	public PersonalAssistantStrategy()
 	{
-		_id = Param(nameof(Id), 3900)
-		.SetDisplay("ID", "Magic number of the strategy", "General");
-
 		_displayLegend = Param(nameof(DisplayLegend), true)
 		.SetDisplay("Display Legend", "Show informational lines in log", "General");
 
 		_lotVolume = Param(nameof(LotVolume), 0.01m)
 		.SetDisplay("Lot Size", "Volume for manual orders", "Trading");
-
-		_slippage = Param(nameof(Slippage), 2)
-		.SetDisplay("Slippage", "Maximum allowed slippage in ticks", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to subscribe", "Data");

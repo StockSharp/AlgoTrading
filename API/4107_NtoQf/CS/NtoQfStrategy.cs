@@ -61,7 +61,7 @@ public class NtoQfStrategy : Strategy
 	private decimal _pipSize;
 
 	private ValueBuffer<decimal> _closeBuffer = null!;
-	private readonly Dictionary<DataType, CandleSeries> _subscriptions = new();
+	private readonly Dictionary<DataType, ISubscriptionHandler<ICandleMessage>> _subscriptions = new();
 	private readonly Dictionary<DataType, ValueBuffer<decimal>> _rsiBuffers = new();
 	private readonly Dictionary<DataType, ValueBuffer<StochasticSnapshot>> _stochasticBuffers = new();
 	private readonly Dictionary<DataType, ValueBuffer<AdxSnapshot>> _adxDirectionalBuffers = new();
@@ -1059,10 +1059,10 @@ public class NtoQfStrategy : Strategy
 		return _closeBuffer.TryGet(Math.Max(0, shift), out price);
 	}
 
-	private CandleSeries GetOrCreateSubscription(DataType timeframe)
+	private ISubscriptionHandler<ICandleMessage> GetOrCreateSubscription(DataType timeframe)
 	{
 		if (_subscriptions.TryGetValue(timeframe, out var series))
-		return series;
+			return series;
 
 		series = SubscribeCandles(timeframe);
 		_subscriptions.Add(timeframe, series);

@@ -37,8 +37,6 @@ public class PendingTreadStrategy : Strategy
 	private readonly StrategyParam<decimal> _pipStepPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
-	private readonly StrategyParam<decimal> _orderVolume;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<bool> _enableBuyGrid;
 	private readonly StrategyParam<PendingGridDirection> _aboveMarketDirection;
 	private readonly StrategyParam<bool> _enableSellGrid;
@@ -87,24 +85,6 @@ public class PendingTreadStrategy : Strategy
 	{
 		get => _stopLossPips.Value;
 		set => _stopLossPips.Value = value;
-	}
-
-	/// <summary>
-	/// Volume used when placing each pending order.
-	/// </summary>
-	public decimal OrderVolume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
-	/// Optional slippage placeholder kept for feature parity with the original expert.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>
@@ -195,14 +175,6 @@ public class PendingTreadStrategy : Strategy
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetNotNegative()
 		.SetDisplay("Stop Loss (pips)", "Optional stop-loss distance for pending orders.", "Risk");
-
-		_orderVolume = Param(nameof(OrderVolume), 0.10m)
-		.SetGreaterThanZero()
-		.SetDisplay("Order Volume", "Trade volume submitted with each pending order.", "Trading");
-
-		_slippage = Param(nameof(Slippage), 3)
-		.SetNotNegative()
-		.SetDisplay("Slippage", "Placeholder parameter for compatibility with the original EA.", "Trading");
 
 		_enableBuyGrid = Param(nameof(EnableBuyGrid), true)
 		.SetDisplay("Enable Above-Market Grid", "Maintains layered pending orders above the market price.", "Grid");

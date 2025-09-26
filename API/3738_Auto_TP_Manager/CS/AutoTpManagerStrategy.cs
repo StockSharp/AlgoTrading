@@ -20,7 +20,6 @@ public class AutoTpManagerStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<bool> _useEquityProtection;
 	private readonly StrategyParam<decimal> _minEquityPercent;
-	private readonly StrategyParam<int> _slippage;
 
 	private Order _stopOrder;
 	private Order _takeProfitOrder;
@@ -64,10 +63,6 @@ public class AutoTpManagerStrategy : Strategy
 		_minEquityPercent = Param(nameof(MinEquityPercent), 20m)
 		.SetNotNegative()
 		.SetDisplay("Min Equity (%)", "Minimum equity as a percentage of the starting balance.", "Risk Management");
-
-		_slippage = Param(nameof(Slippage), 3)
-		.SetNotNegative()
-		.SetDisplay("Slippage", "Reserved for compatibility with the original EA; no direct effect.", "Misc");
 	}
 
 	/// <summary>
@@ -131,15 +126,6 @@ public class AutoTpManagerStrategy : Strategy
 	{
 		get => _minEquityPercent.Value;
 		set => _minEquityPercent.Value = value;
-	}
-
-	/// <summary>
-	/// Reserved for compatibility with the original EA; no direct effect.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <inheritdoc />

@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ComFractiFractalRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<int> _expiryMinutes;
@@ -46,10 +45,6 @@ public class ComFractiFractalRsiStrategy : Strategy
 	/// </summary>
 	public ComFractiFractalRsiStrategy()
 	{
-		_volumeParam = Param(nameof(Volume), 0.1m)
-		.SetDisplay("Volume", "Order size used for entries", "Trading")
-		.SetCanOptimize(true);
-
 		_takeProfitPips = Param(nameof(TakeProfitPips), 700m)
 		.SetDisplay("Take Profit (pips)", "Distance to the profit target expressed in pips", "Risk")
 		.SetCanOptimize(true);
@@ -94,26 +89,17 @@ public class ComFractiFractalRsiStrategy : Strategy
 		.SetDisplay("RSI Period", "Length of the daily RSI filter", "Filters")
 		.SetCanOptimize(true);
 
-		_mainCandleType = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromMinutes(15)))
+		_mainCandleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 		.SetDisplay("Main Timeframe", "Candle type used for trade execution", "Data")
 		.SetCanOptimize(false);
 
-		_higherCandleType = Param(nameof(HigherTimeFrame), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_higherCandleType = Param(nameof(HigherTimeFrame), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Higher Timeframe", "Candle type used for trend confirmation", "Data")
 		.SetCanOptimize(false);
 
-		_dailyCandleType = Param(nameof(DailyTimeFrame), DataType.TimeFrame(TimeSpan.FromDays(1)))
+		_dailyCandleType = Param(nameof(DailyTimeFrame), TimeSpan.FromDays(1).TimeFrame())
 		.SetDisplay("Daily Timeframe", "Candle type used for the RSI filter", "Data")
 		.SetCanOptimize(false);
-	}
-
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volumeParam.Value;
-		set => _volumeParam.Value = value;
 	}
 
 	/// <summary>

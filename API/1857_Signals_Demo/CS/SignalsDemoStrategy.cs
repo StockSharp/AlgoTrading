@@ -15,7 +15,6 @@ public class SignalsDemoStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _equityLimit;
-	private readonly StrategyParam<decimal> _slippage;
 	private readonly StrategyParam<decimal> _depositPercent;
 
 	/// <summary>
@@ -37,15 +36,6 @@ public class SignalsDemoStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Allowed slippage in ticks.
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
-	}
-
-	/// <summary>
 	/// Percentage of deposit to allocate for signal copying.
 	/// </summary>
 	public decimal DepositPercent
@@ -64,10 +54,6 @@ public class SignalsDemoStrategy : Strategy
 
 		_equityLimit = Param(nameof(EquityLimit), 0m)
 		.SetDisplay("Equity Limit", "Max equity for signal copy", "General")
-		.SetCanOptimize(true);
-
-		_slippage = Param(nameof(Slippage), 0m)
-		.SetDisplay("Slippage", "Allowed slippage in ticks", "General")
 		.SetCanOptimize(true);
 
 		_depositPercent = Param(nameof(DepositPercent), 100m)

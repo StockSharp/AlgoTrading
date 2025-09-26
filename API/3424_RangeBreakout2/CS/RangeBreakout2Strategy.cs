@@ -426,7 +426,7 @@ public class RangeBreakout2Strategy : Strategy
 		_atrValue = atrValue;
 	}
 
-	private void ProcessDepth(MarketDepth depth)
+	private void ProcessDepth(IOrderBookMessage depth)
 	{
 		var bestBid = depth.GetBestBid()?.Price;
 		if (bestBid != null)
@@ -564,7 +564,7 @@ public class RangeBreakout2Strategy : Strategy
 			return;
 		}
 
-		ApplyProtections(order.Direction, referencePrice, volume);
+		ApplyProtections(order.Side, referencePrice, volume);
 		_phase = StrategyPhase.Trade;
 	}
 

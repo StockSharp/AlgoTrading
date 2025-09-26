@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 public class BlackScholesOptionPricingStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _strikePrice;
-	private readonly StrategyParam<decimal> _riskFreeRate;
 	private readonly StrategyParam<decimal> _volatility;
 	private readonly StrategyParam<int> _daysToExpiry;
 	private readonly StrategyParam<bool> _isCall;
@@ -25,15 +24,6 @@ public class BlackScholesOptionPricingStrategy : Strategy
 	{
 		get => _strikePrice.Value;
 		set => _strikePrice.Value = value;
-	}
-
-	/// <summary>
-	/// Annual risk free interest rate.
-	/// </summary>
-	public decimal RiskFreeRate
-	{
-		get => _riskFreeRate.Value;
-		set => _riskFreeRate.Value = value;
 	}
 
 	/// <summary>
@@ -85,9 +75,6 @@ public class BlackScholesOptionPricingStrategy : Strategy
 		_strikePrice = Param(nameof(StrikePrice), 100m)
 			.SetGreaterThanZero()
 			.SetDisplay("Strike", "Option strike price", "Black-Scholes");
-
-		_riskFreeRate = Param(nameof(RiskFreeRate), 0.01m)
-			.SetDisplay("Risk Free Rate", "Annual risk free interest rate", "Black-Scholes");
 
 		_volatility = Param(nameof(Volatility), 0.2m)
 			.SetGreaterThanZero()

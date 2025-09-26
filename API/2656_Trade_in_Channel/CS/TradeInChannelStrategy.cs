@@ -15,7 +15,6 @@ public class TradeInChannelStrategy : Strategy
 {
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -56,15 +55,6 @@ public class TradeInChannelStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _orderVolume.Value;
-		set => _orderVolume.Value = value;
-	}
-
-	/// <summary>
 	/// Trailing stop distance expressed in price steps.
 	/// </summary>
 	public decimal TrailingStopPips
@@ -95,10 +85,6 @@ public class TradeInChannelStrategy : Strategy
 		_atrPeriod = Param(nameof(AtrPeriod), 4)
 			.SetDisplay("ATR Period", "Average True Range length", "Volatility")
 			.SetCanOptimize(true)
-			.SetGreaterThanZero();
-
-		_orderVolume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume per trade", "Trading")
 			.SetGreaterThanZero();
 
 		_trailingStopPips = Param(nameof(TrailingStopPips), 30m)

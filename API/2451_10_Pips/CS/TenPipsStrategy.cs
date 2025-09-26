@@ -59,7 +59,7 @@ public class TenPipsStrategy : Strategy
 		SellMarket(Volume);
 	}
 
-	private void ProcessTrade(Trade trade)
+	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		if (_hasLong && TrailingStopBuy > 0 && _longStop != null)
 		{

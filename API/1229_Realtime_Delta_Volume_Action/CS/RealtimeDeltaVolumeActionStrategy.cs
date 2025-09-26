@@ -13,104 +13,104 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RealtimeDeltaVolumeActionStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _deltaThreshold;
-private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<decimal> _deltaThreshold;
+	private readonly StrategyParam<DataType> _candleType;
 
-private decimal _deltaVolume;
+	private decimal _deltaVolume;
 
-/// <summary>
-/// Volume delta threshold for entry.
-/// </summary>
-public decimal DeltaThreshold
-{
-get => _deltaThreshold.Value;
-set => _deltaThreshold.Value = value;
-}
+	/// <summary>
+	/// Volume delta threshold for entry.
+	/// </summary>
+	public decimal DeltaThreshold
+	{
+		get => _deltaThreshold.Value;
+		set => _deltaThreshold.Value = value;
+	}
 
-/// <summary>
-/// Candle type for calculations.
-/// </summary>
-public DataType CandleType
-{
-get => _candleType.Value;
-set => _candleType.Value = value;
-}
+	/// <summary>
+	/// Candle type for calculations.
+	/// </summary>
+	public DataType CandleType
+	{
+		get => _candleType.Value;
+		set => _candleType.Value = value;
+	}
 
-/// <summary>
-/// Initialize <see cref="RealtimeDeltaVolumeActionStrategy"/>.
-/// </summary>
-public RealtimeDeltaVolumeActionStrategy()
-{
-_deltaThreshold = Param(nameof(DeltaThreshold), 100m)
-.SetGreaterThanZero()
-.SetDisplay("Delta Threshold", "Volume delta required to trade", "Parameters")
-.SetCanOptimize(true)
-.SetOptimize(50m, 300m, 50m);
+	/// <summary>
+	/// Initialize <see cref="RealtimeDeltaVolumeActionStrategy"/>.
+	/// </summary>
+	public RealtimeDeltaVolumeActionStrategy()
+	{
+		_deltaThreshold = Param(nameof(DeltaThreshold), 100m)
+		.SetGreaterThanZero()
+		.SetDisplay("Delta Threshold", "Volume delta required to trade", "Parameters")
+		.SetCanOptimize(true)
+		.SetOptimize(50m, 300m, 50m);
 
-_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
-.SetDisplay("Candle Type", "Type of candles", "General");
-}
+		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
+		.SetDisplay("Candle Type", "Type of candles", "General");
+	}
 
-/// <inheritdoc />
-public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-{
-return [(Security, CandleType)];
-}
+	/// <inheritdoc />
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	{
+		return [(Security, CandleType)];
+	}
 
-/// <inheritdoc />
-protected override void OnReseted()
-{
-base.OnReseted();
-_deltaVolume = 0m;
-}
+	/// <inheritdoc />
+	protected override void OnReseted()
+	{
+		base.OnReseted();
+		_deltaVolume = 0m;
+	}
 
-/// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
-{
-base.OnStarted(time);
+	/// <inheritdoc />
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		base.OnStarted(time);
 
-var candleSub = SubscribeCandles(CandleType);
-candleSub.Bind(ProcessCandle).Start();
+		var candleSub = SubscribeCandles(CandleType);
+		candleSub.Bind(ProcessCandle).Start();
 
-SubscribeTicks().Bind(ProcessTrade).Start();
+		SubscribeTicks().Bind(ProcessTrade).Start();
 
-StartProtection(
-takeProfit: new Unit(3, UnitTypes.Percent),
-stopLoss: new Unit(2, UnitTypes.Percent)
-);
+		StartProtection(
+		takeProfit: new Unit(3, UnitTypes.Percent),
+		stopLoss: new Unit(2, UnitTypes.Percent)
+		);
 
-var area = CreateChartArea();
-if (area != null)
-{
-DrawCandles(area, candleSub);
-DrawOwnTrades(area);
-}
-}
+		var area = CreateChartArea();
+		if (area != null)
+		{
+			DrawCandles(area, candleSub);
+			DrawOwnTrades(area);
+		}
+	}
 
-private void ProcessTrade(Trade trade)
-{
-var delta = trade.OriginSide == Sides.Buy ? trade.Volume : -trade.Volume;
-_deltaVolume += delta;
-}
+	private void ProcessTrade(ITickTradeMessage trade)
+	{
+		var delta = trade.OriginSide == Sides.Buy ? trade.Volume : -trade.Volume;
+		_deltaVolume += delta;
+	}
 
-private void ProcessCandle(ICandleMessage candle)
-{
-if (candle.State != CandleStates.Finished)
-return;
+	private void ProcessCandle(ICandleMessage candle)
+	{
+		if (candle.State != CandleStates.Finished)
+			return;
 
-if (!IsFormedAndOnlineAndAllowTrading())
-{
-_deltaVolume = 0m;
-return;
-}
+		if (!IsFormedAndOnlineAndAllowTrading())
+		{
+			_deltaVolume = 0m;
+			return;
+		}
 
-LogInfo($"Delta volume: {_deltaVolume}");
+		LogInfo($"Delta volume: {_deltaVolume}");
 
-if (_deltaVolume > DeltaThreshold && Position <= 0)
-BuyMarket(Volume + Math.Abs(Position));
-else if (_deltaVolume < -DeltaThreshold && Position >= 0)
-SellMarket(Volume + Math.Abs(Position));
+		if (_deltaVolume > DeltaThreshold && Position <= 0)
+			BuyMarket(Volume + Math.Abs(Position));
+		else if (_deltaVolume < -DeltaThreshold && Position >= 0)
+			SellMarket(Volume + Math.Abs(Position));
 
-_deltaVolume = 0m;
-}
+		_deltaVolume = 0m;
+	}
 }

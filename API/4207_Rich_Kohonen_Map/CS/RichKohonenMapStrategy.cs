@@ -23,7 +23,6 @@ public class RichKohonenMapStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<decimal> _lots;
-	private readonly StrategyParam<decimal> _slippage;
 	private readonly StrategyParam<string> _mapPath;
 	private readonly StrategyParam<string> _eaName;
 	private readonly StrategyParam<DataType> _candleType;
@@ -92,15 +91,6 @@ public class RichKohonenMapStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Slippage allowance in pips (reserved for manual order handling).
-	/// </summary>
-	public decimal Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
-	}
-
-	/// <summary>
 	/// Path to the binary file containing the persistent map memory.
 	/// </summary>
 	public string MapPath
@@ -157,10 +147,6 @@ public class RichKohonenMapStrategy : Strategy
 			.SetDisplay("Lots", "Fallback order size", "Execution")
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 5m, 0.1m);
-
-		_slippage = Param(nameof(Slippage), 3m)
-			.SetGreaterThanOrEqualZero()
-			.SetDisplay("Slippage", "Allowed slippage in pips", "Execution");
 
 		_mapPath = Param(nameof(MapPath), "rl.bin")
 			.SetDisplay("Map Path", "Binary storage for the Kohonen map", "Storage");

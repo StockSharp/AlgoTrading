@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AhHmRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volumeParam;
 	private readonly StrategyParam<int> _rsiPeriodParam;
 	private readonly StrategyParam<int> _maPeriodParam;
 	private readonly StrategyParam<decimal> _hammerRsiThresholdParam;
@@ -33,10 +32,6 @@ public class AhHmRsiStrategy : Strategy
 	/// </summary>
 	public AhHmRsiStrategy()
 	{
-		_volumeParam = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order size used for entries", "Trading")
-			.SetCanOptimize(true);
-
 		_rsiPeriodParam = Param(nameof(RsiPeriod), 33)
 			.SetDisplay("RSI Period", "Length of the RSI confirmation filter", "Indicators")
 			.SetCanOptimize(true);
@@ -61,18 +56,9 @@ public class AhHmRsiStrategy : Strategy
 			.SetDisplay("RSI Upper Exit", "RSI level used for exit cross checks", "Risk")
 			.SetCanOptimize(true);
 
-		_candleTypeParam = Param(nameof(CandleType), DataType.TimeFrame(TimeSpan.FromHours(1)))
+		_candleTypeParam = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for detecting candle patterns", "Data")
 			.SetCanOptimize(false);
-	}
-
-	/// <summary>
-	/// Base order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volumeParam.Value;
-		set => _volumeParam.Value = value;
 	}
 
 	/// <summary>

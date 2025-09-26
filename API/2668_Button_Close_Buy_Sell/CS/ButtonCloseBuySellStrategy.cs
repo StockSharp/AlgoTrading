@@ -12,7 +12,6 @@ using StockSharp.Messages;
 /// </summary>
 public class ButtonCloseBuySellStrategy : Strategy
 {
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<bool> _closeBuyParam;
 	private readonly StrategyParam<bool> _closeSellParam;
 
@@ -23,15 +22,6 @@ public class ButtonCloseBuySellStrategy : Strategy
 	private decimal _lastTradePrice;
 	private decimal _openBuyProfit;
 	private decimal _openSellProfit;
-
-	/// <summary>
-	/// Maximum acceptable slippage expressed in price steps.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
-	}
 
 	/// <summary>
 	/// Request to close all open long positions.
@@ -90,10 +80,6 @@ public class ButtonCloseBuySellStrategy : Strategy
 	/// </summary>
 	public ButtonCloseBuySellStrategy()
 	{
-		_slippage = Param(nameof(Slippage), 3)
-			.SetNotNegative()
-			.SetDisplay("Slippage", "Maximum acceptable slippage in price steps", "General");
-
 		_closeBuyParam = Param(nameof(CloseBuyPositions), false)
 			.SetDisplay("Close Buy Positions", "Trigger to close all long positions", "Controls");
 

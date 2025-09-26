@@ -16,7 +16,6 @@ public class VrSetkaP2Strategy : Strategy
 	private readonly StrategyParam<decimal> _lot;
 	private readonly StrategyParam<decimal> _percent;
 	private readonly StrategyParam<bool> _useMartingale;
-	private readonly StrategyParam<int> _slippage;
 	private readonly StrategyParam<int> _correlation;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -45,10 +44,6 @@ public class VrSetkaP2Strategy : Strategy
 
 		_useMartingale = Param(nameof(UseMartingale), true)
 			.SetDisplay("Use Martingale", "Increase volume after loss", "General");
-
-		_slippage = Param(nameof(Slippage), 2)
-			.SetNotNegative()
-			.SetDisplay("Slippage", "Allowed slippage", "General");
 
 		_correlation = Param(nameof(Correlation), 50)
 			.SetDisplay("Correlation", "Offset for grid levels", "General");
@@ -91,15 +86,6 @@ public class VrSetkaP2Strategy : Strategy
 	{
 		get => _useMartingale.Value;
 		set => _useMartingale.Value = value;
-	}
-
-	/// <summary>
-	/// Allowed order slippage.
-	/// </summary>
-	public int Slippage
-	{
-		get => _slippage.Value;
-		set => _slippage.Value = value;
 	}
 
 	/// <summary>
