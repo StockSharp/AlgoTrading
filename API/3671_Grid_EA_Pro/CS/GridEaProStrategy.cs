@@ -15,14 +15,14 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GridEaProStrategy : Strategy
 {
-	private enum GridTradeMode
+	public enum GridTradeMode
 	{
 		Buy,
 		Sell,
 		Both,
 	}
 
-	private enum GridEntryMode
+	public enum GridEntryMode
 	{
 		Rsi,
 		FixedPoints,
@@ -936,10 +936,10 @@ public class GridEaProStrategy : Strategy
 		if (string.Equals(StartTime, "00:00", StringComparison.Ordinal) && string.Equals(EndTime, "00:00", StringComparison.Ordinal))
 		return true;
 
-		if (!TimeSpan.TryParseExact(StartTime, "hh\:mm", CultureInfo.InvariantCulture, out var start))
+		if (!TimeSpan.TryParseExact(StartTime, "hh\\:mm", CultureInfo.InvariantCulture, out var start))
 		return true;
 
-		if (!TimeSpan.TryParseExact(EndTime, "hh\:mm", CultureInfo.InvariantCulture, out var end))
+		if (!TimeSpan.TryParseExact(EndTime, "hh\\:mm", CultureInfo.InvariantCulture, out var end))
 		return true;
 
 		var current = time.TimeOfDay;

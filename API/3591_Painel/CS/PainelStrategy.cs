@@ -133,7 +133,7 @@ public class PainelStrategy : Strategy
 			$"Position: {_positionLabel}; " +
 			$"User: {accountName}; " +
 			$"Profit: {_profit.ToString("0.##", CultureInfo.InvariantCulture)}; " +
-			$"Balance: {_balance.ToString("0.##", CultureInfo.InvariantCulture)}
+			$"Balance: {_balance.ToString("0.##", CultureInfo.InvariantCulture)}; "
 		);
 	}
 }

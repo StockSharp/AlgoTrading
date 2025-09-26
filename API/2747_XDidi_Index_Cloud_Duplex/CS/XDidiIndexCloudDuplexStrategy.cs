@@ -385,316 +385,313 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	if (ShortCandleType == LongCandleType)
-	return [(Security, LongCandleType)];
+		if (ShortCandleType == LongCandleType)
+			return [(Security, LongCandleType)];
 
-	return new[]
-	{
-	(Security, LongCandleType),
-	(Security, ShortCandleType)
-	};
+		return new[]
+		{
+			(Security, LongCandleType),
+			(Security, ShortCandleType)
+		};
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_longFastHistory = Array.Empty<decimal?>();
-	_longSlowHistory = Array.Empty<decimal?>();
-	_shortFastHistory = Array.Empty<decimal?>();
-	_shortSlowHistory = Array.Empty<decimal?>();
+		_longFastHistory = Array.Empty<decimal?>();
+		_longSlowHistory = Array.Empty<decimal?>();
+		_shortFastHistory = Array.Empty<decimal?>();
+		_shortSlowHistory = Array.Empty<decimal?>();
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
-	base.OnStarted(time);
+		base.OnStarted(time);
 
-	_longFastMa = CreateMovingAverage(LongFastMethod, LongFastLength);
-	_longMediumMa = CreateMovingAverage(LongMediumMethod, LongMediumLength);
-	_longSlowMa = CreateMovingAverage(LongSlowMethod, LongSlowLength);
+		_longFastMa = CreateMovingAverage(LongFastMethod, LongFastLength);
+		_longMediumMa = CreateMovingAverage(LongMediumMethod, LongMediumLength);
+		_longSlowMa = CreateMovingAverage(LongSlowMethod, LongSlowLength);
 
-	_shortFastMa = CreateMovingAverage(ShortFastMethod, ShortFastLength);
-	_shortMediumMa = CreateMovingAverage(ShortMediumMethod, ShortMediumLength);
-	_shortSlowMa = CreateMovingAverage(ShortSlowMethod, ShortSlowLength);
+		_shortFastMa = CreateMovingAverage(ShortFastMethod, ShortFastLength);
+		_shortMediumMa = CreateMovingAverage(ShortMediumMethod, ShortMediumLength);
+		_shortSlowMa = CreateMovingAverage(ShortSlowMethod, ShortSlowLength);
 
-	_longFastHistory = new decimal?[Math.Max(LongSignalBar + 2, 2)];
-	_longSlowHistory = new decimal?[Math.Max(LongSignalBar + 2, 2)];
-	_shortFastHistory = new decimal?[Math.Max(ShortSignalBar + 2, 2)];
-	_shortSlowHistory = new decimal?[Math.Max(ShortSignalBar + 2, 2)];
+		_longFastHistory = new decimal?[Math.Max(LongSignalBar + 2, 2)];
+		_longSlowHistory = new decimal?[Math.Max(LongSignalBar + 2, 2)];
+		_shortFastHistory = new decimal?[Math.Max(ShortSignalBar + 2, 2)];
+		_shortSlowHistory = new decimal?[Math.Max(ShortSignalBar + 2, 2)];
 
-	var longSubscription = SubscribeCandles(LongCandleType);
-	longSubscription.Bind(ProcessLongCandle);
+		var longSubscription = SubscribeCandles(LongCandleType);
+		longSubscription.Bind(ProcessLongCandle);
 
-	CandleSeries? shortSubscription = null;
+		ISubscriptionHandler<ICandleMessage> shortSubscription = null;
 
-	if (ShortCandleType == LongCandleType)
-	{
-	longSubscription.Bind(ProcessShortCandle);
-	longSubscription.Start();
-	}
-	else
-	{
-	longSubscription.Start();
-	shortSubscription = SubscribeCandles(ShortCandleType);
-	shortSubscription.Bind(ProcessShortCandle).Start();
-	}
+		if (ShortCandleType == LongCandleType)
+		{
+			longSubscription.Bind(ProcessShortCandle);
+			longSubscription.Start();
+		}
+		else
+		{
+			longSubscription.Start();
+			shortSubscription = SubscribeCandles(ShortCandleType);
+			shortSubscription.Bind(ProcessShortCandle).Start();
+		}
 
-	var primaryArea = CreateChartArea();
-	if (primaryArea != null)
-	{
-	DrawCandles(primaryArea, longSubscription);
-	DrawIndicator(primaryArea, _longFastMa);
-	DrawIndicator(primaryArea, _longMediumMa);
-	DrawIndicator(primaryArea, _longSlowMa);
+		var primaryArea = CreateChartArea();
+		if (primaryArea != null)
+		{
+			DrawCandles(primaryArea, longSubscription);
+			DrawIndicator(primaryArea, _longFastMa);
+			DrawIndicator(primaryArea, _longMediumMa);
+			DrawIndicator(primaryArea, _longSlowMa);
 
-	if (ShortCandleType == LongCandleType)
-	{
-	DrawIndicator(primaryArea, _shortFastMa);
-	DrawIndicator(primaryArea, _shortMediumMa);
-	DrawIndicator(primaryArea, _shortSlowMa);
-	}
+			if (ShortCandleType == LongCandleType)
+			{
+				DrawIndicator(primaryArea, _shortFastMa);
+				DrawIndicator(primaryArea, _shortMediumMa);
+				DrawIndicator(primaryArea, _shortSlowMa);
+			}
 
-	DrawOwnTrades(primaryArea);
-	}
+			DrawOwnTrades(primaryArea);
+		}
 
-	if (shortSubscription != null)
-	{
-	var secondaryArea = CreateChartArea();
-	if (secondaryArea != null)
-	{
-	DrawCandles(secondaryArea, shortSubscription);
-	DrawIndicator(secondaryArea, _shortFastMa);
-	DrawIndicator(secondaryArea, _shortMediumMa);
-	DrawIndicator(secondaryArea, _shortSlowMa);
-	DrawOwnTrades(secondaryArea);
-	}
-	}
+		if (shortSubscription != null)
+		{
+			var secondaryArea = CreateChartArea();
+			if (secondaryArea != null)
+			{
+				DrawCandles(secondaryArea, shortSubscription);
+				DrawIndicator(secondaryArea, _shortFastMa);
+				DrawIndicator(secondaryArea, _shortMediumMa);
+				DrawIndicator(secondaryArea, _shortSlowMa);
+				DrawOwnTrades(secondaryArea);
+			}
+		}
 
-	var priceStep = Security?.PriceStep ?? 0m;
-	Unit? stopLossUnit = null;
-	Unit? takeProfitUnit = null;
+		var priceStep = Security?.PriceStep ?? 0m;
+		Unit stopLossUnit = null;
+		Unit takeProfitUnit = null;
 
-	if (priceStep > 0m)
-	{
-	if (StopLossPoints > 0m)
-	stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
+		if (priceStep > 0m)
+		{
+			if (StopLossPoints > 0m)
+				stopLossUnit = new Unit(StopLossPoints * priceStep, UnitTypes.Absolute);
 
-	if (TakeProfitPoints > 0m)
-	takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
-	}
+			if (TakeProfitPoints > 0m)
+				takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Absolute);
+		}
 
-	if (stopLossUnit != null || takeProfitUnit != null)
-	StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);
-	else
-	StartProtection();
+		StartProtection(stopLoss: stopLossUnit ?? new(), takeProfit: takeProfitUnit ?? new());
 	}
 
 	private void ProcessLongCandle(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var price = GetAppliedPrice(LongAppliedPrice, candle);
+		var price = GetAppliedPrice(LongAppliedPrice, candle);
 
-	var fastValue = _longFastMa.Process(new DecimalIndicatorValue(_longFastMa, price, candle.OpenTime));
-	var mediumValue = _longMediumMa.Process(new DecimalIndicatorValue(_longMediumMa, price, candle.OpenTime));
-	var slowValue = _longSlowMa.Process(new DecimalIndicatorValue(_longSlowMa, price, candle.OpenTime));
+		var fastValue = _longFastMa.Process(new DecimalIndicatorValue(_longFastMa, price, candle.OpenTime));
+		var mediumValue = _longMediumMa.Process(new DecimalIndicatorValue(_longMediumMa, price, candle.OpenTime));
+		var slowValue = _longSlowMa.Process(new DecimalIndicatorValue(_longSlowMa, price, candle.OpenTime));
 
-	if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal)
-	return;
+		if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal)
+			return;
 
-	var medium = mediumValue.GetValue<decimal>();
-	if (medium == 0m)
-	return;
+		var medium = mediumValue.GetValue<decimal>();
+		if (medium == 0m)
+			return;
 
-	var fast = fastValue.GetValue<decimal>() / medium;
-	var slow = slowValue.GetValue<decimal>() / medium;
+		var fast = fastValue.GetValue<decimal>() / medium;
+		var slow = slowValue.GetValue<decimal>() / medium;
 
-	if (LongReverse)
-	{
-	fast = -fast;
-	slow = -slow;
-	}
+		if (LongReverse)
+		{
+			fast = -fast;
+			slow = -slow;
+		}
 
-	UpdateHistory(_longFastHistory, fast);
-	UpdateHistory(_longSlowHistory, slow);
+		UpdateHistory(_longFastHistory, fast);
+		UpdateHistory(_longSlowHistory, slow);
 
-	if (!HasSignalData(_longFastHistory, _longSlowHistory, LongSignalBar))
-	return;
+		if (!HasSignalData(_longFastHistory, _longSlowHistory, LongSignalBar))
+			return;
 
-	var currentFast = _longFastHistory[LongSignalBar]!.Value;
-	var currentSlow = _longSlowHistory[LongSignalBar]!.Value;
-	var previousFast = _longFastHistory[LongSignalBar + 1]!.Value;
-	var previousSlow = _longSlowHistory[LongSignalBar + 1]!.Value;
+		var currentFast = _longFastHistory[LongSignalBar]!.Value;
+		var currentSlow = _longSlowHistory[LongSignalBar]!.Value;
+		var previousFast = _longFastHistory[LongSignalBar + 1]!.Value;
+		var previousSlow = _longSlowHistory[LongSignalBar + 1]!.Value;
 
-	var openSignal = false;
-	var closeSignal = false;
+		var openSignal = false;
+		var closeSignal = false;
 
-	if (previousFast > previousSlow && EnableLongEntries && currentFast <= currentSlow)
-	openSignal = true;
+		if (previousFast > previousSlow && EnableLongEntries && currentFast <= currentSlow)
+			openSignal = true;
 
-	if (previousFast < previousSlow && EnableLongExits)
-	closeSignal = true;
+		if (previousFast < previousSlow && EnableLongExits)
+			closeSignal = true;
 
-	ExecuteLongSignals(openSignal, closeSignal);
+		ExecuteLongSignals(openSignal, closeSignal);
 	}
 
 	private void ProcessShortCandle(ICandleMessage candle)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	var price = GetAppliedPrice(ShortAppliedPrice, candle);
+		var price = GetAppliedPrice(ShortAppliedPrice, candle);
 
-	var fastValue = _shortFastMa.Process(new DecimalIndicatorValue(_shortFastMa, price, candle.OpenTime));
-	var mediumValue = _shortMediumMa.Process(new DecimalIndicatorValue(_shortMediumMa, price, candle.OpenTime));
-	var slowValue = _shortSlowMa.Process(new DecimalIndicatorValue(_shortSlowMa, price, candle.OpenTime));
+		var fastValue = _shortFastMa.Process(new DecimalIndicatorValue(_shortFastMa, price, candle.OpenTime));
+		var mediumValue = _shortMediumMa.Process(new DecimalIndicatorValue(_shortMediumMa, price, candle.OpenTime));
+		var slowValue = _shortSlowMa.Process(new DecimalIndicatorValue(_shortSlowMa, price, candle.OpenTime));
 
-	if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal)
-	return;
+		if (!fastValue.IsFinal || !mediumValue.IsFinal || !slowValue.IsFinal)
+			return;
 
-	var medium = mediumValue.GetValue<decimal>();
-	if (medium == 0m)
-	return;
+		var medium = mediumValue.GetValue<decimal>();
+		if (medium == 0m)
+			return;
 
-	var fast = fastValue.GetValue<decimal>() / medium;
-	var slow = slowValue.GetValue<decimal>() / medium;
+		var fast = fastValue.GetValue<decimal>() / medium;
+		var slow = slowValue.GetValue<decimal>() / medium;
 
-	if (ShortReverse)
-	{
-	fast = -fast;
-	slow = -slow;
-	}
+		if (ShortReverse)
+		{
+			fast = -fast;
+			slow = -slow;
+		}
 
-	UpdateHistory(_shortFastHistory, fast);
-	UpdateHistory(_shortSlowHistory, slow);
+		UpdateHistory(_shortFastHistory, fast);
+		UpdateHistory(_shortSlowHistory, slow);
 
-	if (!HasSignalData(_shortFastHistory, _shortSlowHistory, ShortSignalBar))
-	return;
+		if (!HasSignalData(_shortFastHistory, _shortSlowHistory, ShortSignalBar))
+			return;
 
-	var currentFast = _shortFastHistory[ShortSignalBar]!.Value;
-	var currentSlow = _shortSlowHistory[ShortSignalBar]!.Value;
-	var previousFast = _shortFastHistory[ShortSignalBar + 1]!.Value;
-	var previousSlow = _shortSlowHistory[ShortSignalBar + 1]!.Value;
+		var currentFast = _shortFastHistory[ShortSignalBar]!.Value;
+		var currentSlow = _shortSlowHistory[ShortSignalBar]!.Value;
+		var previousFast = _shortFastHistory[ShortSignalBar + 1]!.Value;
+		var previousSlow = _shortSlowHistory[ShortSignalBar + 1]!.Value;
 
-	var openSignal = false;
-	var closeSignal = false;
+		var openSignal = false;
+		var closeSignal = false;
 
-	if (previousFast < previousSlow && EnableShortEntries && currentFast >= currentSlow)
-	openSignal = true;
+		if (previousFast < previousSlow && EnableShortEntries && currentFast >= currentSlow)
+			openSignal = true;
 
-	if (previousFast > previousSlow && EnableShortExits)
-	closeSignal = true;
+		if (previousFast > previousSlow && EnableShortExits)
+			closeSignal = true;
 
-	ExecuteShortSignals(openSignal, closeSignal);
+		ExecuteShortSignals(openSignal, closeSignal);
 	}
 
 	private void ExecuteLongSignals(bool openSignal, bool closeSignal)
 	{
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	if (closeSignal && Position > 0)
-	SellMarket(Position);
+		if (closeSignal && Position > 0)
+			SellMarket(Position);
 
-	if (openSignal && Position <= 0)
-	{
-	var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
-	if (volume > 0m)
-	BuyMarket(volume);
-	}
+		if (openSignal && Position <= 0)
+		{
+			var volume = Volume + (Position < 0 ? Math.Abs(Position) : 0m);
+			if (volume > 0m)
+				BuyMarket(volume);
+		}
 	}
 
 	private void ExecuteShortSignals(bool openSignal, bool closeSignal)
 	{
-	if (!IsFormedAndOnlineAndAllowTrading())
-	return;
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-	if (closeSignal && Position < 0)
-	BuyMarket(Math.Abs(Position));
+		if (closeSignal && Position < 0)
+			BuyMarket(Math.Abs(Position));
 
-	if (openSignal && Position >= 0)
-	{
-	var volume = Volume + (Position > 0 ? Position : 0m);
-	if (volume > 0m)
-	SellMarket(volume);
-	}
+		if (openSignal && Position >= 0)
+		{
+			var volume = Volume + (Position > 0 ? Position : 0m);
+			if (volume > 0m)
+				SellMarket(volume);
+		}
 	}
 
 	private static void UpdateHistory(decimal?[] buffer, decimal value)
 	{
-	for (var i = buffer.Length - 1; i > 0; i--)
-	buffer[i] = buffer[i - 1];
+		for (var i = buffer.Length - 1; i > 0; i--)
+			buffer[i] = buffer[i - 1];
 
-	buffer[0] = value;
+		buffer[0] = value;
 	}
 
 	private static bool HasSignalData(decimal?[] fastHistory, decimal?[] slowHistory, int signalBar)
 	{
-	var requiredIndex = signalBar + 1;
+		var requiredIndex = signalBar + 1;
 
-	if (requiredIndex >= fastHistory.Length || requiredIndex >= slowHistory.Length)
-	return false;
+		if (requiredIndex >= fastHistory.Length || requiredIndex >= slowHistory.Length)
+			return false;
 
-	return fastHistory[signalBar].HasValue &&
-	fastHistory[requiredIndex].HasValue &&
-	slowHistory[signalBar].HasValue &&
-	slowHistory[requiredIndex].HasValue;
+		return fastHistory[signalBar].HasValue &&
+		fastHistory[requiredIndex].HasValue &&
+		slowHistory[signalBar].HasValue &&
+		slowHistory[requiredIndex].HasValue;
 	}
 
 	private static decimal GetAppliedPrice(AppliedPrice priceType, ICandleMessage candle)
 	{
-	return priceType switch
-	{
-	AppliedPrice.Close => candle.ClosePrice,
-	AppliedPrice.Open => candle.OpenPrice,
-	AppliedPrice.High => candle.HighPrice,
-	AppliedPrice.Low => candle.LowPrice,
-	AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-	AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-	AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-	AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
-	? candle.HighPrice
-	: candle.ClosePrice < candle.OpenPrice
-	? candle.LowPrice
-	: candle.ClosePrice,
-	AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
-	? (candle.HighPrice + candle.ClosePrice) / 2m
-	: candle.ClosePrice < candle.OpenPrice
-	? (candle.LowPrice + candle.ClosePrice) / 2m
-	: candle.ClosePrice,
-	AppliedPrice.Demark =>
-	{
-	var baseSum = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+		return priceType switch
+		{
+			AppliedPrice.Close => candle.ClosePrice,
+			AppliedPrice.Open => candle.OpenPrice,
+			AppliedPrice.High => candle.HighPrice,
+			AppliedPrice.Low => candle.LowPrice,
+			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrice.Weighted => (candle.ClosePrice * 2m + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrice.Quarter => (candle.OpenPrice + candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice
+				? candle.HighPrice
+				: candle.ClosePrice < candle.OpenPrice
+					? candle.LowPrice
+					: candle.ClosePrice,
+			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice
+				? (candle.HighPrice + candle.ClosePrice) / 2m
+				: candle.ClosePrice < candle.OpenPrice
+					? (candle.LowPrice + candle.ClosePrice) / 2m
+					: candle.ClosePrice,
+			AppliedPrice.Demark => CalculateDemarkPrice(candle),
+			_ => candle.ClosePrice,
+		};
+	}
 
-	var adjusted = candle.ClosePrice < candle.OpenPrice
-	? (baseSum + candle.LowPrice) / 2m
-	: candle.ClosePrice > candle.OpenPrice
-	? (baseSum + candle.HighPrice) / 2m
-	: (baseSum + candle.ClosePrice) / 2m;
-
-	return ((adjusted - candle.LowPrice) + (adjusted - candle.HighPrice)) / 2m;
-	},
-	_ => candle.ClosePrice,
-	};
+	private static decimal CalculateDemarkPrice(ICandleMessage candle)
+	{
+		var baseSum = candle.HighPrice + candle.LowPrice + candle.ClosePrice;
+		var adjusted = candle.ClosePrice < candle.OpenPrice
+			? (baseSum + candle.LowPrice) / 2m
+			: candle.ClosePrice > candle.OpenPrice
+				? (baseSum + candle.HighPrice) / 2m
+				: (baseSum + candle.ClosePrice) / 2m;
+		return ((adjusted - candle.LowPrice) + (adjusted - candle.HighPrice)) / 2m;
 	}
 
 	private static LengthIndicator<decimal> CreateMovingAverage(SmoothingMethod method, int length)
 	{
-	return method switch
-	{
-	SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
-	SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
-	SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
-	SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
-	SmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = length },
-	SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
-	_ => new ExponentialMovingAverage { Length = length }
-	};
+		return method switch
+		{
+			SmoothingMethod.Sma => new SimpleMovingAverage { Length = length },
+			SmoothingMethod.Ema => new ExponentialMovingAverage { Length = length },
+			SmoothingMethod.Smma => new SmoothedMovingAverage { Length = length },
+			SmoothingMethod.Lwma => new WeightedMovingAverage { Length = length },
+			SmoothingMethod.T3 => new TripleExponentialMovingAverage { Length = length },
+			SmoothingMethod.Ama => new KaufmanAdaptiveMovingAverage { Length = length },
+			_ => new ExponentialMovingAverage { Length = length }
+		};
 	}
 
 	/// <summary>
@@ -702,16 +699,16 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// </summary>
 	public enum SmoothingMethod
 	{
-	Sma,
-	Ema,
-	Smma,
-	Lwma,
-	Jjma,
-	JurX,
-	ParMa,
-	T3,
-	Vidya,
-	Ama
+		Sma,
+		Ema,
+		Smma,
+		Lwma,
+		Jjma,
+		JurX,
+		ParMa,
+		T3,
+		Vidya,
+		Ama
 	}
 
 	/// <summary>
@@ -719,17 +716,17 @@ public class XDidiIndexCloudDuplexStrategy : Strategy
 	/// </summary>
 	public enum AppliedPrice
 	{
-	Close = 1,
-	Open,
-	High,
-	Low,
-	Median,
-	Typical,
-	Weighted,
-	Simple,
-	Quarter,
-	TrendFollow0,
-	TrendFollow1,
-	Demark
+		Close = 1,
+		Open,
+		High,
+		Low,
+		Median,
+		Typical,
+		Weighted,
+		Simple,
+		Quarter,
+		TrendFollow0,
+		TrendFollow1,
+		Demark
 	}
 }

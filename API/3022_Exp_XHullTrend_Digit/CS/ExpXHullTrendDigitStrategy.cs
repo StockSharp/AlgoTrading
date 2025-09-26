@@ -381,10 +381,6 @@ public class XHullTrendDigitIndicator : BaseIndicator<decimal>
 	public CandlePrice PriceType { get; set; } = CandlePrice.Close;
 	public SmoothMethod Method { get; set; } = SmoothMethod.Weighted;
 	public int Phase { get; set; }
-	{
-		get;
-		set;
-	}
 	public int RoundingDigits { get; set; } = 2;
 	public decimal PriceStep { get; set; } = 0.0001m;
 

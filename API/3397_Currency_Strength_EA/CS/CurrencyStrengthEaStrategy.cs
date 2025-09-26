@@ -6,7 +6,6 @@ using System.Linq;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Logging;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -34,7 +33,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStep;
 	private readonly StrategyParam<string> _startTime;
 	private readonly StrategyParam<string> _endTime;
-	private readonly StrategyParam<TimeMode> _timeMode;
+	private readonly StrategyParam<TimeModes> _timeMode;
 	private readonly StrategyParam<string> _baseCurrency;
 	private readonly StrategyParam<string> _quoteCurrency;
 
@@ -109,7 +108,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 		_endTime = Param(nameof(EndTime), "16:00")
 		.SetDisplay("End Time", "Trading session end (HH:mm)", "Session");
 
-		_timeMode = Param(nameof(TimeMode), TimeMode.Server)
+		_timeMode = Param(nameof(TimeMode), TimeModes.Server)
 		.SetDisplay("Time Mode", "Select which clock is used for the session filter", "Session");
 
 		_baseCurrency = Param(nameof(BaseCurrency), "EUR")
@@ -266,7 +265,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	/// <summary>
 	/// Selects which clock is used for the session filter.
 	/// </summary>
-	public TimeMode TimeMode
+	public TimeModes TimeMode
 	{
 		get => _timeMode.Value;
 		set => _timeMode.Value = value;
@@ -613,9 +612,9 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 		var reference = TimeMode switch
 		{
-			TimeMode.Server => time,
-			TimeMode.Gmt => time.ToUniversalTime(),
-			TimeMode.Local => time.ToLocalTime(),
+			TimeModes.Server => time,
+			TimeModes.Gmt => time.ToUniversalTime(),
+			TimeModes.Local => time.ToLocalTime(),
 			_ => time,
 		};
 
@@ -628,7 +627,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 
 	private static bool TryParseTime(string value, out TimeSpan result)
 	{
-		return TimeSpan.TryParseExact(value, "hh\:mm", CultureInfo.InvariantCulture, out result);
+		return TimeSpan.TryParseExact(value, "hh\\:mm", CultureInfo.InvariantCulture, out result);
 	}
 
 	private static decimal CalculateStrengthLevel(decimal ratio)
@@ -706,7 +705,7 @@ public class CurrencyStrengthEaStrategy : Strategy
 	/// <summary>
 	/// Session clock modes.
 	/// </summary>
-	public enum TimeMode
+	public enum TimeModes
 	{
 		Server,
 		Gmt,

@@ -206,10 +206,10 @@ public class FirebirdChannelAveragingStrategy : Strategy
 			.SetDisplay("Price Source", "Candle price used for signals", "Data");
 
 		_pricePercent = Param(nameof(PricePercent), 0.3m)
-			SetGreaterThanZero()
-			SetDisplay("Channel %", "Channel width percentage", "Indicator")
-			SetCanOptimize(true)
-			SetOptimize(0.1m, 1m, 0.1m);
+			.SetGreaterThanZero()
+			.SetDisplay("Channel %", "Channel width percentage", "Indicator")
+			.SetCanOptimize(true)
+			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_tradeOnFriday = Param(nameof(TradeOnFriday), true)
 			.SetDisplay("Trade Friday", "Allow trading on Fridays", "Risk");
@@ -258,8 +258,8 @@ public class FirebirdChannelAveragingStrategy : Strategy
 
 		var subscription = SubscribeCandles(CandleType);
 		subscription
-			Bind(_ma, ProcessCandle)
-			Start();
+			.Bind(_ma, ProcessCandle)
+			.Start();
 
 		var area = CreateChartArea();
 		if (area != null)

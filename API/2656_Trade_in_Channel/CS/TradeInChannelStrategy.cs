@@ -137,7 +137,8 @@ public class TradeInChannelStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_priceStep = Security?.PriceStep is > 0m step ? step : 1m;
+		var ps = Security?.PriceStep;
+		_priceStep = ps is > 0m ? ps.Value : 1m;
 
 		_donchian = new DonchianChannels
 		{
