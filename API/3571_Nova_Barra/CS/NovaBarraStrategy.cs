@@ -1,7 +1,6 @@
 using System;
 
 using StockSharp.Algo.Strategies;
-using StockSharp.Logging;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;

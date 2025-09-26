@@ -9,7 +9,6 @@ using System.Threading;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
-using StockSharp.Logging;
 
 namespace StockSharp.Samples.Strategies;
 

@@ -6,7 +6,6 @@ using Ecng.Common;
 using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.Logging;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;

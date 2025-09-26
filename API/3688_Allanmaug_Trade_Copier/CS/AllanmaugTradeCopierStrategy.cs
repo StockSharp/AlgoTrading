@@ -7,7 +7,6 @@ using System.Threading;
 using StockSharp.Algo;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
-using StockSharp.Logging;
 
 namespace StockSharp.Samples.Strategies;
 
