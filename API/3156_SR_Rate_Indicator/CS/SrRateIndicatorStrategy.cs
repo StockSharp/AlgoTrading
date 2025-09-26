@@ -28,7 +28,7 @@ public class SrRateIndicatorStrategy : Strategy
 	private readonly StrategyParam<decimal> _highLevel;
 	private readonly StrategyParam<decimal> _lowLevel;
 
-	private SrRateIndicator? _indicator;
+	private SrRateIndicator _indicator;
 	private readonly List<decimal> _colorHistory = new();
 
 	/// <summary>

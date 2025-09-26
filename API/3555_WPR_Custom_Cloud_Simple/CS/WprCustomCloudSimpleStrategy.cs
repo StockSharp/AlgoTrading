@@ -19,7 +19,7 @@ public class WprCustomCloudSimpleStrategy : Strategy
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private WilliamsR? _williamsR;
+	private WilliamsR _williamsR;
 	private decimal? _previousWpr;
 	private decimal? _olderWpr;
 

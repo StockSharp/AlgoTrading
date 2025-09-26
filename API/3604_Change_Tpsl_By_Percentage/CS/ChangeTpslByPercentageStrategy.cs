@@ -177,7 +177,7 @@ public class ChangeTpslByPercentageStrategy : Strategy
 		}
 	}
 
-	private static decimal GetMarginValue(Portfolio? portfolio)
+	private static decimal GetMarginValue(Portfolio portfolio)
 	{
 		if (portfolio == null)
 		return 0m;

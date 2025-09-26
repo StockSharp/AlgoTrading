@@ -23,7 +23,7 @@ public class TestMacdStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal? _macd;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 	private decimal? _previousMacdDiff;
 
 	/// <summary>

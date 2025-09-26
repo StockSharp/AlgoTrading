@@ -70,7 +70,7 @@ public class RangeBreakout2Strategy : Strategy
 	private readonly StrategyParam<DataType> _signalCandleType;
 	private readonly StrategyParam<DataType> _atrCandleType;
 
-	private AverageTrueRange? _atrIndicator;
+	private AverageTrueRange _atrIndicator;
 	private decimal _atrValue;
 	private decimal? _lastAsk;
 	private decimal? _lastBid;

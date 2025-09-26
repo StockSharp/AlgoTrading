@@ -27,7 +27,7 @@ public class AutoTradingSchedulerStrategy : Strategy
 	private readonly StrategyParam<string> _sundaySchedule;
 
 	private readonly object _sync = new();
-	private Timer? _timer;
+	private Timer _timer;
 	private bool _autoTradingEnabled = true;
 	private string _scheduleSnapshot = string.Empty;
 	private Dictionary<DayOfWeek, IReadOnlyList<TimeRange>> _weeklySchedule = new();

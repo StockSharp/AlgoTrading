@@ -30,7 +30,7 @@ public class CloudzsTrade2Strategy : Strategy
 	private readonly StrategyParam<bool> _closeOnOpposite;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 
 	private decimal _previousK;
 	private decimal _previousD;

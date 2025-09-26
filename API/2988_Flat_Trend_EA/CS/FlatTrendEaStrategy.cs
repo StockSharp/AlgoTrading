@@ -28,8 +28,8 @@ public class FlatTrendEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _sarMaximum;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex? _adx;
-	private ParabolicSar? _parabolicSar;
+	private AverageDirectionalIndex _adx;
+	private ParabolicSar _parabolicSar;
 
 	private decimal _pipSize;
 	private decimal? _entryPrice;

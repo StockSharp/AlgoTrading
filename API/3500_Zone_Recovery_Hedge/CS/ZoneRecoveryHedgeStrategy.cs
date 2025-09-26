@@ -60,7 +60,7 @@ public class ZoneRecoveryHedgeStrategy : Strategy
 	private Subscription _entrySubscription = null!;
 	private readonly Dictionary<DataType, RsiState> _rsiStates = new();
 	private readonly List<RsiSetting> _rsiSettings = new();
-	private AverageTrueRange? _dailyAtr;
+	private AverageTrueRange _dailyAtr;
 	private decimal? _dailyAtrValue;
 
 	private readonly List<TradeStep> _steps = new();

@@ -57,8 +57,8 @@ public class FarhadHillVersion2Strategy : Strategy
 
 	private LengthIndicator<decimal> _fastMa;
 	private LengthIndicator<decimal> _slowMa;
-	private LinearRegression? _fastLsma;
-	private LinearRegression? _slowLsma;
+	private LinearRegression _fastLsma;
+	private LinearRegression _slowLsma;
 	private StochasticOscillator _stochastic = null!;
 	private Momentum _momentum = null!;
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
@@ -306,30 +306,30 @@ public class FarhadHillVersion2Strategy : Strategy
 		}
 	}
 
-private void ProcessCandle(
-ICandleMessage candle,
-IIndicatorValue stochasticValue,
-IIndicatorValue momentumValue,
-IIndicatorValue macdValue,
-decimal sarValue)
-{
-// Work only with finished candles to keep logic aligned with MT4 EA behaviour.
-var isFinal = candle.State == CandleStates.Finished;
-var price = GetAppliedPrice(candle, MaPrice);
+	private void ProcessCandle(
+	ICandleMessage candle,
+	IIndicatorValue stochasticValue,
+	IIndicatorValue momentumValue,
+	IIndicatorValue macdValue,
+	decimal sarValue)
+	{
+		// Work only with finished candles to keep logic aligned with MT4 EA behaviour.
+		var isFinal = candle.State == CandleStates.Finished;
+		var price = GetAppliedPrice(candle, MaPrice);
 
-// Update optional moving averages and exit early if they are not ready yet.
-if (!ProcessMovingAverages(candle, price, isFinal))
-return;
+		// Update optional moving averages and exit early if they are not ready yet.
+		if (!ProcessMovingAverages(candle, price, isFinal))
+			return;
 
-if (!isFinal)
-return;
+		if (!isFinal)
+			return;
 
-// Avoid processing when strategy is not ready or trading is blocked.
-if (!IsFormedAndOnlineAndAllowTrading())
-return;
+		// Avoid processing when strategy is not ready or trading is blocked.
+		if (!IsFormedAndOnlineAndAllowTrading())
+			return;
 
-if (!stochasticValue.IsFinal || !momentumValue.IsFinal || !macdValue.IsFinal)
-return;
+		if (!stochasticValue.IsFinal || !momentumValue.IsFinal || !macdValue.IsFinal)
+			return;
 
 		var stochTyped = (StochasticOscillatorValue)stochasticValue;
 		if (stochTyped.K is not decimal stochK || stochTyped.D is not decimal stochD)
@@ -349,23 +349,23 @@ return;
 		var previousSar = _prevSarValue;
 		_prevSarValue = sarValue;
 
-// Manage trailing logic before evaluating new entries.
-ApplyTrailing(candle);
+		// Manage trailing logic before evaluating new entries.
+		ApplyTrailing(candle);
 
-if (Position != 0m)
-return;
+		if (Position != 0m)
+			return;
 
-// Check each filter for a new long or short signal.
-var buySignal = IsBuySignal(candle, macdMain, macdSignal, stochK, stochD, previousK, previousD, momentum, sarValue, previousSar);
-var sellSignal = IsSellSignal(candle, macdMain, macdSignal, stochK, stochD, previousK, previousD, momentum, sarValue, previousSar);
+		// Check each filter for a new long or short signal.
+		var buySignal = IsBuySignal(candle, macdMain, macdSignal, stochK, stochD, previousK, previousD, momentum, sarValue, previousSar);
+		var sellSignal = IsSellSignal(candle, macdMain, macdSignal, stochK, stochD, previousK, previousD, momentum, sarValue, previousSar);
 
-if (!buySignal && !sellSignal)
-return;
+		if (!buySignal && !sellSignal)
+			return;
 
-// Compute tradable volume using configured money-management mode.
-var volume = NormalizeVolume(GetTradeVolume());
-if (volume <= 0m)
-return;
+		// Compute tradable volume using configured money-management mode.
+		var volume = NormalizeVolume(GetTradeVolume());
+		if (volume <= 0m)
+			return;
 
 		if (buySignal)
 		{
@@ -379,14 +379,14 @@ return;
 		}
 	}
 
-private bool ProcessMovingAverages(ICandleMessage candle, decimal price, bool isFinal)
-{
-// The EA allows switching off the moving-average confirmation entirely.
-if (!UseMovingAverageCross)
-return true;
+	private bool ProcessMovingAverages(ICandleMessage candle, decimal price, bool isFinal)
+	{
+		// The EA allows switching off the moving-average confirmation entirely.
+		if (!UseMovingAverageCross)
+			return true;
 
-if (!TryProcessIndicator(_fastMa, _fastLsma, price, candle, isFinal, out var fastValue))
-return false;
+		if (!TryProcessIndicator(_fastMa, _fastLsma, price, candle, isFinal, out var fastValue))
+			return false;
 
 		if (!TryProcessIndicator(_slowMa, _slowLsma, price, candle, isFinal, out var slowValue))
 			return false;
@@ -402,29 +402,29 @@ return false;
 		return true;
 	}
 
-private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression? lsma, decimal price, ICandleMessage candle, bool isFinal, out decimal value)
-{
-value = 0m;
-IIndicatorValue? result = null;
+	private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression lsma, decimal price, ICandleMessage candle, bool isFinal, out decimal value)
+	{
+		value = 0m;
+		IIndicatorValue result = null;
 
-// Linear regression acts as the "Least Squares Moving Average" option in MT4.
-if (lsma != null)
-{
-result = lsma.Process(price, candle.OpenTime, isFinal);
-if (!lsma.IsFormed)
-return false;
-}
-else if (ma != null)
-{
-result = ma.Process(price, candle.OpenTime, isFinal);
-if (!ma.IsFormed)
-return false;
-}
-else
-{
-// When the user disables moving averages the method simply succeeds.
-return true;
-}
+		// Linear regression acts as the "Least Squares Moving Average" option in MT4.
+		if (lsma != null)
+		{
+			result = lsma.Process(price, candle.OpenTime, isFinal);
+			if (!lsma.IsFormed)
+				return false;
+		}
+		else if (ma != null)
+		{
+			result = ma.Process(price, candle.OpenTime, isFinal);
+			if (!ma.IsFormed)
+				return false;
+		}
+		else
+		{
+			// When the user disables moving averages the method simply succeeds.
+			return true;
+		}
 
 		var converted = result?.ToNullableDecimal();
 		if (converted is not decimal decimalValue)
@@ -449,141 +449,141 @@ return true;
 		};
 	}
 
-private bool IsBuySignal(
-ICandleMessage candle,
-decimal macdMain,
-decimal macdSignal,
-decimal stochK,
-		decimal stochD,
-		decimal? prevK,
-		decimal? prevD,
-		decimal momentum,
-decimal sarValue,
-decimal? prevSar)
-{
-// MACD main line must be below the signal line for a long setup.
-if (UseMacd && macdMain >= macdSignal)
-return false;
+	private bool IsBuySignal(
+	ICandleMessage candle,
+	decimal macdMain,
+	decimal macdSignal,
+	decimal stochK,
+			decimal stochD,
+			decimal? prevK,
+			decimal? prevD,
+			decimal momentum,
+	decimal sarValue,
+	decimal? prevSar)
+	{
+		// MACD main line must be below the signal line for a long setup.
+		if (UseMacd && macdMain >= macdSignal)
+			return false;
 
-if (UseStochasticLevel && stochK >= StochasticLow)
-return false;
+		if (UseStochasticLevel && stochK >= StochasticLow)
+			return false;
 
-if (UseStochasticCross)
-{
-// Require a fresh bullish cross where %K rises above %D.
-if (prevK is null || prevD is null)
-return false;
+		if (UseStochasticCross)
+		{
+			// Require a fresh bullish cross where %K rises above %D.
+			if (prevK is null || prevD is null)
+				return false;
 
-if (stochK <= stochD)
-return false;
+			if (stochK <= stochD)
+				return false;
 
 			if (prevK >= prevD)
 				return false;
 		}
 
-if (UseParabolicSar)
-{
-// Parabolic SAR must flip below price with a downward step.
-if (sarValue > candle.ClosePrice)
-return false;
+		if (UseParabolicSar)
+		{
+			// Parabolic SAR must flip below price with a downward step.
+			if (sarValue > candle.ClosePrice)
+				return false;
 
-if (prevSar is null || prevSar <= sarValue)
-return false;
-}
+			if (prevSar is null || prevSar <= sarValue)
+				return false;
+		}
 
-if (UseMomentum && momentum >= MomentumLow)
-return false;
+		if (UseMomentum && momentum >= MomentumLow)
+			return false;
 
-if (UseMovingAverageCross)
-{
-// Confirm that the fast moving average is above the slow average.
-if (_fastMaValue is not decimal fast || _slowMaValue is not decimal slow)
-return false;
+		if (UseMovingAverageCross)
+		{
+			// Confirm that the fast moving average is above the slow average.
+			if (_fastMaValue is not decimal fast || _slowMaValue is not decimal slow)
+				return false;
 
-if (fast <= slow)
-return false;
-}
+			if (fast <= slow)
+				return false;
+		}
 
-return true;
-}
+		return true;
+	}
 
-private bool IsSellSignal(
-ICandleMessage candle,
-decimal macdMain,
-		decimal macdSignal,
-		decimal stochK,
-		decimal stochD,
-		decimal? prevK,
-		decimal? prevD,
-		decimal momentum,
-decimal sarValue,
-decimal? prevSar)
-{
-// For shorts the MACD main line must stay above the signal line.
-if (UseMacd && macdMain <= macdSignal)
-return false;
+	private bool IsSellSignal(
+	ICandleMessage candle,
+	decimal macdMain,
+			decimal macdSignal,
+			decimal stochK,
+			decimal stochD,
+			decimal? prevK,
+			decimal? prevD,
+			decimal momentum,
+	decimal sarValue,
+	decimal? prevSar)
+	{
+		// For shorts the MACD main line must stay above the signal line.
+		if (UseMacd && macdMain <= macdSignal)
+			return false;
 
-if (UseStochasticLevel && stochK <= StochasticHigh)
-return false;
+		if (UseStochasticLevel && stochK <= StochasticHigh)
+			return false;
 
-if (UseStochasticCross)
-{
-// Require a new bearish cross where %K falls below %D.
-if (prevK is null || prevD is null)
-return false;
+		if (UseStochasticCross)
+		{
+			// Require a new bearish cross where %K falls below %D.
+			if (prevK is null || prevD is null)
+				return false;
 
-if (stochK >= stochD)
-return false;
+			if (stochK >= stochD)
+				return false;
 
 			if (prevK <= prevD)
 				return false;
 		}
 
-if (UseParabolicSar)
-{
-// SAR should sit above price while stepping upward.
-if (sarValue < candle.ClosePrice)
-return false;
+		if (UseParabolicSar)
+		{
+			// SAR should sit above price while stepping upward.
+			if (sarValue < candle.ClosePrice)
+				return false;
 
-if (prevSar is null || prevSar >= sarValue)
-return false;
-}
+			if (prevSar is null || prevSar >= sarValue)
+				return false;
+		}
 
-if (UseMomentum && momentum <= MomentumHigh)
-return false;
+		if (UseMomentum && momentum <= MomentumHigh)
+			return false;
 
-if (UseMovingAverageCross)
-{
-// Confirm that the fast moving average stays below the slow line.
-if (_fastMaValue is not decimal fast || _slowMaValue is not decimal slow)
-return false;
+		if (UseMovingAverageCross)
+		{
+			// Confirm that the fast moving average stays below the slow line.
+			if (_fastMaValue is not decimal fast || _slowMaValue is not decimal slow)
+				return false;
 
-if (fast >= slow)
-return false;
-}
+			if (fast >= slow)
+				return false;
+		}
 
-return true;
-}
+		return true;
+	}
 
-private decimal GetTradeVolume()
-{
-// Use fixed lot size when money management is disabled.
-if (!UseMoneyManagement)
-{
-var lot = FixedVolume;
-return AccountIsMini ? AdjustMiniVolume(lot) : lot;
-}
+	private decimal GetTradeVolume()
+	{
+		// Use fixed lot size when money management is disabled.
+		if (!UseMoneyManagement)
+		{
+			var lot = FixedVolume;
+			return AccountIsMini ? AdjustMiniVolume(lot) : lot;
+		}
 
-// Portfolio equity mirrors FreeMargin behaviour from the original EA.
-var equity = Portfolio?.CurrentValue ?? 0m;
-if (equity <= 0m)
-return AccountIsMini ? AdjustMiniVolume(FixedVolume) : FixedVolume;
+		// Portfolio equity mirrors FreeMargin behaviour from the original EA.
+		var equity = Portfolio?.CurrentValue ?? 0m;
+		if (equity <= 0m)
+			return AccountIsMini ? AdjustMiniVolume(FixedVolume) : FixedVolume;
 
-// Recreate the lot calculation used in the MQL version.
-var raw = Math.Floor(equity * TradeSizePercent / 10000m * 10m) / 10m;
-if (AccountIsMini)
-{
-raw = Math.Floor(raw * 10m) / 10m;
+		// Recreate the lot calculation used in the MQL version.
+		var raw = Math.Floor(equity * TradeSizePercent / 10000m * 10m) / 10m;
+		if (AccountIsMini)
+		{
+			raw = Math.Floor(raw * 10m) / 10m;
 			raw = Math.Clamp(raw, 0.1m, MaxLots);
 		}
 		else
@@ -594,55 +594,55 @@ raw = Math.Floor(raw * 10m) / 10m;
 		return raw;
 	}
 
-private decimal AdjustMiniVolume(decimal lot)
-{
-// Convert standard lots to mini lots and clamp to allowed range.
-if (lot > 1m)
-lot /= 10m;
+	private decimal AdjustMiniVolume(decimal lot)
+	{
+		// Convert standard lots to mini lots and clamp to allowed range.
+		if (lot > 1m)
+			lot /= 10m;
 
-if (lot < 0.1m)
-lot = 0.1m;
+		if (lot < 0.1m)
+			lot = 0.1m;
 
 		return Math.Min(lot, MaxLots);
 	}
 
-private void ApplyTrailing(ICandleMessage candle)
-{
-if (!UseTrailingStop)
-return;
+	private void ApplyTrailing(ICandleMessage candle)
+	{
+		if (!UseTrailingStop)
+			return;
 
-if (Position == 0m)
-{
-// Reset staged flags after position is closed.
-_firstLevelTriggered = false;
-_secondLevelTriggered = false;
-return;
-}
+		if (Position == 0m)
+		{
+			// Reset staged flags after position is closed.
+			_firstLevelTriggered = false;
+			_secondLevelTriggered = false;
+			return;
+		}
 
-if (_entryPrice is null)
-return;
+		if (_entryPrice is null)
+			return;
 
-var volume = Math.Abs(Position);
-if (volume <= 0m)
-return;
+		var volume = Math.Abs(Position);
+		if (volume <= 0m)
+			return;
 
-var isLong = Position > 0m;
-switch (TrailingStopType)
-{
-case 1:
-// Type 1: classic stop that hugs price with a fixed distance.
-UpdateTrailingType1(isLong, candle.ClosePrice, volume);
-break;
-case 2:
-// Type 2: wait for price to move by configured distance, then trail.
-UpdateTrailingType2(isLong, candle.ClosePrice, volume);
-break;
-case 3:
-// Type 3: emulate multi-level break-even and trailing sequence.
-UpdateTrailingType3(isLong, candle.ClosePrice, volume);
-break;
-}
-}
+		var isLong = Position > 0m;
+		switch (TrailingStopType)
+		{
+			case 1:
+				// Type 1: classic stop that hugs price with a fixed distance.
+				UpdateTrailingType1(isLong, candle.ClosePrice, volume);
+				break;
+			case 2:
+				// Type 2: wait for price to move by configured distance, then trail.
+				UpdateTrailingType2(isLong, candle.ClosePrice, volume);
+				break;
+			case 3:
+				// Type 3: emulate multi-level break-even and trailing sequence.
+				UpdateTrailingType3(isLong, candle.ClosePrice, volume);
+				break;
+		}
+	}
 
 	private void UpdateTrailingType1(bool isLong, decimal closePrice, decimal volume)
 	{
@@ -878,7 +878,7 @@ break;
 		}
 	}
 
-	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression? lsma)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression lsma)
 	{
 		lsma = null;
 		return mode switch

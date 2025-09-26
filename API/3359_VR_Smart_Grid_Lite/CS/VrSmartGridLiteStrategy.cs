@@ -448,12 +448,12 @@ public class VrSmartGridLiteStrategy : Strategy
 		entries.Insert(0, entry);
 	}
 
-	private static PositionEntry? GetLowestPriceEntry(List<PositionEntry> entries)
+	private static PositionEntry GetLowestPriceEntry(List<PositionEntry> entries)
 	{
 		return entries.Count == 0 ? null : entries.MinBy(e => e.Price);
 	}
 
-	private static PositionEntry? GetHighestPriceEntry(List<PositionEntry> entries)
+	private static PositionEntry GetHighestPriceEntry(List<PositionEntry> entries)
 	{
 		return entries.Count == 0 ? null : entries.MaxBy(e => e.Price);
 	}

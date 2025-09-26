@@ -49,8 +49,8 @@ public class ExpSkyscraperFixColorAmlMmrecStrategy : Strategy
 	private readonly StrategyParam<int> _colorAmlStopLossTicks;
 	private readonly StrategyParam<int> _colorAmlTakeProfitTicks;
 
-	private SkyscraperFixIndicator? _skyscraperIndicator;
-	private ColorAmlIndicator? _colorAmlIndicator;
+	private SkyscraperFixIndicator _skyscraperIndicator;
+	private ColorAmlIndicator _colorAmlIndicator;
 
 	private readonly Queue<int> _skyscraperTrendQueue = new();
 	private readonly Queue<int> _colorAmlQueue = new();

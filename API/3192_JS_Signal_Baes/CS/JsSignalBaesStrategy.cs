@@ -38,7 +38,7 @@ public class JsSignalBaesStrategy : Strategy
 	private readonly StrategyParam<DataType> _timeFrame6;
 
 	private TimeframeState[] _states = Array.Empty<TimeframeState>();
-	private TimeframeState? _primaryState;
+	private TimeframeState _primaryState;
 
 	/// <summary>
 	/// Period for the Commodity Channel Index.

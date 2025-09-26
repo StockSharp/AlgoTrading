@@ -15,10 +15,10 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GetLastNthOpenTradeStrategy : Strategy
 {
-	private static readonly PropertyInfo? StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-	private static readonly PropertyInfo? CommentProperty = typeof(Position).GetProperty("Comment");
-	private static readonly PropertyInfo? OpenTimeProperty = typeof(Position).GetProperty("OpenTime");
-	private static readonly PropertyInfo? CloseTimeProperty = typeof(Position).GetProperty("CloseTime");
+	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
+	private static readonly PropertyInfo CommentProperty = typeof(Position).GetProperty("Comment");
+	private static readonly PropertyInfo OpenTimeProperty = typeof(Position).GetProperty("OpenTime");
+	private static readonly PropertyInfo CloseTimeProperty = typeof(Position).GetProperty("CloseTime");
 
 	private readonly StrategyParam<bool> _enableMagicNumber;
 	private readonly StrategyParam<bool> _enableSymbolFilter;
@@ -26,7 +26,7 @@ public class GetLastNthOpenTradeStrategy : Strategy
 	private readonly StrategyParam<int> _tradeIndex;
 	private readonly StrategyParam<TimeSpan> _refreshInterval;
 
-	private Timer? _timer;
+	private Timer _timer;
 	private int _isProcessing;
 	private string _lastSnapshot = string.Empty;
 

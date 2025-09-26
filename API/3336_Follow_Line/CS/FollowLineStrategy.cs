@@ -51,8 +51,8 @@ public class FollowLineStrategy : Strategy
 	private readonly StrategyParam<decimal> _maxSpread;
 	private readonly StrategyParam<int> _maxOrders;
 
-	private BollingerBands? _bollinger;
-	private AverageTrueRange? _atr;
+	private BollingerBands _bollinger;
+	private AverageTrueRange _atr;
 	private SimpleMovingAverage _highSma;
 	private SimpleMovingAverage _openSma;
 	private SimpleMovingAverage _closeSma;

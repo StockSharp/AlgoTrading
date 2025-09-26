@@ -31,7 +31,7 @@ public class OmniTrendStrategy : Strategy
 	private readonly Queue<SignalInfo> _pendingSignals = new();
 
 	private IIndicator _ma;
-	private AverageTrueRange? _atr;
+	private AverageTrueRange _atr;
 	private decimal _previousSmin;
 	private decimal _previousSmax;
 	private decimal _previousTrendUp;

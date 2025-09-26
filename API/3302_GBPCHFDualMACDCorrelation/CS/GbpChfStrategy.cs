@@ -31,8 +31,8 @@ public class GbpChfStrategy : Strategy
 	private readonly StrategyParam<Security> _gbpUsdSecurity;
 	private readonly StrategyParam<Security> _usdChfSecurity;
 
-	private MovingAverageConvergenceDivergence? _gbpUsdMacd;
-	private MovingAverageConvergenceDivergence? _usdChfMacd;
+	private MovingAverageConvergenceDivergence _gbpUsdMacd;
+	private MovingAverageConvergenceDivergence _usdChfMacd;
 
 	private decimal? _prevGbpUsdMacd;
 	private decimal? _lastGbpUsdMacd;
@@ -170,7 +170,7 @@ public class GbpChfStrategy : Strategy
 	/// <summary>
 	/// GBPUSD security used for the leading MACD calculation.
 	/// </summary>
-	public Security? GbpUsdSecurity
+	public Security GbpUsdSecurity
 	{
 		get => _gbpUsdSecurity.Value;
 		set => _gbpUsdSecurity.Value = value;
@@ -179,7 +179,7 @@ public class GbpChfStrategy : Strategy
 	/// <summary>
 	/// USDCHF security used for the confirming MACD calculation.
 	/// </summary>
-	public Security? UsdChfSecurity
+	public Security UsdChfSecurity
 	{
 		get => _usdChfSecurity.Value;
 		set => _usdChfSecurity.Value = value;

@@ -37,7 +37,7 @@ public class VirtualProfitCloseStrategy : Strategy
 	private decimal? _shortTrailingStop;
 
 	private bool _demoOrderActive;
-	private ISubscription? _tradeSubscription;
+	private ISubscription _tradeSubscription;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="VirtualProfitCloseStrategy"/> class.

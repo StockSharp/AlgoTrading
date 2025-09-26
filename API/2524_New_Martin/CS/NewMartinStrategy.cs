@@ -150,250 +150,250 @@ public class NewMartinStrategy : Strategy
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
-	return [(Security, CandleType)];
+		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
 	{
-	base.OnReseted();
+		base.OnReseted();
 
-	_longPositions.Clear();
-	_shortPositions.Clear();
-	_slowPrev1 = null;
-	_slowPrev2 = null;
-	_fastPrev1 = null;
-	_fastPrev2 = null;
-	_currentVolume = 0m;
-	_pipSize = 0m;
-	_startBalance = 0m;
-	_peakBalance = 0m;
-	_lastCrossTime = null;
-	_positionsInitialized = false;
+		_longPositions.Clear();
+		_shortPositions.Clear();
+		_slowPrev1 = null;
+		_slowPrev2 = null;
+		_fastPrev1 = null;
+		_fastPrev2 = null;
+		_currentVolume = 0m;
+		_pipSize = 0m;
+		_startBalance = 0m;
+		_peakBalance = 0m;
+		_lastCrossTime = null;
+		_positionsInitialized = false;
 	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
 	{
-	base.OnStarted(time);
+		base.OnStarted(time);
 
-	if (SlowPeriod <= FastPeriod)
-	throw new InvalidOperationException("Slow period must be greater than fast period.");
+		if (SlowPeriod <= FastPeriod)
+			throw new InvalidOperationException("Slow period must be greater than fast period.");
 
-	_currentVolume = AdjustVolume(InitialVolume);
+		_currentVolume = AdjustVolume(InitialVolume);
 
-	var step = Security?.PriceStep ?? 0m;
-	if (step <= 0m)
-	{
-		_pipSize = 1m;
-	}
-	else
-	{
-		_pipSize = step;
-		var decimals = Security?.Decimals ?? 0;
-		if (decimals == 3 || decimals == 5)
-			_pipSize = step * 10m;
-	}
+		var step = Security?.PriceStep ?? 0m;
+		if (step <= 0m)
+		{
+			_pipSize = 1m;
+		}
+		else
+		{
+			_pipSize = step;
+			var decimals = Security?.Decimals ?? 0;
+			if (decimals == 3 || decimals == 5)
+				_pipSize = step * 10m;
+		}
 
-	_slowMa = new SmoothedMovingAverage { Length = SlowPeriod };
-	_fastMa = new SmoothedMovingAverage { Length = FastPeriod };
+		_slowMa = new SmoothedMovingAverage { Length = SlowPeriod };
+		_fastMa = new SmoothedMovingAverage { Length = FastPeriod };
 
-	var subscription = SubscribeCandles(CandleType);
-	subscription
-	.Bind(_slowMa, _fastMa, ProcessCandle)
-	.Start();
+		var subscription = SubscribeCandles(CandleType);
+		subscription
+		.Bind(_slowMa, _fastMa, ProcessCandle)
+		.Start();
 
-	_startBalance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
-	_peakBalance = _startBalance;
+		_startBalance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue ?? 0m;
+		_peakBalance = _startBalance;
 	}
 
 	private void ProcessCandle(ICandleMessage candle, decimal slow, decimal fast)
 	{
-	if (candle.State != CandleStates.Finished)
-	return;
+		if (candle.State != CandleStates.Finished)
+			return;
 
-	if (!_slowMa.IsFormed || !_fastMa.IsFormed)
-	{
-	UpdateAverageHistory(slow, fast);
-	return;
-	}
+		if (!_slowMa.IsFormed || !_fastMa.IsFormed)
+		{
+			UpdateAverageHistory(slow, fast);
+			return;
+		}
 
-	UpdateAccountMetrics();
+		UpdateAccountMetrics();
 
-	if (ShouldCloseAllPositions())
-	{
-	CloseAllPositions();
-	_positionsInitialized = false;
-	}
+		if (ShouldCloseAllPositions())
+		{
+			CloseAllPositions();
+			_positionsInitialized = false;
+		}
 
-	if (!_positionsInitialized)
-	{
-	InitializeHedge(candle.ClosePrice);
-	}
+		if (!_positionsInitialized)
+		{
+			InitializeHedge(candle.ClosePrice);
+		}
 
-	var tpTriggered = CheckTakeProfits(candle);
+		var tpTriggered = CheckTakeProfits(candle);
 
-	if (tpTriggered)
-	{
-	CloseExtremePositions(candle.ClosePrice);
-	}
+		if (tpTriggered)
+		{
+			CloseExtremePositions(candle.ClosePrice);
+		}
 
-	if (_longPositions.Count == 0)
-	OpenPosition(Sides.Buy, _currentVolume, candle.ClosePrice);
+		if (_longPositions.Count == 0)
+			OpenPosition(Sides.Buy, _currentVolume, candle.ClosePrice);
 
-	if (_shortPositions.Count == 0)
-	OpenPosition(Sides.Sell, _currentVolume, candle.ClosePrice);
+		if (_shortPositions.Count == 0)
+			OpenPosition(Sides.Sell, _currentVolume, candle.ClosePrice);
 
-	HandleCrossing(candle, slow, fast);
+		HandleCrossing(candle, slow, fast);
 
-	UpdateAverageHistory(slow, fast);
+		UpdateAverageHistory(slow, fast);
 	}
 
 	private void InitializeHedge(decimal price)
 	{
-	if (_currentVolume <= 0m)
-	return;
+		if (_currentVolume <= 0m)
+			return;
 
-	// Start with symmetric hedge on both sides.
-	OpenPosition(Sides.Buy, _currentVolume, price);
-	OpenPosition(Sides.Sell, _currentVolume, price);
-	_positionsInitialized = _longPositions.Count > 0 && _shortPositions.Count > 0;
+		// Start with symmetric hedge on both sides.
+		OpenPosition(Sides.Buy, _currentVolume, price);
+		OpenPosition(Sides.Sell, _currentVolume, price);
+		_positionsInitialized = _longPositions.Count > 0 && _shortPositions.Count > 0;
 	}
 
 	private void UpdateAccountMetrics()
 	{
-	var equity = Portfolio?.CurrentValue ?? 0m;
+		var equity = Portfolio?.CurrentValue ?? 0m;
 
-	if (equity > _peakBalance)
-	_peakBalance = equity;
+		if (equity > _peakBalance)
+			_peakBalance = equity;
 
-	if (_startBalance > 0m && equity >= _startBalance * Multiplier)
-	{
-	_startBalance = equity;
+		if (_startBalance > 0m && equity >= _startBalance * Multiplier)
+		{
+			_startBalance = equity;
 
-	var newVolume = AdjustVolume(_currentVolume * Multiplier);
-	if (newVolume > 0m)
-	_currentVolume = newVolume;
-	}
+			var newVolume = AdjustVolume(_currentVolume * Multiplier);
+			if (newVolume > 0m)
+				_currentVolume = newVolume;
+		}
 	}
 
 	private bool ShouldCloseAllPositions()
 	{
-	if (_peakBalance <= 0m)
-	return false;
+		if (_peakBalance <= 0m)
+			return false;
 
-	var equity = Portfolio?.CurrentValue ?? 0m;
-	if (equity <= 0m)
-	return false;
+		var equity = Portfolio?.CurrentValue ?? 0m;
+		if (equity <= 0m)
+			return false;
 
-	var drawdown = (_peakBalance - equity) / _peakBalance * 100m;
-	return drawdown >= LossPercent;
+		var drawdown = (_peakBalance - equity) / _peakBalance * 100m;
+		return drawdown >= LossPercent;
 	}
 
 	private bool CheckTakeProfits(ICandleMessage candle)
 	{
-	var triggered = false;
-	var offset = TakeProfitPips * _pipSize;
-	if (offset <= 0m)
-	return false;
+		var triggered = false;
+		var offset = TakeProfitPips * _pipSize;
+		if (offset <= 0m)
+			return false;
 
-	foreach (var entry in _longPositions.ToArray())
-	{
-	if (candle.HighPrice >= entry.TakeProfit)
-	{
-	CloseEntry(entry);
-	triggered = true;
-	}
-	}
+		foreach (var entry in _longPositions.ToArray())
+		{
+			if (candle.HighPrice >= entry.TakeProfit)
+			{
+				CloseEntry(entry);
+				triggered = true;
+			}
+		}
 
-	foreach (var entry in _shortPositions.ToArray())
-	{
-	if (candle.LowPrice <= entry.TakeProfit)
-	{
-	CloseEntry(entry);
-	triggered = true;
-	}
-	}
+		foreach (var entry in _shortPositions.ToArray())
+		{
+			if (candle.LowPrice <= entry.TakeProfit)
+			{
+				CloseEntry(entry);
+				triggered = true;
+			}
+		}
 
-	return triggered;
+		return triggered;
 	}
 
 	private void CloseExtremePositions(decimal price)
 	{
-	var (lossEntry, lossValue, profitEntry, profitValue) = GetExtremePositions(price);
+		var (lossEntry, lossValue, profitEntry, profitValue) = GetExtremePositions(price);
 
-	if (lossEntry is not null && lossValue < 0m)
-	CloseEntry(lossEntry);
+		if (lossEntry is not null && lossValue < 0m)
+			CloseEntry(lossEntry);
 
-	if (profitEntry is not null && profitEntry != lossEntry)
-	CloseEntry(profitEntry);
+		if (profitEntry is not null && profitEntry != lossEntry)
+			CloseEntry(profitEntry);
 	}
 
 	private void HandleCrossing(ICandleMessage candle, decimal slow, decimal fast)
 	{
-	if (!_slowPrev2.HasValue || !_slowPrev1.HasValue || !_fastPrev2.HasValue || !_fastPrev1.HasValue)
-	return;
+		if (!_slowPrev2.HasValue || !_slowPrev1.HasValue || !_fastPrev2.HasValue || !_fastPrev1.HasValue)
+			return;
 
-	var crossDetected = (_slowPrev2.Value > _fastPrev2.Value && _slowPrev1.Value < _fastPrev1.Value)
-	|| (_slowPrev2.Value < _fastPrev2.Value && _slowPrev1.Value > _fastPrev1.Value);
+		var crossDetected = (_slowPrev2.Value > _fastPrev2.Value && _slowPrev1.Value < _fastPrev1.Value)
+		|| (_slowPrev2.Value < _fastPrev2.Value && _slowPrev1.Value > _fastPrev1.Value);
 
-	if (!crossDetected)
-	return;
+		if (!crossDetected)
+			return;
 
-	if (_lastCrossTime == candle.OpenTime)
-	return;
+		if (_lastCrossTime == candle.OpenTime)
+			return;
 
-	_lastCrossTime = candle.OpenTime;
+		_lastCrossTime = candle.OpenTime;
 
-	var (lossEntry, _, profitEntry, _) = GetExtremePositions(candle.ClosePrice);
-	if (lossEntry is null)
-	return;
+		var (lossEntry, _, profitEntry, _) = GetExtremePositions(candle.ClosePrice);
+		if (lossEntry is null)
+			return;
 
-	var volume = AdjustVolume(lossEntry.Volume * Multiplier);
-	if (volume <= 0m)
-	return;
+		var volume = AdjustVolume(lossEntry.Volume * Multiplier);
+		if (volume <= 0m)
+			return;
 
-	// Average down on the weakest side.
-	OpenPosition(lossEntry.Side, volume, candle.ClosePrice);
+		// Average down on the weakest side.
+		OpenPosition(lossEntry.Side, volume, candle.ClosePrice);
 
-	if (profitEntry is not null && profitEntry != lossEntry)
-	{
-	// Lock in profit on the strongest position after the new hedge.
-	CloseEntry(profitEntry);
-	}
+		if (profitEntry is not null && profitEntry != lossEntry)
+		{
+			// Lock in profit on the strongest position after the new hedge.
+			CloseEntry(profitEntry);
+		}
 	}
 
 	private void UpdateAverageHistory(decimal slow, decimal fast)
 	{
-	_slowPrev2 = _slowPrev1;
-	_slowPrev1 = slow;
-	_fastPrev2 = _fastPrev1;
-	_fastPrev1 = fast;
+		_slowPrev2 = _slowPrev1;
+		_slowPrev1 = slow;
+		_fastPrev2 = _fastPrev1;
+		_fastPrev1 = fast;
 	}
 
 	private void OpenPosition(Sides side, decimal requestedVolume, decimal price)
 	{
-	var volume = AdjustVolume(requestedVolume);
-	if (volume <= 0m)
-	return;
+		var volume = AdjustVolume(requestedVolume);
+		if (volume <= 0m)
+			return;
 
-	var offset = TakeProfitPips * _pipSize;
-	if (offset <= 0m)
-	return;
+		var offset = TakeProfitPips * _pipSize;
+		if (offset <= 0m)
+			return;
 
-	var takeProfit = side == Sides.Buy ? price + offset : price - offset;
-	var entry = new PositionEntry(side, volume, price, takeProfit);
+		var takeProfit = side == Sides.Buy ? price + offset : price - offset;
+		var entry = new PositionEntry(side, volume, price, takeProfit);
 
-	if (side == Sides.Buy)
-	{
-	_longPositions.Add(entry);
-	BuyMarket(volume);
-	}
-	else
-	{
-	_shortPositions.Add(entry);
-	SellMarket(volume);
-	}
+		if (side == Sides.Buy)
+		{
+			_longPositions.Add(entry);
+			BuyMarket(volume);
+		}
+		else
+		{
+			_shortPositions.Add(entry);
+			SellMarket(volume);
+		}
 	}
 
 	private void CloseAllPositions()
@@ -407,82 +407,82 @@ public class NewMartinStrategy : Strategy
 
 	private void CloseEntry(PositionEntry entry)
 	{
-	if (entry.Side == Sides.Buy)
-	{
-	SellMarket(entry.Volume);
-	_longPositions.Remove(entry);
-	}
-	else
-	{
-	BuyMarket(entry.Volume);
-	_shortPositions.Remove(entry);
-	}
-	}
-
-	private (PositionEntry? lossEntry, decimal lossValue, PositionEntry? profitEntry, decimal profitValue) GetExtremePositions(decimal price)
-	{
-	PositionEntry? lossEntry = null;
-	PositionEntry? profitEntry = null;
-	var lossValue = 0m;
-	var profitValue = 0m;
-
-	foreach (var entry in _longPositions)
-	{
-	var pnl = (price - entry.EntryPrice) * entry.Volume;
-	if (lossEntry is null || pnl < lossValue)
-	{
-	lossEntry = entry;
-	lossValue = pnl;
+		if (entry.Side == Sides.Buy)
+		{
+			SellMarket(entry.Volume);
+			_longPositions.Remove(entry);
+		}
+		else
+		{
+			BuyMarket(entry.Volume);
+			_shortPositions.Remove(entry);
+		}
 	}
 
-	if (profitEntry is null || pnl > profitValue)
+	private (PositionEntry lossEntry, decimal lossValue, PositionEntry profitEntry, decimal profitValue) GetExtremePositions(decimal price)
 	{
-	profitEntry = entry;
-	profitValue = pnl;
-	}
-	}
+		PositionEntry lossEntry = null;
+		PositionEntry profitEntry = null;
+		var lossValue = 0m;
+		var profitValue = 0m;
 
-	foreach (var entry in _shortPositions)
-	{
-	var pnl = (entry.EntryPrice - price) * entry.Volume;
-	if (lossEntry is null || pnl < lossValue)
-	{
-	lossEntry = entry;
-	lossValue = pnl;
-	}
+		foreach (var entry in _longPositions)
+		{
+			var pnl = (price - entry.EntryPrice) * entry.Volume;
+			if (lossEntry is null || pnl < lossValue)
+			{
+				lossEntry = entry;
+				lossValue = pnl;
+			}
 
-	if (profitEntry is null || pnl > profitValue)
-	{
-	profitEntry = entry;
-	profitValue = pnl;
-	}
-	}
+			if (profitEntry is null || pnl > profitValue)
+			{
+				profitEntry = entry;
+				profitValue = pnl;
+			}
+		}
 
-	return (lossEntry, lossValue, profitEntry, profitValue);
+		foreach (var entry in _shortPositions)
+		{
+			var pnl = (entry.EntryPrice - price) * entry.Volume;
+			if (lossEntry is null || pnl < lossValue)
+			{
+				lossEntry = entry;
+				lossValue = pnl;
+			}
+
+			if (profitEntry is null || pnl > profitValue)
+			{
+				profitEntry = entry;
+				profitValue = pnl;
+			}
+		}
+
+		return (lossEntry, lossValue, profitEntry, profitValue);
 	}
 
 	private decimal AdjustVolume(decimal volume)
 	{
-	var security = Security;
-	if (security is null)
-	return volume;
+		var security = Security;
+		if (security is null)
+			return volume;
 
-	var step = security.StepVolume ?? 0m;
-	if (step > 0m)
-	{
-	var steps = decimal.Floor(volume / step);
-	volume = steps * step;
-	}
+		var step = security.StepVolume ?? 0m;
+		if (step > 0m)
+		{
+			var steps = decimal.Floor(volume / step);
+			volume = steps * step;
+		}
 
-	var min = security.MinVolume ?? 0m;
-	if (min > 0m && volume < min)
-	return 0m;
+		var min = security.MinVolume ?? 0m;
+		if (min > 0m && volume < min)
+			return 0m;
 
-	var max = security.MaxVolume ?? 0m;
-	if (max > 0m && volume > max)
-	volume = max;
+		var max = security.MaxVolume ?? 0m;
+		if (max > 0m && volume > max)
+			volume = max;
 
-	return volume;
+		return volume;
 	}
 
 	private sealed record PositionEntry(Sides Side, decimal Volume, decimal EntryPrice, decimal TakeProfit);

@@ -423,7 +423,7 @@ public class KwanCccStrategy : Strategy
 		}
 	}
 
-	private (IIndicator indicator, ChandeMomentumOscillator? vidyaCmo, decimal? vidyaValue) CreateSmoother()
+	private (IIndicator indicator, ChandeMomentumOscillator vidyaCmo, decimal? vidyaValue) CreateSmoother()
 	{
 		switch (SmoothingMethod)
 		{

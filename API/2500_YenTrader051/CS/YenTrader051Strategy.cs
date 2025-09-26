@@ -64,7 +64,7 @@ public class YenTrader051Strategy : Strategy
 	private SimpleMovingAverage _usdJpyRviSignal = null!;
 	private IIndicator _usdJpyMa = null!;
 
-	private AverageTrueRange? _atr;
+	private AverageTrueRange _atr;
 
 	private readonly Queue<decimal> _majorCloses = new();
 	private readonly Queue<decimal> _usdJpyCloses = new();
@@ -175,7 +175,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// Major pair used for confirmation.
 	/// </summary>
-	public Security? MajorSecurity
+	public Security MajorSecurity
 	{
 		get => _majorSecurity.Value;
 		set => _majorSecurity.Value = value;
@@ -184,7 +184,7 @@ public class YenTrader051Strategy : Strategy
 	/// <summary>
 	/// USDJPY pair used for confirmation.
 	/// </summary>
-	public Security? UsdJpySecurity
+	public Security UsdJpySecurity
 	{
 		get => _usdJpySecurity.Value;
 		set => _usdJpySecurity.Value = value;

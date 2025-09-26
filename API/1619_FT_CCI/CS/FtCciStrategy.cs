@@ -23,7 +23,7 @@ public class FtCciStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex? _cci;
+	private CommodityChannelIndex _cci;
 	private decimal _pipSize;
 
 	/// <summary>

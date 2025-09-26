@@ -405,9 +405,9 @@ public class FrankUdMinimalStrategy : Strategy
 		return total;
 	}
 
-	private static PositionEntry? GetMaxVolumeEntry(List<PositionEntry> entries)
+	private static PositionEntry GetMaxVolumeEntry(List<PositionEntry> entries)
 	{
-		PositionEntry? result = null;
+		PositionEntry result = null;
 		decimal maxVolume = 0m;
 
 		foreach (var entry in entries)

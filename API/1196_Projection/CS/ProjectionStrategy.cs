@@ -19,7 +19,7 @@ public class ProjectionStrategy : Strategy
 	private readonly StrategyParam<int> _calculationPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA? _changeSma;
+	private SMA _changeSma;
 	private decimal _prevOpen;
 	private decimal _limitLong;
 	private decimal _limitShort;

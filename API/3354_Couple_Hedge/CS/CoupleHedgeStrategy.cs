@@ -122,7 +122,7 @@ public class CoupleHedgeStrategy : Strategy
 	private readonly StrategyParam<decimal> _signalThreshold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private List<PairState>? _pairs;
+	private List<PairState> _pairs;
 	private int _basketProfitDelay;
 
 	/// <summary>

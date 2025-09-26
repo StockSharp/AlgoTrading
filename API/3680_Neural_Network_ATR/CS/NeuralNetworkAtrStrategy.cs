@@ -41,7 +41,7 @@ public class NeuralNetworkAtrStrategy : Strategy
 	private bool _tradingHalted;
 
 	private decimal _learningRate;
-	private ATR? _atrIndicator;
+	private ATR _atrIndicator;
 
 	private decimal[] _weightsInputHidden = Array.Empty<decimal>();
 	private decimal[] _biasHidden = Array.Empty<decimal>();

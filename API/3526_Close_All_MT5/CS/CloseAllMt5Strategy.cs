@@ -19,7 +19,7 @@ using StockSharp.Messages;
 /// </summary>
 public class CloseAllMt5Strategy : Strategy
 {
-	private static readonly PropertyInfo? StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
+	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
 
 	private readonly StrategyParam<PositionSelection> _positionSelection;
 	private readonly StrategyParam<ProfitMeasure> _profitMeasure;

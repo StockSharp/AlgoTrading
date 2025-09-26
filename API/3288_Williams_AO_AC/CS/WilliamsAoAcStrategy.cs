@@ -33,9 +33,9 @@ public class WilliamsAoAcStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _trailingStopPoints;
 
-	private BollingerBands? _bollinger;
-	private RelativeStrengthIndex? _rsi;
-	private AwesomeOscillator? _awesome;
+	private BollingerBands _bollinger;
+	private RelativeStrengthIndex _rsi;
+	private AwesomeOscillator _awesome;
 	private SimpleMovingAverage _aoAverage;
 
 	private readonly List<decimal> _acceleratorHistory = new();

@@ -37,8 +37,8 @@ public class BinarioStrategy : Strategy
 
 	private Order _buyStopOrder;
 	private Order _sellStopOrder;
-	private PendingSetup? _pendingLong;
-	private PendingSetup? _pendingShort;
+	private PendingSetup _pendingLong;
+	private PendingSetup _pendingShort;
 
 	private Order _longStopOrder;
 	private Order _longTakeProfitOrder;

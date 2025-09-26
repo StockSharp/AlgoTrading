@@ -35,11 +35,11 @@ public class ImaIsarEaStrategy : Strategy
 	private WeightedMovingAverage _fastMa;
 	private WeightedMovingAverage _normalMa;
 	private WeightedMovingAverage _slowMa;
-	private ParabolicSar? _fastSar;
-	private ParabolicSar? _normalSar;
-	private Shift? _fastShiftIndicator;
-	private Shift? _normalShiftIndicator;
-	private Shift? _slowShiftIndicator;
+	private ParabolicSar _fastSar;
+	private ParabolicSar _normalSar;
+	private Shift _fastShiftIndicator;
+	private Shift _normalShiftIndicator;
+	private Shift _slowShiftIndicator;
 
 	private decimal _pipSize;
 

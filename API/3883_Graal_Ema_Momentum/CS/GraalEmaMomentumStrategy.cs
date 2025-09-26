@@ -17,7 +17,7 @@ public class GraalEmaMomentumStrategy : Strategy
 
 	private ExponentialMovingAverage _fastCloseEma;
 	private ExponentialMovingAverage _slowOpenEma;
-	private Momentum? _momentum;
+	private Momentum _momentum;
 
 	private decimal? _previousFast;
 	private decimal? _previousSlow;

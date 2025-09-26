@@ -26,10 +26,10 @@ public class MoStAsHaR15PivotLineStrategy : Strategy
 	private readonly StrategyParam<DataType> _hourlyCandleType;
 	private readonly StrategyParam<DataType> _dailyCandleType;
 
-	private EMA? _emaClose;
-	private EMA? _emaOpen;
-	private AverageDirectionalIndex? _adx;
-	private MovingAverageConvergenceDivergence? _macd;
+	private EMA _emaClose;
+	private EMA _emaOpen;
+	private AverageDirectionalIndex _adx;
+	private MovingAverageConvergenceDivergence _macd;
 
 	private decimal? _previousEmaClose;
 	private decimal? _previousEmaOpen;

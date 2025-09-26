@@ -25,8 +25,8 @@ public class BollingerRsiMaStrategy : Strategy
 	private readonly StrategyParam<decimal> _riskPerTrade;
 	private readonly StrategyParam<decimal> _fixedVolume;
 
-	private BollingerBands? _bollingerBands;
-	private RelativeStrengthIndex? _rsi;
+	private BollingerBands _bollingerBands;
+	private RelativeStrengthIndex _rsi;
 	private ExponentialMovingAverage _dailyEma;
 
 	private decimal? _latestDailyEma;

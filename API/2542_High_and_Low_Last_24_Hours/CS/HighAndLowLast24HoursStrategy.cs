@@ -18,8 +18,8 @@ public class HighAndLowLast24HoursStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _windowLength;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Highest? _highest;
-	private Lowest? _lowest;
+	private Highest _highest;
+	private Lowest _lowest;
 
 	private TimeSpan _timeFrame;
 	private TimeSpan _cachedWindowLength;

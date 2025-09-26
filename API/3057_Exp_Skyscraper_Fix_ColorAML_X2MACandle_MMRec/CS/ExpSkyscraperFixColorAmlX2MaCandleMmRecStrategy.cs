@@ -60,9 +60,9 @@ public class ExpSkyscraperFixColorAmlX2MaCandleMmRecStrategy : Strategy
 	private readonly StrategyParam<int> _x2MaBuyLossTrigger;
 	private readonly StrategyParam<int> _x2MaSellLossTrigger;
 
-	private SkyscraperFixIndicator? _skyscraperIndicator;
-	private ColorAmlIndicator? _colorAmlIndicator;
-	private X2MaCandleColorIndicator? _x2MaIndicator;
+	private SkyscraperFixIndicator _skyscraperIndicator;
+	private ColorAmlIndicator _colorAmlIndicator;
+	private X2MaCandleColorIndicator _x2MaIndicator;
 
 	private readonly Queue<SkyscraperSignal> _skyscraperSignals = new();
 	private readonly List<int> _colorAmlColors = new();

@@ -63,13 +63,13 @@ public class HeikenAshiEngulfStrategy : Strategy
 	private LengthIndicator<decimal> _buyBaselineMa;
 	private LengthIndicator<decimal> _buyFastMa;
 	private LengthIndicator<decimal> _buySlowMa;
-	private RelativeStrengthIndex? _buyPrimaryRsi;
-	private RelativeStrengthIndex? _buySecondaryRsi;
+	private RelativeStrengthIndex _buyPrimaryRsi;
+	private RelativeStrengthIndex _buySecondaryRsi;
 	private LengthIndicator<decimal> _sellBaselineMa;
 	private LengthIndicator<decimal> _sellFastMa;
 	private LengthIndicator<decimal> _sellSlowMa;
-	private RelativeStrengthIndex? _sellPrimaryRsi;
-	private RelativeStrengthIndex? _sellSecondaryRsi;
+	private RelativeStrengthIndex _sellPrimaryRsi;
+	private RelativeStrengthIndex _sellSecondaryRsi;
 
 	private readonly List<CandleSnapshot> _candles = new();
 	private readonly List<HeikenAshiSnapshot> _heiken = new();

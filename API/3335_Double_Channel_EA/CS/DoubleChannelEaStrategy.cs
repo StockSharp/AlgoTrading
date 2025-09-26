@@ -40,7 +40,7 @@ public class DoubleChannelEaStrategy : Strategy
 
 	private readonly Queue<DoubleChannelValue> _signalDelay = new();
 
-	private DoubleChannelIndicator? _indicator;
+	private DoubleChannelIndicator _indicator;
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 	private decimal _entryPrice;

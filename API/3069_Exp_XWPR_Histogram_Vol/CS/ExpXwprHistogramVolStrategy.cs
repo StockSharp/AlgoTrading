@@ -608,7 +608,7 @@ public enum SmoothMethod
 /// </summary>
 public class XwprHistogramVolIndicator : BaseIndicator<decimal>
 {
-	private WilliamsR? _williams;
+	private WilliamsR _williams;
 	private IIndicator _valueSmoother;
 	private IIndicator _volumeSmoother;
 

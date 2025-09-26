@@ -21,7 +21,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 	private readonly Dictionary<string, Summary> _symbolMap = new(StringComparer.OrdinalIgnoreCase);
 	private readonly object _sync = new();
 
-	private Timer? _timer;
+	private Timer _timer;
 	private int _isProcessing;
 
 	/// <summary>

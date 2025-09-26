@@ -20,7 +20,7 @@ public class WeeklyReboundCorridorStrategy : Strategy
 	private readonly StrategyParam<int> _tradeDayOfWeek;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ShiftBuffer? _openShiftBuffer;
+	private ShiftBuffer _openShiftBuffer;
 	private decimal _previousClose;
 	private bool _hasPreviousClose;
 	private bool _positionIsLong;
@@ -28,7 +28,7 @@ public class WeeklyReboundCorridorStrategy : Strategy
 	private decimal _takeProfitPrice;
 	private decimal _stopLossPrice;
 	private int _lastEntryYmd;
-	private TimeZoneInfo? _timeZone;
+	private TimeZoneInfo _timeZone;
 
 	/// <summary>
 	/// Take-profit value expressed in points.

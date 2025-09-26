@@ -26,8 +26,8 @@ public class MacdStochasticTrailingStrategy : Strategy
 
 	private MovingAverageConvergenceDivergence? _bullishMacd;
 	private MovingAverageConvergenceDivergence? _bearishMacd;
-	private StochasticOscillator? _entryStochastic;
-	private StochasticOscillator? _exitStochastic;
+	private StochasticOscillator _entryStochastic;
+	private StochasticOscillator _exitStochastic;
 
 	private decimal? _bullishMacdCurrent;
 	private decimal? _bullishMacdPrevious;

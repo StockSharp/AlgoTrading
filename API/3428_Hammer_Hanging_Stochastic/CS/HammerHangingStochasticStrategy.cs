@@ -26,7 +26,7 @@ public class HammerHangingStochasticStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowerShadowMultiplier;
 	private readonly StrategyParam<decimal> _upperShadowMultiplier;
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 	private decimal? _previousStochD;
 	private decimal? _previous2StochD;
 

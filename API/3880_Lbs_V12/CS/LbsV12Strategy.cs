@@ -21,7 +21,7 @@ public class LbsV12Strategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private AverageTrueRange _atr = null!;
-	private Subscription? _subscription;
+	private Subscription _subscription;
 
 	private ICandleMessage _previousCandle;
 	private DateTime? _currentDate;

@@ -19,8 +19,8 @@ public class SymbolSwapPanelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _swapRequested;
 
-	private MarketDataSubscription? _candleSubscription;
-	private MarketDataSubscription? _level1Subscription;
+	private MarketDataSubscription _candleSubscription;
+	private MarketDataSubscription _level1Subscription;
 
 	private Security _activeSecurity;
 	private string _appliedSecurityId;

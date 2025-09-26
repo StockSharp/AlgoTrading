@@ -35,8 +35,8 @@ public class FiboPivotMultiValStrategy : Strategy
 	private readonly Dictionary<string, ZoneState> _zones = new();
 	private readonly Dictionary<Order, string> _orderZoneMap = new();
 
-	private DailyStats? _currentDay;
-	private DailyStats? _previousDay;
+	private DailyStats _currentDay;
+	private DailyStats _previousDay;
 	private PivotLevels? _activeLevels;
 	private DateTime? _activeLevelsDate;
 

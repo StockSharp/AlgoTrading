@@ -30,8 +30,8 @@ public class RsiMaOnRsiDualStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _sessionStart;
 	private readonly StrategyParam<TimeSpan> _sessionEnd;
 
-	private RelativeStrengthIndex? _fastRsi;
-	private RelativeStrengthIndex? _slowRsi;
+	private RelativeStrengthIndex _fastRsi;
+	private RelativeStrengthIndex _slowRsi;
 	private SimpleMovingAverage _fastMa;
 	private SimpleMovingAverage _slowMa;
 

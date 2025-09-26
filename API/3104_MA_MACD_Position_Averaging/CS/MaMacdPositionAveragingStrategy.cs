@@ -629,9 +629,9 @@ public class MaMacdPositionAveragingStrategy : Strategy
 		return candidate;
 	}
 
-	private PositionLeg? GetWorstShort(decimal currentPrice)
+	private PositionLeg GetWorstShort(decimal currentPrice)
 	{
-		PositionLeg? candidate = null;
+		PositionLeg candidate = null;
 
 		for (var i = 0; i < _legs.Count; i++)
 		{

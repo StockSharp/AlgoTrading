@@ -18,7 +18,7 @@ public class HistoryDownloaderStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _requestTimeout;
 	private readonly StrategyParam<int> _maxFailures;
 
-	private MarketDataSubscription? _subscription;
+	private MarketDataSubscription _subscription;
 	private DateTimeOffset? _earliestCandleTime;
 	private DateTimeOffset _executionStart;
 	private DateTimeOffset _lastUpdateTime;

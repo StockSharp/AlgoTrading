@@ -45,8 +45,8 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 
-	private FineTuningMaCandleIndicator? _longIndicator;
-	private FineTuningMaCandleIndicator? _shortIndicator;
+	private FineTuningMaCandleIndicator _longIndicator;
+	private FineTuningMaCandleIndicator _shortIndicator;
 
 	private readonly List<decimal> _longColorHistory = new();
 	private readonly List<decimal> _shortColorHistory = new();

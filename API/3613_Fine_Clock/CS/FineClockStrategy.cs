@@ -88,7 +88,7 @@ public class FineClockStrategy : Strategy
 	private readonly StrategyParam<bool> _useShadow;
 	private readonly StrategyParam<bool> _showInComment;
 
-	private IChartArea? _chartArea;
+	private IChartArea _chartArea;
 	private decimal? _lastPrice;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;

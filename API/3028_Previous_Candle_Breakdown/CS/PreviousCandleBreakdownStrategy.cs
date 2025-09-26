@@ -28,10 +28,10 @@ public class PreviousCandleBreakdownStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _startTime;
 	private readonly StrategyParam<TimeSpan> _endTime;
 
-	private SMA? _fastMa;
-	private SMA? _slowMa;
-	private Shift? _fastShift;
-	private Shift? _slowShift;
+	private SMA _fastMa;
+	private SMA _slowMa;
+	private Shift _fastShift;
+	private Shift _slowShift;
 
 	private decimal? _fastMaValue;
 	private decimal? _slowMaValue;

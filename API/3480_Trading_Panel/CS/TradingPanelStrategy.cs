@@ -31,7 +31,7 @@ public class TradingPanelStrategy : Strategy
 
 	private Security _resolvedSecurity;
 	private DataType _activeCandleType;
-	private CandleIndicatorSubscription? _subscription;
+	private CandleIndicatorSubscription _subscription;
 
 	/// <summary>
 	/// Preferred timeframe name like "M1", "H4", or "D1".
@@ -42,12 +42,12 @@ public class TradingPanelStrategy : Strategy
 		set
 		{
 			if (string.Equals(_timeFrameName.Value, value, StringComparison.OrdinalIgnoreCase))
-			return;
+				return;
 
 			_timeFrameName.Value = value;
 
 			if (ProcessState == ProcessStates.Started)
-			ApplyTimeFrame();
+				ApplyTimeFrame();
 		}
 	}
 
@@ -61,12 +61,12 @@ public class TradingPanelStrategy : Strategy
 		set
 		{
 			if (string.Equals(_securityId.Value, value, StringComparison.OrdinalIgnoreCase))
-			return;
+				return;
 
 			_securityId.Value = value;
 
 			if (ProcessState == ProcessStates.Started)
-			ApplySecurity();
+				ApplySecurity();
 		}
 	}
 
@@ -79,12 +79,12 @@ public class TradingPanelStrategy : Strategy
 		set
 		{
 			if (_autoLookupSecurity.Value == value)
-			return;
+				return;
 
 			_autoLookupSecurity.Value = value;
 
 			if (ProcessState == ProcessStates.Started)
-			ApplySecurity();
+				ApplySecurity();
 		}
 	}
 
@@ -202,7 +202,7 @@ public class TradingPanelStrategy : Strategy
 	{
 		// Ignore unfinished candles because the panel should react to completed data only.
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		LastFinishedCandle = candle;
 
@@ -213,41 +213,41 @@ public class TradingPanelStrategy : Strategy
 	private Security ResolveSecurity()
 	{
 		if (_resolvedSecurity != null)
-		return _resolvedSecurity;
+			return _resolvedSecurity;
 
 		if (!string.IsNullOrWhiteSpace(SecurityId) && AutoLookupSecurity)
-		_resolvedSecurity = SecurityProvider?.LookupById(SecurityId) ?? Security;
+			_resolvedSecurity = SecurityProvider?.LookupById(SecurityId) ?? Security;
 		else
-		_resolvedSecurity = Security;
+			_resolvedSecurity = Security;
 
 		return _resolvedSecurity;
 	}
 
-	private static DataType? ResolveTimeFrame(string name)
+	private static DataType ResolveTimeFrame(string name)
 	{
 		if (string.IsNullOrWhiteSpace(name))
-		return null;
+			return null;
 
 		switch (name.Trim().ToUpperInvariant())
 		{
-		case "M1":
-			return TimeSpan.FromMinutes(1).TimeFrame();
-		case "M5":
-			return TimeSpan.FromMinutes(5).TimeFrame();
-		case "M15":
-			return TimeSpan.FromMinutes(15).TimeFrame();
-		case "M30":
-			return TimeSpan.FromMinutes(30).TimeFrame();
-		case "H1":
-			return TimeSpan.FromHours(1).TimeFrame();
-		case "H4":
-			return TimeSpan.FromHours(4).TimeFrame();
-		case "D1":
-			return TimeSpan.FromDays(1).TimeFrame();
-		case "W1":
-			return TimeSpan.FromDays(7).TimeFrame();
-		default:
-			return null;
+			case "M1":
+				return TimeSpan.FromMinutes(1).TimeFrame();
+			case "M5":
+				return TimeSpan.FromMinutes(5).TimeFrame();
+			case "M15":
+				return TimeSpan.FromMinutes(15).TimeFrame();
+			case "M30":
+				return TimeSpan.FromMinutes(30).TimeFrame();
+			case "H1":
+				return TimeSpan.FromHours(1).TimeFrame();
+			case "H4":
+				return TimeSpan.FromHours(4).TimeFrame();
+			case "D1":
+				return TimeSpan.FromDays(1).TimeFrame();
+			case "W1":
+				return TimeSpan.FromDays(7).TimeFrame();
+			default:
+				return null;
 		}
 	}
 }

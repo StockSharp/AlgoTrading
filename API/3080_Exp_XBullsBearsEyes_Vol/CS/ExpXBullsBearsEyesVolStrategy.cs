@@ -40,7 +40,7 @@ public class ExpXBullsBearsEyesVolStrategy : Strategy
 	private readonly StrategyParam<int> _smoothPhase;
 	private readonly StrategyParam<int> _signalBar;
 
-	private XBullsBearsEyesVolCalculator? _indicator;
+	private XBullsBearsEyesVolCalculator _indicator;
 
 	private readonly List<ColorSample> _colorHistory = new();
 

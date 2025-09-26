@@ -26,7 +26,7 @@ public class TtmTrendReopenStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
-	private TtmTrendIndicator? _ttmIndicator;
+	private TtmTrendIndicator _ttmIndicator;
 	private readonly List<int> _colorHistory = new();
 	private int _longEntries;
 	private int _shortEntries;

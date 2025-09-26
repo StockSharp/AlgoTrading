@@ -36,7 +36,7 @@ public class SpreaderStrategy : Strategy
 	/// <summary>
 	/// Secondary security that forms the hedge leg of the spread.
 	/// </summary>
-	public Security? SecondSecurity
+	public Security SecondSecurity
 	{
 		get => _secondSecurityParam.Value;
 		set => _secondSecurityParam.Value = value;
@@ -404,12 +404,12 @@ public class SpreaderStrategy : Strategy
 		}
 	}
 
-	private decimal GetPositionVolume(Security? security)
+	private decimal GetPositionVolume(Security security)
 	{
 		return security == null || Portfolio == null ? 0m : GetPositionValue(security, Portfolio) ?? 0m;
 	}
 
-	private static decimal NormalizeVolume(Security? security, decimal volume)
+	private static decimal NormalizeVolume(Security security, decimal volume)
 	{
 		if (security == null)
 			return volume;

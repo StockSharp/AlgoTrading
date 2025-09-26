@@ -33,7 +33,7 @@ public class VectorStrategy : Strategy
 	/// <summary>
 	/// Secondary instrument representing GBPUSD in the original script.
 	/// </summary>
-	public Security? SecondSecurity
+	public Security SecondSecurity
 	{
 		get => _secondSecurity.Value;
 		set => _secondSecurity.Value = value;
@@ -42,7 +42,7 @@ public class VectorStrategy : Strategy
 	/// <summary>
 	/// Third instrument representing USDCHF in the original script.
 	/// </summary>
-	public Security? ThirdSecurity
+	public Security ThirdSecurity
 	{
 		get => _thirdSecurity.Value;
 		set => _thirdSecurity.Value = value;
@@ -51,7 +51,7 @@ public class VectorStrategy : Strategy
 	/// <summary>
 	/// Fourth instrument representing USDJPY in the original script.
 	/// </summary>
-	public Security? FourthSecurity
+	public Security FourthSecurity
 	{
 		get => _fourthSecurity.Value;
 		set => _fourthSecurity.Value = value;
@@ -209,7 +209,7 @@ public class VectorStrategy : Strategy
 		_lastPositions[security] = position;
 	}
 
-	private void CreateContext(Security? security)
+	private void CreateContext(Security security)
 	{
 		if (security == null)
 			return;

@@ -51,7 +51,7 @@ public class ExpSpearmanRankCorrelationHistogramStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<bool> _invertCorrelation;
 
-	private RankCorrelationIndex? _spearman;
+	private RankCorrelationIndex _spearman;
 	private readonly List<int> _colorHistory = new();
 
 	/// <summary>

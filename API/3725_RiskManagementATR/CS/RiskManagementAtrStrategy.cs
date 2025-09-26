@@ -20,7 +20,7 @@ public class RiskManagementAtrStrategy : Strategy
 	private readonly StrategyParam<bool> _useAtrStopLoss;
 	private readonly StrategyParam<int> _fixedStopLossPoints;
 
-	private AverageTrueRange? _atr;
+	private AverageTrueRange _atr;
 	private SimpleMovingAverage _fastMovingAverage;
 	private SimpleMovingAverage _slowMovingAverage;
 

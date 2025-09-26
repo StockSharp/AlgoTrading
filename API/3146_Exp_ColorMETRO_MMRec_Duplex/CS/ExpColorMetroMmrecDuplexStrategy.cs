@@ -714,7 +714,7 @@ public class ExpColorMetroMmrecDuplexStrategy : Strategy
 			set => _marginMode.Value = value;
 		}
 
-		public ColorMetroMmrecIndicator? Indicator { get; private set; }
+		public ColorMetroMmrecIndicator Indicator { get; private set; }
 
 		public void SetIndicator(ColorMetroMmrecIndicator indicator)
 		{

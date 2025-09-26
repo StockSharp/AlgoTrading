@@ -31,7 +31,7 @@ public class ExtremeEaStrategy : Strategy
 
 	private LengthIndicator<decimal> _fastMa;
 	private LengthIndicator<decimal> _slowMa;
-	private CommodityChannelIndex? _cci;
+	private CommodityChannelIndex _cci;
 
 	private decimal? _fastMaCurrent;
 	private decimal? _fastMaPrevious;

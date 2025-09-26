@@ -64,7 +64,7 @@ public class TradingPanelStrategy : Strategy
 	/// Optional override for the traded security.
 	/// When null the strategy uses <see cref="Strategy.Security"/>.
 	/// </summary>
-	public Security? TargetSecurity
+	public Security TargetSecurity
 	{
 		get => _targetSecurity.Value;
 		set => _targetSecurity.Value = value;

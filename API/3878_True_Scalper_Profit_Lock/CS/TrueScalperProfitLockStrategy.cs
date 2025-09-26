@@ -30,7 +30,7 @@ public class TrueScalperProfitLockStrategy : Strategy
 
 	private ExponentialMovingAverage _fastEma;
 	private ExponentialMovingAverage _slowEma;
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 
 	private decimal? _previousFastEma;
 	private decimal? _previousSlowEma;

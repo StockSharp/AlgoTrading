@@ -24,7 +24,7 @@ public class HansIndicatorCloudSystemStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 
 	private readonly List<int> _colorHistory = new();
-	private DayState? _currentDay;
+	private DayState _currentDay;
 	private TimeSpan _timeShift;
 
 	public HansIndicatorCloudSystemStrategy()

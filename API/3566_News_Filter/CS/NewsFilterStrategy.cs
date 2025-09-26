@@ -445,8 +445,8 @@ public class NewsFilterStrategy : Strategy
 
 	private void CheckNewsWindow(DateTimeOffset currentTime)
 	{
-		var activeEvent = default(EconomicEvent?);
-		var upcomingEvent = default(EconomicEvent?);
+		var activeEvent = default(EconomicEvent);
+		var upcomingEvent = default(EconomicEvent);
 		var stopBefore = TimeSpan.FromMinutes(Math.Max(0, StopBeforeNewsMinutes));
 		var startAfter = TimeSpan.FromMinutes(Math.Max(0, StartAfterNewsMinutes));
 		var filterCurrencies = ParseCurrencies();
@@ -492,7 +492,7 @@ public class NewsFilterStrategy : Strategy
 		UpdateStatus(activeEvent is not null, activeEvent ?? upcomingEvent);
 	}
 
-	private void UpdateStatus(bool isNewsActive, EconomicEvent? referenceEvent)
+	private void UpdateStatus(bool isNewsActive, EconomicEvent referenceEvent)
 	{
 		_isNewsActive = isNewsActive;
 

@@ -27,7 +27,7 @@ public class CorrectedAverageChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LengthIndicator<decimal> _ma;
-	private StandardDeviation? _std;
+	private StandardDeviation _std;
 
 	private decimal _priceStep;
 	private decimal _sigmaBuyOffset;

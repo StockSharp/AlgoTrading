@@ -78,7 +78,7 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	private decimal? _activeStopLoss;
 	private decimal? _activeTakeProfit;
 	private bool _isLongPosition;
-	private PendingOrder? _pendingOrder;
+	private PendingOrder _pendingOrder;
 	private DateTimeOffset? _lastEntryTime;
 
 	private enum PendingOrderType

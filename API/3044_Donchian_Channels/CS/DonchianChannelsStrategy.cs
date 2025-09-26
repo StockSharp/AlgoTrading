@@ -475,7 +475,7 @@ public class DonchianChannelsStrategy : Strategy
 		ProcessHigherCandleInternal(candle, donchianValue, momentumValue, macdValue);
 	}
 
-	private void ProcessHigherCandleInternal(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue momentumValue, IIndicatorValue? macdValue)
+	private void ProcessHigherCandleInternal(ICandleMessage candle, IIndicatorValue donchianValue, IIndicatorValue momentumValue, IIndicatorValue macdValue)
 	{
 		if (candle.State != CandleStates.Finished)
 		return;

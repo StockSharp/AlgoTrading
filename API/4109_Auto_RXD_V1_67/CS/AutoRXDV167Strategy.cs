@@ -619,7 +619,7 @@ LongMa = { Length = _macdSlow.Value }
 		var steps = decimal.Divide(distance, priceStep);
 		return (int)Math.Round(steps, MidpointRounding.AwayFromZero);
 	}
-	private bool AreFiltersSatisfied(Sides direction, decimal? rsi, decimal? cci, MovingAverageConvergenceDivergenceValue? macd, AverageDirectionalIndexValue? adx)
+	private bool AreFiltersSatisfied(Sides direction, decimal? rsi, decimal? cci, MovingAverageConvergenceDivergenceValue macd, AverageDirectionalIndexValue adx)
 	{
 		if (_useRsiFilter.Value)
 		{

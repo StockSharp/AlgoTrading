@@ -24,7 +24,7 @@ public class CountOrdersStrategy : Strategy
 	private readonly HashSet<Order> _activeBuyOrders = new();
 	private readonly HashSet<Order> _activeSellOrders = new();
 
-	private CancellationTokenSource? _orderCts;
+	private CancellationTokenSource _orderCts;
 
 	/// <summary>
 	/// Magic number assigned to the sample orders (mapped to <see cref="Order.UserOrderId"/>).

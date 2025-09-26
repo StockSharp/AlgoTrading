@@ -47,7 +47,7 @@ public class AvalancheStrategy : Strategy
 		["USDJPY"] = Sides.Buy,
 	};
 
-	private SMA? _erpSma;
+	private SMA _erpSma;
 	private decimal? _currentErp;
 	private decimal _pipSize;
 	private ErpPosition _erpPosition;

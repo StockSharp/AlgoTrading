@@ -21,7 +21,7 @@ public class AmlRsiMeetingLinesStrategy : Strategy
 	private readonly StrategyParam<decimal> _lowerExitLevel;
 	private readonly StrategyParam<decimal> _upperExitLevel;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 	private SimpleMovingAverage _bodyAverage;
 
 	private ICandleMessage _previousCandle;

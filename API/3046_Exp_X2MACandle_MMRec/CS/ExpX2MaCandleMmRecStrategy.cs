@@ -38,7 +38,7 @@ public class ExpX2MaCandleMmRecStrategy : Strategy
 	private readonly TradeHistory _sellHistory = new();
 	private readonly List<int> _colorHistory = new();
 
-	private ActiveTrade? _activeTrade;
+	private ActiveTrade _activeTrade;
 	private DateTimeOffset? _lastLongSignalTime;
 	private DateTimeOffset? _lastShortSignalTime;
 

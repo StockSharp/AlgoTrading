@@ -27,7 +27,7 @@ public class CheckOpenOrdersStrategy : Strategy
 	private readonly StrategyParam<int> _waitTimeMilliseconds;
 	private readonly StrategyParam<CheckOpenOrdersMode> _mode;
 
-	private CancellationTokenSource? _ordersCts;
+	private CancellationTokenSource _ordersCts;
 	private string _modeDescription = string.Empty;
 	private string _orderTypesDescription = string.Empty;
 	private string _lastStatusMessage;

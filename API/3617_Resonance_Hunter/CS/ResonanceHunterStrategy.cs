@@ -25,9 +25,9 @@ public class ResonanceHunterStrategy : Strategy
 
 		public StrategyParam<Security> SecurityParam { get; }
 
-		public Security? Security => SecurityParam.Value;
+		public Security Security => SecurityParam.Value;
 
-		public StochasticOscillator? Stochastic { get; set; }
+		public StochasticOscillator Stochastic { get; set; }
 		public DateTimeOffset? LastTime { get; set; }
 		public decimal? LastK { get; set; }
 		public decimal? LastD { get; set; }

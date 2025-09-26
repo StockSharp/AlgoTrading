@@ -451,7 +451,7 @@ public class BollingerBandSqueezeStrategy : Strategy
 		}
 	}
 
-	private DataType? GetHigherCandleType()
+	private DataType GetHigherCandleType()
 	{
 		if (CandleType.Arg is not TimeSpan baseSpan)
 		{

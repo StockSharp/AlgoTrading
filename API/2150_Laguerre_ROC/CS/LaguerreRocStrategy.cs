@@ -21,7 +21,7 @@ public class LaguerreRocStrategy : Strategy
 	private readonly StrategyParam<decimal> _downLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RateOfChange? _roc;
+	private RateOfChange _roc;
 	private decimal _l0;
 	private decimal _l1;
 	private decimal _l2;

@@ -27,8 +27,8 @@ public class BandOsMaStrategy : Strategy
 	private readonly StrategyParam<int> _maShift;
 	private readonly StrategyParam<MovingAverageMethod> _maMethod;
 
-	private MovingAverageConvergenceDivergenceSignal? _macd;
-	private BollingerBands? _bollinger;
+	private MovingAverageConvergenceDivergenceSignal _macd;
+	private BollingerBands _bollinger;
 	private IIndicator _osmaAverage;
 
 	private readonly List<decimal> _osmaHistory = new();

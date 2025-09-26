@@ -32,8 +32,8 @@ public class AdxMacdDeevStrategy : Strategy
 	private readonly StrategyParam<int> _macdMinimumPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal? _macd;
-	private AverageDirectionalIndex? _adx;
+	private MovingAverageConvergenceDivergenceSignal _macd;
+	private AverageDirectionalIndex _adx;
 
 	private decimal[] _macdMainHistory = Array.Empty<decimal>();
 	private decimal[] _macdSignalHistory = Array.Empty<decimal>();

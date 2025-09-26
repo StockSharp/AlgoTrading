@@ -23,7 +23,7 @@ public class DailyRangeStrategy : Strategy
 
 	private readonly LinkedList<DayRangeStats> _recentDays = new();
 
-	private DayRangeStats? _currentDayStats;
+	private DayRangeStats _currentDayStats;
 	private bool _rangeCalculatedForDay;
 	private decimal? _upperBoundary;
 	private decimal? _lowerBoundary;

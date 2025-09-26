@@ -370,7 +370,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 		if (SecurityProvider == null)
 			return null;
 
-		Security? security = null;
+		Security security = null;
 		var board = BoardCode;
 		if (!string.IsNullOrWhiteSpace(board))
 		{
@@ -394,7 +394,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 
 		public string Name { get; }
 
-		public Security? CurrentSecurity { get; set; }
+		public Security CurrentSecurity { get; set; }
 
 		public bool IsRolling { get; set; }
 

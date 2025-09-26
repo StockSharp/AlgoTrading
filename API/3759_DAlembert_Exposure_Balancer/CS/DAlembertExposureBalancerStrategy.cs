@@ -266,7 +266,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		}
 	}
 
-	private void CreateState(Security? security, SymbolBias bias)
+	private void CreateState(Security security, SymbolBias bias)
 	{
 		if (security == null)
 		return;

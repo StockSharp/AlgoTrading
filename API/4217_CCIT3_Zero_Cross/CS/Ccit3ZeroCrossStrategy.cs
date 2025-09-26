@@ -83,7 +83,7 @@ public class Ccit3ZeroCrossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _maxDrawdownTarget;
 
-	private CommodityChannelIndex? _cci;
+	private CommodityChannelIndex _cci;
 	private decimal _pointValue;
 	private decimal _alpha;
 	private decimal _beta;

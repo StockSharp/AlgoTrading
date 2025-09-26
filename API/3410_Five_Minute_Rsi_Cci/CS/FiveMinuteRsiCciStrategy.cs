@@ -29,11 +29,11 @@ public class FiveMinuteRsiCciStrategy : Strategy
 	private readonly StrategyParam<decimal> _equityDivisor;
 	private readonly StrategyParam<decimal> _maxSpreadPoints;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 	private SmoothedMovingAverage _fastSmma;
 	private ExponentialMovingAverage _slowEma;
-	private CommodityChannelIndex? _fastCci;
-	private CommodityChannelIndex? _slowCci;
+	private CommodityChannelIndex _fastCci;
+	private CommodityChannelIndex _slowCci;
 	private decimal? _previousRsi;
 	private decimal _pointValue;
 	private decimal? _bestBid;

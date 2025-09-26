@@ -21,7 +21,7 @@ public class MovingAveragePriceCrossStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA? _sma;
+	private SMA _sma;
 	private decimal? _previousClose;
 	private decimal? _previousMa;
 	private decimal? _currentClose;

@@ -179,7 +179,7 @@ public class PositiveSwapInformerStrategy : Strategy
 		{
 			_watchedSecurities.Clear();
 
-			void AddSecurity(Security? sec)
+			void AddSecurity(Security sec)
 			{
 				if (sec == null)
 					return;
@@ -289,7 +289,7 @@ public class PositiveSwapInformerStrategy : Strategy
 		return (longSwap, shortSwap);
 	}
 
-	private static decimal? TryExtractFromExtensionInfo(IDictionary<object, object>? extensionInfo, HashSet<string> aliases)
+	private static decimal? TryExtractFromExtensionInfo(IDictionary<object, object> extensionInfo, HashSet<string> aliases)
 	{
 		if (extensionInfo == null)
 			return null;

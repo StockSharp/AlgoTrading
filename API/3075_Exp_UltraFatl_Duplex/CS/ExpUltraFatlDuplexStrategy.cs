@@ -50,8 +50,8 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortStopLossPoints;
 	private readonly StrategyParam<int> _shortTakeProfitPoints;
 
-	private UltraFatlContext? _longContext;
-	private UltraFatlContext? _shortContext;
+	private UltraFatlContext _longContext;
+	private UltraFatlContext _shortContext;
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 	private decimal _priceStep;
@@ -532,7 +532,7 @@ public class ExpUltraFatlDuplexStrategy : Strategy
 		private IndicatorBase<decimal>? _bearsSmoother;
 		private readonly List<UltraFatlSnapshot> _history = new();
 		private readonly FatlFilter _fatl = new();
-		private MarketDataSubscription? _subscription;
+		private MarketDataSubscription _subscription;
 
 		public UltraFatlContext(
 			ExpUltraFatlDuplexStrategy strategy,

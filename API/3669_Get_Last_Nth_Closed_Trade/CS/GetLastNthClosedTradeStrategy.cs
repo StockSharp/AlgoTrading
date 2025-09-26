@@ -64,8 +64,8 @@ public class GetLastNthClosedTradeStrategy : Strategy
 	private readonly StrategyParam<int> _tradeIndex;
 
 	private readonly List<ClosedTradeInfo> _closedTrades = new();
-	private PositionRecord? _openRecord;
-	private TradeDetail? _lastTrade;
+	private PositionRecord _openRecord;
+	private TradeDetail _lastTrade;
 	private decimal _previousPosition;
 
 	/// <summary>

@@ -38,11 +38,11 @@ public class NatusekoProtrader4HStrategy : Strategy
 	private ExponentialMovingAverage _fastEma;
 	private ExponentialMovingAverage _slowEma;
 	private ExponentialMovingAverage _trendEma;
-	private MovingAverageConvergenceDivergence? _macd;
-	private BollingerBands? _macdBands;
+	private MovingAverageConvergenceDivergence _macd;
+	private BollingerBands _macdBands;
 	private SimpleMovingAverage _macdSma;
-	private RelativeStrengthIndex? _rsi;
-	private ParabolicSar? _parabolicSar;
+	private RelativeStrengthIndex _rsi;
+	private ParabolicSar _parabolicSar;
 
 	private bool _waitingForLongEntry;
 	private bool _waitingForShortEntry;

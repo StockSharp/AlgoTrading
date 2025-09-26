@@ -413,7 +413,7 @@ public class ReadNewsByWebRequestStrategy : Strategy
 		}
 	}
 
-	private NewsEvent? FindExistingEvent(string title, DateTimeOffset release)
+	private NewsEvent FindExistingEvent(string title, DateTimeOffset release)
 	{
 		for (var i = 0; i < _newsEvents.Count; i++)
 		{

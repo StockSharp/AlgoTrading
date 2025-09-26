@@ -30,8 +30,8 @@ public class BandOsMaCustomStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _orderVolume;
 
-	private MovingAverageConvergenceDivergenceHistogram? _osma;
-	private BollingerBands? _osmaBands;
+	private MovingAverageConvergenceDivergenceHistogram _osma;
+	private BollingerBands _osmaBands;
 	private LengthIndicator<decimal> _osmaAverage;
 
 	private readonly List<decimal> _osmaHistory = new();

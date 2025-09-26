@@ -29,7 +29,7 @@ public class ExpAfirmaStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 
 	private readonly List<decimal> _armaHistory = new();
-	private AfirmaIndicator? _indicator;
+	private AfirmaIndicator _indicator;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="ExpAfirmaStrategy"/>.

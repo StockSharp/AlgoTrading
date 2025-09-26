@@ -24,7 +24,7 @@ public class MorningEveningStochasticStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortExitLevel;
 	private readonly StrategyParam<decimal> _longExitLevel;
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 	private SimpleMovingAverage _bodyAverage;
 
 	private ICandleMessage _previousCandle;

@@ -594,7 +594,7 @@ public class AmaTraderV21Strategy : Strategy
 			_power = power;
 		}
 
-		public AmaResult? Process(decimal close, DateTimeOffset time, bool isFinal)
+		public AmaResult Process(decimal close, DateTimeOffset time, bool isFinal)
 		{
 			_closes.Enqueue(close);
 			if (_closes.Count > _length + 1)

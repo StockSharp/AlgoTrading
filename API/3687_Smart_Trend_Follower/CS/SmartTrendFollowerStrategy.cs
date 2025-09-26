@@ -27,9 +27,9 @@ public class SmartTrendFollowerStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 
-	private SMA? _fastSma;
-	private SMA? _slowSma;
-	private StochasticOscillator? _stochastic;
+	private SMA _fastSma;
+	private SMA _slowSma;
+	private StochasticOscillator _stochastic;
 
 	private readonly List<PositionEntry> _longEntries = new();
 	private readonly List<PositionEntry> _shortEntries = new();

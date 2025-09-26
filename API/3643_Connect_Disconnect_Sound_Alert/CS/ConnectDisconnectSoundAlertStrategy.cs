@@ -13,7 +13,7 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 	private readonly StrategyParam<int> _checkIntervalSeconds;
 	private readonly StrategyParam<bool> _logDurations;
 
-	private Timer? _timer;
+	private Timer _timer;
 	private bool? _previousState;
 	private bool _isFirstNotification;
 	private DateTimeOffset? _lastConnectionMoment;

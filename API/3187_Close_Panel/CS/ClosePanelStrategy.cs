@@ -153,7 +153,7 @@ public class ClosePanelStrategy : Strategy
 	{
 		var exposures = new Dictionary<Security, decimal>();
 
-		void AddExposure(Security? security, decimal volume)
+		void AddExposure(Security security, decimal volume)
 		{
 			if (security == null || volume == 0m)
 				return;

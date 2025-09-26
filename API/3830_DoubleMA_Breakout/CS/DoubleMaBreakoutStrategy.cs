@@ -34,8 +34,8 @@ public class DoubleMaBreakoutStrategy : Strategy
 
 	private LengthIndicator<decimal> _fastMa;
 	private LengthIndicator<decimal> _slowMa;
-	private LinearRegression? _fastLsma;
-	private LinearRegression? _slowLsma;
+	private LinearRegression _fastLsma;
+	private LinearRegression _slowLsma;
 	private readonly Queue<decimal> _fastHistory = new();
 	private readonly Queue<decimal> _slowHistory = new();
 	private decimal _priceStep;

@@ -30,8 +30,8 @@ public class ExpTrendMagicStrategy : Strategy
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<int> _signalBar;
 
-	private CommodityChannelIndex? _cci;
-	private AverageTrueRange? _atr;
+	private CommodityChannelIndex _cci;
+	private AverageTrueRange _atr;
 	private readonly List<int> _colorHistory = new();
 	private decimal? _previousTrendMagicValue;
 	private decimal? _entryPrice;
@@ -278,21 +278,21 @@ public class ExpTrendMagicStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle, IIndicatorValue atrValue)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		var cci = _cci;
 		var atr = _atr;
 		if (cci == null || atr == null)
-		return;
+			return;
 
 		if (!atrValue.IsFinal)
-		return;
+			return;
 
 		var price = GetAppliedPrice(candle, CciPrice);
 		var cciIndicatorValue = cci.Process(price, candle.OpenTime, true);
 
 		if (!cci.IsFormed || !atr.IsFormed)
-		return;
+			return;
 
 		var atrDecimal = atrValue.ToDecimal();
 		var cciDecimal = cciIndicatorValue.ToDecimal();
@@ -307,7 +307,7 @@ public class ExpTrendMagicStrategy : Strategy
 
 		var maxHistory = Math.Max(2, SignalBar + 2);
 		if (_colorHistory.Count > maxHistory)
-		_colorHistory.RemoveRange(maxHistory, _colorHistory.Count - maxHistory);
+			_colorHistory.RemoveRange(maxHistory, _colorHistory.Count - maxHistory);
 
 		if (_colorHistory.Count <= SignalBar + 1)
 		{
@@ -323,16 +323,16 @@ public class ExpTrendMagicStrategy : Strategy
 			BuyMarket(Math.Abs(Position));
 			_entryPrice = null;
 		}
-	else if (older == 1 && AllowBuyExit && Position > 0m)
+		else if (older == 1 && AllowBuyExit && Position > 0m)
 		{
 			SellMarket(Position);
 			_entryPrice = null;
 		}
 
 		if (older == 0 && recent == 1 && AllowBuyEntry)
-		TryEnterLong(candle);
-	else if (older == 1 && recent == 0 && AllowSellEntry)
-		TryEnterShort(candle);
+			TryEnterLong(candle);
+		else if (older == 1 && recent == 0 && AllowSellEntry)
+			TryEnterShort(candle);
 
 		ManageRisk(candle);
 	}
@@ -340,14 +340,14 @@ public class ExpTrendMagicStrategy : Strategy
 	private void TryEnterLong(ICandleMessage candle)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		if (_nextLongTradeAllowed.HasValue && candle.OpenTime < _nextLongTradeAllowed.Value)
-		return;
+			return;
 
 		var volume = CalculateOrderVolume(candle.ClosePrice);
 		if (volume <= 0m)
-		return;
+			return;
 
 		if (Position < 0m)
 		{
@@ -365,14 +365,14 @@ public class ExpTrendMagicStrategy : Strategy
 	private void TryEnterShort(ICandleMessage candle)
 	{
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		if (_nextShortTradeAllowed.HasValue && candle.OpenTime < _nextShortTradeAllowed.Value)
-		return;
+			return;
 
 		var volume = CalculateOrderVolume(candle.ClosePrice);
 		if (volume <= 0m)
-		return;
+			return;
 
 		if (Position > 0m)
 		{
@@ -390,11 +390,11 @@ public class ExpTrendMagicStrategy : Strategy
 	private void ManageRisk(ICandleMessage candle)
 	{
 		if (Position == 0m || _entryPrice is null)
-		return;
+			return;
 
 		var step = Security?.PriceStep ?? 0m;
 		if (step <= 0m)
-		step = 1m;
+			step = 1m;
 
 		if (Position > 0m)
 		{
@@ -419,7 +419,7 @@ public class ExpTrendMagicStrategy : Strategy
 				}
 			}
 		}
-	else if (Position < 0m)
+		else if (Position < 0m)
 		{
 			if (StopLossPoints > 0m)
 			{
@@ -454,14 +454,14 @@ public class ExpTrendMagicStrategy : Strategy
 		{
 			trendMagic = candle.LowPrice - atrValue;
 			if (previous.HasValue && trendMagic < previous.Value)
-			trendMagic = previous.Value;
+				trendMagic = previous.Value;
 			color = 0;
 		}
-	else
+		else
 		{
 			trendMagic = candle.HighPrice + atrValue;
 			if (previous.HasValue && trendMagic > previous.Value)
-			trendMagic = previous.Value;
+				trendMagic = previous.Value;
 			color = 1;
 		}
 
@@ -473,53 +473,53 @@ public class ExpTrendMagicStrategy : Strategy
 	{
 		var mm = MoneyManagement;
 		if (mm == 0m)
-		return NormalizeVolume(Volume);
+			return NormalizeVolume(Volume);
 
 		if (mm < 0m)
-		return NormalizeVolume(Math.Abs(mm));
+			return NormalizeVolume(Math.Abs(mm));
 
 		var security = Security;
 		var portfolio = Portfolio;
 		if (security == null || portfolio == null || price <= 0m)
-		return NormalizeVolume(Volume);
+			return NormalizeVolume(Volume);
 
 		var capital = portfolio.CurrentValue ?? portfolio.BeginValue ?? 0m;
 		if (capital <= 0m)
-		return NormalizeVolume(Volume);
+			return NormalizeVolume(Volume);
 
 		decimal volume;
 
 		switch (MarginMode)
 		{
-		case MarginModeOption.FreeMargin:
-		case MarginModeOption.Balance:
+			case MarginModeOption.FreeMargin:
+			case MarginModeOption.Balance:
 			{
 				var amount = capital * mm;
 				volume = amount / price;
 				break;
 			}
-		case MarginModeOption.LossFreeMargin:
-		case MarginModeOption.LossBalance:
+			case MarginModeOption.LossFreeMargin:
+			case MarginModeOption.LossBalance:
 			{
 				if (StopLossPoints <= 0m)
-				return NormalizeVolume(Volume);
+					return NormalizeVolume(Volume);
 
 				var step = security.PriceStep ?? 0m;
 				if (step <= 0m)
-				return NormalizeVolume(Volume);
+					return NormalizeVolume(Volume);
 
 				var riskPerContract = StopLossPoints * step;
 				if (riskPerContract <= 0m)
-				return NormalizeVolume(Volume);
+					return NormalizeVolume(Volume);
 
 				var lossAmount = capital * mm;
 				volume = lossAmount / riskPerContract;
 				break;
 			}
-		case MarginModeOption.Lot:
-		default:
-			volume = mm;
-			break;
+			case MarginModeOption.Lot:
+			default:
+				volume = mm;
+				break;
 		}
 
 		return NormalizeVolume(volume);
@@ -529,7 +529,7 @@ public class ExpTrendMagicStrategy : Strategy
 	{
 		var security = Security;
 		if (security == null)
-		return volume;
+			return volume;
 
 		var step = security.VolumeStep ?? 0m;
 		if (step > 0m)
@@ -540,11 +540,11 @@ public class ExpTrendMagicStrategy : Strategy
 
 		var minVolume = security.MinVolume ?? 0m;
 		if (minVolume > 0m && volume < minVolume)
-		volume = minVolume;
+			volume = minVolume;
 
 		var maxVolume = security.MaxVolume ?? 0m;
 		if (maxVolume > 0m && volume > maxVolume)
-		volume = maxVolume;
+			volume = maxVolume;
 
 		return volume;
 	}

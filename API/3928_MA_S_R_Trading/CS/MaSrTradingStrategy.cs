@@ -22,8 +22,8 @@ public class MaSrTradingStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma;
-	private Highest? _highestHigh;
-	private Lowest? _lowestLow;
+	private Highest _highestHigh;
+	private Lowest _lowestLow;
 
 	private decimal? _smaPrev1;
 	private decimal? _smaPrev2;

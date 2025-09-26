@@ -23,8 +23,8 @@ public class MacrossStrategy : Strategy
 	private readonly StrategyParam<decimal> _minEquity;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA? _fastMa;
-	private SMA? _slowMa;
+	private SMA _fastMa;
+	private SMA _slowMa;
 	private decimal? _previousFast;
 	private decimal? _previousSlow;
 	private decimal? _entryPrice;

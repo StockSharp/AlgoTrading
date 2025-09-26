@@ -58,7 +58,7 @@ public class CloseAgentStrategy : Strategy
 	private const decimal RsiOverbought = 70m;
 	private const decimal RsiOversold = 30m;
 
-	private static readonly PropertyInfo? StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
+	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
 
 	private readonly StrategyParam<CloseAgentMode> _closeMode;
 	private readonly StrategyParam<DataType> _candleType;
@@ -66,8 +66,8 @@ public class CloseAgentStrategy : Strategy
 	private readonly StrategyParam<decimal> _closeAllTarget;
 	private readonly StrategyParam<bool> _enableAlerts;
 
-	private RelativeStrengthIndex? _rsi;
-	private BollingerBands? _bands;
+	private RelativeStrengthIndex _rsi;
+	private BollingerBands _bands;
 	private readonly Queue<(DateTimeOffset time, decimal close, decimal rsi, decimal upper, decimal lower)> _history = new();
 	private decimal _bestBid;
 	private decimal _bestAsk;

@@ -20,7 +20,7 @@ public class RsiAlertStrategy : Strategy
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 
 	/// <summary>
 	/// Order volume used for market trades.

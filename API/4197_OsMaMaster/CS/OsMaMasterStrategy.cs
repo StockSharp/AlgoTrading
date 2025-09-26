@@ -24,7 +24,7 @@ public class OsMaMasterStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 
-	private MovingAverageConvergenceDivergence? _macd;
+	private MovingAverageConvergenceDivergence _macd;
 	private decimal?[] _osmaHistory = Array.Empty<decimal?>();
 	private int _historyCount;
 

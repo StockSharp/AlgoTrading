@@ -341,7 +341,7 @@ public class ExpXFisherOrgV1Strategy : Strategy
 /// </summary>
 public sealed class XFisherOrgIndicator : Indicator<ICandleMessage>
 {
-	private static readonly PropertyInfo? JurikPhaseProperty = typeof(JurikMovingAverage).GetProperty("Phase");
+	private static readonly PropertyInfo JurikPhaseProperty = typeof(JurikMovingAverage).GetProperty("Phase");
 
 	private readonly Highest _highest = new();
 	private readonly Lowest _lowest = new();

@@ -21,7 +21,7 @@ public class BasicRsiEaTemplateStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _orderVolume;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 
 	/// <summary>
 	/// Candle type and timeframe used for analysis.

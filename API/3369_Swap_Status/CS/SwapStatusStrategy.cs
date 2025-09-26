@@ -148,7 +148,7 @@ public class SwapStatusStrategy : Strategy
 		_monitoredSecurities.Clear();
 		_swapBySecurity.Clear();
 
-		void AddSecurity(Security? security)
+		void AddSecurity(Security security)
 		{
 			if (security == null)
 				return;

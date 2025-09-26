@@ -30,7 +30,8 @@ public class ExpBlauHlmStrategy : Strategy
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
 	
-	private BlauHlmCalculator? _calculator;
+	private BlauHlmCalculator _calculator;
+
 	/// <summary>
 	/// Enumeration of available smoothing techniques.
 	/// Unsupported options from the original library fall back to EMA.

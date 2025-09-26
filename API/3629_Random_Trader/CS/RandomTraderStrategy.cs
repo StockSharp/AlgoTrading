@@ -26,7 +26,7 @@ public class RandomTraderStrategy : Strategy
 
 	private readonly AverageTrueRange _atr = new() { Length = 10 };
 
-	private Random? _random;
+	private Random _random;
 	private decimal _pipSize;
 	private bool _breakevenActivated;
 	private Sides? _pendingSide;

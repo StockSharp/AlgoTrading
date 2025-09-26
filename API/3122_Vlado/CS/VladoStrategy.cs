@@ -21,7 +21,7 @@ public class VladoStrategy : Strategy
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private WilliamsR? _williams;
+	private WilliamsR _williams;
 
 	/// <summary>
 	/// Number of candles used to calculate Williams %R.

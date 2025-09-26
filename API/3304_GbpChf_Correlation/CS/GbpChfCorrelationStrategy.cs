@@ -29,8 +29,8 @@ public class GbpChfCorrelationStrategy : Strategy
 	private Security _gbpUsdSecurity;
 	private Security _usdChfSecurity;
 
-	private MovingAverageConvergenceDivergenceSignal? _gbpUsdMacd;
-	private MovingAverageConvergenceDivergenceSignal? _usdChfMacd;
+	private MovingAverageConvergenceDivergenceSignal _gbpUsdMacd;
+	private MovingAverageConvergenceDivergenceSignal _usdChfMacd;
 
 	private decimal? _gbpUsdHistogram;
 	private decimal? _usdChfHistogram;

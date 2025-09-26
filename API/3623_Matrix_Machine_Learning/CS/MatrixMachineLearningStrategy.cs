@@ -25,7 +25,7 @@ public class MatrixMachineLearningStrategy : Strategy
 
 	private readonly List<decimal> _closes = new();
 
-	private double[,]? _weights;
+	private double[,] _weights;
 
 	/// <summary>
 	/// Number of most recent candle closes used for training.

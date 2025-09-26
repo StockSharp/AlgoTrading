@@ -307,7 +307,7 @@ public class CyberiaTraderAiStrategy : Strategy
 		}
 
 		// Respect indicator readiness when the corresponding filter is enabled.
-		MovingAverageConvergenceDivergenceSignalValue? macdSignal = null;
+		MovingAverageConvergenceDivergenceSignalValue macdSignal = null;
 		if (macdValue.IsFinal)
 		{
 			if (macdValue is MovingAverageConvergenceDivergenceSignalValue macdData)
@@ -434,7 +434,7 @@ public class CyberiaTraderAiStrategy : Strategy
 		}
 	}
 
-	private DirectionFlags CalculateDirection(decimal? emaValue, MovingAverageConvergenceDivergenceSignalValue? macdValue)
+	private DirectionFlags CalculateDirection(decimal? emaValue, MovingAverageConvergenceDivergenceSignalValue macdValue)
 	{
 		var stats = _currentStats;
 		var disableBuy = false;

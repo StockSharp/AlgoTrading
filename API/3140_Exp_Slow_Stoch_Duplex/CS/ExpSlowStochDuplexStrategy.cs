@@ -38,8 +38,8 @@ public class ExpSlowStochDuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 
-	private StochasticOscillator? _longStochastic;
-	private StochasticOscillator? _shortStochastic;
+	private StochasticOscillator _longStochastic;
+	private StochasticOscillator _shortStochastic;
 	private LengthIndicator<decimal> _longKSmoother;
 	private LengthIndicator<decimal> _longDSmoother;
 	private LengthIndicator<decimal> _shortKSmoother;

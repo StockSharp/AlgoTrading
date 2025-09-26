@@ -376,6 +376,6 @@ public class MultiHedgingSchedulerStrategy : Strategy
 		public required StrategyParam<bool> Enabled { get; init; }
 		public required StrategyParam<string> Symbol { get; init; }
 		public required StrategyParam<decimal> Volume { get; init; }
-		public Security? Security { get; set; }
+		public Security Security { get; set; }
 	}
 }

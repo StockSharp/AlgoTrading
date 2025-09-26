@@ -21,7 +21,7 @@ public class HpcsInter6RsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _offsetInPips;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 	private decimal? _previousRsi;
 	private DateTimeOffset? _lastSignalTime;
 	private decimal? _targetPrice;

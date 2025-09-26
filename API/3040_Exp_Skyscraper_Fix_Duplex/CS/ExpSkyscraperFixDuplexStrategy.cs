@@ -32,8 +32,8 @@ public class ExpSkyscraperFixDuplexStrategy : Strategy
 	private readonly StrategyParam<SkyscraperCalculationMode> _shortMode;
 	private readonly StrategyParam<int> _shortSignalBar;
 
-	private SkyscraperFixIndicator? _longIndicator;
-	private SkyscraperFixIndicator? _shortIndicator;
+	private SkyscraperFixIndicator _longIndicator;
+	private SkyscraperFixIndicator _shortIndicator;
 
 	private readonly Queue<SkyscraperSignal> _longSignals = new();
 	private readonly Queue<SkyscraperSignal> _shortSignals = new();

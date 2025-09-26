@@ -36,8 +36,8 @@ public class PendulumStrategy : Strategy
 	private decimal _initialEquity;
 	private decimal _takeProfitMoney;
 	private decimal _stopLossMoney;
-	private IMarketDataSubscription? _tradingSubscription;
-	private IMarketDataSubscription? _dailySubscription;
+	private IMarketDataSubscription _tradingSubscription;
+	private IMarketDataSubscription _dailySubscription;
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.

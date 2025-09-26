@@ -17,7 +17,7 @@ public class AdxSystemStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 
-	private AverageDirectionalIndex? _adx;
+	private AverageDirectionalIndex _adx;
 
 	private decimal? _prevAdx;
 	private decimal? _prevPrevAdx;

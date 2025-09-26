@@ -141,9 +141,9 @@ public class ExpICustomStrategy : Strategy
 	private readonly StrategyParam<int> _trailingIndentPoints;
 	private readonly StrategyParam<int> _trailingProfitLockPoints;
 
-	private IndicatorState? _entryIndicatorState;
-	private IndicatorState? _closeIndicatorState;
-	private IndicatorState? _trailingIndicatorState;
+	private IndicatorState _entryIndicatorState;
+	private IndicatorState _closeIndicatorState;
+	private IndicatorState _trailingIndicatorState;
 
 	private DateTimeOffset? _lastBuyBarTime;
 	private DateTimeOffset? _lastSellBarTime;
@@ -827,7 +827,7 @@ public class ExpICustomStrategy : Strategy
 		UpdateRiskManagement(candle);
 	}
 
-	private void ProcessIndicatorState(IndicatorState? state, ICandleMessage candle, Func<ICandleMessage, decimal> priceSelector, HashSet<IndicatorState> processed)
+	private void ProcessIndicatorState(IndicatorState state, ICandleMessage candle, Func<ICandleMessage, decimal> priceSelector, HashSet<IndicatorState> processed)
 	{
 		if (state == null)
 		return;

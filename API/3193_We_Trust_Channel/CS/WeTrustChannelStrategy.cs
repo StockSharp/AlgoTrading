@@ -32,7 +32,7 @@ public class WeTrustChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private LinearWeightedMovingAverage _movingAverage;
-	private StandardDeviation? _standardDeviation;
+	private StandardDeviation _standardDeviation;
 	private readonly List<decimal> _maHistory = new();
 	private readonly List<decimal> _stdDevHistory = new();
 	private decimal _pipSize;

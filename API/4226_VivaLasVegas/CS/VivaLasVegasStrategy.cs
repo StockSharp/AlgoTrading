@@ -16,7 +16,7 @@ public class VivaLasVegasStrategy : Strategy
 	private readonly StrategyParam<int> _seed;
 
 	private Random _random = new();
-	private IMoneyManagement? _management;
+	private IMoneyManagement _management;
 	private decimal _previousPosition;
 	private decimal _lastRealizedPnL;
 	private bool _orderInFlight;

@@ -45,9 +45,9 @@ public class PerceptronMultStrategy : Strategy
 
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SymbolContext? _firstContext;
-	private SymbolContext? _secondContext;
-	private SymbolContext? _thirdContext;
+	private SymbolContext _firstContext;
+	private SymbolContext _secondContext;
+	private SymbolContext _thirdContext;
 
 	private sealed class SymbolContext
 	{
@@ -165,7 +165,7 @@ public class PerceptronMultStrategy : Strategy
 	/// <summary>
 	/// Primary security traded by the strategy.
 	/// </summary>
-	public Security? FirstSecurity
+	public Security FirstSecurity
 	{
 		get => _firstSecurity.Value;
 		set => _firstSecurity.Value = value;
@@ -174,7 +174,7 @@ public class PerceptronMultStrategy : Strategy
 	/// <summary>
 	/// Secondary security traded by the strategy.
 	/// </summary>
-	public Security? SecondSecurity
+	public Security SecondSecurity
 	{
 		get => _secondSecurity.Value;
 		set => _secondSecurity.Value = value;
@@ -183,7 +183,7 @@ public class PerceptronMultStrategy : Strategy
 	/// <summary>
 	/// Third security traded by the strategy.
 	/// </summary>
-	public Security? ThirdSecurity
+	public Security ThirdSecurity
 	{
 		get => _thirdSecurity.Value;
 		set => _thirdSecurity.Value = value;
@@ -441,7 +441,7 @@ public class PerceptronMultStrategy : Strategy
 		}
 	}
 
-	private SymbolContext? CreateContext(Security? security)
+	private SymbolContext CreateContext(Security security)
 	{
 		if (security is null)
 			return null;
@@ -450,7 +450,7 @@ public class PerceptronMultStrategy : Strategy
 		if (point <= 0m)
 			point = security.MinStep ?? 1m;
 
-	var context = new SymbolContext
+		var context = new SymbolContext
 		{
 			Ao = new AwesomeOscillator
 			{
@@ -484,7 +484,7 @@ public class PerceptronMultStrategy : Strategy
 		ProcessCandle(candle, _thirdContext, ThirdSecurity, ThirdOrderVolume, ThirdStopLossPoints, ThirdTakeProfitPoints, ThirdWeight1, ThirdWeight2, ThirdWeight3, ThirdWeight4);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, SymbolContext? context, Security? security, decimal orderVolume, decimal stopLossPoints, decimal takeProfitPoints, int weight1, int weight2, int weight3, int weight4)
+	private void ProcessCandle(ICandleMessage candle, SymbolContext? context, Security security, decimal orderVolume, decimal stopLossPoints, decimal takeProfitPoints, int weight1, int weight2, int weight3, int weight4)
 	{
 		if (context is null || security is null)
 			return;

@@ -28,8 +28,8 @@ public class TrendcaptureStrategy : Strategy
 	private int _desiredDirection;
 	private Order _stopOrder;
 	private Order _takeProfitOrder;
-	private ParabolicSar? _sar;
-	private AverageDirectionalIndex? _adx;
+	private ParabolicSar _sar;
+	private AverageDirectionalIndex _adx;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="TrendcaptureStrategy"/> class.

@@ -76,9 +76,9 @@ public enum CloseAllMode
 /// </summary>
 public class CloseAllControlStrategy : Strategy
 {
-	private static readonly PropertyInfo? PositionCommentProperty = typeof(Position).GetProperty("Comment");
-	private static readonly PropertyInfo? PositionStrategyIdProperty = typeof(Position).GetProperty("StrategyId");
-	private static readonly PropertyInfo? OrderStrategyIdProperty = typeof(Order).GetProperty("StrategyId");
+	private static readonly PropertyInfo PositionCommentProperty = typeof(Position).GetProperty("Comment");
+	private static readonly PropertyInfo PositionStrategyIdProperty = typeof(Position).GetProperty("StrategyId");
+	private static readonly PropertyInfo OrderStrategyIdProperty = typeof(Order).GetProperty("StrategyId");
 
 	private readonly StrategyParam<string> _orderComment;
 	private readonly StrategyParam<CloseAllMode> _mode;
@@ -303,7 +303,7 @@ public class CloseAllControlStrategy : Strategy
 		return comment.Trim().IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
 	}
 
-	private bool MatchesCurrency(Security? security, bool requireCurrency)
+	private bool MatchesCurrency(Security security, bool requireCurrency)
 	{
 		var filter = (CurrencyId ?? string.Empty).Trim();
 

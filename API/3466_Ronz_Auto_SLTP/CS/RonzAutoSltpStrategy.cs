@@ -346,7 +346,7 @@ public class RonzAutoSltpStrategy : Strategy
 		}
 	}
 
-	private void EvaluateSecurity(Security? security)
+	private void EvaluateSecurity(Security security)
 	{
 		if (security == null)
 		{
@@ -364,7 +364,7 @@ public class RonzAutoSltpStrategy : Strategy
 	}
 
 	// Core routine that evaluates stops, takes, and trailing logic for a single security.
-	private void EvaluateSingleSecurity(Position? position, Security security)
+	private void EvaluateSingleSecurity(Position position, Security security)
 	{
 		if (!_securityStates.TryGetValue(security, out var state))
 		return;

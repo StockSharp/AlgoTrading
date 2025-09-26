@@ -75,7 +75,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 	/// <summary>
 	/// Optional security that provides external reference prices.
 	/// </summary>
-	public Security? LeadSecurity
+	public Security LeadSecurity
 	{
 		get => _leadSecurityParam.Value;
 		set => _leadSecurityParam.Value = value;

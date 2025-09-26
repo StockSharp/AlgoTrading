@@ -23,7 +23,7 @@ public class MovingAverageMartingaleStrategy : Strategy
 	private readonly StrategyParam<decimal> _targetMultiplier;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA? _sma;
+	private SMA _sma;
 	private decimal? _previousClose;
 	private decimal? _previousMa;
 	private decimal? _currentClose;

@@ -26,7 +26,7 @@ public class AbeBeStochStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 	private ICandleMessage _previousCandle;
 	private decimal? _previousSignal;
 

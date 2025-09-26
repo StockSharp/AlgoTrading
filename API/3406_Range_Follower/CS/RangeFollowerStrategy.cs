@@ -19,8 +19,8 @@ public class RangeFollowerStrategy : Strategy
 	private readonly StrategyParam<int> _triggerPercent;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private Subscription? _dailySubscription;
-	private Subscription? _intradaySubscription;
+	private Subscription _dailySubscription;
+	private Subscription _intradaySubscription;
 
 	private AverageTrueRange _dailyAtrIndicator = null!;
 

@@ -22,7 +22,7 @@ public class ForexSkyStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergence? _macd;
+	private MovingAverageConvergenceDivergence _macd;
 	private decimal? _macdPrev1;
 	private decimal? _macdPrev2;
 	private decimal? _macdPrev3;

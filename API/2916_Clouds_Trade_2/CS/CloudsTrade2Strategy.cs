@@ -27,7 +27,7 @@ public class CloudsTrade2Strategy : Strategy
 	private readonly StrategyParam<int> _slowingPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 
 	private decimal _priorK;
 	private decimal _priorD;

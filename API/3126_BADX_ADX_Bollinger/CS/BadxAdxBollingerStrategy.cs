@@ -27,8 +27,8 @@ public class BadxAdxBollingerStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<decimal> _trailingStepPips;
 
-	private AverageDirectionalIndex? _adx;
-	private BollingerBands? _bollinger;
+	private AverageDirectionalIndex _adx;
+	private BollingerBands _bollinger;
 	private decimal _pipSize;
 
 	/// <summary>

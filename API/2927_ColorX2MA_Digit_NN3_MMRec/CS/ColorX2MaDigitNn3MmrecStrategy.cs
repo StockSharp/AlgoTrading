@@ -144,8 +144,8 @@ public class ColorX2MaDigitNn3MmrecStrategy : Strategy
 		private readonly StrategyParam<bool> _allowShortExit;
 		private readonly StrategyParam<decimal> _volume;
 
-		private Subscription? _subscription;
-		private ColorX2MaDigitIndicator? _indicator;
+		private Subscription _subscription;
+		private ColorX2MaDigitIndicator _indicator;
 		private TrendDirection _pendingDirection = TrendDirection.None;
 		private int _pendingCount;
 

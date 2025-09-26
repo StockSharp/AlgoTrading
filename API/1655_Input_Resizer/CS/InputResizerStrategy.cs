@@ -27,7 +27,7 @@ public class InputResizerStrategy : Strategy
 	private readonly StrategyParam<bool> _weekendMode;
 
 	private readonly Dictionary<string, Rect> _sizes = new();
-	private CancellationTokenSource? _cts;
+	private CancellationTokenSource _cts;
 
 	/// <summary>
 	/// Save window size for next time.

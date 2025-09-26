@@ -37,10 +37,10 @@ public class FlatChannelStrategy : Strategy
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private StandardDeviation? _stdDev;
+	private StandardDeviation _stdDev;
 	private SimpleMovingAverage _stdDevSma;
-	private Highest? _highest;
-	private Lowest? _lowest;
+	private Highest _highest;
+	private Lowest _lowest;
 
 	private decimal _pipSize;
 	private decimal? _lastStdValue;

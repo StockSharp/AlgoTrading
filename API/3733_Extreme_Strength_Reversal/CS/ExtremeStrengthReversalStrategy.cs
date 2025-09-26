@@ -25,8 +25,8 @@ public class ExtremeStrengthReversalStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiOversold;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands? _bollinger;
-	private RelativeStrengthIndex? _rsi;
+	private BollingerBands _bollinger;
+	private RelativeStrengthIndex _rsi;
 
 	private decimal? _stopLossPrice;
 	private decimal? _takeProfitPrice;

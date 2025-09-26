@@ -30,7 +30,7 @@ public class RnnProbabilityStrategy : Strategy
 	private readonly StrategyParam<decimal> _weight7;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 	private readonly List<decimal> _rsiHistory = new();
 	private decimal _pipSize;
 

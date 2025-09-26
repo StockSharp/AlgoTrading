@@ -42,7 +42,7 @@ private readonly StrategyParam<decimal> _trailingCushionPips;
 private readonly StrategyParam<bool> _useRiskFree;
 private readonly StrategyParam<decimal> _riskFreePips;
 
-private MovingAverageConvergenceDivergenceSignal? _macd;
+private MovingAverageConvergenceDivergenceSignal _macd;
 private decimal? _macdCurrent;
 private decimal? _macdPrevious;
 private decimal? _macdPrevPrev;

@@ -30,7 +30,7 @@ public class CenterOfGravityCandleStrategy : Strategy
 	private readonly StrategyParam<CenterOfGravityMaMethod> _maMethod;
 	private readonly StrategyParam<int> _signalBar;
 
-	private CenterOfGravityCandleIndicator? _indicator;
+	private CenterOfGravityCandleIndicator _indicator;
 	private readonly List<CenterOfGravityCandleColor> _colorHistory = new();
 
 	private decimal _point;

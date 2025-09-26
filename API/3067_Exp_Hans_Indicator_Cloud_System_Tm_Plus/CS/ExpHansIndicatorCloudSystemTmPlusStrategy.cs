@@ -35,7 +35,7 @@ public class ExpHansIndicatorCloudSystemTmPlusStrategy : Strategy
 	private readonly StrategyParam<int> _destinationTimeZone;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private DailySessionState? _dayState;
+	private DailySessionState _dayState;
 	private readonly List<int> _colorHistory = new();
 	private decimal? _stopPrice;
 	private decimal? _takePrice;

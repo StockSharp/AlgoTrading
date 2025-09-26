@@ -30,7 +30,7 @@ public class SlowStochasticModeStrategy : Strategy
 	private readonly List<decimal> _kHistory = new();
 	private readonly List<decimal?> _dHistory = new();
 
-	private StochasticOscillator? _stochastic;
+	private StochasticOscillator _stochastic;
 
 	/// <summary>
 	/// Available signal calculation modes.

@@ -264,7 +264,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		}
 	}
 
-	private List<FatPanelConditionContext> BuildConditionList(List<FatPanelCondition>? source, Dictionary<FatPanelSignalDefinition, SignalContext> signals)
+	private List<FatPanelConditionContext> BuildConditionList(List<FatPanelCondition> source, Dictionary<FatPanelSignalDefinition, SignalContext> signals)
 	{
 		var result = new List<FatPanelConditionContext>();
 
@@ -695,10 +695,10 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		public OperatorType? Operator { get; init; }
 
 		[JsonPropertyName("left")]
-		public FatPanelSignalDefinition? Left { get; init; }
+		public FatPanelSignalDefinition Left { get; init; }
 
 		[JsonPropertyName("right")]
-		public FatPanelSignalDefinition? Right { get; init; }
+		public FatPanelSignalDefinition Right { get; init; }
 
 		[JsonPropertyName("threshold")]
 		public decimal? Threshold { get; init; }
@@ -713,7 +713,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		public string End { get; init; }
 
 		[JsonPropertyName("days")]
-		public List<string>? Days { get; init; }
+		public List<string> Days { get; init; }
 	}
 
 	private sealed record class FatPanelSignalDefinition

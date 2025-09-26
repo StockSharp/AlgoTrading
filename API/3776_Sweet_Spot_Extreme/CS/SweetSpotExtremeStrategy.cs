@@ -31,7 +31,7 @@ public class SweetSpotExtremeStrategy : Strategy
 
 	private ExponentialMovingAverage _trendMa;
 	private ExponentialMovingAverage _closeMa;
-	private CommodityChannelIndex? _cci;
+	private CommodityChannelIndex _cci;
 
 	private decimal? _previousTrendValue;
 	private decimal? _previousCloseMaValue;

@@ -24,8 +24,8 @@ public class ColorZerolagJjrsxStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _fastRsi;
-	private RelativeStrengthIndex? _slowRsi;
+	private RelativeStrengthIndex _fastRsi;
+	private RelativeStrengthIndex _slowRsi;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 

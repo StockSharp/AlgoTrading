@@ -48,8 +48,8 @@ public class SailSystemEaStrategy : Strategy
 
 	private readonly Dictionary<Order, PendingOrderInfo> _pendingOrders = new();
 
-	private PositionState? _longPosition;
-	private PositionState? _shortPosition;
+	private PositionState _longPosition;
+	private PositionState _shortPosition;
 
 	private decimal _pipValue;
 	private decimal _stopLossOffset;

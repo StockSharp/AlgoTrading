@@ -31,7 +31,7 @@ public class RsiEaV2Strategy : Strategy
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 	private decimal? _previousRsi;
 
 	private decimal _pipSize;

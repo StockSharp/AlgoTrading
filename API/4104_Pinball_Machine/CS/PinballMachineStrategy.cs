@@ -22,7 +22,7 @@ public class PinballMachineStrategy : Strategy
 	private readonly StrategyParam<int> _maxTakeProfitPoints;
 	private readonly StrategyParam<int> _randomSeed;
 
-	private Random? _random;
+	private Random _random;
 
 	/// <summary>
 	/// Trade size used for every random entry.

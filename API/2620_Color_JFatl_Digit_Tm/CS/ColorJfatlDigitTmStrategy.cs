@@ -59,7 +59,7 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		0.0040364019m,
 	];
 
-	private static readonly PropertyInfo? JurikPhaseProperty = typeof(JurikMovingAverage).GetProperty("Phase");
+	private static readonly PropertyInfo JurikPhaseProperty = typeof(JurikMovingAverage).GetProperty("Phase");
 
 	private readonly StrategyParam<decimal> _orderVolume;
 	private readonly StrategyParam<bool> _enableTimeFilter;

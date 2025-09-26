@@ -28,7 +28,7 @@ public class ExpertClor2MaStopAtrStrategy : Strategy
 
 	private LengthIndicator<decimal> _fastMa;
 	private LengthIndicator<decimal> _slowMa;
-	private AverageTrueRange? _atr;
+	private AverageTrueRange _atr;
 
 	private decimal? _fastPrev1;
 	private decimal? _fastPrev2;

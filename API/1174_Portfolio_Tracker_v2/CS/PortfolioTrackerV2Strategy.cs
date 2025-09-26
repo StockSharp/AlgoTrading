@@ -19,7 +19,7 @@ public class PortfolioTrackerV2Strategy : Strategy
 		public StrategyParam<string> Symbol { get; init; }
 		public StrategyParam<decimal> Quantity { get; init; }
 		public StrategyParam<decimal> Cost { get; init; }
-		public Security? Security { get; set; }
+		public Security Security { get; set; }
 		public decimal LastPrice;
 	}
 

@@ -22,10 +22,10 @@ public class ZigAndZagTraderStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 
-	private Lowest? _longTermLow;
-	private Highest? _longTermHigh;
-	private Lowest? _shortTermLow;
-	private Highest? _shortTermHigh;
+	private Lowest _longTermLow;
+	private Highest _longTermHigh;
+	private Lowest _shortTermLow;
+	private Highest _shortTermHigh;
 
 	private decimal _pipSize;
 	private decimal _volumeStep;

@@ -694,7 +694,7 @@ public class TrailingCloseManagerStrategy : Strategy
 		return AdjustVolume(volume, Security);
 	}
 
-	private decimal AdjustVolume(decimal volume, Security? security)
+	private decimal AdjustVolume(decimal volume, Security security)
 	{
 		if (security == null)
 			return volume;

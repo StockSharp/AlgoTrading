@@ -21,7 +21,7 @@ public class MaReverseStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SMA? _sma;
+	private SMA _sma;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="MaReverseStrategy"/> class.

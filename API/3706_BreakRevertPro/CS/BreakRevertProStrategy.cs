@@ -26,11 +26,11 @@ public class BreakRevertProStrategy : Strategy
 	private readonly StrategyParam<int> _safetyTradeIntervalSeconds;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ICandleManagerSubscription? _m1Subscription;
-	private ICandleManagerSubscription? _m15Subscription;
-	private ICandleManagerSubscription? _h1Subscription;
+	private ICandleManagerSubscription _m1Subscription;
+	private ICandleManagerSubscription _m15Subscription;
+	private ICandleManagerSubscription _h1Subscription;
 
-	private AverageTrueRange? _m1Atr;
+	private AverageTrueRange _m1Atr;
 	private SimpleMovingAverage _m1TrendAverage;
 	private SimpleMovingAverage _m15TrendAverage;
 	private SimpleMovingAverage _h1TrendAverage;

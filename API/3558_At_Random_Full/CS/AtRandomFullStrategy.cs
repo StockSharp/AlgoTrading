@@ -32,7 +32,7 @@ public class AtRandomFullStrategy : Strategy
 	private readonly StrategyParam<TradeMode> _tradeMode;
 	private readonly StrategyParam<int> _randomSeed;
 
-	private Random? _random;
+	private Random _random;
 	private decimal _priceStep;
 	private decimal _normalizedVolume;
 	private decimal _stopLossDistance;

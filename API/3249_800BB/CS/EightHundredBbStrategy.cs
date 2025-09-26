@@ -22,8 +22,8 @@ public class EightHundredBbStrategy : Strategy
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands? _bollinger;
-	private AverageTrueRange? _atr;
+	private BollingerBands _bollinger;
+	private AverageTrueRange _atr;
 
 	private decimal? _previousUpperBand;
 	private decimal? _previousLowerBand;

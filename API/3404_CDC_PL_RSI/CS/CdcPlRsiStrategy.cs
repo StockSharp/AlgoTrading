@@ -23,8 +23,8 @@ public class CdcPlRsiStrategy : Strategy
 	private SimpleMovingAverage _bodyAverage;
 	private SimpleMovingAverage _closeAverage;
 
-	private CandleSnapshot? _previous;
-	private CandleSnapshot? _previous2;
+	private CandleSnapshot _previous;
+	private CandleSnapshot _previous2;
 
 	private decimal _rsiPrevious;
 	private decimal _rsiPrevious2;

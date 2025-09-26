@@ -22,7 +22,7 @@ public class CciExpertStrategy : Strategy
 	private readonly StrategyParam<int> _cciPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CommodityChannelIndex? _cci;
+	private CommodityChannelIndex _cci;
 	private decimal? _previousCci;
 	private decimal? _previousPreviousCci;
 	private decimal? _bestBidPrice;

@@ -40,7 +40,7 @@ public class ComboRightStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private CCI? _cci;
+	private CCI _cci;
 
 	private decimal[] _openBuffer = Array.Empty<decimal>();
 	private int _barIndex;

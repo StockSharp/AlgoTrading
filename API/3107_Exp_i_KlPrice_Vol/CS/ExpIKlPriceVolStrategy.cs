@@ -41,7 +41,7 @@ public class ExpIKlPriceVolStrategy : Strategy
 	private readonly StrategyParam<int> _lowLevel2;
 	private readonly StrategyParam<int> _signalBar;
 
-	private KlPriceVolCalculator? _calculator;
+	private KlPriceVolCalculator _calculator;
 
 	private readonly List<ColorSample> _colorHistory = new();
 

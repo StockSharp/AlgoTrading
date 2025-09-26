@@ -27,9 +27,9 @@ public class EmaLwmaRsiStrategy : Strategy
 
 	private ExponentialMovingAverage _ema;
 	private WeightedMovingAverage _lwma;
-	private RelativeStrengthIndex? _rsi;
-	private Shift? _emaShiftIndicator;
-	private Shift? _lwmaShiftIndicator;
+	private RelativeStrengthIndex _rsi;
+	private Shift _emaShiftIndicator;
+	private Shift _lwmaShiftIndicator;
 
 	private decimal? _previousEma;
 	private decimal? _previousLwma;

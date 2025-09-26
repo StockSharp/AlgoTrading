@@ -30,7 +30,7 @@ public class BollingerBreakoutDc2008Strategy : Strategy
 	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands? _bollinger;
+	private BollingerBands _bollinger;
 
 	public int BandsPeriod
 	{

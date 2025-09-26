@@ -25,8 +25,8 @@ public class ChartBrowserStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _summaryInterval;
 	private readonly StrategyParam<bool> _autoLogLatestValues;
 
-	private MarketDataSubscription? _chartSubscription;
-	private MarketDataSubscription? _indicatorSubscription;
+	private MarketDataSubscription _chartSubscription;
+	private MarketDataSubscription _indicatorSubscription;
 
 	private ICandleMessage _lastChartCandle;
 	private decimal? _lastIndicatorValue;

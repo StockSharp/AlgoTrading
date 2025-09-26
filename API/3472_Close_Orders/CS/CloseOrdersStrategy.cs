@@ -10,7 +10,7 @@ using StockSharp.Messages;
 
 public class CloseOrdersStrategy : Strategy
 {
-	private static readonly PropertyInfo? StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
+	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
 
 	private readonly StrategyParam<decimal> _targetProfitMoney;
 	private readonly StrategyParam<decimal> _cutLossMoney;

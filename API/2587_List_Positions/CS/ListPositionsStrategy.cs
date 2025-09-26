@@ -29,13 +29,13 @@ public enum PositionSelectionMode
 /// </summary>
 public class ListPositionsStrategy : Strategy
 {
-	private static readonly PropertyInfo? StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
+	private static readonly PropertyInfo StrategyIdProperty = typeof(Position).GetProperty("StrategyId");
 
 	private readonly StrategyParam<string> _strategyIdFilter;
 	private readonly StrategyParam<PositionSelectionMode> _selectionMode;
 	private readonly StrategyParam<TimeSpan> _timerInterval;
 
-	private Timer? _timer;
+	private Timer _timer;
 	private int _isProcessing;
 
 	/// <summary>

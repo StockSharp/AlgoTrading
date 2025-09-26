@@ -25,7 +25,7 @@ public class NrtrReversalStrategy : Strategy
 
 	private readonly List<CandleSnapshot> _history = new();
 
-	private AverageTrueRange? _atr;
+	private AverageTrueRange _atr;
 	private bool _isTrendUp;
 	private decimal _currentLine;
 	private decimal _priceStep;
