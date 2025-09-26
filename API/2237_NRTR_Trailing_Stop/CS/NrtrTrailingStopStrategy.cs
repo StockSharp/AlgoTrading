@@ -134,8 +134,8 @@ public class NrtrTrailingStopStrategy : Strategy
 		}
 
 		var step = Security.PriceStep ?? 1m;
-		Unit? tp = TakeProfit > 0 ? new Unit(TakeProfit * step, UnitTypes.Point) : null;
-		Unit? sl = StopLoss > 0 ? new Unit(StopLoss * step, UnitTypes.Point) : null;
+		Unit tp = TakeProfit > 0 ? new Unit(TakeProfit * step, UnitTypes.Point) : null;
+		Unit sl = StopLoss > 0 ? new Unit(StopLoss * step, UnitTypes.Point) : null;
 		if (tp != null || sl != null)
 			StartProtection(tp, sl);
 	}

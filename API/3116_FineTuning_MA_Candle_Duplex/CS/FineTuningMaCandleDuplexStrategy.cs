@@ -471,8 +471,8 @@ public class FineTuningMaCandleDuplexStrategy : Strategy
 		.Start();
 
 		var step = Security?.Step ?? 0m;
-		Unit? takeProfit = null;
-		Unit? stopLoss = null;
+		Unit takeProfit = null;
+		Unit stopLoss = null;
 
 		if (step > 0m)
 		{

@@ -370,8 +370,8 @@ shortSubscription
 .BindEx(_shortPema, ProcessShortStream)
 .Start();
 
-Unit? stopLoss = StopLossSteps > 0m ? new Unit(StopLossSteps, UnitTypes.Step) : null;
-Unit? takeProfit = TakeProfitSteps > 0m ? new Unit(TakeProfitSteps, UnitTypes.Step) : null;
+Unit stopLoss = StopLossSteps > 0m ? new Unit(StopLossSteps, UnitTypes.Step) : null;
+Unit takeProfit = TakeProfitSteps > 0m ? new Unit(TakeProfitSteps, UnitTypes.Step) : null;
 
 if (stopLoss != null || takeProfit != null)
 {

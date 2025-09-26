@@ -220,8 +220,8 @@ set => _direction.Value = value;
 			DrawOwnTrades(area);
 		}
 
-		Unit? tp = null;
-		Unit? sl = null;
+		Unit tp = null;
+		Unit sl = null;
 		if (TpslCondition == "TP" || TpslCondition == "Both")
 			tp = TakeProfitPerc.Percents();
 		if (TpslCondition == "SL" || TpslCondition == "Both")

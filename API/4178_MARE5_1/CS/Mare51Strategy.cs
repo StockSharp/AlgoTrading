@@ -354,7 +354,7 @@ public class Mare51Strategy : Strategy
 		return step > 0m ? step : 0m;
 	}
 
-	private static Unit? CreateProtectionUnit(decimal points, decimal pointSize)
+	private static Unit CreateProtectionUnit(decimal points, decimal pointSize)
 	{
 		if (points <= 0m || pointSize <= 0m)
 		return null;

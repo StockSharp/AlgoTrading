@@ -259,8 +259,8 @@ public class BandOsMaCustomStrategy : Strategy
 		Volume = OrderVolume;
 
 		var stopLossUnit = CreateUnit(StopLossPoints);
-		Unit? trailingUnit = null;
-		Unit? trailingStepUnit = null;
+		Unit trailingUnit = null;
+		Unit trailingStepUnit = null;
 
 		if (stopLossUnit != null)
 		{
@@ -456,7 +456,7 @@ public class BandOsMaCustomStrategy : Strategy
 		return series[index];
 	}
 
-	private Unit? CreateUnit(decimal distanceInPoints)
+	private Unit CreateUnit(decimal distanceInPoints)
 	{
 		if (distanceInPoints <= 0m || _pointValue <= 0m)
 		return null;

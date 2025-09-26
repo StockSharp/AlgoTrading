@@ -221,8 +221,8 @@ public class TtmTrendReopenStrategy : Strategy
 		}
 
 		var step = Security?.PriceStep ?? 1m;
-		Unit? stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
-		Unit? takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
+		Unit stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
+		Unit takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
 
 		if (stopLossUnit != null || takeProfitUnit != null)
 		StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);

@@ -520,8 +520,8 @@ public class AdvancedEaPanelStrategy : Strategy
 
 	private void InitializeProtection()
 	{
-		Unit? takeProfit = null;
-		Unit? stopLoss = null;
+		Unit takeProfit = null;
+		Unit stopLoss = null;
 
 		if (TakeProfitPips > 0m)
 		takeProfit = new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute);

@@ -263,8 +263,8 @@ public class BronzeWarrioirStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		Unit? stopLossUnit = null;
-		Unit? takeProfitUnit = null;
+		Unit stopLossUnit = null;
+		Unit takeProfitUnit = null;
 
 		if (_pipSize > 0m && StopLossPips > 0)
 			stopLossUnit = new Unit(StopLossPips * _pipSize, UnitTypes.Price);

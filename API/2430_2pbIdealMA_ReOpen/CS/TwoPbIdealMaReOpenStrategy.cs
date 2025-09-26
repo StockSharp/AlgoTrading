@@ -349,8 +349,8 @@ public class TwoPbIdealMaReOpenStrategy : Strategy
 		}
 
 		var step = Security.PriceStep ?? 1m;
-		Unit? stop = StopLossTicks > 0 ? new Unit(StopLossTicks * step, UnitTypes.Point) : null;
-		Unit? take = TakeProfitTicks > 0 ? new Unit(TakeProfitTicks * step, UnitTypes.Point) : null;
+		Unit stop = StopLossTicks > 0 ? new Unit(StopLossTicks * step, UnitTypes.Point) : null;
+		Unit take = TakeProfitTicks > 0 ? new Unit(TakeProfitTicks * step, UnitTypes.Point) : null;
 		StartProtection(stopLoss: stop, takeProfit: take);
 
 		if (PositionVolume > 0m)

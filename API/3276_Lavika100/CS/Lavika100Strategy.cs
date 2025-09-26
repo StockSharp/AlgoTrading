@@ -499,8 +499,8 @@ private void ConfigureProtection()
 
 	var stopLoss = hasStop ? new Unit(StopLossPoints * _pipSize, UnitTypes.Price) : null;
 	var takeProfit = hasTake ? new Unit(TakeProfitPoints * _pipSize, UnitTypes.Price) : null;
-	Unit? trailingStop = null;
-	Unit? trailingStep = null;
+	Unit trailingStop = null;
+	Unit trailingStep = null;
 
 	if (hasTrailing)
 	{

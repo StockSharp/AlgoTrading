@@ -240,14 +240,14 @@ protected override void OnStarted(DateTimeOffset time)
 	var h1Subscription = SubscribeCandles(H1CandleType);
 	h1Subscription.Bind(ProcessH1).Start();
 
-	Unit? takeProfitUnit = null;
+	Unit takeProfitUnit = null;
 	if (TakeProfitPips > 0 && _priceStep > 0m)
 	{
 		var steps = TakeProfitPips * _pipSize / _priceStep;
 		takeProfitUnit = new Unit(steps, UnitTypes.Step);
 	}
 
-	Unit? stopLossUnit = null;
+	Unit stopLossUnit = null;
 	if (StopLossPips > 0 && _priceStep > 0m)
 	{
 		var steps = StopLossPips * _pipSize / _priceStep;

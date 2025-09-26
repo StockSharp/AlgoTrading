@@ -304,17 +304,17 @@ private void ResetBuyPattern()
 	_firstTrough = null;
 }
 
-private Unit? CreateStopLossUnit()
+private Unit CreateStopLossUnit()
 {
 	return CreateUnitFromPips(StopLossPips);
 }
 
-private Unit? CreateTakeProfitUnit()
+private Unit CreateTakeProfitUnit()
 {
 	return CreateUnitFromPips(TakeProfitPips);
 }
 
-private Unit? CreateUnitFromPips(decimal pips)
+private Unit CreateUnitFromPips(decimal pips)
 {
 	if (pips <= 0m)
 	return null;

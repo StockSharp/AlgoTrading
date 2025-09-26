@@ -195,8 +195,8 @@ public class AbhBhMfiStrategy : Strategy
 		_closeAverage = new SimpleMovingAverage { Length = BodyAveragePeriod };
 
 		var step = Security?.PriceStep ?? 0m;
-		Unit? stopLoss = null;
-		Unit? takeProfit = null;
+		Unit stopLoss = null;
+		Unit takeProfit = null;
 
 		if (step > 0m)
 		{

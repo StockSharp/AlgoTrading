@@ -383,11 +383,11 @@ public class DivergenceEmaRsiCloseBuyOnlyStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		Unit? stopLoss = null;
+		Unit stopLoss = null;
 		if (StopLossPips > 0m && _pipSize > 0m)
 		stopLoss = new Unit(StopLossPips * _pipSize, UnitTypes.Absolute);
 
-		Unit? takeProfit = null;
+		Unit takeProfit = null;
 		if (TakeProfitPips > 0m && _pipSize > 0m)
 		takeProfit = new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute);
 

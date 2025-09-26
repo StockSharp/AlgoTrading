@@ -169,7 +169,7 @@ public class TestMacdStrategy : Strategy
 		}
 	}
 
-	private Unit? CreateProtectionUnit(int distanceInPoints)
+	private Unit CreateProtectionUnit(int distanceInPoints)
 	{
 		if (distanceInPoints <= 0)
 			return null;

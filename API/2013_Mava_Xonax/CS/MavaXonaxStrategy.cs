@@ -15,10 +15,10 @@ public class MavaXonaxStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private EMA? _emaClose;
-	private EMA? _emaOpen;
-	private EMA? _emaHigh;
-	private EMA? _emaLow;
+	private EMA _emaClose;
+	private EMA _emaOpen;
+	private EMA _emaHigh;
+	private EMA _emaLow;
 
 	private decimal _prevOpen1;
 	private decimal _prevOpen2;

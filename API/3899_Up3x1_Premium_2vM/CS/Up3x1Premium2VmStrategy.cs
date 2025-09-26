@@ -197,8 +197,8 @@ public class Up3x1Premium2VmStrategy : Strategy
 			.Bind(dailyMa, ProcessDailyCandle)
 			.Start();
 
-		Unit? takeProfit = null;
-		Unit? stopLoss = null;
+		Unit takeProfit = null;
+		Unit stopLoss = null;
 
 		if (TakeProfitPoints > 0m && _pointSize > 0m)
 			takeProfit = new Unit(TakeProfitPoints * _pointSize, UnitTypes.Price);

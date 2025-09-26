@@ -123,8 +123,8 @@ public class MacdVsSignalStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		Unit? tp = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Point) : null;
-		Unit? sl = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Point) :
+		Unit tp = TakeProfit > 0 ? new Unit(TakeProfit, UnitTypes.Point) : null;
+		Unit sl = StopLoss > 0 ? new Unit(StopLoss, UnitTypes.Point) :
 			TrailingStop > 0 ? new Unit(TrailingStop, UnitTypes.Point) : null;
 
 		if (tp != null || sl != null)

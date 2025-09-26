@@ -253,10 +253,10 @@ public class ElliStrategy : Strategy
 			Length = AdxPeriod
 		};
 
-		Unit? stopLoss = StopLossPips > 0m && _pipSize > 0m
+		Unit stopLoss = StopLossPips > 0m && _pipSize > 0m
 			? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute)
 			: null;
-		Unit? takeProfit = TakeProfitPips > 0m && _pipSize > 0m
+		Unit takeProfit = TakeProfitPips > 0m && _pipSize > 0m
 			? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute)
 			: null;
 

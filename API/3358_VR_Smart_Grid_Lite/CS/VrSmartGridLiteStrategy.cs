@@ -429,10 +429,10 @@ public class VrSmartGridLiteStrategy : Strategy
 	/// </summary>
 	private void BuildStatistics(out SideStatistics buyStats, out SideStatistics sellStats)
 	{
-		GridEntry? buyMin = null;
-		GridEntry? buyMax = null;
-		GridEntry? sellMin = null;
-		GridEntry? sellMax = null;
+		GridEntry buyMin = null;
+		GridEntry buyMax = null;
+		GridEntry sellMin = null;
+		GridEntry sellMax = null;
 		var buyCount = 0;
 		var sellCount = 0;
 
@@ -554,7 +554,7 @@ public class VrSmartGridLiteStrategy : Strategy
 
 	private readonly struct SideStatistics
 	{
-		public SideStatistics(int count, GridEntry? minEntry, GridEntry? maxEntry)
+		public SideStatistics(int count, GridEntry minEntry, GridEntry maxEntry)
 		{
 			Count = count;
 			MinEntry = minEntry;
@@ -562,7 +562,7 @@ public class VrSmartGridLiteStrategy : Strategy
 		}
 
 		public int Count { get; }
-		public GridEntry? MinEntry { get; }
-		public GridEntry? MaxEntry { get; }
+		public GridEntry MinEntry { get; }
+		public GridEntry MaxEntry { get; }
 	}
 }

@@ -131,8 +131,8 @@ public class BullsBearsPowerAverageStrategy : Strategy
 
 		// Configure risk management in absolute price units derived from instrument tick size.
 		var step = Security?.PriceStep ?? 1m;
-		Unit? stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * step, UnitTypes.Absolute) : null;
-		Unit? takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * step, UnitTypes.Absolute) : null;
+		Unit stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * step, UnitTypes.Absolute) : null;
+		Unit takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * step, UnitTypes.Absolute) : null;
 
 		if (stopLoss != null || takeProfit != null)
 		{

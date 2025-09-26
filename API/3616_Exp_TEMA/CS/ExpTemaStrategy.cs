@@ -102,8 +102,8 @@ public class ExpTemaStrategy : Strategy
 
 		Volume = TradeVolume;
 
-		Unit? stop = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null;
-		Unit? take = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
+		Unit stop = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : null;
+		Unit take = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : null;
 		StartProtection(stop, take);
 
 		_tema = new TripleExponentialMovingAverage

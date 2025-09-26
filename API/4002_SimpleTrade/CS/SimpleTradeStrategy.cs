@@ -98,7 +98,7 @@ public class SimpleTradeStrategy : Strategy
 			.Start();
 
 		var step = Security?.PriceStep ?? 0m;
-		Unit? stopLossUnit = null;
+		Unit stopLossUnit = null;
 
 		if (StopLossPoints > 0m && step > 0m)
 			stopLossUnit = new Unit(StopLossPoints * step, UnitTypes.Absolute);

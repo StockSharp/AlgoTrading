@@ -238,8 +238,8 @@ public class KlossSimpleStrategy : Strategy
 			.Bind(ProcessCandle)
 			.Start();
 
-		Unit? stopLossUnit = null;
-		Unit? takeProfitUnit = null;
+		Unit stopLossUnit = null;
+		Unit takeProfitUnit = null;
 		var priceStep = Security?.PriceStep ?? 0m;
 
 		if (StopLossPoints > 0m && priceStep > 0m)

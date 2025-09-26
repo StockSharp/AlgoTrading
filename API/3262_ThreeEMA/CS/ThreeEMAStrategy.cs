@@ -136,8 +136,8 @@ public class ThreeEMAStrategy : Strategy
 
 		// Enable protective stop loss and take profit distances.
 		var step = Security.PriceStep ?? 1m;
-		Unit? takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-		Unit? stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+		Unit takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
+		Unit stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
 
 		if (takeProfitUnit != null || stopLossUnit != null)
 		{

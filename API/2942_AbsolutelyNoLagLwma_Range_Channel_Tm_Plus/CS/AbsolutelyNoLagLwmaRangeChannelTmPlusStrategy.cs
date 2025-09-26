@@ -262,8 +262,8 @@ public class AbsolutelyNoLagLwmaRangeChannelTmPlusStrategy : Strategy
 
 		// Configure protective orders using point-based distances from the MQL inputs.
 		var step = Security?.PriceStep ?? 0m;
-		Unit? take = null;
-		Unit? stop = null;
+		Unit take = null;
+		Unit stop = null;
 
 		if (TakeProfitPoints > 0 && step > 0)
 			take = new Unit(step * TakeProfitPoints, UnitTypes.Absolute);

@@ -31,10 +31,10 @@ public class BroadeningTopStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLongs;
 	private readonly StrategyParam<bool> _enableShorts;
 
-	private LinearWeightedMovingAverage? _fastMa;
-	private LinearWeightedMovingAverage? _slowMa;
-	private Momentum? _momentum;
-	private MovingAverageConvergenceDivergenceSignal? _macd;
+	private LinearWeightedMovingAverage _fastMa;
+	private LinearWeightedMovingAverage _slowMa;
+	private Momentum _momentum;
+	private MovingAverageConvergenceDivergenceSignal _macd;
 
 	private decimal _pipSize;
 	private decimal? _momentumCurrent;

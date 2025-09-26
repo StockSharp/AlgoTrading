@@ -291,7 +291,7 @@ public class BBStrategyStrategy : Strategy
 		return step * adjust;
 	}
 
-	private Unit? ToAbsoluteUnit(decimal points)
+	private Unit ToAbsoluteUnit(decimal points)
 	{
 		if (points <= 0m || _pointValue <= 0m)
 			return null;

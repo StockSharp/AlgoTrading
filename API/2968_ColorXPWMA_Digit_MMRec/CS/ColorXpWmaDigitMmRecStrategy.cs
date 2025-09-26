@@ -357,8 +357,8 @@ public class ColorXpWmaDigitMmRecStrategy : Strategy
 		}
 
 		var step = Security?.PriceStep ?? 1m;
-		Unit? stop = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
-		Unit? take = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
+		Unit stop = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+		Unit take = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
 		if (stop != null || take != null)
 			StartProtection(takeProfit: take, stopLoss: stop);
 	}

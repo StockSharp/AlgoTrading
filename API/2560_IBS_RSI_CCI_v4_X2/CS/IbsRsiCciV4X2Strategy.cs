@@ -48,8 +48,8 @@ public class IbsRsiCciV4X2Strategy : Strategy
 	private readonly List<IbsRsiCciValue> _trendValues = new();
 	private readonly List<IbsRsiCciValue> _signalValues = new();
 
-	private IbsRsiCciCalculator? _trendCalculator;
-	private IbsRsiCciCalculator? _signalCalculator;
+	private IbsRsiCciCalculator _trendCalculator;
+	private IbsRsiCciCalculator _signalCalculator;
 
 	private int _trendDirection;
 

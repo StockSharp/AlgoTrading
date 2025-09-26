@@ -155,7 +155,7 @@ public class ETurboFxClassicStrategy : Strategy
 		}
 	}
 
-	private Unit? CreateStepUnit(decimal steps)
+	private Unit CreateStepUnit(decimal steps)
 	{
 		if (steps <= 0)
 			return null;

@@ -253,8 +253,8 @@ public class ExpDigitalMacdStrategy : Strategy
 	}
 
 	var step = Security?.Step ?? 0m;
-	Unit? stopLossUnit = null;
-	Unit? takeProfitUnit = null;
+	Unit stopLossUnit = null;
+	Unit takeProfitUnit = null;
 
 	// Convert point based risk controls to absolute prices when possible.
 	if (StopLossPoints > 0m && step > 0m)

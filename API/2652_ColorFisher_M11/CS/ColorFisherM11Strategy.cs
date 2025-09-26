@@ -240,8 +240,8 @@ public class ColorFisherM11Strategy : Strategy
 			.Start();
 
 		var step = Security?.StepPrice ?? 1m;
-		Unit? stopLossUnit = StopLossPoints > 0 ? new Unit(step * StopLossPoints, UnitTypes.Absolute) : null;
-		Unit? takeProfitUnit = TakeProfitPoints > 0 ? new Unit(step * TakeProfitPoints, UnitTypes.Absolute) : null;
+		Unit stopLossUnit = StopLossPoints > 0 ? new Unit(step * StopLossPoints, UnitTypes.Absolute) : null;
+		Unit takeProfitUnit = TakeProfitPoints > 0 ? new Unit(step * TakeProfitPoints, UnitTypes.Absolute) : null;
 
 		if (stopLossUnit != null || takeProfitUnit != null)
 			StartProtection(stopLoss: stopLossUnit, takeProfit: takeProfitUnit);

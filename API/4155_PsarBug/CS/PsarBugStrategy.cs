@@ -220,7 +220,7 @@ public class PsarBugStrategy : Strategy
 		}
 	}
 
-	private static Unit? CreateProtectionUnit(int points, decimal priceStep)
+	private static Unit CreateProtectionUnit(int points, decimal priceStep)
 	{
 		if (points <= 0 || priceStep <= 0m)
 			return null;

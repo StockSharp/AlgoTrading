@@ -878,9 +878,9 @@ public class CoupleHedgeStrategy : Strategy
 
 		public bool IsEnabled => _isEnabled.Value;
 
-		public Security? PlusSecurity => _plusSecurity.Value;
+		public Security PlusSecurity => _plusSecurity.Value;
 
-		public Security? MinusSecurity => _minusSecurity.Value;
+		public Security MinusSecurity => _minusSecurity.Value;
 
 		public DataType CandleType => _candleType.Value;
 
@@ -921,7 +921,7 @@ public class CoupleHedgeStrategy : Strategy
 			return plus != 0m || minus != 0m;
 		}
 
-		public decimal GetPositionVolume(Security? security, Portfolio? portfolio, Strategy strategy)
+		public decimal GetPositionVolume(Security security, Portfolio? portfolio, Strategy strategy)
 		{
 			return security == null ? 0m : strategy.GetPositionValue(security, portfolio) ?? 0m;
 		}

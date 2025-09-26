@@ -240,8 +240,8 @@ public class SrRateIndicatorStrategy : Strategy
 		.Start();
 
 		var step = Security?.PriceStep ?? 0m;
-		Unit? stopLossUnit = step > 0m && StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
-		Unit? takeProfitUnit = step > 0m && TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
+		Unit stopLossUnit = step > 0m && StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Absolute) : null;
+		Unit takeProfitUnit = step > 0m && TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Absolute) : null;
 
 		if (stopLossUnit != null || takeProfitUnit != null)
 		{

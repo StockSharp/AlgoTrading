@@ -258,8 +258,8 @@ public class ExpDemaRangeChannelTmPlusStrategy : Strategy
 		.Start();
 
 		var step = Security?.PriceStep ?? 1m;
-		Unit? stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Price) : (Unit?)null;
-		Unit? takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Price) : (Unit?)null;
+		Unit stopLossUnit = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Price) : (Unit)null;
+		Unit takeProfitUnit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Price) : (Unit)null;
 
 		if (stopLossUnit is not null && takeProfitUnit is not null)
 		{

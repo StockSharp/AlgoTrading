@@ -600,7 +600,7 @@ public class TrendFollowerRainbowStrategy : Strategy
 		return true;
 	}
 
-	private Unit? ToAbsoluteUnit(decimal points)
+	private Unit ToAbsoluteUnit(decimal points)
 	{
 		if (points <= 0m || _pointValue <= 0m)
 		return null;

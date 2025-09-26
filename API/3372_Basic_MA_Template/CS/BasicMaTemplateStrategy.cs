@@ -143,8 +143,8 @@ public class BasicMaTemplateStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		Unit? takeProfit = null;
-		Unit? stopLoss = null;
+		Unit takeProfit = null;
+		Unit stopLoss = null;
 
 		if (_pipSize > 0m)
 		{

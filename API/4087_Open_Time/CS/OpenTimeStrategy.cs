@@ -227,8 +227,8 @@ public class OpenTimeStrategy : Strategy
 		var takeProfit = ToAbsoluteUnit(TakeProfitPoints);
 		var stopLoss = ToAbsoluteUnit(StopLossPoints);
 
-		Unit? trailingStop = null;
-		Unit? trailingStep = null;
+		Unit trailingStop = null;
+		Unit trailingStep = null;
 
 		if (UseTrailingStop)
 		{
@@ -263,7 +263,7 @@ public class OpenTimeStrategy : Strategy
 		}
 	}
 
-	private Unit? ToAbsoluteUnit(decimal points)
+	private Unit ToAbsoluteUnit(decimal points)
 	{
 		if (points <= 0m || _pointValue <= 0m)
 			return null;

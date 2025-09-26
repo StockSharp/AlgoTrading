@@ -43,11 +43,11 @@ public class FiveMinutesScalpingEaV11Strategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenAfterPips;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private HullMovingAverage? _hullFast;
-	private HullMovingAverage? _hullSlow;
-	private FisherTransform? _fisherMomentum;
-	private FisherTransform? _fisherTrend;
-	private AverageTrueRange? _atr;
+	private HullMovingAverage _hullFast;
+	private HullMovingAverage _hullSlow;
+	private FisherTransform _fisherMomentum;
+	private FisherTransform _fisherTrend;
+	private AverageTrueRange _atr;
 
 	private readonly List<decimal> _hullFastHistory = new();
 	private readonly List<decimal> _hullSlowHistory = new();

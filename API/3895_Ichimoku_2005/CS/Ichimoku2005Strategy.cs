@@ -219,8 +219,8 @@ public class Ichimoku2005Strategy : Strategy
 		_senkouBHistory = new decimal?[historyLength];
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		Unit? stopLossUnit = null;
-		Unit? takeProfitUnit = null;
+		Unit stopLossUnit = null;
+		Unit takeProfitUnit = null;
 
 		if (StopLossPoints > 0m)
 		{

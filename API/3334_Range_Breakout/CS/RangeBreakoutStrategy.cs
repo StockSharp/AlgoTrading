@@ -123,8 +123,8 @@ public class RangeBreakoutStrategy : Strategy
 		_highest = new Highest { Length = RangePeriod };
 		_lowest = new Lowest { Length = RangePeriod };
 
-		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : default(Unit?);
-		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : default(Unit?);
+		var takeProfitUnit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Step) : default(Unit);
+		var stopLossUnit = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Step) : default(Unit);
 
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 

@@ -313,8 +313,8 @@ public class BlauSmStochasticStrategy : Strategy
 		}
 
 		var step = Security.PriceStep ?? 1m;
-		Unit? takeProfit = null;
-		Unit? stopLoss = null;
+		Unit takeProfit = null;
+		Unit stopLoss = null;
 
 		if (TakeProfitPoints > 0)
 			takeProfit = new Unit(TakeProfitPoints * step, UnitTypes.Point);

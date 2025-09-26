@@ -276,7 +276,7 @@ public class OhlcCheckStrategy : Strategy
 			_history.RemoveAt(0);
 	}
 
-	private Unit? CreateTakeProfitUnit()
+	private Unit CreateTakeProfitUnit()
 	{
 		if (TakeProfitPips <= 0m)
 			return null;
@@ -284,7 +284,7 @@ public class OhlcCheckStrategy : Strategy
 		return new Unit(TakeProfitPips * _pipStep, UnitTypes.Point);
 	}
 
-	private Unit? CreateStopLossUnit()
+	private Unit CreateStopLossUnit()
 	{
 		if (StopLossPips <= 0m)
 			return null;

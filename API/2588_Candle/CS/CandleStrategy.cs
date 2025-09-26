@@ -108,11 +108,11 @@ public class CandleStrategy : Strategy
 
 		_pipSize = (Security?.PriceStep ?? 1m) * 10m;
 
-		Unit? takeProfit = TakeProfitPips > 0m && _pipSize > 0m
+		Unit takeProfit = TakeProfitPips > 0m && _pipSize > 0m
 			? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute)
 			: null;
 
-		Unit? trailingStop = TrailingStopPips > 0m && _pipSize > 0m
+		Unit trailingStop = TrailingStopPips > 0m && _pipSize > 0m
 			? new Unit(TrailingStopPips * _pipSize, UnitTypes.Absolute)
 			: null;
 

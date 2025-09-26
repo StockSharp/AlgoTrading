@@ -228,8 +228,8 @@ public class EarlyOpenTrendStrategy : Strategy
 		_pipSize = CalculatePipSize();
 		Volume = OrderVolume;
 
-		Unit? stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
-		Unit? takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
+		Unit stopLoss = StopLossPips > 0 ? new Unit(StopLossPips * _pipSize, UnitTypes.Absolute) : null;
+		Unit takeProfit = TakeProfitPips > 0 ? new Unit(TakeProfitPips * _pipSize, UnitTypes.Absolute) : null;
 
 		if (stopLoss != null || takeProfit != null)
 		{

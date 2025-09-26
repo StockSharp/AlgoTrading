@@ -179,10 +179,10 @@ public class BadxAdxBollingerStrategy : Strategy
 		if (_pipSize <= 0m)
 			_pipSize = Security?.PriceStep ?? 0m;
 
-		Unit? takeProfitUnit = null;
-		Unit? stopLossUnit = null;
-		Unit? trailingStopUnit = null;
-		Unit? trailingStepUnit = null;
+		Unit takeProfitUnit = null;
+		Unit stopLossUnit = null;
+		Unit trailingStopUnit = null;
+		Unit trailingStepUnit = null;
 
 		if (_pipSize > 0m)
 		{

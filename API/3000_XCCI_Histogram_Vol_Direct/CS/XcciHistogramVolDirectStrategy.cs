@@ -333,8 +333,8 @@ DrawIndicator(indicatorArea, _cciVolumeSmoother);
 }
 
 var step = Security?.PriceStep ?? 1m;
-Unit? takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-Unit? stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+Unit takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
+Unit stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
 
 StartProtection(takeProfit, stopLoss);
 }

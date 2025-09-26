@@ -457,8 +457,8 @@ public class CyberiaTraderAdaptiveStrategy : Strategy
 			}
 		}
 
-		Unit? takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
-		Unit? stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
+		Unit takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints, UnitTypes.Absolute) : null;
+		Unit stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints, UnitTypes.Absolute) : null;
 
 		if (takeProfit != null || stopLoss != null)
 		{

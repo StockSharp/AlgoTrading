@@ -193,11 +193,11 @@ public class XFatlXSatlCloudStrategy : Strategy
 		subscription.Bind(fastIndicator, slowIndicator, ProcessCandle).Start();
 
 		var step = Security?.PriceStep ?? 1m;
-		Unit? takeProfit = null;
+		Unit takeProfit = null;
 		if (TakeProfitTicks > 0)
 			takeProfit = new Unit(TakeProfitTicks * step, UnitTypes.Point);
 
-		Unit? stopLoss = null;
+		Unit stopLoss = null;
 		if (StopLossTicks > 0)
 			stopLoss = new Unit(StopLossTicks * step, UnitTypes.Point);
 

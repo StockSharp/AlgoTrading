@@ -268,8 +268,8 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 		Volume = Math.Max(0m, OrderVolume);
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		Unit? stopLoss = null;
-		Unit? takeProfit = null;
+		Unit stopLoss = null;
+		Unit takeProfit = null;
 
 		if (StopLossPoints > 0 && priceStep > 0m)
 		{

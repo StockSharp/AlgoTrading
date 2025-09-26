@@ -235,8 +235,8 @@ public class AutoKdjStrategy : Strategy
 
 		_pipSize = CalculatePipSize();
 
-		Unit? stopLossUnit = null;
-		Unit? takeProfitUnit = null;
+		Unit stopLossUnit = null;
+		Unit takeProfitUnit = null;
 
 		if (UseStopLoss && StopLossPips > 0)
 		{

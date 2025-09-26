@@ -158,11 +158,11 @@ public class ForexSkyStrategy : Strategy
 		Volume = TradeVolume;
 		_pointValue = CalculatePointValue();
 
-		Unit? takeProfitUnit = null;
+		Unit takeProfitUnit = null;
 		if (TakeProfitPoints > 0 && _pointValue > 0m)
 			takeProfitUnit = new Unit(TakeProfitPoints * _pointValue, UnitTypes.Absolute);
 
-		Unit? stopLossUnit = null;
+		Unit stopLossUnit = null;
 		if (StopLossPoints > 0 && _pointValue > 0m)
 			stopLossUnit = new Unit(StopLossPoints * _pointValue, UnitTypes.Absolute);
 

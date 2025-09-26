@@ -256,8 +256,8 @@ public class GbpChfCorrelationStrategy : Strategy
 
 		var step = tradedSecurity.PriceStep ?? 0m;
 		var pipSize = step == 0m ? 0m : step;
-		Unit? stopLoss = StopLossPips > 0 && pipSize > 0m ? new Unit(StopLossPips * pipSize, UnitTypes.Absolute) : null;
-		Unit? takeProfit = TakeProfitPips > 0 && pipSize > 0m ? new Unit(TakeProfitPips * pipSize, UnitTypes.Absolute) : null;
+		Unit stopLoss = StopLossPips > 0 && pipSize > 0m ? new Unit(StopLossPips * pipSize, UnitTypes.Absolute) : null;
+		Unit takeProfit = TakeProfitPips > 0 && pipSize > 0m ? new Unit(TakeProfitPips * pipSize, UnitTypes.Absolute) : null;
 
 		StartProtection(takeProfit, stopLoss);
 

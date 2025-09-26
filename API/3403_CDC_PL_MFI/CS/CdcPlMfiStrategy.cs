@@ -342,7 +342,7 @@ public class CdcPlMfiStrategy : Strategy
 		return true;
 	}
 
-	private Unit? ToPriceUnit(decimal pips)
+	private Unit ToPriceUnit(decimal pips)
 	{
 		if (pips <= 0m)
 			return null;

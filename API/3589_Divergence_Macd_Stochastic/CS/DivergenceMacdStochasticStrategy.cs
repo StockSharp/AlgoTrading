@@ -264,8 +264,8 @@ public class DivergenceMacdStochasticStrategy : Strategy
 			DrawOwnTrades(area);
 		}
 
-		Unit? takeProfitUnit = TakeProfitSteps > 0 ? new Unit(TakeProfitSteps, UnitTypes.Step) : null;
-		Unit? stopLossUnit = StopLossSteps > 0 ? new Unit(StopLossSteps, UnitTypes.Step) : null;
+		Unit takeProfitUnit = TakeProfitSteps > 0 ? new Unit(TakeProfitSteps, UnitTypes.Step) : null;
+		Unit stopLossUnit = StopLossSteps > 0 ? new Unit(StopLossSteps, UnitTypes.Step) : null;
 
 		StartProtection(takeProfitUnit, stopLossUnit);
 	}

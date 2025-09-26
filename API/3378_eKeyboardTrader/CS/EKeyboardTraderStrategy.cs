@@ -261,7 +261,7 @@ public class EKeyboardTraderStrategy : Strategy
 		_protectionStarted = true;
 	}
 
-	private Unit? CreateProtectionUnit(int distancePoints)
+	private Unit CreateProtectionUnit(int distancePoints)
 	{
 		if (distancePoints <= 0)
 			return null;

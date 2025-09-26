@@ -373,8 +373,8 @@ public class EquidistantChannelStrategy : Strategy
 	DrawOwnTrades(area);
 	}
 
-	Unit? tp = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Point) : null;
-	Unit? sl = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Point) : null;
+	Unit tp = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints, UnitTypes.Point) : null;
+	Unit sl = StopLossPoints > 0 ? new Unit(StopLossPoints, UnitTypes.Point) : null;
 
 	if (TrailingStopPoints > 0 && (sl is null || TrailingStopPoints < StopLossPoints))
 	sl = new Unit(TrailingStopPoints, UnitTypes.Point);

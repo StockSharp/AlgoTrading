@@ -191,8 +191,8 @@ public class SidusEmaRsiStrategy : Strategy
 
 		var takeDistance = TakeProfitPoints * _pointValue;
 		var stopDistance = StopLossPoints * _pointValue;
-		Unit? takeProfitUnit = takeDistance > 0m ? new Unit(takeDistance, UnitTypes.Absolute) : null;
-		Unit? stopLossUnit = stopDistance > 0m ? new Unit(stopDistance, UnitTypes.Absolute) : null;
+		Unit takeProfitUnit = takeDistance > 0m ? new Unit(takeDistance, UnitTypes.Absolute) : null;
+		Unit stopLossUnit = stopDistance > 0m ? new Unit(stopDistance, UnitTypes.Absolute) : null;
 		StartProtection(takeProfit: takeProfitUnit, stopLoss: stopLossUnit);
 
 		var area = CreateChartArea();

@@ -350,8 +350,8 @@ public class ColorJfatlDigitTmStrategy : Strategy
 		subscription.Bind(ProcessCandle).Start();
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		Unit? takeProfitUnit = null;
-		Unit? stopLossUnit = null;
+		Unit takeProfitUnit = null;
+		Unit stopLossUnit = null;
 
 		if (TakeProfitPoints > 0 && priceStep > 0m)
 			takeProfitUnit = new Unit(TakeProfitPoints * priceStep, UnitTypes.Price);

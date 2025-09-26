@@ -215,8 +215,8 @@ public class CommissionCalculatorStrategy : Strategy
 		if (EntryPrice <= 0m)
 			return;
 
-		Unit? takeProfit = null;
-		Unit? stopLoss = null;
+		Unit takeProfit = null;
+		Unit stopLoss = null;
 
 		var takeDistance = Math.Abs(TakeProfitPrice - EntryPrice);
 		if (takeDistance > 0m)

@@ -264,8 +264,8 @@ public class MacdSecretsStrategy : Strategy
 	var priceStep = Security?.PriceStep;
 	if (priceStep.HasValue && priceStep.Value > 0m)
 	{
-	Unit? takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * priceStep.Value, UnitTypes.Point) : null;
-	Unit? stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * priceStep.Value, UnitTypes.Point) : null;
+	Unit takeProfit = TakeProfitPoints > 0m ? new Unit(TakeProfitPoints * priceStep.Value, UnitTypes.Point) : null;
+	Unit stopLoss = StopLossPoints > 0m ? new Unit(StopLossPoints * priceStep.Value, UnitTypes.Point) : null;
 
 	if (takeProfit != null || stopLoss != null)
 	{

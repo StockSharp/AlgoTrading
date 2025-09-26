@@ -142,8 +142,8 @@ public class SurefireThingStrategy : Strategy
 	{
 		var step = Security?.Step ?? 0m;
 
-		Unit? stopLossUnit = null;
-		Unit? takeProfitUnit = null;
+		Unit stopLossUnit = null;
+		Unit takeProfitUnit = null;
 
 		if (StopLossPoints > 0m && step > 0m)
 			stopLossUnit = new Unit(StopLossPoints * step, UnitTypes.Absolute);

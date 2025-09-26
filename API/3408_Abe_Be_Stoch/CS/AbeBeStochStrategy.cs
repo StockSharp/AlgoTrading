@@ -201,8 +201,8 @@ public class AbeBeStochStrategy : Strategy
 			.Start();
 
 		var priceStep = Security?.PriceStep ?? 0m;
-		Unit? takeProfitUnit = null;
-		Unit? stopLossUnit = null;
+		Unit takeProfitUnit = null;
+		Unit stopLossUnit = null;
 
 		if (priceStep > 0m)
 		{

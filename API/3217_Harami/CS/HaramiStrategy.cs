@@ -237,11 +237,11 @@ public class HaramiStrategy : Strategy
 			DrawIndicator(area, _slowMa);
 		}
 
-		Unit? takeProfit = null;
+		Unit takeProfit = null;
 		if (TakeProfitPoints > 0m)
 			takeProfit = new Unit(TakeProfitPoints, UnitTypes.Point);
 
-		Unit? stopLoss = null;
+		Unit stopLoss = null;
 		if (StopLossPoints > 0m)
 			stopLoss = new Unit(StopLossPoints, UnitTypes.Point);
 

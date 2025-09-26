@@ -180,8 +180,8 @@ public class Cs2011Strategy : Strategy
 		}
 
 		var step = Security?.PriceStep ?? 1m;
-		Unit? takeProfit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
-		Unit? stopLoss = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
+		Unit takeProfit = TakeProfitPoints > 0 ? new Unit(TakeProfitPoints * step, UnitTypes.Point) : null;
+		Unit stopLoss = StopLossPoints > 0 ? new Unit(StopLossPoints * step, UnitTypes.Point) : null;
 
 		StartProtection(takeProfit: takeProfit, stopLoss: stopLoss);
 	}

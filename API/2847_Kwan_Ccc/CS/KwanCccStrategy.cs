@@ -487,7 +487,7 @@ public class KwanCccStrategy : Strategy
 		return value;
 	}
 
-	private Unit? CreateProtectionUnit(decimal points)
+	private Unit CreateProtectionUnit(decimal points)
 	{
 		if (points <= 0m)
 		return null;

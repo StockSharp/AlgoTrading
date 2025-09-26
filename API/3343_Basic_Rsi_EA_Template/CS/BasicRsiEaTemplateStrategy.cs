@@ -203,7 +203,7 @@ public class BasicRsiEaTemplateStrategy : Strategy
 		}
 	}
 
-	private Unit? CreateProtectionUnit(decimal distanceInPips)
+	private Unit CreateProtectionUnit(decimal distanceInPips)
 	{
 		if (distanceInPips <= 0m)
 			return null;

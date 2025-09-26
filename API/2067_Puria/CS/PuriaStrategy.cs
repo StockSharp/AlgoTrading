@@ -23,10 +23,10 @@ private readonly StrategyParam<int> _ma2Period;
 private readonly StrategyParam<int> _ma3Period;
 private readonly StrategyParam<DataType> _candleType;
 
-private LinearWeightedMovingAverage? _ma75;
-private LinearWeightedMovingAverage? _ma85;
-private ExponentialMovingAverage? _ma5;
-private MovingAverageConvergenceDivergence? _macd;
+private LinearWeightedMovingAverage _ma75;
+private LinearWeightedMovingAverage _ma85;
+private ExponentialMovingAverage _ma5;
+private MovingAverageConvergenceDivergence _macd;
 
 private decimal _prevMa75;
 private decimal _prevMa85;
