@@ -20,10 +20,10 @@ public class SlimeMoldRsiStrategy : Strategy
 	private readonly StrategyParam<decimal> _weight4;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _rsi12;
-	private RelativeStrengthIndex? _rsi36;
-	private RelativeStrengthIndex? _rsi108;
-	private RelativeStrengthIndex? _rsi324;
+	private RelativeStrengthIndex _rsi12;
+	private RelativeStrengthIndex _rsi36;
+	private RelativeStrengthIndex _rsi108;
+	private RelativeStrengthIndex _rsi324;
 
 	private decimal? _previousPerceptron;
 

@@ -255,7 +255,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 
 		foreach (var property in properties)
 		{
-			object? value;
+			object value;
 
 			try
 			{
@@ -304,7 +304,7 @@ public class IndicatorParametersDemoStrategy : Strategy
 		return type.Name;
 	}
 
-	private static string FormatParameterValue(object? value)
+	private static string FormatParameterValue(object value)
 	{
 		return value switch
 		{

@@ -16,7 +16,6 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerDeviation;
 	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -63,15 +62,6 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 	{
 		get => _maxPositions.Value;
 		set => _maxPositions.Value = value;
-	}
-
-	/// <summary>
-	/// Order volume per entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
 	}
 
 	/// <summary>
@@ -137,10 +127,6 @@ public class BollingerBandsNPositionsV2Strategy : Strategy
 		_maxPositions = Param(nameof(MaxPositions), 2)
 			.SetGreaterThanZero()
 			.SetDisplay("Max Positions", "Maximum number of stacked entries per direction.", "Trading");
-
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for each entry.", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 30m)
 			.SetNotNegative()

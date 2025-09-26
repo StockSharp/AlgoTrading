@@ -37,10 +37,10 @@
 		private readonly StrategyParam<int> _takeProfitPoints;
 		private readonly StrategyParam<int> _slippagePoints;
 
-		private Smoother? _openSmoother;
-		private Smoother? _highSmoother;
-		private Smoother? _lowSmoother;
-		private Smoother? _closeSmoother;
+		private Smoother _openSmoother;
+		private Smoother _highSmoother;
+		private Smoother _lowSmoother;
+		private Smoother _closeSmoother;
 
 		private readonly List<int> _colorHistory = new();
 		private readonly Queue<decimal> _smoothedHighs = new();

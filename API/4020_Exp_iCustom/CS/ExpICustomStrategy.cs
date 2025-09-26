@@ -1315,7 +1315,7 @@ public class ExpICustomStrategy : Strategy
 			if (!property.CanRead || property.GetIndexParameters().Length != 0)
 			continue;
 
-			object? raw;
+			object raw;
 			try
 			{
 				raw = property.GetValue(value);
@@ -1438,7 +1438,7 @@ public class ExpICustomStrategy : Strategy
 		}
 	}
 
-	private static object? ConvertString(string value, Type targetType)
+	private static object ConvertString(string value, Type targetType)
 	{
 		if (targetType == typeof(string))
 		return value;

@@ -764,7 +764,7 @@ public class GselectorPatternProbabilityStrategy : Strategy
 			return DeltaIndex == other.DeltaIndex && StopIndex == other.StopIndex && Pattern == other.Pattern;
 		}
 
-		public override bool Equals(object? obj)
+		public override bool Equals(object obj)
 		{
 			return obj is PatternKey other && Equals(other);
 		}

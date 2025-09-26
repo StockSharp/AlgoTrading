@@ -361,7 +361,7 @@ public class TradeEaTemplateForNewsStrategy : Strategy
 		_ => 0
 	};
 
-	private string BuildNewsMessage(NewsEvent? activeEvent, NewsEvent? upcomingEvent)
+	private string BuildNewsMessage(NewsEvent activeEvent, NewsEvent upcomingEvent)
 	{
 		if (activeEvent != null)
 		{

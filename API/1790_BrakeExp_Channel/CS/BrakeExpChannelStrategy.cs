@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 public class BrakeExpChannelStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _a;
 	private readonly StrategyParam<decimal> _b;
 	private readonly StrategyParam<bool> _buyOpen;
@@ -23,7 +22,6 @@ public class BrakeExpChannelStrategy : Strategy
 	private readonly StrategyParam<bool> _sellClose;
 
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public decimal A { get => _a.Value; set => _a.Value = value; }
 	public decimal B { get => _b.Value; set => _b.Value = value; }
 	public bool BuyOpen { get => _buyOpen.Value; set => _buyOpen.Value = value; }
@@ -35,8 +33,6 @@ public class BrakeExpChannelStrategy : Strategy
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "General");
 		_a = Param(nameof(A), 3m)
 			.SetDisplay("A", "BrakeExp parameter A", "Indicator");
 		_b = Param(nameof(B), 1m)

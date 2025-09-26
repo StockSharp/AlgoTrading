@@ -37,10 +37,10 @@ public class MultiStochasticStrategy : Strategy
 	private Security _resolvedSymbol3;
 	private Security _resolvedSymbol4;
 
-	private StochasticOscillator? _stochastic1;
-	private StochasticOscillator? _stochastic2;
-	private StochasticOscillator? _stochastic3;
-	private StochasticOscillator? _stochastic4;
+	private StochasticOscillator _stochastic1;
+	private StochasticOscillator _stochastic2;
+	private StochasticOscillator _stochastic3;
+	private StochasticOscillator _stochastic4;
 
 	private decimal? _prevK1;
 	private decimal? _prevD1;
@@ -176,7 +176,7 @@ public class MultiStochasticStrategy : Strategy
 	/// <summary>
 	/// Security used in the first slot.
 	/// </summary>
-	public Security? Symbol1
+	public Security Symbol1
 	{
 		get => _symbol1.Value;
 		set => _symbol1.Value = value;
@@ -185,7 +185,7 @@ public class MultiStochasticStrategy : Strategy
 	/// <summary>
 	/// Security used in the second slot.
 	/// </summary>
-	public Security? Symbol2
+	public Security Symbol2
 	{
 		get => _symbol2.Value;
 		set => _symbol2.Value = value;
@@ -194,7 +194,7 @@ public class MultiStochasticStrategy : Strategy
 	/// <summary>
 	/// Security used in the third slot.
 	/// </summary>
-	public Security? Symbol3
+	public Security Symbol3
 	{
 		get => _symbol3.Value;
 		set => _symbol3.Value = value;
@@ -203,7 +203,7 @@ public class MultiStochasticStrategy : Strategy
 	/// <summary>
 	/// Security used in the fourth slot.
 	/// </summary>
-	public Security? Symbol4
+	public Security Symbol4
 	{
 		get => _symbol4.Value;
 		set => _symbol4.Value = value;
@@ -331,7 +331,7 @@ public class MultiStochasticStrategy : Strategy
 		StartForSymbol(_resolvedSymbol4, ref _stochastic4, ref _pipValue4, ProcessSymbol4);
 	}
 
-	private void StartForSymbol(Security? security, ref StochasticOscillator? indicator, ref decimal pipValue, Action<ICandleMessage, IIndicatorValue> handler)
+	private void StartForSymbol(Security security, ref StochasticOscillator indicator, ref decimal pipValue, Action<ICandleMessage, IIndicatorValue> handler)
 	{
 		if (security == null)
 			return;
@@ -381,7 +381,7 @@ public class MultiStochasticStrategy : Strategy
 	private void HandleSymbol(
 		ICandleMessage candle,
 		IIndicatorValue stochValue,
-		Security? security,
+		Security security,
 		ref decimal? prevK,
 		ref decimal? prevD,
 		ref decimal? stopPrice,

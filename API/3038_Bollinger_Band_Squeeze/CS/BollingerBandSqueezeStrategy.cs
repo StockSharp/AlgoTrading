@@ -34,8 +34,8 @@ public class BollingerBandSqueezeStrategy : Strategy
 	private WeightedMovingAverage _slowWma = null!;
 	private MovingAverageConvergenceDivergenceSignal _baseMacd = null!;
 	private MovingAverageConvergenceDivergenceSignal _monthlyMacd = null!;
-	private Momentum? _higherMomentum;
-	private DataType? _higherCandleType;
+	private Momentum _higherMomentum;
+	private DataType _higherCandleType;
 	private readonly DataType _monthlyCandleType = TimeSpan.FromDays(30).TimeFrame();
 
 	private decimal? _monthlyMacdMain;

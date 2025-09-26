@@ -28,8 +28,8 @@ public class ColorJjrsxTimePlusStrategy : Strategy
 
 	private readonly Queue<decimal> _smoothedValues = new();
 
-	private RelativeStrengthIndex? _rsi;
-	private JurikMovingAverage? _smoother;
+	private RelativeStrengthIndex _rsi;
+	private JurikMovingAverage _smoother;
 	private DateTimeOffset? _entryTime;
 
 	/// <summary>

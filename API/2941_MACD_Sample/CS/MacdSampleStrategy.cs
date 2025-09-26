@@ -25,8 +25,8 @@ public class MacdSampleStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergenceSignal? _macd;
-	private ExponentialMovingAverage? _trendEma;
+	private MovingAverageConvergenceDivergenceSignal _macd;
+	private ExponentialMovingAverage _trendEma;
 
 	private bool _hasPrevValues;
 	private decimal _prevMacd;

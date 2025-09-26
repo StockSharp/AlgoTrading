@@ -28,11 +28,11 @@ public class KwanRdpStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPercent;
 	private readonly StrategyParam<decimal> _stopLossPercent;
 
-	private MoneyFlowIndex? _mfi;
-	private Momentum? _momentum;
+	private MoneyFlowIndex _mfi;
+	private Momentum _momentum;
 	private LengthIndicator<decimal> _smoother;
-	private SMA? _deMaxAverage;
-	private SMA? _deMinAverage;
+	private SMA _deMaxAverage;
+	private SMA _deMinAverage;
 	private decimal? _previousHigh;
 	private decimal? _previousLow;
 	private decimal? _previousSmoothed;

@@ -19,11 +19,10 @@ public class BrandyV12Strategy : Strategy
 	private readonly StrategyParam<int> _shortShift;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _longSma;
-	private SimpleMovingAverage? _shortSma;
+	private SimpleMovingAverage _longSma;
+	private SimpleMovingAverage _shortSma;
 	private readonly List<decimal> _longHistory = new();
 	private readonly List<decimal> _shortHistory = new();
 	private decimal? _entryPrice;
@@ -62,11 +61,6 @@ public class BrandyV12Strategy : Strategy
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 150m)
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop (points)", "Trailing stop distance in price steps. Activates when >= 100.", "Risk")
-			.SetCanOptimize(true);
-
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries.", "Trading")
 			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
@@ -126,15 +120,6 @@ public class BrandyV12Strategy : Strategy
 	{
 		get => _trailingStopPoints.Value;
 		set => _trailingStopPoints.Value = value;
-	}
-
-	/// <summary>
-	/// Order volume placed when a signal appears.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
 	}
 
 	/// <summary>

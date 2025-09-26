@@ -212,7 +212,7 @@ public class MatrixMachineLearningStrategy : Strategy
 			EvaluateWeights(forwardData, "Forward evaluation");
 	}
 
-	private double[]? Forecast()
+	private double[] Forecast()
 	{
 		var weights = _weights;
 		if (weights == null)
@@ -257,7 +257,7 @@ public class MatrixMachineLearningStrategy : Strategy
 		return result;
 	}
 
-	private double[]? BuildCurrentPattern()
+	private double[] BuildCurrentPattern()
 	{
 		var required = PredictorLength + 1;
 		if (_closes.Count < required)

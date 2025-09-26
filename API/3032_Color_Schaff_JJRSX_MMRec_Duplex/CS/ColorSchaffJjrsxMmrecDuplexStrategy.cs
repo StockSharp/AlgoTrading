@@ -45,8 +45,8 @@ public class ColorSchaffJjrsxMmrecDuplexStrategy : Strategy
 	private readonly StrategyParam<int> _shortSignalBar;
 	private readonly StrategyParam<AppliedPrice> _shortPriceType;
 
-	private ColorSchaffJjrsxTrendCycleIndicator? _longIndicator;
-	private ColorSchaffJjrsxTrendCycleIndicator? _shortIndicator;
+	private ColorSchaffJjrsxTrendCycleIndicator _longIndicator;
+	private ColorSchaffJjrsxTrendCycleIndicator _shortIndicator;
 
 	private readonly List<decimal> _longHistory = new();
 	private readonly List<decimal> _shortHistory = new();

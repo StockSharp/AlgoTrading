@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BlauErgodicMdiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _slippagePoints;
@@ -48,11 +47,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Initializes a new instance of <see cref="BlauErgodicMdiStrategy"/>.
 	/// </summary>
 	public BlauErgodicMdiStrategy()
-		{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
-
+	{
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000)
 			.SetNotNegative()
 			.SetDisplay("Stop Loss", "Stop loss in points", "Risk");
@@ -122,19 +117,10 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Trading volume.
-	/// </summary>
-	public decimal Volume
-		{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
-
-	/// <summary>
 	/// Stop loss distance expressed in instrument points.
 	/// </summary>
 	public int StopLossPoints
-		{
+	{
 		get => _stopLossPoints.Value;
 		set => _stopLossPoints.Value = value;
 	}
@@ -143,7 +129,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Take profit distance expressed in instrument points.
 	/// </summary>
 	public int TakeProfitPoints
-		{
+	{
 		get => _takeProfitPoints.Value;
 		set => _takeProfitPoints.Value = value;
 	}
@@ -152,7 +138,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Allowed price slippage in points.
 	/// </summary>
 	public int SlippagePoints
-		{
+	{
 		get => _slippagePoints.Value;
 		set => _slippagePoints.Value = value;
 	}
@@ -161,7 +147,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Enables opening long positions.
 	/// </summary>
 	public bool AllowLongEntries
-		{
+	{
 		get => _allowLongEntries.Value;
 		set => _allowLongEntries.Value = value;
 	}
@@ -170,7 +156,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Enables opening short positions.
 	/// </summary>
 	public bool AllowShortEntries
-		{
+	{
 		get => _allowShortEntries.Value;
 		set => _allowShortEntries.Value = value;
 	}
@@ -179,7 +165,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Enables closing existing long positions on opposite signals.
 	/// </summary>
 	public bool AllowLongExits
-		{
+	{
 		get => _allowLongExits.Value;
 		set => _allowLongExits.Value = value;
 	}
@@ -188,7 +174,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Enables closing existing short positions on opposite signals.
 	/// </summary>
 	public bool AllowShortExits
-		{
+	{
 		get => _allowShortExits.Value;
 		set => _allowShortExits.Value = value;
 	}
@@ -197,7 +183,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Selected entry confirmation mode.
 	/// </summary>
 	public EntryMode Mode
-		{
+	{
 		get => _entryMode.Value;
 		set => _entryMode.Value = value;
 	}
@@ -206,7 +192,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Candle type used for indicator calculations.
 	/// </summary>
 	public DataType CandleType
-		{
+	{
 		get => _candleType.Value;
 		set => _candleType.Value = value;
 	}
@@ -215,7 +201,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Moving average family used for smoothing steps.
 	/// </summary>
 	public SmoothingMethod SmoothingMethod
-		{
+	{
 		get => _smoothingMethod.Value;
 		set => _smoothingMethod.Value = value;
 	}
@@ -224,7 +210,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Length for the initial smoothing of price.
 	/// </summary>
 	public int PrimaryLength
-		{
+	{
 		get => _primaryLength.Value;
 		set => _primaryLength.Value = value;
 	}
@@ -233,7 +219,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Length of the first smoothing applied to momentum.
 	/// </summary>
 	public int FirstSmoothingLength
-		{
+	{
 		get => _firstSmoothingLength.Value;
 		set => _firstSmoothingLength.Value = value;
 	}
@@ -242,7 +228,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Length of the second smoothing forming the histogram.
 	/// </summary>
 	public int SecondSmoothingLength
-		{
+	{
 		get => _secondSmoothingLength.Value;
 		set => _secondSmoothingLength.Value = value;
 	}
@@ -251,7 +237,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Length of the signal line smoothing.
 	/// </summary>
 	public int SignalLength
-		{
+	{
 		get => _signalLength.Value;
 		set => _signalLength.Value = value;
 	}
@@ -260,7 +246,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Applied price selection for calculations.
 	/// </summary>
 	public AppliedPrice AppliedPrice
-		{
+	{
 		get => _appliedPrice.Value;
 		set => _appliedPrice.Value = value;
 	}
@@ -269,7 +255,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Offset of the bar used for signal confirmation.
 	/// </summary>
 	public int SignalBarShift
-		{
+	{
 		get => _signalBarShift.Value;
 		set => _signalBarShift.Value = value;
 	}
@@ -278,20 +264,20 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Reserved phase parameter kept for compatibility with the original script.
 	/// </summary>
 	public int Phase
-		{
+	{
 		get => _phase.Value;
 		set => _phase.Value = value;
 	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
-		{
+	{
 		return [(Security, CandleType)];
 	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()
-		{
+	{
 		base.OnReseted();
 
 		_histogramBuffer = Array.Empty<decimal>();
@@ -302,7 +288,7 @@ public class BlauErgodicMdiStrategy : Strategy
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)
-		{
+	{
 		base.OnStarted(time);
 
 		_pointValue = Security?.PriceStep ?? 1m;
@@ -336,7 +322,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private void ProcessCandle(ICandleMessage candle)
-		{
+	{
 		if (candle.State != CandleStates.Finished)
 			return;
 
@@ -426,7 +412,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private void ExecuteBuy(decimal currentPosition)
-		{
+	{
 		var volume = 0m;
 
 		if (AllowShortExits && currentPosition < 0m)
@@ -440,7 +426,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private void ExecuteSell(decimal currentPosition)
-		{
+	{
 		var volume = 0m;
 
 		if (AllowLongExits && currentPosition > 0m)
@@ -454,7 +440,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private void InitializeBuffers()
-		{
+	{
 		var size = Math.Max(3, SignalBarShift + 3);
 		_histogramBuffer = new decimal[size];
 		_signalBuffer = new decimal[size];
@@ -463,7 +449,7 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private void AddToBuffer(decimal histogram, decimal signal)
-		{
+	{
 		if (_histogramBuffer.Length == 0)
 			return;
 
@@ -475,17 +461,17 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private bool TryGetHist(int shift, out decimal value)
-		{
+	{
 		return TryGetBufferedValue(_histogramBuffer, shift, out value);
 	}
 
 	private bool TryGetSignal(int shift, out decimal value)
-		{
+	{
 		return TryGetBufferedValue(_signalBuffer, shift, out value);
 	}
 
 	private bool TryGetBufferedValue(decimal[] buffer, int shift, out decimal value)
-		{
+	{
 		value = default;
 
 		if (shift < 0 || shift >= _bufferFilled)
@@ -500,31 +486,31 @@ public class BlauErgodicMdiStrategy : Strategy
 	}
 
 	private decimal SelectPrice(ICandleMessage candle)
-		{
+	{
 		return AppliedPrice switch
 		{
-	AppliedPrice.Open => candle.OpenPrice,
-	AppliedPrice.High => candle.HighPrice,
-	AppliedPrice.Low => candle.LowPrice,
-	AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-	AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
-	AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
-	AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
-	AppliedPrice.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
-	AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
-	AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
-	_ => candle.ClosePrice,
+			AppliedPrice.Open => candle.OpenPrice,
+			AppliedPrice.High => candle.HighPrice,
+			AppliedPrice.Low => candle.LowPrice,
+			AppliedPrice.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPrice.Typical => (candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 3m,
+			AppliedPrice.Weighted => (2m * candle.ClosePrice + candle.HighPrice + candle.LowPrice) / 4m,
+			AppliedPrice.Simple => (candle.OpenPrice + candle.ClosePrice) / 2m,
+			AppliedPrice.Quarter => (candle.OpenPrice + candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 4m,
+			AppliedPrice.TrendFollow0 => candle.ClosePrice > candle.OpenPrice ? candle.HighPrice : candle.ClosePrice < candle.OpenPrice ? candle.LowPrice : candle.ClosePrice,
+			AppliedPrice.TrendFollow1 => candle.ClosePrice > candle.OpenPrice ? (candle.HighPrice + candle.ClosePrice) / 2m : candle.ClosePrice < candle.OpenPrice ? (candle.LowPrice + candle.ClosePrice) / 2m : candle.ClosePrice,
+			_ => candle.ClosePrice,
 		};
 	}
 
 	private static IIndicator CreateMovingAverage(SmoothingMethod method, int length)
-		{
+	{
 		return method switch
 		{
-	SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
-	SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
-	SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
-	_ => new ExponentialMovingAverage { Length = length },
+			SmoothingMethod.Simple => new SimpleMovingAverage { Length = length },
+			SmoothingMethod.Smoothed => new SmoothedMovingAverage { Length = length },
+			SmoothingMethod.Weighted => new WeightedMovingAverage { Length = length },
+			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
 
@@ -532,107 +518,107 @@ public class BlauErgodicMdiStrategy : Strategy
 	/// Entry confirmation modes replicated from the original expert advisor.
 	/// </summary>
 	public enum EntryMode
-		{
-	/// <summary>
-	/// Histogram breaks above or below the zero line.
-	/// </summary>
-	Breakdown,
+	{
+		/// <summary>
+		/// Histogram breaks above or below the zero line.
+		/// </summary>
+		Breakdown,
 
-	/// <summary>
-	/// Histogram changes slope direction.
-	/// </summary>
-	Twist,
+		/// <summary>
+		/// Histogram changes slope direction.
+		/// </summary>
+		Twist,
 
-	/// <summary>
-	/// Histogram crosses the signal line.
-	/// </summary>
-	CloudTwist
+		/// <summary>
+		/// Histogram crosses the signal line.
+		/// </summary>
+		CloudTwist
 	}
 
 	/// <summary>
 	/// Supported smoothing families.
 	/// </summary>
 	public enum SmoothingMethod
-		{
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	Exponential,
+	{
+		/// <summary>
+		/// Exponential moving average.
+		/// </summary>
+		Exponential,
 
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	Simple,
+		/// <summary>
+		/// Simple moving average.
+		/// </summary>
+		Simple,
 
-	/// <summary>
-	/// Smoothed (RMA) moving average.
-	/// </summary>
-	Smoothed,
+		/// <summary>
+		/// Smoothed (RMA) moving average.
+		/// </summary>
+		Smoothed,
 
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	Weighted
+		/// <summary>
+		/// Weighted moving average.
+		/// </summary>
+		Weighted
 	}
 
 	/// <summary>
 	/// Applied price sources identical to the MetaTrader version.
 	/// </summary>
 	public enum AppliedPrice
-		{
-	/// <summary>
-	/// Close price.
-	/// </summary>
-	Close,
+	{
+		/// <summary>
+		/// Close price.
+		/// </summary>
+		Close,
 
-	/// <summary>
-	/// Open price.
-	/// </summary>
-	Open,
+		/// <summary>
+		/// Open price.
+		/// </summary>
+		Open,
 
-	/// <summary>
-	/// High price.
-	/// </summary>
-	High,
+		/// <summary>
+		/// High price.
+		/// </summary>
+		High,
 
-	/// <summary>
-	/// Low price.
-	/// </summary>
-	Low,
+		/// <summary>
+		/// Low price.
+		/// </summary>
+		Low,
 
-	/// <summary>
-	/// Median price (high + low) / 2.
-	/// </summary>
-	Median,
+		/// <summary>
+		/// Median price (high + low) / 2.
+		/// </summary>
+		Median,
 
-	/// <summary>
-	/// Typical price (close + high + low) / 3.
-	/// </summary>
-	Typical,
+		/// <summary>
+		/// Typical price (close + high + low) / 3.
+		/// </summary>
+		Typical,
 
-	/// <summary>
-	/// Weighted price (2 * close + high + low) / 4.
-	/// </summary>
-	Weighted,
+		/// <summary>
+		/// Weighted price (2 * close + high + low) / 4.
+		/// </summary>
+		Weighted,
 
-	/// <summary>
-	/// Simple price (open + close) / 2.
-	/// </summary>
-	Simple,
+		/// <summary>
+		/// Simple price (open + close) / 2.
+		/// </summary>
+		Simple,
 
-	/// <summary>
-	/// Quarted price (open + high + low + close) / 4.
-	/// </summary>
-	Quarter,
+		/// <summary>
+		/// Quarted price (open + high + low + close) / 4.
+		/// </summary>
+		Quarter,
 
-	/// <summary>
-	/// Trend-following price using candle extremes.
-	/// </summary>
-	TrendFollow0,
+		/// <summary>
+		/// Trend-following price using candle extremes.
+		/// </summary>
+		TrendFollow0,
 
-	/// <summary>
-	/// Half-trend-following price.
-	/// </summary>
-	TrendFollow1
+		/// <summary>
+		/// Half-trend-following price.
+		/// </summary>
+		TrendFollow1
 	}
 }

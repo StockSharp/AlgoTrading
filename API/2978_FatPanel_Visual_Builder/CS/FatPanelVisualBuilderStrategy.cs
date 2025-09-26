@@ -254,7 +254,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		return (signals, rules);
 	}
 
-	private static void AddSignals(List<FatPanelCondition>? conditions, Dictionary<FatPanelSignalDefinition, SignalContext> signals)
+	private static void AddSignals(List<FatPanelCondition> conditions, Dictionary<FatPanelSignalDefinition, SignalContext> signals)
 	{
 		if (conditions == null)
 			return;
@@ -377,7 +377,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		return TimeSpan.TryParse(text, CultureInfo.InvariantCulture, out time);
 	}
 
-	private static decimal? ConvertToDecimal(object? value)
+	private static decimal? ConvertToDecimal(object value)
 	{
 		return value switch
 		{
@@ -677,16 +677,16 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		public string Name { get; init; }
 
 		[JsonPropertyName("all")]
-		public List<FatPanelCondition>? All { get; init; }
+		public List<FatPanelCondition> All { get; init; }
 
 		[JsonPropertyName("any")]
-		public List<FatPanelCondition>? Any { get; init; }
+		public List<FatPanelCondition> Any { get; init; }
 
 		[JsonPropertyName("none")]
-		public List<FatPanelCondition>? None { get; init; }
+		public List<FatPanelCondition> None { get; init; }
 
 		[JsonPropertyName("action")]
-		public FatPanelAction? Action { get; init; }
+		public FatPanelAction Action { get; init; }
 	}
 
 	private sealed class FatPanelAction

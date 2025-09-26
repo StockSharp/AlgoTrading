@@ -27,7 +27,7 @@ public class ExpColorPemaDigitTmPlusStrategy : Strategy
 	private readonly StrategyParam<int> _digitPrecision;
 	private readonly StrategyParam<int> _signalBar;
 
-	private ExponentialMovingAverage[]? _emaStages;
+	private ExponentialMovingAverage[] _emaStages;
 	private readonly List<decimal> _pemaValues = new();
 	private readonly List<TrendState> _trendStates = new();
 

@@ -225,7 +225,7 @@ public class AllInformationAboutTheSymbolStrategy : Strategy
 			return;
 		}
 
-		object? value;
+		object value;
 
 		try
 		{
@@ -295,7 +295,7 @@ public class AllInformationAboutTheSymbolStrategy : Strategy
 		LogProperties(board, "\t", skip);
 	}
 
-	private void LogProperties(object instance, string indent, string[]? skipProperties)
+	private void LogProperties(object instance, string indent, string[] skipProperties)
 	{
 		var type = instance.GetType();
 		var properties = type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -316,7 +316,7 @@ public class AllInformationAboutTheSymbolStrategy : Strategy
 			if (ShouldSkip(property.Name, skipProperties))
 				continue;
 
-			object? value;
+			object value;
 
 			try
 			{
@@ -339,7 +339,7 @@ public class AllInformationAboutTheSymbolStrategy : Strategy
 		if (property is null || !property.CanRead || property.GetIndexParameters().Length > 0)
 			return;
 
-		object? value;
+		object value;
 
 		try
 		{
@@ -359,7 +359,7 @@ public class AllInformationAboutTheSymbolStrategy : Strategy
 		return string.Compare(left.Name, right.Name, StringComparison.Ordinal);
 	}
 
-	private static bool ShouldSkip(string name, string[]? skipProperties)
+	private static bool ShouldSkip(string name, string[] skipProperties)
 	{
 		if (skipProperties is null || skipProperties.Length == 0)
 			return false;
@@ -373,7 +373,7 @@ public class AllInformationAboutTheSymbolStrategy : Strategy
 		return false;
 	}
 
-	private string FormatValue(object? value)
+	private string FormatValue(object value)
 	{
 		if (value is null)
 			return "<null>";

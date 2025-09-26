@@ -30,10 +30,10 @@ public class ProffessorV3Strategy : Strategy
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private AverageDirectionalIndex? _adx;
-	private decimal?[]? _adxMainHistory;
-	private decimal?[]? _plusHistory;
-	private decimal?[]? _minusHistory;
+	private AverageDirectionalIndex _adx;
+	private decimal?[] _adxMainHistory;
+	private decimal?[] _plusHistory;
+	private decimal?[] _minusHistory;
 	private decimal _adjustedPoint;
 	private decimal _deltaIncrement;
 	private decimal _delta1;

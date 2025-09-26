@@ -274,7 +274,7 @@ public class ClassicVirtualTrailingStrategy : Strategy
 		: null;
 	}
 
-	private static decimal? ToDecimal(object? value)
+	private static decimal? ToDecimal(object value)
 	{
 		return value switch
 		{

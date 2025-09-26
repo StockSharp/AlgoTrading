@@ -47,7 +47,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 		public decimal TrailingDistance { get; set; }
 		public decimal TrailingStep { get; set; }
 		public decimal FilledVolume { get; set; }
-		public PositionEntry? Entry { get; set; }
+		public PositionEntry Entry { get; set; }
 	}
 
 	private readonly StrategyParam<decimal> _baseVolume;
@@ -79,8 +79,8 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 	private ZeroLagExponentialMovingAverage _slowZlema = null!;
 	private ZeroLagExponentialMovingAverage _signalZlema = null!;
 
-	private PendingEntry? _pendingBuyEntry;
-	private PendingEntry? _pendingSellEntry;
+	private PendingEntry _pendingBuyEntry;
+	private PendingEntry _pendingSellEntry;
 
 	private decimal _pipSize;
 	private decimal _lastLongEntryPrice;
@@ -683,7 +683,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 	private void CloseMaximumProfit(decimal price)
 	{
-		PositionEntry? best = null;
+		PositionEntry best = null;
 		var bestProfit = decimal.MinValue;
 
 		foreach (var entry in _longEntries)
@@ -712,7 +712,7 @@ public class DealersTradeZeroLagMacdStrategy : Strategy
 
 	private void CloseMinimumProfit(decimal price)
 	{
-		PositionEntry? worst = null;
+		PositionEntry worst = null;
 		var worstProfit = decimal.MaxValue;
 
 		foreach (var entry in _longEntries)

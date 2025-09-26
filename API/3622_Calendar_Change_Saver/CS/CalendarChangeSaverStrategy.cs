@@ -171,7 +171,7 @@ public class CalendarChangeSaverStrategy : Strategy
 		LogInfo($"Captured news: {news.Headline}");
 	}
 
-	private void OnTimer(object? state)
+	private void OnTimer(object state)
 	{
 		if (ProcessState != ProcessStates.Started)
 		return;

@@ -15,7 +15,6 @@ public class BollingerBandsNPositionsStrategy : Strategy
 {
 	private const decimal VolumeTolerance = 0.00000001m;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<int> _bollingerPeriod;
 	private readonly StrategyParam<decimal> _bollingerWidth;
@@ -29,15 +28,6 @@ public class BollingerBandsNPositionsStrategy : Strategy
 	private decimal? _shortEntryPrice;
 	private decimal? _longTrailingStop;
 	private decimal? _shortTrailingStop;
-
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Maximum allowed net position expressed as multiples of <see cref="Volume"/>.
@@ -116,10 +106,6 @@ public class BollingerBandsNPositionsStrategy : Strategy
 	/// </summary>
 	public BollingerBandsNPositionsStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
-
 		_maxPositions = Param(nameof(MaxPositions), 9)
 		.SetGreaterThanZero()
 		.SetDisplay("Max Positions", "Net position limit in multiples of Volume", "Risk");

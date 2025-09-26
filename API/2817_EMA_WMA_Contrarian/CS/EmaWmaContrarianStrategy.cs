@@ -25,8 +25,8 @@ public class EmaWmaContrarianStrategy : Strategy
 	private readonly StrategyParam<decimal> _baseVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _ema;
-	private WeightedMovingAverage? _wma;
+	private ExponentialMovingAverage _ema;
+	private WeightedMovingAverage _wma;
 	private bool _hasPrevious;
 	private decimal _previousEma;
 	private decimal _previousWma;

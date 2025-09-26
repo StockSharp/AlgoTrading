@@ -230,7 +230,7 @@ public class PositiveSwapInformerStrategy : Strategy
 		}
 	}
 
-	private void OnTimer(object? state)
+	private void OnTimer(object state)
 	{
 		Security[] securities;
 		lock (_sync)
@@ -289,7 +289,7 @@ public class PositiveSwapInformerStrategy : Strategy
 		return (longSwap, shortSwap);
 	}
 
-	private static decimal? TryExtractFromExtensionInfo(IDictionary<object, object?>? extensionInfo, HashSet<string> aliases)
+	private static decimal? TryExtractFromExtensionInfo(IDictionary<object, object>? extensionInfo, HashSet<string> aliases)
 	{
 		if (extensionInfo == null)
 			return null;
@@ -310,7 +310,7 @@ public class PositiveSwapInformerStrategy : Strategy
 		return null;
 	}
 
-	private static bool TryConvertToDecimal(object? value, out decimal result)
+	private static bool TryConvertToDecimal(object value, out decimal result)
 	{
 		switch (value)
 		{

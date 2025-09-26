@@ -19,7 +19,6 @@ public class BullRowBreakoutStrategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takeProfitPrice;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<TimeSpan> _candleTimeFrame;
 	private readonly StrategyParam<int> _stopLossLookback;
 	private readonly StrategyParam<decimal> _takeProfitPercent;
@@ -44,10 +43,6 @@ public class BullRowBreakoutStrategy : Strategy
 	/// </summary>
 	public BullRowBreakoutStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetDisplay("Volume", "Fixed trade volume", "Trading")
-		.SetCanOptimize(true);
-
 		_candleTimeFrame = Param(nameof(CandleTimeFrame), TimeSpan.FromHours(1))
 		.SetDisplay("Timeframe", "Primary candle timeframe", "Market")
 		.SetCanOptimize(false);
@@ -119,15 +114,6 @@ public class BullRowBreakoutStrategy : Strategy
 		_stochasticLowerLevel = Param(nameof(StochasticLowerLevel), 30m)
 		.SetDisplay("Stochastic lower", "Lower bound for the oscillator", "Indicators")
 		.SetCanOptimize(true);
-	}
-
-	/// <summary>
-	/// Fixed trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
 	}
 
 	/// <summary>

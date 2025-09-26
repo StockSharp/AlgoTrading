@@ -216,7 +216,7 @@ public class SaveTicksStrategy : Strategy
 		timer?.Dispose();
 	}
 
-	private void OnTimer(object? state)
+	private void OnTimer(object state)
 	{
 		lock (_sync)
 		{

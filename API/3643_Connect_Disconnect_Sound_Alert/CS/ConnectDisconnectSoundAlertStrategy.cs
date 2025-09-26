@@ -105,7 +105,7 @@ public class ConnectDisconnectSoundAlertStrategy : Strategy
 		_timer = new Timer(OnTimer, null, interval, interval);
 	}
 
-	private void OnTimer(object? state)
+	private void OnTimer(object state)
 	{
 		var connector = Connector;
 

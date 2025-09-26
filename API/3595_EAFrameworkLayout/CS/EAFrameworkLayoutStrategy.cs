@@ -373,7 +373,7 @@ public class EAFrameworkLayoutStrategy : Strategy
 		return direction;
 	}
 
-	private decimal[]? GetShiftValues(int shift)
+	private decimal[] GetShiftValues(int shift)
 	{
 		return shift switch
 		{

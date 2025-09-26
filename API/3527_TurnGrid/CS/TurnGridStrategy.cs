@@ -31,7 +31,7 @@ public class TurnGridStrategy : Strategy
 	private readonly StrategyParam<decimal> _feeRate;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private GridLevel[]? _grid;
+	private GridLevel[] _grid;
 	private int _currentIndex;
 	private decimal _openBudget;
 	private decimal _openMoneyIncrement;

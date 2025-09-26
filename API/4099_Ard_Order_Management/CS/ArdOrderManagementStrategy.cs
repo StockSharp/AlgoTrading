@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ArdOrderManagementStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _modifyTakeProfitPips;
@@ -33,15 +32,6 @@ public class ArdOrderManagementStrategy : Strategy
 	private decimal _longTrailingTarget;
 	private decimal _shortTrailingStop;
 	private decimal _shortTrailingTarget;
-
-	/// <summary>
-	/// Trading volume used for new market entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initial take-profit distance expressed in pips.
@@ -138,12 +128,6 @@ public class ArdOrderManagementStrategy : Strategy
 	/// </summary>
 	public ArdOrderManagementStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trading volume used for market orders", "Trading")
-			.SetCanOptimize(true)
-			.SetOptimize(0.1m, 5m, 0.1m);
-
 		_takeProfitPips = Param(nameof(TakeProfitPips), 100m)
 			.SetNotNegative()
 			.SetDisplay("Take Profit (pips)", "Initial profit target distance", "Risk")

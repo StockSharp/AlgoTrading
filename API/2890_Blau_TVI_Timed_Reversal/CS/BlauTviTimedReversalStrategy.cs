@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BlauTviTimedReversalStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<BlauTviMaType> _maType;
 	private readonly StrategyParam<int> _length1;
@@ -40,15 +39,6 @@ public class BlauTviTimedReversalStrategy : Strategy
 	private LengthIndicator<decimal> _tviMa = null!;
 
 	private readonly List<decimal> _tviHistory = new();
-
-	/// <summary>
-	/// Trade volume in contracts or lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used for Blau TVI calculations.
@@ -208,10 +198,6 @@ public class BlauTviTimedReversalStrategy : Strategy
 	/// </summary>
 	public BlauTviTimedReversalStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
-
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe used for Blau TVI", "General");
 

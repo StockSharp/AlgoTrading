@@ -86,8 +86,8 @@ public class V1n1LonnyBreakoutStrategy : Strategy
 	private DateTimeOffset _sessionEnd;
 	private bool _sessionInitialized;
 
-	private decimal[]? _preSessionHighs;
-	private decimal[]? _preSessionLows;
+	private decimal[] _preSessionHighs;
+	private decimal[] _preSessionLows;
 	private int _preSessionIndex;
 	private int _preSessionCount;
 

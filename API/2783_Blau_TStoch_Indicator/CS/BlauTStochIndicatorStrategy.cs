@@ -31,7 +31,7 @@ public class BlauTStochIndicatorStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _stopLossPoints;
 
-	private BlauTripleStochastic? _indicator;
+	private BlauTripleStochastic _indicator;
 	private readonly List<decimal> _indicatorValues = new();
 
 	/// <summary>
@@ -519,8 +519,8 @@ public class BlauTStochIndicatorStrategy : Strategy
 		public int Smooth3 { get; set; } = 3;
 		public AppliedPriceType PriceType { get; set; } = AppliedPriceType.Close;
 
-		private Highest? _highest;
-		private Lowest? _lowest;
+		private Highest _highest;
+		private Lowest _lowest;
 		private IIndicator _stoch1;
 		private IIndicator _stoch2;
 		private IIndicator _stoch3;

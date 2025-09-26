@@ -109,7 +109,7 @@ public class Mt4MailStatusStrategy : Strategy
 		base.OnStopped();
 	}
 
-	private void OnTimer(object? state)
+	private void OnTimer(object state)
 	{
 		var now = CurrentTime;
 

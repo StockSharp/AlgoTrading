@@ -19,7 +19,6 @@ public class Breakout04Strategy : Strategy
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<bool> _useMm;
 	private readonly StrategyParam<decimal> _percentMm;
-	private readonly StrategyParam<decimal> _volume;
 
 	private decimal _prevHigh;
 	private decimal _prevLow;
@@ -34,7 +33,6 @@ public class Breakout04Strategy : Strategy
 	public int StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 	public bool UseMoneyManagement { get => _useMm.Value; set => _useMm.Value = value; }
 	public decimal PercentMM { get => _percentMm.Value; set => _percentMm.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	public Breakout04Strategy()
 	{
@@ -56,9 +54,6 @@ public class Breakout04Strategy : Strategy
 		_percentMm = Param(nameof(PercentMM), 8m)
 			.SetGreaterThanZero()
 			.SetDisplay("Percent MM", "Risk percent of free capital", "General");
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

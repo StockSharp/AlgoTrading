@@ -110,7 +110,7 @@ public class IsConnectedStrategy : Strategy
 		}
 	}
 
-	private void CheckConnectionState(object? state)
+	private void CheckConnectionState(object state)
 	{
 		DateTimeOffset now;
 		bool? newState = null;

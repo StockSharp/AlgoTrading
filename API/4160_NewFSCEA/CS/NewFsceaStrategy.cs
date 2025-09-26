@@ -28,7 +28,7 @@ public class NewFsceaStrategy : Strategy
 	private decimal? _previousMacd;
 	private decimal? _previousSignal;
 
-	private decimal?[]? _emaHistory;
+	private decimal?[] _emaHistory;
 	private int _emaIndex;
 	private int _emaCount;
 

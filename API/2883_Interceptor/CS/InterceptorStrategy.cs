@@ -47,11 +47,11 @@ public class InterceptorStrategy : Strategy
 	private readonly StrategyParam<int> _trailingDistancePoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage[]? _m5Emas;
-	private ExponentialMovingAverage[]? _m15Emas;
-	private ExponentialMovingAverage[]? _h1Emas;
-	private StochasticOscillator? _stochasticM5;
-	private StochasticOscillator? _stochasticM15;
+	private ExponentialMovingAverage[] _m5Emas;
+	private ExponentialMovingAverage[] _m15Emas;
+	private ExponentialMovingAverage[] _h1Emas;
+	private StochasticOscillator _stochasticM5;
+	private StochasticOscillator _stochasticM15;
 
 	private readonly RollingWindow<CandleSnapshot> _m5History = new(600);
 	private readonly RollingWindow<decimal> _m5FanWidthHistory = new(600);
@@ -62,9 +62,9 @@ public class InterceptorStrategy : Strategy
 	private readonly RollingWindow<decimal> _m15StochKHistory = new(200);
 	private readonly RollingWindow<decimal> _m15StochDHistory = new(200);
 
-	private decimal[]? _lastM5EmaValues;
-	private decimal[]? _lastM15EmaValues;
-	private decimal[]? _lastH1EmaValues;
+	private decimal[] _lastM5EmaValues;
+	private decimal[] _lastM15EmaValues;
+	private decimal[] _lastH1EmaValues;
 	private DateTimeOffset? _lastM5EmaTime;
 	private DateTimeOffset? _lastM5StochTime;
 	private DateTimeOffset? _lastProcessedM5Time;

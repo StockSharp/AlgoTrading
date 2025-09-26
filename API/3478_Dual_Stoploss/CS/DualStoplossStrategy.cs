@@ -244,7 +244,7 @@ public class DualStoplossStrategy : Strategy
 		return Enum.TryParse(name, out Level1Fields field) ? field : null;
 	}
 
-	private static decimal? ToDecimal(object? value)
+	private static decimal? ToDecimal(object value)
 	{
 		return value switch
 		{

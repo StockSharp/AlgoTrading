@@ -752,7 +752,7 @@ public class MulticurrencyOverlayHedgeStrategy : Strategy
 			return ReferenceEquals(First, other.First) && ReferenceEquals(Second, other.Second);
 		}
 
-		public override bool Equals(object? obj)
+		public override bool Equals(object obj)
 		{
 			return obj is HedgePairKey other && Equals(other);
 		}

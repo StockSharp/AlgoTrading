@@ -22,14 +22,14 @@ public class ReduceRisksStrategy : Strategy
 	private readonly StrategyParam<DataType> _m15CandleType;
 	private readonly StrategyParam<DataType> _h1CandleType;
 
-	private SimpleMovingAverage? _m1Sma5;
-	private SimpleMovingAverage? _m1Sma8;
-	private SimpleMovingAverage? _m1Sma13;
-	private SimpleMovingAverage? _m1Sma60;
-	private SimpleMovingAverage? _m15Sma4;
-	private SimpleMovingAverage? _m15Sma5;
-	private SimpleMovingAverage? _m15Sma8;
-	private SimpleMovingAverage? _h1Sma24;
+	private SimpleMovingAverage _m1Sma5;
+	private SimpleMovingAverage _m1Sma8;
+	private SimpleMovingAverage _m1Sma13;
+	private SimpleMovingAverage _m1Sma60;
+	private SimpleMovingAverage _m15Sma4;
+	private SimpleMovingAverage _m15Sma5;
+	private SimpleMovingAverage _m15Sma8;
+	private SimpleMovingAverage _h1Sma24;
 
 	private RollingValues _m1Sma5Values;
 	private RollingValues _m1Sma8Values;

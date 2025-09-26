@@ -26,10 +26,10 @@ public class MostasHar15PivotStrategy : Strategy
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
 
-	private EMA? _emaClose;
-	private EMA? _emaOpen;
-	private AverageDirectionalIndex? _adx;
-	private MovingAverageConvergenceDivergence? _macd;
+	private EMA _emaClose;
+	private EMA _emaOpen;
+	private AverageDirectionalIndex _adx;
+	private MovingAverageConvergenceDivergence _macd;
 
 	private decimal? _prevEmaClose;
 	private decimal? _prevEmaOpen;

@@ -62,7 +62,7 @@ namespace StockSharp.Samples.Strategies;
 	_timer.Stop();
 }
 
-	private void OnTimer(object? sender, ElapsedEventArgs e)
+	private void OnTimer(object sender, ElapsedEventArgs e)
 	{
 	if (_charts.Count == 0)
 	return;

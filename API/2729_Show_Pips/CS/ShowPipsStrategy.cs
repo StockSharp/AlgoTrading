@@ -24,7 +24,7 @@ public class ShowPipsStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _pipSize;
 
-	private IChartArea? _chartArea;
+	private IChartArea _chartArea;
 	private DateTimeOffset? _currentBarOpenTime;
 	private decimal? _lastPrice;
 	private decimal? _bestBid;

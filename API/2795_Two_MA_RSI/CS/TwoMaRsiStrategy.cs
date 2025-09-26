@@ -22,9 +22,9 @@ public class TwoMaRsiStrategy : Strategy
 	private readonly StrategyParam<int> _maxDoublings;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _fastEma;
-	private ExponentialMovingAverage? _slowEma;
-	private RelativeStrengthIndex? _rsi;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private RelativeStrengthIndex _rsi;
 
 	private decimal? _previousFast;
 	private decimal? _previousSlow;

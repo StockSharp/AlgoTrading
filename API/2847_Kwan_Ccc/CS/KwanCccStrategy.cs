@@ -39,7 +39,7 @@ public class KwanCccStrategy : Strategy
 	private IIndicator _fastMa = null!;
 	private IIndicator _slowMa = null!;
 	private IIndicator _smoothingIndicator;
-	private ChandeMomentumOscillator? _vidyaCmo;
+	private ChandeMomentumOscillator _vidyaCmo;
 	private decimal? _vidyaValue;
 	private decimal? _previousSmoothed;
 	private readonly List<int> _colorHistory = new();

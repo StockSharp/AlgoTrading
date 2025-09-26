@@ -30,8 +30,8 @@ private readonly StrategyParam<decimal> _profitClose;
 
 private LengthIndicator<decimal> _fastMa;
 private LengthIndicator<decimal> _slowMa;
-private ShiftBuffer? _fastBuffer;
-private ShiftBuffer? _slowBuffer;
+private ShiftBuffer _fastBuffer;
+private ShiftBuffer _slowBuffer;
 
 private decimal _pipSize;
 private decimal _positionVolume;

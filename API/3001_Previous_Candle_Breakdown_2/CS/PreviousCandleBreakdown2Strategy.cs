@@ -32,8 +32,8 @@ public class PreviousCandleBreakdown2Strategy : Strategy
 	private readonly StrategyParam<TimeSpan> _endTime;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RollingWindow<decimal>? _fastWindow;
-	private RollingWindow<decimal>? _slowWindow;
+	private RollingWindow<decimal> _fastWindow;
+	private RollingWindow<decimal> _slowWindow;
 	private IIndicator _fastIndicator;
 	private IIndicator _slowIndicator;
 

@@ -18,7 +18,6 @@ public class BreakdownLevelDayStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _noLoss;
 	private readonly StrategyParam<int> _trailing;
-	private readonly StrategyParam<decimal> _volume;
 
 	private decimal _prevHigh;
 	private decimal _prevLow;
@@ -66,12 +65,6 @@ public class BreakdownLevelDayStrategy : Strategy
 		set => _trailing.Value = value;
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
-
 	public BreakdownLevelDayStrategy()
 	{
 		_orderTime = Param(nameof(OrderTime), TimeSpan.Zero)
@@ -91,9 +84,6 @@ public class BreakdownLevelDayStrategy : Strategy
 
 		_trailing = Param(nameof(Trailing), 0)
 			.SetDisplay("Trailing (points)", "Trailing stop distance in points", "Risk");
-
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "General");
 	}
 
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
