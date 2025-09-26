@@ -22,8 +22,8 @@ public class SymbolSwapPanelStrategy : Strategy
 	private MarketDataSubscription? _candleSubscription;
 	private MarketDataSubscription? _level1Subscription;
 
-	private Security? _activeSecurity;
-	private string? _appliedSecurityId;
+	private Security _activeSecurity;
+	private string _appliedSecurityId;
 
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
@@ -212,7 +212,7 @@ public class SymbolSwapPanelStrategy : Strategy
 		SwapRequested = false;
 	}
 
-	private Security? ResolveTargetSecurity(string securityId)
+	private Security ResolveTargetSecurity(string securityId)
 	{
 		var security = this.GetSecurity(securityId);
 

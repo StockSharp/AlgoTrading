@@ -25,9 +25,9 @@ public class SidusEmaRsiStrategy : Strategy
 	private readonly StrategyParam<int> _signalShift;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _fastEma;
-	private ExponentialMovingAverage? _slowEma;
-	private RelativeStrengthIndex? _rsi;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private RelativeStrengthIndex _rsi;
 
 	private readonly Queue<(DateTimeOffset time, decimal fast, decimal slow, decimal rsi)> _history = new();
 

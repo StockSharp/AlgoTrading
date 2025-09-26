@@ -221,7 +221,7 @@ public class MultiHedgingSchedulerStrategy : Strategy
 		};
 	}
 
-	private Security? ResolveSecurity(string code)
+	private Security ResolveSecurity(string code)
 	{
 		if (string.IsNullOrWhiteSpace(code))
 		return null;

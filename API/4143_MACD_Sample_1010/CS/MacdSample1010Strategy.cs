@@ -24,7 +24,7 @@ public class MacdSample1010Strategy : Strategy
 	private readonly StrategyParam<bool> _oneOrderOnly;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private BollingerBands? _bollinger;
+	private BollingerBands _bollinger;
 	private decimal _currentVolume;
 	private decimal? _initialBalancePerLot;
 	private bool _tradeAllowed;

@@ -17,9 +17,9 @@ public class MamyExpertStrategy : Strategy
 	private readonly StrategyParam<MaCalculationType> _maType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal>? _closeMa;
-	private LengthIndicator<decimal>? _openMa;
-	private LengthIndicator<decimal>? _weightedPriceMa;
+	private LengthIndicator<decimal> _closeMa;
+	private LengthIndicator<decimal> _openMa;
+	private LengthIndicator<decimal> _weightedPriceMa;
 
 	private decimal? _previousCloseMa;
 	private decimal? _previousOpenMa;

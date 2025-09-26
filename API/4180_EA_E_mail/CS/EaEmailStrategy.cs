@@ -153,13 +153,13 @@ public class EaEmailStrategy : Strategy
 		return type.Name;
 	}
 
-	private string GetPortfolioLeverage(Portfolio? portfolio)
+	private string GetPortfolioLeverage(Portfolio portfolio)
 	{
 		var leverage = TryGetPortfolioMetric(portfolio, "Leverage");
 		return leverage.HasValue ? FormatDecimal(leverage.Value) : "N/A";
 	}
 
-	private static decimal? TryGetPortfolioMetric(Portfolio? portfolio, string propertyName)
+	private static decimal? TryGetPortfolioMetric(Portfolio portfolio, string propertyName)
 	{
 		if (portfolio == null)
 			return null;

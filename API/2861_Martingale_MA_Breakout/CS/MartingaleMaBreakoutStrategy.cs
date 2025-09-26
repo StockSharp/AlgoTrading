@@ -25,7 +25,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	private readonly StrategyParam<AppliedPrice> _appliedPrice;
 	private readonly StrategyParam<decimal> _riskPercent;
 
-	private LengthIndicator<decimal>? _movingAverage;
+	private LengthIndicator<decimal> _movingAverage;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pipSize;
 	private decimal? _stopPrice;

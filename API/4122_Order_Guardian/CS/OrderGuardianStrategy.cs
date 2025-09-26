@@ -36,7 +36,7 @@ public class OrderGuardianStrategy : Strategy
 
 	private IIndicator _takeProfitMaIndicator;
 	private IIndicator _stopLossMaIndicator;
-	private ParabolicSar? _sarIndicator;
+	private ParabolicSar _sarIndicator;
 
 	private decimal[] _takeProfitBuffer = Array.Empty<decimal>();
 	private int _takeProfitWriteIndex;
@@ -52,7 +52,7 @@ public class OrderGuardianStrategy : Strategy
 	private DateTimeOffset? _lastGuideTime;
 	private decimal? _lastGuideTakeProfit;
 	private decimal? _lastGuideStopLoss;
-	private string? _lastStatusMessage;
+	private string _lastStatusMessage;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="OrderGuardianStrategy"/> class.
@@ -310,10 +310,10 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Latest formatted status line summarising the active levels.
 	/// </summary>
-	public string? StatusLine => _lastStatusMessage;
+	public string StatusLine => _lastStatusMessage;
 
 	/// <inheritdoc />
-	public override System.Collections.Generic.IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
+	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
 		return [(Security, CandleType)];
 	}

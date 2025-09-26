@@ -329,7 +329,7 @@ public class AllanmaugTradeCopierStrategy : Strategy
 		return (volume, averagePrice);
 	}
 
-	private Security? LookupSecurity(string symbol)
+	private Security LookupSecurity(string symbol)
 	{
 		if (string.IsNullOrWhiteSpace(symbol))
 		return null;
@@ -351,8 +351,8 @@ public class AllanmaugTradeCopierStrategy : Strategy
 
 	private sealed class CopierEntry
 	{
-		public string? MasterSymbol { get; set; }
-		public string? SlaveSymbol { get; set; }
+		public string MasterSymbol { get; set; }
+		public string SlaveSymbol { get; set; }
 		public decimal Volume { get; set; }
 		public decimal AveragePrice { get; set; }
 	}

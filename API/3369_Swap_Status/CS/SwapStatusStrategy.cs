@@ -266,8 +266,8 @@ public class SwapStatusStrategy : Strategy
 	{
 		public decimal? ShortSwap;
 		public decimal? LongSwap;
-		public string? LastShortStatus;
-		public string? LastLongStatus;
+		public string LastShortStatus;
+		public string LastLongStatus;
 	}
 }
 

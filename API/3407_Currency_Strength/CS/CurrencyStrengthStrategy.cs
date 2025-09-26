@@ -364,7 +364,7 @@ public class CurrencyStrengthStrategy : Strategy
 		TryLogStrengthSnapshot(candle.OpenTime);
 	}
 
-	private (string? Strongest, string? Weakest) RecalculateCurrencyStrengths()
+	private (string Strongest, string Weakest) RecalculateCurrencyStrengths()
 	{
 		_currencyStrengths.Clear();
 
@@ -413,7 +413,7 @@ public class CurrencyStrengthStrategy : Strategy
 		LogInfo($"Currency strengths => {ordered}");
 	}
 
-	private static (string Base, string Quote) SplitCurrencyPair(string? code)
+	private static (string Base, string Quote) SplitCurrencyPair(string code)
 	{
 		if (code.IsEmpty())
 			return (string.Empty, string.Empty);

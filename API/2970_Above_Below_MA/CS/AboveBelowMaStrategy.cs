@@ -24,7 +24,7 @@ public class AboveBelowMaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal>? _ma;
+	private LengthIndicator<decimal> _ma;
 	private readonly Queue<decimal> _maValues = new();
 	private decimal? _currentMa;
 	private decimal? _previousMa;

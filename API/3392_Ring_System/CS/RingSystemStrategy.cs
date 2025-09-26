@@ -23,9 +23,9 @@ public class RingSystemStrategy : Strategy
 	private readonly StrategyParam<string> _symbolSuffix;
 	private readonly StrategyParam<bool> _flattenOnStop;
 
-	private Security? _pairOne;
-	private Security? _pairTwo;
-	private Security? _pairThree;
+	private Security _pairOne;
+	private Security _pairTwo;
+	private Security _pairThree;
 
 	private readonly Dictionary<Security, decimal> _lastCloses = new();
 	private int _ringDirection;

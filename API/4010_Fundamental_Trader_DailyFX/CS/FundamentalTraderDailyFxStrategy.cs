@@ -759,7 +759,7 @@ public class FundamentalTraderDailyFxStrategy : Strategy
 		}
 	}
 
-	private Security? ResolveSecurity(string currency)
+	private Security ResolveSecurity(string currency)
 	{
 		var key = currency.ToUpperInvariant();
 		if (_currencyToSecurity.TryGetValue(key, out var security))
@@ -787,7 +787,7 @@ public class FundamentalTraderDailyFxStrategy : Strategy
 		return security;
 	}
 
-	private Security? LookupSecurity(string code)
+	private Security LookupSecurity(string code)
 	{
 		if (SecurityProvider == null)
 		return null;
@@ -907,7 +907,7 @@ public class FundamentalTraderDailyFxStrategy : Strategy
 			}
 
 			using var reader = new StreamReader(path);
-			string? line;
+			string line;
 			while ((line = reader.ReadLine()) != null)
 			{
 				if (string.IsNullOrWhiteSpace(line))

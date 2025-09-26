@@ -312,7 +312,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 		EnsureLegPosition(leg);
 	}
 
-	private Security? FindFuture(string shortName, DateTimeOffset referenceTime, DateTimeOffset? minExpiryExclusive)
+	private Security FindFuture(string shortName, DateTimeOffset referenceTime, DateTimeOffset? minExpiryExclusive)
 	{
 		if (SecurityProvider == null)
 			return null;
@@ -365,7 +365,7 @@ public class FuturesPortfolioControlExpirationStrategy : Strategy
 		yield return $"{shortName}{monthStr}{yearSuffix}";
 	}
 
-	private Security? LookupSecurity(string code)
+	private Security LookupSecurity(string code)
 	{
 		if (SecurityProvider == null)
 			return null;

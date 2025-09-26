@@ -92,7 +92,7 @@ public class FineClockStrategy : Strategy
 	private decimal? _lastPrice;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
-	private string? _lastRenderedText;
+	private string _lastRenderedText;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="FineClockStrategy"/> class.

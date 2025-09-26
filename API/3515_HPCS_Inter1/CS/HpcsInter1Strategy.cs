@@ -10,7 +10,7 @@ public class HpcsInter1Strategy : Strategy
 {
 	private readonly StrategyParam<string> _csvFileName;
 	private readonly StrategyParam<char> _separator;
-	private string? _resolvedPath;
+	private string _resolvedPath;
 
 	/// <summary>
 	/// Name of the CSV file that will be read during initialization.

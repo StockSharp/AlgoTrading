@@ -30,7 +30,7 @@ public class KwanRdpStrategy : Strategy
 
 	private MoneyFlowIndex? _mfi;
 	private Momentum? _momentum;
-	private LengthIndicator<decimal>? _smoother;
+	private LengthIndicator<decimal> _smoother;
 	private SMA? _deMaxAverage;
 	private SMA? _deMinAverage;
 	private decimal? _previousHigh;

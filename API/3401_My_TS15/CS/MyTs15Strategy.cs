@@ -29,7 +29,7 @@ public class MyTs15Strategy : Strategy
 
 	private readonly List<decimal> _maHistory = new();
 
-	private LengthIndicator<decimal>? _maIndicator;
+	private LengthIndicator<decimal> _maIndicator;
 	private Order _activeStopOrder;
 	private decimal? _longStop;
 	private decimal? _shortStop;

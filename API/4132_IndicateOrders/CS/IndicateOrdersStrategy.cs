@@ -23,7 +23,7 @@ public class IndicateOrdersStrategy : Strategy
 	private readonly List<OpenTrade> _openSellTrades = new();
 
 	private decimal? _lastPrice;
-	private string? _lastSummary;
+	private string _lastSummary;
 
 	/// <summary>
 	/// Maximum number of order details logged for each side.

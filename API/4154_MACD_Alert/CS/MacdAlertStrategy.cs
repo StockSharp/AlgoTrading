@@ -22,7 +22,7 @@ public class MacdAlertStrategy : Strategy
 	private readonly StrategyParam<bool> _enableAlerts;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverageConvergenceDivergence? _macdIndicator;
+	private MovingAverageConvergenceDivergence _macdIndicator;
 
 	/// <summary>
 	/// Fast EMA period for the MACD calculation.

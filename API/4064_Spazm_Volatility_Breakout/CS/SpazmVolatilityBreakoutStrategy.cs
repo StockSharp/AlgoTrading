@@ -23,7 +23,7 @@ public class SpazmVolatilityBreakoutStrategy : Strategy
 	private readonly StrategyParam<bool> _drawSwingLines;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _volatilityIndicator;
+	private LengthIndicator<decimal> _volatilityIndicator;
 	private decimal _priceStep;
 	private decimal _threshold;
 	private decimal _highestPrice;

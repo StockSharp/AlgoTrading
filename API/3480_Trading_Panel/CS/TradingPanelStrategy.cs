@@ -29,7 +29,7 @@ public class TradingPanelStrategy : Strategy
 	private readonly StrategyParam<bool> _autoLookupSecurity;
 	private readonly StrategyParam<DataType> _defaultCandleType;
 
-	private Security? _resolvedSecurity;
+	private Security _resolvedSecurity;
 	private DataType _activeCandleType;
 	private CandleIndicatorSubscription? _subscription;
 
@@ -210,7 +210,7 @@ public class TradingPanelStrategy : Strategy
 		LogInfo($"{candle.SecurityId} {TimeFrameName} close: {candle.ClosePrice}");
 	}
 
-	private Security? ResolveSecurity()
+	private Security ResolveSecurity()
 	{
 		if (_resolvedSecurity != null)
 		return _resolvedSecurity;

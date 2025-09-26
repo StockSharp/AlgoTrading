@@ -34,8 +34,8 @@ public class CurrencyLoaderStrategy : Strategy
 
 	private readonly List<TimeframeExport> _exports = new();
 
-	private string? _baseDirectory;
-	private string? _safeSymbol;
+	private string _baseDirectory;
+	private string _safeSymbol;
 	private int _priceDigits;
 
 	private readonly record struct CandleSnapshot(

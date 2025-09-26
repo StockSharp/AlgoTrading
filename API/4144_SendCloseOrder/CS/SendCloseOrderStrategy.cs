@@ -29,10 +29,10 @@ public class SendCloseOrderStrategy : Strategy
 
 	private readonly List<FractalPoint> _fractals = new();
 
-	private LineInfo? _sellLine;
-	private LineInfo? _buyLine;
-	private LineInfo? _closeLongLine;
-	private LineInfo? _closeShortLine;
+	private LineInfo _sellLine;
+	private LineInfo _buyLine;
+	private LineInfo _closeLongLine;
+	private LineInfo _closeShortLine;
 
 	private decimal _h1;
 	private decimal _h2;
@@ -469,7 +469,7 @@ public class SendCloseOrderStrategy : Strategy
 		return null;
 	}
 
-	private IEnumerable<LineInfo?> EnumerateLinesByPriority()
+	private IEnumerable<LineInfo> EnumerateLinesByPriority()
 	{
 		yield return _closeLongLine;
 		yield return _closeShortLine;

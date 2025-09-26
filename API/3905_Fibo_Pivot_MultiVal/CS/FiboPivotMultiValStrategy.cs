@@ -806,7 +806,7 @@ public class FiboPivotMultiValStrategy : Strategy
 	return step > 0m ? step : 0.0001m;
 	}
 
-	private static string NormalizeMidZoneMode(string? value)
+	private static string NormalizeMidZoneMode(string value)
 	{
 	if (string.IsNullOrWhiteSpace(value))
 	return "bs";

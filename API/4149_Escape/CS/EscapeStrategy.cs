@@ -23,8 +23,8 @@ public class EscapeStrategy : Strategy
 	private readonly StrategyParam<decimal> _minimumMarginPerLot;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _longAverage;
-	private SimpleMovingAverage? _shortAverage;
+	private SimpleMovingAverage _longAverage;
+	private SimpleMovingAverage _shortAverage;
 
 	private decimal? _previousLongAverage;
 	private decimal? _previousShortAverage;

@@ -42,8 +42,8 @@ public class XcciHistogramVolStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private CommodityChannelIndex? _cci;
-	private LengthIndicator<decimal>? _cciVolumeAverage;
-	private LengthIndicator<decimal>? _volumeAverage;
+	private LengthIndicator<decimal> _cciVolumeAverage;
+	private LengthIndicator<decimal> _volumeAverage;
 	private readonly List<int> _colorHistory = new();
 	private bool _primaryLongActive;
 	private bool _secondaryLongActive;

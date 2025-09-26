@@ -35,8 +35,8 @@ public class SvDailyBreakoutStrategy : Strategy
 	private readonly StrategyParam<AppliedPrice> _slowAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 
 	private readonly List<decimal> _fastMaValues = new();
 	private readonly List<decimal> _slowMaValues = new();

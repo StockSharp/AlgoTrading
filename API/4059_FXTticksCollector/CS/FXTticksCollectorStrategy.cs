@@ -29,7 +29,7 @@ public class FXTticksCollectorStrategy : Strategy
 	private FileStream? _stream;
 	private BinaryWriter _writer;
 	private BinaryReader _reader;
-	private string? _filePath;
+	private string _filePath;
 	private DateTimeOffset? _lastRecordedBar;
 	private int _recordedBars;
 	private long _recordedTicks;

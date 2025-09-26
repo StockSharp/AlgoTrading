@@ -29,8 +29,8 @@ public class ExtremeEaStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceMode> _maPriceMode;
 	private readonly StrategyParam<AppliedPriceMode> _cciPriceMode;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private CommodityChannelIndex? _cci;
 
 	private decimal? _fastMaCurrent;
@@ -399,7 +399,7 @@ public class ExtremeEaStrategy : Strategy
 		_latestCciValue = indicatorValue.ToDecimal();
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal>? indicator, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, ICandleMessage candle)
 	{
 		if (indicator == null)
 			return null;

@@ -40,7 +40,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 
 	private RelativeStrengthIndex _rsi = null!;
 	private WilliamsR _williams = null!;
-	private LengthIndicator<decimal>? _smoother;
+	private LengthIndicator<decimal> _smoother;
 	private SimpleMovingAverage _deMaxSma = null!;
 	private SimpleMovingAverage _deMinSma = null!;
 
@@ -686,7 +686,7 @@ public class FractalWeightOscillatorStrategy : Strategy
 		return candle.TotalVolume;
 	}
 
-	private static LengthIndicator<decimal>? CreateSmoother(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length)
 	{
 		return method switch
 		{

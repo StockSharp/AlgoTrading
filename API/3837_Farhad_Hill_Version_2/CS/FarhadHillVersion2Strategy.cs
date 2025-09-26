@@ -55,8 +55,8 @@ public class FarhadHillVersion2Strategy : Strategy
 	private readonly StrategyParam<MovingAverageMode> _maMode;
 	private readonly StrategyParam<AppliedPriceMode> _maPrice;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private LinearRegression? _fastLsma;
 	private LinearRegression? _slowLsma;
 	private StochasticOscillator _stochastic = null!;
@@ -402,7 +402,7 @@ return false;
 		return true;
 	}
 
-private bool TryProcessIndicator(LengthIndicator<decimal>? ma, LinearRegression? lsma, decimal price, ICandleMessage candle, bool isFinal, out decimal value)
+private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression? lsma, decimal price, ICandleMessage candle, bool isFinal, out decimal value)
 {
 value = 0m;
 IIndicatorValue? result = null;
@@ -878,7 +878,7 @@ break;
 		}
 	}
 
-	private static LengthIndicator<decimal>? CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression? lsma)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression? lsma)
 	{
 		lsma = null;
 		return mode switch

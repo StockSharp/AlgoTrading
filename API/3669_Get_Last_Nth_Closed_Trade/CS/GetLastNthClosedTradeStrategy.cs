@@ -25,7 +25,7 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		public required Sides Side { get; init; }
 		public long? OrderId { get; init; }
 		public long? TradeId { get; init; }
-		public string? Comment { get; init; }
+		public string Comment { get; init; }
 	}
 
 	private sealed class PositionRecord
@@ -35,7 +35,7 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		public required DateTimeOffset EntryTime { get; init; }
 		public required decimal AveragePrice { get; set; }
 		public required decimal TotalVolume { get; set; }
-		public string? EntryComment { get; init; }
+		public string EntryComment { get; init; }
 		public long? EntryOrderId { get; init; }
 		public long? EntryTradeId { get; init; }
 	}
@@ -50,8 +50,8 @@ public class GetLastNthClosedTradeStrategy : Strategy
 		public required decimal ExitPrice { get; init; }
 		public required decimal Volume { get; init; }
 		public required decimal Profit { get; init; }
-		public string? EntryComment { get; init; }
-		public string? ExitComment { get; init; }
+		public string EntryComment { get; init; }
+		public string ExitComment { get; init; }
 		public long? EntryOrderId { get; init; }
 		public long? ExitOrderId { get; init; }
 		public long? EntryTradeId { get; init; }

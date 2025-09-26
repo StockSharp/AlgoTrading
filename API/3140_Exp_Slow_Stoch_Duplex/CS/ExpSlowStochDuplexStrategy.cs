@@ -40,10 +40,10 @@ public class ExpSlowStochDuplexStrategy : Strategy
 
 	private StochasticOscillator? _longStochastic;
 	private StochasticOscillator? _shortStochastic;
-	private LengthIndicator<decimal>? _longKSmoother;
-	private LengthIndicator<decimal>? _longDSmoother;
-	private LengthIndicator<decimal>? _shortKSmoother;
-	private LengthIndicator<decimal>? _shortDSmoother;
+	private LengthIndicator<decimal> _longKSmoother;
+	private LengthIndicator<decimal> _longDSmoother;
+	private LengthIndicator<decimal> _shortKSmoother;
+	private LengthIndicator<decimal> _shortDSmoother;
 
 	private decimal?[] _longKHistory = Array.Empty<decimal?>();
 	private decimal?[] _longDHistory = Array.Empty<decimal?>();
@@ -506,7 +506,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 		}
 	}
 
-	private static LengthIndicator<decimal>? CreateSmoother(SmoothingMethod method, int length)
+	private static LengthIndicator<decimal> CreateSmoother(SmoothingMethod method, int length)
 	{
 		if (method == SmoothingMethod.None || length <= 1)
 			return null;
@@ -521,7 +521,7 @@ public class ExpSlowStochDuplexStrategy : Strategy
 		};
 	}
 
-	private static decimal? ApplySmoothing(LengthIndicator<decimal>? smoother, decimal value, ICandleMessage candle)
+	private static decimal? ApplySmoothing(LengthIndicator<decimal> smoother, decimal value, ICandleMessage candle)
 	{
 		if (smoother == null)
 			return value;

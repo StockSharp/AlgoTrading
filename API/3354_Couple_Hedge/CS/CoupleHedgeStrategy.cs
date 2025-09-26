@@ -882,7 +882,7 @@ public class CoupleHedgeStrategy : Strategy
 		return result;
 	}
 
-	private Security? LookupSecurity(string id)
+	private Security LookupSecurity(string id)
 	{
 		if (string.IsNullOrEmpty(id))
 		return null;

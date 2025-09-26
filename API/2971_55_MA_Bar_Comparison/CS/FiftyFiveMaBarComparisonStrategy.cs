@@ -29,7 +29,7 @@ public class FiftyFiveMaBarComparisonStrategy : Strategy
 	private readonly StrategyParam<MovingAverageMethod> _maMethod;
 	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
 
-	private LengthIndicator<decimal>? _movingAverage;
+	private LengthIndicator<decimal> _movingAverage;
 	private decimal[] _maBuffer = Array.Empty<decimal>();
 	private int _bufferCount;
 	private decimal _pipSize;

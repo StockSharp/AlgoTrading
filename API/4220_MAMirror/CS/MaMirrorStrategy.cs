@@ -15,8 +15,8 @@ public class MaMirrorStrategy : Strategy
 	private readonly StrategyParam<int> _movingShift;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private SimpleMovingAverage? _closeMovingAverage;
-	private SimpleMovingAverage? _openMovingAverage;
+	private SimpleMovingAverage _closeMovingAverage;
+	private SimpleMovingAverage _openMovingAverage;
 
 	private readonly Queue<decimal> _closeBuffer = new(); // Stores SMA values to emulate the MetaTrader shift parameter for closes
 	private readonly Queue<decimal> _openBuffer = new(); // Stores SMA values to emulate the MetaTrader shift parameter for opens
@@ -172,7 +172,7 @@ public class MaMirrorStrategy : Strategy
 		_signalInitialized = true;
 	}
 
-	private static decimal? ProcessMovingAverage(LengthIndicator<decimal>? indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
+	private static decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
 	{
 		if (indicator == null)
 			return null;

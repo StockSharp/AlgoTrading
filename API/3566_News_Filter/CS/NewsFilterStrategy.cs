@@ -403,7 +403,7 @@ public class NewsFilterStrategy : Strategy
 		return System.Net.WebUtility.HtmlDecode(text).Trim();
 	}
 
-	private static bool TryBuildTime(string? dateText, string? timeText, out DateTimeOffset time)
+	private static bool TryBuildTime(string dateText, string timeText, out DateTimeOffset time)
 	{
 		time = default;
 
@@ -567,7 +567,7 @@ public class NewsFilterStrategy : Strategy
 		return currencies;
 	}
 
-	private static string NormalizeImportance(string? raw)
+	private static string NormalizeImportance(string raw)
 	{
 		if (string.IsNullOrWhiteSpace(raw))
 		{

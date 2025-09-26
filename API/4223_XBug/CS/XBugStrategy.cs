@@ -29,8 +29,8 @@ public class XBugStrategy : Strategy
 	private readonly StrategyParam<CandlePrice> _appliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _fastMa;
-	private SimpleMovingAverage? _slowMa;
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
 	private readonly List<decimal> _fastHistory = new();
 	private readonly List<decimal> _slowHistory = new();
 	private decimal _pipSize;

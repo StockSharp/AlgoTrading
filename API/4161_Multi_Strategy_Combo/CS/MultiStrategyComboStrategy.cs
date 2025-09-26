@@ -86,17 +86,17 @@ public class MultiStrategyComboStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitOffset;
 	private readonly StrategyParam<bool> _useTrailingStop;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _midMa;
-	private LengthIndicator<decimal>? _slowMa;
-	private RelativeStrengthIndex? _rsi;
-	private MovingAverageConvergenceDivergence? _macd;
-	private StochasticOscillator? _stochastic;
-	private ParabolicSar? _sar;
-	private AverageDirectionalIndex? _adx;
-	private BollingerBands? _bollingerMedium;
-	private BollingerBands? _bollingerWide;
-	private AverageTrueRange? _noiseAtr;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _midMa;
+	private LengthIndicator<decimal> _slowMa;
+	private RelativeStrengthIndex _rsi;
+	private MovingAverageConvergenceDivergence _macd;
+	private StochasticOscillator _stochastic;
+	private ParabolicSar _sar;
+	private AverageDirectionalIndex _adx;
+	private BollingerBands _bollingerMedium;
+	private BollingerBands _bollingerWide;
+	private AverageTrueRange _noiseAtr;
 
 	private decimal? _fastMaPrev;
 	private decimal? _fastMaCurrent;

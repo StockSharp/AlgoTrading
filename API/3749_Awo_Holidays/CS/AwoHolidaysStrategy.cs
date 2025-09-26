@@ -25,7 +25,7 @@ public class AwoHolidaysStrategy : Strategy
 	private readonly StrategyParam<string> _holidayColorName;
 
 	private readonly List<HolidayEntry> _holidayEntries = new();
-	private string? _lastStatusText;
+	private string _lastStatusText;
 
 	/// <summary>
 	/// Number of past days to include in the status output.

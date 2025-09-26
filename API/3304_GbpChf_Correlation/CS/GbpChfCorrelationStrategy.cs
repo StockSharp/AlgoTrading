@@ -27,8 +27,8 @@ public class GbpChfCorrelationStrategy : Strategy
 	private readonly StrategyParam<string> _gbpUsdSymbol;
 	private readonly StrategyParam<string> _usdChfSymbol;
 
-	private Security? _gbpUsdSecurity;
-	private Security? _usdChfSecurity;
+	private Security _gbpUsdSecurity;
+	private Security _usdChfSecurity;
 
 	private MovingAverageConvergenceDivergenceSignal? _gbpUsdMacd;
 	private MovingAverageConvergenceDivergenceSignal? _usdChfMacd;
@@ -358,7 +358,7 @@ public class GbpChfCorrelationStrategy : Strategy
 		_usdChfSecurity ??= ResolveSecurity(UsdChfSymbol, throwOnError);
 	}
 
-	private Security? ResolveSecurity(string symbol, bool throwOnError)
+	private Security ResolveSecurity(string symbol, bool throwOnError)
 	{
 		if (string.IsNullOrWhiteSpace(symbol))
 		{

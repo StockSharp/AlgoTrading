@@ -20,7 +20,7 @@ public class LittleEaStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceType> _appliedPrice;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private LengthIndicator<decimal>? _movingAverage;
+	private LengthIndicator<decimal> _movingAverage;
 	private readonly List<decimal> _maHistory = new(); // Stores MA values to support the shift parameter
 	private readonly List<ICandleMessage> _candleHistory = new(); // Keeps finished candles for OHLC indexing
 

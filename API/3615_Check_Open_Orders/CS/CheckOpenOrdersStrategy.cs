@@ -30,7 +30,7 @@ public class CheckOpenOrdersStrategy : Strategy
 	private CancellationTokenSource? _ordersCts;
 	private string _modeDescription = string.Empty;
 	private string _orderTypesDescription = string.Empty;
-	private string? _lastStatusMessage;
+	private string _lastStatusMessage;
 	private decimal _lastBidPrice;
 	private decimal _lastAskPrice;
 	private decimal _lastTradePrice;

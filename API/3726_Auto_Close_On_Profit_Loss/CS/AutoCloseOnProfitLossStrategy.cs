@@ -21,7 +21,7 @@ public class AutoCloseOnProfitLossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private bool _closeAllRequested;
-	private string? _pendingReason;
+	private string _pendingReason;
 
 	/// <summary>
 	/// Floating profit required to trigger a full exit.

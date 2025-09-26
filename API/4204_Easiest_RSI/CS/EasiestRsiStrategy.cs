@@ -24,7 +24,7 @@ public class EasiestRsiStrategy : Strategy
 	private readonly StrategyParam<int> _maxEntries;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private RelativeStrengthIndex? _rsi;
+	private RelativeStrengthIndex _rsi;
 	private decimal? _previousRsi;
 	private decimal? _olderRsi;
 	private decimal _pipSize;

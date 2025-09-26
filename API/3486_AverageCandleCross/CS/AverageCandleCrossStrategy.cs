@@ -44,16 +44,16 @@ public class AverageCandleCrossStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _pipSize;
 
-	private LengthIndicator<decimal>? _firstTrendFastMa;
-	private LengthIndicator<decimal>? _firstTrendSlowMa;
-	private LengthIndicator<decimal>? _secondTrendFastMa;
-	private LengthIndicator<decimal>? _secondTrendSlowMa;
-	private LengthIndicator<decimal>? _bullCrossMa;
-	private LengthIndicator<decimal>? _firstTrendBearFastMa;
-	private LengthIndicator<decimal>? _firstTrendBearSlowMa;
-	private LengthIndicator<decimal>? _secondTrendBearFastMa;
-	private LengthIndicator<decimal>? _secondTrendBearSlowMa;
-	private LengthIndicator<decimal>? _bearCrossMa;
+	private LengthIndicator<decimal> _firstTrendFastMa;
+	private LengthIndicator<decimal> _firstTrendSlowMa;
+	private LengthIndicator<decimal> _secondTrendFastMa;
+	private LengthIndicator<decimal> _secondTrendSlowMa;
+	private LengthIndicator<decimal> _bullCrossMa;
+	private LengthIndicator<decimal> _firstTrendBearFastMa;
+	private LengthIndicator<decimal> _firstTrendBearSlowMa;
+	private LengthIndicator<decimal> _secondTrendBearFastMa;
+	private LengthIndicator<decimal> _secondTrendBearSlowMa;
+	private LengthIndicator<decimal> _bearCrossMa;
 
 	private decimal? _prevFirstTrendFast;
 	private decimal? _prevFirstTrendSlow;
@@ -563,7 +563,7 @@ public class AverageCandleCrossStrategy : Strategy
 		return percent > 0m ? stopDistance * (percent / 100m) : 0m;
 	}
 
-	private static decimal? ProcessIndicator(LengthIndicator<decimal>? indicator, decimal input, DateTimeOffset time)
+	private static decimal? ProcessIndicator(LengthIndicator<decimal> indicator, decimal input, DateTimeOffset time)
 	{
 		if (indicator == null)
 		return null;

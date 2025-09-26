@@ -36,8 +36,8 @@ public class WajdyssMaExpertStrategy : Strategy
 	private readonly StrategyParam<int> _fridayCloseMinute;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private readonly List<decimal> _fastHistory = new();
 	private readonly List<decimal> _slowHistory = new();
 	private decimal _pipSize;

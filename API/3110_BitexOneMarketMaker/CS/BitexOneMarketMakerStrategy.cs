@@ -31,7 +31,7 @@ public class BitexOneMarketMakerStrategy : Strategy
 	private decimal _leadPrice;
 	private bool _hasLeadPrice;
 
-	private Security? _leadSecurity;
+	private Security _leadSecurity;
 
 	private decimal _bestBid;
 	private decimal _bestAsk;

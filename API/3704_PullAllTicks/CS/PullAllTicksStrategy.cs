@@ -28,7 +28,7 @@ public class PullAllTicksStrategy : Strategy
 	private long _totalTicks;
 	private long _totalPackets;
 	private int _packetCounter;
-	private string? _statusPath;
+	private string _statusPath;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="PullAllTicksStrategy"/> class.
@@ -254,7 +254,7 @@ public class PullAllTicksStrategy : Strategy
 		File.WriteAllText(_statusPath, content);
 	}
 
-	private string? GetStatusPath()
+	private string GetStatusPath()
 	{
 		var folder = ManagerFolder;
 		var fileName = StatusFileName;

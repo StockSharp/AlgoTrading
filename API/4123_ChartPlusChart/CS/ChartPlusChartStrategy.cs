@@ -78,7 +78,7 @@ public class ChartPlusChartStrategy : Strategy
 	/// <summary>
 	/// Fires whenever one of the chart streams refreshes its snapshot.
 	/// </summary>
-	public event Action<ChartStream, ChartSnapshot>? SnapshotUpdated;
+	public event Action<ChartStream, ChartSnapshot> SnapshotUpdated;
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)

@@ -431,10 +431,10 @@ public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandl
 	private LinearWeightedMovingAverage? _highLwma;
 	private LinearWeightedMovingAverage? _lowLwma;
 	private LinearWeightedMovingAverage? _closeLwma;
-	private LengthIndicator<decimal>? _openSmooth;
-	private LengthIndicator<decimal>? _highSmooth;
-	private LengthIndicator<decimal>? _lowSmooth;
-	private LengthIndicator<decimal>? _closeSmooth;
+	private LengthIndicator<decimal> _openSmooth;
+	private LengthIndicator<decimal> _highSmooth;
+	private LengthIndicator<decimal> _lowSmooth;
+	private LengthIndicator<decimal> _closeSmooth;
 	private CenterOfGravityMaMethod _currentMethod;
 	private int _currentSmoothLength;
 

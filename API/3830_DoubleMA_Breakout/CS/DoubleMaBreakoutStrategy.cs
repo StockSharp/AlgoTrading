@@ -32,8 +32,8 @@ public class DoubleMaBreakoutStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _fridayStopTradingTime;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private LinearRegression? _fastLsma;
 	private LinearRegression? _slowLsma;
 	private readonly Queue<decimal> _fastHistory = new();
@@ -421,7 +421,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 		return true;
 	}
 
-	private bool TryProcessIndicator(LengthIndicator<decimal>? ma, LinearRegression? lsma, decimal price, ICandleMessage candle, out decimal value)
+	private bool TryProcessIndicator(LengthIndicator<decimal> ma, LinearRegression? lsma, decimal price, ICandleMessage candle, out decimal value)
 	{
 		IIndicatorValue? result = null;
 
@@ -576,7 +576,7 @@ public class DoubleMaBreakoutStrategy : Strategy
 		};
 	}
 
-	private static LengthIndicator<decimal>? CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression? lsma)
+	private static LengthIndicator<decimal> CreateMovingAverage(MovingAverageMode mode, int length, out LinearRegression? lsma)
 	{
 		lsma = null;
 		return mode switch

@@ -238,7 +238,7 @@ public class GetLastNthOpenTradeStrategy : Strategy
 		return value?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty;
 	}
 
-	private static string? TryGetStrategyId(Position position)
+	private static string TryGetStrategyId(Position position)
 	{
 		if (StrategyIdProperty == null)
 			return null;
@@ -246,7 +246,7 @@ public class GetLastNthOpenTradeStrategy : Strategy
 		return StrategyIdProperty.GetValue(position)?.ToString();
 	}
 
-	private static string? TryGetComment(Position position)
+	private static string TryGetComment(Position position)
 	{
 		if (CommentProperty == null)
 			return null;

@@ -170,7 +170,7 @@ public class ListPositionsStrategy : Strategy
 		}
 	}
 
-	private static string? TryGetStrategyId(Position position)
+	private static string TryGetStrategyId(Position position)
 	{
 		if (StrategyIdProperty == null)
 			return null;

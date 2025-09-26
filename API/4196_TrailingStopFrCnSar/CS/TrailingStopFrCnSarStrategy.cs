@@ -46,7 +46,7 @@ public class TrailingStopFrCnSarStrategy : Strategy
 	private decimal? _longStop;
 	private decimal? _shortStop;
 
-	private string? _lastSummary;
+	private string _lastSummary;
 
 	public TrailingStopFrCnSarStrategy()
 	{

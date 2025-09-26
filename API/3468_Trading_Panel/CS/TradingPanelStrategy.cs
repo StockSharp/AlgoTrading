@@ -275,7 +275,7 @@ public class TradingPanelStrategy : Strategy
 		order = null;
 	}
 
-	private Security? ResolveSecurity()
+	private Security ResolveSecurity()
 	{
 		return TargetSecurity ?? Security;
 	}

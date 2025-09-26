@@ -26,7 +26,7 @@ public class CsvExampleExpertStrategy : Strategy
 	private decimal? _lastBid;
 	private decimal? _lastAsk;
 	private decimal? _positionEntryPrice;
-	private string? _resolvedFilePath;
+	private string _resolvedFilePath;
 	private decimal? _lastMyTradePrice;
 	private DateTimeOffset? _lastMyTradeTime;
 

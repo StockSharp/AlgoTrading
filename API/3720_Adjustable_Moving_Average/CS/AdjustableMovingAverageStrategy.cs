@@ -30,8 +30,8 @@ public class AdjustableMovingAverageStrategy : Strategy
 	private readonly StrategyParam<int> _maxSlippage;
 	private readonly StrategyParam<string> _tradeComment;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private decimal _pointValue;
 	private decimal _minGapThreshold;
 	private int _previousSignal;

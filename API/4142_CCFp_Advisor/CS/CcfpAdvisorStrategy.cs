@@ -472,7 +472,7 @@ private static bool IsStopHit(Sides side, ICandleMessage candle, decimal stop)
 	return side == Sides.Buy ? candle.LowPrice <= stop : candle.HighPrice >= stop;
 }
 
-private CurrencyStrengthSnapshot? BuildSnapshot(DateTimeOffset time, IReadOnlyDictionary<string, PairValue> values)
+private CurrencyStrengthSnapshot BuildSnapshot(DateTimeOffset time, IReadOnlyDictionary<string, PairValue> values)
 {
 	if (!TryGetPairValue(values, "EURUSD", out var eurUsd) ||
 	!TryGetPairValue(values, "GBPUSD", out var gbpUsd) ||

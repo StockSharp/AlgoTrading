@@ -60,14 +60,14 @@ public class HeikenAshiEngulfStrategy : Strategy
 	private readonly StrategyParam<string> _alertTitle;
 	private readonly StrategyParam<bool> _sendNotification;
 
-	private LengthIndicator<decimal>? _buyBaselineMa;
-	private LengthIndicator<decimal>? _buyFastMa;
-	private LengthIndicator<decimal>? _buySlowMa;
+	private LengthIndicator<decimal> _buyBaselineMa;
+	private LengthIndicator<decimal> _buyFastMa;
+	private LengthIndicator<decimal> _buySlowMa;
 	private RelativeStrengthIndex? _buyPrimaryRsi;
 	private RelativeStrengthIndex? _buySecondaryRsi;
-	private LengthIndicator<decimal>? _sellBaselineMa;
-	private LengthIndicator<decimal>? _sellFastMa;
-	private LengthIndicator<decimal>? _sellSlowMa;
+	private LengthIndicator<decimal> _sellBaselineMa;
+	private LengthIndicator<decimal> _sellFastMa;
+	private LengthIndicator<decimal> _sellSlowMa;
 	private RelativeStrengthIndex? _sellPrimaryRsi;
 	private RelativeStrengthIndex? _sellSecondaryRsi;
 

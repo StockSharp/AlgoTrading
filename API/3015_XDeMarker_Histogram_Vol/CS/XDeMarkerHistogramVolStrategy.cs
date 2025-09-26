@@ -28,8 +28,8 @@ public class XDeMarkerHistogramVolStrategy : Strategy
 	private readonly StrategyParam<bool> _enableLongExits;
 	private readonly StrategyParam<bool> _enableShortExits;
 
-	private LengthIndicator<decimal>? _valueSmoother;
-	private LengthIndicator<decimal>? _volumeSmoother;
+	private LengthIndicator<decimal> _valueSmoother;
+	private LengthIndicator<decimal> _volumeSmoother;
 
 	private readonly List<int> _stateBuffer = new();
 	private readonly Queue<decimal> _deMaxQueue = new();

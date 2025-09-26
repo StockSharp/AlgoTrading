@@ -212,7 +212,7 @@ public class CciMacdStrategy : Strategy
 		var upperBand = ema750Value + AtrMultiplier * atrValue;
 		var lowerBand = ema750Value - AtrMultiplier * atrValue;
 
-		string? currentSignalColor = null;
+		string currentSignalColor = null;
 		if (candle.ClosePrice > ema125Value && candle.ClosePrice > ema750Value && candle.ClosePrice < upperBand && cciSignalUp)
 		{
 			currentSignalColor = "aqua";

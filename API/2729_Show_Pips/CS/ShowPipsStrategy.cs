@@ -29,7 +29,7 @@ public class ShowPipsStrategy : Strategy
 	private decimal? _lastPrice;
 	private decimal? _bestBid;
 	private decimal? _bestAsk;
-	private string? _lastLoggedText;
+	private string _lastLoggedText;
 
 	/// <summary>
 	/// Available output modes for the status text.
@@ -326,7 +326,7 @@ public class ShowPipsStrategy : Strategy
 		return string.Join(Separator, blocks);
 	}
 
-	private string? CalculatePipInfo(out decimal profit, out decimal? percent)
+	private string CalculatePipInfo(out decimal profit, out decimal? percent)
 	{
 		profit = 0m;
 		percent = null;

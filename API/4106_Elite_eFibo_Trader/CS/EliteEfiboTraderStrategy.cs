@@ -33,9 +33,9 @@ public class EliteEfiboTraderStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal>[] _levelVolumeParams;
 
-	private SimpleMovingAverage? _slowMa;
-	private SimpleMovingAverage? _fastMa;
-	private RelativeStrengthIndex? _rsi;
+	private SimpleMovingAverage _slowMa;
+	private SimpleMovingAverage _fastMa;
+	private RelativeStrengthIndex _rsi;
 
 	private readonly List<LevelState> _levels = new();
 	private readonly Dictionary<Order, LevelState> _entryOrderMap = new();

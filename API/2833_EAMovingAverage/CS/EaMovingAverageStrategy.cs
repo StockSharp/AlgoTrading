@@ -43,10 +43,10 @@ public class EaMovingAverageStrategy : Strategy
 	private readonly StrategyParam<bool> _considerPriceLastOut;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _buyOpenMa;
-	private LengthIndicator<decimal>? _buyCloseMa;
-	private LengthIndicator<decimal>? _sellOpenMa;
-	private LengthIndicator<decimal>? _sellCloseMa;
+	private LengthIndicator<decimal> _buyOpenMa;
+	private LengthIndicator<decimal> _buyCloseMa;
+	private LengthIndicator<decimal> _sellOpenMa;
+	private LengthIndicator<decimal> _sellCloseMa;
 
 	private readonly Queue<decimal> _buyOpenBuffer = new();
 	private readonly Queue<decimal> _buyCloseBuffer = new();
@@ -483,7 +483,7 @@ public class EaMovingAverageStrategy : Strategy
 			: _lastExitPrice <= price;
 	}
 
-	private decimal? ProcessMovingAverage(LengthIndicator<decimal>? indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
+	private decimal? ProcessMovingAverage(LengthIndicator<decimal> indicator, Queue<decimal> buffer, int shift, decimal price, ICandleMessage candle)
 	{
 		if (indicator == null)
 			return null;

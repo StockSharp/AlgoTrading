@@ -336,7 +336,7 @@ public class CloseDeleteEaStrategy : Strategy
 		return string.Equals(strategyId, filter, StringComparison.Ordinal);
 	}
 
-	private static string? TryGetStrategyId(Position position)
+	private static string TryGetStrategyId(Position position)
 	{
 		if (PositionStrategyIdProperty == null)
 			return null;
@@ -345,7 +345,7 @@ public class CloseDeleteEaStrategy : Strategy
 		return value?.ToString();
 	}
 
-	private static string? TryGetStrategyId(Order order)
+	private static string TryGetStrategyId(Order order)
 	{
 		if (OrderStrategyIdProperty == null)
 			return null;

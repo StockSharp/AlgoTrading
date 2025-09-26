@@ -27,7 +27,7 @@ public class CsvExporterStrategy : Strategy
 	private int _writeIndex;
 	private int _valueCount;
 	private DateTimeOffset _nextExportTime = DateTimeOffset.MinValue;
-	private string? _lastExportStatus;
+	private string _lastExportStatus;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="CsvExporterStrategy"/> class.
@@ -88,7 +88,7 @@ public class CsvExporterStrategy : Strategy
 	/// <summary>
 	/// Returns the text of the latest export notification.
 	/// </summary>
-	public string? LastExportStatus => _lastExportStatus;
+	public string LastExportStatus => _lastExportStatus;
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)

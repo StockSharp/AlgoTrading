@@ -30,8 +30,8 @@ public class FiveEightMaCrossStrategy : Strategy
 	private readonly Queue<decimal> _fastValues = new();
 	private readonly Queue<decimal> _slowValues = new();
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 
 	private decimal _pipSize;
 	private decimal _takeProfitDistance;

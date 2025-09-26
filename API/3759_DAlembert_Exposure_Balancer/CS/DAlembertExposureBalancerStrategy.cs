@@ -568,7 +568,7 @@ public class DAlembertExposureBalancerStrategy : Strategy
 		}
 	}
 
-	private static (string? Base, string? Quote) ExtractCurrencies(Security security)
+	private static (string Base, string Quote) ExtractCurrencies(Security security)
 	{
 		var code = security?.Code;
 		if (string.IsNullOrEmpty(code) || code.Length < 6)

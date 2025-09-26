@@ -31,8 +31,8 @@ public class BrandyStrategy : Strategy
 	private readonly StrategyParam<int> _maOpenSignalBar;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _maOpenIndicator;
-	private LengthIndicator<decimal>? _maCloseIndicator;
+	private LengthIndicator<decimal> _maOpenIndicator;
+	private LengthIndicator<decimal> _maCloseIndicator;
 	private decimal _pipSize;
 	private readonly Queue<decimal> _maOpenValues = new();
 	private readonly Queue<decimal> _maCloseValues = new();

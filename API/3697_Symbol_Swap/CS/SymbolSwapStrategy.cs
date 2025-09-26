@@ -22,7 +22,7 @@ private ISubscription? _candleSubscription;
 private ISubscription? _level1Subscription;
 private IChartArea? _chartArea;
 
-private Security? _trackedSecurity;
+private Security _trackedSecurity;
 
 private DateTimeOffset? _lastCandleTime;
 private decimal? _lastOpen;
@@ -33,8 +33,8 @@ private decimal? _lastVolume;
 private decimal? _bestBid;
 private decimal? _bestAsk;
 
-private string? _pendingSecurityId;
-private string? _lastLoggedText;
+private string _pendingSecurityId;
+private string _lastLoggedText;
 
 /// <summary>
 /// Defines how the status panel is rendered.

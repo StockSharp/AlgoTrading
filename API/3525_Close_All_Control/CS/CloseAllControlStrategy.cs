@@ -290,7 +290,7 @@ public class CloseAllControlStrategy : Strategy
 		}
 	}
 
-	private bool MatchesComment(string? comment)
+	private bool MatchesComment(string comment)
 	{
 		var filter = (OrderComment ?? string.Empty).Trim();
 
@@ -343,7 +343,7 @@ public class CloseAllControlStrategy : Strategy
 		return MatchesIdentifier(position.Id?.ToString());
 	}
 
-	private bool MatchesIdentifier(string? value)
+	private bool MatchesIdentifier(string value)
 	{
 		var target = MagicOrTicket;
 
@@ -370,17 +370,17 @@ public class CloseAllControlStrategy : Strategy
 		}
 	}
 
-	private static string? TryGetPositionComment(Position position)
+	private static string TryGetPositionComment(Position position)
 	{
 		return PositionCommentProperty?.GetValue(position) as string;
 	}
 
-	private static string? TryGetStrategyId(Position position)
+	private static string TryGetStrategyId(Position position)
 	{
 		return PositionStrategyIdProperty?.GetValue(position)?.ToString();
 	}
 
-	private static string? TryGetStrategyId(Order order)
+	private static string TryGetStrategyId(Order order)
 	{
 		return OrderStrategyIdProperty?.GetValue(order)?.ToString();
 	}

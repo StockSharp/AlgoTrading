@@ -32,10 +32,10 @@ public class MultiStochasticStrategy : Strategy
 	private readonly StrategyParam<Security> _symbol3;
 	private readonly StrategyParam<Security> _symbol4;
 
-	private Security? _resolvedSymbol1;
-	private Security? _resolvedSymbol2;
-	private Security? _resolvedSymbol3;
-	private Security? _resolvedSymbol4;
+	private Security _resolvedSymbol1;
+	private Security _resolvedSymbol2;
+	private Security _resolvedSymbol3;
+	private Security _resolvedSymbol4;
 
 	private StochasticOscillator? _stochastic1;
 	private StochasticOscillator? _stochastic2;

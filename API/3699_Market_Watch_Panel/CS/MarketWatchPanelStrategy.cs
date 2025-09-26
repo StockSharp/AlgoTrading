@@ -177,7 +177,7 @@ public class MarketWatchPanelStrategy : Strategy
 		_persistentSet.Clear();
 	}
 
-	private void DeactivateEntry(string? code, WatchEntry entry)
+	private void DeactivateEntry(string code, WatchEntry entry)
 	{
 		if (entry.Subscription != null)
 		{
@@ -225,7 +225,7 @@ public class MarketWatchPanelStrategy : Strategy
 		}
 	}
 
-	private bool ActivateSymbol(string? symbolCode, bool persistent)
+	private bool ActivateSymbol(string symbolCode, bool persistent)
 	{
 		if (string.IsNullOrWhiteSpace(symbolCode))
 		{

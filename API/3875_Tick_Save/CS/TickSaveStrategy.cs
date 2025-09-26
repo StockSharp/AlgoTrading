@@ -24,7 +24,7 @@ public class TickSaveStrategy : Strategy
 	private readonly StrategyParam<string> _serverFolder;
 
 	private readonly Dictionary<Security, SymbolContext> _contexts = new();
-	private string? _fileSuffix;
+	private string _fileSuffix;
 
 	/// <summary>
 	/// Comma separated collection of security identifiers to record.

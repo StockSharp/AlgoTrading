@@ -25,8 +25,8 @@ public class ExpertClorCloseManagerStrategy : Strategy
 	private readonly StrategyParam<decimal> _atrTarget;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private LengthIndicator<decimal>? _fastMa;
-	private LengthIndicator<decimal>? _slowMa;
+	private LengthIndicator<decimal> _fastMa;
+	private LengthIndicator<decimal> _slowMa;
 	private AverageTrueRange? _atr;
 
 	private decimal? _fastPrev1;

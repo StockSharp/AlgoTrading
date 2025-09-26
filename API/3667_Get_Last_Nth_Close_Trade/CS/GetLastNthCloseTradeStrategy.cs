@@ -21,7 +21,7 @@ public class GetLastNthCloseTradeStrategy : Strategy
 	private readonly List<OrderDetails> _closedOrders = new();
 	private readonly Dictionary<long, OrderDetails> _pendingOrders = new();
 
-	private string? _lastMessage;
+	private string _lastMessage;
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="GetLastNthCloseTradeStrategy"/>.

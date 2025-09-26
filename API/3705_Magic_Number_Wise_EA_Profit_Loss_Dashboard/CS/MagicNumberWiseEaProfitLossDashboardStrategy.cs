@@ -278,7 +278,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		return summary;
 	}
 
-	private void UpdateSymbol(Summary summary, string? symbol)
+	private void UpdateSymbol(Summary summary, string symbol)
 	{
 		if (string.IsNullOrEmpty(symbol))
 			return;
@@ -335,13 +335,13 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		public decimal ClosedPnL { get; set; }
 		public decimal FloatingPnL { get; set; }
 		public bool HasFloatingPnL { get; set; }
-		public string? Symbol { get; set; }
-		public string? Comment { get; set; }
+		public string Symbol { get; set; }
+		public string Comment { get; set; }
 	}
 
 	private readonly struct SummarySnapshot
 	{
-		public SummarySnapshot(string identifier, int dealCount, decimal closedPnL, bool hasFloating, decimal floatingPnL, string? symbol, string? comment)
+		public SummarySnapshot(string identifier, int dealCount, decimal closedPnL, bool hasFloating, decimal floatingPnL, string symbol, string comment)
 		{
 			Identifier = identifier;
 			DealCount = dealCount;
@@ -357,7 +357,7 @@ public class MagicNumberWiseEaProfitLossDashboardStrategy : Strategy
 		public decimal ClosedPnL { get; }
 		public bool HasFloating { get; }
 		public decimal FloatingPnL { get; }
-		public string? Symbol { get; }
-		public string? Comment { get; }
+		public string Symbol { get; }
+		public string Comment { get; }
 	}
 }

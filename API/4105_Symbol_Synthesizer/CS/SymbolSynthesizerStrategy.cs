@@ -38,9 +38,9 @@ public class SymbolSynthesizerStrategy : Strategy
 	private readonly StrategyParam<decimal> _slippageParam;
 	private readonly StrategyParam<SyntheticTradeAction> _tradeActionParam;
 
-	private SyntheticCombination? _combination;
-	private Security? _firstLeg;
-	private Security? _secondLeg;
+	private SyntheticCombination _combination;
+	private Security _firstLeg;
+	private Security _secondLeg;
 
 	private decimal? _firstBid;
 	private decimal? _firstAsk;

@@ -18,7 +18,7 @@ public class SymbolSyncStrategy : Strategy
 
 	private readonly List<Strategy> _linkedStrategies = new();
 
-	private Security? _initialSecurity;
+	private Security _initialSecurity;
 
 	public SymbolSyncStrategy()
 	{
@@ -205,7 +205,7 @@ public class SymbolSyncStrategy : Strategy
 		strategy.Security = security;
 	}
 
-	private Security? ResolveSecurity()
+	private Security ResolveSecurity()
 	{
 		if (Security != null && (SyncSecurityId.IsEmpty() || string.Equals(SyncSecurityId, Security.Id, StringComparison.Ordinal)))
 			return Security;

@@ -28,8 +28,8 @@ private readonly StrategyParam<decimal> _riskPercent;
 private readonly StrategyParam<int> _maxPositions;
 private readonly StrategyParam<decimal> _profitClose;
 
-private LengthIndicator<decimal>? _fastMa;
-private LengthIndicator<decimal>? _slowMa;
+private LengthIndicator<decimal> _fastMa;
+private LengthIndicator<decimal> _slowMa;
 private ShiftBuffer? _fastBuffer;
 private ShiftBuffer? _slowBuffer;
 
@@ -303,8 +303,8 @@ base.OnStarted(time);
 
 _pipSize = GetPipSize();
 
-LengthIndicator<decimal>? fast = null;
-LengthIndicator<decimal>? slow = null;
+LengthIndicator<decimal> fast = null;
+LengthIndicator<decimal> slow = null;
 
 var useMaFilter = FastPeriod > 0 && SlowPeriod > 0;
 

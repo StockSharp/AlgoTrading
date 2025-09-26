@@ -561,13 +561,13 @@ public class FatPanelVisualBuilderStrategy : Strategy
 
 	private sealed class FatPanelRuleContext
 	{
-		private readonly string? _name;
+		private readonly string _name;
 		private readonly List<FatPanelConditionContext> _all;
 		private readonly List<FatPanelConditionContext> _any;
 		private readonly List<FatPanelConditionContext> _none;
 		private readonly FatPanelActionContext _action;
 
-		public FatPanelRuleContext(string? name, List<FatPanelConditionContext> all, List<FatPanelConditionContext> any, List<FatPanelConditionContext> none, FatPanelActionContext action)
+		public FatPanelRuleContext(string name, List<FatPanelConditionContext> all, List<FatPanelConditionContext> any, List<FatPanelConditionContext> none, FatPanelActionContext action)
 		{
 			_name = string.IsNullOrWhiteSpace(name) ? "Unnamed" : name;
 			_all = all;
@@ -674,7 +674,7 @@ public class FatPanelVisualBuilderStrategy : Strategy
 	private sealed class FatPanelRule
 	{
 		[JsonPropertyName("name")]
-		public string? Name { get; init; }
+		public string Name { get; init; }
 
 		[JsonPropertyName("all")]
 		public List<FatPanelCondition>? All { get; init; }
@@ -719,10 +719,10 @@ public class FatPanelVisualBuilderStrategy : Strategy
 		public PositionRequirement? Required { get; init; }
 
 		[JsonPropertyName("start")]
-		public string? Start { get; init; }
+		public string Start { get; init; }
 
 		[JsonPropertyName("end")]
-		public string? End { get; init; }
+		public string End { get; init; }
 
 		[JsonPropertyName("days")]
 		public List<string>? Days { get; init; }
