@@ -276,7 +276,7 @@ public class MatrixMachineLearningStrategy : Strategy
 		return pattern;
 	}
 
-	private static double[,]? TrainWeights(double[] data, int predictor, int response)
+	private static double[,] TrainWeights(double[] data, int predictor, int response)
 	{
 		var sample = predictor + response;
 		if (data.Length < sample)

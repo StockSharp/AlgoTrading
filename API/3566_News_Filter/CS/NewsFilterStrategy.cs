@@ -33,7 +33,7 @@ public class NewsFilterStrategy : Strategy
 
 	private readonly List<EconomicEvent> _events = new();
 	private readonly object _sync = new();
-	private Timer? _timer;
+	private Timer _timer;
 	private DateTime _lastUpdateUtc;
 	private bool _isNewsActive;
 	private string _lastStatus = string.Empty;

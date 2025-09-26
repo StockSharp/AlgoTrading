@@ -24,8 +24,8 @@ public class MacdStochasticTrailingStrategy : Strategy
 	private readonly StrategyParam<DataType> _stochasticCandleType;
 	private readonly StrategyParam<DataType> _entryCandleType;
 
-	private MovingAverageConvergenceDivergence? _bullishMacd;
-	private MovingAverageConvergenceDivergence? _bearishMacd;
+	private MovingAverageConvergenceDivergence _bullishMacd;
+	private MovingAverageConvergenceDivergence _bearishMacd;
 	private StochasticOscillator _entryStochastic;
 	private StochasticOscillator _exitStochastic;
 

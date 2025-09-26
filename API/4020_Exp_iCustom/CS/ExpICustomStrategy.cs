@@ -889,7 +889,7 @@ public class ExpICustomStrategy : Strategy
 		TryClosePosition(false, candle);
 	}
 
-	private bool EvaluateSignal(IndicatorState? state, SignalMode mode, int buyBuffer, int sellBuffer, int mainBuffer, int signalBuffer, decimal buyLevel, decimal sellLevel, int shift, bool isBuy)
+	private bool EvaluateSignal(IndicatorState state, SignalMode mode, int buyBuffer, int sellBuffer, int mainBuffer, int signalBuffer, decimal buyLevel, decimal sellLevel, int shift, bool isBuy)
 	{
 		if (state == null)
 		return false;

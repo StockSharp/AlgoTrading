@@ -107,7 +107,7 @@ public class ExpICustomV1Strategy : Strategy
 	private readonly StrategyParam<int> _breakEvenLockPoints;
 	private readonly StrategyParam<decimal> _baseOrderVolume;
 
-	private IndicatorState? _indicatorState;
+	private IndicatorState _indicatorState;
 	private DateTimeOffset? _lastBuyBarTime;
 	private DateTimeOffset? _lastSellBarTime;
 	private decimal _entryPrice;

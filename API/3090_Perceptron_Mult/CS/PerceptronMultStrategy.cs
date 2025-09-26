@@ -484,7 +484,7 @@ public class PerceptronMultStrategy : Strategy
 		ProcessCandle(candle, _thirdContext, ThirdSecurity, ThirdOrderVolume, ThirdStopLossPoints, ThirdTakeProfitPoints, ThirdWeight1, ThirdWeight2, ThirdWeight3, ThirdWeight4);
 	}
 
-	private void ProcessCandle(ICandleMessage candle, SymbolContext? context, Security security, decimal orderVolume, decimal stopLossPoints, decimal takeProfitPoints, int weight1, int weight2, int weight3, int weight4)
+	private void ProcessCandle(ICandleMessage candle, SymbolContext context, Security security, decimal orderVolume, decimal stopLossPoints, decimal takeProfitPoints, int weight1, int weight2, int weight3, int weight4)
 	{
 		if (context is null || security is null)
 			return;

@@ -254,7 +254,7 @@ public class GetLastNthOpenTradeStrategy : Strategy
 		return CommentProperty.GetValue(position)?.ToString();
 	}
 
-	private static DateTimeOffset? TryGetDateTime(Position position, PropertyInfo? property)
+	private static DateTimeOffset? TryGetDateTime(Position position, PropertyInfo property)
 	{
 		if (property == null)
 			return null;
