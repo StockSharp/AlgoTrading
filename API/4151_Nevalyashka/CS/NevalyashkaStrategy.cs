@@ -15,7 +15,6 @@ public class NevalyashkaStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<Sides> _initialDirection;
 
 	private decimal _pipSize;
@@ -38,10 +37,6 @@ public class NevalyashkaStrategy : Strategy
 			.SetDisplay("Take Profit (pips)", "Profit target distance in pips applied to every trade.", "Risk")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Initial Volume", "Lot size used for the very first order.", "Trading")
-			.SetCanOptimize(true);
 
 		_initialDirection = Param(nameof(InitialDirection), Sides.Sell)
 			.SetDisplay("Initial Direction", "Side of the very first market order.", "Trading");
@@ -70,15 +65,6 @@ public class NevalyashkaStrategy : Strategy
 		set => _takeProfitPips.Value = value;
 	}
 
-	/// <summary>
-	/// Base volume used for the very first order.
-	/// The strategy stores the filled volume of the last trade and reuses it for subsequent entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Direction of the very first order.

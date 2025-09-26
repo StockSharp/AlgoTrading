@@ -13,21 +13,12 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RandomTraderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 
 	private Random _random;
 	private decimal _entryPrice;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take profit in price units.
@@ -52,9 +43,6 @@ public class RandomTraderStrategy : Strategy
 	/// </summary>
 	public RandomTraderStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_takeProfit = Param(nameof(TakeProfit), 10m)
 			.SetGreaterThanZero()

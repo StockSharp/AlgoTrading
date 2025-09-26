@@ -23,7 +23,6 @@ public class AngryBirdScalpingStrategy : Strategy
 	private readonly StrategyParam<decimal> _rsiMin;
 	private readonly StrategyParam<decimal> _rsiMax;
 	private readonly StrategyParam<decimal> _cciDrop;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _lastOpenBuyPrice;
@@ -79,10 +78,6 @@ public class AngryBirdScalpingStrategy : Strategy
 	/// </summary>
 	public decimal CciDrop { get => _cciDrop.Value; set => _cciDrop.Value = value; }
 
-	/// <summary>
-	/// Initial order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Working candle timeframe.
@@ -134,9 +129,6 @@ public class AngryBirdScalpingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("CCI Drop", "CCI value to close positions", "Signals");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Initial order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Working candle timeframe", "General");

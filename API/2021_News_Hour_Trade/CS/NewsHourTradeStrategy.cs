@@ -15,7 +15,6 @@ public class NewsHourTradeStrategy : Strategy
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _startMinute;
 	private readonly StrategyParam<int> _delaySeconds;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _priceGap;
@@ -49,10 +48,6 @@ public class NewsHourTradeStrategy : Strategy
 	/// </summary>
 	public int DelaySeconds { get => _delaySeconds.Value; set => _delaySeconds.Value = value; }
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Stop loss distance in price steps.
@@ -112,7 +107,6 @@ public class NewsHourTradeStrategy : Strategy
 		_startHour = Param(nameof(StartHour), 1).SetDisplay("Start Hour", "Hour to start", "Parameters").SetCanOptimize(true);
 		_startMinute = Param(nameof(StartMinute), 1).SetDisplay("Start Minute", "Minute to start", "Parameters").SetCanOptimize(true);
 		_delaySeconds = Param(nameof(DelaySeconds), 5).SetDisplay("Delay Seconds", "Delay before entry", "Parameters").SetCanOptimize(true);
-		_volume = Param(nameof(Volume), 0.1m).SetDisplay("Volume", "Order volume", "Risk").SetCanOptimize(true);
 		_stopLoss = Param(nameof(StopLoss), 20).SetDisplay("Stop Loss", "Stop distance", "Risk").SetCanOptimize(true);
 		_takeProfit = Param(nameof(TakeProfit), 50).SetDisplay("Take Profit", "Take profit distance", "Risk").SetCanOptimize(true);
 		_priceGap = Param(nameof(PriceGap), 10).SetDisplay("Price Gap", "Price offset", "Parameters").SetCanOptimize(true);

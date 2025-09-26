@@ -16,7 +16,6 @@ public class LimitsMartinStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<bool> _useMartingale;
 	private readonly StrategyParam<int> _lossLimit;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _useMegaLot;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -30,7 +29,6 @@ public class LimitsMartinStrategy : Strategy
 	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 	public bool UseMartingale { get => _useMartingale.Value; set => _useMartingale.Value = value; }
 	public int LossLimit { get => _lossLimit.Value; set => _lossLimit.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public bool UseMegaLot { get => _useMegaLot.Value; set => _useMegaLot.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
@@ -56,8 +54,6 @@ public class LimitsMartinStrategy : Strategy
 			.SetDisplay("Loss Limit", "Maximum consecutive losses for martingale", "Parameters")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetDisplay("Volume", "Base order volume", "Parameters");
 
 		_useMegaLot = Param(nameof(UseMegaLot), true)
 			.SetDisplay("Use MegaLot", "Double volume to recover loss", "Parameters");

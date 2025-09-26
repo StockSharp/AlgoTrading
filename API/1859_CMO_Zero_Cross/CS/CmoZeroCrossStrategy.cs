@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CmoZeroCrossStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _cmoPeriod;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -28,14 +27,6 @@ public class CmoZeroCrossStrategy : Strategy
 	private ChandeMomentumOscillator _cmo;
 	private decimal? _prevCmo;
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Period for the Chande Momentum Oscillator.
@@ -114,9 +105,6 @@ public class CmoZeroCrossStrategy : Strategy
 	/// </summary>
 	public CmoZeroCrossStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_cmoPeriod = Param(nameof(CmoPeriod), 14)
 			.SetGreaterThanZero()

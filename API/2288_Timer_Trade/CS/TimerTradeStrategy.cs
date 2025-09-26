@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 public class TimerTradeStrategy : Strategy
 {
 	private readonly StrategyParam<TimeSpan> _timerInterval;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossLevel;
 	private readonly StrategyParam<decimal> _takeProfitLevel;
 
@@ -29,14 +28,6 @@ public class TimerTradeStrategy : Strategy
 		set => _timerInterval.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in points.
@@ -64,9 +55,6 @@ public class TimerTradeStrategy : Strategy
 		_timerInterval = Param(nameof(TimerInterval), TimeSpan.FromSeconds(30))
 			.SetDisplay("Timer Interval", "Interval between trades", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "Trading")
-			.SetGreaterThanZero();
 
 		_stopLossLevel = Param(nameof(StopLossLevel), 10m)
 			.SetDisplay("Stop Loss Level", "Stop loss in points", "Risk")

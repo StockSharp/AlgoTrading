@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AbeBeRsiStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _rsiPeriod;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<decimal> _bullishEntryLevel;
@@ -38,14 +37,6 @@ public class AbeBeRsiStrategy : Strategy
 	private decimal? _prevCloseAverage;
 	private decimal? _prevPrevCloseAverage;
 
-	/// <summary>
-	/// Default order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Period of the RSI confirmation indicator.
@@ -115,9 +106,6 @@ public class AbeBeRsiStrategy : Strategy
 	/// </summary>
 	public AbeBeRsiStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Default order volume", "Trading");
 
 		_rsiPeriod = Param(nameof(RsiPeriod), 11)
 			.SetGreaterThanZero()

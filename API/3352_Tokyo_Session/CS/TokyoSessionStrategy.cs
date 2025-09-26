@@ -38,7 +38,6 @@ public class TokyoSessionStrategy : Strategy
 	private readonly StrategyParam<bool> _useBreakEven;
 	private readonly StrategyParam<decimal> _breakEven;
 	private readonly StrategyParam<decimal> _breakEvenAfter;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _maxOrders;
 
 	private decimal? _levelHigh;
@@ -196,11 +195,6 @@ public class TokyoSessionStrategy : Strategy
 		set => _breakEvenAfter.Value = value;
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public int MaxOrders
 	{
@@ -292,9 +286,6 @@ public class TokyoSessionStrategy : Strategy
 		.SetDisplay("Break Even Activation", "Profit required before moving stop (pips)", "Risk Management")
 		.SetNotNegative();
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetDisplay("Volume", "Order volume", "Trading")
-		.SetGreaterThanZero();
 
 		_maxOrders = Param(nameof(MaxOrders), 1)
 		.SetDisplay("Maximum Orders", "Maximum number of position multiples to hold", "Trading")

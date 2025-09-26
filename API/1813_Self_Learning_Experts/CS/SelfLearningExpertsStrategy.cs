@@ -19,7 +19,6 @@ public class SelfLearningExpertsStrategy : Strategy
 	private readonly StrategyParam<int> _patternSize;
 	private readonly StrategyParam<bool> _replaceStops;
 	private readonly StrategyParam<int> _trailing;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private int _pattern;
@@ -77,14 +76,6 @@ public class SelfLearningExpertsStrategy : Strategy
 		set => _trailing.Value = value;
 	}
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Candle type used for analysis.
@@ -115,8 +106,6 @@ public class SelfLearningExpertsStrategy : Strategy
 		_trailing = Param(nameof(Trailing), 0)
 		.SetDisplay("Trailing", "Trailing distance in steps", "Risk");
 		
-		_volume = Param(nameof(Volume), 1m)
-		.SetDisplay("Volume", "Order volume", "General");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles to use", "General");

@@ -17,7 +17,6 @@ private readonly StrategyParam<int> _fastEmaLength;
 private readonly StrategyParam<int> _slowEmaLength;
 private readonly StrategyParam<int> _signalEmaLength;
 private readonly StrategyParam<bool> _useFreshSignal;
-private readonly StrategyParam<decimal> _volume;
 private readonly StrategyParam<int> _startHour;
 private readonly StrategyParam<int> _endHour;
 private readonly StrategyParam<int> _killDay;
@@ -48,10 +47,6 @@ public int SignalEmaLength { get => _signalEmaLength.Value; set => _signalEmaLen
 /// </summary>
 public bool UseFreshSignal { get => _useFreshSignal.Value; set => _useFreshSignal.Value = value; }
 
-/// <summary>
-/// Order volume.
-/// </summary>
-public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 /// <summary>
 /// Trading start hour.
@@ -88,9 +83,6 @@ _slowEmaLength = Param(nameof(SlowEmaLength), 34).SetGreaterThanZero();
 _signalEmaLength = Param(nameof(SignalEmaLength), 2).SetGreaterThanZero();
 _useFreshSignal = Param(nameof(UseFreshSignal), true)
 .SetDisplay("Use Fresh Signal", "Require MACD crossover", "General");
-_volume = Param(nameof(Volume), 2m)
-.SetGreaterThanZero()
-.SetDisplay("Volume", "Order volume", "Trading");
 _startHour = Param(nameof(StartHour), 9)
 .SetDisplay("Start Hour", "Trading start hour", "Time Filter");
 _endHour = Param(nameof(EndHour), 15)

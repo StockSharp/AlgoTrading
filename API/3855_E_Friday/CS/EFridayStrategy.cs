@@ -23,7 +23,6 @@ namespace StockSharp.Samples.Strategies;
 public class EFridayStrategy : Strategy
 {
 	#region Params
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 	private readonly StrategyParam<int> _hourOpen;
@@ -36,14 +35,6 @@ public class EFridayStrategy : Strategy
 	private readonly StrategyParam<DataType> _intradayCandleType;
 	private readonly StrategyParam<DataType> _dailyCandleType;
 
-	/// <summary>
-	/// Trade volume expressed in lots or contracts depending on the security.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance in price steps. Set to zero to disable.
@@ -159,10 +150,6 @@ public class EFridayStrategy : Strategy
 	/// </summary>
 	public EFridayStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Trade volume", "Trading")
-		.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 75)
 		.SetNotNegative()

@@ -24,7 +24,6 @@ public class SimpleFxStrategy : Strategy
 
 	private readonly StrategyParam<int> _shortPeriod;
 	private readonly StrategyParam<int> _longPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
@@ -53,11 +52,6 @@ public class SimpleFxStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(50, 400, 10);
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume per entry", "Trading")
-			.SetCanOptimize(true)
-			.SetOptimize(0.1m, 2m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 0m)
 			.SetNotNegative()
@@ -89,14 +83,6 @@ public class SimpleFxStrategy : Strategy
 		set => _longPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume submitted with market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance measured in instrument steps. Set to zero to disable.

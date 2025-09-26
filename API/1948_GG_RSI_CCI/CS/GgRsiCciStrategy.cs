@@ -18,7 +18,6 @@ public class GgRsiCciStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _allowBuyOpen;
 	private readonly StrategyParam<bool> _allowSellOpen;
 	private readonly StrategyParam<bool> _allowBuyClose;
@@ -59,9 +58,6 @@ public class GgRsiCciStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Slow Period", "Slow smoothing period.", "Indicators");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume.", "General");
 
 		_allowBuyOpen = Param(nameof(AllowBuyOpen), true)
 			.SetDisplay("Allow Buy", "Permit opening long positions.", "Permissions");
@@ -103,11 +99,6 @@ public class GgRsiCciStrategy : Strategy
 		set => _slowPeriod.Value = value;
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public bool AllowBuyOpen
 	{

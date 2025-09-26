@@ -18,7 +18,6 @@ public class RandomTrailingStopStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStep;
 	private readonly StrategyParam<int> _sleepMinutes;
 	private readonly StrategyParam<int> _smaPeriod;
-	private readonly StrategyParam<decimal> _volume;
 
 	private readonly Random _random = new();
 	private DateTimeOffset _nextTradeTime;
@@ -60,14 +59,6 @@ public class RandomTrailingStopStrategy : Strategy
 		set => _smaPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="RandomTrailingStopStrategy"/>.
@@ -90,9 +81,6 @@ public class RandomTrailingStopStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SMA Period", "Simple moving average period", "Indicators");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

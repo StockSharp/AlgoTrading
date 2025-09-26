@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 public class SvmTraderStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _riskExposure;
@@ -32,10 +31,6 @@ public class SvmTraderStrategy : Strategy
 	/// </summary>
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
-	/// <summary>
-	/// Trade volume for orders.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Take profit in price units.
@@ -60,9 +55,6 @@ public class SvmTraderStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "General")
-			.SetGreaterThanZero();
 
 		_takeProfit = Param(nameof(TakeProfit), 100m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk");

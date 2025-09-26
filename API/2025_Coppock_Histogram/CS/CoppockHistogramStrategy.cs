@@ -16,7 +16,6 @@ public class CoppockHistogramStrategy : Strategy
 	private readonly StrategyParam<int> _roc1Period;
 	private readonly StrategyParam<int> _roc2Period;
 	private readonly StrategyParam<int> _smoothPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _sma = null!;
@@ -50,14 +49,6 @@ public class CoppockHistogramStrategy : Strategy
 		set => _smoothPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type.
@@ -88,9 +79,6 @@ public class CoppockHistogramStrategy : Strategy
 			.SetDisplay("Smoothing", "Moving average length", "Parameters")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(8).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Parameters");

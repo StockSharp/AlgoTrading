@@ -16,7 +16,6 @@ public class StopreversalTrailingStrategy : Strategy
 	private const int AtrPeriod = 15;
 
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossSteps;
 	private readonly StrategyParam<int> _takeProfitSteps;
 	private readonly StrategyParam<bool> _buyPositionOpen;
@@ -46,10 +45,6 @@ public class StopreversalTrailingStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Stopreversal timeframe", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order volume", "Trading")
-		.SetCanOptimize(true);
 
 		_stopLossSteps = Param(nameof(StopLossSteps), 1000)
 		.SetNotNegative()
@@ -96,14 +91,6 @@ public class StopreversalTrailingStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Base trading volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance measured in price steps.

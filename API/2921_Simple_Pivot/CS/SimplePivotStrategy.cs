@@ -19,7 +19,6 @@ public class SimplePivotStrategy : Strategy
 		Short,
 	}
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private TradeDirection _lastDirection = TradeDirection.None;
@@ -27,14 +26,10 @@ public class SimplePivotStrategy : Strategy
 	private decimal _previousLow;
 	private bool _hasPreviousCandle;
 
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public SimplePivotStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "Data");

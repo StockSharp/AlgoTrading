@@ -17,7 +17,6 @@ public class EaStochasticStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<int> _trailingStepPips;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _kPeriod;
 	private readonly StrategyParam<int> _dPeriod;
 	private readonly StrategyParam<int> _slowing;
@@ -75,14 +74,6 @@ public class EaStochasticStrategy : Strategy
 		set => _trailingStepPips.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume used for market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// %K period of the stochastic oscillator.
@@ -168,9 +159,6 @@ public class EaStochasticStrategy : Strategy
 			.SetDisplay("Trailing Step", "Trailing step distance in pips", "Risk")
 			.SetRange(0, 500);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Orders");
 
 		_kPeriod = Param(nameof(KPeriod), 5)
 			.SetGreaterThanZero()

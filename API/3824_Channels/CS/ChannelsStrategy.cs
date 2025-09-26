@@ -13,7 +13,6 @@ using StockSharp.Messages;
 public class ChannelsStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<decimal> _envelopeLarge;
@@ -57,8 +56,6 @@ public class ChannelsStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for the envelope calculations.", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Lot size used for market orders.", "General");
 
 		_fastPeriod = Param(nameof(FastPeriod), 2)
 			.SetGreaterThanZero()
@@ -114,14 +111,6 @@ public class ChannelsStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Fast EMA length.

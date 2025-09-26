@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ScalperEmaSimpleStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _fastEmaPeriod;
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _stochasticLength;
@@ -47,14 +46,6 @@ public class ScalperEmaSimpleStrategy : Strategy
 	private readonly decimal[] _distanceHistory = new decimal[3];
 	private int _storedDistances;
 
-	/// <summary>
-	/// Trading volume expressed in strategy volume units.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Fast EMA length.
@@ -187,11 +178,6 @@ public class ScalperEmaSimpleStrategy : Strategy
 	/// </summary>
 	public ScalperEmaSimpleStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order volume", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.5m, 2m, 0.5m);
 
 		_fastEmaPeriod = Param(nameof(FastEmaPeriod), 39)
 		.SetGreaterThanZero()

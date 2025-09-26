@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EnvelopesEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _envelopePeriod;
 	private readonly StrategyParam<decimal> _upperDeviationPercent;
 	private readonly StrategyParam<decimal> _lowerDeviationPercent;
@@ -26,14 +25,6 @@ public class EnvelopesEaStrategy : Strategy
 	private bool _longActive;
 	private bool _shortActive;
 
-	/// <summary>
-	/// Order volume expressed in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Length of the exponential moving average used as the envelope basis.
@@ -85,9 +76,6 @@ public class EnvelopesEaStrategy : Strategy
 	/// </summary>
 	public EnvelopesEaStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.2m)
-			.SetDisplay("Volume", "Order volume in lots", "Trading")
-			.SetGreaterThanZero();
 
 		_envelopePeriod = Param(nameof(EnvelopePeriod), 50)
 			.SetDisplay("Envelope Period", "EMA length used for the envelope", "Indicator")

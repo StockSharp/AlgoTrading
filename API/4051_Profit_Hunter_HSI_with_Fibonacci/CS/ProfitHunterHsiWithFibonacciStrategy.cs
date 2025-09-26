@@ -29,7 +29,6 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _timeFrame;
 	private readonly StrategyParam<int> _daysBackForHigh;
 	private readonly StrategyParam<int> _daysBackForLow;
-	private readonly StrategyParam<decimal> _volume;
 
 	private readonly List<ICandleMessage> _intradayCandles = new();
 	private readonly List<ICandleMessage> _dailyCandles = new();
@@ -109,10 +108,6 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		.SetDisplay("Days Back (Low)", "Daily candle index that provides the swing low for Fibonacci levels.", "Fibonacci")
 		.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume expressed in lots.", "Trading")
-		.SetCanOptimize(true);
 
 		ResetInternalState();
 	}
@@ -162,14 +157,6 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 		set => _daysBackForLow.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume expressed in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <inheritdoc />
 	protected override void OnReseted()

@@ -18,7 +18,6 @@ public class DailyTrendReversalStrategy : Strategy
 	private readonly StrategyParam<bool> _enableAutoTrading;
 	private readonly StrategyParam<bool> _enableReversal;
 	private readonly StrategyParam<int> _trendSteps;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _profitStop;
@@ -95,14 +94,6 @@ public class DailyTrendReversalStrategy : Strategy
 		set => _trendSteps.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take-profit distance expressed in pips.
@@ -218,9 +209,6 @@ public class DailyTrendReversalStrategy : Strategy
 		.SetRange(0, 3)
 		.SetDisplay("Trend Steps", "Number of filters used for daily direction", "Trend Filter");
 
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for entries", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 30m)
 		.SetRange(0m, 1000m)

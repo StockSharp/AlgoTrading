@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 public class SvDailyBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<bool> _useManualVolume;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _riskPercent;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
@@ -60,14 +59,6 @@ public class SvDailyBreakoutStrategy : Strategy
 		set => _useManualVolume.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume applied when <see cref="UseManualVolume"/> is enabled.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Risk percentage of account equity used when calculating the dynamic position size.
@@ -239,9 +230,6 @@ public class SvDailyBreakoutStrategy : Strategy
 		_useManualVolume = Param(nameof(UseManualVolume), false)
 			.SetDisplay("Use Manual Volume", "Use fixed volume instead of risk percentage", "Risk");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trading volume when manual sizing is enabled", "Risk");
 
 		_riskPercent = Param(nameof(RiskPercent), 5m)
 			.SetGreaterThanZero()

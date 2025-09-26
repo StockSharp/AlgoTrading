@@ -16,7 +16,6 @@ public class MultiMartinStrategy : Strategy
 	private readonly StrategyParam<bool> _useTimeFilter;
 	private readonly StrategyParam<int> _hourStart;
 	private readonly StrategyParam<int> _hourEnd;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _factor;
 	private readonly StrategyParam<int> _limit;
 	private readonly StrategyParam<int> _stopLossPoints;
@@ -55,10 +54,6 @@ public class MultiMartinStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(1, 24, 1);
 
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Initial Volume", "Base order volume expressed in lots or contracts", "Trading")
-		.SetCanOptimize(true);
 
 		_factor = Param(nameof(Factor), 2m)
 		.SetGreaterThanZero()
@@ -120,14 +115,6 @@ public class MultiMartinStrategy : Strategy
 		set => _hourEnd.Value = value;
 	}
 
-	/// <summary>
-	/// Base order volume used for the first position in a cycle.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Multiplier applied to the next order after a losing trade.

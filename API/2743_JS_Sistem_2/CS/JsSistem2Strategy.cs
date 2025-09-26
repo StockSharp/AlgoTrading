@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 public class JsSistem2Strategy : Strategy
 {
 	private readonly StrategyParam<decimal> _minBalance;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _minDifferencePips;
@@ -57,14 +56,6 @@ public class JsSistem2Strategy : Strategy
 		set => _minBalance.Value = value;
 	}
 
-	/// <summary>
-	/// Volume to send with each new order.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance in pips.
@@ -228,10 +219,6 @@ public class JsSistem2Strategy : Strategy
 			.SetDisplay("Min Balance", "Minimum balance to allow trading", "Risk")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General")
-			.SetCanOptimize(true);
 
 		_stopLossPips = Param(nameof(StopLossPips), 35)
 			.SetDisplay("Stop Loss", "Stop-loss distance in pips", "Risk")

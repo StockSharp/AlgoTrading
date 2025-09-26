@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SmartAssTradeV2Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<bool> _useTrailingStop;
@@ -36,10 +35,6 @@ public class SmartAssTradeV2Strategy : Strategy
 		public decimal? CurrMa;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Take profit in price units.
@@ -71,8 +66,6 @@ public class SmartAssTradeV2Strategy : Strategy
 	/// </summary>
 	public SmartAssTradeV2Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_takeProfit = Param(nameof(TakeProfit), 35m)
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management");

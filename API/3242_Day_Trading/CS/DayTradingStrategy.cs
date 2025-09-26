@@ -21,7 +21,6 @@ public class DayTradingStrategy : Strategy
 	private readonly Queue<bool> _ema100BearQueue = new();
 	private readonly Queue<decimal> _momentumDeviationQueue = new();
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<DataType> _macdCandleType;
 	private readonly StrategyParam<int> _trendConfirmationCount;
@@ -45,9 +44,6 @@ public class DayTradingStrategy : Strategy
 	/// </summary>
 	public DayTradingStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base order size", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");
@@ -79,14 +75,6 @@ public class DayTradingStrategy : Strategy
 			.SetDisplay("Max Positions", "Maximum number of base lots", "Risk");
 	}
 
-	/// <summary>
-	/// Base order size.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Primary candle type used for trading decisions.

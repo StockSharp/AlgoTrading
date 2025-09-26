@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ImproveMaRsiHedgeStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _profitTarget;
 	private readonly StrategyParam<Security> _hedgeSecurity;
 	private readonly StrategyParam<int> _fastPeriod;
@@ -36,14 +35,6 @@ public class ImproveMaRsiHedgeStrategy : Strategy
 	private bool _hasHedgeClose;
 	private int _pairDirection;
 
-	/// <summary>
-	/// Order volume for each instrument.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Profit target across both legs expressed in money.
@@ -122,9 +113,6 @@ public class ImproveMaRsiHedgeStrategy : Strategy
 	/// </summary>
 	public ImproveMaRsiHedgeStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for each symbol", "Trading");
 
 		_profitTarget = Param(nameof(ProfitTarget), 50m)
 			.SetGreaterThanZero()

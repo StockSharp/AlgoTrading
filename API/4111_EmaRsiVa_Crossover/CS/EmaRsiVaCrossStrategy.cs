@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EmaRsiVaCrossStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<bool> _useBalanceMultiplier;
@@ -32,14 +31,6 @@ public class EmaRsiVaCrossStrategy : Strategy
 	private decimal? _previousSlow;
 	private decimal? _previousFast;
 
-	/// <summary>
-	/// Base market order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take-profit distance expressed in price points.
@@ -145,9 +136,6 @@ public class EmaRsiVaCrossStrategy : Strategy
 	/// </summary>
 	public EmaRsiVaCrossStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base market order volume", "Trading");
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 0m)
 		.SetNotNegative()

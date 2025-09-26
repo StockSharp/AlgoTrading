@@ -21,7 +21,6 @@ public class ChaosTraderLiteStrategy : Strategy
 	private readonly StrategyParam<bool> _useFirstWiseMan;
 	private readonly StrategyParam<bool> _useSecondWiseMan;
 	private readonly StrategyParam<bool> _useThirdWiseMan;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SmoothedMovingAverage _lipsSmma;
@@ -90,14 +89,6 @@ public class ChaosTraderLiteStrategy : Strategy
 		set => _useThirdWiseMan.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for stop entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type processed by the strategy.
@@ -126,9 +117,6 @@ public class ChaosTraderLiteStrategy : Strategy
 		_useThirdWiseMan = Param(nameof(UseThirdWiseMan), true)
 			.SetDisplay("Third Wise Man", "Enable fractal breakout setup", "General");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

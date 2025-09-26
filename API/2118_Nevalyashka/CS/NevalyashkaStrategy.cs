@@ -11,7 +11,6 @@ using StockSharp.Messages;
 /// </summary>
 public class NevalyashkaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _lotMultiplier;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -25,8 +24,6 @@ public class NevalyashkaStrategy : Strategy
 	/// </summary>
 	public NevalyashkaStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Base order volume", "Trading");
 		_lotMultiplier = Param(nameof(LotMultiplier), 1.5m)
 			.SetDisplay("Lot Multiplier", "Volume multiplier after losing trade", "Trading");
 		_stopLoss = Param(nameof(StopLoss), 10m)
@@ -35,14 +32,6 @@ public class NevalyashkaStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit in price points", "Risk");
 	}
 
-	/// <summary>
-	/// Base trade volume.
-	/// </summary>
-	public new decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Multiplier applied to volume after a losing trade.

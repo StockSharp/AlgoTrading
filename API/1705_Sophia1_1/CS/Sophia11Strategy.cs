@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Sophia11Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _pipStep;
 	private readonly StrategyParam<decimal> _lotExponent;
 	private readonly StrategyParam<int> _maxTrades;
@@ -35,7 +34,6 @@ public class Sophia11Strategy : Strategy
 	private decimal _trailingStop;
 
 	/// <summary>Base volume for the first trade.</summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	/// <summary>Price steps before adding a new position.</summary>
 	public decimal PipStep { get => _pipStep.Value; set => _pipStep.Value = value; }
 	/// <summary>Multiplier for added position volume.</summary>
@@ -58,9 +56,6 @@ public class Sophia11Strategy : Strategy
 	/// <summary>Constructor.</summary>
 	public Sophia11Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base volume for the first trade", "General");
 
 		_pipStep = Param(nameof(PipStep), 30m)
 			.SetGreaterThanZero()

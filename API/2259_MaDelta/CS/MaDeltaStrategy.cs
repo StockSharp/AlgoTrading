@@ -18,7 +18,6 @@ public class MaDeltaStrategy : Strategy
 	private readonly StrategyParam<int> _multiplier;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _hi;
@@ -64,14 +63,6 @@ public class MaDeltaStrategy : Strategy
 		set => _slowMaPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Type of candles to process.
@@ -107,8 +98,6 @@ public class MaDeltaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 100, 1);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

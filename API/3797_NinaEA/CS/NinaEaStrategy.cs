@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NinaEaStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _volume;
 private readonly StrategyParam<int> _atrPeriod;
 private readonly StrategyParam<decimal> _atrMultiplier;
 private readonly StrategyParam<decimal> _stopLossPoints;
@@ -31,8 +30,6 @@ private decimal? _shortStopPrice;
 /// </summary>
 public NinaEaStrategy()
 {
-_volume = Param(nameof(Volume), 0.1m)
-.SetDisplay("Volume", "Order volume for entries", "Trading");
 
 _atrPeriod = Param(nameof(AtrPeriod), 10)
 .SetDisplay("ATR Period", "ATR length for the SuperTrend filter", "Indicators")
@@ -51,14 +48,6 @@ _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 .SetDisplay("Candle Type", "Source candle series", "Trading");
 }
 
-/// <summary>
-/// Order volume used when opening a new position.
-/// </summary>
-public decimal Volume
-{
-get => _volume.Value;
-set => _volume.Value = value;
-}
 
 /// <summary>
 /// ATR period forwarded to the SuperTrend indicator.

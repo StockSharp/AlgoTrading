@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TwentyOneHourSessionBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _firstSessionStartHour;
 	private readonly StrategyParam<int> _firstSessionStopHour;
 	private readonly StrategyParam<int> _secondSessionStartHour;
@@ -29,14 +28,6 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 	private decimal? _bestBidPrice;
 	private decimal? _bestAskPrice;
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// First trading window start hour (server time).
@@ -106,10 +97,6 @@ public class TwentyOneHourSessionBreakoutStrategy : Strategy
 	/// </summary>
 	public TwentyOneHourSessionBreakoutStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for entries", "Trading")
-			.SetCanOptimize(true);
 
 		_firstSessionStartHour = Param(nameof(FirstSessionStartHour), 8)
 			.SetDisplay("First Session Start", "Hour of the first trading window start (0-23)", "Schedule")

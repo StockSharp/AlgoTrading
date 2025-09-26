@@ -29,7 +29,6 @@ public class IchimokuPriceActionStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _takeProfitRatio;
 	private readonly StrategyParam<bool> _closeOnReverse;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _moveToBreakEven;
 	private readonly StrategyParam<decimal> _trailingStop;
 	private readonly StrategyParam<decimal> _trailingTrigger;
@@ -172,11 +171,6 @@ get => _closeOnReverse.Value;
 set => _closeOnReverse.Value = value;
 }
 
-public decimal Volume
-{
-get => _volume.Value;
-set => _volume.Value = value;
-}
 
 public decimal MoveToBreakEven
 {
@@ -253,9 +247,6 @@ _takeProfitRatio = Param(nameof(TakeProfitRatio), 2m)
 .SetDisplay("Risk/Reward", "Reward-to-risk ratio when ratio mode is selected", "Risk");
 _closeOnReverse = Param(nameof(CloseOnReverse), true)
 .SetDisplay("Close On Reverse", "Exit when the opposite signal appears", "Risk");
-_volume = Param(nameof(Volume), 0.1m)
-.SetGreaterThanZero()
-.SetDisplay("Order Volume", "Volume sent with market orders", "Orders");
 _moveToBreakEven = Param(nameof(MoveToBreakEven), 0m)
 .SetDisplay("Break-Even Trigger", "Profit in pips required to lock entry price", "Risk");
 _trailingStop = Param(nameof(TrailingStop), 50m)

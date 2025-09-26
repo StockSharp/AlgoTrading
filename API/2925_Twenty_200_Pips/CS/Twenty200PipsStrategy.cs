@@ -19,7 +19,6 @@ public class Twenty200PipsStrategy : Strategy
 	private readonly StrategyParam<int> _firstOffset;
 	private readonly StrategyParam<int> _secondOffset;
 	private readonly StrategyParam<int> _deltaPoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Shift _shiftFirst;
@@ -81,14 +80,6 @@ public class Twenty200PipsStrategy : Strategy
 		set => _deltaPoints.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume submitted with market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used for the hourly comparison.
@@ -138,9 +129,6 @@ public class Twenty200PipsStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(10, 200, 10);
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used for the hourly comparison", "General");

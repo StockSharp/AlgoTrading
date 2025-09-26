@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 
 public class SwingCyborgStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<TrendType> _trendPrediction;
 	private readonly StrategyParam<TrendTimeframe> _trendTimeframe;
 	private readonly StrategyParam<DateTimeOffset> _trendStart;
@@ -23,14 +22,6 @@ public class SwingCyborgStrategy : Strategy
 	private int _takeProfitSteps;
 	private int _stopLossSteps;
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-	get => _volume.Value;
-	set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Expected trend direction.
@@ -82,9 +73,6 @@ public class SwingCyborgStrategy : Strategy
 	/// </summary>
 	public SwingCyborgStrategy()
 	{
-	_volume = Param(nameof(Volume), 0.1m)
-	.SetGreaterThanZero()
-	.SetDisplay("Volume", "Order volume", "Trading");
 	
 	_trendPrediction = Param(nameof(TrendPrediction), TrendType.Uptrend)
 	.SetDisplay("Trend Prediction", "Expected trend direction", "General");

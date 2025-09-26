@@ -13,7 +13,6 @@ using StockSharp.Messages;
 public class AeroSpineStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _entryHour;
 	private readonly StrategyParam<decimal> _entryOffsetPips;
 	private readonly StrategyParam<decimal> _exitOffsetPips;
@@ -53,9 +52,6 @@ public class AeroSpineStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 		.SetDisplay("Candle Type", "Working timeframe", "Parameters");
 
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base trading volume", "Parameters");
 
 		_entryHour = Param(nameof(EntryHour), 18)
 		.SetDisplay("Entry Hour", "Start hour for signals", "Parameters");
@@ -99,11 +95,6 @@ public class AeroSpineStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public int EntryHour
 	{

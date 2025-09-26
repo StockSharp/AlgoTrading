@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class GbpChfCorrelationStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<bool> _onlyOnePosition;
@@ -48,11 +47,6 @@ public class GbpChfCorrelationStrategy : Strategy
 	/// </summary>
 	public GbpChfCorrelationStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Trade volume for each entry", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.01m, 0.1m, 0.01m);
 
 		_stopLossPips = Param(nameof(StopLossPips), 90)
 		.SetDisplay("Stop Loss (pips)", "Stop loss distance expressed in pips", "Risk")
@@ -91,14 +85,6 @@ public class GbpChfCorrelationStrategy : Strategy
 		.SetCanOptimize(false);
 	}
 
-	/// <summary>
-	/// Trade volume per entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips.

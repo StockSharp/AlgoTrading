@@ -15,7 +15,6 @@ public class LuckyJumpStrategy : Strategy
 {
 	private readonly StrategyParam<int> _shift;
 	private readonly StrategyParam<int> _limit;
-	private readonly StrategyParam<decimal> _volume;
 
 	private decimal _prevAsk;
 	private decimal _prevBid;
@@ -41,14 +40,6 @@ public class LuckyJumpStrategy : Strategy
 		set => _limit.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="LuckyJumpStrategy"/>.
@@ -63,9 +54,6 @@ public class LuckyJumpStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Loss Limit", "Maximum loss in points before exit", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

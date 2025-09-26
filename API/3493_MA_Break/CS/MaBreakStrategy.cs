@@ -29,7 +29,6 @@ public class MaBreakStrategy : Strategy
 	private readonly StrategyParam<decimal> _bearLowerWickPercent;
 	private readonly StrategyParam<decimal> _candleMinSize;
 	private readonly StrategyParam<decimal> _candleMaxSize;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<bool> _enableLong;
@@ -131,10 +130,6 @@ public class MaBreakStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetNotNegative();
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetDisplay("Volume", "Order volume in lots", "Orders")
-			.SetCanOptimize(true)
-			.SetGreaterThanZero();
 
 		_stopLossPips = Param(nameof(StopLossPips), 20m)
 			.SetDisplay("Stop-Loss (pips)", "Protective stop distance in pips", "Orders")
@@ -291,14 +286,6 @@ public class MaBreakStrategy : Strategy
 		set => _candleMaxSize.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Protective stop distance in pips.

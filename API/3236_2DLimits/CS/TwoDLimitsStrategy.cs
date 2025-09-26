@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TwoDLimitsStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Queue<ICandleMessage> _recentDailyCandles = new(2);
@@ -40,14 +39,6 @@ public class TwoDLimitsStrategy : Strategy
 
 	private decimal _previousPosition;
 
-	/// <summary>
-	/// Order volume for pending entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type that provides the daily reference range.
@@ -63,9 +54,6 @@ public class TwoDLimitsStrategy : Strategy
 	/// </summary>
 	public TwoDLimitsStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for stop entries.", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe used to read the previous day range.", "General");

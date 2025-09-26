@@ -19,7 +19,6 @@ public class TimeTraderStrategy : Strategy
 	private readonly StrategyParam<int> _tradeSecond;
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private bool _buyDone;
@@ -88,14 +87,6 @@ public class TimeTraderStrategy : Strategy
 		set => _allowSell.Value = value;
 	}
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Candle type to watch for time.
@@ -141,9 +132,6 @@ public class TimeTraderStrategy : Strategy
 		_allowSell = Param(nameof(AllowSell), true)
 		.SetDisplay("Allow Sell", "Enable short orders", "Trading");
 		
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 		
 		_candleType = Param(nameof(CandleType), TimeSpan.FromSeconds(1).TimeFrame())
 		.SetDisplay("Candle Type", "Resolution to check time", "General");

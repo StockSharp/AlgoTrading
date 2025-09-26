@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 public class BalanceDrawdownInMt4Strategy : Strategy
 {
 	private readonly StrategyParam<decimal> _startBalance;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
@@ -31,14 +30,6 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 		set => _startBalance.Value = value;
 	}
 
-	/// <summary>
-	/// Volume of the initial market buy order.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in price points.
@@ -81,9 +72,6 @@ public class BalanceDrawdownInMt4Strategy : Strategy
 			.SetDisplay("Start Balance", "Initial balance for drawdown measurement.", "Risk")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetDisplay("Volume", "Market buy volume opened at the start of the session.", "Trading")
-			.SetCanOptimize(true);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
 			.SetDisplay("Stop-Loss (points)", "Distance from entry price to the protective stop.", "Risk")

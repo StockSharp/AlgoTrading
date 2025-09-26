@@ -17,7 +17,6 @@ public class SilverTrendV3Strategy : Strategy
 	private const int DefaultRisk = 3;
 	private const int JtpoDefaultLength = 14;
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _initialStopPoints;
@@ -39,14 +38,6 @@ public class SilverTrendV3Strategy : Strategy
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 
-	/// <summary>
-	/// Trading volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Trailing stop distance expressed in points.
@@ -98,9 +89,6 @@ public class SilverTrendV3Strategy : Strategy
 	/// </summary>
 	public SilverTrendV3Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Trading volume in lots", "General");
 
 		_trailingStopPoints = Param(nameof(TrailingStopPoints), 0m)
 		.SetGreaterThanOrEqual(0m)

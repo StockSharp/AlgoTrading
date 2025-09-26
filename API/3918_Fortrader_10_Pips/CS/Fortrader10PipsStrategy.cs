@@ -18,7 +18,6 @@ public class Fortrader10PipsStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitSell;
 	private readonly StrategyParam<decimal> _stopLossSell;
 	private readonly StrategyParam<decimal> _trailingStopSell;
-	private readonly StrategyParam<decimal> _volume;
 
 	private Order _longStopOrder;
 	private Order _longTakeProfitOrder;
@@ -88,14 +87,6 @@ public class Fortrader10PipsStrategy : Strategy
 		set => _trailingStopSell.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume expressed in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="Fortrader10PipsStrategy"/> class.
@@ -130,9 +121,6 @@ public class Fortrader10PipsStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Trailing Stop Sell", "Trailing stop distance for short positions (points)", "Risk");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "General");
 	}
 
 	/// <inheritdoc />

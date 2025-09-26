@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PolishLayerExpertAdvisorSystemEfficientStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _volume;
 private readonly StrategyParam<DataType> _candleType;
 private readonly StrategyParam<int> _rsiPeriod;
 private readonly StrategyParam<int> _shortPricePeriod;
@@ -56,14 +55,6 @@ private decimal? _shortTakePrice;
 
 private decimal _priceStep;
 
-/// <summary>
-/// Order volume in lots.
-/// </summary>
-public decimal Volume
-{
-get => _volume.Value;
-set => _volume.Value = value;
-}
 
 /// <summary>
 /// Candle type to process.
@@ -241,9 +232,6 @@ set => _takeProfitPips.Value = value;
 /// </summary>
 public PolishLayerExpertAdvisorSystemEfficientStrategy()
 {
-_volume = Param(nameof(Volume), 0.1m)
-.SetGreaterThanZero()
-.SetDisplay("Volume", "Order volume in lots", "General");
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 .SetDisplay("Candle Type", "Primary timeframe for calculations", "General");

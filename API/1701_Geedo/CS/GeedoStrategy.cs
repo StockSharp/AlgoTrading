@@ -23,7 +23,6 @@ public class GeedoStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitShort;
 	private readonly StrategyParam<int> _stopLossShort;
 	private readonly StrategyParam<int> _maxOpenTime;
-	private readonly StrategyParam<decimal> _volume;
 
 	private readonly List<decimal> _openHistory = new();
 	private bool _canTrade = true;
@@ -69,8 +68,6 @@ public class GeedoStrategy : Strategy
 		_maxOpenTime = Param(nameof(MaxOpenTime), 504)
 			.SetDisplay("Max Open Time", "Maximum holding time in hours", "Risk");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <summary>
@@ -172,14 +169,6 @@ public class GeedoStrategy : Strategy
 		set => _maxOpenTime.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()

@@ -12,7 +12,6 @@ using StockSharp.Messages;
 
 public class AngrybirdXScalpingnStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _lotExponent;
 	private readonly StrategyParam<bool> _dynamicPips;
 	private readonly StrategyParam<int> _defaultPips;
@@ -34,7 +33,6 @@ public class AngrybirdXScalpingnStrategy : Strategy
 	private decimal _pipStep;
 	private decimal _prevClose;
 
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public decimal LotExponent { get => _lotExponent.Value; set => _lotExponent.Value = value; }
 	public bool DynamicPips { get => _dynamicPips.Value; set => _dynamicPips.Value = value; }
 	public int DefaultPips { get => _defaultPips.Value; set => _defaultPips.Value = value; }
@@ -50,9 +48,6 @@ public class AngrybirdXScalpingnStrategy : Strategy
 
 	public AngrybirdXScalpingnStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetDisplay("Volume", "Base trade volume", "General")
-		.SetGreaterThanZero();
 
 		_lotExponent = Param(nameof(LotExponent), 2m)
 		.SetDisplay("Lot Exponent", "Volume multiplier for additional trades", "General")

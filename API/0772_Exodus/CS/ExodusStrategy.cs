@@ -19,7 +19,6 @@ public class ExodusStrategy : Strategy
 	private readonly StrategyParam<decimal> _tpMultiplier;
 	private readonly StrategyParam<int> _adxLength;
 	private readonly StrategyParam<decimal> _adxThreshold;
-	private readonly StrategyParam<int> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly AverageTrueRange _atr;
@@ -38,7 +37,6 @@ public class ExodusStrategy : Strategy
 	public decimal TpMultiplier { get => _tpMultiplier.Value; set => _tpMultiplier.Value = value; }
 	public int AdxLength { get => _adxLength.Value; set => _adxLength.Value = value; }
 	public decimal AdxThreshold { get => _adxThreshold.Value; set => _adxThreshold.Value = value; }
-	public int Volume { get => _volume.Value; set => _volume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ExodusStrategy()
@@ -75,9 +73,6 @@ public class ExodusStrategy : Strategy
 		_adxThreshold = Param(nameof(AdxThreshold), 27m)
 			.SetDisplay("ADX Threshold", "Minimum ADX", "Filters");
 
-		_volume = Param(nameof(Volume), 1)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

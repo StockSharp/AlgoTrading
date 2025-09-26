@@ -26,7 +26,6 @@ public class HarVesteRStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxSellLevel;
 	private readonly StrategyParam<int> _adxPeriod;
 	private readonly StrategyParam<int> _halfCloseRatio;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MovingAverageConvergenceDivergenceSignal _macd = null!;
@@ -165,14 +164,6 @@ public class HarVesteRStrategy : Strategy
 		set => _halfCloseRatio.Value = value;
 	}
 
-	/// <summary>
-	/// Default order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used by the strategy.
@@ -249,9 +240,6 @@ public class HarVesteRStrategy : Strategy
 			.SetDisplay("Half Close Ratio", "Multiplier applied to stop distance", "Risk")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe", "General");

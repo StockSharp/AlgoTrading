@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SessionBreakoutStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _europeSessionStartHour;
 	private readonly StrategyParam<int> _europeSessionEndHour;
 	private readonly StrategyParam<int> _usSessionStartHour;
@@ -33,14 +32,6 @@ public class SessionBreakoutStrategy : Strategy
 	private bool _shortExecuted;
 	private decimal _pipSize;
 
-	/// <summary>
-	/// Base order volume for breakout entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Hour when the European session monitoring starts.
@@ -137,10 +128,6 @@ public class SessionBreakoutStrategy : Strategy
 	/// </summary>
 	public SessionBreakoutStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order volume", "Orders")
-		.SetCanOptimize(true);
 
 		_europeSessionStartHour = Param(nameof(EuropeSessionStartHour), 6)
 		.SetDisplay("EU start hour", "Hour when the European session begins", "Sessions")

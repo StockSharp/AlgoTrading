@@ -11,7 +11,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TrainingSimulatorStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _upperStopPrice;
@@ -37,10 +36,6 @@ public class TrainingSimulatorStrategy : Strategy
 	/// </summary>
 	public TrainingSimulatorStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Lot size sent with each market order.", "Trading")
-			.SetCanOptimize(true);
 
 		_takeProfitPoints = Param(nameof(TakeProfitPoints), 30m)
 			.SetNotNegative()
@@ -86,14 +81,6 @@ public class TrainingSimulatorStrategy : Strategy
 		_previousSellEnabled = false;
 	}
 
-	/// <summary>
-	/// Requested market order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take-profit distance expressed in MetaTrader points.

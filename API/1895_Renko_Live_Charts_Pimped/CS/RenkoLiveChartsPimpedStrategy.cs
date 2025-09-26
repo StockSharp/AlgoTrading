@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 public class RenkoLiveChartsPimpedStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _boxSize;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _calculateBestBoxSize;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<DataType> _atrCandleType;
@@ -36,10 +35,6 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 	/// </summary>
 	public decimal BoxSize { get => _boxSize.Value; set => _boxSize.Value = value; }
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	
 	/// <summary>
 	/// Calculate brick size from ATR.
@@ -77,9 +72,6 @@ public class RenkoLiveChartsPimpedStrategy : Strategy
 		.SetCanOptimize(true)
 		.SetOptimize(5m, 20m, 1m);
 		
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 		
 		_calculateBestBoxSize = Param(nameof(CalculateBestBoxSize), false)
 		.SetDisplay("Use ATR Box", "Calculate brick size from ATR", "Renko");

@@ -18,7 +18,6 @@ public class SimpleMaAdxEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _emaPrev1;
@@ -71,14 +70,6 @@ public class SimpleMaAdxEaStrategy : Strategy
 		set => _takeProfit.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type.
@@ -114,9 +105,6 @@ public class SimpleMaAdxEaStrategy : Strategy
 			.SetDisplay("Take Profit", "Take profit in price units", "Risk Management")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume", "General")
-			.SetCanOptimize(true);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

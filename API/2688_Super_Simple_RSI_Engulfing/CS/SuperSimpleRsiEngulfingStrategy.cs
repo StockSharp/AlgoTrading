@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SuperSimpleRsiEngulfingStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _profitGoal;
 	private readonly StrategyParam<decimal> _maxLoss;
 	private readonly StrategyParam<int> _rsiPeriod;
@@ -29,14 +28,6 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 	private decimal? _prevPrevOpen;
 	private decimal? _prevPrevClose;
 
-	/// <summary>
-	/// Order volume in contracts.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Currency profit target that forces a flatten.
@@ -106,9 +97,6 @@ public class SuperSimpleRsiEngulfingStrategy : Strategy
 	/// </summary>
 	public SuperSimpleRsiEngulfingStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_profitGoal = Param(nameof(ProfitGoal), 190m)
 			.SetGreaterThanZero()

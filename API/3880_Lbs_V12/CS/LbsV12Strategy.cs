@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class LbsV12Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _triggerHour;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
@@ -52,14 +51,6 @@ public class LbsV12Strategy : Strategy
 	private decimal? _longEntryPrice;
 	private decimal? _shortEntryPrice;
 
-	/// <summary>
-	/// Trading volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Hour (terminal time) when stop orders should be placed.
@@ -111,9 +102,6 @@ public class LbsV12Strategy : Strategy
 	/// </summary>
 	public LbsV12Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "Trading");
 
 		_triggerHour = Param(nameof(TriggerHour), 9)
 			.SetDisplay("Trigger Hour", "Hour when stop orders are sent", "Execution")

@@ -17,7 +17,6 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 	private readonly StrategyParam<int> _slowEmaPeriod;
 	private readonly StrategyParam<int> _signalPeriod;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<RiskBenefitRatio> _riskBenefit;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -62,14 +61,6 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 		set => _stopLoss.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Risk to reward ratio preset.
@@ -114,8 +105,6 @@ public class MacdWaterlineCrossExpectatorStrategy : Strategy
 			.SetDisplay("Signal", "Signal line period", "Indicators");
 		_stopLoss = Param(nameof(StopLoss), 0.003m)
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume", "Trading");
 		_riskBenefit = Param(nameof(RiskBenefit), RiskBenefitRatio.OneTwo)
 			.SetDisplay("RR", "Risk benefit ratio", "Risk");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())

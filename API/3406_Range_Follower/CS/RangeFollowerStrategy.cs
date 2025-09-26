@@ -17,7 +17,6 @@ public class RangeFollowerStrategy : Strategy
 	private const int DefaultAtrPeriod = 20;
 
 	private readonly StrategyParam<int> _triggerPercent;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private Subscription? _dailySubscription;
@@ -54,9 +53,6 @@ public class RangeFollowerStrategy : Strategy
 			.SetRange(10, 90)
 			.SetDisplay("Trigger Percent", "Percentage of ATR used as breakout trigger", "Parameters");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for market entries", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Primary timeframe for monitoring daily resets", "General");
@@ -71,14 +67,6 @@ public class RangeFollowerStrategy : Strategy
 		set => _triggerPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for new market positions.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Intraday candle type that defines the trading session boundaries.

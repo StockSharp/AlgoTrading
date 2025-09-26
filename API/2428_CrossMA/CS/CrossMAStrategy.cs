@@ -18,7 +18,6 @@ public class CrossMAStrategy : Strategy
 	private readonly StrategyParam<int> _fastPeriod;
 	private readonly StrategyParam<int> _slowPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal? _stopPrice;
@@ -52,14 +51,6 @@ public class CrossMAStrategy : Strategy
 		set => _atrPeriod.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type for calculations.
@@ -87,9 +78,6 @@ public class CrossMAStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("ATR Period", "Period of ATR for stop calculation", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 		.SetDisplay("Candle Type", "Type of candles for calculations", "General");

@@ -15,7 +15,6 @@ public class AfterEffectsStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<bool> _random;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Queue<decimal> _pQueue = [];
@@ -51,14 +50,6 @@ public class AfterEffectsStrategy : Strategy
 		set => _random.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type to subscribe.

@@ -24,7 +24,6 @@ public class ManagerTrailingStrategy : Strategy
 	private readonly StrategyParam<bool> _partCloseOn;
 	private readonly StrategyParam<string> _partCloseLevels;
 	private readonly StrategyParam<string> _partClosePercents;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
@@ -44,7 +43,6 @@ public class ManagerTrailingStrategy : Strategy
 	public bool PartCloseOn { get => _partCloseOn.Value; set => _partCloseOn.Value = value; }
 	public string PartCloseLevels { get => _partCloseLevels.Value; set => _partCloseLevels.Value = value; }
 	public string PartClosePercents { get => _partClosePercents.Value; set => _partClosePercents.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public ManagerTrailingStrategy()
@@ -83,9 +81,6 @@ public class ManagerTrailingStrategy : Strategy
 		_partClosePercents = Param(nameof(PartClosePercents), "50/25/25")
 			.SetDisplay("Part Percents", "Portions of position to close", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to analyze", "General");

@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdCrossAudusdD1Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<decimal> _rewardRatio;
 	private readonly StrategyParam<DataType> _candleType;
@@ -22,14 +21,6 @@ public class MacdCrossAudusdD1Strategy : Strategy
 	private bool _hasPrev;
 	private decimal _pipSize;
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss in pips.
@@ -63,9 +54,6 @@ public class MacdCrossAudusdD1Strategy : Strategy
 	/// </summary>
 	public MacdCrossAudusdD1Strategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume in lots", "Trading")
-			.SetGreaterThanZero();
 
 		_stopLossPips = Param(nameof(StopLossPips), 40)
 			.SetDisplay("Stop Loss (pips)", "Stop loss size in pips", "Risk")

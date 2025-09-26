@@ -19,7 +19,6 @@ public class PerceptronAcStrategy : Strategy
 	private readonly StrategyParam<int> _x3;
 	private readonly StrategyParam<int> _x4;
 	private readonly StrategyParam<decimal> _stopLoss;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private SimpleMovingAverage _aoFast;
@@ -55,10 +54,6 @@ public class PerceptronAcStrategy : Strategy
 	/// </summary>
 	public decimal StopLoss { get => _stopLoss.Value; set => _stopLoss.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Candle type for calculation.
@@ -86,9 +81,6 @@ public class PerceptronAcStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stop Loss", "Stop loss distance", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");

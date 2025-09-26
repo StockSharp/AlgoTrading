@@ -16,7 +16,6 @@ public class EurGbpEaStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<Security> _eurUsdSecurity;
 	private readonly StrategyParam<Security> _gbpUsdSecurity;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
 
@@ -47,10 +46,6 @@ public class EurGbpEaStrategy : Strategy
 		_gbpUsdSecurity = Param<Security>(nameof(GbpUsdSecurity))
 			.SetDisplay("GBPUSD Security", "GBP/USD reference symbol", "General");
 
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetDisplay("Volume", "Order volume in lots", "Trading")
-			.SetGreaterThanZero()
-			.SetCanOptimize(true);
 
 		_stopLoss = Param(nameof(StopLoss), 75)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Protection")
@@ -90,14 +85,6 @@ public class EurGbpEaStrategy : Strategy
 		set => _gbpUsdSecurity.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance measured in price steps.

@@ -13,7 +13,6 @@ using StockSharp.Messages;
 /// </summary>
 public class MLTrendEStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _multiplier1;
 	private readonly StrategyParam<decimal> _multiplier2;
 	private readonly StrategyParam<decimal> _takeProfit;
@@ -25,14 +24,6 @@ public class MLTrendEStrategy : Strategy
 	private decimal _lastEntryPrice;
 	private int _tradeCount;
 
-	/// <summary>
-	/// Base trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Volume multiplier for the second trade.
@@ -100,9 +91,6 @@ public class MLTrendEStrategy : Strategy
 
 	public MLTrendEStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Initial trade volume", "General");
 
 		_multiplier1 = Param(nameof(Multiplier1), 1m)
 			.SetGreaterThanZero()

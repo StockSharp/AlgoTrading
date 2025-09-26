@@ -24,7 +24,6 @@ public class RsiStochasticMaStrategy : Strategy
 	private readonly StrategyParam<int> _stochDPeriod;
 	private readonly StrategyParam<decimal> _stochUpperLevel;
 	private readonly StrategyParam<decimal> _stochLowerLevel;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 	
 	private RelativeStrengthIndex _rsi;
@@ -103,14 +102,6 @@ public class RsiStochasticMaStrategy : Strategy
 	set => _stochLowerLevel.Value = value;
 	}
 	
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-	get => _volume.Value;
-	set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Candle type for calculations.
@@ -166,8 +157,6 @@ public class RsiStochasticMaStrategy : Strategy
 	.SetCanOptimize(true)
 	.SetOptimize(10m, 40m, 5m);
 	
-	_volume = Param(nameof(Volume), 1m)
-	.SetDisplay("Volume", "Order volume", "General");
 	
 	_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 	.SetDisplay("Candle Type", "Candle type", "General");

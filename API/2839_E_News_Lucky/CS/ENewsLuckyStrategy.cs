@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ENewsLuckyStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -41,14 +40,6 @@ public class ENewsLuckyStrategy : Strategy
 	private DateTime? _lastPlacementDate;
 	private DateTime? _lastCancelDate;
 
-	/// <summary>
-	/// Order volume used for pending entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in pips relative to the entry order.
@@ -127,9 +118,6 @@ public class ENewsLuckyStrategy : Strategy
 	/// </summary>
 	public ENewsLuckyStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetDisplay("Stop Loss", "Stop loss in pips", "Trading")

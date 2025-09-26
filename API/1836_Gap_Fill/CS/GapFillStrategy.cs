@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 public class GapFillStrategy : Strategy
 {
 	private readonly StrategyParam<int> _minGapSize;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _prevHigh;
@@ -33,14 +32,6 @@ public class GapFillStrategy : Strategy
 		set => _minGapSize.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type.
@@ -59,8 +50,6 @@ public class GapFillStrategy : Strategy
 		_minGapSize = Param(nameof(MinGapSize), 1)
 			.SetDisplay("Min Gap Size", "Minimum gap size in points", "Parameters");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "Data");

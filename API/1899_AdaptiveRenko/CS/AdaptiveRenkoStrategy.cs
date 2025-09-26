@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class AdaptiveRenkoStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _volatilityPeriod;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<decimal> _minBrick;
@@ -23,11 +22,6 @@ public class AdaptiveRenkoStrategy : Strategy
 	private decimal _lastBrickPrice;
 	private bool _hasBrick;
 
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	public int VolatilityPeriod
 	{
@@ -55,9 +49,6 @@ public class AdaptiveRenkoStrategy : Strategy
 
 	public AdaptiveRenkoStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_volatilityPeriod = Param(nameof(VolatilityPeriod), 10)
 			.SetGreaterThanZero()

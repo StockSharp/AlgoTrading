@@ -20,7 +20,6 @@ public class RenkoTrendReversalV2Strategy : Strategy
 	private readonly StrategyParam<DateTimeOffset> _endDate;
 	private readonly StrategyParam<bool> _enableShorts;
 	private readonly StrategyParam<bool> _enableSignals;
-	private readonly StrategyParam<decimal> _volume;
 
 	private DataType _renkoType;
 	private decimal _prevOpen;
@@ -93,14 +92,6 @@ public class RenkoTrendReversalV2Strategy : Strategy
 		set => _enableSignals.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="RenkoTrendReversalV2Strategy"/>.
@@ -134,9 +125,6 @@ public class RenkoTrendReversalV2Strategy : Strategy
 		_enableSignals = Param(nameof(EnableSignals), true)
 			.SetDisplay("Enable Signals", "Enable trade signals", "Trading");
 
-		_volume = Param(nameof(Volume), 5m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

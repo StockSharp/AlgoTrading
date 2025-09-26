@@ -20,7 +20,6 @@ public class RenkoTrendReversalStrategy : Strategy
 	private readonly StrategyParam<bool> _enableSlTp;
 	private readonly StrategyParam<decimal> _stopLossPct;
 	private readonly StrategyParam<decimal> _takeProfitPct;
-	private readonly StrategyParam<decimal> _volume;
 
 	private DataType _renkoType;
 	private decimal _prevOpen;
@@ -93,14 +92,6 @@ public class RenkoTrendReversalStrategy : Strategy
 		set => _takeProfitPct.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes <see cref="RenkoTrendReversalStrategy"/>.
@@ -134,9 +125,6 @@ public class RenkoTrendReversalStrategy : Strategy
 			.SetDisplay("Take Profit %", "Take profit percentage", "Trading")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 2m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

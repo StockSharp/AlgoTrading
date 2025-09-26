@@ -18,7 +18,6 @@ public class LosslessMaStrategy : Strategy
 	private readonly StrategyParam<int> _slowLength;
 	private readonly StrategyParam<int> _maxDeals;
 	private readonly StrategyParam<bool> _closeLosses;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _entryPrice;
@@ -44,10 +43,6 @@ public class LosslessMaStrategy : Strategy
 	/// </summary>
 	public bool CloseLosses { get => _closeLosses.Value; set => _closeLosses.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Type of candles used for calculations.
@@ -74,9 +69,6 @@ public class LosslessMaStrategy : Strategy
 		_closeLosses = Param(nameof(CloseLosses), true)
 			.SetDisplay("Close Losses", "Close losing trades immediately", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Candles for strategy", "General");

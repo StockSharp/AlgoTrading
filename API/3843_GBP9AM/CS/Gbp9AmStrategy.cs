@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Gbp9AmStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _lookHour;
 	private readonly StrategyParam<int> _lookMinute;
 	private readonly StrategyParam<int> _closeHour;
@@ -39,14 +38,6 @@ public class Gbp9AmStrategy : Strategy
 	private decimal? _activeTakeProfit;
 	private int _positionDirection;
 
-	/// <summary>
-	/// Order volume used for the pending stop orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Hour corresponding to the London 9 AM observation.
@@ -143,10 +134,6 @@ public class Gbp9AmStrategy : Strategy
 	/// </summary>
 	public Gbp9AmStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for both pending stops", "General")
-			.SetCanOptimize(true);
 
 		_lookHour = Param(nameof(LookHour), 9)
 			.SetDisplay("Look hour", "Hour that represents the London 9 AM fix", "Timing")

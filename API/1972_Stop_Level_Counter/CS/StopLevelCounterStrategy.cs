@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 public class StopLevelCounterStrategy : Strategy
 {
 	private readonly StrategyParam<decimal> _level;
-	private readonly StrategyParam<decimal> _volume;
 
 	/// <summary>
 	/// Price level used for profit calculation.
@@ -24,14 +23,6 @@ public class StopLevelCounterStrategy : Strategy
 		set => _level.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
@@ -41,9 +32,6 @@ public class StopLevelCounterStrategy : Strategy
 		_level = Param(nameof(Level), 0m)
 			.SetDisplay("Stop Level", "Price level for profit calculation", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />

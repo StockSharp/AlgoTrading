@@ -23,7 +23,6 @@ public class OneMinuteScalperStrategy : Strategy
 	private readonly StrategyParam<decimal> _moneyTrailStop;
 	private readonly StrategyParam<bool> _useEquityStop;
 	private readonly StrategyParam<decimal> _equityRiskPercent;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
 	private readonly StrategyParam<decimal> _momentumBuyThreshold;
@@ -162,14 +161,6 @@ public class OneMinuteScalperStrategy : Strategy
 		set => _equityRiskPercent.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Fast LWMA length used by the trend filter.
@@ -352,9 +343,6 @@ public class OneMinuteScalperStrategy : Strategy
 			.SetNotNegative()
 			.SetDisplay("Equity Risk %", "Maximum drawdown as percent of peak equity", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_fastMaPeriod = Param(nameof(FastMaPeriod), 6)
 			.SetGreaterThanZero()

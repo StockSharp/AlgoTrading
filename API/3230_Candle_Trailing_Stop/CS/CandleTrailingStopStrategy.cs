@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CandleTrailingStopStrategy : Strategy
 {
-private readonly StrategyParam<decimal> _volume;
 private readonly StrategyParam<int> _maxTrades;
 private readonly StrategyParam<int> _fastHigherLength;
 private readonly StrategyParam<int> _middleHigherLength;
@@ -88,10 +87,6 @@ private decimal _initialEquity;
 /// </summary>
 public CandleTrailingStopStrategy()
 {
-_volume = Param(nameof(Volume), 1m)
-.SetGreaterThanZero()
-.SetCanOptimize(true)
-.SetDisplay("Volume", "Default order volume", "Trading");
 
 _maxTrades = Param(nameof(MaxTrades), 10)
 .SetGreaterThanZero()
@@ -229,14 +224,6 @@ _macdCandleType = Param(nameof(MacdCandleType), TimeSpan.FromDays(30).TimeFrame(
 .SetDisplay("MACD timeframe", "Timeframe used for the MACD confirmation filter", "Data");
 }
 
-/// <summary>
-/// Default order volume.
-/// </summary>
-public decimal Volume
-{
-get => _volume.Value;
-set => _volume.Value = value;
-}
 
 /// <summary>
 /// Maximum number of trades that can be open simultaneously.

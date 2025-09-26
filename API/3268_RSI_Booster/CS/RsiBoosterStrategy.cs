@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class RsiBoosterStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _ratio;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
@@ -52,8 +51,6 @@ public class RsiBoosterStrategy : Strategy
 	/// </summary>
 	public RsiBoosterStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-		.SetDisplay("Volume", "Trading volume in lots", LocalizedStrings.StrGeneral);
 
 		_ratio = Param(nameof(Ratio), 10m)
 		.SetDisplay("RSI Difference", "Threshold between fast and delayed RSI", LocalizedStrings.StrGeneral);
@@ -100,14 +97,6 @@ public class RsiBoosterStrategy : Strategy
 		.SetDisplay("Candle Type", "Candle type used for calculations", LocalizedStrings.StrGeneral);
 	}
 
-	/// <summary>
-	/// Trading volume used for market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Minimum RSI difference required to open a new position.

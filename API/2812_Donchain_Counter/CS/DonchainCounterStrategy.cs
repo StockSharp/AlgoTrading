@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class DonchainCounterStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<int> _bufferSteps;
 	private readonly StrategyParam<TimeSpan> _tradeCooldown;
@@ -38,9 +37,6 @@ public class DonchainCounterStrategy : Strategy
 	/// </summary>
 	public DonchainCounterStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries", "Trading");
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetGreaterThanZero()
@@ -59,14 +55,6 @@ public class DonchainCounterStrategy : Strategy
 			.SetDisplay("Candle Type", "Candle series used for Donchian evaluation", "General");
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Donchian channel lookback period.

@@ -19,7 +19,6 @@ public class JMasterRsxStrategy : Strategy
 	private readonly StrategyParam<decimal> _overboughtLevel;
 	private readonly StrategyParam<decimal> _oversoldLevel;
 	private readonly StrategyParam<decimal> _midlineLevel;
-	private readonly StrategyParam<decimal> _volume;
 
 	private RsxIndicator _fastRsx = null!;
 	private RsxIndicator _slowRsx = null!;
@@ -58,9 +57,6 @@ public class JMasterRsxStrategy : Strategy
 			.SetRange(0m, 100m)
 			.SetDisplay("Midline", "RSX midline separating bullish and bearish regimes", "Signals");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume used for market entries", "Trading");
 	}
 
 	/// <summary>
@@ -117,14 +113,6 @@ public class JMasterRsxStrategy : Strategy
 		set => _midlineLevel.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume submitted with market entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <inheritdoc />
 	protected override void OnStarted(DateTimeOffset time)

@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TradeChannelStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _channelPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
 	private readonly StrategyParam<decimal> _trailingDistance;
@@ -27,14 +26,6 @@ public class TradeChannelStrategy : Strategy
 	private Order _stopOrder;
 	private decimal _point;
 
-	/// <summary>
-	/// Trade volume for entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Lookback period for calculating the price channel.
@@ -77,10 +68,6 @@ public class TradeChannelStrategy : Strategy
 	/// </summary>
 	public TradeChannelStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetDisplay("Volume", "Trade volume", "General")
-			.SetCanOptimize(true)
-			.SetOptimize(0.1m, 1m, 0.1m);
 
 		_channelPeriod = Param(nameof(ChannelPeriod), 20)
 			.SetDisplay("Channel Period", "Lookback for highest/lowest channel levels", "Indicator")

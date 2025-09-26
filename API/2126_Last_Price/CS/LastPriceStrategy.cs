@@ -18,7 +18,6 @@ public class LastPriceStrategy : Strategy
 	private readonly StrategyParam<decimal> _minVolume;
 	private readonly StrategyParam<decimal> _maxVolume;
 	private readonly StrategyParam<decimal> _spread;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 
 	private decimal _bestAsk;
@@ -33,7 +32,6 @@ public class LastPriceStrategy : Strategy
 	public decimal MinVolume { get => _minVolume.Value; set => _minVolume.Value = value; }
 	public decimal MaxVolume { get => _maxVolume.Value; set => _maxVolume.Value = value; }
 	public decimal Spread { get => _spread.Value; set => _spread.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public decimal StopLossPips { get => _stopLossPips.Value; set => _stopLossPips.Value = value; }
 
 	public LastPriceStrategy()
@@ -56,9 +54,6 @@ public class LastPriceStrategy : Strategy
 			.SetDisplay("Spread", "Maximum allowed spread", "General")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 400m)
 			.SetGreaterThanZero()

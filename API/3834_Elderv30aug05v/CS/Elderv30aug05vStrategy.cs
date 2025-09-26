@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class Elderv30aug05vStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _longStopLoss;
 	private readonly StrategyParam<decimal> _shortStopLoss;
 	private readonly StrategyParam<decimal> _longTrailingStop;
@@ -60,14 +59,6 @@ public class Elderv30aug05vStrategy : Strategy
 	private decimal _previousMinuteLow;
 	private bool _hasPreviousMinute;
 
-	/// <summary>
-	/// Trading volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance for long positions expressed in points.
@@ -155,9 +146,6 @@ public class Elderv30aug05vStrategy : Strategy
 	/// </summary>
 	public Elderv30aug05vStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetDisplay("Volume", "Trading volume for entries", "General")
-		.SetCanOptimize(true);
 
 		_longStopLoss = Param(nameof(LongStopLoss), 17m)
 		.SetDisplay("Long Stop Loss", "Stop-loss for long trades in points", "Risk Management")

@@ -12,7 +12,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TimeTraderStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _takeProfit;
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<bool> _allowBuy;
@@ -24,14 +23,6 @@ public class TimeTraderStrategy : Strategy
 	
 	private bool _isTraded;
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Take profit in ticks.
@@ -110,9 +101,6 @@ public class TimeTraderStrategy : Strategy
 	/// </summary>
 	public TimeTraderStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 		
 		_takeProfit = Param(nameof(TakeProfit), 20)
 		.SetGreaterThanZero()

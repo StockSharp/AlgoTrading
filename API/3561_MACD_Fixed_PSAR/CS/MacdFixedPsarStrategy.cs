@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdFixedPsarStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<TrailingMode> _trailingMode;
@@ -75,14 +74,6 @@ public class MacdFixedPsarStrategy : Strategy
 		FixedPsar = 2,
 	}
 
-	/// <summary>
-	/// Trading volume used for market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Take-profit distance expressed in pips.
@@ -179,9 +170,6 @@ public class MacdFixedPsarStrategy : Strategy
 	/// </summary>
 	public MacdFixedPsarStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Trading volume used for orders", "General");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 200m)
 		.SetCanOptimize(true)

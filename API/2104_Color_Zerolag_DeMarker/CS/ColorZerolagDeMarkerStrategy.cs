@@ -26,7 +26,6 @@ public class ColorZerolagDeMarkerStrategy : Strategy
 	private readonly StrategyParam<int> _period4;
 	private readonly StrategyParam<decimal> _factor5;
 	private readonly StrategyParam<int> _period5;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<bool> _openBuy;
 	private readonly StrategyParam<bool> _openSell;
 	private readonly StrategyParam<bool> _closeBuy;
@@ -149,14 +148,6 @@ public class ColorZerolagDeMarkerStrategy : Strategy
 		set => _period5.Value = value;
 	}
 	
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 	
 	/// <summary>
 	/// Enable opening long positions.
@@ -254,9 +245,6 @@ public class ColorZerolagDeMarkerStrategy : Strategy
 		.SetGreaterThanZero()
 		.SetDisplay("Period 5", "DeMarker period 5", "Indicator");
 		
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 		
 		_openBuy = Param(nameof(OpenBuy), true)
 		.SetDisplay("Open Buy", "Enable buy entries", "Trading");

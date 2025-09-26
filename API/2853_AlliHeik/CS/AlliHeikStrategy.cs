@@ -40,7 +40,6 @@ public class AlliHeikStrategy : Strategy
 		Lwma,
 	}
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _trailingStopPips;
@@ -73,14 +72,6 @@ public class AlliHeikStrategy : Strategy
 	private decimal? _stopPrice;
 	private decimal? _takePrice;
 
-	/// <summary>
-	/// Trading volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss distance in pips. Set to zero to disable.
@@ -204,9 +195,6 @@ public class AlliHeikStrategy : Strategy
 	/// </summary>
 	public AlliHeikStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Trading volume in lots", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 			.SetRange(0m, 1000m)

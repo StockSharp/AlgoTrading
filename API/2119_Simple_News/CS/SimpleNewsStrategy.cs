@@ -16,7 +16,6 @@ public class SimpleNewsStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _trail;
 	private readonly StrategyParam<decimal> _takeProfit;
-	private readonly StrategyParam<decimal> _volume;
 
 	private bool _ordersPlaced;
 	private DateTimeOffset _cancelTime;
@@ -62,10 +61,6 @@ public class SimpleNewsStrategy : Strategy
 	/// </summary>
 	public decimal TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Initialize <see cref="SimpleNewsStrategy"/>.
@@ -79,7 +74,6 @@ public class SimpleNewsStrategy : Strategy
 		_stopLoss = Param(nameof(StopLoss), 150m).SetDisplay("Stop Loss", "Initial stop loss (pips)", "Risk");
 		_trail = Param(nameof(Trail), 200m).SetDisplay("Trail", "Trailing stop (pips)", "Risk");
 		_takeProfit = Param(nameof(TakeProfit), 900m).SetDisplay("Take Profit", "Take profit (pips)", "Risk");
-		_volume = Param(nameof(Volume), 0.01m).SetDisplay("Volume", "Order volume", "General");
 	}
 
 	/// <inheritdoc />

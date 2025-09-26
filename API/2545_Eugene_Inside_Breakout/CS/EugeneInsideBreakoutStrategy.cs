@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 public class EugeneInsideBreakoutStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _activationHour;
 
 	private decimal _prevOpen1;
@@ -36,14 +35,6 @@ public class EugeneInsideBreakoutStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Hour of day after which confirmations are automatically valid.
@@ -62,9 +53,6 @@ public class EugeneInsideBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to process", "General");
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_activationHour = Param(nameof(ActivationHour), 8)
 			.SetRange(0, 23)

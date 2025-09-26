@@ -16,7 +16,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TdsGlobal4Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _macdFastPeriod;
 	private readonly StrategyParam<int> _macdSlowPeriod;
 	private readonly StrategyParam<int> _macdSignalPeriod;
@@ -109,14 +108,6 @@ public class TdsGlobal4Strategy : Strategy
 		(54, 59)
 	};
 
-	/// <summary>
-	/// Order volume for pending entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Fast EMA length used by the MACD slope filter.
@@ -231,9 +222,6 @@ public class TdsGlobal4Strategy : Strategy
 	/// </summary>
 	public TdsGlobal4Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for pending entries", "Trading");
 
 		_macdFastPeriod = Param(nameof(MacdFastPeriod), 12)
 		.SetGreaterThanZero()

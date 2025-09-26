@@ -14,7 +14,6 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 {
 	private readonly StrategyParam<int> _maxPositions;
 	private readonly StrategyParam<int> _distancePoints;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private decimal _haOpen1;
@@ -44,10 +43,6 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(50, 500, 50);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetDisplay("Volume", "Trade volume per entry", "General")
-			.SetCanOptimize(true)
-			.SetOptimize(1m, 5m, 1m);
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(1).TimeFrame())
 			.SetDisplay("Candle Type", "Timeframe for Heikin Ashi calculation", "General");
@@ -71,14 +66,6 @@ public class HeikenAshiSimplifiedEaStrategy : Strategy
 		set => _distancePoints.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume per entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type used for calculations.

@@ -15,7 +15,6 @@ public class SimpleLevelsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stopLoss;
 	private readonly StrategyParam<int> _takeProfit;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly List<TrendLine> _lines = new();
@@ -34,10 +33,6 @@ public class SimpleLevelsStrategy : Strategy
 	/// </summary>
 	public int TakeProfit { get => _takeProfit.Value; set => _takeProfit.Value = value; }
 
-	/// <summary>
-	/// Order volume.
-	/// </summary>
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 
 	/// <summary>
 	/// Candle type.
@@ -51,7 +46,6 @@ public class SimpleLevelsStrategy : Strategy
 	{
 		_stopLoss = Param(nameof(StopLoss), 300).SetDisplay("Stop Loss", "Stop loss in steps", "General");
 		_takeProfit = Param(nameof(TakeProfit), 900).SetDisplay("Take Profit", "Take profit in steps", "General");
-		_volume = Param(nameof(Volume), 1m).SetDisplay("Volume", "Order volume", "General");
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(1).TimeFrame())
 			.SetDisplay("Candle Type", "Source candle timeframe", "General");
 	}

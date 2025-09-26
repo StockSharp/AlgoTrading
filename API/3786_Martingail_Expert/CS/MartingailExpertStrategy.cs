@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MartingailExpertStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<decimal> _stepPoints;
 	private readonly StrategyParam<decimal> _profitFactor;
@@ -32,14 +31,6 @@ public class MartingailExpertStrategy : Strategy
 	private decimal? _prevK;
 	private decimal? _prevD;
 
-	/// <summary>
-	/// Base order volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Multiplication factor for martingale averaging.
@@ -127,9 +118,6 @@ public class MartingailExpertStrategy : Strategy
 	/// </summary>
 	public MartingailExpertStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.3m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Base market order volume", "Trading");
 
 		_multiplier = Param(nameof(Multiplier), 1.6m)
 			.SetGreaterThanZero()

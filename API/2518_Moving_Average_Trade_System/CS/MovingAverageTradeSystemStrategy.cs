@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MovingAverageTradeSystemStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _takeProfitSteps;
 	private readonly StrategyParam<decimal> _stopLossSteps;
 	private readonly StrategyParam<decimal> _trailingStopSteps;
@@ -42,14 +41,6 @@ public class MovingAverageTradeSystemStrategy : Strategy
 	private decimal? _shortStopLoss;
 	private decimal _shortLow;
 
-	/// <summary>
-	/// Order volume used for new entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Desired take profit distance in price steps.
@@ -137,9 +128,6 @@ public class MovingAverageTradeSystemStrategy : Strategy
 	/// </summary>
 	public MovingAverageTradeSystemStrategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries", "Trading");
 
 		_takeProfitSteps = Param(nameof(TakeProfitSteps), 50m)
 			.SetGreaterThan(0m)

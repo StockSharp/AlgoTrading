@@ -18,7 +18,6 @@ public class BeginnerBreakoutStrategy : Strategy
 	private readonly StrategyParam<int> _period;
 	private readonly StrategyParam<decimal> _shiftPercent;
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLoss;
 	private readonly StrategyParam<decimal> _takeProfit;
 
@@ -53,14 +52,6 @@ public class BeginnerBreakoutStrategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	/// <summary>
-	/// Trade volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop loss in price units.
@@ -98,9 +89,6 @@ public class BeginnerBreakoutStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 		.SetDisplay("Candle Type", "Timeframe for strategy", "General");
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetDisplay("Volume", "Order volume", "General")
-		.SetGreaterThanZero();
 
 		_stopLoss = Param(nameof(StopLoss), 1000m)
 		.SetDisplay("Stop Loss", "Stop loss in price units", "Risk")

@@ -15,7 +15,6 @@ public class VolumeTraderStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
-	private readonly StrategyParam<decimal> _volume;
 
 	private decimal? _previousVolume;
 	private decimal? _previousPreviousVolume;
@@ -47,14 +46,6 @@ public class VolumeTraderStrategy : Strategy
 		set => _endHour.Value = value;
 	}
 
-	/// <summary>
-	/// Order volume used when opening a new position.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="VolumeTraderStrategy"/>.
@@ -72,9 +63,6 @@ public class VolumeTraderStrategy : Strategy
 			.SetDisplay("End Hour", "Inclusive end hour for trading", "Session")
 			.SetRange(0, 23);
 
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for entries", "Trading");
 	}
 
 	/// <inheritdoc />

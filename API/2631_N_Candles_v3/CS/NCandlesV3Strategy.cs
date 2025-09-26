@@ -19,7 +19,6 @@ public class NCandlesV3Strategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _trailingStepPoints;
 	private readonly StrategyParam<int> _maxPositions;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private int _sequenceDirection;
@@ -101,14 +100,6 @@ public class NCandlesV3Strategy : Strategy
 		set => _maxPositions.Value = value;
 	}
 
-	/// <summary>
-	/// Volume used for every new entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes a new instance of the strategy.
@@ -148,9 +139,6 @@ public class NCandlesV3Strategy : Strategy
 			.SetDisplay("Max Positions", "Maximum simultaneous entries per direction", "Trading")
 			.SetCanOptimize(true);
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume for every entry", "Trading");
 	}
 
 	/// <inheritdoc />

@@ -17,7 +17,6 @@ public class MnistPatternClassifierStrategy : Strategy
 	private readonly StrategyParam<int> _lookbackPeriod;
 	private readonly StrategyParam<int> _targetClass;
 	private readonly StrategyParam<decimal> _confidenceThreshold;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private RelativeStrengthIndex _rsi = null!;
@@ -64,14 +63,6 @@ public class MnistPatternClassifierStrategy : Strategy
 		set => _confidenceThreshold.Value = value;
 	}
 
-	/// <summary>
-	/// Volume used for new market orders.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Candle type that feeds the pattern grid.
@@ -100,9 +91,6 @@ public class MnistPatternClassifierStrategy : Strategy
 		.SetRange(0m, 1m)
 		.SetDisplay("Confidence", "Minimum classification confidence", "Pattern");
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume for new positions", "Trading");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 		.SetDisplay("Candle Type", "Primary timeframe used for the pattern", "General");

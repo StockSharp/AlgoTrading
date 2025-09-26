@@ -17,7 +17,6 @@ public class PureMartingaleStrategy : Strategy
 	private readonly StrategyParam<decimal> _slTp;
 	private readonly StrategyParam<decimal> _lotsMultiplier;
 	private readonly StrategyParam<decimal> _distanceMultiplier;
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private readonly Random _random = new();
@@ -29,7 +28,6 @@ public class PureMartingaleStrategy : Strategy
 	public decimal StopLossTakeProfit { get => _slTp.Value; set => _slTp.Value = value; }
 	public decimal LotsMultiplier { get => _lotsMultiplier.Value; set => _lotsMultiplier.Value = value; }
 	public decimal DistanceMultiplier { get => _distanceMultiplier.Value; set => _distanceMultiplier.Value = value; }
-	public decimal Volume { get => _volume.Value; set => _volume.Value = value; }
 	public DataType CandleType { get => _candleType.Value; set => _candleType.Value = value; }
 
 	public PureMartingaleStrategy()
@@ -46,9 +44,6 @@ public class PureMartingaleStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Distance Multiplier", "SL/TP distance multiplier after loss", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Initial trade volume", "General");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Candles used for trade timing", "General");

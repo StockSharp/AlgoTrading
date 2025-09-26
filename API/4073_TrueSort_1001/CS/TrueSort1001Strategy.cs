@@ -15,7 +15,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TrueSort1001Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _sma10Length;
 	private readonly StrategyParam<int> _sma20Length;
@@ -38,14 +37,6 @@ public class TrueSort1001Strategy : Strategy
 	private decimal _longStop;
 	private decimal _shortStop;
 
-	/// <summary>
-	/// Trade volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Trailing stop distance expressed in price steps.
@@ -133,11 +124,6 @@ public class TrueSort1001Strategy : Strategy
 	/// </summary>
 	public TrueSort1001Strategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume in lots", "Trading")
-		.SetCanOptimize(true)
-		.SetOptimize(0.1m, 1m, 0.1m);
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 100)
 		.SetNotNegative()

@@ -18,7 +18,6 @@ public class ReadNewsByWebRequestStrategy : Strategy
 	private const string DefaultNewsUrl = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml";
 	private static readonly HttpClient HttpClient = new();
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<decimal> _buyDistancePoints;
@@ -39,9 +38,6 @@ public class ReadNewsByWebRequestStrategy : Strategy
 	/// </summary>
 	public ReadNewsByWebRequestStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.01m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume in lots", "General");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 300m)
 			.SetDisplay("Stop Loss", "Stop loss distance in points", "Risk");
@@ -72,14 +68,6 @@ public class ReadNewsByWebRequestStrategy : Strategy
 			.SetDisplay("Log News", "Write the number of scheduled events to the log", "General");
 	}
 
-	/// <summary>
-	/// Trade volume in lots.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance in points.

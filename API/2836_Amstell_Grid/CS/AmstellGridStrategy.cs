@@ -23,12 +23,10 @@ public class AmstellGridStrategy : Strategy
 
 		public decimal Price { get; set; }
 
-		public decimal Volume { get; set; }
 
 		public bool IsClosing { get; set; }
 	}
 
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _stepPips;
 	private readonly StrategyParam<DataType> _candleType;
@@ -41,14 +39,6 @@ public class AmstellGridStrategy : Strategy
 	private bool _hasInitialOrder;
 	private decimal _pipSize;
 
-	/// <summary>
-	/// Order volume per grid action.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Virtual take profit distance in pips.
@@ -82,9 +72,6 @@ public class AmstellGridStrategy : Strategy
 	/// </summary>
 	public AmstellGridStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Volume", "Order volume", "Trading");
 
 		_takeProfitPips = Param(nameof(TakeProfitPips), 50)
 			.SetGreaterThanZero()

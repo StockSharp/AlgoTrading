@@ -15,7 +15,6 @@ using StockSharp.Messages;
 /// </summary>
 public class ImaIsarEaStrategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<decimal> _stopLossPips;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<bool> _useTrailing;
@@ -58,9 +57,6 @@ public class ImaIsarEaStrategy : Strategy
 	/// </summary>
 	public ImaIsarEaStrategy()
 	{
-		_volume = Param(nameof(Volume), 0.1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Base order volume", "Trading");
 
 		_stopLossPips = Param(nameof(StopLossPips), 50m)
 		.SetDisplay("Stop Loss (pips)", "Protective stop distance", "Risk")
@@ -122,14 +118,6 @@ public class ImaIsarEaStrategy : Strategy
 		.SetDisplay("Normal SAR Max", "Maximum acceleration for the normal SAR", "Indicators");
 	}
 
-	/// <summary>
-	/// Base order volume.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Stop-loss distance expressed in pips.

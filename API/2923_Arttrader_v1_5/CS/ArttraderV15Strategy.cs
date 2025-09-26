@@ -13,7 +13,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ArttraderV15Strategy : Strategy
 {
-	private readonly StrategyParam<decimal> _volume;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<decimal> _bigJump;
 	private readonly StrategyParam<decimal> _doubleJump;
@@ -57,14 +56,6 @@ public class ArttraderV15Strategy : Strategy
 	private decimal? _entryPrice;
 	private bool _lastTradeLong;
 
-	/// <summary>
-	/// Order volume used for market entries.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Period of the EMA calculated on the trend timeframe.
@@ -215,9 +206,6 @@ public class ArttraderV15Strategy : Strategy
 	/// </summary>
 	public ArttraderV15Strategy()
 	{
-		_volume = Param(nameof(Volume), 1m)
-			.SetGreaterThanZero()
-			.SetDisplay("Order Volume", "Default order volume", "Trading");
 
 		_emaPeriod = Param(nameof(EmaPeriod), 11)
 			.SetGreaterThanZero()

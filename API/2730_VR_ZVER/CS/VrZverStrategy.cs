@@ -31,7 +31,6 @@ public class VrZverStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPips;
 	private readonly StrategyParam<int> _takeProfitPips;
 	private readonly StrategyParam<int> _breakevenPips;
-	private readonly StrategyParam<decimal> _volume;
 
 	private ExponentialMovingAverage _fastMa = null!;
 	private ExponentialMovingAverage _slowMa = null!;
@@ -213,14 +212,6 @@ public class VrZverStrategy : Strategy
 		set => _breakevenPips.Value = value;
 	}
 
-	/// <summary>
-	/// Trading volume per entry.
-	/// </summary>
-	public decimal Volume
-	{
-		get => _volume.Value;
-		set => _volume.Value = value;
-	}
 
 	/// <summary>
 	/// Initializes a new instance of <see cref="VrZverStrategy"/>.
@@ -291,9 +282,6 @@ public class VrZverStrategy : Strategy
 		.SetNotNegative()
 		.SetDisplay("Breakeven", "Breakeven activation distance", "Risk");
 
-		_volume = Param(nameof(Volume), 1m)
-		.SetGreaterThanZero()
-		.SetDisplay("Volume", "Order volume", "Trading");
 	}
 
 	/// <inheritdoc />
