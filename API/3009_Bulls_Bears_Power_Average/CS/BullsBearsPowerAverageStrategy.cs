@@ -20,7 +20,7 @@ public class BullsBearsPowerAverageStrategy : Strategy
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _ema;
+	private ExponentialMovingAverage _ema;
 	private decimal? _previousAverage;
 
 	/// <summary>

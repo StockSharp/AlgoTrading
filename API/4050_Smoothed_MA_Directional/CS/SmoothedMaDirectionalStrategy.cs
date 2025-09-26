@@ -16,7 +16,7 @@ public class SmoothedMaDirectionalStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SmoothedMovingAverage? _movingAverage;
+	private SmoothedMovingAverage _movingAverage;
 
 	public decimal StopLossPoints
 	{

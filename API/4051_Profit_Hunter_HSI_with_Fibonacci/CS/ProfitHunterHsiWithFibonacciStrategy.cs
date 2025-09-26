@@ -33,7 +33,7 @@ public class ProfitHunterHsiWithFibonacciStrategy : Strategy
 	private readonly List<ICandleMessage> _intradayCandles = new();
 	private readonly List<ICandleMessage> _dailyCandles = new();
 
-	private ExponentialMovingAverage? _ema;
+	private ExponentialMovingAverage _ema;
 
 	private decimal? _support;
 	private decimal? _resistance;

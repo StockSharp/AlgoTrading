@@ -32,7 +32,7 @@ public class ExpXBullsBearsEyesVolDirectStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _takeProfitPoints;
 
-	private ExponentialMovingAverage? _ema;
+	private ExponentialMovingAverage _ema;
 	private IIndicator _histogramSmoother;
 	private IIndicator _volumeSmoother;
 

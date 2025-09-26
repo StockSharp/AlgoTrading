@@ -25,8 +25,8 @@ public class T3MaMtc9Strategy : Strategy
 	private readonly StrategyParam<bool> _allowMultiplePositions;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _emaPrimary;
-	private ExponentialMovingAverage? _emaSmooth;
+	private ExponentialMovingAverage _emaPrimary;
+	private ExponentialMovingAverage _emaSmooth;
 	private readonly Queue<decimal> _smoothedHistory = new();
 	private readonly Queue<SignalInfo> _pendingSignals = new();
 	private int _previousDirection;

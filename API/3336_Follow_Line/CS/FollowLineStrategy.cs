@@ -53,11 +53,11 @@ public class FollowLineStrategy : Strategy
 
 	private BollingerBands? _bollinger;
 	private AverageTrueRange? _atr;
-	private SimpleMovingAverage? _highSma;
-	private SimpleMovingAverage? _openSma;
-	private SimpleMovingAverage? _closeSma;
-	private SimpleMovingAverage? _lowSma;
-	private SimpleMovingAverage? _medianSma;
+	private SimpleMovingAverage _highSma;
+	private SimpleMovingAverage _openSma;
+	private SimpleMovingAverage _closeSma;
+	private SimpleMovingAverage _lowSma;
+	private SimpleMovingAverage _medianSma;
 
 	private decimal? _previousTrendLine;
 	private int _previousTrendDirection;

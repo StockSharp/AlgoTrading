@@ -15,10 +15,10 @@ public class FineTuneInputsFourierSmoothedHybridVolumeSpreadAnalysisStrategy : S
 	private readonly StrategyParam<bool> _enableCloseAll;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _closeEma;
-	private ExponentialMovingAverage? _openEma;
-	private ExponentialMovingAverage? _volumeEma;
-	private ExponentialMovingAverage? _vdma;
+	private ExponentialMovingAverage _closeEma;
+	private ExponentialMovingAverage _openEma;
+	private ExponentialMovingAverage _volumeEma;
+	private ExponentialMovingAverage _vdma;
 	private decimal _prevVolume;
 
 	public bool UseSmoothedVolume

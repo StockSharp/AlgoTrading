@@ -24,7 +24,7 @@ public class SpeedMAStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _movingAverage;
+	private SimpleMovingAverage _movingAverage;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pointValue;
 

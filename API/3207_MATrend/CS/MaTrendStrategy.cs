@@ -29,7 +29,7 @@ public class MaTrendStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOpposite;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage? _movingAverage;
+	private MovingAverage _movingAverage;
 	private readonly List<decimal> _maHistory = new();
 	private decimal _pipSize;
 	private int _historyCapacity;

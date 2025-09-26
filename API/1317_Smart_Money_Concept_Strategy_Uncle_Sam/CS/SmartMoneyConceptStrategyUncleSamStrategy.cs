@@ -23,7 +23,7 @@ public class SmartMoneyConceptStrategyUncleSamStrategy : Strategy
 	private int _bufferCount;
 	private decimal? _pivotHigh;
 	private decimal? _pivotLow;
-	private MovingAverage? _ma;
+	private MovingAverage _ma;
 
 	/// <summary>
 	/// Pivot size to identify highs and lows.

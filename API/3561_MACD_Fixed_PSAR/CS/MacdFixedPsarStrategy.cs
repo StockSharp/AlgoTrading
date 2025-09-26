@@ -27,7 +27,7 @@ public class MacdFixedPsarStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private MovingAverageConvergenceDivergenceSignal? _macd;
-	private ExponentialMovingAverage? _trendEma;
+	private ExponentialMovingAverage _trendEma;
 
 	private bool _hasPrevValues;
 	private decimal _prevMacd;

@@ -31,11 +31,11 @@ public class BreakRevertProStrategy : Strategy
 	private ICandleManagerSubscription? _h1Subscription;
 
 	private AverageTrueRange? _m1Atr;
-	private SimpleMovingAverage? _m1TrendAverage;
-	private SimpleMovingAverage? _m15TrendAverage;
-	private SimpleMovingAverage? _h1TrendAverage;
-	private SimpleMovingAverage? _eventFrequency;
-	private ExponentialMovingAverage? _volatilityEma;
+	private SimpleMovingAverage _m1TrendAverage;
+	private SimpleMovingAverage _m15TrendAverage;
+	private SimpleMovingAverage _h1TrendAverage;
+	private SimpleMovingAverage _eventFrequency;
+	private ExponentialMovingAverage _volatilityEma;
 
 	private decimal _poissonProbability = 0.5m;
 	private decimal _weibullProbability = 0.5m;

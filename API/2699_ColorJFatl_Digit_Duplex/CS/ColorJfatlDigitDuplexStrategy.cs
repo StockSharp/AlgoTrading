@@ -562,7 +562,7 @@ public class ColorJfatlDigitDuplexStrategy : Strategy
 
 		private readonly List<decimal> _priceBuffer = new();
 		private readonly List<IndicatorEntry> _history = new();
-		private JurikMovingAverage? _jma;
+		private JurikMovingAverage _jma;
 		private decimal? _previousRaw;
 
 		public int Length { get; set; } = 5;

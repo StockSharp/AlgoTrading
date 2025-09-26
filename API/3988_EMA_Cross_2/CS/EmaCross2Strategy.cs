@@ -23,8 +23,8 @@ public class EmaCross2Strategy : Strategy
 	private readonly StrategyParam<int> _shortEmaPeriod;
 	private readonly StrategyParam<int> _longEmaPeriod;
 
-	private ExponentialMovingAverage? _shortEma;
-	private ExponentialMovingAverage? _longEma;
+	private ExponentialMovingAverage _shortEma;
+	private ExponentialMovingAverage _longEma;
 
 	private bool _skipFirstSignal = true;
 	private int _lastDirection;

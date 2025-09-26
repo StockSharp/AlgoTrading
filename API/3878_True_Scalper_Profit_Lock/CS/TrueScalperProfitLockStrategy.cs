@@ -28,8 +28,8 @@ public class TrueScalperProfitLockStrategy : Strategy
 	private readonly StrategyParam<decimal> _breakEvenOffsetPoints;
 	private readonly StrategyParam<int> _maxOpenTrades;
 
-	private ExponentialMovingAverage? _fastEma;
-	private ExponentialMovingAverage? _slowEma;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
 	private RelativeStrengthIndex? _rsi;
 
 	private decimal? _previousFastEma;

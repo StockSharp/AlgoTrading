@@ -20,8 +20,8 @@ public class TrendContinuationStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfit;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _fast;
-	private ExponentialMovingAverage? _slow;
+	private ExponentialMovingAverage _fast;
+	private ExponentialMovingAverage _slow;
 	private decimal? _prevFast;
 	private decimal? _prevSlow;
 

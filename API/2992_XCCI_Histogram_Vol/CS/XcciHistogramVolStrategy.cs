@@ -313,8 +313,8 @@ public class XcciHistogramVolStrategy : Strategy
 		base.OnReseted();
 
 		_cci?.Reset();
-		_cciVolumeAverage?.Reset();
-		_volumeAverage?.Reset();
+		_cciVolumeAverage.Reset();
+		_volumeAverage.Reset();
 		_colorHistory.Clear();
 		_primaryLongActive = false;
 		_secondaryLongActive = false;

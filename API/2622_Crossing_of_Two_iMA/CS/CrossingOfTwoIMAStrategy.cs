@@ -64,9 +64,9 @@ public class CrossingOfTwoIMAStrategy : Strategy
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage? _firstMa;
-	private MovingAverage? _secondMa;
-	private MovingAverage? _thirdMa;
+	private MovingAverage _firstMa;
+	private MovingAverage _secondMa;
+	private MovingAverage _thirdMa;
 
 	private readonly List<decimal> _firstValues = new();
 	private readonly List<decimal> _secondValues = new();

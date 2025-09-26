@@ -16,7 +16,7 @@ public class MovingAverageWithFramesStrategy : Strategy
 	private readonly StrategyParam<int> _movingShift;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _movingAverage;
+	private SimpleMovingAverage _movingAverage;
 	private readonly Queue<decimal> _maBuffer = new(); // Maintains indicator values to reproduce the MetaTrader shift parameter.
 	private decimal _signedPosition;
 	private Sides? _lastEntrySide;

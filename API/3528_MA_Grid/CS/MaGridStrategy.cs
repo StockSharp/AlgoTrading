@@ -25,7 +25,7 @@ public class MaGridStrategy : Strategy
 
 	private readonly Dictionary<Order, OrderIntent> _orderIntents = new();
 
-	private ExponentialMovingAverage? _ema;
+	private ExponentialMovingAverage _ema;
 	private int _effectiveGridAmount;
 	private int _currentGrid;
 	private decimal _nextGridPrice;

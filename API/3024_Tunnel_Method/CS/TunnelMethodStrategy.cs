@@ -28,9 +28,9 @@ public class TunnelMethodStrategy : Strategy
 	private readonly StrategyParam<int> _pauseSeconds;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _firstMa;
-	private SimpleMovingAverage? _secondMa;
-	private SimpleMovingAverage? _thirdMa;
+	private SimpleMovingAverage _firstMa;
+	private SimpleMovingAverage _secondMa;
+	private SimpleMovingAverage _thirdMa;
 
 	private decimal?[] _firstBuffer = Array.Empty<decimal?>();
 	private decimal?[] _secondBuffer = Array.Empty<decimal?>();

@@ -25,8 +25,8 @@ public class EmaLwmaRsiStrategy : Strategy
 	private readonly StrategyParam<AppliedPriceType> _rsiAppliedPrice;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _ema;
-	private WeightedMovingAverage? _lwma;
+	private ExponentialMovingAverage _ema;
+	private WeightedMovingAverage _lwma;
 	private RelativeStrengthIndex? _rsi;
 	private Shift? _emaShiftIndicator;
 	private Shift? _lwmaShiftIndicator;

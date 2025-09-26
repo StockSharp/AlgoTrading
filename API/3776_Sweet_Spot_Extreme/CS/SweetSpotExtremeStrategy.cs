@@ -29,8 +29,8 @@ public class SweetSpotExtremeStrategy : Strategy
 	private readonly StrategyParam<DataType> _trendCandleType;
 	private readonly StrategyParam<DataType> _cciCandleType;
 
-	private ExponentialMovingAverage? _trendMa;
-	private ExponentialMovingAverage? _closeMa;
+	private ExponentialMovingAverage _trendMa;
+	private ExponentialMovingAverage _closeMa;
 	private CommodityChannelIndex? _cci;
 
 	private decimal? _previousTrendValue;

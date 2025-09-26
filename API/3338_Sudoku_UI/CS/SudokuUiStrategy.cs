@@ -288,35 +288,26 @@ public class SudokuUiStrategy : Strategy
 		var source = PuzzleDefinition;
 
 		if (string.IsNullOrWhiteSpace(source))
-		return result;
+			return result;
 
-		string content;
-
-		if (File.Exists(source))
-		{
-		content = File.ReadAllText(source);
-		}
-		else
-		{
-		content = source;
-		}
+		string content = source;
 
 		foreach (var ch in content)
 		{
-		if (!char.IsDigit(ch))
-		continue;
+			if (!char.IsDigit(ch))
+				continue;
 
-		if (ch == '0')
-		continue;
+			if (ch == '0')
+				continue;
 
-		result.Add(ch - '0');
+			result.Add(ch - '0');
 
-		if (result.Count == 81)
-		break;
+			if (result.Count == 81)
+				break;
 		}
 
 		if (result.Count != 81)
-		result.Clear();
+			result.Clear();
 
 		return result;
 	}

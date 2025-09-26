@@ -20,7 +20,7 @@ public class EnvelopesEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _entryOffsetPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _ema;
+	private ExponentialMovingAverage _ema;
 	private bool _isClosing;
 	private bool _longActive;
 	private bool _shortActive;

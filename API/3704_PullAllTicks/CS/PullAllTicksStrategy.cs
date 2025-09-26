@@ -19,8 +19,6 @@ public class PullAllTicksStrategy : Strategy
 	private readonly StrategyParam<DateTimeOffset> _oldestLimit;
 	private readonly StrategyParam<int> _tickPacketSize;
 	private readonly StrategyParam<TimeSpan> _requestDelay;
-	private readonly StrategyParam<string> _managerFolder;
-	private readonly StrategyParam<string> _statusFileName;
 
 	private DateTimeOffset? _oldestTick;
 	private DateTimeOffset? _latestTick;
@@ -28,7 +26,6 @@ public class PullAllTicksStrategy : Strategy
 	private long _totalTicks;
 	private long _totalPackets;
 	private int _packetCounter;
-	private string _statusPath;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="PullAllTicksStrategy"/> class.
@@ -47,12 +44,6 @@ public class PullAllTicksStrategy : Strategy
 
 		_requestDelay = Param(nameof(RequestDelay), TimeSpan.FromMilliseconds(44))
 		.SetDisplay("Request Delay", "Minimum delay between status updates", "General");
-
-		_managerFolder = Param(nameof(ManagerFolder), "pat")
-		.SetDisplay("Manager Folder", "Folder where the progress file is stored", "Storage");
-
-		_statusFileName = Param(nameof(StatusFileName), "status.txt")
-		.SetDisplay("Status File", "File that keeps the resume information", "Storage");
 	}
 
 	/// <summary>
@@ -91,24 +82,6 @@ public class PullAllTicksStrategy : Strategy
 		set => _requestDelay.Value = value;
 	}
 
-	/// <summary>
-	/// Directory that contains the status file.
-	/// </summary>
-	public string ManagerFolder
-	{
-		get => _managerFolder.Value;
-		set => _managerFolder.Value = value;
-	}
-
-	/// <summary>
-	/// Name of the file used to persist progress information.
-	/// </summary>
-	public string StatusFileName
-	{
-		get => _statusFileName.Value;
-		set => _statusFileName.Value = value;
-	}
-
 	/// <inheritdoc />
 	public override IEnumerable<(Security sec, DataType dt)> GetWorkingSecurities()
 	{
@@ -129,7 +102,6 @@ public class PullAllTicksStrategy : Strategy
 		_totalTicks = 0;
 		_totalPackets = 0;
 		_packetCounter = 0;
-		_statusPath = null;
 	}
 
 	/// <inheritdoc />
@@ -137,20 +109,9 @@ public class PullAllTicksStrategy : Strategy
 	{
 		base.OnStarted(time);
 
-		_statusPath = GetStatusPath();
-		LoadState();
-
 		SubscribeTrades().Bind(ProcessTrade).Start();
 
 		UpdateStatusComment();
-	}
-
-	/// <inheritdoc />
-	protected override void OnStopped()
-	{
-		SaveState();
-
-		base.OnStopped();
 	}
 
 	private void ProcessTrade(ExecutionMessage trade)
@@ -172,7 +133,6 @@ public class PullAllTicksStrategy : Strategy
 		{
 			_packetCounter = 0;
 			_totalPackets++;
-			SaveState();
 		}
 
 		var lastUpdate = _lastStatusUpdate;
@@ -199,69 +159,6 @@ public class PullAllTicksStrategy : Strategy
 
 		var status = builder.ToString().TrimEnd();
 		LogInfo(status);
-		WriteStatusFile(status);
-	}
-
-	private void SaveState()
-	{
-		WriteStatusFile($"OldestTick={FormatDate(_oldestTick)}\nLatestTick={FormatDate(_latestTick)}\nTotalTicks={_totalTicks}\nTotalPackets={_totalPackets}");
-	}
-
-	private void LoadState()
-	{
-		if (_statusPath == null || !File.Exists(_statusPath))
-		return;
-
-		var lines = File.ReadAllLines(_statusPath);
-		foreach (var line in lines)
-		{
-			var separatorIndex = line.IndexOf('=');
-			if (separatorIndex <= 0)
-			continue;
-
-			var key = line.Substring(0, separatorIndex);
-			var value = line[(separatorIndex + 1)..];
-
-			switch (key)
-			{
-				case "OldestTick":
-					_oldestTick = ParseDate(value);
-					break;
-				case "LatestTick":
-					_latestTick = ParseDate(value);
-					break;
-				case "TotalTicks":
-					if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var ticks))
-					_totalTicks = ticks;
-					break;
-				case "TotalPackets":
-					if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var packets))
-					_totalPackets = packets;
-					break;
-			}
-		}
-	}
-
-	private void WriteStatusFile(string content)
-	{
-		if (_statusPath == null)
-		return;
-
-		var directory = Path.GetDirectoryName(_statusPath);
-		if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
-		Directory.CreateDirectory(directory);
-
-		File.WriteAllText(_statusPath, content);
-	}
-
-	private string GetStatusPath()
-	{
-		var folder = ManagerFolder;
-		var fileName = StatusFileName;
-		if (string.IsNullOrWhiteSpace(folder) || string.IsNullOrWhiteSpace(fileName))
-		return null;
-
-		return Path.Combine(folder, fileName);
 	}
 
 	private static string FormatDate(DateTimeOffset? value)

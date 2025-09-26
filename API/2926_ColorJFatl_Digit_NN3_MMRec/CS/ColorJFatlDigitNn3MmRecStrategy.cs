@@ -508,7 +508,7 @@ public class ColorJFatlDigitNn3MmRecStrategy : Strategy
 		private readonly StrategyParam<bool> _allowSellClose;
 		private readonly StrategyParam<decimal> _volume;
 
-		private JurikMovingAverage? _jma;
+		private JurikMovingAverage _jma;
 		private decimal? _prevJma;
 		private SignalColor _lastColor = SignalColor.Neutral;
 		private readonly Queue<SignalColor> _pending = new();

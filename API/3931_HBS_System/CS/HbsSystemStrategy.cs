@@ -33,7 +33,7 @@ private readonly StrategyParam<int> _secondaryTakeProfitPoints;
 private readonly StrategyParam<decimal> _roundingFactor;
 private readonly StrategyParam<DataType> _candleType;
 
-private ExponentialMovingAverage? _ema;
+private ExponentialMovingAverage _ema;
 private decimal? _previousOpen;
 private decimal? _previousClose;
 private decimal? _previousEma;

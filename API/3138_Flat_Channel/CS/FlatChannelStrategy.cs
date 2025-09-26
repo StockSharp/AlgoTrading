@@ -38,7 +38,7 @@ public class FlatChannelStrategy : Strategy
 	private readonly StrategyParam<DataType> _candleType;
 
 	private StandardDeviation? _stdDev;
-	private SimpleMovingAverage? _stdDevSma;
+	private SimpleMovingAverage _stdDevSma;
 	private Highest? _highest;
 	private Lowest? _lowest;
 

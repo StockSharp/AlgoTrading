@@ -15,8 +15,8 @@ public class GraalEmaMomentumStrategy : Strategy
 	private readonly StrategyParam<decimal> _takeProfitPoints;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _fastCloseEma;
-	private ExponentialMovingAverage? _slowOpenEma;
+	private ExponentialMovingAverage _fastCloseEma;
+	private ExponentialMovingAverage _slowOpenEma;
 	private Momentum? _momentum;
 
 	private decimal? _previousFast;

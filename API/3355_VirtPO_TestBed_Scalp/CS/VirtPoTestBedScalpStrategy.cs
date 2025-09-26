@@ -493,8 +493,8 @@ public class VirtPoTestBedScalpStrategy : Strategy
 		_stochastic?.Reset();
 		_fastSma?.Reset();
 		_slowSma?.Reset();
-		_volumeAverage?.Reset();
-		_volatilityAverage?.Reset();
+		_volumeAverage.Reset();
+		_volatilityAverage.Reset();
 
 		_prevStochastic = null;
 		_lastStochastic = null;

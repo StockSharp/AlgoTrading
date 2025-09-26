@@ -188,7 +188,7 @@ public class MartingaleMaBreakoutStrategy : Strategy
 	{
 		// Calculate the input price according to the selected source.
 		var price = GetAppliedPrice(candle, MaAppliedPrice);
-		var maValue = _movingAverage?.Process(price, candle.OpenTime, candle.State == CandleStates.Finished);
+		var maValue = _movingAverage.Process(price, candle.OpenTime, candle.State == CandleStates.Finished);
 
 		if (Position != 0)
 		{

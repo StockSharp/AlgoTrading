@@ -32,9 +32,9 @@ public class ImaIsarEaStrategy : Strategy
 	private readonly StrategyParam<decimal> _normalSarStep;
 	private readonly StrategyParam<decimal> _normalSarMax;
 
-	private WeightedMovingAverage? _fastMa;
-	private WeightedMovingAverage? _normalMa;
-	private WeightedMovingAverage? _slowMa;
+	private WeightedMovingAverage _fastMa;
+	private WeightedMovingAverage _normalMa;
+	private WeightedMovingAverage _slowMa;
 	private ParabolicSar? _fastSar;
 	private ParabolicSar? _normalSar;
 	private Shift? _fastShiftIndicator;

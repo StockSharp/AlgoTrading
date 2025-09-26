@@ -24,8 +24,8 @@ public class EscapeStrategy : Strategy
 	private readonly StrategyParam<decimal> _stopLossShort;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _fastMa;
-	private SimpleMovingAverage? _slowMa;
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
 	private bool _initialized;
 	private decimal _entryPrice;
 	private decimal _stopPrice;

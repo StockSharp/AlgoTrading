@@ -423,14 +423,14 @@ public class CenterOfGravityCandleStrategy : Strategy
 /// </summary>
 public class CenterOfGravityCandleIndicator : BaseIndicator<CenterOfGravityCandleValue>
 {
-	private SimpleMovingAverage? _openSma;
-	private SimpleMovingAverage? _highSma;
-	private SimpleMovingAverage? _lowSma;
-	private SimpleMovingAverage? _closeSma;
-	private LinearWeightedMovingAverage? _openLwma;
-	private LinearWeightedMovingAverage? _highLwma;
-	private LinearWeightedMovingAverage? _lowLwma;
-	private LinearWeightedMovingAverage? _closeLwma;
+	private SimpleMovingAverage _openSma;
+	private SimpleMovingAverage _highSma;
+	private SimpleMovingAverage _lowSma;
+	private SimpleMovingAverage _closeSma;
+	private LinearWeightedMovingAverage _openLwma;
+	private LinearWeightedMovingAverage _highLwma;
+	private LinearWeightedMovingAverage _lowLwma;
+	private LinearWeightedMovingAverage _closeLwma;
 	private LengthIndicator<decimal> _openSmooth;
 	private LengthIndicator<decimal> _highSmooth;
 	private LengthIndicator<decimal> _lowSmooth;

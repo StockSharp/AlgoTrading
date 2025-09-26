@@ -22,7 +22,7 @@ public class AmlRsiMeetingLinesStrategy : Strategy
 	private readonly StrategyParam<decimal> _upperExitLevel;
 
 	private RelativeStrengthIndex? _rsi;
-	private SimpleMovingAverage? _bodyAverage;
+	private SimpleMovingAverage _bodyAverage;
 
 	private ICandleMessage _previousCandle;
 	private ICandleMessage _twoBarsAgo;

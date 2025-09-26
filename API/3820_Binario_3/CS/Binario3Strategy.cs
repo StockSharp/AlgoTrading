@@ -22,8 +22,8 @@ public class Binario3Strategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _emaHigh;
-	private ExponentialMovingAverage? _emaLow;
+	private ExponentialMovingAverage _emaHigh;
+	private ExponentialMovingAverage _emaLow;
 
 	private Order _buyStopOrder;
 	private Order _sellStopOrder;

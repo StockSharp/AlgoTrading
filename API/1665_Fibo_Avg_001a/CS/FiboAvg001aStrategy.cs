@@ -23,8 +23,8 @@ public class FiboAvg001aStrategy : Strategy
 	private readonly StrategyParam<int> _percentMm;
 	private readonly StrategyParam<decimal> _lotSize;
 	
-	private SmoothedMovingAverage? _fastMa;
-	private SmoothedMovingAverage? _slowMa;
+	private SmoothedMovingAverage _fastMa;
+	private SmoothedMovingAverage _slowMa;
 	private decimal _prevFast;
 	private decimal _prevSlow;
 	private decimal _entryPrice;

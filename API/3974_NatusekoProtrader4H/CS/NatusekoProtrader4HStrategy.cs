@@ -35,12 +35,12 @@ public class NatusekoProtrader4HStrategy : Strategy
 	private readonly StrategyParam<bool> _useRsiTakeProfit;
 	private readonly StrategyParam<decimal> _minimumProfitPoints;
 
-	private ExponentialMovingAverage? _fastEma;
-	private ExponentialMovingAverage? _slowEma;
-	private ExponentialMovingAverage? _trendEma;
+	private ExponentialMovingAverage _fastEma;
+	private ExponentialMovingAverage _slowEma;
+	private ExponentialMovingAverage _trendEma;
 	private MovingAverageConvergenceDivergence? _macd;
 	private BollingerBands? _macdBands;
-	private SimpleMovingAverage? _macdSma;
+	private SimpleMovingAverage _macdSma;
 	private RelativeStrengthIndex? _rsi;
 	private ParabolicSar? _parabolicSar;
 

@@ -16,8 +16,8 @@ public class AveragePipMovementTickSecondsStrategy : Strategy
 	private readonly StrategyParam<int> _maxTicks;
 	private readonly StrategyParam<int> _checkIntervalSeconds;
 
-	private SimpleMovingAverage? _pipMovementAverage;
-	private SimpleMovingAverage? _spreadAverage;
+	private SimpleMovingAverage _pipMovementAverage;
+	private SimpleMovingAverage _spreadAverage;
 
 	private decimal? _previousBid;
 	private decimal? _currentBid;

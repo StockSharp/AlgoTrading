@@ -27,7 +27,7 @@ public class BollingerRsiMaStrategy : Strategy
 
 	private BollingerBands? _bollingerBands;
 	private RelativeStrengthIndex? _rsi;
-	private ExponentialMovingAverage? _dailyEma;
+	private ExponentialMovingAverage _dailyEma;
 
 	private decimal? _latestDailyEma;
 	private decimal? _longStopLoss;

@@ -24,7 +24,7 @@ public class JkBullPAutoTraderStrategy : Strategy
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _ema;
+	private ExponentialMovingAverage _ema;
 	private decimal? _previousBullsPower;
 	private decimal? _lastBullsPower;
 	private decimal _pipSize;

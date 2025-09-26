@@ -22,8 +22,8 @@ public class T3MaDirectionChangeStrategy : Strategy
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private ExponentialMovingAverage? _emaPrice;
-	private ExponentialMovingAverage? _emaSmooth;
+	private ExponentialMovingAverage _emaPrice;
+	private ExponentialMovingAverage _emaSmooth;
 	private readonly Queue<decimal> _recentSmoothed = new();
 	private readonly Queue<SignalInfo> _pendingSignals = new();
 	private int _previousDirection;

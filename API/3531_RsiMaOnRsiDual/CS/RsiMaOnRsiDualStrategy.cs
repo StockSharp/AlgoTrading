@@ -32,8 +32,8 @@ public class RsiMaOnRsiDualStrategy : Strategy
 
 	private RelativeStrengthIndex? _fastRsi;
 	private RelativeStrengthIndex? _slowRsi;
-	private SimpleMovingAverage? _fastMa;
-	private SimpleMovingAverage? _slowMa;
+	private SimpleMovingAverage _fastMa;
+	private SimpleMovingAverage _slowMa;
 
 	private decimal? _previousFastMa;
 	private decimal? _previousSlowMa;

@@ -35,8 +35,8 @@ public class DivergenceTraderClassicStrategy : Strategy
 	private readonly StrategyParam<int> _stopHour;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _fastSma;
-	private SimpleMovingAverage? _slowSma;
+	private SimpleMovingAverage _fastSma;
+	private SimpleMovingAverage _slowSma;
 	private decimal? _previousSpread;
 	private decimal _pipSize;
 	private decimal _maxBasketPnL;

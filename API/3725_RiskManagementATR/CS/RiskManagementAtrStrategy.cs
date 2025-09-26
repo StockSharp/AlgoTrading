@@ -21,8 +21,8 @@ public class RiskManagementAtrStrategy : Strategy
 	private readonly StrategyParam<int> _fixedStopLossPoints;
 
 	private AverageTrueRange? _atr;
-	private SimpleMovingAverage? _fastMovingAverage;
-	private SimpleMovingAverage? _slowMovingAverage;
+	private SimpleMovingAverage _fastMovingAverage;
+	private SimpleMovingAverage _slowMovingAverage;
 
 	private decimal? _lastAtrValue;
 	private Order _stopLossOrder;

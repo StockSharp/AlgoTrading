@@ -28,9 +28,9 @@ public class RiskManagementAndPositionsizeMacdExampleStrategy : Strategy
 	private readonly StrategyParam<TimeSpan> _trendTimeFrame;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _macdSmooth;
-	private SimpleMovingAverage? _signalSmooth;
-	private SimpleMovingAverage? _trendSmooth;
+	private SimpleMovingAverage _macdSmooth;
+	private SimpleMovingAverage _signalSmooth;
+	private SimpleMovingAverage _trendSmooth;
 
 	private decimal _macdValue;
 	private decimal _signalValue;

@@ -19,7 +19,7 @@ public class CrossoverMaStrategy : Strategy
 	private readonly StrategyParam<int> _movingAverageLength;
 	private readonly StrategyParam<decimal> _tradeVolume;
 
-	private SimpleMovingAverage? _movingAverage;
+	private SimpleMovingAverage _movingAverage;
 	private decimal? _previousAverageValue;
 
 	public CrossoverMaStrategy()

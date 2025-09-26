@@ -18,8 +18,8 @@ public class MamCrossoverTraderStrategy : Strategy
 	private readonly StrategyParam<int> _takeProfitTicks;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private SimpleMovingAverage? _closeSma;
-	private SimpleMovingAverage? _openSma;
+	private SimpleMovingAverage _closeSma;
+	private SimpleMovingAverage _openSma;
 
 	private decimal? _prevDiff1; // difference at previous bar
 	private decimal? _prevDiff2; // difference two bars ago
