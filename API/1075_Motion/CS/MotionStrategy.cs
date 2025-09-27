@@ -88,7 +88,7 @@ public class MotionStrategy : Strategy
 			return;
 
 		var text = Text;
-		if (string.IsNullOrEmpty(text))
+		if (text.IsEmpty())
 			return;
 
 		var step = Step;

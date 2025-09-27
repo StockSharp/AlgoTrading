@@ -267,7 +267,7 @@ _canonicalToSecurity.Clear();
 foreach (var security in securities)
 {
 var canonical = GetCanonicalPair(security.Code);
-if (string.IsNullOrEmpty(canonical))
+if (canonical.IsEmpty())
 {
 LogWarning($"Unable to determine canonical code for security '{security.Id}'.");
 continue;
@@ -445,15 +445,15 @@ SellMarket(orderVolume, security);
 
 private string GetCanonicalPair(string code)
 {
-if (string.IsNullOrEmpty(code))
+if (code.IsEmpty())
 return string.Empty;
 
 var trimmed = code;
 
-if (!string.IsNullOrEmpty(SymbolPrefix) && trimmed.StartsWith(SymbolPrefix, StringComparison.OrdinalIgnoreCase))
+if (!SymbolPrefix.IsEmpty() && trimmed.StartsWith(SymbolPrefix, StringComparison.OrdinalIgnoreCase))
 trimmed = trimmed[SymbolPrefix.Length..];
 
-if (!string.IsNullOrEmpty(SymbolSuffix) && trimmed.EndsWith(SymbolSuffix, StringComparison.OrdinalIgnoreCase))
+if (!SymbolSuffix.IsEmpty() && trimmed.EndsWith(SymbolSuffix, StringComparison.OrdinalIgnoreCase))
 trimmed = trimmed[..^SymbolSuffix.Length];
 
 return trimmed.ToUpperInvariant();

@@ -179,7 +179,7 @@ public class AutoCloseOnProfitLossStrategy : Strategy
 
 	private void TriggerCloseAll()
 	{
-		if (ShowAlerts && !string.IsNullOrEmpty(_pendingReason))
+		if (ShowAlerts && !_pendingReason.IsEmpty())
 			LogInfo($"Closing all positions. Reason: {_pendingReason}.");
 
 		_closeAllRequested = true;

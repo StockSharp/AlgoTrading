@@ -143,7 +143,7 @@ public class Get_Last_Nth_Open_TradeStrategy : Strategy
 				if (EnableMagicNumber)
 				{
 					var strategyId = TryGetStrategyId(position);
-					if (string.IsNullOrEmpty(strategyId))
+					if (strategyId.IsEmpty())
 						continue;
 
 					if (!strategyId.EqualsIgnoreCase(MagicNumber))
@@ -183,7 +183,7 @@ public class Get_Last_Nth_Open_TradeStrategy : Strategy
 			builder.AppendLine($"LastChangeTime: {selected.LastChangeTime:yyyy-MM-dd HH:mm:ss}");
 
 			var strategyIdText = TryGetStrategyId(selected);
-			if (!string.IsNullOrEmpty(strategyIdText))
+			if (!strategyIdText.IsEmpty())
 				builder.AppendLine($"StrategyId: {strategyIdText}");
 
 			LogInfo(builder.ToString().TrimEnd());

@@ -62,7 +62,7 @@ public class ShurikenLiteStrategy : Strategy
 			return;
 
 		var comment = order.Comment;
-		if (string.IsNullOrEmpty(comment))
+		if (comment.IsEmpty())
 			return;
 
 		if (!int.TryParse(comment, out var magic))

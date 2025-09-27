@@ -276,7 +276,7 @@ public class EaMaEmailStrategy : Strategy
 	private void LogAlert(string fastLabel, string slowLabel, string direction, ICandleMessage candle)
 	{
 		var securityId = Security?.Id ?? "Unknown";
-		var period = string.IsNullOrEmpty(_periodDescription) ? CandleType.ToString() : _periodDescription;
+		var period = _periodDescription.IsEmpty() ? CandleType.ToString() : _periodDescription;
 		var subject = $"{securityId} {fastLabel}{direction}{slowLabel} {period}";
 		var body = $"Date and Time: {candle.CloseTime:yyyy-MM-dd HH:mm:ss}; Instrument: {securityId}; Close: {candle.ClosePrice:0.#####}";
 

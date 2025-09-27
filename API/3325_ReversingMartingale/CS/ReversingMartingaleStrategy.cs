@@ -207,7 +207,7 @@ public class ReversingMartingaleStrategy : Strategy
 		else
 			order = SellMarket(volume);
 
-		if (order != null && !string.IsNullOrEmpty(OrderComment))
+		if (order != null && !OrderComment.IsEmpty())
 			order.Comment = OrderComment;
 	}
 

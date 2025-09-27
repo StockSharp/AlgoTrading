@@ -692,12 +692,12 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 						if (provider == null)
 						throw new InvalidOperationException("Security provider is not configured.");
 
-						if (string.IsNullOrEmpty(SymbolSuffix) && Security?.Code is string code && code.Length > 6)
-						{
-							var suffix = code.Substring(6);
-							if (!string.IsNullOrEmpty(suffix))
-							SymbolSuffix = suffix;
-						}
+if (SymbolSuffix.IsEmpty() && Security?.Code is string code && code.Length > 6)
+{
+var suffix = code.Substring(6);
+if (!suffix.IsEmpty())
+SymbolSuffix = suffix;
+}
 
 						var resolved = new Dictionary<string, Security>(StringComparer.OrdinalIgnoreCase);
 
@@ -805,7 +805,7 @@ private Security ResolveSecurity(ISecurityProvider provider, string symbol)
 {
 	Security security = null;
 
-	if (!string.IsNullOrEmpty(SymbolSuffix))
+	if (!SymbolSuffix.IsEmpty())
 	{
 		security = provider.LookupById(symbol + SymbolSuffix);
 	}

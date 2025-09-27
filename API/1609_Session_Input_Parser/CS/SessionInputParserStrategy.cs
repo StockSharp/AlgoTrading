@@ -78,7 +78,7 @@ public class SessionInputParserStrategy : Strategy
 		var mEnd = int.Parse(endStr.Substring(2, 2));
 
 		int[] weekdays = Array.Empty<int>();
-		if (!string.IsNullOrEmpty(weekdaysPart))
+		if (!weekdaysPart.IsEmpty())
 			weekdays = weekdaysPart.Select(c => int.Parse(c.ToString())).ToArray();
 
 		return (hStart, mStart, hEnd, mEnd, weekdays);

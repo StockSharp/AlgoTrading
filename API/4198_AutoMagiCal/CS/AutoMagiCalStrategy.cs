@@ -44,7 +44,7 @@ public class AutoMagiCalStrategy : Strategy
 	{
 		var symbol = Security?.Id ?? Security?.Code;
 
-		if (string.IsNullOrEmpty(symbol))
+		if (symbol.IsEmpty())
 		{
 			LogError("Security is not assigned. Unable to generate magic number.");
 			return;

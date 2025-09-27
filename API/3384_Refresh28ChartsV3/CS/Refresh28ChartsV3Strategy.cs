@@ -144,7 +144,7 @@ public class Refresh28ChartsV3Strategy : Strategy
 		var raw = Symbols ?? string.Empty;
 		var tokens = raw.Split(new[] { ',', ';', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries)
 			.Select(t => t.Trim())
-			.Where(t => !string.IsNullOrEmpty(t))
+			.Where(t => !t.IsEmpty())
 			.Distinct(StringComparer.OrdinalIgnoreCase)
 			.ToArray();
 

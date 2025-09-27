@@ -250,7 +250,7 @@ public class ShowPipsStrategy : Strategy
 	private void UpdateDisplay()
 	{
 		var text = BuildStatusText();
-		if (string.IsNullOrEmpty(text))
+		if (text.IsEmpty())
 			return;
 
 		switch (ShowType)
@@ -308,7 +308,7 @@ public class ShowPipsStrategy : Strategy
 		if (ShowSpread)
 		{
 			var spreadText = BuildSpreadText();
-			if (!string.IsNullOrEmpty(spreadText))
+			if (!spreadText.IsEmpty())
 			{
 				blocks.Add(spreadText);
 			}
@@ -317,7 +317,7 @@ public class ShowPipsStrategy : Strategy
 		if (ShowTime)
 		{
 			var timeText = BuildCountdownText();
-			if (!string.IsNullOrEmpty(timeText))
+			if (!timeText.IsEmpty())
 			{
 				blocks.Add(timeText);
 			}

@@ -290,10 +290,10 @@ public class CloseAllControlStrategy : Strategy
 	{
 		var filter = (OrderComment ?? string.Empty).Trim();
 
-		if (string.IsNullOrEmpty(filter))
+		if (filter.IsEmpty())
 			return true;
 
-		if (string.IsNullOrEmpty(comment))
+		if (comment.IsEmpty())
 			return false;
 
 		return comment.Trim().IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0;
@@ -303,7 +303,7 @@ public class CloseAllControlStrategy : Strategy
 	{
 		var filter = (CurrencyId ?? string.Empty).Trim();
 
-		if (string.IsNullOrEmpty(filter))
+		if (filter.IsEmpty())
 		{
 			if (!requireCurrency)
 				return true;
@@ -328,7 +328,7 @@ public class CloseAllControlStrategy : Strategy
 		if (order.Id != null && MatchesIdentifier(order.Id.ToString() ?? string.Empty))
 			return true;
 
-		if (!string.IsNullOrEmpty(order.UserOrderId) && MatchesIdentifier(order.UserOrderId))
+		if (!order.UserOrderId.IsEmpty() && MatchesIdentifier(order.UserOrderId))
 			return true;
 
 		return MatchesIdentifier(TryGetStrategyId(order));
@@ -346,7 +346,7 @@ public class CloseAllControlStrategy : Strategy
 		if (target <= 0)
 			return false;
 
-		if (string.IsNullOrEmpty(value))
+		if (value.IsEmpty())
 			return false;
 
 		if (long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed))

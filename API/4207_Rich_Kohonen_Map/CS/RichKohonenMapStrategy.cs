@@ -443,7 +443,7 @@ public class RichKohonenMapStrategy : Strategy
 		try
 		{
 			var directory = Path.GetDirectoryName(path);
-			if (!string.IsNullOrEmpty(directory))
+			if (!directory.IsEmpty())
 				Directory.CreateDirectory(directory);
 
 			using var stream = File.Open(path, FileMode.Create, FileAccess.Write, FileShare.None);

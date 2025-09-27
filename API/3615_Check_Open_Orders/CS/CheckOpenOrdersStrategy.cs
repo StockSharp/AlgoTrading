@@ -253,7 +253,7 @@ public class CheckOpenOrdersStrategy : Strategy
 
 	private void UpdateStatusMessage()
 	{
-		if (string.IsNullOrEmpty(_modeDescription))
+		if (_modeDescription.IsEmpty())
 		return;
 
 		var hasOpenOrders = HasOpenOrders();

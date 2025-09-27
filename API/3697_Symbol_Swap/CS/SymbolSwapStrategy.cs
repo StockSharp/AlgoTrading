@@ -160,7 +160,7 @@ public class SymbolSwapStrategy : Strategy
 
 	private void TryApplyPendingSecurity()
 	{
-		if (string.IsNullOrEmpty(_pendingSecurityId))
+		if (_pendingSecurityId.IsEmpty())
 			return;
 
 		var candidate = SecurityProvider?.LookupById(_pendingSecurityId);
@@ -239,7 +239,7 @@ public class SymbolSwapStrategy : Strategy
 	private void UpdatePanel()
 	{
 		var text = BuildPanelText();
-		if (string.IsNullOrEmpty(text))
+		if (text.IsEmpty())
 			return;
 
 		switch (OutputMode)
@@ -281,7 +281,7 @@ public class SymbolSwapStrategy : Strategy
 		builder.AppendLine(GetTimeFrameName());
 
 		builder.Append("Symbol: ");
-		builder.AppendLine(!string.IsNullOrEmpty(security.Code) ? security.Code : security.Id);
+		builder.AppendLine(!security.Code.IsEmpty() ? security.Code : security.Id);
 
 		builder.Append("Close Price: ");
 		builder.AppendLine(FormatDecimal(_lastClose));

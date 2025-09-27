@@ -280,10 +280,10 @@ public class NewsTemplateUniversalStrategy : Strategy
 		var headline = news.Headline ?? string.Empty;
 		var story = news.Story ?? string.Empty;
 
-		if (string.IsNullOrEmpty(headline))
+		if (headline.IsEmpty())
 		return story;
 
-		if (string.IsNullOrEmpty(story))
+		if (story.IsEmpty())
 		return headline;
 
 		return $"{headline} - {story}";

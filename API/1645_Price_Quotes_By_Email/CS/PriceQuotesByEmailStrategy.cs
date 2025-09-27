@@ -209,7 +209,7 @@ public class PriceQuotesByEmailStrategy : Strategy
 	        sb.AppendLine($"{pair.Key.Id}: {last} ({change:+0.##;-0.##;0}%)");
 	    }
 
-	    if (string.IsNullOrEmpty(SmtpHost) || string.IsNullOrEmpty(EmailFrom) || string.IsNullOrEmpty(EmailTo))
+	    if (SmtpHost.IsEmpty() || EmailFrom.IsEmpty() || EmailTo.IsEmpty())
 	        return;
 
 	    using var message = new MailMessage(EmailFrom, EmailTo)
