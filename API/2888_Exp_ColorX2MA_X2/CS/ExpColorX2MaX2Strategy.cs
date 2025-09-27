@@ -1,26 +1,18 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using System.Reflection;
 
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using System.Collections.Generic;
-using System.Reflection;
 
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
 
 /// <summary>
 /// Exp ColorX2MA X2 dual timeframe trend-following strategy.

@@ -1,27 +1,19 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-
 using Ecng.Common;
 using Ecng.Collections;
 using Ecng.Serialization;
-
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+using StockSharp.Algo;
+using StockSharp.Algo.Candles;
 
 namespace StockSharp.Samples.Strategies;
 
-using System;
-using StockSharp.Algo;
-using System.Collections.Generic;
 
-using StockSharp.Algo.Candles;
-using StockSharp.Algo.Indicators;
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
-using StockSharp.Messages;
 
 /// <summary>
 /// Port of the MQL5 "Flat Trend EA" that combines Parabolic SAR with ADX directional movement.
