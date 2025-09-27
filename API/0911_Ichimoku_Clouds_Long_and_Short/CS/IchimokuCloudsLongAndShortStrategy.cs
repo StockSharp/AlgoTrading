@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// Ichimoku Clouds strategy allowing long or short modes with customizable signal strength filters and optional take-profit / stop-loss levels.
 /// Entry is triggered by Tenkan-sen crossing Kijun-sen and classified as strong, neutral or weak depending on the cloud position.
 /// </summary>
-public class IchimokuCloudsStrategyLongAndShortStrategy : Strategy
+public class IchimokuCloudsLongAndShortStrategy : Strategy
 {
 	private readonly StrategyParam<int> _tenkanPeriod;
 	private readonly StrategyParam<int> _kijunPeriod;
@@ -131,7 +131,7 @@ public class IchimokuCloudsStrategyLongAndShortStrategy : Strategy
 	/// <summary>
 	/// Initialize Ichimoku Clouds Long/Short strategy.
 	/// </summary>
-	public IchimokuCloudsStrategyLongAndShortStrategy()
+	public IchimokuCloudsLongAndShortStrategy()
 	{
 		_tenkanPeriod = Param(nameof(TenkanPeriod), 9)
 		.SetGreaterThanZero()

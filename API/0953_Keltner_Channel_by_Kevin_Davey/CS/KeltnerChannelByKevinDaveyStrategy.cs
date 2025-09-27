@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// Keltner Channel Strategy by Kevin Davey.
 /// Enters long when price closes below the lower band and short when it closes above the upper band.
 /// </summary>
-public class KeltnerChannelStrategyByKevinDaveyStrategy : Strategy
+public class KeltnerChannelByKevinDaveyStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _atrPeriod;
@@ -42,7 +42,7 @@ public class KeltnerChannelStrategyByKevinDaveyStrategy : Strategy
 	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
-	public KeltnerChannelStrategyByKevinDaveyStrategy()
+	public KeltnerChannelByKevinDaveyStrategy()
 	{
 		_emaPeriod = Param(nameof(EmaPeriod), 10)
 			.SetDisplay("EMA Period", "Period for Exponential Moving Average", "Indicators")

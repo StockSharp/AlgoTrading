@@ -13,7 +13,7 @@ using StockSharp.Messages;
 /// Intra Bullish Strategy - Profit Ping v4.0.
 /// Enters long on EMA crossover with MACD and RSI confirmation.
 /// </summary>
-public class IntraBullishStrategyProfitPingV40Strategy : Strategy
+public class IntraBullishProfitPingV40Strategy : Strategy
 {
 	private readonly StrategyParam<int> _shortEmaLength;
 	private readonly StrategyParam<int> _longEmaLength;
@@ -68,7 +68,7 @@ public class IntraBullishStrategyProfitPingV40Strategy : Strategy
 		set => _candleType.Value = value;
 	}
 
-	public IntraBullishStrategyProfitPingV40Strategy()
+	public IntraBullishProfitPingV40Strategy()
 	{
 		_shortEmaLength = Param(nameof(ShortEmaLength), 7)
 			.SetDisplay("Short EMA", "Short EMA length", "EMA")

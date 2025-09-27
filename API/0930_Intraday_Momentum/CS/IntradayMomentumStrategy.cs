@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Intraday momentum strategy using EMA crossover, RSI and VWAP.
 /// </summary>
-public class IntradayMomentumStrategyStrategy : Strategy
+public class IntradayMomentumStrategy : Strategy
 {
 	private readonly StrategyParam<int> _emaFastLength;
 	private readonly StrategyParam<int> _emaSlowLength;
@@ -101,7 +101,7 @@ public class IntradayMomentumStrategyStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public IntradayMomentumStrategyStrategy()
+	public IntradayMomentumStrategy()
 	{
 		_emaFastLength = Param(nameof(EmaFastLength), 9)
 			.SetGreaterThanZero()

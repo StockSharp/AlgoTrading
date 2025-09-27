@@ -12,7 +12,7 @@ using StockSharp.Messages;
 /// <summary>
 /// Short-only strategy based on EMA trend filters and Fibonacci levels.
 /// </summary>
-public class CCTrendStrategy2DowntrendShortStrategy : Strategy
+public class CCTrend2DowntrendShortStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fibLength;
 	private readonly StrategyParam<DataType> _candleType;
@@ -31,7 +31,7 @@ public class CCTrendStrategy2DowntrendShortStrategy : Strategy
 	/// <summary>
 	/// Constructor.
 	/// </summary>
-	public CCTrendStrategy2DowntrendShortStrategy()
+	public CCTrend2DowntrendShortStrategy()
 	{
 		_fibLength = Param(nameof(FibLength), 100)
 		.SetGreaterThanZero()

@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// High Yield Spread strategy with SMA filter.
 /// Uses either High Yield Spread or VIX to trigger trades.
 /// </summary>
-public class HighYieldSpreadStrategyWithSmaFilterStrategy : Strategy
+public class HighYieldSpreadWithSmaFilterStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<Basis> _basis;
@@ -91,9 +91,9 @@ public class HighYieldSpreadStrategyWithSmaFilterStrategy : Strategy
 	}
 
 	/// <summary>
-	/// Initializes a new instance of the <see cref="HighYieldSpreadStrategyWithSmaFilterStrategy"/> class.
+	/// Initializes a new instance of the <see cref="HighYieldSpreadWithSmaFilterStrategy"/> class.
 	/// </summary>
-	public HighYieldSpreadStrategyWithSmaFilterStrategy()
+	public HighYieldSpreadWithSmaFilterStrategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");

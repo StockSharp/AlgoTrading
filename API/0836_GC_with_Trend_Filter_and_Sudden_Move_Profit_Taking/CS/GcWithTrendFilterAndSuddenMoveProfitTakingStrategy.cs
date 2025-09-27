@@ -12,7 +12,7 @@ namespace StockSharp.Samples.Strategies;
 /// 5SMA-25SMA crossover with 75SMA trend filter and ADX confirmation.
 /// Closes the position on sudden price moves.
 /// </summary>
-public class GcStrategyWithTrendFilterAndSuddenMoveProfitTakingStrategy : Strategy
+public class GcWithTrendFilterAndSuddenMoveProfitTakingStrategy : Strategy
 {
 	private readonly StrategyParam<int> _fastLength;
 	private readonly StrategyParam<int> _slowLength;
@@ -90,7 +90,7 @@ public class GcStrategyWithTrendFilterAndSuddenMoveProfitTakingStrategy : Strate
 	/// <summary>
 	/// Initializes parameters.
 	/// </summary>
-	public GcStrategyWithTrendFilterAndSuddenMoveProfitTakingStrategy()
+	public GcWithTrendFilterAndSuddenMoveProfitTakingStrategy()
 	{
 		_fastLength = Param(nameof(FastLength), 5)
 						  .SetDisplay("Fast SMA", "Period of the fast moving average", "Indicators")

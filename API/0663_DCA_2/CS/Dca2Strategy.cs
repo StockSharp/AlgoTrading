@@ -11,7 +11,7 @@ namespace StockSharp.Samples.Strategies;
 /// <summary>
 /// Dollar cost averaging strategy using Heikin Ashi and RSI.
 /// </summary>
-public class DcaStrategy2Strategy : Strategy
+public class Dca2Strategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _startYear;
@@ -30,7 +30,7 @@ public class DcaStrategy2Strategy : Strategy
 	/// <summary>
 	/// Initialize DCA Strategy 2.
 	/// </summary>
-	public DcaStrategy2Strategy()
+	public Dca2Strategy()
 	{
 		_candleType = Param(nameof(CandleType), TimeSpan.FromDays(1).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles to use", "General");
