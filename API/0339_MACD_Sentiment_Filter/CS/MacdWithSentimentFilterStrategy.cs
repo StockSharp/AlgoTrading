@@ -1,8 +1,11 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
 using Ecng.Common;
-using StockSharp.Algo;
-using StockSharp.Algo.Candles;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
@@ -294,4 +297,3 @@ public class MacdWithSentimentFilterStrategy : Strategy
 		return _prevMacd == 0 && _prevSignal == 0;
 	}
 }
-

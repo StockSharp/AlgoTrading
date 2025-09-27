@@ -1,9 +1,13 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using StockSharp.Algo;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
-using StockSharp.Algo.Candles;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
