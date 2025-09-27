@@ -14,10 +14,6 @@ using StockSharp.Messages;
 /// </summary>
 public class DayTradingStrategy : Strategy
 {
-	private const decimal MomentumNeutralLevel = 100m;
-	private const decimal StochasticBuyThreshold = 35m;
-	private const decimal StochasticSellThreshold = 60m;
-
 	private readonly StrategyParam<decimal> _lotSize;
 	private readonly StrategyParam<decimal> _trailingStopPoints;
 	private readonly StrategyParam<decimal> _takeProfitPoints;
@@ -30,7 +26,10 @@ public class DayTradingStrategy : Strategy
 	private readonly StrategyParam<int> _stochasticLength;
 	private readonly StrategyParam<int> _stochasticSignal;
 	private readonly StrategyParam<int> _stochasticSlow;
+	private readonly StrategyParam<decimal> _stochasticBuyThreshold;
+	private readonly StrategyParam<decimal> _stochasticSellThreshold;
 	private readonly StrategyParam<int> _momentumPeriod;
+	private readonly StrategyParam<decimal> _momentumNeutralLevel;
 	private readonly StrategyParam<decimal> _sarAcceleration;
 	private readonly StrategyParam<decimal> _sarStep;
 	private readonly StrategyParam<decimal> _sarMaximum;
@@ -110,10 +109,22 @@ public class DayTradingStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("Stochastic Slowing", "Final smoothing applied to %K", "Indicators")
 			.SetCanOptimize(true);
+		_stochasticBuyThreshold = Param(nameof(StochasticBuyThreshold), 35m)
+			.SetDisplay("Stochastic Buy", "Oversold %K threshold for long entries", "Indicators")
+			.SetCanOptimize(true);
+
+		_stochasticSellThreshold = Param(nameof(StochasticSellThreshold), 60m)
+			.SetDisplay("Stochastic Sell", "Overbought %K threshold for short entries", "Indicators")
+			.SetCanOptimize(true);
+
 
 		_momentumPeriod = Param(nameof(MomentumPeriod), 14)
 			.SetGreaterThanZero()
 			.SetDisplay("Momentum Period", "Number of candles used for Momentum", "Indicators")
+			.SetCanOptimize(true);
+
+		_momentumNeutralLevel = Param(nameof(MomentumNeutralLevel), 100m)
+			.SetDisplay("Momentum Neutral", "Neutral momentum value used for signal confirmation", "Indicators")
 			.SetCanOptimize(true);
 
 		_sarAcceleration = Param(nameof(SarAcceleration), 0.02m)
@@ -241,12 +252,39 @@ public class DayTradingStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Stochastic %K level that qualifies oversold conditions.
+	/// </summary>
+	public decimal StochasticBuyThreshold
+	{
+		get => _stochasticBuyThreshold.Value;
+		set => _stochasticBuyThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic %K level that qualifies overbought conditions.
+	/// </summary>
+	public decimal StochasticSellThreshold
+	{
+		get => _stochasticSellThreshold.Value;
+		set => _stochasticSellThreshold.Value = value;
+	}
+
+	/// <summary>
 	/// Number of candles used for Momentum.
 	/// </summary>
 	public int MomentumPeriod
 	{
 		get => _momentumPeriod.Value;
 		set => _momentumPeriod.Value = value;
+	}
+
+	/// <summary>
+	/// Momentum value considered neutral for trend confirmation.
+	/// </summary>
+	public decimal MomentumNeutralLevel
+	{
+		get => _momentumNeutralLevel.Value;
+		set => _momentumNeutralLevel.Value = value;
 	}
 
 	/// <summary>

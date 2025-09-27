@@ -14,7 +14,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class TrendRdsStrategy : Strategy
 {
-	private const int MaxPatternDepth = 100;
 	private static readonly TimeSpan SignalWindow = TimeSpan.FromMinutes(10);
 	private static readonly TimeSpan CloseWindow = TimeSpan.FromMinutes(15);
 
@@ -28,8 +27,9 @@ public class TrendRdsStrategy : Strategy
 	private readonly StrategyParam<decimal> _trailingStepPips;
 	private readonly StrategyParam<decimal> _breakEvenPips;
 	private readonly StrategyParam<DataType> _candleType;
+	private readonly StrategyParam<int> _maxPatternDepth;
 
-	private readonly List<(decimal High, decimal Low)> _recentExtremes = new(MaxPatternDepth + 2);
+	private readonly List<(decimal High, decimal Low)> _recentExtremes;
 
 	private decimal _pipSize;
 	private decimal _previousPosition;
@@ -128,6 +128,15 @@ public class TrendRdsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of swings tracked when validating the pattern.
+	/// </summary>
+	public int MaxPatternDepth
+	{
+		get => _maxPatternDepth.Value;
+		set => _maxPatternDepth.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the <see cref="TrendRdsStrategy"/> class.
 	/// </summary>
 	public TrendRdsStrategy()
@@ -173,6 +182,11 @@ public class TrendRdsStrategy : Strategy
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Working timeframe", "General");
+		_maxPatternDepth = Param(nameof(MaxPatternDepth), 100)
+			.SetGreaterThanZero()
+			.SetDisplay("Max Pattern Depth", "Maximum candles tracked for pattern detection", "General");
+
+		_recentExtremes = new List<(decimal High, decimal Low)>(MaxPatternDepth + 2);
 	}
 
 	/// <inheritdoc />

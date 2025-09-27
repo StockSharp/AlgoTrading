@@ -17,8 +17,6 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MomoTradesV3Strategy : Strategy
 {
-	private const decimal MacdZeroTolerance = 1e-8m;
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _emaPeriod;
 	private readonly StrategyParam<int> _emaShift;
@@ -26,6 +24,7 @@ public class MomoTradesV3Strategy : Strategy
 	private readonly StrategyParam<int> _macdSlow;
 	private readonly StrategyParam<int> _macdSignal;
 	private readonly StrategyParam<int> _macdShift;
+	private readonly StrategyParam<decimal> _macdZeroTolerance;
 	private readonly StrategyParam<decimal> _priceShiftPoints;
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<decimal> _riskFraction;
@@ -105,6 +104,15 @@ public class MomoTradesV3Strategy : Strategy
 	{
 		get => _macdShift.Value;
 		set => _macdShift.Value = value;
+	}
+
+	/// <summary>
+	/// Absolute tolerance used to treat MACD values as neutral.
+	/// </summary>
+	public decimal MacdZeroTolerance
+	{
+		get => _macdZeroTolerance.Value;
+		set => _macdZeroTolerance.Value = value;
 	}
 
 	/// <summary>
@@ -219,6 +227,10 @@ public class MomoTradesV3Strategy : Strategy
 		_macdShift = Param(nameof(MacdShift), 1)
 		.SetGreaterThanZero()
 		.SetDisplay("MACD Shift", "Extra displacement for MACD history", "Indicators");
+		_macdZeroTolerance = Param(nameof(MacdZeroTolerance), 1e-8m)
+			.SetGreaterThanZero()
+			.SetDisplay("MACD Zero Tolerance", "Absolute tolerance for flat MACD detection", "Indicators");
+
 
 		_priceShiftPoints = Param(nameof(PriceShiftPoints), 10m)
 		.SetDisplay("Price Shift", "Required price offset from EMA in MetaTrader points", "Signals");
