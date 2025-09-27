@@ -13,8 +13,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class MacdStochastic2Strategy : Strategy
 {
-	private const decimal OversoldThreshold = 20m;
-	private const decimal OverboughtThreshold = 80m;
+	private readonly StrategyParam<decimal> _oversoldThreshold;
+	private readonly StrategyParam<decimal> _overboughtThreshold;
 
 	private readonly StrategyParam<decimal> _tradeVolume;
 	private readonly StrategyParam<int> _stopLossBuyPips;
@@ -107,6 +107,24 @@ public class MacdStochastic2Strategy : Strategy
 	{
 		get => _trailingStepPips.Value;
 		set => _trailingStepPips.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic oversold threshold.
+	/// </summary>
+	public decimal OversoldThreshold
+	{
+		get => _oversoldThreshold.Value;
+		set => _oversoldThreshold.Value = value;
+	}
+
+	/// <summary>
+	/// Stochastic overbought threshold.
+	/// </summary>
+	public decimal OverboughtThreshold
+	{
+		get => _overboughtThreshold.Value;
+		set => _overboughtThreshold.Value = value;
 	}
 
 	/// <summary>

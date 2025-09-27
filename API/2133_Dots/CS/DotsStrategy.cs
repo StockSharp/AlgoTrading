@@ -15,6 +15,7 @@ public class DotsStrategy : Strategy
 {
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _filter;
+	private readonly StrategyParam<double> _coefficient;
 	private readonly StrategyParam<DataType> _candleType;
 
 	private DotsIndicator _dots;
@@ -39,6 +40,15 @@ public class DotsStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Coefficient applied inside the internal weighting formula.
+	/// </summary>
+	public double Coefficient
+	{
+		get => _coefficient.Value;
+		set => _coefficient.Value = value;
+	}
+
+	/// <summary>
 	/// Candle type used for calculations.
 	/// </summary>
 	public DataType CandleType
@@ -57,6 +67,10 @@ public class DotsStrategy : Strategy
 
 		_filter = Param(nameof(Filter), 0m)
 			.SetDisplay("Filter", "Minimal delta to change color", "Parameters");
+
+		_coefficient = Param(nameof(Coefficient), 3.0 * Math.PI)
+			.SetGreaterThanZero()
+			.SetDisplay("Coefficient", "Weighting coefficient inside the filter", "Parameters");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles", "General");
@@ -84,7 +98,8 @@ public class DotsStrategy : Strategy
 		_dots = new DotsIndicator
 		{
 			Length = Length,
-			Filter = Filter
+			Filter = Filter,
+			Coefficient = Coefficient
 		};
 
 		var subscription = SubscribeCandles(CandleType);
@@ -133,6 +148,7 @@ public class DotsStrategy : Strategy
 	{
 		public int Length { get; set; } = 10;
 		public decimal Filter { get; set; } = 0m;
+		public double Coefficient { get; set; } = 3.0 * Math.PI;
 
 		private readonly List<decimal> _prices = new();
 		private decimal? _prevMa;
@@ -141,8 +157,7 @@ public class DotsStrategy : Strategy
 		private int Len => (int)(Length * 4 + (Length - 1));
 		private double Res1 => 1.0 / Math.Max(1.0, Length - 2);
 		private double Res2 => (2.0 * 4 - 1.0) / (4 * Length - 1.0);
-		private const double Coeff = 3.0 * Math.PI;
-
+	
 		protected override IIndicatorValue OnProcess(IIndicatorValue input)
 		{
 			var candle = input.GetValue<ICandleMessage>();
@@ -158,7 +173,7 @@ public class DotsStrategy : Strategy
 			double t = 0, sum = 0, weight = 0;
 			for (var i = 0; i < Len; i++)
 			{
-				var g = 1.0 / (Coeff * t + 1.0);
+				var g = 1.0 / (Coefficient * t + 1.0);
 				if (t <= 0.5)
 					g = 1.0;
 				var beta = Math.Cos(Math.PI * t);

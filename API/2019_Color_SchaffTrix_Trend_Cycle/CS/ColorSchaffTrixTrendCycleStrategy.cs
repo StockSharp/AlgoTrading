@@ -25,6 +25,7 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	private readonly StrategyParam<bool> _sellOpen;
 	private readonly StrategyParam<bool> _buyClose;
 	private readonly StrategyParam<bool> _sellClose;
+	private readonly StrategyParam<decimal> _factor;
 
 	private SchaffTrixTrendCycle _stc = null!;
 	private decimal? _prevStc;
@@ -123,6 +124,14 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	public bool SellClose {
 	get => _sellClose.Value;
 	set => _sellClose.Value = value;
+	}
+
+	/// <summary>
+	/// Smoothing factor used in the Schaff Trend Cycle calculations.
+	/// </summary>
+	public decimal Factor {
+	get => _factor.Value;
+	set => _factor.Value = value;
 	}
 
 	/// <summary>
@@ -240,6 +249,7 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	public int FastLength { get; set; }
 	public int SlowLength { get; set; }
 	public int Cycle { get; set; }
+	public decimal Factor { get; set; } = 0.5m;
 
 	private readonly Trix _fast = new();
 	private readonly Trix _slow = new();
@@ -251,7 +261,6 @@ public class ColorSchaffTrixTrendCycleStrategy : Strategy {
 	private decimal _stcPrev;
 	private bool _stPass;
 	private bool _stcPass;
-	private const decimal Factor = 0.5m;
 
 	public override bool IsFormed => _slow.IsFormed && _stcPass;
 

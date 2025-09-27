@@ -40,13 +40,17 @@ public class SchnickDemoStrategy : Strategy
 	/// </summary>
 	public SchnickDemoStrategy()
 	{
+		_inputCount = Param(nameof(InputCount), 7)
+			.SetGreaterThanZero()
+			.SetDisplay("Input Count", "Number of features per sample", "General");
+
 		_trainingPoints = Param(nameof(TrainingPoints), 5000)
 		.SetGreaterThanZero()
 		.SetDisplay("Training Points", "Number of samples for training", "General")
 		.SetCanOptimize(true)
 		.SetOptimize(1000, 10000, 1000);
 		
-		_testPoints = Param(nameof(TestPoints), 5000)
+			_testPoints = Param(nameof(TestPoints), 5000)
 		.SetGreaterThanZero()
 		.SetDisplay("Test Points", "Number of samples for testing", "General")
 		.SetCanOptimize(true)

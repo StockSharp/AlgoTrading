@@ -14,9 +14,9 @@ using StockSharp.Messages;
 /// </summary>
 public class DeltaRsiStrategy : Strategy
 {
-private const int Up = 0;
-private const int Pass = 1;
-private const int Down = 2;
+	private readonly StrategyParam<int> _upState;
+	private readonly StrategyParam<int> _passState;
+	private readonly StrategyParam<int> _downState;
 
 private readonly StrategyParam<int> _fastPeriod;
 private readonly StrategyParam<int> _slowPeriod;
@@ -27,9 +27,27 @@ private readonly StrategyParam<bool> _buyPosClose;
 private readonly StrategyParam<bool> _sellPosClose;
 private readonly StrategyParam<DataType> _candleType;
 
-private int _prevColor = Pass;
+	private int _prevColor;
 
-public int FastPeriod
+	public int UpState
+{
+	get => _upState.Value;
+	set => _upState.Value = value;
+	}
+
+	public int PassState
+{
+	get => _passState.Value;
+	set => _passState.Value = value;
+	}
+
+	public int DownState
+{
+	get => _downState.Value;
+	set => _downState.Value = value;
+	}
+
+	public int FastPeriod
 {
 get => _fastPeriod.Value;
 set => _fastPeriod.Value = value;
@@ -79,6 +97,15 @@ set => _candleType.Value = value;
 
 public DeltaRsiStrategy()
 {
+	_upState = Param(nameof(UpState), 0)
+		.SetDisplay("Up State", "Value representing bullish state", "Parameters");
+
+	_passState = Param(nameof(PassState), 1)
+		.SetDisplay("Neutral State", "Value representing neutral state", "Parameters");
+
+	_downState = Param(nameof(DownState), 2)
+		.SetDisplay("Down State", "Value representing bearish state", "Parameters");
+
 _fastPeriod = Param(nameof(FastPeriod), 14)
 .SetDisplay("Fast RSI Period", "Length of fast RSI", "Parameters");
 
@@ -102,6 +129,8 @@ _sellPosClose = Param(nameof(SellPosClose), true)
 
 _candleType = Param(nameof(CandleType), TimeSpan.FromHours(4).TimeFrame())
 .SetDisplay("Candle Type", "Type of candles", "General");
+
+	_prevColor = PassState;
 }
 
 /// <inheritdoc />
@@ -114,6 +143,8 @@ return new[] {(Security, CandleType)};
 protected override void OnStarted(DateTimeOffset time)
 {
 base.OnStarted(time);
+
+	_prevColor = PassState;
 
 var rsiFast = new RelativeStrengthIndex
 {
@@ -148,13 +179,13 @@ return;
 if (!IsFormedAndOnlineAndAllowTrading())
 return;
 
-var color = Pass;
+var color = PassState;
 if (rsiSlow > Level && rsiFast > rsiSlow)
-color = Up;
+color = UpState;
 else if (rsiSlow < 100 - Level && rsiFast < rsiSlow)
-color = Down;
+color = DownState;
 
-if (_prevColor == Up && color != Up)
+if (_prevColor == UpState && color != UpState)
 {
 if (SellPosClose && Position < 0)
 ClosePosition();
@@ -162,7 +193,7 @@ ClosePosition();
 if (BuyPosOpen && Position <= 0)
 BuyMarket();
 }
-else if (_prevColor == Down && color != Down)
+else if (_prevColor == DownState && color != DownState)
 {
 if (BuyPosClose && Position > 0)
 ClosePosition();
