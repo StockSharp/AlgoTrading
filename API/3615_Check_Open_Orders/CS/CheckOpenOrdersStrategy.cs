@@ -1,12 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Threading;
-using System.Threading.Tasks;
+using System.Linq;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Threading;
+using System.Threading.Tasks;
 
 public enum CheckOpenOrdersMode
 {
@@ -389,3 +397,4 @@ public class CheckOpenOrdersStrategy : Strategy
 		_ordersCts = null;
 	}
 }
+

@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using StockSharp.Algo;
+using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Strategy converted from the "BULL row full EA" expert advisor.
@@ -528,3 +535,4 @@ public enum RowSequenceMode
 	/// </summary>
 	Smaller
 }
+

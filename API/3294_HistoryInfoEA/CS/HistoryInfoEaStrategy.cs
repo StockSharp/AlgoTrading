@@ -1,7 +1,15 @@
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -263,3 +271,4 @@ int TradeCount)
 	/// </summary>
 	public static readonly HistoryInfoSnapshot Empty = new(null, null, 0m, 0m, 0m, 0);
 }
+

@@ -1,14 +1,20 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
-using System.Reflection;
+using System.Collections.Generic;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Globalization;
+using System.Reflection;
 
 /// <summary>
 /// Utility strategy that mirrors the "Close All MT5" expert advisor.
@@ -597,3 +603,4 @@ public class CloseAllMt5Strategy : Strategy
 		CloseTicket = 6
 	}
 }
+

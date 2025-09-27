@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Port of the MetaTrader expert advisor "TRAYLERv" that maintains fractal-based trailing stops
@@ -623,3 +630,4 @@ public class TraylerStrategy : Strategy
 		public decimal Close { get; }
 	}
 }
+

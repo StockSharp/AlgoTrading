@@ -1,7 +1,12 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -667,3 +672,4 @@ public class PinbarReversal2Strategy : Strategy
 		return upperWick >= range * WickRatio && lowerWick <= range * (1m - WickRatio);
 	}
 }
+

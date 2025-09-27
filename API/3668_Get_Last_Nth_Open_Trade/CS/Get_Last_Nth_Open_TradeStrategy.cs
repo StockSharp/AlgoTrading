@@ -1,13 +1,21 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
 using System.Reflection;
 using System.Text;
 using System.Threading;
-
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 
 /// <summary>
 /// Strategy that periodically reports details about the Nth most recent open position.
@@ -209,3 +217,4 @@ public class Get_Last_Nth_Open_TradeStrategy : Strategy
 		return (value ?? 0m).ToString("0.##");
 	}
 }
+

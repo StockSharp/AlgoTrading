@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Globalization;
 
 /// <summary>
 /// Displays daily, weekly, and monthly realized results in the strategy comment.
@@ -233,3 +240,4 @@ public class SimpleProfitByPeriodsPanel2ExtendedStrategy : Strategy
 		public decimal Profit { get; }
 	}
 }
+

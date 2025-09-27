@@ -1,15 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
 using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
-using StockSharp.Algo;
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Port of the "Mean Reversion" MetaTrader expert advisor.
@@ -731,3 +735,4 @@ public class MeanReversionStrategy : Strategy
 
 	private static readonly int[] MetaTraderMinutes = { 1, 5, 15, 30, 60, 240, 1440, 10080, 43200 };
 }
+

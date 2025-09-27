@@ -1,12 +1,20 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
+using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
 using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Threading;
-
-using StockSharp.Algo.Strategies;
-using StockSharp.BusinessEntities;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -243,3 +251,4 @@ public class GetLastNthOpenTradeStrategy : Strategy
 		return position.StrategyId;
 	}
 }
+

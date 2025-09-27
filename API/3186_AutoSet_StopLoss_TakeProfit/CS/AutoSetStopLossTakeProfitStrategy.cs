@@ -1,12 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
-using System.Globalization;
 
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using System.Globalization;
 
 public class AutoSetStopLossTakeProfitStrategy : Strategy
 {
@@ -421,3 +428,4 @@ public class AutoSetStopLossTakeProfitStrategy : Strategy
 		BuySell,
 	}
 }
+

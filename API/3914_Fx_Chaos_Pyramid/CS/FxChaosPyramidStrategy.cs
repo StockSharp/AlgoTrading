@@ -1,8 +1,14 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
+using StockSharp.BusinessEntities;
 using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
@@ -661,3 +667,4 @@ return new StageVolumeSet(1.0m, 5.0m, 4.0m, 3.0m, 2.0m);
 }
 }
 }
+

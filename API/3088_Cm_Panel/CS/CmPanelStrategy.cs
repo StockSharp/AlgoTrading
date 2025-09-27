@@ -1,10 +1,19 @@
 namespace StockSharp.Samples.Strategies;
 
 using System;
+using System.Linq;
+using System.Collections.Generic;
 
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
+using StockSharp.Messages;
+
+using StockSharp.Algo;
 
 /// <summary>
 /// Manual trading panel that recreates the "cm panel" MetaTrader script.
@@ -580,3 +589,4 @@ public class CmPanelStrategy : Strategy
 	private static bool IsFinal(Order order)
 	=> order.State == OrderStates.Done || order.State == OrderStates.Failed || order.State == OrderStates.Canceled || order.State == OrderStates.Stopped;
 }
+

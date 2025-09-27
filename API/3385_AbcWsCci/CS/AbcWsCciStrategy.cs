@@ -1,5 +1,10 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
+
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
 
 using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
@@ -201,3 +206,4 @@ public class AbcWsCciStrategy : Strategy
 
 	private readonly record struct CandleSnapshot(decimal Open, decimal High, decimal Low, decimal Close);
 }
+

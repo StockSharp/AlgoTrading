@@ -1,11 +1,18 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 
-using StockSharp;
-using StockSharp.Algo;
+using Ecng.Common;
+using Ecng.Collections;
+using Ecng.Serialization;
+
+using StockSharp.Algo.Indicators;
 using StockSharp.Algo.Strategies;
 using StockSharp.BusinessEntities;
 using StockSharp.Messages;
+
+using StockSharp;
+using StockSharp.Algo;
 
 namespace StockSharp.Samples.Strategies;
 
@@ -591,3 +598,4 @@ public class ERegressionChannelStrategy : Strategy
 		return (decimal)Math.Sqrt((double)(sum / n));
 	}
 }
+
