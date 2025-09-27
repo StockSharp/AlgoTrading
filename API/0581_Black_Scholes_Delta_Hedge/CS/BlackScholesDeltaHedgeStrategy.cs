@@ -10,7 +10,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class BlackScholesDeltaHedgeStrategy : Strategy
 {
-	private const int _daysInYear = 365;
+	private readonly StrategyParam<int> _daysInYear;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _strikePrice;
@@ -65,6 +65,11 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 	public decimal PositionSize { get => _positionSize.Value; set => _positionSize.Value = value; }
 
 	/// <summary>
+	/// Trading days per year for time decay calculations.
+	/// </summary>
+	public int DaysInYear { get => _daysInYear.Value; set => _daysInYear.Value = value; }
+
+	/// <summary>
 	/// Initializes strategy parameters.
 	/// </summary>
 	public BlackScholesDeltaHedgeStrategy()
@@ -92,6 +97,10 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 
 		_positionSize = Param(nameof(PositionSize), 1m)
 			.SetDisplay("Position Size", "Number of option contracts", "Trading");
+
+		_daysInYear = Param(nameof(DaysInYear), 365)
+			.SetGreaterThanZero()
+			.SetDisplay("Days In Year", "Trading days per year", "Option Parameters");
 	}
 
 	/// <inheritdoc />
@@ -120,7 +129,7 @@ public class BlackScholesDeltaHedgeStrategy : Strategy
 		var k = StrikePrice;
 		var sigma = Volatility;
 		var r = RiskFreeRate;
-		var t = DaysToExpiry / (decimal)_daysInYear;
+		var t = DaysToExpiry / (decimal)DaysInYear;
 
 		var sqrtT = (decimal)Math.Sqrt((double)t);
 		var d1 = ((decimal)Math.Log((double)(s / k)) + (r + 0.5m * sigma * sigma) * t) / (sigma * sqrtT);

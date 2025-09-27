@@ -19,8 +19,8 @@ public class DominanceTagcloudStrategy : Strategy
 	private readonly List<string> _tickers = new();
 	private readonly List<decimal> _dominance = new();
 
-	private const int Min = 100;
-	private const int Max = 500;
+	private readonly StrategyParam<int> _minCoordinate;
+	private readonly StrategyParam<int> _maxCoordinate;
 
 	/// <summary>
 	/// Reposition boxes every bar.
@@ -41,6 +41,24 @@ public class DominanceTagcloudStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Minimum random coordinate value.
+	/// </summary>
+	public int MinCoordinate
+	{
+		get => _minCoordinate.Value;
+		set => _minCoordinate.Value = value;
+	}
+
+	/// <summary>
+	/// Maximum random coordinate value.
+	/// </summary>
+	public int MaxCoordinate
+	{
+		get => _maxCoordinate.Value;
+		set => _maxCoordinate.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of <see cref="DominanceTagcloudStrategy"/>.
 	/// </summary>
 	public DominanceTagcloudStrategy()
@@ -51,6 +69,14 @@ public class DominanceTagcloudStrategy : Strategy
 
 		_labelAtSide = Param(nameof(LabelAtSide), true)
 			.SetDisplay("Label at the side", "Place labels at chart side", "Visualization")
+			.SetCanOptimize(false);
+
+		_minCoordinate = Param(nameof(MinCoordinate), 100)
+			.SetDisplay("Min Coordinate", "Minimum random coordinate", "Visualization")
+			.SetCanOptimize(false);
+
+		_maxCoordinate = Param(nameof(MaxCoordinate), 500)
+			.SetDisplay("Max Coordinate", "Maximum random coordinate", "Visualization")
 			.SetCanOptimize(false);
 	}
 
@@ -112,8 +138,8 @@ public class DominanceTagcloudStrategy : Strategy
 	{
 		var dom = _dominance[index];
 
-		var randX = _random.Next(Min, Max);
-		var randY = _random.Next(Min, Max);
+		var randX = _random.Next(MinCoordinate, MaxCoordinate);
+		var randY = _random.Next(MinCoordinate, MaxCoordinate);
 
 		var x1 = randX;
 		var x2 = randX + (int)Math.Round(5m * dom);

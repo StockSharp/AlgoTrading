@@ -31,6 +31,8 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	private readonly StrategyParam<decimal> _minVolumeMultiplier;
 	private readonly StrategyParam<int> _baseCooldownBars;
 	private readonly StrategyParam<decimal> _minAtr;
+	private readonly StrategyParam<decimal> _rsiOversold;
+	private readonly StrategyParam<decimal> _adxThreshold;
 	private readonly StrategyParam<bool> _useUtExit;
 	private readonly StrategyParam<DataType> _candleType;
 
@@ -44,9 +46,6 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	private int? _entryIndex;
 	private decimal _entryPrice;
 	private string _lastSignal = string.Empty;
-
-	private const decimal RsiOversold = 30m;
-	private const decimal AdxThreshold = 30m;
 
 	/// <summary>
 	/// Length for fast EMA (default: 20).
@@ -91,6 +90,24 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 	{
 		get => _rsiLength.Value;
 		set => _rsiLength.Value = value;
+	}
+
+	/// <summary>
+	/// RSI oversold threshold for entries.
+	/// </summary>
+	public decimal RsiOversold
+	{
+		get => _rsiOversold.Value;
+		set => _rsiOversold.Value = value;
+	}
+
+	/// <summary>
+	/// ADX strength threshold required for entries.
+	/// </summary>
+	public decimal AdxThreshold
+	{
+		get => _adxThreshold.Value;
+		set => _adxThreshold.Value = value;
 	}
 
 	/// <summary>
@@ -215,6 +232,12 @@ public class AlmaUtBotConfluenceStrategy : Strategy
 		_adxLength = Param(nameof(AdxLength), 10).SetDisplay("ADX Length", "ADX period", "Main");
 
 		_rsiLength = Param(nameof(RsiLength), 14).SetDisplay("RSI Length", "RSI period", "Main");
+
+		_rsiOversold = Param(nameof(RsiOversold), 30m)
+			.SetDisplay("RSI Oversold", "RSI oversold threshold", "Filters");
+
+		_adxThreshold = Param(nameof(AdxThreshold), 30m)
+			.SetDisplay("ADX Threshold", "Minimum ADX required", "Filters");
 
 		_bbMultiplier =
 			Param(nameof(BbMultiplier), 3m).SetDisplay("Bollinger Multiplier", "Bollinger Band width", "Main");
