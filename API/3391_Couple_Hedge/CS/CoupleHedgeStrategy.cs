@@ -15,9 +15,8 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class CoupleHedgeStrategy : Strategy
 {
-	private const int DefaultGroupCount = 3;
-
 	private readonly GroupSlot[] _groups;
+	private readonly StrategyParam<int> _groupCount;
 
 	private readonly StrategyParam<OperationMode> _operationMode;
 	private readonly StrategyParam<SideSelection> _sideSelection;
@@ -102,6 +101,12 @@ public class CoupleHedgeStrategy : Strategy
 	{
 		get => _maximumGroups.Value;
 		set => _maximumGroups.Value = value;
+	}
+
+	public int GroupCount
+	{
+		get => _groupCount.Value;
+		set => _groupCount.Value = value;
 	}
 
 	/// <summary>
@@ -436,11 +441,24 @@ public class CoupleHedgeStrategy : Strategy
 		.SetDisplay("Step Open Next", "Initial loss level that triggers averaging", "Risk Management")
 		.SetCanOptimize(true);
 
-		_groups = new GroupSlot[DefaultGroupCount];
+_groupCount = Param(nameof(GroupCount), 3)
+		.SetGreaterOrEqual(1)
+		.SetDisplay("Group Count", "Number of hedge groups configured for trading", "Groups");
 
-		_groups[0] = new GroupSlot(this, 0, "EURUSD", "GBPUSD");
-		_groups[1] = new GroupSlot(this, 1, "EURGBP", "EURJPY");
-		_groups[2] = new GroupSlot(this, 2, "AUDUSD", "NZDUSD");
+		_groups = new GroupSlot[GroupCount];
+
+		for (var i = 0; i < _groups.Length; i++)
+		{
+			var (plusId, minusId) = i switch
+			{
+				0 => ("EURUSD", "GBPUSD"),
+				1 => ("EURGBP", "EURJPY"),
+				2 => ("AUDUSD", "NZDUSD"),
+				_ => (string.Empty, string.Empty)
+			};
+
+			_groups[i] = new GroupSlot(this, i, plusId, minusId);
+		}
 	}
 
 	/// <inheritdoc />
@@ -839,7 +857,7 @@ public class CoupleHedgeStrategy : Strategy
 
 	private sealed class GroupSlot
 	{
-		private const decimal RangeEmaAlpha = 0.2m;
+		private readonly StrategyParam<decimal> _rangeEmaAlpha;
 
 		private readonly StrategyParam<bool> _isEnabled;
 		private readonly StrategyParam<Security> _plusSecurity;
@@ -861,6 +879,10 @@ public class CoupleHedgeStrategy : Strategy
 
 			_isEnabled = owner.Param($"Group{index + 1}Enabled", true)
 			.SetDisplay($"{groupName} Enabled", "Allow trading for this pair", groupName);
+
+			_rangeEmaAlpha = owner.Param($"Group{index + 1}RangeAlpha", 0.2m)
+			.SetMinMax(0m, 1m)
+			.SetDisplay($"{groupName} Range EMA Alpha", "Smoothing factor for the range estimate", groupName);
 
 			_plusSecurity = owner.Param<Security>($"Group{index + 1}Plus", new Security { Id = plusId })
 			.SetDisplay($"{groupName} Plus", "Security used for the plus side", groupName);
@@ -994,7 +1016,7 @@ public class CoupleHedgeStrategy : Strategy
 			if (_rangeAverage <= 0m)
 			_rangeAverage = range;
 			else
-			_rangeAverage = _rangeAverage * (1m - RangeEmaAlpha) + range * RangeEmaAlpha;
+			_rangeAverage = _rangeAverage * (1m - _rangeEmaAlpha.Value) + range * _rangeEmaAlpha.Value;
 		}
 
 		public decimal GetReferencePrice()

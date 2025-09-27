@@ -14,8 +14,6 @@ using StockSharp.Messages;
 /// </summary>
 public class WedgePatternStrategy : Strategy
 {
-	private const int MaxStoredCandles = 500;
-
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _fastMaPeriod;
 	private readonly StrategyParam<int> _slowMaPeriod;
@@ -35,6 +33,7 @@ public class WedgePatternStrategy : Strategy
 	private readonly StrategyParam<int> _trailingDistancePips;
 	private readonly StrategyParam<int> _trailingStepPips;
 	private readonly StrategyParam<int> _breakoutBufferPips;
+	private readonly StrategyParam<int> _maxStoredCandles;
 
 	private LinearWeightedMovingAverage _fastMa = null!;
 	private LinearWeightedMovingAverage _slowMa = null!;
@@ -144,6 +143,10 @@ public class WedgePatternStrategy : Strategy
 		_breakoutBufferPips = Param(nameof(BreakoutBufferPips), 5)
 		.SetGreaterThanZero()
 		.SetDisplay("Breakout Buffer (pips)", "Extra confirmation distance above/below wedge", "Pattern");
+
+		_maxStoredCandles = Param(nameof(MaxStoredCandles), 500)
+		.SetGreaterOrEqual(100)
+		.SetDisplay("Stored Candles", "Maximum number of candles cached for wedge detection", "Pattern");
 	}
 
 	/// <summary>
@@ -315,6 +318,12 @@ public class WedgePatternStrategy : Strategy
 	{
 		get => _breakoutBufferPips.Value;
 		set => _breakoutBufferPips.Value = value;
+	}
+
+	public int MaxStoredCandles
+	{
+		get => _maxStoredCandles.Value;
+		set => _maxStoredCandles.Value = value;
 	}
 
 	/// <inheritdoc />
