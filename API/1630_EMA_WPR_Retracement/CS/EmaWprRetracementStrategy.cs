@@ -142,12 +142,12 @@ trailingStop: UseTrailingStop ? new Unit(TrailingStop, UnitTypes.Price) : null);
 Volume = OrderVolume;
 }
 
-private enum TrendDirections
-{
-None,
-Up,
-Down
-}
+        private enum TrendDirections
+        {
+                None,
+                Up,
+                Down
+        }
 
 private TrendDirections GetTrend()
 {

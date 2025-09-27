@@ -18,7 +18,43 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XTrail2Strategy : Strategy
 {
-	private readonly StrategyParam<int> _ma1Length;
+        /// <summary>
+        /// Moving average calculation method.
+        /// </summary>
+        public enum MovingAverageTypes
+        {
+                /// <summary>Simple moving average.</summary>
+                Simple,
+                /// <summary>Exponential moving average.</summary>
+                Exponential,
+                /// <summary>Smoothed moving average.</summary>
+                Smoothed,
+                /// <summary>Weighted moving average.</summary>
+                Weighted
+        }
+
+        /// <summary>
+        /// Price type used for indicator calculations.
+        /// </summary>
+        public enum AppliedPriceTypes
+        {
+                /// <summary>Close price.</summary>
+                Close,
+                /// <summary>Open price.</summary>
+                Open,
+                /// <summary>High price.</summary>
+                High,
+                /// <summary>Low price.</summary>
+                Low,
+                /// <summary>Median price (high + low) / 2.</summary>
+                Median,
+                /// <summary>Typical price (high + low + close) / 3.</summary>
+                Typical,
+                /// <summary>Weighted price (high + low + close * 2) / 4.</summary>
+                Weighted
+        }
+
+        private readonly StrategyParam<int> _ma1Length;
 	private readonly StrategyParam<int> _ma2Length;
 	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
 	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
@@ -184,40 +220,4 @@ public class XTrail2Strategy : Strategy
 			_ => candle.ClosePrice,
 		};
 	}
-}
-
-/// <summary>
-/// Moving average calculation method.
-/// </summary>
-public enum MovingAverageTypes
-{
-	/// <summary>Simple moving average.</summary>
-	Simple,
-	/// <summary>Exponential moving average.</summary>
-	Exponential,
-	/// <summary>Smoothed moving average.</summary>
-	Smoothed,
-	/// <summary>Weighted moving average.</summary>
-	Weighted
-}
-
-/// <summary>
-/// Price type used for indicator calculations.
-/// </summary>
-public enum AppliedPriceTypes
-{
-	/// <summary>Close price.</summary>
-	Close,
-	/// <summary>Open price.</summary>
-	Open,
-	/// <summary>High price.</summary>
-	High,
-	/// <summary>Low price.</summary>
-	Low,
-	/// <summary>Median price (high + low) / 2.</summary>
-	Median,
-	/// <summary>Typical price (high + low + close) / 3.</summary>
-	Typical,
-	/// <summary>Weighted price (high + low + close * 2) / 4.</summary>
-	Weighted
 }

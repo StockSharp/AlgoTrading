@@ -18,20 +18,20 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class NyOpeningRangeBreakoutMaStopStrategy : Strategy
 {
-public enum TakeProfitOptions
-	{
-		FixedRiskReward,
-		MovingAverage,
-		Both
-	}
+        public enum TakeProfitOptions
+        {
+                FixedRiskReward,
+                MovingAverage,
+                Both
+        }
 
-	public enum MovingAverageTypes
-	{
-		SMA,
-		EMA,
-		WMA,
-		VWMA
-	}
+        public enum MovingAverageTypes
+        {
+                SMA,
+                EMA,
+                WMA,
+                VWMA
+        }
 
 private readonly StrategyParam<int> _cutoffHour;
 private readonly StrategyParam<int> _cutoffMinute;

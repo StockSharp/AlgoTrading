@@ -13,19 +13,19 @@ using StockSharp.Messages;
 
 namespace StockSharp.Samples.Strategies;
 
-public enum SignalDirections
-{
-	Long,
-	Short,
-	Both
-}
-
 /// <summary>
 /// EMA crossover strategy with RSI and volume filter.
 /// </summary>
 public class OptionsV13Strategy : Strategy
 {
-	private readonly StrategyParam<int> _emaShortLength;
+        public enum SignalDirections
+        {
+                Long,
+                Short,
+                Both
+        }
+
+        private readonly StrategyParam<int> _emaShortLength;
 	private readonly StrategyParam<int> _emaLongLength;
 	private readonly StrategyParam<int> _rsiLength;
 	private readonly StrategyParam<int> _rsiLongThreshold;

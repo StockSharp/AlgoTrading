@@ -19,7 +19,28 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class StochasticHeatMapStrategy : Strategy
 {
-	private readonly StrategyParam<int> _increment;
+        /// <summary>
+        /// Moving average type.
+        /// </summary>
+        public enum MaTypes
+        {
+                /// <summary>
+                /// Simple moving average.
+                /// </summary>
+                SMA,
+
+                /// <summary>
+                /// Exponential moving average.
+                /// </summary>
+                EMA,
+
+                /// <summary>
+                /// Weighted moving average.
+                /// </summary>
+                WMA
+        }
+
+        private readonly StrategyParam<int> _increment;
 	private readonly StrategyParam<int> _smoothFast;
 	private readonly StrategyParam<int> _smoothSlow;
 	private readonly StrategyParam<int> _plotNumber;
@@ -294,25 +315,4 @@ public class StochasticHeatMapValue : ComplexIndicatorValue
 	/// Slow line value.
 	/// </summary>
 	public decimal Slow => (decimal)GetValue(nameof(Slow));
-}
-
-/// <summary>
-/// Moving average type.
-/// </summary>
-public enum MaTypes
-{
-	/// <summary>
-	/// Simple moving average.
-	/// </summary>
-	SMA,
-
-	/// <summary>
-	/// Exponential moving average.
-	/// </summary>
-	EMA,
-
-	/// <summary>
-	/// Weighted moving average.
-	/// </summary>
-	WMA
 }

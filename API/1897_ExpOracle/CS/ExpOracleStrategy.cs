@@ -20,9 +20,30 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ExpOracleStrategy : Strategy
 {
-	private readonly StrategyParam<int> _oraclePeriod;
-	private readonly StrategyParam<int> _smooth;
-	private readonly StrategyParam<AlgorithmModes> _mode;
+        /// <summary>
+        /// Trading algorithm modes.
+        /// </summary>
+        public enum AlgorithmModes
+        {
+                /// <summary>
+                /// Signal line crossing zero.
+                /// </summary>
+                Breakdown,
+
+                /// <summary>
+                /// Change of signal line direction.
+                /// </summary>
+                Twist,
+
+                /// <summary>
+                /// Signal line crossing main line.
+                /// </summary>
+                Disposition
+        }
+
+        private readonly StrategyParam<int> _oraclePeriod;
+        private readonly StrategyParam<int> _smooth;
+        private readonly StrategyParam<AlgorithmModes> _mode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<bool> _allowBuy;
 	private readonly StrategyParam<bool> _allowSell;
@@ -188,27 +209,6 @@ public class ExpOracleStrategy : Strategy
 		_prevSignal = signal;
 		_prevOracle = oracle;
 	}
-}
-
-/// <summary>
-/// Trading algorithm modes.
-/// </summary>
-public enum AlgorithmModes
-{
-	/// <summary>
-	/// Signal line crossing zero.
-	/// </summary>
-	Breakdown,
-
-	/// <summary>
-	/// Change of signal line direction.
-	/// </summary>
-	Twist,
-
-	/// <summary>
-	/// Signal line crossing main line.
-	/// </summary>
-	Disposition
 }
 
 /// <summary>

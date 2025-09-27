@@ -21,7 +21,28 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class PowerHourMoneyStrategy : Strategy
 {
-	private readonly StrategyParam<TradingSessions> _session;
+        /// <summary>
+        /// Trading sessions.
+        /// </summary>
+        public enum TradingSessions
+        {
+                /// <summary>
+                /// NY Session 9:30-11:30.
+                /// </summary>
+                NySession,
+
+                /// <summary>
+                /// Extended NY Session 8-16.
+                /// </summary>
+                ExtendedNy,
+
+                /// <summary>
+                /// All sessions.
+                /// </summary>
+                All
+        }
+
+        private readonly StrategyParam<TradingSessions> _session;
 	private readonly StrategyParam<bool> _useTrail;
 	private readonly StrategyParam<decimal> _longTrail;
 	private readonly StrategyParam<decimal> _shortTrail;
@@ -255,25 +276,4 @@ public class PowerHourMoneyStrategy : Strategy
 				BuyMarket(Math.Abs(Position));
 		}
 	}
-}
-
-/// <summary>
-/// Trading sessions.
-/// </summary>
-public enum TradingSessions
-{
-	/// <summary>
-	/// NY Session 9:30-11:30.
-	/// </summary>
-	NySession,
-
-	/// <summary>
-	/// Extended NY Session 8-16.
-	/// </summary>
-	ExtendedNy,
-
-	/// <summary>
-	/// All sessions.
-	/// </summary>
-	All
 }

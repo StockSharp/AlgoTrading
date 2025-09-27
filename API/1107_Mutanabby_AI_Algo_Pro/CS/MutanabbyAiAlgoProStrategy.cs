@@ -14,27 +14,27 @@ using StockSharp.Messages;
 namespace StockSharp.Samples.Strategies;
 
 /// <summary>
-/// Defines stop loss calculation modes.
-/// </summary>
-public enum StopLossModes
-{
-/// <summary>
-/// Stop loss is calculated from entry price.
-/// </summary>
-EntryPriceBased,
-
-/// <summary>
-/// Stop loss is based on the lowest low over a period.
-/// </summary>
-LowestLowBased
-}
-
-/// <summary>
 /// Mutanabby AI Algo Pro strategy.
 /// Enters long on bullish engulfing with RSI and price filters.
 /// </summary>
 public class MutanabbyAiAlgoProStrategy : Strategy
 {
+        /// <summary>
+        /// Defines stop loss calculation modes.
+        /// </summary>
+        public enum StopLossModes
+        {
+                /// <summary>
+                /// Stop loss is calculated from entry price.
+                /// </summary>
+                EntryPriceBased,
+
+                /// <summary>
+                /// Stop loss is based on the lowest low over a period.
+                /// </summary>
+                LowestLowBased
+        }
+
 private readonly StrategyParam<decimal> _candleStabilityIndex;
 private readonly StrategyParam<int> _rsiIndex;
 private readonly StrategyParam<int> _candleDeltaLength;

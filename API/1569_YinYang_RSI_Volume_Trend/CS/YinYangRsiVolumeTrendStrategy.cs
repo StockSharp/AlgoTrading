@@ -21,7 +21,26 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class YinYangRsiVolumeTrendStrategy : Strategy
 {
-	private readonly StrategyParam<int> _trendLength;
+        /// <summary>
+        /// Options for resetting purchase availability.
+        /// </summary>
+        public enum ResetConditions
+        {
+                /// <summary>
+                /// Reset after entry condition is met.
+                /// </summary>
+                Entry,
+                /// <summary>
+                /// Reset after stop-loss triggers.
+                /// </summary>
+                StopLoss,
+                /// <summary>
+                /// No automatic reset.
+                /// </summary>
+                None
+        }
+
+        private readonly StrategyParam<int> _trendLength;
 	private readonly StrategyParam<bool> _useTakeProfit;
 	private readonly StrategyParam<bool> _useStopLoss;
 	private readonly StrategyParam<decimal> _stopLossMultiplier;
@@ -301,23 +320,4 @@ public class YinYangRsiVolumeTrendStrategy : Strategy
 			_ => candle.ClosePrice,
 		};
 	}
-}
-
-/// <summary>
-/// Options for resetting purchase availability.
-/// </summary>
-public enum ResetConditions
-{
-	/// <summary>
-	/// Reset after entry condition is met.
-	/// </summary>
-	Entry,
-	/// <summary>
-	/// Reset after stop-loss triggers.
-	/// </summary>
-	StopLoss,
-	/// <summary>
-	/// No automatic reset.
-	/// </summary>
-	None
 }

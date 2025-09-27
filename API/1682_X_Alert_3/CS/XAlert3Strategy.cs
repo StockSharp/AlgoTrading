@@ -19,7 +19,37 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class XAlert3Strategy : Strategy
 {
-	private readonly StrategyParam<int> _ma1Period;
+        public enum MovingAverageTypes
+        {
+                /// <summary>Simple Moving Average.</summary>
+                Simple,
+                /// <summary>Exponential Moving Average.</summary>
+                Exponential,
+                /// <summary>Smoothed Moving Average.</summary>
+                Smoothed,
+                /// <summary>Weighted Moving Average.</summary>
+                Weighted
+        }
+
+        public enum PriceTypes
+        {
+                /// <summary>Close price.</summary>
+                Close,
+                /// <summary>Open price.</summary>
+                Open,
+                /// <summary>High price.</summary>
+                High,
+                /// <summary>Low price.</summary>
+                Low,
+                /// <summary>Median price (high+low)/2.</summary>
+                Median,
+                /// <summary>Typical price (high+low+close)/3.</summary>
+                Typical,
+                /// <summary>Weighted close price (high+low+close*2)/4.</summary>
+                Weighted
+        }
+
+        private readonly StrategyParam<int> _ma1Period;
 	private readonly StrategyParam<MovingAverageTypes> _ma1Type;
 	private readonly StrategyParam<int> _ma2Period;
 	private readonly StrategyParam<MovingAverageTypes> _ma2Type;
@@ -197,34 +227,4 @@ public class XAlert3Strategy : Strategy
 			_ => candle.ClosePrice
 		};
 	}
-}
-
-public enum MovingAverageTypes
-{
-	/// <summary>Simple Moving Average.</summary>
-	Simple,
-	/// <summary>Exponential Moving Average.</summary>
-	Exponential,
-	/// <summary>Smoothed Moving Average.</summary>
-	Smoothed,
-	/// <summary>Weighted Moving Average.</summary>
-	Weighted
-}
-
-public enum PriceTypes
-{
-	/// <summary>Close price.</summary>
-	Close,
-	/// <summary>Open price.</summary>
-	Open,
-	/// <summary>High price.</summary>
-	High,
-	/// <summary>Low price.</summary>
-	Low,
-	/// <summary>Median price (high+low)/2.</summary>
-	Median,
-	/// <summary>Typical price (high+low+close)/3.</summary>
-	Typical,
-	/// <summary>Weighted close price (high+low+close*2)/4.</summary>
-	Weighted
 }
