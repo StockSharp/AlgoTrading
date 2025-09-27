@@ -29,6 +29,8 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 	private readonly StrategyParam<decimal> _shortVolume;
 	private readonly StrategyParam<decimal> _shortStopLossPoints;
 	private readonly StrategyParam<decimal> _shortTakeProfitPoints;
+	private readonly StrategyParam<decimal> _brainTrendDartp;
+	private readonly StrategyParam<decimal> _brainTrendCecf;
 
 	private BrainTrend2V2Indicator _longIndicator;
 	private BrainTrend2V2Indicator _shortIndicator;
@@ -186,6 +188,24 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 	}
 
 	/// <summary>
+	/// BrainTrend ATR divisor applied within the indicator.
+	/// </summary>
+	public decimal BrainTrendDartp
+	{
+		get => _brainTrendDartp.Value;
+		set => _brainTrendDartp.Value = value;
+	}
+
+	/// <summary>
+	/// BrainTrend channel expansion coefficient.
+	/// </summary>
+	public decimal BrainTrendCecf
+	{
+		get => _brainTrendCecf.Value;
+		set => _brainTrendCecf.Value = value;
+	}
+
+	/// <summary>
 	/// Initializes a new instance of the strategy.
 	/// </summary>
 	public BrainTrend2V2DuplexStrategy()
@@ -241,6 +261,13 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 
 		_shortTakeProfitPoints = Param(nameof(ShortTakeProfitPoints), 2000m)
 			.SetDisplay("Short Take Profit", "Take profit distance in points for short trades (0 disables)", "Risk Management");
+		_brainTrendDartp = Param(nameof(BrainTrendDartp), 7m)
+			.SetGreaterThanZero()
+			.SetDisplay("BrainTrend Dartp", "ATR divisor used by BrainTrend", "Indicators");
+
+		_brainTrendCecf = Param(nameof(BrainTrendCecf), 0.7m)
+			.SetGreaterThanZero()
+			.SetDisplay("BrainTrend Cecf", "Channel expansion coefficient", "Indicators");
 	}
 
 	/// <inheritdoc />
@@ -266,36 +293,40 @@ public class BrainTrend2V2DuplexStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-protected override void OnStarted(DateTimeOffset time)
-{
-// Initialize indicator instances for both long and short signal streams.
-_longIndicator = new BrainTrend2V2Indicator
-{
-AtrPeriod = LongAtrPeriod
-};
+	protected override void OnStarted(DateTimeOffset time)
+	{
+		// Initialize indicator instances for both long and short signal streams.
+		_longIndicator = new BrainTrend2V2Indicator
+		{
+			AtrPeriod = LongAtrPeriod,
+			Dartp = BrainTrendDartp,
+			Cecf = BrainTrendCecf
+		};
 
 		_shortIndicator = new BrainTrend2V2Indicator
 		{
-			AtrPeriod = ShortAtrPeriod
+			AtrPeriod = ShortAtrPeriod,
+			Dartp = BrainTrendDartp,
+			Cecf = BrainTrendCecf
 		};
 
-// Subscribe to candles for the long side and bind the indicator callback.
-var longSubscription = SubscribeCandles(LongCandleType);
-longSubscription
-.BindEx(_longIndicator, ProcessLongSignal)
-.Start();
+		// Subscribe to candles for the long side and bind the indicator callback.
+		var longSubscription = SubscribeCandles(LongCandleType);
+		longSubscription
+			.BindEx(_longIndicator, ProcessLongSignal)
+			.Start();
 
-// Subscribe to candles for the short side and bind the indicator callback.
-var shortSubscription = SubscribeCandles(ShortCandleType);
-shortSubscription
-.BindEx(_shortIndicator, ProcessShortSignal)
-.Start();
+		// Subscribe to candles for the short side and bind the indicator callback.
+		var shortSubscription = SubscribeCandles(ShortCandleType);
+		shortSubscription
+			.BindEx(_shortIndicator, ProcessShortSignal)
+			.Start();
 
-// Enable built-in position protection helpers.
-StartProtection();
+		// Enable built-in position protection helpers.
+		StartProtection();
 
-base.OnStarted(time);
-}
+		base.OnStarted(time);
+	}
 
 private void ProcessLongSignal(ICandleMessage candle, IIndicatorValue indicatorValue)
 {
@@ -551,8 +582,8 @@ return 1m;
 /// </summary>
 public class BrainTrend2V2Indicator : BaseIndicator<decimal>
 {
-	private const decimal Dartp = 7m;
-	private const decimal Cecf = 0.7m;
+	public decimal Dartp { get; set; } = 7m;
+	public decimal Cecf { get; set; } = 0.7m;
 
 	private readonly List<decimal> _trBuffer = new();
 	private int _bufferIndex;
