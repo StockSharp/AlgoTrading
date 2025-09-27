@@ -414,9 +414,9 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		ClearIfCompleted(ref _session1BuyStop, order);
 		ClearIfCompleted(ref _session1SellStop, order);

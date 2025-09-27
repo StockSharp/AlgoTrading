@@ -162,9 +162,9 @@ public class VirtualSlTpV1Strategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_pendingOrder != null && ReferenceEquals(order, _pendingOrder) && order.State != OrderStates.Active)
 		{

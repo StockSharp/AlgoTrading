@@ -193,9 +193,9 @@ public class FtTimeBigdogStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_buyStopOrder != null && order == _buyStopOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
 			_buyStopOrder = null;

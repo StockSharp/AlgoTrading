@@ -268,9 +268,9 @@ public class TwoDLimitsStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (order == null)
 			return;

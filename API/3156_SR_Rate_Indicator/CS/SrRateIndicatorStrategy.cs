@@ -322,9 +322,9 @@ public class SrRateIndicatorStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnReset()
+	protected override void OnReseted()
 	{
-		base.OnReset();
+		base.OnReseted();
 		_indicator = null;
 		_colorHistory.Clear();
 	}

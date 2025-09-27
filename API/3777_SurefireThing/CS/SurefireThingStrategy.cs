@@ -248,9 +248,9 @@ public class SurefireThingStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_buyLimitOrder != null && order == _buyLimitOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
 			_buyLimitOrder = null;

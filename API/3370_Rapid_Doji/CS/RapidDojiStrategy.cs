@@ -300,9 +300,9 @@ public class RapidDojiStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_longEntryOrder != null && order == _longEntryOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
 			_longEntryOrder = null;

@@ -15,20 +15,20 @@ namespace StockSharp.Samples.Strategies;
 
 public class SeparatedMovingAverageStrategy : Strategy
 {
-        public enum MaTypes
-        {
-                SMA,
-                EMA,
-                HMA,
-        }
+	public enum MaTypes
+	{
+		SMA,
+		EMA,
+		HMA,
+	}
 
-        private readonly StrategyParam<MaTypes> _maType;
+	private readonly StrategyParam<MaTypes> _maType;
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<bool> _useHeikinAshi;
 	private readonly StrategyParam<DataType> _candleType;
 
-	private MovingAverage _maUp = null!;
-	private MovingAverage _maDown = null!;
+	private LengthIndicator<decimal> _maUp = null!;
+	private LengthIndicator<decimal> _maDown = null!;
 	private decimal _upValue;
 	private decimal _downValue;
 	private decimal _prevHaOpen;
@@ -89,8 +89,8 @@ public class SeparatedMovingAverageStrategy : Strategy
 			.Start();
 	}
 
-	private MovingAverage CreateMa()
-		=> MaTypes switch
+	private LengthIndicator<decimal> CreateMa()
+		=> MaType switch
 		{
 			MaTypes.EMA => new ExponentialMovingAverage { Length = Length },
 			MaTypes.HMA => new HullMovingAverage { Length = Length },

@@ -87,9 +87,9 @@ public class EaEmailStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (order.State is OrderStates.None or OrderStates.Pending or OrderStates.Active)
 			_activeOrders.Add(order);

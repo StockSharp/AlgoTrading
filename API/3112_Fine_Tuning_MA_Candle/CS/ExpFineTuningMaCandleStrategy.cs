@@ -378,9 +378,9 @@ public class ExpFineTuningMaCandleStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_stopOrder != null && order == _stopOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Canceled)
 			_stopOrder = null;

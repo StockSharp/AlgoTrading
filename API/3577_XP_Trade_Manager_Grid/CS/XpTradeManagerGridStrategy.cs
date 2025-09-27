@@ -665,10 +665,10 @@ public class XpTradeManagerGridStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
 		// Reset cached handles when orders finish processing.
-	base.OnOrderChanged(order);
+	base.OnOrderReceived(order);
 
 	if (order.Security != Security)
 	return;

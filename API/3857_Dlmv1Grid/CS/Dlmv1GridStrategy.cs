@@ -938,9 +938,9 @@ private void ManageOpenPosition(decimal currentPrice)
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_pendingLimitOrder != null && order == _pendingLimitOrder && order.State.IsFinal())
 		{

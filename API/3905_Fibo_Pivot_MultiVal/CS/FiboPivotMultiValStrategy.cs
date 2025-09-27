@@ -314,9 +314,9 @@ public class FiboPivotMultiValStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (!_orderZoneMap.TryGetValue(order, out var zoneId) || !_zones.TryGetValue(zoneId, out var zone))
 		return;

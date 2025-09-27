@@ -135,9 +135,9 @@ public class TradingPanelStrategy : Strategy
 	}
 
 	/// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		// Drop references once a protective order is no longer active.
 		if (_longStopOrder != null && ReferenceEquals(order, _longStopOrder) && !order.State.IsActive())

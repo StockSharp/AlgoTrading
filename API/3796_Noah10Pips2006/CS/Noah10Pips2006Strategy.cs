@@ -768,9 +768,9 @@ public class Noah10Pips2006Strategy : Strategy
 	}
 
 /// <inheritdoc />
-	protected override void OnOrderChanged(Order order)
+	protected override void OnOrderReceived(Order order)
 	{
-		base.OnOrderChanged(order);
+		base.OnOrderReceived(order);
 
 		if (_protectiveStopOrder != null && order == _protectiveStopOrder && order.State is OrderStates.Done or OrderStates.Failed or OrderStates.Cancelled)
 			_protectiveStopOrder = null;
