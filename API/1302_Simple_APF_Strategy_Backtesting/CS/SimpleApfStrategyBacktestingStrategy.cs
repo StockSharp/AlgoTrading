@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleApfStrategyBacktestingStrategy : Strategy
 {
-	private const int CorrelationLength = 200;
+	private readonly StrategyParam<int> _correlationLength;
 
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<decimal> _thresholdGain;
@@ -25,6 +25,15 @@ public class SimpleApfStrategyBacktestingStrategy : Strategy
 
 	private decimal _storedCycleValue;
 	private decimal _exitPrice;
+
+	/// <summary>
+	/// Number of bars used for autocorrelation calculations.
+	/// </summary>
+	public int CorrelationLength
+	{
+		get => _correlationLength.Value;
+		set => _correlationLength.Value = value;
+	}
 
 	/// <summary>
 	/// Number of bars used for autocorrelation and regression.
@@ -67,6 +76,12 @@ public class SimpleApfStrategyBacktestingStrategy : Strategy
 	/// </summary>
 	public SimpleApfStrategyBacktestingStrategy()
 	{
+		_correlationLength = Param(nameof(CorrelationLength), 200)
+			.SetGreaterThanZero()
+			.SetDisplay("Correlation Length", "Bars used for autocorrelation", "APF")
+			.SetCanOptimize(true)
+			.SetOptimize(50, 400, 50);
+
 		_length = Param(nameof(Length), 20)
 		.SetGreaterThanZero()
 		.SetDisplay("Length", "Bars used for autocorrelation and regression", "APF")
@@ -126,33 +141,31 @@ public class SimpleApfStrategyBacktestingStrategy : Strategy
 	private void ProcessCandle(ICandleMessage candle)
 	{
 		if (candle.State != CandleStates.Finished)
-		return;
+			return;
 
 		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
+			return;
 
 		_prices.Enqueue(candle.ClosePrice);
 		if (_prices.Count > CorrelationLength + Length)
-		_prices.Dequeue();
+			_prices.Dequeue();
 
 		if (_prices.Count >= 2)
 		{
-		var arr = _prices.ToArray();
-		var last = arr[^1];
-		var prev = arr[^2];
-		var ret = (last - prev) / prev * 100m;
-		_returns.Enqueue(ret);
-		if (_returns.Count > Length)
-		_returns.Dequeue();
+			var arr = _prices.ToArray();
+			var last = arr[^1];
+			var prev = arr[^2];
+			var ret = (last - prev) / prev * 100m;
+			_returns.Enqueue(ret);
+			if (_returns.Count > Length)
+				_returns.Dequeue();
 		}
 
 		if (_prices.Count >= CorrelationLength + Length)
 		{
-		var autocorr = ComputeAutocorrelation(_prices.ToArray(), Length);
-		if (autocorr > SignalThreshold && _returns.Count == Length)
-		{
-		_storedCycleValue = ComputeRegression(_returns.ToArray());
-		}
+			var autocorr = ComputeAutocorrelation(_prices.ToArray(), CorrelationLength, Length);
+			if (autocorr > SignalThreshold && _returns.Count == Length)
+				_storedCycleValue = ComputeRegression(_returns.ToArray());
 		}
 
 		var futurePrice = candle.ClosePrice * (1 + _storedCycleValue / 100m);
@@ -160,39 +173,39 @@ public class SimpleApfStrategyBacktestingStrategy : Strategy
 
 		if (gain > ThresholdGain && Position <= 0)
 		{
-		_exitPrice = candle.ClosePrice + gain;
-		BuyMarket(Volume + Math.Abs(Position));
+			_exitPrice = candle.ClosePrice + gain;
+			BuyMarket(Volume + Math.Abs(Position));
 		}
 
 		if (Position > 0 && candle.ClosePrice >= _exitPrice)
+			SellMarket(Position);
+	}
+
+
+	private static decimal ComputeAutocorrelation(decimal[] prices, int correlationLength, int lag)
+	{
+		var n = prices.Length;
+		var start = n - correlationLength;
+		var startLag = start - lag;
+
+		decimal sumX = 0m, sumY = 0m, sumXY = 0m, sumX2 = 0m, sumY2 = 0m;
+
+		for (var i = 0; i < correlationLength; i++)
 		{
-		SellMarket(Position);
+			var x = prices[start + i];
+			var y = prices[startLag + i];
+			sumX += x;
+			sumY += y;
+			sumXY += x * y;
+			sumX2 += x * x;
+			sumY2 += y * y;
 		}
+
+		var numerator = correlationLength * sumXY - sumX * sumY;
+		var denom = Math.Sqrt((double)(correlationLength * sumX2 - sumX * sumX) * (double)(correlationLength * sumY2 - sumY * sumY));
+		return denom <= 0 ? 0 : (decimal)(numerator / denom);
 	}
 
-	private static decimal ComputeAutocorrelation(decimal[] prices, int lag)
-	{
-	int n = prices.Length;
-	int start = n - CorrelationLength;
-	int startLag = start - lag;
-
-	decimal sumX = 0m, sumY = 0m, sumXY = 0m, sumX2 = 0m, sumY2 = 0m;
-
-	for (var i = 0; i < CorrelationLength; i++)
-	{
-	var x = prices[start + i];
-	var y = prices[startLag + i];
-	sumX += x;
-	sumY += y;
-	sumXY += x * y;
-	sumX2 += x * x;
-	sumY2 += y * y;
-	}
-
-	var numerator = CorrelationLength * sumXY - sumX * sumY;
-	var denom = Math.Sqrt((double)(CorrelationLength * sumX2 - sumX * sumX) * (double)(CorrelationLength * sumY2 - sumY * sumY));
-	return denom <= 0 ? 0 : (decimal)(numerator / denom);
-	}
 
 	private static decimal ComputeRegression(decimal[] values)
 	{

@@ -11,7 +11,7 @@ using StockSharp.Messages;
 
 public class ScalpingStrategyByTradingConTotoStrategy : Strategy
 {
-	private const int RightBars = 10;
+	private readonly StrategyParam<int> _rightBars;
 
 	private readonly StrategyParam<int> _pivot;
 	private readonly StrategyParam<decimal> _pips;
@@ -41,7 +41,8 @@ public class ScalpingStrategyByTradingConTotoStrategy : Strategy
 	private decimal _prevFast;
 	private decimal _prevSlow;
 
-	public int Pivot { get => _pivot.Value; set => _pivot.Value = value; }
+	public int RightBars { get => _rightBars.Value; set => _rightBars.Value = value; }
+        public int Pivot { get => _pivot.Value; set => _pivot.Value = value; }
 	public decimal Pips { get => _pips.Value; set => _pips.Value = value; }
 	public decimal Spread { get => _spread.Value; set => _spread.Value = value; }
 	public string Session { get => _session.Value; set => _session.Value = value; }
@@ -51,6 +52,10 @@ public class ScalpingStrategyByTradingConTotoStrategy : Strategy
 
 	public ScalpingStrategyByTradingConTotoStrategy()
 	{
+		_rightBars = Param(nameof(RightBars), 10)
+			.SetGreaterThanZero()
+			.SetDisplay("Right Bars", "Right bars for pivot detection", "Parameters");
+
 		_pivot = Param(nameof(Pivot), 16)
 			.SetGreaterThanZero()
 			.SetDisplay("Pivot", "Left bars for pivot detection", "Parameters");
