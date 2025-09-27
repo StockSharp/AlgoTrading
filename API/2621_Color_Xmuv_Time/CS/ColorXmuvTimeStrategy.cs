@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class ColorXmuvTimeStrategy : Strategy
 {
-	private const int _maxColorHistory = 64;
+	private readonly StrategyParam<int> _maxColorHistory;
 
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<decimal> _orderVolume;
@@ -174,6 +174,19 @@ public class ColorXmuvTimeStrategy : Strategy
 	}
 
 	/// <summary>
+	/// Maximum number of stored trend color values.
+	/// </summary>
+	public int MaxColorHistory
+	{
+		get => _maxColorHistory.Value;
+		set
+		{
+			_maxColorHistory.Value = value;
+			TrimColorHistory();
+		}
+	}
+
+	/// <summary>
 	/// Stop loss size in points (converted to absolute price using the instrument price step).
 	/// </summary>
 	public decimal StopLossPoints
@@ -247,6 +260,10 @@ public class ColorXmuvTimeStrategy : Strategy
 		_signalBar = Param(nameof(SignalBar), 1)
 		.SetRange(0, 10)
 		.SetDisplay("Signal Bar", "Number of completed bars to delay signals", "Indicator");
+
+		_maxColorHistory = Param(nameof(MaxColorHistory), 64)
+		.SetRange(2, 512)
+		.SetDisplay("Max Color History", "Maximum stored trend color values", "Indicator");
 
 		_stopLossPoints = Param(nameof(StopLossPoints), 1000m)
 		.SetNotNegative()
@@ -398,10 +415,20 @@ public class ColorXmuvTimeStrategy : Strategy
 
 	private void StoreColor(TrendColor color)
 	{
-		var maxSize = Math.Clamp(SignalBar + 2, 2, _maxColorHistory);
+		var maxSize = Math.Clamp(SignalBar + 2, 2, MaxColorHistory);
 		_colorHistory.Add(color);
 
 		if (_colorHistory.Count > maxSize)
+		{
+			_colorHistory.RemoveAt(0);
+		}
+	}
+
+	private void TrimColorHistory()
+	{
+		var limit = Math.Max(2, MaxColorHistory);
+
+		while (_colorHistory.Count > limit)
 		{
 			_colorHistory.RemoveAt(0);
 		}

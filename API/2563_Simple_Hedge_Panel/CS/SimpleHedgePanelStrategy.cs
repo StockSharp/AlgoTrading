@@ -13,12 +13,11 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class SimpleHedgePanelStrategy : Strategy
 {
-	private const int MaxSlots = 5;
-
+	private readonly StrategyParam<int> _maxSlots;
 	private readonly StrategyParam<int> _slotCount;
-	private readonly StrategyParam<Security>[] _slotSecurities = new StrategyParam<Security>[MaxSlots];
-	private readonly StrategyParam<decimal>[] _slotVolumes = new StrategyParam<decimal>[MaxSlots];
-	private readonly StrategyParam<bool>[] _slotIsBuy = new StrategyParam<bool>[MaxSlots];
+	private StrategyParam<Security>[] _slotSecurities = Array.Empty<StrategyParam<Security>>();
+	private StrategyParam<decimal>[] _slotVolumes = Array.Empty<StrategyParam<decimal>>();
+	private StrategyParam<bool>[] _slotIsBuy = Array.Empty<StrategyParam<bool>>();
 
 	private bool _positionsOpened;
 
@@ -27,24 +26,34 @@ public class SimpleHedgePanelStrategy : Strategy
 	/// </summary>
 	public SimpleHedgePanelStrategy()
 	{
-		_slotCount = Param(nameof(SlotCount), 3)
+		_maxSlots = Param(nameof(MaxSlots), 5)
+			.SetDisplay("Max Slots", "Maximum number of deal slots", "General")
+			.SetRange(1, 50);
+
+		EnsureSlotParameters(MaxSlots);
+
+		_slotCount = Param(nameof(SlotCount), Math.Min(3, MaxSlots))
 			.SetDisplay("Slots", "Number of deal slots", "General")
 			.SetRange(1, MaxSlots);
+	}
 
-		for (var i = 0; i < MaxSlots; i++)
+	public int MaxSlots
+	{
+		get => _maxSlots.Value;
+		set
 		{
-			var slotNumber = i + 1;
-			var group = $"Slot {slotNumber}";
+			if (value == MaxSlots)
+				return;
 
-			_slotSecurities[i] = Param<Security>($"Slot{slotNumber}Security")
-				.SetDisplay($"Slot {slotNumber} Security", "Security to trade in the slot", group);
+			if (value < 1)
+				throw new ArgumentOutOfRangeException(nameof(value), "Max slots must be positive.");
 
-			_slotVolumes[i] = Param($"Slot{slotNumber}Volume", 0m)
-				.SetDisplay($"Slot {slotNumber} Volume", "Order volume for the slot", group)
-				.SetNotNegative();
+			_maxSlots.Value = value;
+			EnsureSlotParameters(value);
+			_slotCount.SetRange(1, value);
 
-			_slotIsBuy[i] = Param($"Slot{slotNumber}IsBuy", true)
-				.SetDisplay($"Slot {slotNumber} Buy", "True to buy, false to sell", group);
+			if (_slotCount.Value > value)
+				_slotCount.Value = value;
 		}
 	}
 
@@ -178,9 +187,39 @@ public class SimpleHedgePanelStrategy : Strategy
 		}
 	}
 
-	/// <summary>
-	/// Returns a sanitized slot count within the allowed range and logs adjustments.
-	/// </summary>
+	private void EnsureSlotParameters(int slotLimit)
+	{
+		var current = _slotSecurities.Length;
+
+		if (current >= slotLimit)
+		{
+			return;
+		}
+
+		Array.Resize(ref _slotSecurities, slotLimit);
+		Array.Resize(ref _slotVolumes, slotLimit);
+		Array.Resize(ref _slotIsBuy, slotLimit);
+
+		for (var i = current; i < slotLimit; i++)
+		{
+			var slotNumber = i + 1;
+			var group = $"Slot {slotNumber}";
+
+			_slotSecurities[i] = Param<Security>($"Slot{slotNumber}Security")
+				.SetDisplay($"Slot {slotNumber} Security", "Security to trade in the slot", group);
+
+			_slotVolumes[i] = Param($"Slot{slotNumber}Volume", 0m)
+				.SetDisplay($"Slot {slotNumber} Volume", "Order volume for the slot", group)
+				.SetNotNegative();
+
+			_slotIsBuy[i] = Param($"Slot{slotNumber}IsBuy", true)
+				.SetDisplay($"Slot {slotNumber} Buy", "True to buy, false to sell", group);
+		}
+	}
+
+/// <summary>
+/// Returns a sanitized slot count within the allowed range and logs adjustments.
+/// </summary>
 	private int GetValidatedSlotCount()
 	{
 		var count = SlotCount;

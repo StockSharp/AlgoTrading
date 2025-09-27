@@ -13,7 +13,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EurUsdSessionBreakoutStrategy : Strategy
 {
-	private const int EuSessionLengthBars = 24;
+	private readonly StrategyParam<int> _euSessionLengthBars;
 
 	// Strategy parameters
 	private readonly StrategyParam<int> _startHourEuSession;
@@ -82,6 +82,11 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 			.SetDisplay("Breakout Buffer (points)", "Extra points added to the breakout trigger", "Entries")
 			.SetCanOptimize(true);
 
+		_euSessionLengthBars = Param(nameof(EuSessionLengthBars), 24)
+			.SetRange(1, 72)
+			.SetDisplay("EU Session Length (bars)", "Number of bars representing the EU session range", "Schedule")
+			.SetCanOptimize(true);
+
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(15).TimeFrame())
 			.SetDisplay("Candle Type", "Candle type used for calculations", "General");
 	}
@@ -132,6 +137,24 @@ public class EurUsdSessionBreakoutStrategy : Strategy
 	{
 		get => _breakoutBufferPoints.Value;
 		set => _breakoutBufferPoints.Value = value;
+	}
+
+	public int EuSessionLengthBars
+	{
+		get => _euSessionLengthBars.Value;
+		set
+		{
+			_euSessionLengthBars.Value = value;
+			if (_highest != null)
+			{
+				_highest.Length = value;
+			}
+
+			if (_lowest != null)
+			{
+				_lowest.Length = value;
+			}
+		}
 	}
 
 	public DataType CandleType
