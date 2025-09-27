@@ -60,8 +60,8 @@ public class NtoQfStrategy : Strategy
 	private readonly StrategyParam<bool> _useMa;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageMethod> _maMethod;
-	private readonly StrategyParam<AppliedPrice> _maAppliedPrice;
+	private readonly StrategyParam<MovingAverageMethods> _maMethod;
+	private readonly StrategyParam<AppliedPrices> _maAppliedPrices;
 	private readonly StrategyParam<int> _maTimeFrame;
 
 	private decimal _pipSize;
@@ -379,7 +379,7 @@ public class NtoQfStrategy : Strategy
 	/// <summary>
 	/// Moving-average calculation method.
 	/// </summary>
-	public MovingAverageMethod MaMethod
+	public MovingAverageMethods MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -388,10 +388,10 @@ public class NtoQfStrategy : Strategy
 	/// <summary>
 	/// Price field applied when calculating the moving average.
 	/// </summary>
-	public AppliedPrice MaAppliedPrice
+	public AppliedPrices MaAppliedPrices
 	{
-		get => _maAppliedPrice.Value;
-		set => _maAppliedPrice.Value = value;
+		get => _maAppliedPrices.Value;
+		set => _maAppliedPrices.Value = value;
 	}
 
 	/// <summary>
@@ -517,10 +517,10 @@ public class NtoQfStrategy : Strategy
 		_maShift = Param(nameof(MaShift), 0)
 		.SetDisplay("MA Shift", "Extra bars applied to MA", "MA");
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageMethod.Simple)
+		_maMethod = Param(nameof(MaMethod), MovingAverageMethods.Simple)
 		.SetDisplay("MA Method", "Moving-average type", "MA");
 
-		_maAppliedPrice = Param(nameof(MaAppliedPrice), AppliedPrice.Close)
+		_maAppliedPrices = Param(nameof(MaAppliedPrices), AppliedPrices.Close)
 		.SetDisplay("MA Price", "Price source for MA", "MA");
 
 		_maTimeFrame = Param(nameof(MaTimeFrame), 0)
@@ -780,7 +780,7 @@ public class NtoQfStrategy : Strategy
 		if (volume <= 0m)
 		return;
 
-		if (signal == TrendDirection.Long)
+		if (signal == TrendDirections.Long)
 		{
 			BuyMarket(volume);
 			LogInfo($"Enter long at {candle.ClosePrice}");
@@ -859,27 +859,27 @@ public class NtoQfStrategy : Strategy
 		return false;
 	}
 
-	private TrendDirection? GenerateSignal()
+	private TrendDirections? GenerateSignal()
 	{
-		var directions = new List<TrendDirection>();
+		var directions = new List<TrendDirections>();
 
 		if (!TryGetRsiSignal(out var rsiDirection))
 		return null;
-		if (rsiDirection is TrendDirection rsi)
+		if (rsiDirection is TrendDirections rsi)
 		directions.Add(rsi);
 		else if (UseRsi)
 		return null;
 
 		if (!TryGetStochasticSignal(out var stoDirection))
 		return null;
-		if (stoDirection is TrendDirection sto)
+		if (stoDirection is TrendDirections sto)
 		directions.Add(sto);
 		else if (UseStochastic)
 		return null;
 
 		if (!TryGetAdxDirection(out var adxDirection))
 		return null;
-		if (adxDirection is TrendDirection adx)
+		if (adxDirection is TrendDirections adx)
 		directions.Add(adx);
 
 		if (!IsAdxMainSatisfied())
@@ -887,14 +887,14 @@ public class NtoQfStrategy : Strategy
 
 		if (!TryGetSarDirection(out var sarDirection))
 		return null;
-		if (sarDirection is TrendDirection sar)
+		if (sarDirection is TrendDirections sar)
 		directions.Add(sar);
 		else if (UseSar)
 		return null;
 
 		if (!TryGetMaDirection(out var maDirection))
 		return null;
-		if (maDirection is TrendDirection ma)
+		if (maDirection is TrendDirections ma)
 		directions.Add(ma);
 		else if (UseMa)
 		return null;
@@ -912,7 +912,7 @@ public class NtoQfStrategy : Strategy
 		return first;
 	}
 
-	private bool TryGetRsiSignal(out TrendDirection? direction)
+	private bool TryGetRsiSignal(out TrendDirections? direction)
 	{
 		direction = null;
 
@@ -928,14 +928,14 @@ public class NtoQfStrategy : Strategy
 		return false;
 
 		if (value > RsiUpper)
-		direction = TrendDirection.Short;
+		direction = TrendDirections.Short;
 		else if (value < RsiLower)
-		direction = TrendDirection.Long;
+		direction = TrendDirections.Long;
 
 		return true;
 	}
 
-	private bool TryGetStochasticSignal(out TrendDirection? direction)
+	private bool TryGetStochasticSignal(out TrendDirections? direction)
 	{
 		direction = null;
 
@@ -953,19 +953,19 @@ public class NtoQfStrategy : Strategy
 		if (UseStochasticHighLow)
 		{
 			if (snapshot.Main > snapshot.Signal && snapshot.Main > StochasticHigh)
-			direction = TrendDirection.Long;
+			direction = TrendDirections.Long;
 			else if (snapshot.Main < snapshot.Signal && snapshot.Main < StochasticLow)
-			direction = TrendDirection.Short;
+			direction = TrendDirections.Short;
 		}
 		else
 		{
-			direction = snapshot.Main > snapshot.Signal ? TrendDirection.Long : TrendDirection.Short;
+			direction = snapshot.Main > snapshot.Signal ? TrendDirections.Long : TrendDirections.Short;
 		}
 
 		return true;
 	}
 
-	private bool TryGetAdxDirection(out TrendDirection? direction)
+	private bool TryGetAdxDirection(out TrendDirections? direction)
 	{
 		direction = null;
 
@@ -980,11 +980,11 @@ public class NtoQfStrategy : Strategy
 		if (!buffer.TryGet(shift, out var snapshot))
 		return false;
 
-		direction = snapshot.PlusDi > snapshot.MinusDi ? TrendDirection.Long : TrendDirection.Short;
+		direction = snapshot.PlusDi > snapshot.MinusDi ? TrendDirections.Long : TrendDirections.Short;
 		return true;
 	}
 
-	private bool TryGetSarDirection(out TrendDirection? direction)
+	private bool TryGetSarDirection(out TrendDirections? direction)
 	{
 		direction = null;
 
@@ -1002,11 +1002,11 @@ public class NtoQfStrategy : Strategy
 		if (!TryGetClose(shift, out var close))
 		return false;
 
-		direction = sarValue > close ? TrendDirection.Long : TrendDirection.Short;
+		direction = sarValue > close ? TrendDirections.Long : TrendDirections.Short;
 		return true;
 	}
 
-	private bool TryGetMaDirection(out TrendDirection? direction)
+	private bool TryGetMaDirection(out TrendDirections? direction)
 	{
 		direction = null;
 
@@ -1024,7 +1024,7 @@ public class NtoQfStrategy : Strategy
 		if (!TryGetClose(Math.Max(0, Shift), out var close))
 		return false;
 
-		direction = maValue < close ? TrendDirection.Long : TrendDirection.Short;
+		direction = maValue < close ? TrendDirections.Long : TrendDirections.Short;
 		return true;
 	}
 
@@ -1095,28 +1095,28 @@ public class NtoQfStrategy : Strategy
 	{
 		var indicator = MaMethod switch
 		{
-			MovingAverageMethod.Simple => new SimpleMovingAverage { Length = MaPeriod },
-			MovingAverageMethod.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
-			MovingAverageMethod.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
-			MovingAverageMethod.LinearWeighted => new WeightedMovingAverage { Length = MaPeriod },
+			MovingAverageMethods.Simple => new SimpleMovingAverage { Length = MaPeriod },
+			MovingAverageMethods.Exponential => new ExponentialMovingAverage { Length = MaPeriod },
+			MovingAverageMethods.Smoothed => new SmoothedMovingAverage { Length = MaPeriod },
+			MovingAverageMethods.LinearWeighted => new WeightedMovingAverage { Length = MaPeriod },
 			_ => new SimpleMovingAverage { Length = MaPeriod },
 		};
 
-		indicator.CandlePrice = ConvertAppliedPrice(MaAppliedPrice);
+		indicator.CandlePrice = ConvertAppliedPrices(MaAppliedPrices);
 		return indicator;
 	}
 
-	private CandlePrice ConvertAppliedPrice(AppliedPrice price)
+	private CandlePrice ConvertAppliedPrices(AppliedPrices price)
 	{
 		return price switch
 		{
-			AppliedPrice.Close => CandlePrice.Close,
-			AppliedPrice.Open => CandlePrice.Open,
-			AppliedPrice.High => CandlePrice.High,
-			AppliedPrice.Low => CandlePrice.Low,
-			AppliedPrice.Median => CandlePrice.Median,
-			AppliedPrice.Typical => CandlePrice.Typical,
-			AppliedPrice.Weighted => CandlePrice.Weighted,
+			AppliedPrices.Close => CandlePrice.Close,
+			AppliedPrices.Open => CandlePrice.Open,
+			AppliedPrices.High => CandlePrice.High,
+			AppliedPrices.Low => CandlePrice.Low,
+			AppliedPrices.Median => CandlePrice.Median,
+			AppliedPrices.Typical => CandlePrice.Typical,
+			AppliedPrices.Weighted => CandlePrice.Weighted,
 			_ => CandlePrice.Close,
 		};
 	}
@@ -1145,13 +1145,13 @@ public class NtoQfStrategy : Strategy
 		_takePrice = 0m;
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Long,
 		Short,
 	}
 
-	public enum MovingAverageMethod
+	public enum MovingAverageMethods
 	{
 		Simple = 0,
 		Exponential = 1,
@@ -1159,7 +1159,7 @@ public class NtoQfStrategy : Strategy
 		LinearWeighted = 3,
 	}
 
-	public enum AppliedPrice
+	public enum AppliedPrices
 	{
 		Close = 0,
 		Open = 1,

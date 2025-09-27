@@ -271,10 +271,10 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 
 		// Arm breakout orders at configured hours for session 1 and session 2.
 		if (candle.CloseTime.Hour == EndSession1)
-			PlaceSessionOrders(SessionSlot.First, highest, lowest, currentDate);
+			PlaceSessionOrders(SessionSlots.First, highest, lowest, currentDate);
 
 		if (candle.CloseTime.Hour == EndSession2)
-			PlaceSessionOrders(SessionSlot.Second, highest, lowest, currentDate);
+			PlaceSessionOrders(SessionSlots.Second, highest, lowest, currentDate);
 	}
 
 	private void ManageOpenPosition(ICandleMessage candle, DateTime currentDate)
@@ -375,11 +375,11 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 		_session2OrderDate = null;
 	}
 
-	private void PlaceSessionOrders(SessionSlot slot, decimal highest, decimal lowest, DateTime date)
+	private void PlaceSessionOrders(SessionSlots slot, decimal highest, decimal lowest, DateTime date)
 	{
-		ref Order buyOrder = ref slot == SessionSlot.First ? ref _session1BuyStop : ref _session2BuyStop;
-		ref Order sellOrder = ref slot == SessionSlot.First ? ref _session1SellStop : ref _session2SellStop;
-		ref DateTime? placedDate = ref slot == SessionSlot.First ? ref _session1OrderDate : ref _session2OrderDate;
+		ref Order buyOrder = ref slot == SessionSlots.First ? ref _session1BuyStop : ref _session2BuyStop;
+		ref Order sellOrder = ref slot == SessionSlots.First ? ref _session1SellStop : ref _session2SellStop;
+		ref DateTime? placedDate = ref slot == SessionSlots.First ? ref _session1OrderDate : ref _session2OrderDate;
 
 		if (placedDate == date)
 			return;
@@ -483,7 +483,7 @@ public class Hans123TraderRangeBreakoutStrategy : Strategy
 		return Security?.ShrinkPrice(price) ?? price;
 	}
 
-	private enum SessionSlot
+	private enum SessionSlots
 	{
 		First,
 		Second

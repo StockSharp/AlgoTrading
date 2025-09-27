@@ -46,7 +46,7 @@ private double[] _previousVector = null!;
 	private int _sellCount;
 	private int _holdCount;
 
-	private enum MapAction
+	private enum MapActions
 	{
 		Buy,
 		Sell,
@@ -289,22 +289,22 @@ set => _minPips.Value = value;
 	private void ExecuteSignal(double buyDistance, double sellDistance, double holdDistance, decimal volume)
 	{
 		// Determine which map has the smallest distance.
-		var action = MapAction.Buy;
+		var action = MapActions.Buy;
 		var best = buyDistance;
 
 		if (sellDistance < best)
 		{
 			best = sellDistance;
-			action = MapAction.Sell;
+			action = MapActions.Sell;
 		}
 
 		if (holdDistance < best)
-			action = MapAction.Hold;
+			action = MapActions.Hold;
 
 		var targetPosition = action switch
 		{
-			MapAction.Buy => volume,
-			MapAction.Sell => -volume,
+			MapActions.Buy => volume,
+			MapActions.Sell => -volume,
 			_ => 0m,
 		};
 
@@ -329,26 +329,26 @@ set => _minPips.Value = value;
 
 		if (pipDifference >= min && pipDifference <= max)
 		{
-			TeachMap(MapAction.Buy, _previousVector);
+			TeachMap(MapActions.Buy, _previousVector);
 		}
 		else if (pipDifference <= -min && pipDifference >= -max)
 		{
-			TeachMap(MapAction.Sell, _previousVector);
+			TeachMap(MapActions.Sell, _previousVector);
 		}
 		else
 		{
-			TeachMap(MapAction.Hold, _previousVector);
+			TeachMap(MapActions.Hold, _previousVector);
 		}
 	}
 
-	private void TeachMap(MapAction action, double[] vector)
+	private void TeachMap(MapActions action, double[] vector)
 	{
 		switch (action)
 		{
-			case MapAction.Buy:
+			case MapActions.Buy:
 				AddVector(_mapBuy, ref _buyCount, MapBase, vector);
 				break;
-			case MapAction.Sell:
+			case MapActions.Sell:
 				AddVector(_mapSell, ref _sellCount, MapBase, vector);
 				break;
 			default:

@@ -22,14 +22,14 @@ namespace StockSharp.Samples.Strategies;
 public class OrderGuardianStrategy : Strategy
 {
 	private readonly StrategyParam<DataType> _candleType;
-	private readonly StrategyParam<TakeProfitMethodOption> _takeProfitMethod;
-	private readonly StrategyParam<StopLossMethodOption> _stopLossMethod;
+	private readonly StrategyParam<TakeProfitMethodOptions> _takeProfitMethod;
+	private readonly StrategyParam<StopLossMethodOptions> _stopLossMethod;
 	private readonly StrategyParam<int> _takeProfitPeriod;
 	private readonly StrategyParam<int> _stopLossPeriod;
-	private readonly StrategyParam<MovingAverageMethodOption> _takeProfitMaMethod;
-	private readonly StrategyParam<MovingAverageMethodOption> _stopLossMaMethod;
-	private readonly StrategyParam<AppliedPriceOption> _takeProfitPriceType;
-	private readonly StrategyParam<AppliedPriceOption> _stopLossPriceType;
+	private readonly StrategyParam<MovingAverageMethodOptions> _takeProfitMaMethod;
+	private readonly StrategyParam<MovingAverageMethodOptions> _stopLossMaMethod;
+	private readonly StrategyParam<AppliedPriceOptions> _takeProfitPriceType;
+	private readonly StrategyParam<AppliedPriceOptions> _stopLossPriceType;
 	private readonly StrategyParam<decimal> _takeProfitDeviation;
 	private readonly StrategyParam<decimal> _stopLossDeviation;
 	private readonly StrategyParam<int> _takeProfitShift;
@@ -71,10 +71,10 @@ public class OrderGuardianStrategy : Strategy
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(5).TimeFrame())
 			.SetDisplay("Candle Type", "Type of candles processed by the strategy.", "General");
 
-		_takeProfitMethod = Param(nameof(TakeProfitMethod), TakeProfitMethodOption.ManualLine)
+		_takeProfitMethod = Param(nameof(TakeProfitMethod), TakeProfitMethodOptions.ManualLine)
 			.SetDisplay("Take Profit Method", "Source used to compute the take-profit level.", "Take Profit");
 
-		_stopLossMethod = Param(nameof(StopLossMethod), StopLossMethodOption.ManualLine)
+		_stopLossMethod = Param(nameof(StopLossMethod), StopLossMethodOptions.ManualLine)
 			.SetDisplay("Stop Loss Method", "Source used to compute the stop-loss level.", "Stop Loss");
 
 		_takeProfitPeriod = Param(nameof(TakeProfitPeriod), 31)
@@ -85,16 +85,16 @@ public class OrderGuardianStrategy : Strategy
 			.SetGreaterThanZero()
 			.SetDisplay("SL MA Period", "Moving average length for the stop-loss envelope.", "Stop Loss");
 
-		_takeProfitMaMethod = Param(nameof(TakeProfitMaMethod), MovingAverageMethodOption.Exponential)
+		_takeProfitMaMethod = Param(nameof(TakeProfitMaMethod), MovingAverageMethodOptions.Exponential)
 			.SetDisplay("TP MA Method", "Moving average calculation used for the take-profit envelope.", "Take Profit");
 
-		_stopLossMaMethod = Param(nameof(StopLossMaMethod), MovingAverageMethodOption.Exponential)
+		_stopLossMaMethod = Param(nameof(StopLossMaMethod), MovingAverageMethodOptions.Exponential)
 			.SetDisplay("SL MA Method", "Moving average calculation used for the stop-loss envelope.", "Stop Loss");
 
-		_takeProfitPriceType = Param(nameof(TakeProfitPriceType), AppliedPriceOption.Close)
+		_takeProfitPriceType = Param(nameof(TakeProfitPriceType), AppliedPriceOptions.Close)
 			.SetDisplay("TP Price Source", "Price source fed into the take-profit moving average.", "Take Profit");
 
-		_stopLossPriceType = Param(nameof(StopLossPriceType), AppliedPriceOption.Close)
+		_stopLossPriceType = Param(nameof(StopLossPriceType), AppliedPriceOptions.Close)
 			.SetDisplay("SL Price Source", "Price source fed into the stop-loss moving average.", "Stop Loss");
 
 		_takeProfitDeviation = Param(nameof(TakeProfitDeviation), 0.2m)
@@ -147,7 +147,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Take-profit calculation method.
 	/// </summary>
-	public TakeProfitMethodOption TakeProfitMethod
+	public TakeProfitMethodOptions TakeProfitMethod
 	{
 		get => _takeProfitMethod.Value;
 		set => _takeProfitMethod.Value = value;
@@ -156,7 +156,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Stop-loss calculation method.
 	/// </summary>
-	public StopLossMethodOption StopLossMethod
+	public StopLossMethodOptions StopLossMethod
 	{
 		get => _stopLossMethod.Value;
 		set => _stopLossMethod.Value = value;
@@ -183,7 +183,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Moving average method used to calculate the take-profit envelope.
 	/// </summary>
-	public MovingAverageMethodOption TakeProfitMaMethod
+	public MovingAverageMethodOptions TakeProfitMaMethod
 	{
 		get => _takeProfitMaMethod.Value;
 		set => _takeProfitMaMethod.Value = value;
@@ -192,7 +192,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Moving average method used to calculate the stop-loss envelope.
 	/// </summary>
-	public MovingAverageMethodOption StopLossMaMethod
+	public MovingAverageMethodOptions StopLossMaMethod
 	{
 		get => _stopLossMaMethod.Value;
 		set => _stopLossMaMethod.Value = value;
@@ -201,7 +201,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Price source for the take-profit moving average.
 	/// </summary>
-	public AppliedPriceOption TakeProfitPriceType
+	public AppliedPriceOptions TakeProfitPriceType
 	{
 		get => _takeProfitPriceType.Value;
 		set => _takeProfitPriceType.Value = value;
@@ -210,7 +210,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Price source for the stop-loss moving average.
 	/// </summary>
-	public AppliedPriceOption StopLossPriceType
+	public AppliedPriceOptions StopLossPriceType
 	{
 		get => _stopLossPriceType.Value;
 		set => _stopLossPriceType.Value = value;
@@ -342,7 +342,7 @@ public class OrderGuardianStrategy : Strategy
 		base.OnStarted(time);
 
 		// The original expert enforces a minimum shift of one bar for Parabolic SAR to avoid repainting.
-		if (StopLossMethod == StopLossMethodOption.ParabolicSar && StopLossShift < 1)
+		if (StopLossMethod == StopLossMethodOptions.ParabolicSar && StopLossShift < 1)
 		{
 			StopLossShift = 1;
 		}
@@ -444,7 +444,7 @@ public class OrderGuardianStrategy : Strategy
 	{
 		switch (TakeProfitMethod)
 		{
-			case TakeProfitMethodOption.Envelope:
+			case TakeProfitMethodOptions.Envelope:
 			{
 				if (_takeProfitMaIndicator == null)
 					return (null, null);
@@ -462,7 +462,7 @@ public class OrderGuardianStrategy : Strategy
 				var envelope = shifted.Value * (1m + TakeProfitDeviation / 100m);
 				return (envelope, envelope);
 			}
-			case TakeProfitMethodOption.ManualLine:
+			case TakeProfitMethodOptions.ManualLine:
 			{
 				var longPrice = ManualTakeProfitLong > 0m ? ManualTakeProfitLong : (decimal?)null;
 				var shortPrice = ManualTakeProfitShort > 0m ? ManualTakeProfitShort : (decimal?)null;
@@ -477,7 +477,7 @@ public class OrderGuardianStrategy : Strategy
 	{
 		switch (StopLossMethod)
 		{
-			case StopLossMethodOption.Envelope:
+			case StopLossMethodOptions.Envelope:
 			{
 				if (_stopLossMaIndicator == null)
 					return (null, null);
@@ -495,13 +495,13 @@ public class OrderGuardianStrategy : Strategy
 				var envelope = shifted.Value * (1m + StopLossDeviation / 100m);
 				return (envelope, envelope);
 			}
-			case StopLossMethodOption.ManualLine:
+			case StopLossMethodOptions.ManualLine:
 			{
 				var longPrice = ManualStopLossLong > 0m ? ManualStopLossLong : (decimal?)null;
 				var shortPrice = ManualStopLossShort > 0m ? ManualStopLossShort : (decimal?)null;
 				return (longPrice, shortPrice);
 			}
-			case StopLossMethodOption.ParabolicSar:
+			case StopLossMethodOptions.ParabolicSar:
 			{
 				if (_sarIndicator == null)
 					return (null, null);
@@ -525,15 +525,15 @@ public class OrderGuardianStrategy : Strategy
 
 	private void InitializeIndicators()
 	{
-		_takeProfitMaIndicator = TakeProfitMethod == TakeProfitMethodOption.Envelope
+		_takeProfitMaIndicator = TakeProfitMethod == TakeProfitMethodOptions.Envelope
 			? CreateMovingAverage(TakeProfitMaMethod, TakeProfitPeriod)
 			: null;
 
-		_stopLossMaIndicator = StopLossMethod == StopLossMethodOption.Envelope
+		_stopLossMaIndicator = StopLossMethod == StopLossMethodOptions.Envelope
 			? CreateMovingAverage(StopLossMaMethod, StopLossPeriod)
 			: null;
 
-		_sarIndicator = StopLossMethod == StopLossMethodOption.ParabolicSar
+		_sarIndicator = StopLossMethod == StopLossMethodOptions.ParabolicSar
 			? new ParabolicSar { AccelerationStep = SarStep, AccelerationMax = SarMaximum }
 			: null;
 
@@ -605,14 +605,14 @@ public class OrderGuardianStrategy : Strategy
 			LogInfo(_lastStatusMessage);
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageMethodOption method, int period)
+	private static IIndicator CreateMovingAverage(MovingAverageMethodOptions method, int period)
 	{
 		return method switch
 		{
-			MovingAverageMethodOption.Simple => new SimpleMovingAverage { Length = period },
-			MovingAverageMethodOption.Exponential => new ExponentialMovingAverage { Length = period },
-			MovingAverageMethodOption.Smoothed => new SmoothedMovingAverage { Length = period },
-			MovingAverageMethodOption.LinearWeighted => new WeightedMovingAverage { Length = period },
+			MovingAverageMethodOptions.Simple => new SimpleMovingAverage { Length = period },
+			MovingAverageMethodOptions.Exponential => new ExponentialMovingAverage { Length = period },
+			MovingAverageMethodOptions.Smoothed => new SmoothedMovingAverage { Length = period },
+			MovingAverageMethodOptions.LinearWeighted => new WeightedMovingAverage { Length = period },
 			_ => new ExponentialMovingAverage { Length = period }
 		};
 	}
@@ -662,16 +662,16 @@ public class OrderGuardianStrategy : Strategy
 		return buffer[index];
 	}
 
-	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceOption priceType)
+	private static decimal GetAppliedPrice(ICandleMessage candle, AppliedPriceOptions priceType)
 	{
 		return priceType switch
 		{
-			AppliedPriceOption.Open => candle.OpenPrice,
-			AppliedPriceOption.High => candle.HighPrice,
-			AppliedPriceOption.Low => candle.LowPrice,
-			AppliedPriceOption.Median => (candle.HighPrice + candle.LowPrice) / 2m,
-			AppliedPriceOption.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
-			AppliedPriceOption.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
+			AppliedPriceOptions.Open => candle.OpenPrice,
+			AppliedPriceOptions.High => candle.HighPrice,
+			AppliedPriceOptions.Low => candle.LowPrice,
+			AppliedPriceOptions.Median => (candle.HighPrice + candle.LowPrice) / 2m,
+			AppliedPriceOptions.Typical => (candle.HighPrice + candle.LowPrice + candle.ClosePrice) / 3m,
+			AppliedPriceOptions.Weighted => (candle.HighPrice + candle.LowPrice + candle.ClosePrice + candle.ClosePrice) / 4m,
 			_ => candle.ClosePrice
 		};
 	}
@@ -679,7 +679,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Take-profit calculation choices.
 	/// </summary>
-	public enum TakeProfitMethodOption
+	public enum TakeProfitMethodOptions
 	{
 		Envelope = 1,
 		ManualLine = 2
@@ -688,7 +688,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Stop-loss calculation choices.
 	/// </summary>
-	public enum StopLossMethodOption
+	public enum StopLossMethodOptions
 	{
 		Envelope = 1,
 		ManualLine = 2,
@@ -698,7 +698,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Moving average calculation types compatible with the MetaTrader constants.
 	/// </summary>
-	public enum MovingAverageMethodOption
+	public enum MovingAverageMethodOptions
 	{
 		Simple = 0,
 		Exponential = 1,
@@ -709,7 +709,7 @@ public class OrderGuardianStrategy : Strategy
 	/// <summary>
 	/// Price sources equivalent to the MetaTrader applied price options.
 	/// </summary>
-	public enum AppliedPriceOption
+	public enum AppliedPriceOptions
 	{
 		Close = 0,
 		Open = 1,

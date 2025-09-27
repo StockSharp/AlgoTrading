@@ -65,7 +65,7 @@ public class DailyTrendReversalStrategy : Strategy
 	private decimal _shortStopPrice;
 	private bool _shortBreakEvenActive;
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Flat,
 		Up,
@@ -351,11 +351,11 @@ public class DailyTrendReversalStrategy : Strategy
 		EvaluateEntries(candle, trend, rangeTrend, cciTrend);
 	}
 
-	private void EvaluateEntries(ICandleMessage candle, TrendDirection trend, TrendDirection rangeTrend, TrendDirection cciTrend)
+	private void EvaluateEntries(ICandleMessage candle, TrendDirections trend, TrendDirections rangeTrend, TrendDirections cciTrend)
 	{
 		var price = candle.ClosePrice;
 
-		if (trend == TrendDirection.Up && rangeTrend == TrendDirection.Up && cciTrend == TrendDirection.Up && price > _dailyOpen && Position <= 0m)
+		if (trend == TrendDirections.Up && rangeTrend == TrendDirections.Up && cciTrend == TrendDirections.Up && price > _dailyOpen && Position <= 0m)
 		{
 			var volume = Volume + Math.Max(0m, -Position);
 			if (volume > 0m)
@@ -365,7 +365,7 @@ public class DailyTrendReversalStrategy : Strategy
 			}
 		}
 
-		if (trend == TrendDirection.Down && rangeTrend == TrendDirection.Down && cciTrend == TrendDirection.Down && price < _dailyOpen && Position >= 0m)
+		if (trend == TrendDirections.Down && rangeTrend == TrendDirections.Down && cciTrend == TrendDirections.Down && price < _dailyOpen && Position >= 0m)
 		{
 			var volume = Volume + Math.Max(0m, Position);
 			if (volume > 0m)
@@ -376,7 +376,7 @@ public class DailyTrendReversalStrategy : Strategy
 		}
 	}
 
-	private void ManageExistingPositions(ICandleMessage candle, TrendDirection rangeTrend, TrendDirection cciTrend, decimal riskDistance)
+	private void ManageExistingPositions(ICandleMessage candle, TrendDirections rangeTrend, TrendDirections cciTrend, decimal riskDistance)
 	{
 		if (Position > 0m)
 		{
@@ -388,7 +388,7 @@ public class DailyTrendReversalStrategy : Strategy
 		}
 	}
 
-	private void ManageLongPosition(ICandleMessage candle, TrendDirection rangeTrend, TrendDirection cciTrend, decimal riskDistance)
+	private void ManageLongPosition(ICandleMessage candle, TrendDirections rangeTrend, TrendDirections cciTrend, decimal riskDistance)
 	{
 		var price = candle.ClosePrice;
 
@@ -438,7 +438,7 @@ public class DailyTrendReversalStrategy : Strategy
 			var step1 = TrendSteps >= 0 && price - _dailyLow > riskDistance;
 			var step2 = TrendSteps >= 2 && _dailyHigh - _dailyOpen >= riskDistance && _dailyOpen - price <= _tenPips;
 
-			if (price < _dailyOpen && (step1 || step2) && rangeTrend == TrendDirection.Down && cciTrend == TrendDirection.Down)
+			if (price < _dailyOpen && (step1 || step2) && rangeTrend == TrendDirections.Down && cciTrend == TrendDirections.Down)
 			{
 				SellMarket(Position);
 				LogInfo("Long reversed due to opposite trend confirmation.");
@@ -446,7 +446,7 @@ public class DailyTrendReversalStrategy : Strategy
 		}
 	}
 
-	private void ManageShortPosition(ICandleMessage candle, TrendDirection rangeTrend, TrendDirection cciTrend, decimal riskDistance)
+	private void ManageShortPosition(ICandleMessage candle, TrendDirections rangeTrend, TrendDirections cciTrend, decimal riskDistance)
 	{
 		var price = candle.ClosePrice;
 
@@ -496,7 +496,7 @@ public class DailyTrendReversalStrategy : Strategy
 			var step1 = TrendSteps >= 0 && _dailyHigh - price > riskDistance;
 			var step2 = TrendSteps >= 2 && _dailyOpen - _dailyLow >= riskDistance && price - _dailyOpen <= _tenPips;
 
-			if (price > _dailyOpen && (step1 || step2) && rangeTrend == TrendDirection.Up && cciTrend == TrendDirection.Up)
+			if (price > _dailyOpen && (step1 || step2) && rangeTrend == TrendDirections.Up && cciTrend == TrendDirections.Up)
 			{
 				BuyMarket(Math.Abs(Position));
 				LogInfo("Short reversed due to opposite trend confirmation.");
@@ -573,28 +573,28 @@ public class DailyTrendReversalStrategy : Strategy
 		}
 	}
 
-	private TrendDirection GetCciTrend()
+	private TrendDirections GetCciTrend()
 	{
 		if (_cciHistory.Count < 3)
-		return TrendDirection.Flat;
+		return TrendDirections.Flat;
 
 		var current = _cciHistory[0];
 		var previous = _cciHistory[1];
 		var older = _cciHistory[2];
 
 		if (current >= previous && previous >= older)
-		return TrendDirection.Up;
+		return TrendDirections.Up;
 
 		if (current <= previous && previous <= older)
-		return TrendDirection.Down;
+		return TrendDirections.Down;
 
-		return TrendDirection.Flat;
+		return TrendDirections.Flat;
 	}
 
-	private TrendDirection GetDirectionalTrend(ICandleMessage candle, decimal riskDistance)
+	private TrendDirections GetDirectionalTrend(ICandleMessage candle, decimal riskDistance)
 	{
 		if (_currentDay is null)
-		return TrendDirection.Flat;
+		return TrendDirections.Flat;
 
 		var price = candle.ClosePrice;
 
@@ -605,7 +605,7 @@ public class DailyTrendReversalStrategy : Strategy
 			var step3 = TrendSteps >= 3 && price - _dailyOpen <= _tenPips && candle.ClosePrice > candle.OpenPrice;
 
 			if (step1 || step2 || step3)
-			return TrendDirection.Up;
+			return TrendDirections.Up;
 		}
 		else if (price < _dailyOpen)
 		{
@@ -614,24 +614,24 @@ public class DailyTrendReversalStrategy : Strategy
 			var step3 = TrendSteps >= 3 && _dailyOpen - price <= _tenPips && candle.ClosePrice < candle.OpenPrice;
 
 			if (step1 || step2 || step3)
-			return TrendDirection.Down;
+			return TrendDirections.Down;
 		}
 
-		return TrendDirection.Flat;
+		return TrendDirections.Flat;
 	}
 
-	private TrendDirection GetRangeTrend()
+	private TrendDirections GetRangeTrend()
 	{
 		var upDistance = _dailyHigh - _dailyOpen;
 		var downDistance = _dailyOpen - _dailyLow;
 
 		if (upDistance > downDistance)
-		return TrendDirection.Up;
+		return TrendDirections.Up;
 
 		if (upDistance < downDistance)
-		return TrendDirection.Down;
+		return TrendDirections.Down;
 
-		return TrendDirection.Flat;
+		return TrendDirections.Flat;
 	}
 
 	private bool IsWeekday(DateTimeOffset time)

@@ -19,7 +19,7 @@ public class VivaLasVegasStrategy : Strategy
 {
 	private readonly StrategyParam<int> _stopTakePips;
 	private readonly StrategyParam<decimal> _baseVolume;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<int> _seed;
 
 	private Random _random = new();
@@ -42,7 +42,7 @@ public class VivaLasVegasStrategy : Strategy
 			.SetCanOptimize(true)
 			.SetOptimize(0.1m, 5m, 0.1m);
 
-		_moneyManagementMode = Param(nameof(MoneyManagement), MoneyManagementMode.Martingale)
+_moneyManagementMode = Param(nameof(MoneyManagement), MoneyManagementModes.Martingale)
 			.SetDisplay("Money management", "Progression model that decides the next order volume.", "General");
 
 		_seed = Param(nameof(Seed), 0)
@@ -61,15 +61,15 @@ public class VivaLasVegasStrategy : Strategy
 		set => _baseVolume.Value = value;
 	}
 
-	public MoneyManagementMode MoneyManagement
-	{
-		get => _moneyManagementMode.Value;
-		set
-		{
-			_moneyManagementMode.Value = value;
-			InitializeMoneyManagement();
-		}
-	}
+public MoneyManagementModes MoneyManagement
+{
+get => _moneyManagementMode.Value;
+set
+{
+_moneyManagementMode.Value = value;
+InitializeMoneyManagement();
+}
+}
 
 	public int Seed
 	{
@@ -144,7 +144,7 @@ public class VivaLasVegasStrategy : Strategy
 			var closedVolume = Math.Abs(_previousPosition);
 			if (closedVolume > 0m && _management != null)
 			{
-				var result = tradePnL > 0m ? TradeResult.Win : TradeResult.Loss;
+				var result = tradePnL > 0m ? TradeResults.Win : TradeResults.Loss;
 				_management.Update(result, closedVolume, BaseVolume);
 			}
 
@@ -225,29 +225,29 @@ public class VivaLasVegasStrategy : Strategy
 		_management.Reset(BaseVolume);
 	}
 
-	private IMoneyManagement CreateMoneyManagement(MoneyManagementMode mode)
-	{
-		return mode switch
-		{
-			MoneyManagementMode.Martingale => new MartingaleManagement(),
-			MoneyManagementMode.NegativePyramid => new NegativePyramidManagement(),
-			MoneyManagementMode.Labouchere => new LabouchereManagement(),
-			MoneyManagementMode.OscarsGrind => new OscarsGrindManagement(),
-			MoneyManagementMode.System31 => new System31Management(),
-			_ => new MartingaleManagement(),
-		};
-	}
+private IMoneyManagement CreateMoneyManagement(MoneyManagementModes mode)
+{
+return mode switch
+{
+MoneyManagementModes.Martingale => new MartingaleManagement(),
+MoneyManagementModes.NegativePyramid => new NegativePyramidManagement(),
+MoneyManagementModes.Labouchere => new LabouchereManagement(),
+MoneyManagementModes.OscarsGrind => new OscarsGrindManagement(),
+MoneyManagementModes.System31 => new System31Management(),
+_ => new MartingaleManagement(),
+};
+}
 
-	public enum MoneyManagementMode
-	{
-		Martingale,
-		NegativePyramid,
-		Labouchere,
-		OscarsGrind,
-		System31,
-	}
+public enum MoneyManagementModes
+{
+Martingale,
+NegativePyramid,
+Labouchere,
+OscarsGrind,
+System31,
+}
 
-	private enum TradeResult
+	private enum TradeResults
 	{
 		Win,
 		Loss,
@@ -256,7 +256,7 @@ public class VivaLasVegasStrategy : Strategy
 	private interface IMoneyManagement
 	{
 		decimal GetVolume(decimal baseVolume);
-		void Update(TradeResult result, decimal closedVolume, decimal baseVolume);
+		void Update(TradeResults result, decimal closedVolume, decimal baseVolume);
 		void Reset(decimal baseVolume);
 	}
 
@@ -272,9 +272,9 @@ public class VivaLasVegasStrategy : Strategy
 			return _nextVolume;
 		}
 
-		public void Update(TradeResult result, decimal closedVolume, decimal baseVolume)
+		public void Update(TradeResults result, decimal closedVolume, decimal baseVolume)
 		{
-			_nextVolume = result == TradeResult.Win ? baseVolume : _nextVolume * 2m;
+			_nextVolume = result == TradeResults.Win ? baseVolume : _nextVolume * 2m;
 		}
 
 		public void Reset(decimal baseVolume)
@@ -295,9 +295,9 @@ public class VivaLasVegasStrategy : Strategy
 			return _nextVolume;
 		}
 
-		public void Update(TradeResult result, decimal closedVolume, decimal baseVolume)
+		public void Update(TradeResults result, decimal closedVolume, decimal baseVolume)
 		{
-			if (result == TradeResult.Win)
+			if (result == TradeResults.Win)
 			{
 				_nextVolume /= 2m;
 				if (_nextVolume < baseVolume)
@@ -331,12 +331,12 @@ public class VivaLasVegasStrategy : Strategy
 			return _series[0] * baseVolume;
 		}
 
-		public void Update(TradeResult result, decimal closedVolume, decimal baseVolume)
+		public void Update(TradeResults result, decimal closedVolume, decimal baseVolume)
 		{
 			if (_series.Count == 0)
 				Reset(baseVolume);
 
-			if (result == TradeResult.Win)
+			if (result == TradeResults.Win)
 			{
 				if (_series.Count > 2)
 				{
@@ -378,9 +378,9 @@ public class VivaLasVegasStrategy : Strategy
 			return _nextVolume;
 		}
 
-		public void Update(TradeResult result, decimal closedVolume, decimal baseVolume)
+		public void Update(TradeResults result, decimal closedVolume, decimal baseVolume)
 		{
-			if (result == TradeResult.Win)
+			if (result == TradeResults.Win)
 			{
 				_currentResult += closedVolume;
 
@@ -424,9 +424,9 @@ public class VivaLasVegasStrategy : Strategy
 			return multiplier * baseVolume;
 		}
 
-		public void Update(TradeResult result, decimal closedVolume, decimal baseVolume)
+		public void Update(TradeResults result, decimal closedVolume, decimal baseVolume)
 		{
-			if (result == TradeResult.Win)
+			if (result == TradeResults.Win)
 			{
 				if (!_doubleUp)
 				{

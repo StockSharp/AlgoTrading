@@ -49,14 +49,14 @@ public class SimpleStrategy : Strategy
 
 	private bool _stepConversionWarningIssued;
 
-	private enum SignalDirection
+	private enum SignalDirections
 	{
 		None,
 		Buy,
 		Sell
 	}
 
-	private enum TrendDirection
+	private enum TrendDirections
 	{
 		Wait,
 		Up,
@@ -283,10 +283,10 @@ public class SimpleStrategy : Strategy
 
 		switch (signal)
 		{
-			case SignalDirection.Buy:
+			case SignalDirections.Buy:
 				HandleBuySignal(candle);
 				break;
-			case SignalDirection.Sell:
+			case SignalDirections.Sell:
 				HandleSellSignal(candle);
 				break;
 		}
@@ -409,19 +409,19 @@ public class SimpleStrategy : Strategy
 		}
 	}
 
-	private SignalDirection DetectSignal()
+	private SignalDirections DetectSignal()
 	{
 		if (_fastPrev2 is decimal fastHist && _fastPrev is decimal fastPrev &&
 			_slowPrev2 is decimal slowHist && _slowPrev is decimal slowPrev)
 		{
 			if (fastHist < slowHist && fastPrev > slowPrev)
-				return SignalDirection.Buy;
+				return SignalDirections.Buy;
 
 			if (fastHist > slowHist && fastPrev < slowPrev)
-				return SignalDirection.Sell;
+				return SignalDirections.Sell;
 		}
 
-		return SignalDirection.None;
+		return SignalDirections.None;
 	}
 
 	private void UpdateMovingAverageHistory(decimal fastValue, decimal slowValue)
@@ -453,18 +453,18 @@ public class SimpleStrategy : Strategy
 		_trendReference = _slowTrendValues.Count > margin ? _slowTrendValues.Peek() : null;
 	}
 
-	private (TrendDirection Direction, decimal? Difference) GetTrendState(decimal slowValue)
+	private (TrendDirections Direction, decimal? Difference) GetTrendState(decimal slowValue)
 	{
 		if (_trendReference is not decimal reference)
-			return (TrendDirection.Wait, null);
+			return (TrendDirections.Wait, null);
 
 		if (slowValue > reference)
-			return (TrendDirection.Up, CalculateStepDifference(slowValue, reference));
+			return (TrendDirections.Up, CalculateStepDifference(slowValue, reference));
 
 		if (slowValue < reference)
-			return (TrendDirection.Down, CalculateStepDifference(slowValue, reference));
+			return (TrendDirections.Down, CalculateStepDifference(slowValue, reference));
 
-		return (TrendDirection.Wait, 0m);
+		return (TrendDirections.Wait, 0m);
 	}
 
 	private decimal? CalculateStepDifference(decimal value1, decimal value2)
@@ -506,20 +506,20 @@ public class SimpleStrategy : Strategy
 		return steps * priceStep;
 	}
 
-	private void LogSignal(ICandleMessage candle, decimal fastValue, decimal slowValue, SignalDirection signal, decimal? diffSteps, (TrendDirection Direction, decimal? Difference) trendState)
+	private void LogSignal(ICandleMessage candle, decimal fastValue, decimal slowValue, SignalDirections signal, decimal? diffSteps, (TrendDirections Direction, decimal? Difference) trendState)
 	{
 		var signalText = signal switch
 		{
-			SignalDirection.Buy => "BUY",
-			SignalDirection.Sell => "SELL",
+			SignalDirections.Buy => "BUY",
+			SignalDirections.Sell => "SELL",
 			_ => "WAIT"
 		};
 
 		var diffText = diffSteps.HasValue ? diffSteps.Value.ToString("0.0", CultureInfo.InvariantCulture) : "n/a";
 		var trendText = trendState.Direction switch
 		{
-			TrendDirection.Up => "UP",
-			TrendDirection.Down => "DOWN",
+			TrendDirections.Up => "UP",
+			TrendDirections.Down => "DOWN",
 			_ => "WAIT"
 		};
 		var trendDiffText = trendState.Difference.HasValue ? trendState.Difference.Value.ToString("0.0", CultureInfo.InvariantCulture) : "n/a";

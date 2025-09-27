@@ -313,12 +313,12 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 
 	switch (variant.Math)
 		{
-			case VariantMath.Direct:
+			case VariantMaths.Direct:
 				{
 					return TryGetQuote(variant.PrimarySecurity, out bid, out ask);
 				}
 
-				case VariantMath.Inverse:
+				case VariantMaths.Inverse:
 					{
 						if (!TryGetQuote(variant.PrimarySecurity, out var baseBid, out var baseAsk))
 						return false;
@@ -331,7 +331,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 						return true;
 					}
 
-					case VariantMath.Ratio:
+					case VariantMaths.Ratio:
 						{
 							if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 							return false;
@@ -347,7 +347,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 							return true;
 						}
 
-						case VariantMath.Product:
+						case VariantMaths.Product:
 							{
 								if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 								return false;
@@ -360,7 +360,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 								return true;
 							}
 
-							case VariantMath.InverseProduct:
+							case VariantMaths.InverseProduct:
 								{
 									if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 									return false;
@@ -379,7 +379,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 									return true;
 								}
 
-								case VariantMath.ReverseRatio:
+								case VariantMaths.ReverseRatio:
 									{
 										if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 										return false;
@@ -459,13 +459,13 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 
 							switch (variant.Math)
 								{
-									case VariantMath.Direct:
+									case VariantMaths.Direct:
 										{
 											AddPendingVolume(variant.PrimarySecurity, side == Sides.Buy ? volume : -volume);
 											break;
 									}
 
-									case VariantMath.Inverse:
+									case VariantMaths.Inverse:
 										{
 											if (!TryGetQuote(variant.PrimarySecurity, out var bid, out var ask))
 											return;
@@ -490,7 +490,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 											break;
 									}
 
-									case VariantMath.Ratio:
+									case VariantMaths.Ratio:
 										{
 											if (variant.LastBid is not decimal lastBid || variant.LastAsk is not decimal lastAsk)
 											return;
@@ -509,7 +509,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 											break;
 									}
 
-									case VariantMath.Product:
+									case VariantMaths.Product:
 										{
 											if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 											return;
@@ -528,7 +528,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 											break;
 									}
 
-									case VariantMath.InverseProduct:
+									case VariantMaths.InverseProduct:
 										{
 											if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 											return;
@@ -556,7 +556,7 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 											break;
 									}
 
-									case VariantMath.ReverseRatio:
+									case VariantMaths.ReverseRatio:
 										{
 											if (!TryGetQuote(variant.PrimarySecurity, out var bid1, out var ask1))
 											return;
@@ -681,12 +681,12 @@ private bool TryComputeVariantQuotes(Variant variant, out decimal bid, out decim
 
 						return variant.Math switch
 						{
-							VariantMath.Direct => variant.PrimaryCode,
-							VariantMath.Inverse => $"1 / {variant.PrimaryCode}",
-							VariantMath.Ratio => $"{variant.PrimaryCode} / {variant.SecondaryCode}",
-							VariantMath.Product => $"{variant.PrimaryCode} * {variant.SecondaryCode}",
-							VariantMath.InverseProduct => $"1 / ({variant.PrimaryCode} * {variant.SecondaryCode})",
-							VariantMath.ReverseRatio => $"{variant.SecondaryCode} / {variant.PrimaryCode}",
+							VariantMaths.Direct => variant.PrimaryCode,
+							VariantMaths.Inverse => $"1 / {variant.PrimaryCode}",
+							VariantMaths.Ratio => $"{variant.PrimaryCode} / {variant.SecondaryCode}",
+							VariantMaths.Product => $"{variant.PrimaryCode} * {variant.SecondaryCode}",
+							VariantMaths.InverseProduct => $"1 / ({variant.PrimaryCode} * {variant.SecondaryCode})",
+							VariantMaths.ReverseRatio => $"{variant.SecondaryCode} / {variant.PrimaryCode}",
 							_ => variant.PrimaryCode,
 						};
 					}
@@ -751,11 +751,11 @@ SymbolSuffix = suffix;
 
 				var combination = new Combination(baseCurrency, quoteCurrency);
 
-				var direct = CreateDirectVariant(resolved, baseCurrency + quoteCurrency, VariantMath.Direct);
+				var direct = CreateDirectVariant(resolved, baseCurrency + quoteCurrency, VariantMaths.Direct);
 				if (direct != null)
 				combination.Variants.Add(direct);
 
-				var inverse = CreateDirectVariant(resolved, quoteCurrency + baseCurrency, VariantMath.Inverse);
+				var inverse = CreateDirectVariant(resolved, quoteCurrency + baseCurrency, VariantMaths.Inverse);
 				if (inverse != null)
 				combination.Variants.Add(inverse);
 
@@ -764,10 +764,10 @@ SymbolSuffix = suffix;
 					if (cross.Equals(baseCurrency, StringComparison.OrdinalIgnoreCase) || cross.Equals(quoteCurrency, StringComparison.OrdinalIgnoreCase))
 					continue;
 
-				TryAddCrossVariant(combination, resolved, baseCurrency + cross, quoteCurrency + cross, VariantMath.Ratio);
-				TryAddCrossVariant(combination, resolved, baseCurrency + cross, cross + quoteCurrency, VariantMath.Product);
-				TryAddCrossVariant(combination, resolved, cross + baseCurrency, quoteCurrency + cross, VariantMath.InverseProduct);
-				TryAddCrossVariant(combination, resolved, cross + baseCurrency, cross + quoteCurrency, VariantMath.ReverseRatio);
+				TryAddCrossVariant(combination, resolved, baseCurrency + cross, quoteCurrency + cross, VariantMaths.Ratio);
+				TryAddCrossVariant(combination, resolved, baseCurrency + cross, cross + quoteCurrency, VariantMaths.Product);
+				TryAddCrossVariant(combination, resolved, cross + baseCurrency, quoteCurrency + cross, VariantMaths.InverseProduct);
+				TryAddCrossVariant(combination, resolved, cross + baseCurrency, cross + quoteCurrency, VariantMaths.ReverseRatio);
 			}
 
 			if (combination.Variants.Count >= 2)
@@ -833,7 +833,7 @@ private Security ResolveSecurity(ISecurityProvider provider, string symbol)
 	return security;
 }
 
-private Variant CreateDirectVariant(Dictionary<string, Security> resolved, string code, VariantMath math)
+private Variant CreateDirectVariant(Dictionary<string, Security> resolved, string code, VariantMaths math)
 {
 	if (!resolved.TryGetValue(code, out var security))
 	return null;
@@ -848,7 +848,7 @@ private Variant CreateDirectVariant(Dictionary<string, Security> resolved, strin
 	};
 }
 
-private void TryAddCrossVariant(Combination combination, Dictionary<string, Security> resolved, string firstCode, string secondCode, VariantMath math)
+private void TryAddCrossVariant(Combination combination, Dictionary<string, Security> resolved, string firstCode, string secondCode, VariantMaths math)
 {
 	if (!resolved.TryGetValue(firstCode, out var first))
 	return;
@@ -905,7 +905,7 @@ private sealed class Combination
 
 private sealed class Variant
 {
-	public VariantMath Math { get; set; }
+	public VariantMaths Math { get; set; }
 	public Security PrimarySecurity { get; set; }
 	public Security SecondarySecurity { get; set; }
 	public string PrimaryCode { get; set; }
@@ -914,7 +914,7 @@ private sealed class Variant
 	public decimal? LastAsk { get; set; }
 }
 
-private enum VariantMath
+private enum VariantMaths
 {
 	Inverse = -2,
 	Direct = -1,

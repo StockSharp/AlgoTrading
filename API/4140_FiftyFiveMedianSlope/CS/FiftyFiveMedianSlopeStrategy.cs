@@ -27,7 +27,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 	private readonly StrategyParam<int> _stopLossPoints;
 	private readonly StrategyParam<int> _maPeriod;
 	private readonly StrategyParam<int> _maShift;
-	private readonly StrategyParam<MovingAverageKind> _maMethod;
+	private readonly StrategyParam<MovingAverageKinds> _maMethod;
 	private readonly StrategyParam<int> _startHour;
 	private readonly StrategyParam<int> _endHour;
 	private readonly StrategyParam<int> _maxOrders;
@@ -65,7 +65,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 			.SetDisplay("MA shift", "Bars between the recent and historical moving average snapshots.", "Indicators")
 			.SetNotNegative();
 
-		_maMethod = Param(nameof(MaMethod), MovingAverageKind.Exponential)
+		_maMethod = Param(nameof(MaMethod), MovingAverageKinds.Exponential)
 			.SetDisplay("MA method", "Calculation method used for the moving average.", "Indicators");
 
 		_startHour = Param(nameof(StartHour), 8)
@@ -120,7 +120,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 		set => _maShift.Value = value;
 	}
 
-	public MovingAverageKind MaMethod
+	public MovingAverageKinds MaMethod
 	{
 		get => _maMethod.Value;
 		set => _maMethod.Value = value;
@@ -473,14 +473,14 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 		return hour;
 	}
 
-	private static IIndicator CreateMovingAverage(MovingAverageKind method, int length)
+	private static IIndicator CreateMovingAverage(MovingAverageKinds method, int length)
 	{
 		return method switch
 		{
-			MovingAverageKind.Simple => new SimpleMovingAverage { Length = length },
-			MovingAverageKind.Exponential => new ExponentialMovingAverage { Length = length },
-			MovingAverageKind.Smoothed => new SmoothedMovingAverage { Length = length },
-			MovingAverageKind.LinearWeighted => new WeightedMovingAverage { Length = length },
+			MovingAverageKinds.Simple => new SimpleMovingAverage { Length = length },
+			MovingAverageKinds.Exponential => new ExponentialMovingAverage { Length = length },
+			MovingAverageKinds.Smoothed => new SmoothedMovingAverage { Length = length },
+			MovingAverageKinds.LinearWeighted => new WeightedMovingAverage { Length = length },
 			_ => new ExponentialMovingAverage { Length = length },
 		};
 	}
@@ -489,7 +489,7 @@ public class FiftyFiveMedianSlopeStrategy : Strategy
 /// <summary>
 /// Moving average calculation methods supported by the strategy.
 /// </summary>
-public enum MovingAverageKind
+public enum MovingAverageKinds
 {
 	Simple,
 	Exponential,

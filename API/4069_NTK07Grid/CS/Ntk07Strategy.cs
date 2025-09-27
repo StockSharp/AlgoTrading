@@ -21,7 +21,7 @@ public class Ntk07Strategy : Strategy
 	/// <summary>
 	/// Money management modes supported by the strategy.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		/// <summary>
 		/// Use the <see cref="InitialLot"/> and <see cref="LotLimit"/> values without modification.
@@ -45,7 +45,7 @@ public class Ntk07Strategy : Strategy
 	private readonly StrategyParam<int> _trailingStopPips;
 	private readonly StrategyParam<decimal> _multiplier;
 	private readonly StrategyParam<bool> _trailProfit;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<decimal> _initialLot;
 	private readonly StrategyParam<decimal> _lotLimit;
 	private readonly StrategyParam<int> _maxTrades;
@@ -128,7 +128,7 @@ public class Ntk07Strategy : Strategy
 		_trailProfit = Param(nameof(TrailProfit), true)
 		.SetDisplay("Trail Profit", "Extend take-profit while trailing", "Risk");
 
-		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementMode.Progressive)
+		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementModes.Progressive)
 		.SetDisplay("Money Management", "How lot sizes are recalculated", "Money Management");
 
 		_initialLot = Param(nameof(InitialLot), 1m)
@@ -255,7 +255,7 @@ public class Ntk07Strategy : Strategy
 	/// <summary>
 	/// Selected money management mode.
 	/// </summary>
-	public MoneyManagementMode ManagementMode
+	public MoneyManagementModes ManagementMode
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -614,13 +614,13 @@ public class Ntk07Strategy : Strategy
 
 		switch (mode)
 		{
-		case MoneyManagementMode.Fixed:
+		case MoneyManagementModes.Fixed:
 			{
 				_calculatedBaseVolume = lot;
 				_calculatedLotLimit = limit;
 				break;
 			}
-		case MoneyManagementMode.BalanceBased:
+		case MoneyManagementModes.BalanceBased:
 			{
 				var balance = Portfolio?.CurrentValue ?? 0m;
 				if (balance <= 0m)
@@ -646,7 +646,7 @@ public class Ntk07Strategy : Strategy
 				_calculatedLotLimit = Math.Max(rounded, baseVolume);
 				break;
 			}
-		case MoneyManagementMode.Progressive:
+		case MoneyManagementModes.Progressive:
 			{
 				var projected = lot;
 				for (var i = 0; i < MaxTrades; i++)

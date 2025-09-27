@@ -24,17 +24,17 @@ public class MTrendLineStrategy : Strategy
 	private readonly StrategyParam<decimal> _minDistancePoints;
 
 	private readonly StrategyParam<bool> _slot1Enabled;
-	private readonly StrategyParam<PendingOrderType> _slot1Mode;
+	private readonly StrategyParam<PendingOrderTypes> _slot1Mode;
 	private readonly StrategyParam<decimal> _slot1DistancePoints;
 	private readonly StrategyParam<decimal> _slot1Volume;
 
 	private readonly StrategyParam<bool> _slot2Enabled;
-	private readonly StrategyParam<PendingOrderType> _slot2Mode;
+	private readonly StrategyParam<PendingOrderTypes> _slot2Mode;
 	private readonly StrategyParam<decimal> _slot2DistancePoints;
 	private readonly StrategyParam<decimal> _slot2Volume;
 
 	private readonly StrategyParam<bool> _slot3Enabled;
-	private readonly StrategyParam<PendingOrderType> _slot3Mode;
+	private readonly StrategyParam<PendingOrderTypes> _slot3Mode;
 	private readonly StrategyParam<decimal> _slot3DistancePoints;
 	private readonly StrategyParam<decimal> _slot3Volume;
 
@@ -53,7 +53,7 @@ public class MTrendLineStrategy : Strategy
 	/// <summary>
 	/// Supported pending order styles.
 	/// </summary>
-	public enum PendingOrderType
+	public enum PendingOrderTypes
 	{
 		/// <summary>
 		/// Buys below the current market with a limit order.
@@ -116,7 +116,7 @@ public class MTrendLineStrategy : Strategy
 		_slot1Enabled = Param(nameof(PendingOrder1Enabled), true)
 			.SetDisplay("Slot 1 Enabled", "Enable the first pending order slot.", "Pending Order #1");
 
-		_slot1Mode = Param(nameof(PendingOrder1Mode), PendingOrderType.BuyLimit)
+		_slot1Mode = Param(nameof(PendingOrder1Mode), PendingOrderTypes.BuyLimit)
 			.SetDisplay("Slot 1 Type", "Pending order style used by the first slot.", "Pending Order #1");
 
 		_slot1DistancePoints = Param(nameof(PendingOrder1DistancePoints), 10m)
@@ -129,7 +129,7 @@ public class MTrendLineStrategy : Strategy
 		_slot2Enabled = Param(nameof(PendingOrder2Enabled), false)
 			.SetDisplay("Slot 2 Enabled", "Enable the second pending order slot.", "Pending Order #2");
 
-		_slot2Mode = Param(nameof(PendingOrder2Mode), PendingOrderType.SellLimit)
+		_slot2Mode = Param(nameof(PendingOrder2Mode), PendingOrderTypes.SellLimit)
 			.SetDisplay("Slot 2 Type", "Pending order style used by the second slot.", "Pending Order #2");
 
 		_slot2DistancePoints = Param(nameof(PendingOrder2DistancePoints), 10m)
@@ -142,7 +142,7 @@ public class MTrendLineStrategy : Strategy
 		_slot3Enabled = Param(nameof(PendingOrder3Enabled), false)
 			.SetDisplay("Slot 3 Enabled", "Enable the third pending order slot.", "Pending Order #3");
 
-		_slot3Mode = Param(nameof(PendingOrder3Mode), PendingOrderType.BuyStop)
+		_slot3Mode = Param(nameof(PendingOrder3Mode), PendingOrderTypes.BuyStop)
 			.SetDisplay("Slot 3 Type", "Pending order style used by the third slot.", "Pending Order #3");
 
 		_slot3DistancePoints = Param(nameof(PendingOrder3DistancePoints), 10m)
@@ -208,7 +208,7 @@ public class MTrendLineStrategy : Strategy
 		set => _slot1Enabled.Value = value;
 	}
 
-	public PendingOrderType PendingOrder1Mode
+	public PendingOrderTypes PendingOrder1Mode
 	{
 		get => _slot1Mode.Value;
 		set => _slot1Mode.Value = value;
@@ -232,7 +232,7 @@ public class MTrendLineStrategy : Strategy
 		set => _slot2Enabled.Value = value;
 	}
 
-	public PendingOrderType PendingOrder2Mode
+	public PendingOrderTypes PendingOrder2Mode
 	{
 		get => _slot2Mode.Value;
 		set => _slot2Mode.Value = value;
@@ -256,7 +256,7 @@ public class MTrendLineStrategy : Strategy
 		set => _slot3Enabled.Value = value;
 	}
 
-	public PendingOrderType PendingOrder3Mode
+	public PendingOrderTypes PendingOrder3Mode
 	{
 		get => _slot3Mode.Value;
 		set => _slot3Mode.Value = value;
@@ -400,7 +400,7 @@ public class MTrendLineStrategy : Strategy
 			0 => PendingOrder1Mode,
 			1 => PendingOrder2Mode,
 			2 => PendingOrder3Mode,
-			_ => PendingOrderType.BuyLimit
+			_ => PendingOrderTypes.BuyLimit
 		};
 
 		var distance = index switch
@@ -433,10 +433,10 @@ public class MTrendLineStrategy : Strategy
 		// Translate the slot mode into a StockSharp order helper and target order type.
 		var (side, orderType) = mode switch
 		{
-			PendingOrderType.BuyLimit => (Sides.Buy, OrderTypes.Limit),
-			PendingOrderType.BuyStop => (Sides.Buy, OrderTypes.Stop),
-			PendingOrderType.SellLimit => (Sides.Sell, OrderTypes.Limit),
-			PendingOrderType.SellStop => (Sides.Sell, OrderTypes.Stop),
+			PendingOrderTypes.BuyLimit => (Sides.Buy, OrderTypes.Limit),
+			PendingOrderTypes.BuyStop => (Sides.Buy, OrderTypes.Stop),
+			PendingOrderTypes.SellLimit => (Sides.Sell, OrderTypes.Limit),
+			PendingOrderTypes.SellStop => (Sides.Sell, OrderTypes.Stop),
 			_ => (Sides.Buy, OrderTypes.Limit)
 		};
 

@@ -21,7 +21,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class EarlyTopProrateV1Strategy : Strategy
 {
-	private enum MoneyManagementMode
+	private enum MoneyManagementModes
 	{
 		Fixed = 0,
 		FixedAlternate = 1,
@@ -322,7 +322,7 @@ public class EarlyTopProrateV1Strategy : Strategy
 		.SetRange(0, 100)
 		.SetDisplay("Ratio 3", "Percentage closed at the final target", "Trade Management");
 
-		_moneyManagementType = Param(nameof(MoneyManagementType), (int)MoneyManagementMode.Fixed)
+		_moneyManagementType = Param(nameof(MoneyManagementType), (int)MoneyManagementModes.Fixed)
 		.SetRange(0, 3)
 		.SetDisplay("Money Management Mode", "Selects how the order volume is calculated", "Money Management");
 
@@ -667,10 +667,10 @@ public class EarlyTopProrateV1Strategy : Strategy
 
 	private decimal CalculateEntryVolume(decimal price)
 	{
-		var mode = (MoneyManagementMode)MoneyManagementType;
+		var mode = (MoneyManagementModes)MoneyManagementType;
 		var volume = BaseVolume;
 
-		if (mode == MoneyManagementMode.BalanceSquareRoot)
+		if (mode == MoneyManagementModes.BalanceSquareRoot)
 		{
 			var balance = Portfolio?.CurrentValue ?? Portfolio?.BeginValue;
 			if (balance != null && balance.Value > 0m)
@@ -679,7 +679,7 @@ public class EarlyTopProrateV1Strategy : Strategy
 				volume = 0.1m * sqrt * MoneyManagementFactor;
 			}
 		}
-		else if (mode == MoneyManagementMode.EquityRisk)
+		else if (mode == MoneyManagementModes.EquityRisk)
 		{
 			var equity = Portfolio?.CurrentValue ?? Portfolio?.BeginValue;
 			if (equity != null && equity.Value > 0m && price > 0m)

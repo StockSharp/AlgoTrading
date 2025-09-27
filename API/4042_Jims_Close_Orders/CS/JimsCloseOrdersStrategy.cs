@@ -19,7 +19,7 @@ namespace StockSharp.Samples.Strategies;
 /// </summary>
 public class JimsCloseOrdersStrategy : Strategy
 {
-	private enum CloseMode
+	private enum CloseModes
 	{
 		All,
 		Positive,
@@ -98,33 +98,33 @@ public class JimsCloseOrdersStrategy : Strategy
 		Stop();
 	}
 
-	private CloseMode? DetermineMode()
+	private CloseModes? DetermineMode()
 	{
 		var selected = 0;
-		CloseMode mode = CloseMode.All;
+		CloseModes mode = CloseModes.All;
 
 		if (CloseOpenOrders)
 		{
 			selected++;
-			mode = CloseMode.All;
+			mode = CloseModes.All;
 		}
 
 		if (CloseOrdersWithPlusProfit)
 		{
 			selected++;
-			mode = CloseMode.Positive;
+			mode = CloseModes.Positive;
 		}
 
 		if (CloseOrdersWithMinusProfit)
 		{
 			selected++;
-			mode = CloseMode.Negative;
+			mode = CloseModes.Negative;
 		}
 
-		return selected == 1 ? mode : (CloseMode?)null;
+		return selected == 1 ? mode : (CloseModes?)null;
 	}
 
-	private void ClosePositions(Portfolio portfolio, CloseMode mode)
+	private void ClosePositions(Portfolio portfolio, CloseModes mode)
 	{
 		// Create a snapshot because the collection can change while orders are being sent.
 		var positions = portfolio.Positions.ToArray();
@@ -138,13 +138,13 @@ public class JimsCloseOrdersStrategy : Strategy
 		}
 	}
 
-	private void ProcessPosition(Position position, CloseMode mode)
+	private void ProcessPosition(Position position, CloseModes mode)
 	{
 		var signedVolume = position.CurrentValue ?? 0m;
 		if (signedVolume == 0m)
 			return;
 
-		if (mode != CloseMode.All)
+		if (mode != CloseModes.All)
 		{
 			var profit = EstimateProfit(position, signedVolume);
 			if (profit == null)
@@ -153,10 +153,10 @@ public class JimsCloseOrdersStrategy : Strategy
 				return;
 			}
 
-			if (mode == CloseMode.Positive && profit < 0m)
+			if (mode == CloseModes.Positive && profit < 0m)
 				return;
 
-			if (mode == CloseMode.Negative && profit > 0m)
+			if (mode == CloseModes.Negative && profit > 0m)
 				return;
 		}
 

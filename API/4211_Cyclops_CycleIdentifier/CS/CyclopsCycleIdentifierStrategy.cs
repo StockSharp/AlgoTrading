@@ -25,7 +25,7 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	private readonly StrategyParam<int> _length;
 	private readonly StrategyParam<int> _majorCycleStrength;
 	private readonly StrategyParam<bool> _useCycleFilter;
-	private readonly StrategyParam<CycleFilterMode> _cycleFilterMode;
+private readonly StrategyParam<CycleFilterModes> _cycleFilterMode;
 	private readonly StrategyParam<int> _filterStrengthSma;
 	private readonly StrategyParam<int> _filterStrengthRsi;
 	private readonly StrategyParam<bool> _useMomentumFilter;
@@ -101,7 +101,7 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 		_useCycleFilter = Param(nameof(UseCycleFilter), false)
 		.SetDisplay("Use Cycle Filter", "Enable zero-lag slope confirmation", "Indicator");
 
-		_cycleFilterMode = Param(nameof(CycleFilterMode), CycleFilterMode.Sma)
+_cycleFilterMode = Param(nameof(CycleFilterMode), CycleFilterModes.Sma)
 		.SetDisplay("Filter Source", "Source used by the zero-lag filter (price or RSI)", "Indicator");
 
 		_filterStrengthSma = Param(nameof(FilterStrengthSma), 12)
@@ -218,11 +218,11 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 	/// <summary>
 	/// Selects the data source for the zero-lag filter.
 	/// </summary>
-	public CycleFilterMode CycleFilterMode
-	{
-		get => _cycleFilterMode.Value;
-		set => _cycleFilterMode.Value = value;
-	}
+public CycleFilterModes CycleFilterMode
+{
+get => _cycleFilterMode.Value;
+set => _cycleFilterMode.Value = value;
+}
 
 	/// <summary>
 	/// Length of the zero-lag filter when price is used as source.
@@ -662,7 +662,7 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 		decimal source;
 		int length;
 
-		if (this.CycleFilterMode == CycleFilterMode.Sma)
+if (this.CycleFilterMode == CycleFilterModes.Sma)
 		{
 			source = cyclePrice;
 			length = Math.Max(FilterStrengthSma, 1);
@@ -796,12 +796,12 @@ public class CyclopsCycleIdentifierStrategy : Strategy
 /// <summary>
 /// Defines the data source used by the zero-lag filter.
 /// </summary>
-public enum CycleFilterMode
+public enum CycleFilterModes
 {
-	/// <summary>
-	/// Use the smoothed price series as filter input.
-	/// </summary>
-	Sma = 1,
+/// <summary>
+/// Use the smoothed price series as filter input.
+/// </summary>
+Sma = 1,
 
 	/// <summary>
 	/// Use a Wilder style RSI computed on the smoothed price series as filter input.

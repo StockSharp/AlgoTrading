@@ -30,7 +30,7 @@ public class EmaWmaRsiStrategy : Strategy
 	private readonly StrategyParam<bool> _closeOppositePositions;
 	private readonly StrategyParam<decimal> _fixedVolume;
 	private readonly StrategyParam<decimal> _riskPercent;
-	private readonly StrategyParam<TrailingSource> _trailingMode;
+	private readonly StrategyParam<TrailingSources> _trailingMode;
 	private readonly StrategyParam<DataType> _candleType;
 	private readonly StrategyParam<int> _historyLimit;
 	private readonly StrategyParam<decimal> _trailingBufferPoints;
@@ -54,7 +54,7 @@ public class EmaWmaRsiStrategy : Strategy
 	private decimal? _longTake;
 	private decimal? _shortTake;
 
-	private enum TrailingSource
+	private enum TrailingSources
 	{
 		Fractals,
 		CandleExtremes,
@@ -144,7 +144,7 @@ public class EmaWmaRsiStrategy : Strategy
 	/// <summary>
 	/// Source used to build trailing stops when <see cref="TrailingStopPoints"/> is zero.
 	/// </summary>
-	public TrailingSource TrailingMode
+	public TrailingSources TrailingMode
 	{
 		get => _trailingMode.Value;
 		set => _trailingMode.Value = value;
@@ -235,7 +235,7 @@ public class EmaWmaRsiStrategy : Strategy
 			.SetRange(0m, 100m)
 			.SetCanOptimize(true);
 
-		_trailingMode = Param(nameof(TrailingMode), TrailingSource.CandleExtremes)
+		_trailingMode = Param(nameof(TrailingMode), TrailingSources.CandleExtremes)
 			.SetDisplay("Trailing Source", "Price source used when adaptive trailing is enabled", "Risk");
 
 		_candleType = Param(nameof(CandleType), TimeSpan.FromMinutes(30).TimeFrame())
@@ -580,7 +580,7 @@ public class EmaWmaRsiStrategy : Strategy
 			buffer = 0m;
 		}
 
-		if (TrailingMode == TrailingSource.Fractals)
+		if (TrailingMode == TrailingSources.Fractals)
 		{
 			for (var i = _history.Count - 3; i >= 2; i--)
 			{

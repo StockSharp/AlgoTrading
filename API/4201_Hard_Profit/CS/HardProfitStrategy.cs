@@ -33,7 +33,7 @@ public class HardProfitStrategy : Strategy
 	private readonly StrategyParam<decimal> _partialRatio2;
 	private readonly StrategyParam<decimal> _takeProfitPips;
 	private readonly StrategyParam<decimal> _maxSpreadPips;
-	private readonly StrategyParam<MoneyManagementMode> _moneyManagementMode;
+	private readonly StrategyParam<MoneyManagementModes> _moneyManagementMode;
 	private readonly StrategyParam<decimal> _fixedVolume;
 	private readonly StrategyParam<decimal> _geometricalFactor;
 	private readonly StrategyParam<decimal> _proportionalRiskPercent;
@@ -77,7 +77,7 @@ public class HardProfitStrategy : Strategy
 	/// <summary>
 	/// Money management behaviour replicated from the original expert advisor.
 	/// </summary>
-	public enum MoneyManagementMode
+	public enum MoneyManagementModes
 	{
 		Fixed = 1,
 		Geometrical = 2,
@@ -149,7 +149,7 @@ public class HardProfitStrategy : Strategy
 			.SetRange(0m, 200m)
 			.SetDisplay("Max Spread (pips)", "Maximum allowed spread before blocking new entries", "Filters");
 
-		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementMode.Proportional)
+		_moneyManagementMode = Param(nameof(ManagementMode), MoneyManagementModes.Proportional)
 			.SetDisplay("Money Management", "Volume sizing mode derived from the original EA", "Money Management");
 
 		_fixedVolume = Param(nameof(FixedVolume), 0.1m)
@@ -329,7 +329,7 @@ public class HardProfitStrategy : Strategy
 	/// <summary>
 	/// Money management behaviour used to size new positions.
 	/// </summary>
-	public MoneyManagementMode ManagementMode
+	public MoneyManagementModes ManagementMode
 	{
 		get => _moneyManagementMode.Value;
 		set => _moneyManagementMode.Value = value;
@@ -805,10 +805,10 @@ public class HardProfitStrategy : Strategy
 
 		switch (ManagementMode)
 		{
-			case MoneyManagementMode.Fixed:
+			case MoneyManagementModes.Fixed:
 				volume = FixedVolume;
 				break;
-			case MoneyManagementMode.Geometrical:
+			case MoneyManagementModes.Geometrical:
 			{
 				if (balance > 0m)
 				{
@@ -817,13 +817,13 @@ public class HardProfitStrategy : Strategy
 				}
 				break;
 			}
-			case MoneyManagementMode.Proportional:
+			case MoneyManagementModes.Proportional:
 			{
 				if (closePrice > 0m)
 					volume = freeMargin * riskFraction / (closePrice * 1000m);
 				break;
 			}
-			case MoneyManagementMode.Smart:
+			case MoneyManagementModes.Smart:
 			{
 				volume = freeMargin * riskFraction / 100m;
 				var losses = CountRecentConsecutiveLosses();
@@ -834,7 +834,7 @@ public class HardProfitStrategy : Strategy
 				}
 				break;
 			}
-			case MoneyManagementMode.Tssf:
+			case MoneyManagementModes.Tssf:
 			{
 				volume = CalculateTssfVolume(freeMargin, FixedVolume);
 				break;

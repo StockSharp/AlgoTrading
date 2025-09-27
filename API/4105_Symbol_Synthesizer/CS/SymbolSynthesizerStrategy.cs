@@ -42,7 +42,7 @@ public class SymbolSynthesizerStrategy : Strategy
 	};
 
 	private readonly StrategyParam<int> _combinationParam;
-	private readonly StrategyParam<SyntheticTradeAction> _tradeActionParam;
+	private readonly StrategyParam<SyntheticTradeActions> _tradeActionParam;
 
 	private SyntheticCombination _combination;
 	private Security _firstLeg;
@@ -71,7 +71,7 @@ public class SymbolSynthesizerStrategy : Strategy
 	/// <summary>
 	/// Manual action that emulates the Buy/Sell buttons from the original panel.
 	/// </summary>
-	public SyntheticTradeAction TradeAction
+	public SyntheticTradeActions TradeAction
 	{
 		get => _tradeActionParam.Value;
 		set => _tradeActionParam.Value = value;
@@ -86,7 +86,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		.SetDisplay("Combination Index", "Predefined synthetic pair index (0-12)", "Synthetic")
 		.SetNotNegative();
 
-		_tradeActionParam = Param(nameof(TradeAction), SyntheticTradeAction.None)
+		_tradeActionParam = Param(nameof(TradeAction), SyntheticTradeActions.None)
 		.SetDisplay("Trade Action", "Set to Buy or Sell to place paired orders", "Manual")
 		.SetCanOptimize(false);
 	}
@@ -269,7 +269,7 @@ public class SymbolSynthesizerStrategy : Strategy
 
 		var action = TradeAction;
 
-		if (action == SyntheticTradeAction.None)
+		if (action == SyntheticTradeActions.None)
 			return;
 
 		_isPlacingOrders = true;
@@ -277,12 +277,12 @@ public class SymbolSynthesizerStrategy : Strategy
 		try
 		{
 			ExecuteSyntheticTrade(action);
-			TradeAction = SyntheticTradeAction.None;
+			TradeAction = SyntheticTradeActions.None;
 		}
 		catch (Exception ex)
 		{
 			LogError($"Failed to execute synthetic {action}. {ex.Message}");
-			TradeAction = SyntheticTradeAction.None;
+			TradeAction = SyntheticTradeActions.None;
 		}
 		finally
 		{
@@ -290,7 +290,7 @@ public class SymbolSynthesizerStrategy : Strategy
 		}
 	}
 
-	private void ExecuteSyntheticTrade(SyntheticTradeAction action)
+	private void ExecuteSyntheticTrade(SyntheticTradeActions action)
 	{
 		if (_combination == null || _firstLeg == null || _secondLeg == null)
 			throw new InvalidOperationException("Strategy legs are not initialized.");
@@ -308,10 +308,10 @@ public class SymbolSynthesizerStrategy : Strategy
 			throw new InvalidOperationException("Synthetic quotes are not ready yet.");
 
 		var firstSide = _combination.IsProduct
-		? (action == SyntheticTradeAction.Buy ? Sides.Buy : Sides.Sell)
-		: (action == SyntheticTradeAction.Buy ? Sides.Sell : Sides.Buy);
+		? (action == SyntheticTradeActions.Buy ? Sides.Buy : Sides.Sell)
+		: (action == SyntheticTradeActions.Buy ? Sides.Sell : Sides.Buy);
 
-		var secondSide = action == SyntheticTradeAction.Buy ? Sides.Buy : Sides.Sell;
+		var secondSide = action == SyntheticTradeActions.Buy ? Sides.Buy : Sides.Sell;
 
 		var firstPrice = firstSide == Sides.Buy ? firstAsk : firstBid;
 		var secondPrice = secondSide == Sides.Buy ? secondAsk : secondBid;
@@ -331,7 +331,7 @@ public class SymbolSynthesizerStrategy : Strategy
 			throw new InvalidOperationException("Tick value or price step metadata is missing.");
 		}
 
-		var syntheticPrice = action == SyntheticTradeAction.Buy ? synthAsk : synthBid;
+		var syntheticPrice = action == SyntheticTradeActions.Buy ? synthAsk : synthBid;
 
 		if (syntheticPrice <= 0m)
 			throw new InvalidOperationException("Synthetic price must be positive.");
@@ -393,7 +393,7 @@ public class SymbolSynthesizerStrategy : Strategy
 /// <summary>
 /// Manual actions exposed by <see cref="SymbolSynthesizerStrategy"/>.
 /// </summary>
-public enum SyntheticTradeAction
+public enum SyntheticTradeActions
 {
 	/// <summary>
 	/// No action requested.
