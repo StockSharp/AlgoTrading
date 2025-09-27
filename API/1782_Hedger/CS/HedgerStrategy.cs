@@ -133,7 +133,7 @@ public class HedgerStrategy : Strategy
 		
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		
 		PlaceProtectiveOrders();
 		

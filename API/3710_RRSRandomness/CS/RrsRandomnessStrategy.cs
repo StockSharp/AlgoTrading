@@ -262,8 +262,8 @@ public class RrsRandomnessStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice > 0m)
-			_lastTradePrice = trade.TradePrice;
+		if (trade.Price > 0m)
+			_lastTradePrice = trade.Price;
 	}
 
 	private void ProcessCandle(ICandleMessage candle)

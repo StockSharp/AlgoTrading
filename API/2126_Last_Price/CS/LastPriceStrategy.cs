@@ -100,7 +100,7 @@ public class LastPriceStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		_lastPrice = trade.TradePrice ?? 0m;
+		_lastPrice = trade.Price;
 		_lastVolume = trade.Volume ?? 0m;
 
 		Evaluate(trade.ServerTime);

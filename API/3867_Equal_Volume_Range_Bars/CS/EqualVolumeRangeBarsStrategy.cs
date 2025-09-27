@@ -203,8 +203,7 @@ public class EqualVolumeRangeBarsStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-			return;
+		var price = trade.Price;
 
 		var volume = trade.TradeVolume ?? 1m;
 		if (volume <= 0m)

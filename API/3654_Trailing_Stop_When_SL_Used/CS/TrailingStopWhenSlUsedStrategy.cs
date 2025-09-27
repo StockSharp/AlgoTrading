@@ -88,34 +88,32 @@ public class TrailingStopWhenSlUsedStrategy : Strategy
 			ResetTrailingState();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price == null || price.Value <= 0m)
-			return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-			return;
-
-		var stepDistance = TrailingStepPoints * _priceStep;
-		if (stepDistance <= 0m)
-			return;
-
-		var entryPrice = PositionPrice;
-		if (entryPrice == null || entryPrice.Value <= 0m)
-			return;
-
-		var volume = Math.Abs(Position);
-		if (volume <= 0m)
-			return;
-
-		if (Position > 0m)
+		private void ProcessTrade(ITickTradeMessage trade)
 		{
-			ProcessLong(price.Value, entryPrice.Value, volume, stepDistance);
+			var price = trade.Price;
+
+			if (!IsFormedAndOnlineAndAllowTrading())
+			return;
+
+			var stepDistance = TrailingStepPoints * _priceStep;
+			if (stepDistance <= 0m)
+			return;
+
+			var entryPrice = PositionPrice;
+			if (entryPrice == null || entryPrice.Value <= 0m)
+			return;
+
+			var volume = Math.Abs(Position);
+			if (volume <= 0m)
+			return;
+
+			if (Position > 0m)
+		{
+			ProcessLong(price, entryPrice.Value, volume, stepDistance);
 		}
-		else if (Position < 0m)
+			else if (Position < 0m)
 		{
-			ProcessShort(price.Value, entryPrice.Value, volume, stepDistance);
+			ProcessShort(price, entryPrice.Value, volume, stepDistance);
 		}
 	}
 

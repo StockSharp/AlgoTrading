@@ -133,9 +133,8 @@ public class DailyTargetStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice;
-		if (price is decimal tradePrice)
-			_lastTradePrice = tradePrice;
+		var price = trade.Price;
+		_lastTradePrice = price;
 
 		EvaluateDailyThresholds();
 	}

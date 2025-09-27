@@ -315,17 +315,16 @@ public class EliteEFiboTraderStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-		return;
+		var price = trade.Price;
 
 		if (TradeAgainAfterProfit)
-		_tradeEnabled = true;
+			_tradeEnabled = true;
 
 		UpdateStepSizes();
 		UpdateExecutedEntries();
 
 		if (!_cycleActive && _tradeEnabled && HasValidDirection() && IsFormedAndOnlineAndAllowTrading())
-		TryStartCycle(price);
+			TryStartCycle(price);
 
 		if (Position != 0m)
 		{

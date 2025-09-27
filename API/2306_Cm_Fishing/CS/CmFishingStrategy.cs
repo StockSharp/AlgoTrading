@@ -152,7 +152,7 @@ public class CmFishingStrategy : Strategy
 		if (!IsFormedAndOnlineAndAllowTrading())
 			return;
 
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		var absPos = Math.Abs(Position);
 
 		if (Buy && Position >= 0m && price <= _level - StepBuy)

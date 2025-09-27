@@ -237,13 +237,11 @@ public class EesHedgerAdvancedStrategy : Strategy
 			SellMarket(volume, comment: HedgerOrderComment);
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price == null)
-			return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
-		UpdateRiskManagement(price.Value);
+			UpdateRiskManagement(price);
 	}
 
 	private void RefreshProtection()

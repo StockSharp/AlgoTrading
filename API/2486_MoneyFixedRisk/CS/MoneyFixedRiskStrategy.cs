@@ -110,16 +110,14 @@ public class MoneyFixedRiskStrategy : Strategy
 		StartProtection();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		var price = trade.TradePrice;
-		if (price is null || price.Value <= 0m)
-		return;
+		private void ProcessTrade(ITickTradeMessage trade)
+		{
+			var price = trade.Price;
 
 		// Manage existing long position and exit on stop-loss or take-profit.
 		if (Position > 0 && _stopPrice > 0m)
 		{
-			if (price.Value <= _stopPrice || price.Value >= _takeProfitPrice)
+			if (price <= _stopPrice || price >= _takeProfitPrice)
 			{
 				SellMarket(Math.Abs(Position));
 				_stopPrice = 0m;
@@ -148,8 +146,8 @@ public class MoneyFixedRiskStrategy : Strategy
 		// Close short exposure if any and open the long trade sized by risk.
 		BuyMarket(volume + Math.Max(0m, -Position));
 
-		_stopPrice = price.Value - stopDistance;
-		_takeProfitPrice = price.Value + stopDistance;
+		_stopPrice = price - stopDistance;
+		_takeProfitPrice = price + stopDistance;
 	}
 
 	private decimal GetStopDistance()

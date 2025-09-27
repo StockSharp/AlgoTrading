@@ -157,8 +157,7 @@ public class RenkoChartStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-		return;
+		var price = trade.Price;
 
 		_lastSourcePrice = price;
 		_lastSourceUpdate = trade.ServerTime;

@@ -175,7 +175,7 @@ public class DualLotStepHedgeStrategy : Strategy
 		base.OnStarted(time);
 
 		_volumeStep = Security.VolumeStep ?? 0m;
-		if (_volumeStep <= 0m)
+			if (_volumeStep <= 0m)
 		_volumeStep = 1m;
 
 		_maxVolume = LotCheck(_volumeStep * LotMultiplier);
@@ -188,55 +188,54 @@ public class DualLotStepHedgeStrategy : Strategy
 		SubscribeTicks().Bind(ProcessTrade).Start();
 	}
 
-	private void ProcessTrade(ITickTradeMessage trade)
-	{
-		if (trade.TradePrice is not decimal price || price <= 0m)
-		return;
-
-		if (!IsFormedAndOnlineAndAllowTrading())
-		return;
-
-		if (_volumeStep <= 0m)
-		return;
-
-		if (_initialEquity <= 0m)
-		_initialEquity = Portfolio.CurrentValue ?? 0m;
-
-		CheckProtectiveLevels(price);
-
-		if (_longExitInProgress || _shortExitInProgress)
-		return;
-
-		if (CheckProfitTarget())
-		return;
-
-		ResetCurrentVolumeIfNeeded();
-
-		var buyCount = _longVolume > 0m ? 1 : 0;
-		var sellCount = _shortVolume > 0m ? 1 : 0;
-
-		if (buyCount > 1 || sellCount > 1)
+		private void ProcessTrade(ITickTradeMessage trade)
 		{
-			CloseAllPositions();
-			return;
-		}
+			var price = trade.Price;
 
-		if (_longEntryInProgress || _shortEntryInProgress)
-		return;
+			if (!IsFormedAndOnlineAndAllowTrading())
+				return;
 
-		if (buyCount == 0 && sellCount == 0)
-		{
-			TryOpenHedge();
+			if (_volumeStep <= 0m)
+				return;
+
+			if (_initialEquity <= 0m)
+				_initialEquity = Portfolio.CurrentValue ?? 0m;
+
+			CheckProtectiveLevels(price);
+
+			if (_longExitInProgress || _shortExitInProgress)
+				return;
+
+			if (CheckProfitTarget())
+				return;
+
+			ResetCurrentVolumeIfNeeded();
+
+			var buyCount = _longVolume > 0m ? 1 : 0;
+			var sellCount = _shortVolume > 0m ? 1 : 0;
+
+			if (buyCount > 1 || sellCount > 1)
+			{
+				CloseAllPositions();
+				return;
+			}
+
+			if (_longEntryInProgress || _shortEntryInProgress)
+				return;
+
+			if (buyCount == 0 && sellCount == 0)
+			{
+				TryOpenHedge();
+			}
+			else if (buyCount == 1 && sellCount == 0)
+			{
+				OpenShortIfNeeded();
+			}
+			else if (buyCount == 0 && sellCount == 1)
+			{
+				OpenLongIfNeeded();
+			}
 		}
-		else if (buyCount == 1 && sellCount == 0)
-		{
-			OpenShortIfNeeded();
-		}
-		else if (buyCount == 0 && sellCount == 1)
-		{
-			OpenLongIfNeeded();
-		}
-	}
 
 	private bool CheckProfitTarget()
 	{
@@ -503,7 +502,7 @@ public class DualLotStepHedgeStrategy : Strategy
 		if (_longVolume > 0m || _shortVolume > 0m)
 		return;
 
-		if (_longExitInProgress || _shortExitInProgress)
+			if (_longExitInProgress || _shortExitInProgress)
 		return;
 
 		if (_pendingLongEntryVolume > 0m || _pendingShortEntryVolume > 0m)

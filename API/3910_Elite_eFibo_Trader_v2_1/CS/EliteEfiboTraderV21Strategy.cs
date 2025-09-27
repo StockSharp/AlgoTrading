@@ -224,8 +224,7 @@ public class EliteEfiboTraderV21Strategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-			return;
+		var price = trade.Price;
 
 		if (TradeAgainAfterProfit)
 			_allowTrading = true;

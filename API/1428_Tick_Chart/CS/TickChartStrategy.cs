@@ -39,7 +39,7 @@ public class TickChartStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		var price = trade.TradePrice ?? 0m;
+		var price = trade.Price;
 		var vol = trade.Volume ?? 0m;
 
 		if (_count == 0)

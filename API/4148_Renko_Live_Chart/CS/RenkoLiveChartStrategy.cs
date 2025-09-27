@@ -231,9 +231,7 @@ public class RenkoLiveChartStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is not decimal price)
-		// Skip trade messages that do not contain an actual price.
-		return;
+		var price = trade.Price;
 
 		var time = trade.ServerTime;
 		EnsureInitialized(price, time);

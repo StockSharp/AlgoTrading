@@ -78,10 +78,10 @@ public class PainelStrategy : Strategy
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
 		// Store the price from the most recent trade to keep the panel accurate.
-		if (trade.TradePrice is decimal price)
-		{
+		var price = trade.Price;
+
+		if (price > 0m)
 			_lastPrice = price;
-		}
 	}
 
 	private void OnTimer(DateTimeOffset time)

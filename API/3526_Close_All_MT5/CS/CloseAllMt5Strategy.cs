@@ -244,13 +244,14 @@ public class CloseAllMt5Strategy : Strategy
 		.Start();
 	}
 
-	private void ProcessTrade(Security security, ITickTradeMessage trade)
-	{
-		if (trade.TradePrice is decimal price)
+		private void ProcessTrade(Security security, ITickTradeMessage trade)
+		{
+			var price = trade.Price;
+
 			_lastPrices[security] = price;
 
-		EvaluateAllPositions();
-	}
+			EvaluateAllPositions();
+		}
 
 	private void EvaluateAllPositions()
 	{
@@ -318,29 +319,29 @@ public class CloseAllMt5Strategy : Strategy
 		return threshold > 0m ? metric >= threshold : metric <= threshold;
 	}
 
-	private bool TryGetMetricValue(Position position, out decimal metric)
-	{
-		metric = 0m;
-
-		var volume = position.CurrentValue ?? 0m;
-		if (volume == 0m)
-			return false;
-
-		var security = position.Security;
-		if (security == null)
-			return false;
-
-		var averagePrice = position.AveragePrice;
-
-		if (!_lastPrices.TryGetValue(security, out var lastPrice) || lastPrice <= 0m)
+		private bool TryGetMetricValue(Position position, out decimal metric)
 		{
-			var fallback = security.LastTick?.Price ?? security.LastPrice;
-			if (fallback == null || fallback <= 0m)
+			metric = 0m;
+
+			var volume = position.CurrentValue ?? 0m;
+			if (volume == 0m)
 				return false;
 
-			lastPrice = fallback.Value;
-			_lastPrices[security] = lastPrice;
-		}
+			var security = position.Security;
+			if (security == null)
+				return false;
+
+			var averagePrice = position.AveragePrice;
+
+			if (!_lastPrices.TryGetValue(security, out var lastPrice))
+			{
+				var fallback = security.LastTick?.Price ?? security.LastPrice;
+				if (fallback == null)
+					return false;
+
+				lastPrice = fallback.Value;
+				_lastPrices[security] = lastPrice;
+			}
 
 		var priceDiff = volume > 0m ? lastPrice - averagePrice : averagePrice - lastPrice;
 		var absVolume = Math.Abs(volume);

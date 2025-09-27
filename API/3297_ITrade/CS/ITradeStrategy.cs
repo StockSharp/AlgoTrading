@@ -243,7 +243,9 @@ public class ITradeStrategy : Strategy
 
 	private void ProcessTrade(ITickTradeMessage trade)
 	{
-		if (trade.TradePrice is decimal price)
+		var price = trade.Price;
+
+		if (price > 0m)
 			_lastTradePrice = price;
 	}
 
